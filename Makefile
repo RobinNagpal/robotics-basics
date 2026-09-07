@@ -79,8 +79,13 @@ frames: ## [live] Snapshot the TF tree to a PDF and open it
 	$(call ros,cd build/tf_frames && ros2 run tf2_tools view_frames)
 	@open build/tf_frames/frames_*.pdf
 
+# On macOS, rqt aborts during teardown ("mutex lock failed") when the window is
+# closed — an upstream bug in rqt's Qt/threading shutdown, not in this project.
+# The GUI works fine and the crash happens only on exit, so the non-zero status
+# is swallowed rather than reported as a build failure.
 graph: ## [live] Open rqt_graph to see nodes and topics
-	$(call ros,ros2 run rqt_graph rqt_graph)
+	@$(call ros,rqt --standalone rqt_graph) || \
+		echo "(rqt exited non-zero on close — known macOS teardown bug, safe to ignore)"
 
 ##@ Escape hatch
 

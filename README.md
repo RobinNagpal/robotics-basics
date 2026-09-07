@@ -1,18 +1,19 @@
 # robotics-basics
 
-A ROS 2 Jazzy workspace for learning RViz, running natively on macOS.
+A small ROS 2 project for learning RViz on a Mac.
 
-One node publishes a coordinate frame that orbits the origin and a marker
-attached to it, so RViz shows a blue sphere circling a grid.
+A blue ball moves in a circle. That is all it does. The point is to show how
+ROS keeps track of where things are, and how RViz draws them.
 
 ![What you see in RViz](docs/images/overview/scene.svg)
 
 ```
-make setup    # first run downloads ROS 2, a few GB
-make demo     # build, then launch the node and RViz
+make setup    # the first run downloads ROS 2, a few GB
+make demo     # build, then start the node and RViz
 ```
 
-Run `make` to see every target.
+Run `make` on its own to see every command.
 
-**[docs/overview.md](docs/overview.md)** explains how it fits together, what to
-expect when you run it, and how to build on it.
+**[docs/overview.md](docs/overview.md)** explains what the parts are, what to
+expect when you run it, and how to add to it. It starts from the basics, so you
+do not need to know ROS already.

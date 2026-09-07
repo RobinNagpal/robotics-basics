@@ -1,24 +1,27 @@
 # Overview
 
-A ROS 2 Jazzy workspace for learning RViz, running natively on macOS.
+A small ROS 2 project for learning RViz on a Mac.
 
-One node publishes a coordinate frame that orbits the origin, and a marker
-attached to that frame. In RViz you see a blue sphere circling a grid.
+A blue ball moves in a circle. That is all it does. The point is to show how
+ROS keeps track of where things are, and how RViz draws them.
 
 ![What you see in RViz](images/overview/scene.svg)
 
 ## Contents
 
 1. [The problem this solves](#1-the-problem-this-solves)
-   · [Frames, not positions](#frames-not-positions)
+   · [What this example stands for](#what-this-example-stands-for)
+   · [Frames: how a robot stores position](#frames-how-a-robot-stores-position)
+   · [TF: joining the frames](#tf-joining-the-frames)
+   · [RViz: seeing it](#rviz-seeing-it)
    · [The one idea to take away](#the-one-idea-to-take-away)
    · [Vocabulary](#vocabulary)
 2. [How the pieces connect](#2-how-the-pieces-connect)
    · [The motion](#the-motion)
-   · [Parameters](#parameters)
+   · [Settings you can change](#settings-you-can-change)
 3. [Running it](#3-running-it)
    · [What to expect](#what-to-expect)
-   · [Checking it actually works](#checking-it-actually-works)
+   · [Checking it works](#checking-it-works)
    · [Commands](#commands)
 4. [Working on the code](#4-working-on-the-code)
    · [Layout](#layout)
@@ -29,104 +32,152 @@ attached to that frame. In RViz you see a blue sphere circling a grid.
 
 ## 1. The problem this solves
 
-A running robot is invisible. Your code starts, numbers scroll past in the
-terminal, and you have no way to tell whether any of it is right. Is the arm
-where you think it is? Is the camera pointing the way you meant? Is the path
-you planned actually in front of the robot, or behind it? A column of floating
-point numbers will not tell you, and this is where most time gets lost early on.
+When you work with robots, you want to see what the robot is doing.
 
-### Frames, not positions
+Where is the arm right now? Which way is the camera pointing? Did the robot go
+where you told it to go?
 
-Robots describe the world in frames, not absolute positions. A robot almost
-never knows "the gripper is at (1.2, 0.4, 0.8)". What it knows is a chain of
-relationships: the gripper sits 10 cm from the wrist, the wrist 30 cm from the
-elbow, the elbow is bolted to a base that is somewhere in the room. Each link in
-that chain is a *coordinate frame* — an origin plus a set of axes attached to
-one physical thing. The only question that ever matters is "where is this frame
-relative to that one?"
+You cannot answer that from numbers scrolling past in a terminal. So ROS gives
+you three things that work together:
 
-**TF is the bookkeeping for those relationships.** Each part of the system
-publishes just its own link — the arm publishes where the wrist is relative to
-the elbow, and nothing else. TF chains those links together, so you can ask
-"where is the gripper relative to the room?" and get an answer, including how it
-changed over time. Without it, every node would need to know the whole robot.
+- **topics** carry data between programs
+- **TF** keeps track of where every part of the robot is
+- **RViz** draws it on screen so you can look at it
 
-**RViz is the window into all of it.** RViz is a viewer, not a simulator. It
-subscribes to what your nodes publish and draws it: frames as little axis
-crosses, sensor readings as points, and anything else you like as *markers* —
-spheres, arrows, lines, text that you publish on a topic purely so a human can
-see them. Marking up a scene this way is how you debug a robot that cannot tell
-you what it is thinking.
+This project is a small working example of all three.
 
-This cuts both ways, and it is the usual first frustration: if RViz shows an
-empty grid, that is information. It normally means nothing is being published,
-or you are looking from the wrong frame — not that the robot is broken.
+### What this example stands for
+
+Here, a blue ball moves in a circle.
+
+It stands in for a real robot doing the same kind of thing:
+
+- a robot arm moving its gripper in a circle above a table
+- a drone flying a loop around a tower
+- a mobile robot driving one lap of a room
+
+In each case, one part moves and the rest stays still. To draw that, you need
+two things about the moving part at every moment:
+
+1. **where it is** — its position
+2. **which way it faces** — its rotation
+
+Together these are called a **pose**. A robot works out poses many times a
+second. This example does it 30 times a second.
+
+### Frames: how a robot stores position
+
+A robot does not keep one big list of positions. It keeps small relationships
+instead.
+
+Take a robot arm:
+
+- the gripper is 10 cm from the wrist
+- the wrist is 30 cm from the elbow
+- the elbow is fixed to the base
+- the base sits somewhere in the room
+
+Each part gets a **frame**. A frame is a point with three axes (X, Y, Z) stuck
+to one physical thing.
+
+It is done this way so each part only has to know about the part next to it.
+The gripper does not need to know where the room is.
+
+### TF: joining the frames
+
+**TF** is the part of ROS that keeps track of frames.
+
+Each part reports one link, and only that link. The arm says where the wrist is
+compared to the elbow. Nothing more.
+
+TF adds the links together. So you can ask "where is the gripper in the room?"
+and get an answer, even though nobody wrote that down anywhere.
+
+This example has two frames. `world` stays still. `marker_frame` moves.
+
+### RViz: seeing it
+
+**RViz** is a 3D viewer. It listens to what your programs send, and draws it:
+
+- frames, as small red, green and blue arrows
+- sensor data, as points
+- shapes you add yourself, called **markers** — balls, arrows, lines, text
+
+RViz does not run the robot. It only shows what the robot says.
+
+That is worth remembering when the screen is empty. It usually means nothing is
+being sent, or you are looking from the wrong frame. It does not mean the robot
+is broken.
 
 ### The one idea to take away
 
-You do not move the picture. You move the frame, and the picture follows.
+You do not move the ball. You move the frame, and the ball goes with it.
 
-The sphere here is a `visualization_msgs/Marker` sitting at the **origin of
-`marker_frame`**, and it never moves in its own frame. Every drawing of it says
-"a sphere, at (0, 0, 0), in `marker_frame`". What changes is where
-`marker_frame` is, and RViz redraws the sphere wherever TF says that frame
-currently is.
+The ball is a marker placed at (0, 0, 0) in `marker_frame`, and it stays there.
+Every message says the same thing: a ball, in the middle of `marker_frame`.
 
-That seems like a detour for one sphere, but it is exactly how a real robot
-works. The 3D mesh of a forearm is bolted to the forearm frame and stays there
-forever; what moves is the frame. Get comfortable with the indirection on a
-sphere and it costs you nothing later on a robot with forty of them.
+What changes is where `marker_frame` is. TF moves the frame, and RViz draws the
+ball in its new spot.
+
+This looks like extra work for one ball. It is not. On a real robot, the 3D
+shape of a forearm is fixed to the forearm frame and never moves from it. Only
+the frame moves. Learn it here with one ball, and it costs you nothing later
+with forty parts.
 
 ### Vocabulary
 
 | Term | Meaning |
 | --- | --- |
-| node | one program in the ROS system |
-| topic | a named stream of messages that nodes publish to and subscribe from |
-| frame | an origin and set of axes attached to one physical thing |
-| transform | where one frame sits relative to another |
-| TF | the system that tracks transforms and chains them together |
-| marker | a shape published so a person can see it in RViz |
-| fixed frame | the frame RViz draws everything relative to (here, `world`) |
+| node | one running program |
+| topic | a named channel that programs send messages on |
+| frame | a point with three axes, attached to one thing |
+| transform | where one frame is, compared to another |
+| pose | position and rotation together |
+| TF | the system that keeps track of frames |
+| marker | a shape you send so a person can see it in RViz |
+| fixed frame | the frame RViz draws everything from (here, `world`) |
 
 ---
 
 ## 2. How the pieces connect
 
+One node sends two things. RViz reads both.
+
 ```mermaid
 flowchart LR
-    N["marker_publisher<br/>(one node, 30 Hz)"]
-    N -->|"/tf<br/>world → marker_frame"| R["RViz2"]
-    N -->|"/visualization_marker<br/>sphere in marker_frame"| R
+    N["marker_publisher<br/>(one node, 30 times a second)"]
+    N -->|"/tf<br/>where marker_frame is"| R["RViz2"]
+    N -->|"/visualization_marker<br/>a ball in marker_frame"| R
 ```
 
-The TF tree is two frames deep:
+The frames:
 
 ```mermaid
 flowchart LR
     world --> marker_frame
 ```
 
-`world` is the fixed frame RViz renders against. `marker_frame` moves.
+`world` stays still, and RViz draws everything from it. `marker_frame` moves.
 
 ### The motion
 
 ![One revolution](images/overview/motion.svg)
 
-A 2 m radius circle, one lap every 6 seconds, counter-clockwise. The frame's
-+X axis stays tangent to the path, so it points the way it is travelling.
+The circle is 2 metres from the middle. One lap takes 6 seconds. The frame
+turns as it goes, so its red arrow always points the way it is moving.
 
-### Parameters
+### Settings you can change
 
-Both numbers are node parameters, so nothing is hardcoded into the geometry:
+You do not need to edit any maths to change these. They are node settings:
 
-| Parameter | Default |
-| --- | --- |
-| `orbit_radius_m` | 2.0 |
-| `orbit_period_s` | 6.0 |
-| `publish_rate_hz` | 30.0 |
-| `marker_diameter_m` | 0.4 |
-| `world_frame` / `marker_frame` | `world` / `marker_frame` |
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `orbit_radius_m` | 2.0 | how far out the ball sits |
+| `orbit_period_s` | 6.0 | seconds for one lap |
+| `publish_rate_hz` | 30.0 | updates per second |
+| `marker_diameter_m` | 0.4 | how big the ball is |
+| `world_frame` | `world` | name of the still frame |
+| `marker_frame` | `marker_frame` | name of the moving frame |
 
 ---
 
@@ -138,8 +189,9 @@ make demo
 
 ### What to expect
 
-The first ever run downloads ROS 2 — several GB, several minutes. After that
-the build takes about a second and RViz takes roughly ten seconds to appear.
+The first time you run this, it downloads ROS 2. That is a few GB and takes a
+few minutes. After that, the build takes about a second, and RViz takes about
+ten seconds to open.
 
 In the terminal:
 
@@ -150,41 +202,53 @@ In the terminal:
 [rviz2-2] [INFO] [rviz2]: OpenGl version: 2.1 (GLSL 1.2)
 ```
 
-Those two RViz lines are normal on macOS, not errors.
+Those last two lines look like problems. They are not. They are normal on a Mac.
 
-In the window: a dark grid, a blue sphere going round once every six seconds,
-and a small set of red/green/blue axes riding along with it. The Displays
-panel on the left lists Grid, TF and Marker, all with no warning triangles.
+In the window you should see:
 
-Ctrl-C in the terminal stops both.
+- a dark grid
+- a blue ball going round once every six seconds
+- small red, green and blue arrows moving with the ball
 
-### Checking it actually works
+On the left, the Displays panel lists Grid, TF and Marker. None of them should
+have a warning triangle.
 
-With `make demo` running, in a second terminal:
+Press Ctrl-C in the terminal to stop everything.
+
+### Checking it works
+
+Leave `make demo` running. Open a second terminal and try these:
 
 ```
-make topics     # expect /tf, /tf_static, /visualization_marker
-make tf         # expect translations whose x,y always sum to a radius of 2.0
-make marker     # expect type: 2 (SPHERE), frame_id: marker_frame
+make topics     # should list /tf, /tf_static, /visualization_marker
+make tf         # should print numbers that keep changing
+make marker     # should print type: 2 and frame_id: marker_frame
 ```
 
-If `make tf` prints transforms but RViz shows nothing, the usual cause is the
-Fixed Frame — it must be `world`, under Global Options.
+If `make tf` prints numbers but RViz stays empty, check the Fixed Frame. It
+must be set to `world`. You will find it in RViz under Global Options.
 
 ### Commands
 
-Run `make` for the full list.
+Run `make` on its own to see the full list.
 
 ```
-make demo      build, then launch the node and RViz together
-make build     rebuild after changing code
-make test      run the unit tests
+make demo      build, then start the node and RViz
+make build     rebuild after you change code
+make test      run the tests
 make lint      check code style
-make shell     shell with ROS sourced, for plain ros2 commands
+make shell     a shell with ROS ready, for typing ros2 commands
 ```
 
-With the demo running: `make topics`, `make marker`, `make tf`,
-`make frames` (TF tree as a PDF), `make graph` (rqt_graph).
+While the demo is running, these show you what is going on:
+
+```
+make topics    list the topics
+make marker    print one marker message
+make tf        follow the moving frame
+make frames    save the frames as a PDF
+make graph     open a picture of the nodes and topics
+```
 
 ---
 
@@ -193,33 +257,35 @@ With the demo running: `make topics`, `make marker`, `make tf`,
 ### Layout
 
 ```
-pixi.toml                              dependencies and tasks
-Makefile                               entry point for everything
+pixi.toml                              what to install, and the tasks
+Makefile                               all the commands
 docs/
   overview.md                          this file
-  diagrams.py                          regenerates the images below
+  diagrams.py                          redraws the pictures below
   images/overview/                     scene.svg, motion.svg
 src/rviz_basics/
   rviz_basics/marker_publisher.py      the node
-  launch/marker_demo.launch.py         starts the node and RViz
-  rviz/marker_demo.rviz                saved RViz layout
-  test/                                unit tests
+  launch/marker_demo.launch.py         starts the node and RViz together
+  rviz/marker_demo.rviz                the saved RViz layout
+  test/                                the tests
 ```
 
 ### Adding to it
 
-**A node:** add the module under `rviz_basics/`, register it in `setup.py`
-under `console_scripts`, then `make build`.
+**Add a node.** Put a new `.py` file in `rviz_basics/`. Add a line for it in
+`setup.py` under `console_scripts`. Run `make build`.
 
-**A package:** create `src/<name>/` with its own `package.xml` and `setup.py`.
-`make build` finds it automatically.
+**Add a package.** Make a folder `src/<name>/` with its own `package.xml` and
+`setup.py`. `make build` will find it on its own.
 
-**A ROS dependency:** add `ros-jazzy-<name>` to `pixi.toml` and the plain name
-to `package.xml`.
+**Add a ROS library.** Put `ros-jazzy-<name>` in `pixi.toml`, and the plain name
+in `package.xml`.
 
-**A different motion:** `circular_orbit()` in `marker_publisher.py` is a plain
-function of time, radius and period, with no ROS types in it. Replace it and
-nothing else changes. Then regenerate the diagrams:
+**Change the motion.** `circular_orbit()` in `marker_publisher.py` takes a time,
+a radius and a lap length, and gives back a position. It has no ROS code in it,
+so you can swap it for any path you like and nothing else changes.
+
+If you change the radius or the lap time, redraw the pictures in this file:
 
 ```
 pixi run python docs/diagrams.py
@@ -229,14 +295,17 @@ pixi run python docs/diagrams.py
 
 ## 5. Notes and gotchas
 
-Python 3.12, setuptools `<80` and pytest `<8` are pinned on purpose. Each one
-breaks the build if loosened — the reasons are in `pixi.toml`.
+Python 3.12, setuptools below 80, and pytest below 8 are pinned on purpose. If
+you raise any of them, the build breaks. The reasons are written down in
+`pixi.toml`.
 
-ROS 2 packages come from [RoboStack](https://robostack.github.io), because
-there are no official ROS 2 binaries for macOS. Nothing is installed
-system-wide; it all lives in `.pixi/`.
+There is no official ROS 2 build for macOS. The packages come from
+[RoboStack](https://robostack.github.io) instead. Nothing is installed onto your
+system. It all sits in `.pixi/` inside this folder, and `make clean` plus
+deleting that folder removes every trace.
 
-Closing the `make graph` window prints a non-zero exit warning. That is an rqt
-bug on macOS, not a problem here.
+When you close the `make graph` window, it prints an error as it exits. That is
+a bug in rqt on macOS. You can ignore it.
 
-Commit `pixi.lock` — it is what makes the environment reproducible.
+Keep `pixi.lock` in git. It is what lets someone else end up with the exact same
+setup as you.

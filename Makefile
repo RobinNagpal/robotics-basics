@@ -47,7 +47,7 @@ test: ## Run the unit tests
 	pixi run test
 
 lint: ## Check code style
-	pixi run flake8 src/ --max-line-length=100
+	pixi run flake8 src/ docs/ --max-line-length=100
 
 clean: ## Remove build/, install/ and log/
 	pixi run clean

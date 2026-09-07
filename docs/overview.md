@@ -1,6 +1,6 @@
 # Overview
 
-A small ROS 2 project for learning RViz on a Mac.
+A small project for learning RViz on a Mac.
 
 A blue ball moves in a circle. That is all it does. The point is to show how
 ROS keeps track of where things are, and how RViz draws them.
@@ -12,8 +12,8 @@ ROS keeps track of where things are, and how RViz draws them.
 1. [The problem this solves](#1-the-problem-this-solves)
    · [What this example stands for](#what-this-example-stands-for)
    · [Frames: how a robot stores position](#frames-how-a-robot-stores-position)
-   · [TF: joining the frames](#tf-joining-the-frames)
-   · [RViz: seeing it](#rviz-seeing-it)
+   · [TF, short for transform: joining the frames](#tf-short-for-transform-joining-the-frames)
+   · [RViz, short for ROS Visualization: seeing it](#rviz-short-for-ros-visualization-seeing-it)
    · [The one idea to take away](#the-one-idea-to-take-away)
    · [Vocabulary](#vocabulary)
 2. [How the pieces connect](#2-how-the-pieces-connect)
@@ -37,12 +37,19 @@ When you work with robots, you want to see what the robot is doing.
 Where is the arm right now? Which way is the camera pointing? Did the robot go
 where you told it to go?
 
-You cannot answer that from numbers scrolling past in a terminal. So ROS gives
-you three things that work together:
+You cannot answer that from numbers scrolling past in a terminal.
 
-- **topics** carry data between programs
-- **TF** keeps track of where every part of the robot is
-- **RViz** draws it on screen so you can look at it
+**ROS** stands for **Robot Operating System**. The name is misleading. It is not
+an operating system. It is a set of libraries and tools for writing robot
+software. This project uses ROS 2, the current version.
+
+ROS gives you three things that work together here:
+
+- **Topics** carry data from one program to another.
+- **TF**, short for **transform**, keeps track of where every part of the robot
+  is.
+- **RViz**, short for **ROS Visualization**, draws it on screen so you can look
+  at it.
 
 This project is a small working example of all three.
 
@@ -83,9 +90,10 @@ to one physical thing.
 It is done this way so each part only has to know about the part next to it.
 The gripper does not need to know where the room is.
 
-### TF: joining the frames
+### TF, short for transform: joining the frames
 
-**TF** is the part of ROS that keeps track of frames.
+A **transform** is where one frame is, compared to another. **TF** is the part
+of ROS that keeps track of them all. The name is just short for transform.
 
 Each part reports one link, and only that link. The arm says where the wrist is
 compared to the elbow. Nothing more.
@@ -95,7 +103,7 @@ and get an answer, even though nobody wrote that down anywhere.
 
 This example has two frames. `world` stays still. `marker_frame` moves.
 
-### RViz: seeing it
+### RViz, short for ROS Visualization: seeing it
 
 **RViz** is a 3D viewer. It listens to what your programs send, and draws it:
 
@@ -126,16 +134,19 @@ with forty parts.
 
 ### Vocabulary
 
-| Term | Meaning |
-| --- | --- |
-| node | one running program |
-| topic | a named channel that programs send messages on |
-| frame | a point with three axes, attached to one thing |
-| transform | where one frame is, compared to another |
-| pose | position and rotation together |
-| TF | the system that keeps track of frames |
-| marker | a shape you send so a person can see it in RViz |
-| fixed frame | the frame RViz draws everything from (here, `world`) |
+| Term | Full name | Meaning |
+| --- | --- | --- |
+| ROS | Robot Operating System | libraries and tools for robot software, not an actual operating system |
+| node | — | one running program |
+| topic | — | a named channel that programs send messages on |
+| frame | — | a point with three axes, attached to one thing |
+| transform | — | where one frame is, compared to another |
+| pose | — | position and rotation together |
+| TF | transform | the system that keeps track of frames |
+| RViz | ROS Visualization | the 3D viewer that comes with ROS |
+| marker | — | a shape you send so a person can see it in RViz |
+| fixed frame | — | the frame RViz draws everything from (here, `world`) |
+| rqt | ROS Qt | small windowed tools for ROS; `make graph` opens one |
 
 ---
 
@@ -146,7 +157,7 @@ One node sends two things. RViz reads both.
 ```mermaid
 flowchart LR
     N["marker_publisher<br/>(one node, 30 times a second)"]
-    N -->|"/tf<br/>where marker_frame is"| R["RViz2"]
+    N -->|"/tf<br/>where marker_frame is"| R["RViz"]
     N -->|"/visualization_marker<br/>a ball in marker_frame"| R
 ```
 
@@ -172,12 +183,15 @@ You do not need to edit any maths to change these. They are node settings:
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `orbit_radius_m` | 2.0 | how far out the ball sits |
+| `orbit_radius_m` | 2.0 | how far out the ball sits, in metres |
 | `orbit_period_s` | 6.0 | seconds for one lap |
 | `publish_rate_hz` | 30.0 | updates per second |
-| `marker_diameter_m` | 0.4 | how big the ball is |
+| `marker_diameter_m` | 0.4 | how big the ball is, in metres |
 | `world_frame` | `world` | name of the still frame |
 | `marker_frame` | `marker_frame` | name of the moving frame |
+
+The `_hz` in that third name is short for **hertz**, which just means times per
+second.
 
 ---
 
@@ -189,9 +203,9 @@ make demo
 
 ### What to expect
 
-The first time you run this, it downloads ROS 2. That is a few GB and takes a
-few minutes. After that, the build takes about a second, and RViz takes about
-ten seconds to open.
+The first time you run this, it downloads ROS 2. That is a few gigabytes and
+takes a few minutes. After that, the build takes about a second, and RViz takes
+about ten seconds to open.
 
 In the terminal:
 
@@ -203,6 +217,7 @@ In the terminal:
 ```
 
 Those last two lines look like problems. They are not. They are normal on a Mac.
+They are RViz reporting which graphics features it found.
 
 In the window you should see:
 
@@ -295,17 +310,19 @@ pixi run python docs/diagrams.py
 
 ## 5. Notes and gotchas
 
+**pixi** is the tool that installs everything and pins the versions.
+**RoboStack** is the collection of ROS 2 packages it downloads from. There is no
+official ROS 2 build for macOS, which is why RoboStack is needed at all.
+
+Nothing is installed onto your system. It all sits in `.pixi/` inside this
+folder. `make clean`, then deleting that folder, removes every trace.
+
 Python 3.12, setuptools below 80, and pytest below 8 are pinned on purpose. If
 you raise any of them, the build breaks. The reasons are written down in
 `pixi.toml`.
 
-There is no official ROS 2 build for macOS. The packages come from
-[RoboStack](https://robostack.github.io) instead. Nothing is installed onto your
-system. It all sits in `.pixi/` inside this folder, and `make clean` plus
-deleting that folder removes every trace.
-
 When you close the `make graph` window, it prints an error as it exits. That is
-a bug in rqt on macOS. You can ignore it.
+a bug in rqt, the ROS Qt toolset behind that command. You can ignore it.
 
 Keep `pixi.lock` in git. It is what lets someone else end up with the exact same
 setup as you.

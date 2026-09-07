@@ -19,14 +19,23 @@ ROS keeps track of where things are, and how RViz draws them.
 2. [How the pieces connect](#2-how-the-pieces-connect)
    · [The motion](#the-motion)
    · [Settings you can change](#settings-you-can-change)
-3. [Running it](#3-running-it)
+3. [How the code works](#3-how-the-code-works)
+   · [The whole thing in pseudo code](#the-whole-thing-in-pseudo-code)
+   · [Working out where the ball goes](#working-out-where-the-ball-goes)
+   · [Setting up](#setting-up)
+   · [One tick](#one-tick)
+   · [The transform message](#the-transform-message)
+   · [The marker message](#the-marker-message)
+   · [Starting and stopping](#starting-and-stopping)
+   · [End to end](#end-to-end)
+4. [Running it](#4-running-it)
    · [What to expect](#what-to-expect)
    · [Checking it works](#checking-it-works)
    · [Commands](#commands)
-4. [Working on the code](#4-working-on-the-code)
+5. [Working on the code](#5-working-on-the-code)
    · [Layout](#layout)
    · [Adding to it](#adding-to-it)
-5. [Notes and gotchas](#5-notes-and-gotchas)
+6. [Notes and gotchas](#6-notes-and-gotchas)
 
 ---
 
@@ -195,7 +204,213 @@ second.
 
 ---
 
-## 3. Running it
+## 3. How the code works
+
+All of it lives in one file:
+[`marker_publisher.py`](../src/rviz_basics/rviz_basics/marker_publisher.py).
+
+The snippets below are trimmed so they stay readable. Type hints and docstrings
+are left out, a few repeated lines are joined into one, and some comments are
+added. Open the file itself for the exact text.
+
+### The whole thing in pseudo code
+
+```
+when the program starts:
+    read the settings (radius, lap time, rate, frame names)
+    get ready to send transforms
+    get ready to send markers
+    write down the time right now, as the start time
+    ask ROS to call tick() 30 times a second
+
+tick():
+    seconds = time now - start time
+    x, y, facing = where on the circle we are after that many seconds
+
+    send a transform: "marker_frame is at (x, y), facing that way, inside world"
+    send a marker:    "a ball, at the middle of marker_frame"
+
+keep going until Ctrl-C
+```
+
+That is the entire program. The rest of this section is the real code behind
+each of those lines.
+
+### Working out where the ball goes
+
+```python
+def circular_orbit(elapsed_s, radius_m, period_s):
+    angle = 2.0 * math.pi * (elapsed_s / period_s)
+    # +pi/2 makes the frame's +X axis tangent to the circle, i.e. "forwards".
+    return radius_m * math.cos(angle), radius_m * math.sin(angle), angle + math.pi / 2.0
+```
+
+`elapsed_s / period_s` is how far through the lap we are. At 3 seconds of a
+6 second lap that is `0.5`, or half way. Multiplying by `2 * pi` turns it into
+an angle, because a full circle is `2 * pi`.
+
+`cos` and `sin` turn an angle into a point on a circle. Multiply by the radius
+and you have the position.
+
+The third value is the **facing**, called *yaw*. Adding a quarter turn
+(`pi / 2`) makes it point along the direction of travel instead of outwards.
+That is the red arrow in the picture above.
+
+There is no ROS code in this function at all. It takes three numbers and gives
+back three numbers. That is why it can be tested on its own, and why you can
+replace it with any path you like.
+
+### Setting up
+
+```python
+self._tf_broadcaster = TransformBroadcaster(self)
+self._marker_pub = self.create_publisher(Marker, MARKER_TOPIC, 10)
+
+self._start_time = self.get_clock().now()
+self._timer = self.create_timer(1.0 / rate_hz, self._on_timer)
+```
+
+Line by line:
+
+- a **broadcaster** is the thing that sends transforms out on `/tf`
+- a **publisher** sends messages on one topic; here, markers
+- the start time is saved so we can work out how long we have been running
+- the **timer** asks ROS to call `_on_timer` every `1/30` of a second
+
+Nothing moves yet. This only sets things up.
+
+### One tick
+
+```python
+def _on_timer(self):
+    now = self.get_clock().now()
+    elapsed_s = (now - self._start_time).nanoseconds * 1e-9
+    x, y, yaw = circular_orbit(elapsed_s, self._radius_m, self._period_s)
+
+    self._tf_broadcaster.sendTransform(self._build_transform(now, x, y, yaw))
+    self._marker_pub.publish(self._build_marker(now))
+```
+
+This runs 30 times a second, and it is where everything happens.
+
+ROS clocks count in nanoseconds, so `* 1e-9` turns that into seconds. Then the
+maths above gives the position and facing, and two messages go out.
+
+Both messages get the same `now` stamp. That matters. RViz matches them by
+time, so a transform and a marker from the same tick belong together.
+
+### The transform message
+
+```python
+transform.header.frame_id = self._world_frame     # the parent frame
+transform.child_frame_id = self._marker_frame     # the child frame
+transform.transform.translation.x = x
+transform.transform.translation.y = y
+transform.transform.translation.z = 0.0
+```
+
+Read it as a sentence: **`marker_frame` is at (x, y, 0) inside `world`.**
+
+The parent is the frame you measure from. The child is the frame being placed.
+Getting these the wrong way round is a common early mistake, and it puts things
+in mirrored positions.
+
+Rotation is stored differently from what you might expect:
+
+```python
+def yaw_to_quaternion(yaw):
+    return 0.0, 0.0, math.sin(yaw / 2.0), math.cos(yaw / 2.0)
+```
+
+ROS stores rotations as four numbers, called a **quaternion**, not as an angle.
+Four numbers avoid some nasty problems that three angles run into in 3D. Here
+the ball only spins flat, around the up axis, so only the third and fourth
+numbers do any work. You do not need to follow the maths to use it.
+
+### The marker message
+
+```python
+marker.header.frame_id = self._marker_frame   # drawn inside the moving frame
+marker.ns = 'rviz_basics'
+marker.id = 0
+marker.type = Marker.SPHERE
+marker.action = Marker.ADD
+marker.scale.x = marker.scale.y = marker.scale.z = self._diameter_m
+marker.color.a = 1.0
+```
+
+What each line does:
+
+- **`frame_id`** is the important one. The ball is drawn inside `marker_frame`.
+  Its own position is never set, so it stays at the middle of that frame.
+- **`ns`** and **`id`** together are the marker's name tag. Send the same pair
+  again and RViz updates that ball. Send a different `id` and you get a second
+  ball.
+- **`type`** picks the shape. `SPHERE` here; there are also arrows, lines, text.
+- **`action`** is add or delete.
+- **`scale`** is the size in metres, on each axis.
+- **`color.a`** is opacity. It defaults to `0`, which is fully see-through, so
+  forgetting this line means a marker that is sent correctly and draws nothing.
+
+The ball never changes. The same message goes out 30 times a second. That is on
+purpose: it costs almost nothing, and it means RViz gets a copy within a
+thirtieth of a second even if you open it long after the node started.
+
+### Starting and stopping
+
+```python
+def main(args=None):
+    rclpy.init(args=args)
+    node = MarkerPublisher()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+```
+
+`rclpy.init` starts ROS for this program. `rclpy.spin` then sits there and runs
+the timer, over and over, until you stop it. Ctrl-C breaks out, and the last
+lines shut down cleanly.
+
+### End to end
+
+```mermaid
+sequenceDiagram
+    participant T as timer, 30 times a second
+    participant N as marker_publisher
+    participant R as RViz
+    T->>N: tick
+    N->>N: work out x, y and facing for this moment
+    N->>R: /tf — marker_frame is here, inside world
+    N->>R: /visualization_marker — a ball in marker_frame
+    R->>R: look up where marker_frame is now
+    R->>R: draw the ball at that spot
+```
+
+Put together, one run looks like this:
+
+1. `make demo` starts two programs: the node and RViz.
+2. The node reads its settings and starts its timer.
+3. Every thirtieth of a second the timer fires.
+4. The node works out the position and facing for that moment.
+5. It sends a transform saying where `marker_frame` is, and a marker saying to
+   draw a ball inside `marker_frame`.
+6. RViz receives both. It keeps the transform in its frame tree and the marker
+   in its list of things to draw.
+7. To draw, RViz asks TF where `marker_frame` is compared to `world`, its fixed
+   frame. It puts the ball there.
+8. On the next tick the transform is different, so the ball lands somewhere
+   slightly different. Thirty times a second, that reads as smooth movement.
+
+Step 7 is the whole idea. The ball never moved. The frame did.
+
+---
+
+## 4. Running it
 
 ```
 make demo
@@ -267,7 +482,7 @@ make graph     open a picture of the nodes and topics
 
 ---
 
-## 4. Working on the code
+## 5. Working on the code
 
 ### Layout
 
@@ -308,7 +523,7 @@ pixi run python docs/diagrams.py
 
 ---
 
-## 5. Notes and gotchas
+## 6. Notes and gotchas
 
 **pixi** is the tool that installs everything and pins the versions.
 **RoboStack** is the collection of ROS 2 packages it downloads from. There is no

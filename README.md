@@ -9,25 +9,46 @@ that frame — the two mechanisms nearly every RViz visualisation is built on.
 ## Quick start
 
 ```bash
-pixi run demo
+make demo
 ```
 
 That resolves the environment (first run downloads ROS 2, a few GB), builds the
 workspace, and opens RViz2 with a blue sphere circling the grid.
 
-## Available tasks
+Run `make` on its own for the full list of targets.
 
-| Command | What it does |
+## Available targets
+
+Every target runs inside the pixi environment with the colcon overlay already
+sourced — there is no `pixi shell` or `source install/setup.bash` step to
+remember.
+
+| Target | What it does |
 | --- | --- |
-| `pixi run demo` | Build, then launch the node + RViz2 |
-| `pixi run node` | Run just the node (when RViz is already open) |
-| `pixi run build` | `colcon build --symlink-install` |
-| `pixi run test` | Run the package's tests via colcon |
-| `pixi run shell` | Bash shell with ROS **and** the workspace overlay sourced |
-| `pixi run clean` | Remove `build/`, `install/`, `log/` |
+| `make demo` | Build, then launch the node + RViz2 — start here |
+| `make node` | Run only the marker publisher (no RViz) |
+| `make rviz` | Run only RViz2 with the saved config |
+| `make build` | `colcon build --symlink-install` |
+| `make test` | Run the unit tests |
+| `make lint` | Check code style with flake8 |
+| `make doctor` | Print versions of everything that matters |
+| `make setup` | Resolve/install the environment |
+| `make clean` | Remove `build/`, `install/`, `log/` |
+| `make shell` | Bash shell with ROS **and** the workspace overlay sourced |
 
-Anything not covered by a task: use `pixi run shell`, then normal `ros2 ...`
-commands work as usual.
+With `make demo` running in another terminal, these inspect the live system:
+
+| Target | What it does |
+| --- | --- |
+| `make topics` | List active topics |
+| `make marker` | Print one marker message |
+| `make tf` | Stream the `world -> marker_frame` transform |
+| `make frames` | Snapshot the TF tree to a PDF and open it |
+| `make graph` | Open `rqt_graph` to see nodes and topics |
+
+The targets delegate to pixi tasks, so `pixi run demo`, `pixi run test` etc.
+still work if you prefer. Anything not covered: `make shell`, then normal
+`ros2 ...` commands.
 
 ## Layout
 

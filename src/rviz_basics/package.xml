@@ -4,7 +4,7 @@
   <name>rviz_basics</name>
   <version>0.1.0</version>
   <description>Minimal ROS 2 + RViz2 example: a TF frame orbiting the origin with a marker attached to it.</description>
-  <maintainer email="2021guneet@gmail.com">robin</maintainer>
+  <maintainer email="robinnagpal.tiet@gmail.com">Robin Nagpal</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>rclpy</exec_depend>

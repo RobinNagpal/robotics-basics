@@ -10,6 +10,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description() -> LaunchDescription:
+    """Build the launch description: the marker publisher plus an optional RViz2."""
     pkg_share = FindPackageShare('rviz_basics')
     default_rviz_config = PathJoinSubstitution([pkg_share, 'rviz', 'marker_demo.rviz'])
 

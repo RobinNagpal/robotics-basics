@@ -21,9 +21,9 @@ from __future__ import annotations
 
 import math
 
-import rclpy
 from geometry_msgs.msg import TransformStamped
 from rcl_interfaces.msg import ParameterDescriptor
+import rclpy
 from rclpy.node import Node
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker
@@ -32,7 +32,9 @@ from visualization_msgs.msg import Marker
 MARKER_TOPIC = 'visualization_marker'
 
 
-def circular_orbit(elapsed_s: float, radius_m: float, period_s: float) -> tuple[float, float, float]:
+def circular_orbit(
+    elapsed_s: float, radius_m: float, period_s: float
+) -> tuple[float, float, float]:
     """Return the ``(x, y, yaw)`` pose of a body orbiting the origin.
 
     Kept as a free function — with no ROS types in its signature — so the
@@ -59,14 +61,15 @@ class MarkerPublisher(Node):
     """Broadcasts ``world -> marker_frame`` and draws a sphere on that frame."""
 
     def __init__(self) -> None:
+        """Declare parameters, then start the TF broadcaster, publisher and timer."""
         super().__init__('marker_publisher')
 
-        self._world_frame = self._declare_str('world_frame', 'world', 'Fixed frame RViz displays in.')
-        self._marker_frame = self._declare_str('marker_frame', 'marker_frame', 'Moving child frame.')
-        rate_hz = self._declare_float('publish_rate_hz', 30.0, 'TF and marker broadcast rate.')
-        self._radius_m = self._declare_float('orbit_radius_m', 2.0, 'Orbit radius in metres.')
-        self._period_s = self._declare_float('orbit_period_s', 6.0, 'Seconds per revolution.')
-        self._diameter_m = self._declare_float('marker_diameter_m', 0.4, 'Sphere diameter in metres.')
+        self._world_frame = self._str_param('world_frame', 'world', 'Fixed frame for RViz.')
+        self._marker_frame = self._str_param('marker_frame', 'marker_frame', 'Moving child frame.')
+        rate_hz = self._float_param('publish_rate_hz', 30.0, 'TF and marker broadcast rate.')
+        self._radius_m = self._float_param('orbit_radius_m', 2.0, 'Orbit radius in metres.')
+        self._period_s = self._float_param('orbit_period_s', 6.0, 'Seconds per revolution.')
+        self._diameter_m = self._float_param('marker_diameter_m', 0.4, 'Sphere diameter, metres.')
 
         self._tf_broadcaster = TransformBroadcaster(self)
         # Default QoS (reliable, volatile, depth 10) matches what the RViz Marker
@@ -84,11 +87,11 @@ class MarkerPublisher(Node):
 
     # -- parameter helpers -------------------------------------------------
 
-    def _declare_str(self, name: str, default: str, description: str) -> str:
+    def _str_param(self, name: str, default: str, description: str) -> str:
         self.declare_parameter(name, default, ParameterDescriptor(description=description))
         return self.get_parameter(name).get_parameter_value().string_value
 
-    def _declare_float(self, name: str, default: float, description: str) -> float:
+    def _float_param(self, name: str, default: float, description: str) -> float:
         self.declare_parameter(name, default, ParameterDescriptor(description=description))
         return self.get_parameter(name).get_parameter_value().double_value
 
@@ -142,6 +145,7 @@ class MarkerPublisher(Node):
 
 
 def main(args: list[str] | None = None) -> None:
+    """Entry point registered as the ``marker_publisher`` console script."""
     rclpy.init(args=args)
     node = MarkerPublisher()
     try:

@@ -1,0 +1,15 @@
+[flake8]
+max-line-length = 100
+exclude = .git,.pixi,build,install,log,__pycache__
+
+# Match the import ordering ament_flake8 enforces across ROS 2, so this stays
+# consistent with the wider ecosystem: `import x` and `from x import y` sort
+# together by module name rather than in separate blocks.
+import-order-style = google
+application-import-names = rviz_basics
+
+# setup.py is boilerplate with no meaningful module docstring to write, and the
+# test names are the documentation — a docstring per assertion is pure noise.
+per-file-ignores =
+    src/rviz_basics/setup.py:D100
+    src/rviz_basics/test/*:D100,D103

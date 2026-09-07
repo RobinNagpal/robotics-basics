@@ -1,5 +1,5 @@
-import os
 from glob import glob
+import os
 
 from setuptools import find_packages, setup
 
@@ -25,9 +25,12 @@ setup(
     # setuptools 72 removed it.)
     extras_require={'test': ['pytest']},
     zip_safe=True,
-    maintainer='robin',
-    maintainer_email='2021guneet@gmail.com',
-    description='Minimal ROS 2 + RViz2 example: a TF frame orbiting the origin with a marker attached to it.',
+    maintainer='Robin Nagpal',
+    maintainer_email='robinnagpal.tiet@gmail.com',
+    description=(
+        'Minimal ROS 2 + RViz2 example: a TF frame orbiting the origin '
+        'with a marker attached to it.'
+    ),
     license='Apache-2.0',
     entry_points={
         'console_scripts': [

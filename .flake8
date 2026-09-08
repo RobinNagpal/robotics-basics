@@ -11,5 +11,5 @@ application-import-names = rviz_basics
 # setup.py is boilerplate with no meaningful module docstring to write, and the
 # test names are the documentation — a docstring per assertion is pure noise.
 per-file-ignores =
-    src/rviz_basics/setup.py:D100
-    src/rviz_basics/test/*:D100,D103
+    src/*/setup.py:D100
+    src/*/test/*:D100,D103

@@ -26,27 +26,17 @@ pytest = ">=7,<8"
 pip = "*"
 
 [tasks]
+# The Makefile is the entry point for people; these are the few primitives it
+# builds on. Anything area-specific lives in the Makefile, not here.
+
 # Build every package in src/. --symlink-install means edits to Python sources
 # take effect without rebuilding.
 build = "colcon build --symlink-install"
 
 # colcon writes a POSIX `source`-able setup script, which pixi's built-in task
-# shell does not implement — so these tasks shell out to bash explicitly.
-demo = { cmd = "bash -c 'source install/setup.bash && ros2 launch rviz_basics marker_demo.launch.py'", depends-on = [
+# shell does not implement, so this shells out to bash explicitly.
+test = { cmd = "bash -c 'source install/setup.bash && colcon test --event-handlers console_direct+ && colcon test-result --verbose'", depends-on = [
   "build",
 ] }
-
-# Run just the node, no RViz (useful when RViz is already open).
-node = { cmd = "bash -c 'source install/setup.bash && ros2 run rviz_basics marker_publisher'", depends-on = [
-  "build",
-] }
-
-# Run the package's tests.
-test = { cmd = "bash -c 'source install/setup.bash && colcon test --packages-select rviz_basics --event-handlers console_direct+ && colcon test-result --verbose'", depends-on = [
-  "build",
-] }
-
-# Drop into a shell with the workspace overlay already sourced.
-shell = "bash -c 'source install/setup.bash && exec bash'"
 
 clean = "rm -rf build install log"

@@ -1,9 +1,9 @@
-"""Generate the diagrams used in docs/overview.md.
+"""Generate the diagrams used in docs/rviz/overview.md.
 
-Images are written to docs/images/<doc-name>/, so they sit next to the document
-that uses them.
+Images go to docs/images/<area>/, matching the docs/<area>/ folder that uses
+them.
 
-Run with:  pixi run python docs/diagrams.py
+Run with:  pixi run python docs/diagrams/rviz.py
 
 The figures read their numbers from the node's defaults, so if you change the
 orbit radius or period in marker_publisher.py, regenerate rather than editing
@@ -23,8 +23,8 @@ RADIUS_M = 2.0
 PERIOD_S = 6.0
 DIAMETER_M = 0.4
 
-DOC_NAME = 'overview'
-OUT_DIR = pathlib.Path(__file__).parent / 'images' / DOC_NAME
+AREA = 'rviz'
+OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / 'images' / AREA
 
 GRID = '#d6d6d6'
 AXIS_X = '#d1495b'

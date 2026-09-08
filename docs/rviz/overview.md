@@ -5,7 +5,7 @@ A small project for learning RViz on a Mac.
 A blue ball moves in a circle. That is all it does. The point is to show how
 ROS keeps track of where things are, and how RViz draws them.
 
-![What you see in RViz](images/overview/scene.svg)
+![What you see in RViz](../images/rviz/scene.svg)
 
 ## Contents
 
@@ -155,7 +155,7 @@ with forty parts.
 | RViz | ROS Visualization | the 3D viewer that comes with ROS |
 | marker | — | a shape you send so a person can see it in RViz |
 | fixed frame | — | the frame RViz draws everything from (here, `world`) |
-| rqt | ROS Qt | small windowed tools for ROS; `make graph` opens one |
+| rqt | ROS Qt | small windowed tools for ROS, run from `make shell` |
 
 ---
 
@@ -181,7 +181,7 @@ flowchart LR
 
 ### The motion
 
-![One revolution](images/overview/motion.svg)
+![One revolution](../images/rviz/motion.svg)
 
 The circle is 2 metres from the middle. One lap takes 6 seconds. The frame
 turns as it goes, so its red arrow always points the way it is moving.
@@ -207,7 +207,7 @@ second.
 ## 3. How the code works
 
 All of it lives in one file:
-[`marker_publisher.py`](../src/rviz_basics/rviz_basics/marker_publisher.py).
+[`marker_publisher.py`](../../src/rviz_basics/rviz_basics/marker_publisher.py).
 
 The snippets below are trimmed so they stay readable. Type hints and docstrings
 are left out, a few repeated lines are joined into one, and some comments are
@@ -393,7 +393,7 @@ sequenceDiagram
 
 Put together, one run looks like this:
 
-1. `make demo` starts two programs: the node and RViz.
+1. `make rviz.demo` starts two programs: the node and RViz.
 2. The node reads its settings and starts its timer.
 3. Every thirtieth of a second the timer fires.
 4. The node works out the position and facing for that moment.
@@ -413,7 +413,7 @@ Step 7 is the whole idea. The ball never moved. The frame did.
 ## 4. Running it
 
 ```
-make demo
+make rviz.demo
 ```
 
 ### What to expect
@@ -447,38 +447,38 @@ Press Ctrl-C in the terminal to stop everything.
 
 ### Checking it works
 
-Leave `make demo` running. Open a second terminal and try these:
+Leave `make rviz.demo` running. In a second terminal:
 
 ```
-make topics     # should list /tf, /tf_static, /visualization_marker
-make tf         # should print numbers that keep changing
-make marker     # should print type: 2 and frame_id: marker_frame
+make rviz.check
 ```
 
-If `make tf` prints numbers but RViz stays empty, check the Fixed Frame. It
-must be set to `world`. You will find it in RViz under Global Options.
+It lists the topics, then prints one marker and one transform. You should see
+`/tf` and `/visualization_marker` in the list, `type: 2` on the marker, and
+numbers on the transform that differ each time you run it.
+
+If that all works but RViz stays empty, check the Fixed Frame. It must be set to
+`world`. You will find it in RViz under Global Options.
 
 ### Commands
 
-Run `make` on its own to see the full list.
+This area has two commands:
 
 ```
-make demo      build, then start the node and RViz
+make rviz.demo     build, then start the node and RViz
+make rviz.check    show what it is publishing (run the demo first)
+```
+
+Everything else is repo-wide, and works the same for every area:
+
+```
 make build     rebuild after you change code
 make test      run the tests
 make lint      check code style
 make shell     a shell with ROS ready, for typing ros2 commands
 ```
 
-While the demo is running, these show you what is going on:
-
-```
-make topics    list the topics
-make marker    print one marker message
-make tf        follow the moving frame
-make frames    save the frames as a PDF
-make graph     open a picture of the nodes and topics
-```
+Run `make` on its own for the full list, including the other areas.
 
 ---
 
@@ -486,19 +486,22 @@ make graph     open a picture of the nodes and topics
 
 ### Layout
 
+The repo is split into areas. This is the `rviz` one:
+
 ```
-pixi.toml                              what to install, and the tasks
-Makefile                               all the commands
 docs/
-  overview.md                          this file
-  diagrams.py                          redraws the pictures below
-  images/overview/                     scene.svg, motion.svg
+  rviz/overview.md                     this file
+  diagrams/rviz.py                     redraws the pictures in it
+  images/rviz/                         scene.svg, motion.svg
 src/rviz_basics/
   rviz_basics/marker_publisher.py      the node
   launch/marker_demo.launch.py         starts the node and RViz together
   rviz/marker_demo.rviz                the saved RViz layout
   test/                                the tests
 ```
+
+Every area follows that shape: one package under `src/`, one folder under
+`docs/`, and its pictures under `docs/images/<area>/`.
 
 ### Adding to it
 
@@ -518,7 +521,7 @@ so you can swap it for any path you like and nothing else changes.
 If you change the radius or the lap time, redraw the pictures in this file:
 
 ```
-pixi run python docs/diagrams.py
+pixi run python docs/diagrams/rviz.py
 ```
 
 ---
@@ -536,8 +539,12 @@ Python 3.12, setuptools below 80, and pytest below 8 are pinned on purpose. If
 you raise any of them, the build breaks. The reasons are written down in
 `pixi.toml`.
 
-When you close the `make graph` window, it prints an error as it exits. That is
-a bug in rqt, the ROS Qt toolset behind that command. You can ignore it.
+From `make shell` you can run the rqt tools, such as `rqt_graph` for a picture
+of the nodes and topics. Closing one prints an error as it exits. That is a bug
+in rqt on macOS. You can ignore it.
 
 Keep `pixi.lock` in git. It is what lets someone else end up with the exact same
 setup as you.
+
+Next area: [position, frames and transforms](../arm/overview.md), which works
+out the maths this one takes for granted, on a two-joint robot arm.

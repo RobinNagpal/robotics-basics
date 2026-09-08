@@ -1,8 +1,10 @@
-# robotics-basics — one entry point for running the project.
+# robotics-basics — one entry point for everything.
 #
-# Every target runs inside the pixi environment with the colcon overlay already
-# sourced, so there is never a `pixi shell` or `source install/setup.bash` step
-# to remember. Run `make` on its own to see what is available.
+# The repo is split into areas. Each area is one ROS package under src/ and one
+# folder under docs/. Area commands are named <area>.<action>, and each area
+# keeps to two or three of them so this list stays readable as areas are added.
+#
+# Run `make` on its own to see what is available.
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
@@ -10,84 +12,69 @@ SHELL := /bin/bash
 # Run a command inside the pixi env with the workspace overlay sourced.
 ros = pixi run bash -c 'source install/setup.bash && $(1)'
 
-.PHONY: help setup build test lint demo node rviz topics marker tf frames graph shell doctor clean
+.PHONY: help setup doctor build test lint clean shell \
+        rviz.demo rviz.check arm.learn arm.demo arm.watch
 
 help: ## Show this help
 	@echo ""
 	@awk 'BEGIN {FS = ":.*##"} \
 		/^##@/ { printf "\n  \033[1m%s\033[0m\n", substr($$0, 5) } \
-		/^[a-zA-Z_-]+:.*?##/ { printf "    \033[36m%-9s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+		/^[a-zA-Z_.-]+:.*?##/ { printf "    \033[36m%-12s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo ""
-	@echo "  Targets marked [live] need 'make demo' running in another terminal."
+	@echo "  Area commands are <area>.<action>. Docs for an area are in docs/<area>/."
 	@echo ""
 
-##@ Setup
+##@ Project
 
-setup: ## Resolve and install the environment (first run downloads ROS 2, a few GB)
+setup: ## Install the environment (first run downloads ROS 2, a few gigabytes)
 	pixi install
 
-# NOTE: this recipe deliberately does not use $(call ros,...) — that helper wraps
-# the command in single quotes, so any single quote in the command (a printf
-# format string, say) silently terminates the quoting and mangles the output.
-doctor: ## Print versions of everything that matters
-	@printf "%-14s %s\n" "pixi" "$$(pixi --version 2>&1)"
-	@pixi run bash -c 'source install/setup.bash 2>/dev/null; \
-		printf "%-14s %s\n" "python"     "$$(python --version 2>&1)"; \
-		printf "%-14s %s\n" "ROS distro" "$$ROS_DISTRO"; \
-		printf "%-14s %s\n" "rviz2"      "$$(command -v rviz2)"; \
-		printf "%-14s %s\n" "ROS pkgs"   "$$(ros2 pkg list | wc -l | tr -d " ") available"; \
-		printf "%-14s %s\n" "workspace"  "$$(ls install 2>/dev/null | grep -c rviz_basics) built package(s)"'
-
-##@ Build & test
-
-build: ## Build the colcon workspace
+build: ## Build every area
 	pixi run build
 
-test: ## Run the unit tests
+test: ## Run every test
 	pixi run test
 
-lint: ## Check code style
+lint: ## Check code style everywhere
 	pixi run flake8 src/ docs/ --max-line-length=100
 
 clean: ## Remove build/, install/ and log/
 	pixi run clean
 
-##@ Run it
-
-demo: ## Launch the node + RViz2 together — this is the one to start with
-	pixi run demo
-
-node: ## Run only the marker publisher (no RViz)
-	pixi run node
-
-rviz: build ## Run only RViz2 with the saved config
-	$(call ros,rviz2 -d src/rviz_basics/rviz/marker_demo.rviz)
-
-##@ Inspect the running system
-
-topics: ## [live] List active topics
-	$(call ros,ros2 topic list)
-
-marker: ## [live] Print one marker message
-	$(call ros,ros2 topic echo --once /visualization_marker)
-
-tf: ## [live] Stream the world -> marker_frame transform (Ctrl-C to stop)
-	$(call ros,ros2 run tf2_ros tf2_echo world marker_frame)
-
-frames: ## [live] Snapshot the TF tree to a PDF and open it
-	@mkdir -p build/tf_frames
-	$(call ros,cd build/tf_frames && ros2 run tf2_tools view_frames)
-	@open build/tf_frames/frames_*.pdf
-
-# On macOS, rqt aborts during teardown ("mutex lock failed") when the window is
-# closed — an upstream bug in rqt's Qt/threading shutdown, not in this project.
-# The GUI works fine and the crash happens only on exit, so the non-zero status
-# is swallowed rather than reported as a build failure.
-graph: ## [live] Open rqt_graph to see nodes and topics
-	@$(call ros,rqt --standalone rqt_graph) || \
-		echo "(rqt exited non-zero on close — known macOS teardown bug, safe to ignore)"
-
-##@ Escape hatch
-
-shell: build ## Open a shell with ROS + the workspace sourced (plain ros2 commands work)
+shell: build ## Shell with ROS ready, for typing ros2 commands
 	$(call ros,exec bash)
+
+# NOTE: not written with $(call ros,...) — that helper wraps the command in
+# single quotes, so a printf format string would end the quoting early.
+doctor: ## Print versions of everything that matters
+	@printf "%-14s %s\n" "pixi" "$$(pixi --version 2>&1)"
+	@pixi run bash -c 'source install/setup.bash 2>/dev/null; \
+		printf "%-14s %s\n" "python"     "$$(python --version 2>&1)"; \
+		printf "%-14s %s\n" "ROS distro" "$$ROS_DISTRO"; \
+		printf "%-14s %s\n" "areas"      "$$(ls src | tr "\n" " ")"'
+
+##@ rviz — a marker in a moving frame
+
+rviz.demo: build ## Launch the node and RViz: a ball circling a grid
+	$(call ros,ros2 launch rviz_basics marker_demo.launch.py)
+
+rviz.check: ## Show what the demo is publishing (run rviz.demo first)
+	@pixi run bash -c 'source install/setup.bash; \
+		ros2 topic list | grep -qx /visualization_marker || \
+			{ echo "Nothing is publishing. Start it with: make rviz.demo"; exit 1; }; \
+		echo "--- topics ---"; ros2 topic list; \
+		echo; echo "--- one marker ---"; ros2 topic echo --once /visualization_marker | head -8; \
+		echo; echo "--- one transform ---"; ros2 topic echo --once /tf | head -16'
+
+##@ arm — position, frames and transforms
+
+arm.learn: build ## Work through the maths, steps 1 to 3, then exit
+	@$(call ros,ros2 run arm_transforms arm_step1_positions)
+	@echo; $(call ros,ros2 run arm_transforms arm_step2_frames)
+	@echo; $(call ros,ros2 run arm_transforms arm_step3_chain)
+
+arm.demo: build ## Step 4: publish the arm to TF and draw it in RViz
+	$(call ros,ros2 launch arm_transforms arm_demo.launch.py)
+
+arm.watch: build ## Step 5: ask TF where the gripper is (run arm.demo first)
+	$(call ros,ros2 run arm_transforms arm_step5_lookup)

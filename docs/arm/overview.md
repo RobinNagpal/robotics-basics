@@ -86,10 +86,7 @@ area builds the piece of maths that answers all three, then hands it to ROS.
 Before the two-joint arm, take the smallest arm there is. One joint, one link,
 the gripper bolted straight onto the end:
 
-```
-    base_link o───────────────o gripper
-              q1      L1
-```
+![One joint, one link](../images/arm/one_joint.svg)
 
 The link leaves the base at angle `q1` and is `L1` long. So where is the
 gripper?
@@ -101,6 +98,9 @@ gripper_y = L1 · sin(q1)
 
 That is all `cos` and `sin` do here. They turn "this far away, at this angle"
 into "this far across, this far up". Nothing more.
+
+The picture above shows both of those as the two sides of a right-angled
+triangle: `L1·cos(q1)` across the bottom, `L1·sin(q1)` up the side.
 
 With `q1 = 30°` and `L1 = 0.5`, that gives `(0.433, 0.250)`. Step 1 prints this
 table for a few angles before it does anything else.
@@ -116,17 +116,16 @@ File: `step1_positions.py`. Plain Python, no ROS.
 Now add joint 2 and link 2. Joint 2 sits at the far end of link 1, which is
 exactly where the one-joint arm's gripper was:
 
-```
-              q1              q2
-    base_link o───────────────o───────────────o gripper
-                    L1              L2
-```
+![Adding the second joint](../images/arm/two_joints.svg)
 
 So the first half is already done. Joint 2 is at `(0.433, 0.250)`, same as
 before.
 
-The catch is the angle of link 2. `q2` is measured against link 1, not against
-the table. Link 1 is already turned by `q1`. So measured from the table, link 2
+The catch is the angle of link 2, and the picture shows it. There are two arcs
+at joint 2. The grey one is `q2`, measured from link 1. The purple one is the
+angle from the table, and it is the bigger of the two.
+
+`q2` is measured against link 1, not against the table. Link 1 is already turned by `q1`. So measured from the table, link 2
 points at `q1 + q2`:
 
 ```
@@ -261,8 +260,13 @@ and where the one-joint arm's gripper was in section 2. Same point, reached thre
 different ways.
 
 Join the third row on the same way and you get `base_link` → `gripper`: a shift
-of `(0.433, 0.650)` and a turn of `90°`. Step 2 prints this build-up one line at
-a time, so you can watch it happen.
+of `(0.433, 0.650)` and a turn of `90°`.
+
+![Joining the links one at a time](../images/arm/joining.svg)
+
+Each panel adds one link. The frame walks out along the arm, and the shift and
+turn underneath it are the answer so far. Step 2 prints exactly these three
+lines, so you can watch it happen.
 
 This is `Transform2D.then()`.
 
@@ -303,6 +307,12 @@ a shift of `(0.433, 0.650)` and a turn of `90°`. Flipped, `gripper` →
 `base_link` is a shift of `(-0.650, 0.433)` and a turn of `-90°`. Step 3 prints
 both, one under the other.
 
+![The same link read both ways](../images/arm/flipping.svg)
+
+Same two frames, same arm, no new measurement. Only the direction of the
+question changed, and the numbers are completely different because they are now
+measured along the gripper's axes instead of the table's.
+
 This is how a robot answers "where is the table, from the gripper?" when all
 anyone told it is how far each joint has turned.
 
@@ -322,6 +332,12 @@ bolted to the gripper.
 To find the tip on the table, apply `base_link` → `gripper` to that fixed point:
 turn it, then add the shift. With the arm in the pose above, the tip lands at
 `(0.433, 0.700)`.
+
+![The tip never moves in the gripper frame](../images/arm/carrying.svg)
+
+Two poses, one point. The bottom line is the same in both, because that is the
+tip's description in the `gripper` frame and it never changes. The number by the
+star is different in each, because that is the table's answer.
 
 Move the arm and run step 3 again. The description in the `gripper` frame does
 not change. The answer on the table does. This is the same idea as the ball in
@@ -405,6 +421,8 @@ link3 -> gripper   move L3
 
 Nothing else changes. Joining still adds the angles, so `q1 + q2 + q3` appears
 on its own. Step 5 does not change at all — it still asks for two frame names.
+
+![A third joint changes nothing](../images/arm/three_joints.svg)
 
 **A gripper that can turn.** Right now the gripper is bolted on, so its row
 never changes. Give it a joint and that row starts changing with `q3` like any

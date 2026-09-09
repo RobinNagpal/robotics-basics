@@ -53,8 +53,9 @@ first: a single joint with a single link.
    · [What a frame is](#what-a-frame-is)
    · [What a transform is](#what-a-transform-is)
    · [Turning a point](#turning-a-point)
+   · [Applying a transform: turn, then shift](#applying-a-transform-turn-then-shift)
    · [Joining two transforms](#joining-two-transforms)
-   · [Where the added angles come from](#where-the-added-angles-come-from)
+   · [Why describe each part once](#why-describe-each-part-once)
 5. [Step 3: backwards, and carrying a point](#5-step-3-backwards-and-carrying-a-point)
    · [Flipping a transform](#flipping-a-transform)
    · [Carrying a point](#carrying-a-point)
@@ -179,15 +180,38 @@ Step 2 gets the same numbers without working out anything.
 
 File: `step2_frames.py`. Still plain Python.
 
-The idea is to stop describing the whole arm at once. Describe each piece on its
-own, and let the pieces be combined.
+Step 1 worked. But the formula it used answered one question, about one arm,
+and you had to work it out yourself.
+
+Here we do the opposite. We never describe the whole arm. We describe each piece
+on its own, in the simplest terms we can, and then let the pieces be combined.
+
+That sounds like more work. It is less, and this section is mostly about why.
 
 ### What a frame is
 
-A **frame** is a starting point with axes, stuck to one physical thing. It
-travels with that thing.
+A **frame** is a starting point with axes, stuck to one physical thing. When
+that thing moves, its frame moves with it.
 
-This arm has four:
+Why bother? Because a pair of numbers on its own says nothing.
+
+![One spot, two frames](../images/arm/frames.svg)
+
+Both panels show the same spot: joint 2. Nothing moved between the two pictures.
+The numbers are completely different, because they are measured from different
+places.
+
+- From `base_link`, joint 2 is at **(2.598, 1.5)**. Awkward numbers, and they
+  change every time the arm moves.
+- From `gripper`, the same spot is at **(-2, 0)**. That means two metres
+  straight back along the gripper's own X axis — and it never changes, because
+  link 2 is rigid.
+
+Same spot, two frames, two answers, and neither is more correct than the other.
+That is the whole reason frames exist: each part of a robot has its own natural
+way to describe where things are, and it is usually the simple one.
+
+This arm has four frames:
 
 ```mermaid
 flowchart LR
@@ -203,15 +227,23 @@ flowchart LR
 | `link2` | link 2, so it turns with joint 2 |
 | `gripper` | the gripper, at the far end of link 2 |
 
-Notice that every frame has exactly one parent, the part it is attached to. That
-is what lets them be joined up in order.
+Every frame has exactly one parent, the part it is attached to. That is what
+lets them be joined up in order.
 
 ### What a transform is
 
-A **transform** says where one frame sits inside another. Three numbers say it
-completely: a shift across, a shift up, and an angle.
+A **transform** says where a child frame sits inside its parent. Three numbers
+say it completely: how far across, how far up, and how much turned.
 
-The whole arm is then three of them, and each one is short:
+Those three numbers are really just two moves:
+
+![The three numbers as two moves](../images/arm/transform_parts.svg)
+
+Read it left to right. Start at link 1's frame. Move 3 metres along link 1's own
+X axis, which lands you at joint 2. Then turn 60°. You are now sitting in link
+2's frame. Shift `(3, 0)`, turn `60°` — that is the whole transform.
+
+The arm needs three of them, and each one is short:
 
 | From | To | The transform | Changes? |
 | --- | --- | --- | --- |
@@ -219,9 +251,13 @@ The whole arm is then three of them, and each one is short:
 | `link1` | `link2` | shift `L1` across, turn by `q2` | yes, joint 2 |
 | `link2` | `gripper` | shift `L2` across, no turn | no, bolted on |
 
-Read the second row as a sentence: *link 2 starts `L1` along link 1, turned by
-`q2` from it*. That is a fact about joint 2 alone. It stays true whatever joint 1
-is doing, so nobody has to update it.
+Read the second row as a sentence: *link 2 starts 3 m along link 1, turned by
+`q2` from it.*
+
+Now look at what that sentence does **not** mention. Not the table. Not joint 1.
+Not the gripper. It is a fact about joint 2 and nothing else, so whoever built
+that joint could have written it down without knowing what the rest of the robot
+looks like.
 
 The last row never changes at all. It was measured once, when the arm was built.
 TF does not treat it differently from the joints — a transform is a transform.
@@ -259,6 +295,32 @@ some work, rather than one of them vanishing.
 This is `rotate_point()` in `arm_math.py`, and it is the only formula in the
 area. Everything below is built from it.
 
+### Applying a transform: turn, then shift
+
+A transform is used to move a point from the child frame out into the parent.
+That takes two steps, and they go in this order:
+
+1. **turn** the point by the transform's angle
+2. **then add** the transform's shift
+
+The order is not a matter of taste. Doing it the other way gives a different
+answer:
+
+![Order matters](../images/arm/order_matters.svg)
+
+Both panels start with the same point, `(2, 0)`, and use the same transform:
+shift `(3, 0)`, turn `60°`.
+
+- Turn first, then shift: the point lands at **(4, 1.732)**.
+- Shift first, then turn: it lands at **(2.5, 4.33)**.
+
+Why so different? Shifting first pushes the point away from the origin. The turn
+then swings that shift around as well, which was never meant to happen. The
+shift was measured along the *parent's* axes. It has to be added after all the
+turning is done.
+
+This is `Transform2D.apply()`.
+
 ### Joining two transforms
 
 Now the useful part. Two transforms end to end can be replaced by one.
@@ -280,6 +342,10 @@ x = 3 · cos(30°) - 0 · sin(30°) = 3 · 0.866... = 2.598
 y = 3 · sin(30°) + 0 · cos(30°) = 3 · 0.5     = 1.5
 ```
 
+That is the same rule as the section above, and for the same reason. The second
+transform's shift is written in the first one's tilted axes. So it has to be
+turned before it can be added.
+
 Then add the first shift, which here is `(0, 0)`. So `base_link` → `link2` is a
 shift of `(2.598, 1.5)` and a turn of `90°`.
 
@@ -299,18 +365,39 @@ lines, so you can watch it happen.
 
 This is `Transform2D.then()`.
 
-### Where the added angles come from
+### Why describe each part once
 
-Step 2 finishes by checking itself against step 1, and prints the difference.
-The difference is zero, at every pose.
+Here is the payoff, and it is easiest to see by moving a joint.
 
-That is worth pausing on. Look back at section 3, where we had to notice that
-link 2 points at `q1 + q2` and write it in ourselves. Nothing in step 2 mentions
-`q1 + q2`. Each transform only knows its own joint.
+![Local facts stay true](../images/arm/local_facts.svg)
 
-The `q1 + q2` appeared anyway, because joining adds the angles. That is the
-whole benefit: a third joint would produce `q1 + q2 + q3` on its own, with no
-new thinking and no new formulas.
+Both panels show the same arm, with joint 1 turned to a different angle.
+
+**The green line is identical in both.** `link1` → `link2` is still shift
+`(3, 0)`, turn `60°`. Moving joint 1 did not make that fact stale, because it
+never depended on joint 1 in the first place.
+
+**The purple line is different in each.** `base_link` → `gripper` had to change,
+because the gripper really did move.
+
+So the things you write down by hand are the green ones. They are short, local,
+and stay true whatever the rest of the robot does. The purple one — the answer
+you actually wanted — is never written down. It is worked out by joining, fresh,
+each time somebody asks.
+
+That is what "describe each part once" buys you: nothing to keep in sync.
+
+It also explains where the added angles came from. Step 2 finishes by checking
+itself against step 1, and prints the difference. The difference is zero, at
+every pose.
+
+Look back at section 3, where we had to notice that link 2 points at `q1 + q2`
+and write it in ourselves. Nothing in step 2 mentions `q1 + q2`. Each transform
+only knows its own joint. The `q1 + q2` appeared anyway, because joining adds the
+angles.
+
+A third joint would produce `q1 + q2 + q3` on its own, with no new thinking and
+no new formulas.
 
 ---
 

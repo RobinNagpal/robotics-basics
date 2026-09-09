@@ -458,8 +458,167 @@ def rotation():
     _save(fig, 'rotation.svg')
 
 
-FIGURES = (arm, one_joint, two_joints, rotation, joining, flipping, carrying,
-           three_joints)
+def frames():
+    """Show one physical spot measured from two different frames."""
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.8), facecolor='white')
+    grip_t = gripper_in_base(Q1, Q2)
+    seen_from_gripper = grip_t.inverse().apply(*JOINT2)
+
+    for ax, which in zip(axes, ('base_link', 'gripper')):
+        _axes((-2.2, 5.4), (-1.9, 5.2), ax=ax)
+
+        _link(ax, (0, 0), JOINT2, color=LINK_PALE, width=5)
+        _link(ax, JOINT2, GRIPPER, color=LINK_PALE, width=5)
+        _joint(ax, (0, 0), size=10)
+        _gripper(ax, GRIPPER, size=8)
+
+        # The spot we are measuring: joint 2, in both panels.
+        ax.plot([JOINT2[0]], [JOINT2[1]], 'o', color=JOINT, ms=15, zorder=5)
+        ax.text(JOINT2[0] + 0.28, JOINT2[1] - 0.5, 'the same spot', color=INK,
+                fontsize=10, family='monospace', ha='left', va='center')
+
+        if which == 'base_link':
+            _frame(ax, 0, 0, 0.0, 'base_link', length=1.1, offset=(-0.75, -0.42))
+            _dashed(ax, JOINT2, (JOINT2[0], 0), color=AXIS_X)
+            _dashed(ax, JOINT2, (0, JOINT2[1]), color=AXIS_Y)
+            ax.text(JOINT2[0] / 2 + 0.2, -0.72, '2.598 across', color=AXIS_X, fontsize=10,
+                    family='monospace', ha='center')
+            ax.text(-0.3, JOINT2[1] / 2, '1.5 up', color=AXIS_Y, fontsize=10,
+                    family='monospace', ha='right', va='center')
+            answer = f'({_fmt(JOINT2[0])}, {_fmt(JOINT2[1])})'
+        else:
+            _frame(ax, GRIPPER[0], GRIPPER[1], Q1 + Q2, 'gripper', length=1.1,
+                   offset=(1.15, 0.1))
+            _dashed(ax, GRIPPER, JOINT2, color=AXIS_X)
+            ax.text(GRIPPER[0] + 0.28, (GRIPPER[1] + JOINT2[1]) / 2,
+                    '2 back along\nthe gripper X', color=AXIS_X, fontsize=10,
+                    family='monospace', ha='left', va='center')
+            answer = f'({_fmt(seen_from_gripper[0])}, {_fmt(seen_from_gripper[1])})'
+
+        ax.text(1.6, -1.45, f'measured from {which}:  {answer}', fontsize=11,
+                ha='center', color=INK, family='monospace')
+
+    fig.suptitle('One spot, two frames, two different pairs of numbers',
+                 fontsize=13, weight='bold', y=1.0)
+    _save(fig, 'frames.svg')
+
+
+def transform_parts():
+    """Break one transform into the two moves its three numbers describe."""
+    fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.2), facecolor='white')
+    captions = ['start at link1', 'move 3 along link1 X', 'turn by q2 = 60°']
+
+    for step, (ax, caption) in enumerate(zip(axes, captions)):
+        _axes((-1.5, 4.8), (-1.9, 4.8), ax=ax)
+
+        _link(ax, (0, 0), JOINT2, color=LINK_PALE, width=5)
+        _link(ax, JOINT2, GRIPPER, color=LINK_PALE, width=5)
+        _joint(ax, (0, 0), size=10)
+
+        if step == 0:
+            _frame(ax, 0, 0, Q1, '', length=1.1)
+        elif step == 1:
+            ax.annotate('', xy=JOINT2, xytext=(0, 0),
+                        arrowprops={'arrowstyle': '-|>', 'color': '#b06fc4',
+                                    'lw': 2.2, 'shrinkA': 0, 'shrinkB': 0}, zorder=6)
+            _frame(ax, JOINT2[0], JOINT2[1], Q1, '', length=1.1)
+            _joint(ax, JOINT2, size=10)
+        else:
+            _frame(ax, JOINT2[0], JOINT2[1], Q1 + Q2, '', length=1.1)
+            _joint(ax, JOINT2, size=10)
+            _arc(ax, JOINT2, 0.85, Q1, Q1 + Q2, 'q2',
+                 (JOINT2[0] + 0.9, JOINT2[1] + 0.55), size=10)
+
+        ax.text(1.6, 4.45, caption, fontsize=11, ha='center', color=INK,
+                family='monospace', weight='bold')
+        ax.text(1.6, -1.55, ['(the parent)', 'shift = (3, 0)', 'turn = 60°'][step],
+                fontsize=11, ha='center', color=MUTED, family='monospace')
+
+    fig.suptitle('The three numbers of link1 -> link2, as two moves',
+                 fontsize=13, weight='bold', y=1.0)
+    _save(fig, 'transform_parts.svg')
+
+
+def order_matters():
+    """Turn-then-shift against shift-then-turn, on the same point."""
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.8), facecolor='white')
+
+    point = (2.0, 0.0)
+    shift = (LINK1_M, 0.0)
+    turned = rotate_point(*point, Q2)
+    right = (turned[0] + shift[0], turned[1] + shift[1])
+    moved = (point[0] + shift[0], point[1] + shift[1])
+    wrong = rotate_point(*moved, Q2)
+
+    panels = [('turn first, then shift', turned, right, '#2b7d76', 'correct'),
+              ('shift first, then turn', moved, wrong, '#c0392b', 'wrong')]
+
+    for ax, (caption, middle, end, colour, verdict) in zip(axes, panels):
+        _axes((-1.4, 6.4), (-1.9, 5.4), ax=ax)
+
+        ax.annotate('', xy=(5.6, 0), xytext=(0, 0),
+                    arrowprops={'arrowstyle': '-|>', 'color': GRID, 'lw': 1.2})
+        ax.annotate('', xy=(0, 4.9), xytext=(0, 0),
+                    arrowprops={'arrowstyle': '-|>', 'color': GRID, 'lw': 1.2})
+
+        ax.plot([point[0]], [point[1]], 'o', color='#999999', ms=10, zorder=4)
+        ax.text(point[0], -0.55, 'the point\n(2, 0)', color=MUTED, fontsize=9.5,
+                family='monospace', ha='center', va='top')
+
+        for start, stop in ((point, middle), (middle, end)):
+            ax.annotate('', xy=stop, xytext=start,
+                        arrowprops={'arrowstyle': '-|>', 'color': colour, 'lw': 1.8,
+                                    'connectionstyle': 'arc3,rad=0.18'}, zorder=5)
+        ax.plot([middle[0]], [middle[1]], 'o', color=colour, ms=8, alpha=0.5, zorder=4)
+        ax.plot([end[0]], [end[1]], '*', color=colour, ms=19, zorder=6)
+
+        ax.text(end[0] + 0.25, end[1] + 0.2, f'({_fmt(end[0])}, {_fmt(end[1])})',
+                color=colour, fontsize=11, family='monospace', ha='left', va='bottom')
+        ax.text(2.5, 5.15, caption, fontsize=11.5, ha='center', color=INK,
+                family='monospace', weight='bold')
+        ax.text(2.5, -1.6, verdict, fontsize=11.5, ha='center', color=colour,
+                weight='bold')
+
+    fig.suptitle('Same point, same transform, different order, different answer',
+                 fontsize=13, weight='bold', y=1.0)
+    _save(fig, 'order_matters.svg')
+
+
+def local_facts():
+    """Move joint 1 and show that link 2's own description does not change."""
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 5.0), facecolor='white')
+
+    for ax, q1 in zip(axes, (Q1, math.radians(60.0))):
+        _axes((-2.0, 5.6), (-2.4, 5.6), ax=ax)
+        joint2 = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
+        grip = gripper_in_base(q1, Q2)
+
+        _dashed(ax, joint2, (joint2[0] + 1.2 * math.cos(q1),
+                             joint2[1] + 1.2 * math.sin(q1)))
+        _link(ax, (0, 0), joint2)
+        _link(ax, joint2, (grip.x, grip.y))
+        _joint(ax, (0, 0), size=11)
+        _joint(ax, joint2, size=11)
+        _gripper(ax, (grip.x, grip.y), size=9)
+        _arc(ax, (0, 0), 1.0, 0, q1, f'q1 = {math.degrees(q1):.0f}°',
+             (1.75 * math.cos(q1 / 2 - 0.18), 1.75 * math.sin(q1 / 2 - 0.18)), size=10)
+        _arc(ax, joint2, 0.85, q1, q1 + Q2, 'q2',
+             (joint2[0] + 0.85 * math.cos(q1 + Q2 / 2) * 1.55,
+              joint2[1] + 0.85 * math.sin(q1 + Q2 / 2) * 1.55), size=10)
+
+        ax.text(1.8, -1.55, 'link1 -> link2:  shift (3, 0), turn 60°',
+                color='#2b7d76', fontsize=10.5, family='monospace', ha='center')
+        ax.text(1.8, -2.15,
+                f'base_link -> gripper:  ({_fmt(grip.x)}, {_fmt(grip.y)})',
+                color='#8b4fa5', fontsize=10.5, family='monospace', ha='center')
+
+    fig.suptitle('Move joint 1. The green line is the same in both. Only the '
+                 'purple one changes.', fontsize=12.5, weight='bold', y=1.0)
+    _save(fig, 'local_facts.svg')
+
+
+FIGURES = (arm, one_joint, two_joints, frames, transform_parts, rotation,
+           order_matters, joining, local_facts, flipping, carrying, three_joints)
 
 if __name__ == '__main__':
     OUT_DIR.mkdir(parents=True, exist_ok=True)

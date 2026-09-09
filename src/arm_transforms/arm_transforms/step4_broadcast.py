@@ -11,19 +11,18 @@ where the gripper was. This step publishes the *same* transforms from
 TF is the part of ROS that keeps track of frames. The name is short for
 *transform*.
 
-What changes: nothing about the maths. ``all_links(q1, q2)`` is imported
+What changes: nothing about the maths. ``arm_chain(q1, q2)`` is imported
 unchanged. The node only turns each link into a ROS message and sends it.
 
 WHAT GETS SENT
 --------------
-Four transforms, once per tick::
+Three transforms, once per tick::
 
     base_link -> link1      turn by q1              (joint 1)
     link1     -> link2      move L1, turn by q2     (joint 2)
     link2     -> gripper    move L2                 (bolted on, not a joint)
-    link2     -> camera     move and turn, fixed    (bolted on, not a joint)
 
-Two of those four are joints, and two are brackets that never change. TF does
+Two of those three are joints, and one is a bracket that never changes. TF does
 not care which is which. A transform is a transform.
 
 Notice we publish each link on its own, exactly as written in step 2. We never
@@ -35,7 +34,7 @@ AND THE SHAPES
 The arm is drawn with markers, and each one is placed **in the frame it belongs
 to**: the bar for link 1 is described inside ``link1`` and never moves in that
 frame. TF moves the frame; the bar follows. Same idea as the ball in the RViz
-area, now with six shapes instead of one.
+area, now with five shapes instead of one.
 
 ROTATIONS IN ROS
 ----------------
@@ -48,7 +47,7 @@ from __future__ import annotations
 
 import math
 
-from arm_transforms.arm_math import all_links, LINK1_M, LINK2_M, yaw_to_quaternion
+from arm_transforms.arm_math import arm_chain, LINK1_M, LINK2_M, yaw_to_quaternion
 from geometry_msgs.msg import TransformStamped
 from rcl_interfaces.msg import ParameterDescriptor
 import rclpy
@@ -84,7 +83,7 @@ class ArmBroadcaster(Node):
         self.create_timer(1.0 / rate_hz, self._on_timer)
 
         self.get_logger().info(
-            f'Publishing base_link -> link1 -> link2 -> gripper, plus link2 -> camera, '
+            f'Publishing base_link -> link1 -> link2 -> gripper '
             f"and shapes on '{MARKER_TOPIC}' at {rate_hz:g} Hz"
         )
 
@@ -112,7 +111,7 @@ class ArmBroadcaster(Node):
         # One message per link, straight from the same list step 2 used.
         transforms = [
             self._to_message(now, parent, child, link)
-            for parent, child, link in all_links(q1, q2)
+            for parent, child, link in arm_chain(q1, q2)
         ]
         self._tf_broadcaster.sendTransform(transforms)
         self._marker_pub.publish(self._build_markers(now))
@@ -135,14 +134,13 @@ class ArmBroadcaster(Node):
         return message
 
     def _build_markers(self, stamp) -> MarkerArray:
-        """Draw the links, the joints, the gripper and the camera, each in its own frame."""
+        """Draw the links, the joints and the gripper, each in its own frame."""
         return MarkerArray(markers=[
             self._bar(stamp, 0, 'link1', LINK1_M, (0.25, 0.55, 0.95)),
             self._bar(stamp, 1, 'link2', LINK2_M, (0.25, 0.75, 0.95)),
             self._ball(stamp, 2, 'link1', 0.09, (0.95, 0.75, 0.15)),
             self._ball(stamp, 3, 'link2', 0.09, (0.95, 0.75, 0.15)),
             self._ball(stamp, 4, 'gripper', 0.07, (0.95, 0.35, 0.35)),
-            self._box(stamp, 5, 'camera', (0.06, 0.05, 0.05), (0.55, 0.55, 0.60)),
         ])
 
     def _bar(self, stamp, marker_id: int, frame: str, length: float, rgb) -> Marker:
@@ -160,12 +158,6 @@ class ArmBroadcaster(Node):
         """Draw a joint as a ball at its frame's origin."""
         marker = self._blank(stamp, marker_id, frame, Marker.SPHERE, rgb)
         marker.scale.x = marker.scale.y = marker.scale.z = size
-        return marker
-
-    def _box(self, stamp, marker_id: int, frame: str, size, rgb) -> Marker:
-        """Draw the camera body at its frame's origin."""
-        marker = self._blank(stamp, marker_id, frame, Marker.CUBE, rgb)
-        marker.scale.x, marker.scale.y, marker.scale.z = size
         return marker
 
     def _blank(self, stamp, marker_id: int, frame: str, shape: int, rgb) -> Marker:

@@ -50,7 +50,7 @@ WHY WE DO NOT STOP HERE
 Those formulas were worked out by hand, for this arm, to answer this one
 question. Add a third joint and you work them out again. Move to 3D and each
 step needs three angles. Ask a different question — "where is the table, from
-the camera's point of view?" — and you work out a fresh set backwards.
+the gripper's point of view?" — and you work out a fresh set backwards.
 
 Step 2 gets the same numbers without working out anything.
 """

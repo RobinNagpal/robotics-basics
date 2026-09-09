@@ -16,8 +16,8 @@ measure anything new; you undo the turn and undo the shift::
     inverse.angle  = -angle
     inverse.offset = the offset, rotated backwards, then negated
 
-This is how a robot answers "where is the table, from the camera's point of
-view?" when all it was told is where the camera is on the robot.
+This is how a robot answers "where is the table, from the gripper's point of
+view?" when all it was told is where each joint is turned to.
 
 CARRYING A POINT BETWEEN FRAMES
 -------------------------------

@@ -19,8 +19,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / 'src' / 'arm_transforms'))
 # Imported after the sys.path line above, which flake8's import rules cannot see.
-from arm_transforms.arm_math import (  # noqa: E402,I100,I202
-    CAMERA_ALONG_M, CAMERA_ASIDE_M, CAMERA_TURN_RAD, LINK1_M, LINK2_M, rotate_point)
+from arm_transforms.arm_math import LINK1_M, LINK2_M, rotate_point  # noqa: E402,I100,I202
 
 AREA = 'arm'
 OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / 'images' / AREA
@@ -62,7 +61,7 @@ def _frame(ax, x, y, theta, label, length=0.13, offset=(0.0, -0.075)):
 
 def arm():
     """Draw the two-link arm with its joints, links and frames labelled."""
-    fig, ax = _axes((-0.30, 1.02), (-0.22, 0.95))
+    fig, ax = _axes((-0.30, 0.92), (-0.22, 0.95))
 
     joint2 = (LINK1_M * math.cos(Q1), LINK1_M * math.sin(Q1))
     tip = (joint2[0] + LINK2_M * math.cos(Q1 + Q2), joint2[1] + LINK2_M * math.sin(Q1 + Q2))
@@ -100,15 +99,6 @@ def arm():
     ax.text(mid2[0] - 0.175, mid2[1], f'L2 = {LINK2_M} m', color=MUTED,
             fontsize=10, family='monospace', ha='center')
 
-    # The camera: bolted to link 2, so it is placed in link 2's frame.
-    cam_offset = rotate_point(CAMERA_ALONG_M, CAMERA_ASIDE_M, Q1 + Q2)
-    cam = (joint2[0] + cam_offset[0], joint2[1] + cam_offset[1])
-    ax.plot([joint2[0], cam[0]], [joint2[1], cam[1]], color=GRID, lw=1.0,
-            ls=(0, (2, 2)), zorder=1)
-    ax.plot([cam[0]], [cam[1]], 's', color='#8a8a90', ms=11, zorder=4)
-    _frame(ax, cam[0], cam[1], Q1 + Q2 + CAMERA_TURN_RAD, 'camera',
-           length=0.11, offset=(0.10, 0.085))
-
     _frame(ax, 0, 0, 0.0, 'base_link', length=0.17, offset=(-0.135, -0.095))
     _frame(ax, 0, 0, Q1, 'link1', length=0.10, offset=(0.125, -0.095))
     _frame(ax, joint2[0], joint2[1], Q1 + Q2, 'link2', offset=(0.145, -0.055))
@@ -116,7 +106,7 @@ def arm():
 
     ax.text(0.31, 0.90, 'The arm and its frames', fontsize=13, ha='center',
             color=INK, weight='bold')
-    ax.text(0.31, -0.19, 'q1 turns joint 1 · q2 turns joint 2 · gripper and camera are bolted on',
+    ax.text(0.31, -0.19, 'q1 turns joint 1 · q2 turns joint 2 · the gripper is bolted on',
             fontsize=10, ha='center', color=MUTED)
 
     fig.savefig(OUT_DIR / 'arm.svg', bbox_inches='tight', pad_inches=0.3, facecolor='white')

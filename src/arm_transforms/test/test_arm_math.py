@@ -3,8 +3,6 @@
 import math
 
 from arm_transforms.arm_math import (
-    camera_in_base,
-    camera_mount,
     gripper_in_base,
     LINK1_M,
     LINK2_M,
@@ -80,17 +78,3 @@ def test_quaternion_is_normalised():
 
 def test_zero_yaw_is_the_identity_quaternion():
     assert yaw_to_quaternion(0.0) == pytest.approx((0.0, 0.0, 0.0, 1.0))
-
-
-@pytest.mark.parametrize('q1,q2', [(0.0, 0.0), (0.5, -0.3), (1.2, 0.9)])
-def test_camera_hangs_off_link2_not_the_gripper(q1, q2):
-    """Moving joint 2 moves the camera, but the gripper is not on its route."""
-    _parent, _child, bracket = camera_mount()
-    # base_link -> link2 -> camera, done the long way round for comparison.
-    link2 = Transform2D.rotation(q1).then(Transform2D(LINK1_M, 0.0, q2))
-    assert camera_in_base(q1, q2) == link2.then(bracket)
-
-
-def test_camera_bracket_never_changes():
-    assert camera_mount()[2] == camera_mount()[2]
-    assert camera_mount()[0] == 'link2'

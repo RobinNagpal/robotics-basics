@@ -56,7 +56,7 @@ from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker, MarkerArray
 
 MARKER_TOPIC = 'arm_markers'
-LINK_THICKNESS_M = 0.06
+LINK_THICKNESS_M = 0.30
 
 
 class ArmBroadcaster(Node):
@@ -138,9 +138,9 @@ class ArmBroadcaster(Node):
         return MarkerArray(markers=[
             self._bar(stamp, 0, 'link1', LINK1_M, (0.25, 0.55, 0.95)),
             self._bar(stamp, 1, 'link2', LINK2_M, (0.25, 0.75, 0.95)),
-            self._ball(stamp, 2, 'link1', 0.09, (0.95, 0.75, 0.15)),
-            self._ball(stamp, 3, 'link2', 0.09, (0.95, 0.75, 0.15)),
-            self._ball(stamp, 4, 'gripper', 0.07, (0.95, 0.35, 0.35)),
+            self._ball(stamp, 2, 'link1', 0.45, (0.95, 0.75, 0.15)),
+            self._ball(stamp, 3, 'link2', 0.45, (0.95, 0.75, 0.15)),
+            self._ball(stamp, 4, 'gripper', 0.35, (0.95, 0.35, 0.35)),
         ])
 
     def _bar(self, stamp, marker_id: int, frame: str, length: float, rgb) -> Marker:

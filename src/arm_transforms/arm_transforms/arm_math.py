@@ -16,6 +16,11 @@ Flat (2D), with two joints, two rigid links and a gripper::
 Joints are numbered from the base outwards, so joint 1 is the one attached to
 ``base_link``. Real arms are 3D and have more joints, but the rules do not
 change: a 3D transform is the same idea with three angles instead of one.
+
+The lengths are 3 m and 2 m, and the worked examples use right angles. That is
+deliberate: ``cos`` and ``sin`` of 0 and 90 degrees are 0 and 1, so every
+position comes out a whole number and can be checked in your head. Angles like
+30 degrees bring in ``sqrt(3)/2``, and the numbers stop being tidy.
 """
 
 from __future__ import annotations
@@ -24,9 +29,9 @@ from dataclasses import dataclass
 import math
 
 #: Length of link 1, in metres.
-LINK1_M = 0.5
+LINK1_M = 3.0
 #: Length of link 2, in metres.
-LINK2_M = 0.4
+LINK2_M = 2.0
 
 
 def rotate_point(x: float, y: float, theta: float) -> tuple[float, float]:

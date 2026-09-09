@@ -21,7 +21,7 @@ frames without knowing how the robot is built.
 
 THE TOOL TIP, AGAIN
 -------------------
-Step 3 carried a screwdriver tip from the gripper frame onto the table with
+Step 3 carried a tool tip from the gripper frame onto the table with
 ``transform.apply(...)``. Here the same job is done by asking TF for the
 transform and applying it to the point. The tip never changes in the gripper
 frame. The answer on the table changes constantly, because the frame moves.
@@ -49,8 +49,8 @@ from rclpy.node import Node
 from rclpy.time import Time
 from tf2_ros import Buffer, TransformException, TransformListener
 
-#: A screwdriver tip, 5 cm ahead of the gripper, fixed there.
-TOOL_TIP_IN_GRIPPER = (0.05, 0.0)
+#: A tool tip, 1 m ahead of the gripper, fixed there.
+TOOL_TIP_IN_GRIPPER = (1.0, 0.0)
 
 
 def yaw_of(transform: TransformStamped) -> float:

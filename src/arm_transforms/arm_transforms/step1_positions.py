@@ -27,6 +27,10 @@ at angle ``q1`` sits at::
 That is all ``cos`` and ``sin`` do here. They turn "this far away, at this
 angle" into "this far across, this far up".
 
+With ``L1 = 3`` and ``q1 = 90``, that is ``(3*0, 3*1)``, or ``(0, 3)``. Straight
+up, three metres. Right angles keep every number whole, which is why the rest of
+this area sticks to them.
+
 NOW ADD A SECOND JOINT
 ----------------------
 Two joints, two links, the gripper still bolted to the end::
@@ -59,11 +63,13 @@ import math
 
 from arm_transforms.arm_math import LINK1_M, LINK2_M
 
-#: Angles to try on the one-joint arm, in degrees.
-ONE_JOINT_DEG = [0, 30, 45, 60, 90]
+#: Angles to try on the one-joint arm, in degrees. The right angles give whole
+#: numbers; 30 and 45 are here to show what happens when they do not.
+ONE_JOINT_DEG = [0, 30, 45, 90, 180]
 
-#: A few joint angles to try on the two-joint arm, in degrees, as (q1, q2).
-POSES_DEG = [(0, 0), (45, 0), (0, 90), (45, 45), (90, -45)]
+#: Joint angles to try on the two-joint arm, in degrees, as (q1, q2). All right
+#: angles, so every position below is a whole number.
+POSES_DEG = [(0, 0), (90, -90), (0, 90), (90, 0), (180, -90)]
 
 
 def one_joint_gripper(q1: float) -> tuple[float, float]:

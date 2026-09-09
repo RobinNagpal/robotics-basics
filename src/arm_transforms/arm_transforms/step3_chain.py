@@ -21,8 +21,8 @@ view?" when all it was told is where each joint is turned to.
 
 CARRYING A POINT BETWEEN FRAMES
 -------------------------------
-A gripper holding a screwdriver cares about the tip, not the gripper itself.
-The tip is easy to describe *in the gripper frame*: 5 cm straight ahead, and it
+A gripper holding a tool cares about the tip, not the gripper itself.
+The tip is easy to describe *in the gripper frame*: 1 m straight ahead, and it
 stays there no matter how the arm moves.
 
 To find the tip on the table, apply base_link→gripper to that fixed point. The
@@ -40,8 +40,8 @@ import math
 
 from arm_transforms.arm_math import gripper_in_base, Transform2D
 
-#: A screwdriver tip, 5 cm ahead of the gripper. Fixed in the gripper frame.
-TOOL_TIP_IN_GRIPPER = (0.05, 0.0)
+#: A tool tip, 1 m ahead of the gripper. Fixed in the gripper frame.
+TOOL_TIP_IN_GRIPPER = (1.0, 0.0)
 
 
 def describe(name: str, transform: Transform2D) -> str:
@@ -56,8 +56,9 @@ def main() -> None:
     """Show joining, flipping and applying, on one arm pose."""
     print(__doc__.split('THE IDEA')[0].strip())
 
-    q1, q2 = math.radians(30.0), math.radians(60.0)
-    print('\nArm pose: q1 = 30°, q2 = 60°\n')
+    # Right angles, so every number printed below is whole.
+    q1, q2 = math.radians(180.0), math.radians(-90.0)
+    print('\nArm pose: q1 = 180°, q2 = -90°\n')
 
     # --- forwards ------------------------------------------------------
     base_to_gripper = gripper_in_base(q1, q2)
@@ -81,7 +82,7 @@ def main() -> None:
 
     # --- carrying a point ----------------------------------------------
     tip_x, tip_y = base_to_gripper.apply(*TOOL_TIP_IN_GRIPPER)
-    print('\nA screwdriver tip, 5 cm ahead of the gripper:')
+    print('\nA tool tip, 1 m ahead of the gripper:')
     print(f'    in the gripper frame: ({TOOL_TIP_IN_GRIPPER[0]:.3f}, '
           f'{TOOL_TIP_IN_GRIPPER[1]:.3f})   <- never changes')
     print(f'    on the table:         ({tip_x:.3f}, {tip_y:.3f})   <- changes as the arm moves')

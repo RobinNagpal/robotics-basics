@@ -17,10 +17,14 @@ Joints are numbered from the base outwards, so joint 1 is the one attached to
 ``base_link``. Real arms are 3D and have more joints, but the rules do not
 change: a 3D transform is the same idea with three angles instead of one.
 
-The lengths are 3 m and 2 m, and the worked examples use right angles. That is
-deliberate: ``cos`` and ``sin`` of 0 and 90 degrees are 0 and 1, so every
-position comes out a whole number and can be checked in your head. Angles like
-30 degrees bring in ``sqrt(3)/2``, and the numbers stop being tidy.
+The lengths are 3 m and 2 m, and the worked examples use 30, 45 and 60 degrees.
+Right angles would give whole numbers, but they also lay a link flat along an
+axis and collapse the angle you are trying to look at, which makes the pictures
+harder to read rather than easier.
+
+At ``q1 = 30``, ``3 * cos(30)`` is ``2.598...`` and cannot be tidier: ``cos(30)``
+is ``sqrt(3)/2``. The chosen pose keeps that to one number, which then repeats,
+while everything else lands on a half.
 """
 
 from __future__ import annotations

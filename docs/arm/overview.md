@@ -32,11 +32,14 @@ three, and none of the ideas change.
 when the arm was built. The gripper never moves relative to link 2, because it
 is bolted to it.
 
-The lengths are 3 m and 2 m, and every worked example below uses right angles.
-That is on purpose. `cos` and `sin` of 0° and 90° are 0 and 1, so every position
-comes out a whole number you can check in your head. An angle like 30° drags in
-`sqrt(3)/2 = 0.866...` and the numbers stop being tidy without teaching you
-anything extra.
+The lengths are 3 m and 2 m, and the worked examples use 30°, 45° and 60°.
+Right angles would give whole numbers everywhere, but they also lay a link flat
+along an axis and flatten the very angle each picture is trying to show. Slanted
+angles keep the drawings readable.
+
+One number pays for that: `3 · cos(30°)` is `2.598...`, and it cannot be tidier,
+because `cos(30°)` is `sqrt(3)/2`. The pose below keeps it to that one value,
+which then turns up again and again, while everything else lands on a half.
 
 We build up to this arm rather than starting there. Section 2 uses a simpler one
 first: a single joint with a single link.
@@ -108,15 +111,14 @@ into "this far across, this far up". Nothing more.
 The picture above shows both of those as the two sides of a right-angled
 triangle: `L1·cos(q1)` across the bottom, `L1·sin(q1)` up the side.
 
-Try `q1 = 90°`, straight up. `cos(90°)` is 0 and `sin(90°)` is 1, so the gripper
-is at `(3 · 0, 3 · 1)`, which is `(0, 3)`. Three metres up, nothing across.
+Try `q1 = 30°`. `cos(30°)` is `0.866...` and `sin(30°)` is exactly `0.5`, so the
+gripper is at `(3 · 0.866..., 3 · 0.5)`, which is `(2.598, 1.5)`.
 
-The picture shows that case on the right, and an untidy one on the left: at
-`q1 = 30°` the answer is `(2.598..., 1.5)`, because `cos(30°)` is `0.866...`.
-Both are correct. Only one is worth doing in your head, which is why the rest of
-this area sticks to right angles.
+Now turn the same link to `60°`, in the right-hand picture. The answer is
+`(1.5, 2.598)` — the same two numbers, swapped. That is `cos` and `sin` trading
+places: what one gives at 30°, the other gives at 60°.
 
-Step 1 prints a table of both kinds before it does anything else.
+Step 1 prints a table of these before it does anything else.
 
 One joint is easy. The interesting part starts when there are two.
 
@@ -131,8 +133,8 @@ exactly where the one-joint arm's gripper was:
 
 ![Adding the second joint](../images/arm/two_joints.svg)
 
-So the first half is already done. With `q1 = 90°`, joint 2 is at `(0, 3)`,
-same as the one-joint arm's gripper.
+So the first half is already done. With `q1 = 30°`, joint 2 is at
+`(2.598, 1.5)`, same as the one-joint arm's gripper.
 
 The catch is the angle of link 2, and the picture shows it. There are two arcs
 at joint 2. The grey one is `q2`, measured from link 1. The purple one is the
@@ -146,9 +148,14 @@ gripper_x = joint2_x + L2 · cos(q1 + q2)
 gripper_y = joint2_y + L2 · sin(q1 + q2)
 ```
 
-The picture uses `q2 = -90°`, which swings link 2 back down to horizontal. From
-the table, link 2 then points at `q1 + q2 = 0°`, so the gripper sits `L2` further
-along X: `(0 + 2, 3) = (2, 3)`.
+The picture uses `q2 = 60°`. Link 1 is already turned by 30°, so from the table
+link 2 points at `30° + 60° = 90°` — straight up. The gripper is therefore `L2`
+above joint 2: `(2.598, 1.5 + 2)`, or `(2.598, 3.5)`.
+
+Look at the picture again. There are two arcs at joint 2, and they are different
+sizes. The small one is `q2 = 60°`, measured from link 1. The large one is
+`q1 + q2 = 90°`, measured from the table. That gap is the whole point of this
+section.
 
 Try it with both joints straight instead, `q1 = 0` and `q2 = 0`. Every cosine is
 1 and every sine is 0, so the gripper is at `L1 + L2 = 5` metres straight out. A
@@ -245,8 +252,9 @@ y' = 1 · 1 + 0 · 0 = 1
 The answer is `(0, 1)`: one metre along Y. The point that pointed along X now
 points along Y, which is what a quarter turn should do.
 
-The picture uses `(3, 1)` turned by 90°, which lands on `(-1, 3)`. That is the
-same turn joint 1 applies to link 1, and again both numbers come out whole.
+The picture turns `(3, 1)` by 45°, which lands on `(1.414, 2.828)`. Less tidy
+than the check above, but it is the general case: both terms of each formula do
+some work, rather than one of them vanishing.
 
 This is `rotate_point()` in `arm_math.py`, and it is the only formula in the
 area. Everything below is built from it.
@@ -255,32 +263,33 @@ area. Everything below is built from it.
 
 Now the useful part. Two transforms end to end can be replaced by one.
 
-Take the first two rows of the table above, with `q1 = 90°` and `q2 = -90°`:
+Take the first two rows of the table above, with `q1 = 30°` and `q2 = 60°`:
 
-- `base_link` → `link1` is: shift `(0, 0)`, turn `90°`
-- `link1` → `link2` is: shift `(3, 0)`, turn `-90°`
+- `base_link` → `link1` is: shift `(0, 0)`, turn `30°`
+- `link1` → `link2` is: shift `(3, 0)`, turn `60°`
 
 To get `base_link` → `link2` directly, there are two rules.
 
-**The angles add.** `90° + (-90°) = 0°`.
+**The angles add.** `30° + 60° = 90°`.
 
 **The second shift has to be turned first.** The `(3, 0)` was measured along
-link 1, and link 1 is turned by 90°. So turn `(3, 0)` by 90° before using it:
+link 1, and link 1 is turned by 30°. So turn `(3, 0)` by 30° before using it:
 
 ```
-x = 3 · cos(90°) - 0 · sin(90°) = 3 · 0 - 0 = 0
-y = 3 · sin(90°) + 0 · cos(90°) = 3 · 1 + 0 = 3
+x = 3 · cos(30°) - 0 · sin(30°) = 3 · 0.866... = 2.598
+y = 3 · sin(30°) + 0 · cos(30°) = 3 · 0.5     = 1.5
 ```
 
 Then add the first shift, which here is `(0, 0)`. So `base_link` → `link2` is a
-shift of `(0, 3)` and a turn of `0°`.
+shift of `(2.598, 1.5)` and a turn of `90°`.
 
-That `(0, 3)` should look familiar. It is where joint 2 was in section 3, and
-where the one-joint arm's gripper was in section 2. Same point, reached three
+That `(2.598, 1.5)` should look familiar. It is where joint 2 was in section 3,
+and where the one-joint arm's gripper was in section 2. Same point, reached three
 different ways.
 
-Join the third row on the same way — shift `(2, 0)`, no turn — and you get
-`base_link` → `gripper`: a shift of `(2, 3)` and a turn of `0°`.
+Join the third row on the same way — shift `(2, 0)`, no turn. This time the shift
+gets turned by the running 90°, so `(2, 0)` becomes `(0, 2)`, and adding it gives
+`base_link` → `gripper`: a shift of `(2.598, 3.5)` and a turn of `90°`.
 
 ![Joining the links one at a time](../images/arm/joining.svg)
 
@@ -322,15 +331,15 @@ flipped angle = -angle
 flipped shift = turn the shift by -angle, then flip its sign
 ```
 
-This one needs a pose with a turn left in it, so step 3 uses `q1 = 180°`,
-`q2 = -90°`: link 1 goes left, link 2 goes up. There `base_link` → `gripper` is
-a shift of `(-3, 2)` and a turn of `90°`.
+At the pose we have been using, `base_link` → `gripper` is a shift of
+`(2.598, 3.5)` and a turn of `90°`.
 
-Flipped, `gripper` → `base_link` is a shift of `(-2, -3)` and a turn of `-90°`.
-Step 3 prints both, one under the other.
+Flipped, `gripper` → `base_link` is a shift of `(-3.5, 2.598)` and a turn of
+`-90°`. Step 3 prints both, one under the other.
 
-Look at what happened to the shift. `(-3, 2)` did not simply change sign. It
-came back as `(-2, -3)`, because it had to be turned by `-90°` on the way out.
+Look at what happened to the shift. `(2.598, 3.5)` did not simply change sign.
+The same two numbers came back **swapped**, with one negated, because the shift
+had to be turned by `-90°` on the way out.
 
 ![The same link read both ways](../images/arm/flipping.svg)
 
@@ -355,8 +364,9 @@ stays `(1, 0)` there forever, no matter how the arm moves, because it is bolted
 to the gripper.
 
 To find the tip on the table, apply `base_link` → `gripper` to that fixed point:
-turn it, then add the shift. At the main pose the tip lands at `(3, 3)`; at the
-`q1 = 180°` pose it lands at `(-3, 3)`.
+turn it, then add the shift. At the pose we have been using the tip lands at
+`(2.598, 4.5)`. At the second pose in the picture, `q1 = 60°` and `q2 = -60°`,
+it lands at `(4.5, 2.598)` — the same two numbers again, the other way round.
 
 ![The tip never moves in the gripper frame](../images/arm/carrying.svg)
 
@@ -449,8 +459,9 @@ on its own. Step 5 does not change at all — it still asks for two frame names.
 
 ![A third joint changes nothing](../images/arm/three_joints.svg)
 
-The picture adds a third link 1 m long, turned by `q3 = -90°`, and the tip lands
-at `(2, 2)` — still whole, still no new formula.
+The picture adds a third link 1 m long, turned by `q3 = -60°`. From the table it
+points at `30° + 60° - 60° = 30°`, and the tip lands at `(3.464, 4)`. No new
+formula was needed to work that out.
 
 **A gripper that can turn.** Right now the gripper is bolted on, so its row
 never changes. Give it a joint and that row starts changing with `q3` like any
@@ -529,9 +540,8 @@ loop. You should see:
 gripper at (+4.037, +2.713) facing   +17.4°   tool tip at (+4.991, +3.012)
 ```
 
-Those are not whole numbers, because the arm is swinging through every angle
-rather than sitting on a right angle. But the gap between the two pairs is
-always 1 m, whatever the arm does. That point never moved. It is fixed in the
+The arm is swinging through every angle, so these are whatever the moment gives.
+But the gap between the two pairs is always 1 m, whatever the arm does. That point never moved. It is fixed in the
 `gripper` frame, and only the frame went anywhere.
 
 ---

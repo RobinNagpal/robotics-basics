@@ -56,9 +56,8 @@ def main() -> None:
     """Show joining, flipping and applying, on one arm pose."""
     print(__doc__.split('THE IDEA')[0].strip())
 
-    # Right angles, so every number printed below is whole.
-    q1, q2 = math.radians(180.0), math.radians(-90.0)
-    print('\nArm pose: q1 = 180°, q2 = -90°\n')
+    q1, q2 = math.radians(30.0), math.radians(60.0)
+    print('\nArm pose: q1 = 30°, q2 = 60°\n')
 
     # --- forwards ------------------------------------------------------
     base_to_gripper = gripper_in_base(q1, q2)

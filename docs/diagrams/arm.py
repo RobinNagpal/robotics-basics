@@ -37,13 +37,14 @@ GRIP = '#e05555'
 INK = '#222222'
 MUTED = '#777777'
 
-#: The pose most pictures use. Right angles, so every number is whole.
-Q1 = math.radians(90.0)
-Q2 = math.radians(-90.0)
+#: The pose most pictures use. Slanted, so no link lies flat on an axis and
+#: every angle in the drawing is actually visible.
+Q1 = math.radians(30.0)
+Q2 = math.radians(60.0)
 
-#: A second pose, used where a non-zero total turn is needed. Also whole.
-R1 = math.radians(180.0)
-R2 = math.radians(-90.0)
+#: A second pose, used only where two poses need comparing.
+R1 = math.radians(60.0)
+R2 = math.radians(-60.0)
 
 JOINT2 = (LINK1_M * math.cos(Q1), LINK1_M * math.sin(Q1))
 GRIPPER = (JOINT2[0] + LINK2_M * math.cos(Q1 + Q2),
@@ -119,6 +120,14 @@ def _n(value, places=9):
     return round(value, places) + 0.0
 
 
+def _fmt(value):
+    """Format a coordinate: whole numbers stay short, the rest get 3 decimals."""
+    value = _n(value)
+    if value == round(value):
+        return f'{value:g}'
+    return f'{value:.3f}'.rstrip('0').rstrip('.')
+
+
 def _save(fig, name):
     fig.savefig(OUT_DIR / name, bbox_inches='tight', pad_inches=0.3, facecolor='white')
     plt.close(fig)
@@ -131,10 +140,11 @@ def _save(fig, name):
 
 def arm():
     """Draw the whole arm with its four frames. Used at the top of the doc."""
-    fig, ax = _axes((-1.9, 4.5), (-1.3, 4.7))
+    fig, ax = _axes((-1.7, 5.5), (-1.5, 5.0), size=(6.6, 5.4))
 
-    _dashed(ax, (0, 0), (1.5, 0))
-    _dashed(ax, JOINT2, (JOINT2[0], JOINT2[1] + 1.1))
+    _dashed(ax, (0, 0), (1.7, 0))
+    ext = (JOINT2[0] + 1.1 * math.cos(Q1), JOINT2[1] + 1.1 * math.sin(Q1))
+    _dashed(ax, JOINT2, ext)
 
     _link(ax, (0, 0), JOINT2)
     _link(ax, JOINT2, GRIPPER)
@@ -142,36 +152,33 @@ def arm():
     _joint(ax, JOINT2)
     _gripper(ax, GRIPPER)
 
-    _arc(ax, (0, 0), 1.0, 0, Q1, 'q1 = 90°', (1.05, 0.95))
-    _arc(ax, JOINT2, 0.75, Q1 + Q2, Q1, 'q2 = -90°', (0.95, 3.80))
+    _arc(ax, (0, 0), 1.1, 0, Q1, 'q1 = 30°', (1.62, 0.34))
+    _arc(ax, JOINT2, 0.95, Q1, Q1 + Q2, 'q2 = 60°', (JOINT2[0] + 0.72, JOINT2[1] + 1.18))
 
-    ax.text(-0.30, LINK1_M / 2, f'L1 = {LINK1_M:g} m', color=MUTED, fontsize=10,
-            family='monospace', ha='right', va='center')
-    ax.text(1.0, 2.62, f'L2 = {LINK2_M:g} m', color=MUTED, fontsize=10,
+    ax.text(0.82, 1.55, f'L1 = {LINK1_M:g} m', color=MUTED, fontsize=10,
             family='monospace', ha='center')
+    ax.text(2.30, 2.50, f'L2 = {LINK2_M:g} m', color=MUTED, fontsize=10,
+            family='monospace', ha='right')
 
-    _frame(ax, 0, 0, 0.0, 'base_link', length=0.95, offset=(-0.90, -0.42))
-    _frame(ax, 0, 0, Q1, 'link1', length=0.60, offset=(0.62, -0.42))
-    _frame(ax, JOINT2[0], JOINT2[1], Q1 + Q2, 'link2', offset=(-0.65, -0.36), length=0.75)
-    _frame(ax, GRIPPER[0], GRIPPER[1], Q1 + Q2, 'gripper', offset=(0.80, -0.42), length=0.75)
+    _frame(ax, 0, 0, 0.0, 'base_link', length=1.0, offset=(-0.20, -0.55))
+    _frame(ax, 0, 0, Q1, 'link1', length=0.75, offset=(1.15, -0.42))
+    _frame(ax, JOINT2[0], JOINT2[1], Q1 + Q2, 'link2', length=0.8,
+           offset=(-0.90, 0.42))
+    _frame(ax, GRIPPER[0], GRIPPER[1], Q1 + Q2, 'gripper', length=0.8,
+           offset=(0.95, 0.15))
 
-    ax.text(2.32, 3.42, '(2, 3)', color=INK, fontsize=9.5, family='monospace',
-            ha='left', va='center')
-    ax.text(-0.32, 3.30, '(0, 3)', color=INK, fontsize=9.5, family='monospace',
-            ha='right', va='center')
-
-    _title(ax, 1.3, 4.45, 'The arm and its frames')
-    _caption(ax, 1.3, -1.15,
+    _title(ax, 1.9, 4.75, 'The arm and its frames')
+    _caption(ax, 1.9, -1.35,
              'q1 turns joint 1 · q2 turns joint 2 · the gripper is bolted on')
     _save(fig, 'arm.svg')
 
 
 def one_joint():
-    """Draw the simplest arm twice: a general angle, then a right angle."""
+    """Draw the simplest arm at two angles, to show what cos and sin do."""
     fig, axes = plt.subplots(1, 2, figsize=(10.2, 4.6), facecolor='white')
 
-    for ax, q1, tidy in zip(axes, (math.radians(30.0), math.radians(90.0)), (False, True)):
-        _axes((-1.6, 4.4), (-1.7, 4.2), ax=ax)
+    for ax, q1 in zip(axes, (math.radians(30.0), math.radians(60.0))):
+        _axes((-1.7, 4.4), (-1.7, 4.2), ax=ax)
         tip = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
 
         ax.annotate('', xy=(3.9, 0), xytext=(0, 0),
@@ -184,35 +191,32 @@ def one_joint():
         _link(ax, (0, 0), tip)
         _joint(ax, (0, 0), size=11)
         _gripper(ax, tip, size=9)
-        _arc(ax, (0, 0), 0.85, 0, q1, f'q1 = {math.degrees(q1):.0f}°',
+        _arc(ax, (0, 0), 0.9, 0, q1, f'q1 = {math.degrees(q1):.0f}°',
              (1.45 * math.cos(q1 / 2), 1.45 * math.sin(q1 / 2)), size=10)
 
-        across = '3·cos(90°) = 0' if tidy else 'L1·cos(q1) = 2.6...'
-        up = '3·sin(90°)|= 3' if tidy else 'L1·sin(q1)|= 1.5'
-        ax.text(max(tip[0] / 2, 0.55), -0.6, across, color=AXIS_X, fontsize=10,
-                family='monospace', ha='center')
-        ax.text(-0.28, tip[1] / 2, up.replace('|', chr(10)), color=AXIS_Y,
-                fontsize=10, family='monospace', ha='right', va='center')
-        shown = (f'({_n(tip[0]):g}, {_n(tip[1]):g})' if tidy
-                 else f'({tip[0]:.1f}..., {_n(tip[1]):g})')
-        ax.text(tip[0] + 0.22, tip[1] + 0.28, shown, color=INK, fontsize=10,
-                family='monospace', ha='left', va='bottom')
-        ax.text(1.4, -1.55,
-                'a right angle: whole numbers' if tidy else 'any old angle: untidy numbers',
-                fontsize=10.5, ha='center', color=MUTED)
+        ax.text(tip[0] / 2, -0.62, f'3·cos(q1) = {tip[0]:.3f}', color=AXIS_X,
+                fontsize=10, family='monospace', ha='center')
+        ax.text(-0.28, tip[1] / 2, '3·sin(q1)', color=AXIS_Y, fontsize=10,
+                family='monospace', ha='right', va='bottom')
+        ax.text(-0.28, tip[1] / 2 - 0.42, f'= {tip[1]:.3f}', color=AXIS_Y,
+                fontsize=10, family='monospace', ha='right', va='bottom')
+        ax.text(tip[0] + 0.22, tip[1] + 0.28, f'({_fmt(tip[0])}, {_fmt(tip[1])})',
+                color=INK, fontsize=10, family='monospace', ha='left', va='bottom')
 
-    fig.suptitle(f'One joint, one link  (L1 = {LINK1_M:g} m)', fontsize=13,
-                 weight='bold', y=1.0)
+    fig.suptitle(f'One joint, one link  (L1 = {LINK1_M:g} m).  '
+                 'Turn it from 30° to 60° and the two swap round.',
+                 fontsize=12.5, weight='bold', y=1.0)
     _save(fig, 'one_joint.svg')
 
 
 def two_joints():
     """Draw the two-joint arm, showing that q2 is measured from link 1."""
-    fig, ax = _axes((-2.5, 5.2), (-1.5, 4.9), size=(6.6, 5.4))
+    fig, ax = _axes((-2.0, 6.0), (-1.6, 5.2), size=(6.8, 5.4))
 
-    _dashed(ax, (0, 0), (1.4, 0))
-    _dashed(ax, JOINT2, (JOINT2[0], JOINT2[1] + 1.3))
-    _dashed(ax, JOINT2, (JOINT2[0] + 1.5, JOINT2[1]))
+    _dashed(ax, (0, 0), (1.8, 0))
+    ext = (JOINT2[0] + 1.5 * math.cos(Q1), JOINT2[1] + 1.5 * math.sin(Q1))
+    _dashed(ax, JOINT2, ext)
+    _dashed(ax, JOINT2, (JOINT2[0] + 2.1, JOINT2[1]))
 
     _link(ax, (0, 0), JOINT2)
     _link(ax, JOINT2, GRIPPER)
@@ -220,33 +224,31 @@ def two_joints():
     _joint(ax, JOINT2)
     _gripper(ax, GRIPPER)
 
-    _arc(ax, (0, 0), 0.85, 0, Q1, 'q1 = 90°', (1.20, 0.85))
-    _arc(ax, JOINT2, 0.85, Q1 + Q2, Q1, 'q2 = -90°', (1.00, 3.95))
+    _arc(ax, (0, 0), 1.05, 0, Q1, 'q1 = 30°', (1.60, 0.32))
+    _arc(ax, JOINT2, 0.95, Q1, Q1 + Q2, 'q2 = 60°',
+         (JOINT2[0] + 0.95, JOINT2[1] + 0.50))
+    _arc(ax, JOINT2, 1.85, 0, Q1 + Q2, 'q1 + q2 = 90°',
+         (JOINT2[0] + 1.30, JOINT2[1] + 2.05), color='#b06fc4', size=10)
 
-    ax.text(-0.3, 1.5, f'L1 = {LINK1_M:g}', color=MUTED, fontsize=10,
-            family='monospace', ha='right', va='center')
-    ax.text(1.0, 2.60, f'L2 = {LINK2_M:g}', color=MUTED, fontsize=10,
+    ax.text(0.80, 1.58, f'L1 = {LINK1_M:g}', color=MUTED, fontsize=10,
             family='monospace', ha='center')
+    ax.text(2.30, 2.50, f'L2 = {LINK2_M:g}', color=MUTED, fontsize=10,
+            family='monospace', ha='right')
 
-    ax.text(-0.35, 3.0, 'joint 2 (0, 3)', color=INK, fontsize=9.5,
+    ax.text(2.90, 1.10, 'joint 2 (2.598, 1.5)', color=INK, fontsize=9.5,
+            family='monospace', ha='left', va='center')
+    ax.text(2.36, 3.62, 'gripper (2.598, 3.5)', color=INK, fontsize=9.5,
             family='monospace', ha='right', va='center')
-    ax.text(2.35, 3.0, 'gripper (2, 3)', color=INK, fontsize=9.5,
-            family='monospace', ha='left', va='center')
 
-    ax.text(1.55, 2.45, 'from the table, link 2', color='#8b4fa5', fontsize=9.5,
-            family='monospace', ha='left', va='center')
-    ax.text(1.55, 2.15, 'points at q1 + q2 = 0°', color='#8b4fa5', fontsize=9.5,
-            family='monospace', ha='left', va='center')
-
-    _title(ax, 1.2, 4.65, 'Adding the second joint')
-    _caption(ax, 1.2, -1.35,
+    _title(ax, 2.0, 4.95, 'Adding the second joint')
+    _caption(ax, 2.0, -1.45,
              'q2 is measured from link 1 · from the table it comes to q1 + q2')
     _save(fig, 'two_joints.svg')
 
 
 def joining():
     """Show the chain being joined one link at a time, in three panels."""
-    fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.1), facecolor='white')
+    fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.2), facecolor='white')
 
     running = Transform2D()
     steps = [
@@ -259,7 +261,7 @@ def joining():
              Transform2D.translation(LINK2_M, 0.0)]
 
     for ax, (caption, name, point), link in zip(axes, steps, links):
-        _axes((-1.6, 4.0), (-2.0, 5.0), ax=ax)
+        _axes((-1.4, 4.4), (-2.1, 5.0), ax=ax)
         running = running.then(link)
 
         _link(ax, (0, 0), JOINT2, color=LINK_PALE, width=5)
@@ -283,15 +285,14 @@ def joining():
                         arrowprops={'arrowstyle': '-|>', 'color': '#b06fc4',
                                     'lw': 1.8, 'shrinkA': 0, 'shrinkB': 0},
                         zorder=5)
-        _frame(ax, point[0], point[1], running.theta, '', length=0.85)
+        _frame(ax, point[0], point[1], running.theta, '', length=0.9)
 
-        ax.text(1.2, 4.62, caption, fontsize=11, ha='center', color=INK,
+        ax.text(1.5, 4.62, caption, fontsize=11, ha='center', color=INK,
                 family='monospace', weight='bold')
-        ax.text(1.2, -1.5,
-                f'shift ({_n(running.x):g}, {_n(running.y):g})', fontsize=11,
-                ha='center', color=MUTED, family='monospace')
-        ax.text(1.2, -1.9, f'turn {math.degrees(running.theta):.0f}°', fontsize=11,
-                ha='center', color=MUTED, family='monospace')
+        ax.text(1.5, -1.55, f'shift ({_fmt(running.x)}, {_fmt(running.y)})',
+                fontsize=11, ha='center', color=MUTED, family='monospace')
+        ax.text(1.5, -2.0, f'turn {math.degrees(running.theta):.0f}°',
+                fontsize=11, ha='center', color=MUTED, family='monospace')
 
     fig.suptitle('Joining the links, one at a time', fontsize=13, weight='bold', y=1.0)
     _save(fig, 'joining.svg')
@@ -299,47 +300,44 @@ def joining():
 
 def flipping():
     """Show the same relationship read in both directions."""
-    fig, ax = _axes((-6.9, 3.4), (-2.9, 4.3), size=(7.2, 5.0))
+    fig, ax = _axes((-2.4, 6.6), (-2.4, 4.9), size=(7.0, 5.0))
 
-    joint2 = (LINK1_M * math.cos(R1), LINK1_M * math.sin(R1))
-    grip = (joint2[0] + LINK2_M * math.cos(R1 + R2),
-            joint2[1] + LINK2_M * math.sin(R1 + R2))
-
-    _link(ax, (0, 0), joint2, color=LINK_PALE, width=5)
-    _link(ax, joint2, grip, color=LINK_PALE, width=5)
+    _link(ax, (0, 0), JOINT2, color=LINK_PALE, width=5)
+    _link(ax, JOINT2, GRIPPER, color=LINK_PALE, width=5)
     _joint(ax, (0, 0), size=11)
-    _joint(ax, joint2, size=11)
-    _gripper(ax, grip, size=9)
+    _joint(ax, JOINT2, size=11)
+    _gripper(ax, GRIPPER, size=9)
 
-    forward = gripper_in_base(R1, R2)
+    forward = gripper_in_base(Q1, Q2)
     back = forward.inverse()
 
-    ax.annotate('', xy=grip, xytext=(0, 0),
+    ax.annotate('', xy=GRIPPER, xytext=(0, 0),
                 arrowprops={'arrowstyle': '-|>', 'color': '#b06fc4', 'lw': 2.0,
-                            'connectionstyle': 'arc3,rad=0.3'}, zorder=5)
-    ax.annotate('', xy=(0, 0), xytext=grip,
+                            'connectionstyle': 'arc3,rad=-0.3'}, zorder=5)
+    ax.annotate('', xy=(0, 0), xytext=GRIPPER,
                 arrowprops={'arrowstyle': '-|>', 'color': '#3aa39a', 'lw': 2.0,
-                            'connectionstyle': 'arc3,rad=0.3'}, zorder=5)
+                            'connectionstyle': 'arc3,rad=-0.3'}, zorder=5)
 
-    _frame(ax, 0, 0, 0.0, 'base_link', length=0.85, offset=(0.85, -0.55))
-    _frame(ax, grip[0], grip[1], R1 + R2, 'gripper', length=0.85, offset=(-1.0, 0.35))
+    _frame(ax, 0, 0, 0.0, 'base_link', length=0.9, offset=(-0.15, -0.55))
+    _frame(ax, GRIPPER[0], GRIPPER[1], Q1 + Q2, 'gripper', length=0.9,
+           offset=(1.05, 0.15))
 
-    ax.text(-6.6, 1.5, 'base_link -> gripper', color='#8b4fa5', fontsize=10,
+    ax.text(-2.2, 3.6, 'base_link -> gripper', color='#8b4fa5', fontsize=10,
             family='monospace', ha='left')
-    ax.text(-6.6, 1.05, f'shift ({_n(forward.x):g}, {_n(forward.y):g})', color='#8b4fa5',
-            fontsize=10, family='monospace', ha='left')
-    ax.text(-6.6, 0.6, f'turn {math.degrees(forward.theta):.0f}°', color='#8b4fa5',
+    ax.text(-2.2, 3.15, f'shift ({_fmt(forward.x)}, {_fmt(forward.y)})',
+            color='#8b4fa5', fontsize=10, family='monospace', ha='left')
+    ax.text(-2.2, 2.70, f'turn {math.degrees(forward.theta):.0f}°', color='#8b4fa5',
             fontsize=10, family='monospace', ha='left')
 
-    ax.text(-6.7, -0.85, 'gripper -> base_link', color='#2b7d76', fontsize=10,
+    ax.text(3.5, 0.55, 'gripper -> base_link', color='#2b7d76', fontsize=10,
             family='monospace', ha='left')
-    ax.text(-6.7, -1.35, f'shift ({_n(back.x):g}, {_n(back.y):g})', color='#2b7d76',
+    ax.text(3.5, 0.10, f'shift ({_fmt(back.x)}, {_fmt(back.y)})', color='#2b7d76',
             fontsize=10, family='monospace', ha='left')
-    ax.text(-6.7, -1.85, f'turn {math.degrees(back.theta):.0f}°', color='#2b7d76',
+    ax.text(3.5, -0.35, f'turn {math.degrees(back.theta):.0f}°', color='#2b7d76',
             fontsize=10, family='monospace', ha='left')
 
-    _title(ax, -1.7, 4.05, 'The same link, read both ways')
-    _caption(ax, -1.7, -2.65, 'nothing new was measured — the turn and shift are undone')
+    _title(ax, 2.1, 4.65, 'The same link, read both ways')
+    _caption(ax, 2.1, -2.1, 'the same two numbers come back, swapped and turned')
     _save(fig, 'flipping.svg')
 
 
@@ -348,7 +346,7 @@ def carrying():
     fig, axes = plt.subplots(1, 2, figsize=(10.2, 4.8), facecolor='white')
 
     for ax, (q1, q2) in zip(axes, [(Q1, Q2), (R1, R2)]):
-        _axes((-4.9, 4.9), (-3.1, 4.6), ax=ax)
+        _axes((-1.6, 6.4), (-2.6, 5.6), ax=ax)
         joint2 = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
         grip = (joint2[0] + LINK2_M * math.cos(q1 + q2),
                 joint2[1] + LINK2_M * math.sin(q1 + q2))
@@ -362,15 +360,15 @@ def carrying():
         tip = gripper_in_base(q1, q2).apply(1.0, 0.0)
         _dashed(ax, grip, tip, color='#c9a227')
         ax.plot([tip[0]], [tip[1]], '*', color='#c9a227', ms=17, zorder=5)
-        _frame(ax, grip[0], grip[1], q1 + q2, '', length=0.7)
+        _frame(ax, grip[0], grip[1], q1 + q2, '', length=0.75)
 
-        ax.text(tip[0], tip[1] + 1.05, 'tip on the table', color=INK, fontsize=10,
-                family='monospace', ha='center', va='bottom')
-        ax.text(tip[0], tip[1] + 0.55, f'({_n(tip[0]):g}, {_n(tip[1]):g})', color=INK,
+        ax.text(tip[0] + 0.45, tip[1] + 0.95, 'tip on the table', color=INK,
                 fontsize=10, family='monospace', ha='center', va='bottom')
-        ax.text(0.0, -2.1, f'q1 = {math.degrees(q1):.0f}°, q2 = {math.degrees(q2):.0f}°',
+        ax.text(tip[0] + 0.45, tip[1] + 0.5, f'({_fmt(tip[0])}, {_fmt(tip[1])})',
+                color=INK, fontsize=10, family='monospace', ha='center', va='bottom')
+        ax.text(2.4, -1.7, f'q1 = {math.degrees(q1):.0f}°, q2 = {math.degrees(q2):.0f}°',
                 fontsize=11, ha='center', color=INK, family='monospace')
-        ax.text(0.0, -2.85, 'in the gripper frame: (1, 0)', color='#8a6d1f',
+        ax.text(2.4, -2.4, 'in the gripper frame: (1, 0)', color='#8a6d1f',
                 fontsize=10, family='monospace', ha='center')
 
     fig.suptitle('The tip never moves in the gripper frame', fontsize=13,
@@ -380,17 +378,17 @@ def carrying():
 
 def three_joints():
     """Sketch a third joint, to show the pattern does not change."""
-    fig, ax = _axes((-2.2, 5.6), (-1.7, 4.9), size=(6.8, 5.2))
+    fig, ax = _axes((-2.0, 6.6), (-1.7, 5.4), size=(6.8, 5.2))
 
     link3_m = 1.0
-    q3 = math.radians(-90.0)
+    q3 = math.radians(-60.0)
     joint3 = GRIPPER
     tip = (joint3[0] + link3_m * math.cos(Q1 + Q2 + q3),
            joint3[1] + link3_m * math.sin(Q1 + Q2 + q3))
 
-    _dashed(ax, (0, 0), (1.3, 0))
-    _dashed(ax, JOINT2, (JOINT2[0], JOINT2[1] + 1.2))
-    _dashed(ax, joint3, (joint3[0] + 1.3, joint3[1]))
+    _dashed(ax, (0, 0), (1.6, 0))
+    _dashed(ax, JOINT2, (JOINT2[0] + 1.2 * math.cos(Q1), JOINT2[1] + 1.2 * math.sin(Q1)))
+    _dashed(ax, joint3, (joint3[0], joint3[1] + 1.2))
 
     _link(ax, (0, 0), JOINT2)
     _link(ax, JOINT2, joint3)
@@ -400,19 +398,21 @@ def three_joints():
     _joint(ax, joint3)
     _gripper(ax, tip)
 
-    _arc(ax, (0, 0), 0.8, 0, Q1, 'q1', (1.05, 0.75))
-    _arc(ax, JOINT2, 0.8, Q1 + Q2, Q1, 'q2', (1.15, 3.60))
-    _arc(ax, joint3, 0.7, Q1 + Q2 + q3, Q1 + Q2, 'q3', (3.15, 2.70))
+    _arc(ax, (0, 0), 1.0, 0, Q1, 'q1', (1.35, 0.30))
+    _arc(ax, JOINT2, 0.9, Q1, Q1 + Q2, 'q2', (JOINT2[0] + 0.48, JOINT2[1] + 1.12))
+    _arc(ax, joint3, 0.85, Q1 + Q2 + q3, Q1 + Q2, 'q3',
+         (joint3[0] + 0.72, joint3[1] + 0.82))
 
-    ax.text(2.55, 1.55, f'link 3 is new (L3 = {link3_m:g})', color=MUTED,
-            fontsize=10, family='monospace', ha='left', va='center')
-    ax.annotate('', xy=(tip[0] + 0.14, (joint3[1] + tip[1]) / 2), xytext=(2.48, 1.6),
+    ax.text(4.6, 3.1, f'link 3 is new (L3 = {link3_m:g})', color=MUTED,
+            fontsize=10, family='monospace', ha='center', va='center')
+    ax.annotate('', xy=((joint3[0] + tip[0]) / 2 + 0.12, (joint3[1] + tip[1]) / 2),
+                xytext=(4.6, 3.3),
                 arrowprops={'arrowstyle': '-|>', 'color': GRID, 'lw': 1.2})
-    ax.text(1.82, tip[1], f'({_n(tip[0]):g}, {_n(tip[1]):g})', color=INK,
-            fontsize=9.5, family='monospace', ha='right', va='center')
+    ax.text(tip[0] + 0.25, tip[1] - 0.05, f'({_fmt(tip[0])}, {_fmt(tip[1])})',
+            color=INK, fontsize=9.5, family='monospace', ha='left', va='center')
 
-    _title(ax, 1.6, 4.65, 'A third joint changes nothing')
-    _caption(ax, 1.6, -1.55,
+    _title(ax, 2.2, 5.15, 'A third joint changes nothing')
+    _caption(ax, 2.2, -1.55,
              'one more row in the list · joining produces q1 + q2 + q3 on its own')
     _save(fig, 'three_joints.svg')
 
@@ -421,7 +421,7 @@ def rotation():
     """Draw a point being turned about the origin, with the formula."""
     fig, ax = _axes((-3.0, 5.6), (-2.9, 4.7), size=(6.4, 5.4))
 
-    theta = math.pi / 2
+    theta = math.radians(45.0)
     px, py = 3.0, 1.0
     qx, qy = rotate_point(px, py, theta)
 
@@ -438,19 +438,17 @@ def rotation():
                      color=GRID, lw=1.4, ls=(0, (5, 4))))
 
     for x, y, label, color in ((px, py, 'the point', '#888888'),
-                               (qx, qy, 'turned by 90°', LINK)):
+                               (qx, qy, 'turned by 45°', LINK)):
         ax.plot([0, x], [0, y], color=color, lw=1.8, zorder=2)
         ax.plot([x], [y], 'o', color=color, ms=11, zorder=3)
-        side = -0.25 if x < 0 else 0.2
-        align = 'right' if x < 0 else 'left'
-        ax.text(x + side, y + 0.45, label, color=INK, fontsize=10,
-                family='monospace', ha=align, va='bottom')
-        ax.text(x + side, y + 0.1, f'({_n(x):g}, {_n(y):g})', color=INK, fontsize=10,
-                family='monospace', ha=align, va='bottom')
+        ax.text(x + 0.2, y + 0.5, label, color=INK, fontsize=10,
+                family='monospace', ha='left', va='bottom')
+        ax.text(x + 0.2, y + 0.12, f'({_fmt(x)}, {_fmt(y)})', color=INK,
+                fontsize=10, family='monospace', ha='left', va='bottom')
 
-    ax.add_patch(Arc((0, 0), 1.7, 1.7, theta1=math.degrees(math.atan2(py, px)),
+    ax.add_patch(Arc((0, 0), 2.2, 2.2, theta1=math.degrees(math.atan2(py, px)),
                      theta2=math.degrees(math.atan2(qy, qx)), color=MUTED, lw=1.3))
-    ax.text(0.80, 1.10, 'theta', color=INK, fontsize=10, family='monospace')
+    ax.text(1.30, 0.95, 'theta', color=INK, fontsize=10, family='monospace')
 
     _title(ax, 1.4, 4.55, 'Turning a point about the origin')
     ax.text(1.2, -1.95, "x' = x·cos(theta) − y·sin(theta)", fontsize=10.5,

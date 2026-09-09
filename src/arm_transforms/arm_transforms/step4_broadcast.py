@@ -8,16 +8,23 @@ Steps 1 to 3 were plain Python. Nothing was shared, and nothing else could ask
 where the gripper was. This step publishes the *same* transforms from
 ``arm_math`` onto ``/tf``, where any program on the robot can use them.
 
-What changes: nothing about the maths. ``arm_transforms(q1, q2)`` is imported
+TF is the part of ROS that keeps track of frames. The name is short for
+*transform*.
+
+What changes: nothing about the maths. ``all_links(q1, q2)`` is imported
 unchanged. The node only turns each link into a ROS message and sends it.
 
 WHAT GETS SENT
 --------------
-Three transforms, once per tick::
+Four transforms, once per tick::
 
-    base_link -> upper_arm      turn by q1
-    upper_arm -> forearm        move L1, turn by q2
-    forearm   -> gripper        move L2
+    base_link -> link1      turn by q1              (joint 1)
+    link1     -> link2      move L1, turn by q2     (joint 2)
+    link2     -> gripper    move L2                 (bolted on, not a joint)
+    link2     -> camera     move and turn, fixed    (bolted on, not a joint)
+
+Two of those four are joints, and two are brackets that never change. TF does
+not care which is which. A transform is a transform.
 
 Notice we publish each link on its own, exactly as written in step 2. We never
 publish base_link->gripper. Anyone who wants it asks TF, and TF joins the chain.
@@ -26,9 +33,9 @@ That is step 5.
 AND THE SHAPES
 --------------
 The arm is drawn with markers, and each one is placed **in the frame it belongs
-to**: the upper arm box is described in ``upper_arm`` and never moves in that
-frame. TF moves the frame; the box follows. Same idea as the ball in the RViz
-area, now with five shapes instead of one.
+to**: the bar for link 1 is described inside ``link1`` and never moves in that
+frame. TF moves the frame; the bar follows. Same idea as the ball in the RViz
+area, now with six shapes instead of one.
 
 ROTATIONS IN ROS
 ----------------
@@ -41,7 +48,7 @@ from __future__ import annotations
 
 import math
 
-from arm_transforms.arm_math import arm_transforms, LINK1_M, LINK2_M, yaw_to_quaternion
+from arm_transforms.arm_math import all_links, LINK1_M, LINK2_M, yaw_to_quaternion
 from geometry_msgs.msg import TransformStamped
 from rcl_interfaces.msg import ParameterDescriptor
 import rclpy
@@ -61,14 +68,14 @@ class ArmBroadcaster(Node):
         super().__init__('arm_broadcaster')
 
         rate_hz = self._float_param('publish_rate_hz', 30.0, 'Updates per second.')
-        self._shoulder_swing = self._float_param(
-            'shoulder_swing_deg', 45.0, 'How far the shoulder swings each way.')
-        self._elbow_swing = self._float_param(
-            'elbow_swing_deg', 60.0, 'How far the elbow swings each way.')
-        self._shoulder_period = self._float_param(
-            'shoulder_period_s', 8.0, 'Seconds for one shoulder swing cycle.')
-        self._elbow_period = self._float_param(
-            'elbow_period_s', 5.0, 'Seconds for one elbow swing cycle.')
+        self._joint1_swing = self._float_param(
+            'joint1_swing_deg', 45.0, 'How far joint 1 swings each way.')
+        self._joint2_swing = self._float_param(
+            'joint2_swing_deg', 60.0, 'How far joint 2 swings each way.')
+        self._joint1_period = self._float_param(
+            'joint1_period_s', 8.0, 'Seconds for one swing cycle of joint 1.')
+        self._joint2_period = self._float_param(
+            'joint2_period_s', 5.0, 'Seconds for one swing cycle of joint 2.')
 
         self._tf_broadcaster = TransformBroadcaster(self)
         self._marker_pub = self.create_publisher(MarkerArray, MARKER_TOPIC, 10)
@@ -77,7 +84,7 @@ class ArmBroadcaster(Node):
         self.create_timer(1.0 / rate_hz, self._on_timer)
 
         self.get_logger().info(
-            f'Publishing base_link -> upper_arm -> forearm -> gripper '
+            f'Publishing base_link -> link1 -> link2 -> gripper, plus link2 -> camera, '
             f"and shapes on '{MARKER_TOPIC}' at {rate_hz:g} Hz"
         )
 
@@ -91,10 +98,10 @@ class ArmBroadcaster(Node):
         The two periods do not divide into each other, so the arm keeps
         producing new poses instead of repeating a short loop.
         """
-        q1 = math.radians(self._shoulder_swing) * math.sin(
-            2.0 * math.pi * elapsed_s / self._shoulder_period)
-        q2 = math.radians(self._elbow_swing) * math.sin(
-            2.0 * math.pi * elapsed_s / self._elbow_period)
+        q1 = math.radians(self._joint1_swing) * math.sin(
+            2.0 * math.pi * elapsed_s / self._joint1_period)
+        q2 = math.radians(self._joint2_swing) * math.sin(
+            2.0 * math.pi * elapsed_s / self._joint2_period)
         return q1, q2
 
     def _on_timer(self) -> None:
@@ -105,7 +112,7 @@ class ArmBroadcaster(Node):
         # One message per link, straight from the same list step 2 used.
         transforms = [
             self._to_message(now, parent, child, link)
-            for parent, child, link in arm_transforms(q1, q2)
+            for parent, child, link in all_links(q1, q2)
         ]
         self._tf_broadcaster.sendTransform(transforms)
         self._marker_pub.publish(self._build_markers(now))
@@ -128,13 +135,14 @@ class ArmBroadcaster(Node):
         return message
 
     def _build_markers(self, stamp) -> MarkerArray:
-        """Draw two link boxes and three joint balls, each in its own frame."""
+        """Draw the links, the joints, the gripper and the camera, each in its own frame."""
         return MarkerArray(markers=[
-            self._bar(stamp, 0, 'upper_arm', LINK1_M, (0.25, 0.55, 0.95)),
-            self._bar(stamp, 1, 'forearm', LINK2_M, (0.25, 0.75, 0.95)),
-            self._ball(stamp, 2, 'upper_arm', 0.09, (0.95, 0.75, 0.15)),
-            self._ball(stamp, 3, 'forearm', 0.09, (0.95, 0.75, 0.15)),
+            self._bar(stamp, 0, 'link1', LINK1_M, (0.25, 0.55, 0.95)),
+            self._bar(stamp, 1, 'link2', LINK2_M, (0.25, 0.75, 0.95)),
+            self._ball(stamp, 2, 'link1', 0.09, (0.95, 0.75, 0.15)),
+            self._ball(stamp, 3, 'link2', 0.09, (0.95, 0.75, 0.15)),
             self._ball(stamp, 4, 'gripper', 0.07, (0.95, 0.35, 0.35)),
+            self._box(stamp, 5, 'camera', (0.06, 0.05, 0.05), (0.55, 0.55, 0.60)),
         ])
 
     def _bar(self, stamp, marker_id: int, frame: str, length: float, rgb) -> Marker:
@@ -152,6 +160,12 @@ class ArmBroadcaster(Node):
         """Draw a joint as a ball at its frame's origin."""
         marker = self._blank(stamp, marker_id, frame, Marker.SPHERE, rgb)
         marker.scale.x = marker.scale.y = marker.scale.z = size
+        return marker
+
+    def _box(self, stamp, marker_id: int, frame: str, size, rgb) -> Marker:
+        """Draw the camera body at its frame's origin."""
+        marker = self._blank(stamp, marker_id, frame, Marker.CUBE, rgb)
+        marker.scale.x, marker.scale.y, marker.scale.z = size
         return marker
 
     def _blank(self, stamp, marker_id: int, frame: str, shape: int, rgb) -> Marker:

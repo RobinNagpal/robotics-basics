@@ -1,19 +1,46 @@
 # Position, frames and transforms
 
-A robot arm has to answer one question, over and over: **where is my hand right
-now?**
+A robot arm has to answer one question, over and over: **where is my gripper
+right now?**
 
 That sounds easy. It is not, and the way robots answer it is the foundation for
 almost everything else they do. This area works up to the answer over five small
 programs you can read and run.
 
+## The arm used in this doc
+
+Everything below is explained on one example arm. It is worth fixing in your
+head before going on:
+
+- **2 joints**, numbered from the base outwards, called `q1` and `q2`
+- **2 rigid links**, called `L1` and `L2`
+- **a gripper**, bolted to the far end of link 2 — it is *not* a joint
+- **a camera**, bolted to the side of link 2 — also *not* a joint
+
+The arm is flat, as if lying on a table. That keeps it to one angle instead of
+three, and none of the ideas change.
+
 ![The arm and its frames](../images/arm/arm.svg)
+
+| Name | What it is | Value |
+| --- | --- | --- |
+| `q1` | angle of joint 1, the one attached to the base | changes |
+| `q2` | angle of joint 2, at the far end of link 1 | changes |
+| `L1` | length of link 1 | 0.5 m, fixed |
+| `L2` | length of link 2 | 0.4 m, fixed |
+
+`q1` and `q2` are the two things the robot controls. `L1` and `L2` were decided
+when the arm was built. The gripper and the camera never move relative to
+link 2, because they are bolted to it.
+
+We build up to this arm rather than starting there. Section 2 uses a simpler one
+first: a single joint with a single link.
 
 ## Contents
 
 1. [The question this area answers](#1-the-question-this-area-answers)
-2. [Meet the arm](#2-meet-the-arm)
-3. [Step 1: work it out by hand](#3-step-1-work-it-out-by-hand)
+2. [Start simple: one joint, one link](#2-start-simple-one-joint-one-link)
+3. [Step 1: two joints, worked out by hand](#3-step-1-two-joints-worked-out-by-hand)
 4. [Step 2: describe each part once](#4-step-2-describe-each-part-once)
    · [What a frame is](#what-a-frame-is)
    · [What a transform is](#what-a-transform-is)
@@ -25,83 +52,90 @@ programs you can read and run.
    · [Carrying a point](#carrying-a-point)
 6. [Step 4: hand the arm to ROS](#6-step-4-hand-the-arm-to-ros)
 7. [Step 5: ask instead of working it out](#7-step-5-ask-instead-of-working-it-out)
-8. [All the maths on one page](#8-all-the-maths-on-one-page)
-9. [Running it](#9-running-it)
-10. [Notes](#10-notes)
+8. [Making the arm bigger](#8-making-the-arm-bigger)
+9. [All the maths on one page](#9-all-the-maths-on-one-page)
+10. [Running it](#10-running-it)
+11. [Notes](#11-notes)
 
 ---
 
 ## 1. The question this area answers
 
-Say the arm's hand is at `(0.43, 0.65)`.
+Say the gripper is at `(0.43, 0.65)`.
 
 Those two numbers are useless on their own. Measured from where? From the table
-the arm is bolted to? From the elbow? From a camera on the far wall? Each gives
-a different pair of numbers for the same hand in the same place.
+the arm is bolted to? From joint 2? From the camera? Each gives a different pair
+of numbers for the same gripper in the same place.
 
 So a position always comes with a starting point. Robots have a lot of them: the
-table has one, the shoulder has one, the elbow, the hand, every camera.
+table has one, each joint has one, the gripper has one, the camera has one.
 
 The work is nearly always moving between those starting points:
 
-- A camera sees a screw 20 cm in front of it. Where is that screw on the table?
-- The hand holds a screwdriver. Where is the tip of it?
-- You want the hand at a spot on the table. What should each joint do?
+- The camera sees a screw 20 cm in front of it. Where is that screw on the table?
+- The gripper holds a screwdriver. Where is the tip of it?
+- You want the gripper at a spot on the table. What should each joint do?
 
 These look like three problems. They are one problem, asked three ways. This
 area builds the piece of maths that answers all three, then hands it to ROS.
 
 ---
 
-## 2. Meet the arm
+## 2. Start simple: one joint, one link
 
-The arm is flat, like it is lying on a table. That keeps it to one angle instead
-of three, and none of the ideas change.
+Before the two-joint arm, take the smallest arm there is. One joint, one link,
+the gripper bolted straight onto the end:
 
-It has two joints and two rigid links:
+```
+    base_link o───────────────o gripper
+              q1      L1
+```
 
-| Name | What it is | Value |
-| --- | --- | --- |
-| `q1` | the shoulder angle — how far the first joint has turned | changes |
-| `q2` | the elbow angle — how far the second joint has turned | changes |
-| `L1` | the length of the upper arm | 0.5 m, fixed |
-| `L2` | the length of the forearm | 0.4 m, fixed |
+The link leaves the base at angle `q1` and is `L1` long. So where is the
+gripper?
 
-`q1` and `q2` are the two things the robot controls. `L1` and `L2` were decided
-when the arm was built.
+```
+gripper_x = L1 · cos(q1)
+gripper_y = L1 · sin(q1)
+```
 
-So the question at the top becomes a concrete one: **given `q1` and `q2`, where
-is the hand?**
+That is all `cos` and `sin` do here. They turn "this far away, at this angle"
+into "this far across, this far up". Nothing more.
+
+With `q1 = 30°` and `L1 = 0.5`, that gives `(0.433, 0.250)`. Step 1 prints this
+table for a few angles before it does anything else.
+
+One joint is easy. The interesting part starts when there are two.
 
 ---
 
-## 3. Step 1: work it out by hand
+## 3. Step 1: two joints, worked out by hand
 
 File: `step1_positions.py`. Plain Python, no ROS.
 
-Start with the elbow. The upper arm leaves the shoulder at angle `q1` and is
-`L1` long. A point `L1` away at angle `q1` sits at:
+Now add joint 2 and link 2. Joint 2 sits at the far end of link 1, which is
+exactly where the one-joint arm's gripper was:
 
 ```
-elbow_x = L1 · cos(q1)
-elbow_y = L1 · sin(q1)
+              q1              q2
+    base_link o───────────────o───────────────o gripper
+                    L1              L2
 ```
 
-That is what `cos` and `sin` are for. They turn "this far away, at this angle"
-into "this far across, this far up". Nothing more.
+So the first half is already done. Joint 2 is at `(0.433, 0.250)`, same as
+before.
 
-Now the hand. It is `L2` from the elbow, so we add another step onto the elbow's
-position. The only catch is the angle. `q2` is measured against the upper arm,
-not against the table. The upper arm is already turned by `q1`. So on the table
-the forearm points at `q1 + q2`:
+The catch is the angle of link 2. `q2` is measured against link 1, not against
+the table. Link 1 is already turned by `q1`. So measured from the table, link 2
+points at `q1 + q2`:
 
 ```
-hand_x = elbow_x + L2 · cos(q1 + q2)
-hand_y = elbow_y + L2 · sin(q1 + q2)
+gripper_x = joint2_x + L2 · cos(q1 + q2)
+gripper_y = joint2_y + L2 · sin(q1 + q2)
 ```
 
 Try it with both joints straight, `q1 = 0` and `q2 = 0`. Every cosine is 1 and
-every sine is 0, so the hand is at `L1 + L2 = 0.9` metres straight out. A
+every sine is 0, so the gripper is at `L1 + L2 = 0.9` metres straight out. A
 straight arm at full stretch. That is right, and step 1 prints exactly that.
 
 **This works. So why not stop here?**
@@ -111,7 +145,7 @@ one question. Change anything and you do it again:
 
 - add a third joint, and you rewrite them
 - move to 3D, and every step needs three angles instead of one
-- ask a different question — "where is the table, from the hand's point of
+- ask a different question — "where is the table, from the camera's point of
   view?" — and you work out a fresh set backwards
 
 Step 2 gets the same numbers without working out anything.
@@ -130,38 +164,48 @@ own, and let the pieces be combined.
 A **frame** is a starting point with axes, stuck to one physical thing. It
 travels with that thing.
 
-This arm has four:
+This arm has five:
 
 ```mermaid
 flowchart LR
-    base_link -->|"turn by q1"| upper_arm
-    upper_arm -->|"move L1, turn by q2"| forearm
-    forearm -->|"move L2"| gripper
+    base_link -->|"turn by q1"| link1
+    link1 -->|"move L1, turn by q2"| link2
+    link2 -->|"move L2"| gripper
+    link2 -->|"fixed bracket"| camera
 ```
 
 | Frame | Stuck to |
 | --- | --- |
 | `base_link` | the table the arm is bolted to |
-| `upper_arm` | the first link, so it turns with the shoulder |
-| `forearm` | the second link, so it turns with the elbow |
-| `gripper` | the hand, at the far end of the forearm |
+| `link1` | link 1, so it turns with joint 1 |
+| `link2` | link 2, so it turns with joint 2 |
+| `gripper` | the gripper, at the far end of link 2 |
+| `camera` | the camera, on the side of link 2 |
+
+Notice the shape. It is a tree, not a single line. The gripper and the camera
+both hang off `link2`, so neither is on the other's route back to the base.
 
 ### What a transform is
 
 A **transform** says where one frame sits inside another. Three numbers say it
 completely: a shift across, a shift up, and an angle.
 
-The arm is then just three of them, and each one is short:
+The whole arm is then four of them, and each one is short:
 
-| From | To | The transform |
-| --- | --- | --- |
-| `base_link` | `upper_arm` | turn by `q1`, no shift |
-| `upper_arm` | `forearm` | shift `L1` across, turn by `q2` |
-| `forearm` | `gripper` | shift `L2` across, no turn |
+| From | To | The transform | Changes? |
+| --- | --- | --- | --- |
+| `base_link` | `link1` | turn by `q1`, no shift | yes, joint 1 |
+| `link1` | `link2` | shift `L1` across, turn by `q2` | yes, joint 2 |
+| `link2` | `gripper` | shift `L2` across, no turn | no, bolted on |
+| `link2` | `camera` | shift and turn, both fixed | no, bolted on |
 
-Read the middle row as a sentence: *the forearm starts `L1` along the upper arm,
-turned by `q2` from it*. That is a fact about the elbow alone. It stays true
-whatever the shoulder is doing, so nobody has to update it.
+Read the second row as a sentence: *link 2 starts `L1` along link 1, turned by
+`q2` from it*. That is a fact about joint 2 alone. It stays true whatever joint 1
+is doing, so nobody has to update it.
+
+The last two rows never change at all. They were measured once, when the arm was
+built. TF does not treat them differently from the joints — a transform is a
+transform.
 
 ### Turning a point
 
@@ -198,24 +242,27 @@ Now the useful part. Two transforms end to end can be replaced by one.
 
 Take the first two rows of the table above, with `q1 = 30°` and `q2 = 60°`:
 
-- `base_link` → `upper_arm` is: shift `(0, 0)`, turn `30°`
-- `upper_arm` → `forearm` is: shift `(0.5, 0)`, turn `60°`
+- `base_link` → `link1` is: shift `(0, 0)`, turn `30°`
+- `link1` → `link2` is: shift `(0.5, 0)`, turn `60°`
 
-To get `base_link` → `forearm` directly, there are two rules.
+To get `base_link` → `link2` directly, there are two rules.
 
 **The angles add.** `30° + 60° = 90°`.
 
 **The second shift has to be turned first.** The `(0.5, 0)` was measured along
-the upper arm, and the upper arm is tilted by 30°. So turn `(0.5, 0)` by 30°
-before using it:
+link 1, and link 1 is tilted by 30°. So turn `(0.5, 0)` by 30° before using it:
 
 ```
 x = 0.5 · cos(30°) - 0 · sin(30°) = 0.433
 y = 0.5 · sin(30°) + 0 · cos(30°) = 0.250
 ```
 
-Then add the first shift, which here is `(0, 0)`. So `base_link` → `forearm` is
-a shift of `(0.433, 0.250)` and a turn of `90°`.
+Then add the first shift, which here is `(0, 0)`. So `base_link` → `link2` is a
+shift of `(0.433, 0.250)` and a turn of `90°`.
+
+That `(0.433, 0.250)` should look familiar. It is where joint 2 was in section 3,
+and where the one-joint arm's gripper was in section 2. Same point, reached three
+different ways.
 
 Join the third row on the same way and you get `base_link` → `gripper`: a shift
 of `(0.433, 0.650)` and a turn of `90°`. Step 2 prints this build-up one line at
@@ -228,9 +275,9 @@ This is `Transform2D.then()`.
 Step 2 finishes by checking itself against step 1, and prints the difference.
 The difference is zero, at every pose.
 
-That is worth pausing on. Look back at step 1, where we had to notice that the
-forearm points at `q1 + q2` and write it in ourselves. Nothing in step 2
-mentions `q1 + q2`. Each transform only knows its own joint.
+That is worth pausing on. Look back at section 3, where we had to notice that
+link 2 points at `q1 + q2` and write it in ourselves. Nothing in step 2 mentions
+`q1 + q2`. Each transform only knows its own joint.
 
 The `q1 + q2` appeared anyway, because joining adds the angles. That is the
 whole benefit: a third joint would produce `q1 + q2 + q3` on its own, with no
@@ -246,9 +293,9 @@ Two more moves, and both were awkward in step 1.
 
 ### Flipping a transform
 
-If you know where the hand is on the table, you already know where the table is
-from the hand's point of view. You do not measure anything new. You undo the
-turn, and undo the shift:
+If you know where the gripper is on the table, you already know where the table
+is from the gripper's point of view. You do not measure anything new. You undo
+the turn, and undo the shift:
 
 ```
 flipped angle = -angle
@@ -261,7 +308,7 @@ a shift of `(0.433, 0.650)` and a turn of `90°`. Flipped, `gripper` →
 both, one under the other.
 
 This is how a robot answers "where is the table, from the camera?" when all
-anyone told it is where the camera sits on the robot.
+anyone told it is where the camera is bolted on.
 
 A good check: flip it twice and you must get back exactly what you started with.
 The tests do that at several poses.
@@ -270,11 +317,11 @@ This is `Transform2D.inverse()`.
 
 ### Carrying a point
 
-A hand holding a screwdriver cares about the tip, not the hand.
+A gripper holding a screwdriver cares about the tip, not the gripper itself.
 
 The tip is easy to describe in the `gripper` frame: 5 cm straight ahead. And it
 stays `(0.05, 0)` there forever, no matter how the arm moves, because it is
-bolted to the hand.
+bolted to the gripper.
 
 To find the tip on the table, apply `base_link` → `gripper` to that fixed point:
 turn it, then add the shift. With the arm in the pose above, the tip lands at
@@ -294,19 +341,20 @@ This is `Transform2D.apply()`.
 File: `step4_broadcast.py`. This is the first one that uses ROS.
 
 So far everything has been one program talking to itself. Nothing else on the
-robot could ask where the hand was.
+robot could ask where the gripper was.
 
 **TF** fixes that. It is the part of ROS that keeps track of frames, and the
 name is just short for *transform*. Programs publish the transforms they know
 about, and TF joins them up for anyone who asks.
 
-Step 4 publishes the arm's three transforms, thirty times a second, as the
-joints swing:
+Step 4 publishes the arm's four transforms, thirty times a second, as the joints
+swing:
 
 ```
-base_link -> upper_arm      turn by q1
-upper_arm -> forearm        move L1, turn by q2
-forearm   -> gripper        move L2
+base_link -> link1      turn by q1              (joint 1)
+link1     -> link2      move L1, turn by q2     (joint 2)
+link2     -> gripper    move L2                 (bolted on)
+link2     -> camera     move and turn, fixed    (bolted on)
 ```
 
 The maths did not change at all. Step 4 imports the same list of transforms
@@ -318,9 +366,9 @@ Two things are worth noticing.
 `gripper`, even though it could work it out easily. Each program publishes only
 what it actually knows.
 
-**The shapes are drawn in their own frames.** The bar for the upper arm is
-described inside `upper_arm`, and it never moves there. TF moves the frame, and
-the bar goes along with it. Five shapes, none of which are ever repositioned.
+**The shapes are drawn in their own frames.** The bar for link 1 is described
+inside `link1`, and it never moves there. TF moves the frame, and the bar goes
+along with it. Six shapes, none of which are ever repositioned.
 
 ---
 
@@ -328,19 +376,24 @@ the bar goes along with it. Five shapes, none of which are ever repositioned.
 
 File: `step5_lookup.py`. This is where it pays off.
 
-Nobody published `base_link` → `gripper`. This program asks for it anyway:
+Nobody published `base_link` → `gripper`, and nobody published `base_link` →
+`camera`. This program asks for both anyway:
 
 ```python
 buffer.lookup_transform('base_link', 'gripper', Time())
+buffer.lookup_transform('base_link', 'camera', Time())
 ```
 
-TF joins the three published links and answers.
+TF joins the published links and answers. It walks a different route each time.
+The gripper route goes through link 2 and out to the end. The camera route goes
+through link 2 and off to the side. The gripper is not involved in the camera's
+answer at all.
 
 Now open the file and look for trigonometry. There is none. No `cos`, no `sin`,
 no `q1 + q2`. It never imports `arm_math`. It does not know how long the links
 are, how many joints there are, or that the arm is flat.
 
-It only knows two frame names.
+It only knows frame names.
 
 That is the reason for all the work in steps 2 and 3. Describe each part once,
 in the one place that knows it. Publish that. Then any other program can ask
@@ -348,7 +401,37 @@ about any pair of frames, without knowing how the robot is built.
 
 ---
 
-## 8. All the maths on one page
+## 8. Making the arm bigger
+
+Everything above was shown on two joints. Here is what actually changes when the
+arm grows.
+
+**A third joint and a third link.** Add one row to the list of transforms:
+
+```
+link2 -> link3     move L2, turn by q3
+link3 -> gripper   move L3
+```
+
+Nothing else changes. Joining still adds the angles, so `q1 + q2 + q3` appears
+on its own. Step 5 does not change at all — it still asks for two frame names.
+
+**A second camera.** Add one more fixed row, hanging off whichever link it is
+bolted to. Cameras, tools and sensors are all the same thing to TF: a frame with
+a transform to its parent. The only difference from a joint is that the numbers
+never change.
+
+**Moving to 3D.** A position becomes three numbers, and a rotation needs three
+angles instead of one. Each of the four operations gets more arithmetic inside
+it, but there are still only four of them. This is the point where real code
+stops writing the formulas out and calls a matrix library instead.
+
+The pattern holds at every size: describe each part once, against its immediate
+parent, and let the joining do the rest.
+
+---
+
+## 9. All the maths on one page
 
 Four operations. Everything above is one of them.
 
@@ -373,54 +456,52 @@ to flip transform A:
 And the arm's answer, built from them:
 
 ```
-to find the hand on the table:
+to find the gripper on the table:
     answer = no shift, no turn
     for each transform from base_link to gripper:
         answer = join(answer, that transform)
     return answer
 ```
 
-In 3D there are three angles instead of one, so each line has more arithmetic in
-it. The four operations stay exactly the same, which is why real code keeps them
-in a matrix library and stops thinking about them.
-
 ---
 
-## 9. Running it
+## 10. Running it
 
 ```
 make arm.learn     steps 1 to 3: the maths, printed, then it exits
 make arm.demo      step 4: publish the arm and draw it in RViz
-make arm.watch     step 5: ask TF where the hand is (needs arm.demo running)
+make arm.watch     step 5: ask TF where things are (needs arm.demo running)
 ```
 
-`make arm.learn` runs the three plain-Python steps back to back. Step 1 prints a
-table of joint angles and where the hand lands. Step 2 prints the link-by-link
+`make arm.learn` runs the three plain-Python steps back to back. Step 1 prints
+the one-joint table, then the two-joint one. Step 2 prints the link-by-link
 build-up, and its check against step 1. Step 3 flips a transform, and carries
 the screwdriver tip onto the table.
 
 `make arm.demo` opens RViz with the arm swinging. The two joints move at
 different speeds, so it keeps finding new poses instead of repeating a short
-loop. You should see two blue bars, a yellow ball at each joint, a red ball at
-the hand, and the frame arrows moving along with them.
+loop. You should see:
+
+- two blue bars, one per link
+- a yellow ball at each joint
+- a red ball at the gripper
+- a grey box for the camera
+- frame arrows moving along with all of them
 
 `make arm.watch` prints one line a second:
 
 ```
-gripper at (+0.852, -0.028) facing   +19.2°   tool tip at (+0.899, -0.011)
+gripper (+0.883, -0.011)  tool tip (+0.932, -0.001)  |  camera (+0.754, -0.130)  screw (+0.795, -0.326)
 ```
 
-Watch the two pairs of numbers. They both keep changing, but the gap between
-them is always 5 cm, whatever the arm does. That is the screwdriver tip from
-step 3, still described as `(0.05, 0)` in the `gripper` frame, still never
-touched.
+All four pairs keep changing. But the gap between the gripper and the tool tip
+is always 5 cm, and the gap between the camera and the screw is always 20 cm.
+Those two points never moved. They are fixed in the `gripper` and `camera`
+frames, and only the frames went anywhere.
 
 ---
 
-## 10. Notes
-
-The arm here is flat on purpose, so there is one angle to follow instead of
-three. Real arms are 3D and have more joints. The ideas do not change.
+## 11. Notes
 
 ROS stores a rotation as four numbers, called a **quaternion**, rather than as
 angles. Three angles have an awkward case in 3D: at certain poses two axes line

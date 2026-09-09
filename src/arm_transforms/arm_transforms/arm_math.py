@@ -3,12 +3,21 @@
 Everything here is plain Python. No ROS, no matrix library. The point is that a
 transform is a small, ordinary thing: a rotation and a shift, kept together.
 
-The arm used throughout this area is flat (2D) and has two joints:
+THE ARM USED THROUGHOUT THIS AREA
+---------------------------------
+Flat (2D), with two joints, two rigid links, a gripper and a camera::
 
-    base_link ──rotate q1──▶ upper_arm ──move L1, rotate q2──▶ forearm ──move L2──▶ gripper
+    base_link ─q1─▶ link1 ─L1, q2─▶ link2 ─L2─▶ gripper
+                                      └─fixed─▶ camera
 
-Real arms are 3D and have more joints, but the rules do not change. A 3D
-transform is the same idea with three angles instead of one.
+* ``q1`` and ``q2`` are the joint angles. They are what the robot controls.
+* ``L1`` and ``L2`` are the link lengths. They were fixed when the arm was built.
+* The gripper is bolted to the end of link 2. It is not a joint.
+* The camera is bolted to the side of link 2. It is not a joint either.
+
+Joints are numbered from the base outwards, so joint 1 is the one attached to
+``base_link``. Real arms are 3D and have more joints, but the rules do not
+change: a 3D transform is the same idea with three angles instead of one.
 """
 
 from __future__ import annotations
@@ -16,10 +25,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 
-#: Length of the upper arm, in metres.
+#: Length of link 1, in metres.
 LINK1_M = 0.5
-#: Length of the forearm, in metres.
+#: Length of link 2, in metres.
 LINK2_M = 0.4
+
+#: Where the camera is bolted to link 2: along it, out to the side, and turned.
+CAMERA_ALONG_M = 0.25
+CAMERA_ASIDE_M = -0.09
+CAMERA_TURN_RAD = -math.pi / 2.0
 
 
 def rotate_point(x: float, y: float, theta: float) -> tuple[float, float]:
@@ -108,25 +122,55 @@ class Transform2D:
         return Transform2D(x, y, -self.theta)
 
 
-def arm_transforms(q1: float, q2: float) -> list[tuple[str, str, Transform2D]]:
-    """Describe the arm as a list of ``(parent, child, transform)`` links.
+def arm_chain(q1: float, q2: float) -> list[tuple[str, str, Transform2D]]:
+    """Describe the arm base-to-gripper as ``(parent, child, transform)`` links.
 
     Each entry knows only about its own two frames. Nothing here knows where
     the gripper ends up — that falls out of joining them together.
     """
     return [
-        # The shoulder joint turns, but does not move.
-        ('base_link', 'upper_arm', Transform2D.rotation(q1)),
-        # Travel the length of the upper arm, then the elbow turns.
-        ('upper_arm', 'forearm', Transform2D(LINK1_M, 0.0, q2)),
-        # The forearm is rigid: a shift with no turn.
-        ('forearm', 'gripper', Transform2D.translation(LINK2_M, 0.0)),
+        # Joint 1 turns, but does not move.
+        ('base_link', 'link1', Transform2D.rotation(q1)),
+        # Travel the length of link 1, then joint 2 turns.
+        ('link1', 'link2', Transform2D(LINK1_M, 0.0, q2)),
+        # Link 2 is rigid, and the gripper is bolted to its end: a shift, no turn.
+        ('link2', 'gripper', Transform2D.translation(LINK2_M, 0.0)),
     ]
 
 
+def camera_mount() -> tuple[str, str, Transform2D]:
+    """Describe where the camera is bolted to link 2.
+
+    This one never changes, because it is a bracket rather than a joint. It also
+    branches off the chain instead of continuing it, which is why it is kept
+    separate from :func:`arm_chain`.
+    """
+    return ('link2', 'camera',
+            Transform2D(CAMERA_ALONG_M, CAMERA_ASIDE_M, CAMERA_TURN_RAD))
+
+
+def all_links(q1: float, q2: float) -> list[tuple[str, str, Transform2D]]:
+    """List every link of the arm, including the branch to the camera."""
+    return [*arm_chain(q1, q2), camera_mount()]
+
+
 def gripper_in_base(q1: float, q2: float) -> Transform2D:
-    """Join every link of the arm into one base_link→gripper transform."""
+    """Join every link of the chain into one base_link→gripper transform."""
     result = Transform2D()
-    for _parent, _child, link in arm_transforms(q1, q2):
+    for _parent, _child, link in arm_chain(q1, q2):
         result = result.then(link)
     return result
+
+
+def camera_in_base(q1: float, q2: float) -> Transform2D:
+    """Join base_link→link2 with the camera bracket to get base_link→camera.
+
+    Note where this stops: the camera hangs off link 2, so the gripper is not
+    part of the answer at all.
+    """
+    result = Transform2D()
+    for _parent, child, link in arm_chain(q1, q2):
+        if child == 'gripper':
+            break
+        result = result.then(link)
+    return result.then(camera_mount()[2])

@@ -88,9 +88,9 @@ instead.
 
 Take a robot arm:
 
-- the gripper is 10 cm from the wrist
-- the wrist is 30 cm from the elbow
-- the elbow is fixed to the base
+- the gripper is 10 cm from joint 3
+- joint 3 is 30 cm from joint 2
+- joint 2 is bolted to the base
 - the base sits somewhere in the room
 
 Each part gets a **frame**. A frame is a point with three axes (X, Y, Z) stuck
@@ -104,8 +104,8 @@ The gripper does not need to know where the room is.
 A **transform** is where one frame is, compared to another. **TF** is the part
 of ROS that keeps track of them all. The name is just short for transform.
 
-Each part reports one link, and only that link. The arm says where the wrist is
-compared to the elbow. Nothing more.
+Each part reports one link, and only that link. The arm says where joint 3 is
+compared to joint 2. Nothing more.
 
 TF adds the links together. So you can ask "where is the gripper in the room?"
 and get an answer, even though nobody wrote that down anywhere.
@@ -137,7 +137,7 @@ What changes is where `marker_frame` is. TF moves the frame, and RViz draws the
 ball in its new spot.
 
 This looks like extra work for one ball. It is not. On a real robot, the 3D
-shape of a forearm is fixed to the forearm frame and never moves from it. Only
+shape of each link is fixed to that link's frame, and never moves from it. Only
 the frame moves. Learn it here with one ball, and it costs you nothing later
 with forty parts.
 

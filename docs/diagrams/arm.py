@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / 'src' / 'arm_transforms'))
 # Imported after the sys.path line above, which flake8's import rules cannot see.
-from arm_transforms.arm_math import LINK1_M, LINK2_M, rotate_point  # noqa: E402,I100,I202
+from arm_transforms.arm_math import (  # noqa: E402,I100,I202
+    CAMERA_ALONG_M, CAMERA_ASIDE_M, CAMERA_TURN_RAD, LINK1_M, LINK2_M, rotate_point)
 
 AREA = 'arm'
 OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / 'images' / AREA
@@ -61,52 +62,61 @@ def _frame(ax, x, y, theta, label, length=0.13, offset=(0.0, -0.075)):
 
 def arm():
     """Draw the two-link arm with its joints, links and frames labelled."""
-    fig, ax = _axes((-0.30, 0.92), (-0.22, 0.95))
+    fig, ax = _axes((-0.30, 1.02), (-0.22, 0.95))
 
-    elbow = (LINK1_M * math.cos(Q1), LINK1_M * math.sin(Q1))
-    grip = (elbow[0] + LINK2_M * math.cos(Q1 + Q2), elbow[1] + LINK2_M * math.sin(Q1 + Q2))
+    joint2 = (LINK1_M * math.cos(Q1), LINK1_M * math.sin(Q1))
+    tip = (joint2[0] + LINK2_M * math.cos(Q1 + Q2), joint2[1] + LINK2_M * math.sin(Q1 + Q2))
 
     # Reference lines the joint angles are measured from.
     ax.plot([0, 0.34], [0, 0], color=GRID, lw=1.0, ls=(0, (4, 3)), zorder=1)
-    ext = (elbow[0] + 0.20 * math.cos(Q1), elbow[1] + 0.20 * math.sin(Q1))
-    ax.plot([elbow[0], ext[0]], [elbow[1], ext[1]], color=GRID, lw=1.0,
+    ext = (joint2[0] + 0.20 * math.cos(Q1), joint2[1] + 0.20 * math.sin(Q1))
+    ax.plot([joint2[0], ext[0]], [joint2[1], ext[1]], color=GRID, lw=1.0,
             ls=(0, (4, 3)), zorder=1)
 
     # The two links.
-    ax.plot([0, elbow[0]], [0, elbow[1]], color=LINK, lw=7, solid_capstyle='round', zorder=2)
-    ax.plot([elbow[0], grip[0]], [elbow[1], grip[1]], color=LINK, lw=7,
+    ax.plot([0, joint2[0]], [0, joint2[1]], color=LINK, lw=7, solid_capstyle='round', zorder=2)
+    ax.plot([joint2[0], tip[0]], [joint2[1], tip[1]], color=LINK, lw=7,
             solid_capstyle='round', zorder=2)
 
     # Joints and the gripper.
     ax.plot([0], [0], 'o', color=JOINT, ms=13, zorder=4)
-    ax.plot([elbow[0]], [elbow[1]], 'o', color=JOINT, ms=13, zorder=4)
-    ax.plot([grip[0]], [grip[1]], 'o', color='#e05555', ms=10, zorder=4)
+    ax.plot([joint2[0]], [joint2[1]], 'o', color=JOINT, ms=13, zorder=4)
+    ax.plot([tip[0]], [tip[1]], 'o', color='#e05555', ms=10, zorder=4)
 
     # Joint angle arcs.
     ax.add_patch(Arc((0, 0), 0.42, 0.42, theta1=0, theta2=math.degrees(Q1),
                      color=MUTED, lw=1.3, zorder=3))
     ax.text(0.245, 0.052, 'q1', color=INK, fontsize=11, family='monospace')
-    ax.add_patch(Arc(elbow, 0.30, 0.30, theta1=math.degrees(Q1),
+    ax.add_patch(Arc(joint2, 0.30, 0.30, theta1=math.degrees(Q1),
                      theta2=math.degrees(Q1 + Q2), color=MUTED, lw=1.3, zorder=3))
-    ax.text(elbow[0] + 0.115, elbow[1] + 0.105, 'q2', color=INK, fontsize=11,
+    ax.text(joint2[0] + 0.115, joint2[1] + 0.105, 'q2', color=INK, fontsize=11,
             family='monospace')
 
     # Link length labels, pushed off the link so they stay readable.
-    mid1 = (elbow[0] / 2, elbow[1] / 2)
+    mid1 = (joint2[0] / 2, joint2[1] / 2)
     ax.text(mid1[0] - 0.055, mid1[1] + 0.090, f'L1 = {LINK1_M} m', color=MUTED,
             fontsize=10, family='monospace', ha='center')
-    mid2 = ((elbow[0] + grip[0]) / 2, (elbow[1] + grip[1]) / 2)
+    mid2 = ((joint2[0] + tip[0]) / 2, (joint2[1] + tip[1]) / 2)
     ax.text(mid2[0] - 0.175, mid2[1], f'L2 = {LINK2_M} m', color=MUTED,
             fontsize=10, family='monospace', ha='center')
 
-    _frame(ax, 0, 0, 0.0, 'base_link', length=0.17, offset=(-0.135, -0.095))
-    _frame(ax, 0, 0, Q1, 'upper_arm', length=0.10, offset=(0.155, -0.095))
-    _frame(ax, elbow[0], elbow[1], Q1 + Q2, 'forearm', offset=(0.17, -0.055))
-    _frame(ax, grip[0], grip[1], Q1 + Q2, 'gripper', offset=(0.135, 0.055))
+    # The camera: bolted to link 2, so it is placed in link 2's frame.
+    cam_offset = rotate_point(CAMERA_ALONG_M, CAMERA_ASIDE_M, Q1 + Q2)
+    cam = (joint2[0] + cam_offset[0], joint2[1] + cam_offset[1])
+    ax.plot([joint2[0], cam[0]], [joint2[1], cam[1]], color=GRID, lw=1.0,
+            ls=(0, (2, 2)), zorder=1)
+    ax.plot([cam[0]], [cam[1]], 's', color='#8a8a90', ms=11, zorder=4)
+    _frame(ax, cam[0], cam[1], Q1 + Q2 + CAMERA_TURN_RAD, 'camera',
+           length=0.11, offset=(0.10, 0.085))
 
-    ax.text(0.31, 0.90, 'The arm, and its four frames', fontsize=13, ha='center',
+    _frame(ax, 0, 0, 0.0, 'base_link', length=0.17, offset=(-0.135, -0.095))
+    _frame(ax, 0, 0, Q1, 'link1', length=0.10, offset=(0.125, -0.095))
+    _frame(ax, joint2[0], joint2[1], Q1 + Q2, 'link2', offset=(0.145, -0.055))
+    _frame(ax, tip[0], tip[1], Q1 + Q2, 'gripper', offset=(0.145, 0.055))
+
+    ax.text(0.31, 0.90, 'The arm and its frames', fontsize=13, ha='center',
             color=INK, weight='bold')
-    ax.text(0.31, -0.19, 'q1 turns the shoulder · q2 turns the elbow',
+    ax.text(0.31, -0.19, 'q1 turns joint 1 · q2 turns joint 2 · gripper and camera are bolted on',
             fontsize=10, ha='center', color=MUTED)
 
     fig.savefig(OUT_DIR / 'arm.svg', bbox_inches='tight', pad_inches=0.3, facecolor='white')

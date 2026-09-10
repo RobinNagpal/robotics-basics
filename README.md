@@ -20,14 +20,18 @@ own, with its own code, its own doc, and two or three commands.
 | --- | --- | --- |
 | [rviz](docs/rviz/overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
 | [arm](docs/arm/overview.md) | position, frames and transforms | `make arm.learn` |
+| [camera](docs/camera/overview.md) | lenses, pictures and the points inside them | `make camera.learn` |
 
 <p align="center">
-  <img src="docs/images/rviz/scene.svg" width="46%" alt="A ball circling a grid in RViz">
-  <img src="docs/images/arm/arm.svg" width="46%" alt="A two-joint arm and its frames">
+  <img src="docs/images/rviz/scene.svg" width="31%" alt="A ball circling a grid in RViz">
+  <img src="docs/images/arm/arm.svg" width="31%" alt="A two-joint arm and its frames">
+  <img src="docs/images/camera/pinhole.svg" width="31%" alt="A pixel is a direction, not a place">
 </p>
 
-New to this? Start with **rviz**. It is the easier of the two, and it shows you
-what you are looking at before the arm area explains the maths behind it.
+New to this? Start with **rviz**. It is the easiest of the three, and it shows
+you what you are looking at before the arm area explains the maths behind it.
+Then **arm**, then **camera**, which uses that maths to turn a picture into
+points.
 
 ## Layout
 

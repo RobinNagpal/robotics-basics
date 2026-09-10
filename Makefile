@@ -13,7 +13,8 @@ SHELL := /bin/bash
 ros = pixi run bash -c 'source install/setup.bash && $(1)'
 
 .PHONY: help setup doctor build test lint clean shell \
-        rviz.demo rviz.check arm.learn arm.demo arm.watch
+        rviz.demo rviz.check arm.learn arm.demo arm.watch \
+        camera.learn camera.demo camera.check
 
 help: ## Show this help
 	@echo ""
@@ -78,3 +79,24 @@ arm.demo: build ## Step 4: publish the arm to TF and draw it in RViz
 
 arm.watch: build ## Step 5: ask TF where the gripper is (run arm.demo first)
 	$(call ros,ros2 run arm_transforms arm_step5_lookup)
+
+##@ camera — lenses, pictures and the points inside them
+
+camera.learn: build ## Work through the lens, the captures and the maths, then exit
+	$(call ros,ros2 run camera_basics camera_walkthrough)
+
+camera.demo: build ## Publish RGB, depth and a point cloud, and draw them in RViz
+	$(call ros,ros2 launch camera_basics camera_demo.launch.py)
+
+camera.check: ## Show what the demo is publishing (run camera.demo first)
+	@pixi run bash -c 'source install/setup.bash; \
+		ros2 topic list | grep -qx /camera/image_raw || \
+			{ echo "Nothing is publishing. Start it with: make camera.demo"; exit 1; }; \
+		echo "--- topics ---"; ros2 topic list; \
+		echo; echo "--- the lens ---"; ros2 topic echo --once /camera/camera_info | head -24; \
+		echo; echo "--- one colour image, big arrays hidden ---"; \
+		ros2 topic echo --once --no-arr /camera/image_raw; \
+		echo; echo "--- one depth image ---"; \
+		ros2 topic echo --once --no-arr /camera/depth/image_raw; \
+		echo; echo "--- the point cloud ---"; \
+		ros2 topic echo --once --no-arr /camera/points'

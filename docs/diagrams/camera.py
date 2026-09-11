@@ -516,8 +516,69 @@ def frames():
     _save(fig, 'frames.svg')
 
 
+def pixels():
+    """Show what a pixel is, using a capture small enough to see each one."""
+    tiny = CameraConfig('tiny', 16, 12, WRIST.hfov_deg)
+    small_shot = capture(TABLE_SCENE, tiny, TOP_DOWN)
+    full_shot = capture(TABLE_SCENE, WRIST, TOP_DOWN)
+    w, h = tiny.width_px, tiny.height_px
+
+    fig, (left, right) = plt.subplots(1, 2, figsize=(11.6, 5.0), facecolor='white',
+                                      gridspec_kw={'wspace': 0.18})
+
+    # The tiny picture, with each pixel drawn as the square it is. The extent
+    # puts pixel (u, v) on the square from u to u+1 and v to v+1, which is the
+    # convention the rest of the doc uses.
+    left.imshow(_rgb_array(small_shot), interpolation='nearest', extent=(0, w, h, 0))
+    for x in range(w + 1):
+        left.plot([x, x], [0, h], color='white', lw=0.9)
+    for y in range(h + 1):
+        left.plot([0, w], [y, y], color='white', lw=0.9)
+    left.set_xlim(-2.6, w + 0.4)
+    left.set_ylim(h + 2.2, -2.4)
+    left.set_aspect('equal')
+    left.axis('off')
+
+    left.annotate('', xy=(5.5, -1.0), xytext=(0, -1.0),
+                  arrowprops={'arrowstyle': '-|>', 'color': AXIS_X, 'lw': 1.8})
+    left.text(5.9, -1.0, 'u counts across', color=AXIS_X, fontsize=10,
+              family='monospace', va='center')
+    left.annotate('', xy=(-1.0, 5.5), xytext=(-1.0, 0),
+                  arrowprops={'arrowstyle': '-|>', 'color': AXIS_Y, 'lw': 1.8})
+    left.text(-1.0, 6.1, 'v counts\ndown', color=AXIS_Y, fontsize=10,
+              family='monospace', ha='center', va='top')
+    left.text(0.1, -0.25, '(0, 0)', color=INK, fontsize=9.5, family='monospace',
+              ha='left', va='bottom')
+
+    left.add_patch(Rectangle((3, 2), 1, 1, fill=False, edgecolor=INK, lw=2.4, zorder=5))
+    left.annotate('one pixel:\none square, one colour', xy=(3.5, 3.0), xytext=(3.5, h + 1.4),
+                  fontsize=9.5, color=INK, ha='center', va='center', family='monospace',
+                  arrowprops={'arrowstyle': '-|>', 'color': INK, 'lw': 1.2})
+
+    left.plot([w / 2], [h / 2], marker='+', color='white', ms=16, mew=3, zorder=6)
+    left.plot([w / 2], [h / 2], marker='+', color=INK, ms=13, mew=1.6, zorder=7)
+    left.annotate(f'the middle\n({w // 2}, {h // 2})', xy=(w / 2, h / 2),
+                  xytext=(w - 2.2, h + 1.4), fontsize=9.5, color=INK, ha='center',
+                  va='center', family='monospace',
+                  arrowprops={'arrowstyle': '-|>', 'color': INK, 'lw': 1.2})
+    left.set_title(f'{w} × {h} pixels', fontsize=11, color=INK, pad=4)
+
+    right.imshow(_rgb_array(full_shot), interpolation='nearest')
+    right.set_xticks([])
+    right.set_yticks([])
+    for spine in right.spines.values():
+        spine.set_color(GRID)
+    right.set_title(f'{WRIST.width_px} × {WRIST.height_px} pixels: the same view, cut finer',
+                    fontsize=11, color=INK, pad=4)
+
+    fig.suptitle('A picture is a grid of pixels', fontsize=13, color=INK,
+                 weight='bold', y=0.98)
+    _save(fig, 'pixels.svg')
+
+
 if __name__ == '__main__':
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    pixels()
     pinhole()
     field_of_view()
     scene()

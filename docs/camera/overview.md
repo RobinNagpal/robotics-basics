@@ -1,296 +1,422 @@
 # Cameras: pictures, and the points inside them
 
-A camera is the sensor a robot uses to find out what is in front of it. This
-area is about the small piece of arithmetic that makes that possible.
+A camera is how a robot finds out what is in front of it.
 
-A camera flattens. The world is 3D, a picture is 2D, and taking a picture throws
-the third dimension away. Everything below is about what survives that, what it
-costs, and how a second picture — a **depth** picture — puts back what was lost.
+This area starts from what a camera physically does: it turns light into a grid
+of coloured squares. From there it works up to what a robot arm actually needs,
+which is where each object is, in metres.
 
-![One capture is two pictures of the same size](../images/camera/capture.svg)
-
-## The camera used in this doc
-
-One camera, photographing one scene, throughout. It is worth fixing before going
-on:
-
-| Name | What it is | Value |
-| --- | --- | --- |
-| picture size | pixels across and down | 320 × 240 |
-| `hfov` | how many degrees across it sees | 60°, fixed |
-| `fx`, `fy` | focal length, in pixels | 277.1 |
-| `cx`, `cy` | the middle of the picture | 160, 120 |
-| height | how far above the table it sits | 0.40 m |
-
-The scene is a grey table with a 5 cm grid printed on it and three boxes
-standing on it: **red** 6 cm tall, **green** 9 cm, **blue** 4 cm.
+Everything is explained on one example. A camera hangs 40 cm above a grey table
+and looks straight down. Three boxes stand on the table: **red** 6 cm tall,
+**green** 9 cm, and **blue** 4 cm.
 
 ![The scene, from above and from the side](../images/camera/scene.svg)
 
-Those numbers are not arbitrary. 320 pixels across 60° gives
-`160 / tan(30°) ≈ 277`, which is close to what the small RGB-D cameras bolted
-next to a gripper actually report, and 40 cm above the table is roughly where
-such a camera sits when it looks at what the gripper is about to pick up.
-
-The pictures in this document are not drawn by hand. They are taken by the code
-this document describes, on the scene it defines. So are the numbers beside
-them.
+The pictures in this doc are not drawn by hand. They are taken by the code this
+area describes, and so are the numbers beside them.
 
 ## Contents
 
-1. [The question this area answers](#1-the-question-this-area-answers)
-2. [A pixel is a direction, not a place](#2-a-pixel-is-a-direction-not-a-place)
-   · [The four numbers](#the-four-numbers)
+**The basics**
+
+1. [What a camera is for](#1-what-a-camera-is-for)
+2. [How a camera makes a picture](#2-how-a-camera-makes-a-picture)
+   · [A grid of pixels](#a-grid-of-pixels)
+   · [Resolution: how many pixels](#resolution-how-many-pixels)
+   · [Field of view: how wide it sees](#field-of-view-how-wide-it-sees)
+3. [What a picture loses](#3-what-a-picture-loses)
+4. [Getting distance back: the depth picture](#4-getting-distance-back-the-depth-picture)
+   · [Depth is not distance](#depth-is-not-distance)
+
+**This camera**
+
+5. [The camera used in this doc](#5-the-camera-used-in-this-doc)
+6. [The lens as four numbers](#6-the-lens-as-four-numbers)
+   · [The camera's own axes](#the-cameras-own-axes)
    · [Where 277 comes from](#where-277-comes-from)
-   · [Vocabulary](#vocabulary)
-3. [Configuring it: two separate knobs](#3-configuring-it-two-separate-knobs)
-   · [Field of view: how much is in shot](#field-of-view-how-much-is-in-shot)
-   · [Resolution: how finely it is sampled](#resolution-how-finely-it-is-sampled)
-   · [Why they are worth keeping apart](#why-they-are-worth-keeping-apart)
-4. [Where the camera is](#4-where-the-camera-is)
-   · [Two conventions, on purpose](#two-conventions-on-purpose)
+7. [Field of view and resolution are separate knobs](#7-field-of-view-and-resolution-are-separate-knobs)
+
+**From pixels to places**
+
+8. [Pixel plus depth gives back the point](#8-pixel-plus-depth-gives-back-the-point)
+9. [Where the camera is](#9-where-the-camera-is)
    · [camera_to_world](#camera_to_world)
    · [Pointing it somewhere](#pointing-it-somewhere)
-5. [Different kinds of capture](#5-different-kinds-of-capture)
-   · [Colour](#colour)
-   · [Depth](#depth)
-   · [Grey, and depth in millimetres](#grey-and-depth-in-millimetres)
-   · [A mask](#a-mask)
-   · [A point cloud](#a-point-cloud)
-6. [Pixel plus depth gives back the point](#6-pixel-plus-depth-gives-back-the-point)
-   · [The arithmetic](#the-arithmetic)
-   · [Depth is not distance](#depth-is-not-distance)
-7. [Why one picture is not enough](#7-why-one-picture-is-not-enough)
-8. [Publishing it to ROS](#8-publishing-it-to-ros)
-   · [How the pieces connect](#how-the-pieces-connect)
-   · [Settings you can change](#settings-you-can-change)
-9. [Running it](#9-running-it)
-10. [Working on the code](#10-working-on-the-code)
-11. [Notes and gotchas](#11-notes-and-gotchas)
+10. [What one capture contains](#10-what-one-capture-contains)
+11. [Why one picture is not enough](#11-why-one-picture-is-not-enough)
+
+**In ROS**
+
+12. [Publishing it to ROS](#12-publishing-it-to-ros)
+    · [Two sets of camera axes](#two-sets-of-camera-axes)
+    · [How the pieces connect](#how-the-pieces-connect)
+    · [Settings you can change](#settings-you-can-change)
+13. [Running it](#13-running-it)
+    · [Checking it works](#checking-it-works)
+    · [Commands](#commands)
+14. [Working on the code](#14-working-on-the-code)
+    · [Layout](#layout)
+    · [Changing things](#changing-things)
+15. [Notes and gotchas](#15-notes-and-gotchas)
+16. [Vocabulary](#16-vocabulary)
 
 ---
 
-## 1. The question this area answers
+## 1. What a camera is for
 
-A robot arm is about to pick something up. Before it can, somebody has to answer:
+A robot arm is about to pick something up. First it needs to know three things:
 
-- **What is on the table?**
-- **Where is it**, in the same coordinates the arm moves in?
-- **How big is it**, so the gripper opens far enough?
+- **What** is on the table?
+- **Where** is it, in the same coordinates the arm moves in?
+- **How big** is it, so the gripper opens wide enough?
 
-A camera seems like the obvious way to find out, and it is. But a colour picture
-on its own cannot answer any of the three. It can tell you *something red is
-over there, in that direction*, and no more. It cannot tell you how far away the
-red thing is, and therefore it cannot tell you where it is or how big it is.
+A camera is the obvious way to find out. But an ordinary colour picture can only
+answer the first question. It can tell you that something red is over there, in
+that direction. It cannot tell you how far away it is — and without that, it
+cannot tell you where it is or how big it is.
 
-That is not a limitation of the code. It is what flattening means, and the next
-section is about why.
-
-The way out is a second picture, taken through the same lens at the same moment,
-where each pixel holds a distance instead of a colour. With those two together,
-every pixel becomes a point you can measure. That is the whole of this area, and
-[`camera.py`](../../src/camera_basics/camera_basics/camera.py) is the whole of
-it in one file, with no ROS in it.
+Sections 2 to 4 explain why, using nothing but what a camera physically does.
+The rest of the area is about getting the missing information back.
 
 ---
 
-## 2. A pixel is a direction, not a place
+## 2. How a camera makes a picture
 
-Take three points: one 1 m away and 25 cm off to the side, one 2 m away and
-50 cm off to the side, one 4 m away and a metre off to the side.
+A camera is a box with a lens at the front and a flat sensor at the back.
 
-All three land on the same pixel.
+Light bounces off everything in the room. Some of it passes through the lens and
+lands on the sensor. The sensor is covered in a grid of tiny light detectors, and
+each one records the colour of the light that reached it.
+
+That grid of recordings is the picture.
+
+### A grid of pixels
+
+Each detector gives one square of the picture, called a **pixel** — short for
+*picture element*. A pixel holds one colour, and nothing else.
+
+![A picture is a grid of pixels](../images/camera/pixels.svg)
+
+The left picture was taken with a camera only 16 pixels across and 12 down, so
+you can see every square. Each box is just a few coloured squares.
+
+Pixels are numbered from the **top-left** corner:
+
+- `u` counts across, left to right
+- `v` counts **down**, top to bottom
+
+So `(0, 0)` is the top-left pixel. The downward `v` is easy to trip over, because
+on a graph `y` goes up. In a picture, it goes down.
+
+A pixel is a small square, not a point. Pixel `(3, 2)` covers the square from 3
+to 4 across and from 2 to 3 down, so its middle is at `(3.5, 2.5)`. That half
+pixel matters later.
+
+### Resolution: how many pixels
+
+**Resolution** is how many pixels a picture has, written width × height. The
+camera in this doc is `320 × 240`: 320 across, 240 down, 76,800 pixels in all.
+
+The right picture above is the same view at `320 × 240`. Nothing new came into
+the shot. The same table was cut into many more, smaller squares, so the edges
+come out sharp.
+
+### Field of view: how wide it sees
+
+**Field of view** is how many degrees across the camera takes in. It is set by
+the lens.
+
+![Field of view decides how much is in shot](../images/camera/field_of_view.svg)
+
+A wide lens takes in more of the table. A narrow lens takes in less, as if
+zoomed in. The camera in this doc sees 60° across. (The numbers under each lens
+come back in section 7.)
+
+Resolution and field of view are two separate things. One decides how much of
+the world is in the picture. The other decides how finely it is cut up. That
+difference matters a lot when choosing a camera, and section 7 shows why.
+
+---
+
+## 3. What a picture loses
+
+Here is the most important fact about cameras.
+
+**Every pixel looks out along one straight line.** Light reaching a pixel came
+from somewhere along that line — and the pixel has no way of knowing where.
 
 ![A pixel is a direction, not a place](../images/camera/pinhole.svg)
 
-They have to. They are on the same line out of the lens, so no camera could tell
-them apart. A pixel does not name a place. It names a **direction**, and
-everything along that direction shares it.
+The picture shows three points on the same line out of the lens: one near, one
+further, one further still. All three land on **the same pixel**. No camera could
+tell them apart. (The formula at the bottom is explained in section 6.)
 
-As arithmetic, for a point measured in the camera's own axes:
+So a pixel does not tell you a place. It tells you a **direction**.
+
+That is what people mean when they say a camera flattens the world. The world
+has three dimensions. A picture has two. The one that gets thrown away is
+distance.
+
+That has everyday consequences:
+
+- a big thing far away and a small thing close by can look exactly the same
+- a colour picture cannot tell you how far away anything is
+- so it cannot tell you where anything is, or how big
+
+No clever code can fix this, because the distance was never recorded. The only
+way out is to measure it separately.
+
+---
+
+## 4. Getting distance back: the depth picture
+
+A **depth camera** measures the missing distance.
+
+It takes a second picture, the same size as the colour one, through the same
+lens, at the same moment. But instead of a colour, each pixel holds a
+**distance, in metres**.
+
+A camera that gives both together is called **RGB-D**: red, green and blue for
+the colour picture, plus D for depth.
+
+![One capture is two pictures of the same size](../images/camera/capture.svg)
+
+Look at the numbers on the right. They are the depth readings for a small patch
+of pixels at the edge of the red box. On the box they read `0.340` m. On the
+table just behind it they read `0.400` m. (The labels `rgb8` and `32FC1` are the
+names ROS gives these two pictures; section 10 explains them.)
+
+That 6 cm jump is the red box. **No colour was needed to find it.** The depth
+numbers alone say that something sticks up out of the table, and by how much.
+
+For every box:
+
+| What | Depth reads | Height above the table |
+| --- | --- | --- |
+| table | 0.400 m | — |
+| green box top | 0.310 m | 0.090 m |
+| red box top | 0.340 m | 0.060 m |
+| blue box top | 0.360 m | 0.040 m |
+
+Subtract each reading from the table's `0.400` and you have each box's height,
+to the millimetre, from one picture.
+
+With the two pictures together, each pixel gives you a **direction** and a
+**distance**. A direction and a distance are enough to pin down a point in 3D.
+That is the whole idea of this area, and sections 5 to 9 turn it into
+arithmetic.
+
+### Depth is not distance
+
+One detail catches almost everyone.
+
+**Depth is measured straight ahead, along the way the camera points — not along
+the slanted line from the lens to the point.**
+
+That is why the table reads exactly `0.400` m *everywhere*, corners included.
+The corners are clearly further from the lens than the middle is. But every
+point on the table is 0.40 m *in front of* the camera, measured straight down.
+
+Mix the two up and every point comes out slightly too far away, worst at the
+edges of the picture. Getting it right also keeps the maths simple later: the
+third coordinate of a point turns out to be just the depth reading.
+
+---
+
+## 5. The camera used in this doc
+
+With the basics in place, here is the camera the rest of the doc uses:
+
+| What | Value | Meaning |
+| --- | --- | --- |
+| resolution | 320 × 240 | pixels across, pixels down |
+| field of view | 60° across | how wide it sees |
+| height | 0.40 m | how far above the table it hangs |
+| pointing | straight down | at the middle of the table |
+
+The table has a 5 cm grid printed on it, which makes it easy to see how much of
+it is in shot.
+
+These numbers are realistic. Small RGB-D cameras like this get mounted next to
+a robot gripper, looking down at whatever it is about to pick up.
+
+---
+
+## 6. The lens as four numbers
+
+To do arithmetic with a camera, its lens and sensor have to be described as
+numbers. It takes exactly four:
+
+| Number | What it means | Here |
+| --- | --- | --- |
+| `cx`, `cy` | the middle of the picture, in pixels. Straight ahead lands here | 160, 120 |
+| `fx`, `fy` | the **focal length**, in pixels: how zoomed in the lens is | 277.1 |
+
+Together they are called the **intrinsics**, because they are intrinsic to the
+camera: part of the device itself. They do not change when the camera moves.
+
+`fx` and `fy` are the same here, and on nearly every camera, because pixels are
+square. They are kept as two numbers because the ROS message keeps them as two.
+
+"Focal length in pixels" sounds odd, since lenses are measured in millimetres.
+It is a useful shortcut. What the arithmetic needs to know is how many pixels a
+given angle covers, and that depends on the lens and the sensor together. One
+number, in pixels, covers both.
+
+### The camera's own axes
+
+To say where something is relative to the camera, we need the camera's own axes.
+They are chosen to match the picture:
+
+- **X** points right, the same way as `u`
+- **Y** points **down**, the same way as `v`
+- **Z** points straight ahead, out of the lens
+
+With those axes, a point at `(x, y, z)` in front of the camera lands on this
+pixel:
 
 ```
 u = fx · (x / z) + cx
 v = fy · (y / z) + cy
 ```
 
-`x / z` is the whole idea. Twice as far away for twice the offset is the same
-ratio, so it is the same pixel. **Dividing by `z` is where the third dimension
-goes.**
+In words: how far to the side, **divided by how far ahead**, scaled up by the
+focal length, then moved to the middle of the picture.
 
-Everything awkward about cameras follows from that one division:
+`x / z` is section 3 written as arithmetic. Twice as far away and twice as far
+to the side gives the same ratio, so the same pixel. **Dividing by `z` is
+exactly where distance gets thrown away.**
 
-- a colour camera cannot measure size or distance, only direction
-- a big thing far away and a small thing close by look identical
-- to get a position back you have to supply the `z` that was divided out
-
-### The four numbers
-
-`fx`, `fy`, `cx`, `cy` are called the **intrinsics**, because they are intrinsic
-to the camera itself — its lens and its sensor — and do not change when it
-moves. A driver reports them with every frame, and they are all you need.
-
-| Number | What it is | Here |
-| --- | --- | --- |
-| `cx`, `cy` | the middle of the picture, in pixels. Straight ahead lands here | 160, 120 |
-| `fx`, `fy` | the focal length, **in pixels**: how zoomed in the lens is | 277.1 |
-
-Focal length measured in pixels sounds like a category error — a lens is
-measured in millimetres. It is a shortcut, and a good one. What the arithmetic
-needs to know is *how many pixels a given angle covers*, which mixes the lens
-and the sensor together. Folding both into one number, measured in pixels, means
-nothing downstream ever has to know either separately.
-
-`fx` and `fy` are equal here, and on essentially every camera you will meet,
-because pixels are square. They are kept apart anyway, because the message
-format keeps them apart.
+This is called **projection**: a 3D point in, a pixel out. It is what taking a
+picture does.
 
 ### Where 277 comes from
 
-A camera `width` pixels across, seeing `hfov` degrees across, is a triangle. Half
-the width is the opposite side, the focal length is the adjacent side, and half
-the field of view is the angle between them:
+The focal length follows from the resolution and the field of view. Half the
+picture's width and half its field of view make a right-angled triangle with the
+focal length:
 
 ```
-fx = (width / 2) / tan(hfov / 2)
+fx = (width / 2) / tan(field of view / 2)
    = 160 / tan(30°)
    = 277.1
 ```
 
-In a real run nothing calculates this. The driver sends it with every frame and
-the code reads it. It is worth being able to derive because it says which way the
-trade goes: **halve the field of view and the focal length roughly doubles.**
-Seeing less of the world means each degree of it covers more pixels.
-
-### Vocabulary
-
-| Term | Full name | Meaning |
-| --- | --- | --- |
-| intrinsics | — | `fx`, `fy`, `cx`, `cy`: the lens and sensor, as four numbers |
-| `fx`, `fy` | focal length | how zoomed in the lens is, measured in pixels |
-| `cx`, `cy` | principal point | the middle of the picture, in pixels |
-| fov | field of view | how many degrees across the picture covers |
-| projection | — | 3D point in, pixel out. The flattening |
-| deprojection | — | pixel plus depth in, 3D point out. The reverse |
-| RGB-D | red green blue, depth | a camera giving a colour and a depth picture together |
-| depth | — | distance along the way the camera looks, not along the slanted line |
-| optical frame | — | the camera's own axes: X right, Y down, Z forward |
-| point cloud | — | a bag of 3D points, what a depth picture becomes |
-| encoding | — | what the bytes in an image message mean: `rgb8`, `32FC1`, … |
-| intrinsic matrix | `K` | the four numbers laid out as a 3 × 3, as `CameraInfo` carries them |
+A real camera reports this number with every picture, so nothing has to work it
+out. But the formula shows which way the trade goes: **halve the field of view
+and the focal length roughly doubles.** Seeing less of the world means each
+degree of it is spread over more pixels.
 
 ---
 
-## 3. Configuring it: two separate knobs
+## 7. Field of view and resolution are separate knobs
 
-There are two things you can change about a camera before you have changed
-anything else, and they are independent. Confusing them is the most common way
-to buy the wrong camera.
+Section 2 said these are different things. Here is why it matters: mixing them
+up is the most common way to choose the wrong camera.
 
-### Field of view: how much is in shot
+![Field of view and resolution are separate knobs](../images/camera/configurations.svg)
 
-How many degrees across the lens takes in. It decides **how much of the world is
-in the picture**, and nothing else.
+The top row changes the **lens** and keeps the sensor. From 40 cm above the
+table:
 
-![Field of view decides how much is in shot](../images/camera/field_of_view.svg)
-
-From 40 cm above the table:
-
-| Lens | Field of view | `fx` | Sees, across | Per pixel |
+| Lens | Field of view | `fx` | Sees, across | One pixel covers |
 | --- | --- | --- | --- | --- |
 | wide | 90° | 160.0 | 0.800 m | 2.50 mm |
 | wrist | 60° | 277.1 | 0.462 m | 1.44 mm |
 | narrow | 30° | 597.1 | 0.214 m | 0.67 mm |
 
-How much fits is `distance × width / fx`. Note that it grows with distance: twice
-as far away means twice as much in shot, which is the same fact as the previous
-section from the other end.
+The bottom row changes the **sensor** and keeps the lens:
 
-### Resolution: how finely it is sampled
+| Sensor | Resolution | `fx` | Sees, across | One pixel covers |
+| --- | --- | --- | --- | --- |
+| lowres | 80 × 60 | 69.3 | 0.462 m | 5.77 mm |
+| wrist | 320 × 240 | 277.1 | 0.462 m | 1.44 mm |
+| hires | 640 × 480 | 554.3 | 0.462 m | 0.72 mm |
 
-How many pixels the sensor has. It decides **how finely whatever is in shot gets
-sampled**, and nothing else.
+All three sensors see exactly the same 46 cm of table. They only differ in how
+many pieces they cut it into.
 
-| Sensor | Size | `fx` | Sees, across | Per pixel | Pixels |
-| --- | --- | --- | --- | --- | --- |
-| lowres | 80 × 60 | 69.3 | 0.462 m | 5.77 mm | 4,800 |
-| wrist | 320 × 240 | 277.1 | 0.462 m | 1.44 mm | 76,800 |
-| hires | 640 × 480 | 554.3 | 0.462 m | 0.72 mm | 307,200 |
-
-All three see exactly the same 46 cm of table. They differ only in how many
-pieces they cut it into.
-
-### Why they are worth keeping apart
-
-![Field of view and resolution are separate knobs](../images/camera/configurations.svg)
-
-The top row changes the lens and keeps the sensor. The bottom row changes the
-sensor and keeps the lens. Both change `fx` — which is why `fx` on its own tells
-you nothing until you also know the picture size.
-
-The number that actually matters for a job is the last column of both tables:
-**millimetres per pixel at the distance you work at.** If one pixel covers
-1.4 mm, nothing 1 mm wide is going to be measured reliably, whatever the code
-does afterwards. That single number is what decides whether a camera can do what
-you want, and it is a property of the lens, the sensor and the working distance
-together.
+The number that decides whether a camera can do a job is the last column: **how
+many millimetres one pixel covers**, at the distance you work at. If one pixel
+covers 1.4 mm, nothing 1 mm wide can be measured reliably. No code can fix that
+afterwards.
 
 Two things follow that are easy to get wrong:
 
-- **A wide lens is not "more camera".** It spreads the same pixels over more
-  world, so everything in it is measured more coarsely. Wide sees more, badly.
-- **More pixels do not help you see more.** They cut the same view more finely.
-  A 640 × 480 camera and an 80 × 60 camera with the same lens are pointed at
-  exactly the same patch of table.
+- **A wide lens is not "more camera".** It spreads the same pixels over more of
+  the world, so everything in it is measured more coarsely.
+- **More pixels do not show you more.** They cut the same view more finely.
 
-Note also that the vertical field of view is not a free choice. With square
-pixels it falls out of the width, the height and the horizontal field of view:
-the 320 × 240 camera above sees 60° across and 46.8° down, and no setting
-changes that except changing one of the three.
+And `fx` on its own tells you nothing. `fx` changes in both tables, for
+different reasons. Always read it next to the resolution.
 
 ---
 
-## 4. Where the camera is
+## 8. Pixel plus depth gives back the point
 
-A picture says *this is 34 cm in front of me*. To know where that is in the room,
-you also have to know where "me" was, and which way it faced. So a capture that
-does not carry the camera's pose is not much use, and every real driver ships one
-alongside every frame.
+This is the section the rest of the area exists for.
 
-### Two conventions, on purpose
+A pixel is a direction. A depth reading is the distance that was thrown away.
+Put the distance back, and the 3D point comes back.
 
-ROS uses two different sets of axes for cameras, at the same time, in the same
-place.
+![Pixel plus depth gives back the point](../images/camera/deprojection.svg)
 
-![The two axis conventions](../images/camera/frames.svg)
+Turn the two formulas from section 6 around:
 
-| Frame | Axes | Why |
-| --- | --- | --- |
-| `camera_link` | X forward, Y left, Z up | matches the rest of the robot, so the URDF bolts this to a wrist |
-| `camera_link_optical` | X right, Y down, Z forward | matches the picture, so images are stamped in this |
+```
+x = (u - cx) · depth / fx
+y = (v - cy) · depth / fy
+z =  depth
+```
 
-The optical one looks wrong until you notice where it comes from: in an image,
-pixel `(0, 0)` is the **top** left and `v` counts downwards. Keeping the camera's
-axes in step with the picture is exactly what lets the two formulas in section 2
-be as short as they are. Rewrite them for a forward-is-X frame and they grow
-minus signs everywhere.
+This is called **deprojection**: a pixel and a depth in, a 3D point out. The
+reverse of taking a picture.
 
-So both conventions are kept, each doing the job it is natural for, with a fixed
-quarter turn between them. The turn never changes, so it is published once, on
-`/tf_static`, as the quaternion `(-0.5, 0.5, -0.5, 0.5)`. That is worth
-recognising on sight: four halves with alternating signs, and it is the same on
-every ROS camera there has ever been. Frames using the optical convention are
-named `..._optical_frame` or `..._optical` by tradition, precisely so that nobody
-has to guess which of the two a frame means.
+Here it is for one pixel on top of the red box:
 
-**This is the single most common camera bug in ROS.** Stamp an image in
-`camera_link` instead of the optical frame and nothing errors. The point cloud
-simply comes out lying on its side, rotated a quarter turn, and it looks like a
-maths bug in your own code.
+```
+pixel (212.5, 86.5), depth 0.340 m
+
+x = (212.5 - 160) · 0.340 / 277.1 = +0.0644 m
+y = (86.5 - 120)  · 0.340 / 277.1 = -0.0411 m
+z =                                 +0.3400 m
+```
+
+So that spot on the red box is:
+
+- 6.4 cm to the right of the camera
+- 4.1 cm towards the top of the picture
+- 34 cm in front of it
+
+Three things to notice:
+
+- **`y` is negative.** The camera's Y points down the picture. This pixel is
+  *above* the middle — `86.5` is less than `120` — so it comes out negative.
+  Nothing is wrong.
+- **The `.5` in the pixel** is the middle of the pixel, as section 2 said. At the
+  edge of a box, half a pixel is the difference between measuring the box and
+  measuring the table behind it.
+- **It goes both ways.** Put `(0.0644, -0.0411, 0.340)` back into the formula in
+  section 6 and pixel `(212.5, 86.5)` comes straight back. It is one formula,
+  read in two directions.
+
+The answer is still measured from the camera. A robot needs it in the room — and
+for that, it needs to know where the camera is.
+
+---
+
+## 9. Where the camera is
+
+The point above is "34 cm in front of me". To know where that is in the room,
+you also need to know where "me" is, and which way it faces.
+
+That is the camera's **pose**: where it is, and which way it points. Every
+picture has to carry it, or its numbers cannot be placed anywhere.
 
 ### camera_to_world
 
-Where the camera is, as one 4 × 4 table of numbers. For the top-down camera:
+The pose is kept as one table of numbers, called **camera_to_world**. For the
+camera in this doc, looking straight down from 40 cm up:
 
 |  | camera's RIGHT | camera's DOWN | camera's FORWARD | camera's POSITION |
 | --- | :---: | :---: | :---: | :---: |
@@ -301,124 +427,78 @@ Where the camera is, as one 4 × 4 table of numbers. For the top-down camera:
 
 How to read it:
 
-- **The last column is where the camera is**, in metres. 0.40 m above the middle
+- **The last column is where the camera is**, in metres: 0.40 m above the middle
   of the table.
-- **The first three columns are directions**, saying which way the camera's
+- **The first three columns are directions.** They say which way the camera's
   right, down and forward point in the room. Forward is `(0, 0, −1)`: straight
-  down. Down-the-picture is world `−Y`, which is another way of saying world
-  `+Y` comes out at the top of the picture.
+  down.
 - **The bottom row is always `0 0 0 1`.** It carries no information. It is there
-  so that turning a point and shifting it become one multiplication instead of
-  two steps.
+  so that turning and shifting can be done in one step.
 
-Applying it is simpler than the table makes it look. Start at the camera, then go
-`x` along its right, `y` along its down, `z` along its forward. That is all a
-rotation ever does: the three columns are three directions to walk in.
+It is the same idea as a transform in the [arm area](../arm/overview.md): a turn
+and a shift, kept together.
 
-Going the other way — a point in the room, measured from the camera — is three
-dot products, because the three axes are perpendicular and one unit long. That
-makes the inverse of the rotation the same numbers read the other way round,
-which is a very unusual thing to be able to say about an inverse.
+Using it is simpler than it looks. Start at the camera's position. Walk `x`
+along the camera's right, `y` along its down, and `z` along its forward. Where
+you end up is the point in the room.
+
+Do that with the red box point from section 8 and it lands at
+`(+0.0644, +0.0411, +0.0600)` in the room. That `z` of `0.060` m is exactly the
+height of the red box — and nothing in the calculation was told the height.
+
+The `y` changed sign on the way. For this camera, "down the picture" is world
+`−Y`, so a point towards the top of the picture has a positive `y` in the room.
 
 ### Pointing it somewhere
 
-Given a place to stand and a thing to look at, the three axes follow:
+Given a place to put the camera and a thing to look at, its three axes follow:
 
-1. **forward** is the arrow from the camera to what it is looking at.
-2. **right** is perpendicular to forward and to an "up" hint.
-3. **down** is then forced, perpendicular to the other two.
+1. **forward** is the arrow from the camera to the thing it looks at
+2. **right** is at right angles to forward and to "up"
+3. **down** is then at right angles to both
 
-The up hint only decides which way up the picture comes out; spinning a camera
-about the direction it looks rotates the picture but does not change what is in
-it. It must not be parallel to the viewing direction, which is exactly the case
-for a camera looking straight down — there, world `+Z` is the wrong hint and the
-code raises rather than quietly producing nonsense.
+"Up" only decides which way up the picture comes out. It must not point the
+same way as forward. A camera looking straight down is exactly that case, so
+there the code refuses to guess rather than quietly producing nonsense.
 
 ---
 
-## 5. Different kinds of capture
+## 10. What one capture contains
 
-One shot through one lens at one moment. Out of it come several different
-pictures, all the same size, all describing the same pixels.
+One shot through one lens at one moment gives several pictures, all the same
+size, all describing the same pixels. ROS names each kind by its **encoding**:
+what the numbers in each pixel mean.
 
-### Colour
-
-Three bytes a pixel: red, green, blue, each 0 to 255. ROS calls this encoding
-`rgb8`. The grey table reads `(148, 148, 148)`.
-
-This is the picture people mean when they say "camera", and on its own it is the
-least useful of the ones here. It tells you direction and appearance, and no
-geometry at all.
-
-### Depth
-
-One number a pixel: how far away that pixel is, in metres. ROS calls this
-encoding `32FC1` — 32-bit float, one channel.
-
-From the top-down camera:
-
-| What | Depth reads | Table minus that |
-| --- | --- | --- |
-| table | 0.400 m | — |
-| green box top | 0.310 m | 0.090 m |
-| red box top | 0.340 m | 0.060 m |
-| blue box top | 0.360 m | 0.040 m |
-
-Subtract each reading from the table's and you have the height of every box, to
-the millimetre, from one picture. **That jump in the numbers is how a box shows
-up.** No colour was involved.
-
-Two things about that table are worth pausing on.
-
-The first: the table reads 0.400 m *everywhere*, corners included, even though
-the corners are further from the lens than the middle is. That is not a rounding
-artefact — see [depth is not distance](#depth-is-not-distance) below.
-
-The second: a real depth camera never fills in every pixel. Shiny surfaces, dark
-surfaces, glass and anything past the sensor's range come back with no reading at
-all, and code that assumes a number is always there breaks the first time it
-meets a window. Missing readings are kept as missing here rather than clamped to
-the near or far limit, because clamping invents surfaces that are not there.
-
-### Grey, and depth in millimetres
-
-Two more views of the same shot, both of which you will meet:
-
-| Encoding | Per pixel | Bytes for 320 × 240 | At one sample pixel |
+| Picture | Encoding | Each pixel holds | At the red box pixel |
 | --- | --- | --- | --- |
-| `rgb8` | 3 bytes: r, g, b | 230,400 | `(196, 64, 54)` |
-| `mono8` | 1 byte: brightness | 76,800 | `102` |
-| `32FC1` | 4 bytes: metres | 307,200 | `0.3400 m` |
-| `16UC1` | 2 bytes: millimetres | 153,600 | `340 mm` |
+| colour | `rgb8` | red, green, blue, 0 to 255 each | `(196, 64, 54)` |
+| grey | `mono8` | brightness, 0 to 255 | `102` |
+| depth | `32FC1` | distance, in metres | `0.3400` |
+| depth | `16UC1` | distance, in whole millimetres | `340` |
 
-**Grey is not the average of the three.** The eye is far more sensitive to green
-than to blue, so brightness that matches what a person sees weights them 0.299,
-0.587 and 0.114. A third each gives a picture that is technically an average and
-looks wrong. It is worth having anyway: a third of the data, and plenty of vision
-work — edges, corners, tracking — never looks at colour at all.
+**Colour** is what people usually mean by "a camera". On its own it is the least
+useful here: direction and appearance, but no measurements.
 
-**`32FC1` and `16UC1` are the same measurement in different clothes**, and mixing
-them up is a thousand-fold error that will look like a wildly broken calibration.
-Which one you get depends on the camera, so both are worth recognising. They also
-disagree about how to say "no reading": `32FC1` uses `NaN`, `16UC1` uses `0`.
-Forget the second and every hole in the depth picture turns into a point sitting
-exactly inside the lens.
+**Grey** is a third of the data, and a lot of vision work — finding edges and
+corners, tracking — never looks at colour. It is not the plain average of red,
+green and blue. The eye is much more sensitive to green, so grey weights them
+`0.299` red, `0.587` green and `0.114` blue.
 
-### A mask
+**Depth** comes in two forms. `32FC1` holds metres as decimal numbers. `16UC1`
+holds whole millimetres. They are the same measurement — but read one as the
+other and everything is out by a factor of a thousand.
 
-Which pixels belong to which object — 2,624 of them are the red box here.
+Two more things come out of the same shot.
 
-This one is a cheat. It is free in a simulator, which knows what every ray hit,
-and on a real camera it is the hard part. It is also what the colour picture is
-usually *for*: pick out the pixels belonging to the thing you care about, then
-read only their depths. Having the true answer to hand is what makes a scene like
-this useful for checking working code.
+**A mask** says which pixels belong to which object: 2,624 of them are the red
+box. A simulator knows this for free, because it knows what every line of sight
+hit. On a real camera, working it out is the hard part. It is also what the
+colour picture is usually *for*: pick out the pixels of the thing you want, then
+read only their depths.
 
-### A point cloud
-
-Every pixel that has a depth reading, turned back into a 3D point. A 320 × 240
-picture is 76,800 of them; taking every fourth pixel in each direction gives
-4,800, which is plenty for most purposes.
+**A point cloud** is every pixel that has a depth reading, deprojected into a 3D
+point with section 8's arithmetic. Taking every fourth pixel across and down
+gives 4,800 points. A few of them, in room coordinates:
 
 | Landed on | x | y | z |
 | --- | --- | --- | --- |
@@ -427,118 +507,70 @@ picture is 76,800 of them; taking every fourth pixel in each direction gives
 | red | 0.035 | 0.068 | 0.060 |
 | blue | −0.082 | −0.037 | 0.040 |
 
-Every `z` is the height of the thing that pixel landed on. Nothing measured
-those heights — they fall out of one depth reading per pixel and the arithmetic
-in the next section.
+Every `z` is the height of what that pixel landed on. This is the form the rest
+of a robot wants. A picture is a grid of directions; a point cloud is a
+collection of places, and places can be grouped, measured and picked up.
 
-This is the form the rest of a robot actually wants. A picture is a grid of
-directions; a point cloud is a bag of places, and places are what you can group,
-measure and grasp.
-
----
-
-## 6. Pixel plus depth gives back the point
-
-This is the section the rest of the area exists for.
-
-Section 2 said a pixel is a direction, and that the third dimension was lost in
-a division. The depth reading is the missing number. Put it back and the point
-comes back.
-
-![Pixel plus depth gives back the point](../images/camera/deprojection.svg)
-
-### The arithmetic
-
-Turn the two projection formulas around:
-
-```
-x = (u - cx) · depth / fx
-y = (v - cy) · depth / fy
-z =  depth
-```
-
-Worked through for one pixel on top of the red box:
-
-```
-pixel (212.5, 86.5), depth 0.340 m
-
-x = (212.5 - 160) · 0.340 / 277.1 = +0.0644 m
-y = (86.5 - 120)  · 0.340 / 277.1 = -0.0411 m
-z =                                 +0.3400 m
-```
-
-Those three are measured from the camera. Push them through `camera_to_world`
-and you get `(+0.0644, +0.0411, +0.0600)` in the room — and `z = 0.060 m` is
-exactly the height of the red box top, which nothing in the calculation was told.
-
-Project it again and pixel `(212.5, 86.5)` comes straight back. The round trip
-closes because the two formulas are one formula read in both directions.
-
-Two details worth noticing in that arithmetic:
-
-- **`y` is negative from the camera and positive in the room.** Nothing is
-  wrong. The camera's `+Y` is *down the picture*, and this pixel is above the
-  middle of the picture. Moving into the room flips it, because for this camera
-  down-the-picture is world `−Y`.
-- **The `+ 0.5` in the pixel.** Pixel `(0, 0)` covers the square from 0 to 1, so
-  its middle is at `(0.5, 0.5)`. Half a pixel sounds like a rounding detail; at
-  the edge of a box it is the difference between measuring the box and measuring
-  the table behind it.
-
-### Depth is not distance
-
-The one thing most likely to bite you here.
-
-**Depth is measured along the direction the camera looks — not along the slanted
-line from the lens to the point.**
-
-That is why the whole table reads exactly 0.400 m from the top-down camera, when
-the corners are plainly further from the lens than the middle is. It is also
-what the deprojection above assumes. Feed it a straight-line distance and every
-point comes out slightly too far away, worst at the edges of the picture, in a
-way that looks like a lens distortion problem and is not.
-
-The convention is not an accident: it is what makes `z = depth` the third line
-of the deprojection instead of something involving a square root.
+A real depth camera never fills in every pixel. Shiny, dark or see-through
+surfaces, and anything out of range, come back with no reading. Here those stay
+missing rather than being filled with a made-up value, because a made-up value
+would put a surface where there is none.
 
 ---
 
-## 7. Why one picture is not enough
+## 11. Why one picture is not enough
 
 Move the camera and the same scene reads differently.
 
-| Viewpoint | Depth readings run | What you see |
+| Where the camera is | Depth readings run | What it sees |
 | --- | --- | --- |
-| straight down | 0.310 m to 0.400 m | tops of things, and a flat table everywhere |
-| leaning in ~20° | 0.306 m to 0.505 m | some of the sides, and a table that slopes across the picture |
+| straight down | 0.310 m to 0.400 m | the tops of things, and a table that reads the same everywhere |
+| leaning in about 20° | 0.306 m to 0.505 m | some of the sides, and a table that slopes across the picture |
 
 From straight above you mostly see tops, and a tall box can hide a short one
-behind it. The tilted view sees some of the sides instead, and picks up what was
-hidden. Its table no longer reads one number, because the far edge really is
-further away than the near edge.
+behind it. The tilted view sees some sides instead, and finds what was hidden.
+Its table no longer reads one number, because the far edge really is further
+away.
 
-Neither view is better. They see different things, which is why a robot that
+Neither view is better. They see different things. That is why a robot that
 wants to measure something usually takes two or three pictures from different
-places and puts the points together. Since every capture carries its own
-`camera_to_world`, points from different viewpoints land in the same room
-coordinates and simply add up.
-
-There is one more reason to move: the boxes near the edge of the picture show a
-sliver of their own sides even to the top-down camera, because rays away from the
-middle look outward at a slant. Which surfaces a camera can see is a property of
-where it is standing, and no amount of resolution changes it.
+places. Each picture carries its own `camera_to_world`, so the points from every
+view land in the same room coordinates and simply add together.
 
 ---
 
-## 8. Publishing it to ROS
+## 12. Publishing it to ROS
 
-Everything above is plain Python. `camera.py` has no ROS in it at all. The node
-next to it is only packaging: it takes those pictures and puts them on topics in
-the shape the rest of the ecosystem expects.
+Everything so far is plain Python. `camera.py` does not use ROS at all.
 
-That split is the point. Swap the ray-cast scene for a Gazebo plugin or a real
-RealSense driver and the topics below do not change, which is why a pipeline
-written against them keeps working.
+The node next to it, `camera_publisher.py`, is only packaging. It takes the same
+pictures and puts them on topics in the shape the rest of ROS expects. Swap the
+simulated scene for a real camera and those topics stay the same, so anything
+built on them keeps working.
+
+### Two sets of camera axes
+
+Section 6 gave the camera's axes as X right, Y down, Z forward, to match the
+picture. The rest of a robot uses a different habit: X forward, Y left, Z up.
+
+ROS keeps both, as two frames in the same place:
+
+![The two axis conventions](../images/camera/frames.svg)
+
+| Frame | Axes | Used for |
+| --- | --- | --- |
+| `camera_link` | X forward, Y left, Z up | attaching the camera to the robot, like any other part |
+| `camera_link_optical` | X right, Y down, Z forward | stamping the pictures, so the formulas stay short |
+
+Between them is a fixed quarter turn that never changes. ROS publishes it once,
+on `/tf_static`, as the quaternion `(-0.5, 0.5, -0.5, 0.5)` — the same four
+numbers on every ROS camera. Frames that use the picture's axes are named
+`..._optical` by habit, so nobody has to guess which is which.
+
+**This is the most common camera bug in ROS.** Stamp an image in `camera_link`
+instead of the optical frame and nothing complains. The point cloud just comes
+out lying on its side, turned a quarter turn, and it looks like a mistake in your
+own maths.
 
 ### How the pieces connect
 
@@ -560,48 +592,47 @@ flowchart LR
     camera_link -->|"fixed quarter turn, /tf_static"| camera_link_optical
 ```
 
-`world` stays still and RViz draws everything from it. `camera_link` walks slowly
-round, always looking at the middle of the table. `camera_link_optical` is a
-quarter turn from it and never moves relative to it — that is exactly why it goes
-out on `/tf_static` rather than every frame.
+`world` stays still, and RViz draws everything from it. `camera_link` circles
+slowly, always looking at the middle of the table. `camera_link_optical` is a
+quarter turn from it and never moves relative to it.
 
-Two things about that graph are the whole lesson:
+Two things about this are the whole lesson:
 
-**Everything carries the same timestamp.** A depth picture is only meaningful
-next to the intrinsics that produced it and the pose it was taken from. Anything
-downstream matches the four topics up by their stamp, so they have to agree.
+**Every message carries the same timestamp.** A depth picture only makes sense
+next to the four numbers and the pose it was taken with. Anything downstream
+matches the topics up by their timestamp, so they have to agree.
 
-**The point cloud is published in camera coordinates**, stamped in the optical
-frame, and left there — exactly as a real driver does. RViz moves it by looking
-up TF. Nothing re-computes the points when the camera moves. That is the same
-lesson as the [rviz](../rviz/overview.md) area, where the ball never moves and
-its frame does.
+**The point cloud is published from the camera's point of view**, and left
+there, exactly as a real camera driver does. RViz moves it into the room by
+looking up TF. Nothing recalculates the points when the camera moves — the same
+idea as the [rviz area](../rviz/overview.md), where the ball never moves but its
+frame does.
 
 ### Settings you can change
 
-No maths to edit. They are node parameters:
+They are node settings, so no code needs editing:
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `width_px` | 160 | picture width. Every pixel is a ray, so this costs CPU |
+| `width_px` | 160 | picture width |
 | `height_px` | 120 | picture height |
-| `hfov_deg` | 60.0 | field of view. Try 90 for wide, 30 for a zoom |
-| `camera_height_m` | 0.40 | how far above the table it sits |
+| `hfov_deg` | 60.0 | field of view across. Try 90 for wide, 30 for zoomed in |
+| `camera_height_m` | 0.40 | how far above the table it hangs |
 | `orbit_radius_m` | 0.13 | how far it leans out from straight above |
-| `orbit_period_s` | 20.0 | seconds for one lap |
-| `cloud_step` | 2 | take every Nth pixel for the point cloud |
-| `publish_rate_hz` | 2.0 | frames per second |
+| `orbit_period_s` | 20.0 | seconds for one circle |
+| `cloud_step` | 2 | use every Nth pixel for the point cloud |
+| `publish_rate_hz` | 2.0 | pictures per second |
 | `world_frame` | `world` | name of the still frame |
-| `camera_frame` | `camera_link` | the body-convention frame |
-| `optical_frame` | `camera_link_optical` | the frame images are stamped in |
+| `camera_frame` | `camera_link` | the robot-style frame |
+| `optical_frame` | `camera_link_optical` | the frame pictures are stamped in |
 
-The demo runs at 160 × 120 and 2 frames a second on purpose. Every pixel is one
-ray traced in plain Python, so the resolution is the cost. Raising `width_px` to
-320 quadruples the work.
+The demo runs at `160 × 120` and two pictures a second, on purpose. Each pixel
+is worked out in plain Python, one at a time, so resolution is what costs time.
+Doubling both the width and the height does four times the work.
 
 ---
 
-## 9. Running it
+## 13. Running it
 
 Two commands. Start with the first:
 
@@ -609,22 +640,25 @@ Two commands. Start with the first:
 make camera.learn
 ```
 
-It prints the whole thing: the intrinsics table, what each lens buys you,
-`camera_to_world`, a capture drawn in the terminal in ASCII, the depth numbers,
-one pixel worked through to a point, the encodings side by side, and the same
-scene from two viewpoints and through three lenses. It takes about a second and
-then exits.
+It prints the whole area in the terminal, then exits. In order:
+
+- the four numbers for each lens, and how much each one covers
+- `camera_to_world`
+- a capture drawn in text characters, and its depth readings
+- one pixel worked through to a point
+- the encodings side by side
+- the same scene from two positions
 
 ```
 make camera.demo
 ```
 
-This one opens RViz. Expect:
+This one opens RViz. You should see:
 
-- a **PointCloud2** of the table and the three boxes, in colour, rebuilt twice a
+- a **point cloud** of the table and the three boxes, in colour, rebuilt twice a
   second
-- two **Image** panels, colour and depth
-- the camera's **frames** walking slowly round the scene, once every 20 seconds
+- two **image** panels: colour and depth
+- the camera's **frames** circling the scene once every 20 seconds
 - a 5 cm **grid**
 
 In the terminal:
@@ -636,7 +670,7 @@ In the terminal:
 [rviz2-2] [INFO] [rviz2]: OpenGl version: 2.1 (GLSL 1.2)
 ```
 
-Those last two lines look like problems and are not. They are normal on a Mac.
+The last two lines look like problems. They are not — they are normal on a Mac.
 
 Press Ctrl-C to stop.
 
@@ -648,17 +682,22 @@ Leave `make camera.demo` running. In a second terminal:
 make camera.check
 ```
 
-It lists the topics, then prints the intrinsics the camera is reporting, and one
-message from each of the other three with their big arrays hidden. You should
-see `/camera/image_raw`, `/camera/depth/image_raw`, `/camera/camera_info` and
-`/camera/points` in the list, `k:` on the camera info holding `fx`, `cx`, `fy`
-and `cy`, `encoding: rgb8` on the colour image, `encoding: 32FC1` on the depth
-one, and `frame_id: camera_link_optical` on all three.
+It lists the topics, prints the four numbers the camera reports, and shows one
+message from each of the other topics with their big arrays hidden. You should
+see:
 
-If the point cloud is missing from RViz but the images are there, check the
-Fixed Frame under Global Options. It must be `world`. If the cloud appears but
-lies on its side, something is stamping images in `camera_link` rather than the
-optical frame — see [two conventions](#two-conventions-on-purpose).
+- `/camera/image_raw`, `/camera/depth/image_raw`, `/camera/camera_info` and
+  `/camera/points` in the list
+- `k:` on the camera info, holding `fx`, `cx`, `fy` and `cy`
+- `encoding: rgb8` on the colour picture and `encoding: 32FC1` on the depth one
+- `frame_id: camera_link_optical` on all three
+
+If the images appear but the point cloud does not, check the Fixed Frame under
+Global Options in RViz. It must be `world`.
+
+If the point cloud appears but lies on its side, pictures are being stamped in
+`camera_link` instead of the optical frame. See
+[two sets of camera axes](#two-sets-of-camera-axes).
 
 ### Commands
 
@@ -679,7 +718,7 @@ make shell     a shell with ROS ready, for typing ros2 commands
 
 ---
 
-## 10. Working on the code
+## 14. Working on the code
 
 ### Layout
 
@@ -696,33 +735,29 @@ src/camera_basics/
   test/test_camera.py                          the tests
 ```
 
-Every area follows that shape: one package under `src/`, one folder under
-`docs/`, and its pictures under `docs/images/<area>/`.
-
 ### Changing things
 
 **Change the lens.** `CONFIGS` in `camera.py` holds the five compared in
-section 3. Add one, or pass `hfov_deg` to the demo:
+section 7. Add one, or pass a different field of view to the demo:
 
 ```
 pixi run bash -c 'source install/setup.bash && \
   ros2 launch camera_basics camera_demo.launch.py hfov_deg:=90.0'
 ```
 
-**Change the scene.** `TABLE_SCENE` is three `Box`es on a plane. Add a fourth,
-or change a height, and every picture and every number in this document follows.
+**Change the scene.** `TABLE_SCENE` is three `Box`es on a table. Add a fourth or
+change a height, and every picture and number here follows.
 
 **Change what a capture gives you.** The methods on `Capture` — `mono8`,
 `depth_millimetres`, `mask`, `point_cloud` — are each a few lines over the same
 stored pixels. A new one goes next to them.
 
-**Swap the camera for a real one.** `camera.py` never imports ROS, and the node
-only ever calls `capture()`. Replace that one call with a driver subscription
-and nothing else in the node changes.
+**Use a real camera.** `camera.py` never imports ROS, and the node only ever
+calls `capture()`. Replace that one call with a real camera's feed and nothing
+else in the node changes.
 
-If you change the lens, the resolution or the scene, redraw the pictures in this
-file — they are taken by the code, not drawn by hand, so they will be wrong
-otherwise:
+If you change the lens, the resolution or the scene, redraw the pictures. They
+are taken by the code, so they go out of date otherwise:
 
 ```
 pixi run python docs/diagrams/camera.py
@@ -730,38 +765,58 @@ pixi run python docs/diagrams/camera.py
 
 ---
 
-## 11. Notes and gotchas
+## 15. Notes and gotchas
 
-**The pictures are rendered by ray casting**, one ray per pixel, in plain
-Python: send a ray out through each pixel, see what it hits first, write down the
-colour and the distance. That is the reverse of how light works and much easier
-to compute, and for this purpose it gives the same answer. It also has a happy
-side effect worth knowing: if the ray's forward component is left at exactly 1,
-then however far along it the scene is hit, that distance *is* the depth the
-camera reports, with no extra arithmetic.
+**The pictures are made by ray casting.** For each pixel, the code sends a line
+out through the lens, finds the first thing it hits, and records its colour and
+distance. That is the reverse of how light really travels, and much easier to
+compute, but it gives the same picture.
 
-**There is no lens distortion here.** Real lenses bend straight lines, especially
-wide ones, and a calibration produces five numbers describing the bend, which
-`CameraInfo` carries in `d`. This camera is ideal, so those are zeros. On a real
-camera they are not, and using the raw picture as though they were is a real
-source of error near the edges.
+**There is no lens distortion here.** Real lenses bend straight lines, wide ones
+especially. Calibrating a camera gives five numbers describing the bend, which
+`CameraInfo` carries as `d`. This camera is perfect, so they are all zero. On a
+real camera they are not, and ignoring them causes errors near the edges of the
+picture.
 
-**The `rgb` field in a point cloud is a wart.** Colour goes in as four bytes
-declared `FLOAT32` but read as `0x00RRGGBB`. It is not a float and never was.
-That is what RViz's "Color Transformer: RGB8" expects to find, so that is what
-the node writes.
+**`16UC1` uses `0` for "no reading", and `32FC1` uses `NaN`** — short for *not a
+number*. Forget that `0` means missing, and every hole in the depth picture turns
+into a point sitting exactly inside the lens.
 
-**`step` in an image message is the bytes in one row**, not the pixels. Getting
-it wrong shears the picture diagonally, which is at least a recognisable symptom.
+**The colour in a point cloud is stored oddly.** Each point's colour is packed
+into four bytes labelled as a decimal number, but the bytes are really
+`0x00RRGGBB`. That is what RViz expects, so that is what the node writes.
 
-**A depth camera's range matters.** Both a near limit and a far one; readings
-outside either come back empty. The near limit is why a camera pushed right up
-against something sees nothing at all.
+**`step` in an image message is the number of bytes in one row**, not the number
+of pixels. Get it wrong and the picture comes out sheared diagonally.
 
-**Focal length in pixels tells you nothing on its own.** `fx = 277` is a wide
-lens on a 640-pixel sensor and a narrow one on a 160-pixel sensor. Always read
-it next to the picture size.
+**Depth cameras have a range.** Too close and too far both come back empty. The
+near limit is why a camera pushed right up against something sees nothing at
+all.
+
+---
+
+## 16. Vocabulary
+
+| Term | Full name | Meaning |
+| --- | --- | --- |
+| pixel | picture element | one square of a picture, holding one value |
+| `u`, `v` | — | a pixel's position: across from the left, down from the top |
+| resolution | — | how many pixels, as width × height |
+| field of view | — | how many degrees across the camera sees |
+| depth | — | distance straight ahead of the camera, not along the slanted line |
+| RGB-D | red, green, blue, depth | a camera that gives a colour and a depth picture together |
+| intrinsics | — | `fx`, `fy`, `cx`, `cy`: the lens and sensor, as four numbers |
+| `fx`, `fy` | focal length | how zoomed in the lens is, in pixels |
+| `cx`, `cy` | principal point | the middle of the picture, in pixels |
+| projection | — | 3D point in, pixel out. Taking a picture |
+| deprojection | — | pixel and depth in, 3D point out. The reverse |
+| pose | — | where the camera is, and which way it points |
+| camera_to_world | — | the pose, as a table of numbers |
+| point cloud | — | a collection of 3D points, made from a depth picture |
+| encoding | — | what the numbers in an image message mean: `rgb8`, `32FC1`, and so on |
+| optical frame | — | the camera's picture-matching axes: X right, Y down, Z forward |
+| `K` | intrinsic matrix | the four numbers laid out as a 3 × 3 grid, as `CameraInfo` carries them |
 
 Previous area: [position, frames and transforms](../arm/overview.md), which
-builds the transform maths this area uses to move a point from the camera into
-the room.
+builds the transform maths used in section 9 to move a point from the camera
+into the room.

@@ -33,6 +33,14 @@ you what you are looking at before the arm area explains the maths behind it.
 Then **arm**, then **camera**, which uses that maths to turn a picture into
 points.
 
+## Beyond the areas
+
+**[Tools and libraries](docs/tools-and-libraries.md)** is a map of the main
+tools used with arms mounted on a table: ROS 2, URDF, MoveIt, ros2_control,
+simulators, perception, calibration and more. For each it explains the job it
+does, then shows pseudo code and a few lines of real code. Read it after the
+areas, when you want to know what to reach for next.
+
 ## Layout
 
 ```

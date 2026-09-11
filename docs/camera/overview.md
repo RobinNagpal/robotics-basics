@@ -33,15 +33,19 @@ be on the table, or where. Someone may have moved a box since last time. A camer
 sees the whole table at once, in a fraction of a second, without touching
 anything.
 
-To get there, this doc explains what a camera actually does, why an ordinary
-photo is not enough on its own, and how a second kind of picture fixes that.
+We will get there in two steps:
+
+- **Part 1: one box.** Just the red box on the table. Every idea about cameras
+  is explained on this simplest case, ending with the red box measured.
+- **Part 2: three boxes.** Put the other two back. Most of Part 1 carries over
+  unchanged, so this part is only about what is new: telling the boxes apart.
 
 The pictures in this doc are not drawn by hand. They are taken by the code this
 area describes, and so are the numbers beside them.
 
 ## Contents
 
-**The basics**
+**[Part 1: one box](#part-1-one-box)**
 
 1. [What a camera is for](#1-what-a-camera-is-for)
 2. [How a camera makes a picture](#2-how-a-camera-makes-a-picture)
@@ -52,54 +56,64 @@ area describes, and so are the numbers beside them.
 4. [Getting distance back: the depth picture](#4-getting-distance-back-the-depth-picture)
    · [Where the 76,800 readings land](#where-the-76800-readings-land)
    · [Depth is not distance](#depth-is-not-distance)
-
-**This camera**
-
 5. [The camera used in this doc](#5-the-camera-used-in-this-doc)
 6. [The lens as four numbers](#6-the-lens-as-four-numbers)
    · [The camera's own axes](#the-cameras-own-axes)
    · [Where 277 comes from](#where-277-comes-from)
 7. [Field of view and resolution are separate knobs](#7-field-of-view-and-resolution-are-separate-knobs)
-
-**From pixels to places**
-
 8. [Pixel plus depth gives back the point](#8-pixel-plus-depth-gives-back-the-point)
 9. [Where the camera is](#9-where-the-camera-is)
    · [camera_to_world](#camera_to_world)
    · [Pointing it somewhere](#pointing-it-somewhere)
 10. [What one capture contains](#10-what-one-capture-contains)
-    · [The three boxes, measured](#the-three-boxes-measured)
-11. [Why one picture is not enough](#11-why-one-picture-is-not-enough)
+11. [The box, measured](#11-the-box-measured)
 
-**In ROS**
+**[Part 2: three boxes](#part-2-three-boxes)**
 
-12. [Publishing it to ROS](#12-publishing-it-to-ros)
+12. [Telling the boxes apart](#12-telling-the-boxes-apart)
+13. [The three boxes, measured](#13-the-three-boxes-measured)
+14. [Why one picture is not enough](#14-why-one-picture-is-not-enough)
+
+**[Reference: ROS, running and the code](#reference-ros-running-and-the-code)**
+
+15. [Publishing it to ROS](#15-publishing-it-to-ros)
     · [Two sets of camera axes](#two-sets-of-camera-axes)
     · [How the pieces connect](#how-the-pieces-connect)
     · [Settings you can change](#settings-you-can-change)
-13. [Running it](#13-running-it)
+16. [Running it](#16-running-it)
     · [Checking it works](#checking-it-works)
     · [Commands](#commands)
-14. [Working on the code](#14-working-on-the-code)
+17. [Working on the code](#17-working-on-the-code)
     · [Layout](#layout)
     · [Changing things](#changing-things)
-15. [Notes and gotchas](#15-notes-and-gotchas)
-16. [Vocabulary](#16-vocabulary)
+18. [Notes and gotchas](#18-notes-and-gotchas)
+19. [Vocabulary](#19-vocabulary)
 
 ---
+
+## Part 1: one box
+
+Start with the simplest version of the problem: only the red box, on its own,
+exactly where it stands in the full scene. It is a 6 cm cube.
+
+![One box, from above and from the side](../images/camera/scene_one.svg)
+
+Everything in this part is shown on this one box: what a camera does, what it
+loses, how depth gets it back, and how a pixel becomes a point. It ends with the
+box measured.
 
 ## 1. What a camera is for
 
 A camera is good at one part of this job straight away: it can see what is on
-the table. A photo of it shows a red box, a green one and a blue one.
+the table. A photo of it shows a red box.
 
 But an ordinary colour photo cannot finish the job. It can tell you that
 something red is over there, in that direction. It cannot tell you how far away
 it is — and without that, it cannot tell you where the box is, or how tall.
 
 Sections 2 to 4 explain why, using nothing but what a camera physically does.
-The rest of the doc gets the missing information back, and then uses it to
-measure the three boxes.
+The rest of Part 1 gets the missing information back, and then uses it to
+measure the box.
 
 ---
 
@@ -121,7 +135,7 @@ Each detector gives one square of the picture, called a **pixel** — short for
 ![A picture is a grid of pixels](../images/camera/pixels.svg)
 
 The left picture was taken with a camera only 16 pixels across and 12 down, so
-you can see every square. Each box is just a few coloured squares.
+you can see every square. The red box is just a few red squares.
 
 Pixels are numbered from the **top-left** corner:
 
@@ -222,28 +236,26 @@ Here is where every reading landed, and what it read:
 
 | Landed on | Readings | The top reads | Height above the table |
 | --- | --- | --- | --- |
-| the table | 68,897 | 0.400 m | — |
-| green box | 2,456 | 0.310 m | 0.090 m |
-| red box | 2,624 | 0.340 m | 0.060 m |
-| blue box | 2,823 | 0.360 m | 0.040 m |
+| the table | 74,176 | 0.400 m | — |
+| the red box | 2,624 | 0.340 m | 0.060 m |
 | **all of them** | **76,800** | | |
 
 Most readings land on the table, and every one of those reads exactly `0.400` m.
 
-Each box gets a couple of thousand readings. Most of them land on its flat top,
-and all of those read the same number. A few land on a thin strip of the box's
-side, which the camera catches at the edge, and read a little more. For the red
-box, 2,352 readings are on its top and 272 are on a side.
+The box gets 2,624 readings. Most of them land on its flat top, and all of those
+read the same number: 2,352 readings of `0.340` m. The other 272 land on a thin
+strip of the box's side, which the camera catches at its edge. They read a
+little more, because the side is further down.
 
-Subtract each box's top reading from the table's `0.400` and you have its
-height: 9 cm, 6 cm and 4 cm. **That is half the problem solved**, from one
-picture. The heights match the table at the top of the doc.
+With only one box, finding its readings is easy: **anything that reads less than
+the table's `0.400` must be the box.** Part 2 shows why that stops working with
+more than one.
 
-(Here we know which pixel landed on which box, because the scene is simulated.
-On a real camera, sorting pixels into objects is a job of its own. Section 10
-comes back to it.)
+Subtract the box's top reading from the table's and you have its height:
+`0.400 - 0.340 = 0.060` m, which is 6 cm. **That is half the job done**, from one
+picture.
 
-The other half is where each box is. With the two pictures together, each pixel
+The other half is where the box is. With the two pictures together, each pixel
 gives you a **direction** and a **distance**. A direction and a distance are
 enough to pin down a point in 3D, and sections 5 to 9 turn that into arithmetic.
 
@@ -529,24 +541,15 @@ green and blue. The eye is much more sensitive to green, so grey weights them
 holds whole millimetres. They are the same measurement — but read one as the
 other and everything is out by a factor of a thousand.
 
-Two more things come out of the same shot.
-
-**A mask** says which pixels belong to which object: 2,624 of them are the red
-box. A simulator knows this for free, because it knows what every line of sight
-hit. On a real camera, working it out is the hard part. It is also what the
-colour picture is usually *for*: pick out the pixels of the thing you want, then
-read only their depths.
-
-**A point cloud** is every pixel that has a depth reading, deprojected into a 3D
-point with section 8's arithmetic. Taking every fourth pixel across and down
-gives 4,800 points. A few of them, in room coordinates:
+One more thing comes out of the same shot: **a point cloud**. That is every
+pixel with a depth reading, deprojected into a 3D point with section 8's
+arithmetic. Taking every fourth pixel across and down gives 4,800 points. Two of
+them, in room coordinates:
 
 | Landed on | x | y | z |
 | --- | --- | --- | --- |
 | table | −0.230 | 0.172 | 0.000 |
-| green | −0.084 | 0.071 | 0.090 |
-| red | 0.035 | 0.068 | 0.060 |
-| blue | −0.082 | −0.037 | 0.040 |
+| red box | 0.035 | 0.068 | 0.060 |
 
 Every `z` is the height of what that pixel landed on. This is the form the rest
 of a robot wants. A picture is a grid of directions; a point cloud is a
@@ -557,13 +560,14 @@ surfaces, and anything out of range, come back with no reading. Here those stay
 missing rather than being filled with a made-up value, because a made-up value
 would put a surface where there is none.
 
-### The three boxes, measured
+---
 
-Everything is now in place to answer the problem from the top of the doc.
+## 11. The box, measured
 
-For each box:
+Everything is now in place to measure the box. It takes four steps:
 
-1. take the pixels that landed on it, using the mask
+1. take the pixels that landed on the box — with one box, the ones reading less
+   than `0.400`
 2. turn each one into a point in the room, with sections 8 and 9
 3. keep only the highest points: that is the box's top
 4. average them
@@ -572,8 +576,8 @@ The average of the top is the middle of the box. The height of the top is how
 tall the box is. The strip of side from section 4 sits lower than the top, so
 step 3 leaves it out.
 
-Nothing about the boxes was looked up. The answer comes only from their pixels,
-the depth readings, the four lens numbers, and where the camera was.
+Nothing about the box was looked up. The answer comes only from its pixels, the
+depth readings, the four lens numbers, and where the camera was.
 
 Positions are in metres from the middle of the table, the spot straight under
 the camera:
@@ -581,18 +585,93 @@ the camera:
 | Box | Measured middle | True middle | Measured height | True height |
 | --- | --- | --- | --- | --- |
 | red | (+0.064, +0.040) | (+0.065, +0.040) | 0.060 m | 0.060 m |
-| green | (−0.060, +0.048) | (−0.060, +0.048) | 0.090 m | 0.090 m |
-| blue | (−0.040, −0.062) | (−0.040, −0.062) | 0.040 m | 0.040 m |
 
-Every middle is within a millimetre of the truth, and every height is exact. The
-camera has worked out where each box is and how tall it is, from one picture.
+The middle is within a millimetre of the truth, and the height is exact. One box,
+measured from one picture.
 
-This is `Capture.measure()` in `camera.py`, and it is the last thing
+This is `Capture.measure()` in `camera.py`, and it is the last thing Part 1 of
 `make camera.learn` prints.
 
 ---
 
-## 11. Why one picture is not enough
+## Part 2: three boxes
+
+Now put the green and blue boxes back, exactly as in the problem at the top.
+
+![The three boxes, from above and from the side](../images/camera/scene.svg)
+
+Almost nothing from Part 1 changes. The camera is the same, and so are its four
+numbers, its pose, and the arithmetic that turns a pixel into a point. The red
+box reads exactly what it read before.
+
+Only one thing breaks, and this part is about that.
+
+## 12. Telling the boxes apart
+
+In Part 1, finding the box was easy: anything reading less than the table's
+`0.400` was the box.
+
+With three boxes, that rule finds all three at once. It says these 7,903 pixels
+are not the table, but not which box each one belongs to. Measure that lump the
+Part 1 way and it goes wrong: keeping the highest points finds only the tallest
+box, the green one, and the other two vanish.
+
+So before any box can be measured, its pixels have to be sorted out from the
+others. The result is called a **mask**: for every pixel, which box it landed
+on.
+
+![Telling the boxes apart](../images/camera/mask.svg)
+
+Here is how the 76,800 readings split up now:
+
+| Landed on | Readings | The top reads | Height above the table |
+| --- | --- | --- | --- |
+| the table | 68,897 | 0.400 m | — |
+| green box | 2,456 | 0.310 m | 0.090 m |
+| red box | 2,624 | 0.340 m | 0.060 m |
+| blue box | 2,823 | 0.360 m | 0.040 m |
+| **all of them** | **76,800** | | |
+
+The red box still has exactly 2,624 readings, the same as in Part 1. The two new
+boxes take their readings away from the table instead: 74,176 in Part 1, 68,897
+now.
+
+Where does the mask come from? Here the simulator knows it for free, because it
+knows what every line of sight hit. A real camera has to work it out, and the
+usual clues are:
+
+- **colour**: red pixels are probably the red box
+- **jumps in depth**: where the depth changes suddenly, one object ends and
+  another begins
+
+Working this out is called **segmentation**. On a real camera it is the hard
+part, and a large share of real vision work is doing it well. This doc takes the
+mask as given, so that it can stay about the camera.
+
+---
+
+## 13. The three boxes, measured
+
+With the mask, each box gets its own pixels. Each one is then measured exactly as
+the red box was in section 11: turn its pixels into points, keep its top, and
+average.
+
+| Box | Measured middle | True middle | Measured height | True height |
+| --- | --- | --- | --- | --- |
+| red | (+0.064, +0.040) | (+0.065, +0.040) | 0.060 m | 0.060 m |
+| green | (−0.060, +0.048) | (−0.060, +0.048) | 0.090 m | 0.090 m |
+| blue | (−0.040, −0.062) | (−0.040, −0.062) | 0.040 m | 0.040 m |
+
+Every middle is within a millimetre of the truth, and every height is exact.
+That is the problem from the top of the doc, solved: where each box is and how
+tall it is, from one picture.
+
+The red box comes out exactly as it did in Part 1, to the last digit. The other
+two boxes did not disturb it, which is the whole point of telling them apart.
+
+---
+
+## 14. Why one picture is not enough
 
 Move the camera and the same scene reads differently.
 
@@ -613,7 +692,13 @@ view land in the same room coordinates and simply add together.
 
 ---
 
-## 12. Publishing it to ROS
+## Reference: ROS, running and the code
+
+The two parts above are the ideas. This part is the practical side: how the same
+pictures go out over ROS, how to run everything, and where things are in the
+code.
+
+## 15. Publishing it to ROS
 
 Everything so far is plain Python. `camera.py` does not use ROS at all.
 
@@ -706,7 +791,7 @@ Doubling both the width and the height does four times the work.
 
 ---
 
-## 13. Running it
+## 16. Running it
 
 Two commands. Start with the first:
 
@@ -714,15 +799,23 @@ Two commands. Start with the first:
 make camera.learn
 ```
 
-It prints the whole area in the terminal, then exits. In order:
+It runs the two parts in order, prints them in the terminal, and exits.
+
+Part 1, one box:
 
 - the four numbers for each lens, and how much each one covers
 - `camera_to_world`
-- a capture drawn in text characters, and its depth readings
-- one pixel worked through to a point
-- the encodings side by side
+- a capture drawn in text characters, and where its depth readings land
+- one pixel worked through to a point, and a point cloud
+- the encodings side by side, and the same shot through three lenses
+- the box, measured, next to its true size
+
+Part 2, three boxes:
+
+- which box each pixel landed on
+- where the depth readings land now
+- all three boxes, measured, next to their true sizes
 - the same scene from two positions
-- the three boxes, measured, next to their true sizes
 
 ```
 make camera.demo
@@ -777,7 +870,7 @@ If the point cloud appears but lies on its side, pictures are being stamped in
 ### Commands
 
 ```
-make camera.learn    the walkthrough, in the terminal
+make camera.learn    part 1 then part 2, in the terminal
 make camera.demo     build, then start the node and RViz
 make camera.check    show what it is publishing (run the demo first)
 ```
@@ -793,7 +886,7 @@ make shell     a shell with ROS ready, for typing ros2 commands
 
 ---
 
-## 14. Working on the code
+## 17. Working on the code
 
 ### Layout
 
@@ -803,11 +896,14 @@ docs/
   diagrams/camera.py                           redraws the pictures in it
   images/camera/                               the pictures
 src/camera_basics/
-  camera_basics/camera.py                      the camera. No ROS in it
+  camera_basics/camera.py                      the camera itself. No ROS in it
+  camera_basics/problems/one_box.py            part 1: every idea, on one box
+  camera_basics/problems/three_boxes.py        part 2: three boxes, what changes
   camera_basics/camera_publisher.py            the node. Only packaging
   launch/camera_demo.launch.py                 starts the node and RViz together
   rviz/camera_demo.rviz                        the saved RViz layout
-  test/test_camera.py                          the tests
+  test/test_camera.py                          tests for the camera
+  test/test_problems.py                        checks both parts print what this doc quotes
 ```
 
 ### Changing things
@@ -820,8 +916,13 @@ pixi run bash -c 'source install/setup.bash && \
   ros2 launch camera_basics camera_demo.launch.py hfov_deg:=90.0'
 ```
 
-**Change the scene.** `TABLE_SCENE` is three `Box`es on a table. Add a fourth or
-change a height, and every picture and number here follows.
+**Change the scene.** `ONE_BOX_SCENE` is the red box alone, used in Part 1, and
+`TABLE_SCENE` is all three, used in Part 2. Add a box or change a height, and
+every picture and number here follows.
+
+**Change a problem.** Each part is one file in `problems/`, and each prints its
+own sections in order. They only drive `camera.py` and print what comes out, so a
+new experiment is a new file next to them.
 
 **Change what a capture gives you.** The methods on `Capture` — `mono8`,
 `depth_millimetres`, `mask`, `point_cloud`, `measure` — are each a few lines
@@ -840,7 +941,7 @@ pixi run python docs/diagrams/camera.py
 
 ---
 
-## 15. Notes and gotchas
+## 18. Notes and gotchas
 
 **The pictures are made by ray casting.** For each pixel, the code sends a line
 out through the lens, finds the first thing it hits, and records its colour and
@@ -870,7 +971,7 @@ all.
 
 ---
 
-## 16. Vocabulary
+## 19. Vocabulary
 
 | Term | Full name | Meaning |
 | --- | --- | --- |
@@ -888,6 +989,9 @@ all.
 | pose | — | where the camera is, and which way it points |
 | camera_to_world | — | the pose, as a table of numbers |
 | point cloud | — | a collection of 3D points, made from a depth picture |
+| mask | — | for every pixel, which object it landed on |
+| segmentation | — | working out the mask from a real camera's pictures |
+| cuboid | — | a plain rectangular block, like the three boxes here |
 | encoding | — | what the numbers in an image message mean: `rgb8`, `32FC1`, and so on |
 | optical frame | — | the camera's picture-matching axes: X right, Y down, Z forward |
 | `K` | intrinsic matrix | the four numbers laid out as a 3 × 3 grid, as `CameraInfo` carries them |

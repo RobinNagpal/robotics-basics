@@ -25,7 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             # The walkthrough is meant to be read as much as run.
-            'camera_walkthrough = camera_basics.camera:main',
+            'camera_one_box = camera_basics.problems.one_box:main',
+            'camera_three_boxes = camera_basics.problems.three_boxes:main',
             'camera_publisher = camera_basics.camera_publisher:main',
         ],
     },

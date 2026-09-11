@@ -26,6 +26,7 @@ from camera_basics.camera import (  # noqa: E402  (must follow the sys.path line
     CameraConfig,
     capture,
     CONFIGS,
+    ONE_BOX_SCENE,
     TABLE_SCENE,
     TOP_DOWN,
     WRIST,
@@ -194,7 +195,7 @@ def field_of_view():
     _save(fig, 'field_of_view.svg')
 
 
-def scene():
+def scene(world=TABLE_SCENE, out='scene.svg'):
     """Draw the table, the boxes and the camera, from above and from the side."""
     fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.6), facecolor='white')
     plan, side = axes
@@ -215,7 +216,7 @@ def scene():
               f'what the wrist camera sees: {seen_w:.3f} x {seen_h:.3f} m',
               fontsize=9, ha='center', color=MUTED)
 
-    for box in TABLE_SCENE.boxes:
+    for box in world.boxes:
         low_x, low_y = box.centre[0] - box.size[0] / 2, box.centre[1] - box.size[1] / 2
         colour = '#%02x%02x%02x' % box.rgb
         plan.add_patch(Rectangle((low_x, low_y), box.size[0], box.size[1],
@@ -254,7 +255,7 @@ def scene():
     side.text(-0.205, CAMERA_HEIGHT_M / 2, f'{CAMERA_HEIGHT_M:.2f} m  ', fontsize=9,
               color=MUTED, ha='right', va='center', family='monospace')
 
-    for box in sorted(TABLE_SCENE.boxes, key=lambda b: b.centre[0]):
+    for box in sorted(world.boxes, key=lambda b: b.centre[0]):
         low_x = box.centre[0] - box.size[0] / 2
         colour = '#%02x%02x%02x' % box.rgb
         side.add_patch(Rectangle((low_x, 0.0), box.size[0], box.size[2],
@@ -271,14 +272,15 @@ def scene():
                    fontsize=12, color=INK, weight='bold', pad=12)
     fig.text(0.5, 0.02,
              'Subtract each reading from the 0.40 m the table reads, and you have '
-             'the height of every box.',
+             + ('the height of the box.' if len(world.boxes) == 1
+                else 'the height of every box.'),
              fontsize=9.5, ha='center', color=MUTED)
-    _save(fig, 'scene.svg')
+    _save(fig, out)
 
 
-def one_capture():
+def one_capture(world=TABLE_SCENE, out='capture.svg'):
     """Take one shot and show it as colour, as depth, and as the numbers behind it."""
-    shot = capture(TABLE_SCENE, WRIST, TOP_DOWN)
+    shot = capture(world, WRIST, TOP_DOWN)
     depth = _depth_array(shot)
 
     # A window straddling the far edge of the red box, where the depth steps
@@ -330,23 +332,23 @@ def one_capture():
 
     fig.suptitle('One capture is two pictures of the same size',
                  fontsize=13, color=INK, weight='bold', y=1.0)
-    _save(fig, 'capture.svg')
+    _save(fig, out)
 
 
-def configurations():
+def configurations(world=TABLE_SCENE, out='configurations.svg'):
     """Compare the two knobs: what is in shot, and how finely it is sampled."""
     fig, axes = plt.subplots(2, 3, figsize=(10.5, 7.4), facecolor='white')
 
     for axis, name in zip(axes[0], ('wide', 'wrist', 'narrow')):
         config = CameraConfig(name, 240, 180, CONFIGS[name].hfov_deg)
-        shot = capture(TABLE_SCENE, config, TOP_DOWN)
+        shot = capture(world, config, TOP_DOWN)
         width_m, _ = config.coverage_m(CAMERA_HEIGHT_M)
         _show_picture(axis, _rgb_array(shot),
                       f'{name} — {config.hfov_deg:g}°, {width_m:.3f} m across')
 
     for axis, name in zip(axes[1], ('lowres', 'wrist', 'hires')):
         config = CONFIGS[name]
-        shot = capture(TABLE_SCENE, config, TOP_DOWN)
+        shot = capture(world, config, TOP_DOWN)
         _show_picture(axis, _rgb_array(shot),
                       f'{name} — {config.width_px}x{config.height_px}, '
                       f'{config.metres_per_pixel(CAMERA_HEIGHT_M) * 1000:.2f} mm a pixel')
@@ -361,21 +363,22 @@ def configurations():
     fig.suptitle('Field of view and resolution are separate knobs',
                  fontsize=13, color=INK, weight='bold', y=0.97)
     fig.text(0.5, 0.045,
-             'Top row: same sensor, different lens — more of the table, less of each box.\n'
+             'Top row: same sensor, different lens — more of the table, fewer pixels on '
+             + ('the box' if len(world.boxes) == 1 else 'each box') + '.\n'
              'Bottom row: same lens, different sensor — the same view, sampled coarsely '
              'or finely.',
              fontsize=9.5, ha='center', color=MUTED)
     fig.subplots_adjust(top=0.90, bottom=0.13, hspace=0.22)
-    _save(fig, 'configurations.svg')
+    _save(fig, out)
 
 
-def deprojection():
+def deprojection(world=TABLE_SCENE, out='deprojection.svg'):
     """Walk one pixel and its depth reading back out to a point in the room."""
-    shot = capture(TABLE_SCENE, WRIST, TOP_DOWN)
+    shot = capture(world, WRIST, TOP_DOWN)
     u, v = 212.5, 86.5
     depth_m = shot.depth_at(u, v)
     cam_x, cam_y, cam_z = WRIST.deproject(u, v, depth_m)
-    world = shot.pixel_to_world(u, v)
+    in_room = shot.pixel_to_world(u, v)
 
     fig, axes = plt.subplots(1, 3, figsize=(12.4, 4.3), facecolor='white')
 
@@ -419,17 +422,17 @@ def deprojection():
     for tick in np.arange(-0.15, 0.16, 0.05):
         room.plot([-0.15, 0.15], [tick, tick], color=GRID, lw=0.7, zorder=0)
         room.plot([tick, tick], [-0.15, 0.15], color=GRID, lw=0.7, zorder=0)
-    for box in TABLE_SCENE.boxes:
+    for box in world.boxes:
         low_x, low_y = box.centre[0] - box.size[0] / 2, box.centre[1] - box.size[1] / 2
         room.add_patch(Rectangle((low_x, low_y), box.size[0], box.size[1],
                                  facecolor='#%02x%02x%02x' % box.rgb, alpha=0.55,
                                  edgecolor=INK, lw=0.8, zorder=2))
-    room.plot([world[0]], [world[1]], marker='o', ms=9, color=AXIS_X, zorder=5)
-    room.annotate(f'({world[0]:+.3f}, {world[1]:+.3f}, {world[2]:+.3f})',
-                  xy=(world[0], world[1]), xytext=(-0.145, 0.125), fontsize=9,
+    room.plot([in_room[0]], [in_room[1]], marker='o', ms=9, color=AXIS_X, zorder=5)
+    room.annotate(f'({in_room[0]:+.3f}, {in_room[1]:+.3f}, {in_room[2]:+.3f})',
+                  xy=(in_room[0], in_room[1]), xytext=(-0.145, 0.125), fontsize=9,
                   color=AXIS_X, family='monospace',
                   arrowprops={'arrowstyle': '-|>', 'color': AXIS_X, 'lw': 1.2})
-    room.text(0.5, -0.08, f'z = {world[2]:.3f} m: the height of the red box top',
+    room.text(0.5, -0.08, f'z = {in_room[2]:.3f} m: the height of the red box top',
               transform=room.transAxes, fontsize=9, ha='center', color=MUTED)
 
     # The three panels are different shapes, so their own titles would sit at
@@ -447,7 +450,7 @@ def deprojection():
 
     fig.suptitle('Pixel plus depth gives back the point',
                  fontsize=13, color=INK, weight='bold', y=0.98)
-    _save(fig, 'deprojection.svg')
+    _save(fig, out)
 
 
 def _iso(point):
@@ -516,11 +519,11 @@ def frames():
     _save(fig, 'frames.svg')
 
 
-def pixels():
+def pixels(world=TABLE_SCENE, out='pixels.svg'):
     """Show what a pixel is, using a capture small enough to see each one."""
     tiny = CameraConfig('tiny', 16, 12, WRIST.hfov_deg)
-    small_shot = capture(TABLE_SCENE, tiny, TOP_DOWN)
-    full_shot = capture(TABLE_SCENE, WRIST, TOP_DOWN)
+    small_shot = capture(world, tiny, TOP_DOWN)
+    full_shot = capture(world, WRIST, TOP_DOWN)
     w, h = tiny.width_px, tiny.height_px
 
     fig, (left, right) = plt.subplots(1, 2, figsize=(11.6, 5.0), facecolor='white',
@@ -573,16 +576,55 @@ def pixels():
 
     fig.suptitle('A picture is a grid of pixels', fontsize=13, color=INK,
                  weight='bold', y=0.98)
-    _save(fig, 'pixels.svg')
+    _save(fig, out)
+
+
+def mask(world=TABLE_SCENE, out='mask.svg'):
+    """Show the colour picture next to which box each pixel landed on."""
+    shot = capture(world, WRIST, TOP_DOWN)
+    colours = {'table': (236, 236, 236), None: (255, 255, 255)}
+    colours.update({box.label: box.rgb for box in world.boxes})
+    which = np.array([[colours[label] for label in row] for row in shot.labels],
+                     dtype=np.uint8)
+    counts = {}
+    for row in shot.labels:
+        for label in row:
+            counts[label] = counts.get(label, 0) + 1
+
+    fig, (left, right) = plt.subplots(1, 2, figsize=(11.0, 4.6), facecolor='white',
+                                      gridspec_kw={'wspace': 0.12})
+    _show_picture(left, _rgb_array(shot), 'what the camera sees: colour')
+    _show_picture(right, which, 'which box each pixel landed on')
+    for box in world.boxes:
+        rows = [r for r, row in enumerate(shot.labels) if box.label in row]
+        cols = [c for row in shot.labels for c, lab in enumerate(row) if lab == box.label]
+        right.text(sum(cols) / len(cols), max(rows) + 16,
+                   f'{box.label}: {counts[box.label]:,} pixels', fontsize=9,
+                   ha='center', va='center', color=INK, family='monospace',
+                   bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 1.5})
+    right.text(6, 12, f"table: {counts['table']:,} pixels", fontsize=9, ha='left',
+               va='center', color=MUTED, family='monospace')
+
+    fig.suptitle('Three boxes: the new job is telling them apart',
+                 fontsize=13, color=INK, weight='bold', y=1.0)
+    fig.text(0.5, 0.02, 'Colour and depth do not say which box a pixel belongs to. '
+             'That has to be worked out before each box can be measured.',
+             fontsize=9.5, ha='center', color=MUTED)
+    _save(fig, out)
 
 
 if __name__ == '__main__':
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    pixels()
+    # Part 1 of the doc: every idea, shown on one box.
+    scene(ONE_BOX_SCENE, 'scene_one.svg')
+    pixels(ONE_BOX_SCENE)
     pinhole()
     field_of_view()
-    scene()
-    one_capture()
-    configurations()
-    deprojection()
+    one_capture(ONE_BOX_SCENE)
+    configurations(ONE_BOX_SCENE)
+    deprojection(ONE_BOX_SCENE)
+    # Part 2: three boxes.
+    scene(TABLE_SCENE, 'scene.svg')
+    mask(TABLE_SCENE)
+    # The ROS reference section.
     frames()

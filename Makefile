@@ -82,8 +82,9 @@ arm.watch: build ## Step 5: ask TF where the gripper is (run arm.demo first)
 
 ##@ camera — lenses, pictures and the points inside them
 
-camera.learn: build ## Work through the lens, the captures and the maths, then exit
-	$(call ros,ros2 run camera_basics camera_walkthrough)
+camera.learn: build ## Part 1 (one box), then part 2 (three boxes), then exit
+	@$(call ros,ros2 run camera_basics camera_one_box)
+	@echo; $(call ros,ros2 run camera_basics camera_three_boxes)
 
 camera.demo: build ## Publish RGB, depth and a point cloud, and draw them in RViz
 	$(call ros,ros2 launch camera_basics camera_demo.launch.py)

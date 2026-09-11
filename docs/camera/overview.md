@@ -1,16 +1,40 @@
 # Cameras: pictures, and the points inside them
 
-A camera is how a robot finds out what is in front of it.
+## The problem
 
-This area starts from what a camera physically does: it turns light into a grid
-of coloured squares. From there it works up to what a robot arm actually needs,
-which is where each object is, in metres.
+Three boxes are sitting on a table, and a robot arm has to pick them up.
 
-Everything is explained on one example. A camera hangs 40 cm above a grey table
-and looks straight down. Three boxes stand on the table: **red** 6 cm tall,
-**green** 9 cm, and **blue** 4 cm.
+Before it can, the arm needs to know two things about each box:
+
+- **where it is** on the table
+- **how tall it is**, so it knows how far down to reach
+
+In this doc we will measure both, for all three boxes, using one camera. The
+camera hangs 40 cm above the middle of the table and looks straight down. It is
+the only thing doing the measuring. Nothing tells it where the boxes are, or how
+big they are.
 
 ![The scene, from above and from the side](../images/camera/scene.svg)
+
+The boxes are cuboids: plain rectangular blocks, standing upright.
+
+| Box | Footprint | Height | Seen from above |
+| --- | --- | --- | --- |
+| red | 6 × 6 cm | 6 cm | top right of the middle |
+| green | 5 × 5 cm | 9 cm | top left of the middle |
+| blue | 9 × 5 cm | 4 cm | bottom left of the middle |
+
+We know those numbers because we built the scene. The camera does not. That
+makes it a fair test: by the end of the doc, the camera's own measurements should
+match this table.
+
+Why use a camera for this? Because the robot cannot know ahead of time what will
+be on the table, or where. Someone may have moved a box since last time. A camera
+sees the whole table at once, in a fraction of a second, without touching
+anything.
+
+To get there, this doc explains what a camera actually does, why an ordinary
+photo is not enough on its own, and how a second kind of picture fixes that.
 
 The pictures in this doc are not drawn by hand. They are taken by the code this
 area describes, and so are the numbers beside them.
@@ -26,6 +50,7 @@ area describes, and so are the numbers beside them.
    · [Field of view: how wide it sees](#field-of-view-how-wide-it-sees)
 3. [What a picture loses](#3-what-a-picture-loses)
 4. [Getting distance back: the depth picture](#4-getting-distance-back-the-depth-picture)
+   · [Where the 76,800 readings land](#where-the-76800-readings-land)
    · [Depth is not distance](#depth-is-not-distance)
 
 **This camera**
@@ -43,6 +68,7 @@ area describes, and so are the numbers beside them.
    · [camera_to_world](#camera_to_world)
    · [Pointing it somewhere](#pointing-it-somewhere)
 10. [What one capture contains](#10-what-one-capture-contains)
+    · [The three boxes, measured](#the-three-boxes-measured)
 11. [Why one picture is not enough](#11-why-one-picture-is-not-enough)
 
 **In ROS**
@@ -64,19 +90,16 @@ area describes, and so are the numbers beside them.
 
 ## 1. What a camera is for
 
-A robot arm is about to pick something up. First it needs to know three things:
+A camera is good at one part of this job straight away: it can see what is on
+the table. A photo of it shows a red box, a green one and a blue one.
 
-- **What** is on the table?
-- **Where** is it, in the same coordinates the arm moves in?
-- **How big** is it, so the gripper opens wide enough?
-
-A camera is the obvious way to find out. But an ordinary colour picture can only
-answer the first question. It can tell you that something red is over there, in
-that direction. It cannot tell you how far away it is — and without that, it
-cannot tell you where it is or how big it is.
+But an ordinary colour photo cannot finish the job. It can tell you that
+something red is over there, in that direction. It cannot tell you how far away
+it is — and without that, it cannot tell you where the box is, or how tall.
 
 Sections 2 to 4 explain why, using nothing but what a camera physically does.
-The rest of the area is about getting the missing information back.
+The rest of the doc gets the missing information back, and then uses it to
+measure the three boxes.
 
 ---
 
@@ -176,8 +199,12 @@ It takes a second picture, the same size as the colour one, through the same
 lens, at the same moment. But instead of a colour, each pixel holds a
 **distance, in metres**.
 
-A camera that gives both together is called **RGB-D**: red, green and blue for
-the colour picture, plus D for depth.
+So you get **one depth reading for every pixel**. The camera in this doc is
+320 × 240 pixels, so one depth picture holds **76,800 readings**. In this scene,
+every one of the 76,800 came back with a number.
+
+A camera that gives both pictures together is called **RGB-D**: red, green and
+blue for the colour picture, plus D for depth.
 
 ![One capture is two pictures of the same size](../images/camera/capture.svg)
 
@@ -189,22 +216,36 @@ names ROS gives these two pictures; section 10 explains them.)
 That 6 cm jump is the red box. **No colour was needed to find it.** The depth
 numbers alone say that something sticks up out of the table, and by how much.
 
-For every box:
+### Where the 76,800 readings land
 
-| What | Depth reads | Height above the table |
-| --- | --- | --- |
-| table | 0.400 m | — |
-| green box top | 0.310 m | 0.090 m |
-| red box top | 0.340 m | 0.060 m |
-| blue box top | 0.360 m | 0.040 m |
+Here is where every reading landed, and what it read:
 
-Subtract each reading from the table's `0.400` and you have each box's height,
-to the millimetre, from one picture.
+| Landed on | Readings | The top reads | Height above the table |
+| --- | --- | --- | --- |
+| the table | 68,897 | 0.400 m | — |
+| green box | 2,456 | 0.310 m | 0.090 m |
+| red box | 2,624 | 0.340 m | 0.060 m |
+| blue box | 2,823 | 0.360 m | 0.040 m |
+| **all of them** | **76,800** | | |
 
-With the two pictures together, each pixel gives you a **direction** and a
-**distance**. A direction and a distance are enough to pin down a point in 3D.
-That is the whole idea of this area, and sections 5 to 9 turn it into
-arithmetic.
+Most readings land on the table, and every one of those reads exactly `0.400` m.
+
+Each box gets a couple of thousand readings. Most of them land on its flat top,
+and all of those read the same number. A few land on a thin strip of the box's
+side, which the camera catches at the edge, and read a little more. For the red
+box, 2,352 readings are on its top and 272 are on a side.
+
+Subtract each box's top reading from the table's `0.400` and you have its
+height: 9 cm, 6 cm and 4 cm. **That is half the problem solved**, from one
+picture. The heights match the table at the top of the doc.
+
+(Here we know which pixel landed on which box, because the scene is simulated.
+On a real camera, sorting pixels into objects is a job of its own. Section 10
+comes back to it.)
+
+The other half is where each box is. With the two pictures together, each pixel
+gives you a **direction** and a **distance**. A direction and a distance are
+enough to pin down a point in 3D, and sections 5 to 9 turn that into arithmetic.
 
 ### Depth is not distance
 
@@ -516,6 +557,39 @@ surfaces, and anything out of range, come back with no reading. Here those stay
 missing rather than being filled with a made-up value, because a made-up value
 would put a surface where there is none.
 
+### The three boxes, measured
+
+Everything is now in place to answer the problem from the top of the doc.
+
+For each box:
+
+1. take the pixels that landed on it, using the mask
+2. turn each one into a point in the room, with sections 8 and 9
+3. keep only the highest points: that is the box's top
+4. average them
+
+The average of the top is the middle of the box. The height of the top is how
+tall the box is. The strip of side from section 4 sits lower than the top, so
+step 3 leaves it out.
+
+Nothing about the boxes was looked up. The answer comes only from their pixels,
+the depth readings, the four lens numbers, and where the camera was.
+
+Positions are in metres from the middle of the table, the spot straight under
+the camera:
+
+| Box | Measured middle | True middle | Measured height | True height |
+| --- | --- | --- | --- | --- |
+| red | (+0.064, +0.040) | (+0.065, +0.040) | 0.060 m | 0.060 m |
+| green | (−0.060, +0.048) | (−0.060, +0.048) | 0.090 m | 0.090 m |
+| blue | (−0.040, −0.062) | (−0.040, −0.062) | 0.040 m | 0.040 m |
+
+Every middle is within a millimetre of the truth, and every height is exact. The
+camera has worked out where each box is and how tall it is, from one picture.
+
+This is `Capture.measure()` in `camera.py`, and it is the last thing
+`make camera.learn` prints.
+
 ---
 
 ## 11. Why one picture is not enough
@@ -648,6 +722,7 @@ It prints the whole area in the terminal, then exits. In order:
 - one pixel worked through to a point
 - the encodings side by side
 - the same scene from two positions
+- the three boxes, measured, next to their true sizes
 
 ```
 make camera.demo
@@ -749,8 +824,8 @@ pixi run bash -c 'source install/setup.bash && \
 change a height, and every picture and number here follows.
 
 **Change what a capture gives you.** The methods on `Capture` — `mono8`,
-`depth_millimetres`, `mask`, `point_cloud` — are each a few lines over the same
-stored pixels. A new one goes next to them.
+`depth_millimetres`, `mask`, `point_cloud`, `measure` — are each a few lines
+over the same stored pixels. A new one goes next to them.
 
 **Use a real camera.** `camera.py` never imports ROS, and the node only ever
 calls `capture()`. Replace that one call with a real camera's feed and nothing

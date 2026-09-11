@@ -419,3 +419,15 @@ def test_camera_link_then_the_static_turn_lands_on_the_optical_frame(eye):
     pose = look_at(eye, (0.0, 0.0, 0.0))
     chained = _quaternion_multiply(pose.body_quaternion(), OPTICAL_FROM_BODY_QUATERNION)
     assert _same_rotation(chained, pose.quaternion())
+
+
+@pytest.mark.parametrize('box', TABLE_SCENE.boxes, ids=lambda b: b.label)
+def test_measuring_a_box_finds_where_it_stands_and_how_tall(box):
+    """The problem the doc opens with: position and height, from pixels alone."""
+    x, y, height = capture(TABLE_SCENE, WRIST, TOP_DOWN).measure(box.label)
+    assert math.hypot(x - box.centre[0], y - box.centre[1]) < 0.001
+    assert height == pytest.approx(box.top_z, abs=0.001)
+
+
+def test_measuring_something_not_in_shot_gives_nothing():
+    assert capture(TABLE_SCENE, WRIST, TOP_DOWN).measure('purple') is None

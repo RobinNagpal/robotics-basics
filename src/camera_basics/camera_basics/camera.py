@@ -870,6 +870,39 @@ class Capture:
                 points.append((point[0], point[1], point[2], self.rgb[row][col]))
         return points
 
+    def measure(self, label: str) -> tuple[float, float, float] | None:
+        """Measure one object from this capture: where it stands, and how tall.
+
+        This is the whole point of the area in a few lines. Deproject every
+        pixel that landed on the object, move each point into the room, keep
+        the highest ones — its top — and average them. The average of the top
+        is the middle of the object, and the top's height is how tall it is.
+
+        Nothing about the object is looked up. Only its pixels, their depth
+        readings, the four lens numbers and where the camera was.
+
+        :param label: Which object, as named in the mask.
+        :returns: ``(x, y, height)`` in metres in the room, or ``None`` if no
+            pixel landed on it.
+        """
+        points = []
+        for row in range(self.config.height_px):
+            for col in range(self.config.width_px):
+                depth_m = self.depth[row][col]
+                if self.labels[row][col] != label or depth_m is None:
+                    continue
+                points.append(self.pose.to_world(
+                    self.config.deproject(col + 0.5, row + 0.5, depth_m)))
+        if not points:
+            return None
+        # Pixels at the object's edge catch a strip of its side. Those sit
+        # lower than the top, so keep only points within a millimetre of it.
+        top_z = max(p[2] for p in points)
+        top = [p for p in points if p[2] > top_z - 0.001]
+        x = sum(p[0] for p in top) / len(top)
+        y = sum(p[1] for p in top) / len(top)
+        return (x, y, top_z)
+
     # -- looking at it in a terminal ---------------------------------------
 
     def depth_range(self) -> tuple[float, float] | None:
@@ -1213,6 +1246,20 @@ def _show_lens_comparison() -> None:
     print('sensor did not change, only what was aimed at it.')
 
 
+def _show_measurements(shot: Capture) -> None:
+    _heading('11. the answer: the three boxes, measured')
+    print('Each box from its own pixels only: deproject them, keep its top,')
+    print('and average. Then compare with the true sizes the scene was built with.\n')
+    print(f"{'box':<7}{'measured middle':>18}{'true middle':>18}{'height':>9}{'true':>7}")
+    print('-' * 59)
+    for box in TABLE_SCENE.boxes:
+        x, y, height = shot.measure(box.label)
+        true_x, true_y = box.centre
+        print(f'{box.label:<7}  ({x:+.3f}, {y:+.3f})   ({true_x:+.3f}, {true_y:+.3f})'
+              f'{height:>9.3f}{box.top_z:>7.3f}')
+    print('\nEvery middle within a millimetre, every height exact, from one picture.')
+
+
 def main() -> None:
     """Print the whole walkthrough, from the four numbers to a point cloud."""
     print(__doc__.split('WHAT A CAMERA ACTUALLY DOES')[0].strip())
@@ -1231,6 +1278,7 @@ def main() -> None:
 
     _show_viewpoints()
     _show_lens_comparison()
+    _show_measurements(shot)
 
     print('\nNext: make camera.demo publishes these same pictures to RViz,')
     print('as sensor_msgs/Image, sensor_msgs/CameraInfo and a point cloud.')

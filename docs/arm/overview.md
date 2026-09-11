@@ -644,3 +644,7 @@ without following the theory.
 If you have not read the [RViz area](../rviz/overview.md) yet, it covers markers
 and the 3D viewer itself. It is the easier of the two, and it shows you what you
 are looking at before this area explains the maths underneath.
+
+Next area: [lenses, pictures and the points inside them](../camera/overview.md),
+which puts the transforms built here to work — moving a point measured by a
+camera into the room the arm moves in.

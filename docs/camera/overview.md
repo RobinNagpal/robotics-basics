@@ -59,7 +59,7 @@ area describes, and so are the numbers beside them.
    - [1.4 Getting distance back: the depth picture](#14-getting-distance-back-the-depth-picture)
      · [Where the 76,800 readings land](#where-the-76800-readings-land)
      · [Depth is not distance](#depth-is-not-distance)
-   - [1.5 The camera used in this doc](#15-the-camera-used-in-this-doc)
+   - [1.5 The cameras used in this doc](#15-the-cameras-used-in-this-doc)
    - [1.6 The lens as four numbers](#16-the-lens-as-four-numbers)
      · [What focal length is](#what-focal-length-is)
      · [Why the focal length is counted in pixels](#why-the-focal-length-is-counted-in-pixels)
@@ -301,9 +301,14 @@ Mix the two up and every point comes out slightly too far away, worst at the
 edges of the picture. Getting it right also keeps the maths simple later: the
 third coordinate of a point turns out to be just the depth reading.
 
-#### 1.5 The camera used in this doc
+#### 1.5 The cameras used in this doc
 
-With those ideas in place, here is the camera that the rest of the doc uses:
+With those ideas in place, we can describe the cameras this doc uses. There are
+two of them, and they have different jobs.
+
+The first is a simulated camera, which takes every picture and gives every number
+in this doc. It lives in the code, so we can put it exactly where we want, and it
+gives both a colour picture and a depth picture for every shot:
 
 | What | Value | Meaning |
 | --- | --- | --- |
@@ -313,10 +318,33 @@ With those ideas in place, here is the camera that the rest of the doc uses:
 | pointing | straight down | at the middle of the table |
 
 The table has a 5 cm grid printed on it, which makes it easy to see how much of
-it is in shot.
+it is in shot. The picture is kept small on purpose: 76,800 pixels are few enough
+to work through quickly and to print in a terminal, and every idea in this doc
+works the same way with more pixels.
 
-These numbers are realistic. Small RGB-D cameras like this get mounted next to
-a robot gripper, looking down at whatever it is about to pick up.
+The second is a real camera, the
+[Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/), which
+this doc uses whenever it shows how things look on real hardware. It is a small,
+inexpensive camera that is often fitted to hobby robots, and its maker publishes
+every number we need in its
+[hardware specifications](https://www.raspberrypi.com/documentation/accessories/camera.html#hardware-specification).
+Its field of view across is 62.2°, which is very close to the simulated camera's
+60°, so from the same height the two see almost the same patch of table. The big
+difference is how finely they cut that patch up, because the real camera has
+about 105 times as many pixels:
+
+| What | Simulated camera | Raspberry Pi Camera Module 2 |
+| --- | --- | --- |
+| resolution | 320 × 240 (76,800 pixels) | 3280 × 2464 (about 8.1 million pixels) |
+| field of view | 60° across, 46.8° down | 62.2° across, 48.8° down |
+| depth picture | yes | no, colour only |
+
+The last row matters. The Raspberry Pi camera only records colour, so on its own
+it cannot measure how far away anything is, which is exactly what section 1.3
+showed a colour picture loses. That makes it a good real example for everything
+about the lens and the pixels, but a real robot doing this doc's job would need a
+depth camera as well. Whenever this doc uses the real camera, it also says what
+that camera can and cannot do.
 
 #### 1.6 The lens as four numbers
 
@@ -346,13 +374,11 @@ the back wall where the picture forms.
 
 Real focal lengths are small, so they are measured in millimetres. A traditional
 camera with a "50 mm lens" has its lens about 50 millimetres in front of the film
-or the sensor. Small cameras have much shorter focal lengths than that. This doc
-uses the [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/)
-as its real example, because it is a small camera that is often fitted to hobby
-robots, and because its maker publishes every number we need in its
-[hardware specifications](https://www.raspberrypi.com/documentation/accessories/camera.html#hardware-specification).
-Its lens sits only 3.04 millimetres in front of its sensor, so its focal length
-is 3.04 mm.
+or the sensor. Small cameras have much shorter focal lengths than that, and the
+Raspberry Pi camera from section 1.5 is a good example. Its
+[hardware specifications](https://www.raspberrypi.com/documentation/accessories/camera.html#hardware-specification)
+give its focal length as 3.04 mm, which means that its lens sits only 3.04
+millimetres in front of its sensor.
 
 The focal length matters because it decides how big things look in the picture.
 Light from a point in the scene travels in a straight line through the lens and
@@ -463,9 +489,11 @@ coloured line is the line of sight to the spot on the red box, which lands 52.5
 pixels to the right of the middle and 33.5 pixels above it.
 
 `fx` and `fy` are the same here, and on nearly every camera, because pixels are
-square, so a pixel's width and its height are the same. They are still kept as
-two numbers because the ROS message keeps them as two, and because a few cameras
-have pixels that are very slightly taller than they are wide.
+square, so a pixel's width and its height are the same. The Raspberry Pi camera
+is one of them: its pixels are 1.12 µm by 1.12 µm, so its `fx` and its `fy` are
+both 2,714 pixels. The two numbers are still kept separately because the ROS
+message keeps them as two, and because a few cameras have pixels that are very
+slightly taller than they are wide.
 
 ##### cx and cy: the middle of the picture
 
@@ -476,7 +504,10 @@ is measured from there. Our picture is 320 by 240 pixels, so its middle is at
 `cx = 160` and `cy = 120`, and the diagram above marks it under each picture. On
 a real camera these two numbers are usually close to the exact middle but not
 quite on it, because the sensor is never perfectly centred behind the lens, and
-that is why they are measured and reported rather than assumed.
+that is why they are measured and reported rather than assumed. For the Raspberry
+Pi camera, the exact middle of its 3280 × 2464 picture is at pixel (1640, 1232),
+and calibrating a real one would give numbers close to those, but not exactly
+equal to them.
 
 ##### The camera's own axes
 
@@ -569,10 +600,18 @@ The bottom row changes the **sensor** and keeps the lens:
 All three sensors see exactly the same 46 cm of table. They only differ in how
 many pieces they cut it into.
 
+The Raspberry Pi camera from section 1.5 shows the same thing on real hardware.
+From the same 40 cm above the table, with its `fx` of 2,714 pixels, it sees 0.483
+metres across, which is almost the same as the simulated camera's 0.462 metres.
+But it cuts that view into 3,280 pixels instead of 320, so one of its pixels
+covers only 0.15 millimetres of the table, which is about ten times finer than
+the simulated camera's 1.44 millimetres.
+
 The number that decides whether a camera can do a job is the last column: **how
 many millimetres one pixel covers**, at the distance you work at. If one pixel
 covers 1.4 mm, nothing 1 mm wide can be measured reliably. No code can fix that
-afterwards.
+afterwards. With the Raspberry Pi camera's 0.15 mm, the same 1 mm feature spans
+about seven pixels, which is enough to measure it.
 
 Two things follow that are easy to get wrong:
 
@@ -955,6 +994,10 @@ distance in whole millimetres. They are the same measurement written in two
 ways, but if a program reads one as the other, every distance comes out a
 thousand times too big or too small.
 
+A colour-only camera, such as the Raspberry Pi camera from section 1.5, gives
+only the first two forms, colour and grey. It has no depth to report, so it never
+produces either of the depth forms.
+
 One more thing comes out of the same shot, and for a robot it is the most useful
 one: a **point cloud**. A point cloud is what we get when we take every pixel
 that has a depth reading, turn it into a point with the calculation from section
@@ -970,7 +1013,9 @@ them, in room coordinates:
 In every point, `z` is the height of whatever that pixel landed on, which is 0
 for the table and 0.060 for the red box. This is the form the rest of a robot
 wants, because a picture is a grid of directions, while a point cloud is a
-collection of places, and places can be grouped, measured and picked up.
+collection of places, and places can be grouped, measured and picked up. This is
+also where a colour-only camera falls short: the Raspberry Pi camera has no depth
+reading for any of its pixels, so it cannot make a point cloud on its own.
 
 A real depth camera never fills in every pixel. Shiny, dark or see-through
 surfaces, and anything too near or too far away, come back with no reading at
@@ -1343,6 +1388,9 @@ usual clues are:
 - **jumps in depth**: where the depth changes suddenly, one object ends and
   another begins
 
+The Raspberry Pi camera from section 1.5 could only use the first of these clues,
+because it has no depth picture.
+
 Working this out is called **segmentation**. On a real camera it is the hard
 part, and a large share of real vision work is doing it well. This doc takes the
 mask as given, so that it can stay about the camera.
@@ -1405,6 +1453,15 @@ The node next to it, `camera_publisher.py`, is only packaging. It takes the same
 pictures and puts them on topics in the shape the rest of ROS expects. Swap the
 simulated scene for a real camera and those topics stay the same, so anything
 built on them keeps working.
+
+For the Raspberry Pi camera, the usual ROS 2 driver is
+[`camera_ros`](https://github.com/christianrauch/camera_ros). The camera plugs
+into the camera connector on a Raspberry Pi rather than into a USB port, so the
+driver runs on the Pi itself. It publishes the colour picture on `~/image_raw`
+and the four lens numbers on `~/camera_info`, where `~` stands for the node's own
+name, so a node named `camera` publishes `/camera/image_raw` and
+`/camera/camera_info`, the same two topics this area uses for colour. It
+publishes nothing for depth or points, because the camera measures neither.
 
 #### Two sets of camera axes
 
@@ -1629,7 +1686,9 @@ over the same stored pixels. A new one goes next to them.
 
 **Use a real camera.** `camera.py` never imports ROS, and the node only ever
 calls `capture()`. Replace that one call with a real camera's feed and nothing
-else in the node changes.
+else in the node changes. With the Raspberry Pi camera, that feed would come from
+the `camera_ros` driver in section 8, and it would only fill in the colour
+picture, so the depth parts would still need a depth camera.
 
 If you change the lens, the resolution or the scene, redraw the pictures. They
 are taken by the code, so they go out of date otherwise:
@@ -1651,7 +1710,8 @@ compute, but it gives the same picture.
 especially. Calibrating a camera gives five numbers describing the bend, which
 `CameraInfo` carries as `d`. This camera is perfect, so they are all zero. On a
 real camera they are not, and ignoring them causes errors near the edges of the
-picture.
+picture. The Raspberry Pi camera is no exception, so measuring anything with it
+would start with calibrating it.
 
 **`16UC1` uses `0` for "no reading", and `32FC1` uses `NaN`** — short for *not a
 number*. Forget that `0` means missing, and every hole in the depth picture turns

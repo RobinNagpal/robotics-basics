@@ -1,0 +1,57 @@
+# What ros_gz_bridge copies from Gazebo onto ROS topics.
+#
+# Gazebo and ROS have separate message systems. Each entry names a topic on
+# each side and the message type on each side, and says which way it flows.
+# The ROS names on the left follow the usual camera driver layout, so any ROS
+# tool that works with a real camera works with this one unchanged.
+#
+# Gazebo's own point cloud is left out on purpose. Its points use the camera
+# body's axes (X forward) but are stamped with the optical frame (Z forward), so
+# RViz would draw them turned on their side. The launch file builds the cloud
+# from the depth picture with depth_image_proc instead, as a real robot would.
+
+# Simulated time. Every node in the launch file uses it (use_sim_time), so that
+# timestamps on the pictures and on TF agree with each other.
+- ros_topic_name: /clock
+  gz_topic_name: /clock
+  ros_type_name: rosgraph_msgs/msg/Clock
+  gz_type_name: gz.msgs.Clock
+  direction: GZ_TO_ROS
+
+# The camera the doc uses, 320 x 240.
+- ros_topic_name: /camera/image_raw
+  gz_topic_name: /camera/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /camera/depth/image_raw
+  gz_topic_name: /camera/depth_image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /camera/camera_info
+  gz_topic_name: /camera/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+
+# The basic camera, 80 x 60, for looking at every pixel.
+- ros_topic_name: /basic_camera/image_raw
+  gz_topic_name: /basic_camera/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /basic_camera/depth/image_raw
+  gz_topic_name: /basic_camera/depth_image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+- ros_topic_name: /basic_camera/camera_info
+  gz_topic_name: /basic_camera/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS

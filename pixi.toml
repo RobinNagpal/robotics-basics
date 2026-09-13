@@ -15,6 +15,17 @@ platforms = ["osx-arm64"]
 python = "3.12.*"
 ros-jazzy-desktop = "*"
 
+# Simulation and perception, as used by the camera projects. Gazebo Harmonic
+# renders the camera pictures, ros_gz bridges them onto ROS topics, xacro builds
+# the robot description, and vision_msgs carries what the camera found.
+ros-jazzy-ros-gz = "*"
+ros-jazzy-xacro = "*"
+ros-jazzy-vision-msgs = "*"
+# Turns a depth picture into a point cloud: the standard way to get one in ROS.
+ros-jazzy-depth-image-proc = "*"
+# Rotations and transforms as matrices, the way most robotics Python code does it.
+scipy = "*"
+
 # Build tooling for the colcon workspace under src/.
 colcon-common-extensions = "*"
 # setuptools 80 removed the `develop` command that ament_python packages rely on

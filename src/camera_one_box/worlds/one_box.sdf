@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<!--
+  The world for the one-box problem: a table with a 5 cm grid printed on it, and
+  one red 6 cm cube standing on it. The camera is not in here. It is described
+  in urdf/camera.urdf.xacro and added to this world by the launch file, the same
+  way a robot arm would be.
+-->
+<sdf version="1.9">
+  <world name="one_box">
+
+    <!-- The systems every world needs: physics, a way for the GUI and ROS to
+         see what is in the world, the renderer behind the camera sensors, and
+         the service the launch file uses to add the camera. -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <scene>
+      <ambient>0.5 0.5 0.5 1</ambient>
+      <background>0.3 0.3 0.3 1</background>
+    </scene>
+
+    <!-- Light from above, slightly to one side, so the sides of the box are
+         darker than its top. -->
+    <light type="directional" name="sun">
+      <pose>0 0 2 0 0 0</pose>
+      <direction>-0.3 0.2 -1</direction>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <!-- The table: 1.2 m square, with its top surface at height 0. -->
+    <model name="table">
+      <static>true</static>
+      <pose>0 0 -0.01 0 0 0</pose>
+      <link name="top">
+        <collision name="collision">
+          <geometry><box><size>1.2 1.2 0.02</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1.2 1.2 0.02</size></box></geometry>
+          <material>
+            <diffuse>1 1 1 1</diffuse>
+            <ambient>1 1 1 1</ambient>
+            <pbr>
+              <metal>
+                <albedo_map>textures/table_grid.png</albedo_map>
+                <roughness>1.0</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- The red box: a 6 cm cube, its middle 6.5 cm to the right of the middle of
+         the table and 4 cm towards the top of the picture. -->
+    <model name="red_box">
+      <static>true</static>
+      <pose>0.065 0.040 0.03 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.06</size></box></geometry>
+          <material>
+            <diffuse>0.77 0.25 0.21 1</diffuse>
+            <ambient>0.77 0.25 0.21 1</ambient>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

@@ -14,13 +14,13 @@ ros = pixi run bash -c 'source install/setup.bash && $(1)'
 
 .PHONY: help setup doctor build test lint clean shell \
         rviz.demo rviz.check arm.learn arm.demo arm.watch \
-        camera.learn camera.demo camera.check
+        camera.learn camera.demo camera.check camera.one_box camera.pixels
 
 help: ## Show this help
 	@echo ""
 	@awk 'BEGIN {FS = ":.*##"} \
 		/^##@/ { printf "\n  \033[1m%s\033[0m\n", substr($$0, 5) } \
-		/^[a-zA-Z_.-]+:.*?##/ { printf "    \033[36m%-12s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+		/^[a-zA-Z_.-]+:.*?##/ { printf "    \033[36m%-19s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "  Area commands are <area>.<action>. Docs for an area are in docs/<area>/."
 	@echo ""
@@ -101,3 +101,9 @@ camera.check: ## Show what the demo is publishing (run camera.demo first)
 		ros2 topic echo --once --no-arr /camera/depth/image_raw; \
 		echo; echo "--- the point cloud ---"; \
 		ros2 topic echo --once --no-arr /camera/points'
+
+camera.one_box: build ## One box in Gazebo: the camera finds it and measures it, shown in RViz
+	$(call ros,ros2 launch camera_one_box one_box.launch.py)
+
+camera.pixels: ## Print every pixel of the 80 x 60 basic camera (run camera.one_box first)
+	@$(call ros,ros2 run camera_one_box show_pixels)

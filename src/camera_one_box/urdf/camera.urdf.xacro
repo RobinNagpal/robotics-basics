@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<!--
+  A depth camera on a fixed stand, 0.40 m above the middle of the table, looking
+  straight down. This is the "eye-to-hand" setup: the camera is bolted to the
+  world, not to the arm.
+
+  robot_state_publisher reads this file and publishes its frames on TF, and
+  Gazebo reads the same file to put the camera in the simulated world. The two
+  <sensor> blocks at the bottom are the only Gazebo-specific part.
+-->
+<robot name="camera_stand" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- xacro already knows pi, so the angles below can use it directly. -->
+  <xacro:arg name="height" default="0.40"/>
+
+  <link name="world"/>
+
+  <!-- The camera body. Like every other link on a robot, its X points forward
+       (out of the lens), Y to the left and Z up. -->
+  <link name="camera_link">
+    <visual>
+      <!-- The body sits behind the lens, so the camera never sees itself. -->
+      <origin xyz="-0.0125 0 0"/>
+      <geometry>
+        <box size="0.025 0.09 0.025"/>
+      </geometry>
+      <material name="camera_grey">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <!-- Gazebo drops links that have no mass, so give it a small one. -->
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/>
+    </inertial>
+  </link>
+
+  <joint name="camera_mount" type="fixed">
+    <parent link="world"/>
+    <child link="camera_link"/>
+    <!-- Pitch a quarter turn so the lens looks down at the table, then yaw a
+         quarter turn so that world +Y comes out at the top of the picture. -->
+    <origin xyz="0 0 $(arg height)" rpy="0 ${pi / 2} ${pi / 2}"/>
+  </joint>
+
+  <!-- The optical frame: X right, Y down the picture, Z out of the lens. It is
+       in the same place as camera_link, turned so that its axes match the
+       picture. Images and camera info are stamped with this frame. -->
+  <link name="camera_optical_frame"/>
+
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="${-pi / 2} 0 ${-pi / 2}"/>
+  </joint>
+
+  <gazebo reference="camera_link">
+    <!-- The camera the doc uses: 320 x 240 pixels, 60 degrees across. -->
+    <sensor name="camera" type="rgbd_camera">
+      <topic>camera</topic>
+      <gz_frame_id>camera_optical_frame</gz_frame_id>
+      <update_rate>5</update_rate>
+      <always_on>true</always_on>
+      <camera>
+        <horizontal_fov>${pi / 3}</horizontal_fov>
+        <image>
+          <width>320</width>
+          <height>240</height>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>3.0</far>
+        </clip>
+      </camera>
+    </sensor>
+
+    <!-- A basic camera in the same place, with the same lens, but only 80 x 60
+         pixels: few enough to print every one of them in a terminal. -->
+    <sensor name="basic_camera" type="rgbd_camera">
+      <topic>basic_camera</topic>
+      <gz_frame_id>camera_optical_frame</gz_frame_id>
+      <update_rate>5</update_rate>
+      <always_on>true</always_on>
+      <camera>
+        <horizontal_fov>${pi / 3}</horizontal_fov>
+        <image>
+          <width>80</width>
+          <height>60</height>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>3.0</far>
+        </clip>
+      </camera>
+    </sensor>
+  </gazebo>
+
+</robot>

@@ -31,6 +31,7 @@ from camera_basics.camera import (  # noqa: E402  (must follow the sys.path line
     TOP_DOWN,
     WRIST,
 )
+from camera_basics.problems.one_box import SAMPLE_PIXEL  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use('Agg')
 from matplotlib.patches import Circle, Rectangle  # noqa: E402  (must follow use)
@@ -613,6 +614,194 @@ def mask(world=TABLE_SCENE, out='mask.svg'):
     _save(fig, out)
 
 
+def _worked_point():
+    """Return the section 2.1 example: the pixel, its depth, and the point it gives."""
+    shot = capture(ONE_BOX_SCENE, WRIST, TOP_DOWN)
+    u, v = SAMPLE_PIXEL
+    depth = shot.depth_at(u, v)
+    return shot, u, v, depth, WRIST.deproject(u, v, depth)
+
+
+def deproject_setup(out='deproject_setup.svg'):
+    """Show, from the side, where the camera is and which spot is being measured."""
+    shot, u, v, depth, (x, _y, _z) = _worked_point()
+    box = ONE_BOX_SCENE.boxes[0]
+    low_x, top = box.centre[0] - box.size[0] / 2, box.size[2]
+
+    fig, ax = _new_axes(size=(8.6, 5.6), xlim=(-0.38, 0.34), ylim=(-0.07, 0.47))
+    ax.plot([-0.22, 0.26], [0, 0], color=INK, lw=2.0, zorder=3)
+    ax.text(0.26, -0.03, 'the table', fontsize=9.5, color=MUTED, ha='right')
+    ax.add_patch(Rectangle((low_x, 0), box.size[0], top, facecolor='#%02x%02x%02x' % box.rgb,
+                           edgecolor=INK, lw=0.8, zorder=4))
+    ax.text(low_x + box.size[0] + 0.008, top / 2, 'red box,\n6 cm tall', fontsize=9,
+            color=INK, va='center')
+
+    ax.plot([0], [CAMERA_HEIGHT_M], marker='s', color=LENS, ms=13, zorder=6)
+    ax.text(-0.02, CAMERA_HEIGHT_M + 0.03, 'the camera, 0.40 m above the middle\n'
+            'of the table, looking straight down', fontsize=9.5, color=LENS,
+            ha='center', va='bottom')
+
+    # The camera's own axes: X to the right, Z straight ahead, which here is down.
+    for (dx, dz), name, colour in (((0.07, 0), 'X: right', AXIS_X),
+                                   ((0, -0.07), 'Z: ahead (down)', AXIS_Z)):
+        ax.annotate('', xy=(dx, CAMERA_HEIGHT_M + dz), xytext=(0, CAMERA_HEIGHT_M),
+                    arrowprops={'arrowstyle': '-|>', 'color': colour, 'lw': 1.8}, zorder=7)
+    ax.text(0.078, CAMERA_HEIGHT_M, 'X: right', fontsize=9, color=AXIS_X, va='center')
+    ax.text(-0.008, CAMERA_HEIGHT_M - 0.085, 'Z: straight ahead,\nwhich is down', fontsize=9,
+            color=AXIS_Z, ha='right', va='top')
+
+    # The line of sight to the spot, and the straight-ahead line.
+    ax.plot([0, x], [CAMERA_HEIGHT_M, top], color=AXIS_X, lw=1.4, ls=(0, (5, 3)), zorder=5)
+    ax.plot([0, 0], [CAMERA_HEIGHT_M, top], color=GRID, lw=1.2, ls=(0, (2, 2)), zorder=2)
+    ax.plot([x], [top], marker='o', color=INK, ms=7, zorder=8)
+    ax.annotate('the spot we measure,\nseen at pixel (212.5, 86.5)', xy=(x, top),
+                xytext=(0.16, 0.16), fontsize=9, color=INK, ha='left',
+                arrowprops={'arrowstyle': '-|>', 'color': INK, 'lw': 1.0})
+
+    # What we want: how far right (x), and how far ahead (depth, which is z).
+    ax.annotate('', xy=(x, top + 0.012), xytext=(0, top + 0.012),
+                arrowprops={'arrowstyle': '<|-|>', 'color': AXIS_X, 'lw': 1.3})
+    ax.text(x / 2, top + 0.024, 'x', fontsize=11, color=AXIS_X, ha='center', weight='bold')
+    ax.annotate('', xy=(-0.17, top), xytext=(-0.17, CAMERA_HEIGHT_M),
+                arrowprops={'arrowstyle': '<|-|>', 'color': AXIS_Z, 'lw': 1.3})
+    ax.text(-0.18, (top + CAMERA_HEIGHT_M) / 2, f'depth = z\n= {depth:.3f} m', fontsize=9.5,
+            color=AXIS_Z, ha='right', va='center', family='monospace')
+    ax.plot([-0.175, 0], [top, top], color=GRID, lw=0.8, zorder=1)
+    ax.annotate('', xy=(-0.28, 0), xytext=(-0.28, CAMERA_HEIGHT_M),
+                arrowprops={'arrowstyle': '<|-|>', 'color': MUTED, 'lw': 1.0})
+    ax.text(-0.29, CAMERA_HEIGHT_M / 2, '0.40 m', fontsize=9, color=MUTED, ha='right',
+            va='center', family='monospace')
+
+    fig.suptitle('Where the camera is, and what we are measuring', fontsize=13,
+                 color=INK, weight='bold', y=0.97)
+    fig.text(0.5, 0.03, 'Seen from the side. We want x (how far right of the camera) and z '
+             '(how far ahead of it). y, towards the top of the picture, works the same way.',
+             fontsize=9.5, ha='center', color=MUTED)
+    _save(fig, out)
+
+
+def deproject_pixel(out='deproject_pixel.svg'):
+    """Mark u, v, cx, cy and the two pixel offsets on the real picture."""
+    shot, u, v, _depth, _point = _worked_point()
+    w, h = WRIST.width_px, WRIST.height_px
+    cx, cy = WRIST.cx, WRIST.cy
+
+    fig, ax = plt.subplots(figsize=(8.4, 6.4), facecolor='white')
+    ax.imshow(_rgb_array(shot), interpolation='nearest', extent=(0, w, h, 0), alpha=0.55)
+    ax.set_xlim(-62, w + 6)
+    ax.set_ylim(h + 44, -44)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    ax.add_patch(Rectangle((0, 0), w, h, fill=False, edgecolor=MUTED, lw=1.0))
+
+    # The directions u and v count in, and the picture's edges.
+    ax.annotate('', xy=(120, -22), xytext=(0, -22),
+                arrowprops={'arrowstyle': '-|>', 'color': AXIS_X, 'lw': 1.8})
+    ax.text(126, -22, 'u counts across: left to right, 0 to 320', fontsize=9.5,
+            color=AXIS_X, va='center')
+    ax.annotate('', xy=(-22, 90), xytext=(-22, 0),
+                arrowprops={'arrowstyle': '-|>', 'color': AXIS_Y, 'lw': 1.8})
+    ax.text(-22, 96, 'v counts\ndown:\ntop to\nbottom,\n0 to 240', fontsize=9.5,
+            color=AXIS_Y, ha='center', va='top')
+
+    # The middle of the picture, and our pixel.
+    ax.plot([cx], [cy], marker='+', color=INK, ms=18, mew=2.2, zorder=6)
+    ax.text(cx - 6, cy + 16, f'the middle: (cx, cy) = ({cx:g}, {cy:g})', fontsize=9.5,
+            color=INK, ha='center', va='top',
+            bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 1.5})
+    ax.plot([u], [v], marker='o', color=INK, ms=9, mfc='none', mew=2.2, zorder=7)
+    ax.text(u + 10, v - 12, f'our pixel: (u, v) = ({u:g}, {v:g})', fontsize=9.5,
+            color=INK, ha='left', va='bottom',
+            bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 1.5})
+
+    # How far the pixel is from the middle: right, then up.
+    ax.annotate('', xy=(u, cy), xytext=(cx, cy),
+                arrowprops={'arrowstyle': '-|>', 'color': AXIS_X, 'lw': 2.2,
+                            'shrinkA': 0, 'shrinkB': 0}, zorder=5)
+    ax.text((cx + u) / 2, cy + 38, f'{u - cx:g} pixels to the right\nu − cx = {u - cx:g}',
+            fontsize=9.5, color=AXIS_X, ha='left', va='top',
+            bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 1.5})
+    ax.annotate('', xy=(u, v), xytext=(u, cy),
+                arrowprops={'arrowstyle': '-|>', 'color': AXIS_Y, 'lw': 2.2,
+                            'shrinkA': 0, 'shrinkB': 0}, zorder=5)
+    ax.text(u + 32, (cy + v) / 2 + 6, f'{cy - v:g} pixels up\nv − cy = {v - cy:g}\n'
+            '(negative, because\nv counts down)', fontsize=9.5, color=AXIS_Y,
+            ha='left', va='center',
+            bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 1.5})
+
+    fig.suptitle('The variables in the picture', fontsize=13, color=INK, weight='bold', y=0.95)
+    fig.text(0.5, 0.06, 'The colour picture from the camera, 320 × 240 pixels, faded so the '
+             'markings stand out.', fontsize=9.5, ha='center', color=MUTED)
+    _save(fig, out)
+
+
+def deproject_triangles(out='deproject_triangles.svg'):
+    """Show the two same-shaped triangles that make the formula work."""
+    _shot, u, v, depth, (x, _y, _z) = _worked_point()
+    fx, cx = WRIST.fx, WRIST.cx
+    box = ONE_BOX_SCENE.boxes[0]
+    top = box.size[2]
+    lens = CAMERA_HEIGHT_M
+    slope = (u - cx) / fx                  # sideways per unit forwards, the same for both
+    pic_z = lens - 0.12                    # where the picture is drawn: only its shape matters
+
+    fig, ax = plt.subplots(figsize=(8.6, 6.0), facecolor='white')
+    ax.set_xlim(-0.16, 0.215)
+    ax.set_ylim(-0.03, 0.46)
+    # Sideways is drawn 2.5 times wider than forwards, so the thin triangles can be
+    # read. Stretching both the same way keeps them the same shape as each other.
+    ax.set_aspect(0.4)
+    ax.axis('off')
+
+    ax.plot([-0.10, 0.20], [0, 0], color=INK, lw=2.0)
+    low_x = box.centre[0] - box.size[0] / 2
+    ax.add_patch(Rectangle((low_x, 0), box.size[0], top, facecolor='#e6a39c',
+                           edgecolor=INK, lw=0.6, zorder=1))
+    ax.plot([0], [lens], marker='o', color=LENS, ms=10, zorder=6)
+    ax.text(-0.01, lens + 0.012, 'lens', fontsize=10, color=LENS, ha='right')
+
+    # The straight-ahead line and the line of sight to the spot.
+    ax.plot([0, 0], [lens, top], color=MUTED, lw=1.2, ls=(0, (4, 3)), zorder=2)
+    ax.plot([0, x], [lens, top], color=INK, lw=1.6, zorder=3)
+    ax.plot([x], [top], marker='o', color=INK, ms=7, zorder=6)
+
+    # Small triangle: inside the camera, measured in pixels.
+    small = slope * (lens - pic_z)
+    ax.fill([0, 0, small], [lens, pic_z, pic_z], color='#cfe3f5', zorder=2)
+    ax.plot([0, small], [pic_z, pic_z], color=AXIS_X, lw=2.4, zorder=4)
+    ax.annotate('', xy=(-0.018, pic_z), xytext=(-0.018, lens),
+                arrowprops={'arrowstyle': '<|-|>', 'color': '#2f6db0', 'lw': 1.2})
+    ax.text(-0.024, (lens + pic_z) / 2, f'fx = {fx:.1f}\npixels', fontsize=9.5,
+            color='#2f6db0', ha='right', va='center', family='monospace')
+    ax.text(small + 0.004, pic_z - 0.004, f'u − cx = {u - cx:g} pixels', fontsize=9.5,
+            color=AXIS_X, ha='left', va='top', family='monospace')
+    ax.text(0.06, pic_z + 0.045, 'small triangle: the picture,\ninside the camera, in pixels',
+            fontsize=9, color='#2f6db0', ha='left')
+
+    # Large triangle: outside the camera, measured in metres.
+    ax.fill([0, 0, x], [lens, top, top], color='#fbe0dc', alpha=0.55, zorder=1)
+    ax.plot([0, x], [top, top], color=AXIS_X, lw=2.4, zorder=4)
+    ax.annotate('', xy=(-0.075, top), xytext=(-0.075, lens),
+                arrowprops={'arrowstyle': '<|-|>', 'color': '#b5433a', 'lw': 1.2})
+    ax.text(-0.081, (lens + top) / 2 - 0.04, f'z = depth\n= {depth:.3f} m', fontsize=9.5,
+            color='#b5433a', ha='right', va='center', family='monospace')
+    ax.text(x / 2, top - 0.012, f'x = {x:.4f} m', fontsize=9.5, color=AXIS_X,
+            ha='center', va='top', family='monospace',
+            bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 1.0})
+    ax.text(0.10, top + 0.075, 'large triangle: from the lens\nto the spot, in metres',
+            fontsize=9, color='#b5433a', ha='left')
+
+    fig.suptitle('Why it works: two triangles with the same shape', fontsize=13,
+                 color=INK, weight='bold', y=0.96)
+    fig.text(0.5, 0.05, 'Same shape, so the same ratio:   '
+             f'{u - cx:g} / {fx:.1f}  =  x / {depth:.3f}'
+             f'     so     x = {x:.4f} m', fontsize=10.5, ha='center', color=INK,
+             family='monospace')
+    fig.text(0.5, 0.01, 'Sideways distances are drawn 2.5 times wider than they really are, '
+             'so the triangles are easier to see.', fontsize=9, ha='center', color=MUTED)
+    _save(fig, out)
+
+
 if __name__ == '__main__':
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     # Part 1 of the doc: every idea, shown on one box.
@@ -623,6 +812,9 @@ if __name__ == '__main__':
     one_capture(ONE_BOX_SCENE)
     configurations(ONE_BOX_SCENE)
     deprojection(ONE_BOX_SCENE)
+    deproject_setup()
+    deproject_pixel()
+    deproject_triangles()
     # Part 2: three boxes.
     scene(TABLE_SCENE, 'scene.svg')
     mask(TABLE_SCENE)

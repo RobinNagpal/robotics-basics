@@ -35,79 +35,103 @@ anything.
 
 We will get there in two steps:
 
-- **Part 1: one box.** Just the red box on the table. Every idea about cameras
-  is explained on this simplest case, ending with the red box measured.
-- **Part 2: three boxes.** Put the other two back. Most of Part 1 carries over
-  unchanged, so this part is only about what is new: telling the boxes apart.
+- **Part 1: locating a single box.** Just the red box on the table. Every idea
+  about cameras is explained on this simplest case, ending with the red box
+  measured.
+- **Part 2: locating three boxes.** Put the other two back. Most of Part 1
+  carries over unchanged, so this part is only about what is new: telling the
+  boxes apart.
 
 The pictures in this doc are not drawn by hand. They are taken by the code this
 area describes, and so are the numbers beside them.
 
 ## Contents
 
-**[Part 1: one box](#part-1-one-box)**
+**[Part 1: locating a single box](#part-1-locating-a-single-box)**
 
-1. [What a camera is for](#1-what-a-camera-is-for)
-2. [How a camera makes a picture](#2-how-a-camera-makes-a-picture)
-   · [A grid of pixels](#a-grid-of-pixels)
-   · [Resolution: how many pixels](#resolution-how-many-pixels)
-   · [Field of view: how wide it sees](#field-of-view-how-wide-it-sees)
-3. [What a picture loses](#3-what-a-picture-loses)
-4. [Getting distance back: the depth picture](#4-getting-distance-back-the-depth-picture)
-   · [Where the 76,800 readings land](#where-the-76800-readings-land)
-   · [Depth is not distance](#depth-is-not-distance)
-5. [The camera used in this doc](#5-the-camera-used-in-this-doc)
-6. [The lens as four numbers](#6-the-lens-as-four-numbers)
-   · [The camera's own axes](#the-cameras-own-axes)
-   · [Where 277 comes from](#where-277-comes-from)
-7. [Field of view and resolution are separate knobs](#7-field-of-view-and-resolution-are-separate-knobs)
-8. [Pixel plus depth gives back the point](#8-pixel-plus-depth-gives-back-the-point)
-   · [What we are doing](#what-we-are-doing)
-   · [The variables](#the-variables)
-   · [Step by step](#step-by-step)
-   · [Pseudo code](#pseudo-code)
-   · [Python code](#python-code)
-9. [Where the camera is](#9-where-the-camera-is)
-   · [camera_to_world](#camera_to_world)
-   · [Pointing it somewhere](#pointing-it-somewhere)
-10. [What one capture contains](#10-what-one-capture-contains)
-11. [The box, measured](#11-the-box-measured)
+1. [Basics](#1-basics)
+   - [1.1 What a camera is for](#11-what-a-camera-is-for)
+   - [1.2 How a camera makes a picture](#12-how-a-camera-makes-a-picture)
+     · [A grid of pixels](#a-grid-of-pixels)
+     · [Resolution: how many pixels](#resolution-how-many-pixels)
+     · [Field of view: how wide it sees](#field-of-view-how-wide-it-sees)
+   - [1.3 What a picture loses](#13-what-a-picture-loses)
+   - [1.4 Getting distance back: the depth picture](#14-getting-distance-back-the-depth-picture)
+     · [Where the 76,800 readings land](#where-the-76800-readings-land)
+     · [Depth is not distance](#depth-is-not-distance)
+   - [1.5 The camera used in this doc](#15-the-camera-used-in-this-doc)
+   - [1.6 The lens as four numbers](#16-the-lens-as-four-numbers)
+     · [The camera's own axes](#the-cameras-own-axes)
+     · [Where 277 comes from](#where-277-comes-from)
+   - [1.7 Field of view and resolution are separate knobs](#17-field-of-view-and-resolution-are-separate-knobs)
+2. [Calculations](#2-calculations)
+   - [2.1 Pixel plus depth gives back the point](#21-pixel-plus-depth-gives-back-the-point)
+     · [What we are doing](#what-we-are-doing)
+     · [The variables](#the-variables)
+     · [Why the calculation works](#why-the-calculation-works)
+     · [Step by step](#step-by-step)
+     · [The same steps as three formulas](#the-same-steps-as-three-formulas)
+   - [2.2 Where the camera is](#22-where-the-camera-is)
+     · [camera_to_world](#camera_to_world)
+     · [Pointing it somewhere](#pointing-it-somewhere)
+   - [2.3 What one capture contains](#23-what-one-capture-contains)
+   - [2.4 The box, measured](#24-the-box-measured)
+3. [Pseudo code](#3-pseudo-code)
+   - [3.1 One pixel into one point](#31-one-pixel-into-one-point)
+   - [3.2 From the camera into the room](#32-from-the-camera-into-the-room)
+   - [3.3 Measuring the box](#33-measuring-the-box)
+4. [Python code](#4-python-code)
+   - [4.1 One pixel into one point](#41-one-pixel-into-one-point)
+   - [4.2 From the camera into the room](#42-from-the-camera-into-the-room)
+   - [4.3 Every pixel at once](#43-every-pixel-at-once)
+   - [4.4 Measuring the box](#44-measuring-the-box)
 
-**[Part 2: three boxes](#part-2-three-boxes)**
+**[Part 2: locating three boxes](#part-2-locating-three-boxes)**
 
-12. [Telling the boxes apart](#12-telling-the-boxes-apart)
-13. [The three boxes, measured](#13-the-three-boxes-measured)
-14. [Why one picture is not enough](#14-why-one-picture-is-not-enough)
+5. [Telling the boxes apart](#5-telling-the-boxes-apart)
+6. [The three boxes, measured](#6-the-three-boxes-measured)
+7. [Why one picture is not enough](#7-why-one-picture-is-not-enough)
 
 **[Reference: ROS, running and the code](#reference-ros-running-and-the-code)**
 
-15. [Publishing it to ROS](#15-publishing-it-to-ros)
-    · [Two sets of camera axes](#two-sets-of-camera-axes)
-    · [How the pieces connect](#how-the-pieces-connect)
-    · [Settings you can change](#settings-you-can-change)
-16. [Running it](#16-running-it)
-    · [Checking it works](#checking-it-works)
-    · [Commands](#commands)
-17. [Working on the code](#17-working-on-the-code)
-    · [Layout](#layout)
-    · [Changing things](#changing-things)
-18. [Notes and gotchas](#18-notes-and-gotchas)
-19. [Vocabulary](#19-vocabulary)
+8. [Publishing it to ROS](#8-publishing-it-to-ros)
+   · [Two sets of camera axes](#two-sets-of-camera-axes)
+   · [How the pieces connect](#how-the-pieces-connect)
+   · [Settings you can change](#settings-you-can-change)
+9. [Running it](#9-running-it)
+   · [Checking it works](#checking-it-works)
+   · [Commands](#commands)
+10. [Working on the code](#10-working-on-the-code)
+   · [Layout](#layout)
+   · [Changing things](#changing-things)
+11. [Notes and gotchas](#11-notes-and-gotchas)
+12. [Vocabulary](#12-vocabulary)
 
 ---
 
-## Part 1: one box
+## Part 1: locating a single box
 
-Start with the simplest version of the problem: only the red box, on its own,
-exactly where it stands in the full scene. It is a 6 cm cube.
+We start with the simplest version of the problem, where only the red box is on
+the table, standing exactly where it stands in the full scene. It is a 6 cm cube.
 
 ![One box, from above and from the side](../images/camera/scene_one.svg)
 
-Everything in this part is shown on this one box: what a camera does, what it
-loses, how depth gets it back, and how a pixel becomes a point. It ends with the
-box measured.
+This part is split into four sections, and each one builds on the one before it.
+Section 1 explains the basics of cameras, using this one box. Section 2 does the
+calculations that turn pixels into points in the room, and it ends with the box
+measured. Sections 3 and 4 then show the same calculations again, first as
+pseudo code and then as Python code that you can run.
 
-## 1. What a camera is for
+---
+
+### 1. Basics
+
+Before we can calculate anything, we need a few ideas about what a camera does
+and what it records. This section builds them up one at a time: what a camera is
+for, how it makes a picture, what the picture loses, how a depth camera gets
+that back, and the four numbers that describe the lens.
+
+#### 1.1 What a camera is for
 
 A camera is good at one part of this job straight away: it can see what is on
 the table. A photo of it shows a red box.
@@ -116,13 +140,11 @@ But an ordinary colour photo cannot finish the job. It can tell you that
 something red is over there, in that direction. It cannot tell you how far away
 it is — and without that, it cannot tell you where the box is, or how tall.
 
-Sections 2 to 4 explain why, using nothing but what a camera physically does.
+Sections 1.2 to 1.4 explain why, using nothing but what a camera physically does.
 The rest of Part 1 gets the missing information back, and then uses it to
 measure the box.
 
----
-
-## 2. How a camera makes a picture
+#### 1.2 How a camera makes a picture
 
 A camera is a box with a lens at the front and a flat sensor at the back.
 
@@ -132,7 +154,7 @@ each one records the colour of the light that reached it.
 
 That grid of recordings is the picture.
 
-### A grid of pixels
+##### A grid of pixels
 
 Each detector gives one square of the picture, called a **pixel** — short for
 *picture element*. A pixel holds one colour, and nothing else.
@@ -154,7 +176,7 @@ A pixel is a small square, not a point. Pixel `(3, 2)` covers the square from 3
 to 4 across and from 2 to 3 down, so its middle is at `(3.5, 2.5)`. That half
 pixel matters later.
 
-### Resolution: how many pixels
+##### Resolution: how many pixels
 
 **Resolution** is how many pixels a picture has, written width × height. The
 camera in this doc is `320 × 240`: 320 across, 240 down, 76,800 pixels in all.
@@ -163,7 +185,7 @@ The right picture above is the same view at `320 × 240`. Nothing new came into
 the shot. The same table was cut into many more, smaller squares, so the edges
 come out sharp.
 
-### Field of view: how wide it sees
+##### Field of view: how wide it sees
 
 **Field of view** is how many degrees across the camera takes in. It is set by
 the lens.
@@ -172,15 +194,13 @@ the lens.
 
 A wide lens takes in more of the table. A narrow lens takes in less, as if
 zoomed in. The camera in this doc sees 60° across. (The numbers under each lens
-come back in section 7.)
+come back in section 1.7.)
 
 Resolution and field of view are two separate things. One decides how much of
 the world is in the picture. The other decides how finely it is cut up. That
-difference matters a lot when choosing a camera, and section 7 shows why.
+difference matters a lot when choosing a camera, and section 1.7 shows why.
 
----
-
-## 3. What a picture loses
+#### 1.3 What a picture loses
 
 Here is the most important fact about cameras.
 
@@ -191,7 +211,7 @@ from somewhere along that line — and the pixel has no way of knowing where.
 
 The picture shows three points on the same line out of the lens: one near, one
 further, one further still. All three land on **the same pixel**. No camera could
-tell them apart. (The formula at the bottom is explained in section 6.)
+tell them apart. (The formula at the bottom is explained in section 1.6.)
 
 So a pixel does not tell you a place. It tells you a **direction**.
 
@@ -208,9 +228,7 @@ That has everyday consequences:
 No clever code can fix this, because the distance was never recorded. The only
 way out is to measure it separately.
 
----
-
-## 4. Getting distance back: the depth picture
+#### 1.4 Getting distance back: the depth picture
 
 A **depth camera** measures the missing distance.
 
@@ -230,12 +248,12 @@ blue for the colour picture, plus D for depth.
 Look at the numbers on the right. They are the depth readings for a small patch
 of pixels at the edge of the red box. On the box they read `0.340` m. On the
 table just behind it they read `0.400` m. (The labels `rgb8` and `32FC1` are the
-names ROS gives these two pictures; section 10 explains them.)
+names ROS gives these two pictures; section 2.3 explains them.)
 
 That 6 cm jump is the red box. **No colour was needed to find it.** The depth
 numbers alone say that something sticks up out of the table, and by how much.
 
-### Where the 76,800 readings land
+##### Where the 76,800 readings land
 
 Here is where every reading landed, and what it read:
 
@@ -262,9 +280,9 @@ picture.
 
 The other half is where the box is. With the two pictures together, each pixel
 gives you a **direction** and a **distance**. A direction and a distance are
-enough to pin down a point in 3D, and sections 5 to 9 turn that into arithmetic.
+enough to pin down a point in 3D, and section 2 turns that into arithmetic.
 
-### Depth is not distance
+##### Depth is not distance
 
 One detail catches almost everyone.
 
@@ -279,11 +297,9 @@ Mix the two up and every point comes out slightly too far away, worst at the
 edges of the picture. Getting it right also keeps the maths simple later: the
 third coordinate of a point turns out to be just the depth reading.
 
----
+#### 1.5 The camera used in this doc
 
-## 5. The camera used in this doc
-
-With the basics in place, here is the camera the rest of the doc uses:
+With those ideas in place, here is the camera that the rest of the doc uses:
 
 | What | Value | Meaning |
 | --- | --- | --- |
@@ -298,9 +314,7 @@ it is in shot.
 These numbers are realistic. Small RGB-D cameras like this get mounted next to
 a robot gripper, looking down at whatever it is about to pick up.
 
----
-
-## 6. The lens as four numbers
+#### 1.6 The lens as four numbers
 
 To do arithmetic with a camera, its lens and sensor have to be described as
 numbers. It takes exactly four:
@@ -321,7 +335,7 @@ It is a useful shortcut. What the arithmetic needs to know is how many pixels a
 given angle covers, and that depends on the lens and the sensor together. One
 number, in pixels, covers both.
 
-### The camera's own axes
+##### The camera's own axes
 
 To say where something is relative to the camera, we need the camera's own axes.
 They are chosen to match the picture:
@@ -341,14 +355,14 @@ v = fy · (y / z) + cy
 In words: how far to the side, **divided by how far ahead**, scaled up by the
 focal length, then moved to the middle of the picture.
 
-`x / z` is section 3 written as arithmetic. Twice as far away and twice as far
+`x / z` is section 1.3 written as arithmetic. Twice as far away and twice as far
 to the side gives the same ratio, so the same pixel. **Dividing by `z` is
 exactly where distance gets thrown away.**
 
 This is called **projection**: a 3D point in, a pixel out. It is what taking a
 picture does.
 
-### Where 277 comes from
+##### Where 277 comes from
 
 The focal length follows from the resolution and the field of view. Half the
 picture's width and half its field of view make a right-angled triangle with the
@@ -365,11 +379,9 @@ out. But the formula shows which way the trade goes: **halve the field of view
 and the focal length roughly doubles.** Seeing less of the world means each
 degree of it is spread over more pixels.
 
----
+#### 1.7 Field of view and resolution are separate knobs
 
-## 7. Field of view and resolution are separate knobs
-
-Section 2 said these are different things. Here is why it matters: mixing them
+Section 1.2 said these are different things. Here is why it matters: mixing them
 up is the most common way to choose the wrong camera.
 
 ![Field of view and resolution are separate knobs](../images/camera/configurations.svg)
@@ -410,123 +422,231 @@ different reasons. Always read it next to the resolution.
 
 ---
 
-## 8. Pixel plus depth gives back the point
+### 2. Calculations
 
-This is the section the rest of the area exists for.
+The basics showed that each pixel gives a direction, and that the depth picture
+gives a distance for every pixel. This section turns those two facts into
+arithmetic, in four parts that build on one another. Section 2.1 turns one pixel
+and its depth reading into a point measured from the camera. Section 2.2 moves
+that point into the room, using where the camera is and which way it points.
+Section 2.3 shows everything one capture contains, including the point cloud,
+which is every pixel turned into a point at once. Section 2.4 then uses all of
+this to measure the red box: where it is on the table, and how tall it is.
 
-### What we are doing
+#### 2.1 Pixel plus depth gives back the point
 
-We take **one pixel** on top of the red box, and **its depth reading**. We turn
-them into **one point in 3D**: a position in metres, measured from the camera.
+This is the part that the basics have been building up to, so it is worth
+taking slowly, one idea at a time.
 
-Why? Because a robot cannot reach for a pixel. "Pixel `(212.5, 86.5)`" says
-where the box is in the picture. The arm needs to know where the box is in
-space: how far right, how far up, how far ahead.
+##### What we are doing
 
-Two earlier sections give us everything needed:
+Before any calculation, it helps to picture the scene. The camera hangs 40
+centimetres above the middle of the table, and it points straight down at it.
+The red box stands on the table a little to one side of the middle, and because
+the box is 6 centimetres tall, its top is 34 centimetres below the camera.
+Because the camera points straight down, anything "in front of the camera" is
+really below it, and we will keep using the phrase "in front of" because that
+is how a camera sees the world.
 
-- section 3: a pixel is a **direction**, one line out of the lens
-- section 4: the depth reading says how far along that line the box is
+![Where the camera is, and what we are measuring](../images/camera/deproject_setup.svg)
 
-A direction and a distance pin down one point. This section does the arithmetic.
+In this section we pick one small spot on the top of the red box, and we work
+out exactly where that spot is, measured from the camera. We want three
+distances, all in metres. The first is how far the spot is to the right of the
+camera, which we call `x`. The second is how far it is towards the bottom of
+the picture, which we call `y`. The third is how far it is in front of the
+camera, which we call `z`. The picture above shows `x` and `z` from the side,
+while `y` runs across the table at right angles to the page, so it does not
+show up in a side view.
 
-![Pixel plus depth gives back the point](../images/camera/deprojection.svg)
+We need these numbers because a robot arm cannot move to a pixel. A pixel only
+tells us where the box appears in the picture, but the arm has to know where the
+box really is in space, so turning pixels into distances is the step that
+connects what the camera sees to what the arm can do.
 
-### The variables
+The camera has already given us everything we need to find those three
+distances, in two pictures taken at the same moment. The colour picture tells us
+which pixel the spot appears in, and section 1.3 showed that a pixel tells us a
+direction, meaning one straight line out from the lens. The depth picture tells
+us, for that same pixel, how far away the surface is, as section 1.4 explained.
+Once we know which line to follow and how far to go along it, we arrive at
+exactly one point, and that point is the spot on the box.
 
-Seven numbers go in, and three come out.
+##### The variables
+
+To do the calculation we use seven numbers that we already know, and we get
+three numbers back. Before using them, it is worth knowing what each one means
+and where it comes from, so this part goes through them one by one, starting
+with the picture itself.
+
+![The variables in the picture](../images/camera/deproject_pixel.svg)
+
+A position in the picture is described by two directions, and it helps to name
+them clearly. **Across** means along the width of the picture, from its left
+edge to its right edge. **Down** means along the height of the picture, from
+its top edge to its bottom edge. These are the two directions you would use to
+describe a place on a printed photo lying on a desk, and in this picture
+"across" is the camera's right, while "down" is towards the bottom of the
+picture.
+
+The first two numbers, `u` and `v`, say which pixel we are looking at. The number
+`u` counts pixels across the picture, starting from 0 at the left edge and going
+up to 320 at the right edge. The number `v` counts pixels down the picture,
+starting from 0 at the top edge and going up to 240 at the bottom edge. The spot
+we chose appears at `u = 212.5` and `v = 86.5`, which is on the top of the red
+box. Both numbers end in `.5` because a pixel is a small square rather than a
+point, and we want the middle of that square: pixel number 212 covers the strip
+from 212 to 213, so its middle is at 212.5.
+
+The next two numbers, `cx` and `cy`, give the position of the middle of the
+picture. The picture is 320 pixels wide and 240 pixels tall, so its middle is at
+`cx = 160` across and `cy = 120` down. The middle matters because anything
+exactly in front of the camera appears there, which makes it the natural place
+to measure every other pixel from, and the diagram above shows it as a cross.
+
+The fifth number is the `depth` reading for our pixel, which we read from the
+depth picture at the same `u` and `v`. For our pixel it is `0.340` metres. As
+section 1.4 explained, this distance is measured straight out in the direction the
+camera points, and not along the slanted line from the lens to the spot. That
+detail is what will make the last step of the calculation so simple.
+
+The last two numbers, `fx` and `fy`, are the focal length of the lens, measured
+in pixels, which section 1.6 introduced. They describe how zoomed in the camera
+is, and they have a simple meaning that we will rely on in a moment: a point that
+is as far to the side of the camera as it is in front of it appears exactly `fx`
+pixels from the middle of the picture. In our camera both numbers are `277.1`,
+and they are equal because the pixels are square.
+
+The three numbers that come out, `x`, `y` and `z`, are the distances described at
+the start of this section. They are measured along the camera's own axes from
+section 1.6, which point the same ways as the picture: `x` points across, to the
+right, `y` points down the picture, and `z` points straight out of the lens.
+
+Here are all ten together, for looking things up later:
 
 | Name | What it is | Where it comes from | For our pixel |
 | --- | --- | --- | --- |
-| `u` | the pixel's position across, counted from the left edge | the pixel we picked | 212.5 |
-| `v` | the pixel's position down, counted from the top edge | the pixel we picked | 86.5 |
-| `depth` | how far in front of the camera that pixel's surface is, in metres | the depth picture, at that pixel | 0.340 |
-| `cx` | the middle of the picture, across. Straight ahead lands here | the four lens numbers (section 6) | 160 |
+| `u` | the pixel's position across the picture, counted from the left edge | the pixel we picked | 212.5 |
+| `v` | the pixel's position down the picture, counted from the top edge | the pixel we picked | 86.5 |
+| `cx` | the middle of the picture, across | the four lens numbers (section 1.6) | 160 |
 | `cy` | the middle of the picture, down | the four lens numbers | 120 |
+| `depth` | how far in front of the camera the spot is, in metres | the depth picture, at the same pixel | 0.340 |
 | `fx` | the focal length across, in pixels | the four lens numbers | 277.1 |
 | `fy` | the focal length down, in pixels | the four lens numbers | 277.1 |
-| `x` | **answer**: how far right of the camera, in metres | worked out below | |
-| `y` | **answer**: how far down the picture, in metres | worked out below | |
-| `z` | **answer**: how far straight ahead, in metres | worked out below | |
+| `x` | **answer:** how far to the right of the camera, in metres | worked out below | |
+| `y` | **answer:** how far towards the bottom of the picture, in metres | worked out below | |
+| `z` | **answer:** how far in front of the camera, in metres | worked out below | |
 
-A few of these deserve a word more.
+##### Why the calculation works
 
-**`u` and `v` end in `.5`** because they point at the middle of the pixel. Pixel
-number 212 across covers the strip from 212 to 213, so its middle is 212.5.
+Before doing any arithmetic, it helps to see why the calculation works, because
+then each step will make sense instead of being a rule to memorise. The reason
+is that there are two triangles with exactly the same shape.
 
-**`depth` is measured straight ahead**, not along the slanted line to the
-point. That is the rule from section 4, and it is what makes the last step easy.
+![Why it works: two triangles with the same shape](../images/camera/deproject_triangles.svg)
 
-**`fx` and `fy` have a concrete meaning.** Take a point that is as far to the
-side as it is in front: 1 m ahead and 1 m to the right, say. It lands exactly
-`fx` pixels from the middle of the picture, which here is 277.1 pixels. `fx` and
-`fy` are equal because the pixels are square.
+Light from the spot on the box travels to the camera in a straight line, passes
+through the lens, and lands on the picture inside the camera. That one straight
+line makes two triangles. The small triangle is inside the camera, between the
+lens and the picture. Its long side, pointing straight out of the lens, is the
+focal length `fx`, and its short side, pointing across, is how far the pixel is
+from the middle of the picture, which is `u - cx`. The large triangle is outside
+the camera, between the lens and the spot. Its long side, pointing straight out
+of the lens, is the depth `z`, and its short side, pointing across, is `x`, the
+distance we want to find.
 
-**`x`, `y` and `z` use the camera's own axes** from section 6: X to the right,
-Y **down** the picture, Z straight ahead.
-
-### Step by step
-
-Four small steps, for the pixel on top of the red box.
-
-**Step 1: how far is the pixel from the middle of the picture?**
-
-The middle of the picture, `(cx, cy)`, is where "straight ahead" lands. So
-everything is measured from there:
-
-```
-across = u - cx = 212.5 - 160 =  52.5 pixels
-down   = v - cy =  86.5 - 120 = -33.5 pixels
-```
-
-The pixel is 52.5 pixels to the right of the middle. Its `down` is negative
-because `v` counts downwards, and 86.5 is less than 120: the pixel is 33.5
-pixels *above* the middle.
-
-**Step 2: how big is one pixel, at that distance?**
-
-A pixel is not a fixed size in the world. Close to the camera it covers a tiny
-patch; far away it covers a big one. At a distance of `depth`, one pixel covers
-`depth / fx` metres:
+Both triangles have a right angle, and both have the same angle at the lens,
+because the light travels in one straight line. Two triangles with the same
+angles always have the same shape, even when one is much bigger than the other,
+and even when one is measured in pixels while the other is measured in metres.
+Because the shapes are the same, the short side divided by the long side gives
+the same answer in both triangles:
 
 ```
-one pixel = depth / fx = 0.340 / 277.1 = 0.00123 m, about 1.2 mm
+(u - cx) / fx  =  x / z
 ```
 
-That is the same idea as the last column of the tables in section 7. There, one
-pixel covered 1.44 mm on the table, 0.40 m away. The box top is 6 cm nearer, so
-each pixel covers a little less.
+For our pixel, the left side is `52.5 / 277.1`, which is about `0.19`. This
+number is the direction from section 1.3, written as a number: it says that the
+line from the lens moves 0.19 metres to the right for every metre it goes
+forwards. Since we know the line goes 0.340 metres forwards before it reaches
+the box, we can find how far to the right it has moved by that point, and that
+is exactly `x`. The steps below do this calculation carefully, and the same
+reasoning, turned on its side, gives `y` from `v` and `cy`.
 
-**Step 3: turn pixels into metres.**
+##### Step by step
 
-Now multiply. The pixel is 52.5 pixels right of the middle, and each pixel is
-0.00123 m wide:
+We can now work through the calculation for the spot on the red box, one step
+at a time, using the numbers from the table above.
+
+**Step 1: find how far the pixel is from the middle of the picture.** Both
+triangles start from the line that points straight out of the lens, and that
+line lands on the middle of the picture. So the first thing we need is the
+number of pixels between our pixel and the middle, first across and then down:
 
 ```
-x = across × one pixel =  52.5 × 0.00123 = +0.0644 m
-y = down   × one pixel = -33.5 × 0.00123 = -0.0411 m
+pixels to the right of the middle = u - cx = 212.5 - 160 =  52.5
+pixels below the middle           = v - cy =  86.5 - 120 = -33.5
 ```
 
-**Step 4: how far ahead?**
+The first result tells us that the pixel is 52.5 pixels to the right of the
+middle. The second result is negative because `v` counts downwards and 86.5 is
+smaller than 120, which means that our pixel is 33.5 pixels *above* the middle
+rather than below it.
 
-That is the depth reading itself, with no arithmetic at all:
+**Step 2: find how much of the table one pixel covers at that distance.** A
+pixel does not cover a fixed amount of the world, because a camera takes in more
+of the world the further away it looks. When a pixel looks at something close to
+the camera, it covers a tiny patch, and when the same pixel looks at something
+far away, it covers a much larger patch. The triangles tell us exactly how
+large the patch is. Since `fx` pixels in the picture match a distance across
+that is equal to the depth, a single pixel matches a distance of the depth
+divided by `fx`:
 
 ```
-z = depth = 0.340 m
+one pixel covers = depth / fx = 0.340 / 277.1 = 0.001227 metres
 ```
 
-This is why section 4 cared that depth is measured straight ahead. Because it
-is, the third coordinate is just the reading.
+This means that at the height of the box top, each pixel covers about 1.2
+millimetres. It is the same idea as the last column of the tables in section 1.7,
+where one pixel covered 1.44 millimetres of the table, which is 0.40 metres
+away. The box top is 6 centimetres closer to the camera than the table, so each
+of its pixels covers a little less.
 
-**The answer.** The point is `(+0.0644, -0.0411, 0.340)`. In words, that spot
-on the red box is:
+**Step 3: turn the distance in pixels into a distance in metres.** We now know
+that the pixel is 52.5 pixels to the right of the middle, and that each pixel
+covers 0.001227 metres at that distance. Multiplying these two numbers together
+gives the distance to the right in metres, and doing the same with the pixels
+below the middle gives the distance down the picture:
 
-- 6.4 cm to the right of the camera
-- 4.1 cm towards the top of the picture
-- 34 cm in front of it
+```
+x = pixels to the right × one pixel =  52.5 × 0.001227 = +0.0644 metres
+y = pixels below        × one pixel = -33.5 × 0.001227 = -0.0411 metres
+```
 
-**All four steps at once.** Put them together and you get the three formulas
-this is usually written as:
+**Step 4: find how far in front of the camera the spot is.** This last distance
+needs no calculation at all, because it is the depth reading itself:
+
+```
+z = depth = 0.340 metres
+```
+
+This is where the detail from section 1.4 pays off. The depth is measured straight
+out from the lens, rather than along the slanted line, so it is already the long
+side of the large triangle, and we can use it exactly as it is.
+
+When we put the three results together, the spot is at `(+0.0644, -0.0411,
+0.340)` metres, measured from the camera. In everyday terms, the spot on top of
+the red box is 6.4 centimetres to the right of the camera, 4.1 centimetres
+towards the top of the picture, and 34 centimetres in front of the camera. The
+value of `y` is negative, and that is correct, because `y` measures distance
+towards the bottom of the picture, while this spot sits towards the top.
+
+##### The same steps as three formulas
+
+The four steps are usually written in a shorter form, as three formulas. The
+first two formulas do steps 1, 2 and 3 in one line each, one for `x` and one for
+`y`, and the third formula is step 4:
 
 ```
 x = (u - cx) · depth / fx
@@ -534,71 +654,331 @@ y = (v - cy) · depth / fy
 z =  depth
 ```
 
-This is called **deprojection**: a pixel and a depth in, a 3D point out. It is
-the formula from section 6 turned around, the reverse of taking a picture.
+Turning a pixel and a depth back into a point in this way is called
+**deprojection**, because it undoes what the camera did when it took the
+picture. It is the exact reverse of the formula in section 1.6, which starts
+from a point and works out which pixel that point lands on. We can check this by
+putting our answer back into that formula: `277.1 × 0.0644 / 0.340 + 160` comes
+to 212.5, which is the pixel we started from. The two formulas are really one
+formula, read in two directions.
 
-There is a second way to read the same formula. Dividing by `fx` first gives the
-direction the pixel looks in. `52.5 / 277.1 = 0.19`, so the line goes 0.19 m
-right for every metre ahead. Multiplying by the depth then walks 0.34 m along
-that line. Same numbers, same answer, and exactly section 3's "a pixel is a
-direction".
+One small detail is worth repeating, because it causes real mistakes. If we used
+the corner of the pixel, 212, instead of its middle, 212.5, the answer would move
+by half a pixel. That sounds too small to matter, but at the edge of a box, half
+a pixel can be the difference between a point on the box and a point on the
+table behind it.
 
-Three things to notice:
+The picture below shows the whole journey in one place: the pixel and its depth
+on the left, the arithmetic we have just done in the middle, and, on the right,
+the point placed in the room. That last part is still to come.
 
-- **`y` is negative, and that is right.** The camera's Y points down the
-  picture, and this pixel is above the middle.
-- **Half a pixel matters.** At the edge of a box, being half a pixel out is the
-  difference between measuring the box and measuring the table behind it.
-- **It goes both ways.** Put `(0.0644, -0.0411, 0.340)` back into the formula
-  in section 6 and pixel `(212.5, 86.5)` comes straight back. It is one formula,
-  read in two directions.
+![Pixel plus depth gives back the point](../images/camera/deprojection.svg)
 
-The answer is still measured from the camera. A robot needs it in the room, and
-for that it needs to know where the camera is. That is section 9.
+The point we have found is measured from the camera, not from the room. To use
+it, the robot also needs to know where the camera is and which way it points,
+and section 2.2 explains that step next. The same four steps appear again as
+pseudo code in section 3.1 and as Python code in section 4.1.
 
-### Pseudo code
+#### 2.2 Where the camera is
+
+The point we found in section 2.1 is measured from the camera, so what it really
+says is "34 centimetres in front of me, and a little to the right". That is not
+yet useful to the arm, because the arm needs to know where things are in the
+room, not where they are compared with the camera. To turn one into the other,
+we also need to know where the camera is and which way it points, and together
+those two things are called the camera's **pose**. Every picture has to come
+with the pose it was taken from, because without it, the picture's numbers
+cannot be placed anywhere in the room.
+
+##### camera_to_world
+
+The pose is usually kept as one table of numbers, called **camera_to_world**,
+because it takes a point measured from the camera and gives the same point
+measured in the room, which is also called the world. For the camera in this
+doc, which hangs 40 centimetres above the middle of the table and looks straight
+down, the table is:
+
+|  | camera's RIGHT | camera's DOWN | camera's FORWARD | camera's POSITION |
+| --- | :---: | :---: | :---: | :---: |
+| world x | 1 | 0 | 0 | 0.00 |
+| world y | 0 | −1 | 0 | 0.00 |
+| world z | 0 | 0 | −1 | 0.40 |
+|  | 0 | 0 | 0 | 1 |
+
+The table is easiest to read one column at a time. The last column says where
+the camera is, measured in metres from the middle of the table, and it shows
+that the camera is 0.40 metres straight up. The first three columns are
+directions, and each of them says which way one of the camera's own axes points
+in the room. The camera's right points along the room's x, so the first column
+is `(1, 0, 0)`. The camera's down, towards the bottom of the picture, points
+along the room's negative y, so the second column is `(0, −1, 0)`. The camera's
+forward points straight down at the table, which is the room's negative z, so
+the third column is `(0, 0, −1)`. The bottom row is always `0 0 0 1` and carries
+no information of its own. It is only there so that a computer can do the
+turning and the shifting in a single multiplication.
+
+This is the same idea as a transform in the [arm area](../arm/overview.md): a
+turn and a shift, kept together.
+
+Using the table is simpler than it looks. We start at the camera's position,
+then walk `x` along the camera's right, `y` along its down, and `z` along its
+forward, and wherever we end up is the point in the room. For the spot on the
+red box, we start at the camera, 0.40 metres above the middle of the table.
+Walking 0.0644 metres along the camera's right moves us 0.0644 metres along the
+room's x. Walking −0.0411 metres along the camera's down means walking 0.0411
+metres the opposite way, which is towards the room's positive y. Finally,
+walking 0.340 metres along the camera's forward takes us 0.340 metres straight
+down, which leaves us 0.060 metres above the table. So the spot is at
+`(+0.0644, +0.0411, +0.0600)` in the room.
+
+That last number, 0.060 metres, is exactly the height of the red box, even
+though nothing in the calculation was told how tall the box is. The height came
+from the depth reading and the camera's pose alone. Notice also that `y` changed
+sign on the way into the room. For this camera, "down the picture" points along
+the room's negative y, so a spot towards the top of the picture has a positive
+y in the room.
+
+##### Pointing it somewhere
+
+The code does not ask for these three directions to be typed in by hand. It is
+told where the camera is and what it is looking at, and it works out the three
+directions from those in three steps. First, forward is the arrow from the
+camera to the thing it is looking at. Second, right is the direction at right
+angles to both forward and a chosen "up", which is given as a hint. Third, down
+is the direction at right angles to both forward and right, so once the first
+two are known, there is only one possible answer for it.
+
+The "up" hint only decides which way up the picture comes out, because a camera
+turned around the direction it looks at still sees the same things, only
+rotated. The hint must not point the same way as forward, because then there is
+no single direction at right angles to both of them. A camera looking straight
+down is exactly that case if the hint is the room's z, so the code refuses to
+guess and raises an error rather than quietly producing nonsense. The default
+hint is the room's y, which works for the camera in this doc.
+
+#### 2.3 What one capture contains
+
+So far we have used two pictures from each capture: the colour picture and the
+depth picture. A real camera, and the ROS messages that carry its pictures, can
+give the same shot in a few more forms, all the same size and all describing the
+same pixels. ROS tells them apart by their **encoding**, which is a short name
+that says what the numbers in each pixel mean. The encodings are worth knowing,
+because reading a picture in the wrong encoding is one of the most common bugs
+in camera code.
+
+| Picture | Encoding | Each pixel holds | At the red box pixel |
+| --- | --- | --- | --- |
+| colour | `rgb8` | red, green, blue, 0 to 255 each | `(196, 64, 54)` |
+| grey | `mono8` | brightness, 0 to 255 | `102` |
+| depth | `32FC1` | distance, in metres | `0.3400` |
+| depth | `16UC1` | distance, in whole millimetres | `340` |
+
+The **colour** picture, `rgb8`, is what most people mean by "a camera". Each
+pixel holds three numbers from 0 to 255, one each for red, green and blue. On its
+own it is the least useful picture for our job, because it gives directions and
+appearance but no measurements.
+
+The **grey** picture, `mono8`, holds a single brightness number for each pixel,
+so it is a third of the size of the colour picture. A lot of vision work, such as
+finding edges and corners or following something as it moves, never looks at
+colour, so the smaller picture is enough. The brightness is not the plain
+average of red, green and blue, because the human eye is much more sensitive to
+green than to blue. To match what a person sees, grey weights them `0.299` for
+red, `0.587` for green and `0.114` for blue.
+
+The **depth** picture comes in two forms, and they are easy to mix up. `32FC1`
+holds the distance in metres, as a decimal number, while `16UC1` holds the same
+distance in whole millimetres. They are the same measurement written in two
+ways, but if a program reads one as the other, every distance comes out a
+thousand times too big or too small.
+
+One more thing comes out of the same shot, and for a robot it is the most useful
+one: a **point cloud**. A point cloud is what we get when we take every pixel
+that has a depth reading, turn it into a point with the calculation from section
+2.1, and move that point into the room with section 2.2. Taking every fourth
+pixel across and every fourth pixel down gives 4,800 points. Here are two of
+them, in room coordinates:
+
+| Landed on | x | y | z |
+| --- | --- | --- | --- |
+| table | −0.230 | 0.172 | 0.000 |
+| red box | 0.035 | 0.068 | 0.060 |
+
+In every point, `z` is the height of whatever that pixel landed on, which is 0
+for the table and 0.060 for the red box. This is the form the rest of a robot
+wants, because a picture is a grid of directions, while a point cloud is a
+collection of places, and places can be grouped, measured and picked up.
+
+A real depth camera never fills in every pixel. Shiny, dark or see-through
+surfaces, and anything too near or too far away, come back with no reading at
+all. In this area those pixels stay missing rather than being filled with a
+made-up value, because a made-up value would put a surface where there is none.
+
+#### 2.4 The box, measured
+
+Everything is now in place to measure the box. Section 2.1 showed how to turn one
+pixel into a point measured from the camera, and section 2.2 showed how to move
+that point into the room, so measuring the whole box needs only four steps.
+
+The first step is to pick out the pixels that landed on the box. With only one
+box on the table this is easy, because any pixel that reads less than the
+table's `0.400` metres must be on the box. The second step is to turn each of
+those pixels into a point in the room, using the calculations from sections 2.1
+and 2.2. The third step is to keep only the highest points, because those are
+the top of the box. This step is needed because the thin strip of the box's side
+from section 1.4 also reads less than `0.400`, but its points sit lower than the
+top, so keeping only the highest points leaves them out. The fourth step is to
+average the points that are left. The average position of the top is the middle
+of the box, and the height of the top is how tall the box is.
+
+Nothing about the box was looked up along the way. The answer comes only from the
+box's pixels, their depth readings, the four lens numbers, and where the camera
+was.
+
+The table below compares the answer with the true values, which we know because
+we built the scene. Positions are in metres from the middle of the table, which
+is the spot straight under the camera.
+
+| Box | Measured middle | True middle | Measured height | True height |
+| --- | --- | --- | --- | --- |
+| red | (+0.064, +0.040) | (+0.065, +0.040) | 0.060 m | 0.060 m |
+
+The middle is within a millimetre of the truth, and the height is exact, so the
+red box has been measured from one picture. In the code, this whole calculation
+is `Capture.measure()` in `camera.py`, and its answer is the last thing that
+Part 1 of `make camera.learn` prints. Sections 3 and 4 show the same four steps
+as pseudo code and as Python.
+
+---
+
+### 3. Pseudo code
+
+The pseudo code below repeats the calculations from section 2 without the
+explanations, so that the whole job can be seen in one place. It is split into
+the same pieces as section 2, so each piece can be read side by side with the
+part that explains it.
+
+#### 3.1 One pixel into one point
+
+This piece follows the four steps from section 2.1, in the same order. It starts
+from one pixel and its depth reading, and it ends with a point measured from the
+camera.
 
 ```
-the goal: one pixel of the red box  ->  one point in 3D, measured from the camera
+the goal: turn one pixel on the red box into one point, measured from the camera
 
-inputs:
-    u, v        the pixel: across from the left, down from the top
+what we start with:
+    u, v        which pixel: how far across from the left, and how far down from the top
     depth       the depth reading at that pixel, in metres
     fx, fy      the focal length, in pixels            (the four lens numbers)
     cx, cy      the middle of the picture, in pixels   (the four lens numbers)
 
 step 1: how far is the pixel from the middle of the picture?
-    across = u - cx
-    down   = v - cy
+    pixels_right = u - cx
+    pixels_down  = v - cy
 
-step 2: how big is one pixel, at that distance?
+step 2: how much does one pixel cover, at that distance?
     size_across = depth / fx
     size_down   = depth / fy
 
 step 3: turn pixels into metres
-    x = across * size_across
-    y = down   * size_down
+    x = pixels_right * size_across
+    y = pixels_down  * size_down
 
-step 4: how far ahead?
+step 4: how far in front of the camera?
     z = depth
 
-answer: (x, y, z)
+the answer is the point (x, y, z)
 ```
 
-### Python code
+#### 3.2 From the camera into the room
 
-The four steps, written out so each one can be seen:
+This piece follows section 2.2. It starts from the point that 3.1 gives back,
+which is measured from the camera, and it ends with the same point measured in
+the room.
+
+```
+the goal: move one point from the camera's axes into the room's axes
+
+what we start with:
+    x, y, z             the point, measured from the camera           (from 3.1)
+    camera_to_world     where the camera is, and which way it points  (section 2.2)
+        right           the camera's right, as a direction in the room      first column
+        down            the camera's down, as a direction in the room       second column
+        forward         the camera's forward, as a direction in the room    third column
+        position        where the camera is, in the room                    last column
+
+start at the camera:
+    point_in_room = position
+
+walk along the camera's own three directions:
+    point_in_room = point_in_room + x * right
+    point_in_room = point_in_room + y * down
+    point_in_room = point_in_room + z * forward
+
+the answer is point_in_room
+```
+
+#### 3.3 Measuring the box
+
+This last piece is the whole job from section 2.4. It runs the two pieces above
+for every pixel on the box, and then keeps and averages the top.
+
+```
+the goal: find where the box is on the table, and how tall it is
+
+what we start with:
+    the depth picture from one capture
+    the four lens numbers, and camera_to_world
+
+step 1: pick out the box's pixels
+    box_pixels = every pixel whose depth reading is less than the table's 0.400
+
+step 2: turn each of them into a point in the room
+    points = an empty list
+    for each pixel in box_pixels:
+        u, v  = the middle of that pixel
+        point = one pixel into one point         (3.1)
+        point = from the camera into the room    (3.2)
+        add point to points
+
+step 3: keep only the top of the box
+    top_height = the highest z among the points
+    top        = the points whose z is within a millimetre of top_height
+
+step 4: average the top
+    middle = the average x and the average y of the points in top
+    height = top_height
+
+the answer is the middle of the box, and its height
+```
+
+---
+
+### 4. Python code
+
+The Python code below does the same calculations once more, in the same pieces
+as the pseudo code, so each piece can be matched with the pseudo code above it.
+Every piece runs as it is, and each one prints the numbers that section 2 worked
+out by hand. The pieces that import `camera_basics` need the workspace set up,
+so run them in the shell that `make shell` opens.
+
+#### 4.1 One pixel into one point
+
+The first version writes the four steps from section 2.1 out one line at a time,
+so that each step can be seen and checked on its own. It uses the same numbers
+as section 2.1, and it prints the same answer.
 
 ```python
 def pixel_to_point(u, v, depth, fx, fy, cx, cy):
     """Turn one pixel and its depth reading into a 3D point, measured from the camera."""
-    across = u - cx              # step 1: pixels right of the middle
-    down = v - cy                #         pixels below the middle
-    size_across = depth / fx     # step 2: metres one pixel covers, at this depth
+    pixels_right = u - cx             # step 1: how far right of the middle, in pixels
+    pixels_down = v - cy              #         how far below the middle, in pixels
+    size_across = depth / fx          # step 2: how much one pixel covers, in metres
     size_down = depth / fy
-    x = across * size_across     # step 3: pixels into metres
-    y = down * size_down
-    z = depth                    # step 4: straight ahead is the depth itself
+    x = pixels_right * size_across    # step 3: pixels into metres
+    y = pixels_down * size_down
+    z = depth                         # step 4: straight ahead is the depth itself
     return x, y, z
 
 
@@ -606,15 +986,17 @@ x, y, z = pixel_to_point(u=212.5, v=86.5, depth=0.340, fx=277.1, fy=277.1, cx=16
 print(f'x = {x:+.4f} m, y = {y:+.4f} m, z = {z:+.4f} m')
 ```
 
-It prints:
+When it runs, it prints:
 
 ```
 x = +0.0644 m, y = -0.0411 m, z = +0.3400 m
 ```
 
-This area's own code does the same thing in `CameraConfig.deproject()`, in
-`camera.py`. Here it is on a real capture, reading the depth from the depth
-picture rather than typing it in:
+
+This area's own code does the same calculation in `CameraConfig.deproject()`,
+inside `camera.py`. The next example uses it on a real capture, and it reads the
+depth from the depth picture instead of typing it in, which is how the
+calculation is used in practice.
 
 ```python
 from camera_basics.camera import capture, ONE_BOX_SCENE, TOP_DOWN, WRIST
@@ -626,9 +1008,56 @@ point = WRIST.deproject(212.5, 86.5, depth)     # the same four steps, in camera
 
 It gives the same point, `(+0.0644, -0.0411, +0.3400)`.
 
-In practice you want every pixel, not one, and NumPy does all 76,800 at once.
-The formula is unchanged; `u`, `v` and `depth` just become whole grids of
-numbers instead of single ones:
+#### 4.2 From the camera into the room
+
+This piece takes the point from 4.1 and moves it into the room. It writes the
+walk from section 2.2 out in full, with the four columns of `camera_to_world`
+typed in by hand.
+
+```python
+def camera_to_room(point, right, down, forward, position):
+    """Start at the camera, then walk x along its right, y along its down, z along its forward."""
+    x, y, z = point
+    return (
+        position[0] + x * right[0] + y * down[0] + z * forward[0],
+        position[1] + x * right[1] + y * down[1] + z * forward[1],
+        position[2] + x * right[2] + y * down[2] + z * forward[2],
+    )
+
+
+right = (1, 0, 0)         # the first three columns of camera_to_world:
+down = (0, -1, 0)         # which way the camera's right, down and forward
+forward = (0, 0, -1)      # point in the room
+position = (0, 0, 0.40)   # the last column: where the camera is
+
+room = camera_to_room((0.0644, -0.0411, 0.340), right, down, forward, position)
+print(f'in the room: x = {room[0]:+.4f} m, y = {room[1]:+.4f} m, z = {room[2]:+.4f} m')
+```
+
+When it runs, it prints the point from section 2.2, with the height of the box
+as its last number:
+
+```
+in the room: x = +0.0644 m, y = +0.0411 m, z = +0.0600 m
+```
+
+The library does the same walk in `Pose.to_world()`, and `TOP_DOWN` is the pose
+of the camera in this doc, so it gives the same point:
+
+```python
+from camera_basics.camera import TOP_DOWN
+
+room = TOP_DOWN.to_world((0.0644, -0.0411, 0.340))    # (+0.0644, +0.0411, +0.0600)
+```
+
+#### 4.3 Every pixel at once
+
+A real program usually wants every pixel rather than just one, and NumPy can
+work out all 76,800 of them in a single calculation. The formula does not change
+at all. The only difference is that `u`, `v` and `depth` become whole grids of
+numbers, one for every pixel, instead of single numbers. Like the library
+example in section 4.1, this piece carries on from the capture `shot` made
+there.
 
 ```python
 import numpy as np
@@ -640,152 +1069,70 @@ y = (v - WRIST.cy) * depth / WRIST.fy
 z = depth
 ```
 
-That is 76,800 points in one go: a point cloud, which section 10 comes back to.
-Pixels with no depth reading stay as `nan`, "not a number", so they cannot turn
-into made-up points. Looking up pixel `(212.5, 86.5)` in those grids gives the
-same `(+0.0644, -0.0411, +0.3400)` once again.
+The result is one point for every pixel, measured from the camera, and moving
+each of them into the room, as in section 4.2, gives the point cloud from section
+2.3. Any pixel without a depth reading is stored as `nan`, which stands for "not
+a number", so that it can never turn into a point that was not really measured.
+Looking up our pixel, `(212.5, 86.5)`, in these grids gives the same point,
+`(+0.0644, -0.0411, +0.3400)`, once again. The library can also do the whole
+thing in one call: `shot.point_cloud(step=4)` gives the 4,800 points from section
+2.3, already moved into the room.
+
+#### 4.4 Measuring the box
+
+This last piece is the whole job from section 2.4, written out in full. It
+carries on from the capture `shot` in section 4.1, and it follows the four steps
+of the pseudo code in section 3.3.
+
+```python
+TABLE_DEPTH = 0.400
+
+# steps 1 and 2: every pixel nearer than the table becomes a point in the room
+points = []
+for row in range(WRIST.height_px):
+    for col in range(WRIST.width_px):
+        depth = shot.depth[row][col]
+        if depth is None or depth > TABLE_DEPTH - 0.001:    # no reading, or the table
+            continue
+        point = WRIST.deproject(col + 0.5, row + 0.5, depth)    # the middle of the pixel
+        points.append(TOP_DOWN.to_world(point))
+
+# step 3: keep only the top, the points within a millimetre of the highest one
+top_z = max(p[2] for p in points)
+top = [p for p in points if p[2] > top_z - 0.001]
+
+# step 4: the average of the top is the middle of the box
+x = sum(p[0] for p in top) / len(top)
+y = sum(p[1] for p in top) / len(top)
+print(f'{len(points)} points on the box')
+print(f'middle = ({x:+.3f}, {y:+.3f}) m, height = {top_z:.3f} m')
+```
+
+When it runs, it finds the same 2,624 readings on the box as section 1.4, and it
+prints the answer from section 2.4:
+
+```
+2624 points on the box
+middle = (+0.064, +0.040) m, height = 0.060 m
+```
+
+The library does all four steps in `Capture.measure()`, so the whole calculation
+can also be done in one line:
+
+```python
+print(shot.measure('red'))    # (x, y, height), in metres: about (0.064, 0.040, 0.060)
+```
+
+There is one difference, and it does not change the answer here. Instead of the
+depth rule in step 1, `measure()` picks out the box's pixels by name, using the
+mask that Part 2 explains. With one box both ways pick the same pixels, but with
+three boxes the depth rule stops working, as Part 2 shows.
 
 ---
 
-## 9. Where the camera is
+## Part 2: locating three boxes
 
-The point above is "34 cm in front of me". To know where that is in the room,
-you also need to know where "me" is, and which way it faces.
-
-That is the camera's **pose**: where it is, and which way it points. Every
-picture has to carry it, or its numbers cannot be placed anywhere.
-
-### camera_to_world
-
-The pose is kept as one table of numbers, called **camera_to_world**. For the
-camera in this doc, looking straight down from 40 cm up:
-
-|  | camera's RIGHT | camera's DOWN | camera's FORWARD | camera's POSITION |
-| --- | :---: | :---: | :---: | :---: |
-| world x | 1 | 0 | 0 | 0.00 |
-| world y | 0 | −1 | 0 | 0.00 |
-| world z | 0 | 0 | −1 | 0.40 |
-|  | 0 | 0 | 0 | 1 |
-
-How to read it:
-
-- **The last column is where the camera is**, in metres: 0.40 m above the middle
-  of the table.
-- **The first three columns are directions.** They say which way the camera's
-  right, down and forward point in the room. Forward is `(0, 0, −1)`: straight
-  down.
-- **The bottom row is always `0 0 0 1`.** It carries no information. It is there
-  so that turning and shifting can be done in one step.
-
-It is the same idea as a transform in the [arm area](../arm/overview.md): a turn
-and a shift, kept together.
-
-Using it is simpler than it looks. Start at the camera's position. Walk `x`
-along the camera's right, `y` along its down, and `z` along its forward. Where
-you end up is the point in the room.
-
-Do that with the red box point from section 8 and it lands at
-`(+0.0644, +0.0411, +0.0600)` in the room. That `z` of `0.060` m is exactly the
-height of the red box — and nothing in the calculation was told the height.
-
-The `y` changed sign on the way. For this camera, "down the picture" is world
-`−Y`, so a point towards the top of the picture has a positive `y` in the room.
-
-### Pointing it somewhere
-
-Given a place to put the camera and a thing to look at, its three axes follow:
-
-1. **forward** is the arrow from the camera to the thing it looks at
-2. **right** is at right angles to forward and to "up"
-3. **down** is then at right angles to both
-
-"Up" only decides which way up the picture comes out. It must not point the
-same way as forward. A camera looking straight down is exactly that case, so
-there the code refuses to guess rather than quietly producing nonsense.
-
----
-
-## 10. What one capture contains
-
-One shot through one lens at one moment gives several pictures, all the same
-size, all describing the same pixels. ROS names each kind by its **encoding**:
-what the numbers in each pixel mean.
-
-| Picture | Encoding | Each pixel holds | At the red box pixel |
-| --- | --- | --- | --- |
-| colour | `rgb8` | red, green, blue, 0 to 255 each | `(196, 64, 54)` |
-| grey | `mono8` | brightness, 0 to 255 | `102` |
-| depth | `32FC1` | distance, in metres | `0.3400` |
-| depth | `16UC1` | distance, in whole millimetres | `340` |
-
-**Colour** is what people usually mean by "a camera". On its own it is the least
-useful here: direction and appearance, but no measurements.
-
-**Grey** is a third of the data, and a lot of vision work — finding edges and
-corners, tracking — never looks at colour. It is not the plain average of red,
-green and blue. The eye is much more sensitive to green, so grey weights them
-`0.299` red, `0.587` green and `0.114` blue.
-
-**Depth** comes in two forms. `32FC1` holds metres as decimal numbers. `16UC1`
-holds whole millimetres. They are the same measurement — but read one as the
-other and everything is out by a factor of a thousand.
-
-One more thing comes out of the same shot: **a point cloud**. That is every
-pixel with a depth reading, deprojected into a 3D point with section 8's
-arithmetic. Taking every fourth pixel across and down gives 4,800 points. Two of
-them, in room coordinates:
-
-| Landed on | x | y | z |
-| --- | --- | --- | --- |
-| table | −0.230 | 0.172 | 0.000 |
-| red box | 0.035 | 0.068 | 0.060 |
-
-Every `z` is the height of what that pixel landed on. This is the form the rest
-of a robot wants. A picture is a grid of directions; a point cloud is a
-collection of places, and places can be grouped, measured and picked up.
-
-A real depth camera never fills in every pixel. Shiny, dark or see-through
-surfaces, and anything out of range, come back with no reading. Here those stay
-missing rather than being filled with a made-up value, because a made-up value
-would put a surface where there is none.
-
----
-
-## 11. The box, measured
-
-Everything is now in place to measure the box. It takes four steps:
-
-1. take the pixels that landed on the box — with one box, the ones reading less
-   than `0.400`
-2. turn each one into a point in the room, with sections 8 and 9
-3. keep only the highest points: that is the box's top
-4. average them
-
-The average of the top is the middle of the box. The height of the top is how
-tall the box is. The strip of side from section 4 sits lower than the top, so
-step 3 leaves it out.
-
-Nothing about the box was looked up. The answer comes only from its pixels, the
-depth readings, the four lens numbers, and where the camera was.
-
-Positions are in metres from the middle of the table, the spot straight under
-the camera:
-
-| Box | Measured middle | True middle | Measured height | True height |
-| --- | --- | --- | --- | --- |
-| red | (+0.064, +0.040) | (+0.065, +0.040) | 0.060 m | 0.060 m |
-
-The middle is within a millimetre of the truth, and the height is exact. One box,
-measured from one picture.
-
-This is `Capture.measure()` in `camera.py`, and it is the last thing Part 1 of
-`make camera.learn` prints.
-
----
-
-## Part 2: three boxes
-
-Now put the green and blue boxes back, exactly as in the problem at the top.
+Now we put the green and blue boxes back, exactly as in the problem at the top.
 
 ![The three boxes, from above and from the side](../images/camera/scene.svg)
 
@@ -795,7 +1142,7 @@ box reads exactly what it read before.
 
 Only one thing breaks, and this part is about that.
 
-## 12. Telling the boxes apart
+### 5. Telling the boxes apart
 
 In Part 1, finding the box was easy: anything reading less than the table's
 `0.400` was the box.
@@ -839,10 +1186,10 @@ mask as given, so that it can stay about the camera.
 
 ---
 
-## 13. The three boxes, measured
+### 6. The three boxes, measured
 
 With the mask, each box gets its own pixels. Each one is then measured exactly as
-the red box was in section 11: turn its pixels into points, keep its top, and
+the red box was in section 2.4: turn its pixels into points, keep its top, and
 average.
 
 | Box | Measured middle | True middle | Measured height | True height |
@@ -860,7 +1207,7 @@ two boxes did not disturb it, which is the whole point of telling them apart.
 
 ---
 
-## 14. Why one picture is not enough
+### 7. Why one picture is not enough
 
 Move the camera and the same scene reads differently.
 
@@ -887,7 +1234,7 @@ The two parts above are the ideas. This part is the practical side: how the same
 pictures go out over ROS, how to run everything, and where things are in the
 code.
 
-## 15. Publishing it to ROS
+### 8. Publishing it to ROS
 
 Everything so far is plain Python. `camera.py` does not use ROS at all.
 
@@ -896,9 +1243,9 @@ pictures and puts them on topics in the shape the rest of ROS expects. Swap the
 simulated scene for a real camera and those topics stay the same, so anything
 built on them keeps working.
 
-### Two sets of camera axes
+#### Two sets of camera axes
 
-Section 6 gave the camera's axes as X right, Y down, Z forward, to match the
+Section 1.6 gave the camera's axes as X right, Y down, Z forward, to match the
 picture. The rest of a robot uses a different habit: X forward, Y left, Z up.
 
 ROS keeps both, as two frames in the same place:
@@ -920,7 +1267,7 @@ instead of the optical frame and nothing complains. The point cloud just comes
 out lying on its side, turned a quarter turn, and it looks like a mistake in your
 own maths.
 
-### How the pieces connect
+#### How the pieces connect
 
 ```mermaid
 flowchart LR
@@ -956,7 +1303,7 @@ looking up TF. Nothing recalculates the points when the camera moves — the sam
 idea as the [rviz area](../rviz/overview.md), where the ball never moves but its
 frame does.
 
-### Settings you can change
+#### Settings you can change
 
 They are node settings, so no code needs editing:
 
@@ -980,7 +1327,7 @@ Doubling both the width and the height does four times the work.
 
 ---
 
-## 16. Running it
+### 9. Running it
 
 Two commands. Start with the first:
 
@@ -1031,7 +1378,7 @@ The last two lines look like problems. They are not — they are normal on a Mac
 
 Press Ctrl-C to stop.
 
-### Checking it works
+#### Checking it works
 
 Leave `make camera.demo` running. In a second terminal:
 
@@ -1056,7 +1403,7 @@ If the point cloud appears but lies on its side, pictures are being stamped in
 `camera_link` instead of the optical frame. See
 [two sets of camera axes](#two-sets-of-camera-axes).
 
-### Commands
+#### Commands
 
 ```
 make camera.learn    part 1 then part 2, in the terminal
@@ -1075,9 +1422,9 @@ make shell     a shell with ROS ready, for typing ros2 commands
 
 ---
 
-## 17. Working on the code
+### 10. Working on the code
 
-### Layout
+#### Layout
 
 ```
 docs/
@@ -1095,10 +1442,10 @@ src/camera_basics/
   test/test_problems.py                        checks both parts print what this doc quotes
 ```
 
-### Changing things
+#### Changing things
 
 **Change the lens.** `CONFIGS` in `camera.py` holds the five compared in
-section 7. Add one, or pass a different field of view to the demo:
+section 1.7. Add one, or pass a different field of view to the demo:
 
 ```
 pixi run bash -c 'source install/setup.bash && \
@@ -1130,7 +1477,7 @@ pixi run python docs/diagrams/camera.py
 
 ---
 
-## 18. Notes and gotchas
+### 11. Notes and gotchas
 
 **The pictures are made by ray casting.** For each pixel, the code sends a line
 out through the lens, finds the first thing it hits, and records its colour and
@@ -1160,7 +1507,7 @@ all.
 
 ---
 
-## 19. Vocabulary
+### 12. Vocabulary
 
 | Term | Full name | Meaning |
 | --- | --- | --- |
@@ -1186,5 +1533,5 @@ all.
 | `K` | intrinsic matrix | the four numbers laid out as a 3 × 3 grid, as `CameraInfo` carries them |
 
 Previous area: [position, frames and transforms](../arm/overview.md), which
-builds the transform maths used in section 9 to move a point from the camera
+builds the transform maths used in section 2.2 to move a point from the camera
 into the room.

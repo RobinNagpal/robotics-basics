@@ -7,8 +7,9 @@ from camera_basics.problems import one_box, three_boxes
 def test_part_1_finds_and_measures_the_one_box(capsys):
     one_box.main()
     printed = capsys.readouterr().out
-    assert '74,176' in printed               # readings that landed on the table
-    assert '(+0.064, +0.040)' in printed     # the red box, measured
+    assert '4,645' in printed                # the basic camera's readings on the table
+    assert '(+0.064, +0.039)' in printed     # the red box, measured by the basic camera
+    assert '(+0.064, +0.040)' in printed     # and by the doc's 320 x 240 camera
 
 
 def test_part_2_tells_three_boxes_apart_and_measures_each(capsys):

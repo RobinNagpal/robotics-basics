@@ -1054,8 +1054,8 @@ is the spot straight under the camera.
 The middle is within a millimetre of the truth, and the height is exact, so the
 red box has been measured from one picture. In the code, this whole calculation
 is `Capture.measure()` in `camera.py`, and its answer is the last thing that
-Part 1 of `make camera.learn` prints. Sections 3 and 4 show the same four steps
-as pseudo code and as Python.
+Part 1 of `make camera.learn` prints, next to the answer from a basic 80 × 60
+camera. Sections 3 and 4 show the same four steps as pseudo code and as Python.
 
 ---
 
@@ -1557,14 +1557,23 @@ make camera.learn
 
 It runs the two parts in order, prints them in the terminal, and exits.
 
-Part 1, one box:
+Part 1, one box, uses a basic camera with the same lens but only 80 × 60 pixels,
+so that it can draw every pixel the camera returns. Its numbers are smaller than
+the ones in this doc, but every step is the same:
 
 - the camera's four lens numbers, and how much of the table it covers
 - `camera_to_world`
-- a capture drawn in text characters, and where its depth readings land
+- the colour picture and the depth picture, drawn one coloured square per pixel
+- the actual depth readings for a small patch on the box's edge
+- where the depth readings land
 - one pixel worked through to a point, and a point cloud
 - the encodings side by side
 - the box, measured, next to its true size
+- the same box measured again with this doc's 320 × 240 camera, which gets
+  closer to the truth
+
+The pictures use 24-bit colour, which almost every modern terminal shows. If
+yours prints strange characters instead, try a different terminal.
 
 Part 2, three boxes:
 

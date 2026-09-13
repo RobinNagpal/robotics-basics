@@ -31,7 +31,6 @@ from camera_basics.camera import (  # noqa: E402  (must follow the sys.path line
     TOP_DOWN,
     WRIST,
 )
-from camera_basics.problems.one_box import SAMPLE_PIXEL  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use('Agg')
 from matplotlib.patches import Arc, Circle, Rectangle  # noqa: E402  (must follow use)
@@ -40,6 +39,10 @@ import numpy as np  # noqa: E402
 
 AREA = 'camera'
 OUT_DIR = REPO_ROOT / 'docs' / 'images' / AREA
+
+#: The pixel the doc works through in section 2.1: on top of the red box, off
+#: centre so that both halves of the arithmetic have work to do.
+SAMPLE_PIXEL = (212.5, 86.5)
 
 #: Height the reference camera sits at, in metres. Matches ``TOP_DOWN``.
 CAMERA_HEIGHT_M = TOP_DOWN.position[2]

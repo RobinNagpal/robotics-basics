@@ -3,10 +3,12 @@
 Run it:  make camera.learn   (or: ros2 run camera_basics camera_one_box)
 
 Only the red box is on the table: a 6 cm cube, 40 cm below a camera looking
-straight down. The camera is the one the doc uses throughout: 320 x 240 pixels,
-seeing 60 degrees across. This walks through what it makes of the box, from the
-four numbers that describe its lens to the box measured in the room. Part 2,
-three_boxes.py, puts the other two boxes back.
+straight down. This part uses a basic camera, only 80 x 60 pixels, so that
+every pixel it returns can be drawn and looked at. It walks through what that
+camera makes of the box, from the four numbers that describe its lens to the
+box measured in the room. The last step measures the box again with the doc's
+bigger 320 x 240 camera, to show what more pixels buy. Part 2, three_boxes.py,
+puts the other two boxes back.
 
 THE IDEA
 --------
@@ -32,9 +34,17 @@ from camera_basics.camera import (
     WRIST,
 )
 
-#: A pixel picked out below: on top of the red box, off centre so that both
-#: halves of the arithmetic have work to do.
-SAMPLE_PIXEL = (212.5, 86.5)
+#: The basic camera this part uses: the same 60 degree lens as the doc's camera,
+#: but only 80 x 60 pixels. That is 4,800 pixels, few enough to draw every one.
+BASIC = CameraConfig('basic', 80, 60, 60.0)
+
+#: A pixel picked out below, in the basic camera's picture: on top of the red
+#: box, off centre so that both halves of the arithmetic have work to do.
+SAMPLE_PIXEL = (53.5, 21.5)
+
+#: A small patch of the picture, as (first column, last column, first row, last
+#: row). It sits on the box's left edge, so it holds table, side and top.
+PATCH = (43, 50, 19, 23)
 
 _SECTION = [0]
 
@@ -62,15 +72,58 @@ def side_by_side(left: list[str], right: list[str], gap: str = '   ') -> list[st
     return rows
 
 
-def show_lens(config: CameraConfig = WRIST) -> None:
-    """Print the four lens numbers of the one camera this part uses."""
+def draw_pixels(colours) -> None:
+    """Print a picture in the terminal, one coloured square for every pixel.
+
+    Each character on screen holds two pixels, one above the other. The top
+    pixel is the colour of the half block '▀' itself, and the bottom pixel is
+    the colour behind it. Terminal characters are about twice as tall as they
+    are wide, so this makes every pixel come out square.
+
+    The colours use the standard 24-bit colour codes, which almost every modern
+    terminal understands.
+    """
+    rows = list(colours)
+    if len(rows) % 2:
+        rows.append([(0, 0, 0)] * len(rows[0]))    # an odd last row gets a black partner
+    for top, bottom in zip(rows[0::2], rows[1::2]):
+        line = ''.join(
+            f'\x1b[38;2;{r1};{g1};{b1}m\x1b[48;2;{r2};{g2};{b2}m▀'
+            for (r1, g1, b1), (r2, g2, b2) in zip(top, bottom)
+        )
+        print('  ' + line + '\x1b[0m')
+
+
+def depth_to_grey(shot: Capture) -> list[list[tuple[int, int, int]]]:
+    """Turn each depth reading into a shade of grey: the nearer, the brighter.
+
+    The furthest reading in the picture becomes dark grey and the nearest
+    becomes white. A pixel with no reading would be black.
+    """
+    near, far = shot.depth_range()
+    spread = (far - near) or 1.0
+    pixels = []
+    for row in shot.depth:
+        line = []
+        for depth_m in row:
+            if depth_m is None:
+                line.append((0, 0, 0))
+                continue
+            level = round(60 + 195 * (far - depth_m) / spread)
+            line.append((level, level, level))
+        pixels.append(line)
+    return pixels
+
+
+def show_lens(config: CameraConfig = BASIC) -> None:
+    """Print the four lens numbers of the camera this part uses."""
     heading('the lens: four numbers, and where they come from')
     print(f'The camera is {config.width_px} x {config.height_px} pixels and sees '
           f'{config.hfov_deg:g}° across.')
     print('Those two facts decide all four numbers that describe its lens.\n')
     print(f'  fx = fy = {config.fx:.1f}   the focal length, counted in pixels')
-    print(f'  cx      = {config.cx:g}   the middle of the picture, across')
-    print(f'  cy      = {config.cy:g}   the middle of the picture, down')
+    print(f'  cx      = {config.cx:g}     the middle of the picture, across')
+    print(f'  cy      = {config.cy:g}     the middle of the picture, down')
     print(
         f'\nCheck fx by hand: half the width, divided by tan of half the field of'
         f'\nview, is {config.width_px // 2} / tan({config.hfov_deg / 2:g}°) = {config.fx:.1f}. '
@@ -79,7 +132,7 @@ def show_lens(config: CameraConfig = WRIST) -> None:
     )
 
 
-def show_coverage(config: CameraConfig = WRIST, distance_m: float = 0.40) -> None:
+def show_coverage(config: CameraConfig = BASIC, distance_m: float = 0.40) -> None:
     """Print how much of the table the camera sees, and how finely."""
     heading(f'what that buys you, {distance_m:g} m from the table')
     width_m, height_m = config.coverage_m(distance_m)
@@ -112,14 +165,50 @@ def show_pose() -> None:
     )
 
 
-def show_captures(shot: Capture) -> None:
-    """Print one capture as two terminal pictures: colour and depth."""
-    heading('one capture, two pictures')
-    print('The same pixels twice. Colour on the left, depth on the right:')
-    print('denser characters are nearer, so anything taller than the table')
-    print('stands out of it.\n')
-    for line in side_by_side(shot.ascii_art('rgb', 40), shot.ascii_art('depth', 40)):
-        print('  ' + line)
+def show_colour_picture(shot: Capture) -> None:
+    """Draw the colour picture exactly as the camera returned it."""
+    heading('the colour picture, every pixel')
+    config = shot.config
+    print(f'This is exactly what the camera returned: {config.width_px} pixels across and '
+          f'{config.height_px} down,')
+    print('each one a single colour. Nothing is smoothed or left out. The grey')
+    print('squares are the table, with its 5 cm grid, and the red block is the box.\n')
+    draw_pixels(shot.rgb)
+
+
+def show_depth_picture(shot: Capture) -> None:
+    """Draw the depth picture, one grey square per reading."""
+    heading('the depth picture, every pixel')
+    near, far = shot.depth_range()
+    print('The same pixels again, but each one now holds a distance instead of a')
+    print(f'colour. Nearer is brighter: {far:.3f} m is dark grey and {near:.3f} m is '
+          'white. The')
+    print('box stands out because its top is nearer the camera than the table.\n')
+    draw_pixels(depth_to_grey(shot))
+
+
+def show_pixel_numbers(shot: Capture) -> None:
+    """Print the actual numbers behind a small patch of pixels."""
+    heading('the numbers behind the pixels')
+    first_col, last_col, first_row, last_row = PATCH
+    print('A picture is only numbers. Here are the depth readings, in metres, for')
+    print(f'columns {first_col} to {last_col} and rows {first_row} to {last_row}, '
+          "on the box's left edge:\n")
+    print('         ' + ''.join(f'{col:>7}' for col in range(first_col, last_col + 1)))
+    for row in range(first_row, last_row + 1):
+        readings = shot.depth[row][first_col:last_col + 1]
+        print(f'  row {row:<3}' + ''.join(f'{d:>7.3f}' for d in readings))
+    table, side, top = (shot.rgb[first_row][col]
+                        for col in (first_col, first_col + 3, first_col + 4))
+    print(
+        '\nThe table reads 0.400, the top of the box reads 0.340, and the one'
+        '\ncolumn in between is the side of the box, which the camera catches'
+        '\nat an angle. The colour picture holds three numbers in each pixel'
+        f'\ninstead, for red, green and blue:\n'
+        f'\n  {table} on the table'
+        f'\n  {side} on the side, in shadow'
+        f'\n  {top} on the top'
+    )
 
 
 def show_depth_numbers(shot: Capture, scene: Scene) -> None:
@@ -167,11 +256,14 @@ def show_pixel_to_point(shot: Capture, scene: Scene) -> None:
     print(f'Its depth reading is {depth_m:.3f} m.\n')
     x, y, z = config.deproject(u, v, depth_m)
     print('Measured from the camera, undoing the divide-by-depth:')
-    print(f'  x = (u - cx) * depth / fx = ({u:g} - {config.cx:g})'
-          f' * {depth_m:.3f} / {config.fx:.1f} = {x:+.4f} m')
-    print(f'  y = (v - cy) * depth / fy = ({v:g} - {config.cy:g})'
-          f' * {depth_m:.3f} / {config.fy:.1f} = {y:+.4f} m')
-    print(f'  z =  depth                                          = {z:+.4f} m')
+    x_line = (f'  x = (u - cx) * depth / fx = ({u:g} - {config.cx:g})'
+              f' * {depth_m:.3f} / {config.fx:.1f} = ')
+    y_line = (f'  y = (v - cy) * depth / fy = ({v:g} - {config.cy:g})'
+              f' * {depth_m:.3f} / {config.fy:.1f} = ')
+    width = max(len(x_line), len(y_line))
+    print(f'{x_line:>{width}}{x:+.4f} m')
+    print(f'{y_line:>{width}}{y:+.4f} m')
+    print(f"{'  z =  depth':<{width - 2}}= {z:+.4f} m")
     wx, wy, wz = shot.pixel_to_world(u, v)
     print(f'\nMoved into the room by camera_to_world: ({wx:+.4f}, {wy:+.4f}, {wz:+.4f})')
     print(f'The red box top is {scene.boxes[0].top_z:.3f} m above the table, and z agrees.')
@@ -181,14 +273,14 @@ def show_pixel_to_point(shot: Capture, scene: Scene) -> None:
     print('Round trip, because the two formulas are one formula read both ways.')
 
     heading('every pixel at once is a point cloud')
-    cloud = shot.point_cloud(step=4)
-    print(f'One in sixteen pixels, deprojected: {len(cloud):,} points.')
+    cloud = shot.point_cloud()
+    print(f'Every pixel, deprojected: {len(cloud):,} points.')
     print('The picture was a grid of directions; this is a bag of places.\n')
 
     # One point off each thing in the scene, rather than five off the table.
     first: dict[str, tuple[float, float, float]] = {}
-    for row in range(0, config.height_px, 4):
-        for col in range(0, config.width_px, 4):
+    for row in range(config.height_px):
+        for col in range(config.width_px):
             label = shot.labels[row][col]
             if label is not None and label not in first:
                 point = shot.pixel_to_world(col + 0.5, row + 0.5)
@@ -244,7 +336,29 @@ def show_measurements(shot: Capture, scene: Scene) -> None:
         true_x, true_y = box.centre
         print(f'{box.label:<7}  ({x:+.3f}, {y:+.3f})   ({true_x:+.3f}, {true_y:+.3f})'
               f'{height:>9.3f}{box.top_z:>7.3f}')
-    print('\nWithin a millimetre, and the height exact, from one picture.')
+    print('\nWithin a millimetre or so, and the height exact, from one picture.')
+
+
+def show_more_pixels(scene: Scene) -> None:
+    """Measure the box with the basic camera and with the doc's camera, side by side."""
+    heading("more pixels: the same box through the doc's camera")
+    print(f'The doc uses a camera with the same lens but {WRIST.width_px} x {WRIST.height_px} '
+          'pixels, sixteen')
+    print('times as many. Each of its pixels is a quarter as wide, so it finds the')
+    print('edges of the box more precisely.\n')
+    print(f"{'camera':<12}{'pixels':>8}{'one pixel':>12}{'measured middle':>21}{'height':>9}")
+    print('-' * 62)
+    for config in (BASIC, WRIST):
+        x, y, height = capture(scene, config, TOP_DOWN).measure('red')
+        size = f'{config.width_px} x {config.height_px}'
+        print(f'{size:<12}{config.pixel_count:>8,}'
+              f'{config.metres_per_pixel(0.40) * 1000:>9.2f} mm'
+              f'    ({x:+.3f}, {y:+.3f}){height:>9.3f}')
+    true_x, true_y = scene.boxes[0].centre
+    print(f"{'the truth':<12}{'':>8}{'':>12}    ({true_x:+.3f}, {true_y:+.3f})"
+          f'{scene.boxes[0].top_z:>9.3f}')
+    print('\nThe height is exact either way, because every reading on the top is')
+    print('the same. The middle gets closer to the truth with more pixels.')
 
 
 def main() -> None:
@@ -256,12 +370,15 @@ def main() -> None:
     show_coverage()
     show_pose()
 
-    shot = capture(ONE_BOX_SCENE, WRIST, TOP_DOWN)
-    show_captures(shot)
+    shot = capture(ONE_BOX_SCENE, BASIC, TOP_DOWN)
+    show_colour_picture(shot)
+    show_depth_picture(shot)
+    show_pixel_numbers(shot)
     show_depth_numbers(shot, ONE_BOX_SCENE)
     show_pixel_to_point(shot, ONE_BOX_SCENE)
     show_encodings(shot)
     show_measurements(shot, ONE_BOX_SCENE)
+    show_more_pixels(ONE_BOX_SCENE)
 
     print('\nNext: three_boxes.py puts the other two boxes back.')
 

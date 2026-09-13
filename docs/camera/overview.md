@@ -62,6 +62,11 @@ area describes, and so are the numbers beside them.
    · [Where 277 comes from](#where-277-comes-from)
 7. [Field of view and resolution are separate knobs](#7-field-of-view-and-resolution-are-separate-knobs)
 8. [Pixel plus depth gives back the point](#8-pixel-plus-depth-gives-back-the-point)
+   · [What we are doing](#what-we-are-doing)
+   · [The variables](#the-variables)
+   · [Step by step](#step-by-step)
+   · [Pseudo code](#pseudo-code)
+   · [Python code](#python-code)
 9. [Where the camera is](#9-where-the-camera-is)
    · [camera_to_world](#camera_to_world)
    · [Pointing it somewhere](#pointing-it-somewhere)
@@ -409,12 +414,119 @@ different reasons. Always read it next to the resolution.
 
 This is the section the rest of the area exists for.
 
-A pixel is a direction. A depth reading is the distance that was thrown away.
-Put the distance back, and the 3D point comes back.
+### What we are doing
+
+We take **one pixel** on top of the red box, and **its depth reading**. We turn
+them into **one point in 3D**: a position in metres, measured from the camera.
+
+Why? Because a robot cannot reach for a pixel. "Pixel `(212.5, 86.5)`" says
+where the box is in the picture. The arm needs to know where the box is in
+space: how far right, how far up, how far ahead.
+
+Two earlier sections give us everything needed:
+
+- section 3: a pixel is a **direction**, one line out of the lens
+- section 4: the depth reading says how far along that line the box is
+
+A direction and a distance pin down one point. This section does the arithmetic.
 
 ![Pixel plus depth gives back the point](../images/camera/deprojection.svg)
 
-Turn the two formulas from section 6 around:
+### The variables
+
+Seven numbers go in, and three come out.
+
+| Name | What it is | Where it comes from | For our pixel |
+| --- | --- | --- | --- |
+| `u` | the pixel's position across, counted from the left edge | the pixel we picked | 212.5 |
+| `v` | the pixel's position down, counted from the top edge | the pixel we picked | 86.5 |
+| `depth` | how far in front of the camera that pixel's surface is, in metres | the depth picture, at that pixel | 0.340 |
+| `cx` | the middle of the picture, across. Straight ahead lands here | the four lens numbers (section 6) | 160 |
+| `cy` | the middle of the picture, down | the four lens numbers | 120 |
+| `fx` | the focal length across, in pixels | the four lens numbers | 277.1 |
+| `fy` | the focal length down, in pixels | the four lens numbers | 277.1 |
+| `x` | **answer**: how far right of the camera, in metres | worked out below | |
+| `y` | **answer**: how far down the picture, in metres | worked out below | |
+| `z` | **answer**: how far straight ahead, in metres | worked out below | |
+
+A few of these deserve a word more.
+
+**`u` and `v` end in `.5`** because they point at the middle of the pixel. Pixel
+number 212 across covers the strip from 212 to 213, so its middle is 212.5.
+
+**`depth` is measured straight ahead**, not along the slanted line to the
+point. That is the rule from section 4, and it is what makes the last step easy.
+
+**`fx` and `fy` have a concrete meaning.** Take a point that is as far to the
+side as it is in front: 1 m ahead and 1 m to the right, say. It lands exactly
+`fx` pixels from the middle of the picture, which here is 277.1 pixels. `fx` and
+`fy` are equal because the pixels are square.
+
+**`x`, `y` and `z` use the camera's own axes** from section 6: X to the right,
+Y **down** the picture, Z straight ahead.
+
+### Step by step
+
+Four small steps, for the pixel on top of the red box.
+
+**Step 1: how far is the pixel from the middle of the picture?**
+
+The middle of the picture, `(cx, cy)`, is where "straight ahead" lands. So
+everything is measured from there:
+
+```
+across = u - cx = 212.5 - 160 =  52.5 pixels
+down   = v - cy =  86.5 - 120 = -33.5 pixels
+```
+
+The pixel is 52.5 pixels to the right of the middle. Its `down` is negative
+because `v` counts downwards, and 86.5 is less than 120: the pixel is 33.5
+pixels *above* the middle.
+
+**Step 2: how big is one pixel, at that distance?**
+
+A pixel is not a fixed size in the world. Close to the camera it covers a tiny
+patch; far away it covers a big one. At a distance of `depth`, one pixel covers
+`depth / fx` metres:
+
+```
+one pixel = depth / fx = 0.340 / 277.1 = 0.00123 m, about 1.2 mm
+```
+
+That is the same idea as the last column of the tables in section 7. There, one
+pixel covered 1.44 mm on the table, 0.40 m away. The box top is 6 cm nearer, so
+each pixel covers a little less.
+
+**Step 3: turn pixels into metres.**
+
+Now multiply. The pixel is 52.5 pixels right of the middle, and each pixel is
+0.00123 m wide:
+
+```
+x = across × one pixel =  52.5 × 0.00123 = +0.0644 m
+y = down   × one pixel = -33.5 × 0.00123 = -0.0411 m
+```
+
+**Step 4: how far ahead?**
+
+That is the depth reading itself, with no arithmetic at all:
+
+```
+z = depth = 0.340 m
+```
+
+This is why section 4 cared that depth is measured straight ahead. Because it
+is, the third coordinate is just the reading.
+
+**The answer.** The point is `(+0.0644, -0.0411, 0.340)`. In words, that spot
+on the red box is:
+
+- 6.4 cm to the right of the camera
+- 4.1 cm towards the top of the picture
+- 34 cm in front of it
+
+**All four steps at once.** Put them together and you get the three formulas
+this is usually written as:
 
 ```
 x = (u - cx) · depth / fx
@@ -422,39 +534,116 @@ y = (v - cy) · depth / fy
 z =  depth
 ```
 
-This is called **deprojection**: a pixel and a depth in, a 3D point out. The
-reverse of taking a picture.
+This is called **deprojection**: a pixel and a depth in, a 3D point out. It is
+the formula from section 6 turned around, the reverse of taking a picture.
 
-Here it is for one pixel on top of the red box:
-
-```
-pixel (212.5, 86.5), depth 0.340 m
-
-x = (212.5 - 160) · 0.340 / 277.1 = +0.0644 m
-y = (86.5 - 120)  · 0.340 / 277.1 = -0.0411 m
-z =                                 +0.3400 m
-```
-
-So that spot on the red box is:
-
-- 6.4 cm to the right of the camera
-- 4.1 cm towards the top of the picture
-- 34 cm in front of it
+There is a second way to read the same formula. Dividing by `fx` first gives the
+direction the pixel looks in. `52.5 / 277.1 = 0.19`, so the line goes 0.19 m
+right for every metre ahead. Multiplying by the depth then walks 0.34 m along
+that line. Same numbers, same answer, and exactly section 3's "a pixel is a
+direction".
 
 Three things to notice:
 
-- **`y` is negative.** The camera's Y points down the picture. This pixel is
-  *above* the middle — `86.5` is less than `120` — so it comes out negative.
-  Nothing is wrong.
-- **The `.5` in the pixel** is the middle of the pixel, as section 2 said. At the
-  edge of a box, half a pixel is the difference between measuring the box and
-  measuring the table behind it.
-- **It goes both ways.** Put `(0.0644, -0.0411, 0.340)` back into the formula in
-  section 6 and pixel `(212.5, 86.5)` comes straight back. It is one formula,
+- **`y` is negative, and that is right.** The camera's Y points down the
+  picture, and this pixel is above the middle.
+- **Half a pixel matters.** At the edge of a box, being half a pixel out is the
+  difference between measuring the box and measuring the table behind it.
+- **It goes both ways.** Put `(0.0644, -0.0411, 0.340)` back into the formula
+  in section 6 and pixel `(212.5, 86.5)` comes straight back. It is one formula,
   read in two directions.
 
-The answer is still measured from the camera. A robot needs it in the room — and
-for that, it needs to know where the camera is.
+The answer is still measured from the camera. A robot needs it in the room, and
+for that it needs to know where the camera is. That is section 9.
+
+### Pseudo code
+
+```
+the goal: one pixel of the red box  ->  one point in 3D, measured from the camera
+
+inputs:
+    u, v        the pixel: across from the left, down from the top
+    depth       the depth reading at that pixel, in metres
+    fx, fy      the focal length, in pixels            (the four lens numbers)
+    cx, cy      the middle of the picture, in pixels   (the four lens numbers)
+
+step 1: how far is the pixel from the middle of the picture?
+    across = u - cx
+    down   = v - cy
+
+step 2: how big is one pixel, at that distance?
+    size_across = depth / fx
+    size_down   = depth / fy
+
+step 3: turn pixels into metres
+    x = across * size_across
+    y = down   * size_down
+
+step 4: how far ahead?
+    z = depth
+
+answer: (x, y, z)
+```
+
+### Python code
+
+The four steps, written out so each one can be seen:
+
+```python
+def pixel_to_point(u, v, depth, fx, fy, cx, cy):
+    """Turn one pixel and its depth reading into a 3D point, measured from the camera."""
+    across = u - cx              # step 1: pixels right of the middle
+    down = v - cy                #         pixels below the middle
+    size_across = depth / fx     # step 2: metres one pixel covers, at this depth
+    size_down = depth / fy
+    x = across * size_across     # step 3: pixels into metres
+    y = down * size_down
+    z = depth                    # step 4: straight ahead is the depth itself
+    return x, y, z
+
+
+x, y, z = pixel_to_point(u=212.5, v=86.5, depth=0.340, fx=277.1, fy=277.1, cx=160, cy=120)
+print(f'x = {x:+.4f} m, y = {y:+.4f} m, z = {z:+.4f} m')
+```
+
+It prints:
+
+```
+x = +0.0644 m, y = -0.0411 m, z = +0.3400 m
+```
+
+This area's own code does the same thing in `CameraConfig.deproject()`, in
+`camera.py`. Here it is on a real capture, reading the depth from the depth
+picture rather than typing it in:
+
+```python
+from camera_basics.camera import capture, ONE_BOX_SCENE, TOP_DOWN, WRIST
+
+shot = capture(ONE_BOX_SCENE, WRIST, TOP_DOWN)
+depth = shot.depth_at(212.5, 86.5)              # 0.340, read from the depth picture
+point = WRIST.deproject(212.5, 86.5, depth)     # the same four steps, in camera.py
+```
+
+It gives the same point, `(+0.0644, -0.0411, +0.3400)`.
+
+In practice you want every pixel, not one, and NumPy does all 76,800 at once.
+The formula is unchanged; `u`, `v` and `depth` just become whole grids of
+numbers instead of single ones:
+
+```python
+import numpy as np
+
+depth = np.array([[np.nan if d is None else d for d in row] for row in shot.depth])
+v, u = np.mgrid[0:depth.shape[0], 0:depth.shape[1]] + 0.5     # every pixel's middle
+x = (u - WRIST.cx) * depth / WRIST.fx
+y = (v - WRIST.cy) * depth / WRIST.fy
+z = depth
+```
+
+That is 76,800 points in one go: a point cloud, which section 10 comes back to.
+Pixels with no depth reading stay as `nan`, "not a number", so they cannot turn
+into made-up points. Looking up pixel `(212.5, 86.5)` in those grids gives the
+same `(+0.0644, -0.0411, +0.3400)` once again.
 
 ---
 

@@ -198,14 +198,20 @@ def field_of_view():
 
 def focal_length(out='focal_length.svg'):
     """Show what focal length is: the gap between lens and sensor, and what it changes."""
-    fig, axes = plt.subplots(1, 2, figsize=(10.4, 3.9), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(10.8, 3.3), facecolor='white')
     box_z, box_h, sensor_half = -3.0, 0.9, 0.8
-    lens_colour, focal_colour = LENS, '#2f6db0'
+    lens_colour, focal_colour, scene_colour = LENS, '#2f6db0', '#b5433a'
+    row = -1.12                            # the row the lengths along the axis are drawn on
+
+    def span(ax, start, end, colour):
+        ax.annotate('', xy=end, xytext=start,
+                    arrowprops={'arrowstyle': '<|-|>', 'color': colour, 'lw': 1.2,
+                                'shrinkA': 0, 'shrinkB': 0})
 
     for ax, (f, name) in zip(axes, ((1.0, 'short focal length: a wide view'),
                                     (2.0, 'twice the focal length: zoomed in'))):
-        ax.set_xlim(-3.5, 2.7)
-        ax.set_ylim(-1.55, 1.45)
+        ax.set_xlim(-4.4, 3.0)
+        ax.set_ylim(-2.25, 1.3)
         ax.set_aspect('equal')
         ax.axis('off')
         ax.set_title(name, fontsize=11, color=INK, pad=4)
@@ -213,13 +219,19 @@ def focal_length(out='focal_length.svg'):
         # Straight ahead, through the middle of the lens and the sensor.
         ax.plot([-3.4, f + 0.3], [0, 0], color=MUTED, lw=0.9, ls=':')
 
-        # What the edges of the sensor can see: the field of view.
+        # What the edges of the sensor can see: the field of view. Cut off above the
+        # row of lengths, so the wide view does not run into the labels.
+        view = Rectangle((-3.3, -0.95), f + 3.6, 2.2, transform=ax.transData)
         for sign in (-1, 1):
             reach = sensor_half / f * 3.3
-            ax.plot([f, -3.3], [sign * sensor_half, -sign * reach], color=MUTED, lw=0.8,
-                    ls=(0, (4, 3)))
-        ax.fill([0, -3.3, -3.3], [0, sensor_half / f * 3.3, -sensor_half / f * 3.3],
-                color='#e8eef5', zorder=0)
+            edge, = ax.plot([f, -3.3], [sign * sensor_half, -sign * reach], color=MUTED,
+                            lw=0.8, ls=(0, (4, 3)))
+            edge.set_clip_path(view)
+        shade, = ax.fill([0, -3.3, -3.3], [0, sensor_half / f * 3.3, -sensor_half / f * 3.3],
+                         color='#e8eef5', zorder=0)
+        shade.set_clip_path(view)
+        ax.text(-2.3, -0.3, 'what the sensor\ncan see', fontsize=8.5,
+                color=MUTED, ha='center', va='top')
 
         # The box, and the light from its top corner through the lens.
         ax.add_patch(Rectangle((box_z - 0.12, 0), 0.24, box_h, facecolor='#e6a39c',
@@ -232,22 +244,32 @@ def focal_length(out='focal_length.svg'):
         ax.plot([f, f], [0, -image_h], color=AXIS_X, lw=5.0, zorder=5,
                 solid_capstyle='butt')
         ax.text(f + 0.12, sensor_half - 0.05, 'sensor', fontsize=9, color=INK, va='top')
-        ax.text(f + 0.2, -image_h / 2, f'the box\nlands {image_h:g}\nfrom the\nmiddle',
-                fontsize=8.5, color=AXIS_X, va='center')
 
         ax.add_patch(Circle((0, 0), 0.09, color=lens_colour, zorder=6))
         ax.text(0, 0.2, 'lens', fontsize=9, color=lens_colour, ha='center')
 
-        ax.annotate('', xy=(f, -1.12), xytext=(0, -1.12),
-                    arrowprops={'arrowstyle': '<|-|>', 'color': focal_colour, 'lw': 1.3})
-        ax.text(f / 2, -1.3, f'focal length = {f:g}', fontsize=9.5, color=focal_colour,
+        # The four lengths the sum below uses. Dotted lines drop each end onto one row.
+        for x in (box_z, 0, f):
+            ax.plot([x, x], [0 if x else -0.1, row], color=GRID, lw=0.9, ls=':', zorder=1)
+        span(ax, (-3.38, 0), (-3.38, box_h), scene_colour)
+        ax.text(-3.5, box_h / 2, f'{box_h:g} to\nthe side', fontsize=9, color=scene_colour,
+                ha='right', va='center')
+        span(ax, (box_z, row), (-0.04, row), scene_colour)
+        ax.text(box_z / 2, row - 0.1, f'{-box_z:g} ahead', fontsize=9.5, color=scene_colour,
                 ha='center', va='top')
-        ax.text(-2.0, -0.35, 'what the sensor\ncan see', fontsize=8.5,
-                color=MUTED, ha='center', va='top')
+        span(ax, (0.04, row), (f, row), focal_colour)
+        ax.text(f + 0.1, row - 0.1, f'focal length = {f:g}', fontsize=9.5,
+                color=focal_colour, ha='right' if f > 1.5 else 'left', va='top')
+        span(ax, (f + 0.2, 0), (f + 0.2, -image_h), AXIS_X)
+        ax.text(f + 0.3, -image_h / 2, f'lands\n{image_h:g} from\nthe middle', fontsize=8.5,
+                color=AXIS_X, ha='left', va='center')
+
+        ax.text(-0.7, -1.95, f'{f:g} × {box_h:g} / {-box_z:g} = {image_h:g}', fontsize=10,
+                color=INK, ha='center', va='center', family='monospace')
 
     fig.suptitle('Focal length is the distance from the lens to the sensor', fontsize=13,
-                 color=INK, weight='bold', y=1.04)
-    fig.text(0.5, -0.04, 'Twice the focal length: the same box lands twice as far from the '
+                 color=INK, weight='bold', y=1.02)
+    fig.text(0.5, 0.0, 'Twice the focal length: the same box lands twice as far from the '
              'middle, so it looks twice as big,\nand the same sensor takes in a narrower '
              'view. Real cameras flip the upside-down picture back.',
              fontsize=9, ha='center', color=MUTED)

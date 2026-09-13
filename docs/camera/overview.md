@@ -377,9 +377,10 @@ sensor at:
 distance from the middle of the sensor = focal length × (distance to the side / distance ahead)
 ```
 
-The top of the box in the diagram is 0.9 to the side and 3 ahead, so a focal
-length of 1 puts it 1 × 0.9 / 3 = 0.3 from the middle, and a focal length of 2
-puts it 0.6 from the middle.
+The arrows in the diagram mark every number in this rule. The top of the box is
+0.9 to the side and 3 ahead, so a focal length of 1 puts it 1 × 0.9 / 3 = 0.3
+from the middle, and a focal length of 2 puts it 2 × 0.9 / 3 = 0.6 from the
+middle. Those are the two sums written under the two pictures.
 
 ##### Why the focal length is counted in pixels
 

@@ -346,8 +346,13 @@ the back wall where the picture forms.
 
 Real focal lengths are small, so they are measured in millimetres. A traditional
 camera with a "50 mm lens" has its lens about 50 millimetres in front of the film
-or the sensor. A phone is much thinner than that, so the lens of a phone camera
-sits only about 4 millimetres in front of its sensor.
+or the sensor. Small cameras have much shorter focal lengths than that. This doc
+uses the [Raspberry Pi Camera Module 2](https://www.raspberrypi.com/products/camera-module-v2/)
+as its real example, because it is a small camera that is often fitted to hobby
+robots, and because its maker publishes every number we need in its
+[hardware specifications](https://www.raspberrypi.com/documentation/accessories/camera.html#hardware-specification).
+Its lens sits only 3.04 millimetres in front of its sensor, so its focal length
+is 3.04 mm.
 
 The focal length matters because it decides how big things look in the picture.
 Light from a point in the scene travels in a straight line through the lens and
@@ -391,16 +396,29 @@ direction in the room with a pixel number. The millimetres on the sensor are onl
 a step in between, and we never get to see them.
 
 To turn millimetres on the sensor into pixels, we divide by the width of one
-pixel. On the phone camera from above, each pixel is about 0.0014 millimetres
-wide, so a point that lands 1.4 millimetres from the middle of the sensor is
-1,000 pixels from the middle of the picture. We can do the same division to the
-focal length itself, and that gives the focal length counted in pixels:
+pixel. The Raspberry Pi camera's specifications give its pixel size as
+1.12 µm × 1.12 µm, where µm stands for micrometres, which are thousandths of a
+millimetre. So each pixel is 0.00112 millimetres wide, and a point that lands
+1.12 millimetres from the middle of the sensor is 1,000 pixels from the middle of
+the picture. We can do the same division to the focal length itself, and that
+gives the focal length counted in pixels:
 
 ```
 focal length in pixels = focal length in millimetres / width of one pixel in millimetres
-                       = 4 / 0.0014
-                       = about 2,860 pixels
+                       = 3.04 / 0.00112
+                       = 2,714 pixels
 ```
+
+For this camera, the maker publishes both numbers, the focal length in
+millimetres and the pixel size, in one table. For other cameras, the pixel size
+is listed in the datasheet of the image sensor inside the camera, and it can also
+be worked out by dividing the width of the sensor by the number of pixels across
+it: the Raspberry Pi camera's sensor is 3.68 millimetres wide and 3,280 pixels
+across, and 3.68 / 3,280 gives the same 0.00112 millimetres. Most cameras made for
+robots skip all of this and report `fx` and `fy` directly, already counted in
+pixels. A camera that does not report them can be measured instead, by taking
+pictures of a printed checkerboard and letting a calibration tool work out `fx`
+and `fy` from where its corners land.
 
 With the focal length counted in pixels, the rule from the last part gives its
 answer in pixels straight away, and that is exactly the form this doc uses:
@@ -501,6 +519,23 @@ fx = (width / 2) / tan(field of view / 2)
    = 160 / tan(30°)
    = 277.1
 ```
+
+The same formula works on a real camera, and it gives us a way to check the
+Raspberry Pi numbers from earlier in this section. Its picture is 3,280 pixels
+wide, and its specifications give its field of view as 62.2° across, so:
+
+```
+fx = (3280 / 2) / tan(62.2° / 2)
+   = 1640 / tan(31.1°)
+   = 2,719 pixels
+```
+
+That is within 0.2 per cent of the 2,714 pixels we worked out from the
+millimetres. The small difference is about what rounding in the published
+figures would cause: a focal length printed as 3.04 mm could really be anything
+from 3.035 to 3.045 mm, and 3.045 mm would give 2,719 pixels. So two
+separate sets of published numbers give the same focal length, which is a good
+sign that we have understood what it means.
 
 A real camera reports this number with every picture, so nothing has to work it
 out. But the formula shows which way the trade goes: **halve the field of view

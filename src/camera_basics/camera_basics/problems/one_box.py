@@ -3,8 +3,9 @@
 Run it:  make camera.learn   (or: ros2 run camera_basics camera_one_box)
 
 Only the red box is on the table: a 6 cm cube, 40 cm below a camera looking
-straight down. This walks through what the camera makes of it, from the four
-numbers that describe the lens to the box measured in the room. Part 2,
+straight down. The camera is the one the doc uses throughout: 320 x 240 pixels,
+seeing 60 degrees across. This walks through what it makes of the box, from the
+four numbers that describe its lens to the box measured in the room. Part 2,
 three_boxes.py, puts the other two boxes back.
 
 THE IDEA
@@ -25,17 +26,11 @@ from camera_basics.camera import (
     CameraConfig,
     Capture,
     capture,
-    CONFIGS,
-    field_of_view_deg,
     ONE_BOX_SCENE,
     Scene,
     TOP_DOWN,
     WRIST,
 )
-
-#: Small enough to render several times in a couple of seconds, and big enough
-#: that the terminal pictures below are recognisable.
-PREVIEW = CameraConfig('preview', 160, 120, 60.0)
 
 #: A pixel picked out below: on top of the red box, off centre so that both
 #: halves of the arithmetic have work to do.
@@ -67,39 +62,33 @@ def side_by_side(left: list[str], right: list[str], gap: str = '   ') -> list[st
     return rows
 
 
-def show_lenses() -> None:
-    """Print the four lens numbers for each configuration."""
+def show_lens(config: CameraConfig = WRIST) -> None:
+    """Print the four lens numbers of the one camera this part uses."""
     heading('the lens: four numbers, and where they come from')
-    print('Change the field of view and the focal length changes with it.')
-    print('Change the resolution and the middle of the picture moves.\n')
-    print(f"{'name':<10} {'size':^9} {'hfov':>6} {'vfov':>6} {'fx=fy':>7} {'cx':>6} {'cy':>6}")
-    print('-' * 55)
-    for config in CONFIGS.values():
-        print(config.describe())
+    print(f'The camera is {config.width_px} x {config.height_px} pixels and sees '
+          f'{config.hfov_deg:g}° across.')
+    print('Those two facts decide all four numbers that describe its lens.\n')
+    print(f'  fx = fy = {config.fx:.1f}   the focal length, counted in pixels')
+    print(f'  cx      = {config.cx:g}   the middle of the picture, across')
+    print(f'  cy      = {config.cy:g}   the middle of the picture, down')
     print(
-        f'\nCheck one by hand: {WRIST.name} is {WRIST.width_px} px across '
-        f'{WRIST.hfov_deg:g}°,\nso fx = {WRIST.width_px // 2} / tan(30°) = '
-        f'{WRIST.fx:.1f}. Read it back with the inverse and\nthe field of view '
-        f'comes out at {field_of_view_deg(WRIST.width_px, WRIST.fx):.1f}° again.'
+        f'\nCheck fx by hand: half the width, divided by tan of half the field of'
+        f'\nview, is {config.width_px // 2} / tan({config.hfov_deg / 2:g}°) = {config.fx:.1f}. '
+        f'The picture is only {config.height_px} pixels'
+        f'\ntall, so the same focal length sees {config.vfov_deg:.1f}° down it.'
     )
 
 
-def show_coverage(distance_m: float = 0.40) -> None:
-    """Print how much of the table each lens sees, and how finely."""
+def show_coverage(config: CameraConfig = WRIST, distance_m: float = 0.40) -> None:
+    """Print how much of the table the camera sees, and how finely."""
     heading(f'what that buys you, {distance_m:g} m from the table')
-    print('Field of view decides how much is in shot. Resolution decides how')
-    print('finely it is sampled. They are separate knobs, and this is the proof:')
-    print('wide and narrow see different amounts at the same resolution, while')
-    print('hires and lowres see the same amount at different sharpness.\n')
-    print(f"{'name':<10} {'sees (w x h)':>18} {'per pixel':>12} {'pixels':>10}")
-    print('-' * 54)
-    for config in CONFIGS.values():
-        width_m, height_m = config.coverage_m(distance_m)
-        print(
-            f'{config.name:<10} {width_m:>8.3f} x {height_m:<7.3f} '
-            f'{config.metres_per_pixel(distance_m) * 1000:>8.2f} mm '
-            f'{config.pixel_count:>10,}'
-        )
+    width_m, height_m = config.coverage_m(distance_m)
+    print(f'From {distance_m:g} m up, the picture covers {width_m:.3f} m x {height_m:.3f} m '
+          'of the table.')
+    print(f'Its {config.pixel_count:,} pixels cut that into squares of '
+          f'{config.metres_per_pixel(distance_m) * 1000:.2f} mm, so nothing much')
+    print('smaller than that can be measured from this height. Section 1.7 of the')
+    print('doc compares this with other lenses and other resolutions.')
 
 
 def show_pose() -> None:
@@ -243,25 +232,6 @@ def show_encodings(shot: Capture) -> None:
     print(f'\nAnd the mask: {red_pixels:,} pixels belong to the red box.')
 
 
-def show_lens_comparison(scene: Scene) -> None:
-    """Take the same shot through three lenses and draw each."""
-    heading('change the lens, keep everything else')
-    print(f'Same scene, same place, all three {PREVIEW.width_px} px across. Only the')
-    print('field of view differs, and the 5 cm grid on the table shows the cost.\n')
-    for name in ('wide', 'wrist', 'narrow'):
-        config = CameraConfig(name, PREVIEW.width_px, PREVIEW.height_px, CONFIGS[name].hfov_deg)
-        shot = capture(scene, config, TOP_DOWN)
-        width_m, _ = config.coverage_m(0.40)
-        print(f'  {name}  —  {config.hfov_deg:g}° across, {width_m:.3f} m of table, '
-              f'{config.metres_per_pixel(0.40) * 1000:.1f} mm per pixel')
-        for line in shot.ascii_art('rgb', 34):
-            print('    ' + line)
-        print()
-    print('Wide fits more in and spends fewer pixels on each thing. Narrow')
-    print('spends more pixels on less. Neither is sharper than the other: the')
-    print('sensor did not change, only what was aimed at it.')
-
-
 def show_measurements(shot: Capture, scene: Scene) -> None:
     """Measure every box in the scene and compare with the truth."""
     heading('the answer: measured, next to the truth')
@@ -282,16 +252,15 @@ def main() -> None:
     print(__doc__.split('THE IDEA')[0].strip())
     start_numbering()
 
-    show_lenses()
+    show_lens()
     show_coverage()
     show_pose()
 
     shot = capture(ONE_BOX_SCENE, WRIST, TOP_DOWN)
-    show_captures(capture(ONE_BOX_SCENE, PREVIEW, TOP_DOWN))
+    show_captures(shot)
     show_depth_numbers(shot, ONE_BOX_SCENE)
     show_pixel_to_point(shot, ONE_BOX_SCENE)
     show_encodings(shot)
-    show_lens_comparison(ONE_BOX_SCENE)
     show_measurements(shot, ONE_BOX_SCENE)
 
     print('\nNext: three_boxes.py puts the other two boxes back.')

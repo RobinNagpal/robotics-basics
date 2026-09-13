@@ -26,7 +26,6 @@ usually takes more than one picture.
 from camera_basics.camera import Capture, capture, TABLE_SCENE, TILTED, TOP_DOWN, WRIST
 from camera_basics.problems.one_box import (
     heading,
-    PREVIEW,
     show_depth_numbers,
     show_measurements,
     side_by_side,
@@ -48,8 +47,8 @@ def show_viewpoints() -> None:
     """Take the scene from two places and compare the depth readings."""
     heading('move the camera, and the same scene reads differently')
     print('Straight down on the left, leaning in about 20° on the right.\n')
-    top = capture(TABLE_SCENE, PREVIEW, TOP_DOWN)
-    tilted = capture(TABLE_SCENE, PREVIEW, TILTED)
+    top = capture(TABLE_SCENE, WRIST, TOP_DOWN)
+    tilted = capture(TABLE_SCENE, WRIST, TILTED)
     for line in side_by_side(top.ascii_art('depth', 34), tilted.ascii_art('depth', 34)):
         print('  ' + line)
     print(
@@ -69,7 +68,7 @@ def main() -> None:
     start_numbering()
 
     shot = capture(TABLE_SCENE, WRIST, TOP_DOWN)
-    show_labels(capture(TABLE_SCENE, PREVIEW, TOP_DOWN))
+    show_labels(shot)
     show_depth_numbers(shot, TABLE_SCENE)
     show_measurements(shot, TABLE_SCENE)
     show_viewpoints()

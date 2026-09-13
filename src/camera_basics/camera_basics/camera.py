@@ -274,14 +274,6 @@ class CameraConfig:
         """Say whether this pixel is inside the picture."""
         return 0.0 <= u < self.width_px and 0.0 <= v < self.height_px
 
-    def describe(self) -> str:
-        """One line of the table :func:`main` prints."""
-        return (
-            f'{self.name:<10} {self.width_px:>4}x{self.height_px:<4} '
-            f'{self.hfov_deg:>5.1f}° {self.vfov_deg:>5.1f}° '
-            f'{self.fx:>7.1f} {self.cx:>6.1f} {self.cy:>6.1f}'
-        )
-
 
 #: Five cameras that differ in exactly one thing at a time, so the effect of
 #: each is visible on its own. ``wrist`` is the one everything else is compared

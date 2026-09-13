@@ -1425,7 +1425,7 @@ Move the camera and the same scene reads differently.
 | Where the camera is | Depth readings run | What it sees |
 | --- | --- | --- |
 | straight down | 0.310 m to 0.400 m | the tops of things, and a table that reads the same everywhere |
-| leaning in about 20° | 0.306 m to 0.505 m | some of the sides, and a table that slopes across the picture |
+| leaning in about 20° | 0.306 m to 0.506 m | some of the sides, and a table that slopes across the picture |
 
 From straight above you mostly see tops, and a tall box can hide a short one
 behind it. The tilted view sees some sides instead, and finds what was hidden.
@@ -1559,11 +1559,11 @@ It runs the two parts in order, prints them in the terminal, and exits.
 
 Part 1, one box:
 
-- the four numbers for each lens, and how much each one covers
+- the camera's four lens numbers, and how much of the table it covers
 - `camera_to_world`
 - a capture drawn in text characters, and where its depth readings land
 - one pixel worked through to a point, and a point cloud
-- the encodings side by side, and the same shot through three lenses
+- the encodings side by side
 - the box, measured, next to its true size
 
 Part 2, three boxes:

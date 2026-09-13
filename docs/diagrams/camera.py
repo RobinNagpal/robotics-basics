@@ -34,7 +34,7 @@ from camera_basics.camera import (  # noqa: E402  (must follow the sys.path line
 from camera_basics.problems.one_box import SAMPLE_PIXEL  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use('Agg')
-from matplotlib.patches import Circle, Rectangle  # noqa: E402  (must follow use)
+from matplotlib.patches import Arc, Circle, Rectangle  # noqa: E402  (must follow use)
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
@@ -194,6 +194,129 @@ def field_of_view():
     ax.text(0.0, 0.47, 'Field of view decides how much is in shot',
             fontsize=13, ha='center', color=INK, weight='bold')
     _save(fig, 'field_of_view.svg')
+
+
+def focal_length(out='focal_length.svg'):
+    """Show what focal length is: the gap between lens and sensor, and what it changes."""
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 3.9), facecolor='white')
+    box_z, box_h, sensor_half = -3.0, 0.9, 0.8
+    lens_colour, focal_colour = LENS, '#2f6db0'
+
+    for ax, (f, name) in zip(axes, ((1.0, 'short focal length: a wide view'),
+                                    (2.0, 'twice the focal length: zoomed in'))):
+        ax.set_xlim(-3.5, 2.7)
+        ax.set_ylim(-1.55, 1.45)
+        ax.set_aspect('equal')
+        ax.axis('off')
+        ax.set_title(name, fontsize=11, color=INK, pad=4)
+
+        # Straight ahead, through the middle of the lens and the sensor.
+        ax.plot([-3.4, f + 0.3], [0, 0], color=MUTED, lw=0.9, ls=':')
+
+        # What the edges of the sensor can see: the field of view.
+        for sign in (-1, 1):
+            reach = sensor_half / f * 3.3
+            ax.plot([f, -3.3], [sign * sensor_half, -sign * reach], color=MUTED, lw=0.8,
+                    ls=(0, (4, 3)))
+        ax.fill([0, -3.3, -3.3], [0, sensor_half / f * 3.3, -sensor_half / f * 3.3],
+                color='#e8eef5', zorder=0)
+
+        # The box, and the light from its top corner through the lens.
+        ax.add_patch(Rectangle((box_z - 0.12, 0), 0.24, box_h, facecolor='#e6a39c',
+                               edgecolor=INK, lw=0.6, zorder=3))
+        image_h = box_h * f / -box_z
+        ax.plot([box_z, f], [box_h, -image_h], color=AXIS_X, lw=1.4, zorder=2)
+
+        # The sensor, and the picture of the box on it, upside down.
+        ax.plot([f, f], [-sensor_half, sensor_half], color=INK, lw=3.0, zorder=4)
+        ax.plot([f, f], [0, -image_h], color=AXIS_X, lw=5.0, zorder=5,
+                solid_capstyle='butt')
+        ax.text(f + 0.12, sensor_half - 0.05, 'sensor', fontsize=9, color=INK, va='top')
+        ax.text(f + 0.2, -image_h / 2, f'the box\nlands {image_h:g}\nfrom the\nmiddle',
+                fontsize=8.5, color=AXIS_X, va='center')
+
+        ax.add_patch(Circle((0, 0), 0.09, color=lens_colour, zorder=6))
+        ax.text(0, 0.2, 'lens', fontsize=9, color=lens_colour, ha='center')
+
+        ax.annotate('', xy=(f, -1.12), xytext=(0, -1.12),
+                    arrowprops={'arrowstyle': '<|-|>', 'color': focal_colour, 'lw': 1.3})
+        ax.text(f / 2, -1.3, f'focal length = {f:g}', fontsize=9.5, color=focal_colour,
+                ha='center', va='top')
+        ax.text(-2.0, -0.35, 'what the sensor\ncan see', fontsize=8.5,
+                color=MUTED, ha='center', va='top')
+
+    fig.suptitle('Focal length is the distance from the lens to the sensor', fontsize=13,
+                 color=INK, weight='bold', y=1.04)
+    fig.text(0.5, -0.04, 'Twice the focal length: the same box lands twice as far from the '
+             'middle, so it looks twice as big,\nand the same sensor takes in a narrower '
+             'view. Real cameras flip the upside-down picture back.',
+             fontsize=9, ha='center', color=MUTED)
+    _save(fig, out)
+
+
+def fx_fy(out='fx_fy.svg'):
+    """Put fx, fy, cx and cy on this doc's camera: once seen from above, once from the side."""
+    _shot, u, v, _depth, _point = _worked_point()
+    fig, axes = plt.subplots(1, 2, figsize=(10.6, 5.4), facecolor='white')
+    focal_colour = '#2f6db0'
+    panels = (
+        (axes[0], 'Across the picture: fx and cx', WRIST.fx, WRIST.width_px, WRIST.cx,
+         u - WRIST.cx, WRIST.hfov_deg, AXIS_X, 'u', 'left edge', 'right edge',
+         f'{u - WRIST.cx:g} pixels right\nof the middle'),
+        (axes[1], 'Down the picture: fy and cy', WRIST.fy, WRIST.height_px, WRIST.cy,
+         v - WRIST.cy, WRIST.vfov_deg, AXIS_Y, 'v', 'top edge', 'bottom edge',
+         f'{-(v - WRIST.cy):g} pixels above\nthe middle'),
+    )
+    for ax, title, f, size, middle, offset, fov, colour, letter, low, high, spot in panels:
+        ax.set_xlim(-230, 230)
+        ax.set_ylim(-395, 60)
+        ax.set_aspect('equal')
+        ax.axis('off')
+        ax.set_title(title, fontsize=11.5, color=INK, pad=2)
+        half = size / 2
+
+        # The lens, and the picture fx (or fy) pixels in front of it.
+        ax.fill([0, -half, half], [0, -f, -f], color='#e8eef5', zorder=0)
+        for sign in (-1, 1):
+            ax.plot([0, sign * half], [0, -f], color=MUTED, lw=0.9, ls=(0, (4, 3)))
+        ax.plot([-half, half], [-f, -f], color=INK, lw=3.0, zorder=3)
+        ax.plot([0, 0], [0, -f], color=MUTED, lw=0.9, ls=':')
+        ax.add_patch(Circle((0, 0), 7, color=LENS, zorder=6))
+        ax.text(0, 14, 'lens', fontsize=9.5, color=LENS, ha='center')
+
+        ax.annotate('', xy=(-half - 22, -f), xytext=(-half - 22, 0),
+                    arrowprops={'arrowstyle': '<|-|>', 'color': focal_colour, 'lw': 1.3})
+        name = 'fx' if letter == 'u' else 'fy'
+        ax.text(-half - 30, -f / 2, f'{name} =\n{f:.1f}\npixels', fontsize=9.5,
+                color=focal_colour, ha='right', va='center', family='monospace')
+
+        # The field of view: the angle between the two edges, at the lens.
+        ax.add_patch(Arc((0, 0), 110, 110, theta1=270 - fov / 2, theta2=270 + fov / 2,
+                         color=MUTED, lw=1.0))
+        side = -1 if offset > 0 else 1
+        ax.text(side * 24, -80, f'{fov:.1f}°'.replace('.0°', '°'), fontsize=9.5, color=MUTED,
+                ha='center', va='center')
+
+        # Pixel numbers along the picture: 0, the middle, and the far edge.
+        for pos, label in ((-half, f'{letter} = 0\n{low}'),
+                           (0, f'{letter} = {middle:g}\nthe middle\n'
+                               f'(c{"x" if letter == "u" else "y"})'),
+                           (half, f'{letter} = {size}\n{high}')):
+            ax.plot([pos, pos], [-f - 6, -f + 6], color=INK, lw=1.2, zorder=4)
+            ax.text(pos, -f - 14, label, fontsize=8.5, color=INK, ha='center', va='top')
+
+        # The spot on the red box, and where its line of sight lands.
+        ax.plot([0, offset], [0, -f], color=colour, lw=1.4, zorder=2)
+        ax.plot([offset], [-f], marker='o', color=colour, ms=6, zorder=5)
+        ax.text(offset + (8 if offset > 0 else -8), -f + 30, spot, fontsize=8.5, color=colour,
+                ha='left' if offset > 0 else 'right', va='bottom')
+
+    fig.suptitle('fx and fy: the focal length, counted in pixels', fontsize=13,
+                 color=INK, weight='bold', y=0.99)
+    fig.text(0.5, 0.02, 'Left: the camera seen from above.   Right: seen from the side.   '
+             'The pixels are square, so fx and fy are both 277.1.',
+             fontsize=9, ha='center', color=MUTED)
+    _save(fig, out)
 
 
 def scene(world=TABLE_SCENE, out='scene.svg'):
@@ -809,6 +932,8 @@ if __name__ == '__main__':
     pixels(ONE_BOX_SCENE)
     pinhole()
     field_of_view()
+    focal_length()
+    fx_fy()
     one_capture(ONE_BOX_SCENE)
     configurations(ONE_BOX_SCENE)
     deprojection(ONE_BOX_SCENE)

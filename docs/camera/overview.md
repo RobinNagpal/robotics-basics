@@ -61,6 +61,10 @@ area describes, and so are the numbers beside them.
      · [Depth is not distance](#depth-is-not-distance)
    - [1.5 The camera used in this doc](#15-the-camera-used-in-this-doc)
    - [1.6 The lens as four numbers](#16-the-lens-as-four-numbers)
+     · [What focal length is](#what-focal-length-is)
+     · [Why the focal length is counted in pixels](#why-the-focal-length-is-counted-in-pixels)
+     · [fx and fy: across and down](#fx-and-fy-across-and-down)
+     · [cx and cy: the middle of the picture](#cx-and-cy-the-middle-of-the-picture)
      · [The camera's own axes](#the-cameras-own-axes)
      · [Where 277 comes from](#where-277-comes-from)
    - [1.7 Field of view and resolution are separate knobs](#17-field-of-view-and-resolution-are-separate-knobs)
@@ -316,24 +320,144 @@ a robot gripper, looking down at whatever it is about to pick up.
 
 #### 1.6 The lens as four numbers
 
-To do arithmetic with a camera, its lens and sensor have to be described as
-numbers. It takes exactly four:
+To do arithmetic with a camera, we have to describe its lens and its sensor as
+numbers, and it turns out that four numbers are enough. This section explains
+what each of them means, starting with the one that needs the most background,
+which is the focal length.
 
 | Number | What it means | Here |
 | --- | --- | --- |
-| `cx`, `cy` | the middle of the picture, in pixels. Straight ahead lands here | 160, 120 |
-| `fx`, `fy` | the **focal length**, in pixels: how zoomed in the lens is | 277.1 |
+| `fx`, `fy` | the **focal length**, counted in pixels: how far the sensor sits behind the lens, which decides how zoomed in the camera is | 277.1 |
+| `cx`, `cy` | the middle of the picture, in pixels, where anything straight ahead lands | 160, 120 |
 
-Together they are called the **intrinsics**, because they are intrinsic to the
-camera: part of the device itself. They do not change when the camera moves.
+Together these four numbers are called the **intrinsics**, because they are
+intrinsic to the camera, meaning that they are part of the device itself. They
+do not change when the camera moves around the room, so a camera only has to
+measure them once.
+
+##### What focal length is
+
+Section 1.2 described a camera as a box with a lens at the front and a flat
+sensor at the back. The **focal length** is the distance between those two: how
+far behind the lens the sensor sits, when the camera is focused on something far
+away. In the simplest camera of all, a pinhole camera, which is a dark box with a
+tiny hole in one side, the focal length is simply the distance from the hole to
+the back wall where the picture forms.
+
+Real focal lengths are small, so they are measured in millimetres. A traditional
+camera with a "50 mm lens" has its lens about 50 millimetres in front of the film
+or the sensor. A phone is much thinner than that, so the lens of a phone camera
+sits only about 4 millimetres in front of its sensor.
+
+The focal length matters because it decides how big things look in the picture.
+Light from a point in the scene travels in a straight line through the lens and
+lands on the sensor. When the sensor sits further behind the lens, that line has
+further to travel after the lens, so it lands further from the middle of the
+sensor. The diagram below shows the same box through two lenses. With twice the
+focal length, the top of the box lands twice as far from the middle, so the box
+looks twice as big. At the same time, the edges of the sensor now catch a
+narrower range of directions, so the camera sees less of the scene. That is what
+"zoomed in" means, and it is why a longer focal length always goes together with
+a narrower field of view.
+
+![Focal length is the distance from the lens to the sensor](../images/camera/focal_length.svg)
+
+You may notice that the picture of the box lands upside down on the sensor. That
+happens in every camera, because the lines of light cross over at the lens, and
+the camera simply turns the picture the right way up before handing it over. The
+other diagrams in this doc draw the picture in front of the lens instead, at the
+same distance, where it is already the right way up. The triangles, and so the
+numbers, are the same either way.
+
+The rule for where a point lands comes from the same triangles as the diagram.
+A point that is some distance to the side and some distance ahead lands on the
+sensor at:
+
+```
+distance from the middle of the sensor = focal length × (distance to the side / distance ahead)
+```
+
+The top of the box in the diagram is 0.9 to the side and 3 ahead, so a focal
+length of 1 puts it 1 × 0.9 / 3 = 0.3 from the middle, and a focal length of 2
+puts it 0.6 from the middle.
+
+##### Why the focal length is counted in pixels
+
+The rule above gives its answer in millimetres on the sensor, but a picture never
+tells us millimetres. All we can read from a picture is which pixel something
+landed on, such as "pixel 212 across", so the arithmetic we need has to connect a
+direction in the room with a pixel number. The millimetres on the sensor are only
+a step in between, and we never get to see them.
+
+To turn millimetres on the sensor into pixels, we divide by the width of one
+pixel. On the phone camera from above, each pixel is about 0.0014 millimetres
+wide, so a point that lands 1.4 millimetres from the middle of the sensor is
+1,000 pixels from the middle of the picture. We can do the same division to the
+focal length itself, and that gives the focal length counted in pixels:
+
+```
+focal length in pixels = focal length in millimetres / width of one pixel in millimetres
+                       = 4 / 0.0014
+                       = about 2,860 pixels
+```
+
+With the focal length counted in pixels, the rule from the last part gives its
+answer in pixels straight away, and that is exactly the form this doc uses:
+
+```
+pixels from the middle of the picture = fx × (distance to the side / distance ahead)
+```
+
+This is why the arithmetic only needs to know how many pixels from the middle a
+given direction lands, and never needs the millimetres. The distance to the lens
+and the size of a pixel never matter on their own, only the result of dividing
+one by the other. Two cameras with different lenses and different pixels, but
+with the same focal length in pixels, take exactly the same picture. So a single
+number, in pixels, describes the lens and the sensor together, and it is the
+number that a camera reports with every picture.
+
+For the camera in this doc, `fx` is 277.1 pixels. This means that a point which
+is 0.1 metres to the side for every metre ahead lands 0.1 × 277.1 = 27.7 pixels
+from the middle of the picture. The spot on the red box that section 2.1 measures
+is 0.1894 metres to the side for every metre ahead, so it lands
+0.1894 × 277.1 = 52.5 pixels from the middle. Our camera is simulated, so it has
+no real lens in millimetres at all. It is described directly in pixels, which is
+all the arithmetic ever needs.
+
+##### fx and fy: across and down
+
+The focal length is kept as two numbers because a picture has two directions.
+`fx` is the focal length counted in pixel widths, and it is used for positions
+across the picture, from left to right. `fy` is the focal length counted in pixel
+heights, and it is used for positions down the picture, from top to bottom. The
+diagram below shows both on the camera in this doc, first seen from above and
+then seen from the side.
+
+![fx and fy: the focal length, counted in pixels](../images/camera/fx_fy.svg)
+
+In the left half, the picture is 320 pixels wide and sits `fx` = 277.1 pixels in
+front of the lens, and the lines from the lens to its two edges make the 60°
+field of view. In the right half, the picture is 240 pixels tall and sits `fy` =
+277.1 pixels in front of the lens. Because the picture is shorter than it is
+wide, the field of view down the picture is only 46.8°. In both halves, the
+coloured line is the line of sight to the spot on the red box, which lands 52.5
+pixels to the right of the middle and 33.5 pixels above it.
 
 `fx` and `fy` are the same here, and on nearly every camera, because pixels are
-square. They are kept as two numbers because the ROS message keeps them as two.
+square, so a pixel's width and its height are the same. They are still kept as
+two numbers because the ROS message keeps them as two, and because a few cameras
+have pixels that are very slightly taller than they are wide.
 
-"Focal length in pixels" sounds odd, since lenses are measured in millimetres.
-It is a useful shortcut. What the arithmetic needs to know is how many pixels a
-given angle covers, and that depends on the lens and the sensor together. One
-number, in pixels, covers both.
+##### cx and cy: the middle of the picture
+
+The other two numbers, `cx` and `cy`, say where the middle of the picture is,
+counted in pixels from the left edge and from the top edge. It is the pixel where
+anything straight ahead of the lens lands, so every other position in the picture
+is measured from there. Our picture is 320 by 240 pixels, so its middle is at
+`cx = 160` and `cy = 120`, and the diagram above marks it under each picture. On
+a real camera these two numbers are usually close to the exact middle but not
+quite on it, because the sensor is never perfectly centred behind the lens, and
+that is why they are measured and reported rather than assumed.
 
 ##### The camera's own axes
 
@@ -353,7 +477,9 @@ v = fy · (y / z) + cy
 ```
 
 In words: how far to the side, **divided by how far ahead**, scaled up by the
-focal length, then moved to the middle of the picture.
+focal length, then moved to the middle of the picture. It is the rule from the
+last two parts, counted in pixels, with `cx` and `cy` added so that pixels are
+counted from the edges of the picture instead of from its middle.
 
 `x / z` is section 1.3 written as arithmetic. Twice as far away and twice as far
 to the side gives the same ratio, so the same pixel. **Dividing by `z` is
@@ -364,9 +490,10 @@ picture does.
 
 ##### Where 277 comes from
 
-The focal length follows from the resolution and the field of view. Half the
-picture's width and half its field of view make a right-angled triangle with the
-focal length:
+The focal length in pixels follows from the resolution and the field of view, and
+the left half of the diagram above shows why. Half the picture's width, which is
+160 pixels, and the focal length make a right-angled triangle, and the angle of
+that triangle at the lens is half the field of view, which is 30°. So:
 
 ```
 fx = (width / 2) / tan(field of view / 2)
@@ -376,8 +503,8 @@ fx = (width / 2) / tan(field of view / 2)
 
 A real camera reports this number with every picture, so nothing has to work it
 out. But the formula shows which way the trade goes: **halve the field of view
-and the focal length roughly doubles.** Seeing less of the world means each
-degree of it is spread over more pixels.
+and the focal length roughly doubles.** That is because seeing less of the world
+means that each degree of it is spread over more pixels.
 
 #### 1.7 Field of view and resolution are separate knobs
 
@@ -1518,7 +1645,7 @@ all.
 | depth | — | distance straight ahead of the camera, not along the slanted line |
 | RGB-D | red, green, blue, depth | a camera that gives a colour and a depth picture together |
 | intrinsics | — | `fx`, `fy`, `cx`, `cy`: the lens and sensor, as four numbers |
-| `fx`, `fy` | focal length | how zoomed in the lens is, in pixels |
+| `fx`, `fy` | focal length | how far the sensor sits behind the lens, counted in pixels; it decides how zoomed in the camera is |
 | `cx`, `cy` | principal point | the middle of the picture, in pixels |
 | projection | — | 3D point in, pixel out. Taking a picture |
 | deprojection | — | pixel and depth in, 3D point out. The reverse |

@@ -14,7 +14,7 @@ ros = pixi run bash -c 'source install/setup.bash && $(1)'
 
 .PHONY: help setup doctor build test lint clean shell \
         rviz.demo rviz.check arm.learn arm.demo arm.watch \
-        camera.learn camera.demo camera.check camera.one_box camera.pixels
+        camera.one_box camera.pixels camera.check
 
 help: ## Show this help
 	@echo ""
@@ -80,19 +80,18 @@ arm.demo: build ## Step 4: publish the arm to TF and draw it in RViz
 arm.watch: build ## Step 5: ask TF where the gripper is (run arm.demo first)
 	$(call ros,ros2 run arm_transforms arm_step5_lookup)
 
-##@ camera — lenses, pictures and the points inside them
+##@ camera — a depth camera in Gazebo finds a box and measures it
 
-camera.learn: build ## Part 1 (one box), then part 2 (three boxes), then exit
-	@$(call ros,ros2 run camera_basics camera_one_box)
-	@echo; $(call ros,ros2 run camera_basics camera_three_boxes)
+camera.one_box: build ## Start Gazebo, the camera and the box locator, and show them in RViz
+	$(call ros,ros2 launch camera_one_box one_box.launch.py)
 
-camera.demo: build ## Publish RGB, depth and a point cloud, and draw them in RViz
-	$(call ros,ros2 launch camera_basics camera_demo.launch.py)
+camera.pixels: ## Print every pixel of the 80 x 60 basic camera (run camera.one_box first)
+	@$(call ros,ros2 run camera_one_box show_pixels)
 
-camera.check: ## Show what the demo is publishing (run camera.demo first)
+camera.check: ## Show what the simulation is publishing (run camera.one_box first)
 	@pixi run bash -c 'source install/setup.bash; \
 		ros2 topic list | grep -qx /camera/image_raw || \
-			{ echo "Nothing is publishing. Start it with: make camera.demo"; exit 1; }; \
+			{ echo "Nothing is publishing. Start it with: make camera.one_box"; exit 1; }; \
 		echo "--- topics ---"; ros2 topic list; \
 		echo; echo "--- the lens ---"; ros2 topic echo --once /camera/camera_info | head -24; \
 		echo; echo "--- one colour image, big arrays hidden ---"; \
@@ -100,10 +99,6 @@ camera.check: ## Show what the demo is publishing (run camera.demo first)
 		echo; echo "--- one depth image ---"; \
 		ros2 topic echo --once --no-arr /camera/depth/image_raw; \
 		echo; echo "--- the point cloud ---"; \
-		ros2 topic echo --once --no-arr /camera/points'
-
-camera.one_box: build ## One box in Gazebo: the camera finds it and measures it, shown in RViz
-	$(call ros,ros2 launch camera_one_box one_box.launch.py)
-
-camera.pixels: ## Print every pixel of the 80 x 60 basic camera (run camera.one_box first)
-	@$(call ros,ros2 run camera_one_box show_pixels)
+		ros2 topic echo --once --no-arr /camera/points; \
+		echo; echo "--- the measured box ---"; \
+		ros2 topic echo --once /detections | head -40'

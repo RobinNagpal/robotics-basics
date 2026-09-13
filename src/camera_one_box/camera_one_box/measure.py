@@ -5,7 +5,7 @@ node in box_locator.py hands it, and what the tests hand it from a recorded
 capture. Keeping the maths apart from the ROS plumbing is the usual way to
 make perception code testable.
 
-The four steps are the ones in section 2 of docs/camera/overview.md:
+The four steps are the ones in section 1 of docs/camera/one-box.md:
 
 1. turn every pixel and its depth reading into a point measured from the camera
 2. move those points into the room, using camera_to_world
@@ -34,10 +34,11 @@ class BoxMeasurement:
 def depth_to_points(depth: np.ndarray, fx: float, fy: float, cx: float, cy: float) -> np.ndarray:
     """Turn a whole depth picture into points measured from the camera.
 
-    This is section 2.1 of the doc, done for every pixel at once. The result has
-    the same shape as the picture, with three numbers per pixel: x to the right,
-    y down the picture and z straight ahead, in the camera's optical frame.
-    Pixels with no reading stay NaN, so they can never become a point.
+    This is section 1.1 of docs/camera/one-box.md, done for every pixel at
+    once. The result has the same shape as the picture, with three numbers per
+    pixel: x to the right, y down the picture and z straight ahead, in the
+    camera's optical frame. Pixels with no reading stay NaN, so they can never
+    become a point.
 
     Gazebo, like the doc, measures pixel positions from the pixel's top-left
     corner, so the middle of a pixel is at +0.5.
@@ -54,7 +55,7 @@ def transform_matrix(translation, rotation_xyzw) -> np.ndarray:
 
     TF stores a transform as a translation and a quaternion. The first three
     columns of the matrix are the camera's right, down and forward, written in
-    the room's axes, and the last column is where the camera is: section 2.2.
+    the room's axes, and the last column is where the camera is: section 1.2.
     """
     matrix = np.eye(4)
     matrix[:3, :3] = Rotation.from_quat(rotation_xyzw).as_matrix()

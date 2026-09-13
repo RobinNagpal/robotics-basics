@@ -39,7 +39,9 @@ class SaveSnapshot(Node):
         super().__init__('save_snapshot')
         self.writer = rosbag2_py.SequentialWriter()
         self.writer.open(
-            rosbag2_py.StorageOptions(uri=output, storage_id='mcap'),
+            # zstd_fast compresses the file, which matters for pictures kept in git.
+            rosbag2_py.StorageOptions(uri=output, storage_id='mcap',
+                                      storage_preset_profile='zstd_fast'),
             rosbag2_py.ConverterOptions('', ''))
         for name, kind in [*TOPICS.items(), ('/tf_static', TFMessage)]:
             self.writer.create_topic(rosbag2_py.TopicMetadata(

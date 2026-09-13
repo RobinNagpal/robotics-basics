@@ -83,13 +83,13 @@ def test_the_table_reads_40_cm_and_the_box_top_34_cm(depth):
 
 
 def test_the_doc_pixel_becomes_the_doc_point(depth, camera):
-    """Section 2.1: pixel (212.5, 86.5) at depth 0.340 m is (+0.0644, -0.0411, 0.340)."""
+    """Section 1.1: pixel (212.5, 86.5) at depth 0.340 m is (+0.0644, -0.0411, 0.340)."""
     points = depth_to_points(depth, camera.fx(), camera.fy(), camera.cx(), camera.cy())
     assert points[86, 212] == pytest.approx([0.0644, -0.0411, 0.340], abs=5e-5)
 
 
 def test_the_box_is_measured(depth, camera, camera_to_world):
-    """Section 2.4: middle within a millimetre of (0.065, 0.040), height exactly 6 cm."""
+    """Section 1.4: middle within a millimetre of (0.065, 0.040), height exactly 6 cm."""
     points = depth_to_points(depth, camera.fx(), camera.fy(), camera.cx(), camera.cy())
     box = measure_box(to_world(points, camera_to_world))
     assert (round(box.x, 3), round(box.y, 3)) == (0.064, 0.040)

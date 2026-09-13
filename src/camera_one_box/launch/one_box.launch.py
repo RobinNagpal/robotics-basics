@@ -46,6 +46,16 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument(
             'gui', default_value='false',
             description='Also open the Gazebo window. On macOS it runs as its own process.'),
+        # The camera's picture size and lens. The defaults are the doc's camera.
+        DeclareLaunchArgument('width', default_value='320', description='Pixels across.'),
+        DeclareLaunchArgument('height', default_value='240', description='Pixels down.'),
+        DeclareLaunchArgument('hfov_deg', default_value='60',
+                              description='How wide the camera sees, in degrees.'),
+    ]
+    camera_settings = [
+        ' width:=', LaunchConfiguration('width'),
+        ' height:=', LaunchConfiguration('height'),
+        ' hfov_deg:=', LaunchConfiguration('hfov_deg'),
     ]
 
     # Lets Gazebo find the table's grid texture, which lives next to the world file.
@@ -56,7 +66,8 @@ def generate_launch_description() -> LaunchDescription:
         package='robot_state_publisher',
         executable='robot_state_publisher',
         parameters=[sim_time, {
-            'robot_description': ParameterValue(Command(['xacro ', description]), value_type=str),
+            'robot_description': ParameterValue(
+                Command(['xacro ', description, *camera_settings]), value_type=str),
         }],
     )
 

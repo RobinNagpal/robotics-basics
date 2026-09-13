@@ -20,12 +20,12 @@ own, with its own code, its own doc, and two or three commands.
 | --- | --- | --- |
 | [rviz](docs/rviz/overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
 | [arm](docs/arm/overview.md) | position, frames and transforms | `make arm.learn` |
-| [camera](docs/camera/overview.md) | lenses, pictures and the points inside them | `make camera.learn` |
+| [camera](docs/camera/basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
 
 <p align="center">
   <img src="docs/images/rviz/scene.svg" width="31%" alt="A ball circling a grid in RViz">
   <img src="docs/images/arm/arm.svg" width="31%" alt="A two-joint arm and its frames">
-  <img src="docs/images/camera/pinhole.svg" width="31%" alt="A pixel is a direction, not a place">
+  <img src="docs/images/camera/basics/pinhole.svg" width="31%" alt="A pixel is a direction, not a place">
 </p>
 
 New to this? Start with **rviz**. It is the easiest of the three, and it shows

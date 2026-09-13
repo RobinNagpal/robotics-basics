@@ -4,7 +4,7 @@ rosbag2_bagfile_information:
   duration:
     nanoseconds: 0
   starting_time:
-    nanoseconds_since_epoch: 8000000000
+    nanoseconds_since_epoch: 3600000000
   message_count: 4
   topics_with_message_count:
     - topic_metadata:
@@ -42,11 +42,11 @@ rosbag2_bagfile_information:
   compression_format: ""
   compression_mode: ""
   relative_file_paths:
-    - one_box_0.mcap
+    - narrow_0.mcap
   files:
-    - path: one_box_0.mcap
+    - path: narrow_0.mcap
       starting_time:
-        nanoseconds_since_epoch: 8000000000
+        nanoseconds_since_epoch: 3600000000
       duration:
         nanoseconds: 0
       message_count: 8

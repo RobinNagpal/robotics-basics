@@ -10,8 +10,14 @@
 -->
 <robot name="camera_stand" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- xacro already knows pi, so the angles below can use it directly. -->
-  <xacro:arg name="height" default="0.40"/>
+  <!-- How high the stand holds the camera, in metres. -->
+  <xacro:arg name="mount_height" default="0.40"/>
+
+  <!-- The camera: how many pixels across and down, and how wide it sees. The
+       defaults are the camera the doc uses. xacro already knows pi and radians(). -->
+  <xacro:arg name="width" default="320"/>
+  <xacro:arg name="height" default="240"/>
+  <xacro:arg name="hfov_deg" default="60"/>
 
   <link name="world"/>
 
@@ -40,7 +46,7 @@
     <child link="camera_link"/>
     <!-- Pitch a quarter turn so the lens looks down at the table, then yaw a
          quarter turn so that world +Y comes out at the top of the picture. -->
-    <origin xyz="0 0 $(arg height)" rpy="0 ${pi / 2} ${pi / 2}"/>
+    <origin xyz="0 0 $(arg mount_height)" rpy="0 ${pi / 2} ${pi / 2}"/>
   </joint>
 
   <!-- The optical frame: X right, Y down the picture, Z out of the lens. It is
@@ -55,17 +61,18 @@
   </joint>
 
   <gazebo reference="camera_link">
-    <!-- The camera the doc uses: 320 x 240 pixels, 60 degrees across. -->
+    <!-- The camera the doc uses: 320 x 240 pixels, 60 degrees across, unless
+         the launch file asks for another. -->
     <sensor name="camera" type="rgbd_camera">
       <topic>camera</topic>
       <gz_frame_id>camera_optical_frame</gz_frame_id>
       <update_rate>5</update_rate>
       <always_on>true</always_on>
       <camera>
-        <horizontal_fov>${pi / 3}</horizontal_fov>
+        <horizontal_fov>${radians($(arg hfov_deg))}</horizontal_fov>
         <image>
-          <width>320</width>
-          <height>240</height>
+          <width>$(arg width)</width>
+          <height>$(arg height)</height>
         </image>
         <clip>
           <near>0.05</near>

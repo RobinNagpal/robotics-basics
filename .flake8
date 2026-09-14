@@ -6,7 +6,7 @@ exclude = .git,.pixi,build,install,log,__pycache__
 # consistent with the wider ecosystem: `import x` and `from x import y` sort
 # together by module name rather than in separate blocks.
 import-order-style = google
-application-import-names = rviz_basics,camera_one_box
+application-import-names = rviz_basics,camera_one_box,ros_camera,ros_arm,ros_camera_arm
 
 # setup.py is boilerplate with no meaningful module docstring to write, and the
 # test names are the documentation — a docstring per assertion is pure noise.

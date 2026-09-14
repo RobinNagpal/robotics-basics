@@ -18,6 +18,7 @@ own, with its own code, its own doc, and two or three commands.
 
 | Area | What it covers | Start with |
 | --- | --- | --- |
+| [ros](docs/ros/ros-intro.md) | the basics of ROS: a camera, an arm, and the two together | `make ros.camera` |
 | [rviz](docs/rviz/overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
 | [arm](docs/arm/overview.md) | position, frames and transforms | `make arm.learn` |
 | [camera](docs/camera/basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
@@ -28,10 +29,11 @@ own, with its own code, its own doc, and two or three commands.
   <img src="docs/images/camera/basics/pinhole.svg" width="31%" alt="A pixel is a direction, not a place">
 </p>
 
-New to this? Start with **rviz**. It is the easiest of the three, and it shows
-you what you are looking at before the arm area explains the maths behind it.
-Then **arm**, then **camera**, which uses that maths to turn a picture into
-points.
+New to this? Start with **ros**, which explains what ROS is with the three
+smallest programs that can be written with it: one that works with a camera, one
+that moves an arm, and one that uses both. Then **rviz**, which shows you what
+you are looking at before the arm area explains the maths behind it. Then
+**arm**, then **camera**, which uses that maths to turn a picture into points.
 
 ## Beyond the areas
 
@@ -50,6 +52,7 @@ docs/<area>/          the doc for each area
 docs/images/<area>/   its pictures
 docs/diagrams/        the scripts that draw them
 src/<package>/        the code for each area
+src/ros/<package>/    the code for the ros area: one package per example
 ```
 
 ## Repo-wide commands

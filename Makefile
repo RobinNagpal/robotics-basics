@@ -13,6 +13,7 @@ SHELL := /bin/bash
 ros = pixi run bash -c 'source install/setup.bash && $(1)'
 
 .PHONY: help setup doctor build test lint clean shell \
+        ros.camera ros.arm ros.camera_arm \
         rviz.demo rviz.check arm.learn arm.demo arm.watch \
         camera.one_box camera.pixels camera.check
 
@@ -53,6 +54,17 @@ doctor: ## Print versions of everything that matters
 		printf "%-14s %s\n" "python"     "$$(python --version 2>&1)"; \
 		printf "%-14s %s\n" "ROS distro" "$$ROS_DISTRO"; \
 		printf "%-14s %s\n" "areas"      "$$(ls src | tr "\n" " ")"'
+
+##@ ros — the basics of ROS: a camera, an arm, and the two together
+
+ros.camera: build ## One node publishes camera pictures, another receives them; RViz shows them
+	$(call ros,ros2 launch ros_camera camera.launch.py)
+
+ros.arm: build ## Move a two-joint arm by publishing its joint angles; RViz shows it
+	$(call ros,ros2 launch ros_arm arm.launch.py)
+
+ros.camera_arm: build ## The arm points at the ball the camera sees
+	$(call ros,ros2 launch ros_camera_arm camera_arm.launch.py)
 
 ##@ rviz — a marker in a moving frame
 

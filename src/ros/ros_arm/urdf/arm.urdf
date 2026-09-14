@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<!--
+  The simplest arm: a pointer that can turn left and right, and tilt up and down.
+
+  A URDF file describes a robot as links (the rigid parts) and joints (how each
+  part is attached to the one before it). This arm has three parts:
+
+    base_link  - the base, which sits on the table and never moves
+    turret     - sits on the base and turns left and right: joint "pan"
+    arm_link   - sits on the turret and tilts up and down: joint "tilt"
+
+  and a fourth, "tip", which is just the end of the arm, bolted on.
+
+  robot_state_publisher reads this file. Whenever it is told the angle of each
+  joint, on the /joint_states topic, it works out where every part is and
+  publishes that on TF, and RViz draws the arm there.
+-->
+<robot name="pointer_arm">
+
+  <material name="grey"><color rgba="0.6 0.6 0.6 1"/></material>
+  <material name="orange"><color rgba="1.0 0.55 0.1 1"/></material>
+  <material name="red"><color rgba="0.9 0.15 0.15 1"/></material>
+
+  <!-- The base: a flat cylinder, 12 cm across and 4 cm tall. -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.02"/>
+      <geometry><cylinder radius="0.06" length="0.04"/></geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+
+  <!-- "pan" turns the turret around the upright z axis: left and right.
+       Positive angles turn it to the left, seen from above. -->
+  <joint name="pan" type="revolute">
+    <parent link="base_link"/>
+    <child link="turret"/>
+    <origin xyz="0 0 0.04"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.57" upper="1.57" effort="1" velocity="1"/>
+  </joint>
+
+  <link name="turret">
+    <visual>
+      <origin xyz="0 0 0.03"/>
+      <geometry><cylinder radius="0.03" length="0.06"/></geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+
+  <!-- "tilt" tips the arm around a sideways axis: up and down. The axis points
+       along -y so that positive angles tilt the arm up. -->
+  <joint name="tilt" type="revolute">
+    <parent link="turret"/>
+    <child link="arm_link"/>
+    <origin xyz="0 0 0.06"/>
+    <axis xyz="0 -1 0"/>
+    <limit lower="-0.5" upper="1.2" effort="1" velocity="1"/>
+  </joint>
+
+  <!-- The arm: a bar 25 cm long, pointing along x when both joints are at zero. -->
+  <link name="arm_link">
+    <visual>
+      <origin xyz="0.125 0 0"/>
+      <geometry><box size="0.25 0.03 0.03"/></geometry>
+      <material name="orange"/>
+    </visual>
+  </link>
+
+  <!-- The tip is bolted to the end of the arm: a fixed joint never moves. -->
+  <joint name="tip_joint" type="fixed">
+    <parent link="arm_link"/>
+    <child link="tip"/>
+    <origin xyz="0.25 0 0"/>
+  </joint>
+
+  <link name="tip">
+    <visual>
+      <geometry><sphere radius="0.018"/></geometry>
+      <material name="red"/>
+    </visual>
+  </link>
+
+</robot>

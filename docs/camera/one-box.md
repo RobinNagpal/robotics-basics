@@ -1079,6 +1079,7 @@ simulation first.
 
 ```
 src/camera_one_box/
+  README.md                          the commands, the main files and this layout
   launch/one_box.launch.py           starts everything in section 4.1 together
   urdf/camera.urdf.xacro             the camera on its stand, and its two sensors
   worlds/one_box.sdf                 the table and the box, for Gazebo

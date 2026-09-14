@@ -15,10 +15,17 @@ The four steps are the ones in section 1 of docs/camera/one-box.md:
 
 from dataclasses import dataclass
 
+# NumPy does arithmetic on whole arrays at once. A depth picture is a 240 x 320
+# array, and one line of NumPy works on all 76,800 pixels without a Python loop.
 import numpy as np
+# SciPy's Rotation turns between the different ways of writing down a turn,
+# such as the quaternion TF uses and the 3 x 3 table the maths needs.
 from scipy.spatial.transform import Rotation
 
 
+# A dataclass is a plain Python class for holding a few named values. frozen=True
+# means the values cannot be changed after it is made, so a measurement stays
+# exactly what was measured.
 @dataclass(frozen=True)
 class BoxMeasurement:
     """What the camera measured about one box, in metres, in the room."""
@@ -44,9 +51,17 @@ def depth_to_points(depth: np.ndarray, fx: float, fy: float, cx: float, cy: floa
     corner, so the middle of a pixel is at +0.5.
     """
     rows, cols = depth.shape
+    # np.mgrid makes two arrays the same size as the picture: one holding each
+    # pixel's row number, and one holding its column number. Adding 0.5 moves
+    # every number from the pixel's corner to its middle. So v and u are the
+    # pixel positions of every pixel at once, ready for the formulas below.
     v, u = np.mgrid[0:rows, 0:cols] + 0.5
+    # The two formulas from the doc. Because u, v and depth are whole arrays,
+    # each line works out x or y for every pixel in one go.
     x = (u - cx) * depth / fx
     y = (v - cy) * depth / fy
+    # np.dstack puts the three arrays together, so that each pixel holds its
+    # three numbers side by side: (x, y, z), where z is the depth itself.
     return np.dstack([x, y, depth])
 
 
@@ -57,15 +72,30 @@ def transform_matrix(translation, rotation_xyzw) -> np.ndarray:
     columns of the matrix are the camera's right, down and forward, written in
     the room's axes, and the last column is where the camera is: section 1.2.
     """
+    # Start from a 4 x 4 table with ones down the diagonal and zeros elsewhere,
+    # which is a transform that does nothing. Its bottom row, 0 0 0 1, is then
+    # already right.
     matrix = np.eye(4)
+    # Fill the top-left 3 x 3 with the rotation. from_quat reads the quaternion,
+    # four numbers in the order x, y, z, w, which is the order TF uses, and
+    # as_matrix writes the same turn as three columns: the camera's three axes.
     matrix[:3, :3] = Rotation.from_quat(rotation_xyzw).as_matrix()
+    # The last column is where the camera is.
     matrix[:3, 3] = translation
     return matrix
 
 
 def to_world(points: np.ndarray, camera_to_world: np.ndarray) -> np.ndarray:
     """Move points from the camera's axes into the room's. Returns an N x 3 array."""
+    # Lay the points out as one long list, one row per point with three numbers
+    # in it. The -1 asks NumPy to work out how many rows that makes.
     flat = points.reshape(-1, 3)
+    # Move every point at once. @ is matrix multiplication: it turns each point
+    # from the camera's axes into the room's, and .T lays the table on its side
+    # so that it fits points written as rows. Adding the camera's position then
+    # shifts every point from "measured from the camera" to "measured from the
+    # middle of the table". This is the walk from section 1.2 of the doc, for
+    # all the points together.
     return flat @ camera_to_world[:3, :3].T + camera_to_world[:3, 3]
 
 
@@ -80,13 +110,24 @@ def measure_box(points_in_world: np.ndarray, table_z: float = 0.0,
         The pixels at the box's edge catch a strip of its side, which is lower,
         and this leaves them out.
     """
+    # NaN, "not a number", marks a pixel with no depth reading. isnan finds
+    # them, any(axis=1) flags a point if any of its three numbers is NaN, and ~
+    # turns that round into "this point is fine". Indexing with a list of
+    # True/False values keeps only the rows marked True.
     valid = ~np.isnan(points_in_world).any(axis=1)
     points = points_in_world[valid]
+    # points[:, 2] is the third number of every point: its height in the room.
+    # Keep the points standing more than min_height above the table.
     standing = points[points[:, 2] > table_z + min_height]
     if len(standing) == 0:
         return None
+    # The highest point is the top of the box. Keep every point within
+    # top_tolerance of it, which leaves out the lower strip of the box's side.
     top_z = standing[:, 2].max()
     top = standing[standing[:, 2] > top_z - top_tolerance]
+    # The middle of the top is the average of its points along x and along y.
+    # np.ptp, "peak to peak", is the largest value minus the smallest, which is
+    # how far the top spreads in each direction.
     return BoxMeasurement(
         x=float(top[:, 0].mean()),
         y=float(top[:, 1].mean()),

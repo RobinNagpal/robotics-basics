@@ -5,6 +5,10 @@ while the simulation was running. It holds one colour picture, one depth
 picture, the camera info and the static transforms. Replaying it here goes
 through the same libraries the node uses: rosbag2 to read it, cv_bridge for the
 pictures, image_geometry for the lens and tf2 for where the camera is.
+
+The tests use pytest. A fixture, marked @pytest.fixture, is a set-up function:
+any test that names it as an argument gets its result. scope='module' means it
+runs once for the whole file, so the bag is read only once.
 """
 
 from pathlib import Path
@@ -27,9 +31,15 @@ SNAPSHOT = Path(__file__).parent / 'data' / 'one_box'
 @pytest.fixture(scope='module')
 def capture():
     """Read every message in the snapshot, by topic."""
+    # A bag stores each message as the bytes that were sent between the nodes.
+    # The reader hands them back one at a time, with the topic they came on.
     reader = rosbag2_py.SequentialReader()
     reader.open(rosbag2_py.StorageOptions(uri=str(SNAPSHOT), storage_id='mcap'),
                 rosbag2_py.ConverterOptions('', ''))
+    # The bag also records each topic's message type, such as
+    # 'sensor_msgs/msg/Image'. get_message turns that name into the Python
+    # class, and deserialize_message turns the bytes back into a message of
+    # that class, exactly as the box locator received it.
     types = {topic.name: topic.type for topic in reader.get_all_topics_and_types()}
     messages = {}
     while reader.has_next():
@@ -49,6 +59,9 @@ def camera(capture):
 @pytest.fixture(scope='module')
 def camera_to_world(capture):
     """Look up where the camera is in the static transforms, as a 4 x 4 matrix."""
+    # A TF Buffer can be used without a running robot: give it the recorded
+    # transforms by hand, and it answers questions about them just the same.
+    # The second argument names where they came from, for error messages.
     buffer = Buffer()
     for transform in capture['/tf_static'].transforms:
         buffer.set_transform_static(transform, 'snapshot')

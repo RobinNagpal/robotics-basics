@@ -83,14 +83,21 @@ def show(colour: np.ndarray, depth: np.ndarray) -> None:
           f'  {top} on the top')
 
 
+# Like BoxLocator, this class extends rclpy's Node, which is what lets it
+# subscribe to the camera's topics. box_locator.py explains what a Node is and why.
 class ShowPixels(Node):
     """Wait for one colour and depth picture from the basic camera, print them, stop."""
 
     def __init__(self):
         """Subscribe to the basic camera's colour and depth pictures, in pairs."""
         super().__init__('show_pixels')
+        # CvBridge turns ROS picture messages into NumPy arrays, one value per
+        # pixel, which is what the printing code below reads.
         self.bridge = CvBridge()
         self.done = False
+        # Take the colour and depth pictures in pairs with the same timestamp, so
+        # that both pictures printed are of the same moment. box_locator.py
+        # explains message_filters in more detail.
         colour = message_filters.Subscriber(self, Image, '/basic_camera/image_raw')
         depth = message_filters.Subscriber(self, Image, '/basic_camera/depth/image_raw')
         self.pairs = message_filters.TimeSynchronizer([colour, depth], queue_size=10)
@@ -100,6 +107,8 @@ class ShowPixels(Node):
         """Print the first pair of pictures, then ask to stop."""
         if self.done:
             return
+        # 'rgb8' asks for three numbers per pixel, red, green and blue, each 0 to
+        # 255. '32FC1' asks for one decimal number per pixel: the depth in metres.
         colour = self.bridge.imgmsg_to_cv2(colour_msg, desired_encoding='rgb8')
         depth = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
         show(colour, depth)
@@ -108,10 +117,15 @@ class ShowPixels(Node):
 
 def main(args=None) -> None:
     """Spin until one pair of pictures has been printed."""
+    # Start ROS for this program, before making the node.
     rclpy.init(args=args)
     node = ShowPixels()
     print('Waiting for the basic camera. Is the simulation running (make camera.one_box)?')
     try:
+        # spin_once() waits up to half a second for a message, handles it by
+        # calling the right callback, and returns. Looping on it, rather than
+        # calling spin() once, lets the program stop as soon as one pair of
+        # pictures has been printed.
         while rclpy.ok() and not node.done:
             rclpy.spin_once(node, timeout_sec=0.5)
     except KeyboardInterrupt:

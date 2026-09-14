@@ -708,7 +708,7 @@ NumPy is installed here. Pinocchio and SciPy are not; add them with
 **What it is.** Turning pictures into objects. Three kinds of tool do it:
 
 - **Camera drivers** publish what the camera sees, as the same topics the
-  [camera area](camera/one-box.md) uses: colour, depth, the four lens
+  [camera area](camera/one-box-code.md#43-the-topics) uses: colour, depth, the four lens
   numbers, and a point cloud. `realsense2_camera` is the driver for Intel
   RealSense cameras, and Orbbec and Stereolabs make similar ones.
 - **OpenCV** is the standard library for 2D pictures: colours, edges, shapes and

@@ -162,7 +162,7 @@ class BoxLocator(Node):
         # TF gives the transform as a translation, where the camera is, and a
         # rotation, which way it is turned. The rotation is a quaternion, four
         # numbers that describe a turn. transform_matrix() turns both into the
-        # camera_to_world table from the one-box doc.
+        # camera_to_world table from the one-box intro.
         t, q = tf.transform.translation, tf.transform.rotation
         camera_to_world = transform_matrix((t.x, t.y, t.z), (q.x, q.y, q.z, q.w))
 

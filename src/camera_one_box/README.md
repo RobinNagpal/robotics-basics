@@ -6,8 +6,10 @@ real robot arm's perception code is, and it uses the same libraries.
 
 This file is about running the code and finding your way around it. The ideas
 behind it, and the maths, are explained in
-[docs/camera/one-box.md](../../docs/camera/one-box.md), which builds on
-[docs/camera/basics.md](../../docs/camera/basics.md).
+[docs/camera/one-box-intro.md](../../docs/camera/one-box-intro.md), which builds
+on [docs/camera/basics.md](../../docs/camera/basics.md), and
+[docs/camera/one-box-code.md](../../docs/camera/one-box-code.md) explains the
+code and the basics of every library it uses.
 
 ## Contents
 
@@ -127,7 +129,7 @@ a grasp planner would read, and as a cube on `/detection_markers`, which RViz
 draws.
 
 **`measure.py`** holds the maths, and has no ROS in it. It follows the four
-steps in section 1 of the one-box doc, one function each:
+steps in section 1 of the one-box intro, one function each:
 
 | Function | What it does |
 | --- | --- |
@@ -151,7 +153,7 @@ usually developed and tested on real robots.
 with the camera description, Gazebo with the world, `ros_gz_sim create` to add
 the camera to the world, `ros_gz_bridge` to copy the camera's topics onto ROS,
 depth_image_proc to build the point cloud, the box locator, and RViz. Section 4.1
-of the one-box doc draws how these pieces connect.
+of the one-box code doc draws how these pieces connect.
 
 **`test/test_measure.py`** reads the recorded capture with the same libraries the
 node uses, and checks that the lens, the camera's position, the depth readings

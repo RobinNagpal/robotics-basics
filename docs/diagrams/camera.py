@@ -1,7 +1,7 @@
-"""Generate the diagrams used in docs/camera/basics.md and docs/camera/one-box.md.
+"""Generate the diagrams used in the camera docs: basics, one-box-intro and one-box-code.
 
-Each doc's images go to its own folder: docs/images/camera/basics/ and
-docs/images/camera/one-box/.
+Each doc's images go to a folder named after it: docs/images/camera/basics/,
+docs/images/camera/one-box-intro/ and docs/images/camera/one-box-code/.
 
 Run with:  pixi run python docs/diagrams/camera.py
 
@@ -45,7 +45,7 @@ WORLD = REPO_ROOT / 'src' / 'camera_one_box' / 'worlds' / 'one_box.sdf'
 #: folder in turn, before drawing that doc's diagrams.
 OUT_DIR = IMAGES
 
-#: The pixel the one-box doc works through: on top of the red box, off centre
+#: The pixel the one-box intro works through: on top of the red box, off centre
 #: so that both halves of the arithmetic have work to do.
 SAMPLE_PIXEL = (212.5, 86.5)
 
@@ -847,7 +847,7 @@ def pixels(out='pixels.svg'):
 
 
 def _worked_point():
-    """Return the one-box doc's section 1.1 example: the pixel, its depth, its point."""
+    """Return the one-box intro's section 1.1 example: the pixel, its depth, its point."""
     shot = WRIST
     u, v = SAMPLE_PIXEL
     depth = shot.depth_at(u, v)
@@ -1039,8 +1039,9 @@ if __name__ == '__main__':
     for folder, drawings in (
         ('basics', (scene, pixels, field_of_view, pinhole, one_capture, focal_length, fx_fy,
                     configurations)),
-        ('one-box', (scene, deproject_setup, deproject_pixel, deproject_triangles,
-                     deprojection, frames)),
+        ('one-box-intro', (scene, deproject_setup, deproject_pixel, deproject_triangles,
+                           deprojection)),
+        ('one-box-code', (frames,)),
     ):
         OUT_DIR = IMAGES / folder
         OUT_DIR.mkdir(parents=True, exist_ok=True)

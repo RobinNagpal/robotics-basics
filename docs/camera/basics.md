@@ -4,7 +4,7 @@ A robot arm that has to pick something up first has to find it, and the usual
 way to find things is with a camera. This doc explains how a camera works,
 starting from nothing: what it records, what it loses, how a depth camera gets
 the lost part back, and the four numbers that describe a lens. The
-[one-box doc](one-box.md) then uses these basics to find a box on a table and
+[one-box doc](one-box-intro.md) then uses these basics to find a box on a table and
 measure it.
 
 Every idea here is shown on one example, which the one-box doc uses too. A red
@@ -50,7 +50,7 @@ it is — and without that, it cannot tell you where the box is, or how tall.
 
 Sections 2 to 4 explain why, using nothing but what a camera physically does.
 Sections 5 to 7 then describe the camera used here as numbers, and the
-[one-box doc](one-box.md) uses those numbers to get the missing information
+[one-box doc](one-box-intro.md) uses those numbers to get the missing information
 back and measure the box.
 
 ---
@@ -164,7 +164,7 @@ Look at the numbers on the right. They are the depth readings for a small patch
 of pixels at the edge of the red box. On the box they read `0.340` m. On the
 table just behind it they read `0.400` m. (The labels `rgb8` and `32FC1` are the
 names ROS gives these two pictures; the
-[one-box doc](one-box.md#13-what-one-capture-contains) explains them.)
+[one-box doc](one-box-intro.md#13-what-one-capture-contains) explains them.)
 
 That 6 cm jump is the red box. **No colour was needed to find it.** The depth
 numbers alone say that something sticks up out of the table, and by how much.
@@ -195,7 +195,7 @@ picture.
 
 The other half is where the box is. With the two pictures together, each pixel
 gives you a **direction** and a **distance**. A direction and a distance are
-enough to pin down a point in 3D, and the [one-box doc](one-box.md) turns that
+enough to pin down a point in 3D, and the [one-box doc](one-box-intro.md) turns that
 into arithmetic.
 
 ### Depth is not distance
@@ -382,7 +382,7 @@ number that a camera reports with every picture.
 For the camera in this doc, `fx` is 277.1 pixels. This means that a point which
 is 0.1 metres to the side for every metre ahead lands 0.1 × 277.1 = 27.7 pixels
 from the middle of the picture. The spot on the red box that the [one-box
-doc](one-box.md#11-pixel-plus-depth-gives-back-the-point) measures is 0.1894
+doc](one-box-intro.md#11-pixel-plus-depth-gives-back-the-point) measures is 0.1894
 metres to the side for every metre ahead, so it lands 0.1894 × 277.1 = 52.5
 pixels from the middle. Our camera is simulated, so it has no real lens in
 millimetres at all. It is described directly in pixels, which is all the
@@ -563,6 +563,6 @@ different reasons. Always read it next to the resolution.
 | `K` | intrinsic matrix | the four numbers laid out as a 3 × 3 grid, as `CameraInfo` carries them |
 | Gazebo | — | the robot simulator that takes the pictures in these docs |
 
-Next: [finding one box](one-box.md), which uses these basics to measure the box.
+Next: [finding one box](one-box-intro.md), which uses these basics to measure the box.
 
 Previous area: [position, frames and transforms](../arm/overview.md).

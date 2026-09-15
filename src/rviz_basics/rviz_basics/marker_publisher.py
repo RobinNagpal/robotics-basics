@@ -24,6 +24,7 @@ import math
 from geometry_msgs.msg import TransformStamped
 from rcl_interfaces.msg import ParameterDescriptor
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.publisher import Publisher
 from rclpy.time import Time
@@ -157,14 +158,11 @@ def main(args: list[str] | None = None) -> None:
     rclpy.init(args=args)
     node: MarkerPublisher = MarkerPublisher()
     try:
+        # spin() keeps the program running, calling the timer when it is due,
+        # until the program is asked to stop.
         rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        # Ctrl-C may already have torn the context down; shutting down twice raises.
-        if rclpy.ok():
-            rclpy.shutdown()
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass        # Ctrl-C, or the launch file stopping everything: not an error
 
 
 if __name__ == '__main__':

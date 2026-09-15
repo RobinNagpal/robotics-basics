@@ -372,17 +372,16 @@ def main(args: list[str] | None = None) -> None:
     node: MarkerPublisher = MarkerPublisher()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
-    finally:
-        node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
 ```
 
 `rclpy.init` starts ROS for this program. `rclpy.spin` then sits there and runs
-the timer, over and over, until you stop it. Ctrl-C breaks out, and the last
-lines shut down cleanly.
+the timer, over and over, until you stop it. Ctrl-C stops it with a
+`KeyboardInterrupt`, and a launch file stopping all its nodes stops it with an
+`ExternalShutdownException`. Neither is an error here, so the program catches
+both and ends. Ctrl-C has already stopped ROS by then, so there is nothing left
+to shut down.
 
 ### End to end
 

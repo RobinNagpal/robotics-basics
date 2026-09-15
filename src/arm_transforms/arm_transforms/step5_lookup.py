@@ -45,6 +45,7 @@ import math
 
 from geometry_msgs.msg import TransformStamped
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.time import Time
 from tf2_ros import Buffer, TransformException, TransformListener
@@ -119,13 +120,11 @@ def main(args: list[str] | None = None) -> None:
     rclpy.init(args=args)
     node: GripperWatcher = GripperWatcher()
     try:
+        # spin() keeps the program running, calling the timer when it is due,
+        # until the program is asked to stop.
         rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass        # Ctrl-C, or the launch file stopping everything: not an error
 
 
 if __name__ == '__main__':

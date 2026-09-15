@@ -20,13 +20,13 @@ import subprocess
 import sys
 import time
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-CAPTURES = REPO_ROOT / 'docs' / 'diagrams' / 'captures' / 'camera'
+REPO_ROOT: Path = Path(__file__).resolve().parents[2]
+CAPTURES: Path = REPO_ROOT / 'docs' / 'diagrams' / 'captures' / 'camera'
 
 #: name: (pixels across, pixels down, field of view in degrees). "wrist" is the
 #: camera the doc uses. The others change one thing at a time, for section 7
 #: of the basics doc, and "tiny" is small enough to see every pixel.
-SETTINGS = {
+SETTINGS: dict[str, tuple[int, int, int]] = {
     'wrist': (320, 240, 60),
     'wide': (320, 240, 90),
     'narrow': (320, 240, 30),
@@ -43,10 +43,10 @@ def ros(command: str) -> list[str]:
 
 def record(name: str, width: int, height: int, hfov_deg: int) -> None:
     """Start the simulation with one camera setting, save a capture, stop it."""
-    out = CAPTURES / name
+    out: Path = CAPTURES / name
     shutil.rmtree(out, ignore_errors=True)
     out.parent.mkdir(parents=True, exist_ok=True)
-    simulation = subprocess.Popen(
+    simulation: subprocess.Popen[bytes] = subprocess.Popen(
         ros('ros2 launch camera_one_box one_box.launch.py rviz:=false '
             f'width:={width} height:={height} hfov_deg:={hfov_deg}'),
         cwd=REPO_ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -65,6 +65,6 @@ def record(name: str, width: int, height: int, hfov_deg: int) -> None:
 
 
 if __name__ == '__main__':
-    names = sys.argv[1:] or list(SETTINGS)
+    names: list[str] = sys.argv[1:] or list(SETTINGS)
     for name in names:
         record(name, *SETTINGS[name])

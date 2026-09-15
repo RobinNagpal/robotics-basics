@@ -17,37 +17,48 @@ from dataclasses import dataclass
 import math
 import pathlib
 import sys
+from typing import Any
 import xml.etree.ElementTree as ElementTree
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+REPO_ROOT: pathlib.Path = pathlib.Path(__file__).resolve().parents[2]
 # The diagrams turn pixels into points with the same code the box locator uses.
 sys.path.insert(0, str(REPO_ROOT / 'src' / 'camera_one_box'))
 
 from cv_bridge import CvBridge  # noqa: E402
+from geometry_msgs.msg import Quaternion, TransformStamped, Vector3  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use('Agg')
+from matplotlib.axes import Axes  # noqa: E402
+from matplotlib.colorbar import Colorbar  # noqa: E402
+from matplotlib.figure import Figure  # noqa: E402
+from matplotlib.gridspec import GridSpec  # noqa: E402
+from matplotlib.image import AxesImage  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Arc, Circle, Rectangle  # noqa: E402  (must follow use)
+from matplotlib.patches import Polygon  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from numpy.typing import NDArray  # noqa: E402
 from rclpy.serialization import deserialize_message  # noqa: E402
 from rclpy.time import Time  # noqa: E402
 import rosbag2_py  # noqa: E402
 from rosidl_runtime_py.utilities import get_message  # noqa: E402
+from sensor_msgs.msg import CameraInfo  # noqa: E402
 from tf2_ros import Buffer  # noqa: E402
 
 from camera_one_box.measure import depth_to_points, to_world, transform_matrix  # noqa: E402
 
-IMAGES = REPO_ROOT / 'docs' / 'images' / 'camera'
-CAPTURES = REPO_ROOT / 'docs' / 'diagrams' / 'captures' / 'camera'
-WORLD = REPO_ROOT / 'src' / 'camera_one_box' / 'worlds' / 'one_box.sdf'
+IMAGES: pathlib.Path = REPO_ROOT / 'docs' / 'images' / 'camera'
+CAPTURES: pathlib.Path = REPO_ROOT / 'docs' / 'diagrams' / 'captures' / 'camera'
+WORLD: pathlib.Path = REPO_ROOT / 'src' / 'camera_one_box' / 'worlds' / 'one_box.sdf'
 
 #: Where _save writes. The main block at the bottom points it at each doc's
 #: folder in turn, before drawing that doc's diagrams.
-OUT_DIR = IMAGES
+OUT_DIR: pathlib.Path = IMAGES
 
 #: The pixel the one-box intro works through: on top of the red box, off centre
 #: so that both halves of the arithmetic have work to do.
-SAMPLE_PIXEL = (212.5, 86.5)
+SAMPLE_PIXEL: tuple[float, float] = (212.5, 86.5)
 
 
 @dataclass(frozen=True)
@@ -89,9 +100,9 @@ class Shot:
     """One capture from Gazebo: the two pictures, the lens, and where the camera was."""
 
     camera: Camera
-    rgb: np.ndarray
-    depth: np.ndarray
-    camera_to_world: np.ndarray
+    rgb: NDArray[np.uint8]
+    depth: NDArray[np.float32]
+    camera_to_world: NDArray[np.float64]
 
     def depth_at(self, u: float, v: float) -> float:
         """Return the depth reading of pixel (u, v), in metres."""
@@ -99,34 +110,40 @@ class Shot:
 
     def pixel_to_world(self, u: float, v: float) -> tuple[float, float, float]:
         """Turn one pixel into a point in the room."""
-        point = np.array(self.camera.deproject(u, v, self.depth_at(u, v)))
+        point: NDArray[np.float64] = np.array(self.camera.deproject(u, v, self.depth_at(u, v)))
         return tuple(to_world(point, self.camera_to_world)[0])
 
-    def points_in_world(self) -> np.ndarray:
+    def points_in_world(self) -> NDArray[np.float64]:
         """Turn every pixel into a point in the room, as the box locator does."""
-        c = self.camera
+        c: Camera = self.camera
         return to_world(depth_to_points(self.depth, c.fx, c.fy, c.cx, c.cy),
                         self.camera_to_world).reshape(self.depth.shape + (3,))
 
 
 def load(name: str) -> Shot:
     """Read one recorded capture, with the same libraries the box locator uses."""
-    reader = rosbag2_py.SequentialReader()
+    reader: rosbag2_py.SequentialReader = rosbag2_py.SequentialReader()
     reader.open(rosbag2_py.StorageOptions(uri=str(CAPTURES / name), storage_id='mcap'),
                 rosbag2_py.ConverterOptions('', ''))
-    types = {topic.name: topic.type for topic in reader.get_all_topics_and_types()}
-    messages = {}
+    types: dict[str, str] = {topic.name: topic.type for topic in reader.get_all_topics_and_types()}
+    # The messages are of different classes, an Image, a CameraInfo and a TFMessage, so
+    # their type is written as Any: "any type at all".
+    messages: dict[str, Any] = {}
     while reader.has_next():
+        topic: str
+        data: bytes
         topic, data, _ = reader.read_next()
         messages[topic] = deserialize_message(data, get_message(types[topic]))
 
-    info = messages['/camera/camera_info']
-    camera = Camera(info.width, info.height, info.k[0], info.k[4], info.k[2], info.k[5])
-    bridge = CvBridge()
-    buffer = Buffer()
+    info: CameraInfo = messages['/camera/camera_info']
+    camera: Camera = Camera(info.width, info.height, info.k[0], info.k[4], info.k[2], info.k[5])
+    bridge: CvBridge = CvBridge()
+    buffer: Buffer = Buffer()
     for transform in messages['/tf_static'].transforms:
         buffer.set_transform_static(transform, 'capture')
-    tf = buffer.lookup_transform('world', info.header.frame_id, Time())
+    tf: TransformStamped = buffer.lookup_transform('world', info.header.frame_id, Time())
+    t: Vector3
+    q: Quaternion
     t, q = tf.transform.translation, tf.transform.rotation
     return Shot(
         camera=camera,
@@ -149,35 +166,45 @@ class Box:
 
 def world_boxes(sdf: pathlib.Path = WORLD) -> list[Box]:
     """Read every box model out of the world file: its colour, where it is, its size."""
-    boxes = []
+    boxes: list[Box] = []
     for model in ElementTree.parse(sdf).getroot().iter('model'):
-        name = model.get('name')
+        # get() and findtext() give the '' passed to them when a tag is missing,
+        # rather than None, so what they return is always a str.
+        name: str = model.get('name', '')
         if not name.endswith('_box'):
             continue
-        x, y = (float(value) for value in model.findtext('pose').split()[:2])
-        size = tuple(float(value) for value in model.find('.//visual//size').text.split())
-        diffuse = model.find('.//visual//diffuse').text.split()[:3]
-        rgb = tuple(int(round(float(value) * 255)) for value in diffuse)
-        boxes.append(Box(name.removesuffix('_box'), rgb, (x, y), size))
+        x: float
+        y: float
+        x, y = (float(value) for value in model.findtext('pose', '').split()[:2])
+        size: tuple[float, ...] = tuple(
+            float(value) for value in model.findtext('.//visual//size', '').split())
+        diffuse: list[str] = model.findtext('.//visual//diffuse', '').split()[:3]
+        rgb: tuple[int, ...] = tuple(int(round(float(value) * 255)) for value in diffuse)
+        # tuple() cannot know the world file gives three numbers each, so mypy is told.
+        boxes.append(Box(name.removesuffix('_box'), rgb, (x, y), size))  # type: ignore[arg-type]
     return boxes
 
 
-WRIST = load('wrist')
-RED_BOX = world_boxes()[0]
+WRIST: Shot = load('wrist')
+RED_BOX: Box = world_boxes()[0]
 #: How high the camera is above the table, in metres, from its transform.
-CAMERA_HEIGHT_M = float(WRIST.camera_to_world[2, 3])
+CAMERA_HEIGHT_M: float = float(WRIST.camera_to_world[2, 3])
 
-GRID = '#d6d6d6'
-AXIS_X = '#d1495b'
-AXIS_Y = '#2a9d3f'
-AXIS_Z = '#1a99ff'
-INK = '#222222'
-MUTED = '#777777'
-PAPER = '#f4f4f4'
-LENS = '#3d5a80'
+GRID: str = '#d6d6d6'
+AXIS_X: str = '#d1495b'
+AXIS_Y: str = '#2a9d3f'
+AXIS_Z: str = '#1a99ff'
+INK: str = '#222222'
+MUTED: str = '#777777'
+PAPER: str = '#f4f4f4'
+LENS: str = '#3d5a80'
 
 
-def _new_axes(size=(6.0, 6.0), xlim=(-3.2, 3.2), ylim=(-3.2, 3.2)):
+def _new_axes(size: tuple[float, float] = (6.0, 6.0),
+              xlim: tuple[float, float] = (-3.2, 3.2),
+              ylim: tuple[float, float] = (-3.2, 3.2)) -> tuple[Figure, Axes]:
+    fig: Figure
+    ax: Axes
     fig, ax = plt.subplots(figsize=size, facecolor='white')
     ax.set_facecolor('white')
     ax.set_aspect('equal')
@@ -187,30 +214,32 @@ def _new_axes(size=(6.0, 6.0), xlim=(-3.2, 3.2), ylim=(-3.2, 3.2)):
     return fig, ax
 
 
-def _save(fig, name):
+def _save(fig: Figure, name: str) -> None:
     fig.savefig(OUT_DIR / name, bbox_inches='tight', pad_inches=0.3, facecolor='white')
     plt.close(fig)
     print(f'wrote {OUT_DIR / name}')
 
 
-def _title(ax, text, y=None, subtitle=None):
+def _title(ax: Axes, text: str, y: float | None = None, subtitle: str | None = None) -> None:
     ax.set_title(text, fontsize=12, color=INK, weight='bold', pad=10)
     if subtitle is not None:
-        ax.text(0.5, y, subtitle, transform=ax.transAxes, fontsize=9,
+        # A subtitle is always given with the y to put it at, so y is not None here.
+        ax.text(0.5, y, subtitle, transform=ax.transAxes, fontsize=9,  # type: ignore[arg-type]
                 ha='center', color=MUTED)
 
 
-def _rgb_array(shot):
+def _rgb_array(shot: Shot) -> NDArray[np.uint8]:
     """Return the colour picture as an array matplotlib can show."""
     return shot.rgb
 
 
-def _depth_array(shot):
+def _depth_array(shot: Shot) -> NDArray[np.float32]:
     """Return the depth picture as an array, with missing readings as NaN."""
     return shot.depth
 
 
-def _show_picture(ax, image, title, cmap=None, vmin=None, vmax=None):
+def _show_picture(ax: Axes, image: NDArray[np.uint8], title: str, cmap: str | None = None,
+                  vmin: float | None = None, vmax: float | None = None) -> Axes:
     ax.imshow(image, cmap=cmap, vmin=vmin, vmax=vmax, interpolation='nearest')
     ax.set_title(title, fontsize=10, color=INK, pad=6)
     ax.set_xticks([])
@@ -220,8 +249,10 @@ def _show_picture(ax, image, title, cmap=None, vmin=None, vmax=None):
     return ax
 
 
-def pinhole():
+def pinhole() -> None:
     """Draw the projection idea: three points at one ratio share one pixel."""
+    fig: Figure
+    ax: Axes
     fig, ax = _new_axes(size=(7.4, 4.4), xlim=(-0.9, 5.2), ylim=(-1.95, 1.75))
 
     # The optical axis runs to the right; the picture is the vertical line.
@@ -229,19 +260,19 @@ def pinhole():
                 arrowprops={'arrowstyle': '-|>', 'color': MUTED, 'lw': 1.0, 'ls': ':'})
     ax.text(4.85, 0.0, '+Z\nforward', fontsize=9, color=MUTED, va='center')
 
-    plane_z = 1.25
+    plane_z: float = 1.25
     ax.plot([plane_z, plane_z], [-1.15, 1.15], color=INK, lw=2.0, zorder=3)
     ax.text(plane_z, -1.32, 'the picture', fontsize=9, ha='center', color=INK)
 
     # One ray. Every point on it has the same x/z, so it is the same pixel.
-    slope = 0.28
+    slope: float = 0.28
     ax.plot([0, 4.6], [0, -slope * 4.6], color=AXIS_X, lw=1.6, zorder=2)
 
     for z_pos, label in ((1.9, 'near'), (3.1, 'further'), (4.3, 'further still')):
         ax.add_patch(Circle((z_pos, -slope * z_pos), 0.075, color=AXIS_X, zorder=4))
         ax.text(z_pos, -slope * z_pos - 0.26, label, fontsize=9, ha='center', color=INK)
 
-    pixel_y = -slope * plane_z
+    pixel_y: float = -slope * plane_z
     ax.add_patch(Circle((plane_z, pixel_y), 0.09, color=INK, zorder=5))
     ax.text(plane_z - 0.12, pixel_y - 0.02, 'one pixel  ', fontsize=9, ha='right',
             va='center', color=INK, family='monospace')
@@ -273,8 +304,10 @@ def pinhole():
     _save(fig, 'pinhole.svg')
 
 
-def field_of_view():
+def field_of_view() -> None:
     """Draw what each lens can see of the table from the same height."""
+    fig: Figure
+    ax: Axes
     fig, ax = _new_axes(size=(7.4, 4.4), xlim=(-0.48, 0.48), ylim=(-0.06, 0.50))
     ax.set_aspect('auto')
 
@@ -284,24 +317,26 @@ def field_of_view():
         ax.plot([tick, tick], [0, -0.012], color=GRID, lw=1.0, zorder=2)
     ax.text(-0.465, -0.032, 'the table', fontsize=9, ha='left', color=MUTED)
 
-    eye = (0.0, CAMERA_HEIGHT_M)
+    eye: tuple[float, float] = (0.0, CAMERA_HEIGHT_M)
     ax.add_patch(Circle(eye, 0.011, color=LENS, zorder=6))
     ax.text(0.015, CAMERA_HEIGHT_M, f'  camera, {CAMERA_HEIGHT_M:g} m up',
             fontsize=9, va='center', color=LENS)
 
+    styles: tuple[tuple[str, str, float], ...]
     styles = (('wide', AXIS_Y, 0.30), ('wrist', AXIS_X, 0.55), ('narrow', AXIS_Z, 0.85))
     for name, colour, alpha in styles:
-        config = load(name).camera
-        half = math.tan(math.radians(config.hfov_deg) / 2.0) * CAMERA_HEIGHT_M
+        config: Camera = load(name).camera
+        half: float = math.tan(math.radians(config.hfov_deg) / 2.0) * CAMERA_HEIGHT_M
         ax.fill([eye[0], -half, half], [eye[1], 0, 0], color=colour, alpha=0.12, zorder=1)
         for sign in (-1, 1):
             ax.plot([eye[0], sign * half], [eye[1], 0], color=colour, lw=1.4,
                     alpha=alpha, zorder=4)
+        width_m: float
         width_m, _ = config.coverage_m(CAMERA_HEIGHT_M)
         # One row per lens, so the three measurements do not sit on top of
         # each other.
-        row = styles.index((name, colour, alpha))
-        arrow_y = -0.055 - 0.075 * row
+        row: int = styles.index((name, colour, alpha))
+        arrow_y: float = -0.055 - 0.075 * row
         ax.annotate('', xy=(half, arrow_y), xytext=(-half, arrow_y),
                     arrowprops={'arrowstyle': '<|-|>', 'color': colour, 'lw': 1.2})
         ax.text(0.0, arrow_y - 0.042,
@@ -316,14 +351,22 @@ def field_of_view():
     _save(fig, 'field_of_view.svg')
 
 
-def focal_length(out='focal_length.svg'):
+def focal_length(out: str = 'focal_length.svg') -> None:
     """Show what focal length is: the gap between lens and sensor, and what it changes."""
+    fig: Figure
+    axes: NDArray[np.object_]       # a NumPy array holding one Axes per panel
     fig, axes = plt.subplots(1, 2, figsize=(10.8, 3.3), facecolor='white')
+    box_z: float
+    box_h: float
+    sensor_half: float
     box_z, box_h, sensor_half = -3.0, 0.9, 0.8
+    lens_colour: str
+    focal_colour: str
+    scene_colour: str
     lens_colour, focal_colour, scene_colour = LENS, '#2f6db0', '#b5433a'
-    row = -1.12                            # the row the lengths along the axis are drawn on
+    row: float = -1.12                           # the row the lengths along the axis are drawn on
 
-    def span(ax, start, end, colour):
+    def span(ax: Axes, start: tuple[float, float], end: tuple[float, float], colour: str) -> None:
         ax.annotate('', xy=end, xytext=start,
                     arrowprops={'arrowstyle': '<|-|>', 'color': colour, 'lw': 1.2,
                                 'shrinkA': 0, 'shrinkB': 0})
@@ -341,12 +384,14 @@ def focal_length(out='focal_length.svg'):
 
         # What the edges of the sensor can see: the field of view. Cut off above the
         # row of lengths, so the wide view does not run into the labels.
-        view = Rectangle((-3.3, -0.95), f + 3.6, 2.2, transform=ax.transData)
+        view: Rectangle = Rectangle((-3.3, -0.95), f + 3.6, 2.2, transform=ax.transData)
         for sign in (-1, 1):
-            reach = sensor_half / f * 3.3
+            reach: float = sensor_half / f * 3.3
+            edge: Line2D
             edge, = ax.plot([f, -3.3], [sign * sensor_half, -sign * reach], color=MUTED,
                             lw=0.8, ls=(0, (4, 3)))
             edge.set_clip_path(view)
+        shade: Polygon
         shade, = ax.fill([0, -3.3, -3.3], [0, sensor_half / f * 3.3, -sensor_half / f * 3.3],
                          color='#e8eef5', zorder=0)
         shade.set_clip_path(view)
@@ -356,7 +401,7 @@ def focal_length(out='focal_length.svg'):
         # The box, and the light from its top corner through the lens.
         ax.add_patch(Rectangle((box_z - 0.12, 0), 0.24, box_h, facecolor='#e6a39c',
                                edgecolor=INK, lw=0.6, zorder=3))
-        image_h = box_h * f / -box_z
+        image_h: float = box_h * f / -box_z
         ax.plot([box_z, f], [box_h, -image_h], color=AXIS_X, lw=1.4, zorder=2)
 
         # The sensor, and the picture of the box on it, upside down.
@@ -396,12 +441,22 @@ def focal_length(out='focal_length.svg'):
     _save(fig, out)
 
 
-def fx_fy(out='fx_fy.svg'):
+def fx_fy(out: str = 'fx_fy.svg') -> None:
     """Put fx, fy, cx and cy on this doc's camera: once seen from above, once from the side."""
+    _shot: Shot
+    u: float
+    v: float
+    _depth: float
+    _point: tuple[float, float, float]
     _shot, u, v, _depth, _point = _worked_point()
-    camera = WRIST.camera
+    camera: Camera = WRIST.camera
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 2, figsize=(10.6, 5.4), facecolor='white')
-    focal_colour = '#2f6db0'
+    focal_colour: str = '#2f6db0'
+    # Each panel: its axes, title, focal length, size, middle, offset, field of view,
+    # colour, letter, the names of its two edges, and the words by the spot.
+    panels: tuple[tuple[Axes, str, float, int, float, float, float, str, str, str, str, str], ...]
     panels = (
         (axes[0], 'Across the picture: fx and cx', camera.fx, camera.width_px, camera.cx,
          u - camera.cx, camera.hfov_deg, AXIS_X, 'u', 'left edge', 'right edge',
@@ -416,7 +471,7 @@ def fx_fy(out='fx_fy.svg'):
         ax.set_aspect('equal')
         ax.axis('off')
         ax.set_title(title, fontsize=11.5, color=INK, pad=2)
-        half = size / 2
+        half: float = size / 2
 
         # The lens, and the picture fx (or fy) pixels in front of it.
         ax.fill([0, -half, half], [0, -f, -f], color='#e8eef5', zorder=0)
@@ -429,14 +484,14 @@ def fx_fy(out='fx_fy.svg'):
 
         ax.annotate('', xy=(-half - 22, -f), xytext=(-half - 22, 0),
                     arrowprops={'arrowstyle': '<|-|>', 'color': focal_colour, 'lw': 1.3})
-        name = 'fx' if letter == 'u' else 'fy'
+        name: str = 'fx' if letter == 'u' else 'fy'
         ax.text(-half - 30, -f / 2, f'{name} =\n{f:.1f}\npixels', fontsize=9.5,
                 color=focal_colour, ha='right', va='center', family='monospace')
 
         # The field of view: the angle between the two edges, at the lens.
         ax.add_patch(Arc((0, 0), 110, 110, theta1=270 - fov / 2, theta2=270 + fov / 2,
                          color=MUTED, lw=1.0))
-        side = -1 if offset > 0 else 1
+        side: int = -1 if offset > 0 else 1
         ax.text(side * 24, -80, f'{fov:.1f}°'.replace('.0°', '°'), fontsize=9.5, color=MUTED,
                 ha='center', va='center')
 
@@ -462,10 +517,14 @@ def fx_fy(out='fx_fy.svg'):
     _save(fig, out)
 
 
-def scene(out='scene.svg'):
+def scene(out: str = 'scene.svg') -> None:
     """Draw the table, the box and the camera, from above and from the side."""
-    boxes = world_boxes()
+    boxes: list[Box] = world_boxes()
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.6), facecolor='white')
+    plan: Axes
+    side: Axes
     plan, side = axes
 
     # -- from above ------------------------------------------------------
@@ -477,6 +536,8 @@ def scene(out='scene.svg'):
         plan.plot([-0.25, 0.25], [tick, tick], color=GRID, lw=0.7, zorder=0)
         plan.plot([tick, tick], [-0.22, 0.22], color=GRID, lw=0.7, zorder=0)
 
+    seen_w: float
+    seen_h: float
     seen_w, seen_h = WRIST.camera.coverage_m(CAMERA_HEIGHT_M)
     plan.add_patch(Rectangle((-seen_w / 2, -seen_h / 2), seen_w, seen_h, fill=False,
                              ls=(0, (5, 4)), color=MUTED, lw=1.3, zorder=2))
@@ -485,8 +546,10 @@ def scene(out='scene.svg'):
               fontsize=9, ha='center', color=MUTED)
 
     for box in boxes:
+        low_x: float
+        low_y: float
         low_x, low_y = box.centre[0] - box.size[0] / 2, box.centre[1] - box.size[1] / 2
-        colour = '#%02x%02x%02x' % box.rgb
+        colour: str = '#%02x%02x%02x' % box.rgb
         plan.add_patch(Rectangle((low_x, low_y), box.size[0], box.size[1],
                                  facecolor=colour, edgecolor=INK, lw=0.8, zorder=3))
         # Above each box, so nothing lands on the camera marker at the origin.
@@ -545,27 +608,31 @@ def scene(out='scene.svg'):
     _save(fig, out)
 
 
-def one_capture(out='capture.svg'):
+def one_capture(out: str = 'capture.svg') -> None:
     """Show one capture as colour, as depth, and as the numbers behind it."""
-    shot = WRIST
-    depth = _depth_array(shot)
+    shot: Shot = WRIST
+    depth: NDArray[np.float32] = _depth_array(shot)
 
     # A window straddling the far edge of the red box, where the depth steps
     # cleanly from the box top to the table behind it.
+    col_from: int
+    col_to: int
     col_from, col_to = 233, 241
+    row_from: int
+    row_to: int
     row_from, row_to = 84, 89
 
-    fig = plt.figure(figsize=(12.0, 4.5), facecolor='white')
-    grid = fig.add_gridspec(1, 3, width_ratios=(1.0, 1.0, 1.25), wspace=0.22)
+    fig: Figure = plt.figure(figsize=(12.0, 4.5), facecolor='white')
+    grid: GridSpec = fig.add_gridspec(1, 3, width_ratios=(1.0, 1.0, 1.25), wspace=0.22)
 
-    colour_ax = fig.add_subplot(grid[0, 0])
+    colour_ax: Axes = fig.add_subplot(grid[0, 0])
     _show_picture(colour_ax, _rgb_array(shot), 'colour — rgb8, 3 bytes a pixel')
-    depth_ax = fig.add_subplot(grid[0, 1])
-    image = depth_ax.imshow(depth, cmap='viridis_r', interpolation='nearest')
+    depth_ax: Axes = fig.add_subplot(grid[0, 1])
+    image: AxesImage = depth_ax.imshow(depth, cmap='viridis_r', interpolation='nearest')
     depth_ax.set_title('depth — 32FC1, metres', fontsize=10, color=INK, pad=6)
     depth_ax.set_xticks([])
     depth_ax.set_yticks([])
-    bar = fig.colorbar(image, ax=depth_ax, fraction=0.046, pad=0.03)
+    bar: Colorbar = fig.colorbar(image, ax=depth_ax, fraction=0.046, pad=0.03)
     bar.ax.tick_params(labelsize=8)
     bar.set_label('metres', fontsize=8)
 
@@ -578,15 +645,15 @@ def one_capture(out='capture.svg'):
                       arrowprops={'arrowstyle': '-|>', 'color': AXIS_X, 'lw': 1.2})
 
     # The same handful of pixels, written out as the numbers they are.
-    zoom = fig.add_subplot(grid[0, 2])
+    zoom: Axes = fig.add_subplot(grid[0, 2])
     zoom.set_xlim(-0.5, col_to - col_from - 0.5)
     zoom.set_ylim(row_to - row_from - 0.5, -0.5)
     zoom.set_aspect('equal')
     zoom.axis('off')
     for row in range(row_from, row_to):
         for col in range(col_from, col_to):
-            value = depth[row][col]
-            on_box = value < 0.399            # nearer than the table
+            value: np.float32 = depth[row][col]
+            on_box: np.bool_ = value < 0.399            # nearer than the table
             zoom.add_patch(Rectangle((col - col_from - 0.5, row - row_from - 0.5), 1, 1,
                                      facecolor='#fbe6e4' if on_box else PAPER,
                                      edgecolor=GRID, lw=0.6))
@@ -602,13 +669,16 @@ def one_capture(out='capture.svg'):
     _save(fig, out)
 
 
-def configurations(out='configurations.svg'):
+def configurations(out: str = 'configurations.svg') -> None:
     """Compare the two knobs: what is in shot, and how finely it is sampled."""
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(2, 3, figsize=(10.5, 7.4), facecolor='white')
 
     for axis, name in zip(axes[0], ('wide', 'wrist', 'narrow')):
-        shot = load(name)
-        config = shot.camera
+        shot: Shot = load(name)
+        config: Camera = shot.camera
+        width_m: float
         width_m, _ = config.coverage_m(CAMERA_HEIGHT_M)
         _show_picture(axis, _rgb_array(shot),
                       f'{name} — {config.hfov_deg:.0f}°, {width_m:.3f} m across')
@@ -639,16 +709,26 @@ def configurations(out='configurations.svg'):
     _save(fig, out)
 
 
-def deprojection(out='deprojection.svg'):
+def deprojection(out: str = 'deprojection.svg') -> None:
     """Walk one pixel and its depth reading back out to a point in the room."""
-    shot = WRIST
+    shot: Shot = WRIST
+    u: float
+    v: float
     u, v = SAMPLE_PIXEL
-    depth_m = shot.depth_at(u, v)
+    depth_m: float = shot.depth_at(u, v)
+    cam_x: float
+    cam_y: float
+    cam_z: float
     cam_x, cam_y, cam_z = shot.camera.deproject(u, v, depth_m)
-    in_room = shot.pixel_to_world(u, v)
+    in_room: tuple[float, float, float] = shot.pixel_to_world(u, v)
 
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 3, figsize=(12.4, 4.3), facecolor='white')
 
+    picture: Axes
+    sums: Axes
+    room: Axes
     picture, sums, room = axes
     picture.imshow(_depth_array(shot), cmap='viridis_r', interpolation='nearest')
     picture.plot([u], [v], marker='o', ms=9, mfc='none', mec=AXIS_X, mew=2.0)
@@ -661,7 +741,7 @@ def deprojection(out='deprojection.svg'):
     sums.axis('off')
     # Three lines per coordinate: formula, the numbers put in, the answer. On one
     # line the answer runs into the formula.
-    lines = [
+    lines: list[tuple[str, str, str]] = [
         ('x = (u - cx) · depth / fx',
          f'  = ({u:g} - {shot.camera.cx:g}) · {depth_m:.3f} / {shot.camera.fx:.1f}',
          f'  = {cam_x:+.4f} m'),
@@ -671,7 +751,7 @@ def deprojection(out='deprojection.svg'):
         ('z =  depth', '', f'  = {cam_z:+.4f} m'),
     ]
     for i, (lhs, middle, rhs) in enumerate(lines):
-        top = 0.92 - i * 0.27
+        top: float = 0.92 - i * 0.27
         sums.text(0.0, top, lhs, fontsize=10, family='monospace', color=INK)
         if middle:
             sums.text(0.0, top - 0.075, middle, fontsize=9, family='monospace', color=MUTED)
@@ -690,6 +770,8 @@ def deprojection(out='deprojection.svg'):
         room.plot([-0.15, 0.15], [tick, tick], color=GRID, lw=0.7, zorder=0)
         room.plot([tick, tick], [-0.15, 0.15], color=GRID, lw=0.7, zorder=0)
     for box in world_boxes():
+        low_x: float
+        low_y: float
         low_x, low_y = box.centre[0] - box.size[0] / 2, box.centre[1] - box.size[1] / 2
         room.add_patch(Rectangle((low_x, low_y), box.size[0], box.size[1],
                                  facecolor='#%02x%02x%02x' % box.rgb, alpha=0.55,
@@ -704,7 +786,7 @@ def deprojection(out='deprojection.svg'):
 
     # The three panels are different shapes, so their own titles would sit at
     # three different heights. Place them all on one line instead.
-    titles = (
+    titles: tuple[str, str, str] = (
         f'1. a pixel, and its depth: {depth_m:.3f} m',
         '2. undo the divide by depth',
         '3. a point in the room',
@@ -720,23 +802,33 @@ def deprojection(out='deprojection.svg'):
     _save(fig, out)
 
 
-def _iso(point):
+def _iso(point: tuple[float, ...]) -> tuple[float, float]:
     """Flatten a 3D direction onto the page, isometric style."""
+    x: float
+    y: float
+    z: float
     x, y, z = point
     return ((x - y) * math.cos(math.radians(30.0)),
             (x + y) * math.sin(math.radians(30.0)) + z)
 
 
-def frames():
+def frames() -> None:
     """Draw the two axis conventions a ROS camera carries at once."""
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.6), facecolor='white')
 
     # The camera body points along world +X in both panels; only the naming of
     # the axes differs, which is the entire point.
+    forward: tuple[float, float, float]
+    left: tuple[float, float, float]
+    up: tuple[float, float, float]
     forward, left, up = (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)
-    right = (0.0, -1.0, 0.0)
-    down = (0.0, 0.0, -1.0)
+    right: tuple[float, float, float] = (0.0, -1.0, 0.0)
+    down: tuple[float, float, float] = (0.0, 0.0, -1.0)
 
+    # Each panel: its title, its three arrows (direction, label, colour), and its caption.
+    panels: tuple[tuple[str, tuple[tuple[tuple[float, float, float], str, str], ...], str], ...]
     panels = (
         ('camera_link — the body convention',
          ((forward, '+X forward', AXIS_X), (left, '+Y left', AXIS_Y), (up, '+Z up', AXIS_Z)),
@@ -754,22 +846,22 @@ def frames():
         axis.axis('off')
 
         # A small camera body with its lens on the +X face.
-        body = [(-0.22, -0.22, -0.18), (0.22, -0.22, -0.18),
-                (0.22, 0.22, -0.18), (-0.22, 0.22, -0.18)]
-        flat = [_iso(corner) for corner in body]
+        body: list[tuple[float, float, float]] = [(-0.22, -0.22, -0.18), (0.22, -0.22, -0.18),
+                                                  (0.22, 0.22, -0.18), (-0.22, 0.22, -0.18)]
+        flat: list[tuple[float, float]] = [_iso(corner) for corner in body]
         axis.fill([p[0] for p in flat], [p[1] for p in flat],
                   facecolor='#dfe6ee', edgecolor=LENS, lw=1.2, zorder=2)
-        lens_at = _iso((0.30, 0.0, 0.0))
+        lens_at: tuple[float, float] = _iso((0.30, 0.0, 0.0))
         axis.add_patch(Circle(lens_at, 0.1, facecolor=LENS, edgecolor=LENS, zorder=3))
         axis.text(lens_at[0] + 0.12, lens_at[1] - 0.26, 'lens', fontsize=8.5,
                   color=LENS, ha='left')
 
         for direction, label, colour in triad:
-            tip = _iso(tuple(component * 1.15 for component in direction))
+            tip: tuple[float, float] = _iso(tuple(component * 1.15 for component in direction))
             axis.annotate('', xy=tip, xytext=_iso((0.0, 0.0, 0.0)),
                           arrowprops={'arrowstyle': '-|>', 'color': colour, 'lw': 2.0},
                           zorder=4)
-            label_at = _iso(tuple(component * 1.38 for component in direction))
+            label_at: tuple[float, float] = _iso(tuple(component * 1.38 for component in direction))
             axis.text(label_at[0], label_at[1], label, fontsize=9.5, color=colour,
                       ha='center', va='center', family='monospace', zorder=5,
                       bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 1.5})
@@ -786,12 +878,17 @@ def frames():
     _save(fig, 'frames.svg')
 
 
-def pixels(out='pixels.svg'):
+def pixels(out: str = 'pixels.svg') -> None:
     """Show what a pixel is, using a capture small enough to see each one."""
-    small_shot = load('tiny')
-    full_shot = WRIST
+    small_shot: Shot = load('tiny')
+    full_shot: Shot = WRIST
+    w: int
+    h: int
     w, h = small_shot.camera.width_px, small_shot.camera.height_px
 
+    fig: Figure
+    left: Axes
+    right: Axes
     fig, (left, right) = plt.subplots(1, 2, figsize=(11.6, 5.0), facecolor='white',
                                       gridspec_kw={'wspace': 0.18})
 
@@ -846,20 +943,33 @@ def pixels(out='pixels.svg'):
     _save(fig, out)
 
 
-def _worked_point():
+def _worked_point() -> tuple[Shot, float, float, float, tuple[float, float, float]]:
     """Return the one-box intro's section 1.1 example: the pixel, its depth, its point."""
-    shot = WRIST
+    shot: Shot = WRIST
+    u: float
+    v: float
     u, v = SAMPLE_PIXEL
-    depth = shot.depth_at(u, v)
+    depth: float = shot.depth_at(u, v)
     return shot, u, v, depth, shot.camera.deproject(u, v, depth)
 
 
-def deproject_setup(out='deproject_setup.svg'):
+def deproject_setup(out: str = 'deproject_setup.svg') -> None:
     """Show, from the side, where the camera is and which spot is being measured."""
+    shot: Shot
+    u: float
+    v: float
+    depth: float
+    x: float
+    _y: float
+    _z: float
     shot, u, v, depth, (x, _y, _z) = _worked_point()
-    box = RED_BOX
+    box: Box = RED_BOX
+    low_x: float
+    top: float
     low_x, top = box.centre[0] - box.size[0] / 2, box.size[2]
 
+    fig: Figure
+    ax: Axes
     fig, ax = _new_axes(size=(8.6, 5.6), xlim=(-0.38, 0.34), ylim=(-0.07, 0.47))
     ax.plot([-0.22, 0.26], [0, 0], color=INK, lw=2.0, zorder=3)
     ax.text(0.26, -0.03, 'the table', fontsize=9.5, color=MUTED, ha='right')
@@ -912,12 +1022,23 @@ def deproject_setup(out='deproject_setup.svg'):
     _save(fig, out)
 
 
-def deproject_pixel(out='deproject_pixel.svg'):
+def deproject_pixel(out: str = 'deproject_pixel.svg') -> None:
     """Mark u, v, cx, cy and the two pixel offsets on the real picture."""
+    shot: Shot
+    u: float
+    v: float
+    _depth: float
+    _point: tuple[float, float, float]
     shot, u, v, _depth, _point = _worked_point()
+    w: int
+    h: int
     w, h = WRIST.camera.width_px, WRIST.camera.height_px
+    cx: float
+    cy: float
     cx, cy = WRIST.camera.cx, WRIST.camera.cy
 
+    fig: Figure
+    ax: Axes
     fig, ax = plt.subplots(figsize=(8.4, 6.4), facecolor='white')
     ax.imshow(_rgb_array(shot), interpolation='nearest', extent=(0, w, h, 0), alpha=0.55)
     ax.set_xlim(-62, w + 6)
@@ -967,16 +1088,29 @@ def deproject_pixel(out='deproject_pixel.svg'):
     _save(fig, out)
 
 
-def deproject_triangles(out='deproject_triangles.svg'):
+def deproject_triangles(out: str = 'deproject_triangles.svg') -> None:
     """Show the two same-shaped triangles that make the formula work."""
+    _shot: Shot
+    u: float
+    v: float
+    depth: float
+    x: float
+    _y: float
+    _z: float
     _shot, u, v, depth, (x, _y, _z) = _worked_point()
+    fx: float
+    cx: float
     fx, cx = WRIST.camera.fx, WRIST.camera.cx
-    box = RED_BOX
-    top = box.size[2]
-    lens = CAMERA_HEIGHT_M
+    box: Box = RED_BOX
+    top: float = box.size[2]
+    lens: float = CAMERA_HEIGHT_M
+    slope: float
+    pic_z: float
     slope = (u - cx) / fx                  # sideways per unit forwards, the same for both
     pic_z = lens - 0.12                    # where the picture is drawn: only its shape matters
 
+    fig: Figure
+    ax: Axes
     fig, ax = plt.subplots(figsize=(8.6, 6.0), facecolor='white')
     ax.set_xlim(-0.16, 0.215)
     ax.set_ylim(-0.03, 0.46)
@@ -986,7 +1120,7 @@ def deproject_triangles(out='deproject_triangles.svg'):
     ax.axis('off')
 
     ax.plot([-0.10, 0.20], [0, 0], color=INK, lw=2.0)
-    low_x = box.centre[0] - box.size[0] / 2
+    low_x: float = box.centre[0] - box.size[0] / 2
     ax.add_patch(Rectangle((low_x, 0), box.size[0], top, facecolor='#e6a39c',
                            edgecolor=INK, lw=0.6, zorder=1))
     ax.plot([0], [lens], marker='o', color=LENS, ms=10, zorder=6)
@@ -998,7 +1132,7 @@ def deproject_triangles(out='deproject_triangles.svg'):
     ax.plot([x], [top], marker='o', color=INK, ms=7, zorder=6)
 
     # Small triangle: inside the camera, measured in pixels.
-    small = slope * (lens - pic_z)
+    small: float = slope * (lens - pic_z)
     ax.fill([0, 0, small], [lens, pic_z, pic_z], color='#cfe3f5', zorder=2)
     ax.plot([0, small], [pic_z, pic_z], color=AXIS_X, lw=2.4, zorder=4)
     ax.annotate('', xy=(-0.018, pic_z), xytext=(-0.018, lens),

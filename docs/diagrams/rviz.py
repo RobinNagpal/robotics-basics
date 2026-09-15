@@ -15,26 +15,32 @@ import pathlib
 
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib.axes import Axes  # noqa: E402
+from matplotlib.figure import Figure  # noqa: E402
 from matplotlib.patches import Circle  # noqa: E402  (must follow matplotlib.use)
 import matplotlib.pyplot as plt  # noqa: E402
 
 # Defaults declared by MarkerPublisher.
-RADIUS_M = 2.0
-PERIOD_S = 6.0
-DIAMETER_M = 0.4
+RADIUS_M: float = 2.0
+PERIOD_S: float = 6.0
+DIAMETER_M: float = 0.4
 
-AREA = 'rviz'
-OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / 'images' / AREA
+AREA: str = 'rviz'
+OUT_DIR: pathlib.Path = pathlib.Path(__file__).resolve().parents[1] / 'images' / AREA
 
-GRID = '#d6d6d6'
-AXIS_X = '#d1495b'
-AXIS_Y = '#2a9d3f'
-SPHERE = '#1a99ff'
-INK = '#222222'
-MUTED = '#777777'
+GRID: str = '#d6d6d6'
+AXIS_X: str = '#d1495b'
+AXIS_Y: str = '#2a9d3f'
+SPHERE: str = '#1a99ff'
+INK: str = '#222222'
+MUTED: str = '#777777'
 
 
-def _new_axes(size=(6.0, 6.0), xlim=(-3.2, 3.2), ylim=(-3.2, 3.2)):
+def _new_axes(size: tuple[float, float] = (6.0, 6.0),
+              xlim: tuple[float, float] = (-3.2, 3.2),
+              ylim: tuple[float, float] = (-3.2, 3.2)) -> tuple[Figure, Axes]:
+    fig: Figure
+    ax: Axes
     fig, ax = plt.subplots(figsize=size, facecolor='white')
     ax.set_facecolor('white')
     ax.set_aspect('equal')
@@ -44,14 +50,15 @@ def _new_axes(size=(6.0, 6.0), xlim=(-3.2, 3.2), ylim=(-3.2, 3.2)):
     return fig, ax
 
 
-def _draw_grid(ax):
+def _draw_grid(ax: Axes) -> None:
     """Draw the RViz Grid display: 1 m cells on the XY plane."""
     for i in range(-3, 4):
         ax.plot([-3, 3], [i, i], color=GRID, lw=0.8, zorder=0)
         ax.plot([i, i], [-3, 3], color=GRID, lw=0.8, zorder=0)
 
 
-def _draw_frame(ax, x, y, yaw, label, length=0.6, label_offset=(0.0, -0.42)):
+def _draw_frame(ax: Axes, x: float, y: float, yaw: float, label: str, length: float = 0.6,
+                label_offset: tuple[float, float] = (0.0, -0.42)) -> None:
     """Draw a coordinate frame: red +X, green +Y, like RViz's TF display."""
     for angle, color in ((yaw, AXIS_X), (yaw + math.pi / 2, AXIS_Y)):
         ax.annotate(
@@ -65,16 +72,20 @@ def _draw_frame(ax, x, y, yaw, label, length=0.6, label_offset=(0.0, -0.42)):
             fontsize=10, ha='center', va='center', family='monospace', zorder=5)
 
 
-def scene():
+def scene() -> None:
     """Draw what the RViz window shows."""
     # Extra room on the right so the marker_frame label does not touch the edge.
+    fig: Figure
+    ax: Axes
     fig, ax = _new_axes(xlim=(-3.2, 4.0))
     _draw_grid(ax)
 
     ax.add_patch(Circle((0, 0), RADIUS_M, fill=False, ls=(0, (5, 4)),
                         color=MUTED, lw=1.2, zorder=1))
 
-    angle = math.radians(35.0)
+    angle: float = math.radians(35.0)
+    mx: float
+    my: float
     mx, my = RADIUS_M * math.cos(angle), RADIUS_M * math.sin(angle)
 
     ax.add_patch(Circle((mx, my), DIAMETER_M / 2, color=SPHERE, zorder=3))
@@ -96,8 +107,10 @@ def scene():
     plt.close(fig)
 
 
-def motion():
+def motion() -> None:
     """Where the frame is at each quarter of a revolution."""
+    fig: Figure
+    ax: Axes
     fig, ax = _new_axes(ylim=(-3.6, 3.6))
 
     ax.add_patch(Circle((0, 0), RADIUS_M, fill=False, ls=(0, (5, 4)),
@@ -105,14 +118,16 @@ def motion():
     _draw_frame(ax, 0, 0, 0.0, 'world', length=0.5, label_offset=(-0.4, -0.28))
 
     for quarter in range(4):
-        t = quarter * PERIOD_S / 4.0
-        angle = 2 * math.pi * t / PERIOD_S
+        t: float = quarter * PERIOD_S / 4.0
+        angle: float = 2 * math.pi * t / PERIOD_S
+        x: float
+        y: float
         x, y = RADIUS_M * math.cos(angle), RADIUS_M * math.sin(angle)
 
         ax.add_patch(Circle((x, y), DIAMETER_M / 2, color=SPHERE,
                             alpha=0.35 + 0.65 * (quarter == 0), zorder=3))
         # Heading is tangent to the circle: yaw = angle + pi/2.
-        heading = angle + math.pi / 2
+        heading: float = angle + math.pi / 2
         ax.annotate(
             '', xy=(x + 0.75 * math.cos(heading), y + 0.75 * math.sin(heading)),
             xytext=(x, y),

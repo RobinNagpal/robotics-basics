@@ -10,56 +10,64 @@ reader can carry positions from one to the next. The link lengths come from
 arm_math, so changing the arm changes every picture.
 """
 
+from collections.abc import Callable
 import math
 import pathlib
 import sys
 
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib.axes import Axes  # noqa: E402
+from matplotlib.figure import Figure  # noqa: E402
 from matplotlib.patches import Arc  # noqa: E402  (must follow matplotlib.use)
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from numpy.typing import NDArray  # noqa: E402
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / 'src' / 'arm_transforms'))
 # Imported after the sys.path line above, which flake8's import rules cannot see.
 from arm_transforms.arm_math import (  # noqa: E402,I100,I202
     gripper_in_base, LINK1_M, LINK2_M, rotate_point, Transform2D)
 
-AREA = 'arm'
-OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / 'images' / AREA
+AREA: str = 'arm'
+OUT_DIR: pathlib.Path = pathlib.Path(__file__).resolve().parents[1] / 'images' / AREA
 
-GRID = '#d6d6d6'
-AXIS_X = '#d1495b'
-AXIS_Y = '#2a9d3f'
-LINK = '#3b82c4'
-LINK_PALE = '#b9d3ea'
-JOINT = '#f0a500'
-GRIP = '#e05555'
-INK = '#222222'
-MUTED = '#777777'
+GRID: str = '#d6d6d6'
+AXIS_X: str = '#d1495b'
+AXIS_Y: str = '#2a9d3f'
+LINK: str = '#3b82c4'
+LINK_PALE: str = '#b9d3ea'
+JOINT: str = '#f0a500'
+GRIP: str = '#e05555'
+INK: str = '#222222'
+MUTED: str = '#777777'
 
 #: The pose most pictures use. Slanted, so no link lies flat on an axis and
 #: every angle in the drawing is actually visible.
-Q1 = math.radians(30.0)
-Q2 = math.radians(60.0)
+Q1: float = math.radians(30.0)
+Q2: float = math.radians(60.0)
 
 #: A second pose, used only where two poses need comparing.
-R1 = math.radians(60.0)
-R2 = math.radians(-60.0)
+R1: float = math.radians(60.0)
+R2: float = math.radians(-60.0)
 
-JOINT2 = (LINK1_M * math.cos(Q1), LINK1_M * math.sin(Q1))
-GRIPPER = (JOINT2[0] + LINK2_M * math.cos(Q1 + Q2),
-           JOINT2[1] + LINK2_M * math.sin(Q1 + Q2))
+JOINT2: tuple[float, float] = (LINK1_M * math.cos(Q1), LINK1_M * math.sin(Q1))
+GRIPPER: tuple[float, float] = (JOINT2[0] + LINK2_M * math.cos(Q1 + Q2),
+                                JOINT2[1] + LINK2_M * math.sin(Q1 + Q2))
 
 
 # --------------------------------------------------------------------------
 # small drawing helpers
 # --------------------------------------------------------------------------
 
-def _axes(xlim, ylim, size=(6.4, 5.6), ax=None):
+def _axes(xlim: tuple[float, float], ylim: tuple[float, float],
+          size: tuple[float, float] = (6.4, 5.6), ax: Axes | None = None) -> tuple[Figure, Axes]:
+    fig: Figure
     if ax is None:
         fig, ax = plt.subplots(figsize=size, facecolor='white')
     else:
-        fig = ax.figure
+        # ax.figure may be a SubFigure, a figure inside a figure, but none is used here.
+        fig = ax.figure  # type: ignore[assignment]
     ax.set_facecolor('white')
     ax.set_aspect('equal')
     ax.set_xlim(*xlim)
@@ -68,7 +76,8 @@ def _axes(xlim, ylim, size=(6.4, 5.6), ax=None):
     return fig, ax
 
 
-def _frame(ax, x, y, theta, label, length=0.13, offset=(0.0, -0.075), size=9):
+def _frame(ax: Axes, x: float, y: float, theta: float, label: str, length: float = 0.13,
+           offset: tuple[float, float] = (0.0, -0.075), size: float = 9) -> None:
     """Draw a frame as a red +X arrow and a green +Y arrow."""
     for angle, color in ((theta, AXIS_X), (theta + math.pi / 2, AXIS_Y)):
         ax.annotate(
@@ -82,45 +91,48 @@ def _frame(ax, x, y, theta, label, length=0.13, offset=(0.0, -0.075), size=9):
                 ha='center', va='center', family='monospace', zorder=6)
 
 
-def _link(ax, start, end, color=LINK, width=7):
+def _link(ax: Axes, start: tuple[float, float], end: tuple[float, float], color: str = LINK,
+          width: float = 7) -> None:
     ax.plot([start[0], end[0]], [start[1], end[1]], color=color, lw=width,
             solid_capstyle='round', zorder=2)
 
 
-def _joint(ax, point, size=13):
+def _joint(ax: Axes, point: tuple[float, float], size: float = 13) -> None:
     ax.plot([point[0]], [point[1]], 'o', color=JOINT, ms=size, zorder=4)
 
 
-def _gripper(ax, point, size=10):
+def _gripper(ax: Axes, point: tuple[float, float], size: float = 10) -> None:
     ax.plot([point[0]], [point[1]], 'o', color=GRIP, ms=size, zorder=4)
 
 
-def _dashed(ax, start, end, color=GRID):
+def _dashed(ax: Axes, start: tuple[float, float], end: tuple[float, float],
+            color: str = GRID) -> None:
     ax.plot([start[0], end[0]], [start[1], end[1]], color=color, lw=1.0,
             ls=(0, (4, 3)), zorder=1)
 
 
-def _arc(ax, centre, radius, a1, a2, label, label_at, color=MUTED, size=11):
+def _arc(ax: Axes, centre: tuple[float, float], radius: float, a1: float, a2: float, label: str,
+         label_at: tuple[float, float], color: str = MUTED, size: float = 11) -> None:
     ax.add_patch(Arc(centre, 2 * radius, 2 * radius, theta1=math.degrees(a1),
                      theta2=math.degrees(a2), color=color, lw=1.3, zorder=3))
     ax.text(label_at[0], label_at[1], label, color=INK, fontsize=size,
             family='monospace', ha='center', va='center', zorder=6)
 
 
-def _title(ax, x, y, text):
+def _title(ax: Axes, x: float, y: float, text: str) -> None:
     ax.text(x, y, text, fontsize=13, ha='center', color=INK, weight='bold')
 
 
-def _caption(ax, x, y, text, size=10):
+def _caption(ax: Axes, x: float, y: float, text: str, size: float = 10) -> None:
     ax.text(x, y, text, fontsize=size, ha='center', color=MUTED)
 
 
-def _n(value, places=9):
+def _n(value: float, places: int = 9) -> float:
     """Round away floating-point dust, so cos(90°) prints as 0 and not 1.8e-16."""
     return round(value, places) + 0.0
 
 
-def _fmt(value):
+def _fmt(value: float) -> str:
     """Format a coordinate: whole numbers stay short, the rest get 3 decimals."""
     value = _n(value)
     if value == round(value):
@@ -128,7 +140,7 @@ def _fmt(value):
     return f'{value:.3f}'.rstrip('0').rstrip('.')
 
 
-def _save(fig, name):
+def _save(fig: Figure, name: str) -> None:
     fig.savefig(OUT_DIR / name, bbox_inches='tight', pad_inches=0.3, facecolor='white')
     plt.close(fig)
 
@@ -138,12 +150,14 @@ def _save(fig, name):
 # --------------------------------------------------------------------------
 
 
-def arm():
+def arm() -> None:
     """Draw the whole arm with its four frames. Used at the top of the doc."""
+    fig: Figure
+    ax: Axes
     fig, ax = _axes((-1.7, 5.5), (-1.5, 5.0), size=(6.6, 5.4))
 
     _dashed(ax, (0, 0), (1.7, 0))
-    ext = (JOINT2[0] + 1.1 * math.cos(Q1), JOINT2[1] + 1.1 * math.sin(Q1))
+    ext: tuple[float, float] = (JOINT2[0] + 1.1 * math.cos(Q1), JOINT2[1] + 1.1 * math.sin(Q1))
     _dashed(ax, JOINT2, ext)
 
     _link(ax, (0, 0), JOINT2)
@@ -173,13 +187,15 @@ def arm():
     _save(fig, 'arm.svg')
 
 
-def one_joint():
+def one_joint() -> None:
     """Draw the simplest arm at two angles, to show what cos and sin do."""
+    fig: Figure
+    axes: NDArray[np.object_]       # a NumPy array holding one Axes per panel
     fig, axes = plt.subplots(1, 2, figsize=(10.2, 4.6), facecolor='white')
 
     for ax, q1 in zip(axes, (math.radians(30.0), math.radians(60.0))):
         _axes((-1.7, 4.4), (-1.7, 4.2), ax=ax)
-        tip = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
+        tip: tuple[float, float] = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
 
         ax.annotate('', xy=(3.9, 0), xytext=(0, 0),
                     arrowprops={'arrowstyle': '-|>', 'color': GRID, 'lw': 1.2})
@@ -209,12 +225,14 @@ def one_joint():
     _save(fig, 'one_joint.svg')
 
 
-def two_joints():
+def two_joints() -> None:
     """Draw the two-joint arm, showing that q2 is measured from link 1."""
+    fig: Figure
+    ax: Axes
     fig, ax = _axes((-2.0, 6.0), (-1.6, 5.2), size=(6.8, 5.4))
 
     _dashed(ax, (0, 0), (1.8, 0))
-    ext = (JOINT2[0] + 1.5 * math.cos(Q1), JOINT2[1] + 1.5 * math.sin(Q1))
+    ext: tuple[float, float] = (JOINT2[0] + 1.5 * math.cos(Q1), JOINT2[1] + 1.5 * math.sin(Q1))
     _dashed(ax, JOINT2, ext)
     _dashed(ax, JOINT2, (JOINT2[0] + 2.1, JOINT2[1]))
 
@@ -246,19 +264,21 @@ def two_joints():
     _save(fig, 'two_joints.svg')
 
 
-def joining():
+def joining() -> None:
     """Show the chain being joined one link at a time, in three panels."""
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.2), facecolor='white')
 
-    running = Transform2D()
-    steps = [
+    running: Transform2D = Transform2D()
+    steps: list[tuple[str, str, tuple[float, float]]] = [
         ('base_link -> link1', 'link1', (0, 0)),
         ('base_link -> link2', 'link2', JOINT2),
         ('base_link -> gripper', 'gripper', GRIPPER),
     ]
-    links = [Transform2D.rotation(Q1),
-             Transform2D(LINK1_M, 0.0, Q2),
-             Transform2D.translation(LINK2_M, 0.0)]
+    links: list[Transform2D] = [Transform2D.rotation(Q1),
+                                Transform2D(LINK1_M, 0.0, Q2),
+                                Transform2D.translation(LINK2_M, 0.0)]
 
     for ax, (caption, name, point), link in zip(axes, steps, links):
         _axes((-1.4, 4.4), (-2.1, 5.0), ax=ax)
@@ -298,8 +318,10 @@ def joining():
     _save(fig, 'joining.svg')
 
 
-def flipping():
+def flipping() -> None:
     """Show the same relationship read in both directions."""
+    fig: Figure
+    ax: Axes
     fig, ax = _axes((-2.4, 6.6), (-2.4, 4.9), size=(7.0, 5.0))
 
     _link(ax, (0, 0), JOINT2, color=LINK_PALE, width=5)
@@ -308,8 +330,8 @@ def flipping():
     _joint(ax, JOINT2, size=11)
     _gripper(ax, GRIPPER, size=9)
 
-    forward = gripper_in_base(Q1, Q2)
-    back = forward.inverse()
+    forward: Transform2D = gripper_in_base(Q1, Q2)
+    back: Transform2D = forward.inverse()
 
     ax.annotate('', xy=GRIPPER, xytext=(0, 0),
                 arrowprops={'arrowstyle': '-|>', 'color': '#b06fc4', 'lw': 2.0,
@@ -341,15 +363,17 @@ def flipping():
     _save(fig, 'flipping.svg')
 
 
-def carrying():
+def carrying() -> None:
     """Show a point fixed in the gripper frame, at two different arm poses."""
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 2, figsize=(10.2, 4.8), facecolor='white')
 
     for ax, (q1, q2) in zip(axes, [(Q1, Q2), (R1, R2)]):
         _axes((-1.6, 6.4), (-2.6, 5.6), ax=ax)
-        joint2 = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
-        grip = (joint2[0] + LINK2_M * math.cos(q1 + q2),
-                joint2[1] + LINK2_M * math.sin(q1 + q2))
+        joint2: tuple[float, float] = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
+        grip: tuple[float, float] = (joint2[0] + LINK2_M * math.cos(q1 + q2),
+                                     joint2[1] + LINK2_M * math.sin(q1 + q2))
 
         _link(ax, (0, 0), joint2)
         _link(ax, joint2, grip)
@@ -357,7 +381,7 @@ def carrying():
         _joint(ax, joint2, size=11)
         _gripper(ax, grip, size=9)
 
-        tip = gripper_in_base(q1, q2).apply(1.0, 0.0)
+        tip: tuple[float, float] = gripper_in_base(q1, q2).apply(1.0, 0.0)
         _dashed(ax, grip, tip, color='#c9a227')
         ax.plot([tip[0]], [tip[1]], '*', color='#c9a227', ms=17, zorder=5)
         _frame(ax, grip[0], grip[1], q1 + q2, '', length=0.75)
@@ -376,15 +400,17 @@ def carrying():
     _save(fig, 'carrying.svg')
 
 
-def three_joints():
+def three_joints() -> None:
     """Sketch a third joint, to show the pattern does not change."""
+    fig: Figure
+    ax: Axes
     fig, ax = _axes((-2.0, 6.6), (-1.7, 5.4), size=(6.8, 5.2))
 
-    link3_m = 1.0
-    q3 = math.radians(-60.0)
-    joint3 = GRIPPER
-    tip = (joint3[0] + link3_m * math.cos(Q1 + Q2 + q3),
-           joint3[1] + link3_m * math.sin(Q1 + Q2 + q3))
+    link3_m: float = 1.0
+    q3: float = math.radians(-60.0)
+    joint3: tuple[float, float] = GRIPPER
+    tip: tuple[float, float] = (joint3[0] + link3_m * math.cos(Q1 + Q2 + q3),
+                                joint3[1] + link3_m * math.sin(Q1 + Q2 + q3))
 
     _dashed(ax, (0, 0), (1.6, 0))
     _dashed(ax, JOINT2, (JOINT2[0] + 1.2 * math.cos(Q1), JOINT2[1] + 1.2 * math.sin(Q1)))
@@ -417,12 +443,18 @@ def three_joints():
     _save(fig, 'three_joints.svg')
 
 
-def rotation():
+def rotation() -> None:
     """Draw a point being turned about the origin, with the formula."""
+    fig: Figure
+    ax: Axes
     fig, ax = _axes((-3.0, 5.6), (-2.9, 4.7), size=(6.4, 5.4))
 
-    theta = math.radians(45.0)
+    theta: float = math.radians(45.0)
+    px: float
+    py: float
     px, py = 3.0, 1.0
+    qx: float
+    qy: float
     qx, qy = rotate_point(px, py, theta)
 
     for angle, color, name in ((0.0, AXIS_X, 'X'), (math.pi / 2, AXIS_Y, 'Y')):
@@ -431,7 +463,7 @@ def rotation():
         ax.text(4.3 * math.cos(angle), 4.3 * math.sin(angle), name, color=color,
                 fontsize=11, ha='center', va='center', family='monospace')
 
-    radius = math.hypot(px, py)
+    radius: float = math.hypot(px, py)
     ax.add_patch(Arc((0, 0), 2 * radius, 2 * radius,
                      theta1=math.degrees(math.atan2(py, px)),
                      theta2=math.degrees(math.atan2(qy, qx)),
@@ -458,11 +490,13 @@ def rotation():
     _save(fig, 'rotation.svg')
 
 
-def frames():
+def frames() -> None:
     """Show one physical spot measured from two different frames."""
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.8), facecolor='white')
-    grip_t = gripper_in_base(Q1, Q2)
-    seen_from_gripper = grip_t.inverse().apply(*JOINT2)
+    grip_t: Transform2D = gripper_in_base(Q1, Q2)
+    seen_from_gripper: tuple[float, float] = grip_t.inverse().apply(*JOINT2)
 
     for ax, which in zip(axes, ('base_link', 'gripper')):
         _axes((-2.2, 5.4), (-1.9, 5.2), ax=ax)
@@ -485,7 +519,7 @@ def frames():
                     family='monospace', ha='center')
             ax.text(-0.3, JOINT2[1] / 2, '1.5 up', color=AXIS_Y, fontsize=10,
                     family='monospace', ha='right', va='center')
-            answer = f'({_fmt(JOINT2[0])}, {_fmt(JOINT2[1])})'
+            answer: str = f'({_fmt(JOINT2[0])}, {_fmt(JOINT2[1])})'
         else:
             _frame(ax, GRIPPER[0], GRIPPER[1], Q1 + Q2, 'gripper', length=1.1,
                    offset=(1.15, 0.1))
@@ -503,10 +537,12 @@ def frames():
     _save(fig, 'frames.svg')
 
 
-def transform_parts():
+def transform_parts() -> None:
     """Break one transform into the two moves its three numbers describe."""
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.2), facecolor='white')
-    captions = ['start at link1', 'move 3 along link1 X', 'turn by q2 = 60°']
+    captions: list[str] = ['start at link1', 'move 3 along link1 X', 'turn by q2 = 60°']
 
     for step, (ax, caption) in enumerate(zip(axes, captions)):
         _axes((-1.5, 4.8), (-1.9, 4.8), ax=ax)
@@ -539,17 +575,20 @@ def transform_parts():
     _save(fig, 'transform_parts.svg')
 
 
-def order_matters():
+def order_matters() -> None:
     """Turn-then-shift against shift-then-turn, on the same point."""
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.8), facecolor='white')
 
-    point = (2.0, 0.0)
-    shift = (LINK1_M, 0.0)
-    turned = rotate_point(*point, Q2)
-    right = (turned[0] + shift[0], turned[1] + shift[1])
-    moved = (point[0] + shift[0], point[1] + shift[1])
-    wrong = rotate_point(*moved, Q2)
+    point: tuple[float, float] = (2.0, 0.0)
+    shift: tuple[float, float] = (LINK1_M, 0.0)
+    turned: tuple[float, float] = rotate_point(*point, Q2)
+    right: tuple[float, float] = (turned[0] + shift[0], turned[1] + shift[1])
+    moved: tuple[float, float] = (point[0] + shift[0], point[1] + shift[1])
+    wrong: tuple[float, float] = rotate_point(*moved, Q2)
 
+    panels: list[tuple[str, tuple[float, float], tuple[float, float], str, str]]
     panels = [('turn first, then shift', turned, right, '#2b7d76', 'correct'),
               ('shift first, then turn', moved, wrong, '#c0392b', 'wrong')]
 
@@ -584,14 +623,16 @@ def order_matters():
     _save(fig, 'order_matters.svg')
 
 
-def local_facts():
+def local_facts() -> None:
     """Move joint 1 and show that link 2's own description does not change."""
+    fig: Figure
+    axes: NDArray[np.object_]
     fig, axes = plt.subplots(1, 2, figsize=(10.4, 5.0), facecolor='white')
 
     for ax, q1 in zip(axes, (Q1, math.radians(60.0))):
         _axes((-2.0, 5.6), (-2.4, 5.6), ax=ax)
-        joint2 = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
-        grip = gripper_in_base(q1, Q2)
+        joint2: tuple[float, float] = (LINK1_M * math.cos(q1), LINK1_M * math.sin(q1))
+        grip: Transform2D = gripper_in_base(q1, Q2)
 
         _dashed(ax, joint2, (joint2[0] + 1.2 * math.cos(q1),
                              joint2[1] + 1.2 * math.sin(q1)))
@@ -617,6 +658,7 @@ def local_facts():
     _save(fig, 'local_facts.svg')
 
 
+FIGURES: tuple[Callable[[], None], ...]
 FIGURES = (arm, one_joint, two_joints, frames, transform_parts, rotation,
            order_matters, joining, local_facts, flipping, carrying, three_joints)
 

@@ -17,6 +17,7 @@ messages.
 2. [The camera's two message classes](#2-the-cameras-two-message-classes)
    - [2.1 Image: one picture](#21-image-one-picture)
    - [2.2 CameraInfo: the camera's lens](#22-camerainfo-the-cameras-lens)
+   - [2.3 k in detail: what it is, why the camera sends it, and who reads it](#23-k-in-detail-what-it-is-why-the-camera-sends-it-and-who-reads-it)
 3. [The publisher](#3-the-publisher)
 4. [The subscriber](#4-the-subscriber)
 5. [Running it](#5-running-it)
@@ -87,45 +88,44 @@ fields.
 
 ### 2.2 CameraInfo: the camera's lens
 
-A picture on its own does not say how the lens that took it sees the world, and
-a program needs that to turn a pixel into a direction, as the
-[camera and arm example](ros-camera-arm.md) does. So a camera driver publishes a
-`sensor_msgs/CameraInfo` alongside every picture, with the same header. These are
-its fields:
+A picture only says what colour each pixel is. It does not say which direction
+each pixel looks in, and a program needs that to turn a pixel into a direction,
+as the [camera and arm example](ros-camera-arm.md) does, or to work out where a
+point in the room will appear in the picture. Which direction a pixel looks in
+depends on the camera's lens and sensor, and a program that only receives the
+pictures has no way to know those. So a camera driver publishes a
+`sensor_msgs/CameraInfo` alongside every picture, with the same header, and
+that message describes the camera. These are its fields:
 
 | Field | What it holds | This example sends |
 | --- | --- | --- |
 | `header` | when and where, the same as the picture's | the picture's header |
 | `height`, `width` | the picture's size, in pixels | 240, 320 |
-| `k` | the four lens numbers, `fx`, `fy`, `cx` and `cy`, as a 3 × 3 grid | `[277.1, 0, 160, 0, 277.1, 120, 0, 0, 1]` |
-| `distortion_model` | the name of the formula for how the lens bends straight lines | empty |
-| `d` | the numbers for that formula, usually five | empty |
-| `r` | a rotation, used only by stereo cameras, which have two lenses side by side | all zeros |
-| `p` | the lens numbers again, as a 3 × 4 grid, for the picture after its bending has been taken out | all zeros |
+| `k` | the four lens numbers, `fx`, `fy`, `cx` and `cy`, as a 3 × 3 grid: section 2.3 | `[277.1, 0, 160, 0, 277.1, 120, 0, 0, 1]` |
+| `p` | the same lens numbers, as a 3 × 4 grid, for the picture after its lens's bending has been taken out | `k`, with a column of zeros added |
+| `distortion_model` | the name of the formula for how the lens bends straight lines | `plumb_bob`, the usual one |
+| `d` | the numbers for that formula, five for `plumb_bob` | five zeros: no bending |
+| `r` | a turn, used only by stereo cameras, which have two lenses side by side | "no turn": ones down the diagonal |
 | `binning_x`, `binning_y` | how many of the sensor's pixels were joined into each picture pixel | 0, meaning none |
 | `roi` | the region of interest: the part of the sensor the picture came from | all zeros, meaning all of it |
 
-`k` holds the numbers from the
-[camera basics](../camera/basics.md#6-the-lens-as-four-numbers) written out as
-nine numbers, row by row: `[fx, 0, cx, 0, fy, cy, 0, 0, 1]`. The publisher's lens
-sees 60° across, so `fx` and `fy` are 277.1, and the middle of its picture, `cx`
-and `cy`, is at pixel (160, 120). This is one camera info message, as
+This is one camera info message, as
 `ros2 topic echo --once --flow-style /camera/camera_info` printed it, with
 `--flow-style` putting each list on one line:
 
 ```
 header:
   stamp:
-    sec: 1789473173
-    nanosec: 275754000
+    sec: 1789475630
+    nanosec: 805670000
   frame_id: camera
 height: 240
 width: 320
-distortion_model: ''
-d: []
+distortion_model: plumb_bob
+d: [0.0, 0.0, 0.0, 0.0, 0.0]
 k: [277.1, 0.0, 160.0, 0.0, 277.1, 120.0, 0.0, 0.0, 1.0]
-r: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-p: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+r: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+p: [277.1, 0.0, 160.0, 0.0, 0.0, 277.1, 120.0, 0.0, 0.0, 0.0, 1.0, 0.0]
 binning_x: 0
 binning_y: 0
 roi:
@@ -136,14 +136,79 @@ roi:
   do_rectify: false
 ```
 
-This example fills in only the size and `k`, which is all the other programs
-here use, and leaves the rest as a new `CameraInfo()` starts them: empty. A real
-camera's driver fills in every field, from a **calibration**, which measures the
-camera by photographing a printed checkerboard from many angles. A calibrated
-camera usually has the distortion model `plumb_bob`, with five numbers in `d`
-that describe how its lens bends straight lines, `r` set to "no rotation", and
-`p` holding the lens numbers for the corrected picture, which tools such as
-`depth_image_proc` read.
+The publisher's lens bends nothing, so every field that describes bending says
+so: five zeros in `d`, no turn in `r`, and `p` the same as `k`. A real lens does
+bend straight lines a little, so a real camera's driver gets these numbers from
+a **calibration**, which measures the camera by photographing a printed
+checkerboard from many angles. Its `d` then holds five numbers that describe the
+bending, and its `k` and `p` differ slightly.
+
+### 2.3 k in detail: what it is, why the camera sends it, and who reads it
+
+`k` is the most important field in the message. It holds the four lens numbers
+from [section 6 of the camera
+basics](../camera/basics.md#6-the-lens-as-four-numbers): the focal length, `fx`
+and `fy`, which says how zoomed in the camera is, in pixels, and the middle of
+the picture, `cx` and `cy`. For the publisher's lens, which sees 60° across,
+`fx` and `fy` are 277.1, and the middle of its 320 × 240 picture is at pixel
+(160, 120).
+
+**What it is.** The four numbers are laid out in a 3 × 3 grid, called the
+**camera matrix**, or the **intrinsic matrix**, because the numbers are part of
+the camera itself and do not change when it moves:
+
+```
+| fx   0  cx |       | 277.1    0    160 |
+|  0  fy  cy |   =   |    0   277.1  120 |
+|  0   0   1 |       |    0     0      1 |
+```
+
+A message cannot hold a grid, so `k` holds its nine numbers written out row after
+row: `[fx, 0, cx, 0, fy, cy, 0, 0, 1]`. That puts `fx` at `k[0]`, `cx` at
+`k[2]`, `fy` at `k[4]` and `cy` at `k[5]`, which is where a program reading the
+message finds them.
+
+**Why a grid, with those zeros and that 1.** The grid is the camera formula
+from the camera basics, written so that it becomes one multiplication. The
+formula says where a point `(x, y, z)`, measured from the camera, lands in the
+picture:
+
+```
+u = fx · x / z + cx
+v = fy · y / z + cy
+```
+
+Multiplying the grid by the point gives three numbers, `(fx·x + cx·z, fy·y +
+cy·z, z)`, and dividing the first two by the third, `z`, gives exactly `u` and
+`v`. The zeros say that how far a point is to the side does not change how far
+down the picture it lands, and the other way round. The 1 keeps `z` as it is,
+ready for the division. For the point the camera docs work through, `(0.0644,
+-0.0411, 0.340)`, the multiplication gives `(72.245, 29.411, 0.340)`, and
+dividing by 0.340 gives pixel (212.5, 86.5). Writing it as a grid is the
+standard form, which OpenCV and the rest of computer vision use, so every tool
+can read it.
+
+**Why the camera sends it.** Without `k`, a program receiving the pictures knows
+where the ball is in the picture, at pixel (263, 188) for example, but not which
+direction that is from the camera, because the same pixel points in a different
+direction through a wide lens than through a narrow one. The numbers depend on
+the lens and the sensor, so only the camera, or its calibration, can supply them,
+and sending them with every picture means they always match the picture they
+came with.
+
+**Who reads it.** In this repo, the camera and arm example's follower reads
+`k[0]`, `k[4]`, `k[2]` and `k[5]` to turn the ball's pixel into the angles that
+point the arm at it, as its [section
+2](ros-camera-arm.md#2-from-a-pixel-to-an-angle) shows. In real projects, most
+programs read the lens through **image_geometry**, ROS's standard camera
+library. Its `PinholeCameraModel` turns pixels into directions and points into
+pixels, and **depth_image_proc** uses it to turn a depth picture into a point
+cloud, as in the [camera
+area](../camera/one-box-code.md#28-depth_image_proc-the-point-cloud).
+image_geometry reads its lens numbers from `p`, not from `k`, which is why the
+publisher fills in both: a camera info with an empty `p` would give those tools
+a focal length of zero. This package's tests check that image_geometry reads the
+publisher's lens as 277.1, and puts the point above on pixel (212.5, 86.5).
 
 ## 3. The publisher
 
@@ -196,9 +261,10 @@ class CameraPublisher(Node):
 `draw_picture()` draws the picture as a NumPy array, and `picture.tobytes()`
 turns that array into the long list of bytes the message holds. The 10 in
 `create_publisher()` is how many messages ROS keeps waiting if a subscriber is
-slow to take them. The camera info message is filled in and published the same
-way, with the same timestamp, so that a node receiving both knows they belong
-together.
+slow to take them. The camera info message comes from `camera_info()`, a function
+that fills in the fields from section 2.2, and it is published straight after
+the picture, with the same header, so that a node receiving both knows they
+belong together.
 
 ## 4. The subscriber
 

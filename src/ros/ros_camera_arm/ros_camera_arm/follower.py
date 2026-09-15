@@ -60,7 +60,12 @@ class Follower(Node):
         self.publisher = self.create_publisher(JointState, '/joint_states', 10)
 
     def on_camera_info(self, msg: CameraInfo) -> None:
-        """Keep the lens numbers. k holds them in a 3 x 3 grid, row by row."""
+        """Keep the four lens numbers, to turn pixels into angles.
+
+        k holds them in a 3 x 3 grid, written out row by row:
+        [fx, 0, cx,  0, fy, cy,  0, 0, 1]. So fx is k[0], fy is k[4], cx is k[2]
+        and cy is k[5].
+        """
         self.lens = (msg.k[0], msg.k[4], msg.k[2], msg.k[5])
 
     def on_picture(self, msg: Image) -> None:

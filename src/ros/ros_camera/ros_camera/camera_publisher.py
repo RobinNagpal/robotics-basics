@@ -42,6 +42,65 @@ def ball_position(seconds: float) -> tuple[float, float]:
     return u, v
 
 
+def camera_info() -> CameraInfo:
+    """Describe the camera's lens, as a sensor_msgs/CameraInfo message.
+
+    A picture only says what colour each pixel is. It does not say which
+    direction each pixel looks in, and a program needs that to turn a pixel into
+    a direction, or a point in the room into a pixel. That depends on the lens
+    and the sensor, which a program receiving the pictures cannot know, so the
+    camera sends it, in this message, alongside every picture.
+    """
+    info = CameraInfo()
+    info.height, info.width = HEIGHT, WIDTH
+
+    # k: the four lens numbers, arranged as a 3 x 3 grid called the camera
+    # matrix (or intrinsic matrix, because the numbers are part of the camera
+    # itself):
+    #
+    #     | fx   0  cx |
+    #     |  0  fy  cy |
+    #     |  0   0   1 |
+    #
+    # A message cannot hold a grid, so the nine numbers are written out row by
+    # row. That puts fx at k[0], cx at k[2], fy at k[4] and cy at k[5], which is
+    # where programs that read this message look for them.
+    #
+    # The numbers are laid out as a grid, with those zeros and that 1, because
+    # the grid turns the camera formula into one multiplication. Multiply it by
+    # a point (x, y, z), measured from the camera, and you get
+    # (fx * x + cx * z, fy * y + cy * z, z). Divide the first two by the third,
+    # z, and you have u = fx * x / z + cx and v = fy * y / z + cy: the pixel the
+    # point lands on, as in section 6 of the camera basics. The zeros say that
+    # how far a point is to the side does not change how far down the picture
+    # it lands, and the other way round. The 1 keeps z as it is, ready for the
+    # division.
+    info.k = [FX, 0.0, CX,
+              0.0, FY, CY,
+              0.0, 0.0, 1.0]
+
+    # p: the same four numbers, in a 3 x 4 grid, for the picture after its
+    # lens's bending has been taken out. ROS's standard camera tools, such as
+    # image_geometry and depth_image_proc, read their lens numbers from p, not
+    # from k, so a camera must fill it in too. This lens bends nothing, so p is
+    # k with a column of zeros added.
+    info.p = [FX, 0.0, CX, 0.0,
+              0.0, FY, CY, 0.0,
+              0.0, 0.0, 1.0, 0.0]
+
+    # How the lens bends straight lines. 'plumb_bob' is the usual model, with
+    # five numbers in d, and five zeros mean "no bending at all".
+    info.distortion_model = 'plumb_bob'
+    info.d = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+    # r is a turn, used only by stereo cameras, which have two lenses side by
+    # side. A camera with one lens sends "no turn": ones down the diagonal.
+    info.r = [1.0, 0.0, 0.0,
+              0.0, 1.0, 0.0,
+              0.0, 0.0, 1.0]
+    return info
+
+
 def draw_picture(u: float, v: float) -> np.ndarray:
     """Draw the grey picture with the red ball at pixel (u, v).
 
@@ -99,14 +158,10 @@ class CameraPublisher(Node):
         image.data = picture.tobytes()
         self.image_publisher.publish(image)
 
-        # A sensor_msgs/CameraInfo describes the lens. The four lens numbers go
-        # into k, a 3 x 3 grid written out as nine numbers, row by row.
-        info = CameraInfo()
+        # The lens numbers, with the same header as the picture, so that a
+        # program receiving both knows this is the lens that took it.
+        info = camera_info()
         info.header = image.header
-        info.height, info.width = HEIGHT, WIDTH
-        info.k = [FX, 0.0, CX,
-                  0.0, FY, CY,
-                  0.0, 0.0, 1.0]
         self.info_publisher.publish(info)
 
 

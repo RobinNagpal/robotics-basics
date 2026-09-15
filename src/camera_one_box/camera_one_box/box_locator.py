@@ -28,19 +28,32 @@ A few words used in the comments below:
   every frame sits relative to every other one.
 """
 
+# builtin_interfaces.msg.Time is the message type for a timestamp, named TimeMsg
+# here to tell it apart from rclpy's Time, a point in time that can do arithmetic.
+from builtin_interfaces.msg import Time as TimeMsg
 from cv_bridge import CvBridge
+from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from image_geometry import PinholeCameraModel
 import message_filters
+import numpy as np
+from numpy.typing import NDArray
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.publisher import Publisher
 from rclpy.time import Time
 from sensor_msgs.msg import CameraInfo, Image
 from tf2_ros import Buffer, TransformException, TransformListener
 from vision_msgs.msg import Detection3D, Detection3DArray, ObjectHypothesisWithPose
 from visualization_msgs.msg import Marker, MarkerArray
 
-from camera_one_box.measure import depth_to_points, measure_box, to_world, transform_matrix
+from camera_one_box.measure import (
+    BoxMeasurement,
+    depth_to_points,
+    measure_box,
+    to_world,
+    transform_matrix,
+)
 
 
 # What a Node is, and why this class extends it
@@ -71,7 +84,7 @@ from camera_one_box.measure import depth_to_points, measure_box, to_world, trans
 class BoxLocator(Node):
     """Measure the box in every depth picture the camera sends."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Declare the parameters, and connect the subscriptions and publishers."""
         # Register this program with ROS under the name 'box_locator'. That is
         # the name `ros2 node list` shows, and the name at the start of every
@@ -81,9 +94,9 @@ class BoxLocator(Node):
         # Parameters are settings that can be changed from the launch file or
         # the command line, without editing this code. Each line declares one,
         # with its default value, and .value reads what it was actually set to.
-        self.world_frame = self.declare_parameter('world_frame', 'world').value
-        self.table_z = self.declare_parameter('table_z', 0.0).value
-        self.min_height = self.declare_parameter('min_height', 0.01).value
+        self.world_frame: str = self.declare_parameter('world_frame', 'world').value
+        self.table_z: float = self.declare_parameter('table_z', 0.0).value
+        self.min_height: float = self.declare_parameter('min_height', 0.01).value
 
         # A picture arrives as a ROS message: a long list of bytes, plus its
         # width, its height and a note saying what the bytes mean. CvBridge turns
@@ -91,13 +104,13 @@ class BoxLocator(Node):
         # we can do arithmetic on. It is called a bridge because it connects ROS
         # images to OpenCV, the standard picture library, which uses the same
         # arrays.
-        self.bridge = CvBridge()
+        self.bridge: CvBridge = CvBridge()
 
         # PinholeCameraModel holds the camera's lens: the four numbers fx, fy,
         # cx and cy from the basics doc. It is empty for now, and it is filled in
         # from each camera info message as it arrives. "Pinhole" is the name of
         # the simple camera model the basics doc explains.
-        self.camera = PinholeCameraModel()
+        self.camera: PinholeCameraModel = PinholeCameraModel()
 
         # TF keeps track of where every frame is. The Buffer is its memory: it
         # stores every transform it hears about, so that we can ask it later
@@ -107,27 +120,30 @@ class BoxLocator(Node):
         # with. It has to be kept in a variable, even though this code never
         # uses it again, because otherwise Python would throw it away and it
         # would stop listening.
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.tf_buffer: Buffer = Buffer()
+        self.tf_listener: TransformListener = TransformListener(self.tf_buffer, self)
 
         # A depth picture only means something next to the lens that took it,
         # so take them in pairs with matching timestamps. A message_filters
         # Subscriber works like an ordinary subscription, but instead of calling
         # our code for every message, it hands the messages to a filter.
-        depth = message_filters.Subscriber(self, Image, '/camera/depth/image_raw')
-        info = message_filters.Subscriber(self, CameraInfo, '/camera/camera_info')
+        depth: message_filters.Subscriber = message_filters.Subscriber(
+            self, Image, '/camera/depth/image_raw')
+        info: message_filters.Subscriber = message_filters.Subscriber(
+            self, CameraInfo, '/camera/camera_info')
         # The TimeSynchronizer is that filter. It holds on to messages until it
         # has a depth picture and a camera info with exactly the same timestamp,
         # and then calls on_picture with both. queue_size is how many unmatched
         # messages it keeps while it waits for their partners.
-        self.pairs = message_filters.TimeSynchronizer([depth, info], queue_size=10)
+        self.pairs: message_filters.TimeSynchronizer = message_filters.TimeSynchronizer(
+            [depth, info], queue_size=10)
         self.pairs.registerCallback(self.on_picture)
 
         # A publisher announces that this node will send messages of one type on
         # one topic. The 10 is how many messages ROS keeps waiting if a
         # subscriber is slow to take them, before it starts dropping old ones.
-        self.detections = self.create_publisher(Detection3DArray, 'detections', 10)
-        self.markers = self.create_publisher(MarkerArray, 'detection_markers', 10)
+        self.detections: Publisher = self.create_publisher(Detection3DArray, 'detections', 10)
+        self.markers: Publisher = self.create_publisher(MarkerArray, 'detection_markers', 10)
 
     def on_picture(self, depth_msg: Image, info_msg: CameraInfo) -> None:
         """Measure the box in one depth picture, and publish what was found."""
@@ -139,7 +155,8 @@ class BoxLocator(Node):
         # Turn the depth message into a NumPy array. '32FC1' means one 32-bit
         # decimal number per pixel, which here is the distance in metres. Asking
         # for it by name makes cv_bridge check that the picture really is that.
-        depth = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
+        depth: NDArray[np.float32] = self.bridge.imgmsg_to_cv2(
+            depth_msg, desired_encoding='32FC1')
 
         try:
             # Ask TF where the camera was, measured in the room. Every picture
@@ -148,7 +165,7 @@ class BoxLocator(Node):
             # from that frame into the world frame. Time() means "the latest you
             # have". The camera is bolted to the world, so its transform never
             # changes and the latest one is the right one.
-            tf = self.tf_buffer.lookup_transform(
+            tf: TransformStamped = self.tf_buffer.lookup_transform(
                 self.world_frame, depth_msg.header.frame_id, Time())
         except TransformException as error:
             # For the first moment after starting, TF may not have heard about
@@ -163,15 +180,18 @@ class BoxLocator(Node):
         # rotation, which way it is turned. The rotation is a quaternion, four
         # numbers that describe a turn. transform_matrix() turns both into the
         # camera_to_world table from the one-box intro.
-        t, q = tf.transform.translation, tf.transform.rotation
-        camera_to_world = transform_matrix((t.x, t.y, t.z), (q.x, q.y, q.z, q.w))
+        t: Vector3 = tf.transform.translation
+        q: Quaternion = tf.transform.rotation
+        camera_to_world: NDArray[np.float64] = transform_matrix(
+            (t.x, t.y, t.z), (q.x, q.y, q.z, q.w))
 
         # The maths, from measure.py: every pixel becomes a point measured from
         # the camera, those points are moved into the room, and the box is found
         # among them and measured.
-        points = depth_to_points(
+        points: NDArray[np.float64] = depth_to_points(
             depth, self.camera.fx(), self.camera.fy(), self.camera.cx(), self.camera.cy())
-        box = measure_box(to_world(points, camera_to_world), self.table_z, self.min_height)
+        box: BoxMeasurement | None = measure_box(
+            to_world(points, camera_to_world), self.table_z, self.min_height)
         if box is None:
             self.get_logger().info('Nothing is standing on the table.', throttle_duration_sec=2.0)
             return
@@ -185,12 +205,12 @@ class BoxLocator(Node):
         # it knows exactly which moment it describes.
         self.publish(box, depth_msg.header.stamp)
 
-    def publish(self, box, stamp) -> None:
+    def publish(self, box: BoxMeasurement, stamp: TimeMsg) -> None:
         """Publish the box as a detection, and as a marker RViz can draw."""
         # A Detection3D is the standard ROS message for "I found something, and
         # here it is". Every message that carries a position has a header, which
         # says which frame the numbers are measured in and when they were true.
-        detection = Detection3D()
+        detection: Detection3D = Detection3D()
         detection.header.frame_id = self.world_frame
         detection.header.stamp = stamp
         # bbox is the bounding box: the smallest box that holds the object,
@@ -204,7 +224,7 @@ class BoxLocator(Node):
         # A detection also says what the object is and how sure we are, as a
         # hypothesis: a label, and a score from 0 to 1. This node only ever
         # looks for one thing, so it is always a 'box', and always certain.
-        hypothesis = ObjectHypothesisWithPose()
+        hypothesis: ObjectHypothesisWithPose = ObjectHypothesisWithPose()
         hypothesis.hypothesis.class_id = 'box'
         hypothesis.hypothesis.score = 1.0
         hypothesis.pose.pose = detection.bbox.center
@@ -216,7 +236,7 @@ class BoxLocator(Node):
         # A Marker is a shape for RViz to draw. The namespace and id name this
         # marker, so each new message replaces the old cube instead of adding
         # another one. ADD means "add it, or change it if it is already there".
-        marker = Marker()
+        marker: Marker = Marker()
         marker.header = detection.header
         marker.ns, marker.id = 'box', 0
         marker.type, marker.action = Marker.CUBE, Marker.ADD
@@ -228,11 +248,11 @@ class BoxLocator(Node):
         self.markers.publish(MarkerArray(markers=[marker]))
 
 
-def main(args=None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Run the node until Ctrl-C."""
     # Start ROS for this program. This has to happen before any node is made.
     rclpy.init(args=args)
-    node = BoxLocator()
+    node: BoxLocator = BoxLocator()
     try:
         # spin() keeps the program running, waiting for messages and calling
         # the callbacks, such as on_picture, as they arrive. It only returns

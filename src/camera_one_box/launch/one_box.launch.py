@@ -52,21 +52,21 @@ def generate_launch_description() -> LaunchDescription:
     # config folders into the package's "share" folder, inside install/.
     # FindPackageShare finds that folder, and PathJoinSubstitution builds a path
     # inside it, so this works wherever the workspace is.
-    share = FindPackageShare('camera_one_box')
-    world = PathJoinSubstitution([share, 'worlds', 'one_box.sdf'])
-    description = PathJoinSubstitution([share, 'urdf', 'camera.urdf.xacro'])
-    bridge_config = PathJoinSubstitution([share, 'config', 'bridge.yaml'])
-    rviz_config = PathJoinSubstitution([share, 'config', 'one_box.rviz'])
+    share: FindPackageShare = FindPackageShare('camera_one_box')
+    world: PathJoinSubstitution = PathJoinSubstitution([share, 'worlds', 'one_box.sdf'])
+    description: PathJoinSubstitution = PathJoinSubstitution([share, 'urdf', 'camera.urdf.xacro'])
+    bridge_config: PathJoinSubstitution = PathJoinSubstitution([share, 'config', 'bridge.yaml'])
+    rviz_config: PathJoinSubstitution = PathJoinSubstitution([share, 'config', 'one_box.rviz'])
     # Gazebo keeps its own clock, which starts at zero and can run slower or
     # faster than real time. Every node is told to use that clock, which it
     # reads from the /clock topic, so that the timestamps on the pictures and on
     # TF all agree.
-    sim_time = {'use_sim_time': True}
+    sim_time: dict[str, bool] = {'use_sim_time': True}
 
     # Launch arguments are the settings you can pass on the command line, as
     # name:=value. Each one is declared here with its default, and read further
     # down with LaunchConfiguration('name').
-    arguments = [
+    arguments: list[DeclareLaunchArgument] = [
         DeclareLaunchArgument('rviz', default_value='true', description='Open RViz.'),
         DeclareLaunchArgument(
             'gui', default_value='false',
@@ -79,7 +79,7 @@ def generate_launch_description() -> LaunchDescription:
     ]
     # The same settings, written as arguments for xacro, so that they reach the
     # camera description: xacro width:=320 height:=240 hfov_deg:=60.
-    camera_settings = [
+    camera_settings: list[str | LaunchConfiguration] = [
         ' width:=', LaunchConfiguration('width'),
         ' height:=', LaunchConfiguration('height'),
         ' hfov_deg:=', LaunchConfiguration('hfov_deg'),
@@ -89,7 +89,7 @@ def generate_launch_description() -> LaunchDescription:
     # file. An environment variable is a setting every program started from here
     # can read, and GZ_SIM_RESOURCE_PATH is the list of folders Gazebo searches
     # for files such as textures and models.
-    resource_path = AppendEnvironmentVariable(
+    resource_path: AppendEnvironmentVariable = AppendEnvironmentVariable(
         'GZ_SIM_RESOURCE_PATH', PathJoinSubstitution([share, 'worlds']))
 
     # Node(...) starts one ROS program: the executable named here, from the
@@ -102,7 +102,7 @@ def generate_launch_description() -> LaunchDescription:
     # says to keep that as plain text. Without it, the launch system would try
     # to read the description as YAML, the format settings are usually written
     # in, and the XML would not make sense as YAML.
-    robot_state_publisher = Node(
+    robot_state_publisher: Node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         parameters=[sim_time, {
@@ -115,7 +115,7 @@ def generate_launch_description() -> LaunchDescription:
     # with ros_gz_sim for starting Gazebo. gz_args are the options for Gazebo
     # itself: -s runs the Gazebo server only, with no window, -r starts the
     # simulation straight away instead of paused, and -v 1 prints errors only.
-    gazebo = IncludeLaunchDescription(
+    gazebo: IncludeLaunchDescription = IncludeLaunchDescription(
         PathJoinSubstitution([FindPackageShare('ros_gz_sim'), 'launch', 'gz_sim.launch.py']),
         launch_arguments={'gz_args': ['-r -s -v 1 ', world]}.items(),
     )
@@ -123,7 +123,7 @@ def generate_launch_description() -> LaunchDescription:
     # ExecuteProcess runs an ordinary command, not a ROS node. This one opens
     # Gazebo's window, but only if gui:=true was passed: IfCondition makes an
     # action happen only when a setting is true.
-    gazebo_window = ExecuteProcess(
+    gazebo_window: ExecuteProcess = ExecuteProcess(
         cmd=['gz', 'sim', '-g', '-v', '1'],
         condition=IfCondition(LaunchConfiguration('gui')),
     )
@@ -133,7 +133,7 @@ def generate_launch_description() -> LaunchDescription:
     # robot_description topic, which robot_state_publisher publishes, so Gazebo
     # and ROS are guaranteed to use the same description. The world name must
     # match <world name="one_box"> in the world file.
-    spawn_camera = Node(
+    spawn_camera: Node = Node(
         package='ros_gz_sim',
         executable='create',
         arguments=['-world', 'one_box', '-topic', 'robot_description', '-name', 'camera_stand'],
@@ -142,7 +142,7 @@ def generate_launch_description() -> LaunchDescription:
 
     # Gazebo has its own message system, separate from ROS. The bridge copies
     # messages across, topic by topic, as listed in config/bridge.yaml.
-    bridge = Node(
+    bridge: Node = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         parameters=[sim_time, {'config_file': bridge_config}],
@@ -161,7 +161,7 @@ def generate_launch_description() -> LaunchDescription:
     # depth_image_proc expects rectified pictures, meaning pictures with the
     # lens's bending taken out. Gazebo's lens has no distortion, so its raw
     # pictures are already rectified.
-    point_cloud = ComposableNodeContainer(
+    point_cloud: ComposableNodeContainer = ComposableNodeContainer(
         name='point_cloud_container',
         namespace='',
         package='rclcpp_components',
@@ -182,7 +182,7 @@ def generate_launch_description() -> LaunchDescription:
 
     # The project's own node. output='screen' makes its messages appear in the
     # terminal, which is where it prints what it measures.
-    box_locator = Node(
+    box_locator: Node = Node(
         package='camera_one_box',
         executable='box_locator',
         parameters=[sim_time],
@@ -191,7 +191,7 @@ def generate_launch_description() -> LaunchDescription:
 
     # RViz, the 3D viewer, opened with the saved layout in config/one_box.rviz
     # (-d names the layout file), unless rviz:=false was passed.
-    rviz = Node(
+    rviz: Node = Node(
         package='rviz2',
         executable='rviz2',
         arguments=['-d', rviz_config],

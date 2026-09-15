@@ -29,7 +29,7 @@ from sensor_msgs.msg import CameraInfo, Image
 from tf2_msgs.msg import TFMessage
 
 # The camera topics to record, and the type of message each one carries.
-TOPICS = {
+TOPICS: dict[str, type] = {
     '/camera/image_raw': Image,
     '/camera/depth/image_raw': Image,
     '/camera/camera_info': CameraInfo,
@@ -41,13 +41,13 @@ TOPICS = {
 class SaveSnapshot(Node):
     """Write one synchronised set of camera messages, plus /tf_static, to a bag."""
 
-    def __init__(self, output: str):
+    def __init__(self, output: str) -> None:
         """Open the bag, and subscribe to the camera and the static transforms."""
         super().__init__('save_snapshot')
 
         # rosbag2_py is the Python side of ros2 bag, the recording tool. A
         # SequentialWriter writes messages into a bag one after another.
-        self.writer = rosbag2_py.SequentialWriter()
+        self.writer: rosbag2_py.SequentialWriter = rosbag2_py.SequentialWriter()
         self.writer.open(
             # Where to write, and in which file format. uri is the folder the
             # bag goes in, and MCAP is the standard format for ROS 2 bags.
@@ -66,8 +66,8 @@ class SaveSnapshot(Node):
                 id=0, name=name, type=f'{kind.__module__.split(".")[0]}/msg/{kind.__name__}',
                 serialization_format='cdr'))
 
-        self.tf_static = None
-        self.done = False
+        self.tf_static: TFMessage | None = None
+        self.done: bool = False
 
         # /tf_static holds the transforms that never change, such as where the
         # camera is bolted. robot_state_publisher sends them once, when it
@@ -75,16 +75,17 @@ class SaveSnapshot(Node):
         # later. A subscriber only gets that kept message if it asks for it, and
         # this QoS setting ("quality of service") is how it asks: TRANSIENT_LOCAL
         # means "also give me the message you kept from before I joined".
-        latched = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        latched: QoSProfile = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(TFMessage, '/tf_static', self.on_tf_static, latched)
 
         # The camera's three topics, taken together: the TimeSynchronizer waits
         # until it has one message on each with the same timestamp, and then
         # calls on_capture with all three. box_locator.py explains this in more
         # detail.
-        subscribers = [message_filters.Subscriber(self, kind, name)
-                       for name, kind in TOPICS.items()]
-        self.capture = message_filters.TimeSynchronizer(subscribers, queue_size=10)
+        subscribers: list[message_filters.Subscriber] = [
+            message_filters.Subscriber(self, kind, name) for name, kind in TOPICS.items()]
+        self.capture: message_filters.TimeSynchronizer = message_filters.TimeSynchronizer(
+            subscribers, queue_size=10)
         self.capture.registerCallback(self.on_capture)
 
     def on_tf_static(self, msg: TFMessage) -> None:
@@ -99,26 +100,33 @@ class SaveSnapshot(Node):
             return
         # A bag stores each message's time as one whole number of nanoseconds.
         # A ROS timestamp is kept as whole seconds plus nanoseconds, so join them.
-        stamp = depth.header.stamp.sec * 10**9 + depth.header.stamp.nanosec
+        stamp: int = depth.header.stamp.sec * 10**9 + depth.header.stamp.nanosec
         # serialize_message turns a message into the bytes ROS sends between
         # nodes, which is what a bag stores. Reading the bag back turns the bytes
         # into the same message again.
+        #
+        # rosbag2_py's type information says write() takes the data as a str,
+        # but it takes the bytes that serialize_message returns, and that is what
+        # ROS's own examples pass it. "type: ignore" tells mypy, the type
+        # checker, not to report that one mismatch.
         for name, msg in zip(TOPICS, (colour, depth, info)):
-            self.writer.write(name, serialize_message(msg), stamp)
-        self.writer.write('/tf_static', serialize_message(self.tf_static), stamp)
+            data: bytes = serialize_message(msg)
+            self.writer.write(name, data, stamp)  # type: ignore[call-overload]
+        tf_data: bytes = serialize_message(self.tf_static)
+        self.writer.write('/tf_static', tf_data, stamp)  # type: ignore[call-overload]
         self.done = True
 
 
-def main(args=None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Record one capture into the folder named on the command line."""
     # ros2 run can add its own arguments after --ros-args. Take those out, so
     # that only ours, the output folder, is left.
-    argv = rclpy.utilities.remove_ros_args(sys.argv if args is None else args)
+    argv: list[str] = rclpy.utilities.remove_ros_args(sys.argv if args is None else args)
     if len(argv) != 2:
         print('usage: ros2 run camera_one_box save_snapshot <output folder>')
         sys.exit(2)
     rclpy.init(args=args)
-    node = SaveSnapshot(argv[1])
+    node: SaveSnapshot = SaveSnapshot(argv[1])
     try:
         # spin_once() waits up to half a second for a message, handles it by
         # calling the right callback, and returns. Looping on it, rather than

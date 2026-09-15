@@ -18,6 +18,9 @@ from dataclasses import dataclass
 # NumPy does arithmetic on whole arrays at once. A depth picture is a 240 x 320
 # array, and one line of NumPy works on all 76,800 pixels without a Python loop.
 import numpy as np
+# NDArray[...] is how a type hint names a NumPy array, and what is inside it:
+# NDArray[np.float32] is an array of 32-bit decimal numbers.
+from numpy.typing import NDArray
 # SciPy's Rotation turns between the different ways of writing down a turn,
 # such as the quaternion TF uses and the 3 x 3 table the maths needs.
 from scipy.spatial.transform import Rotation
@@ -38,7 +41,8 @@ class BoxMeasurement:
     points: int        # how many points landed on its top
 
 
-def depth_to_points(depth: np.ndarray, fx: float, fy: float, cx: float, cy: float) -> np.ndarray:
+def depth_to_points(depth: NDArray[np.float32], fx: float, fy: float,
+                    cx: float, cy: float) -> NDArray[np.float64]:
     """Turn a whole depth picture into points measured from the camera.
 
     This is section 1.1 of docs/camera/one-box-intro.md, done for every pixel
@@ -50,22 +54,27 @@ def depth_to_points(depth: np.ndarray, fx: float, fy: float, cx: float, cy: floa
     Gazebo, like the doc, measures pixel positions from the pixel's top-left
     corner, so the middle of a pixel is at +0.5.
     """
+    rows: int
+    cols: int
     rows, cols = depth.shape
     # np.mgrid makes two arrays the same size as the picture: one holding each
     # pixel's row number, and one holding its column number. Adding 0.5 moves
     # every number from the pixel's corner to its middle. So v and u are the
     # pixel positions of every pixel at once, ready for the formulas below.
+    v: NDArray[np.float64]
+    u: NDArray[np.float64]
     v, u = np.mgrid[0:rows, 0:cols] + 0.5
     # The two formulas from the doc. Because u, v and depth are whole arrays,
     # each line works out x or y for every pixel in one go.
-    x = (u - cx) * depth / fx
-    y = (v - cy) * depth / fy
+    x: NDArray[np.float64] = (u - cx) * depth / fx
+    y: NDArray[np.float64] = (v - cy) * depth / fy
     # np.dstack puts the three arrays together, so that each pixel holds its
     # three numbers side by side: (x, y, z), where z is the depth itself.
     return np.dstack([x, y, depth])
 
 
-def transform_matrix(translation, rotation_xyzw) -> np.ndarray:
+def transform_matrix(translation: tuple[float, float, float],
+                     rotation_xyzw: tuple[float, float, float, float]) -> NDArray[np.float64]:
     """Build camera_to_world as a 4 x 4 matrix, from what TF gives.
 
     TF stores a transform as a translation and a quaternion. The first three
@@ -75,7 +84,7 @@ def transform_matrix(translation, rotation_xyzw) -> np.ndarray:
     # Start from a 4 x 4 table with ones down the diagonal and zeros elsewhere,
     # which is a transform that does nothing. Its bottom row, 0 0 0 1, is then
     # already right.
-    matrix = np.eye(4)
+    matrix: NDArray[np.float64] = np.eye(4)
     # Fill the top-left 3 x 3 with the rotation. from_quat reads the quaternion,
     # four numbers in the order x, y, z, w, which is the order TF uses, and
     # as_matrix writes the same turn as three columns: the camera's three axes.
@@ -85,11 +94,12 @@ def transform_matrix(translation, rotation_xyzw) -> np.ndarray:
     return matrix
 
 
-def to_world(points: np.ndarray, camera_to_world: np.ndarray) -> np.ndarray:
+def to_world(points: NDArray[np.float64],
+             camera_to_world: NDArray[np.float64]) -> NDArray[np.float64]:
     """Move points from the camera's axes into the room's. Returns an N x 3 array."""
     # Lay the points out as one long list, one row per point with three numbers
     # in it. The -1 asks NumPy to work out how many rows that makes.
-    flat = points.reshape(-1, 3)
+    flat: NDArray[np.float64] = points.reshape(-1, 3)
     # Move every point at once. @ is matrix multiplication: it turns each point
     # from the camera's axes into the room's, and .T lays the table on its side
     # so that it fits points written as rows. Adding the camera's position then
@@ -99,8 +109,8 @@ def to_world(points: np.ndarray, camera_to_world: np.ndarray) -> np.ndarray:
     return flat @ camera_to_world[:3, :3].T + camera_to_world[:3, 3]
 
 
-def measure_box(points_in_world: np.ndarray, table_z: float = 0.0,
-                min_height: float = 0.01, top_tolerance: float = 0.001):
+def measure_box(points_in_world: NDArray[np.float64], table_z: float = 0.0,
+                min_height: float = 0.01, top_tolerance: float = 0.001) -> BoxMeasurement | None:
     """Find the box among the points and measure it. Returns None if nothing stands up.
 
     :param points_in_world: N x 3 points in the room, NaN where there was no reading.
@@ -114,17 +124,17 @@ def measure_box(points_in_world: np.ndarray, table_z: float = 0.0,
     # them, any(axis=1) flags a point if any of its three numbers is NaN, and ~
     # turns that round into "this point is fine". Indexing with a list of
     # True/False values keeps only the rows marked True.
-    valid = ~np.isnan(points_in_world).any(axis=1)
-    points = points_in_world[valid]
+    valid: NDArray[np.bool_] = ~np.isnan(points_in_world).any(axis=1)
+    points: NDArray[np.float64] = points_in_world[valid]
     # points[:, 2] is the third number of every point: its height in the room.
     # Keep the points standing more than min_height above the table.
-    standing = points[points[:, 2] > table_z + min_height]
+    standing: NDArray[np.float64] = points[points[:, 2] > table_z + min_height]
     if len(standing) == 0:
         return None
     # The highest point is the top of the box. Keep every point within
     # top_tolerance of it, which leaves out the lower strip of the box's side.
-    top_z = standing[:, 2].max()
-    top = standing[standing[:, 2] > top_z - top_tolerance]
+    top_z: float = float(standing[:, 2].max())
+    top: NDArray[np.float64] = standing[standing[:, 2] > top_z - top_tolerance]
     # The middle of the top is the average of its points along x and along y.
     # np.ptp, "peak to peak", is the largest value minus the smallest, which is
     # how far the top spreads in each direction.

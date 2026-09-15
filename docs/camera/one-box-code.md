@@ -223,11 +223,11 @@ from sensor_msgs.msg import Image
 
 
 class Watcher(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('watcher')                        # the node's name
         self.create_subscription(Image, '/camera/image_raw', self.on_picture, 10)
 
-    def on_picture(self, msg):                             # a callback
+    def on_picture(self, msg: Image) -> None:              # a callback
         self.get_logger().info(f'a {msg.width} x {msg.height} picture, encoded as {msg.encoding}')
 
 
@@ -248,6 +248,13 @@ argument of `create_subscription()`, the 10, is how many messages ROS keeps
 waiting if the callback is slow, before it starts dropping the oldest ones. The
 box locator in `box_locator.py` is built the same way, only with more to do in
 its callback.
+
+The code in this doc, and in the project, writes down the **type** of every value
+with Python's type hints, as the [ROS intro explains in section
+2](../ros/ros-intro.md#2-nodes-topics-and-messages). `msg: Image` says that the
+callback receives an `Image` message, and `-> None` says that the method gives
+nothing back. Python does not check them when the program runs. They are there so
+that the reader knows what every value is without having to work it out.
 
 ### 2.2 Launch files: starting everything together
 
@@ -316,16 +323,18 @@ In Python, the library is `tf2_ros`. A `Buffer` stores the transforms, a
 `lookup_transform()` answers the question:
 
 ```python
+from geometry_msgs.msg import TransformStamped
 from rclpy.time import Time
 from tf2_ros import Buffer, TransformListener
 
-tf_buffer = Buffer()
-tf_listener = TransformListener(tf_buffer, node)     # node: the node to listen with
-tf = tf_buffer.lookup_transform('world', 'camera_optical_frame', Time())
+tf_buffer: Buffer = Buffer()
+tf_listener: TransformListener = TransformListener(tf_buffer, node)   # node: the node to listen with
+tf: TransformStamped = tf_buffer.lookup_transform('world', 'camera_optical_frame', Time())
 ```
 
 The answer is the transform that moves a point from the second frame into the
-first, and `Time()` asks for the latest one known. TF gives the turn as a
+first, as a `TransformStamped` message, and `Time()` asks for the latest one
+known. TF gives the turn as a
 **quaternion**, four numbers `(x, y, z, w)` that describe a rotation without the
 awkward cases three angles have. `tf2_geometry_msgs` adds the step that moves one
 point with a transform, which section 3.3 uses.
@@ -366,12 +375,16 @@ the pixels, the code needs them as a NumPy array, with one row of the array for
 each row of pixels, and **cv_bridge** does that conversion. It is called a bridge
 because it connects ROS pictures to OpenCV, the standard library for pictures,
 which uses the same arrays. The second argument names the encoding the code
-expects, so cv_bridge can check the picture really is that:
+expects, so cv_bridge can check the picture really is that. `'32FC1'` means one
+32-bit decimal number in each pixel, so the array's type is
+`NDArray[np.float32]`: a NumPy array of 32-bit decimal numbers.
 
 ```python
 from cv_bridge import CvBridge
+import numpy as np
+from numpy.typing import NDArray
 
-depth = CvBridge().imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
+depth: NDArray[np.float32] = CvBridge().imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
 depth[86, 212]           # 0.34: the depth reading at row 86, column 212, in metres
 ```
 
@@ -385,7 +398,7 @@ section 3.2 uses.
 ```python
 from image_geometry import PinholeCameraModel
 
-camera = PinholeCameraModel()
+camera: PinholeCameraModel = PinholeCameraModel()
 camera.from_camera_info(info_msg)
 camera.fx(), camera.cx()         # (277.1..., 160.0)
 ```
@@ -404,10 +417,13 @@ subscriber with the same timestamp, and then calls one callback with all of them
 ```python
 import message_filters
 
-depth = message_filters.Subscriber(node, Image, '/camera/depth/image_raw')
-info = message_filters.Subscriber(node, CameraInfo, '/camera/camera_info')
-pairs = message_filters.TimeSynchronizer([depth, info], queue_size=10)
-pairs.registerCallback(on_picture)       # on_picture(depth_msg, info_msg)
+depth: message_filters.Subscriber = message_filters.Subscriber(
+    node, Image, '/camera/depth/image_raw')
+info: message_filters.Subscriber = message_filters.Subscriber(
+    node, CameraInfo, '/camera/camera_info')
+pairs: message_filters.TimeSynchronizer = message_filters.TimeSynchronizer(
+    [depth, info], queue_size=10)
+pairs.registerCallback(on_picture)       # on_picture(depth_msg: Image, info_msg: CameraInfo)
 ```
 
 Gazebo stamps all of a camera's messages with exactly the same time, so an exact
@@ -520,17 +536,23 @@ depth picture, the camera info with the four lens numbers, and the static
 transforms that say where the camera is.
 
 ```python
+from typing import Any
+
 import rosbag2_py
 from rclpy.serialization import deserialize_message
 from rosidl_runtime_py.utilities import get_message
 
-reader = rosbag2_py.SequentialReader()
+reader: rosbag2_py.SequentialReader = rosbag2_py.SequentialReader()
 reader.open(rosbag2_py.StorageOptions(uri='src/camera_one_box/test/data/one_box',
                                       storage_id='mcap'),
             rosbag2_py.ConverterOptions('', ''))
-types = {topic.name: topic.type for topic in reader.get_all_topics_and_types()}
-capture = {}
+# Each topic's message type, by name, such as 'sensor_msgs/msg/Image'.
+types: dict[str, str] = {topic.name: topic.type for topic in reader.get_all_topics_and_types()}
+# Each topic's message. They are of different classes, so their type is Any.
+capture: dict[str, Any] = {}
 while reader.has_next():
+    topic: str
+    data: bytes
     topic, data, _ = reader.read_next()
     capture[topic] = deserialize_message(data, get_message(types[topic]))
 print(sorted(capture))
@@ -552,19 +574,20 @@ intro](one-box-intro.md#11-pixel-plus-depth-gives-back-the-point), and it prints
 the same answer.
 
 ```python
-def pixel_to_point(u, v, depth, fx, fy, cx, cy):
+def pixel_to_point(u: float, v: float, depth: float, fx: float, fy: float,
+                   cx: float, cy: float) -> tuple[float, float, float]:
     """Turn one pixel and its depth reading into a 3D point, measured from the camera."""
-    pixels_right = u - cx             # step 1: how far right of the middle, in pixels
-    pixels_down = v - cy              #         how far below the middle, in pixels
-    size_across = depth / fx          # step 2: how much one pixel covers, in metres
-    size_down = depth / fy
-    x = pixels_right * size_across    # step 3: pixels into metres
-    y = pixels_down * size_down
-    z = depth                         # step 4: straight ahead is the depth itself
+    pixels_right: float = u - cx      # step 1: how far right of the middle, in pixels
+    pixels_down: float = v - cy       #         how far below the middle, in pixels
+    size_across: float = depth / fx   # step 2: how much one pixel covers, in metres
+    size_down: float = depth / fy
+    x: float = pixels_right * size_across    # step 3: pixels into metres
+    y: float = pixels_down * size_down
+    z: float = depth                  # step 4: straight ahead is the depth itself
     return x, y, z
 
 
-x, y, z = pixel_to_point(u=212.5, v=86.5, depth=0.340, fx=277.1, fy=277.1, cx=160, cy=120)
+x, y, z = pixel_to_point(u=212.5, v=86.5, depth=0.340, fx=277.1, fy=277.1, cx=160.0, cy=120.0)
 print(f'x = {x:+.4f} m, y = {y:+.4f} m, z = {z:+.4f} m')
 ```
 
@@ -586,15 +609,20 @@ message into a NumPy array.
 from cv_bridge import CvBridge
 from image_geometry import PinholeCameraModel
 
-camera = PinholeCameraModel()
-camera.from_camera_info(capture['/camera/camera_info'])        # fx, fy, cx, cy
-depth = CvBridge().imgmsg_to_cv2(capture['/camera/depth/image_raw'],
-                                 desired_encoding='32FC1')
+import numpy as np
+from numpy.typing import NDArray
 
-u, v = 212.5, 86.5
-d = float(depth[int(v), int(u)])                   # 0.340, read from the depth picture
-ray = camera.project_pixel_to_3d_ray((u, v))       # the direction, one metre long
-point = [c * d / ray[2] for c in ray]              # stretched until it is d ahead
+camera: PinholeCameraModel = PinholeCameraModel()
+camera.from_camera_info(capture['/camera/camera_info'])        # fx, fy, cx, cy
+depth: NDArray[np.float32] = CvBridge().imgmsg_to_cv2(capture['/camera/depth/image_raw'],
+                                                      desired_encoding='32FC1')
+
+u: float = 212.5
+v: float = 86.5
+d: float = float(depth[int(v), int(u)])            # 0.340, read from the depth picture
+# The direction, as (x, y, z), one metre long.
+ray: tuple[float, float, float] = camera.project_pixel_to_3d_ray((u, v))
+point: list[float] = [c * d / ray[2] for c in ray]  # stretched until it is d ahead
 print(f'x = {point[0]:+.4f} m, y = {point[1]:+.4f} m, z = {point[2]:+.4f} m')
 ```
 
@@ -611,8 +639,15 @@ walk from [section 1.2 of the intro](one-box-intro.md#12-where-the-camera-is)
 out in full, with the four columns of `camera_to_world` typed in by hand.
 
 ```python
-def camera_to_room(point, right, down, forward, position):
+def camera_to_room(point: tuple[float, float, float],
+                   right: tuple[float, float, float],
+                   down: tuple[float, float, float],
+                   forward: tuple[float, float, float],
+                   position: tuple[float, float, float]) -> tuple[float, float, float]:
     """Start at the camera, then walk x along its right, y along its down, z along its forward."""
+    x: float
+    y: float
+    z: float
     x, y, z = point
     return (
         position[0] + x * right[0] + y * down[0] + z * forward[0],
@@ -621,12 +656,15 @@ def camera_to_room(point, right, down, forward, position):
     )
 
 
-right = (1, 0, 0)         # the first three columns of camera_to_world:
-down = (0, -1, 0)         # which way the camera's right, down and forward
-forward = (0, 0, -1)      # point in the room
-position = (0, 0, 0.40)   # the last column: where the camera is
+# The first three columns of camera_to_world: which way the camera's right,
+# down and forward point in the room.
+right: tuple[float, float, float] = (1.0, 0.0, 0.0)
+down: tuple[float, float, float] = (0.0, -1.0, 0.0)
+forward: tuple[float, float, float] = (0.0, 0.0, -1.0)
+# The last column: where the camera is.
+position: tuple[float, float, float] = (0.0, 0.0, 0.40)
 
-room = camera_to_room((0.0644, -0.0411, 0.340), right, down, forward, position)
+room: tuple[float, float, float] = camera_to_room((0.0644, -0.0411, 0.340), right, down, forward, position)
 print(f'in the room: x = {room[0]:+.4f} m, y = {room[1]:+.4f} m, z = {room[2]:+.4f} m')
 ```
 
@@ -644,20 +682,22 @@ up as if the robot were running. `tf2_geometry_msgs` then moves a point from one
 frame to another, given the transform between them.
 
 ```python
-from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import Point, PointStamped, TransformStamped
 from rclpy.time import Time
 import tf2_geometry_msgs
 from tf2_ros import Buffer
 
-tf_buffer = Buffer()
+tf_buffer: Buffer = Buffer()
 for transform in capture['/tf_static'].transforms:
     tf_buffer.set_transform_static(transform, 'recorded')
-camera_to_world = tf_buffer.lookup_transform('world', 'camera_optical_frame', Time())
+camera_to_world: TransformStamped = tf_buffer.lookup_transform(
+    'world', 'camera_optical_frame', Time())
 
-spot = PointStamped()
+# A PointStamped is a point with a header, which names the frame it is measured in.
+spot: PointStamped = PointStamped()
 spot.header.frame_id = 'camera_optical_frame'
 spot.point.x, spot.point.y, spot.point.z = point
-p = tf2_geometry_msgs.do_transform_point(spot, camera_to_world).point
+p: Point = tf2_geometry_msgs.do_transform_point(spot, camera_to_world).point
 print(f'in the room: x = {p.x:+.4f} m, y = {p.y:+.4f} m, z = {p.z:+.4f} m')
 ```
 
@@ -673,11 +713,16 @@ one for every pixel, instead of single numbers.
 ```python
 import numpy as np
 
+rows: int
+cols: int
 rows, cols = depth.shape
-v, u = np.mgrid[0:rows, 0:cols] + 0.5              # every pixel's middle
-x = (u - camera.cx()) * depth / camera.fx()
-y = (v - camera.cy()) * depth / camera.fy()
-z = depth
+# Every pixel's middle: v is a grid of row numbers and u a grid of column numbers.
+v: NDArray[np.float64]
+u: NDArray[np.float64]
+v, u = np.mgrid[0:rows, 0:cols] + 0.5
+x: NDArray[np.float64] = (u - camera.cx()) * depth / camera.fx()
+y: NDArray[np.float64] = (v - camera.cy()) * depth / camera.fy()
+z: NDArray[np.float32] = depth
 print(depth.shape, x[86, 212].round(4), y[86, 212].round(4), z[86, 212].round(4))
 ```
 
@@ -700,19 +745,22 @@ transform from 3.3, turned into the table from [section 1.2 of the
 intro](one-box-intro.md#12-where-the-camera-is) by `transform_matrix()`.
 
 ```python
+from geometry_msgs.msg import Quaternion, Vector3
+
 from camera_one_box.measure import depth_to_points, measure_box, to_world, transform_matrix
 
-t, q = camera_to_world.transform.translation, camera_to_world.transform.rotation
-matrix = transform_matrix((t.x, t.y, t.z), (q.x, q.y, q.z, q.w))
+t: Vector3 = camera_to_world.transform.translation     # the shift
+q: Quaternion = camera_to_world.transform.rotation     # the turn
+matrix: NDArray[np.float64] = transform_matrix((t.x, t.y, t.z), (q.x, q.y, q.z, q.w))
 
-# step 1: every pixel becomes a point in the room
-points = to_world(depth_to_points(depth, camera.fx(), camera.fy(), camera.cx(), camera.cy()),
-                  matrix)
+# step 1: every pixel becomes a point in the room, one row of (x, y, z) each
+points: NDArray[np.float64] = to_world(
+    depth_to_points(depth, camera.fx(), camera.fy(), camera.cx(), camera.cy()), matrix)
 # step 2: keep the points standing more than a centimetre above the table
-standing = points[points[:, 2] > 0.01]
+standing: NDArray[np.float64] = points[points[:, 2] > 0.01]
 # step 3: keep the top, the points within a millimetre of the highest one
-top_z = standing[:, 2].max()
-top = standing[standing[:, 2] > top_z - 0.001]
+top_z: float = float(standing[:, 2].max())
+top: NDArray[np.float64] = standing[standing[:, 2] > top_z - 0.001]
 # step 4: the average of the top is the middle of the box
 print(f'{len(points):,} points, {len(standing):,} standing on the table, {len(top):,} on the top')
 print(f'middle = ({top[:, 0].mean():+.3f}, {top[:, 1].mean():+.3f}) m, height = {top_z:.3f} m')
@@ -730,8 +778,11 @@ The project does steps 2 to 4 in `measure_box()`, which the box locator calls on
 every picture:
 
 ```python
-box = measure_box(points)
-print(f'middle = ({box.x:+.3f}, {box.y:+.3f}) m, height = {box.height:.3f} m')
+from camera_one_box.measure import BoxMeasurement
+
+box: BoxMeasurement | None = measure_box(points)     # None when there is no box
+if box is not None:
+    print(f'middle = ({box.x:+.3f}, {box.y:+.3f}) m, height = {box.height:.3f} m')
 ```
 
 It gives the same answer, `middle = (+0.064, +0.040) m, height = 0.060 m`.

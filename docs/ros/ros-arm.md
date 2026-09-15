@@ -153,24 +153,27 @@ inside the joints' limits in the URDF, which the package's tests check. This is
 the core of `ros_arm/arm_mover.py`:
 
 ```python
-def arm_pose(seconds):
-    pan = 1.0 * math.sin(0.5 * seconds)
-    tilt = 0.4 + 0.4 * math.sin(0.8 * seconds)
-    gripper = 0.01 + 0.01 * math.sin(1.2 * seconds)
+def arm_pose(seconds: float) -> tuple[float, float, float]:
+    pan: float = 1.0 * math.sin(0.5 * seconds)
+    tilt: float = 0.4 + 0.4 * math.sin(0.8 * seconds)
+    gripper: float = 0.01 + 0.01 * math.sin(1.2 * seconds)
     return pan, tilt, gripper
 
 
 class ArmMover(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('arm_mover')
-        self.publisher = self.create_publisher(JointState, '/joint_states', 10)
-        self.start = self.get_clock().now()
-        self.timer = self.create_timer(0.05, self.publish_pose)
+        self.publisher: Publisher = self.create_publisher(JointState, '/joint_states', 10)
+        self.start: Time = self.get_clock().now()
+        self.timer: Timer = self.create_timer(0.05, self.publish_pose)
 
     def publish_pose(self) -> None:
-        now = self.get_clock().now()
+        now: Time = self.get_clock().now()
+        pan: float
+        tilt: float
+        gripper: float
         pan, tilt, gripper = arm_pose((now - self.start).nanoseconds / 1e9)
-        msg = JointState()
+        msg: JointState = JointState()
         msg.header.stamp = now.to_msg()
         msg.name = ['pan', 'tilt', 'gripper']
         msg.position = [pan, tilt, gripper]
@@ -183,7 +186,7 @@ It reads the URDF file and hands its text to robot_state_publisher as a
 
 ```python
 with open(os.path.join(share, 'urdf', 'arm.urdf')) as urdf:
-    description = urdf.read()
+    description: str = urdf.read()
 ...
 Node(package='robot_state_publisher', executable='robot_state_publisher',
      parameters=[{'robot_description': description}]),
@@ -358,31 +361,32 @@ publishes, a `TransformListener` fills it in the background, and
 `lookup_transform()` asks it where one frame is, measured from another.
 
 ```python
-def distance_to_table(height, downwards):
+def distance_to_table(height: float, downwards: float) -> float:
     if downwards <= 0:
         return math.inf
     return height / downwards
 
 
 class DistanceSensor(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('distance_sensor')
-        self.publisher = self.create_publisher(Range, '/tip_range', 10)
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.timer = self.create_timer(0.1, self.measure)
+        self.publisher: Publisher = self.create_publisher(Range, '/tip_range', 10)
+        self.tf_buffer: Buffer = Buffer()
+        self.tf_listener: TransformListener = TransformListener(self.tf_buffer, self)
+        self.timer: Timer = self.create_timer(0.1, self.measure)
 
-    def measure(self):
+    def measure(self) -> None:
         try:
-            tf = self.tf_buffer.lookup_transform('base_link', 'range_sensor', Time())
+            tf: TransformStamped = self.tf_buffer.lookup_transform(
+                'base_link', 'range_sensor', Time())
         except TransformException:
             return
-        height = tf.transform.translation.z
-        q = tf.transform.rotation
-        beam = Rotation.from_quat([q.x, q.y, q.z, q.w]).apply([1.0, 0.0, 0.0])
-        distance = distance_to_table(height, -beam[2])
+        height: float = tf.transform.translation.z
+        q: Quaternion = tf.transform.rotation
+        beam: NDArray[np.float64] = Rotation.from_quat([q.x, q.y, q.z, q.w]).apply([1.0, 0.0, 0.0])
+        distance: float = distance_to_table(height, -beam[2])
 
-        msg = Range()
+        msg: Range = Range()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'range_sensor'
         msg.radiation_type = Range.INFRARED

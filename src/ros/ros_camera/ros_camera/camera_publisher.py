@@ -15,21 +15,32 @@ Run it on its own with:  ros2 run ros_camera camera_publisher
 
 import math
 
+# builtin_interfaces.msg.Time is the message type for a timestamp. It is not
+# the same as rclpy's Time, which is a point in time that can do arithmetic, so
+# it is given another name here.
+from builtin_interfaces.msg import Time as TimeMsg
 import numpy as np
+from numpy.typing import NDArray
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.publisher import Publisher
+from rclpy.time import Time
+from rclpy.timer import Timer
 from sensor_msgs.msg import CameraInfo, Image
 
 # The picture's size, and the four lens numbers from the camera docs: a lens
 # that sees 60 degrees across, which makes the focal length 277.1 pixels.
-WIDTH, HEIGHT = 320, 240
-FX = FY = 277.1
-CX, CY = WIDTH / 2, HEIGHT / 2
+WIDTH: int = 320
+HEIGHT: int = 240
+FX: float = 277.1
+FY: float = 277.1
+CX: float = WIDTH / 2
+CY: float = HEIGHT / 2
 
-BALL_RADIUS = 15                       # in pixels
-BALL_COLOUR = (220, 40, 40)            # red, green, blue
-BACKGROUND = (200, 200, 200)           # light grey
+BALL_RADIUS: int = 15                                  # in pixels
+BALL_COLOUR: tuple[int, int, int] = (220, 40, 40)      # red, green, blue
+BACKGROUND: tuple[int, int, int] = (200, 200, 200)     # light grey
 
 
 def ball_position(seconds: float) -> tuple[float, float]:
@@ -37,8 +48,8 @@ def ball_position(seconds: float) -> tuple[float, float]:
 
     The ball moves in a slow loop that stays inside the picture.
     """
-    u = CX + 110 * math.sin(0.6 * seconds)
-    v = CY + 70 * math.sin(0.9 * seconds)
+    u: float = CX + 110 * math.sin(0.6 * seconds)
+    v: float = CY + 70 * math.sin(0.9 * seconds)
     return u, v
 
 
@@ -51,7 +62,7 @@ def camera_info() -> CameraInfo:
     and the sensor, which a program receiving the pictures cannot know, so the
     camera sends it, in this message, alongside every picture.
     """
-    info = CameraInfo()
+    info: CameraInfo = CameraInfo()
     info.height, info.width = HEIGHT, WIDTH
 
     # k: the four lens numbers, arranged as a 3 x 3 grid called the camera
@@ -101,15 +112,20 @@ def camera_info() -> CameraInfo:
     return info
 
 
-def draw_picture(u: float, v: float) -> np.ndarray:
+def draw_picture(u: float, v: float) -> NDArray[np.uint8]:
     """Draw the grey picture with the red ball at pixel (u, v).
 
     The result is a NumPy array with one row per row of pixels, and three
-    numbers in each pixel: red, green and blue, from 0 to 255.
+    numbers in each pixel: red, green and blue, from 0 to 255. NDArray[np.uint8]
+    says so: an array of whole numbers that each fit in one byte.
     """
-    picture = np.full((HEIGHT, WIDTH, 3), BACKGROUND, dtype=np.uint8)
-    rows, cols = np.mgrid[0:HEIGHT, 0:WIDTH] + 0.5          # the middle of every pixel
-    inside = (cols - u) ** 2 + (rows - v) ** 2 <= BALL_RADIUS ** 2
+    picture: NDArray[np.uint8] = np.full((HEIGHT, WIDTH, 3), BACKGROUND, dtype=np.uint8)
+    # The middle of every pixel: rows and cols are arrays of decimal numbers.
+    rows: NDArray[np.float64]
+    cols: NDArray[np.float64]
+    rows, cols = np.mgrid[0:HEIGHT, 0:WIDTH] + 0.5
+    # True for every pixel inside the ball, False for the rest.
+    inside: NDArray[np.bool_] = (cols - u) ** 2 + (rows - v) ** 2 <= BALL_RADIUS ** 2
     picture[inside] = BALL_COLOUR
     return picture
 
@@ -119,37 +135,38 @@ def draw_picture(u: float, v: float) -> np.ndarray:
 class CameraPublisher(Node):
     """Publish a new picture, and the lens numbers, ten times a second."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create the two publishers, and a timer that calls publish_picture."""
         super().__init__('camera_publisher')
 
         # A publisher announces "I will send messages of this type on this
         # topic". The 10 is how many messages to keep waiting if a subscriber is
         # slow to take them.
-        self.image_publisher = self.create_publisher(Image, '/camera/image_raw', 10)
-        self.info_publisher = self.create_publisher(CameraInfo, '/camera/camera_info', 10)
+        self.image_publisher: Publisher = self.create_publisher(Image, '/camera/image_raw', 10)
+        self.info_publisher: Publisher = self.create_publisher(
+            CameraInfo, '/camera/camera_info', 10)
 
         # A timer calls a function again and again, here every 0.1 seconds.
         # That is how a node does something regularly without a loop of its own.
-        self.start = self.get_clock().now()
-        self.timer = self.create_timer(0.1, self.publish_picture)
+        self.start: Time = self.get_clock().now()
+        self.timer: Timer = self.create_timer(0.1, self.publish_picture)
 
     def publish_picture(self) -> None:
         """Draw the next picture, and publish it with its lens numbers."""
-        now = self.get_clock().now()
-        seconds = (now - self.start).nanoseconds / 1e9
-        picture = draw_picture(*ball_position(seconds))
+        now: Time = self.get_clock().now()
+        seconds: float = (now - self.start).nanoseconds / 1e9
+        picture: NDArray[np.uint8] = draw_picture(*ball_position(seconds))
 
         # Every picture carries a header: when it was taken, and which frame
         # (which set of axes) it was taken in. Both messages get the same
         # timestamp, so a receiver knows they belong together.
-        stamp = now.to_msg()
+        stamp: TimeMsg = now.to_msg()
 
         # A sensor_msgs/Image holds the picture's size, an encoding that says
         # what each pixel's numbers mean, and every pixel's numbers as one long
         # list of bytes, row after row. 'rgb8' means three numbers per pixel, red,
         # green and blue, one byte each, so each row is WIDTH * 3 bytes long.
-        image = Image()
+        image: Image = Image()
         image.header.stamp = stamp
         image.header.frame_id = 'camera'
         image.height, image.width = HEIGHT, WIDTH
@@ -160,15 +177,15 @@ class CameraPublisher(Node):
 
         # The lens numbers, with the same header as the picture, so that a
         # program receiving both knows this is the lens that took it.
-        info = camera_info()
+        info: CameraInfo = camera_info()
         info.header = image.header
         self.info_publisher.publish(info)
 
 
-def main(args=None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Start ROS, run the node until Ctrl-C, then stop."""
     rclpy.init(args=args)
-    node = CameraPublisher()
+    node: CameraPublisher = CameraPublisher()
     try:
         # spin() keeps the program running, and lets ROS call the node's timer
         # or callbacks whenever they are due. It returns when the program is

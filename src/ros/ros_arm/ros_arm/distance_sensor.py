@@ -17,17 +17,22 @@ Run it on its own with:  ros2 run ros_arm distance_sensor
 
 import math
 
+from geometry_msgs.msg import Quaternion, TransformStamped
+import numpy as np
+from numpy.typing import NDArray
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.publisher import Publisher
 from rclpy.time import Time
+from rclpy.timer import Timer
 from scipy.spatial.transform import Rotation
 from sensor_msgs.msg import Range
 from tf2_ros import Buffer, TransformException, TransformListener
 
-MIN_RANGE = 0.02           # the nearest the sensor can measure, in metres
-MAX_RANGE = 1.0            # the furthest it can measure, in metres
-FIELD_OF_VIEW = 0.1        # how wide its beam is, in radians (about 6 degrees)
+MIN_RANGE: float = 0.02          # the nearest the sensor can measure, in metres
+MAX_RANGE: float = 1.0           # the furthest it can measure, in metres
+FIELD_OF_VIEW: float = 0.1       # how wide its beam is, in radians (about 6 degrees)
 
 
 def distance_to_table(height: float, downwards: float) -> float:
@@ -48,15 +53,15 @@ def distance_to_table(height: float, downwards: float) -> float:
 class DistanceSensor(Node):
     """Publish the distance from the gripper to the table, ten times a second."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create the publisher, listen to TF, and start a timer."""
         super().__init__('distance_sensor')
-        self.publisher = self.create_publisher(Range, '/tip_range', 10)
+        self.publisher: Publisher = self.create_publisher(Range, '/tip_range', 10)
         # TF keeps track of where every frame is. The Buffer stores what TF
         # hears, and the TransformListener fills it in the background.
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.timer = self.create_timer(0.1, self.measure)
+        self.tf_buffer: Buffer = Buffer()
+        self.tf_listener: TransformListener = TransformListener(self.tf_buffer, self)
+        self.timer: Timer = self.create_timer(0.1, self.measure)
 
     def measure(self) -> None:
         """Work out one reading, and publish it."""
@@ -64,21 +69,22 @@ class DistanceSensor(Node):
             # Where is the sensor, measured from the base? The base sits on the
             # table, so the sensor's height above the base is its height above
             # the table.
-            tf = self.tf_buffer.lookup_transform('base_link', 'range_sensor', Time())
+            tf: TransformStamped = self.tf_buffer.lookup_transform(
+                'base_link', 'range_sensor', Time())
         except TransformException:
             return                  # TF has not heard about the arm yet
-        height = tf.transform.translation.z
+        height: float = tf.transform.translation.z
         # A distance sensor measures along its own x axis. Turn that axis into
         # the base's axes: its third number, z, is how much it points up, so
         # minus z is how much it points down.
-        q = tf.transform.rotation
-        beam = Rotation.from_quat([q.x, q.y, q.z, q.w]).apply([1.0, 0.0, 0.0])
-        distance = distance_to_table(height, -beam[2])
+        q: Quaternion = tf.transform.rotation
+        beam: NDArray[np.float64] = Rotation.from_quat([q.x, q.y, q.z, q.w]).apply([1.0, 0.0, 0.0])
+        distance: float = distance_to_table(height, -beam[2])
 
         # A Range message holds one reading, and describes the sensor that took
         # it: what kind it is, how wide its beam is, and the nearest and
         # furthest it can measure. A reading it cannot make is sent as infinity.
-        msg = Range()
+        msg: Range = Range()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'range_sensor'
         msg.radiation_type = Range.INFRARED
@@ -90,10 +96,10 @@ class DistanceSensor(Node):
         self.get_logger().info(f'{msg.range:.3f} m to the table', throttle_duration_sec=1.0)
 
 
-def main(args=None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Start ROS, run the node until Ctrl-C, then stop."""
     rclpy.init(args=args)
-    node = DistanceSensor()
+    node: DistanceSensor = DistanceSensor()
     try:
         # spin() keeps the program running, and lets ROS call the node's timer
         # or callbacks whenever they are due. It returns when the program is

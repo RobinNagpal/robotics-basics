@@ -106,32 +106,36 @@ subscriber uses too.
 from ros_camera.camera_subscriber import find_ball
 
 
-def pixel_to_angles(u, v, fx, fy, cx, cy):
-    pan = -math.atan2(u - cx, fx)
-    tilt = math.atan2(cy - v, fy)
+def pixel_to_angles(u: float, v: float, fx: float, fy: float,
+                    cx: float, cy: float) -> tuple[float, float]:
+    pan: float = -math.atan2(u - cx, fx)
+    tilt: float = math.atan2(cy - v, fy)
     return pan, tilt
 
 
 class Follower(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('follower')
-        self.bridge = CvBridge()
-        self.lens = None
+        self.bridge: CvBridge = CvBridge()
+        self.lens: tuple[float, float, float, float] | None = None     # fx, fy, cx, cy
         self.create_subscription(CameraInfo, '/camera/camera_info', self.on_camera_info, 10)
         self.create_subscription(Image, '/camera/image_raw', self.on_picture, 10)
-        self.publisher = self.create_publisher(JointState, '/joint_states', 10)
+        self.publisher: Publisher = self.create_publisher(JointState, '/joint_states', 10)
 
-    def on_camera_info(self, msg):
-        self.lens = (msg.k[0], msg.k[4], msg.k[2], msg.k[5])       # fx, fy, cx, cy
+    def on_camera_info(self, msg: CameraInfo) -> None:
+        self.lens = (msg.k[0], msg.k[4], msg.k[2], msg.k[5])
 
-    def on_picture(self, msg):
+    def on_picture(self, msg: Image) -> None:
         if self.lens is None:
             return
-        ball = find_ball(self.bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8'))
+        picture: NDArray[np.uint8] = self.bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
+        ball: tuple[float, float] | None = find_ball(picture)
         if ball is None:
             return
+        pan: float
+        tilt: float
         pan, tilt = pixel_to_angles(*ball, *self.lens)
-        joints = JointState()
+        joints: JointState = JointState()
         joints.header.stamp = msg.header.stamp
         joints.name = ['pan', 'tilt', 'gripper']
         joints.position = [pan, tilt, 0.02]           # the gripper stays open
@@ -152,7 +156,7 @@ launch file start `ros_camera`'s publisher and read `ros_arm`'s URDF:
 
 ```python
 with open(os.path.join(get_package_share_directory('ros_arm'), 'urdf', 'arm.urdf')) as urdf:
-    description = urdf.read()
+    description: str = urdf.read()
 ...
 Node(package='ros_camera', executable='camera_publisher'),
 Node(package='robot_state_publisher', executable='robot_state_publisher',

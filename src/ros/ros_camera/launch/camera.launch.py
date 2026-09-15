@@ -17,7 +17,8 @@ def generate_launch_description() -> LaunchDescription:
     """List the programs to start. ros2 launch starts them all, and Ctrl-C stops them all."""
     # The package's installed files, such as the saved RViz layout, live in its
     # "share" folder. get_package_share_directory finds that folder.
-    rviz_layout = os.path.join(get_package_share_directory('ros_camera'), 'config', 'camera.rviz')
+    rviz_layout: str = os.path.join(
+        get_package_share_directory('ros_camera'), 'config', 'camera.rviz')
 
     return LaunchDescription([
         # A launch argument: a setting you can change on the command line, such

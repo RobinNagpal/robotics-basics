@@ -22,6 +22,9 @@ import math
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.publisher import Publisher
+from rclpy.time import Time
+from rclpy.timer import Timer
 from sensor_msgs.msg import JointState
 
 
@@ -33,9 +36,9 @@ def arm_pose(seconds: float) -> tuple[float, float, float]:
     slow loop. The gripper opens and closes between 0 and 0.02 metres, which is
     how far each finger slides out.
     """
-    pan = 1.0 * math.sin(0.5 * seconds)
-    tilt = 0.4 + 0.4 * math.sin(0.8 * seconds)
-    gripper = 0.01 + 0.01 * math.sin(1.2 * seconds)
+    pan: float = 1.0 * math.sin(0.5 * seconds)
+    tilt: float = 0.4 + 0.4 * math.sin(0.8 * seconds)
+    gripper: float = 0.01 + 0.01 * math.sin(1.2 * seconds)
     return pan, tilt, gripper
 
 
@@ -44,20 +47,23 @@ def arm_pose(seconds: float) -> tuple[float, float, float]:
 class ArmMover(Node):
     """Publish the next position of the arm's joints, twenty times a second."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create the publisher, and a timer that calls publish_pose."""
         super().__init__('arm_mover')
         # The topic name /joint_states is the one robot_state_publisher listens
         # to. Every ROS arm uses it.
-        self.publisher = self.create_publisher(JointState, '/joint_states', 10)
-        self.start = self.get_clock().now()
+        self.publisher: Publisher = self.create_publisher(JointState, '/joint_states', 10)
+        self.start: Time = self.get_clock().now()
         # Call publish_pose every 0.05 seconds: twenty times a second, which is
         # often enough for the arm to move smoothly on screen.
-        self.timer = self.create_timer(0.05, self.publish_pose)
+        self.timer: Timer = self.create_timer(0.05, self.publish_pose)
 
     def publish_pose(self) -> None:
         """Publish where the joints are now."""
-        now = self.get_clock().now()
+        now: Time = self.get_clock().now()
+        pan: float
+        tilt: float
+        gripper: float
         pan, tilt, gripper = arm_pose((now - self.start).nanoseconds / 1e9)
 
         # A JointState lists the joints by the names they have in the URDF, and
@@ -65,17 +71,17 @@ class ArmMover(Node):
         # is an angle in radians, and for a sliding joint, such as the
         # gripper's, it is a distance in metres. The second finger's joint is not
         # listed: the URDF says it copies "gripper".
-        msg = JointState()
+        msg: JointState = JointState()
         msg.header.stamp = now.to_msg()
         msg.name = ['pan', 'tilt', 'gripper']
         msg.position = [pan, tilt, gripper]
         self.publisher.publish(msg)
 
 
-def main(args=None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Start ROS, run the node until Ctrl-C, then stop."""
     rclpy.init(args=args)
-    node = ArmMover()
+    node: ArmMover = ArmMover()
     try:
         # spin() keeps the program running, and lets ROS call the node's timer
         # or callbacks whenever they are due. It returns when the program is

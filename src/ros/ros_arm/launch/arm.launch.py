@@ -15,12 +15,12 @@ from launch_ros.actions import Node
 
 def generate_launch_description() -> LaunchDescription:
     """List the programs to start. ros2 launch starts them all, and Ctrl-C stops them all."""
-    share = get_package_share_directory('ros_arm')
-    rviz_layout = os.path.join(share, 'config', 'arm.rviz')
+    share: str = get_package_share_directory('ros_arm')
+    rviz_layout: str = os.path.join(share, 'config', 'arm.rviz')
     # robot_state_publisher needs the arm's description as text, so read the
     # URDF file in.
     with open(os.path.join(share, 'urdf', 'arm.urdf')) as urdf:
-        description = urdf.read()
+        description: str = urdf.read()
 
     return LaunchDescription([
         # A launch argument: a setting you can change on the command line, such

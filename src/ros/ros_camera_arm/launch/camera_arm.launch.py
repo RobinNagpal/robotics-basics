@@ -19,8 +19,8 @@ from launch_ros.actions import Node
 def generate_launch_description() -> LaunchDescription:
     """List the programs to start. ros2 launch starts them all, and Ctrl-C stops them all."""
     with open(os.path.join(get_package_share_directory('ros_arm'), 'urdf', 'arm.urdf')) as urdf:
-        description = urdf.read()
-    rviz_layout = os.path.join(
+        description: str = urdf.read()
+    rviz_layout: str = os.path.join(
         get_package_share_directory('ros_camera_arm'), 'config', 'camera_arm.rviz')
 
     return LaunchDescription([

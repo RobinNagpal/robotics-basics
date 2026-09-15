@@ -20,9 +20,12 @@ Run it on its own with:  ros2 run ros_camera_arm follower
 import math
 
 from cv_bridge import CvBridge
+import numpy as np
+from numpy.typing import NDArray
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.publisher import Publisher
 from sensor_msgs.msg import CameraInfo, Image, JointState
 
 # Reuse the ball finder from the ros_camera package. One ROS package can use
@@ -39,8 +42,8 @@ def pixel_to_angles(u: float, v: float, fx: float, fy: float,
     turn to the right, which is a negative pan. Above the middle, where v is
     smaller than cy, is a tilt up, which is a positive tilt.
     """
-    pan = -math.atan2(u - cx, fx)
-    tilt = math.atan2(cy - v, fy)
+    pan: float = -math.atan2(u - cx, fx)
+    tilt: float = math.atan2(cy - v, fy)
     return pan, tilt
 
 
@@ -49,15 +52,16 @@ def pixel_to_angles(u: float, v: float, fx: float, fy: float,
 class Follower(Node):
     """Point the arm at the ball, every time a picture arrives."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Subscribe to the pictures and the lens numbers, and publish joint angles."""
         super().__init__('follower')
-        self.bridge = CvBridge()
-        self.lens = None        # (fx, fy, cx, cy), once the first camera info arrives
+        self.bridge: CvBridge = CvBridge()
+        # (fx, fy, cx, cy), once the first camera info arrives, and None until then.
+        self.lens: tuple[float, float, float, float] | None = None
 
         self.create_subscription(CameraInfo, '/camera/camera_info', self.on_camera_info, 10)
         self.create_subscription(Image, '/camera/image_raw', self.on_picture, 10)
-        self.publisher = self.create_publisher(JointState, '/joint_states', 10)
+        self.publisher: Publisher = self.create_publisher(JointState, '/joint_states', 10)
 
     def on_camera_info(self, msg: CameraInfo) -> None:
         """Keep the four lens numbers, to turn pixels into angles.
@@ -72,12 +76,15 @@ class Follower(Node):
         """Find the ball, and publish the joint angles that point the arm at it."""
         if self.lens is None:
             return              # no lens numbers yet, so no way to turn pixels into angles
-        ball = find_ball(self.bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8'))
+        picture: NDArray[np.uint8] = self.bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
+        ball: tuple[float, float] | None = find_ball(picture)
         if ball is None:
             return              # nothing to point at: leave the arm where it is
 
+        pan: float
+        tilt: float
         pan, tilt = pixel_to_angles(*ball, *self.lens)
-        joints = JointState()
+        joints: JointState = JointState()
         joints.header.stamp = msg.header.stamp
         # The arm's URDF also has a gripper. It has nothing to hold here, so keep
         # it open, at 0.02 metres, or RViz would not know where to draw its fingers.
@@ -90,10 +97,10 @@ class Follower(Node):
             throttle_duration_sec=1.0)
 
 
-def main(args=None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Start ROS, run the node until Ctrl-C, then stop."""
     rclpy.init(args=args)
-    node = Follower()
+    node: Follower = Follower()
     try:
         # spin() keeps the program running, and lets ROS call the node's timer
         # or callbacks whenever they are due. It returns when the program is

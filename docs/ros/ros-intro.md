@@ -106,6 +106,17 @@ function is called a **callback**. The last thing a node's program does is call
 `rclpy.spin()`, which keeps the program running, waiting for messages and calling
 the callbacks as they arrive.
 
+The Python code in these examples states the **type** of every value, using
+Python's type hints. `self.pictures: int = 0` says that `pictures` is a whole
+number, and `def find_ball(picture: NDArray[np.uint8]) -> tuple[float, float] |
+None:` says that `find_ball` takes a picture, an array of whole numbers from 0 to
+255, and gives back either two decimal numbers, a pixel, or `None`. The ROS
+objects have types too: a publisher is a `Publisher`, a timer is a `Timer`, and a
+message is an object of its message class, such as `Image`. Python itself does
+not check the types when the program runs, so they are there for the reader, to
+say what every value is, and for tools such as **mypy**, which read the code and
+report any place where a value does not match its type.
+
 ## 3. Message types and the sensor_msgs package
 
 Message types are defined in packages, and some packages hold nothing but
@@ -160,7 +171,7 @@ the fields it needs before publishing it:
 ```python
 from sensor_msgs.msg import Range
 
-reading = Range()                         # a new message: every field starts empty
+reading: Range = Range()                  # a new message: every field starts empty
 print(reading.range)                      # 0.0
 reading.range = 0.085                     # fill in the fields you need
 reading.radiation_type = Range.INFRARED   # a named number from the .msg file: 1
@@ -231,7 +242,8 @@ camera example's, with its comments left out:
 
 ```python
 def generate_launch_description() -> LaunchDescription:
-    rviz_layout = os.path.join(get_package_share_directory('ros_camera'), 'config', 'camera.rviz')
+    rviz_layout: str = os.path.join(
+        get_package_share_directory('ros_camera'), 'config', 'camera.rviz')
     return LaunchDescription([
         DeclareLaunchArgument('rviz', default_value='true', description='Open RViz.'),
         Node(package='ros_camera', executable='camera_publisher'),

@@ -236,20 +236,22 @@ so that it can. This is the core of `ros_camera/camera_publisher.py`:
 
 ```python
 class CameraPublisher(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('camera_publisher')
-        self.image_publisher = self.create_publisher(Image, '/camera/image_raw', 10)
-        self.info_publisher = self.create_publisher(CameraInfo, '/camera/camera_info', 10)
-        self.start = self.get_clock().now()
-        self.timer = self.create_timer(0.1, self.publish_picture)
+        self.image_publisher: Publisher = self.create_publisher(Image, '/camera/image_raw', 10)
+        self.info_publisher: Publisher = self.create_publisher(
+            CameraInfo, '/camera/camera_info', 10)
+        self.start: Time = self.get_clock().now()
+        self.timer: Timer = self.create_timer(0.1, self.publish_picture)
 
     def publish_picture(self) -> None:
-        now = self.get_clock().now()
-        seconds = (now - self.start).nanoseconds / 1e9
-        picture = draw_picture(*ball_position(seconds))
+        now: Time = self.get_clock().now()
+        seconds: float = (now - self.start).nanoseconds / 1e9
+        picture: NDArray[np.uint8] = draw_picture(*ball_position(seconds))
+        stamp: TimeMsg = now.to_msg()
 
-        image = Image()
-        image.header.stamp = now.to_msg()
+        image: Image = Image()
+        image.header.stamp = stamp
         image.header.frame_id = 'camera'
         image.height, image.width = HEIGHT, WIDTH
         image.encoding = 'rgb8'
@@ -259,7 +261,10 @@ class CameraPublisher(Node):
 ```
 
 `draw_picture()` draws the picture as a NumPy array, and `picture.tobytes()`
-turns that array into the long list of bytes the message holds. The 10 in
+turns that array into the long list of bytes the message holds. `now` is an
+rclpy `Time`, a point in time that can be subtracted from another, and
+`now.to_msg()` turns it into a `TimeMsg`, the timestamp message a header holds,
+which the code imports under that name to tell the two apart. The 10 in
 `create_publisher()` is how many messages ROS keeps waiting if a subscriber is
 slow to take them. The camera info message comes from `camera_info()`, a function
 that fills in the fields from section 2.2, and it is published straight after
@@ -289,26 +294,30 @@ that turns an image message into a NumPy array, one entry per pixel. This is the
 core of `ros_camera/camera_subscriber.py`:
 
 ```python
-def find_ball(picture):
-    red, green, blue = picture[..., 0], picture[..., 1], picture[..., 2]
-    is_red = (red > 150) & (green < 100) & (blue < 100)
+def find_ball(picture: NDArray[np.uint8]) -> tuple[float, float] | None:
+    red: NDArray[np.uint8] = picture[..., 0]
+    green: NDArray[np.uint8] = picture[..., 1]
+    blue: NDArray[np.uint8] = picture[..., 2]
+    is_red: NDArray[np.bool_] = (red > 150) & (green < 100) & (blue < 100)
     if not is_red.any():
         return None
+    rows: NDArray[np.intp]
+    cols: NDArray[np.intp]
     rows, cols = np.nonzero(is_red)
     return float(cols.mean()) + 0.5, float(rows.mean()) + 0.5
 
 
 class CameraSubscriber(Node):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('camera_subscriber')
-        self.bridge = CvBridge()
-        self.pictures = 0
+        self.bridge: CvBridge = CvBridge()
+        self.pictures: int = 0
         self.create_subscription(Image, '/camera/image_raw', self.on_picture, 10)
 
     def on_picture(self, msg: Image) -> None:
         self.pictures += 1
-        picture = self.bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
-        ball = find_ball(picture)
+        picture: NDArray[np.uint8] = self.bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
+        ball: tuple[float, float] | None = find_ball(picture)
         ...
 ```
 

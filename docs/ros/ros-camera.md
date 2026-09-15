@@ -295,9 +295,9 @@ core of `ros_camera/camera_subscriber.py`:
 
 ```python
 def find_ball(picture: NDArray[np.uint8]) -> tuple[float, float] | None:
-    red: NDArray[np.uint8] = picture[..., 0]
-    green: NDArray[np.uint8] = picture[..., 1]
-    blue: NDArray[np.uint8] = picture[..., 2]
+    red: NDArray[np.uint8] = picture[:, :, 0]
+    green: NDArray[np.uint8] = picture[:, :, 1]
+    blue: NDArray[np.uint8] = picture[:, :, 2]
     is_red: NDArray[np.bool_] = (red > 150) & (green < 100) & (blue < 100)
     if not is_red.any():
         return None
@@ -320,6 +320,18 @@ class CameraSubscriber(Node):
         ball: tuple[float, float] | None = find_ball(picture)
         ...
 ```
+
+`find_ball()` works on the picture as a NumPy array with three sizes, or axes:
+240 rows, then 320 columns, then the 3 colour numbers of each pixel, red, green
+and blue. So `picture[80, 100]` is the pixel in row 80 and column 100, such as
+`[220, 40, 40]` on the ball, and `picture[80, 100, 0]` is its red number alone,
+220. In `picture[:, :, 0]`, each `:` means "all of them", so it reads "every
+row, every column, colour number 0": a 240 × 320 grid of every pixel's red
+number. Colour numbers 1 and 2 give the green and blue grids. Comparing those
+grids with `>` and `<` checks every pixel at once, and `&` joins the checks
+pixel by pixel, which gives `is_red`, a grid of True and False. `np.nonzero()`
+then lists the row and column of every True pixel, and their averages are the
+middle of the ball.
 
 `find_ball()` adds 0.5 because a pixel's middle is half a pixel from its corner,
 as the [camera basics](../camera/basics.md#a-grid-of-pixels) explain. The

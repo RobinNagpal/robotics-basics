@@ -26,10 +26,21 @@ def find_ball(picture: NDArray[np.uint8]) -> tuple[float, float] | None:
     are low. The middle of the ball is the average position of its red pixels,
     plus 0.5, because a pixel's middle is half a pixel from its corner.
     """
-    red: NDArray[np.uint8] = picture[..., 0]
-    green: NDArray[np.uint8] = picture[..., 1]
-    blue: NDArray[np.uint8] = picture[..., 2]
-    # True for every pixel that is red enough, False for the rest.
+    # The picture is a grid of numbers with three sizes, or "axes": 240 rows,
+    # then 320 columns, then 3 colour numbers for each pixel: red, green and
+    # blue. So picture[80, 100] is the pixel in row 80, column 100, such as
+    # [220, 40, 40], and picture[80, 100, 0] is just its red number, 220.
+    #
+    # In picture[:, :, 0], each ":" means "all of them", so it reads "every row,
+    # every column, colour number 0". The result is a 240 x 320 grid holding
+    # the red number of every pixel. Colour numbers 1 and 2 give the green and
+    # blue grids in the same way.
+    red: NDArray[np.uint8] = picture[:, :, 0]
+    green: NDArray[np.uint8] = picture[:, :, 1]
+    blue: NDArray[np.uint8] = picture[:, :, 2]
+    # Compare every pixel at once: the result is a 240 x 320 grid of True and
+    # False, True for every pixel that is red enough. & means "and", pixel by
+    # pixel: high red, and low green, and low blue.
     is_red: NDArray[np.bool_] = (red > 150) & (green < 100) & (blue < 100)
     if not is_red.any():
         return None

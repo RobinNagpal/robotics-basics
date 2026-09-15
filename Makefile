@@ -1,7 +1,7 @@
 # robotics-basics — one entry point for everything.
 #
-# The repo is split into areas. Each area is one ROS package under src/ and one
-# folder under docs/. Area commands are named <area>.<action>, and each area
+# The repo is split into areas. Each area has its code under src/ (a ROS
+# package, or for numpy, plain Python files) and one folder under docs/. Area commands are named <area>.<action>, and each area
 # keeps to two or three of them so this list stays readable as areas are added.
 #
 # Run `make` on its own to see what is available.
@@ -15,7 +15,8 @@ ros = pixi run bash -c 'source install/setup.bash && $(1)'
 .PHONY: help setup doctor build test lint clean shell \
         ros.camera ros.arm ros.camera_arm \
         rviz.demo rviz.check arm.learn arm.demo arm.watch \
-        camera.one_box camera.pixels camera.check
+        camera.one_box camera.pixels camera.check \
+        numpy.learn numpy.run numpy.check
 
 help: ## Show this help
 	@echo ""
@@ -114,3 +115,18 @@ camera.check: ## Show what the simulation is publishing (run camera.one_box firs
 		ros2 topic echo --once --no-arr /camera/points; \
 		echo; echo "--- the measured box ---"; \
 		ros2 topic echo --once /detections | head -40'
+
+##@ numpy — the parts of NumPy robotics uses most
+
+numpy.learn: ## Run the five NumPy files in order, printing every example
+	@for file in arrays indexing maths linear_algebra sampling; do \
+		echo; echo "===== src/numpy/$$file.py ====="; \
+		pixi run python src/numpy/$$file.py || exit 1; \
+	done
+
+numpy.run: ## Run one NumPy file, for example: make numpy.run FILE=linear_algebra
+	@test -n "$(FILE)" || { echo "Say which file, for example: make numpy.run FILE=linear_algebra"; exit 1; }
+	@pixi run python src/numpy/$(FILE).py
+
+numpy.check: ## Check every type written in the NumPy files, with mypy
+	pixi exec mypy --python-executable .pixi/envs/default/bin/python --check-untyped-defs src/numpy

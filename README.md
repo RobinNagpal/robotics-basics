@@ -22,6 +22,7 @@ own, with its own code, its own doc, and two or three commands.
 | [rviz](docs/rviz/overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
 | [arm](docs/arm/overview.md) | position, frames and transforms | `make arm.learn` |
 | [camera](docs/camera/basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
+| [numpy](docs/numpy/numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
 
 <p align="center">
   <img src="docs/images/rviz/scene.svg" width="31%" alt="A ball circling a grid in RViz">
@@ -34,6 +35,8 @@ smallest programs that can be written with it: one that works with a camera, one
 that moves an arm, and one that uses both. Then **rviz**, which shows you what
 you are looking at before the arm area explains the maths behind it. Then
 **arm**, then **camera**, which uses that maths to turn a picture into points.
+The camera code is mostly NumPy, so if NumPy is new to you, read **numpy** before
+**camera**; it needs no ROS, and each of its five files runs on its own.
 
 ## Beyond the areas
 
@@ -53,6 +56,7 @@ docs/images/<area>/   its pictures
 docs/diagrams/        the scripts that draw them
 src/<package>/        the code for each area
 src/ros/<package>/    the code for the ros area: one package per example
+src/numpy/            the numpy area: five plain Python files, not a ROS package
 ```
 
 ## Repo-wide commands

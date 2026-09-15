@@ -33,9 +33,9 @@ from dataclasses import dataclass
 import math
 
 #: Length of link 1, in metres.
-LINK1_M = 3.0
+LINK1_M: float = 3.0
 #: Length of link 2, in metres.
-LINK2_M = 2.0
+LINK2_M: float = 2.0
 
 
 def rotate_point(x: float, y: float, theta: float) -> tuple[float, float]:
@@ -49,7 +49,8 @@ def rotate_point(x: float, y: float, theta: float) -> tuple[float, float]:
     Sanity check it by hand: rotating ``(1, 0)`` by a quarter turn gives
     ``(0, 1)``, because ``cos(90°) = 0`` and ``sin(90°) = 1``.
     """
-    cos_t, sin_t = math.cos(theta), math.sin(theta)
+    cos_t: float = math.cos(theta)
+    sin_t: float = math.sin(theta)
     return x * cos_t - y * sin_t, x * sin_t + y * cos_t
 
 
@@ -101,6 +102,8 @@ class Transform2D:
         Rotate first, then shift. The order matters: shifting first and then
         rotating would swing the shift around too, and give a different answer.
         """
+        rx: float
+        ry: float
         rx, ry = rotate_point(x, y, self.theta)
         return rx + self.x, ry + self.y
 
@@ -111,6 +114,8 @@ class Transform2D:
         whole trick: you describe each link once, on its own, and joining them
         gives you any pair you want.
         """
+        x: float
+        y: float
         x, y = self.apply(child.x, child.y)
         return Transform2D(x, y, self.theta + child.theta)
 
@@ -120,6 +125,8 @@ class Transform2D:
         Undo the turn, then undo the shift — in that order, which is why the
         shift gets rotated backwards on the way out.
         """
+        x: float
+        y: float
         x, y = rotate_point(-self.x, -self.y, -self.theta)
         return Transform2D(x, y, -self.theta)
 
@@ -142,7 +149,7 @@ def arm_chain(q1: float, q2: float) -> list[tuple[str, str, Transform2D]]:
 
 def gripper_in_base(q1: float, q2: float) -> Transform2D:
     """Join every link of the chain into one base_link→gripper transform."""
-    result = Transform2D()
+    result: Transform2D = Transform2D()
     for _parent, _child, link in arm_chain(q1, q2):
         result = result.then(link)
     return result

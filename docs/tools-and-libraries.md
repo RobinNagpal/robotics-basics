@@ -130,15 +130,16 @@ import math
 
 import rclpy
 from rclpy.node import Node
+from rclpy.publisher import Publisher
 from sensor_msgs.msg import JointState
 
 rclpy.init()
-node = Node('joint_publisher')
-pub = node.create_publisher(JointState, 'joint_states', 10)
+node: Node = Node('joint_publisher')
+pub: Publisher = node.create_publisher(JointState, 'joint_states', 10)
 
 
-def tick():
-    msg = JointState()
+def tick() -> None:
+    msg: JointState = JointState()
     msg.header.stamp = node.get_clock().now().to_msg()
     msg.name = ['joint1', 'joint2']
     msg.position = [math.radians(30), math.radians(60)]
@@ -271,8 +272,8 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 
 
-def generate_launch_description():
-    urdf_text = Path('table_arm.urdf').read_text()
+def generate_launch_description() -> LaunchDescription:
+    urdf_text: str = Path('table_arm.urdf').read_text()
     return LaunchDescription([
         Node(package='robot_state_publisher', executable='robot_state_publisher',
              parameters=[{'robot_description': urdf_text}]),
@@ -282,10 +283,10 @@ def generate_launch_description():
 Then ask TF where the gripper is, from any node:
 
 ```python
-buffer = Buffer()
-listener = TransformListener(buffer, node)
+buffer: Buffer = Buffer()
+listener: TransformListener = TransformListener(buffer, node)
 
-where = buffer.lookup_transform('world', 'gripper', Time()).transform.translation
+where: Vector3 = buffer.lookup_transform('world', 'gripper', Time()).transform.translation
 ```
 
 Run it with the joint publisher from section 1, holding the arm at 30° and 60°.
@@ -372,12 +373,12 @@ six-joint arm, started from a launch file that loads its MoveIt configuration:
 
 ```python
 from geometry_msgs.msg import PoseStamped
-from moveit.planning import MoveItPy
+from moveit.planning import MoveItPy, PlanningComponent
 
-robot = MoveItPy(node_name='moveit_py')
-arm = robot.get_planning_component('arm')
+robot: MoveItPy = MoveItPy(node_name='moveit_py')
+arm: PlanningComponent = robot.get_planning_component('arm')
 
-goal = PoseStamped()
+goal: PoseStamped = PoseStamped()
 goal.header.frame_id = 'base_link'
 goal.pose.position.x, goal.pose.position.y, goal.pose.position.z = 0.4, 0.1, 0.3
 goal.pose.orientation.w = 1.0
@@ -396,10 +397,10 @@ from geometry_msgs.msg import Pose
 from moveit_msgs.msg import CollisionObject
 from shape_msgs.msg import SolidPrimitive
 
-table = CollisionObject(id='table', operation=CollisionObject.ADD)
+table: CollisionObject = CollisionObject(id='table', operation=CollisionObject.ADD)
 table.header.frame_id = 'base_link'
 table.primitives.append(SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[1.2, 0.8, 0.05]))
-top = Pose()
+top: Pose = Pose()
 top.position.z = -0.025
 top.orientation.w = 1.0
 table.primitive_poses.append(top)
@@ -500,10 +501,10 @@ And send the arm a trajectory directly, without MoveIt:
 from builtin_interfaces.msg import Duration
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-trajectory = JointTrajectory(joint_names=['joint1', 'joint2'])
+trajectory: JointTrajectory = JointTrajectory(joint_names=['joint1', 'joint2'])
 trajectory.points.append(JointTrajectoryPoint(positions=[0.5236, 1.0472],
                                               time_from_start=Duration(sec=2)))
-pub = node.create_publisher(JointTrajectory, '/arm_controller/joint_trajectory', 10)
+pub: Publisher = node.create_publisher(JointTrajectory, '/arm_controller/joint_trajectory', 10)
 pub.publish(trajectory)
 ```
 
@@ -605,8 +606,8 @@ import math
 
 import mujoco
 
-model = mujoco.MjModel.from_xml_path('table_arm.xml')
-data = mujoco.MjData(model)
+model: mujoco.MjModel = mujoco.MjModel.from_xml_path('table_arm.xml')
+data: mujoco.MjData = mujoco.MjData(model)
 data.ctrl[:] = [math.radians(30), math.radians(60)]
 for _ in range(5000):                      # 10 simulated seconds
     mujoco.mj_step(model, data)
@@ -665,11 +666,12 @@ section 2:
 import math
 
 import numpy as np
+from numpy.typing import NDArray
 import pinocchio as pin
 
-model = pin.buildModelFromUrdf('table_arm.urdf')
-data = model.createData()
-q = np.array([math.radians(30), math.radians(60)])
+model: pin.Model = pin.buildModelFromUrdf('table_arm.urdf')
+data: pin.Data = model.createData()
+q: NDArray[np.float64] = np.array([math.radians(30), math.radians(60)])
 pin.forwardKinematics(model, data, q)
 pin.updateFramePlacements(model, data)
 print(data.oMf[model.getFrameId('gripper')].translation)   # [2.598 3.5   0.   ]
@@ -735,11 +737,16 @@ for each clump: its middle and its height
 **Real code.** OpenCV, finding the red box by its colour:
 
 ```python
-image = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-mask = cv2.inRange(hsv, (0, 120, 70), (10, 255, 255))      # red-ish pixels
+image: NDArray[np.uint8] = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+hsv: NDArray[np.uint8] = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+mask: NDArray[np.uint8] = cv2.inRange(hsv, (0, 120, 70), (10, 255, 255))   # red-ish pixels
+contours: tuple[NDArray[np.int32], ...]    # each outline, as points along its edge
 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-box = max(contours, key=cv2.contourArea)
+box: NDArray[np.int32] = max(contours, key=cv2.contourArea)
+x: int
+y: int
+w: int
+h: int
 x, y, w, h = cv2.boundingRect(box)
 ```
 
@@ -750,12 +757,14 @@ pixels. That is exactly the red box: the camera area's mask counts the same
 Open3D, the table-top recipe, on the camera area's point cloud:
 
 ```python
-pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(xyz))
+pcd: o3d.geometry.PointCloud = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(xyz))
+plane: NDArray[np.float64]     # the table's plane, as the four numbers a, b, c, d
+on_table: list[int]            # the index of every point on that plane
 plane, on_table = pcd.segment_plane(distance_threshold=0.005, ransac_n=3,
                                     num_iterations=1000)
-objects = pcd.select_by_index(on_table, invert=True)
-labels = np.array(objects.cluster_dbscan(eps=0.02, min_points=20))
-boxes = [k for k in range(labels.max() + 1) if (labels == k).sum() >= 100]
+objects: o3d.geometry.PointCloud = pcd.select_by_index(on_table, invert=True)
+labels: NDArray[np.int32] = np.array(objects.cluster_dbscan(eps=0.02, min_points=20))
+boxes: list[int] = [k for k in range(labels.max() + 1) if (labels == k).sum() >= 100]
 ```
 
 Of 19,200 points, it put 17,238 on the table, and found the table perfectly
@@ -814,6 +823,8 @@ publish it once, as a fixed transform
 **Real code.** The solving step, for a camera on the gripper:
 
 ```python
+R_cam2gripper: NDArray[np.float64]      # the turn, as a 3 x 3 table
+t_cam2gripper: NDArray[np.float64]      # the shift, as 3 numbers
 R_cam2gripper, t_cam2gripper = cv2.calibrateHandEye(
     R_gripper2base, t_gripper2base,       # 15 arm poses, from TF
     R_target2cam, t_target2cam)           # 15 board poses, seen by the camera
@@ -886,10 +897,10 @@ pick and place: in order, stopping at the first failure
 In py_trees, where `FindBox` and the rest are your own steps:
 
 ```python
-grasp = py_trees.composites.Selector('grasp', memory=False)
+grasp: py_trees.composites.Selector = py_trees.composites.Selector('grasp', memory=False)
 grasp.add_children([GraspFromAbove(), GraspFromSide()])
 
-pick_and_place = py_trees.composites.Sequence('pick and place', memory=True)
+pick_and_place: py_trees.composites.Sequence = py_trees.composites.Sequence('pick and place', memory=True)
 pick_and_place.add_children([FindBox(), grasp, MoveToBin(), LetGo()])
 
 py_trees.trees.BehaviourTree(pick_and_place).tick()

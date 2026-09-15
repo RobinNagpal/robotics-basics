@@ -239,8 +239,10 @@ each of those lines.
 ### Working out where the ball goes
 
 ```python
-def circular_orbit(elapsed_s, radius_m, period_s):
-    angle = 2.0 * math.pi * (elapsed_s / period_s)
+def circular_orbit(
+    elapsed_s: float, radius_m: float, period_s: float
+) -> tuple[float, float, float]:
+    angle: float = 2.0 * math.pi * (elapsed_s / period_s)
     # +pi/2 makes the frame's +X axis tangent to the circle, i.e. "forwards".
     return radius_m * math.cos(angle), radius_m * math.sin(angle), angle + math.pi / 2.0
 ```
@@ -257,17 +259,20 @@ The third value is the **facing**, called *yaw*. Adding a quarter turn
 That is the red arrow in the picture above.
 
 There is no ROS code in this function at all. It takes three numbers and gives
-back three numbers. That is why it can be tested on its own, and why you can
+back three numbers, and its first lines say so: each argument is a `float`, a
+decimal number, and `-> tuple[float, float, float]` means it gives back three of
+them together. The code in this project writes down the type of every value like
+this, so that you can see what each one is without working it out. That is why it can be tested on its own, and why you can
 replace it with any path you like.
 
 ### Setting up
 
 ```python
-self._tf_broadcaster = TransformBroadcaster(self)
-self._marker_pub = self.create_publisher(Marker, MARKER_TOPIC, 10)
+self._tf_broadcaster: TransformBroadcaster = TransformBroadcaster(self)
+self._marker_pub: Publisher = self.create_publisher(Marker, MARKER_TOPIC, 10)
 
-self._start_time = self.get_clock().now()
-self._timer = self.create_timer(1.0 / rate_hz, self._on_timer)
+self._start_time: Time = self.get_clock().now()
+self._timer: Timer = self.create_timer(1.0 / rate_hz, self._on_timer)
 ```
 
 Line by line:
@@ -282,9 +287,12 @@ Nothing moves yet. This only sets things up.
 ### One tick
 
 ```python
-def _on_timer(self):
-    now = self.get_clock().now()
-    elapsed_s = (now - self._start_time).nanoseconds * 1e-9
+def _on_timer(self) -> None:
+    now: Time = self.get_clock().now()
+    elapsed_s: float = (now - self._start_time).nanoseconds * 1e-9
+    x: float
+    y: float
+    yaw: float
     x, y, yaw = circular_orbit(elapsed_s, self._radius_m, self._period_s)
 
     self._tf_broadcaster.sendTransform(self._build_transform(now, x, y, yaw))
@@ -318,7 +326,7 @@ in mirrored positions.
 Rotation is stored differently from what you might expect:
 
 ```python
-def yaw_to_quaternion(yaw):
+def yaw_to_quaternion(yaw: float) -> tuple[float, float, float, float]:
     return 0.0, 0.0, math.sin(yaw / 2.0), math.cos(yaw / 2.0)
 ```
 
@@ -359,9 +367,9 @@ thirtieth of a second even if you open it long after the node started.
 ### Starting and stopping
 
 ```python
-def main(args=None):
+def main(args: list[str] | None = None) -> None:
     rclpy.init(args=args)
-    node = MarkerPublisher()
+    node: MarkerPublisher = MarkerPublisher()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

@@ -48,7 +48,7 @@ from arm_transforms.step1_positions import gripper_position, POSES_DEG
 
 def gripper_by_joining(q1: float, q2: float) -> Transform2D:
     """Join the arm's links one at a time, printing each step along the way."""
-    result = Transform2D()  # base_link to itself: no shift, no turn
+    result: Transform2D = Transform2D()  # base_link to itself: no shift, no turn
     for parent, child, link in arm_chain(q1, q2):
         result = result.then(link)
         print(
@@ -67,15 +67,18 @@ def main() -> None:
         print(f'    {parent:>9} -> {child:<9} shift ({link.x}, {link.y}), turn by its joint')
 
     print('\nNow join them, one link at a time:\n')
-    worst_error = 0.0
+    worst_error: float = 0.0
     for q1_deg, q2_deg in POSES_DEG:
-        q1, q2 = math.radians(q1_deg), math.radians(q2_deg)
+        q1: float = math.radians(q1_deg)
+        q2: float = math.radians(q2_deg)
         print(f'  q1 = {q1_deg}°, q2 = {q2_deg}°')
-        joined = gripper_by_joining(q1, q2)
+        joined: Transform2D = gripper_by_joining(q1, q2)
 
         # The same numbers step 1 worked out with its hand-written formula.
+        hand_x: float
+        hand_y: float
         hand_x, hand_y = gripper_position(q1, q2)
-        error = math.hypot(joined.x - hand_x, joined.y - hand_y)
+        error: float = math.hypot(joined.x - hand_x, joined.y - hand_y)
         worst_error = max(worst_error, error)
         print(f'    step 1 said ({hand_x:.3f}, {hand_y:.3f}) — difference: {error:.2e}\n')
 

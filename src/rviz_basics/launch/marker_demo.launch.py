@@ -11,10 +11,11 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description() -> LaunchDescription:
     """Build the launch description: the marker publisher plus an optional RViz2."""
-    pkg_share = FindPackageShare('rviz_basics')
-    default_rviz_config = PathJoinSubstitution([pkg_share, 'rviz', 'marker_demo.rviz'])
+    pkg_share: FindPackageShare = FindPackageShare('rviz_basics')
+    default_rviz_config: PathJoinSubstitution = PathJoinSubstitution(
+        [pkg_share, 'rviz', 'marker_demo.rviz'])
 
-    launch_args = [
+    launch_args: list[DeclareLaunchArgument] = [
         DeclareLaunchArgument(
             'use_rviz',
             default_value='true',
@@ -32,7 +33,7 @@ def generate_launch_description() -> LaunchDescription:
         ),
     ]
 
-    marker_publisher = Node(
+    marker_publisher: Node = Node(
         package='rviz_basics',
         executable='marker_publisher',
         name='marker_publisher',
@@ -48,7 +49,7 @@ def generate_launch_description() -> LaunchDescription:
         ],
     )
 
-    rviz = Node(
+    rviz: Node = Node(
         package='rviz2',
         executable='rviz2',
         name='rviz2',

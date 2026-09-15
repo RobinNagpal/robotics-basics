@@ -10,10 +10,11 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description() -> LaunchDescription:
     """Build the launch description: the broadcaster, RViz, and the watcher."""
-    pkg_share = FindPackageShare('arm_transforms')
-    default_rviz_config = PathJoinSubstitution([pkg_share, 'rviz', 'arm_demo.rviz'])
+    pkg_share: FindPackageShare = FindPackageShare('arm_transforms')
+    default_rviz_config: PathJoinSubstitution = PathJoinSubstitution(
+        [pkg_share, 'rviz', 'arm_demo.rviz'])
 
-    launch_args = [
+    launch_args: list[DeclareLaunchArgument] = [
         DeclareLaunchArgument(
             'use_rviz', default_value='true', description='Start RViz alongside the node.'),
         DeclareLaunchArgument(
@@ -24,14 +25,14 @@ def generate_launch_description() -> LaunchDescription:
             description='Also run step 5, which asks TF where the gripper is.'),
     ]
 
-    broadcaster = Node(
+    broadcaster: Node = Node(
         package='arm_transforms',
         executable='arm_step4_broadcast',
         name='arm_broadcaster',
         output='screen',
     )
 
-    rviz = Node(
+    rviz: Node = Node(
         package='rviz2',
         executable='rviz2',
         name='rviz2',
@@ -40,7 +41,7 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(LaunchConfiguration('use_rviz')),
     )
 
-    watcher = Node(
+    watcher: Node = Node(
         package='arm_transforms',
         executable='arm_step5_lookup',
         name='gripper_watcher',

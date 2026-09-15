@@ -47,16 +47,18 @@ from __future__ import annotations
 
 import math
 
-from arm_transforms.arm_math import arm_chain, LINK1_M, LINK2_M, yaw_to_quaternion
+from arm_transforms.arm_math import arm_chain, LINK1_M, LINK2_M, Transform2D, yaw_to_quaternion
 from geometry_msgs.msg import TransformStamped
 from rcl_interfaces.msg import ParameterDescriptor
 import rclpy
 from rclpy.node import Node
+from rclpy.publisher import Publisher
+from rclpy.time import Time
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker, MarkerArray
 
-MARKER_TOPIC = 'arm_markers'
-LINK_THICKNESS_M = 0.30
+MARKER_TOPIC: str = 'arm_markers'
+LINK_THICKNESS_M: float = 0.30
 
 
 class ArmBroadcaster(Node):
@@ -66,20 +68,20 @@ class ArmBroadcaster(Node):
         """Read the settings, then start the broadcaster, publisher and timer."""
         super().__init__('arm_broadcaster')
 
-        rate_hz = self._float_param('publish_rate_hz', 30.0, 'Updates per second.')
-        self._joint1_swing = self._float_param(
+        rate_hz: float = self._float_param('publish_rate_hz', 30.0, 'Updates per second.')
+        self._joint1_swing: float = self._float_param(
             'joint1_swing_deg', 45.0, 'How far joint 1 swings each way.')
-        self._joint2_swing = self._float_param(
+        self._joint2_swing: float = self._float_param(
             'joint2_swing_deg', 60.0, 'How far joint 2 swings each way.')
-        self._joint1_period = self._float_param(
+        self._joint1_period: float = self._float_param(
             'joint1_period_s', 8.0, 'Seconds for one swing cycle of joint 1.')
-        self._joint2_period = self._float_param(
+        self._joint2_period: float = self._float_param(
             'joint2_period_s', 5.0, 'Seconds for one swing cycle of joint 2.')
 
-        self._tf_broadcaster = TransformBroadcaster(self)
-        self._marker_pub = self.create_publisher(MarkerArray, MARKER_TOPIC, 10)
+        self._tf_broadcaster: TransformBroadcaster = TransformBroadcaster(self)
+        self._marker_pub: Publisher = self.create_publisher(MarkerArray, MARKER_TOPIC, 10)
 
-        self._start_time = self.get_clock().now()
+        self._start_time: Time = self.get_clock().now()
         self.create_timer(1.0 / rate_hz, self._on_timer)
 
         self.get_logger().info(
@@ -97,28 +99,31 @@ class ArmBroadcaster(Node):
         The two periods do not divide into each other, so the arm keeps
         producing new poses instead of repeating a short loop.
         """
-        q1 = math.radians(self._joint1_swing) * math.sin(
+        q1: float = math.radians(self._joint1_swing) * math.sin(
             2.0 * math.pi * elapsed_s / self._joint1_period)
-        q2 = math.radians(self._joint2_swing) * math.sin(
+        q2: float = math.radians(self._joint2_swing) * math.sin(
             2.0 * math.pi * elapsed_s / self._joint2_period)
         return q1, q2
 
     def _on_timer(self) -> None:
-        now = self.get_clock().now()
-        elapsed_s = (now - self._start_time).nanoseconds * 1e-9
+        now: Time = self.get_clock().now()
+        elapsed_s: float = (now - self._start_time).nanoseconds * 1e-9
+        q1: float
+        q2: float
         q1, q2 = self.joint_angles(elapsed_s)
 
         # One message per link, straight from the same list step 2 used.
-        transforms = [
+        transforms: list[TransformStamped] = [
             self._to_message(now, parent, child, link)
             for parent, child, link in arm_chain(q1, q2)
         ]
         self._tf_broadcaster.sendTransform(transforms)
         self._marker_pub.publish(self._build_markers(now))
 
-    def _to_message(self, stamp, parent: str, child: str, link) -> TransformStamped:
+    def _to_message(self, stamp: Time, parent: str, child: str,
+                    link: Transform2D) -> TransformStamped:
         """Turn one Transform2D into the ROS message TF expects."""
-        message = TransformStamped()
+        message: TransformStamped = TransformStamped()
         message.header.stamp = stamp.to_msg()
         message.header.frame_id = parent
         message.child_frame_id = child
@@ -133,7 +138,7 @@ class ArmBroadcaster(Node):
         ) = yaw_to_quaternion(link.theta)
         return message
 
-    def _build_markers(self, stamp) -> MarkerArray:
+    def _build_markers(self, stamp: Time) -> MarkerArray:
         """Draw the links, the joints and the gripper, each in its own frame."""
         return MarkerArray(markers=[
             self._bar(stamp, 0, 'link1', LINK1_M, (0.25, 0.55, 0.95)),
@@ -143,9 +148,10 @@ class ArmBroadcaster(Node):
             self._ball(stamp, 4, 'gripper', 0.35, (0.95, 0.35, 0.35)),
         ])
 
-    def _bar(self, stamp, marker_id: int, frame: str, length: float, rgb) -> Marker:
+    def _bar(self, stamp: Time, marker_id: int, frame: str, length: float,
+             rgb: tuple[float, float, float]) -> Marker:
         """Draw a link as a box lying along its own frame's X axis."""
-        marker = self._blank(stamp, marker_id, frame, Marker.CUBE, rgb)
+        marker: Marker = self._blank(stamp, marker_id, frame, Marker.CUBE, rgb)
         # Half the length along X, so the box starts at the joint rather than
         # being centred on it.
         marker.pose.position.x = length / 2.0
@@ -154,14 +160,16 @@ class ArmBroadcaster(Node):
         marker.scale.z = LINK_THICKNESS_M
         return marker
 
-    def _ball(self, stamp, marker_id: int, frame: str, size: float, rgb) -> Marker:
+    def _ball(self, stamp: Time, marker_id: int, frame: str, size: float,
+              rgb: tuple[float, float, float]) -> Marker:
         """Draw a joint as a ball at its frame's origin."""
-        marker = self._blank(stamp, marker_id, frame, Marker.SPHERE, rgb)
+        marker: Marker = self._blank(stamp, marker_id, frame, Marker.SPHERE, rgb)
         marker.scale.x = marker.scale.y = marker.scale.z = size
         return marker
 
-    def _blank(self, stamp, marker_id: int, frame: str, shape: int, rgb) -> Marker:
-        marker = Marker()
+    def _blank(self, stamp: Time, marker_id: int, frame: str, shape: int,
+               rgb: tuple[float, float, float]) -> Marker:
+        marker: Marker = Marker()
         marker.header.stamp = stamp.to_msg()
         marker.header.frame_id = frame
         marker.ns = 'arm'
@@ -177,7 +185,7 @@ class ArmBroadcaster(Node):
 def main(args: list[str] | None = None) -> None:
     """Entry point for ``ros2 run arm_transforms arm_step4_broadcast``."""
     rclpy.init(args=args)
-    node = ArmBroadcaster()
+    node: ArmBroadcaster = ArmBroadcaster()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

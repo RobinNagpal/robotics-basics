@@ -64,10 +64,10 @@ import math
 from arm_transforms.arm_math import LINK1_M, LINK2_M
 
 #: Angles to try on the one-joint arm, in degrees.
-ONE_JOINT_DEG = [0, 30, 45, 60, 90]
+ONE_JOINT_DEG: list[int] = [0, 30, 45, 60, 90]
 
 #: Joint angles to try on the two-joint arm, in degrees, as (q1, q2).
-POSES_DEG = [(0, 0), (30, 60), (45, 45), (60, -60), (30, 30)]
+POSES_DEG: list[tuple[int, int]] = [(0, 0), (30, 60), (45, 45), (60, -60), (30, 30)]
 
 
 def one_joint_gripper(q1: float) -> tuple[float, float]:
@@ -90,6 +90,8 @@ def gripper_position(q1: float, q2: float) -> tuple[float, float]:
     Note ``q1 + q2``: link 2's angle on the table is its own joint angle plus
     everything the joints before it contributed.
     """
+    x: float
+    y: float
     x, y = joint2_position(q1)
     return (
         x + LINK2_M * math.cos(q1 + q2),
@@ -107,6 +109,8 @@ def main() -> None:
     print(f"{'q1':>6}  {'gripper (x, y)':>20}")
     print('-' * 30)
     for q1_deg in ONE_JOINT_DEG:
+        x: float
+        y: float
         x, y = one_joint_gripper(math.radians(q1_deg))
         print(f'{q1_deg:>5}°  ({x:>7.3f}, {y:>7.3f})')
 
@@ -114,8 +118,13 @@ def main() -> None:
     print(f"{'q1':>6} {'q2':>6}  {'joint 2 (x, y)':>20}  {'gripper (x, y)':>20}")
     print('-' * 58)
     for q1_deg, q2_deg in POSES_DEG:
-        q1, q2 = math.radians(q1_deg), math.radians(q2_deg)
+        q1: float = math.radians(q1_deg)
+        q2: float = math.radians(q2_deg)
+        jx: float
+        jy: float
         jx, jy = joint2_position(q1)
+        gx: float
+        gy: float
         gx, gy = gripper_position(q1, q2)
         print(
             f'{q1_deg:>5}° {q2_deg:>5}°  '

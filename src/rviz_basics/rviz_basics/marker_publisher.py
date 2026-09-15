@@ -25,11 +25,14 @@ from geometry_msgs.msg import TransformStamped
 from rcl_interfaces.msg import ParameterDescriptor
 import rclpy
 from rclpy.node import Node
+from rclpy.publisher import Publisher
+from rclpy.time import Time
+from rclpy.timer import Timer
 from tf2_ros import TransformBroadcaster
 from visualization_msgs.msg import Marker
 
 #: Topic RViz's Marker display subscribes to by default.
-MARKER_TOPIC = 'visualization_marker'
+MARKER_TOPIC: str = 'visualization_marker'
 
 
 def circular_orbit(
@@ -47,7 +50,7 @@ def circular_orbit(
     :param period_s: Seconds for one full revolution.
     :returns: ``(x, y, yaw)``, where ``yaw`` points along the direction of travel.
     """
-    angle = 2.0 * math.pi * (elapsed_s / period_s)
+    angle: float = 2.0 * math.pi * (elapsed_s / period_s)
     # +pi/2 makes the frame's +X axis tangent to the circle, i.e. "forwards".
     return radius_m * math.cos(angle), radius_m * math.sin(angle), angle + math.pi / 2.0
 
@@ -64,21 +67,23 @@ class MarkerPublisher(Node):
         """Declare parameters, then start the TF broadcaster, publisher and timer."""
         super().__init__('marker_publisher')
 
-        self._world_frame = self._str_param('world_frame', 'world', 'Fixed frame for RViz.')
-        self._marker_frame = self._str_param('marker_frame', 'marker_frame', 'Moving child frame.')
-        rate_hz = self._float_param('publish_rate_hz', 30.0, 'TF and marker broadcast rate.')
-        self._radius_m = self._float_param('orbit_radius_m', 2.0, 'Orbit radius in metres.')
-        self._period_s = self._float_param('orbit_period_s', 6.0, 'Seconds per revolution.')
-        self._diameter_m = self._float_param('marker_diameter_m', 0.4, 'Sphere diameter, metres.')
+        self._world_frame: str = self._str_param('world_frame', 'world', 'Fixed frame for RViz.')
+        self._marker_frame: str = self._str_param(
+            'marker_frame', 'marker_frame', 'Moving child frame.')
+        rate_hz: float = self._float_param('publish_rate_hz', 30.0, 'TF and marker broadcast rate.')
+        self._radius_m: float = self._float_param('orbit_radius_m', 2.0, 'Orbit radius in metres.')
+        self._period_s: float = self._float_param('orbit_period_s', 6.0, 'Seconds per revolution.')
+        self._diameter_m: float = self._float_param(
+            'marker_diameter_m', 0.4, 'Sphere diameter, metres.')
 
-        self._tf_broadcaster = TransformBroadcaster(self)
+        self._tf_broadcaster: TransformBroadcaster = TransformBroadcaster(self)
         # Default QoS (reliable, volatile, depth 10) matches what the RViz Marker
         # display expects; the marker is republished every tick, so a late-joining
         # RViz picks it up within one period without needing transient-local.
-        self._marker_pub = self.create_publisher(Marker, MARKER_TOPIC, 10)
+        self._marker_pub: Publisher = self.create_publisher(Marker, MARKER_TOPIC, 10)
 
-        self._start_time = self.get_clock().now()
-        self._timer = self.create_timer(1.0 / rate_hz, self._on_timer)
+        self._start_time: Time = self.get_clock().now()
+        self._timer: Timer = self.create_timer(1.0 / rate_hz, self._on_timer)
 
         self.get_logger().info(
             f"Publishing TF '{self._world_frame}' -> '{self._marker_frame}' "
@@ -98,15 +103,18 @@ class MarkerPublisher(Node):
     # -- periodic work -----------------------------------------------------
 
     def _on_timer(self) -> None:
-        now = self.get_clock().now()
-        elapsed_s = (now - self._start_time).nanoseconds * 1e-9
+        now: Time = self.get_clock().now()
+        elapsed_s: float = (now - self._start_time).nanoseconds * 1e-9
+        x: float
+        y: float
+        yaw: float
         x, y, yaw = circular_orbit(elapsed_s, self._radius_m, self._period_s)
 
         self._tf_broadcaster.sendTransform(self._build_transform(now, x, y, yaw))
         self._marker_pub.publish(self._build_marker(now))
 
-    def _build_transform(self, stamp, x: float, y: float, yaw: float) -> TransformStamped:
-        transform = TransformStamped()
+    def _build_transform(self, stamp: Time, x: float, y: float, yaw: float) -> TransformStamped:
+        transform: TransformStamped = TransformStamped()
         transform.header.stamp = stamp.to_msg()
         transform.header.frame_id = self._world_frame
         transform.child_frame_id = self._marker_frame
@@ -121,8 +129,8 @@ class MarkerPublisher(Node):
         ) = yaw_to_quaternion(yaw)
         return transform
 
-    def _build_marker(self, stamp) -> Marker:
-        marker = Marker()
+    def _build_marker(self, stamp: Time) -> Marker:
+        marker: Marker = Marker()
         marker.header.stamp = stamp.to_msg()
         # Stamped in the *moving* frame, at its origin — TF supplies the motion.
         marker.header.frame_id = self._marker_frame
@@ -147,7 +155,7 @@ class MarkerPublisher(Node):
 def main(args: list[str] | None = None) -> None:
     """Entry point registered as the ``marker_publisher`` console script."""
     rclpy.init(args=args)
-    node = MarkerPublisher()
+    node: MarkerPublisher = MarkerPublisher()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

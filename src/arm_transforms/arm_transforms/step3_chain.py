@@ -41,7 +41,7 @@ import math
 from arm_transforms.arm_math import gripper_in_base, Transform2D
 
 #: A tool tip, 1 m ahead of the gripper. Fixed in the gripper frame.
-TOOL_TIP_IN_GRIPPER = (1.0, 0.0)
+TOOL_TIP_IN_GRIPPER: tuple[float, float] = (1.0, 0.0)
 
 
 def describe(name: str, transform: Transform2D) -> str:
@@ -56,16 +56,17 @@ def main() -> None:
     """Show joining, flipping and applying, on one arm pose."""
     print(__doc__.split('THE IDEA')[0].strip())
 
-    q1, q2 = math.radians(30.0), math.radians(60.0)
+    q1: float = math.radians(30.0)
+    q2: float = math.radians(60.0)
     print('\nArm pose: q1 = 30°, q2 = 60°\n')
 
     # --- forwards ------------------------------------------------------
-    base_to_gripper = gripper_in_base(q1, q2)
+    base_to_gripper: Transform2D = gripper_in_base(q1, q2)
     print('Joining every link, base to gripper:')
     print('   ', describe('base_link -> gripper', base_to_gripper))
 
     # --- backwards -----------------------------------------------------
-    gripper_to_base = base_to_gripper.inverse()
+    gripper_to_base: Transform2D = base_to_gripper.inverse()
     print('\nThe same transform, flipped round:')
     print('   ', describe('gripper -> base_link', gripper_to_base))
     print(
@@ -75,11 +76,13 @@ def main() -> None:
 
     # Flipping twice must land back where we started. Worth checking, because a
     # sign error in an inverse is easy to write and hard to spot by eye.
-    round_trip = gripper_to_base.inverse()
-    drift = math.hypot(round_trip.x - base_to_gripper.x, round_trip.y - base_to_gripper.y)
+    round_trip: Transform2D = gripper_to_base.inverse()
+    drift: float = math.hypot(round_trip.x - base_to_gripper.x, round_trip.y - base_to_gripper.y)
     print(f'\n    Flipping it twice returns the original, to within {drift:.2e} m.')
 
     # --- carrying a point ----------------------------------------------
+    tip_x: float
+    tip_y: float
     tip_x, tip_y = base_to_gripper.apply(*TOOL_TIP_IN_GRIPPER)
     print('\nA tool tip, 1 m ahead of the gripper:')
     print(f'    in the gripper frame: ({TOOL_TIP_IN_GRIPPER[0]:.3f}, '

@@ -50,7 +50,7 @@ from rclpy.time import Time
 from tf2_ros import Buffer, TransformException, TransformListener
 
 #: A tool tip, 1 m ahead of the gripper, fixed there.
-TOOL_TIP_IN_GRIPPER = (1.0, 0.0)
+TOOL_TIP_IN_GRIPPER: tuple[float, float] = (1.0, 0.0)
 
 
 def yaw_of(transform: TransformStamped) -> float:
@@ -59,8 +59,8 @@ def yaw_of(transform: TransformStamped) -> float:
     The reverse of ``yaw_to_quaternion``. Only correct for rotations about the
     up axis, which is all this arm does.
     """
-    z = transform.transform.rotation.z
-    w = transform.transform.rotation.w
+    z: float = transform.transform.rotation.z
+    w: float = transform.transform.rotation.w
     return 2.0 * math.atan2(z, w)
 
 
@@ -70,8 +70,9 @@ def carry_into_base(found: TransformStamped, x: float, y: float) -> tuple[float,
     Rotate first, then shift — the same rule as step 2, applied to a transform
     this program never calculated.
     """
-    yaw = yaw_of(found)
-    cos_t, sin_t = math.cos(yaw), math.sin(yaw)
+    yaw: float = yaw_of(found)
+    cos_t: float = math.cos(yaw)
+    sin_t: float = math.sin(yaw)
     return (
         found.transform.translation.x + x * cos_t - y * sin_t,
         found.transform.translation.y + x * sin_t + y * cos_t,
@@ -87,8 +88,8 @@ class GripperWatcher(Node):
 
         # The buffer stores transforms as they arrive; the listener fills it
         # from /tf. Both are needed, and the listener must be kept alive.
-        self._buffer = Buffer()
-        self._listener = TransformListener(self._buffer, self)
+        self._buffer: Buffer = Buffer()
+        self._listener: TransformListener = TransformListener(self._buffer, self)
 
         self.create_timer(1.0, self._on_timer)
         self.get_logger().info('Asking TF for base_link -> gripper once a second')
@@ -96,13 +97,15 @@ class GripperWatcher(Node):
     def _on_timer(self) -> None:
         try:
             # Time() means "whatever is most recent", rather than a moment.
-            found = self._buffer.lookup_transform('base_link', 'gripper', Time())
+            found: TransformStamped = self._buffer.lookup_transform('base_link', 'gripper', Time())
         except TransformException as error:
             self.get_logger().warn(f'No answer yet: {error}')
             return
 
-        x = found.transform.translation.x
-        y = found.transform.translation.y
+        x: float = found.transform.translation.x
+        y: float = found.transform.translation.y
+        tip_x: float
+        tip_y: float
         tip_x, tip_y = carry_into_base(found, *TOOL_TIP_IN_GRIPPER)
 
         self.get_logger().info(
@@ -114,7 +117,7 @@ class GripperWatcher(Node):
 def main(args: list[str] | None = None) -> None:
     """Entry point for ``ros2 run arm_transforms arm_step5_lookup``."""
     rclpy.init(args=args)
-    node = GripperWatcher()
+    node: GripperWatcher = GripperWatcher()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

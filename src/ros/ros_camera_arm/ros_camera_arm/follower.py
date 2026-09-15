@@ -74,8 +74,10 @@ class Follower(Node):
         pan, tilt = pixel_to_angles(*ball, *self.lens)
         joints = JointState()
         joints.header.stamp = msg.header.stamp
-        joints.name = ['pan', 'tilt']
-        joints.position = [pan, tilt]
+        # The arm's URDF also has a gripper. It has nothing to hold here, so keep
+        # it open, at 0.02 metres, or RViz would not know where to draw its fingers.
+        joints.name = ['pan', 'tilt', 'gripper']
+        joints.position = [pan, tilt, 0.02]
         self.publisher.publish(joints)
         self.get_logger().info(
             f'ball at pixel ({ball[0]:.0f}, {ball[1]:.0f}): pan {math.degrees(pan):+.0f}°, '

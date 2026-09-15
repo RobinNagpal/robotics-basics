@@ -32,6 +32,8 @@ def generate_launch_description() -> LaunchDescription:
              parameters=[{'robot_description': description}]),
         # Our program: it publishes the joint angles that make the arm move.
         Node(package='ros_arm', executable='arm_mover'),
+        # The distance sensor in the gripper: it publishes how far the table is.
+        Node(package='ros_arm', executable='distance_sensor', output='screen'),
         # RViz, with a layout that draws the arm and its frames.
         Node(package='rviz2', executable='rviz2', arguments=['-d', rviz_layout],
              condition=IfCondition(LaunchConfiguration('rviz'))),

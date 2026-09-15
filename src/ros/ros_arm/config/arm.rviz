@@ -60,6 +60,20 @@ Visualization Manager:
     Visual Enabled: true
     Collision Enabled: false
     Value: true
+  - Alpha: 0.5
+    Buffer Length: 1
+    Class: rviz_default_plugins/Range
+    Color: 255; 255; 255
+    Enabled: true
+    Name: Distance sensor
+    Value: true
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      Filter size: 10
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /tip_range
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

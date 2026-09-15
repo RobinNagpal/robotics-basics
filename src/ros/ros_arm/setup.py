@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'arm_mover = ros_arm.arm_mover:main',
+            'distance_sensor = ros_arm.distance_sensor:main',
         ],
     },
 )

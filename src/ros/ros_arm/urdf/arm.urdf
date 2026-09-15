@@ -1,15 +1,18 @@
 <?xml version="1.0"?>
 <!--
-  The simplest arm: a pointer that can turn left and right, and tilt up and down.
+  The simplest arm: a pointer that can turn left and right, and tilt up and down,
+  with a small gripper and a distance sensor at its end.
 
   A URDF file describes a robot as links (the rigid parts) and joints (how each
-  part is attached to the one before it). This arm has three parts:
+  part is attached to the one before it). This arm has these parts:
 
-    base_link  - the base, which sits on the table and never moves
-    turret     - sits on the base and turns left and right: joint "pan"
-    arm_link   - sits on the turret and tilts up and down: joint "tilt"
-
-  and a fourth, "tip", which is just the end of the arm, bolted on.
+    base_link     - the base, which sits on the table and never moves
+    turret        - sits on the base and turns left and right: joint "pan"
+    arm_link      - sits on the turret and tilts up and down: joint "tilt"
+    tip           - the gripper's palm, bolted to the end of the arm
+    left_finger   - slides sideways to open and close: joint "gripper"
+    right_finger  - slides the other way, copying the left finger
+    range_sensor  - a distance sensor in the palm, looking down
 
   robot_state_publisher reads this file. Whenever it is told the angle of each
   joint, on the /joint_states topic, it works out where every part is and
@@ -67,7 +70,8 @@
     </visual>
   </link>
 
-  <!-- The tip is bolted to the end of the arm: a fixed joint never moves. -->
+  <!-- The tip is the gripper's palm, bolted to the end of the arm: a fixed
+       joint never moves. -->
   <joint name="tip_joint" type="fixed">
     <parent link="arm_link"/>
     <child link="tip"/>
@@ -76,9 +80,61 @@
 
   <link name="tip">
     <visual>
-      <geometry><sphere radius="0.018"/></geometry>
+      <origin xyz="0.01 0 0"/>
+      <geometry><box size="0.02 0.07 0.03"/></geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+
+  <!-- The gripper: two fingers that slide apart and together. "prismatic"
+       means the joint slides instead of turning, so its position is a distance
+       in metres, not an angle. At 0 the fingers touch, and at 0.02 each one has
+       slid 2 cm out, so the gripper is open 4 cm. -->
+  <joint name="gripper" type="prismatic">
+    <parent link="tip"/>
+    <child link="left_finger"/>
+    <origin xyz="0.02 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0" upper="0.02" effort="1" velocity="0.1"/>
+  </joint>
+
+  <link name="left_finger">
+    <visual>
+      <origin xyz="0.02 0.004 0"/>
+      <geometry><box size="0.04 0.008 0.02"/></geometry>
       <material name="red"/>
     </visual>
   </link>
+
+  <!-- The right finger slides the other way. <mimic> makes this joint copy the
+       "gripper" joint, so one number opens and closes both fingers. -->
+  <joint name="gripper_mirror" type="prismatic">
+    <parent link="tip"/>
+    <child link="right_finger"/>
+    <origin xyz="0.02 0 0"/>
+    <axis xyz="0 -1 0"/>
+    <limit lower="0" upper="0.02" effort="1" velocity="0.1"/>
+    <mimic joint="gripper"/>
+  </joint>
+
+  <link name="right_finger">
+    <visual>
+      <origin xyz="0.02 -0.004 0"/>
+      <geometry><box size="0.04 0.008 0.02"/></geometry>
+      <material name="red"/>
+    </visual>
+  </link>
+
+  <!-- The distance sensor sits under the palm. A distance sensor measures along
+       its own x axis, so this frame is turned a quarter turn (pitch, 1.5708
+       radians) to make its x axis point down, towards the table, when the arm
+       is level. It has no shape of its own: RViz draws its beam instead. -->
+  <joint name="range_sensor_joint" type="fixed">
+    <parent link="tip"/>
+    <child link="range_sensor"/>
+    <origin xyz="0.01 0 -0.015" rpy="0 1.5708 0"/>
+  </joint>
+
+  <link name="range_sensor"/>
 
 </robot>

@@ -14,7 +14,9 @@ messages.
 ## Contents
 
 1. [The two programs](#1-the-two-programs)
-2. [What a picture message holds](#2-what-a-picture-message-holds)
+2. [The camera's two message classes](#2-the-cameras-two-message-classes)
+   - [2.1 Image: one picture](#21-image-one-picture)
+   - [2.2 CameraInfo: the camera's lens](#22-camerainfo-the-cameras-lens)
 3. [The publisher](#3-the-publisher)
 4. [The subscriber](#4-the-subscriber)
 5. [Running it](#5-running-it)
@@ -45,32 +47,103 @@ camera.
 
 ![One picture from the camera publisher](../images/ros/ros-camera/picture.svg)
 
-## 2. What a picture message holds
+## 2. The camera's two message classes
 
-A picture travels as a `sensor_msgs/Image` message. The message cannot hold a
-picture as a grid, so it holds the picture's size, and then every pixel's numbers
-in one long list of bytes, row after row. The diagram shows that for a picture
-only 3 pixels wide and 2 pixels tall.
+The two topics carry two message types from the `sensor_msgs` package: `Image`,
+for the picture, and `CameraInfo`, for the camera's lens. In Python, each type
+is a class, which the code gets with `from sensor_msgs.msg import CameraInfo,
+Image`. For every picture, the publisher makes one object of each class, fills
+in its fields, and publishes it. [Section 3 of the ROS
+intro](ros-intro.md#3-message-types-and-the-sensor_msgs-package) explains where
+these classes come from, and this section explains what is in each one.
+
+### 2.1 Image: one picture
+
+A `sensor_msgs/Image` holds one picture. The message cannot hold a picture as a
+grid, so it holds the picture's size, and then every pixel's numbers in one long
+list of bytes, row after row. The diagram shows that for a picture only 3 pixels
+wide and 2 pixels tall.
 
 ![How a picture becomes a message](../images/ros/ros-camera/image_message.svg)
 
-These are the message's parts, with the values the publisher sends:
+These are the class's fields, with the values the publisher sends:
 
-| Field | What it holds | Here |
+| Field | What it holds | This example sends |
 | --- | --- | --- |
 | `header.stamp` | when the picture was taken | the time it was drawn |
 | `header.frame_id` | the frame the picture was taken in | `camera` |
 | `height`, `width` | the picture's size, in pixels | 240, 320 |
 | `encoding` | what each pixel's numbers mean | `rgb8`: red, green and blue, one byte each |
+| `is_bigendian` | the order of the bytes, for numbers that take more than one | 0: one byte per number, so it does not matter |
 | `step` | how many bytes one row takes | 320 pixels × 3 bytes = 960 |
 | `data` | every pixel's numbers, row after row | 240 rows × 960 bytes = 230,400 bytes |
 
-The lens numbers travel separately, as a `sensor_msgs/CameraInfo` message. Its
-field `k` holds the four lens numbers from the [camera
-basics](../camera/basics.md#6-the-lens-as-four-numbers), `fx`, `fy`, `cx` and
-`cy`, laid out as a 3 × 3 grid and written as nine numbers, row by row: `[fx, 0,
-cx, 0, fy, cy, 0, 0, 1]`. The publisher's lens sees 60° across, so `fx` and `fy`
-are 277.1, and the middle of its picture, `cx` and `cy`, is at pixel (160, 120).
+`header` is a message of its own, a `std_msgs/Header`, and nearly every message
+about the world has one. Its `stamp` says when the message was true, as whole
+seconds and nanoseconds, and its `frame_id` names the set of axes the message's
+numbers are measured in. A new `Image()` has every field empty, with a size of 0
+by 0 and no bytes, so a picture only exists once the publisher has filled in its
+fields.
+
+### 2.2 CameraInfo: the camera's lens
+
+A picture on its own does not say how the lens that took it sees the world, and
+a program needs that to turn a pixel into a direction, as the
+[camera and arm example](ros-camera-arm.md) does. So a camera driver publishes a
+`sensor_msgs/CameraInfo` alongside every picture, with the same header. These are
+its fields:
+
+| Field | What it holds | This example sends |
+| --- | --- | --- |
+| `header` | when and where, the same as the picture's | the picture's header |
+| `height`, `width` | the picture's size, in pixels | 240, 320 |
+| `k` | the four lens numbers, `fx`, `fy`, `cx` and `cy`, as a 3 × 3 grid | `[277.1, 0, 160, 0, 277.1, 120, 0, 0, 1]` |
+| `distortion_model` | the name of the formula for how the lens bends straight lines | empty |
+| `d` | the numbers for that formula, usually five | empty |
+| `r` | a rotation, used only by stereo cameras, which have two lenses side by side | all zeros |
+| `p` | the lens numbers again, as a 3 × 4 grid, for the picture after its bending has been taken out | all zeros |
+| `binning_x`, `binning_y` | how many of the sensor's pixels were joined into each picture pixel | 0, meaning none |
+| `roi` | the region of interest: the part of the sensor the picture came from | all zeros, meaning all of it |
+
+`k` holds the numbers from the
+[camera basics](../camera/basics.md#6-the-lens-as-four-numbers) written out as
+nine numbers, row by row: `[fx, 0, cx, 0, fy, cy, 0, 0, 1]`. The publisher's lens
+sees 60° across, so `fx` and `fy` are 277.1, and the middle of its picture, `cx`
+and `cy`, is at pixel (160, 120). This is one camera info message, as
+`ros2 topic echo --once --flow-style /camera/camera_info` printed it, with
+`--flow-style` putting each list on one line:
+
+```
+header:
+  stamp:
+    sec: 1789473173
+    nanosec: 275754000
+  frame_id: camera
+height: 240
+width: 320
+distortion_model: ''
+d: []
+k: [277.1, 0.0, 160.0, 0.0, 277.1, 120.0, 0.0, 0.0, 1.0]
+r: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+p: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+binning_x: 0
+binning_y: 0
+roi:
+  x_offset: 0
+  y_offset: 0
+  height: 0
+  width: 0
+  do_rectify: false
+```
+
+This example fills in only the size and `k`, which is all the other programs
+here use, and leaves the rest as a new `CameraInfo()` starts them: empty. A real
+camera's driver fills in every field, from a **calibration**, which measures the
+camera by photographing a printed checkerboard from many angles. A calibrated
+camera usually has the distortion model `plumb_bob`, with five numbers in `d`
+that describe how its lens bends straight lines, `r` set to "no rotation", and
+`p` holding the lens numbers for the corrected picture, which tools such as
+`depth_image_proc` read.
 
 ## 3. The publisher
 
@@ -145,7 +218,7 @@ on_picture:
 
 The function ROS calls with each message is the **callback**, here
 `on_picture`. Turning the message back into a grid of pixels would mean undoing
-section 2 by hand, so the subscriber uses **cv_bridge**, a standard ROS library
+section 2.1 by hand, so the subscriber uses **cv_bridge**, a standard ROS library
 that turns an image message into a NumPy array, one entry per pixel. This is the
 core of `ros_camera/camera_subscriber.py`:
 
@@ -200,10 +273,10 @@ Ctrl-C to stop everything.
 
 While it runs, a second terminal, opened with `make shell`, can look at it with
 the commands from [section 5 of the
-intro](ros-intro.md#5-looking-inside-a-running-robot): `ros2 topic hz
+intro](ros-intro.md#6-looking-inside-a-running-robot): `ros2 topic hz
 /camera/image_raw` shows about 10 pictures a second, and `ros2 topic echo --once
 --no-arr /camera/image_raw` prints one picture's message, with the fields from
-section 2.
+section 2.1.
 
 Each program can also be started on its own, in its own terminal, which shows
 that they only meet through the topic:

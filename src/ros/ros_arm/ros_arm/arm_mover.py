@@ -11,7 +11,8 @@ the part that drives the motors, and the controller would publish /joint_states
 as the motors actually moved. Here this node plays both parts.
 
 Publishes:
-  /joint_states     sensor_msgs/JointState   the angle of "pan" and "tilt", in radians
+  /joint_states     sensor_msgs/JointState   "pan" and "tilt", in radians, and "gripper",
+                                             in metres
 
 Run it on its own with:  ros2 run ros_arm arm_mover
 """
@@ -24,22 +25,24 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
 
-def arm_pose(seconds: float) -> tuple[float, float]:
-    """Say where the two joints should be after this many seconds, in radians.
+def arm_pose(seconds: float) -> tuple[float, float, float]:
+    """Say where the three joints should be after this many seconds.
 
     The arm swings left and right by up to 1 radian (about 57 degrees), and nods
     up and down between 0 and 0.8 radians, at different speeds, so it traces a
-    slow loop.
+    slow loop. The gripper opens and closes between 0 and 0.02 metres, which is
+    how far each finger slides out.
     """
     pan = 1.0 * math.sin(0.5 * seconds)
     tilt = 0.4 + 0.4 * math.sin(0.8 * seconds)
-    return pan, tilt
+    gripper = 0.01 + 0.01 * math.sin(1.2 * seconds)
+    return pan, tilt, gripper
 
 
 # ArmMover extends rclpy's Node, which is what makes this program a ROS node:
 # something with a name, that can publish messages on topics.
 class ArmMover(Node):
-    """Publish the next position of the arm's two joints, twenty times a second."""
+    """Publish the next position of the arm's joints, twenty times a second."""
 
     def __init__(self):
         """Create the publisher, and a timer that calls publish_pose."""
@@ -55,15 +58,17 @@ class ArmMover(Node):
     def publish_pose(self) -> None:
         """Publish where the joints are now."""
         now = self.get_clock().now()
-        pan, tilt = arm_pose((now - self.start).nanoseconds / 1e9)
+        pan, tilt, gripper = arm_pose((now - self.start).nanoseconds / 1e9)
 
         # A JointState lists the joints by the names they have in the URDF, and
         # their positions in the same order. For a turning joint, the position
-        # is an angle in radians.
+        # is an angle in radians, and for a sliding joint, such as the
+        # gripper's, it is a distance in metres. The second finger's joint is not
+        # listed: the URDF says it copies "gripper".
         msg = JointState()
         msg.header.stamp = now.to_msg()
-        msg.name = ['pan', 'tilt']
-        msg.position = [pan, tilt]
+        msg.name = ['pan', 'tilt', 'gripper']
+        msg.position = [pan, tilt, gripper]
         self.publisher.publish(msg)
 
 

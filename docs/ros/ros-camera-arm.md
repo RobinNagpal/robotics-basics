@@ -95,7 +95,7 @@ on_picture:
     if there is no ball, leave the arm where it is
     pan  = -atan((u - cx) / fx)        right of the middle is a turn to the right
     tilt =  atan((cy - v) / fy)        above the middle is a tilt up
-    publish a JointState with the names pan and tilt, and these two angles
+    publish a JointState with pan, tilt, and the gripper held open
 ```
 
 This is the core of `ros_camera_arm/follower.py`. It does not find the ball
@@ -133,15 +133,18 @@ class Follower(Node):
         pan, tilt = pixel_to_angles(*ball, *self.lens)
         joints = JointState()
         joints.header.stamp = msg.header.stamp
-        joints.name = ['pan', 'tilt']
-        joints.position = [pan, tilt]
+        joints.name = ['pan', 'tilt', 'gripper']
+        joints.position = [pan, tilt, 0.02]           # the gripper stays open
         self.publisher.publish(joints)
 ```
 
 `math.atan2(a, b)` is the angle whose tangent is `a / b`, which is the `atan`
 from section 2, written the way Python prefers. The joint message is stamped with
 the picture's timestamp, so that anyone reading it knows which picture the angles
-came from.
+came from. The arm's URDF also has a gripper, as the
+[arm doc](ros-arm.md#6-the-gripper) explains, and robot_state_publisher needs a
+position for every joint before RViz can draw the whole arm, so the follower
+keeps the gripper open at 0.02 metres.
 
 This package's `package.xml` lists `ros_camera` and `ros_arm` among the packages
 it needs, which is what lets the follower import from `ros_camera`, and lets its
@@ -199,7 +202,7 @@ the arm moving, as it does in the [arm doc](ros-arm.md#5-running-it).
 The idea is exactly the same on a real robot, and the node graph from section 1
 barely changes: a real camera driver takes the place of `camera_publisher`, and
 the arm's controller takes the place of publishing `/joint_states` directly, as
-the [arm doc](ros-arm.md#6-a-real-arm) explains. Three things do get harder.
+the [arm doc](ros-arm.md#8-a-real-arm) explains. Three things do get harder.
 
 - **Where the camera is.** Here the camera sits exactly at the arm's base,
   looking the same way, so a direction from the camera is a direction from the

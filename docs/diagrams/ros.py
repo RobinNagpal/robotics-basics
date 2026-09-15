@@ -177,6 +177,69 @@ def arm():
     _save(fig, 'ros-arm', 'arm.svg')
 
 
+def gripper_and_sensor():
+    """Draw the gripper's fingers from above, and the distance sensor's beam from the side."""
+    fig, (top, side) = plt.subplots(1, 2, figsize=(11, 4.6), facecolor='white',
+                                    gridspec_kw={'width_ratios': (1, 1.4)})
+
+    # From above: the palm, and two fingers each slid out by `gripper` metres.
+    gripper = 0.015
+    top.set_aspect('equal')
+    top.axis('off')
+    top.set_xlim(-0.04, 0.11)
+    top.set_ylim(-0.055, 0.06)
+    top.add_patch(Rectangle((-0.03, -0.015), 0.03, 0.03, facecolor=ORANGE, edgecolor=INK, lw=0.6))
+    top.add_patch(Rectangle((0, -0.035), 0.02, 0.07, facecolor='#cccccc', edgecolor=INK, lw=0.8))
+    for sign in (1, -1):
+        low = sign * gripper + (0 if sign > 0 else -0.008)
+        top.add_patch(Rectangle((0.02, low), 0.04, 0.008, facecolor=RED, edgecolor=INK, lw=0.8))
+        top.annotate('', xy=(0.07, sign * gripper), xytext=(0.07, 0),
+                     arrowprops={'arrowstyle': '-|>', 'color': BLUE, 'lw': 1.2})
+    top.text(0.075, 0.0, f'gripper =\n{gripper:.3f} m:\nhow far each\nfinger slides',
+             color=BLUE, fontsize=9, va='center')
+    top.text(-0.015, -0.028, 'arm', color=ORANGE, fontsize=9, ha='center')
+    top.text(0.01, 0.04, 'palm', color=INK, fontsize=9, ha='center')
+    top.text(0.04, -0.047, f'open {2 * gripper * 100:.0f} cm', color=RED, fontsize=9, ha='center')
+    top.set_title('The gripper, from above: one sliding joint', fontsize=11, color=INK, pad=6)
+
+    # From the side: the arm tilted up, and the beam leaving the palm at right
+    # angles to the arm, down to the table.
+    pan_z, tilt_z, length = _urdf_sizes()
+    tilt = math.radians(25)
+    side.set_aspect('equal')
+    side.axis('off')
+    side.set_xlim(-0.10, 0.36)
+    side.set_ylim(-0.03, 0.26)
+    side.plot([-0.09, 0.35], [0, 0], color=INK, lw=1.5)
+    side.add_patch(Rectangle((-0.06, 0), 0.12, pan_z, facecolor='#cccccc', edgecolor=INK, lw=0.8))
+    side.add_patch(Rectangle((-0.03, pan_z), 0.06, tilt_z - pan_z, facecolor='#dddddd',
+                             edgecolor=INK, lw=0.8))
+    side.text(0.34, -0.022, 'the table', color=MUTED, fontsize=9, ha='right')
+    end = (length * math.cos(tilt), tilt_z + length * math.sin(tilt))
+    side.plot([0, end[0]], [tilt_z, end[1]], color=ORANGE, lw=8, solid_capstyle='butt')
+    side.plot([0], [tilt_z], marker='o', color=GREEN, ms=7)
+    beam = (math.sin(tilt), -math.cos(tilt))           # at right angles to the arm, downwards
+    reach = end[1] / math.cos(tilt)
+    hit = (end[0] + beam[0] * reach, end[1] + beam[1] * reach)
+    side.plot([end[0], hit[0]], [end[1], hit[1]], color=BLUE, lw=1.6, ls=(0, (5, 3)))
+    side.plot([end[0]], [end[1]], marker='s', color=INK, ms=6)
+    side.text(end[0] + 0.01, end[1] + 0.012, 'the sensor, under the palm', fontsize=9, color=INK)
+    side.plot([end[0], end[0]], [end[1], 0], color=MUTED, lw=1, ls=':')
+    side.text(end[0] - 0.006, end[1] / 2, 'height', color=MUTED, fontsize=9, ha='right')
+    side.text((end[0] + hit[0]) / 2 + 0.012, end[1] / 2, 'the beam:\nthe distance\nit measures',
+              color=BLUE, fontsize=9, va='center')
+    side.add_patch(Arc(end, 0.09, 0.09, theta1=270, theta2=270 + math.degrees(tilt), color=GREEN,
+                       lw=1.4))
+    side.text(end[0] + 0.012, end[1] - 0.075, f'{math.degrees(tilt):.0f}°', color=GREEN, fontsize=9)
+    side.text(0.0, tilt_z + 0.035, f'tilt = {math.degrees(tilt):.0f}°', color=GREEN, fontsize=9,
+              ha='center')
+    side.set_title('The distance sensor, from the side: its beam leans with the arm',
+                   fontsize=11, color=INK, pad=6)
+    fig.text(0.62, 0.02, 'distance = height / cos(tilt): the more the arm tilts, the longer '
+             'the beam', ha='center', fontsize=9.5, color=INK, family='monospace')
+    _save(fig, 'ros-arm', 'gripper_sensor.svg')
+
+
 def pixel_to_angle():
     """Draw, from above, how a pixel right of the middle becomes a turn to the right."""
     # The ball from the camera doc's picture, where the subscriber found it.
@@ -228,4 +291,5 @@ if __name__ == '__main__':
     picture()
     image_message()
     arm()
+    gripper_and_sensor()
     pixel_to_angle()

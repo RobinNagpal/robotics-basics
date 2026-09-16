@@ -6,7 +6,7 @@ that turn the camera's pictures into the box's position and height. This doc
 turns those calculations into code. Section 1 writes them as pseudo code, section
 2 explains the basics of each library the real code uses, and section 3 does the
 calculations in Python with those libraries, on a real capture from the
-simulation. The rest describes the project itself, `src/camera_one_box`: how its
+simulation. The rest describes the project itself, `src/camera/camera_applied/camera_one_box`: how its
 pieces connect, how to run it, where things are in the code, and the gotchas
 found while building it.
 
@@ -478,7 +478,7 @@ command line, `ros2 bag record` and `ros2 bag play` do that, and `ros2 bag info`
 shows what a bag holds:
 
 ```
-ros2 bag info src/camera_one_box/test/data/one_box
+ros2 bag info src/camera/camera_applied/camera_one_box/test/data/one_box
 ```
 
 For the capture the tests use, that lists the four messages it holds, one on
@@ -523,7 +523,7 @@ own code uses.
 
 The pieces work on a real capture from the Gazebo camera, recorded into a
 rosbag, which is the usual way to keep camera data for testing. It lives in
-`src/camera_one_box/test/data/one_box`, and the project's tests use the same one.
+`src/camera/camera_applied/camera_one_box/test/data/one_box`, and the project's tests use the same one.
 To try the pieces yourself, run `make shell`, start `python` from the top of the
 repo, and paste them in order, because the later pieces use what the earlier
 ones made.
@@ -543,7 +543,7 @@ from rclpy.serialization import deserialize_message
 from rosidl_runtime_py.utilities import get_message
 
 reader: rosbag2_py.SequentialReader = rosbag2_py.SequentialReader()
-reader.open(rosbag2_py.StorageOptions(uri='src/camera_one_box/test/data/one_box',
+reader.open(rosbag2_py.StorageOptions(uri='src/camera/camera_applied/camera_one_box/test/data/one_box',
                                       storage_id='mcap'),
             rosbag2_py.ConverterOptions('', ''))
 # Each topic's message type, by name, such as 'sensor_msgs/msg/Image'.
@@ -1000,7 +1000,7 @@ simulation first.
 ### 6.1 Layout
 
 ```
-src/camera_one_box/
+src/camera/camera_applied/camera_one_box/
   README.md                          the commands, the main files and this layout
   launch/one_box.launch.py           starts everything in section 4.1 together
   urdf/camera.urdf.xacro             the camera on its stand, and its two sensors
@@ -1048,7 +1048,7 @@ into a rosbag, which is what the tests replay:
 
 ```
 pixi run bash -c 'source install/setup.bash && \
-  ros2 run camera_one_box save_snapshot src/camera_one_box/test/data/one_box'
+  ros2 run camera_one_box save_snapshot src/camera/camera_applied/camera_one_box/test/data/one_box'
 ```
 
 It will not overwrite an existing folder, so delete the old one first.

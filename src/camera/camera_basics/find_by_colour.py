@@ -18,7 +18,7 @@ The steps are always the same, and they are the steps in this file:
 The picture is data/table_colour.png, one frame recorded from the camera area's
 Gazebo simulation: a camera 0.40 m above a table, looking down at a red box.
 
-Run it with:  pixi run python src/camera_basics/find_by_colour.py
+Run it with:  pixi run python src/camera/camera_basics/find_by_colour.py
 """
 
 from collections.abc import Sequence

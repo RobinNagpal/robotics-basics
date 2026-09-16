@@ -24,8 +24,8 @@ the drawing is what a real project does.
 
 This file needs PyTorch, which is in the separate `vision` environment:
 
-  pixi run -e vision python src/camera_basics/train_a_model.py       # 40 epochs, ~3 min
-  pixi run -e vision python src/camera_basics/train_a_model.py 12    # quicker, less sure
+  pixi run -e vision python src/camera/camera_basics/train_a_model.py       # 40 epochs, ~3 min
+  pixi run -e vision python src/camera/camera_basics/train_a_model.py 12    # quicker, less sure
 
 Training writes to runs/ and the dataset to datasets/; both are ignored by git.
 """

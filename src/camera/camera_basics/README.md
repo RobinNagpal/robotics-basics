@@ -5,7 +5,7 @@ run: by its **colour**, by adding **depth** to turn the pixel into metres, and
 with a **trained model**. The fourth program trains a model of your own.
 
 The doc for this folder is
-[docs/camera/finding-objects.md](../../docs/camera/finding-objects.md).
+[docs/camera/finding-objects.md](../../../docs/camera/finding-objects.md).
 
 ## Running it
 
@@ -18,10 +18,10 @@ make camera.train      # teach YOLO this robot's box, from 80 drawn pictures (~3
 The same, without make:
 
 ```
-pixi run python src/camera_basics/find_by_colour.py
-pixi run python src/camera_basics/depth_of_object.py
-pixi run -e vision python src/camera_basics/find_with_model.py
-pixi run -e vision python src/camera_basics/train_a_model.py        # or: ... 12
+pixi run python src/camera/camera_basics/find_by_colour.py
+pixi run python src/camera/camera_basics/depth_of_object.py
+pixi run -e vision python src/camera/camera_basics/find_with_model.py
+pixi run -e vision python src/camera/camera_basics/train_a_model.py        # or: ... 12
 ```
 
 The first two are plain OpenCV and NumPy and run in the normal environment. The
@@ -55,7 +55,7 @@ runs/box/                what training produced, including best.pt  (ignored by 
 out/                     annotated pictures the programs write  (ignored by git)
 ```
 
-The recorded frame comes from `src/camera_one_box`, the Gazebo simulation in the
+The recorded frame comes from `src/camera/camera_applied/camera_one_box`, the Gazebo simulation in the
 camera area: a camera 0.40 m above a table, looking straight down at a red box
 6 cm across. It is kept here as plain files so that this folder needs no ROS.
 A real robot gets exactly these three things from its camera driver, as

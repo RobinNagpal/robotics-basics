@@ -6,9 +6,9 @@ real robot arm's perception code is, and it uses the same libraries.
 
 This file is about running the code and finding your way around it. The ideas
 behind it, and the maths, are explained in
-[docs/camera/one-box-intro.md](../../docs/camera/one-box-intro.md), which builds
-on [docs/camera/basics.md](../../docs/camera/basics.md), and
-[docs/camera/one-box-code.md](../../docs/camera/one-box-code.md) explains the
+[docs/camera/one-box-intro.md](../../../../docs/camera/one-box-intro.md), which builds
+on [docs/camera/basics.md](../../../../docs/camera/basics.md), and
+[docs/camera/one-box-code.md](../../../../docs/camera/one-box-code.md) explains the
 code and the basics of every library it uses.
 
 ## Contents
@@ -96,9 +96,9 @@ It refuses to write over a folder that already exists, so it cannot delete a
 recording by accident:
 
 ```
-rm -r src/camera_one_box/test/data/one_box
+rm -r src/camera/camera_applied/camera_one_box/test/data/one_box
 pixi run bash -c 'source install/setup.bash && \
-  ros2 run camera_one_box save_snapshot src/camera_one_box/test/data/one_box'
+  ros2 run camera_one_box save_snapshot src/camera/camera_applied/camera_one_box/test/data/one_box'
 ```
 
 The pictures in the camera docs are drawn from captures of this simulation too.
@@ -162,7 +162,7 @@ and the measured box all match the numbers in the docs.
 ## 3. Layout
 
 ```
-src/camera_one_box/
+src/camera/camera_applied/camera_one_box/
   README.md                          this file
   package.xml                        what the package needs from ROS
   setup.py, setup.cfg                how it is installed, and its three commands

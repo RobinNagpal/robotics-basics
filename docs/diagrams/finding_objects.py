@@ -3,7 +3,7 @@
 The images go to docs/images/camera/finding-objects/.
 
 Photographs and camera pictures are saved as PNG, and the one drawn diagram as
-SVG. Everything comes from the code in src/camera_basics, so the doc's pictures
+SVG. Everything comes from the code in src/camera/camera_basics, so the doc's pictures
 cannot drift from what that code does.
 
 The model parts need PyTorch, so run this in the vision environment:
@@ -12,7 +12,7 @@ The model parts need PyTorch, so run this in the vision environment:
 
 The last figure needs the trained weights, which are made by:
 
-  pixi run -e vision python src/camera_basics/train_a_model.py
+  pixi run -e vision python src/camera/camera_basics/train_a_model.py
 """
 
 import pathlib
@@ -20,7 +20,7 @@ import sys
 import textwrap
 
 REPO_ROOT: pathlib.Path = pathlib.Path(__file__).resolve().parents[2]
-CODE: pathlib.Path = REPO_ROOT / 'src' / 'camera_basics'
+CODE: pathlib.Path = REPO_ROOT / 'src' / 'camera' / 'camera_basics'
 sys.path.insert(0, str(CODE))
 
 import cv2  # noqa: E402

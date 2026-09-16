@@ -18,7 +18,7 @@ own, with its own code, its own doc, and two or three commands.
 
 | Area | What it covers | Start with |
 | --- | --- | --- |
-| [ros](docs/ros/ros-intro.md) | the basics of ROS: a camera, an arm, and the two together | `make ros.camera` |
+| [ros](docs/ros/ros-intro.md) | the basics of ROS, one program per idea, then a camera, an arm, and the two together | `make ros.basics` |
 | [rviz](docs/rviz/overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
 | [arm](docs/arm/overview.md) | position, frames and transforms | `make arm.learn` |
 | [camera](docs/camera/basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
@@ -31,9 +31,10 @@ own, with its own code, its own doc, and two or three commands.
   <img src="docs/images/camera/basics/pinhole.svg" width="31%" alt="A pixel is a direction, not a place">
 </p>
 
-New to this? Start with **ros**, which explains what ROS is with the three
-smallest programs that can be written with it: one that works with a camera, one
-that moves an arm, and one that uses both. Then **rviz**, which shows you what
+New to this? Start with **ros**, which explains what ROS is: first one small
+program for each thing ROS does — a node, a topic, a parameter, a service, an
+action, a frame, a launch file — and then three worked examples, one that works
+with a camera, one that moves an arm, and one that uses both. Then **rviz**, which shows you what
 you are looking at before the arm area explains the maths behind it. Then
 **arm**, then **camera**, which uses that maths to turn a picture into points.
 The camera code is mostly NumPy, so if NumPy is new to you, read **numpy** before
@@ -55,10 +56,14 @@ pixi.toml             what to install
 docs/<area>/          the doc for each area
 docs/images/<area>/   its pictures
 docs/diagrams/        the scripts that draw them
-src/<package>/        the code for each area
-src/ros/<package>/    the code for the ros area: one package per example
-src/numpy/            the numpy area: five plain Python files, not a ROS package
-src/camera_basics/    finding an object by colour, by depth, and with a model
+src/                  the code for each area:
+  ros/ros_basics/       one small program for each thing ROS is used for
+  ros/ros_applied/      the three worked ROS examples, one package each
+  camera/camera_basics/    finding an object by colour, by depth, and with a model
+  camera/camera_applied/   the Gazebo depth camera that finds and measures a box
+  numpy/                five plain Python files, not a ROS package
+  rviz_basics/          a marker in a moving frame
+  arm_transforms/       position, frames and transforms, in five steps
 ```
 
 ## Repo-wide commands

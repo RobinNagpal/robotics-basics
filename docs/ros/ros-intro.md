@@ -25,7 +25,7 @@ No robotics knowledge is needed. It helps to know a little Python.
 6. [Looking inside a running robot](#6-looking-inside-a-running-robot)
 7. [Frames, TF and URDF](#7-frames-tf-and-urdf)
 8. [RViz](#8-rviz)
-9. [The three examples](#9-the-three-examples)
+9. [The programs in this area](#9-the-programs-in-this-area)
 10. [Vocabulary](#10-vocabulary)
 
 ---
@@ -190,22 +190,28 @@ same for `JointState` and `Range`.
 
 ROS code is organised into **packages**. A package is a folder with the code for
 one piece of a robot, and a file called `package.xml`, which says what the
-package is and which other packages it needs. The three examples are three
-packages, in `src/ros/`:
+package is and which other packages it needs. This area has four packages, in
+`src/ros/`, split into the basics and the worked examples:
 
 ```
 src/ros/
-  ros_camera/                    the camera example
+  ros_basics/                    one small program per thing ROS does
     package.xml                  what the package is, and what it needs
     setup.py                     how it is installed, and the names of its programs
-    ros_camera/                  its Python code
-      camera_publisher.py
-      camera_subscriber.py
-    launch/camera.launch.py      starts its programs together
-    config/camera.rviz           a saved RViz layout
-    test/test_camera.py          its tests
-  ros_arm/                       the arm example, laid out the same way
-  ros_camera_arm/                the camera and arm example
+    ros_basics/                  its Python code
+      nodes.py                   a node
+      publisher.py               a topic, from the sending side
+      subscriber.py              and from the receiving side
+      parameters.py              settings
+      service_server.py          a question and an answer
+      action_server.py           a long job, watched while it runs
+      frames.py                  where the parts are
+    launch/basics.launch.py      starting several of them together
+    test/test_ros_basics.py      its tests
+  ros_applied/                   the three worked examples
+    ros_camera/                  the camera example, laid out the same way
+    ros_arm/                     the arm example
+    ros_camera_arm/              the camera and arm example
 ```
 
 The folder that holds all the packages is called the **workspace**, and here it is
@@ -370,7 +376,21 @@ RViz with a layout made for it.
 RViz shows only what the nodes publish, so it is the quickest way to check that a
 robot's software is doing what you think it is.
 
-## 9. The three examples
+## 9. The programs in this area
+
+The area is in two halves. **[ROS basics](ros-basics.md)** is one small program
+for each thing ROS is used for, in `src/ros/ros_basics/`: a node, a topic, a
+parameter, a service, an action, a frame, and a launch file. Read it beside this
+doc, running each program as you reach it.
+
+| Basics | What it shows | Run it with |
+| --- | --- | --- |
+| [topics](ros-basics.md#3-topics-publishing-and-subscribing), [parameters](ros-basics.md#4-parameters-a-nodes-settings), [launching](ros-basics.md#8-launching-starting-everything-together) | a publisher, a subscriber and a settings node, started together | `make ros.basics` |
+| [services](ros-basics.md#5-services-one-question-one-answer) | one node asks another a question and waits for the answer | `make ros.service` |
+| [actions](ros-basics.md#6-actions-long-jobs-with-progress) | a long job, reporting progress until it finishes | `make ros.action` |
+
+The three **worked examples**, in `src/ros/ros_applied/`, then put those
+together into something a robot actually does:
 
 | Example | What it shows | Run it with | The ROS ideas it uses |
 | --- | --- | --- | --- |
@@ -395,6 +415,9 @@ RViz. Press Ctrl-C to stop it.
 | message type | — | what a message holds, defined in a `.msg` file, such as `sensor_msgs/msg/Image` |
 | sensor_msgs | sensor messages | the standard package of message types for sensor data |
 | callback | — | a function a node hands to ROS, which ROS calls when a message arrives |
+| parameter | — | a node's setting, which can be read and changed while it runs |
+| service | — | one question and one answer between two nodes, with the asker waiting |
+| action | — | a long job: a goal, progress while it runs, and a result, and it can be cancelled |
 | rclpy | ROS client library for Python | the Python library for writing nodes |
 | package | — | a folder with the code for one piece of a robot, and a `package.xml` |
 | workspace | — | the folder that holds the packages, under `src/` |
@@ -405,4 +428,5 @@ RViz. Press Ctrl-C to stop it.
 | URDF | Unified Robot Description Format | the file format that describes a robot's links and joints |
 | RViz | ROS visualization | the 3D viewer that comes with ROS |
 
-Next: [ROS camera](ros-camera.md), the first example.
+Next: [ROS basics](ros-basics.md), one small program for each of these ideas.
+Then [ROS camera](ros-camera.md), the first worked example.

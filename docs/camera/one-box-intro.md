@@ -24,7 +24,7 @@ anything.
 
 The table, the box and the camera are simulated in Gazebo, the robot simulator
 most ROS projects use, and the code that finds the box is a small ROS 2 project,
-`src/camera_one_box`, laid out the way a real robot arm's perception code is. The
+`src/camera/camera_applied/camera_one_box`, laid out the way a real robot arm's perception code is. The
 pictures and numbers in this doc all come from that simulation.
 
 This doc builds on [the basics](basics.md), which explain what a camera records

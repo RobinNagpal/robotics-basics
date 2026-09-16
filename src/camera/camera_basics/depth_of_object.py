@@ -17,7 +17,7 @@ The data is one frame recorded from the camera area's Gazebo simulation, in
 data/: the colour picture, the depth picture as a NumPy file, and the lens
 numbers as JSON. The camera basics doc explains where those numbers come from.
 
-Run it with:  pixi run python src/camera_basics/depth_of_object.py
+Run it with:  pixi run python src/camera/camera_basics/depth_of_object.py
 """
 
 from dataclasses import dataclass

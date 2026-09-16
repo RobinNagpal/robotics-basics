@@ -18,7 +18,7 @@ photo and a football photo, plus this folder's own recorded frame of the table.
 This file needs PyTorch, which is in the separate `vision` environment, so it is
 run with -e vision:
 
-  pixi run -e vision python src/camera_basics/find_with_model.py
+  pixi run -e vision python src/camera/camera_basics/find_with_model.py
 """
 
 import pathlib

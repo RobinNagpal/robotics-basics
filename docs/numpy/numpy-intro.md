@@ -1175,18 +1175,18 @@ not match its type.
 The other areas use the tools from this doc, and it is worth reading them with
 this doc beside you:
 
-- **`src/ros/ros_camera/ros_camera/camera_publisher.py`** draws the test picture
+- **`src/ros/ros_applied/ros_camera/ros_camera/camera_publisher.py`** draws the test picture
   with `np.full` for the grey background, `np.mgrid` for every pixel's position,
   and a boolean mask for the pixels inside the ball, then sends it with
   `tobytes()`.
-- **`src/ros/ros_camera/ros_camera/camera_subscriber.py`** finds the ball with the
+- **`src/ros/ros_applied/ros_camera/ros_camera/camera_subscriber.py`** finds the ball with the
   colour channels `picture[:, :, 0]`, a mask built with `&`, and `np.nonzero`,
   whose rows and columns it averages into the ball's pixel.
-- **`src/camera_one_box/camera_one_box/measure.py`** uses most of this doc in
+- **`src/camera/camera_applied/camera_one_box/camera_one_box/measure.py`** uses most of this doc in
   under 150 lines: `np.mgrid` and broadcasting in `depth_to_points()`, a 4 × 4 transform
   from `np.eye(4)` in `transform_matrix()`, `@` and `.T` in `to_world()`, and
   NaN, masks, `max`, `mean` and `np.ptp` in `measure_box()`.
-- **`src/camera_one_box/camera_one_box/show_pixels.py`** uses `np.nanmin`,
+- **`src/camera/camera_applied/camera_one_box/camera_one_box/show_pixels.py`** uses `np.nanmin`,
   `np.nanmax` and `np.where` to turn a depth picture with missing readings into
   grey levels.
 - **`docs/diagrams/`** draws every picture in the docs with NumPy and matplotlib.

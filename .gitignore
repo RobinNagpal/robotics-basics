@@ -22,7 +22,7 @@ __pycache__/
 
 # camera_basics: downloaded model weights, drawn training pictures, training
 # runs and annotated output. All of it is remade by the scripts.
-src/camera_basics/models/
-src/camera_basics/datasets/
-src/camera_basics/runs/
-src/camera_basics/out/
+src/camera/camera_basics/models/
+src/camera/camera_basics/datasets/
+src/camera/camera_basics/runs/
+src/camera/camera_basics/out/

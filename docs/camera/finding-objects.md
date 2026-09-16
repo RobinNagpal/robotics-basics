@@ -7,7 +7,7 @@ camera picture, with the three tools every project uses: a **colour range**, a
 new object, which is what you do when no ready-made model knows the thing your
 robot handles.
 
-The code is in [`src/camera_basics/`](../../src/camera_basics/), four small
+The code is in [`src/camera/camera_basics/`](../../src/camera/camera_basics/), four small
 programs that each print what they are doing, and every number quoted here came
 from running them.
 
@@ -77,7 +77,7 @@ lives in a separate pixi environment called `vision`
 
 Everything is done on one frame recorded from the camera area's Gazebo
 simulation: a camera 0.40 m above a table, looking straight down at a red box
-6 cm across. It is kept in `src/camera_basics/data/` as three plain files, so
+6 cm across. It is kept in `src/camera/camera_basics/data/` as three plain files, so
 this folder needs no ROS and no simulator running:
 
 | File | What it holds |
@@ -517,7 +517,7 @@ in a `labels` folder beside the `images` one.
 The 80 pictures are split into 64 to learn from and 16 to be tested on:
 
 ```
-64 pictures to learn from and 16 to be tested on, in <repo>/src/camera_basics/datasets/box
+64 pictures to learn from and 16 to be tested on, in <repo>/src/camera/camera_basics/datasets/box
 ```
 
 The **val** (validation) pictures are never learned from. They are how you find
@@ -528,7 +528,7 @@ one that only works on your laptop.
 ### 6.3 The dataset file
 
 ```
-path: <repo>/src/camera_basics/datasets/box
+path: <repo>/src/camera/camera_basics/datasets/box
 train: images/train
 val: images/val
 names:
@@ -648,17 +648,17 @@ make camera.train      # teach YOLO this robot's box, from 80 drawn pictures (~3
 The same commands without make, which is also how to pass arguments:
 
 ```
-pixi run python src/camera_basics/find_by_colour.py
-pixi run python src/camera_basics/depth_of_object.py
-pixi run -e vision python src/camera_basics/find_with_model.py
-pixi run -e vision python src/camera_basics/train_a_model.py 12     # fewer epochs
+pixi run python src/camera/camera_basics/find_by_colour.py
+pixi run python src/camera/camera_basics/depth_of_object.py
+pixi run -e vision python src/camera/camera_basics/find_with_model.py
+pixi run -e vision python src/camera/camera_basics/train_a_model.py 12     # fewer epochs
 ```
 
 `-e vision` picks the second pixi environment, the one with PyTorch and
 ultralytics in it. It is kept separate because PyTorch is a large download with
 its own opinions about which NumPy to use, and the ROS environment has to keep
 working. The first run of either model command downloads the 5.4 MB of YOLO
-weights into `src/camera_basics/models/`.
+weights into `src/camera/camera_basics/models/`.
 
 Everything the programs produce — the weights, the drawn dataset, the training
 run and the annotated pictures in `out/` — is ignored by git and remade by

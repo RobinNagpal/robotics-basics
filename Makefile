@@ -13,6 +13,7 @@ SHELL := /bin/bash
 ros = pixi run bash -c 'source install/setup.bash && $(1)'
 
 .PHONY: help setup doctor build test lint clean shell \
+        ros.basics ros.service ros.action \
         ros.camera ros.arm ros.camera_arm \
         rviz.demo rviz.check arm.learn arm.demo arm.watch \
         camera.one_box camera.pixels camera.check \
@@ -57,7 +58,27 @@ doctor: ## Print versions of everything that matters
 		printf "%-14s %s\n" "ROS distro" "$$ROS_DISTRO"; \
 		printf "%-14s %s\n" "areas"      "$$(ls src | tr "\n" " ")"'
 
-##@ ros — the basics of ROS: a camera, an arm, and the two together
+##@ ros basics — one small program for each thing ROS is used for
+
+ros.basics: build ## Launch a publisher, a subscriber and a settings node together
+	$(call ros,ros2 launch ros_basics basics.launch.py)
+
+# These two start a server, use it, and stop it again, all in one bash. `set -m`
+# turns on job control, which puts the server in its own process group, so that
+# `kill -- -$$server` stops it and the program it started, not just the wrapper.
+ros.service: build ## Start the service server, then ask it to add two numbers
+	@pixi run bash -c 'set -m; source install/setup.bash; \
+		ros2 run ros_basics basics_service_server & server=$$!; \
+		sleep 3; ros2 run ros_basics basics_service_client 7 5; \
+		kill -- -$$server 2>/dev/null; wait $$server 2>/dev/null; true'
+
+ros.action: build ## Start the action server, then send it a goal and watch it
+	@pixi run bash -c 'set -m; source install/setup.bash; \
+		ros2 run ros_basics basics_action_server & server=$$!; \
+		sleep 3; ros2 run ros_basics basics_action_client 5; \
+		kill -- -$$server 2>/dev/null; wait $$server 2>/dev/null; true'
+
+##@ ros applied — three worked examples: a camera, an arm, and the two together
 
 ros.camera: build ## One node publishes camera pictures, another receives them; RViz shows them
 	$(call ros,ros2 launch ros_camera camera.launch.py)
@@ -94,7 +115,19 @@ arm.demo: build ## Step 4: publish the arm to TF and draw it in RViz
 arm.watch: build ## Step 5: ask TF where the gripper is (run arm.demo first)
 	$(call ros,ros2 run arm_transforms arm_step5_lookup)
 
-##@ camera — a depth camera in Gazebo finds a box and measures it
+##@ camera basics — finding an object in a picture: colour, depth, a model
+
+camera.colour: ## Find the object by its colour, then measure it with the depth picture
+	@pixi run python src/camera/camera_basics/find_by_colour.py
+	@echo; pixi run python src/camera/camera_basics/depth_of_object.py
+
+camera.model: ## Find objects with YOLO, a trained model (the first run downloads 5 MB)
+	@pixi run -e vision python src/camera/camera_basics/find_with_model.py
+
+camera.train: ## Teach YOLO this robot's box, from 80 drawn pictures (about 3 minutes)
+	@pixi run -e vision python src/camera/camera_basics/train_a_model.py
+
+##@ camera applied — a depth camera in Gazebo finds a box and measures it
 
 camera.one_box: build ## Start Gazebo, the camera and the box locator, and show them in RViz
 	$(call ros,ros2 launch camera_one_box one_box.launch.py)
@@ -116,18 +149,6 @@ camera.check: ## Show what the simulation is publishing (run camera.one_box firs
 		ros2 topic echo --once --no-arr /camera/points; \
 		echo; echo "--- the measured box ---"; \
 		ros2 topic echo --once /detections | head -40'
-
-##@ camera basics — finding an object in a picture (src/camera_basics)
-
-camera.colour: ## Find the object by its colour, then measure it with the depth picture
-	@pixi run python src/camera_basics/find_by_colour.py
-	@echo; pixi run python src/camera_basics/depth_of_object.py
-
-camera.model: ## Find objects with YOLO, a trained model (the first run downloads 5 MB)
-	@pixi run -e vision python src/camera_basics/find_with_model.py
-
-camera.train: ## Teach YOLO this robot's box, from 80 drawn pictures (about 3 minutes)
-	@pixi run -e vision python src/camera_basics/train_a_model.py
 
 ##@ numpy — the parts of NumPy robotics uses most
 

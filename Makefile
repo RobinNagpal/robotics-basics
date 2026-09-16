@@ -16,7 +16,8 @@ ros = pixi run bash -c 'source install/setup.bash && $(1)'
         ros.camera ros.arm ros.camera_arm \
         rviz.demo rviz.check arm.learn arm.demo arm.watch \
         camera.one_box camera.pixels camera.check \
-        numpy.learn numpy.run numpy.check
+        numpy.learn numpy.run numpy.check \
+        camera.colour camera.model camera.train
 
 help: ## Show this help
 	@echo ""
@@ -115,6 +116,18 @@ camera.check: ## Show what the simulation is publishing (run camera.one_box firs
 		ros2 topic echo --once --no-arr /camera/points; \
 		echo; echo "--- the measured box ---"; \
 		ros2 topic echo --once /detections | head -40'
+
+##@ camera basics — finding an object in a picture (src/camera_basics)
+
+camera.colour: ## Find the object by its colour, then measure it with the depth picture
+	@pixi run python src/camera_basics/find_by_colour.py
+	@echo; pixi run python src/camera_basics/depth_of_object.py
+
+camera.model: ## Find objects with YOLO, a trained model (the first run downloads 5 MB)
+	@pixi run -e vision python src/camera_basics/find_with_model.py
+
+camera.train: ## Teach YOLO this robot's box, from 80 drawn pictures (about 3 minutes)
+	@pixi run -e vision python src/camera_basics/train_a_model.py
 
 ##@ numpy — the parts of NumPy robotics uses most
 

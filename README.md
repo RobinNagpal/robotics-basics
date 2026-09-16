@@ -23,6 +23,7 @@ own, with its own code, its own doc, and two or three commands.
 | [arm](docs/arm/overview.md) | position, frames and transforms | `make arm.learn` |
 | [camera](docs/camera/basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
 | [numpy](docs/numpy/numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
+| [finding objects](docs/camera/finding-objects.md) | finding a thing in a picture: by colour, with depth, and with a trained model | `make camera.colour` |
 
 <p align="center">
   <img src="docs/images/rviz/scene.svg" width="31%" alt="A ball circling a grid in RViz">
@@ -57,6 +58,7 @@ docs/diagrams/        the scripts that draw them
 src/<package>/        the code for each area
 src/ros/<package>/    the code for the ros area: one package per example
 src/numpy/            the numpy area: five plain Python files, not a ROS package
+src/camera_basics/    finding an object by colour, by depth, and with a model
 ```
 
 ## Repo-wide commands

@@ -565,4 +565,8 @@ different reasons. Always read it next to the resolution.
 
 Next: [finding one box](one-box-intro.md), which uses these basics to measure the box.
 
+Also in this area: [finding an object in a picture](finding-objects.md), the
+three ways a robot finds something — by its colour, with a depth picture, and
+with a trained model — and how to train a model on an object of your own.
+
 Previous area: [position, frames and transforms](../arm/overview.md).

@@ -48,6 +48,12 @@ simulators, perception, calibration and more. For each it explains the job it
 does, then shows pseudo code and a few lines of real code. Read it after the
 areas, when you want to know what to reach for next.
 
+**[Two-arm manipulation](docs/two-arm-manipulation.md)** is a route into
+bimanual work, in five steps from "make two arms move" to "a long task, measured
+properly", using only projects whose code, simulator and data are all open. It
+says which ones run on this Mac, which need a Linux box with an NVIDIA card, and
+which well-known ones are not as open as they look.
+
 ## Layout
 
 ```

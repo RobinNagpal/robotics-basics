@@ -54,6 +54,12 @@ properly", using only projects whose code, simulator and data are all open. It
 says which ones run on this Mac, which need a Linux box with an NVIDIA card, and
 which well-known ones are not as open as they look.
 
+**[Stone stacking](docs/stone-stacking.md)** takes one hard two-arm task —
+balancing rough stones on top of each other — and walks through how such a
+system is built: what makes a stack stand up, what the second arm is for, the
+loop the robot runs once per stone, and which open frameworks do each stage. A
+map of the process, not code.
+
 ## Layout
 
 ```

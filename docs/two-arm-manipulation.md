@@ -628,6 +628,10 @@ pieces you will meet:
 - **[NumPy](numpy/numpy-intro.md)** — the datasets are arrays: 14 numbers of
   state, 14 of action, per frame, per episode.
 
+For one hard task worked through from end to end, see
+[stone stacking](stone-stacking.md): balancing rough stones needs all four
+coordination kinds, and it shows where the pieces above actually go.
+
 ---
 
 ## 11. What was checked, and when

@@ -60,6 +60,11 @@ system is built: what makes a stack stand up, what the second arm is for, the
 loop the robot runs once per stone, and which open frameworks do each stage. A
 map of the process, not code.
 
+**[Full training](docs/full-training/overview.md)** follows one branch of that
+map to the end: what it takes to train the whole thing, rather than programme
+it. The rig and the demonstrations, what a dataset of them looks like, the
+training run and what it costs, and how to evaluate it honestly and improve it.
+
 ## Layout
 
 ```

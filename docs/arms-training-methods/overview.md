@@ -239,6 +239,14 @@ your other hand turns the lid. The coupling is real but mild — the working arm
 needs to know where the holding arm put things, and the holding arm must not give
 way — so the two can still be controlled largely separately.
 
+That separation is worth designing for deliberately rather than stumbling into.
+One research system built exactly on this idea — one arm stabilises the object, a
+learned component decides when it needs re-stabilising, and the other arm acts —
+reached **77% across four tasks from twenty demonstrations**, well above an
+unstructured policy given the same data. Telling the system which arm holds is
+information you have for free, and it is worth roughly as much as a lot of extra
+data.
+
 **Both hold one thing.** Both grippers grip the same rigid object, and now the
 arms, the object and the table form a closed loop. This is the case that breaks
 ordinary software. If you command each arm to a position independently and the two
@@ -261,6 +269,50 @@ permits. Arrange the task so the arms are independent where possible, use
 hold-and-work where they must cooperate, and accept the closed-chain case only
 where the object genuinely has to be carried or stretched by both — because
 everything from motion planning to policy learning gets harder in that order.
+
+### The same three, in the words the literature uses
+
+The plain names above are the ones this doc uses, but you will meet the formal
+versions and they are worth recognising.
+
+The [2012 dual-arm survey](https://doi.org/10.1016/j.robot.2012.07.005) that most
+papers cite splits the field into **non-coordinated** manipulation, where the arms
+do two different tasks, and **coordinated** manipulation, where they work on the
+same one. It then divides coordinated work into **goal-coordinated**, where the
+arms contribute to the same goal without touching each other or the same object,
+and **bimanual**, reserved for arms physically interacting with the same object.
+So "bimanual" in that vocabulary is narrower than "two arms" — it means the closed
+chain.
+
+The modern reference is
+[Krebs and Asfour's bimanual manipulation taxonomy](https://h2t.iar.kit.edu/pdf/Krebs2022.pdf)
+from 2022, which is the one to read if you read one. It separates **loosely
+coupled** actions, connected only by shared waypoints in space or moments in time,
+from **tightly coupled** ones, where contact creates forces that constrain both
+arms together — the same distinction as hold-and-work against both-hold-one-thing.
+It also gives the hold-and-work pattern its proper name, **role-differentiated
+bimanual manipulation**, borrowed from a model of human handedness in which the
+non-dominant hand stabilises the object and sets the frame of reference that the
+dominant hand then works in. That is exactly the arrangement described above, and
+it is reassuring that the ergonomics literature arrived at it first.
+
+One nuance from that work is worth keeping in mind against
+[section 5](#5-the-layers-of-a-two-arm-system): in human manipulation the roles are
+*not* statically assigned to a particular hand, but swap to suit each step. Robot
+systems today almost always fix them, which is a simplification rather than a
+principle.
+
+A separate and often-confused distinction is **symmetric** against **asymmetric**
+coordination — whether the two arms are doing the same thing mirrored, or
+different things. It is a different axis from how tightly they are coupled, and
+conflating the two is a common error.
+
+One practical vocabulary worth knowing because it appears in working code: the
+data-generation tool DexMimicGen splits two-arm subtasks into **parallel** (each
+arm runs independently), **coordination** (both arms' timing is synchronised so
+their relative pose is maintained) and **sequential** (one arm waits for the other
+to finish, as in a handover). Those three are the same three ideas again, expressed
+as scheduling rules.
 
 ## 5. The layers of a two-arm system
 
@@ -419,11 +471,14 @@ the winning entry of a 2026 garment-folding competition released its code and
 checkpoints, having built on the open π₀.₅ and added a reinforcement-learning
 loop over roughly twelve thousand practice episodes, and at least one open
 specialist policy reports over 90% on real shirts, skirts, trousers and towels.
-Worth knowing as a counterweight: a 2022 system built the classical way —
-perception plus planning, with the fold lines given to it — reported 93% success
-at thirty to forty folds an hour from a crumpled start. Nobody has run the two
-approaches against each other on the same garments, so "learning won here" is the
-direction of travel rather than a measured result.
+Worth knowing as a counterweight, because it is routinely forgotten:
+[SpeedFolding](https://pantor.github.io/speedfolding/), a two-armed system built
+the classical way with learned perception feeding planned motions, reported **93%
+success on a known t-shirt and 80–87% on unseen garments, at thirty to forty folds
+an hour** from a crumpled start — and it won a best-paper award in 2022, three
+years before the current wave. Nobody has run the two approaches against each
+other on the same garments, so "learning won here" is the direction of travel
+rather than a measured result.
 
 **Welding on an assembly line** — the worked example where the answer is **use one
 arm**. The part is in a jig, the seam is on the drawing, and there is nothing for
@@ -642,7 +697,9 @@ Thinking and reacting have different timescales, so they are different models.
 | [HIL-SERL](https://hil-serl.github.io/) | one | safety limits, resets, the controller underneath | RL on the real robot, with human take-overs | real contact cannot be simulated well enough |
 | [Figure's Helix](https://www.figure.ai/news/helix) | two | the low-level stack | a VLM at 7–9 Hz, a visuomotor policy at 200 Hz | thinking and reacting run at different rates |
 | [TRI's Large Behavior Models](https://toyotaresearchinstitute.github.io/lbm1/) | two | data collection and evaluation | one diffusion model pretrained on ~1,700 hours, fine-tuned per task | pretraining reportedly cuts the data a new task needs several-fold |
-| [ALOHA / ACT](https://tonyzhaozh.github.io/aloha/) | two | almost nothing above the controller | the entire task, from 50 demonstrations | the counter-example: sometimes copying is enough |
+| [ALOHA / ACT](https://tonyzhaozh.github.io/aloha/) | two | almost nothing above the controller | the entire task, from 50 demonstrations per task | the counter-example: sometimes copying is enough — 84–93% on four tasks, but 20% on the hardest |
+| [ALOHA Unleashed](https://aloha-unleashed.github.io/) | two | nothing | the entire task, from 26,241 demonstrations across five tasks | 100× the data for success rates no higher; nothing released |
+| [SpeedFolding](https://pantor.github.io/speedfolding/) | two | the folding plan and both arms' motions | where to grasp the garment | the classical two-arm system that folds laundry, and predates the learned ones |
 
 ---
 
@@ -678,6 +735,20 @@ and "99% accuracy" in this area is self-reported, usually without a denominator.
 And at least one very widely repeated statistic, the claim that over 90% of
 industrial robots are teach-pendant programmed, traces to a single undated page
 that no longer exists; it is not used here.
+
+Two habits are worth borrowing for two-arm work specifically. **Read the table,
+not the abstract** — the ALOHA summary of "80–90% success" covers four of its six
+tasks, and the two it omits are the two that needed the arms to agree with each
+other. And **check the trial count**, because it varies wildly: the widely shared
+clip of a two-armed robot cooking shrimp rests on five trials at 40%, while the
+most disciplined evaluation cited here ran three hundred trials per task and
+published confidence intervals.
+
+If you want a survey to read instead of this one, there is not a recent one. The
+standard references for two-arm manipulation are a 2012 survey and a 2022
+taxonomy; searches for a 2024-onwards survey of bimanual manipulation return
+nothing. That absence is itself informative about how fast and how unevenly this
+area has been moving.
 
 **What was checked, and when.** The repository statistics, licences and activity
 dates in this doc were read from the GitHub API on 19 September 2026, and the

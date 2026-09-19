@@ -58,9 +58,14 @@ drifts into situations no demonstrator ever visited. Two developments fixed this
 enough to matter.
 
 **Action chunking**: predict the next hundred commands rather than one, and play
-them out before looking again. A hundred steps at fifty a second is two seconds
-of coherent motion decided in one go, which removes the jitter and keeps two arms
-in step with each other. This is what ACT does.
+them out before looking again. This is what ACT does, and the reason its paper
+gives is arithmetic rather than anything to do with two arms — playing out *k*
+commands per decision cuts the number of decisions in a task by a factor of *k*,
+and compounding error grows with the number of decisions. The effect is large:
+ACT's own ablation goes from **1% success predicting one action at a time to 44%
+predicting a hundred**, falling off again beyond that as the policy stops
+reacting to what it sees. (That is an average over simulated tasks, not a
+real-robot number.)
 
 **Generative action models**: demonstrators are inconsistent, and a network
 trained to output one number per command averages their different approaches,
@@ -83,32 +88,81 @@ screwing stages mostly fail outright. A twenty-step job needs something above th
 policy that sequences and recovers, which is why
 [section 5](#5-directed-by-language) exists.
 
-**What two arms change here.** Four things, and the first is the one that matters.
+**What two arms change here.** Four things — and one widely repeated claim that
+turns out not to be supported.
 
-*One policy controls both arms, not two policies.* The network's output is the
+*One policy usually controls both arms, but the evidence for that is weaker than
+you would expect.* The normal design is a single network whose output is the
 commands for both arms at once — for two six-joint arms with a gripper each, that
-is fourteen numbers per step. This is not an implementation detail: it is why the
-approach works. The coordination between the arms is inside a single prediction,
-so the policy cannot produce a left-arm motion that contradicts its own right-arm
-motion. Splitting into two policies and a coordinator throws that away and is not
-what the successful systems do.
+is fourteen numbers per step — so the coordination sits inside one prediction and
+the policy cannot produce a left-arm motion that contradicts its own right-arm
+motion. That argument is persuasive and it is what most systems do. It has also
+been measured, once, cleanly: **PerAct2 compared a single two-arm network against
+two separate networks where one arm's prediction is fed to the other, on thirteen
+tasks with a hundred evaluations each, and got 16.8% for the joint policy against
+17.5% for the pair.** That is a tie. The joint policy won on nine of the thirteen
+tasks and trained in about 40% less time, which is a real advantage, but "one
+policy beats two" is not something the numbers support. Treat it as the simpler
+design rather than the proven one.
 
-*Chunking matters more with two arms than with one.* Predicting a whole burst of
-future commands keeps the arms coherent with each other over the whole burst
-rather than re-deciding fifty times a second, which is exactly when two arms drift
-out of step. A one-arm policy that jitters looks clumsy; a two-arm policy that
-jitters drops the object it is holding between them.
+*What is measurably true is that the arms must see each other's state.* The one
+clean bimanual ablation I know of comes from UMI: removing the term that tells the
+policy where each gripper is *relative to the other* dropped two-arm cloth folding
+from **70% to 30%**. Whatever architecture you choose, the coupling between the
+arms has to be in the input.
 
-*Demonstrating is genuinely harder.* Somebody has to drive fourteen joints at
-once, in a coordinated way, for hundreds of episodes. This is why the standard rig
-is a pair of small **leader** arms that a person holds one in each hand, with the
-real arms following: it is the only method where controlling both arms at once is
-natural. This repo covers the practicalities in
+*Chunking is not a two-arm technique, despite being introduced on a two-arm
+robot.* ACT was demonstrated bimanually, so it is often said that chunking exists
+to keep the two arms coherent. The paper does not say that — its argument is about
+compounding error and applies identically to one arm — and as of 2026 no published
+study isolates a two-arm-specific benefit. If anything the evidence points the
+other way: a follow-up that looked specifically at two arms argued plain chunking
+is *insufficient* for them, and added machinery for the dependencies between the
+arms on top. Chunking needing extra help for two arms is not the same as chunking
+mattering more.
+
+*Demonstrating is genuinely harder, and the rig choice is measurable.* Somebody
+has to drive fourteen joints at once, in a coordinated way, for hundreds of
+episodes. A controlled study with twelve participants across five two-arm tasks
+compared three ways of doing it and found **leader arms at 92% task success,
+virtual-reality controllers at 72% and a 3D mouse at 63%** — which is why the
+standard rig is a pair of small leader arms held one in each hand, with the real
+arms following. This repo covers the practicalities in
 [collecting the data](../full-training/collecting-data.md#2-how-a-person-drives-two-arms).
 
-*You need a camera that can see the pair.* One overhead view plus one camera on
+*You need cameras that can see the pair.* One overhead view plus one camera on
 each wrist is the usual arrangement, because the overhead view shows the relation
 between the arms and the wrist views show what each is about to touch.
+
+**What the numbers actually look like.** This is worth setting out properly,
+because the headline impression of two-arm imitation is considerably rosier than
+the tables in the papers.
+
+The original ALOHA work is where "fifty demonstrations is enough" comes from, and
+over 25 trials per task it reported: sliding a bag closed **86%**, slotting a
+battery **93%**, opening a cup **84%**, putting on a shoe **92%**, preparing tape
+**64%** — and threading velcro **20%**, from twice as many demonstrations as the
+rest. The summary "80–90% success" that gets quoted covers four of those six. Look
+at the stages rather than the totals and it is sharper still: the velcro task
+lifts successfully 92% of the time, grasps 40% of the time, and inserts 20% of the
+time. The failures are concentrated exactly where the two arms have to agree with
+each other.
+
+Then there is the scaling result, which is the most sobering number in this
+document. **ALOHA Unleashed collected 26,241 demonstrations across five tasks** —
+roughly a hundred times the original's fifty per task, gathered on ten robots over
+eight months by thirty-five operators — and reported hanging a shirt at **75%**,
+tying a shoelace at **40%** on the harder variant, and inserting gears at 95% for
+one gear, 75% for two and **40% for three**. Stacking kitchen items went 95% for
+one item, 65% for two, **25% for three**. Two things follow. Success rates did not
+end up higher than the fifty-demonstration results, and **compounding error across
+a sequence survived both action chunking and diffusion**, which were the two
+techniques meant to address it. Nothing from that work was released.
+
+If you want one number for how hard two-arm cloth still is, a 2026 evaluation of a
+frontier vision-language-action model on a simulated ALOHA — run properly, at 300
+trials per task with confidence intervals — scored **99% at handing an object from
+one arm to the other** and **6.7% at folding a towel in half**.
 
 **Good for:** the contact-heavy parts of Group A, and Groups C and D where no
 model of the object exists. Laundry folding is the flagship case, and a flagship
@@ -119,13 +173,40 @@ LeRobot's own documentation calls ACT "our recommended first policy", which is
 about cost as much as quality — it trains in under an hour on a single consumer
 GPU where a large policy takes a day.
 **Code to look at:** [LeRobot](https://github.com/huggingface/lerobot) (27.6k
-stars, pushed today) is where all of this now lives. Note that the original
-implementations are historical: [ACT](https://github.com/tonyzhaozh/act) (2.2k)
-has not been touched since 2024, and
-[diffusion_policy](https://github.com/real-stanford/diffusion_policy) (4.6k) is
-the reference implementation everyone cites and nobody develops. Use LeRobot's
-versions. [robomimic](https://github.com/ARISE-Initiative/robomimic) (1.6k)
+stars, pushed today, Apache-2.0) is where all of this now lives, and it supports
+two arms directly: the `bi_so_follower` robot and `bi_so_leader` teleoperator
+compose two single arms into a pair, with observations prefixed `left_` and
+`right_`. Note that the original implementations are historical —
+[ACT](https://github.com/tonyzhaozh/act) (2.2k stars) and
+[the ALOHA hardware repo](https://github.com/tonyzhaozh/aloha) have had no commits
+since 2024, and [diffusion_policy](https://github.com/real-stanford/diffusion_policy)
+(4.6k) is the reference implementation everyone cites and nobody develops. None is
+archived, and the methods are actively maintained elsewhere, so "the original
+codebases are dormant" is fairer than "abandoned". Use LeRobot's versions;
+ALOHA hardware support now lives in a separate
+[Trossen plugin](https://github.com/TrossenRobotics/lerobot_trossen) rather than in
+LeRobot itself. [robomimic](https://github.com/ARISE-Initiative/robomimic) (1.6k)
 remains the careful study of which details matter.
+
+**Benchmarks to practise on, with the licences that matter.**
+[RoboTwin 2.0](https://github.com/RoboTwin-Platform/RoboTwin) (2.9k stars, MIT,
+active) is the most complete open two-arm stack — 50 dual-arm tasks including
+handovers and joint lifts, with over 100,000 pre-generated trajectories.
+[gym-aloha](https://github.com/huggingface/gym-aloha) (Apache-2.0) is the small
+one, with exactly two environments: transfer a cube between the arms, and a
+two-arm insertion. [robosuite](https://github.com/ARISE-Initiative/robosuite)
+(2.6k, MIT) has four two-arm tasks — lift, peg-in-hole, handover, transport — and
+one property that makes it unusually good for learning: **you can run the same
+task with one genuinely two-armed robot or with two independent single arms**,
+which is as close to a controlled experiment on "what does the second arm change"
+as anything available. Be careful with licences before building on
+[MimicGen](https://github.com/NVlabs/mimicgen) or
+[DexMimicGen](https://github.com/NVlabs/dexmimicgen), which are research-only
+under NVIDIA's licence, and with anything built on
+[RLBench](https://github.com/stepjam/RLBench), which is academic-use only —
+[PerAct2](https://github.com/markusgrotz/peract_bimanual), the main two-arm
+benchmark in that family, inherits the restriction and has been dormant since
+early 2025.
 
 ### 1.2 Interactive imitation: correcting it as it goes
 

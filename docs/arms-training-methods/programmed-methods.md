@@ -290,6 +290,17 @@ letting go, comes down to transferring load from one arm to the other or to the
 world. Doing it by position is guesswork; doing it by watching the force fall as
 the other support takes the weight is measurable.
 
+**An open gap worth knowing about.** Control theory has had a proper mathematical
+treatment of two cooperating arms for decades — formulations that describe the
+pair as a single system with one set of coordinates for the object's motion and
+another for the internal squeeze, so that the two can be commanded separately.
+Learned policies do not use any of it. A search for work combining a trained
+policy with an explicit cooperative formulation turns up essentially nothing; the
+learned side reinvents the idea informally, by putting each gripper's position
+relative to the other into the network's input and hoping the constraint is picked
+up from the data. Whether the formal structure would help a learned policy is, as
+far as this doc could establish, an unanswered question rather than a settled one.
+
 **Good for:** Group A is force control's home — insertion, screwdriving, anything
 where a part is held while another is fitted — and it underlies the release in
 Group D. It is also the bottom layer under every learned method, because a policy

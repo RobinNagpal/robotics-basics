@@ -65,10 +65,17 @@ map to the end: what it takes to train the whole thing, rather than programme
 it. The rig and the demonstrations, what a dataset of them looks like, the
 training run and what it costs, and how to evaluate it honestly and improve it.
 
-**[Ways to train or programme an arm](docs/arms-training-methods/overview.md)**
-is the map above both: every method there is, as a family tree, with a grid
-comparing eight families on twenty points, the mixes real systems actually use,
-and a table of which to reach for when. Links to the good write-up of each.
+**[One-arm training](docs/one-arm-training/overview.md)** is the map above all of
+these: every way to programme or train a single arm, as a family tree, with a grid
+comparing eight families point by point, the mixes real systems actually use, and a
+table of which to reach for when. It ends with an evidenced look at what is
+realistic to build — and to be paid for — in the next year. Start here.
+
+**[Two-arm training](docs/two-arm-training/overview.md)** is the companion folder
+for what changes when two arms must **cooperate** on one job: whether your task
+needs a second arm at all, the two ways the arms can be coupled, and what that does
+to every method. Two arms doing unrelated things in one cell are deliberately out of
+scope — that is the one-arm problem, twice.
 
 ## Layout
 

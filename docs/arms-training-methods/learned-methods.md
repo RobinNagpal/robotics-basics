@@ -259,13 +259,34 @@ with comparatively few examples. These are **vision-language-action models**, or
 VLAs: camera images and a sentence in, arm commands out. The instruction is what
 lets one model cover many tasks.
 
-**These models are bimanual by default**, which is easy to miss. The robot data
-they are pretrained on comes largely from two-armed platforms, and their output is
-an action vector covering whatever joints the robot has, so a two-arm setup is the
-normal case rather than an extension. The practical consequence is pleasant: the
-fastest route to a working two-arm policy today is usually to fine-tune one of
-these on your own demonstrations rather than to train from scratch, because the
-model arrives already knowing what coordinated two-arm motion looks like.
+**Are these models bimanual? Mostly by accommodation rather than by design, and
+the data explains why.** It is tempting to assume that a model trained on
+everything has seen plenty of two-arm work. It has not. Open X-Embodiment, the
+pooled cross-robot corpus these models were built on, labels just **two of its
+seventy-two datasets as bimanual** — about **520 episodes out of 2.4 million,
+roughly two hundredths of one percent**. Counting a third, misfiled two-arm
+dataset barely changes it. The field's flagship shared corpus is, in effect,
+entirely single-armed, and that is the plainest explanation of why two-arm
+learning lagged behind single-arm learning.
+
+That history is visible in how the models are built. Most of them define one long
+action vector and pad it out to whatever the robot needs, so two arms are an
+accommodated special case. One model inverts this: **RDT was designed bimanual
+first**, splitting its state vector into a right-arm half and a left-arm half, and
+its documentation instructs you that if your robot has one arm you should write
+its values into the *right-arm* portion — single-arm as the padded special case,
+which is the opposite of everyone else. Its 2026 successor H-RDT continues that
+line. It is a good illustration that "supports two arms" and "is built for two
+arms" are different claims.
+
+The data situation is now changing quickly, and this is the most useful thing in
+this section. Purpose-built two-arm datasets have arrived at a scale the old
+pooled corpus never had: AgiBot World, gathered on a dual-arm platform and
+published at a major robotics conference; RoboMIND 2.0, which is bimanual by
+deliberate design — over **310,000 dual-arm trajectories across 739 tasks and six
+platforms**, with even its single-arm robots re-rigged as pairs — and Galaxea's
+open dataset of 500-plus hours on one dual-arm platform. If you are training
+anything two-armed, these rather than Open X-Embodiment are where the data is.
 
 **Good for:** Groups B and C, and any situation where you want one policy to do
 several tasks rather than one policy per task. This is where laundry folding and
@@ -283,6 +304,15 @@ groups have published since, including Physical Intelligence's π\*0.6 and π0.7
 have **no released code or weights**, so read about them but do not plan on using
 them.
 
+Check what is *downloadable* rather than what is supported, because for two arms
+they differ. GR00T's code carries embodiment definitions for two-armed humanoid
+platforms, with separate left-arm and right-arm entries — but every fine-tuned
+checkpoint released for it is single-arm. On the openpi side there is a
+configuration for the two-armed ALOHA platform with no published checkpoint behind
+it. The base models are genuinely usable for two arms; you will usually be
+fine-tuning one yourself rather than downloading a two-arm policy someone else
+trained.
+
 Second, **the previous generation is already historical.** RT-1 is archived, RT-2
 never released code or weights at all, and Octo has had no commits since mid-2024.
 [OpenVLA](https://github.com/openvla/openvla) (7.0k) is the interesting case: it
@@ -294,7 +324,7 @@ Third, **the 2026 recipe for a hard task is a pipeline, not a model**: fine-tune
 a pretrained policy on roughly fifty demonstrations, run it with real-time
 chunking so a slow model produces smooth motion, and then use a short burst of
 reinforcement learning on the real robot to sharpen the precise phase. Physical
-Intelligence reported exactly this on tasks from Group B — driving screws,
+Intelligence reported exactly this on tasks from Group A — driving screws,
 fitting zip ties, inserting Ethernet and power connectors — with about fifteen
 minutes of real-world data and roughly two hours including resets, reaching up to
 three times faster execution and beating human teleoperation on one of them. That
@@ -327,9 +357,22 @@ single-task baselines on only about half the tasks tested — with the authors
 warning that much of the field may be measuring statistical noise.
 
 **Code to look at:** [LeRobot](https://github.com/huggingface/lerobot) again, which
-now hosts about twenty policies including the open VLAs, plus
+hosts twenty registered policy types including the open VLAs, plus
 [openpi](https://github.com/Physical-Intelligence/openpi) and
 [Isaac-GR00T](https://github.com/NVIDIA/Isaac-GR00T) for the models themselves.
+For the bimanual-first alternative see [RDT](https://github.com/thu-ml/RoboticsDiffusionTransformer)
+and its successor [H-RDT](https://github.com/HongzheBi/H_RDT) (MPL-2.0).
+
+**Data to look at, which matters more here than code.**
+[Open X-Embodiment](https://github.com/google-deepmind/open_x_embodiment) is the
+famous pooled corpus and is almost entirely single-arm, as above. The two-arm data
+is elsewhere: [AgiBot World](https://github.com/OpenDriveLab/AgiBot-World)
+(dual-arm platform, published at IROS 2025; note the repository carries no licence
+file, and the stated terms live only in the README),
+[RoboMIND 2.0](https://arxiv.org/abs/2512.24653) (310,000 dual-arm trajectories,
+Apache-2.0, but a preprint with no venue and around 112 TB to download) and
+[Galaxea's open dataset](https://arxiv.org/abs/2509.00576) (500-plus hours on one
+dual-arm platform, in LeRobot format).
 
 ---
 

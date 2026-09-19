@@ -630,7 +630,9 @@ pieces you will meet:
 
 For one hard task worked through from end to end, see
 [stone stacking](stone-stacking.md): balancing rough stones needs all four
-coordination kinds, and it shows where the pieces above actually go.
+coordination kinds, and it shows where the pieces above actually go. For the
+wider map — every way of programming or training an arm, compared — see
+[ways to train or programme an arm](arms-training-methods/overview.md).
 
 ---
 

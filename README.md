@@ -65,6 +65,11 @@ map to the end: what it takes to train the whole thing, rather than programme
 it. The rig and the demonstrations, what a dataset of them looks like, the
 training run and what it costs, and how to evaluate it honestly and improve it.
 
+**[Ways to train or programme an arm](docs/arms-training-methods/overview.md)**
+is the map above both: every method there is, as a family tree, with a grid
+comparing eight families on twenty points, the mixes real systems actually use,
+and a table of which to reach for when. Links to the good write-up of each.
+
 ## Layout
 
 ```

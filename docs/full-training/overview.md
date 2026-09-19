@@ -132,7 +132,9 @@ no way to demonstrate, or when the task is mostly geometry — which stone, whic
 way up — rather than touch.
 
 **In practice most working systems split it**, exactly as the
-[stone stacking doc suggests](../stone-stacking.md#6-programmed-or-trained):
+[stone stacking doc suggests](../stone-stacking.md#6-programmed-or-trained) and
+as the [survey of methods](../arms-training-methods/overview.md#9-mixes-that-are-actually-used)
+shows across a dozen real systems:
 search for the pose with a physics engine, and train the last centimetre. Having
 read this folder you will know what the training half costs, which is the
 information you need to make that choice honestly.

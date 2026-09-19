@@ -193,6 +193,59 @@ def layers() -> None:
     _save(fig, 'layers.svg')
 
 
+def timeline() -> None:
+    """Draw roughly when each method became common, and which are fading."""
+    # (label, first widely used, still common until, status colour, note)
+    bars: list[tuple[str, int, int, str, str]] = [
+        ('teach and replay', 1975, 2026, BLUE, 'not declining; now hand-guided'),
+        ('offline programming from CAD', 1990, 2026, BLUE, 'standard for high-mix lines'),
+        ('behaviour trees and state machines', 2005, 2026, BLUE, 'standard for sequencing'),
+        ('sampling-based motion planning', 2000, 2026, BLUE, 'standard; now often GPU-solved'),
+        ('CAD model matching for known parts', 2004, 2026, BLUE, 'still standard for known parts'),
+        ('hand-designed visual features', 2000, 2016, GREY, 'replaced by learned perception'),
+        ('learned grasp proposal', 2017, 2026, GREEN, 'deployed; for unknown objects'),
+        ('learned pose and segmentation', 2018, 2026, GREEN, 'deployed widely'),
+        ('reinforcement learning in simulation', 2017, 2026, GREEN, 'for contact and dexterity'),
+        ('inverse RL and adversarial imitation', 2016, 2022, GREY, 'now a minority approach'),
+        ('behaviour cloning with action chunking', 2023, 2026, GREEN, 'the default first try'),
+        ('diffusion and flow-matching policies', 2023, 2026, GREEN, 'default when demos vary'),
+        ('language models as task planners', 2022, 2026, PURPLE, 'for sequencing and code'),
+        ('vision-language-action models', 2023, 2026, PURPLE, 'the current frontier'),
+        ('RL fine-tuning of pretrained policies', 2025, 2026, PURPLE, 'the 2026 precision recipe'),
+        ('world-model policies', 2025, 2026, PURPLE, 'new, and unproven on real arms'),
+        ('learning from human video at scale', 2026, 2026, PURPLE, 'newest; little released'),
+    ]
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(13, 6.4), facecolor='white')
+    first: int = 1975
+    last: int = 2027
+    ax.set_xlim(first - 1, last + 9)
+    ax.set_ylim(len(bars) + 0.4, -1.8)
+    ax.axis('off')
+
+    for year in range(1980, 2027, 10):
+        ax.plot([year, year], [-0.8, len(bars) - 0.4], color=PALE_GREY, lw=1.0, zorder=0)
+        ax.text(year, -1.1, str(year), ha='center', fontsize=8.5, color=MUTED)
+    ax.text(2026, -1.1, 'now', ha='center', fontsize=8.5, color=INK)
+
+    for index, (label, start, end, colour, note) in enumerate(bars):
+        fading: bool = end < 2026
+        ax.add_patch(Rectangle((start, index - 0.28), end - start, 0.56,
+                               facecolor=colour, edgecolor='none',
+                               alpha=0.35 if fading else 0.85, zorder=2))
+        ax.text(start - 0.6, index, label, ha='right', va='center', fontsize=8.6,
+                color=MUTED if fading else INK)
+        ax.text(end + 0.6, index, note, ha='left', va='center', fontsize=8.2,
+                color=MUTED if fading else colour)
+
+    ax.text(first - 1, len(bars) + 0.2,
+            'Faded bars are methods that were largely replaced; the year they end is '
+            'roughly when that happened.', fontsize=9, color=MUTED)
+    _save(fig, 'timeline.svg')
+
+
 if __name__ == '__main__':
     taxonomy()
     layers()
+    timeline()

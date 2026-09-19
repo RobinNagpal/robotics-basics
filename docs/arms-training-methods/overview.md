@@ -82,10 +82,36 @@ everything harder. It has to earn that.
 
 **The cheap alternative is a fixture.** A jig, a vice or a clamp is a second hand
 that costs a fraction of an arm, never drifts, needs no software, and cannot
-collide with anything. Whenever the object is rigid, always the same shape, and
-the job repeats often enough to justify making the jig, the sensible engineering
-is a fixture and one arm. That is why most robots in factories work alone, and a
-doc about two arms should say plainly that two arms are the exception.
+collide with anything. It also holds far more: the two best-known dual-arm
+industrial robots carry **half a kilogram and two kilograms per arm**
+respectively, which is less than a full mug of tea. Whenever the object is rigid,
+always the same shape, and the job repeats often enough to justify making the jig,
+the sensible engineering is a fixture and one arm.
+
+**How much of an exception two arms are is worth stating properly, because the
+evidence is unusually clean.** The body that counts the world's industrial robots
+does not have a category for them. Its published methodology classifies every one
+of the roughly 542,000 robots installed in 2024 by mechanical structure —
+articulated, cartesian, cylindrical, parallel, SCARA, or "others" — and
+"dual-arm" appears nowhere in that methodology, nor as a field on the forms
+manufacturers fill in. The data does not exist at source. This is not an oversight
+of a fast-moving area either: the same body added a separate category for
+humanoids when those became numerous enough to warrant one. The nearest niche it
+does publish is collaborative robots, at about a tenth of installations.
+
+The vendor catalogues say the same thing. Of the major industrial robot makers —
+FANUC, KUKA, Yaskawa, Universal Robots, Doosan, Techman, Comau, ABB — **exactly
+one still lists a purpose-built dual-arm robot as a current global product**, ABB's
+YuMi. Kawasaki's duAro is still sold in Japan but its robot pages disappeared from
+the Americas site in 2026. Yaskawa's dual-arm series is gone from the US catalogue
+and the controller it runs on is officially phased out. And the most telling
+detail of all: when ABB wanted to grow the YuMi line after launching it, it added
+a **single-arm** version.
+
+So the honest framing is that two-arm manipulation is a **fast-growing research
+field and a shrinking industrial product category at the same time.** That is not
+a contradiction — it means the tasks two arms are good at are mostly tasks nobody
+has yet automated profitably.
 
 Four things a fixture cannot do, and these are where a second arm earns its keep.
 
@@ -111,8 +137,33 @@ routing it into a clip; holding a lid down while driving the screw that fixes it
 supporting a stone while releasing it at exactly the right instant. No sequence of
 one-arm motions is equivalent to two constraints holding simultaneously.
 
-If your task needs none of those four, use one arm and a fixture, and read the
-rest of this doc for the method families rather than for the second arm.
+**What the trade-off actually turns on is variety, not capability.** The research
+area has a name — *fixtureless assembly*, or *jigless* in aerospace — and
+engineers at a large car maker put the economics plainly: holding parts with
+robots instead of fixtures pays off **"especially for a multi-style production
+line or when new styles are frequently introduced"**. A fixture is cheaper for one
+product and a liability for twenty, because each new variant needs a new fixture.
+The vendors' own marketing agrees, and is revealing about what they are really
+selling: the arguments for dual-arm robots are that they fit in the space of one
+human workstation, need no safety fence, and can be dropped into a line built for
+people without redesigning it. Those are arguments about *space and flexibility*,
+not about doing something a fixture cannot.
+
+**And there is a real counter-argument, which this doc would be dishonest to
+skip.** One careful study compared re-grasping with two arms against re-grasping
+with one arm that puts the object down and picks it up again — using the table as
+the fixture — and concluded that **two arms are not reliably better**: when the
+two grasps have room, the second arm wins; when they overlap, it is worse. Another
+group showed that "completely jigless" assembly can be done with **one** ordinary
+position-controlled arm, if the gripper is designed so that grasping self-aligns
+the part. Even garment folding, the flagship two-arm task, has a published
+single-arm solution. The one direct timing comparison found a dual-arm cell about
+20% faster than a single-arm one and less energy-efficient, paying for itself in
+eight months — but that was a simulation study, and the single-arm alternative was
+not given an optimised fixture.
+
+If your task needs none of those four things, use one arm and a fixture, and read
+the rest of this doc for the method families rather than for the second arm.
 
 ## 2. The tasks two arms are asked to do
 
@@ -282,7 +333,11 @@ same one. It then divides coordinated work into **goal-coordinated**, where the
 arms contribute to the same goal without touching each other or the same object,
 and **bimanual**, reserved for arms physically interacting with the same object.
 So "bimanual" in that vocabulary is narrower than "two arms" — it means the closed
-chain.
+chain. (That survey popularised the taxonomy but did not invent it; it credits
+[a 2010 paper by Surdilović and colleagues](https://doi.org/10.1109/ICHR.2010.5686273).)
+The same survey makes a point worth carrying: uncoordinated two-arm work has "no
+intrinsic difference to single-arm systems" — which is why the independent case
+needs no new methods.
 
 The modern reference is
 [Krebs and Asfour's bimanual manipulation taxonomy](https://h2t.iar.kit.edu/pdf/Krebs2022.pdf)
@@ -303,9 +358,23 @@ systems today almost always fix them, which is a simplification rather than a
 principle.
 
 A separate and often-confused distinction is **symmetric** against **asymmetric**
-coordination — whether the two arms are doing the same thing mirrored, or
-different things. It is a different axis from how tightly they are coupled, and
-conflating the two is a common error.
+coordination — whether the two arms are doing the same thing to the same object,
+or different things. It comes from
+[a 2004 paper by Zöllner, Asfour and Dillmann](https://h2t.iar.kit.edu/pdf/Zollner2004.pdf),
+which is also where the closed kinematic chain first enters the taxonomy, and it
+is a different axis from how tightly the arms are coupled. Conflating the two is a
+common error.
+
+**One honest caveat about all of this.** There is no standard here. No ISO or IEEE
+document defines a dual-arm coordination taxonomy — the international vocabulary
+for robots offers only "simultaneous motion" and "robot cooperation", and reserves
+"collaborative" for humans working with robots, so do not borrow that word for two
+arms working together. Recent papers do not agree either: some reuse the 2012
+terms, some independently reinvent "loosely and tightly coupled" without citing
+anyone, some use "master–slave versus symmetric", and at least one survey
+explicitly declines to propose a taxonomy at all. Treat the vocabulary above as a
+good map rather than an agreed standard, and expect any paper you read to have
+picked its own words.
 
 One practical vocabulary worth knowing because it appears in working code: the
 data-generation tool DexMimicGen splits two-arm subtasks into **parallel** (each
@@ -563,6 +632,21 @@ largely a research technique. Inverse reinforcement learning and adversarial
 imitation are a minority approach for arms, and their main open library has been
 untouched since early 2025 — though surveys still treat the family as live, so
 "declining" is fairer than "dead".
+
+**The cautionary tale, which is about hardware rather than method.** The most
+famous two-armed robot ever built was Baxter, from a company that raised around
+$150 million and shipped a couple of thousand machines before closing in 2018. The
+brand was bought, relaunched in 2024, and shut down again in September 2025; the
+website is now a parked domain. It is worth being precise about what went wrong,
+because "two arms" was not it. Baxter's joints were deliberately springy so it
+would be safe near people, and that cost it the precision to do useful work — one
+robotics professor's summary was that the design compromised accuracy in favour of
+safety, and that the company then spent too long trying to fix hardware problems in
+software. Meanwhile a competitor selling a conventional *single* arm outsold them
+roughly twenty-five to one over the same period. The verdict from one of its own
+distributors is the line to remember: it was **a roboticist's robot, not a tool for
+a job**. The second arm doubled the cost without doubling the set of jobs it could
+pay for.
 
 **The newest things, which a doc written in 2024 would miss entirely.**
 Reinforcement learning used to sharpen an already-trained policy rather than to

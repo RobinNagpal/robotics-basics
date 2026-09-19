@@ -39,16 +39,28 @@ assumes the world never changes: move the fixture two centimetres and every
 waypoint is wrong.
 
 **With two arms** this is still perfectly workable, and it is how dual-arm
-industrial robots are actually programmed — but only for the *independent* and
-*hold-and-work* patterns from [the overview](overview.md#4-the-three-ways-two-arms-can-be-coordinated),
-and only when the timing between the arms can be written down as simple waiting.
-You teach the holding arm its one pose, you teach the working arm its sequence,
-and you insert waits so that neither moves while the other is in its space.
-What you cannot teach this way is anything where the two arms must move
-*together* along a coordinated path — carrying one object between them, or keeping
-a cloth in tension — because that is not a pair of recordings, it is a constraint
-that has to hold continuously. For that you need the coordinated control in
-[section 6](#6-feedback-control).
+industrial robots are actually programmed. You teach the holding arm its one pose,
+you teach the working arm its sequence, and you insert waits so that neither moves
+while the other is in its space.
+
+What that leaves out is coordinated motion, and industrial controllers have a
+specific answer for it worth studying, because it shows exactly what two arms
+demand. ABB's dual-arm facility offers **three modes that line up almost exactly
+with the three coordination kinds** in
+[the overview](overview.md#4-the-three-ways-two-arms-can-be-coordinated):
+independent, semi-coordinated, and coordinated-synchronised. Turning on the
+synchronised mode imposes a rule that tells you everything about the difficulty —
+**the number of motion instructions between switching synchronisation on and off
+must be identical in both arms' programmes**, and matching instructions are paired
+by an identifier so the controller can step them together. Two arms moving as one
+is not two programmes running side by side; it is one programme written twice, in
+lockstep, and the controller enforces the lockstep.
+
+The same manual is candid about the consequences. If one arm faults during
+synchronised motion, **the other stops too** — it cannot meaningfully continue. And
+when a collision is detected, the default is to stop *every* robot in the cell,
+on the sensible grounds that the most likely thing a robot in a two-robot cell has
+collided with is the other robot.
 
 **Good for:** the free-space parts of Group A, and any two-arm task where one arm
 simply holds a known part in a known place.
@@ -190,9 +202,38 @@ rather than two paths.
 And the case a planner cannot express at all is the closed chain, where both arms
 grip one object. The two arms' positions are no longer free to choose
 independently — the object's rigidity ties them — and an ordinary planner has no
-way to represent that constraint. Handling it needs either a planner that supports
-closed-chain constraints or, much more commonly in practice, a controller that
-holds the constraint while a simpler planner moves the object.
+way to represent that constraint.
+
+**This is not a theoretical gap, and it is worth knowing exactly where the
+standard tools stop.** In MoveIt 2, the maintained dual-arm example defines the
+two arms as two separate planning groups and plans for **one at a time**; no
+shipped configuration plans them as one. The inverse-kinematics solvers are
+chain solvers, and the documentation says so outright — the default one "only
+works with serial chains" — so a loop through both arms and the object cannot be
+solved at all. There is no constraint type for "keep these two grippers a fixed
+distance apart", because every constraint relates one link to a frame rather than
+two links to each other. A maintainer's own summary of the situation is the
+sentence to remember: *nobody seems to have made tools that specifically go this
+far to assist you in formulating these problems.*
+
+Two more traps in the same tooling, both of which produce the classic two-arm bugs:
+
+*Planning the arms separately hides the collision you care about.* When the
+left arm is planned, the right arm is treated as an obstacle **at the position it
+is in right now**, not along the path it is about to follow. Each plan is
+collision-free on its own, and together they collide.
+
+*The arms do not start at the same moment.* The layer that executes a two-arm
+trajectory splits it by joint name and dispatches each arm's half in sequence,
+without stamping a common start time, so each arm begins when its own command
+arrives. For independent motions this does not matter. For a coordinated carry it
+is the difference between working and dropping the object, and the fix is to give
+both halves the same future start time yourself.
+
+Handling the closed chain properly therefore needs either a library that genuinely
+models loops — Drake and Pinocchio both do, and are the right places to look — or,
+much more commonly in practice, a controller that holds the constraint while a
+simpler planner moves the object.
 
 **Good for:** Groups A, B and C, and the "how to move" layer of D. It is the piece
 that lets a system respond to *where things are* rather than replaying a
@@ -213,6 +254,20 @@ way a real industrial controller does, and
 [Ruckig](https://github.com/pantor/ruckig), which generates jerk-limited
 time-optimal trajectories online. Between them they are much closer to how a
 factory arm actually moves than a randomised sampler is.
+
+**For two arms specifically**, start from MoveIt's maintained
+[dual-arm Panda configuration](https://github.com/moveit/moveit_resources/tree/ros2/dual_arm_panda_moveit_config)
+and copy its structure — it is simulated only, but it is the reference that works.
+[cuRobo](https://github.com/NVlabs/curobo) genuinely supports planning for two
+arms at once and ships a dual-arm configuration, though it too has no way to
+express a constraint *between* the two grippers. If your task involves a real
+closed loop, [Drake](https://github.com/RobotLocomotion/drake) and
+[Pinocchio](https://github.com/stack-of-tasks/pinocchio) are the two libraries
+with genuine support for closed kinematic chains, and are worth the switch. Be
+warned that open two-arm *hardware* support is thin: there is no maintained
+ROS 2 dual-arm coordination package at all, and ABB's YuMi — the one dual-arm
+robot still in general production — has no ROS 2 driver, only two archived ROS 1
+attempts.
 
 ## 5. Task and motion planning
 
@@ -271,12 +326,29 @@ makes coordination possible at all.** Three points, in order of importance.
 *The closed chain has to be controlled, not planned.* When both grippers hold one
 object, commanding both arms by position guarantees a fight, because no two
 position commands agree to the precision the object's rigidity demands. The
-standard fix is to stop thinking about two arms and think about one object: command
-where the *object* should go and how hard the arms should squeeze it, and let the
-controller work out what each arm does. The squeeze — the part of the force that
-presses the grippers together and produces no motion — is then something you
-choose deliberately, firm enough not to drop the object and gentle enough not to
-crush it.
+control literature is blunt about this: with independent joint control, the
+tracking errors that violate the closed-chain constraint "lead to building of large
+internal forces". A classic textbook puts the same thing more vividly — the two
+chains "fight against each other and apply forces which cause no net wrench".
+
+The arithmetic makes it clear why this is unavoidable rather than a tuning
+failure. Two six-joint arms have twelve degrees of freedom between them, and the
+object they are holding has only six. The other six dimensions do not disappear:
+**they become force**. That is the *internal* or *squeeze* force — the part of what
+the arms exert that produces no motion at all, only compression or tension in the
+object between them. You cannot choose not to have it; you can only choose whether
+you command it deliberately or discover it when something is crushed.
+
+So the standard fix is to stop thinking about two arms and think about one object:
+command where the *object* should go and how hard the arms should squeeze it, and
+let the controller work out what each arm does. If you go looking for this in the
+literature, the names to search for are the **symmetric formulation**, which treats
+the pair even-handedly and is what the reference handbook chapter on cooperative
+manipulation adopts; **cooperative task space**, the same idea in a different
+parameterisation; the **virtual linkage** and **augmented object** models; and
+**object impedance control**, which makes the held object behave like a spring. The
+older alternative is **master–slave**, where one arm leads and the other follows —
+simple, and largely superseded by the symmetric approaches.
 
 *The holding arm needs the opposite setting to the working arm.* An arm that
 steadies a part while the other pushes into it should be stiff, so the part does

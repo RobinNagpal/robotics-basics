@@ -159,7 +159,7 @@ of this shape.
 You have three honest options, and the third is the one most working systems
 actually use. (For the full set of methods these three are drawn from, and how
 they compare, see
-[ways to train or programme an arm](arms-training-methods/overview.md).)
+[ways to programme or train two arms](arms-training-methods/overview.md).)
 
 **Programme all of it.** Perception, a physics-engine search for the pose,
 planning, compliant placement — no learning anywhere. This is how the published

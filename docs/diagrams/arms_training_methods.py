@@ -30,6 +30,7 @@ PALE_GREEN: str = '#dff2e2'
 PALE_ORANGE: str = '#fdebd3'
 PALE_PURPLE: str = '#ece4f5'
 PALE_GREY: str = '#eeeeee'
+PALE_RED: str = '#fbe4e8'
 
 # One branch of the tree: a label, its colour, and the children below it.
 Node = tuple[str, list['Node']]
@@ -157,26 +158,100 @@ def taxonomy() -> None:
     _save(fig, 'taxonomy.svg')
 
 
+def _arm(ax: Axes, base: tuple[float, float], elbow: tuple[float, float],
+         hand: tuple[float, float], colour: str) -> None:
+    """Draw one arm as a base, two links and a gripper."""
+    ax.add_patch(Rectangle((base[0] - 0.42, base[1] - 0.22), 0.84, 0.44,
+                           facecolor=colour, edgecolor='none', alpha=0.75))
+    ax.plot([base[0], elbow[0], hand[0]], [base[1], elbow[1], hand[1]],
+            color=colour, lw=2.6, solid_capstyle='round', zorder=3)
+    ax.plot([hand[0]], [hand[1]], marker='o', markersize=6, color=colour, zorder=4)
+
+
+def coordination() -> None:
+    """Draw the three ways two arms can work on one problem."""
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(13.2, 4.8), facecolor='white')
+    ax.set_xlim(-0.6, 26.4)
+    ax.set_ylim(-2.6, 6.4)
+    ax.axis('off')
+
+    panels: list[tuple[str, str, str]] = [
+        ('independent',
+         'two jobs at once, sharing only\nthe space they move through',
+         'the only coupling is collision:\nplan both, keep them apart'),
+        ('one holds, one works',
+         'one arm makes the frame steady,\nthe other does the fine work',
+         'the common case, and the one\nworth designing for on purpose'),
+        ('both hold one thing',
+         'the arms and the object form a loop,\nso neither arm is free any more',
+         'position control alone will squeeze\nor fight: control the pair together'),
+    ]
+    for index, (title, what, why) in enumerate(panels):
+        x0: float = index * 9.0
+        colour: str = [BLUE, GREEN, ORANGE][index]
+        fill: str = [PALE_BLUE, PALE_GREEN, PALE_ORANGE][index]
+        ax.add_patch(Rectangle((x0, -0.5), 7.8, 5.6, facecolor=fill,
+                               edgecolor=colour, lw=1.4))
+        ax.text(x0 + 3.9, 5.6, title, ha='center', fontsize=11, color=INK)
+        ax.plot([x0 + 0.5, x0 + 7.3], [0.0, 0.0], color=MUTED, lw=1.0)
+
+        left_base: tuple[float, float] = (x0 + 1.6, 0.35)
+        right_base: tuple[float, float] = (x0 + 6.2, 0.35)
+        if index == 0:
+            _arm(ax, left_base, (x0 + 1.6, 2.4), (x0 + 2.4, 3.2), colour)
+            _arm(ax, right_base, (x0 + 6.2, 2.4), (x0 + 5.4, 3.2), colour)
+            for hand_x in (x0 + 2.4, x0 + 5.4):
+                ax.add_patch(Rectangle((hand_x - 0.5, 3.3), 1.0, 0.7,
+                                       facecolor=INK, edgecolor='none', alpha=0.55))
+        elif index == 1:
+            _arm(ax, left_base, (x0 + 1.6, 2.4), (x0 + 3.0, 3.05), colour)
+            _arm(ax, right_base, (x0 + 6.2, 3.4), (x0 + 4.5, 3.9), colour)
+            ax.add_patch(Rectangle((x0 + 3.0, 2.4), 2.0, 1.3, facecolor=INK,
+                                   edgecolor='none', alpha=0.55))
+            ax.text(x0 + 2.4, 1.8, 'holds', ha='center', fontsize=8.5, color=colour)
+            ax.text(x0 + 4.9, 4.3, 'works', ha='center', fontsize=8.5, color=colour)
+        else:
+            _arm(ax, left_base, (x0 + 1.6, 2.4), (x0 + 2.7, 3.0), colour)
+            _arm(ax, right_base, (x0 + 6.2, 2.4), (x0 + 5.1, 3.0), colour)
+            ax.add_patch(Rectangle((x0 + 2.7, 2.6), 2.4, 0.9, facecolor=INK,
+                                   edgecolor='none', alpha=0.55))
+            for sign, tip in ((1, x0 + 3.5), (-1, x0 + 4.3)):
+                ax.add_patch(FancyArrowPatch((tip - 0.5 * sign, 3.05), (tip, 3.05),
+                                             arrowstyle='-|>', mutation_scale=9,
+                                             color='white', lw=1.4))
+            ax.text(x0 + 3.9, 1.9, 'forces that go nowhere', ha='center',
+                    fontsize=8.5, color=colour)
+
+        ax.text(x0 + 3.9, -1.1, what, ha='center', va='top', fontsize=8.8, color=INK)
+        ax.text(x0 + 3.9, -1.9, why, ha='center', va='top', fontsize=8.5, color=colour)
+
+    _save(fig, 'coordination.svg')
+
+
 def layers() -> None:
     """Draw the four layers of a system, and which method usually fills each one."""
     rows: list[tuple[str, str, str, str]] = [
         ('what to do next', 'the order of the steps',
          'scripted logic  ·  behaviour tree  ·  task planner  ·  a language model', PURPLE),
+        ('which arm does what', 'who holds, who works, when they swap',
+         'almost always written by hand  ·  sometimes chosen by a planner', RED),
         ('which skill, and where', 'pick the object, place it there',
          'a planner with learned perception  ·  a trained policy  ·  a VLA', BLUE),
-        ('how to move', 'a path that misses everything',
-         'motion planning  ·  learned directly by the policy', GREEN),
-        ('how to touch', 'the last centimetre, and the forces',
+        ('how to move', 'two paths that must miss each other',
+         'motion planning over both arms  ·  learned directly by the policy', GREEN),
+        ('how to touch', 'the last centimetre, and the release',
          'force control  ·  learned from demonstrations  ·  RL', ORANGE),
     ]
     fig: Figure
     ax: Axes
-    fig, ax = plt.subplots(figsize=(12.5, 4.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(12.5, 5.7), facecolor='white')
     ax.set_xlim(0, 26)
     ax.set_ylim(-1.2, 4.6 * len(rows) + 0.4)
     ax.axis('off')
     fills: dict[str, str] = {PURPLE: PALE_PURPLE, BLUE: PALE_BLUE, GREEN: PALE_GREEN,
-                             ORANGE: PALE_ORANGE}
+                             ORANGE: PALE_ORANGE, RED: PALE_RED}
     for index, (title, note, methods, colour) in enumerate(rows):
         y: float = (len(rows) - 1 - index) * 4.4
         ax.add_patch(Rectangle((0.2, y), 7.2, 3.4, facecolor=fills[colour],
@@ -247,5 +322,6 @@ def timeline() -> None:
 
 if __name__ == '__main__':
     taxonomy()
+    coordination()
     layers()
     timeline()

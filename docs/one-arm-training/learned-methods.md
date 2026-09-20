@@ -269,7 +269,8 @@ it buys you a technique that the field itself is using less with each passing ye
 understand how they work;
 [Isaac Lab](https://github.com/isaac-sim/IsaacLab) and
 [MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground) (2.2k) for
-where the practising happens; and
+where the practising happens, though note that both need an NVIDIA card, so on a Mac
+you are limited to plain MuJoCo on the processor; and
 [HIL-SERL](https://github.com/rail-berkeley/hil-serl) for reinforcement learning on
 a real arm, which is the branch most likely to be useful to you.
 

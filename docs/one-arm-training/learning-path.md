@@ -43,7 +43,7 @@ runs, and each one is a thing you can describe to somebody else.
 | **2. Make it plan** | pick and place that responds to where things are | MoveIt pick and place · compare three planners over 20 runs · add a fallback grasp | [MoveIt 2](https://moveit.picknik.ai/main/index.html), [OMPL](https://ompl.kavrakilab.org/), Pilz, [Ruckig](https://github.com/pantor/ruckig), [Task Constructor](https://github.com/moveit/moveit_task_constructor) | the Mac |
 | **3. Make it see** | picking an object the system has never been shown | depth camera to point cloud · swap colour rules for segmentation · rank grasps and hand one to the planner | [Gazebo sensors](https://gazebosim.org/docs/harmonic/ros2_integration/), `depth_image_proc`, [SAM 2](https://github.com/facebookresearch/sam2), [GraspNet](https://graspnet.net/) | the Mac |
 | **4. Make it touch** | a peg that goes in because of force, not because of position | insert by position and watch it jam · add compliance and a search · sweep the stiffness | [MuJoCo](https://github.com/google-deepmind/mujoco), [robosuite](https://robosuite.ai/), [robomimic](https://github.com/ARISE-Initiative/robomimic) | the Mac |
-| **5. Make it learn** | a trained policy and an honest number with a denominator | train ACT on a two-arm handover · a long task in LIBERO · fine-tune a pretrained policy | [LeRobot](https://github.com/huggingface/lerobot), [gym-aloha](https://github.com/huggingface/gym-aloha), [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO), [SmolVLA](https://huggingface.co/blog/smolvla) | Mac, then a rented GPU |
+| **5. Make it learn** | a trained policy and an honest number with a denominator | train ACT and evaluate it properly · a longer task, to meet compounding error · fine-tune a pretrained policy | [LeRobot](https://github.com/huggingface/lerobot), [gym-aloha](https://github.com/huggingface/gym-aloha), [robomimic](https://github.com/ARISE-Initiative/robomimic), [SmolVLA](https://huggingface.co/blog/smolvla) | Mac, then a rented GPU |
 
 ## Why MuJoCo and Gazebo, and why both
 
@@ -76,9 +76,43 @@ Gazebo and misbehaves in MuJoCo is usually telling you that your contact paramet
 are fiction. A controller that works in MuJoCo and falls apart in Gazebo is usually
 telling you that your real problem is timing or message plumbing rather than physics.
 
-Both run natively on an Apple Silicon Mac. MuJoCo ships an `osx-arm64` build on
-conda-forge, and this repository already runs Gazebo Harmonic on this machine for
-[the camera area](../camera/basics.md), so neither is a gamble.
+### What that means on a Mac, honestly
+
+MuJoCo is the easy half. It publishes native Apple Silicon builds, it has a native
+viewer, and nothing about it is second-class. One practical wrinkle catches
+everybody: macOS insists that rendering happens on the main thread, so the
+interactive viewer has to be started with the `mjpython` launcher rather than with
+`python`. If you would rather avoid that entirely, [mjviser](https://pypi.org/project/mjviser/)
+renders MuJoCo in a browser instead, which sidesteps the problem.
+
+Gazebo is the awkward half, and it is worth knowing that before you lose an evening
+to it. It does work — this repository already runs Gazebo Harmonic on this machine
+for [the camera area](../camera/basics.md) — but macOS is a best-effort platform for
+it with no Apple Silicon testing behind it, and two things follow.
+
+The first is that **you must install it through conda, not Homebrew.** Gazebo's own
+documentation tells you to use Homebrew, and for the version that pairs with ROS 2
+Jazzy there is no prebuilt Homebrew package, so that route means compiling the whole
+stack from source. The conda-forge builds that `pixi` already pulls in are prebuilt
+and are the reason this repo's camera area works at all.
+
+The second is that **the graphical window and the physics server cannot run in the
+same process on macOS.** You start them as two separate commands rather than one.
+This has been [an open issue since 2019](https://github.com/gazebosim/gz-sim/issues/44),
+so treat it as how Gazebo works on a Mac rather than as something you have broken.
+Expect the occasional crash as well; the maintainers say plainly that they have no
+Apple Silicon machine to test on.
+
+None of that stops any of the projects below. It does mean that when Gazebo
+misbehaves on this machine, the platform is a fair suspect, which is not the usual
+advice and is worth holding on to.
+
+Also worth knowing: the matching ROS 2 pieces are in better shape than their
+reputation suggests. MoveIt 2, RViz2 and `ros2_control` all publish Apple Silicon
+builds, and the crashes that made them painful on Macs were fixed through 2025 and
+early 2026. One setting is worth applying anyway — prefer the Cyclone DDS
+middleware over the default, because the alternative still has an open thread-affinity
+bug on recent macOS.
 
 ---
 
@@ -223,10 +257,22 @@ described and which you cannot debug when it is wrong. That trade is the subject
 this entire folder, and here you get to feel it.
 
 **Project three: choose a grasp and execute it.** Generate candidate grasp poses on
-the segmented object, filter them for the ones MoveIt can actually reach, and pick
-the best one. Most of the engineering here is ordinary code sitting between the
-network and the planner, which is exactly where the engineering sits in real
-systems too.
+the segmented object, filter them down to the ones MoveIt can actually reach, and
+execute the best. Most of the engineering here is ordinary code sitting between the
+network and the planner, which is exactly where the engineering sits in real systems
+too.
+
+Write the grasp generator yourself rather than downloading one, and be aware that
+this is not a preference — it is a hard limit. **Every open learned grasp-pose model
+in 2026 needs NVIDIA hardware**, because they all depend on compiled CUDA operations:
+the GraspNet baseline and Contact-GraspNet both do, AnyGrasp does and is a
+licence-gated binary besides, and GraspGen carries a research licence on top. There
+is no CUDA-free option, and this is the single hardest stop in a Mac-only robotics
+path. The good news is that a geometric generator — find opposing surfaces on the
+point cloud where the gripper fits, score them by how square-on the approach is — is
+perhaps a hundred lines, works fine, and teaches you what the learned models are
+actually predicting. [GraspNet-1Billion](https://graspnet.net/) is still worth
+having as the dataset to check your scores against.
 
 ### The stack, and why each piece
 
@@ -234,17 +280,16 @@ systems too.
 | --- | --- | --- |
 | [Gazebo sensors](https://gazebosim.org/docs/harmonic/ros2_integration/) | simulated depth and colour cameras, with noise | the noise matters; a perfect camera teaches you nothing about a real one |
 | `depth_image_proc` | depth picture to point cloud | the standard ROS way, already in this repo's dependencies |
-| [SAM 2](https://github.com/facebookresearch/sam2) | segmentation without per-object training | the model that removed the need for a vision engineer per customer |
-| [GraspNet-1Billion](https://graspnet.net/) | grasp dataset and benchmark | most valuable now as data to evaluate against rather than as code to run |
+| [SAM 2](https://github.com/facebookresearch/sam2) | segmentation without per-object training | the model that removed the need for a vision engineer per customer. Its install notes say Linux, but it runs on Apple's Metal backend in practice — build it with the optional CUDA step switched off. Note that SAM 3 hard-requires CUDA, so stay on 2 |
+| [GraspNet-1Billion](https://graspnet.net/) | grasp dataset and benchmark | data to score your own generator against. Its detector, like every other open one, needs CUDA |
 | [MoveIt 2](https://moveit.picknik.ai/main/index.html) | executes the chosen grasp | stage 2 pays off here |
 
 A note on what to avoid at this stage.
 [FoundationPose](https://github.com/NVlabs/FoundationPose) is the best open
-six-degree-of-freedom pose estimator, and it is built around NVIDIA-specific
-libraries, so it is not a Mac project — leave it for the cloud, or skip it, because
-segmentation plus a point cloud is enough to get a grasp.
-[AnyGrasp](https://github.com/graspnet/anygrasp_sdk) has real commercial traction
-but ships as a licence-gated binary and is not open source despite appearances.
+six-degree-of-freedom pose estimator and is built around NVIDIA-specific libraries,
+so it is not a Mac project — leave it for the cloud, or skip it, because
+segmentation plus a point cloud is enough to get a grasp. Stay on SAM 2 rather than
+SAM 3, which requires CUDA outright.
 
 ### What real products do this
 
@@ -299,7 +344,7 @@ any explanation of it.
 | Tool | What it does | Why this one |
 | --- | --- | --- |
 | [MuJoCo](https://github.com/google-deepmind/mujoco) | the contact physics underneath | Gazebo's contact model is not built for this; MuJoCo's is |
-| [robosuite](https://robosuite.ai/) | ready contact tasks, including peg insertion | saves you building a task, and is the benchmark the papers use |
+| [robosuite](https://robosuite.ai/) | ready contact tasks, including peg insertion | saves you building a task, and is the benchmark the papers use. It pins an older MuJoCo, so let it choose the version |
 | [robomimic](https://github.com/ARISE-Initiative/robomimic) | careful baselines on those tasks | tells you what a good result even looks like before you chase one |
 | [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers) | Cartesian force and impedance control in ROS | read this for how the real thing is structured, even if you prototype in MuJoCo |
 
@@ -341,13 +386,20 @@ fifty trials from fixed starting states and write down the number. Reporting an
 honest success rate with a denominator is a skill in itself, and most of the field
 is bad at it.
 
-**Project two: watch a long task fail.** Move to
-[LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO), which has long
-multi-step tasks, and train the same way. It will do noticeably worse, and the
-failures will cluster near the end rather than being spread evenly. That is
-compounding error, and seeing it in your own evaluation is the fastest way to
-understand why
+**Project two: watch a long task fail.** Move to a longer task from
+[robomimic's dataset collection](https://robomimic.github.io/docs/datasets/robomimic_v0.1.html)
+— Square and Tool Hang are the ones that hurt — and train the same way. The policy
+will do noticeably worse, and the failures will cluster near the end of the task
+rather than being spread evenly through it. That clustering is compounding error,
+and seeing it in your own evaluation is the fastest way to understand why
 [the programmed methods have not gone anywhere](programmed-methods.md).
+
+A word on why this project does not use LIBERO, which is the benchmark you will see
+recommended for exactly this. LIBERO's requirements still pin PyTorch 1.11 against
+CUDA 11.3, and LeRobot's `libero` extra carries a Linux-only marker, so
+`pip install lerobot[libero]` will resolve happily on a Mac and then fail at import
+because the simulator was silently left out. robomimic is built on robosuite and
+therefore on MuJoCo, so it works where LIBERO does not.
 
 **Project three: fine-tune a pretrained policy.** Take
 [SmolVLA](https://huggingface.co/blog/smolvla), which was built to be trained and
@@ -363,8 +415,7 @@ card.
 | --- | --- | --- |
 | [LeRobot](https://github.com/huggingface/lerobot) | policies, datasets, training, evaluation | where all of these methods now live and are maintained; there is no close second |
 | [gym-aloha](https://github.com/huggingface/gym-aloha) | two small MuJoCo tasks | small enough to iterate on quickly, which is what matters when learning the loop |
-| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | long multi-step tasks | where the interesting failures are |
-| [robomimic](https://github.com/ARISE-Initiative/robomimic) | which implementation details matter | read before blaming your data for a hyperparameter problem |
+| [robomimic](https://github.com/ARISE-Initiative/robomimic) | longer tasks, datasets, and careful baselines | where the interesting failures are, and it tells you what a good result even looks like. Install from GitHub: the version on PyPI has been frozen since 2023 |
 | [SmolVLA](https://huggingface.co/blog/smolvla) | a pretrained policy sized for ordinary hardware | the only realistic entry point to the pretrained family without a large card |
 | [community_dataset_v3](https://huggingface.co/datasets/lerobot/community_dataset_v3) | 791 datasets, 46 robot types, Apache-2.0 | permissively licensed and large, which is rarer than it should be |
 
@@ -431,9 +482,12 @@ a compute budget, and the field itself is using it less each year as a first sta
 [Learn the fine-tuning use instead](learned-methods.md#2-learning-from-trial-and-error).
 
 **Isaac Lab and the NVIDIA stack.** Excellent, widely used, and requires hardware you
-do not have. MuJoCo teaches the same lessons, and
-[MuJoCo Warp](https://github.com/google-deepmind/mujoco_warp) is where the
-high-throughput version of that story is going.
+do not have. MuJoCo teaches the same lessons. Note that
+[MuJoCo Warp](https://github.com/google-deepmind/mujoco_warp), where the
+high-throughput version of that story is going, is explicitly designed for NVIDIA
+hardware too — it will run on a Mac for reading and debugging, and not for training.
+If you want a simulator with a genuine Apple graphics backend, the one to watch is
+[Genesis](https://github.com/Genesis-Embodied-AI/Genesis).
 
 ---
 

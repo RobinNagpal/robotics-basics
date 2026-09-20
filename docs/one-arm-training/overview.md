@@ -425,9 +425,14 @@ are dormant now, so use LeRobot's versions of those methods rather than theirs.
 **Reinforcement learning in simulation.** The idea is to let the robot practise
 millions of times somewhere that costs nothing, and then transfer what it learned to
 the real arm. [Isaac Lab](https://github.com/isaac-sim/IsaacLab) is the current
-standard, and it requires an NVIDIA graphics card.
-[MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground) is the one
-that runs on an Apple Silicon Mac, which matters a great deal for this repository.
+standard, and it requires an NVIDIA graphics card. So, be warned, does most of the
+rest of this column: [MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground)
+documents no processor-only path, and the JAX backend it relies on does not support
+Apple graphics at all. On a Mac the honest option is plain MuJoCo driven by
+[Stable-Baselines3](https://stable-baselines3.readthedocs.io/) on the processor,
+which is fine for learning how the algorithms behave and far too slow for a real
+training run. This is the one column in the grid where the hardware genuinely
+decides for you.
 
 Around those, [ManiSkill](https://github.com/haosulab/ManiSkill) and
 [robosuite](https://github.com/ARISE-Initiative/robosuite) provide the manipulation
@@ -491,9 +496,10 @@ This is worth knowing before you invest a weekend, because discovering it afterw
 is the most common way to lose one. Everything in the imitation column trains on a
 single consumer graphics card, or on a cheap rented one. Everything in the
 vision-language-action column except SmolVLA wants more memory than a consumer card
-has. Isaac Lab and cuRobo both require CUDA and will not run on an Apple Silicon Mac
-at all, whereas MuJoCo, MuJoCo Playground, MoveIt 2, Drake, Pinocchio and LeRobot's
-training all will.
+has. Isaac Lab, cuRobo and MuJoCo Playground all require CUDA and will not run on an
+Apple Silicon Mac, and neither will any open learned grasp-pose model. What does run
+natively: MuJoCo, Gazebo, MoveIt 2, RViz2, `ros2_control`, Drake, Pinocchio, and
+LeRobot's training on Apple's Metal backend.
 
 ### The grid
 
@@ -684,7 +690,7 @@ rather than at research, this is the family to be good at.
 | **TAMP** | [PDDLStream](https://github.com/caelan/pddlstream) | a symbolic domain model | a plan that is both sensible and reachable |
 | **Classical control** | [ros2_control](https://github.com/ros-controls/ros2_control), [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers), [Drake](https://github.com/RobotLocomotion/drake), [MuJoCo MPC](https://github.com/google-deepmind/mujoco_mpc) | a model of the robot | the arm presses on a surface without fighting it |
 | **Imitation** | [LeRobot](https://github.com/huggingface/lerobot), [robomimic](https://github.com/ARISE-Initiative/robomimic), [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | 50–1000 demonstrations | a policy that does the task some of the time |
-| **RL (sim → real)** | [Isaac Lab](https://github.com/isaac-sim/IsaacLab) or [MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground), [ManiSkill](https://github.com/haosulab/ManiSkill), [Stable-Baselines3](https://stable-baselines3.readthedocs.io/) | a reward, and a simulator that is close enough | it works in simulation, then survives the transfer |
+| **RL (sim → real)** | [Isaac Lab](https://github.com/isaac-sim/IsaacLab) or [MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground), both needing CUDA; [Stable-Baselines3](https://stable-baselines3.readthedocs.io/) on plain MuJoCo otherwise | a reward, and a simulator that is close enough | it works in simulation, then survives the transfer |
 | **VLA fine-tune** | [openpi](https://github.com/Physical-Intelligence/openpi), [Isaac-GR00T](https://github.com/NVIDIA/Isaac-GR00T), [SmolVLA](https://huggingface.co/blog/smolvla) in LeRobot | 10–500 demonstrations, and a checkpoint that fits your robot | a pretrained model doing *your* task |
 | **Learned pieces in a classical stack** | [Segment Anything](https://github.com/facebookresearch/segment-anything), [FoundationPose](https://github.com/NVlabs/FoundationPose), [GraspGen](https://github.com/NVlabs/GraspGen) + MoveIt 2 | labelled data, or just a downloaded model | picking an object the system has never seen |
 

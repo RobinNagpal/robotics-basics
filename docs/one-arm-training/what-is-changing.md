@@ -333,60 +333,36 @@ several of these will not survive contact with real deployments.
 
 ### Reinforcement learning as polish, not as training
 
-This lets you take a policy that works maybe half the time after demonstrations and
-make it reliable in a matter of hours on the real robot, rather than weeks in
-simulation. Physical Intelligence reported exactly this on driving screws, fitting
-zip ties and inserting connectors, using about fifteen minutes of real-world data or
-roughly two hours once the resets between attempts are counted, and reaching up to
-three times faster execution while beating human teleoperation on one of the tasks.
+This is the most important arrival of the year, and
+[the learned-methods document explains how it works](learned-methods.md#3-learning-from-large-scale-pretraining).
+What belongs here is why it appeared and why you should believe it.
 
-The reason it works is that the two methods fail in exactly complementary ways.
-Demonstrations give you the *shape* of a task cheaply, but they do not give you the
-last few percent of reliability. Exploration cannot find the shape on its own,
-because a coordinated behaviour is almost never stumbled upon by chance, but it
-polishes beautifully once the shape is already there. Nobody sat down and designed
-this pairing. It was discovered independently by four separate groups in a single
-year, on laundry and box assembly, on shoe-lacing where success went from 46% to 83%
-after about 150 practice episodes, on precision insertion, and in the winning entry
-of a garment-folding competition.
+It appeared because demonstrations and practice fail in exactly complementary ways.
+Demonstrations give you the *shape* of a task cheaply but not the last few percent
+of reliability. Practice cannot find the shape on its own, because a coordinated
+behaviour is almost never stumbled upon by chance, but it polishes beautifully once
+the shape is already there. Pair them and each covers the other's weakness.
 
-This is the current state of the art for a hard task, and that convergence of four
-independent groups is the strongest signal anywhere in this document. The open tools
-are [HIL-SERL](https://github.com/rail-berkeley/hil-serl) inside
-[LeRobot](https://github.com/huggingface/lerobot) for the real-robot stage, and
-[SimpleVLA-RL](https://github.com/PRIME-RL/SimpleVLA-RL) for the simulated version.
+You should believe it because nobody designed the pairing. It was discovered
+independently by four separate groups in a single year, on four unrelated tasks:
+laundry and box assembly, shoe-lacing, precision insertion, and a garment-folding
+competition. Convergence like that is the strongest evidence this document contains,
+and it is a better reason to trust a method than any single headline result.
 
 ### Flow matching, and an honest doubt about it
 
-This generates a whole action sequence that can represent "either this motion or
-that one" rather than averaging the two together, and does so fast enough to run at
-control rates. The averaging problem it solves is real and concrete: if some of your
-demonstrators go left around an obstacle and others go right, a network trained to
-output a single number per command will learn to go straight through the obstacle.
+Flow matching is now the action-generating component inside essentially every large
+policy, and it too is
+[explained in the learned-methods document](learned-methods.md#11-behaviour-cloning).
+It is listed here for a different reason: it is the clearest example in the field of
+something that everybody adopted before anybody justified it.
 
-It emerged because diffusion had already solved the averaging problem but was too
-slow to run on a robot at fifty hertz. Flow matching is a faster relative of
-diffusion, and it is now the action-generating component inside essentially every
-current large policy.
-
-The doubt belongs here alongside the description. A 2026 study called
-[MINERVA](https://arxiv.org/abs/2609.03715) found that flow matching gave no
-detectable advantage over plain regression on its benchmarks, while being several
-times slower to run. The field is optimising a design choice that it has not fully
-justified, and this is a good example of something everyone has adopted which may
-not survive.
-
-### Real-time action chunking
-
-This lets a large, slow model produce smooth continuous motion. A
-vision-language-action model might run at five to ten hertz, whereas an arm wants
-commands at somewhere between fifty and two hundred. Chunking closes that gap by
-letting the model emit a block of future actions which play out while the next block
-is still being computed.
-
-The reason it appeared is a purely practical mismatch between model size and control
-rate, and it is the piece that makes the whole 2026 recipe described above
-executable on real hardware rather than only in a video.
+A 2026 study called [MINERVA](https://arxiv.org/abs/2609.03715) found that flow
+matching gave no detectable advantage over plain regression on its benchmarks, while
+being several times slower to run. That does not make it wrong. It makes it an open
+question that the field has stopped asking, which is worth noticing, because a
+method can spread through a field on elegance and convenience rather than on
+measured benefit.
 
 ### World models
 

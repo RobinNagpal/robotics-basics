@@ -16,17 +16,17 @@ actually bought to do, the layers that every arm system is built from, the famil
 tree of the methods themselves, and a grid that says which method suits which job.
 The three companion documents then take the methods one at a time.
 
-**Who this is for.** Someone who can picture an arm moving, and who knows roughly
+## Who this is for, and what it is for
+
+This is written for someone who can picture an arm moving, and who knows roughly
 what a camera does and what a joint angle is, but who has not yet had to choose
 between these approaches for a real project. You do not need to have used any of
 them, and where a term is likely to be unfamiliar it is explained as it appears.
 
-## What this is for, and what it is not for
-
-This folder was written for a particular purpose, and being explicit about that
-purpose changes quite a lot of what is in it. It is written for someone who wants to
-learn this field well enough to be useful in it within about a year — well enough to
-talk credibly about a robotics project, to scope one sensibly, to win service or
+The folder also has a particular purpose behind it, and being explicit about that
+changes quite a lot of what is in it. It is written for someone who wants to learn
+this field well enough to be useful in it within about a year — well enough to talk
+credibly about a robotics project, to scope one sensibly, to win service or
 consulting work, or to start building something real over the next one to three
 years as the hardware and the models get cheaper.
 
@@ -86,7 +86,7 @@ clear, so start here.
 3. [The four layers of an arm system](#3-the-four-layers-of-an-arm-system)
 4. [The family tree](#4-the-family-tree)
 5. [Which method for which task](#5-which-method-for-which-task)
-6. [Four worked examples](#6-four-worked-examples)
+6. [Three worked examples](#6-three-worked-examples)
 7. [What is current, and what is fading](#7-what-is-current-and-what-is-fading)
 8. [What each method costs you](#8-what-each-method-costs-you)
 9. [What real systems actually do](#9-what-real-systems-actually-do)
@@ -532,7 +532,7 @@ approach — it is the only approach there is.
 
 ---
 
-## 6. Four worked examples
+## 6. Three worked examples
 
 **Inserting a connector into a board.** This is the canonical Group A problem and
 the clearest case anywhere of position not being enough. The clearance is tighter
@@ -561,18 +561,6 @@ Nothing about this is end-to-end, and nothing needs to be. The learning is confi
 to the one part of the job that required recognising something, everything else
 stays inspectable, and when the system fails you can look at the grasps it proposed
 and see which of them was wrong.
-
-**Polishing a curved part.** This is the example where the interesting engineering
-turns out not to be in the arm at all. The path comes from CAD or from a scan of the
-actual part, and the contact force has to be held constant along a surface that is
-never quite where the model says it is.
-
-In practice the force loop for this usually does not live in the arm. It lives in a
-compliant flange, which is a small spring-loaded device bolted between the arm and
-the tool that holds a set force over a few millimetres of travel. It does this far
-faster than the arm itself could react. This example is worth knowing precisely
-because it is a case where the right answer is mechanical, and no amount of learning
-changes the physics that makes it so.
 
 **Picking a strawberry.** This is the Group D problem, and it shows where the field
 genuinely is rather than where the videos suggest it is. Every fruit is a different
@@ -781,38 +769,6 @@ applied to the part of the job that requires recognising or reacting to somethin
 and everything else stays classical — and the reason everything else stays classical
 is that everything else can be checked.
 
-### One sector, as a lesson in reading the industry
-
-Truck unloading and depalletising deserves a few paragraphs here, because it is the
-sector with the most published numbers in it, and the pattern in those numbers turns
-out to be more instructive than any of the numbers themselves.
-
-Boston Dynamics' Stretch is the only product in the category that ever published
-cumulative counts. It reported one million customer boxes moved by September 2023,
-then two million by the end of that year, and later a figure of 700 cases per hour
-that was co-signed by a logistics customer in May 2025 — the co-signing being what
-makes it the best-evidenced throughput claim anywhere in the sector. One retail
-customer reported that one or two people can now process ten thousand cases a day
-where twelve to fifteen people were needed before, which is the most concrete
-productivity claim in this whole document.
-
-And then it stopped. No cumulative count has been published since the end of 2023,
-no fleet size has ever been published at all, and the throughput figures that
-circulate — 700, 800 and 1,200 cases per hour — contradict one another, as do two
-different battery-life figures drawn from the vendor's own materials and the trade
-press. Among the competitors, one publishes a genuinely well-formed number: 400 to
-1,500 picks per hour, explicitly labelled as production deployments rather than
-demonstrations, with the dependency on freight type named. One publishes capability
-ratings with no site and no averaging window attached. One published nothing
-operational at all. And one now has a parked domain.
-
-Across every vendor in the category, not one publishes an error rate per thousand
-cases, a damage rate, or cumulative uptime hours. The lesson here is not that these
-products do not work, because they clearly do. The lesson is that the one company
-that was being transparent quietly stopped being transparent, nobody replaced it,
-and this is the normal state of evidence in commercial robotics. Calibrate your
-expectations accordingly the next time a supplier shows you a number.
-
 ---
 
 ## 10. What you can realistically do in the next year
@@ -933,15 +889,16 @@ collection across several iterative rounds, and ended without a publishable succ
 rate. If there is an adjacent niche today, it is in data collection, teleoperation
 infrastructure and evaluation rather than in policy training.
 
-**Meanwhile the classical market is growing and changing shape.** North American
-robot orders in the first half of 2026 came to 17,995 units and $1.166 billion, up
-2.0% in units and 6.6% in value. But the composition moved sharply: orders from
-automotive manufacturers fell 25%, while semiconductors and electronics rose 35% and
-life sciences and pharmaceuticals rose 32%. Non-automotive is now 56% of units.
-Collaborative robots were 15.4% of units but only 9.8% of revenue, and they are
-concentrated in exactly those growing sectors. That data comes from a voluntary
-survey of member suppliers run by a trade body whose stated purpose is advocating for
-automation, so treat it as directionally useful rather than audited.
+**Meanwhile the classical market is growing, and more importantly it is changing
+shape.** North American robot orders grew modestly through the first half of 2026,
+but underneath that flat total the composition moved sharply: orders from automotive
+manufacturers fell by a quarter, while semiconductors and electronics rose by about
+a third and life sciences and pharmaceuticals by nearly as much. Non-automotive work
+is now the majority. That matters more to you than the headline number does, because
+it says where the new cells are being built, and it is not where the textbooks
+assume. (The figures come from a voluntary survey of member suppliers run by a trade
+body that exists to advocate for automation, so treat them as directionally useful
+rather than audited.)
 
 **And there is a specific, dated, compelled opportunity.** The robot safety standards
 ISO 10218-1 and ISO 10218-2 were republished in February 2025, with European and

@@ -342,6 +342,76 @@ def timeline() -> None:
 
 
 # --------------------------------------------------------------------------
+# learning-path.md
+# --------------------------------------------------------------------------
+
+def learning_path() -> None:
+    """Five stages, what each one adds, and where each one can actually run.
+
+    The right-hand column is the point: everything up to the last stage runs
+    natively on an Apple Silicon Mac, and only the final fine-tune wants a
+    rented graphics card.
+    """
+    # (stage, what you build, simulator, needs a GPU?, colour)
+    rows: list[tuple[str, str, str, bool, str]] = [
+        ('1. Make it move',
+         'one arm, two simulators, driven to joint targets',
+         'MuJoCo  +  Gazebo', False, BLUE),
+        ('2. Make it plan',
+         'pick and place, three planners compared',
+         'Gazebo  +  MoveIt 2', False, PURPLE),
+        ('3. Make it see',
+         'depth camera to segmentation to a reachable grasp',
+         'Gazebo  +  SAM 2', False, GREEN),
+        ('4. Make it touch',
+         'peg insertion by force, not by position',
+         'MuJoCo  +  robosuite', False, ORANGE),
+        ('5. Make it learn',
+         'collect demonstrations, train a policy, measure it honestly',
+         'MuJoCo  +  LeRobot', True, RED),
+    ]
+    fills: dict[str, str] = {BLUE: PALE_BLUE, PURPLE: PALE_PURPLE, GREEN: PALE_GREEN,
+                             ORANGE: PALE_ORANGE, RED: PALE_RED}
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(13.4, 6.4), facecolor='white')
+    ax.set_xlim(0, 34)
+    ax.set_ylim(-2.0, 4.6 * len(rows) + 1.2)
+    ax.axis('off')
+
+    ax.text(0.2, 4.6 * len(rows) + 0.4,
+            'Five stages, each one usable on its own, and only the last one '
+            'wanting a graphics card', fontsize=11.5, color=INK)
+
+    for index, (stage, builds, sim, needs_gpu, colour) in enumerate(rows):
+        y: float = (len(rows) - 1 - index) * 4.5
+        ax.add_patch(Rectangle((0.2, y), 6.4, 3.4, facecolor=fills[colour],
+                               edgecolor=colour, lw=1.6))
+        ax.text(3.4, y + 1.7, stage, ha='center', va='center', fontsize=10.5,
+                color=INK)
+        ax.text(7.4, y + 2.25, builds, ha='left', va='center', fontsize=9.4,
+                color=INK)
+        ax.text(7.4, y + 1.05, sim, ha='left', va='center', fontsize=9.0,
+                color=colour)
+        mark: str = 'rent a GPU\nfor this step' if needs_gpu else 'runs on the Mac'
+        edge: str = ORANGE if needs_gpu else GREEN
+        ax.add_patch(Rectangle((28.0, y + 0.7), 5.6, 2.0,
+                               facecolor=PALE_ORANGE if needs_gpu else PALE_GREEN,
+                               edgecolor=edge, lw=1.3))
+        ax.text(30.8, y + 1.7, mark, ha='center', va='center', fontsize=8.8,
+                color=edge, linespacing=1.45)
+        if index < len(rows) - 1:
+            ax.add_patch(FancyArrowPatch((3.4, y), (3.4, y - 1.1),
+                                         arrowstyle='-|>', mutation_scale=12,
+                                         color=INK, lw=1.2))
+
+    ax.text(0.2, -1.5, 'Each stage produces something that works, so you can stop '
+            'at any of them and still have built a robot system that runs.',
+            fontsize=9.5, color=INK)
+    _save(fig, 'learning-path', 'learning-path.svg')
+
+
+# --------------------------------------------------------------------------
 # what-is-changing.md
 # --------------------------------------------------------------------------
 
@@ -731,6 +801,7 @@ if __name__ == '__main__':
     layers()
     taxonomy()
     timeline()
+    learning_path()
     what_is_expensive()
     consolidation()
     planner_families()

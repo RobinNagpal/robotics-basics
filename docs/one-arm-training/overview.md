@@ -14,7 +14,8 @@ layers of the same machine without realising it.
 This document is the map of that landscape. It sets out the jobs that arms are
 actually bought to do, the layers that every arm system is built from, the family
 tree of the methods themselves, and a grid that says which method suits which job.
-The three companion documents then take the methods one at a time.
+The four companion documents then take the methods one at a time, and one of
+them is a hands-on path if you would rather build than read.
 
 ## Who this is for, and what it is for
 
@@ -53,11 +54,13 @@ variety well, it needs a great deal of data to do so, and when it fails it canno
 tell you why. Every serious system therefore uses both, programming the parts of the
 job that are easy to say out loud and training the parts that are not.
 
-## The four documents
+## The five documents
 
 **This document — the map.** The tasks, the layers, the family tree, the grid of
 which method suits which job, and an honest account of what is realistic to build in
-the next year. Read it first, and quite possibly read only it.
+the next year. Read it first. If you would rather start by building something, go
+straight to [the learning path](learning-path.md) and come back here when a choice
+needs making.
 
 **[Programmed methods](programmed-methods.md).** The behaviour a person writes down:
 teaching, offline programming, behaviour trees, motion planning, task and motion
@@ -67,6 +70,11 @@ planning, and feedback control. This is what runs in factories today.
 imitation learning, reinforcement learning, large pretrained policies, learned
 components sitting inside an otherwise conventional system, and language models used
 as planners. This is where most of the research is.
+
+**[A learning path, in simulation](learning-path.md).** The practical companion to
+the rest: five stages from an arm that does not move to a trained policy with an
+honest success rate, built on MuJoCo and Gazebo, with three projects per stage and
+the reason for every tool. Almost all of it runs on an ordinary Mac.
 
 **[What is changing, and why](what-is-changing.md).** The direction the field is
 travelling in and the reasons behind it — why methods get displaced, the five forces

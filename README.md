@@ -69,10 +69,14 @@ training run and what it costs, and how to evaluate it honestly and improve it.
 these: every way to programme or train a single arm, as a family tree, with a grid
 comparing eight families point by point, the mixes real systems actually use, and a
 table of which to reach for when. It ends with an evidenced look at what is
-realistic to build — and to be paid for — in the next year. Start here. Its
-companion **[what is changing, and why](docs/one-arm-training/what-is-changing.md)**
-explains the direction of travel and the reasons behind it, which outlast any
-particular model name.
+realistic to build — and to be paid for — in the next year. Start here.
+
+Two companions to it: **[a learning path](docs/one-arm-training/learning-path.md)**
+is five stages of simulation-only projects on MuJoCo and Gazebo, from moving a joint
+to training a policy, with the frameworks and the reason for each; and
+**[what is changing, and why](docs/one-arm-training/what-is-changing.md)** explains
+the direction of travel and the reasons behind it, which outlast any particular
+model name.
 
 **[Two-arm training](docs/two-arm-training/overview.md)** is the companion folder
 for what changes when two arms must **cooperate** on one job: whether your task

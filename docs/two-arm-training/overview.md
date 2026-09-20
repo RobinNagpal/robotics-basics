@@ -19,7 +19,9 @@ the standard survey of the field puts it bluntly — uncoordinated two-arm work 
 [the one-arm methods](../one-arm-training/overview.md) twice and keeping the arms
 apart.
 
-**Read the one-arm documents first.** Almost every method here is a single-arm
+**Read the one-arm documents first**, including
+[what is changing and why](../one-arm-training/what-is-changing.md) for the
+direction the whole field is moving. Almost every method here is a single-arm
 method with a coordination problem bolted on, and the coordination problem is only
 legible once you know the method. This folder does not repeat them; it says what
 changes.

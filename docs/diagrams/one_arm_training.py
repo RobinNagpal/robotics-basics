@@ -338,7 +338,125 @@ def timeline() -> None:
     ax.text(first - 1, len(bars) + 0.2,
             'Faded bars are methods that were largely replaced; the year they end is '
             'roughly when that happened.', fontsize=9, color=MUTED)
-    _save(fig, 'overview', 'timeline.svg')
+    _save(fig, 'what-is-changing', 'timeline.svg')
+
+
+# --------------------------------------------------------------------------
+# what-is-changing.md
+# --------------------------------------------------------------------------
+
+def what_is_expensive() -> None:
+    """Show the mechanism: the winner is whatever needs less of the scarce thing.
+
+    The fourth panel is the same rule producing the opposite answer, which is
+    the part that explains why industry has not adopted the learned methods.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(13.4, 6.2), facecolor='white')
+    ax.set_xlim(-0.5, 35.5)
+    ax.set_ylim(-1.2, 12.0)
+    ax.axis('off')
+
+    ax.text(-0.5, 11.5, 'Methods are displaced by whatever needs less of the '
+            'currently expensive thing', fontsize=12, color=INK)
+
+    # (era, what is scarce, what won, what it displaced, colour, fill)
+    panels: list[tuple[str, str, str, str, str, str]] = [
+        ('1970s onwards', 'COMPUTE', 'teach and replay',
+         'stores joint angles and\nplays them back: no model,\n'
+         'no search, no arithmetic\nworth the name', BLUE, PALE_BLUE),
+        ('2010s onwards', "A SPECIALIST'S TIME", 'learned perception',
+         'displaced hand-tuned visual\nfeatures, which needed a\n'
+         'specialist per object and\nper factory', GREEN, PALE_GREEN),
+        ('2020s onwards', 'SPECIFICATION EFFORT', 'imitation learning',
+         'beat reinforcement learning:\nwriting a reward is\n'
+         'specification, doing the\ntask 50 times is not', PURPLE, PALE_PURPLE),
+        ('wherever it applies', 'VERIFICATION', 'the classical stack',
+         'a factory must say why a\nmachine stopped, and an\n'
+         'inspectable system is\ncheaper to certify', RED, PALE_RED),
+    ]
+    for index, (era, scarce, winner, why, colour, fill) in enumerate(panels):
+        x0: float = index * 8.8
+        ax.add_patch(Rectangle((x0, 0.2), 7.7, 10.2, facecolor=fill,
+                               edgecolor=colour, lw=2.4 if index == 3 else 1.4))
+        ax.text(x0 + 3.85, 9.6, era, ha='center', fontsize=9.0, color=MUTED)
+        ax.text(x0 + 3.85, 8.5, 'what is expensive', ha='center', fontsize=8.4,
+                color=MUTED)
+        ax.text(x0 + 3.85, 7.6, scarce, ha='center', fontsize=10.5, color=colour)
+        ax.add_patch(FancyArrowPatch((x0 + 3.85, 7.0), (x0 + 3.85, 5.9),
+                                     arrowstyle='-|>', mutation_scale=12,
+                                     color=INK, lw=1.2))
+        ax.text(x0 + 3.85, 5.4, 'so the winner is', ha='center', fontsize=8.4,
+                color=MUTED)
+        ax.text(x0 + 3.85, 4.5, winner, ha='center', fontsize=11, color=INK)
+        ax.text(x0 + 3.85, 3.3, why, ha='center', va='top', fontsize=8.5,
+                color=colour, linespacing=1.55)
+        if index == 3:
+            ax.text(x0 + 3.85, 10.8, 'the same rule, opposite answer',
+                    ha='center', fontsize=9.0, color=RED)
+
+    ax.text(-0.5, -0.9, 'Nothing here got worse. What changed is which resource '
+            'was scarce — which is why a displaced method can come back, and why '
+            'the fourth panel is not nostalgia.', fontsize=9.5, color=INK)
+    _save(fig, 'what-is-changing', 'what-is-expensive.svg')
+
+
+def consolidation() -> None:
+    """Show that most "dead" repositories were consolidated, not superseded."""
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(13.0, 6.6), facecolor='white')
+    ax.set_xlim(-0.5, 32.0)
+    ax.set_ylim(-2.2, 15.4)
+    ax.axis('off')
+
+    ax.text(-0.5, 14.9, 'Three organisations, one pattern: the work moved house '
+            'rather than stopping', fontsize=12, color=INK)
+
+    # (sources, destination, who did it, colour, fill)
+    bands: list[tuple[list[str], str, str, str, str]] = [
+        (['ACT  ·  last commit 2024',
+          'diffusion_policy  ·  late 2024',
+          'Octo  ·  mid-2024',
+          'OpenVLA  ·  March 2025'],
+         'LeRobot\nmaintained, one shared\ndataset format',
+         'consolidated by Hugging Face', GREEN, PALE_GREEN),
+        (['OpenAI Gym  ·  archived',
+          'D4RL  ·  deprecated'],
+         'Gymnasium\nand Minari',
+         'adopted by the Farama Foundation', BLUE, PALE_BLUE),
+        (['Isaac Gym  ·  no longer supported',
+          'IsaacGymEnvs  ·  archived'],
+         'Isaac Lab\non the Isaac Sim platform',
+         'consolidated by NVIDIA', ORANGE, PALE_ORANGE),
+    ]
+    top: float = 13.4
+    for sources, destination, who, colour, fill in bands:
+        height: float = 1.05 * len(sources) + 0.9
+        centre: float = top - height / 2
+        for index, source in enumerate(sources):
+            y: float = top - 1.0 - index * 1.05
+            ax.add_patch(Rectangle((0.2, y - 0.38), 11.0, 0.76,
+                                   facecolor=PALE_GREY, edgecolor=GREY, lw=1.0))
+            ax.text(0.5, y, source, va='center', fontsize=8.6, color=MUTED)
+            ax.add_patch(FancyArrowPatch((11.4, y), (15.4, centre),
+                                         arrowstyle='-|>', mutation_scale=10,
+                                         color=colour, lw=1.1,
+                                         connectionstyle='arc3,rad=0.12'))
+        ax.add_patch(Rectangle((15.7, centre - height / 2 + 0.3), 9.4,
+                               height - 0.6, facecolor=fill, edgecolor=colour,
+                               lw=1.6))
+        ax.text(20.4, centre, destination, ha='center', va='center',
+                fontsize=9.8, color=INK, linespacing=1.5)
+        ax.text(25.6, centre, who, ha='left', va='center', fontsize=8.8,
+                color=colour)
+        top -= height + 0.9
+
+    ax.text(-0.5, -1.4, 'A dormant repository is not a verdict on the technique. '
+            'Check whether the method moved into a maintained home before '
+            'concluding it died.', fontsize=9.5, color=INK)
+    _save(fig, 'what-is-changing', 'consolidation.svg')
 
 
 # --------------------------------------------------------------------------
@@ -613,6 +731,8 @@ if __name__ == '__main__':
     layers()
     taxonomy()
     timeline()
+    what_is_expensive()
+    consolidation()
     planner_families()
     position_vs_force()
     compounding_error()

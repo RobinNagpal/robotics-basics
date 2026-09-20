@@ -40,7 +40,7 @@ safe, and cannot cope with variety. Training copes with variety, needs a great d
 of data, and cannot tell you why it failed. Every serious system uses both: it
 programmes the parts that are easy to say and trains the parts that are not.
 
-## The three documents
+## The four documents
 
 **This document — the map.** The tasks, the layers, the family tree, the grid, and
 an honest account of what is realistic in the next year. Read it first, and
@@ -54,6 +54,11 @@ planning, and feedback control. This is what runs in factories today.
 imitation learning, reinforcement learning, large pretrained policies, learned
 components inside a conventional system, and language models as planners. This is
 where the research is.
+
+**[What is changing, and why](what-is-changing.md).** The direction of travel and
+the reasons behind it: why methods get displaced, the five forces driving 2026, what
+each new capability actually lets you do, and how to tell a real shift from a
+fashion. Read this when you want to understand the field rather than a method.
 
 There is also a companion folder,
 **[two-arm training](../two-arm-training/overview.md)**, for what changes when a
@@ -466,65 +471,36 @@ rather than algorithmic.
 
 ## 7. What is current, and what is fading
 
-Methods rarely die of old age; they are displaced by something that needs less of
-what is expensive. This chart is a rough guide to when each became common and which
-are now on the way out.
+**Methods rarely die of old age. They are displaced by something that needs less of
+whatever is currently expensive.** That one sentence explains nearly every transition
+in this field, and it has a corollary worth holding on to: because *what is
+expensive* changes over time, a method can be displaced without ever becoming worse.
 
-![Roughly when each method became common, and which are fading](../images/one-arm-training/overview/timeline.svg)
+The short version for 2026:
 
-**Clearly superseded, with the evidence.** Isaac Gym, the GPU simulator behind many
-reinforcement-learning papers, is marked legacy by NVIDIA and its example
-repository is archived; Isaac Lab replaced it. The D4RL benchmark suite that
-offline reinforcement learning was measured on was formally deprecated in favour of
-Minari. SERL was deprecated by its own authors in favour of HIL-SERL. RT-1 is
-archived and RT-2 never released code. OpenAI Gym was archived in favour of
-Gymnasium, and ROS 1 reached end of life in May 2025. Hand-designed visual features
-were displaced by learned perception a decade ago.
+- **Superseded, with notices to prove it.** Isaac Gym (use Isaac Lab), D4RL (use
+  Minari), OpenAI Gym (use Gymnasium), SERL (use HIL-SERL), RT-1 and RT-2, ROS 1,
+  and hand-designed visual features.
+- **Quietly dormant rather than dead.** The original ACT, diffusion_policy, Octo and
+  OpenVLA repositories, and the classical grasping stack. **The imitation methods are
+  alive and maintained inside [LeRobot](https://github.com/huggingface/lerobot) — their
+  homes changed, which is not the same as dying.**
+- **Widely got wrong.** CAD model matching was *not* replaced by learned grasping. It
+  was replaced for **unknown and mixed items only**. For known parts, model matching
+  is still the standard product and the right engineering choice.
+- **Not moving at all, which is where the durable skills are.** Force control,
+  behaviour trees, motion planning and calibration. Teach-and-replay is *growing*,
+  because cobot hand-guiding made it easier rather than obsolete.
+- **Arriving now.** Reinforcement learning used as polish rather than as training;
+  world models; learning from human video; verification at run time; small
+  vision-language-action models sized for cheap hardware.
 
-**Quietly fading rather than deprecated.** Several important repositories have
-simply stopped: the original ACT implementation has had no commits since 2024,
-diffusion_policy since late 2024, Octo since mid-2024, and OpenVLA since March
-2025. None carries a deprecation notice. The work moved into LeRobot, which is
-where those methods now live and are maintained. The same has happened to the
-classical grasping repositories — Contact-GraspNet, the GraspNet baseline, Dex-Net
-and `gqcnn` are all quiet or dead — and to PyBullet, which has an enormous tutorial
-legacy and about one commit a year.
-
-On the industrial side, the ROS-Industrial vendor drivers for FANUC, Motoman, ABB
-and KUKA are all dormant ROS 1 code, and there is **no maintained open-source ROS 2
-driver for FANUC or Motoman at all**, which is a genuine gap rather than an
-oversight. The calibration tool most tutorials still recommend,
-`moveit_calibration`, has had no commits in a year; use `industrial_calibration` or
-OpenCV's hand-eye function directly.
-
-**Displaced only in part, and this one is widely got wrong.** Computing grasps from
-CAD models has been displaced **for mixed-item picking** by learned grasp proposal
-— but not for known parts, where model matching is still the standard product and
-the right engineering choice, because it gives a full pose with a residual you can
-check.
-
-**Used less than its reputation suggests.** Task and motion planning remains
-largely a research technique. Inverse reinforcement learning and adversarial
-imitation are a minority approach for arms, and their main open library has been
-untouched since early 2025 — though surveys still treat the family as live, so
-"declining" is fairer than "dead".
-
-**The newest things, which a doc written in 2024 would miss entirely.**
-Reinforcement learning used to sharpen an already-trained policy rather than to
-train one from scratch. World-model policies, which learn to predict what will
-happen and act through that prediction, now a first-class category in LeRobot but
-not yet proven on production arms. Training on large amounts of ordinary human
-video rather than robot demonstrations, where the scaling behaviour looks promising
-and almost nothing has been released. Verification at run time — trying several
-candidate actions and checking them — where at least one 2026 result claims that
-scaling the checking beats scaling the policy. And tactile foundation models,
-trained across many different touch sensors at once.
-
-Treat that last paragraph as a weather report rather than a forecast: these are
-months old, mostly unreleased, and several will not survive contact with real
-deployments.
-
----
+**[What is changing, and why](what-is-changing.md)** is the full treatment: the
+mechanism behind the shifts, the five forces driving 2026, every deprecation with the
+reason behind it, what each new capability actually lets you do, and five questions
+for telling a real shift from a fashion. If you read one thing beyond this overview,
+read that — the specific names above will be stale within a year and the reasons
+will not.
 
 ## 8. What each method costs you
 

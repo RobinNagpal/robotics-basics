@@ -1,19 +1,21 @@
 # What is changing in robot manipulation, and why
 
-Every list of "what is hot in robotics" goes stale in a year. The reasons behind the
-list do not, which is why this document spends most of its length on **why** things
-move rather than on what moved. If you understand the mechanism, you can read next
-year's announcements yourself and tell which ones matter.
+Every list of "what is hot in robotics" goes stale within about a year. The reasons
+behind such a list do not go stale, which is why this document spends most of its
+length on why things move rather than on what has moved. If you understand the
+mechanism, you can read next year's announcements yourself and work out which of
+them matter.
 
 This is the long version of
-[the overview's status section](overview.md#7-what-is-current-and-what-is-fading).
-Read that first if you only want the summary.
+[the overview's status section](overview.md#7-what-is-current-and-what-is-fading), so
+read that one first if all you want is the summary.
 
-**What this document is for.** Two things. First, so that when you meet a tutorial,
-a repository or a paper you can place it — current, superseded, or never actually
-released. Second, so that when something new appears you can ask the right question
-about it, which is almost never "is it better?" and almost always "**what does it
-need less of?**"
+This document is meant to do two things for you. The first is that when you come
+across a tutorial, a repository or a paper, you should be able to place it —
+current, superseded, or never actually released in the first place. The second is
+that when something genuinely new appears, you should be able to ask the right
+question about it, and the right question is almost never "is this better?" but
+almost always "what does this need less of?"
 
 ## Contents
 
@@ -30,442 +32,501 @@ need less of?**"
 
 ## 1. The one mechanism behind every shift
 
-**Methods rarely die of being wrong. They are displaced by something that needs less
-of whatever is currently expensive.**
+Methods in this field rarely die because somebody proved them wrong. They are
+displaced by something that needs less of whatever happens to be expensive at the
+time.
 
-That sentence explains almost every transition in this document, and it has a useful
-corollary: because *what is expensive* changes over time, a method can be displaced
-without ever becoming worse, and can come back when the economics move again.
+That single sentence explains almost every transition described in this document,
+and it carries a useful corollary. Because what is expensive changes over the
+decades, a method can be displaced without ever having become worse at its job — and
+it can come back later, if the economics move again.
 
 ![What was scarce in each era, and which method won by needing less of it](../images/one-arm-training/what-is-changing/what-is-expensive.svg)
 
-Three eras make the point.
+Three eras make the point clearly enough.
 
-**When compute was expensive**, the winning methods were the ones that computed
-almost nothing. Teach-and-replay stores joint angles and plays them back; it needs no
-model, no search and no arithmetic worth the name. That is why it won in the 1970s
-and — this is the part people find surprising — why it has never gone away. Its cost
-profile is unbeatable and nothing has made it worse.
+**When compute was the expensive thing**, the methods that won were the ones that
+computed almost nothing at all. Teach-and-replay simply stores a list of joint
+angles and plays them back, needing no model of the robot, no search through
+possible paths, and no arithmetic worth the name. That is why it won in the 1970s,
+and — this is the part people tend to find surprising — it is also why it has never
+gone away. Its cost profile is unbeatable, and nothing that has happened since has
+made it any worse at what it does.
 
-**When hand-written perception was the bottleneck**, the thing that got expensive was
-a specialist's time. Hand-designed visual features needed a computer-vision engineer
-to tune them per object, per lighting condition, per factory. Learned perception
-needed a great deal of data and no specialist, and by the mid-2010s data had become
-the cheaper of the two. That is the entire reason bin picking of mixed items went
-from a research problem to a product: not that networks were clever, but that the
-per-object engineering cost fell to roughly zero.
+**When hand-written perception was the bottleneck**, the thing that had become
+expensive was a specialist's time. Hand-designed visual features had to be tuned by
+a computer-vision engineer for each object, for each lighting condition, and for
+each factory they were installed in. Learned perception needed a great deal of data
+instead, and no specialist, and by the middle of the 2010s data had become the
+cheaper of those two things. That is the entire reason bin picking of mixed items
+turned from a research problem into a product. It was not that the networks were
+clever. It was that the engineering cost per object fell to roughly zero.
 
-**Now the expensive thing is human specification effort** — somebody sitting down and
-writing out what the robot should do, in a form precise enough to execute. Every
-current shift points the same way: away from methods where a person must describe the
-behaviour, towards methods where the behaviour comes from examples. This is why
-imitation learning beat reinforcement learning for arms despite being theoretically
-weaker. Writing a reward function is specification work. Doing the task fifty times
-is not.
+**Now the expensive thing is human specification effort** — somebody sitting down
+and writing out what the robot should do, in a form precise enough for a machine to
+execute. Every current shift points in the same direction: away from methods where a
+person has to describe the behaviour, and towards methods where the behaviour comes
+out of examples instead. This is why imitation learning beat reinforcement learning
+for arms, despite being the theoretically weaker of the two. Writing a reward
+function is specification work, and doing the task fifty times yourself is not.
 
-**The corollary that keeps you honest.** A method that needs less of what is expensive
-can still be worse in every other respect and win anyway. And in the places where
-*verification* is the expensive thing — a factory that must certify what a machine
-will do — the classical methods are still winning, because an inspectable system costs
-less to verify than a learned one. That is not nostalgia. It is the same mechanism
-producing the opposite answer under a different cost structure, and it is why
-[the deployed systems look nothing like the papers](overview.md#9-what-real-systems-actually-do).
+There is a corollary here that keeps you honest, and it is worth stating plainly. A
+method that needs less of what is expensive can still be worse in every other
+respect and win anyway. And in the places where **verification** is the expensive
+thing — a factory that has to certify in advance what a machine will do — the
+classical methods are still winning, because an inspectable system costs far less to
+verify than a learned one. That is not nostalgia on anyone's part. It is the same
+mechanism producing the opposite answer under a different cost structure, and it is
+why [the deployed systems look nothing like the papers](overview.md#9-what-real-systems-actually-do).
 
 ## 2. The five forces driving 2026
 
-Five specific pressures are doing the work right now. Each one predicts several of
-the individual changes in the sections below.
+Five specific pressures are doing the work at the moment, and each of them predicts
+several of the individual changes described further down.
 
-**Force one: data is the binding constraint, and everyone knows it.** The single
-most sobering result in this whole repository is that ALOHA Unleashed collected
-**26,241 demonstrations — about a hundred times the original's fifty per task** —
-and did not end up with higher success rates. That is a scaling curve flattening in
-public. If more data of the same kind does not help, the field has to find
-*different* data, and that pressure explains four separate directions: learning from
-human video, data-generation tools that multiply demonstrations, cheap hardware that
-lets more people collect, and world models that learn from video without action
-labels at all.
+**The first force is that data is the binding constraint, and everybody knows it.**
+The single most sobering result anywhere in this repository is that ALOHA Unleashed
+collected 26,241 demonstrations — roughly a hundred times the original ALOHA's fifty
+per task — and did not end up with higher success rates than the original. That is a
+scaling curve flattening out in public view. If more data of the same kind does not
+help, then the field has to go and find *different* data, and that single pressure
+explains four separate directions at once: learning from ordinary human video,
+data-generation tools that multiply demonstrations, cheap hardware that lets far
+more people collect data in the first place, and world models that learn from video
+with no action labels at all.
 
-**Force two: pretrained perception made generalisation purchasable.** You can now
-download a model that segments objects it has never seen and another that estimates
-their pose without per-object training. The consequence is structural rather than
-incremental: the part of a robot system that used to require bespoke engineering per
-customer became a dependency you install. That is what turned modular
-learned-perception pipelines into the most deployed use of machine learning on arms,
-and it is why that unglamorous family keeps winning against end-to-end approaches.
+**The second force is that pretrained perception made generalisation purchasable.**
+You can now download a model that segments objects it has never seen, and another
+that estimates their pose without having been trained on them. The consequence of
+that is structural rather than incremental: the part of a robot system that used to
+require bespoke engineering for every customer turned into a dependency you install.
+That is what turned modular learned-perception pipelines into the most deployed use
+of machine learning on arms, and it is why that rather unglamorous family keeps
+winning against end-to-end approaches.
 
-**Force three: consolidation into one maintained home.** This one is badly
-underappreciated and explains more "dead repositories" than any technical argument.
-A research repository exists to support a paper; once the paper is published, the
-incentive to maintain it disappears. What changed is that
-[LeRobot](https://github.com/huggingface/lerobot) became a single maintained library
-with a shared dataset format, so the methods moved there and the original repositories
-went quiet. **Those methods are not dead — their homes changed.** Reading a dormant
-star count as a verdict on a technique is the most common mistake in this area.
+**The third force is consolidation into one maintained home**, and it is badly
+underappreciated — it explains more apparently dead repositories than any technical
+argument does. A research repository exists in order to support a paper, and once
+the paper is published the incentive to maintain the code largely disappears. What
+changed recently is that [LeRobot](https://github.com/huggingface/lerobot) became a
+single maintained library with a shared dataset format, so the methods moved there
+and the original repositories went quiet. Those methods are not dead. Their homes
+changed. Reading a dormant star count as a verdict on a technique is the most common
+mistake people make in this area.
 
-**Force four: verification pressure is why adoption is uneven.** A factory must be
-able to say why a machine stopped. A method that cannot explain itself carries a
-verification cost that is often larger than the engineering it saves. This force runs
-*against* the other four, and it is the reason the timeline below shows classical
-methods persisting for decades next to learned ones that are years old. Expect this
-to be the slowest-moving force of the five, and expect regulation —
-[the EU Machinery Regulation from January 2027](overview.md#and-be-honest-about-where-the-paid-work-is)
-— to strengthen it rather than weaken it.
+**The fourth force is verification pressure, and it is why adoption is so uneven.** A
+factory has to be able to say why a machine stopped. A method that cannot explain
+itself therefore carries a verification cost that is often larger than the
+engineering effort it saves. This force runs *against* the other four, and it is the
+reason the timeline below shows classical methods persisting for decades alongside
+learned ones that are only a few years old. Expect it to be the slowest-moving of
+the five, and expect regulation such as
+[the EU Machinery Regulation coming in January 2027](overview.md#and-be-honest-about-where-the-paid-work-is)
+to strengthen it rather than weaken it.
 
-**Force five: the shape of available compute changed.** Massively parallel GPUs made
-two things possible that were not: simulating thousands of robots at once, which is
-what made reinforcement learning in simulation practical, and solving motion plans
-fast enough to replan continuously rather than plan once. The second is quieter and
-arguably more useful — a planner that replans fifty times a second is not a faster
-planner, it is a reactive controller, which is a different capability.
+**The fifth force is that the shape of available compute changed.** Massively
+parallel graphics cards made two things possible that had not been before. The first
+was simulating thousands of robots at once, which is what made reinforcement
+learning in simulation practical at all. The second is quieter and arguably more
+useful: solving motion plans fast enough to replan continuously rather than planning
+once and executing. A planner that replans fifty times a second is not simply a
+faster planner — it is a reactive controller, which is a different capability
+altogether.
 
 ## 3. What has clearly been superseded, and why
 
-Before the individual cases, the shape of the whole field on one axis — roughly when
-each method became common, and which are now on the way out. The long blue bars are
-the point: several of the oldest methods are still current, which is what
+Before working through the individual cases, here is the shape of the whole field on
+a single axis: roughly when each method became common, and which ones are now on the
+way out. The long blue bars are the point of the picture, because several of the
+oldest methods are still entirely current, which is exactly what
 [section 1](#1-the-one-mechanism-behind-every-shift) predicts.
 
 ![Roughly when each method became common, and which are fading](../images/one-arm-training/what-is-changing/timeline.svg)
 
-These have explicit deprecation notices or archived repositories. The *reason* is the
-part worth remembering.
+Everything in this section has either an explicit deprecation notice or an archived
+repository behind it. In each case the reason is the part worth remembering, because
+the reasons generalise and the specific names do not.
 
-**Isaac Gym → [Isaac Lab](https://github.com/isaac-sim/IsaacLab).** NVIDIA's own page
-says Isaac Gym "is no longer supported" and
-[its example repository](https://github.com/NVIDIA-Omniverse/IsaacGymEnvs) is
-archived. *Reason:* Isaac Gym was a standalone research prototype; NVIDIA consolidated
-simulation onto the Isaac Sim platform so that one physics and rendering stack serves
-research and product. A consolidation, not a capability gap. If you meet a tutorial
-using Isaac Gym, it is out of date.
+**Isaac Gym gave way to [Isaac Lab](https://github.com/isaac-sim/IsaacLab).**
+NVIDIA's own page says that Isaac Gym "is no longer supported", and
+[its example repository](https://github.com/NVIDIA-Omniverse/IsaacGymEnvs) has been
+archived. The reason is not that anything was wrong with it. Isaac Gym was a
+standalone research prototype, and NVIDIA consolidated its simulation work onto the
+Isaac Sim platform so that a single physics and rendering stack could serve both
+research and product. This was a consolidation rather than a capability gap. If you
+meet a tutorial that uses Isaac Gym, it is out of date.
 
-**[D4RL](https://github.com/Farama-Foundation/D4RL) → [Minari](https://github.com/Farama-Foundation/Minari).**
-The offline reinforcement-learning benchmark suite was formally deprecated.
-*Reason:* the same consolidation force — the Farama Foundation took over maintenance
-of the scattered reinforcement-learning ecosystem and rebuilt the dataset format
-properly. The benchmarks did not become wrong; they became unmaintained, and
-somebody responsible adopted them.
+**[D4RL](https://github.com/Farama-Foundation/D4RL) gave way to
+[Minari](https://github.com/Farama-Foundation/Minari).** The offline
+reinforcement-learning benchmark suite was formally deprecated, and the reason is the
+same consolidation force again: the Farama Foundation took over maintenance of the
+scattered reinforcement-learning ecosystem and rebuilt the dataset format properly.
+The benchmarks did not become wrong. They became unmaintained, and then somebody
+responsible adopted them.
 
-**[OpenAI Gym](https://github.com/openai/gym) → [Gymnasium](https://github.com/Farama-Foundation/Gymnasium).**
-Same story, same foundation, and the single most common stale import in old
-tutorials.
+**[OpenAI Gym](https://github.com/openai/gym) gave way to
+[Gymnasium](https://github.com/Farama-Foundation/Gymnasium).** Same story, same
+foundation, and the single most common stale import you will find in old tutorials.
 
-**[SERL](https://github.com/rail-berkeley/serl) → [HIL-SERL](https://github.com/rail-berkeley/hil-serl).**
-Deprecated by its own authors. *Reason:* this is the most informative deprecation in
-the list, because it is a genuine capability jump rather than a maintenance move.
-SERL did reinforcement learning on a real robot; HIL-SERL added **human intervention**
-— a person takes over when it is about to fail, and those take-overs become the
-learning signal. That one change took the method from "works on some tasks" to
-**100% success on every task tried, within one to two and a half hours of real-robot
-training**. When authors deprecate their own work, believe them.
+**[SERL](https://github.com/rail-berkeley/serl) gave way to
+[HIL-SERL](https://github.com/rail-berkeley/hil-serl)**, and this one was deprecated
+by its own authors. It is the most informative deprecation in the list, because
+unlike the others it is a genuine capability jump rather than a maintenance move.
+SERL did reinforcement learning on a real robot. HIL-SERL added human intervention,
+meaning that a person takes over when the robot is about to fail, and those
+take-overs then become the learning signal. That one change took the method from
+working on some tasks to 100% success on every task it was tried on, within one to
+two and a half hours of training on the real robot. When authors deprecate their own
+work, it is worth believing them.
 
-**[RT-1](https://github.com/google-research/robotics_transformer) archived, RT-2 never
-released.** *Reason:* not technical. Google's robotics work moved into a closed
-product line. This is a pattern worth naming rather than a one-off — the frontier of
-this field is increasingly announced rather than released, which is why
+**[RT-1](https://github.com/google-research/robotics_transformer) was archived and
+RT-2 was never released at all.** The reason here is not technical: Google's robotics
+work moved into a closed product line. This is a pattern worth naming rather than a
+one-off, because the frontier of this field is increasingly announced rather than
+released, which is why
 [separating announced from downloadable](overview.md#11-how-to-read-the-numbers-in-this-field)
-is now a core skill.
+has become a core skill.
 
-**ROS 1 → ROS 2.** ROS 1 reached end of life in May 2025. *Reason:* a genuine
-architectural rewrite — real-time support, security, and a middleware that works on
-multiple machines properly. The cost has been real: several industrial vendor drivers
-never made the transition, and there is still **no maintained open-source ROS 2
-driver for FANUC or Motoman**, which is a live gap rather than an oversight.
+**ROS 1 gave way to ROS 2**, with ROS 1 reaching end of life in May 2025. This was a
+genuine architectural rewrite, bringing real-time support, security, and a middleware
+that works properly across multiple machines. The cost of that rewrite has been real,
+though: several industrial vendor drivers never made the transition, and there is
+still no maintained open-source ROS 2 driver for FANUC or Motoman, which is a live
+gap rather than an oversight.
 
-**Hand-designed visual features → learned perception.** *Reason:* force two, a decade
-early. The features were the bottleneck and they needed a specialist per deployment.
+**Hand-designed visual features gave way to learned perception**, which is simply the
+second force arriving a decade early. The features were the bottleneck, and they
+needed a specialist for every deployment.
 
-**[PyBullet](https://github.com/bulletphysics/bullet3) → [MuJoCo](https://github.com/google-deepmind/mujoco).**
-PyBullet has an enormous tutorial legacy and roughly one commit a year. *Reason:*
-this one is almost pure licensing history. MuJoCo was commercial software with a paid
-licence until DeepMind acquired it in 2021 and open-sourced it in 2022. PyBullet's
-main advantage had been that it was free; the moment the better simulator was also
-free, the reason to choose PyBullet evaporated. Nothing about PyBullet got worse.
+**[PyBullet](https://github.com/bulletphysics/bullet3) gave way to
+[MuJoCo](https://github.com/google-deepmind/mujoco)**, and PyBullet now has an
+enormous tutorial legacy and roughly one commit a year. This one is almost pure
+licensing history rather than anything technical. MuJoCo was commercial software
+with a paid licence until DeepMind acquired it in 2021 and open-sourced it in 2022.
+PyBullet's main advantage had always been that it was free, so the moment the better
+simulator was also free, the reason to choose PyBullet evaporated. Nothing about
+PyBullet got worse.
 
 ### The one everybody gets wrong
 
-**CAD model matching was NOT replaced by learned grasping.** It was replaced *for
-mixed and unknown items only*. If you know the part, the industry still matches its
-model, and the major 3D-vision vendors describe their products in exactly those
-terms. *Reason:* a model match returns a full six-degree-of-freedom pose **plus a
-geometric residual you can threshold** — a number that says "this fit badly, stop".
-A learned grasp proposer returns a ranked list with a confidence, which is a much
-weaker guarantee. Under verification pressure, the checkable answer wins. Both
-methods are current in 2026, and which you use is decided by whether the object is in
-your catalogue, not by which is more modern.
+CAD model matching was not replaced by learned grasping. It was replaced for mixed
+and unknown items only. If you know the part you are picking, the industry still
+matches its model, and the major 3D-vision vendors describe their products in
+exactly those terms.
+
+The reason comes down to what each method hands back to you. When you match a CAD
+model against a depth picture, what you get is the object's full position and
+orientation — where it sits along three axes, and how it is turned about each of
+them, which together are called its six degrees of freedom. But you also get
+something less obvious and considerably more useful: a number describing how closely
+the model actually fitted the measured points. That number is a self-check. If the
+fit is poor the number is large, and the system can stop and say so rather than
+picking up something it has misunderstood.
+
+A learned grasp proposer hands back something different. It gives you a ranked list
+of places where the gripper could close, each with a confidence score attached to
+it. A confidence score is the network's own opinion about its own answer, and a
+network that is wrong is quite often confidently wrong, which makes that score a
+much weaker guarantee than a measured geometric fit. Under verification pressure —
+the fourth force — the answer you can check wins over the answer that generalises
+better.
+
+Both methods are entirely current in 2026, and which one you use is decided by
+whether the object is in your catalogue, not by which one is more modern.
 
 ## 4. What is quietly fading rather than deprecated
 
-Nothing here carries a deprecation notice. Each is simply not being developed, and
-the reason differs in ways that matter for whether you should use it.
+Nothing in this section carries a deprecation notice. Each of these is simply not
+being developed any more, and the reason differs from case to case in ways that
+matter for whether you should still use it.
 
 ![Where the research repositories went](../images/one-arm-training/what-is-changing/consolidation.svg)
 
-**The imitation-learning originals.** [ACT](https://github.com/tonyzhaozh/act) has had
-no commits since 2024, [diffusion_policy](https://github.com/real-stanford/diffusion_policy)
-since late 2024, [Octo](https://github.com/octo-models/octo) since mid-2024, and
-[OpenVLA](https://github.com/openvla/openvla) since March 2025. *Reason: force three,
-consolidation.* The methods are alive and maintained inside
-[LeRobot](https://github.com/huggingface/lerobot). **Use LeRobot's versions and treat
-the originals as historical references.** OpenVLA is the interesting case — still the
-most-downloaded robotics model and the baseline in most papers, yet absent from
-LeRobot's policy list. It is a reference point, not a foundation.
+**The imitation-learning originals.** [ACT](https://github.com/tonyzhaozh/act) has
+had no commits since 2024,
+[diffusion_policy](https://github.com/real-stanford/diffusion_policy) since late
+2024, [Octo](https://github.com/octo-models/octo) since mid-2024, and
+[OpenVLA](https://github.com/openvla/openvla) since March 2025. The reason in every
+one of those cases is the third force, consolidation: the methods themselves are
+alive and maintained inside [LeRobot](https://github.com/huggingface/lerobot). Use
+LeRobot's versions and treat the originals as historical references. OpenVLA is the
+interesting case among them, because it is still the most-downloaded robotics model
+and the baseline in most papers, and yet it is absent from LeRobot's policy list
+entirely. It is a reference point rather than a foundation.
 
 **The classical grasping repositories.**
 [Contact-GraspNet](https://github.com/NVlabs/contact_graspnet) has not been touched
-since 2024 and depends on a long-dead TensorFlow generation;
+since 2024 and depends on a long-dead generation of TensorFlow;
 [GraspNet-1Billion](https://graspnet.net/) is most valuable now as a dataset rather
-than code; Dex-Net and `gqcnn` have been dead since 2022. *Reason:* different from
-above and worth distinguishing — the **research line moved** to diffusion models that
-generate grasps, of which NVIDIA's [GraspGen](https://github.com/NVlabs/GraspGen) is
-the current example, while the **commercial line moved closed**. AnyGrasp has real
-traction and ships as a licence-gated binary; it is **not open source** despite
-appearing so. Treat this whole corner as concepts and datasets rather than as code to
-build on.
+than as code; and Dex-Net along with its `gqcnn` implementation have been dead since
+2022. The reason here is different from the one above and the distinction is worth
+drawing. The research line moved on, to diffusion models that generate grasps, of
+which NVIDIA's [GraspGen](https://github.com/NVlabs/GraspGen) is the current
+example. Meanwhile the commercial line moved closed: AnyGrasp has real traction and
+ships as a licence-gated binary, and it is not open source despite appearing to be.
+Treat this whole corner as concepts and datasets rather than as code to build on.
 
 **Inverse reinforcement learning and adversarial imitation.** The flagship library
 [imitation](https://github.com/HumanCompatibleAI/imitation) has had no commits since
-January 2025. *Reason:* the generality is real and so is the fragility, and the
-preference-learning branch found a better home tuning language models. Surveys still
-treat the family as live, so "declining" is fairer than "dead" — but do not expect to
-meet it in a working arm system.
+January 2025. The generality of the approach is real, and so is its fragility, and
+the preference-learning branch of the work found a better home tuning language
+models instead. Surveys still treat the family as live, so calling it declining is
+fairer than calling it dead — but do not expect to meet it inside a working arm
+system.
 
 **Task and motion planning.** [PDDLStream](https://github.com/caelan/pddlstream) last
-committed in 2023. *Reason:* it is the most capable purely-programmed approach for
-long tasks and demands the most before it does anything — somebody must write a
-symbolic domain model. Industry uses behaviour trees instead because a tree is free
-to write, and the research energy moved to language models doing the same sequencing
-job with far less modelling effort.
+committed in 2023. It is the most capable purely-programmed approach there is for
+long tasks, and it also demands the most before it will do anything, because
+somebody has to write a symbolic model of the domain. Industry uses behaviour trees
+instead, for the straightforward reason that a tree is free to write, and the
+research energy moved to language models doing the same sequencing job with far less
+modelling effort.
 
-**Industrial ROS glue.** The ROS-Industrial vendor drivers for FANUC, Motoman, ABB and
-KUKA are dormant ROS 1 code. `moveit_calibration`, which most tutorials still
-recommend, has had no commits in a year — use
+**Industrial ROS glue.** The ROS-Industrial vendor drivers for FANUC, Motoman, ABB
+and KUKA are all dormant ROS 1 code. `moveit_calibration`, which most tutorials still
+recommend, has had no commits in a year, so use
 [industrial_calibration](https://github.com/ros-industrial/industrial_calibration) or
-OpenCV's hand-eye function directly. *Reason:* unglamorous maintenance work with no
-paper attached and no vendor obliged to do it. This is the least satisfying reason in
-this document and the most commonly encountered.
+OpenCV's hand-eye function directly instead. The reason in this case is the least
+satisfying in the whole document and the most commonly encountered: this is
+unglamorous maintenance work with no paper attached to it and no vendor obliged to
+do it.
 
 ## 5. What is not moving at all, and why that matters
 
-A document about change should say what has not changed, because that list is where
-the durable skills are.
+A document about change ought to say what has not changed, because that list is
+where the durable skills are.
 
 **Force control.** The mathematics of impedance and admittance control has been
-settled for decades and is still the answer to contact-rich assembly. *Reason:*
-physics did not change, and the theory was already correct. Every major vendor sells
-this as a product. A learned policy that outputs positions still needs this
-underneath it, which means learning to do this well has a longer shelf life than
-anything in section 6.
+settled for decades, and it is still the answer to contact-rich assembly. The reason
+nothing has displaced it is simply that the physics did not change and the theory was
+already correct. Every major vendor sells this as a product. A learned policy that
+outputs positions still needs this underneath it, which means that learning to do it
+well has a longer shelf life than anything in section 6.
 
-**Behaviour trees.** Standard for sequencing, and the only competitor is a language
-model choosing which subtree to invoke — with the tree still underneath, doing the
-running. *Reason:* nothing has beaten them at being inspectable while staying
-readable at fifty branches.
+**Behaviour trees.** Still standard for sequencing, and the only competitor is a
+language model choosing which subtree to invoke — with the tree still underneath,
+doing the actual running. Nothing has beaten them at being inspectable while
+remaining readable at fifty branches.
 
-**Teach and replay is growing, not shrinking.** *Reason:* collaborative-robot
-hand-guiding made it easier rather than obsolete. You guide the torch along the seam
-and press start. That is *more* teaching done by *less* specialised people, which is
-a cost structure moving in the right direction, not the wrong one.
+**Teach and replay, which is growing rather than shrinking.** Collaborative-robot
+hand-guiding made it easier rather than obsolete: you guide the torch along the seam
+and press start. That amounts to more teaching being done by less specialised people,
+which is a cost structure moving in the right direction rather than the wrong one.
 
-**Motion planning.** Healthy and standard; the only axis moving is speed.
+**Motion planning.** Healthy and standard, and the only axis on which it is moving is
+speed.
 
-**Calibration.** Still the unglamorous thing that decides whether a cell works, still
-mostly hand-rolled, still what separates a demo from a deployment.
+**Calibration.** Still the unglamorous thing that decides whether a cell works at
+all, still mostly hand-rolled, and still what separates a demonstration from a
+deployment.
 
-**The lesson.** Four of those five are in the programmed family, and all five are
-things you can learn once and use for a decade. Section 6 is where the excitement is;
-this section is where the compound interest is.
+Four of those five sit in the programmed family, and all five are things you can
+learn once and then use for a decade. Section 6 below is where the excitement is.
+This section is where the compound interest is.
 
 ## 6. What is arriving now, and what it can actually do
 
-For each of these: the **capability** — what it lets you do that the previous
-generation did not — and the **reason** it emerged, which is always one of the five
-forces. Treat this section as a weather report rather than a forecast. Several of
-these will not survive contact with real deployments.
+Each of the following says what the new capability lets you do that the previous
+generation could not, and then why it emerged, which in every case is one of the
+five forces. Treat the whole section as a weather report rather than a forecast:
+several of these will not survive contact with real deployments.
 
 ### Reinforcement learning as polish, not as training
 
-**Capability:** take a policy that works maybe half the time after demonstrations, and
-make it reliable in **hours on the real robot** rather than weeks in simulation.
-Physical Intelligence reported this on driving screws, fitting zip ties and inserting
-connectors with about **fifteen minutes of real-world data and roughly two hours
-including resets**, reaching up to three times faster execution and beating human
-teleoperation on one task.
+This lets you take a policy that works maybe half the time after demonstrations and
+make it reliable in a matter of hours on the real robot, rather than weeks in
+simulation. Physical Intelligence reported exactly this on driving screws, fitting
+zip ties and inserting connectors, using about fifteen minutes of real-world data or
+roughly two hours once the resets between attempts are counted, and reaching up to
+three times faster execution while beating human teleoperation on one of the tasks.
 
-**Reason:** the two methods fail in exactly complementary ways. Demonstrations give
-you the *shape* of a task cheaply but not the last few percent; exploration cannot
-find the shape — a coordinated behaviour is almost never stumbled upon — but polishes
-beautifully once the shape is there. Nobody designed this pairing; it was discovered
-by four separate groups in one year, on laundry and box assembly, on shoe-lacing
-(46% → 83% after about 150 practice episodes), on precision insertion, and in the
-winning entry of a garment-folding competition.
+The reason it works is that the two methods fail in exactly complementary ways.
+Demonstrations give you the *shape* of a task cheaply, but they do not give you the
+last few percent of reliability. Exploration cannot find the shape on its own,
+because a coordinated behaviour is almost never stumbled upon by chance, but it
+polishes beautifully once the shape is already there. Nobody sat down and designed
+this pairing. It was discovered independently by four separate groups in a single
+year, on laundry and box assembly, on shoe-lacing where success went from 46% to 83%
+after about 150 practice episodes, on precision insertion, and in the winning entry
+of a garment-folding competition.
 
-**Status:** this is the current state of the art for a hard task, and the convergence
-of four independent groups is the strongest signal in this document.
-**Open tools:** [HIL-SERL](https://github.com/rail-berkeley/hil-serl) inside
-[LeRobot](https://github.com/huggingface/lerobot) for the real-robot stage;
-[SimpleVLA-RL](https://github.com/PRIME-RL/SimpleVLA-RL) in simulation.
+This is the current state of the art for a hard task, and that convergence of four
+independent groups is the strongest signal anywhere in this document. The open tools
+are [HIL-SERL](https://github.com/rail-berkeley/hil-serl) inside
+[LeRobot](https://github.com/huggingface/lerobot) for the real-robot stage, and
+[SimpleVLA-RL](https://github.com/PRIME-RL/SimpleVLA-RL) for the simulated version.
 
 ### Flow matching, and an honest doubt about it
 
-**Capability:** generate a whole action sequence that can represent "either this
-motion or that one" rather than averaging them — fast enough to run at control rates.
-The averaging problem is real and concrete: if some demonstrators go left around an
-obstacle and some go right, a network trained to output one number per command will
-learn to go straight through it.
+This generates a whole action sequence that can represent "either this motion or
+that one" rather than averaging the two together, and does so fast enough to run at
+control rates. The averaging problem it solves is real and concrete: if some of your
+demonstrators go left around an obstacle and others go right, a network trained to
+output a single number per command will learn to go straight through the obstacle.
 
-**Reason:** diffusion solved the averaging problem but was too slow to run on a robot
-at fifty hertz. Flow matching is a faster relative, and it is now the action head
-inside essentially every current large policy.
+It emerged because diffusion had already solved the averaging problem but was too
+slow to run on a robot at fifty hertz. Flow matching is a faster relative of
+diffusion, and it is now the action-generating component inside essentially every
+current large policy.
 
-**The doubt, which belongs here:** a 2026 study ([MINERVA](https://arxiv.org/abs/2609.03715))
-found flow matching gave **no detectable advantage over plain regression** on its
-benchmarks while being several times slower. The field is optimising a design choice
-it has not fully justified. This is a good example of something everyone has adopted
-that may not survive.
+The doubt belongs here alongside the description. A 2026 study called
+[MINERVA](https://arxiv.org/abs/2609.03715) found that flow matching gave no
+detectable advantage over plain regression on its benchmarks, while being several
+times slower to run. The field is optimising a design choice that it has not fully
+justified, and this is a good example of something everyone has adopted which may
+not survive.
 
 ### Real-time action chunking
 
-**Capability:** a large slow model producing smooth continuous motion. A
-vision-language-action model might run at five to ten hertz; an arm wants commands at
-fifty to two hundred. Chunking lets the model emit a block of future actions that
-play out while the next block is being computed.
+This lets a large, slow model produce smooth continuous motion. A
+vision-language-action model might run at five to ten hertz, whereas an arm wants
+commands at somewhere between fifty and two hundred. Chunking closes that gap by
+letting the model emit a block of future actions which play out while the next block
+is still being computed.
 
-**Reason:** a purely practical mismatch between model size and control rate — and it
-is the piece that makes the whole 2026 recipe above executable on real hardware
-rather than in a video.
+The reason it appeared is a purely practical mismatch between model size and control
+rate, and it is the piece that makes the whole 2026 recipe described above
+executable on real hardware rather than only in a video.
 
 ### World models
 
-**Capability:** learn to predict what will happen and act through that prediction —
-which, crucially, means learning from data that has **no action labels at all**, such
-as ordinary video.
+These learn to predict what will happen next and then act through that prediction,
+which — and this is the crucial part — means they can learn from data that has no
+action labels attached to it at all, such as ordinary video.
 
-**Reason:** force one. If robot demonstrations are the constraint and more of them
-stop helping, the way out is to learn from data that is not robot demonstrations.
-Video is abundant; action-labelled robot episodes are not.
+The reason is the first force. If robot demonstrations are the binding constraint,
+and collecting more of them has stopped helping, then the way out is to learn from
+data that is not robot demonstrations. Video is abundant; action-labelled robot
+episodes are not.
 
-**Status:** now a first-class category in LeRobot and **not yet proven on production
-arms.** Worth watching, not worth betting on.
+They are now a first-class category in LeRobot and have not yet been proven on
+production arms. Worth watching, but not worth betting on.
 
 ### Learning from human video, and recording without a robot
 
-**Capability:** use people doing tasks as training data. The scaling behaviour looks
-promising and almost nothing has been released, so the honest status is "interesting".
+This uses people doing tasks as training data. The scaling behaviour looks
+promising, almost nothing has been released, and so the honest status is
+"interesting" rather than anything stronger.
 
-**Reason:** the same data constraint, taken to its logical end. The numbers make the
-motivation obvious — Open X-Embodiment, the famous pooled corpus, contains about 2.4
-million robot episodes, against effectively unlimited video of humans manipulating
-things.
+The reason is the same data constraint taken to its logical conclusion, and the
+numbers make the motivation obvious. Open X-Embodiment, the famous pooled corpus,
+contains about 2.4 million robot episodes, set against an effectively unlimited
+supply of video showing humans manipulating things.
 
-**The practical spin-off you can use today** is more interesting than the research.
-[Grabette](https://huggingface.co/blog/grabette) (Apache-2.0, €490) is a handheld
-recorder — cameras, an inertial sensor, a gripper encoder — that you hold in your own
-hand to do the task, with browser-based reconstruction producing
-six-degree-of-freedom trajectories in LeRobot format. Its ancestor is
-[UMI](https://github.com/real-stanford/universal_manipulation_interface). **You can
-collect training data before owning a robot at all**, which removes the most common
-blocker for a learner.
+The practical spin-off from this research is more immediately interesting than the
+research itself. [Grabette](https://huggingface.co/blog/grabette) (Apache-2.0, €490)
+is a handheld recorder — cameras, an inertial sensor and a gripper encoder — that
+you hold in your own hand while doing the task, with browser-based reconstruction
+producing six-degree-of-freedom trajectories in LeRobot format. Its ancestor is
+[UMI](https://github.com/real-stanford/universal_manipulation_interface). What this
+means in practice is that you can collect training data before owning a robot at
+all, which removes the single most common blocker for somebody trying to learn this.
 
 ### Verification at run time
 
-**Capability:** instead of trusting the policy's first answer, generate several
-candidate actions and check them before acting. At least one 2026 result claims that
-**scaling the checking beats scaling the policy**.
+Instead of trusting the policy's first answer, this generates several candidate
+actions and checks them before acting on any of them. At least one 2026 result
+claims that scaling up the checking beats scaling up the policy.
 
-**Reason:** force one again, from a different angle. If a hundred times the data buys
-no improvement, spending compute at run time rather than at training time is the
-obvious other lever — and there is a suggestive precedent in how language models
-gained from test-time reasoning. It also sits well with force four, because a system
-that checks its candidates is a system that can explain a rejection.
+The reason is the first force again, approached from a different angle. If a hundred
+times the data buys no improvement, then spending compute at run time rather than at
+training time is the obvious remaining lever, and there is a suggestive precedent in
+how much language models gained from reasoning at test time. It also sits well
+alongside the fourth force, because a system that checks its own candidates is a
+system that can explain why it rejected one.
 
 ### Data generation as a first-class tool
 
-**Capability:** turn a handful of demonstrations into thousands by re-composing them
-around the objects' positions, then train on the result.
+This turns a handful of demonstrations into thousands, by re-composing them around
+wherever the objects happen to be, and then trains on the result.
 
-**Reason:** the purest expression of force one, and a nice inversion — **programming
-is used to manufacture the data that training needs.** The classical stack earns its
-keep by generating what the learned stack is short of.
+It is the purest expression of the first force, and it involves a rather pleasing
+inversion: programming is being used to manufacture the data that training needs.
+The classical stack earns its keep by generating exactly what the learned stack is
+short of.
 
-**Open tools:** [MimicGen](https://github.com/NVlabs/mimicgen) and its two-arm
-successor [DexMimicGen](https://github.com/NVlabs/dexmimicgen) — both **research-only
-under NVIDIA's licence**, so check before building anything commercial.
+The open tools are [MimicGen](https://github.com/NVlabs/mimicgen) and its two-arm
+successor [DexMimicGen](https://github.com/NVlabs/dexmimicgen), both of which are
+research-only under NVIDIA's licence, so check carefully before building anything
+commercial on them.
 
 ### Small models for cheap hardware
 
-**Capability:** a pretrained vision-language-action policy you can actually fine-tune
-and run on consumer hardware, rather than one that needs more memory than a consumer
-card has.
+This gives you a pretrained vision-language-action policy that you can actually
+fine-tune and run on consumer hardware, rather than one that needs more memory than
+a consumer card has.
 
-**Reason:** a community with tens of thousands of shared datasets and hundred-dollar
-arms needed a model sized for it, and the large policies are not. This is
-democratisation as a technical requirement rather than a slogan.
+The reason it exists is that a community with tens of thousands of shared datasets
+and hundred-dollar arms needed a model sized for it, and the large policies are not.
+This is democratisation arriving as a technical requirement rather than as a slogan.
 
-**Open tools:** [SmolVLA](https://huggingface.co/blog/smolvla), inside LeRobot,
-trained on community data. For anyone learning on a cheap arm, this is the realistic
-entry point to the whole VLA family.
+The open tool is [SmolVLA](https://huggingface.co/blog/smolvla), which sits inside
+LeRobot and was trained on community data. For anyone learning on a cheap arm, it is
+the realistic entry point to the whole vision-language-action family.
 
 ### Tactile foundation models
 
-**Capability:** one model that works across many different touch sensors, rather than
-one model per sensor type.
+These aim at a single model that works across many different touch sensors, rather
+than one model per sensor type.
 
-**Reason:** touch data has always been locked to a specific sensor's geometry and
-physics, so nobody could pool it — exactly the fragmentation that pretrained vision
-models escaped a decade ago. Whether touch has enough shared structure to make the
-same trick work is genuinely unknown.
+The reason is that touch data has always been locked to the specific geometry and
+physics of one sensor, so nobody could pool it — which is exactly the fragmentation
+that pretrained vision models escaped a decade ago. Whether touch has enough shared
+structure for the same trick to work is genuinely unknown at this point.
 
 ## 7. How to tell a real shift from a fashion
 
-Five questions, roughly in order of how much signal they carry.
+Five questions, arranged roughly in order of how much signal each one carries.
 
-**Did the authors deprecate their own previous work?** The strongest signal there is.
-Researchers do not willingly retire their own contribution. SERL → HIL-SERL is the
-model case.
+**Did the authors deprecate their own previous work?** This is the strongest signal
+there is, because researchers do not willingly retire their own contributions. SERL
+giving way to HIL-SERL is the model case.
 
 **Did independent groups converge on the same shape of solution?** Four different
-groups arriving at demonstrate-then-polish, on four different tasks, in one year, is
-worth more than any single impressive result.
+groups arriving at demonstrate-then-polish, on four different tasks, within a single
+year, is worth considerably more than any one impressive result.
 
 **Is there a checkpoint you can download, or only a paper?** Several of 2026's most
-impressive models have no released code or weights. Read about them; do not plan on
-using them. Checking this first will save you more time than any other habit here.
+impressive models have no released code and no released weights. Read about them by
+all means, but do not plan on using them. Checking this before anything else will
+save you more time than any other habit in this list.
 
-**Did the benchmark move, or just the leaderboard?** A new number on an old benchmark
-is incremental. A new benchmark, or a paper that reports *per-stage* success rates
-instead of totals, usually signals that the field noticed it was measuring the wrong
-thing.
+**Did the benchmark move, or only the leaderboard?** A new number on an old benchmark
+is incremental progress. A new benchmark, or a paper that reports success rates
+per stage rather than as a single total, usually signals that the field has noticed
+it was measuring the wrong thing.
 
-**Does the new thing need less of what is currently expensive?** The mechanism from
-[section 1](#1-the-one-mechanism-behind-every-shift). If a method is better but needs
-more demonstrations, more specification, or more verification, it will lose to a
-worse method that needs less — and you should plan accordingly rather than being
-surprised.
+**Does the new thing need less of what is currently expensive?** This is the
+mechanism from [section 1](#1-the-one-mechanism-behind-every-shift). If a method is
+better but needs more demonstrations, more specification or more verification, it
+will lose to a worse method that needs less of those things — and you are better off
+planning for that than being surprised by it.
 
-**One anti-signal:** a dormant repository proves nothing on its own. Check whether
-the method moved into a maintained home before concluding it died.
+There is also one anti-signal worth holding on to. A dormant repository proves
+nothing by itself. Check whether the method moved into a maintained home before
+concluding that it died.
 
 ## 8. What this means for what you learn
 
 **Learn the things in [section 5](#5-what-is-not-moving-at-all-and-why-that-matters)
 first.** Force control, behaviour trees, motion planning and calibration have not
-changed in a decade and will not change in the next one. They are also what people
-are paid for.
+changed in a decade and will not change much in the next one, and they are also what
+people are actually paid to do.
 
-**In the learned family, learn the loop rather than the architecture.** Collect,
-train, evaluate, find what failed, collect more of that. The architecture will be
-different in eighteen months; the loop will not. This is also why the cheap hardware
-matters more than it looks — going round that loop once teaches you things no paper
-will.
+**Within the learned family, learn the loop rather than the architecture.** Collect
+data, train, evaluate, work out what failed, then collect more of whatever failed.
+The architecture will be different in eighteen months. The loop will not. This is
+also why the cheap hardware matters more than it appears to, because going round that
+loop once will teach you things that no paper can.
 
-**Assume the specific model names in section 6 will be wrong within a year, and the
-reasons will not.** If you remember one thing from this document, make it the
-question rather than any of the answers: *what does this need less of?*
+**Assume that the specific model names in section 6 will be wrong within a year, and
+that the reasons behind them will not be.** If you remember one thing from this
+document, make it the question rather than any of the answers: what does this need
+less of?
 
 ---
 
 Back to [the overview](overview.md), or on to
 [the programmed methods](programmed-methods.md) and
-[the learned methods](learned-methods.md). For what changes when two arms must
+[the learned methods](learned-methods.md). For what changes when two arms have to
 cooperate, see [the two-arm folder](../two-arm-training/overview.md).

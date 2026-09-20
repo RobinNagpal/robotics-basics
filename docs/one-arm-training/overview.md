@@ -238,6 +238,152 @@ perception — rather than the end-to-end approach that gets the attention.
 The direct answer to "is this the right method for this task". Read a row to plan a
 system; read a column to see where a method earns its keep.
 
+But a column heading like "learned perception" is only a label until you know what
+you would install and run to get it, so the nine columns are explained first, each
+with the open-source projects that actually implement it and something concrete to
+go and look at.
+
+### The nine columns, explained
+
+**Teach / offline programming.** Two ways of writing the motion down in advance:
+drive the arm to each position and record it, or model the cell in CAD and generate
+the path against the model. The teaching half has no open-source equivalent,
+because it lives in each vendor's pendant software — the nearest open thing is
+hand-guiding, which you get by running an
+[admittance controller](https://github.com/ros-controls/ros2_controllers) on an arm
+that can sense torque. The offline half has a serious open stack that almost nobody
+outside industry knows about:
+[Tesseract](https://github.com/tesseract-robotics/tesseract) is the planning
+environment and solver set,
+[Noether](https://github.com/ros-industrial/noether) generates toolpaths from a
+surface mesh, and
+[scan_n_plan_workshop](https://github.com/ros-industrial-consortium/scan_n_plan_workshop)
+wires scan → reconstruct → toolpath → plan → execute into one working example. That
+last one is the thing to look at, because it is a complete industrial pipeline you
+can read. [RoboDK](https://robodk.com/) is the accessible commercial tool if you
+want to see what the mainstream looks like. Be warned Tesseract has no packaged
+binaries — you build it from source.
+
+**Motion planning.** Find a path from here to there that hits nothing.
+[MoveIt 2](https://github.com/moveit/moveit2) is what you will actually use, and
+[its tutorials](https://github.com/moveit/moveit2_tutorials) are the fastest way in;
+[OMPL](https://ompl.kavrakilab.org/) provides the samplers underneath it. Two pieces
+inside MoveIt matter more than their profile suggests: the **Pilz industrial motion
+planner**, which gives deterministic point-to-point, linear and circular motions the
+way a real industrial controller does, and
+[Ruckig](https://github.com/pantor/ruckig) for jerk-limited timing. For multi-stage
+pick-and-place with alternatives and fallbacks, look at
+[MoveIt Task Constructor](https://github.com/moveit/moveit_task_constructor), which
+is the closest mainstream thing to structured task planning.
+[cuRobo](https://github.com/NVlabs/curobo) is the GPU planner that replans
+continuously rather than planning once — it needs an NVIDIA card.
+
+**Force control.** Command how the arm responds to contact instead of commanding a
+position. [ros2_control](https://github.com/ros-controls/ros2_control) plus the
+admittance controller in
+[ros2_controllers](https://github.com/ros-controls/ros2_controllers) is the baseline.
+The piece people consistently miss is
+[cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers),
+which gives you Cartesian force and impedance control rather than joint-space
+admittance, and is much closer to what contact tasks need.
+[Drake](https://github.com/RobotLocomotion/drake) and
+[Pinocchio](https://github.com/stack-of-tasks/pinocchio) are the model-based
+libraries for anything serious;
+[franka_ros2](https://github.com/frankaemika/franka_ros2) is the reference driver for
+a genuinely torque-controlled arm; and
+[MuJoCo MPC](https://github.com/google-deepmind/mujoco_mpc) lets you drag a
+predictive controller around interactively, which is the fastest way to build an
+intuition. **Know where this stops:** there is no open implementation of hybrid
+force-position control or of contact-rich assembly strategies. Past admittance
+control you write it yourself or buy it from the robot vendor.
+
+**Learned perception.** A network tells you what is there and where, and ordinary
+code does the rest. [Segment Anything](https://github.com/facebookresearch/segment-anything)
+does segmentation without being trained on your objects;
+[FoundationPose](https://github.com/NVlabs/FoundationPose) does six-degree-of-freedom
+pose estimation without per-object training. For grasping,
+[GraspNet-1Billion](https://graspnet.net/) is most useful now as a dataset and
+benchmark, and NVIDIA's [GraspGen](https://github.com/NVlabs/GraspGen) is the current
+research line — note it is under a research licence, not a permissive one, and
+[Contact-GraspNet](https://github.com/NVlabs/contact_graspnet) depends on a long-dead
+TensorFlow generation. The example worth building: Segment Anything plus
+FoundationPose feeding grasp poses into MoveIt is a complete bin-picking system, and
+it is the shape of essentially every deployed machine-learning robot.
+
+**Imitation.** Show the task, train a policy to copy it.
+[LeRobot](https://github.com/huggingface/lerobot) is the answer and there is no close
+second — it hosts ACT, diffusion policy and the rest, supports the cheap arms
+directly, and trains in under an hour on one consumer GPU.
+[robomimic](https://github.com/ARISE-Initiative/robomimic) is the careful study of
+which implementation details actually matter, worth reading before you blame your
+data. To practise without hardware:
+[LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) for long-horizon
+single-arm tasks and
+[FurnitureBench](https://github.com/clvrai/furniture-bench) for the honest hard case.
+The original [ACT](https://github.com/tonyzhaozh/act) and
+[diffusion_policy](https://github.com/real-stanford/diffusion_policy) repositories are
+dormant; use LeRobot's versions.
+
+**Reinforcement learning in simulation.** Practise millions of times somewhere
+cheap, then transfer. [Isaac Lab](https://github.com/isaac-sim/IsaacLab) is the
+current standard and **requires an NVIDIA GPU**;
+[MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground) is the one
+that runs on an Apple Silicon Mac, which matters for this repo.
+[ManiSkill](https://github.com/haosulab/ManiSkill) and
+[robosuite](https://github.com/ARISE-Initiative/robosuite) are the manipulation task
+suites, [mujoco_menagerie](https://github.com/google-deepmind/mujoco_menagerie) has
+the robot models, and
+[Stable-Baselines3](https://stable-baselines3.readthedocs.io/) is the cleanest place
+to actually understand the algorithms. The worked industrial example is
+[IndustRealKit](https://github.com/NVLabs/industrealkit) — simulation-only training
+that transferred to a real arm at 83–99% across 600 insertion trials. If you meet a
+tutorial using Isaac Gym, it is out of date.
+
+**Real-robot reinforcement learning.** Practise on the actual hardware, with a
+person catching it when it goes wrong.
+[HIL-SERL](https://github.com/rail-berkeley/hil-serl) is the system, and it now ships
+inside LeRobot, which is where you should use it from. Its predecessor SERL is
+formally deprecated — ignore tutorials that use it. This is the column with the
+strongest published numbers in this whole document: 100% on every task tried, after
+one to two and a half hours of real-robot training.
+
+**Vision-language-action models.** One large pretrained model, images and a sentence
+in, arm commands out. The openly released ones are π₀, π₀-FAST and π₀.₅ from
+[openpi](https://github.com/Physical-Intelligence/openpi) and
+[GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T). **For a cheap arm the one that
+matters is [SmolVLA](https://huggingface.co/blog/smolvla)**, which ships inside
+LeRobot and was designed to be trained and run on consumer hardware — it is the
+realistic entry point to this column, and the rest are not.
+[OpenVLA](https://github.com/openvla/openvla) is still the baseline in most papers
+but has been dormant since March 2025, so treat it as a reference point rather than
+a foundation. [SimplerEnv](https://github.com/simpler-env/SimplerEnv) is how you
+evaluate these without a robot, and
+[SimpleVLA-RL](https://github.com/PRIME-RL/SimpleVLA-RL) is the open version of the
+reinforcement-learning polish stage.
+
+**Language planner.** A model decides the order of the steps, and something else
+executes them. **There is no standard framework here, and you should be suspicious
+of anyone who implies there is.** [SayCan](https://say-can.github.io/),
+[Code as Policies](https://code-as-policies.github.io/) and
+[VoxPoser](https://voxposer.github.io/) are research projects with pages rather than
+maintained libraries, and [Inner Monologue](https://innermonologue.github.io/) is the
+idea of feeding failures back so the model can replan. In practice you build this
+yourself out of a language-model API plus
+[BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) or
+[py_trees](https://py-trees.readthedocs.io/) as the thing that actually runs — the
+model picks which subtree to invoke, and the tree keeps the behaviour inspectable.
+
+### What runs on what
+
+Worth knowing before you invest a weekend, since it is the most common way to lose
+one. Everything in the imitation column trains on a single consumer GPU or a cheap
+rented one. Everything in the vision-language-action column except SmolVLA wants
+more memory than a consumer card has. Isaac Lab and cuRobo need CUDA and will not
+run on an Apple Silicon Mac at all; MuJoCo, MuJoCo Playground, MoveIt 2, Drake,
+Pinocchio and LeRobot's training all will.
+
+### The grid
+
 **★** the usual choice today · **✓** used, and works · **~** emerging, or used in
 part · **–** not used
 
@@ -382,10 +528,61 @@ deployments.
 
 ## 8. What each method costs you
 
-Eight families on seventeen points. Rows 1 to 7 are what a method demands before it
-will work at all. Rows 8 to 17 are what you get back. "Somewhat" means it copes
-with variation of a kind it has seen but not with a new kind; "deployed widely"
-means you can buy it, "research" means you would build it from papers.
+Eight families on seventeen points. These are the same methods as
+[the grid above](#5-which-method-for-which-task) but grouped as **things you would
+commit to building**, which is why the columns differ: teaching and offline
+programming split apart, because they cost completely different things, and three
+families appear that were not columns in the grid.
+
+### The three families that were not in the grid
+
+**Task and motion planning (TAMP)** searches what to do and how to move at the same
+time, because sometimes they cannot be separated — whether you must move the pan
+depends on geometry, and whether you *can* depends on whether a path exists for the
+pan. [PDDLStream](https://github.com/caelan/pddlstream) is the well-documented
+reference implementation and its last commit was in 2023, which is a fair indicator
+of the state of the field. What you must supply is the expensive part: a symbolic
+model of your domain, listing every action with its preconditions and effects. In
+industry this job is done by a behaviour tree instead, because a tree is free to
+write and a domain model is not.
+
+**Classical control** is the whole feedback layer as a commitment rather than as one
+column: inverse kinematics and trajectory tracking, force and impedance control,
+visual servoing, and model predictive control. The stack is
+[ros2_control](https://github.com/ros-controls/ros2_control) with
+[ros2_controllers](https://github.com/ros-controls/ros2_controllers) and
+[cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers),
+[Drake](https://github.com/RobotLocomotion/drake) or
+[Pinocchio](https://github.com/stack-of-tasks/pinocchio) for the model-based side,
+and [ViSP](https://visp.inria.fr/) for visual servoing. What it asks of you is a
+model of the robot and a control engineer's instincts; what it gives back is the
+only thing in this table that genuinely handles contact, and the only thing you can
+verify line by line.
+
+**Learned pieces inside a classical stack** is the least glamorous family and by a
+wide margin the most deployed. You keep the planner, the controller and the logic,
+and replace only the parts that require recognising something — so the stack is
+[Segment Anything](https://github.com/facebookresearch/segment-anything) and
+[FoundationPose](https://github.com/NVlabs/FoundationPose) feeding
+[MoveIt 2](https://github.com/moveit/moveit2), and the engineering that matters is
+the ordinary code in between. It asks for labelled data or, increasingly, nothing at
+all beyond a downloaded model. It gives back generalisation to objects you have
+never seen while keeping the system inspectable: when it fails you can look at the
+proposed grasps and the estimated pose and see which was wrong. If you are aiming at
+paid work rather than research, this is the family to be good at.
+
+### What you would actually install
+
+| Family | The stack you install | What you must supply | First milestone |
+| --- | --- | --- | --- |
+| **Teach & replay** | vendor pendant software; [ros2_controllers](https://github.com/ros-controls/ros2_controllers) admittance for hand-guiding | the motion itself | the arm repeats a taught path |
+| **Offline prog. + planner** | [Tesseract](https://github.com/tesseract-robotics/tesseract), [Noether](https://github.com/ros-industrial/noether), [scan_n_plan_workshop](https://github.com/ros-industrial-consortium/scan_n_plan_workshop), [MoveIt 2](https://github.com/moveit/moveit2), [RoboDK](https://robodk.com/) | a CAD model, and calibration | a path generated from the model runs on the real cell |
+| **TAMP** | [PDDLStream](https://github.com/caelan/pddlstream) | a symbolic domain model | a plan that is both sensible and reachable |
+| **Classical control** | [ros2_control](https://github.com/ros-controls/ros2_control), [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers), [Drake](https://github.com/RobotLocomotion/drake), [MuJoCo MPC](https://github.com/google-deepmind/mujoco_mpc) | a model of the robot | the arm presses on a surface without fighting it |
+| **Imitation** | [LeRobot](https://github.com/huggingface/lerobot), [robomimic](https://github.com/ARISE-Initiative/robomimic), [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | 50–1000 demonstrations | a policy that does the task some of the time |
+| **RL (sim → real)** | [Isaac Lab](https://github.com/isaac-sim/IsaacLab) or [MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground), [ManiSkill](https://github.com/haosulab/ManiSkill), [Stable-Baselines3](https://stable-baselines3.readthedocs.io/) | a reward, and a simulator that is close enough | it works in simulation, then survives the transfer |
+| **VLA fine-tune** | [openpi](https://github.com/Physical-Intelligence/openpi), [Isaac-GR00T](https://github.com/NVIDIA/Isaac-GR00T), [SmolVLA](https://huggingface.co/blog/smolvla) in LeRobot | 10–500 demonstrations, and a checkpoint that fits your robot | a pretrained model doing *your* task |
+| **Learned pieces in a classical stack** | [Segment Anything](https://github.com/facebookresearch/segment-anything), [FoundationPose](https://github.com/NVlabs/FoundationPose), [GraspGen](https://github.com/NVlabs/GraspGen) + MoveIt 2 | labelled data, or just a downloaded model | picking an object the system has never seen |
 
 **What the method asks of you**
 

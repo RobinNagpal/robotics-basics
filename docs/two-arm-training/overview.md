@@ -244,6 +244,134 @@ unchanged.
 
 Read a row to plan a system; read a column to see where a method earns its keep.
 
+The columns are the same nine as in
+[the one-arm grid](../one-arm-training/overview.md#5-which-method-for-which-task),
+and that document explains what each one *is* and what you would install. This
+section says something different and more useful here: **what actually changes for
+each when the arms must cooperate, and which of those tools support two arms at
+all.** The short answer is that about half of them do not, and knowing which half in
+advance will save you weeks.
+
+### The nine columns, for two coordinated arms
+
+**Teach / offline programming.** Still how coordinated two-arm robots are
+programmed in industry, and **there is no open-source equivalent whatsoever**. The
+capability lives in vendor controllers — ABB's MultiMove is the one to study, with
+its independent, semi-coordinated and coordinated-synchronised modes and its rule
+that the number of motion instructions between synchronisation on and off must be
+*identical* in both arms' programmes. Offline programming handles the loose case
+through **synchronisation points** ("arm one waits here until arm two reaches
+there"), which commercial tools have supported for decades and which is enough for
+most hold-and-work tasks. The open industrial stack —
+[Tesseract](https://github.com/tesseract-robotics/tesseract),
+[Noether](https://github.com/ros-industrial/noether) — has no two-arm coordination
+concept at all. Read
+[the programmed methods document](programmed-methods.md#1-teaching-two-arms) for why
+that lockstep rule tells you everything about the difficulty.
+
+**Motion planning.** The method that changes most, and the one where the tooling
+gap is sharpest. MoveIt 2's maintained
+[dual-arm Panda configuration](https://github.com/moveit/moveit_resources/tree/ros2/dual_arm_panda_moveit_config)
+is the reference to copy, but it defines two planning groups and plans **one at a
+time** — no shipped configuration plans them as one twelve-joint robot, the default
+inverse-kinematics solvers are chain solvers so a closed loop cannot be solved at
+all, and there is no constraint type relating two grippers to each other.
+[cuRobo](https://github.com/NVlabs/curobo) genuinely plans for two arms at once and
+ships a dual-arm configuration — it is the best open answer here — though it too
+cannot express a constraint *between* the grippers, and it needs an NVIDIA card. For
+a real closed chain, [Drake](https://github.com/RobotLocomotion/drake) and
+[Pinocchio](https://github.com/stack-of-tasks/pinocchio) are the two libraries with
+genuine closed-kinematic-chain support and are worth switching to. **There is no
+maintained ROS 2 dual-arm coordination package at all.**
+
+**Force control.** The column that is never empty in the grid below, because loads
+pass between the arms whatever else you use.
+[ros2_control](https://github.com/ros-controls/ros2_control) and
+[cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers)
+give you per-arm admittance and Cartesian impedance, which is enough for the loosely
+coupled case — and note it needs **two different stiffness settings at once**, stiff
+for the holding arm and soft for the working arm, which is easy to get backwards.
+For the closed chain you need a controller that commands the object's motion and the
+squeeze separately, and **no open implementation of a cooperative two-arm controller
+exists**. You write it from the papers — search for the *symmetric formulation*,
+*cooperative task space*, *virtual linkage*, *augmented object* and *object impedance
+control* — using Drake or Pinocchio for the model. This is the single biggest piece
+of work in coordinated two-arm robotics, and it is why serious work still runs on
+vendor software.
+
+**Learned perception.** The networks are unchanged — Segment Anything,
+FoundationPose and grasp proposers neither know nor care how many arms will use
+their output. What the second arm adds is **the choice made with that output**:
+which arm takes which grasp, whether both are reachable, whether taking this one
+with the left arm leaves the right able to reach the next, and whether the resulting
+pair of motions collide. That selection is ordinary code between the network and the
+planner, and it is where most of the two-arm engineering in such a system lives. It
+is also a good first two-arm project precisely because the hard part is code you
+write rather than a model you train.
+
+**Imitation.** The column where coordinated two-arm work actually happens, and the
+best-supported one. [LeRobot](https://github.com/huggingface/lerobot) supports pairs
+directly through its `bi_so_follower` robot and `bi_so_leader` teleoperator, which
+compose two single arms with observations prefixed `left_` and `right_`. The
+standard design is one network emitting both arms' commands — fourteen numbers per
+step — though [the evidence for that being better is a tie](learned-methods.md#2-one-policy-or-two-and-what-the-evidence-says).
+What *is* measured: the grippers' pose relative to each other must be in the input.
+To practise: [gym-aloha](https://github.com/huggingface/gym-aloha) has exactly two
+environments and both are coordinated;
+[RoboTwin 2.0](https://github.com/RoboTwin-Platform/RoboTwin) is the most complete
+open two-arm stack, with 50 dual-arm tasks and over 100,000 pre-generated
+trajectories. Watch the licences:
+[DexMimicGen](https://github.com/NVlabs/dexmimicgen) is research-only, and
+[PerAct2](https://github.com/markusgrotz/peract_bimanual) inherits RLBench's
+academic-use restriction and has been dormant since early 2025.
+
+**Reinforcement learning in simulation.** Harder for two arms in a specific and
+instructive way: the space to explore is the *product* of both arms' possibilities
+rather than the sum, and the useful behaviours only pay off when both arms do the
+right thing **at the same moment** — a handover earns nothing unless one arm has
+arrived and the other releases on time. Random exploration essentially never
+stumbles on that, so the reward is not merely sparse but sparse in two dimensions at
+once. [robosuite](https://github.com/ARISE-Initiative/robosuite) has four two-arm
+tasks — lift, peg-in-hole, handover, transport — and one property nothing else
+offers: **you can run the same task with one two-armed robot or with two independent
+single arms**, which is as close to a controlled experiment on "what does
+coordination change" as exists. Use this column as a *second* stage after
+demonstrations, not a first.
+
+**Real-robot reinforcement learning.** [HIL-SERL](https://github.com/rail-berkeley/hil-serl),
+inside LeRobot, is the method — but be clear that **its published results are
+single-arm**. The correction rig for two arms is the same leader-arm pair you
+collected with, so a person can grab whichever arm went wrong, and the failures
+worth correcting are coordination failures rather than single-arm ones: the holding
+arm drifted, the handover released early, the arms pulled the cloth out of each
+other's grip. Treat the two-arm case as the same method with less evidence behind it
+rather than as a proven recipe.
+
+**Vision-language-action models.** Check what is **downloadable** rather than what
+is supported, because for two arms they differ.
+[openpi](https://github.com/Physical-Intelligence/openpi) has a configuration for the
+two-armed ALOHA platform with no published checkpoint behind it;
+[GR00T](https://github.com/NVIDIA/Isaac-GR00T) carries embodiment definitions for
+two-armed platforms with separate left and right entries, but every released
+fine-tuned checkpoint is single-arm. The exception is
+[RDT](https://github.com/thu-ml/RoboticsDiffusionTransformer) and its successor
+[H-RDT](https://github.com/HongzheBi/H_RDT), which were **designed bimanual first** —
+RDT splits its state vector into left and right halves and tells you to write a
+single arm's values into the *right-arm* portion, the opposite of everyone else. The
+base models are genuinely usable for two arms; you will be fine-tuning one yourself.
+
+**Language planner.** The interesting two-arm possibility is that the model assigns
+the **roles** — deciding the left arm holds the bag while the right fills it —
+rather than a person writing that down. Of the three shapes, the code-writing one
+fits two arms best, because a short program can state plainly which arm does what
+and in which order, and you can read it before running it. As with one arm there is
+no framework: you build it from a language-model API plus
+[BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP). Treat this as a
+promising direction rather than how systems are built — role assignment in working
+two-arm systems is written by hand.
+
+### The grid
+
 **★** the usual choice today · **✓** used, and works · **~** emerging, or used in
 part · **–** not used
 
@@ -294,6 +422,39 @@ This is the table this folder exists for: what the **second arm** adds to each
 method's bill, over and above what
 [the single-arm version](../one-arm-training/overview.md#8-what-each-method-costs-you)
 already demanded.
+
+The eight families are the same as in that document, which explains what each one is
+and what you would install. Before the table, here is the question that actually
+decides your project plan: **does the open tooling support two arms, or will you be
+writing it?**
+
+### Does the open tooling support two arms?
+
+| Family | Two-arm support in open tools | What you write yourself |
+| --- | --- | --- |
+| **Teach & replay** | **none** — this lives entirely in vendor controllers (ABB MultiMove and its equivalents) | everything, or you buy the controller |
+| **Offline prog. + planner** | none in the open industrial stack; synchronisation points are a commercial-tool feature | the waits and the arm-to-arm calibration |
+| **TAMP** | [PDDLStream](https://github.com/caelan/pddlstream) can express which arm does what in principle | the domain model, and in practice you assign roles by hand anyway |
+| **Classical control** | per-arm admittance and impedance from [ros2_control](https://github.com/ros-controls/ros2_control) and [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers); **no cooperative two-arm controller exists** | the closed-chain controller, from the papers, on [Drake](https://github.com/RobotLocomotion/drake) or [Pinocchio](https://github.com/stack-of-tasks/pinocchio) |
+| **Imitation** | **good** — [LeRobot](https://github.com/huggingface/lerobot) `bi_so_follower` / `bi_so_leader`, [gym-aloha](https://github.com/huggingface/gym-aloha), [RoboTwin 2.0](https://github.com/RoboTwin-Platform/RoboTwin) | nothing; the algorithm is unchanged, the data collection is the work |
+| **RL (sim → real)** | [robosuite](https://github.com/ARISE-Initiative/robosuite) has four two-arm tasks and a one-robot-or-two-arms switch | a reward that two arms can actually stumble into |
+| **VLA fine-tune** | configurations exist, **checkpoints mostly do not**; [RDT](https://github.com/thu-ml/RoboticsDiffusionTransformer) / [H-RDT](https://github.com/HongzheBi/H_RDT) are bimanual-first | the fine-tune, on your own two-arm data |
+| **Learned pieces in a classical stack** | the networks are arm-count agnostic, so full support | the grasp-assignment logic — which arm takes which grasp |
+
+Read that table down the middle column and the plan writes itself: **start in the
+imitation row, because it is the only one where the open tooling genuinely supports
+two arms out of the box**, and treat the classical-control row as the serious
+engineering project it is.
+
+### Planning motion for the pair
+
+Motion planning is split across two rows above because it sits under several
+families, so it is worth stating separately. The reference to copy is MoveIt's
+[dual-arm Panda configuration](https://github.com/moveit/moveit_resources/tree/ros2/dual_arm_panda_moveit_config),
+which plans the arms one at a time; [cuRobo](https://github.com/NVlabs/curobo) is the
+one open planner that genuinely plans both at once. Neither can express a constraint
+between the two grippers, and there is no maintained ROS 2 dual-arm coordination
+package. Budget for that rather than assuming you have misconfigured something.
 
 | | Teach & replay | Offline prog. + planner | TAMP | Classical control | Imitation | RL (sim → real) | VLA fine-tune | Learned pieces in a classical stack |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

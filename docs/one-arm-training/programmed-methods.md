@@ -301,28 +301,18 @@ mug" — and a geometric layer tests whether each proposed action is physically
 achievable, feeding the failures back so that the symbolic layer can try something
 else instead.
 
-It is the most capable purely-programmed approach there is for long tasks. It is
-also the hardest to build, the slowest to run, and the one that demands the most
-from you before it will do anything at all, because somebody has to sit down and
+That makes it the most capable purely-programmed approach there is for long tasks,
+and it is worth knowing why almost nobody uses it. Somebody has to sit down and
 write a symbolic model of the domain, listing every action along with its
-preconditions and its effects.
+preconditions and its effects, and that is expensive. Industry uses behaviour trees
+instead, for the straightforward reason that a tree is free to write and a domain
+model is not, and the research energy has largely moved to language models doing the
+same sequencing job with far less modelling effort.
 
-**Good for:** in principle, the long rearrangement problems in Groups B and D.
-
-**Status in 2026:** research, and used considerably less than its reputation
-suggests. Industrial long-horizon work is done with behaviour trees instead, for the
-straightforward reason that a behaviour tree is free to write and a domain model is
-not. The research energy has largely moved to language models doing the same
-sequencing job with far less modelling effort, which is a fair trade in a research
-setting and a rather questionable one anywhere that safety matters.
-
-**Worth learning now?** Read enough to know what it is and why it has not taken
-over, but do not invest in it unless you are going into research. The honest signal
-here is that the reference implementation's last commit was in 2023.
-
-**Code to look at:** [PDDLStream](https://github.com/caelan/pddlstream) (486 stars,
-last commit 2023) is the well-documented reference, and its own activity level is a
-fair indicator of the state of the field.
+So read enough to know what TAMP is and why it has not taken over, and do not invest
+further unless you are going into research. The honest signal is that the
+well-documented reference implementation,
+[PDDLStream](https://github.com/caelan/pddlstream), last had a commit in 2023.
 
 ## 6. Feedback control
 

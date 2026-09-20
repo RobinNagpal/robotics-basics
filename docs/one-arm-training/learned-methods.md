@@ -176,23 +176,19 @@ deprecated in favour of it, so ignore any tutorial built on SERL.
 
 ### 1.3 Learning the goal instead of the motion
 
-Rather than copying what the demonstrator did, you try to infer what they were
-*trying to achieve*, and then optimise for that instead. This is **inverse
-reinforcement learning**, and it has relatives in adversarial imitation and in
-learning from stated preferences. The appeal is generality, because a learned goal
-transfers to situations that a copied motion cannot.
+There is a third branch worth knowing by name so that you can recognise it and move
+on. Rather than copying what the demonstrator did, you try to infer what they were
+*trying to achieve* and optimise for that instead, which is **inverse reinforcement
+learning**. The appeal is generality, because a learned goal transfers to situations
+that a copied motion cannot.
 
-**Status in 2026:** a minority approach for arms. The generality is real, and so is
-the fragility, and the flagship open library
-([imitation](https://github.com/HumanCompatibleAI/imitation), 1.8k stars) has had no
-commits since January 2025, although surveys still treat the family as live. The
-preference-learning branch of this work found its real home tuning language models
-rather than robot arms.
-
-**Worth learning now?** No. Read [GAIL](https://arxiv.org/abs/1606.03476) and
-[learning from human preferences](https://arxiv.org/abs/1706.03741) for the ideas,
-which are genuinely good ones, but do not expect to meet either of them in a working
-arm system.
+In practice it is a minority approach for arms: the generality is real and so is the
+fragility, and the flagship open library
+([imitation](https://github.com/HumanCompatibleAI/imitation)) has had no commits
+since January 2025. The preference-learning branch of this work found its real home
+tuning language models rather than robot arms. Read
+[GAIL](https://arxiv.org/abs/1606.03476) if the idea interests you, but do not
+expect to meet it in a working arm system.
 
 ---
 

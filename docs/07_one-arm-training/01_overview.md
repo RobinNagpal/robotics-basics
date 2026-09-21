@@ -84,11 +84,11 @@ learning — followed by a table of every framework and whether it runs on a Mac
 things up here rather than reading it through.
 
 **[A case study: a glass on a drying rack](07_case-study/01_place-glass.md).** One
-small household job — pick up a drinking glass, turn it over, and stand it mouth-down
-on a peg — followed all the way down to the sensors, the gripper, the grip force, the
-frameworks and the limits. It is where the choices in this document get applied to
-something concrete, including the question of what has to change when a glass of a
-shape nobody planned for turns up.
+small household job, built four times: pick up the empty glasses on a table, turn each
+one over, and stand it mouth-down on a peg, leaving the full ones alone. It is where
+the choices in this document get applied to something concrete — which part is a
+planner, which part is a model, which part is a force loop, and the named tool for
+each.
 
 **[What is changing, and why](05_what-is-changing.md).** The direction the field is
 travelling in and the reasons behind it — why methods get displaced, the five forces

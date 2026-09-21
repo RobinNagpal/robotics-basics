@@ -960,7 +960,7 @@ def why_depth_fails() -> None:
                                edgecolor=MUTED, lw=1.2))
         ax.text(10.6, bottom + 1.88, title, fontsize=9.4, color=INK, ha='left')
 
-    panel(3.25, 'what the colour picture shows')
+    panel(3.25, 'what the ordinary picture shows')
     ax.add_patch(Rectangle((11.30, 3.74), 0.60, 0.92, facecolor=PALE_ORANGE,
                            edgecolor=ORANGE, lw=1.4))
     _glass_glyph(ax, 13.15, 3.74, 0.66, 0.92, mouth_up=True, colour=BLUE)
@@ -975,10 +975,63 @@ def why_depth_fails() -> None:
     ax.text(11.60, 0.66, 'a solid block', fontsize=8.5, color=MUTED, ha='center')
     ax.text(13.15, 0.66, 'a hole', fontsize=8.5, color=RED, ha='center')
 
-    ax.text(-0.3, -1.42, 'The colour picture still shows the glass. That is why its '
-            'shape has to come from colour, with depth used only to confirm what '
-            'colour already claimed.', fontsize=9.5, color=INK)
+    ax.text(-0.3, -1.42, 'The ordinary picture still shows the glass. So the '
+            'outline has to come from a model run on that picture, and depth is '
+            'demoted to confirming it.', fontsize=9.5, color=INK)
     _save(fig, 'case-study/place-glass', 'why-depth-fails.svg')
+
+
+def empty_or_full() -> None:
+    """Both checks for water sit before the turn, because the turn cannot be undone."""
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.4, 5.0), facecolor='white')
+    ax.set_xlim(-0.35, 14.9)
+    ax.set_ylim(-2.35, 3.25)
+    ax.axis('off')
+
+    steps: list[tuple[float, str, str]] = [
+        (0.30, 'look at it', 'is there a\nwater line?'),
+        (3.30, 'pick it up', ''),
+        (6.30, 'weigh it', 'more than\n260 g?'),
+        (10.60, 'turn it over', ''),
+    ]
+    for x, title, question in steps:
+        pale: str = PALE_RED if title == 'turn it over' else PALE_BLUE
+        edge: str = RED if title == 'turn it over' else BLUE
+        ax.add_patch(Rectangle((x, 0.55), 2.35, 0.95, facecolor=pale,
+                               edgecolor=edge, lw=1.6))
+        ax.text(x + 1.175, 1.02, title, fontsize=10, color=INK, ha='center',
+                va='center')
+        if question:
+            ax.text(x + 1.175, 1.70, question, fontsize=8.8, color=MUTED,
+                    ha='center', va='bottom', linespacing=1.45)
+
+    for start, end in ((2.65, 3.30), (5.65, 6.30), (8.65, 10.60)):
+        ax.add_patch(FancyArrowPatch((start, 1.02), (end, 1.02), arrowstyle='-|>',
+                                     mutation_scale=12, color=INK, lw=1.3))
+
+    # The two ways out, both of them before the turn.
+    for x, answer in ((1.48, 'leave it\nwhere it is'), (7.48, 'put it back\ndown')):
+        ax.add_patch(FancyArrowPatch((x, 0.50), (x, -0.55), arrowstyle='-|>',
+                                     mutation_scale=12, color=ORANGE, lw=1.6))
+        ax.text(x + 0.16, 0.00, 'yes', fontsize=8.6, color=ORANGE, ha='left',
+                va='center')
+        ax.add_patch(Rectangle((x - 1.05, -1.42), 2.10, 0.82,
+                               facecolor=PALE_ORANGE, edgecolor=ORANGE, lw=1.4))
+        ax.text(x, -1.01, answer, fontsize=9.0, color=INK, ha='center',
+                va='center', linespacing=1.45)
+
+    ax.plot([9.70, 9.70], [-1.60, 2.55], color=RED, lw=1.4, linestyle=(0, (5, 4)))
+    ax.text(9.88, 2.50, 'the point of no return: after this,\nwater from a full '
+            'glass is on the floor', fontsize=9.0, color=RED, ha='left', va='top',
+            linespacing=1.5)
+
+    ax.text(0.30, -1.92, 'This glass weighs 220 g empty and 564 g full, so a full '
+            'one is not a close call — but the scales are the arm itself, and '
+            'it only reads them once the glass is off the table.',
+            fontsize=9.5, color=INK, va='top', linespacing=1.6)
+    _save(fig, 'case-study/place-glass', 'empty-or-full.svg')
 
 
 def grip_window() -> None:
@@ -1115,3 +1168,4 @@ if __name__ == '__main__':
     why_depth_fails()
     grip_window()
     rack_clearance()
+    empty_or_full()

@@ -83,11 +83,11 @@ model name. There is also a
 folder, from what a degree of freedom is to what ACT and diffusion policy are.
 
 **[A case study](docs/07_one-arm-training/07_case-study/01_place-glass.md)** in the same
-folder works one household job all the way through: pick up a drinking glass, turn it
-over, and stand it mouth-down on a drying rack. It covers why a depth camera cannot
-see a glass, why the 180-degree turn has to be planned before the grasp, which
-gripper and which grip force, what changes when a glass of an unfamiliar shape turns
-up, and where the whole thing breaks.
+folder builds one household job four times over: pick up the *empty* glasses on a
+table, turn each one over, and stand it mouth-down on a drying rack. It says what
+makes that hard — a transparent object, a 180-degree turn, a fragile rim, and water
+that has to be spotted before the turn — and then names the tool for each part, from
+the segmentation model to the planner to the force loop.
 
 **[Two-arm training](docs/08_two-arm-training/01_overview.md)** is the companion folder
 for what changes when two arms must **cooperate** on one job: whether your task

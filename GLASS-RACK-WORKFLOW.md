@@ -340,6 +340,7 @@ the obvious alternative we are not using, with the reason we are not.
 | Describe the arm | [URDF](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/URDF/URDF-Main.html), the Unified Robot Description Format | a bespoke model that no other tool can read |
 | Try it before the hardware exists | [Gazebo](https://github.com/gazebosim/gz-sim) | [MuJoCo](https://github.com/google-deepmind/mujoco), whose contact model is better but which makes cameras and ROS harder, and here those matter more |
 | Find the rack | an [AprilTag](https://github.com/AprilRobotics/apriltag) marker read by [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) | recognising the rack itself, which is more work for a thing you are allowed to glue a marker to |
+| Get corrected pictures out of the camera | [image_pipeline](https://github.com/ros-perception/image_pipeline) | opening the camera device yourself, and then writing your own lens correction |
 | Find the glasses and their type | [YOLO segmentation](https://github.com/ultralytics/ultralytics) | colour thresholding, which has nothing to work with on a transparent object |
 | Label the training pictures | [SAM 2](https://github.com/facebookresearch/sam2) | outlining a few hundred glasses by hand |
 | Fit the table plane and the glass shape | [Open3D](https://github.com/isl-org/Open3D) | [PCL](https://github.com/PointCloudLibrary/pcl), the Point Cloud Library, which is capable and heavier than this needs |

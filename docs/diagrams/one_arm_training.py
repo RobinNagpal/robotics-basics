@@ -346,68 +346,82 @@ def timeline() -> None:
 # --------------------------------------------------------------------------
 
 def learning_path() -> None:
-    """Five stages, what each one adds, and where each one can actually run.
+    """Five whole projects, each climbing the same four layers.
 
-    The right-hand column is the point: everything up to the last stage runs
-    natively on an Apple Silicon Mac, and only the final fine-tune wants a
-    rented graphics card.
+    The point of the picture is that every project is done four times, getting
+    less hand-written each round, and that the Mac runs everything except the
+    last column.
     """
-    # (stage, what you build, simulator, needs a GPU?, colour)
-    rows: list[tuple[str, str, str, bool, str]] = [
-        ('1. Make it move',
-         'one arm, two simulators, driven to joint targets',
-         'MuJoCo  +  Gazebo', False, BLUE),
-        ('2. Make it plan',
-         'pick and place, three planners compared',
-         'Gazebo  +  MoveIt 2', False, PURPLE),
-        ('3. Make it see',
-         'depth camera to segmentation to a reachable grasp',
-         'Gazebo  +  SAM 2', False, GREEN),
-        ('4. Make it touch',
-         'peg insertion by force, not by position',
-         'MuJoCo  +  robosuite', False, ORANGE),
-        ('5. Make it learn',
-         'collect demonstrations, train a policy, measure it honestly',
-         'MuJoCo  +  LeRobot', True, RED),
+    layers: list[tuple[str, str]] = [
+        ('layer 1', 'written by hand'),
+        ('layer 2', 'one learned piece'),
+        ('layer 3', 'a learned skill'),
+        ('layer 4', 'the 2026 frontier'),
     ]
-    fills: dict[str, str] = {BLUE: PALE_BLUE, PURPLE: PALE_PURPLE, GREEN: PALE_GREEN,
-                             ORANGE: PALE_ORANGE, RED: PALE_RED}
+    # (project, [four cells], colour)
+    rows: list[tuple[str, list[str], str]] = [
+        ('1. Tidy the desk',
+         ['find by colour,\nplan, place', 'segment anything,\nnot just colour',
+          'learn where\nto grasp', 'ask for it\nin words'], BLUE),
+        ('2. Fit the connector',
+         ['position control\njams the pin', 'force control\nand a search',
+          'copy the search\nfrom demos', 'practise until\nit is reliable'], ORANGE),
+        ('3. Empty the bin',
+         ['geometric grasps\non a point cloud', 'segment, then\nrank candidates',
+          'train your own\ngrasp scorer', 'a pretrained\npolicy'], GREEN),
+        ('4. Copy from video',
+         ['track a hand\nin your own video', 'retarget hand\nto gripper',
+          'train on the\nretargeted data', 'video plus a few\nreal demos'], PURPLE),
+        ('5. Build the kit',
+         ['behaviour tree\nover skills', 'learned steps\ninside the tree',
+          'one policy,\nend to end', 'a model picks\nthe branch'], RED),
+    ]
+    fills: dict[str, str] = {BLUE: PALE_BLUE, ORANGE: PALE_ORANGE, GREEN: PALE_GREEN,
+                             PURPLE: PALE_PURPLE, RED: PALE_RED}
     fig: Figure
     ax: Axes
-    fig, ax = plt.subplots(figsize=(13.4, 6.4), facecolor='white')
-    ax.set_xlim(0, 34)
-    ax.set_ylim(-2.0, 4.6 * len(rows) + 1.2)
+    fig, ax = plt.subplots(figsize=(13.6, 7.6), facecolor='white')
+    col_w: float = 6.2
+    left: float = 7.0
+    ax.set_xlim(0, left + 4 * col_w + 0.6)
+    ax.set_ylim(-2.4, 4.0 * len(rows) + 3.0)
     ax.axis('off')
 
-    ax.text(0.2, 4.6 * len(rows) + 0.4,
-            'Five stages, each one usable on its own, and only the last one '
-            'wanting a graphics card', fontsize=11.5, color=INK)
+    ax.text(0.2, 4.0 * len(rows) + 2.3,
+            'Five whole projects, each built four times — every round replaces '
+            'more hand-written code with something learned', fontsize=11.5, color=INK)
 
-    for index, (stage, builds, sim, needs_gpu, colour) in enumerate(rows):
-        y: float = (len(rows) - 1 - index) * 4.5
-        ax.add_patch(Rectangle((0.2, y), 6.4, 3.4, facecolor=fills[colour],
+    for index, (tag, note) in enumerate(layers):
+        x: float = left + index * col_w
+        ax.text(x + col_w / 2 - 0.3, 4.0 * len(rows) + 1.1, tag, ha='center',
+                fontsize=9.0, color=MUTED)
+        ax.text(x + col_w / 2 - 0.3, 4.0 * len(rows) + 0.35, note, ha='center',
+                fontsize=9.6, color=INK)
+
+    for r, (project, cells, colour) in enumerate(rows):
+        y: float = (len(rows) - 1 - r) * 4.0
+        ax.add_patch(Rectangle((0.2, y), 6.2, 3.1, facecolor=fills[colour],
                                edgecolor=colour, lw=1.6))
-        ax.text(3.4, y + 1.7, stage, ha='center', va='center', fontsize=10.5,
+        ax.text(3.3, y + 1.55, project, ha='center', va='center', fontsize=10.2,
                 color=INK)
-        ax.text(7.4, y + 2.25, builds, ha='left', va='center', fontsize=9.4,
-                color=INK)
-        ax.text(7.4, y + 1.05, sim, ha='left', va='center', fontsize=9.0,
-                color=colour)
-        mark: str = 'rent a GPU\nfor this step' if needs_gpu else 'runs on the Mac'
-        edge: str = ORANGE if needs_gpu else GREEN
-        ax.add_patch(Rectangle((28.0, y + 0.7), 5.6, 2.0,
-                               facecolor=PALE_ORANGE if needs_gpu else PALE_GREEN,
-                               edgecolor=edge, lw=1.3))
-        ax.text(30.8, y + 1.7, mark, ha='center', va='center', fontsize=8.8,
-                color=edge, linespacing=1.45)
-        if index < len(rows) - 1:
-            ax.add_patch(FancyArrowPatch((3.4, y), (3.4, y - 1.1),
-                                         arrowstyle='-|>', mutation_scale=12,
-                                         color=INK, lw=1.2))
+        for c, cell in enumerate(cells):
+            x = left + c * col_w
+            ax.add_patch(Rectangle((x, y), col_w - 0.6, 3.1, facecolor='white',
+                                   edgecolor=GREY, lw=1.0))
+            ax.text(x + (col_w - 0.6) / 2, y + 1.55, cell, ha='center',
+                    va='center', fontsize=8.6, color=INK, linespacing=1.5)
 
-    ax.text(0.2, -1.5, 'Each stage produces something that works, so you can stop '
-            'at any of them and still have built a robot system that runs.',
-            fontsize=9.5, color=INK)
+    # Where the Mac stops.
+    boundary: float = left + 3 * col_w - 0.3
+    ax.plot([boundary, boundary], [-0.5, 4.0 * len(rows) - 0.4], color=ORANGE,
+            lw=2.0, linestyle=(0, (6, 4)))
+    ax.text(boundary - 0.3, -1.1, 'everything left of this line runs on the Mac',
+            ha='right', fontsize=9.2, color=GREEN)
+    ax.text(boundary + 0.3, -1.1, 'rent a GPU for most of this column',
+            ha='left', fontsize=9.2, color=ORANGE)
+
+    ax.text(0.2, -2.1, 'Each project is worth doing on its own, and each layer is '
+            'a version you could show somebody.', fontsize=9.5, color=INK)
     _save(fig, 'learning-path', 'learning-path.svg')
 
 

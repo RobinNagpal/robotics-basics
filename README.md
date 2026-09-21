@@ -72,8 +72,10 @@ table of which to reach for when. It ends with an evidenced look at what is
 realistic to build — and to be paid for — in the next year. Start here.
 
 Two companions to it: **[a learning path](docs/one-arm-training/learning-path.md)**
-is five stages of simulation-only projects on MuJoCo and Gazebo, from moving a joint
-to training a policy, with the frameworks and the reason for each; and
+is five complete simulation projects on MuJoCo and Gazebo — from tidying a desk to
+learning a task from video of your own hand — each built four times, from
+hand-written code up to the current frontier, with the reason for every framework;
+and
 **[what is changing, and why](docs/one-arm-training/what-is-changing.md)** explains
 the direction of travel and the reasons behind it, which outlast any particular
 model name.

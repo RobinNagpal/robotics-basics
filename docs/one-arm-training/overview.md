@@ -72,9 +72,11 @@ components sitting inside an otherwise conventional system, and language models 
 as planners. This is where most of the research is.
 
 **[A learning path, in simulation](learning-path.md).** The practical companion to
-the rest: five stages from an arm that does not move to a trained policy with an
-honest success rate, built on MuJoCo and Gazebo, with three projects per stage and
-the reason for every tool. Almost all of it runs on an ordinary Mac.
+the rest: five complete projects — tidy a desk, fit a connector, empty a bin, copy a
+task from video of your own hand, assemble a kit — each built four times, starting
+from code you write by hand and ending at the 2026 frontier. Every version has
+cameras, motion, a grasp and an honest evaluation. Almost all of it runs on an
+ordinary Mac.
 
 **[What is changing, and why](what-is-changing.md).** The direction the field is
 travelling in and the reasons behind it — why methods get displaced, the five forces

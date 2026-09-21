@@ -1152,6 +1152,253 @@ def rack_clearance() -> None:
     _save(fig, 'case-study/place-glass', 'rack-clearance.svg')
 
 
+def weight_per_type() -> None:
+    """Why the water gate needs one threshold per glass type, not one number.
+
+    The three types overlap: any single threshold high enough to let an empty
+    tall glass through is also high enough to let a full tea glass through.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.4, 5.0), facecolor='white')
+    ax.set_xlim(-235, 980)
+    ax.set_ylim(-1.95, 3.35)
+    ax.axis('off')
+
+    # grams -> nothing to convert; the x axis is grams directly.
+    types: list[tuple[float, str, float, float, float]] = [
+        (2.35, 'tea glass', 128, 273, 146),
+        (1.35, 'tumbler', 218, 563, 261),
+        (0.35, 'tall glass', 305, 854, 373),
+    ]
+    for y, name, empty, full, gate in types:
+        ax.plot([empty, full], [y, y], color=PALE_BLUE, lw=11,
+                solid_capstyle='butt', zorder=1)
+        ax.plot([empty], [y], marker='o', markersize=8, color=GREY, zorder=4)
+        ax.plot([full], [y], marker='o', markersize=8, color=BLUE, zorder=4)
+        ax.text(-18, y, name, fontsize=9.6, color=INK, ha='right', va='center')
+        # The tall glass's empty label would otherwise sit on the red line.
+        side: str = 'right' if name == 'tall glass' else 'center'
+        nudge: float = -14 if name == 'tall glass' else 0
+        ax.text(empty + nudge, y + 0.26, f'{empty:.0f} g', fontsize=8.6,
+                color=MUTED, ha=side)
+        ax.text(full, y + 0.26, f'{full:.0f} g', fontsize=8.6, color=BLUE,
+                ha='center')
+        ax.plot([gate, gate], [y - 0.24, y + 0.24], color=GREEN, lw=2.0, zorder=5)
+        ax.text(gate - 7, y - 0.34, f'gate {gate:.0f} g', fontsize=8.4,
+                color=GREEN, ha='right', va='top')
+
+    ax.add_patch(FancyArrowPatch((0, -0.62), (930, -0.62), arrowstyle='-|>',
+                                 mutation_scale=13, color=INK, lw=1.2))
+    for tick in (0, 200, 400, 600, 800):
+        ax.plot([tick, tick], [-0.70, -0.62], color=INK, lw=1.0)
+        ax.text(tick, -0.82, f'{tick}', fontsize=8.4, color=MUTED, ha='center',
+                va='top')
+    ax.text(930, -0.46, 'grams on the wrist', fontsize=9.0, color=INK, ha='right',
+            va='bottom')
+
+    # The overlap that kills a single global threshold: these two dots, and the
+    # line between them, are the whole argument.
+    ax.plot([273, 305], [2.24, 0.46], color=RED, lw=1.3, linestyle=(0, (4, 3)),
+            zorder=3)
+    for mass, y in ((273, 2.35), (305, 0.35)):
+        ax.plot([mass], [y], marker='o', markersize=13, markerfacecolor='none',
+                markeredgecolor=RED, markeredgewidth=1.6, zorder=6)
+    ax.plot([430, 300], [2.94, 2.52], color=RED, lw=0.9)
+    ax.text(430, 3.02, 'a full tea glass (273 g) is lighter than an empty tall '
+            'glass (305 g)', fontsize=9.2, color=RED, ha='center')
+
+    ax.text(-235, -1.20, 'Grey is empty, blue is full, and the pale bar between '
+            'them is the water. Every glass needs its own gate, because no single '
+            'number\nseparates full from empty across all three \u2014 and the '
+            'numbers live in the glass library, not in the code.',
+            fontsize=9.5, color=INK, va='top', linespacing=1.7)
+    _save(fig, 'case-study/place-glass', 'weight-per-type.svg')
+
+
+def what_language_decides() -> None:
+    """A language model changes the goal of the run. It never changes the motion."""
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.4, 5.6), facecolor='white')
+    ax.set_xlim(-0.35, 13.9)
+    ax.set_ylim(-1.05, 7.35)
+    ax.axis('off')
+
+    ax.add_patch(Rectangle((0.0, 6.15), 8.4, 0.85, facecolor=PALE_PURPLE,
+                           edgecolor=PURPLE, lw=1.6))
+    ax.text(4.2, 6.57, '"put the tea glasses on the front row and leave the '
+            'tall ones out"', fontsize=10, color=PURPLE, ha='center', va='center')
+    ax.text(8.6, 6.57, 'what a person says,\nwhich changes every day',
+            fontsize=8.8, color=MUTED, ha='left', va='center', linespacing=1.45)
+
+    def block(bottom: float, height: float, title: str, body: str, pale: str,
+              edge: str, side: str) -> None:
+        ax.add_patch(Rectangle((0.0, bottom), 8.4, height, facecolor=pale,
+                               edgecolor=edge, lw=1.6))
+        ax.text(0.28, bottom + height - 0.32, title, fontsize=10, color=INK,
+                ha='left', va='center')
+        ax.text(0.28, bottom + height - 0.72, body, fontsize=9.0, color=MUTED,
+                ha='left', va='top', linespacing=1.55)
+        ax.text(8.6, bottom + height / 2, side, fontsize=8.8, color=edge,
+                ha='left', va='center', linespacing=1.45)
+
+    block(4.55, 1.25, 'the planner works out the goal',
+          'which glasses, in what order, to which destination',
+          PALE_PURPLE, PURPLE, 'this part is the\nlanguage model')
+    block(3.05, 1.20, 'the checker refuses what cannot be done',
+          'is that glass in the library? is that peg free? does it fit?',
+          PALE_ORANGE, ORANGE, 'ordinary code, and\nnothing moves\nuntil it passes')
+    block(0.30, 2.40, 'the recipes carry it out',
+          'find it \u00b7 look for a water line \u00b7 grasp with the wrist '
+          'pre-turned\nlift \u00b7 weigh it against this type\'s gate \u00b7 '
+          'turn 180\u00b0\ndescend on force \u00b7 let go slowly \u00b7 check '
+          'it is standing',
+          PALE_GREEN, GREEN, 'unchanged from\nversion 3, and the\nonly thing that\n'
+          'touches the glass')
+
+    for top, bottom in ((6.15, 5.80), (4.55, 4.25), (3.05, 2.70)):
+        ax.add_patch(FancyArrowPatch((4.2, top), (4.2, bottom), arrowstyle='-|>',
+                                     mutation_scale=13, color=INK, lw=1.4))
+
+    ax.text(-0.35, -0.42, 'The instruction decides which glass goes where. It never '
+            'decides how the arm holds one, how hard it squeezes, or whether it '
+            'may skip the water gate.', fontsize=9.5, color=INK)
+    _save(fig, 'case-study/place-glass', 'what-language-decides.svg')
+
+
+def force_signal_chain() -> None:
+    """Where every force decision in the task gets its number from.
+
+    The point is that it is one topic feeding three decisions, published by a
+    stock controller, and that the fourth decision comes from somewhere else.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.6, 5.4), facecolor='white')
+    ax.set_xlim(-0.35, 15.0)
+    ax.set_ylim(-1.30, 5.85)
+    ax.axis('off')
+
+    def box(x: float, bottom: float, width: float, title: str, detail: str,
+            pale: str, edge: str) -> None:
+        ax.add_patch(Rectangle((x, bottom), width, 0.95, facecolor=pale,
+                               edgecolor=edge, lw=1.5))
+        ax.text(x + 0.20, bottom + 0.63, title, fontsize=9.4, color=INK,
+                ha='left', va='center')
+        ax.text(x + 0.20, bottom + 0.30, detail, fontsize=8.5, color=MUTED,
+                ha='left', va='center')
+
+    for x, heading in ((0.0, 'where the number comes from'),
+                       (4.35, 'what publishes it'),
+                       (8.85, 'what decides with it')):
+        ax.text(x, 5.45, heading, fontsize=9.6, color=INK, ha='left')
+
+    box(0.0, 2.70, 3.95, 'wrist force\u2013torque sensor',
+        'or an estimate from the joint currents', PALE_BLUE, BLUE)
+    box(0.0, 0.30, 3.95, 'gripper finger position',
+        'which every gripper already reports', PALE_ORANGE, ORANGE)
+
+    box(4.35, 2.70, 4.05, 'force_torque_sensor_broadcaster',
+        'publishes the /wrench topic', PALE_BLUE, BLUE)
+    box(4.35, 0.30, 4.05, 'gripper_controllers',
+        'publishes the actual finger width', PALE_ORANGE, ORANGE)
+
+    uses: list[tuple[float, str, str, str, str]] = [
+        (3.90, 'is it empty?', 'lift 20 mm, read the payload, take off the tool weight',
+         PALE_BLUE, BLUE),
+        (2.70, 'has the rim met the base?', 'admittance_controller stops on contact',
+         PALE_BLUE, BLUE),
+        (1.50, 'is the rack carrying it?', 'only then open the fingers',
+         PALE_BLUE, BLUE),
+        (0.30, 'is it slipping?', 'the fingers are still closing',
+         PALE_ORANGE, ORANGE),
+    ]
+    for bottom, title, detail, pale, edge in uses:
+        box(8.85, bottom, 5.95, title, detail, pale, edge)
+
+    ax.add_patch(FancyArrowPatch((3.95, 3.18), (4.35, 3.18), arrowstyle='-|>',
+                                 mutation_scale=12, color=BLUE, lw=1.4))
+    ax.add_patch(FancyArrowPatch((3.95, 0.78), (4.35, 0.78), arrowstyle='-|>',
+                                 mutation_scale=12, color=ORANGE, lw=1.4))
+    for target in (4.38, 3.18, 1.98):
+        ax.add_patch(FancyArrowPatch((8.40, 3.18), (8.85, target),
+                                     arrowstyle='-|>', mutation_scale=12,
+                                     color=BLUE, lw=1.4,
+                                     connectionstyle='arc3,rad=0.0'))
+    ax.add_patch(FancyArrowPatch((8.40, 0.78), (8.85, 0.78), arrowstyle='-|>',
+                                 mutation_scale=12, color=ORANGE, lw=1.4))
+
+    ax.text(-0.35, -0.55, 'Three of the four decisions read one topic, published by '
+            'a controller that ships with ros2_controllers. The fourth needs no '
+            'force sensor\nat all, which is worth knowing before you buy one.',
+            fontsize=9.5, color=INK, va='top', linespacing=1.7)
+    _save(fig, 'case-study/place-glass', 'force-signal-chain.svg')
+
+
+def where_to_hold() -> None:
+    """Four criteria run up the height of a glass, and three of them agree.
+
+    Drawn to scale in millimetres for the example tumbler, whose centre of
+    mass works out at 53.4 mm, or 44.5 per cent of its height.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.4, 4.7), facecolor='white')
+    ax.set_aspect('equal')
+    ax.set_xlim(-40, 470)
+    ax.set_ylim(-42, 152)
+    ax.axis('off')
+
+    outer, inner, height, wall = 35.0, 32.0, 120.0, 3.0
+
+    # The two zones that decide the answer, drawn behind the glass.
+    ax.add_patch(Rectangle((-42, 90), 84, 30, facecolor=PALE_RED,
+                           edgecolor='none', zorder=0))
+    ax.add_patch(Rectangle((-42, 22), 84, 26, facecolor=PALE_GREEN,
+                           edgecolor='none', zorder=0))
+
+    # The glass in section: a U of wall thickness, open at the top.
+    section = [(-outer, height), (-outer, 0), (outer, 0), (outer, height),
+               (inner, height), (inner, wall), (-inner, wall), (-inner, height)]
+    ax.add_patch(Polygon(section, closed=True, facecolor=PALE_BLUE,
+                         edgecolor=BLUE, lw=1.8, zorder=2))
+
+    # Where gravity acts.
+    com: float = 53.4
+    ax.plot([0], [com], marker='o', markersize=9, color=INK, zorder=5)
+    ax.plot([-inner, inner], [com, com], color=INK, lw=0.9,
+            linestyle=(0, (3, 3)), zorder=4)
+
+    # The offset a low grip leaves, measured on the right of the glass.
+    quarter: float = 30.0
+    ax.add_patch(FancyArrowPatch((54, quarter), (54, com), arrowstyle='<|-|>',
+                                 mutation_scale=10, color=ORANGE, lw=1.5))
+    ax.text(58, (quarter + com) / 2, '23 mm', fontsize=8.8, color=ORANGE,
+            ha='left', va='center')
+
+    notes: list[tuple[float, float, str, str]] = [
+        (108, 103, 'the worst place to squeeze it\nan open edge with nothing to stop '
+         'it going oval,\nand the part people put their mouths on', RED),
+        (62, 56, 'where gravity acts\na low grip leaves a moment for the pads to '
+         'take,\nwhich is a reason for taller pads, not a harder squeeze', INK),
+        (20, 33, 'hold here, about a quarter of the way up\nthe base stiffens the '
+         'shell against going oval, and after\nthe turn these fingers are on top, '
+         'clear of the rack', GREEN),
+    ]
+    for y_text, y_point, body, colour in notes:
+        ax.plot([76, 100], [y_point, y_text], color=MUTED, lw=0.8, zorder=1)
+        ax.text(104, y_text, body, fontsize=8.8, color=colour, ha='left',
+                va='center', linespacing=1.6)
+
+    ax.text(0, 132, 'the example tumbler', fontsize=9.0, color=MUTED, ha='center')
+    ax.text(-40, -26, 'Three of the four criteria want a low grip and only the '
+            'centre of mass wants a middle one. That is why the answer is a low '
+            'grip with tall pads,\nrather than a compromise height.', fontsize=9.5,
+            color=INK, va='top', linespacing=1.7)
+    _save(fig, 'case-study/place-glass', 'where-to-hold.svg')
+
+
 if __name__ == '__main__':
     task_map()
     layers()
@@ -1169,3 +1416,7 @@ if __name__ == '__main__':
     grip_window()
     rack_clearance()
     empty_or_full()
+    weight_per_type()
+    what_language_decides()
+    force_signal_chain()
+    where_to_hold()

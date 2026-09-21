@@ -1267,6 +1267,75 @@ def what_language_decides() -> None:
     _save(fig, 'case-study/place-glass', 'what-language-decides.svg')
 
 
+def force_signal_chain() -> None:
+    """Where every force decision in the task gets its number from.
+
+    The point is that it is one topic feeding three decisions, published by a
+    stock controller, and that the fourth decision comes from somewhere else.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.6, 5.4), facecolor='white')
+    ax.set_xlim(-0.35, 15.0)
+    ax.set_ylim(-1.30, 5.85)
+    ax.axis('off')
+
+    def box(x: float, bottom: float, width: float, title: str, detail: str,
+            pale: str, edge: str) -> None:
+        ax.add_patch(Rectangle((x, bottom), width, 0.95, facecolor=pale,
+                               edgecolor=edge, lw=1.5))
+        ax.text(x + 0.20, bottom + 0.63, title, fontsize=9.4, color=INK,
+                ha='left', va='center')
+        ax.text(x + 0.20, bottom + 0.30, detail, fontsize=8.5, color=MUTED,
+                ha='left', va='center')
+
+    for x, heading in ((0.0, 'where the number comes from'),
+                       (4.35, 'what publishes it'),
+                       (8.85, 'what decides with it')):
+        ax.text(x, 5.45, heading, fontsize=9.6, color=INK, ha='left')
+
+    box(0.0, 2.70, 3.95, 'wrist force\u2013torque sensor',
+        'or an estimate from the joint currents', PALE_BLUE, BLUE)
+    box(0.0, 0.30, 3.95, 'gripper finger position',
+        'which every gripper already reports', PALE_ORANGE, ORANGE)
+
+    box(4.35, 2.70, 4.05, 'force_torque_sensor_broadcaster',
+        'publishes the /wrench topic', PALE_BLUE, BLUE)
+    box(4.35, 0.30, 4.05, 'gripper_controllers',
+        'publishes the actual finger width', PALE_ORANGE, ORANGE)
+
+    uses: list[tuple[float, str, str, str, str]] = [
+        (3.90, 'is it empty?', 'lift 20 mm, read the payload, take off the tool weight',
+         PALE_BLUE, BLUE),
+        (2.70, 'has the rim met the base?', 'admittance_controller stops on contact',
+         PALE_BLUE, BLUE),
+        (1.50, 'is the rack carrying it?', 'only then open the fingers',
+         PALE_BLUE, BLUE),
+        (0.30, 'is it slipping?', 'the fingers are still closing',
+         PALE_ORANGE, ORANGE),
+    ]
+    for bottom, title, detail, pale, edge in uses:
+        box(8.85, bottom, 5.95, title, detail, pale, edge)
+
+    ax.add_patch(FancyArrowPatch((3.95, 3.18), (4.35, 3.18), arrowstyle='-|>',
+                                 mutation_scale=12, color=BLUE, lw=1.4))
+    ax.add_patch(FancyArrowPatch((3.95, 0.78), (4.35, 0.78), arrowstyle='-|>',
+                                 mutation_scale=12, color=ORANGE, lw=1.4))
+    for target in (4.38, 3.18, 1.98):
+        ax.add_patch(FancyArrowPatch((8.40, 3.18), (8.85, target),
+                                     arrowstyle='-|>', mutation_scale=12,
+                                     color=BLUE, lw=1.4,
+                                     connectionstyle='arc3,rad=0.0'))
+    ax.add_patch(FancyArrowPatch((8.40, 0.78), (8.85, 0.78), arrowstyle='-|>',
+                                 mutation_scale=12, color=ORANGE, lw=1.4))
+
+    ax.text(-0.35, -0.55, 'Three of the four decisions read one topic, published by '
+            'a controller that ships with ros2_controllers. The fourth needs no '
+            'force sensor\nat all, which is worth knowing before you buy one.',
+            fontsize=9.5, color=INK, va='top', linespacing=1.7)
+    _save(fig, 'case-study/place-glass', 'force-signal-chain.svg')
+
+
 if __name__ == '__main__':
     task_map()
     layers()
@@ -1286,3 +1355,4 @@ if __name__ == '__main__':
     empty_or_full()
     weight_per_type()
     what_language_decides()
+    force_signal_chain()

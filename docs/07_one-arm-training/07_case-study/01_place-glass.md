@@ -208,6 +208,34 @@ pattern a camera can locate exactly — on the rack base;
 [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) for the
 sequencing, because this is the version where recovery branches start to multiply.
 
+**Then it has to touch the glass.** Perception only says where the glass is. Four of
+the nine steps in [section 1](#1-the-task) — grasping, confirming it is empty, coming
+down onto the peg, and letting go — are settled by force rather than by geometry, and
+the last step is settled by looking again. That is the difference between a sequence
+that runs and a sequence that works.
+
+![Where every force decision gets its number from](../../images/one-arm-training/case-study/place-glass/force-signal-chain.svg)
+
+Read the table as one row per moment: what it decides, and what gives you the number.
+
+| Moment | What it decides | What provides it |
+| --- | --- | --- |
+| Closing on the glass | how hard to squeeze, so it neither slips nor cracks | [gripper_controllers](https://control.ros.org/jazzy/doc/ros2_controllers/gripper_controllers/doc/userdoc.html) in ros2_controllers, commanded as a force rather than as a width |
+| While carrying it | whether it is slipping | the same controller's reported finger width, which keeps closing if the glass is sliding through |
+| Just after the lift | whether it is empty | [force_torque_sensor_broadcaster](https://control.ros.org/jazzy/doc/ros2_controllers/force_torque_sensor_broadcaster/doc/userdoc.html), publishing the wrist wrench, with the gripper's own weight taken off |
+| Coming down onto the peg | when the rim has met the base | [admittance_controller](https://control.ros.org/jazzy/doc/ros2_controllers/admittance_controller/doc/userdoc.html), or [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers), moving on the force instead of to a height |
+| Before opening the fingers | whether the rack is now carrying the glass | the same wrench: if the load has not transferred, the glass is hung up, so lift away rather than let go |
+| After retreating | whether it is actually standing | the overhead camera and the same YOLO pass, asking whether there is a glass on that peg |
+
+Two things are worth taking from that table. The first is that none of it is a new
+framework: it is version 1's [ros2_control](https://github.com/ros-controls/ros2_control)
+with two more controllers loaded and one topic read, which is the practical reason the
+force work belongs here rather than in something written from scratch. The second is
+that only one of these costs money. You have to buy the force reading — a wrist
+force-torque sensor, or an arm that estimates it from joint currents well enough to
+trust — while the slip check is free, because every gripper already reports where its
+fingers are.
+
 **Buys you:** the assumption that hurt most in version 1 is gone. The table can be
 loaded any way round, and full glasses are handled correctly. **Costs you:** training
 data and a labelling job, plus a component whose reasoning you cannot read.

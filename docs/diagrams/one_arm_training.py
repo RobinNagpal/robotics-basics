@@ -812,6 +812,77 @@ def what_is_learned() -> None:
 
 
 # --------------------------------------------------------------------------
+# case-study/v1-place-glass.md
+# --------------------------------------------------------------------------
+
+def add_a_glass_type() -> None:
+    """Draw the loop for adding a new glass type, and what each stage gives you.
+
+    The point of the picture is that only the first stage touches a real glass
+    and only the last stage risks one, with simulation in between.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(13.4, 6.4), facecolor='white')
+    ax.set_xlim(0, 34.5)
+    ax.set_ylim(-3.2, 9.0)
+    ax.axis('off')
+
+    ax.text(0.2, 8.5, 'Adding a glass type: measure, model, prove, then trust',
+            fontsize=12, color=INK)
+
+    # (title, what you do, what it produces, colour, where it happens)
+    stages: list[tuple[str, str, str, str, str]] = [
+        ('1. Measure',
+         'a ruler and a\nkitchen scale,\none afternoon',
+         'a record in\nthe glass library', BLUE, 'real glass'),
+        ('2. Model',
+         'spin an outline,\nsimplify it for\ncontact, set the mass',
+         'an SDF file the\nsimulator can load', PURPLE, 'desk'),
+        ('3. Prove',
+         '50 attempts, varying\nplace, rotation,\nneighbours and slot',
+         'four numbers, each\nwith its own gate', GREEN, 'simulation'),
+        ('4. Trust',
+         'ten real picks at\nthe calculated force',
+         'a type the cell\ncan be left with', ORANGE, 'real glass'),
+    ]
+    fills: dict[str, str] = {BLUE: PALE_BLUE, PURPLE: PALE_PURPLE,
+                             GREEN: PALE_GREEN, ORANGE: PALE_ORANGE}
+    width: float = 7.4
+    gap: float = 1.2
+    for index, (title, does, makes, colour, where) in enumerate(stages):
+        x: float = 0.2 + index * (width + gap)
+        ax.add_patch(Rectangle((x, 1.6), width, 5.6, facecolor=fills[colour],
+                               edgecolor=colour, lw=1.6))
+        ax.text(x + width / 2, 6.6, title, ha='center', fontsize=10.8, color=INK)
+        ax.text(x + width / 2, 5.9, where, ha='center', fontsize=8.4, color=colour)
+        ax.text(x + width / 2, 4.5, does, ha='center', va='center', fontsize=9.0,
+                color=INK, linespacing=1.55)
+        ax.plot([x + 0.8, x + width - 0.8], [3.2, 3.2], color=colour, lw=1.0)
+        ax.text(x + width / 2, 2.5, makes, ha='center', va='center', fontsize=8.8,
+                color=colour, linespacing=1.5)
+        if index < len(stages) - 1:
+            ax.add_patch(FancyArrowPatch((x + width, 4.4), (x + width + gap, 4.4),
+                                         arrowstyle='-|>', mutation_scale=13,
+                                         color=INK, lw=1.4))
+
+    # the loop back: a failed gate sends you to the field it blames. Routed
+    # below the boxes so it crosses nothing.
+    ax.add_patch(FancyArrowPatch((0.2 + 2 * (width + gap) + width / 2, 1.5),
+                                 (0.2 + width / 2, 1.5),
+                                 arrowstyle='-|>', mutation_scale=12, color=RED,
+                                 lw=1.5, connectionstyle='arc3,rad=-0.28'))
+    ax.text(0.2 + width + gap + width / 2, -1.25,
+            'a failed gate names the field to change, so you go back and measure '
+            'again', ha='center', fontsize=9.2, color=RED)
+
+    ax.text(0.2, -2.45, 'No code is edited at any stage. If adding a type needs a '
+            'code change, the record is missing a field.',
+            fontsize=9.6, color=INK)
+    _save(fig, 'case-study/v1-place-glass', 'add-a-glass-type.svg')
+
+
+# --------------------------------------------------------------------------
 # case-study/place-glass.md
 # --------------------------------------------------------------------------
 
@@ -1404,6 +1475,7 @@ if __name__ == '__main__':
     layers()
     taxonomy()
     timeline()
+    add_a_glass_type()
     learning_path()
     what_is_expensive()
     consolidation()

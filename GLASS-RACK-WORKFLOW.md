@@ -159,7 +159,8 @@ running.
 ### Step 1: find the rack and count the free slots
 
 The robot takes one picture from the table camera and finds the rack in it. The
-reliable way is a printed marker, an AprilTag, glued to the rack base. A tag is a flat
+reliable way is a printed marker, an [AprilTag](https://github.com/AprilRobotics/apriltag),
+glued to the rack base. A tag is a flat
 black-and-white pattern that a camera can locate exactly, in position and in rotation,
 from one frame. Given the tag, every slot position comes from the rack file.
 
@@ -167,8 +168,11 @@ Then it decides which slots are occupied. Run the same segmentation model used i
 2 over the rack region, and mark a slot as taken if a glass outline covers it. Six
 slots is small enough that this is reliable.
 
-**Uses:** [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) for the marker;
-the table camera through the ROS 2 image pipeline;
+**Uses:** [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) to read the marker,
+running inside [ROS 2](https://docs.ros.org/en/jazzy/index.html), the Robot Operating
+System; the table camera read through
+[image_pipeline](https://github.com/ros-perception/image_pipeline), the ROS 2 packages
+that turn a raw camera frame into a corrected one;
 [YOLO segmentation](https://github.com/ultralytics/ultralytics) for occupancy.
 
 **Confirmed by:** a tag pose that is within the table area and has not jumped since the
@@ -225,7 +229,7 @@ Two rules from the rack file apply here. Wide types need a gap beside them, so p
 one removes two slots from the list. And filling order matters: work outward from the
 far end so that the glasses already placed are never between the arm and the next slot.
 
-**Uses:** ordinary Python. This is arithmetic over six slots and a handful of glasses,
+**Uses:** ordinary [Python](https://www.python.org/). This is arithmetic over six slots and a handful of glasses,
 not a planning problem, and reaching for a solver here would be a mistake.
 
 **Confirmed by:** a chosen slot that is still free in this cycle's occupancy check.
@@ -248,7 +252,8 @@ fit.
 [MoveIt Task Constructor](https://github.com/moveit/moveit_task_constructor) to plan
 the grasp, the turn and the placement as one problem rather than three;
 [gripper_controllers](https://control.ros.org/jazzy/doc/ros2_controllers/gripper_controllers/doc/userdoc.html)
-in ros2_controllers, commanded as a force.
+in [ros2_controllers](https://github.com/ros-controls/ros2_controllers), commanded as a
+force.
 
 **Confirmed by:** the finger width when the force arrives. If it matches the width in
 the record, the glass is where perception said it was. If the fingers close further
@@ -294,7 +299,7 @@ is spent, and a tilted descent is what knocks over the glass in the next slot.
 
 **Uses:** the
 [admittance_controller](https://control.ros.org/jazzy/doc/ros2_controllers/admittance_controller/doc/userdoc.html)
-in ros2_controllers, or
+in [ros2_controllers](https://github.com/ros-controls/ros2_controllers), or
 [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers).
 Either one moves on a force instead of to a position. The cost is a force reading you
 trust plus an afternoon of tuning with nothing visible to show for it.
@@ -331,8 +336,8 @@ the obvious alternative we are not using, with the reason we are not.
 
 | Job | What we use | Rather than |
 | --- | --- | --- |
-| Run everything and let the parts talk | ROS 2, the Robot Operating System | writing your own message passing, and then your own tooling for it |
-| Describe the arm | URDF, the Unified Robot Description Format | a bespoke model that no other tool can read |
+| Run everything and let the parts talk | [ROS 2](https://docs.ros.org/en/jazzy/index.html), the Robot Operating System | writing your own message passing, and then your own tooling for it |
+| Describe the arm | [URDF](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/URDF/URDF-Main.html), the Unified Robot Description Format | a bespoke model that no other tool can read |
 | Try it before the hardware exists | [Gazebo](https://github.com/gazebosim/gz-sim) | [MuJoCo](https://github.com/google-deepmind/mujoco), whose contact model is better but which makes cameras and ROS harder, and here those matter more |
 | Find the rack | an [AprilTag](https://github.com/AprilRobotics/apriltag) marker read by [apriltag_ros](https://github.com/AprilRobotics/apriltag_ros) | recognising the rack itself, which is more work for a thing you are allowed to glue a marker to |
 | Find the glasses and their type | [YOLO segmentation](https://github.com/ultralytics/ultralytics) | colour thresholding, which has nothing to work with on a transparent object |
@@ -342,11 +347,11 @@ the obvious alternative we are not using, with the reason we are not.
 | Plan an ordinary move | [MoveIt 2](https://github.com/moveit/moveit2) | hand-written waypoints, which stop working the day the rack moves |
 | Drive the joints | [ros2_control](https://github.com/ros-controls/ros2_control) | your own control loop, where the hard part is the timing |
 | Squeeze without breaking | the gripper controller in [ros2_controllers](https://github.com/ros-controls/ros2_controllers), commanded as a force | commanding a finger width, which is wrong for a wet glass and wrong for a tapered one |
-| Weigh the glass | the force-torque broadcaster in the same package | a scale in the table, which cannot weigh a glass the arm is already holding |
-| Come down onto the rack | the admittance controller, or [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers) | commanding a height into a rigid plastic base |
+| Weigh the glass | [force_torque_sensor_broadcaster](https://control.ros.org/jazzy/doc/ros2_controllers/force_torque_sensor_broadcaster/doc/userdoc.html) in the same package | a scale in the table, which cannot weigh a glass the arm is already holding |
+| Come down onto the rack | the [admittance_controller](https://control.ros.org/jazzy/doc/ros2_controllers/admittance_controller/doc/userdoc.html), or [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers) | commanding a height into a rigid plastic base |
 | Sequence the steps and recover | [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) | a state machine, which becomes unreadable as soon as recovery branches multiply |
 | Hold the per-type numbers | one file, one record per type | constants spread through the code |
-| Record every attempt | rosbag2, which ships with ROS 2 | log lines, which cannot show you the frame before the drop |
+| Record every attempt | [rosbag2](https://github.com/ros2/rosbag2), which ships with ROS 2 | log lines, which cannot show you the frame before the drop |
 
 Two of these carry a real cost. MoveIt Task Constructor is a noticeably steeper climb
 than plain MoveIt, and you can put it off until the turn actually fails to plan.
@@ -365,7 +370,8 @@ glass and to stop the descent.
 
 ## 6. How the robot reports each glass
 
-The requirement is a confirmation per glass, one by one. That is a ROS 2 action, not a
+The requirement is a confirmation per glass, one by one. That is a
+[ROS 2 action](https://docs.ros.org/en/jazzy/Concepts/Basic/About-Actions.html), not a
 topic. An action is the ROS call that runs for a while, sends progress while it runs,
 and ends in success or failure — which is the shape of this job exactly.
 
@@ -382,7 +388,7 @@ A refusal is a result, not an error. A glass with water in it that was left alon
 the system working, and it should be reported in the same words every time so that a
 day's log can be counted.
 
-Record every attempt with rosbag2: the camera frames, the force trace, the finger
+Record every attempt with [rosbag2](https://github.com/ros2/rosbag2): the camera frames, the force trace, the finger
 width, and the planned and actual poses. Without them, a failure next month is a story
 rather than a bug.
 
@@ -418,7 +424,7 @@ Four sittings, each of which ends with something that runs.
 1. **One straight glass, everything known.** Mark a spot on the table, measure the rack
    once, and hard-code both. No camera. This gets the grasp, the turn, the force
    descent and the release working, and it is the rig on which everything else is
-   tested. Do it in Gazebo first, where a dropped glass costs nothing.
+   tested. Do it in [Gazebo](https://github.com/gazebosim/gz-sim) first, where a dropped glass costs nothing.
 2. **Add the camera.** Steps 1 to 4 of section 4, so the glass can be anywhere, the
    rack can be anywhere, and full glasses are left alone. This is where most of the
    work is.

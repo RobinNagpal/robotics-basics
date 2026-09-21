@@ -1152,6 +1152,121 @@ def rack_clearance() -> None:
     _save(fig, 'case-study/place-glass', 'rack-clearance.svg')
 
 
+def weight_per_type() -> None:
+    """Why the water gate needs one threshold per glass type, not one number.
+
+    The three types overlap: any single threshold high enough to let an empty
+    tall glass through is also high enough to let a full tea glass through.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.4, 5.0), facecolor='white')
+    ax.set_xlim(-235, 980)
+    ax.set_ylim(-1.95, 3.35)
+    ax.axis('off')
+
+    # grams -> nothing to convert; the x axis is grams directly.
+    types: list[tuple[float, str, float, float, float]] = [
+        (2.35, 'tea glass', 128, 273, 146),
+        (1.35, 'tumbler', 218, 563, 261),
+        (0.35, 'tall glass', 305, 854, 373),
+    ]
+    for y, name, empty, full, gate in types:
+        ax.plot([empty, full], [y, y], color=PALE_BLUE, lw=11,
+                solid_capstyle='butt', zorder=1)
+        ax.plot([empty], [y], marker='o', markersize=8, color=GREY, zorder=4)
+        ax.plot([full], [y], marker='o', markersize=8, color=BLUE, zorder=4)
+        ax.text(-18, y, name, fontsize=9.6, color=INK, ha='right', va='center')
+        # The tall glass's empty label would otherwise sit on the red line.
+        side: str = 'right' if name == 'tall glass' else 'center'
+        nudge: float = -14 if name == 'tall glass' else 0
+        ax.text(empty + nudge, y + 0.26, f'{empty:.0f} g', fontsize=8.6,
+                color=MUTED, ha=side)
+        ax.text(full, y + 0.26, f'{full:.0f} g', fontsize=8.6, color=BLUE,
+                ha='center')
+        ax.plot([gate, gate], [y - 0.24, y + 0.24], color=GREEN, lw=2.0, zorder=5)
+        ax.text(gate - 7, y - 0.34, f'gate {gate:.0f} g', fontsize=8.4,
+                color=GREEN, ha='right', va='top')
+
+    ax.add_patch(FancyArrowPatch((0, -0.62), (930, -0.62), arrowstyle='-|>',
+                                 mutation_scale=13, color=INK, lw=1.2))
+    for tick in (0, 200, 400, 600, 800):
+        ax.plot([tick, tick], [-0.70, -0.62], color=INK, lw=1.0)
+        ax.text(tick, -0.82, f'{tick}', fontsize=8.4, color=MUTED, ha='center',
+                va='top')
+    ax.text(930, -0.46, 'grams on the wrist', fontsize=9.0, color=INK, ha='right',
+            va='bottom')
+
+    # The overlap that kills a single global threshold: these two dots, and the
+    # line between them, are the whole argument.
+    ax.plot([273, 305], [2.24, 0.46], color=RED, lw=1.3, linestyle=(0, (4, 3)),
+            zorder=3)
+    for mass, y in ((273, 2.35), (305, 0.35)):
+        ax.plot([mass], [y], marker='o', markersize=13, markerfacecolor='none',
+                markeredgecolor=RED, markeredgewidth=1.6, zorder=6)
+    ax.plot([430, 300], [2.94, 2.52], color=RED, lw=0.9)
+    ax.text(430, 3.02, 'a full tea glass (273 g) is lighter than an empty tall '
+            'glass (305 g)', fontsize=9.2, color=RED, ha='center')
+
+    ax.text(-235, -1.20, 'Grey is empty, blue is full, and the pale bar between '
+            'them is the water. Every glass needs its own gate, because no single '
+            'number\nseparates full from empty across all three \u2014 and the '
+            'numbers live in the glass library, not in the code.',
+            fontsize=9.5, color=INK, va='top', linespacing=1.7)
+    _save(fig, 'case-study/place-glass', 'weight-per-type.svg')
+
+
+def what_language_decides() -> None:
+    """A language model changes the goal of the run. It never changes the motion."""
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.4, 5.6), facecolor='white')
+    ax.set_xlim(-0.35, 13.9)
+    ax.set_ylim(-1.05, 7.35)
+    ax.axis('off')
+
+    ax.add_patch(Rectangle((0.0, 6.15), 8.4, 0.85, facecolor=PALE_PURPLE,
+                           edgecolor=PURPLE, lw=1.6))
+    ax.text(4.2, 6.57, '"put the tea glasses on the front row and leave the '
+            'tall ones out"', fontsize=10, color=PURPLE, ha='center', va='center')
+    ax.text(8.6, 6.57, 'what a person says,\nwhich changes every day',
+            fontsize=8.8, color=MUTED, ha='left', va='center', linespacing=1.45)
+
+    def block(bottom: float, height: float, title: str, body: str, pale: str,
+              edge: str, side: str) -> None:
+        ax.add_patch(Rectangle((0.0, bottom), 8.4, height, facecolor=pale,
+                               edgecolor=edge, lw=1.6))
+        ax.text(0.28, bottom + height - 0.32, title, fontsize=10, color=INK,
+                ha='left', va='center')
+        ax.text(0.28, bottom + height - 0.72, body, fontsize=9.0, color=MUTED,
+                ha='left', va='top', linespacing=1.55)
+        ax.text(8.6, bottom + height / 2, side, fontsize=8.8, color=edge,
+                ha='left', va='center', linespacing=1.45)
+
+    block(4.55, 1.25, 'the planner works out the goal',
+          'which glasses, in what order, to which destination',
+          PALE_PURPLE, PURPLE, 'this part is the\nlanguage model')
+    block(3.05, 1.20, 'the checker refuses what cannot be done',
+          'is that glass in the library? is that peg free? does it fit?',
+          PALE_ORANGE, ORANGE, 'ordinary code, and\nnothing moves\nuntil it passes')
+    block(0.30, 2.40, 'the recipes carry it out',
+          'find it \u00b7 look for a water line \u00b7 grasp with the wrist '
+          'pre-turned\nlift \u00b7 weigh it against this type\'s gate \u00b7 '
+          'turn 180\u00b0\ndescend on force \u00b7 let go slowly \u00b7 check '
+          'it is standing',
+          PALE_GREEN, GREEN, 'unchanged from\nversion 3, and the\nonly thing that\n'
+          'touches the glass')
+
+    for top, bottom in ((6.15, 5.80), (4.55, 4.25), (3.05, 2.70)):
+        ax.add_patch(FancyArrowPatch((4.2, top), (4.2, bottom), arrowstyle='-|>',
+                                     mutation_scale=13, color=INK, lw=1.4))
+
+    ax.text(-0.35, -0.42, 'The instruction decides which glass goes where. It never '
+            'decides how the arm holds one, how hard it squeezes, or whether it '
+            'may skip the water gate.', fontsize=9.5, color=INK)
+    _save(fig, 'case-study/place-glass', 'what-language-decides.svg')
+
+
 if __name__ == '__main__':
     task_map()
     layers()
@@ -1169,3 +1284,5 @@ if __name__ == '__main__':
     grip_window()
     rack_clearance()
     empty_or_full()
+    weight_per_type()
+    what_language_decides()

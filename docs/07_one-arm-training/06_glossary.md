@@ -56,7 +56,7 @@ vendors advertise.
 **Accuracy.** How close the arm gets to a place it has been *told* about but never
 visited. This is a different number, and it is much worse than repeatability,
 usually by a factor of ten or more. Most people confuse the two. The gap between
-them is why [calibration](#calibration) matters.
+them is why calibration matters.
 
 **Singularity.** An arm pose where the arm loses the ability to move in some
 direction, no matter what the joints do. The classic case is the arm stretched
@@ -126,7 +126,7 @@ what most robot perception code actually works on, because points can be reasone
 about geometrically while pixels cannot.
 
 **Segmentation.** Working out which pixels belong to which object. Doing this well
-for objects the system has never seen is what [SAM 2](#sam-2) provides, and it is
+for objects the system has never seen is what [SAM 2](https://github.com/facebookresearch/sam2) provides, and it is
 the main reason machine learning has been adopted in real robot cells.
 
 **Pose estimation.** Working out the full position and orientation of a known
@@ -189,7 +189,7 @@ including the arm overlapping itself. Planners do this thousands of times per
 query, so it has to be fast.
 
 **Jerk.** The rate at which acceleration changes. Limiting it is what stops an arm
-from moving in a way that shakes the whole cell. [Ruckig](#ruckig) does this.
+from moving in a way that shakes the whole cell. [Ruckig](https://github.com/pantor/ruckig) does this.
 
 ## Touching
 

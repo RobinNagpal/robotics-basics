@@ -815,6 +815,98 @@ def what_is_learned() -> None:
 # case-study/v1-place-glass.md
 # --------------------------------------------------------------------------
 
+def grip_from_profile() -> None:
+    """Draw how a grip point is read off a measured width profile.
+
+    Two stemmed glasses of very different proportions give the same answer,
+    which is the whole argument for measuring instead of looking up.
+    """
+    fig: Figure
+    axes: np.ndarray
+    fig, axes = plt.subplots(1, 3, figsize=(13.6, 6.2), facecolor='white')
+
+    def profile(height: float, stem_at: float, stem_w: float,
+                bowl_w: float, foot_w: float) -> tuple[np.ndarray, np.ndarray]:
+        """Half-width against height for a stemmed glass."""
+        h: np.ndarray = np.linspace(0, height, 260)
+        w: np.ndarray = np.empty_like(h)
+        foot_top: float = 0.06 * height
+        bowl_bot: float = stem_at + 0.10 * height
+        for i, y in enumerate(h):
+            if y < foot_top:                       # the foot
+                w[i] = foot_w * (1 - 0.35 * y / foot_top)
+            elif y < bowl_bot:                     # the stem
+                span = (y - foot_top) / (bowl_bot - foot_top)
+                w[i] = foot_w * 0.35 + (stem_w - foot_w * 0.35) * min(1.0, span * 2.2)
+            else:                                  # the bowl
+                span = (y - bowl_bot) / (height - bowl_bot)
+                w[i] = stem_w + (bowl_w - stem_w) * np.sqrt(max(0.0, span))
+        return h, w
+
+    tall = profile(200, 70, 5.5, 42, 32)
+    squat = profile(120, 28, 9.0, 48, 36)
+
+    # --- panel 1 and 3: the two glasses, with the found grip band -----------
+    for ax, (h, w), name, height in ((axes[0], tall, 'a tall wine glass', 200),
+                                     (axes[2], squat, 'a squat wine glass', 120)):
+        ax.set_xlim(-72, 72)
+        ax.set_ylim(-46, 232)
+        ax.axis('off')
+        ax.set_title(name, fontsize=10.5, color=INK, pad=10)
+        ax.fill_betweenx(h, -w, w, facecolor=PALE_BLUE, edgecolor=BLUE, lw=1.6)
+        ax.plot([-66, 66], [0, 0], color=MUTED, lw=1.2)
+
+        widest: int = int(np.argmax(w))
+        below: np.ndarray = w[:widest]
+        stem: int = int(np.argmin(below))
+        gh: float = float(h[stem])
+        opening: float = float(2 * w[stem])
+
+        ax.plot([-58, 58], [gh, gh], color=GREEN, lw=1.8, linestyle=(0, (5, 3)))
+        for side in (-1, 1):
+            ax.add_patch(Rectangle((side * (w[stem] + 4) - (0 if side > 0 else 11),
+                                    gh - 9), 11, 18, facecolor=GREEN,
+                                   edgecolor='none', alpha=0.85))
+        # beside the stem, where the glass is narrow, so nothing overlaps
+        ax.text(64, gh + 8, f'grip here\nopening {opening:.0f} mm',
+                ha='right', va='bottom', fontsize=8.6, color=GREEN,
+                linespacing=1.45)
+        ax.text(0, h[widest] + 6, 'widest', ha='center', fontsize=8.0, color=MUTED)
+        ax.text(0, -22, f'height {height} mm', ha='center', fontsize=8.8, color=INK)
+        ax.text(0, -36, 'nobody measured this glass', ha='center', fontsize=8.2,
+                color=MUTED)
+
+    # --- panel 2: the rule, as a procedure over the list of widths ---------
+    ax = axes[1]
+    ax.set_xlim(0, 10)
+    ax.set_ylim(-1.2, 11.4)
+    ax.axis('off')
+    ax.set_title('the rule, applied to both', fontsize=10.5, color=INK, pad=10)
+    steps: list[tuple[str, str]] = [
+        ('1', 'take one side-on picture'),
+        ('2', 'read the width at every height'),
+        ('3', 'find the widest point'),
+        ('4', 'below it, find the narrowest'),
+        ('5', 'grip there'),
+        ('6', 'the opening is the width you measured'),
+    ]
+    for index, (number, text) in enumerate(steps):
+        y: float = 9.6 - index * 1.65
+        ax.add_patch(Circle((0.7, y), 0.34, facecolor=PALE_GREEN, edgecolor=GREEN,
+                            lw=1.3))
+        ax.text(0.7, y, number, ha='center', va='center', fontsize=8.6, color=GREEN)
+        ax.text(1.4, y, text, va='center', fontsize=9.2, color=INK)
+        if index < len(steps) - 1:
+            ax.plot([0.7, 0.7], [y - 0.42, y - 1.23], color=GREEN, lw=1.1)
+    ax.text(0.2, -0.6, 'The same six steps. No number in them\nbelongs to a '
+            'particular glass.', fontsize=8.8, color=MUTED, linespacing=1.5)
+
+    fig.text(0.5, 0.015, 'Two wine glasses with nothing in common but their shape, '
+             'and one rule that finds the stem on both.',
+             ha='center', fontsize=9.8, color=INK)
+    _save(fig, 'case-study/v1-place-glass', 'grip-from-profile.svg')
+
+
 def add_a_glass_type() -> None:
     """Draw the loop for adding a new glass type, and what each stage gives you.
 
@@ -1476,6 +1568,7 @@ if __name__ == '__main__':
     taxonomy()
     timeline()
     add_a_glass_type()
+    grip_from_profile()
     learning_path()
     what_is_expensive()
     consolidation()

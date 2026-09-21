@@ -1,543 +1,919 @@
 # A learning path for robot arms, in simulation
 
-The rest of this folder explains what the methods are and why the field moves the
-way it does. This document is the practical companion to all of it: **five complete
-projects, each of which you build four times**, starting from something you write by
-hand and ending at the 2026 frontier.
+This document gives you five projects to build. Each one is a complete working
+robot system. You build each one four times over, and each time you replace more of
+your own code with something learned.
 
-Two things about that shape are deliberate, and they are what makes this different
-from a list of exercises.
+Everything runs in simulation. Almost everything runs on an ordinary Mac.
 
-**Every project is a whole system, not a step.** Each one has a camera or two, a
-motion, a grasp, and a way of telling whether it worked. That matters because the
-interesting problems in robotics live in the joins between those things, and an
-exercise that only moves a joint hides every one of them. A project you can
-describe to somebody else — "it tidies a desk" — is also a project you can put in
-front of a client.
+## Why projects rather than exercises
 
-**Every project is then rebuilt, three more times.** The first version is written by
-hand. The second replaces the perception with something learned. The third replaces
-a skill with something learned. The fourth is whatever the field is currently
-excited about. Building the *same* task four ways is the fastest honest way to form
-an opinion about which methods actually earn their keep, because you are comparing
-on a problem you understand rather than on somebody's benchmark.
+A common way to learn robotics is a list of small exercises. Move a joint. Plan a
+path. Detect an object. Each one takes an hour, and at the end you cannot build
+anything.
 
-Working only in simulation is also deliberate. Everything that makes robot hardware
-slow to learn from — the wiring, the calibration, the safety, resetting the
-workspace between attempts — is absent, while almost everything that makes the
-*software* hard is still there. You will still have to work out why the planner
-cannot find a path, why the gripper jams, and why the policy drifts away on the
-fourth attempt.
+The problem with that approach is where robot bugs actually come from. Most of them
+happen where two parts meet. The camera says the mug is at one place. The planner
+moves the arm there. The gripper closes, and there is nothing in it. Now you have to
+work out which of the three was wrong, and the answer is usually a fourth thing, such
+as the camera and the arm disagreeing about where the table is.
+
+An exercise that only moves a joint never shows you this. It has one part, so there
+is nowhere for the parts to disagree.
+
+So every project here has a camera or two, a motion, a grasp, and a check on whether
+it worked. That is the smallest thing that can go wrong in an interesting way.
+
+## Why you build each project four times
+
+Each project is built in four versions, which this document calls layers.
+
+**Layer 1 is written by hand.** You write every rule yourself. No machine learning
+anywhere.
+
+**Layer 2 replaces the perception with a model.** The part that recognises things
+becomes a network. Everything else stays as it was.
+
+**Layer 3 replaces a skill with a policy.** A behaviour you wrote by hand is
+replaced by one learned from demonstrations.
+
+**Layer 4 is whatever the field is currently excited about.** Pretrained policies,
+language models, learning from video.
+
+There is a reason to do it this way rather than jumping to layer 4. When you build
+the same task four ways, you can compare the four on a problem you understand well.
+You will have your own numbers. You will know which version broke, and why. That is
+worth far more than reading somebody else's benchmark, because you cannot check
+their benchmark and you can check yours.
+
+It also means you always have something that works. Layer 1 of project 1 is a robot
+that tidies a desk. You can show that to somebody.
+
+## Why simulation only
+
+Everything that makes real robot hardware slow to learn from is absent in
+simulation. There is no wiring. There is no calibration. Nothing is dangerous.
+Nothing needs resetting by hand between attempts. You do not wait two weeks for a
+part.
+
+Almost everything that makes the *software* hard is still there. You still have to
+work out why the planner cannot find a path. You still have to work out why the
+gripper jams. You still have to work out why the policy drifts away on the fourth
+attempt.
+
+Those are the problems worth your time, and you can repeat them a hundred times in
+an evening.
 
 ## Contents
 
-1. [The five projects at a glance](#the-five-projects-at-a-glance)
-2. [Why MuJoCo and Gazebo, and why both](#why-mujoco-and-gazebo-and-why-both)
-3. [Project 1: tidy the desk](#project-1-tidy-the-desk)
-4. [Project 2: fit the connector](#project-2-fit-the-connector)
-5. [Project 3: empty the bin](#project-3-empty-the-bin)
-6. [Project 4: copy it from video](#project-4-copy-it-from-video)
-7. [Project 5: build the kit](#project-5-build-the-kit)
-8. [Where the cloud actually helps](#where-the-cloud-actually-helps)
-9. [What this path deliberately leaves out](#what-this-path-deliberately-leaves-out)
+1. [The five projects](#the-five-projects)
+2. [The two simulators](#the-two-simulators)
+3. [The tools, and why each one](#the-tools-and-why-each-one)
+4. [Project 1: tidy the desk](#project-1-tidy-the-desk)
+5. [Project 2: fit the connector](#project-2-fit-the-connector)
+6. [Project 3: empty the bin](#project-3-empty-the-bin)
+7. [Project 4: copy it from video](#project-4-copy-it-from-video)
+8. [Project 5: build the kit](#project-5-build-the-kit)
+9. [Where the cloud helps](#where-the-cloud-helps)
+10. [What this path leaves out](#what-this-path-leaves-out)
 
 ---
 
-## The five projects at a glance
+## The five projects
 
 ![Five projects, each built four times, and where the Mac stops](../images/one-arm-training/learning-path/learning-path.svg)
 
-| Project | What it does | Its character | Simulator |
+| Project | What it does | What it teaches | Simulator |
 | --- | --- | --- | --- |
-| **1. Tidy the desk** | sorts a tabletop of mixed objects into bins | mostly programmed, the classical cell | Gazebo |
-| **2. Fit the connector** | mates a plug into a socket it cannot see | contact and force, then learning on top | MuJoCo |
-| **3. Empty the bin** | picks mixed objects out of a cluttered bin | perception-heavy, the deployed pattern | Gazebo |
-| **4. Copy it from video** | learns a task from a video of your own hand | learning from human video, the frontier | MuJoCo |
-| **5. Build the kit** | assembles five parts in order, and recovers | long-horizon sequencing, programmed against learned | both |
+| **1. Tidy the desk** | sorts a table of mixed objects into bins | the ordinary robot cell, end to end | Gazebo |
+| **2. Fit the connector** | pushes a plug into a socket it cannot see | contact, force, and why position fails | MuJoCo |
+| **3. Empty the bin** | picks objects out of a cluttered bin | perception, and grasping unknown things | Gazebo |
+| **4. Copy it from video** | learns a task from video of your own hand | learning without a robot | MuJoCo |
+| **5. Build the kit** | assembles five parts in order | long tasks, and recovering from failure | both |
 
-Every project, at every layer, involves **one or two cameras, a planned motion, a
-grasp, and an evaluation over enough trials to mean something**. That repetition is
-on purpose: by project five those four things are muscle memory, and your attention
-is free for what is actually new.
+Do them in order. Each one reuses code from the one before. By project 5 you are
+assembling parts using the grasping from project 1, the force control from project
+2, and the perception from project 3.
 
-The four layers are the same each time:
+---
 
-| Layer | What changes | Typically |
-| --- | --- | --- |
-| **1. Written by hand** | you write every rule | a planner, a controller and a behaviour tree |
-| **2. One learned piece** | perception becomes a model | a network recognises, ordinary code decides |
-| **3. A learned skill** | a behaviour becomes a policy | demonstrations replace a hand-written skill |
-| **4. The 2026 frontier** | whatever the field is betting on | pretrained policies, language, practice |
+## The two simulators
 
-## Why MuJoCo and Gazebo, and why both
+You will use two simulators. That is not wasted effort, because they do different
+jobs.
 
-Newcomers usually assume that picking a simulator is like picking a text editor, so
-that learning two of them is wasted effort. It is not, because these two are built
-for different jobs.
+### Gazebo simulates a robot system
 
-**[Gazebo](https://github.com/gazebosim/gz-sim) is for simulating a robot
-*system*.** It speaks ROS 2 natively through
-[ros_gz](https://github.com/gazebosim/ros_gz), it simulates sensors properly — depth
-cameras, colour cameras, lidar, with noise — and it runs the same
-[`ros2_control`](https://control.ros.org/jazzy/index.html) controllers a real arm
-would run, through [`gz_ros2_control`](https://github.com/ros-controls/gz_ros2_control).
-That last point is what matters: the controller code you write against Gazebo is
-the controller code you would ship. When the thing you are testing is the plumbing —
-topics, frames, controllers, cameras, launch files — Gazebo is the right tool, which
-is why projects 1, 3 and 5 live there.
+[Gazebo](https://github.com/gazebosim/gz-sim) is the simulator that ROS uses.
 
-**[MuJoCo](https://github.com/google-deepmind/mujoco) is for simulating *physics
-and policies*.** It was built for contact-rich simulation and for machine learning,
-it is fast enough to run many thousands of steps a second, and essentially every
-imitation-learning benchmark in this folder is written against it. When the thing
-you are testing is a controller's response to contact, or a policy, MuJoCo is the
-right tool, which is why projects 2 and 4 live there.
+**What it is good at.** It simulates cameras properly, including the noise and the
+errors a real camera has. It talks to ROS 2 directly. Most importantly, it runs the
+*same controller software* that a real arm runs. The code you write against Gazebo
+is the code you would put on real hardware.
 
-They also fail differently, and comparing them teaches you something neither teaches
-alone. A model that behaves in Gazebo and misbehaves in MuJoCo is usually telling
-you that your contact parameters are fiction. A controller that works in MuJoCo and
-falls apart in Gazebo is usually telling you that your real problem is timing or
-message plumbing rather than physics.
+**When to reach for it.** When the thing you are testing is the plumbing. Topics,
+camera frames, controllers, launch files, how the pieces connect. Projects 1, 3 and
+5 use Gazebo, because those are the projects where the system matters.
 
-### What that means on a Mac, honestly
+**What it is bad at.** Contact. Gazebo's physics is fine for an arm moving through
+the air and picking things up. It is not accurate enough for a peg going into a hole
+with half a millimetre of clearance.
 
-MuJoCo is the easy half. It publishes native Apple Silicon builds and a native
-viewer, and nothing about it is second-class. One wrinkle catches everybody: macOS
-insists that rendering happens on the main thread, so the interactive viewer must be
-started with the `mjpython` launcher rather than with `python`. If you would rather
-avoid that, [mjviser](https://pypi.org/project/mjviser/) renders MuJoCo in a browser
+### MuJoCo simulates physics and policies
+
+[MuJoCo](https://github.com/google-deepmind/mujoco) was built by DeepMind for
+contact simulation and for machine learning.
+
+**What it is good at.** Contact. It handles objects pressing and sliding against
+each other accurately. It is also very fast, which matters when a training run needs
+millions of attempts.
+
+**When to reach for it.** When the thing you are testing is physics or a policy.
+Projects 2 and 4 use MuJoCo. You also have no real choice here, because nearly every
+robot learning tool expects MuJoCo underneath.
+
+**What it is bad at.** Being a system. It has no ROS integration worth using on a
+Mac, and its camera models are simpler than Gazebo's.
+
+### Why learning both is worth it
+
+They fail in different ways, and that is useful.
+
+If your setup works in Gazebo but misbehaves in MuJoCo, your contact settings are
+probably wrong. If it works in MuJoCo but falls apart in Gazebo, your problem is
+probably timing or message passing rather than physics.
+
+Knowing which simulator to blame saves you days.
+
+### What this means on a Mac
+
+MuJoCo is easy. It has proper Apple Silicon builds and a native viewer. One thing
+catches everybody: macOS requires drawing to happen on the main thread, so you start
+the viewer with the `mjpython` command rather than `python`. If you would rather
+avoid that, [mjviser](https://pypi.org/project/mjviser/) shows MuJoCo in a browser
 instead.
 
-Gazebo is the awkward half, and it is worth knowing before you lose an evening. It
-does work — this repository already runs Gazebo Harmonic on this machine for
-[the camera area](../camera/basics.md) — but macOS is a best-effort platform with no
-Apple Silicon testing behind it. **Install it through conda rather than Homebrew**,
-because Gazebo's own documentation points at Homebrew and there is no prebuilt
-Homebrew package for the version that pairs with ROS 2 Jazzy, so that route means
-compiling the whole stack from source. And **the graphical window and the physics
-server cannot share a process on macOS**, so you start them as two commands; this
-has been [an open issue since 2019](https://github.com/gazebosim/gz-sim/issues/44).
+Gazebo is harder, and you should know this before you lose an evening to it. It does
+work — this repository already runs it on this machine for
+[the camera area](../camera/basics.md). But Apple Silicon is not a platform Gazebo's
+developers test on. Two things follow.
 
-The ROS 2 pieces are in better shape than their reputation suggests. MoveIt 2,
-RViz2 and `ros2_control` all publish Apple Silicon builds, and the crashes that made
-them painful were fixed through 2025 and early 2026. Prefer the Cyclone DDS
-middleware over the default, which still has an open thread-affinity bug on recent
-macOS.
+First, **install it with conda, not Homebrew.** Gazebo's own instructions tell you
+to use Homebrew. For the version that works with ROS 2 Jazzy there is no ready-made
+Homebrew package, so Homebrew would compile the whole thing from source. That takes
+hours. The conda packages are already built, which is why this repo's camera area
+works.
+
+Second, **the window and the physics cannot run in one process on macOS.** You start
+them as two separate commands. This has been
+[a known problem since 2019](https://github.com/gazebosim/gz-sim/issues/44). It is
+how Gazebo works on a Mac, not something you have broken.
+
+The ROS 2 parts are better than their reputation. MoveIt 2, RViz2 and `ros2_control`
+all have Apple Silicon builds, and the crashes that used to make them painful were
+fixed during 2025 and early 2026. One setting is worth changing: use the Cyclone DDS
+middleware rather than the default, which still has a bug on recent macOS.
+
+---
+
+## The tools, and why each one
+
+Each tool is explained once here. The projects then say which ones they use.
+
+For each tool there are four things worth knowing: what it is, what it does for you,
+why it rather than the obvious alternative, and what it costs you.
+
+### Describing the robot: URDF and MJCF
+
+**What they are.** Two file formats that describe a robot. URDF, the Unified Robot
+Description Format, is what ROS and Gazebo use. MJCF is MuJoCo's own format. Both
+list the arm's links, its joints, and how they connect.
+
+**What they do for you.** Every other tool reads one of these. The planner needs it
+to know how long the arm is. The controller needs it to know which joints exist. The
+simulator needs it to draw the arm.
+
+**Why you need to know both.** Because the same arm has two descriptions, and they
+can disagree. A joint limit set in one and not the other will waste an afternoon.
+This repo's [arm area](../arm/overview.md) builds a URDF up from nothing, which is
+the fastest way to understand what is in one.
+
+**What it costs you.** Converting between the two formats is not automatic. Most
+people keep both by hand for the one arm they care about.
+
+### Ready-made robot models: MuJoCo Menagerie
+
+**What it is.** [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie)
+is DeepMind's collection of models of real robots — a Franka Panda, a UR5e, a Kinova
+and many others — already written in MJCF.
+
+**What it does for you.** It gives you a correct arm on the first day.
+
+**Why this rather than writing your own.** A robot model has masses, inertias,
+joint friction and motor limits in it. Get any of them wrong and your arm will
+behave oddly in ways that look like bugs in your code. These models are tuned by the
+people who wrote the simulator. When something goes wrong, you then know it is your
+code.
+
+**What it costs you.** Nothing. Use it.
+
+### Controlling the joints: ros2_control
+
+**What it is.** [ros2_control](https://control.ros.org/jazzy/index.html) is the
+standard ROS framework for driving robot joints. It sits between your commands and
+the motors.
+
+**What it does for you.** It gives you controllers you would otherwise write. A
+joint trajectory controller takes a path and follows it smoothly. An admittance
+controller makes the arm soft and responsive to being pushed.
+
+**Why this rather than writing directly to the joints.** Because of what happens
+later. The same controllers run on simulated and real arms without changes. If you
+write your own control loop against MuJoCo, none of it transfers.
+[gz_ros2_control](https://github.com/ros-controls/gz_ros2_control) is the piece that
+runs these controllers inside Gazebo.
+
+**What it costs you.** Configuration files, and a fair amount of them. Expect the
+first setup to take a day. [ros2_control_demos](https://github.com/ros-controls/ros2_control_demos)
+has working examples, which is much faster than reading the documentation.
+
+### Planning motion: MoveIt 2
+
+**What it is.** [MoveIt 2](https://moveit.picknik.ai/main/index.html) finds a path
+for the arm from where it is to where you want it, avoiding obstacles.
+
+**What it does for you.** Collision checking, inverse kinematics, path planning and
+execution, all together. Inverse kinematics means working out the joint angles that
+put the gripper in a particular place, which is harder than it sounds and which you
+do not want to write yourself.
+
+**Why this rather than anything else.** There is no real competitor in open source.
+MoveIt is what the jobs ask for and what the tutorials assume. It also has Apple
+Silicon builds, which several alternatives do not.
+
+**What it costs you.** MoveIt is fiddly to configure, and this is its main
+reputation. Start from
+[its own tutorials](https://github.com/moveit/moveit2_tutorials) and its
+[ready-made robot configurations](https://github.com/moveit/moveit_resources) rather
+than from an empty folder.
+
+**Three pieces inside MoveIt worth knowing by name.**
+[OMPL](https://ompl.kavrakilab.org/) provides the random planners, which are good at
+finding a way through awkward spaces and give a different answer every time. The
+**Pilz industrial motion planner** gives you straight lines and arcs that are
+identical on every run, which is how real factory controllers work and what you need
+if anyone ever has to certify the cell. [Ruckig](https://github.com/pantor/ruckig)
+works out the speed along a path so the arm accelerates smoothly instead of jerking.
+
+**One more piece, for later projects.**
+[MoveIt Task Constructor](https://github.com/moveit/moveit_task_constructor) builds
+a motion out of stages with alternatives, so you can say "try grasping from the top,
+and if that does not work, try from the side".
+
+### Sequencing the job: behaviour trees
+
+**What they are.** A behaviour tree organises a task as a tree of small steps. The
+tree is run over and over, perhaps fifty times a second. Each step reports one of
+three things: it succeeded, it failed, or it is still working.
+
+**What they do for you.** They handle failure. A sequence node runs its children in
+order and stops when one fails. A fallback node tries each child until one succeeds,
+which is exactly the shape of "try the normal thing, and if that fails, try the
+recovery".
+
+**Why this rather than a state machine, or plain code.** A state machine is easy
+with five states and unreadable with fifty, because the number of possible
+transitions grows with the square of the number of states. Plain code turns into
+nested conditionals that nobody can change safely. Behaviour trees stay readable at
+fifty branches, and you can add a recovery without touching anything around it. That
+matters more than it sounds, because most of the code in a working robot is about
+what happens when things fail.
+
+**Which one to use.** [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP)
+is the standard, and its Groot editor lets you watch the tree run live, which is the
+fastest way to understand them. [py_trees](https://py-trees.readthedocs.io/) is the
+Python version and is easier to start with.
+
+### Seeing: depth cameras and segmentation
+
+**Turning depth into points.** A depth camera gives you a picture where each pixel
+is a distance. `depth_image_proc` turns that into a point cloud, which is a set of
+3D points you can actually reason about. It is a standard ROS package and it is
+already in this repository's dependencies.
+
+**Finding objects: SAM 2.** [SAM 2](https://github.com/facebookresearch/sam2) is
+Meta's segmentation model. Segmentation means working out which pixels belong to
+which object.
+
+*What it does for you.* It separates objects it has never been trained on. You do
+not collect data, you do not label anything, and you do not train.
+
+*Why this rather than writing colour rules.* Colour rules are twenty lines you fully
+understand, and they break the moment the lighting changes or somebody adds a shiny
+object. SAM 2 handles objects you never described. The trade is that you cannot
+debug it when it is wrong. You will feel both sides of this in project 1.
+
+*What it costs you.* Its instructions say Linux only. It does in fact run on Apple's
+Metal backend, and you build it with the optional CUDA step switched off. Stay on
+version 2: SAM 3 requires an NVIDIA card outright.
+
+**Tracking a hand: MediaPipe.**
+[MediaPipe](https://github.com/google-ai-edge/mediapipe) finds hand positions in
+ordinary video. It runs on a laptop camera in real time and has Apple Silicon
+builds. Project 4 is built on it.
+
+### Contact tasks: robosuite
+
+**What it is.** [robosuite](https://robosuite.ai/) is a set of manipulation tasks
+that run inside MuJoCo. Peg insertion, door opening, nut assembly and others.
+
+**What it does for you.** Each task comes with a robot, the objects, a way of
+scoring success and a way of resetting. You do not build any of it.
+
+**Why this rather than building the task yourself.** Contact simulation is harder to
+get right than it looks. Friction, contact stiffness and the size of the simulation
+time step all change whether the peg goes in. If you build the task yourself and it
+does not work, you will not know whether your controller is wrong or your physics
+is. robosuite's tasks are already tuned, so a failure is yours.
+
+**Why this rather than ManiSkill.** [ManiSkill](https://github.com/haosulab/ManiSkill)
+has more tasks and better graphics. On a Mac it needs a manual Vulkan installation
+and runs physics on the processor only, and its own documentation contradicts itself
+about whether macOS is supported. robosuite simply works.
+
+**What it costs you.** It requires a slightly older MuJoCo, so let it choose the
+version rather than forcing the newest.
+
+**Its companion: robomimic.**
+[robomimic](https://github.com/ARISE-Initiative/robomimic) provides datasets and
+careful baseline results on those same tasks. It is worth having because it tells
+you what a good score even looks like, so you know whether your result is bad or
+normal. Install it from GitHub; the version on PyPI has not been updated since 2023.
+
+### Learning: LeRobot
+
+**What it is.** [LeRobot](https://github.com/huggingface/lerobot) is Hugging Face's
+robot learning library. It holds the policies, the dataset format, the training loop
+and the evaluation tools.
+
+**What it does for you.** Everything on the learning side. It has ACT and diffusion
+policy built in, it defines the dataset format that the rest of the field now uses,
+and it runs on Apple's Metal backend.
+
+**Why this rather than the original code for each method.** The original
+repositories are dormant. [ACT](https://github.com/tonyzhaozh/act) has had no
+commits since 2024 and
+[diffusion_policy](https://github.com/real-stanford/diffusion_policy) none since
+late 2024. The methods themselves are alive and maintained inside LeRobot. This
+catches people out: a quiet repository looks like a dead technique, and here it just
+means the work moved.
+
+**What it costs you.** PyTorch's `compile` speedup does not work on Apple's Metal
+backend, so training is slower than on an NVIDIA card. For the small policies in
+this path that is fine.
+
+**The policy to start with: ACT.** ACT predicts the next hundred commands at once
+rather than the next one. This matters because errors build up with every decision,
+so making a hundred times fewer decisions means a hundred times fewer chances to
+drift. LeRobot's own documentation calls it their recommended first policy, mostly
+because it trains in under an hour.
+
+**Making a policy reliable: HIL-SERL.**
+[HIL-SERL](https://github.com/rail-berkeley/hil-serl) takes a policy that half works
+and improves it by practice, with you taking over when it is about to fail. Those
+take-overs become the training signal. It ships inside LeRobot. Its earlier version,
+SERL, has been retired by its own authors, so ignore tutorials that use it.
+
+**A pretrained policy you can actually run: SmolVLA.**
+[SmolVLA](https://huggingface.co/blog/smolvla) is a pretrained model that takes
+camera pictures and a sentence, and produces arm commands. It was deliberately built
+small enough for ordinary hardware. The larger models in this family need more memory
+than a consumer graphics card has, so on this path SmolVLA is the realistic option
+and the others are not.
 
 ---
 
 ## Project 1: tidy the desk
 
-**What you are building.** A cell that looks at a tabletop covered with a dozen
-mixed objects — pens, mugs, tools, small boxes — and sorts them into three bins by
-category. It runs unattended until the table is clear, and it does not stop when one
-grasp fails.
+### What you are building
 
-**Why this one first.** It is the complete classical cell in miniature, and it is
-the shape of an enormous fraction of real deployed robot work. It also gives you,
-by the end of layer one, something you can demonstrate, which is worth more than
-four disconnected exercises.
+A table with about a dozen mixed objects on it: pens, mugs, small tools, boxes. Three
+bins beside it. The arm clears the table, putting each object in the right bin. It
+keeps going until the table is empty, and it does not stop when a grasp fails.
 
-**The setup.** An arm with a parallel gripper, an overhead depth camera that sees
-the whole table, and a wrist camera that sees what the gripper is about to touch.
-Two cameras rather than one, deliberately: the overhead view tells you where things
-are and the wrist view tells you whether the grasp is going to work, and learning
-why you need both is part of the project.
+### What is in the scene
 
-### The four layers
+- One arm with a parallel gripper, which means two fingers that close together
+- One depth camera above the table, looking down, which sees everything
+- One camera on the wrist, which sees what the gripper is about to touch
+- Three bins, and twelve objects
 
-**Layer 1, written by hand.** Segment the table by colour and height above the
-plane, fit a bounding box to each blob, choose a top-down grasp at the centroid,
-plan to it with MoveIt, close the gripper, and drop the object in the bin the colour
-rule chose. A [behaviour tree](programmed-methods.md#3-scripted-logic-state-machines-and-behaviour-trees)
-sequences the whole thing and handles the retry when a grasp fails. Expect this to
-work beautifully on the objects you tuned it for and to fall over the moment you add
-a shiny one.
+Two cameras rather than one, on purpose. The overhead camera tells you where things
+are. The wrist camera tells you whether the grasp is actually going to work. Finding
+out why you need both is part of the project.
 
-**Layer 2, one learned piece.** Replace the colour-and-height rule with
-[SAM 2](https://github.com/facebookresearch/sam2), which segments objects it was
-never trained on. Nothing else in the system changes, and that is the lesson: the
-planner, the controller and the tree all carry on exactly as before. You have
-swapped twenty lines you fully understood, which broke under new lighting, for a
-download that handles objects you never described and which you cannot debug when
-it is wrong. That trade is the subject of this whole folder, and here you get to
-feel it rather than read about it.
+### Why start here
 
-**Layer 3, a learned skill.** Your grasp choice is still a centroid, which is why it
-drops the mug. Collect outcomes — every grasp you attempt, and whether it held —
-then train a small model that scores candidate grasps, and let it choose. The
-important part is that **you generate the training labels yourself by trying
-grasps in simulation**, so no dataset and no large model is needed. This is the
-cheapest possible taste of the pattern in
-[learned pieces inside a programmed system](learned-methods.md#4-learned-pieces-inside-a-programmed-system).
+This is the ordinary robot cell. A large share of real deployed robot work looks
+roughly like this, so it is the most directly useful thing in the document.
 
-**Layer 4, the frontier.** Put a language model on top, so the instruction becomes
-"put the tools away and leave the mugs out". The model chooses which subtree to
-invoke for each object; the tree still does the running. Read
-[directed by language](learned-methods.md#5-directed-by-language) first, and note
-that the interesting failure is the model confidently asking for something the arm
-cannot reach.
+It also means that after layer 1 you have a robot that tidies a desk, which is
+something you can show people.
 
-### The stack
+### Layer 1: written by hand
 
-| Tool | What it does | Why this one |
-| --- | --- | --- |
-| [Gazebo](https://github.com/gazebosim/gz-sim) + [ros_gz](https://github.com/gazebosim/ros_gz) | the world, the two cameras, the noise | the only simulator here with sensor models worth trusting |
-| [MoveIt 2](https://moveit.picknik.ai/main/index.html) | planning and execution | the standard, and available for Apple Silicon through RoboStack |
-| [ros2_control](https://control.ros.org/jazzy/index.html) | the controller the arm actually runs | the same controllers work on real hardware |
-| [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) or [py_trees](https://py-trees.readthedocs.io/) | sequencing and recovery | recovery is most of a real system, and trees stay readable |
-| `depth_image_proc` | depth picture to point cloud | already in this repo's dependencies |
-| [SAM 2](https://github.com/facebookresearch/sam2) | segmentation, layer 2 onwards | runs on Apple's Metal backend in practice; build it with the CUDA step off. Stay on 2, because SAM 3 requires CUDA |
+Find objects by colour and by how far they stand above the table. Fit a box around
+each one. Pick a grasp straight down at the middle of the box. Plan to it with
+MoveIt. Close the gripper. Drop the object in whichever bin your colour rule chose. A
+behaviour tree runs the sequence and retries when a grasp fails.
+
+This will work very well on the objects you tuned it for. It will fall over as soon
+as you add a shiny one, because the colour rule was never about the object, it was
+about the light.
+
+**Tools:** Gazebo, `depth_image_proc`, MoveIt 2, `ros2_control`, a behaviour tree.
+
+### Layer 2: one learned piece
+
+Replace the colour-and-height rule with SAM 2.
+
+Nothing else changes. The planner, the controller and the behaviour tree all carry on
+exactly as before. That is the lesson of this layer. You have swapped twenty lines
+you completely understood, which broke under new lighting, for a downloaded model
+that handles objects you never described and that you cannot debug when it is wrong.
+
+This trade is what most of this folder is about, and here you get to feel it rather
+than read about it.
+
+**Tools added:** SAM 2.
+
+### Layer 3: a learned skill
+
+Your grasp is still straight down at the middle of the object. That is why it drops
+the mug, and why it knocks the pen instead of picking it.
+
+So learn where to grasp. Record every grasp you attempt and whether it held. Train a
+small model that scores possible grasps, and let it choose.
+
+The important part is where the training data comes from. **You make it yourself, by
+trying.** Every attempt in simulation is a labelled example. A few thousand attempts
+overnight give you a dataset that nobody had to annotate, and a model small enough to
+train on this machine.
+
+**Tools added:** LeRobot for the training loop, or plain PyTorch.
+
+### Layer 4: the frontier
+
+Put a language model on top, so that the instruction becomes "put the tools away and
+leave the mugs out". The model picks which part of the behaviour tree to run for each
+object. The tree still does the work.
+
+Read [directed by language](learned-methods.md#5-directed-by-language) first. The
+interesting failure is the model confidently asking for something the arm cannot
+reach, which is exactly the problem the research in that section is about.
 
 ### Who does this for a living
 
-This is what the 3D-vision companies sell. [Photoneo](https://www.photoneo.com/),
+This is what the 3D vision companies sell. [Photoneo](https://www.photoneo.com/),
 [Zivid](https://www.zivid.com/) and [Keyence](https://www.keyence.com/) all ship
-systems whose job is exactly layer 2. At the top of the scale,
-[Amazon's item-stowing system](https://arxiv.org/abs/2505.04572) is this pattern at
-half a million real attempts, and its paper states plainly which parts are learned
-and which are conventional — the best free description of a production system
-anywhere.
+systems that do roughly layer 2.
 
-**Done looks like:** the table clears without you touching it, over twenty runs, and
-you can say which layer improved which failure.
+At the largest scale, [Amazon's item-stowing system](https://arxiv.org/abs/2505.04572)
+is this same pattern, measured over half a million real attempts. Its paper says
+exactly which parts are learned and which are ordinary code, which makes it the best
+free description of a production robot anywhere.
+
+### How to tell you are done
+
+The table clears on its own, twenty times in a row. You can say which layer fixed
+which failure.
 
 ---
 
 ## Project 2: fit the connector
 
-**What you are building.** A cell that picks a connector from a fixture and mates it
-into a socket whose exact position it does not know, with a clearance tighter than
-the arm can repeat. It reports whether the connector is properly seated.
+### What you are building
 
-**Why this one.** This is the task where position is not enough, and it is the
-single best place in robotics to compare programmed and learned methods honestly,
-because both have strong published results on it. It is also the most commercially
-valuable thing in this document, since contact-rich assembly is where the unsolved
-industrial problems are.
+A plug and a socket. The arm picks up the plug and pushes it into the socket. The
+clearance is tighter than the arm can reliably repeat, and the socket is not quite
+where the model says it is.
 
-**The setup.** An arm, a wrist camera to find the socket, and force readings at the
-wrist. The socket is deliberately placed a few millimetres from where the model says
-it is, because that misalignment is the entire problem.
+### What is in the scene
 
-### The four layers
+- One arm, with force readings at the wrist
+- One wrist camera, to find the socket
+- A plug in a fixture, and a socket board a few millimetres from where it should be
 
-**Layer 1, written by hand, and it fails.** Find the socket with the camera, plan to
-it, and push. The connector jams and the contact forces climb alarmingly. Do this
-first and watch it properly, because the failure is not a bug in anything — it is
-exactly what a position controller is designed to do, as
-[the programmed-methods document explains](programmed-methods.md#6-feedback-control).
+That last point is the whole project. If the socket were exactly where you expected,
+this would be easy.
 
-**Layer 2, force control.** Switch to commanding *stiffness* rather than position:
-come in soft, so a small misalignment pushes the arm aside instead of jamming it,
-and search in a small spiral until the force readings say the pin has dropped in.
-Then push. This is the single most reusable idea in contact-rich robotics, and
-having felt it work, the distinction between commanding a position and commanding a
-stiffness stops being abstract. Sweep the stiffness across twenty attempts each and
-plot success against it — you will find a window, with jamming at one end and not
-enough push at the other.
+### Why this project
 
-**Layer 3, a learned skill.** Collect fifty demonstrations of the search, and train
-an [ACT policy](learned-methods.md#11-behaviour-cloning) on the contact phase only,
-leaving the approach planned. Confining the policy to the phase that actually needs
-it is the design decision worth taking away, and it is what the deployed systems do.
+This is the task where moving to the right position is not enough. It is also the
+best place in robotics to compare programmed and learned methods honestly, because
+both have strong published results on exactly this problem.
 
-**Layer 4, the frontier.** Apply the 2026 recipe: take the imitated policy and
-improve it with a short burst of reinforcement learning, with you intervening when
-it is about to fail.
-[Four independent groups converged on this in one year](what-is-changing.md#6-what-is-arriving-now-and-what-it-can-actually-do),
-which makes it the best-evidenced method in this folder.
-[HIL-SERL](https://github.com/rail-berkeley/hil-serl) inside LeRobot is the open
-implementation.
+Commercially it is the most valuable thing in this document, because contact-rich
+assembly is where the unsolved industrial problems are.
 
-### The stack
+### Layer 1: written by hand, and it fails
 
-| Tool | What it does | Why this one |
-| --- | --- | --- |
-| [MuJoCo](https://github.com/google-deepmind/mujoco) | the contact physics | Gazebo's contact model is not built for this; MuJoCo's is |
-| [robosuite](https://robosuite.ai/) | ready contact tasks, including peg insertion | saves building the task, and is what the papers benchmark on. It pins an older MuJoCo, so let it choose |
-| [robomimic](https://github.com/ARISE-Initiative/robomimic) | careful baselines on those tasks | tells you what a good result looks like. Install from GitHub; its PyPI release has been frozen since 2023 |
-| [LeRobot](https://github.com/huggingface/lerobot) | training the layer 3 policy | where ACT lives and is maintained |
-| [HIL-SERL](https://github.com/rail-berkeley/hil-serl) | the layer 4 practice loop | ships inside LeRobot; its predecessor SERL is deprecated |
-| [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers) | Cartesian force and impedance control in ROS | read it for how the real thing is structured, even while prototyping in MuJoCo |
+Find the socket with the camera. Plan to it. Push.
+
+The plug jams, and the forces climb alarmingly. Do this first and watch it properly,
+because the failure is not a bug. It is exactly what a position controller is built
+to do: it sees an error it cannot remove, so it pushes harder, and then harder again.
+
+**Tools:** MuJoCo, robosuite.
+
+### Layer 2: force control
+
+Stop commanding a position. Command a stiffness instead.
+
+That means telling the arm how hard to resist being pushed, rather than where to be.
+Come in soft, so a small misalignment shoves the arm aside instead of jamming the
+plug. Then search in a small spiral until the force readings say the pin has dropped
+into the hole. Then push.
+
+This is the most reusable idea in contact robotics. Once you have felt it work, the
+difference between commanding a position and commanding a stiffness stops being
+abstract.
+
+Then measure it. Run twenty attempts at each of several stiffness values and plot
+success against stiffness. You will find a window. Too stiff and it jams like layer
+1. Too soft and it cannot push the plug home.
+
+**Tools added:** a compliant controller.
+[cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers)
+is worth reading for how this is structured in ROS, even while you prototype in
+MuJoCo.
+
+### Layer 3: a learned skill
+
+Collect fifty demonstrations of the search and train an ACT policy on the contact
+part only. Leave the approach planned as it was.
+
+Confining the policy to the part that actually needs it is the design decision worth
+taking away here. It is what the deployed systems do, and it is why they can still be
+checked.
+
+**Tools added:** LeRobot.
+
+### Layer 4: the frontier
+
+Take the policy from layer 3 and improve it by practice, stepping in when it is
+about to fail. Your take-overs become the training signal.
+
+This is the recipe that
+[four separate research groups arrived at independently in one year](what-is-changing.md#6-what-is-arriving-now-and-what-it-can-actually-do),
+on four unrelated tasks. That makes it the best-evidenced method in this folder.
+
+**Tools added:** HIL-SERL, inside LeRobot.
 
 ### Who does this for a living
 
-Every major vendor sells force control as a product: FANUC ships force sensors and
-fitting functions, ABB has two separate options — one for machining and one that
-searches for the right location during assembly — and KUKA has a force-torque
-package. [Micropsi's MIRAI](https://www.micropsi-industries.com/) is the interesting
-learned case, because it removes positional variance with a trained visuomotor skill
-while leaving force control underneath to handle the actual contact. On the research
-side, [IndustRealKit](https://github.com/NVLabs/industrealkit) trained insertion
-purely in simulation and transferred at 83% to 99% across 600 trials.
+Every major robot vendor sells force control. FANUC ships force sensors and fitting
+functions. ABB has two separate options, one for machining and one that searches for
+the right location during assembly. KUKA has a force-torque package.
 
-**Done looks like:** a plot of success against stiffness for layer 2, and a
-layer-by-layer comparison of success rate over at least fifty attempts each.
+[Micropsi's MIRAI](https://www.micropsi-industries.com/) is the interesting learned
+case. It uses a trained visuomotor skill to cope with parts not being where they
+should be, while leaving force control underneath to handle the actual contact. That
+split is worth noticing, because it is the same split as your layers 2 and 3.
+
+On the research side, [IndustRealKit](https://github.com/NVLabs/industrealkit)
+trained insertion entirely in simulation and transferred it to a real arm, reaching
+between 83% and 99% across 600 trials.
+
+### How to tell you are done
+
+You have a plot of success against stiffness from layer 2, and a success rate for
+each of the four layers over at least fifty attempts each.
 
 ---
 
 ## Project 3: empty the bin
 
-**What you are building.** A bin of thirty mixed objects, piled and overlapping, and
-an arm that empties it onto a conveyor without damaging anything or giving up when
-an object is wedged.
+### What you are building
 
-**Why this one.** Bin picking is the task that learned perception turned from a
-research problem into a product, so it is the clearest demonstration of what machine
-learning has actually bought robotics. It is also where clutter and occlusion make
-perception genuinely hard rather than a formality.
+A bin holding thirty mixed objects, piled on top of each other. The arm empties it
+onto a conveyor, without damaging anything, and without giving up when an object is
+wedged in a corner.
 
-**The setup.** An overhead depth camera looking into the bin, a wrist camera for the
-approach, and a gripper narrow enough to reach between objects.
+### What is in the scene
 
-### The four layers
+- One arm with a narrow gripper that can reach between objects
+- One depth camera above the bin
+- One wrist camera for the approach
+- Thirty objects of different shapes, overlapping
 
-**Layer 1, written by hand.** Take the point cloud, find pairs of roughly parallel
-surfaces the gripper could close on, score them by how square-on the approach is and
-how far they are from other objects, and pick the best reachable one. This geometric
-grasp generator is perhaps a hundred lines and it works. Writing it is also the only
-sensible route here, because — and this is worth knowing before you go looking —
-**every open learned grasp model needs NVIDIA hardware**, since they all compile
-CUDA operations. There is no download that will do this on a Mac.
+### Why this project
 
-**Layer 2, one learned piece.** Add [SAM 2](https://github.com/facebookresearch/sam2)
-so that you know which points belong to which object, and rank your candidate grasps
-per object rather than over an undifferentiated cloud. The improvement on a cluttered
-bin is large and immediate.
+Bin picking is the task that learned perception turned from a research problem into
+a product. It is therefore the clearest demonstration of what machine learning has
+actually bought robotics.
 
-**Layer 3, a learned skill.** Now train your own grasp scorer, and note that the
-interesting part is where the data comes from: **you generate it by trying**. Every
-attempt in simulation is a labelled example, so a few thousand attempts overnight
-give you a dataset nobody had to annotate. This is the same trick as
-[MimicGen](https://github.com/NVlabs/mimicgen) at a smaller scale — using programming
-to manufacture the data that training needs — and it is the most practically useful
-idea in this whole document for anyone without a GPU budget.
+It is also where perception becomes genuinely hard rather than a formality, because
+objects hide each other.
 
-**Layer 4, the frontier.** Fine-tune [SmolVLA](https://huggingface.co/blog/smolvla)
-on your collected data and compare it against your hand-written pipeline. Be honest
-about the result: the modular approach may well win, and
-[no published paper anywhere reports a head-to-head](learned-methods.md#4-learned-pieces-inside-a-programmed-system)
-of a general pretrained policy against one of these pipelines. This is the one layer
-in the project that wants a rented GPU.
+### Layer 1: written by hand
 
-### The stack
+Take the point cloud. Find pairs of roughly parallel surfaces that the gripper could
+close on. Score each pair by how square-on the approach is and how far it is from
+other objects. Pick the best one the arm can reach.
 
-| Tool | What it does | Why this one |
-| --- | --- | --- |
-| [Gazebo](https://github.com/gazebosim/gz-sim) | bin, clutter, depth camera with noise | the noise matters; a perfect camera teaches you nothing |
-| `depth_image_proc` | depth to point cloud | the standard ROS route |
-| [SAM 2](https://github.com/facebookresearch/sam2) | which points are which object | the model that removed the need for a vision engineer per customer |
-| [MoveIt 2](https://moveit.picknik.ai/main/index.html) | reachability and execution | reachability filtering is most of the grasp choice |
-| [GraspNet-1Billion](https://graspnet.net/) | grasp dataset and benchmark | data to score your own generator against; its detector needs CUDA |
-| [LeRobot](https://github.com/huggingface/lerobot) + [SmolVLA](https://huggingface.co/blog/smolvla) | layer 4 | the only pretrained policy sized for ordinary hardware |
+This geometric grasp finder is about a hundred lines, and it works.
+
+Writing it yourself is also the only option here, and you should know why before you
+go looking for a shortcut. **Every open learned grasp model needs an NVIDIA card**,
+because they all contain compiled CUDA code. The GraspNet baseline does,
+Contact-GraspNet does, AnyGrasp does and is a licensed binary as well. There is no
+download that will do this on a Mac.
+
+**Tools:** Gazebo, `depth_image_proc`, MoveIt 2.
+
+### Layer 2: one learned piece
+
+Add SAM 2, so you know which points belong to which object. Then rank your grasp
+candidates per object rather than across one undifferentiated cloud.
+
+On a cluttered bin the improvement is large and immediate, because most bad grasps
+in layer 1 were the gripper trying to close across two different objects.
+
+**Tools added:** SAM 2.
+
+### Layer 3: a learned skill
+
+Train your own grasp scorer, exactly as in project 1 but with real clutter.
+
+The interesting part is again the data. You generate it by trying. A few thousand
+attempts overnight is a labelled dataset that nobody annotated.
+
+This is the same idea as [MimicGen](https://github.com/NVlabs/mimicgen) at a smaller
+scale: using ordinary programming to manufacture the data that training needs. For
+anyone without a budget for graphics cards, it is the most practically useful idea in
+this document.
+
+### Layer 4: the frontier
+
+Fine-tune SmolVLA on the data you collected, and compare it against your hand-written
+pipeline.
+
+Be honest about the result. The hand-written pipeline may well win.
+[No published paper anywhere reports a head-to-head](learned-methods.md#4-learned-pieces-inside-a-programmed-system)
+of a general pretrained policy against one of these pipelines, so you would be asking
+a question nobody has answered.
+
+This is the one layer in the project that wants a rented graphics card.
 
 ### Who does this for a living
 
-This is the most commercially settled task in the document. Beyond the vision
-vendors named in project 1, the published numbers are strong: AnyGrasp reported
-clearing bins of over 300 unseen objects at 93.3% success and more than 900 picks an
-hour. Note that AnyGrasp ships as a licence-gated binary and is not open source
-despite appearances, which is itself a useful thing to know about this market.
+This is the most commercially settled task in the document, beyond the vision
+companies already named in project 1.
 
-**Done looks like:** picks per hour and success rate for all four layers, on the
-same thirty objects, with the bin emptied at least ten times.
+The published numbers are strong. AnyGrasp reported clearing bins of over 300 unseen
+objects at 93.3% success, at more than 900 picks an hour. Note that AnyGrasp ships as
+a licensed binary and is not open source despite appearing to be, which tells you
+something about this market.
+
+### How to tell you are done
+
+Picks per hour and success rate for all four layers, on the same thirty objects, with
+the bin emptied at least ten times.
 
 ---
 
 ## Project 4: copy it from video
 
-**What you are building.** You record a video of your own hand doing a simple
-tabletop task — pushing a block into a target square, or stacking two cups — and the
-arm learns to do it. No teleoperation rig, no demonstrations driven through the
-robot.
+### What you are building
 
-**Why this one.** This is the clearest bet in the field right now.
-[Robot demonstrations are the binding constraint](what-is-changing.md#2-the-five-forces-driving-2026)
-and more of them have stopped helping, so the obvious way out is to learn from
-video, of which there is effectively an unlimited supply. Doing a small version
-yourself teaches you why it is hard in a way no paper will, and it is the project
-here most likely to be genuinely novel to whoever you show it to.
+You record a video of your own hand doing a simple task on a table. Pushing a block
+into a marked square, or stacking two cups. The arm then learns to do the same task.
 
-**The setup.** Your phone or laptop camera for recording yourself, and in
-simulation an arm with a wrist camera and a parallel gripper.
+No teleoperation rig. No demonstrations driven through the robot.
 
-### The four layers
+### What is in the scene
 
-**Layer 1, written by hand.** Record thirty attempts at the task and track your hand
-through them with
-[MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker),
-which runs natively on Apple Silicon and gives you hand landmarks per frame. Plot
-the resulting trajectories. Nothing is learned yet, and already you have met the
-first real problem: the scale and the origin of your hand's coordinates have nothing
-to do with the robot's.
+- Your phone or laptop camera, for recording yourself
+- In simulation: one arm, one wrist camera, a parallel gripper, and the blocks
 
-**Layer 2, retargeting.** Map the hand pose onto a gripper pose — the pinch between
-thumb and forefinger becomes the gripper's opening, the palm becomes the wrist —
-then replay the retargeted trajectory open-loop in MuJoCo. It will miss, and *why*
-it misses is the lesson: your hand and the gripper have different kinematics, your
-camera never measured depth accurately, and nothing ever closed a loop. Retargeting
-is the hard, unglamorous core of this entire research direction.
-[dex-retargeting](https://github.com/dexsuite/dex-retargeting) is worth reading for
-how it is done properly.
+### Why this project
 
-**Layer 3, a learned skill.** Train a policy on the retargeted trajectories rather
-than replaying them, so that it can correct rather than repeat. Evaluate it
-honestly. Expect a low number — this is genuinely hard, and a low number here is a
-correct result rather than a failure of yours.
+This is the clearest bet in the field right now.
 
-**Layer 4, the frontier.** Mix a handful of proper demonstrations, collected in
-simulation, in with the video data, and find out how few real demonstrations it
-takes to rescue the policy. That ratio is exactly what the research community is
-currently trying to establish, so you are asking a live question rather than a
-settled one. [UMI](https://github.com/real-stanford/universal_manipulation_interface)
-is the ancestor of this whole idea, and
-[Grabette](https://huggingface.co/blog/grabette) is the €490 handheld device that
-does it properly today.
+Robot demonstrations are the thing everybody is short of, and collecting more of the
+same kind has stopped helping. Video of humans doing things is effectively unlimited.
+So a great deal of current research is about closing that gap.
 
-### The stack
+Building a small version yourself teaches you why it is hard in a way no paper will.
+It is also the project here most likely to be genuinely new to whoever you show it to.
 
-| Tool | What it does | Why this one |
-| --- | --- | --- |
-| [MediaPipe](https://github.com/google-ai-edge/mediapipe) | hand tracking from ordinary video | ships Apple Silicon wheels and runs on a laptop camera in real time |
-| [MuJoCo](https://github.com/google-deepmind/mujoco) | where the arm replays and trains | fast, scriptable, and what LeRobot expects |
-| [dex-retargeting](https://github.com/dexsuite/dex-retargeting) | hand pose to robot pose, done properly | the reference for the hardest part of the project |
-| [LeRobot](https://github.com/huggingface/lerobot) | dataset format, training, evaluation | its dataset format is what everything else in this area expects |
-| [UMI](https://github.com/real-stanford/universal_manipulation_interface) | the research this descends from | read it before building, to see which problems are already solved |
+### Layer 1: written by hand
+
+Record thirty attempts at the task. Track your hand through each one with MediaPipe,
+which gives you the position of each finger joint in every frame. Plot the
+trajectories.
+
+Nothing is learned yet, and you have already met the first real problem. The
+coordinates of your hand have nothing to do with the robot's coordinates. Different
+origin, different scale, different units.
+
+**Tools:** MediaPipe.
+
+### Layer 2: retargeting
+
+Map the hand onto the gripper. The pinch between your thumb and forefinger becomes
+how far the gripper is open. Your palm becomes the wrist. Then replay that
+retargeted path in MuJoCo with no feedback at all.
+
+It will miss. Why it misses is the lesson.
+
+Your hand and the gripper are shaped differently, so the same motion does not put the
+fingers in the same place. Your camera never measured depth accurately. And nothing
+ever closed a loop, so a small error at the start stays wrong for the whole motion.
+
+Retargeting is the hard, unglamorous core of this whole research direction.
+[dex-retargeting](https://github.com/dexsuite/dex-retargeting) is worth reading to
+see how it is done properly.
+
+**Tools added:** MuJoCo.
+
+### Layer 3: a learned skill
+
+Train a policy on the retargeted paths rather than replaying them. A policy can
+correct as it goes, where a replay cannot.
+
+Evaluate it honestly. Expect a low number. This is genuinely hard, and a low number
+here is a correct result rather than a mistake on your part.
+
+**Tools added:** LeRobot.
+
+### Layer 4: the frontier
+
+Now mix in a handful of proper demonstrations collected in simulation, and find out
+how few of them it takes to rescue the policy.
+
+That ratio — how much human video one robot demonstration is worth — is exactly what
+the research community is currently trying to establish. You would be asking a live
+question rather than a settled one.
 
 ### Who does this for a living
 
-Nobody is selling this yet, which is the point of including it. The research line is
-active, almost nothing has been released, and the one thing you can actually buy —
-[Grabette](https://huggingface.co/blog/grabette), Apache-2.0 — is a handheld recorder
-with cameras and a gripper encoder that lets you collect training data with no robot
-present. If your eventual goal is service work, being able to say you have built a
-video-to-policy pipeline, however small, is unusual.
+Nobody is selling this yet, which is part of why it is here.
 
-**Done looks like:** a success rate for layer 3, and a curve showing how it improves
-as you add real demonstrations in layer 4.
+The research line is active and almost nothing has been released.
+[UMI](https://github.com/real-stanford/universal_manipulation_interface) is where
+this idea comes from and is worth reading before you build.
+[Grabette](https://huggingface.co/blog/grabette) is the one thing you can actually
+buy: a €490 handheld recorder with cameras and a gripper sensor, which lets you
+collect training data with no robot present.
+
+If your goal is consulting work, being able to say you have built a video-to-policy
+pipeline, however small, is unusual.
+
+### How to tell you are done
+
+A success rate for layer 3, and a curve showing how it improves as you add real
+demonstrations in layer 4.
 
 ---
 
 ## Project 5: build the kit
 
-**What you are building.** A tray holding five parts, which must be assembled in a
-fixed order: place the base, fit the board, drive two fasteners, clip the cover,
-and put the finished unit in an output tray. If a step fails, the cell recovers and
-carries on rather than stopping.
+### What you are building
 
-**Why this one last.** Long tasks are where the learned methods are weakest and the
-programmed ones are strongest, and having built the previous four projects you are
-now in a position to demonstrate that rather than take it on trust. This is also the
-project that most resembles actual industrial work.
+A tray holding five parts, assembled in a fixed order. Place the base. Fit the board.
+Drive two fasteners. Clip the cover. Put the finished unit in an output tray.
 
-**The setup.** An overhead camera to locate parts in the tray, a wrist camera for
-each fitting operation, force readings for the fastening, and a gripper that can
-handle all five parts.
+If a step fails, the cell recovers and carries on instead of stopping.
 
-### The four layers
+### What is in the scene
 
-**Layer 1, written by hand.** A behaviour tree over the skills you have already
-built in projects 1 to 3, with a recovery branch for every step. Most of your code
-here will be about what happens when something fails, which is true of every real
-robot system and is the main thing this layer teaches.
+- One arm, with force readings for the fastening
+- One overhead camera, to find the parts in the tray
+- One wrist camera, for each fitting step
+- Five parts, and an output tray
 
-**Layer 2, one learned piece.** Feed the tree with learned perception, so the parts
-no longer have to start in known positions. The tree does not change at all, which
-is the same lesson as project 1's layer 2, now at a scale where it matters more.
+### Why this project last
 
-**Layer 3, a learned skill, and it will fail.** Replace the whole tree with a single
-policy trained end to end, and evaluate it. It will do much worse, and the failures
-will cluster near the end rather than spreading evenly — that clustering is
-[compounding error](learned-methods.md#11-behaviour-cloning), and seeing it in your
-own numbers is the fastest way to understand why the programmed methods have not
-gone anywhere. The published evidence agrees with you:
+Long tasks are where learned methods are weakest and programmed ones are strongest.
+Having built the other four projects, you are now in a position to demonstrate that
+rather than take it on trust.
+
+This is also the project that most resembles real industrial work.
+
+### Layer 1: written by hand
+
+A behaviour tree over the skills you already built in projects 1 to 3, with a
+recovery branch for every step.
+
+Most of the code you write here will be about what happens when something fails. That
+is true of every real robot system, and it is the main thing this layer teaches.
+
+**Tools:** Gazebo, MoveIt 2, MoveIt Task Constructor, a behaviour tree.
+
+### Layer 2: one learned piece
+
+Feed the tree with learned perception, so the parts no longer have to start in known
+positions.
+
+The tree itself does not change at all. Same lesson as project 1's layer 2, now at a
+scale where it matters more.
+
+**Tools added:** SAM 2.
+
+### Layer 3: a learned skill, and it will fail
+
+Replace the whole tree with a single policy trained end to end. Evaluate it.
+
+It will do much worse, and the failures will cluster near the end of the task rather
+than spreading evenly through it. That clustering is compounding error: small
+mistakes early put the arm somewhere the training data never covered, so later steps
+get worse. Seeing it in your own numbers is the fastest way to understand why the
+programmed methods have not gone away.
+
+The published evidence agrees with you.
 [FurnitureBench](https://github.com/clvrai/furniture-bench) found that behaviour
-cloning completes none of its full assemblies except the very simplest.
+cloning completes none of its full assemblies except the very simplest one.
 
-**Layer 4, the frontier.** Put a language model above the behaviour tree, choosing
-which subtree to run next and replanning when a step reports failure, and compare it
-against the fixed tree from layer 1. For a task whose sequence is genuinely fixed,
-the tree should win, and understanding *why* — it is deterministic, free and provable
-— is worth more than the layer itself.
-[SayCan](https://say-can.github.io/) and
-[Code as Policies](https://code-as-policies.github.io/) are the two shapes to read.
+**Tools added:** MuJoCo, LeRobot.
 
-### The stack
+### Layer 4: the frontier
 
-| Tool | What it does | Why this one |
-| --- | --- | --- |
-| [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) | the sequence and the recovery | its Groot editor lets you watch the tree tick, which is the best way to understand them |
-| [MoveIt Task Constructor](https://github.com/moveit/moveit_task_constructor) | multi-stage motion with alternatives | the mainstream way to express "try this, else that" |
-| [Gazebo](https://github.com/gazebosim/gz-sim) + [MoveIt 2](https://moveit.picknik.ai/main/index.html) | layers 1 and 2 | the system half of the project |
-| [MuJoCo](https://github.com/google-deepmind/mujoco) + [LeRobot](https://github.com/huggingface/lerobot) | layer 3 | the policy half, and the comparison |
-| [FurnitureBench](https://github.com/clvrai/furniture-bench) | the honest yardstick | read the results before you are disappointed by your own |
+Put a language model above the behaviour tree. It picks which part of the tree to run
+next, and replans when a step reports failure. Compare it against the fixed tree from
+layer 1.
+
+For a task whose order is genuinely fixed, the tree should win. Understanding why is
+worth more than the layer itself: the tree is the same every run, it costs nothing to
+run, and you can prove what it will do.
 
 ### Who does this for a living
 
 This is ordinary industrial assembly, and it is done with behaviour trees and
-programmed skills essentially everywhere. The interesting commercial question is not
-who does it but who is trying to replace it, which is
+programmed skills essentially everywhere.
+
+The interesting question is not who does it but who is trying to replace it. That is
 [Physical Intelligence](https://github.com/Physical-Intelligence/openpi),
 [Figure](https://www.figure.ai/news/helix) and
-[Toyota Research Institute](https://toyotaresearchinstitute.github.io/lbm1/) — none
-of whom can yet do a twenty-step assembly reliably end to end.
+[Toyota Research Institute](https://toyotaresearchinstitute.github.io/lbm1/), none of
+whom can yet do a twenty-step assembly reliably from end to end.
 
-**Done looks like:** a completion rate for the full assembly at each layer, and a
-breakdown of which step the failures happen at.
+### How to tell you are done
+
+A completion rate for the full assembly at each layer, and a breakdown of which step
+the failures happen at.
 
 ---
 
-## Where the cloud actually helps
+## Where the cloud helps
 
-Almost all of this runs on the Mac, and that is worth defending, because a local
-loop you can run twenty times in an evening teaches you far more than a cloud job
-you run twice. Rent a machine for the steps that genuinely need one.
+Almost all of this runs on the Mac. That is worth defending. A loop you can run
+twenty times in an evening teaches you far more than a cloud job you run twice.
 
-**Worth renting a graphics card for.** The layer-4 pretrained fine-tunes in projects
-3 and 4. Any NVIDIA-specific perception model, such as
+**Rent a graphics card for these.** The layer 4 fine-tunes in projects 3 and 4. Any
+NVIDIA-only perception model, such as
 [FoundationPose](https://github.com/NVlabs/FoundationPose), if you decide you want
-six-degree-of-freedom pose estimation. Anything involving
-[Isaac Lab](https://github.com/isaac-sim/IsaacLab), which requires CUDA and will not
-run on Apple Silicon at all — though this path avoids it entirely, because MuJoCo
-covers the same ground for what you are learning.
+full pose estimation. Anything using
+[Isaac Lab](https://github.com/isaac-sim/IsaacLab), which needs CUDA and will not run
+on Apple Silicon at all — though this path avoids it, because MuJoCo teaches the same
+things.
 
-**Not worth renting for.** Every layer 1 and layer 2 in this document. Training an
-ACT policy on a small task, which is an hour of compute rather than a day. Your own
-small grasp scorer in project 3, which is the whole point of generating the data
-yourself. Any amount of Gazebo, MoveIt or `ros2_control` work, none of which is
-compute-bound.
+**Do not rent for these.** Every layer 1 and layer 2 in this document. Training an
+ACT policy on a small task, which takes an hour rather than a day. Your own grasp
+scorer in projects 1 and 3, which is the whole point of generating the data yourself.
+Any amount of Gazebo, MoveIt or `ros2_control` work, none of which is limited by
+compute.
 
-**The habit worth building** is to develop locally at small scale until the pipeline
-is correct, and only then rent something to run it at full size. The most common way
-to waste cloud credit is to debug in the cloud.
+**The habit worth building.** Develop locally at small scale until the pipeline is
+correct. Only then rent something to run it at full size. The most common way to
+waste cloud credit is debugging in the cloud.
 
-## What this path deliberately leaves out
+## What this path leaves out
 
-**Real hardware, and therefore calibration.** Everything above is simulated, which
-means you will not have met the problem of making a model agree with reality. If you
-later buy a cheap arm, expect that to be the surprise.
+**Real hardware, and therefore calibration.** Everything here is simulated, so you
+will not have met the problem of making a model agree with reality. If you later buy
+a cheap arm, expect that to be the surprise.
 
-**Two arms.** Coordination is a genuinely different problem with
-[its own folder](../two-arm-training/overview.md). Do this path first, because
-almost every two-arm method is a single-arm method with a coordination problem added.
+**Two arms.** Coordination is a genuinely different problem and has
+[its own folder](../two-arm-training/overview.md). Do this path first, because almost
+every two-arm method is a single-arm method with a coordination problem added on top.
 
 **Reinforcement learning from scratch.** It needs a simulator, a reward function and
-a compute budget, and the field itself is using it less each year as a first stage.
-Project 2's layer 4 teaches the use that actually matters, which is practice applied
-to an already-demonstrated policy.
+a budget for compute, and the field itself is using it less each year as a first
+step. Project 2's layer 4 teaches the use that actually matters, which is practice
+applied to a policy that was demonstrated first.
 
-**Isaac Lab and the NVIDIA stack.** Excellent, widely used, and requires hardware you
-do not have. MuJoCo teaches the same lessons. Note that
-[MuJoCo Warp](https://github.com/google-deepmind/mujoco_warp), where the
-high-throughput version of that story is going, is NVIDIA-first as well — it runs on
-a Mac for reading and debugging, not for training. The simulator to watch if you
-want a genuine Apple graphics backend is
-[Genesis](https://github.com/Genesis-Embodied-AI/Genesis).
+**Isaac Lab and the NVIDIA stack.** Excellent, widely used, and needs hardware you do
+not have. MuJoCo teaches the same lessons.
+[MuJoCo Warp](https://github.com/google-deepmind/mujoco_warp), where the fast version
+of MuJoCo is heading, is NVIDIA-first as well: it runs on a Mac for reading and
+debugging, not for training. If you want a simulator with a real Apple graphics
+backend, watch [Genesis](https://github.com/Genesis-Embodied-AI/Genesis).
 
 ---
 
 Back to [the overview](overview.md). For the methods themselves, see
 [programmed methods](programmed-methods.md) and
-[learned methods](learned-methods.md); for the direction the field is moving, see
+[learned methods](learned-methods.md). For where the field is going, see
 [what is changing, and why](what-is-changing.md).

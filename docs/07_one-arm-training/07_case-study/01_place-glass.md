@@ -508,3 +508,11 @@ rather than a bug.
   simulation; projects 1 and 2 between them cover most of what this task needs.
 - [Tools and libraries](../../06_tools-and-libraries.md) is the fuller version of
   [section 4](#4-which-part-uses-what).
+
+---
+
+## 9. Quesitons
+1. How can we we train the model on where to pick the glass from? We can use some images and add some markets on where to pick it from, can that be used, if yes how?
+2. How can we train the gripping of the glass from the handle?
+3. Can we use reinforced learning here? if yes where?
+

@@ -516,3 +516,30 @@ rather than a bug.
 2. How can we train the gripping of the glass from the handle?
 3. Can we use reinforced learning here? if yes where?
 
+### First Project/Version
+
+- we have table and there we have x number of different types of glasses. we also have the rack or glass stand where glasses are put down so that their open face looks down. we will have 6 slots in the rack for now. 
+- we also know rack dimension like height of that stand and difference between two parallel glasses
+- we have 5 types of glasses and we need to place the upside down on rack.
+-- simple straight glass like rocks or vodka glass
+-- wine glass
+-- kind of glass with simple handle
+-- milkshake glass
+-- irish glass
+- as all type of glass are of different shapes so we have some values predefined like weight of empty glass, then their opening thickness, height etc. 
+- what we need is simply pick up the glass and place it on the rack safely. and we need some type of confirmation that it has completed task one by one. 
+- one last thing is we should not disturb the glasses which has some water in it. we need to pick only empty glasses.  
+- total number and which glass were present, we are not sure.
+- we also dont know the location where rack is present on the table. 
+
+- first we need initial camera images (table camera)
+- also here we need to capture the images of rack as well to find either we have enough empty slots or not. there we can use yolo i think would be better.
+- it will just tell us which slots are empty and which are already booked.
+- there we can use yolo segmentation it will do both things one is giving outline and other is classifiyng the type of glass.
+- the other appraoch could be using of SAM for outline and then use some other ML model for classifcation
+- after we get these details. we need to perform first action which is grupper going and picking up the glass 
+- to find exact position where it need to pick. we can use learned policy for that glass only. because the policy knows all glass dimensions and its dynamics
+- then it would be easier for the arm to perform this thing on that type of glass.
+- after picking the glass from that location to upward there we check the weight logic as well by force sensors of the joints
+- after that upside thing is movelt part and placing also
+- but in placing part, after arm done with it, we need to confirm whether it acutally get successful or not by camera image to confirm if that slot has been booked.

@@ -1336,6 +1336,69 @@ def force_signal_chain() -> None:
     _save(fig, 'case-study/place-glass', 'force-signal-chain.svg')
 
 
+def where_to_hold() -> None:
+    """Four criteria run up the height of a glass, and three of them agree.
+
+    Drawn to scale in millimetres for the example tumbler, whose centre of
+    mass works out at 53.4 mm, or 44.5 per cent of its height.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.4, 4.7), facecolor='white')
+    ax.set_aspect('equal')
+    ax.set_xlim(-40, 470)
+    ax.set_ylim(-42, 152)
+    ax.axis('off')
+
+    outer, inner, height, wall = 35.0, 32.0, 120.0, 3.0
+
+    # The two zones that decide the answer, drawn behind the glass.
+    ax.add_patch(Rectangle((-42, 90), 84, 30, facecolor=PALE_RED,
+                           edgecolor='none', zorder=0))
+    ax.add_patch(Rectangle((-42, 22), 84, 26, facecolor=PALE_GREEN,
+                           edgecolor='none', zorder=0))
+
+    # The glass in section: a U of wall thickness, open at the top.
+    section = [(-outer, height), (-outer, 0), (outer, 0), (outer, height),
+               (inner, height), (inner, wall), (-inner, wall), (-inner, height)]
+    ax.add_patch(Polygon(section, closed=True, facecolor=PALE_BLUE,
+                         edgecolor=BLUE, lw=1.8, zorder=2))
+
+    # Where gravity acts.
+    com: float = 53.4
+    ax.plot([0], [com], marker='o', markersize=9, color=INK, zorder=5)
+    ax.plot([-inner, inner], [com, com], color=INK, lw=0.9,
+            linestyle=(0, (3, 3)), zorder=4)
+
+    # The offset a low grip leaves, measured on the right of the glass.
+    quarter: float = 30.0
+    ax.add_patch(FancyArrowPatch((54, quarter), (54, com), arrowstyle='<|-|>',
+                                 mutation_scale=10, color=ORANGE, lw=1.5))
+    ax.text(58, (quarter + com) / 2, '23 mm', fontsize=8.8, color=ORANGE,
+            ha='left', va='center')
+
+    notes: list[tuple[float, float, str, str]] = [
+        (108, 103, 'the worst place to squeeze it\nan open edge with nothing to stop '
+         'it going oval,\nand the part people put their mouths on', RED),
+        (62, 56, 'where gravity acts\na low grip leaves a moment for the pads to '
+         'take,\nwhich is a reason for taller pads, not a harder squeeze', INK),
+        (20, 33, 'hold here, about a quarter of the way up\nthe base stiffens the '
+         'shell against going oval, and after\nthe turn these fingers are on top, '
+         'clear of the rack', GREEN),
+    ]
+    for y_text, y_point, body, colour in notes:
+        ax.plot([76, 100], [y_point, y_text], color=MUTED, lw=0.8, zorder=1)
+        ax.text(104, y_text, body, fontsize=8.8, color=colour, ha='left',
+                va='center', linespacing=1.6)
+
+    ax.text(0, 132, 'the example tumbler', fontsize=9.0, color=MUTED, ha='center')
+    ax.text(-40, -26, 'Three of the four criteria want a low grip and only the '
+            'centre of mass wants a middle one. That is why the answer is a low '
+            'grip with tall pads,\nrather than a compromise height.', fontsize=9.5,
+            color=INK, va='top', linespacing=1.7)
+    _save(fig, 'case-study/place-glass', 'where-to-hold.svg')
+
+
 if __name__ == '__main__':
     task_map()
     layers()
@@ -1356,3 +1419,4 @@ if __name__ == '__main__':
     weight_per_type()
     what_language_decides()
     force_signal_chain()
+    where_to_hold()

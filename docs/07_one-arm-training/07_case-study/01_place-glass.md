@@ -193,13 +193,6 @@ same pass, which is the class you actually need. What that costs you is a labell
 job on your own table, and a model that knows nothing outside the classes you
 labelled.
 
-One name worth separating out, because the two get confused. **SLAM** is not this.
-SLAM, Simultaneous Localisation and Mapping, is how a robot that *drives around* a
-building works out where it is while building a map of it as it goes. This arm is
-bolted to a table that was measured once, so there is nothing to localise and no map
-to build. The similar-sounding one you do want here is **SAM**, the Segment Anything
-Model, in the table above.
-
 **Stack, on top of version 1:** YOLO segmentation with two classes, empty glass and
 full glass; [Open3D](https://github.com/isl-org/Open3D) to fit a cylinder to each
 outline against the measured table plane; an
@@ -267,6 +260,45 @@ Those gates are the clearest argument for keeping all of this per type rather th
 global.
 
 ![Why the water gate needs one number per glass type](../../images/one-arm-training/case-study/place-glass/weight-per-type.svg)
+
+#### Where to hold it
+
+A record needs one more thing: where on the glass to take hold. It is not obliged to
+be the middle, and for these glasses the middle is the wrong answer. Four criteria
+argue about it, and three of them agree.
+
+![Four criteria up the height of a glass, and where they agree](../../images/one-arm-training/case-study/place-glass/where-to-hold.svg)
+
+So the record gains four more fields — grasp height, grip width, approach and force —
+and the question is settled once, by a person with a ruler, rather than worked out at
+run time.
+
+For a glass with no record, the grasp comes from the cylinder that perception already
+fitted: take pairs of opposing points with opposite surface normals, score them by
+friction and by how far they sit from the centre of mass, and keep the lowest one that
+clears the table. On a cylinder that is arithmetic rather than a search. The MoveIt 1
+package for this, `moveit_grasps`, has no ROS 2 branch, so it is a short piece of your
+own code instead.
+
+There are also **grasp-proposal networks** —
+[Contact-GraspNet](https://github.com/NVlabs/contact_graspnet) and
+[GraspGen](https://github.com/NVlabs/GraspGen) are the open ones — which take a point
+cloud and return ranked six-degree-of-freedom grasps. They are the right tool for a bin
+of objects you cannot list in advance, and they are worth knowing exist. They are not
+right here, for two reasons: a transparent glass gives no point cloud to feed them, and
+they rank grasps by whether the object will slip, having been trained on objects that
+cannot break. A grasp across the rim scores well.
+
+However the grasp was chosen, check it rather than trust it. All three checks use
+sensors the task already has.
+
+| When | What to look at | What it tells you |
+| --- | --- | --- |
+| As the fingers close | force against finger width | force rising at the width you predicted means the glass is where you thought it was |
+| Just after the lift | the torque in the wrist wrench | an unexpected moment means you gripped higher, lower or further off the axis than intended |
+| Before the turn | tilt 20 to 30 degrees slowly | whether the glass shifts in the fingers, while a shift is still recoverable |
+
+A failed check costs a regrasp. Not checking costs a glass.
 
 **Stack:** no new frameworks at all. The library is a file, and the recipe is the
 version 1 sequence with its constants replaced by lookups. The perception from
@@ -336,6 +368,7 @@ the obvious alternative we are not using, with the reason.
 | Descend onto the rack | the admittance controller in [ros2_controllers](https://github.com/ros-controls/ros2_controllers), or [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers) | commanding a height into a rigid base |
 | Sequence and recover | [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) | a state machine, which turns illegible once recovery branches multiply |
 | Hold the per-glass numbers | a file, one record per type | constants spread through the code |
+| Choose where to hold an unfamiliar glass | antipodal sampling on the fitted cylinder, written yourself | [Contact-GraspNet](https://github.com/NVlabs/contact_graspnet), [GraspGen](https://github.com/NVlabs/GraspGen) — they need a point cloud a transparent glass does not give, and they rank by slip rather than by breakage |
 | Turn an instruction into a goal | [Qwen3-VL](https://github.com/QwenLM/Qwen3-VL) in the [Code as Policies](https://code-as-policies.github.io/) pattern | a menu of buttons, which cannot cover what people actually ask for |
 | Learn a skill, if recipes run out | [LeRobot](https://github.com/huggingface/lerobot) | the original [ACT](https://github.com/tonyzhaozh/act) and [diffusion policy](https://github.com/real-stanford/diffusion_policy) repositories, which are quiet now |
 | Record every attempt | rosbag2, which ships with ROS 2 | log lines, which cannot show you the frame before the drop |

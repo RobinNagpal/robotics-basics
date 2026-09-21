@@ -12,7 +12,8 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib.axes import Axes  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
-from matplotlib.patches import FancyArrowPatch, Rectangle  # noqa: E402
+from matplotlib.patches import (Arc, Circle, FancyArrowPatch,  # noqa: E402
+                                Polygon, Rectangle)
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
@@ -810,6 +811,294 @@ def what_is_learned() -> None:
     _save(fig, 'learned-methods', 'what-is-learned.svg')
 
 
+# --------------------------------------------------------------------------
+# case-study/place-glass.md
+# --------------------------------------------------------------------------
+
+# The example rack and glass the case study assumes, in millimetres. The doc
+# quotes the same numbers, so change them in both places or in neither.
+GLASS_RIM_OUTER: float = 70.0
+GLASS_RIM_INNER: float = 64.0
+PEG_DIAMETER: float = 12.0
+PEG_SPACING: float = 90.0
+
+
+def _glass_glyph(ax: Axes, middle_x: float, base_y: float, width: float,
+                 height: float, mouth_up: bool, colour: str = BLUE) -> None:
+    """Draw a small tapered tumbler, open end up or open end down."""
+    half: float = width / 2
+    narrow: float = half * 0.80
+    if mouth_up:
+        outline = [(middle_x - half, base_y + height), (middle_x - narrow, base_y),
+                   (middle_x + narrow, base_y), (middle_x + half, base_y + height)]
+        closed_y: float = base_y
+        closed_half: float = narrow
+    else:
+        outline = [(middle_x - narrow, base_y), (middle_x - half, base_y + height),
+                   (middle_x + half, base_y + height), (middle_x + narrow, base_y)]
+        closed_y = base_y + height
+        closed_half = half
+    ax.add_patch(Polygon(outline, closed=False, fill=False, edgecolor=colour,
+                         lw=1.8, joinstyle='round'))
+    ax.plot([middle_x - closed_half, middle_x + closed_half], [closed_y, closed_y],
+            color=colour, lw=3.2, solid_capstyle='butt')
+
+
+def wrist_budget() -> None:
+    """Why the 180 degree turn has to be planned backwards from the joint limits.
+
+    The turn itself is free. What is not free is where in the wrist's range it
+    starts, and that is settled at the moment of the grasp, long before the turn.
+    """
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.6, 4.8), facecolor='white')
+    ax.set_xlim(-285, 365)
+    ax.set_ylim(-1.55, 3.55)
+    ax.axis('off')
+
+    limit: float = 175.0
+
+    def lane(y: float, start: float, title: str, colour: str, verdict: str,
+             ok: bool) -> None:
+        ax.text(-283, y + 0.84, title, fontsize=9.8, color=INK, ha='left')
+        ax.add_patch(Rectangle((-200, y - 0.09), 400, 0.18, facecolor=PALE_GREY,
+                               edgecolor='none'))
+        ax.add_patch(Rectangle((-200, y - 0.19), 200 - limit, 0.38,
+                               facecolor=PALE_RED, edgecolor='none'))
+        ax.add_patch(Rectangle((limit, y - 0.19), 200 - limit, 0.38,
+                               facecolor=PALE_RED, edgecolor='none'))
+        ax.plot([-limit, -limit], [y - 0.21, y + 0.21], color=RED, lw=1.4)
+        ax.plot([limit, limit], [y - 0.21, y + 0.21], color=RED, lw=1.4)
+
+        end: float = start + 180.0
+        tip: float = min(end, limit)
+        ax.add_patch(FancyArrowPatch((start, y + 0.42), (tip, y + 0.42),
+                                     arrowstyle='-|>', mutation_scale=13,
+                                     color=colour, lw=2.0))
+        ax.text((start + tip) / 2, y + 0.54, 'turn 180°', fontsize=8.8,
+                color=colour, ha='center')
+        ax.plot([start], [y], marker='o', markersize=7, color=colour, zorder=5)
+        ax.text(start, y - 0.32, f'grasp at {start:+.0f}°', fontsize=9,
+                color=colour, ha='center', va='top')
+        if ok:
+            ax.plot([end], [y], marker='o', markersize=7, color=colour, zorder=5)
+            ax.text(end, y - 0.32, f'let go at {end:+.0f}°', fontsize=9,
+                    color=colour, ha='center', va='top')
+        else:
+            ax.plot([limit], [y], marker='X', markersize=11, color=RED, zorder=6)
+        ax.text(208, y + 0.02, verdict, fontsize=9.2, color=colour, ha='left',
+                va='center', linespacing=1.5)
+
+    lane(2.00, 0.0, 'Plan A: grasp with the wrist where it happens to be', RED,
+         'the wrist stops 5° short,\nholding the glass on its side', False)
+    lane(0.45, -90.0, 'Plan B: turn the wrist back before closing the fingers',
+         GREEN, 'the same turn, with\n85° still to spare', True)
+
+    for edge in (-limit, limit):
+        ax.text(edge, -0.42, 'joint limit', fontsize=8.6, color=RED, ha='center',
+                va='top')
+
+    # A key on the right: what the turn is for.
+    _glass_glyph(ax, 265, 2.72, 46, 0.48, mouth_up=True, colour=MUTED)
+    _glass_glyph(ax, 340, 2.72, 46, 0.48, mouth_up=False, colour=MUTED)
+    ax.add_patch(FancyArrowPatch((293, 2.96), (312, 2.96), arrowstyle='-|>',
+                                 mutation_scale=11, color=MUTED, lw=1.4))
+    ax.text(302, 2.54, 'what the turn is for', fontsize=8.6, color=MUTED,
+            ha='center', va='top')
+
+    ax.text(-285, -1.46, 'The turn itself is free. Where in the range it starts is '
+            'not, and that is settled at the grasp, not at the turn.',
+            fontsize=9.5, color=INK)
+    _save(fig, 'case-study/place-glass', 'wrist-budget.svg')
+
+
+def why_depth_fails() -> None:
+    """What a depth camera gives back when it is pointed at a drinking glass."""
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.6, 4.9), facecolor='white')
+    ax.set_xlim(-0.3, 15.1)
+    ax.set_ylim(-1.55, 5.35)
+    ax.axis('off')
+
+    # The camera, and the table it is looking at.
+    ax.add_patch(Rectangle((0.0, 3.55), 1.15, 0.72, facecolor=PALE_GREY,
+                           edgecolor=INK, lw=1.2))
+    ax.add_patch(Circle((1.15, 3.91), 0.16, facecolor=INK, edgecolor='none'))
+    ax.text(0.57, 4.44, 'depth camera', fontsize=9.2, color=INK, ha='center')
+    ax.plot([0.5, 8.9], [0.7, 0.7], color=INK, lw=1.6)
+    ax.text(0.55, 0.44, 'table', fontsize=8.8, color=MUTED)
+
+    # An opaque mug: the light comes back, so the distance is measured.
+    ax.add_patch(Rectangle((3.05, 0.7), 0.85, 1.20, facecolor=PALE_ORANGE,
+                           edgecolor=ORANGE, lw=1.8))
+    ax.text(3.48, 2.24, 'a mug', fontsize=9.0, color=ORANGE, ha='center')
+    ax.add_patch(FancyArrowPatch((1.42, 3.74), (3.12, 1.98), arrowstyle='-|>',
+                                 mutation_scale=12, color=ORANGE, lw=1.6))
+    ax.add_patch(FancyArrowPatch((3.30, 1.98), (1.56, 3.58), arrowstyle='-|>',
+                                 mutation_scale=12, color=ORANGE, lw=1.6))
+    ax.text(0.0, 2.58, 'the light comes straight\nback, so the distance\nis '
+            'measured', fontsize=8.8, color=ORANGE, ha='left', va='top',
+            linespacing=1.5)
+
+    # The glass: the light goes through, bends, and lands somewhere else.
+    _glass_glyph(ax, 6.35, 0.7, 0.90, 1.20, mouth_up=True, colour=BLUE)
+    ax.text(6.35, 2.06, 'a glass', fontsize=9.0, color=BLUE, ha='center')
+    ax.plot([1.42, 6.06], [3.68, 1.52], color=BLUE, lw=1.6)
+    ax.plot([6.06, 6.72], [1.52, 0.98], color=BLUE, lw=1.6, linestyle=(0, (5, 3)))
+    ax.add_patch(FancyArrowPatch((6.72, 0.98), (8.62, 0.73), arrowstyle='-|>',
+                                 mutation_scale=12, color=BLUE, lw=1.6,
+                                 linestyle=(0, (5, 3))))
+    ax.text(7.05, 1.72, 'it passes through and bends,\nso what comes back is the '
+            'table\nbehind — or nothing at all', fontsize=8.8, color=BLUE,
+            ha='left', va='center', linespacing=1.5)
+
+    # What the two pictures of that scene look like.
+    def panel(bottom: float, title: str) -> None:
+        ax.add_patch(Rectangle((10.6, bottom), 3.6, 1.75, facecolor='white',
+                               edgecolor=MUTED, lw=1.2))
+        ax.text(10.6, bottom + 1.88, title, fontsize=9.4, color=INK, ha='left')
+
+    panel(3.25, 'what the colour picture shows')
+    ax.add_patch(Rectangle((11.30, 3.74), 0.60, 0.92, facecolor=PALE_ORANGE,
+                           edgecolor=ORANGE, lw=1.4))
+    _glass_glyph(ax, 13.15, 3.74, 0.66, 0.92, mouth_up=True, colour=BLUE)
+    ax.text(12.40, 3.36, 'both of them', fontsize=8.5, color=MUTED, ha='center')
+
+    panel(0.55, 'what the depth picture shows')
+    ax.add_patch(Rectangle((11.30, 1.04), 0.60, 0.92, facecolor=ORANGE,
+                           edgecolor='none', alpha=0.8))
+    ax.add_patch(Rectangle((12.82, 1.04), 0.66, 0.92, facecolor='white',
+                           edgecolor=RED, lw=1.4, linestyle=(0, (4, 3)),
+                           hatch='///'))
+    ax.text(11.60, 0.66, 'a solid block', fontsize=8.5, color=MUTED, ha='center')
+    ax.text(13.15, 0.66, 'a hole', fontsize=8.5, color=RED, ha='center')
+
+    ax.text(-0.3, -1.42, 'The colour picture still shows the glass. That is why its '
+            'shape has to come from colour, with depth used only to confirm what '
+            'colour already claimed.', fontsize=9.5, color=INK)
+    _save(fig, 'case-study/place-glass', 'why-depth-fails.svg')
+
+
+def grip_window() -> None:
+    """Grip force has a window, and the fingers decide how wide that window is."""
+    fig: Figure
+    ax: Axes
+    fig, ax = plt.subplots(figsize=(12.2, 4.6), facecolor='white')
+    ax.set_xlim(-0.2, 14.6)
+    ax.set_ylim(-1.35, 3.60)
+    ax.axis('off')
+
+    lo: float = 3.6
+    hi: float = 10.4
+
+    def bar(y: float, slip: float, crack: float, label: str, note: str) -> None:
+        ax.add_patch(Rectangle((lo, y), slip - lo, 0.50, facecolor=PALE_RED,
+                               edgecolor='none'))
+        ax.add_patch(Rectangle((slip, y), crack - slip, 0.50, facecolor=PALE_GREEN,
+                               edgecolor='none'))
+        ax.add_patch(Rectangle((crack, y), hi - crack, 0.50, facecolor=PALE_RED,
+                               edgecolor='none'))
+        ax.plot([slip, slip], [y - 0.05, y + 0.55], color=RED, lw=1.4)
+        ax.plot([crack, crack], [y - 0.05, y + 0.55], color=RED, lw=1.4)
+        ax.text((slip + crack) / 2, y + 0.25, 'it holds', fontsize=9.0, color=GREEN,
+                ha='center', va='center')
+        ax.text(lo - 0.15, y + 0.25, label, fontsize=9.2, color=INK, ha='right',
+                va='center')
+        ax.text(hi + 0.20, y + 0.25, note, fontsize=9.0, color=MUTED, ha='left',
+                va='center')
+
+    bar(2.20, 5.00, 6.55, 'hard plastic fingers', 'a window you can miss')
+    bar(1.25, 4.05, 9.30, 'soft pads, dry glass', 'the pads widened it')
+    bar(0.30, 5.55, 9.30, 'soft pads, wet glass', 'water moved the near edge')
+
+    ax.add_patch(FancyArrowPatch((lo, -0.22), (hi, -0.22), arrowstyle='-|>',
+                                 mutation_scale=13, color=INK, lw=1.2))
+    ax.text(lo, -0.52, 'less squeeze', fontsize=9.0, color=INK, ha='left')
+    ax.text(hi, -0.52, 'more squeeze', fontsize=9.0, color=INK, ha='right')
+
+    ax.text(4.30, 3.10, 'it slides out of the fingers', fontsize=9.2, color=RED,
+            ha='center')
+    ax.text(9.30, 3.38, 'the rim cracks', fontsize=9.2, color=RED, ha='center')
+    ax.plot([9.30, 9.30], [0.85, 3.28], color=RED, lw=1.0, linestyle=(0, (3, 3)))
+    ax.text(9.48, 3.06, 'set by the glass, not by you', fontsize=8.6, color=MUTED,
+            va='top', ha='left')
+
+    ax.text(-0.2, -1.22, 'You do not pick a force. You pick fingers that widen the '
+            'window, then measure where its two edges are for the glass you have.',
+            fontsize=9.5, color=INK)
+    _save(fig, 'case-study/place-glass', 'grip-window.svg')
+
+
+def rack_clearance() -> None:
+    """The peg is easy to hit. The glasses already on the rack are not.
+
+    Both halves are drawn to scale in millimetres, from the numbers in the doc.
+    """
+    fig: Figure
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.0), facecolor='white')
+    radius_outer: float = GLASS_RIM_OUTER / 2
+    radius_inner: float = GLASS_RIM_INNER / 2
+
+    left: Axes = axes[0]
+    left.set_aspect('equal')
+    left.set_xlim(-112, 112)
+    left.set_ylim(-78, 62)
+    left.axis('off')
+    left.add_patch(Circle((0, 0), radius_outer, facecolor=PALE_BLUE,
+                          edgecolor=BLUE, lw=2.0))
+    left.add_patch(Circle((0, 0), radius_inner, facecolor='white',
+                          edgecolor=BLUE, lw=1.1, linestyle=(0, (4, 3))))
+    left.add_patch(Circle((0, 0), PEG_DIAMETER / 2, facecolor=GREY,
+                          edgecolor=INK, lw=1.1))
+    left.add_patch(FancyArrowPatch((PEG_DIAMETER / 2, 0), (radius_inner, 0),
+                                   arrowstyle='<|-|>', mutation_scale=10,
+                                   color=GREEN, lw=1.5))
+    left.text(16, 8.0, '26 mm', fontsize=9.6, color=GREEN, ha='center')
+    left.text(0, 50, 'against the peg', fontsize=10.6, color=GREEN, ha='center')
+    left.text(0, -42, 'The peg is 12 mm across, the glass 64 mm across\n'
+              'inside. You can be 26 mm out sideways and the\nglass still drops '
+              'over it.', fontsize=9.2, color=INK, ha='center', va='top',
+              linespacing=1.6)
+
+    right: Axes = axes[1]
+    right.set_aspect('equal')
+    right.set_xlim(-112, 112)
+    right.set_ylim(-78, 62)
+    right.axis('off')
+    for offset in (-PEG_SPACING, 0.0, PEG_SPACING):
+        placing: bool = offset == 0.0
+        right.add_patch(Circle((offset, 0), radius_outer,
+                               facecolor=PALE_BLUE if placing else PALE_GREY,
+                               edgecolor=BLUE if placing else GREY, lw=2.0))
+        right.add_patch(Circle((offset, 0), PEG_DIAMETER / 2, facecolor=GREY,
+                               edgecolor=INK, lw=1.0))
+    for offset in (-PEG_SPACING, PEG_SPACING):
+        right.text(offset, -14, 'already\nthere', fontsize=8.4, color=MUTED,
+                   ha='center', va='center', linespacing=1.4)
+    right.text(0, -14, 'going\nin', fontsize=8.4, color=BLUE, ha='center',
+               va='center', linespacing=1.4)
+    gap_left: float = -PEG_SPACING + radius_outer
+    right.add_patch(FancyArrowPatch((gap_left, 22), (-radius_outer, 22),
+                                    arrowstyle='<|-|>', mutation_scale=10,
+                                    color=RED, lw=1.5))
+    right.text((gap_left - radius_outer) / 2, 27, '10 mm', fontsize=9.6, color=RED,
+               ha='center')
+    right.text(0, 50, 'against the neighbours', fontsize=10.6, color=RED,
+               ha='center')
+    right.text(0, -42, 'The rims sit 20 mm apart, so 10 mm each side is all\n'
+               'there is — and tilting a 120 mm glass by 5° swings its\n'
+               'rim 10.5 mm, which uses every bit of it.', fontsize=9.2, color=INK,
+               ha='center', va='top', linespacing=1.6)
+
+    fig.text(0.5, 0.02, 'Both halves are drawn to the same scale. Landing on the '
+             'peg is the easy part; getting down past the glasses already on the '
+             'rack is the tolerance that decides the design.',
+             fontsize=9.5, color=INK, ha='center')
+    _save(fig, 'case-study/place-glass', 'rack-clearance.svg')
+
+
 if __name__ == '__main__':
     task_map()
     layers()
@@ -822,3 +1111,7 @@ if __name__ == '__main__':
     position_vs_force()
     compounding_error()
     what_is_learned()
+    wrist_budget()
+    why_depth_fails()
+    grip_window()
+    rack_clearance()

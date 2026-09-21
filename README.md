@@ -82,6 +82,13 @@ model name. There is also a
 **[glossary](docs/07_one-arm-training/06_glossary.md)** covering every term in that
 folder, from what a degree of freedom is to what ACT and diffusion policy are.
 
+**[A case study](docs/07_one-arm-training/07_case-study/01_place-glass.md)** in the same
+folder works one household job all the way through: pick up a drinking glass, turn it
+over, and stand it mouth-down on a drying rack. It covers why a depth camera cannot
+see a glass, why the 180-degree turn has to be planned before the grasp, which
+gripper and which grip force, what changes when a glass of an unfamiliar shape turns
+up, and where the whole thing breaks.
+
 **[Two-arm training](docs/08_two-arm-training/01_overview.md)** is the companion folder
 for what changes when two arms must **cooperate** on one job: whether your task
 needs a second arm at all, the two ways the arms can be coupled, and what that does

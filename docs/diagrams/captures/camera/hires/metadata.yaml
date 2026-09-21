@@ -4,7 +4,7 @@ rosbag2_bagfile_information:
   duration:
     nanoseconds: 0
   starting_time:
-    nanoseconds_since_epoch: 3800000000
+    nanoseconds_since_epoch: 3600000000
   message_count: 4
   topics_with_message_count:
     - topic_metadata:
@@ -46,7 +46,7 @@ rosbag2_bagfile_information:
   files:
     - path: hires_0.mcap
       starting_time:
-        nanoseconds_since_epoch: 3800000000
+        nanoseconds_since_epoch: 3600000000
       duration:
         nanoseconds: 0
       message_count: 8

@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/rviz/overview.md.
+"""Generate the diagrams used in docs/02_rviz/overview.md.
 
 Images go to docs/images/<area>/, matching the docs/<area>/ folder that uses
 them.

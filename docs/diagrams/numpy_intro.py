@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/numpy/numpy-intro.md.
+"""Generate the diagrams used in docs/04_numpy/numpy-intro.md.
 
 The images go to docs/images/numpy/numpy-intro/.
 

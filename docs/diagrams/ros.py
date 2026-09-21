@@ -1,4 +1,4 @@
-"""Generate the diagrams used in the docs/ros/ docs.
+"""Generate the diagrams used in the docs/01_ros/ docs.
 
 Each doc's images go to a folder named after it, under docs/images/ros/.
 

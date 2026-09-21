@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/ros/ros-basics.md.
+"""Generate the diagrams used in docs/01_ros/02_ros-basics.md.
 
 The images go to docs/images/ros/ros-basics/.
 

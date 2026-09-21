@@ -1,4 +1,4 @@
-"""Generate the pictures used in docs/camera/finding-objects.md.
+"""Generate the pictures used in docs/05_camera/02_finding-objects.md.
 
 The images go to docs/images/camera/finding-objects/.
 

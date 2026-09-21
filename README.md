@@ -18,12 +18,12 @@ own, with its own code, its own doc, and two or three commands.
 
 | Area | What it covers | Start with |
 | --- | --- | --- |
-| [ros](docs/ros/ros-intro.md) | the basics of ROS, one program per idea, then a camera, an arm, and the two together | `make ros.basics` |
-| [rviz](docs/rviz/overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
-| [arm](docs/arm/overview.md) | position, frames and transforms | `make arm.learn` |
-| [camera](docs/camera/basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
-| [numpy](docs/numpy/numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
-| [finding objects](docs/camera/finding-objects.md) | finding a thing in a picture: by colour, with depth, and with a trained model | `make camera.colour` |
+| [ros](docs/01_ros/01_ros-intro.md) | the basics of ROS, one program per idea, then a camera, an arm, and the two together | `make ros.basics` |
+| [rviz](docs/02_rviz/01_overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
+| [arm](docs/03_arm/01_overview.md) | position, frames and transforms | `make arm.learn` |
+| [camera](docs/05_camera/01_basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
+| [numpy](docs/04_numpy/01_numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
+| [finding objects](docs/05_camera/02_finding-objects.md) | finding a thing in a picture: by colour, with depth, and with a trained model | `make camera.colour` |
 
 <p align="center">
   <img src="docs/images/rviz/scene.svg" width="31%" alt="A ball circling a grid in RViz">
@@ -42,57 +42,66 @@ The camera code is mostly NumPy, so if NumPy is new to you, read **numpy** befor
 
 ## Beyond the areas
 
-**[Tools and libraries](docs/tools-and-libraries.md)** is a map of the main
+**[Tools and libraries](docs/06_tools-and-libraries.md)** is a map of the main
 tools used with arms mounted on a table: ROS 2, URDF, MoveIt, ros2_control,
 simulators, perception, calibration and more. For each it explains the job it
 does, then shows pseudo code and a few lines of real code. Read it after the
 areas, when you want to know what to reach for next.
 
-**[Two-arm manipulation](docs/two-arm-manipulation.md)** is a route into
+**[Two-arm manipulation](docs/10_two-arm-manipulation.md)** is a route into
 bimanual work, in five steps from "make two arms move" to "a long task, measured
 properly", using only projects whose code, simulator and data are all open. It
 says which ones run on this Mac, which need a Linux box with an NVIDIA card, and
 which well-known ones are not as open as they look.
 
-**[Stone stacking](docs/stone-stacking.md)** takes one hard two-arm task —
+**[Stone stacking](docs/09_stone-stacking.md)** takes one hard two-arm task —
 balancing rough stones on top of each other — and walks through how such a
 system is built: what makes a stack stand up, what the second arm is for, the
 loop the robot runs once per stone, and which open frameworks do each stage. A
 map of the process, not code.
 
-**[Full training](docs/full-training/overview.md)** follows one branch of that
+**[Full training](docs/11_full-training/01_overview.md)** follows one branch of that
 map to the end: what it takes to train the whole thing, rather than programme
 it. The rig and the demonstrations, what a dataset of them looks like, the
 training run and what it costs, and how to evaluate it honestly and improve it.
 
-**[One-arm training](docs/one-arm-training/overview.md)** is the map above all of
+**[One-arm training](docs/07_one-arm-training/01_overview.md)** is the map above all of
 these: every way to programme or train a single arm, as a family tree, with a grid
 comparing eight families point by point, the mixes real systems actually use, and a
 table of which to reach for when. It ends with an evidenced look at what is
 realistic to build — and to be paid for — in the next year. Start here.
 
-Two companions to it: **[a learning path](docs/one-arm-training/learning-path.md)**
+Two companions to it: **[a learning path](docs/07_one-arm-training/04_learning-path.md)**
 is five complete simulation projects on MuJoCo and Gazebo — from tidying a desk to
 learning a task from video of your own hand — each built four times, from
 hand-written code up to the current frontier, with the reason for every framework;
 and
-**[what is changing, and why](docs/one-arm-training/what-is-changing.md)** explains
+**[what is changing, and why](docs/07_one-arm-training/05_what-is-changing.md)** explains
 the direction of travel and the reasons behind it, which outlast any particular
-model name.
+model name. There is also a
+**[glossary](docs/07_one-arm-training/06_glossary.md)** covering every term in that
+folder, from what a degree of freedom is to what ACT and diffusion policy are.
 
-**[Two-arm training](docs/two-arm-training/overview.md)** is the companion folder
+**[Two-arm training](docs/08_two-arm-training/01_overview.md)** is the companion folder
 for what changes when two arms must **cooperate** on one job: whether your task
 needs a second arm at all, the two ways the arms can be coupled, and what that does
 to every method. Two arms doing unrelated things in one cell are deliberately out of
 scope — that is the one-arm problem, twice.
+
+## How the docs are ordered
+
+Everything in `docs/` is numbered in the order it is meant to be read, both the
+folders and the files inside them. So `docs/01_ros/` comes before `docs/03_arm/`,
+and inside a folder `01_overview.md` comes before `02_programmed-methods.md`. You do
+not have to guess where to start.
 
 ## Layout
 
 ```
 Makefile              every command
 pixi.toml             what to install
-docs/<area>/          the doc for each area
-docs/images/<area>/   its pictures
+docs/NN_<area>/       the docs for each area, numbered in reading order
+docs/images/<area>/   its pictures (not numbered: nobody reads these in order)
 docs/diagrams/        the scripts that draw them
 src/                  the code for each area:
   ros/ros_basics/       one small program for each thing ROS is used for

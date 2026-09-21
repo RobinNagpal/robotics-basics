@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/arm/overview.md.
+"""Generate the diagrams used in docs/03_arm/overview.md.
 
 Images go to docs/images/<area>/, matching the docs/<area>/ folder that uses
 them.

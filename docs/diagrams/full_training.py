@@ -1,4 +1,4 @@
-"""Generate the diagrams used in the docs/full-training/ docs.
+"""Generate the diagrams used in the docs/11_full-training/ docs.
 
 Each doc's images go to docs/images/full-training/<doc-name>/.
 

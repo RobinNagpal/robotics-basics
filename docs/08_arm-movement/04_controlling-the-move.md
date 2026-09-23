@@ -129,10 +129,11 @@ because mid-move is when it is near obstacles.
 
 **A tolerance of zero never fails and a tolerance tighter than the measurement
 never succeeds.** These are the same mistake in two directions and they live in
-the same file. Setting a goal tolerance of 0.0001 radians on an arm whose
-repeatability is 0.03 mm produces a controller that aborts every move; setting
-0.0 produces one that accepts every move. The correct value is the hardware's
-number with a margin, and choosing it requires knowing the hardware's number.
+the same file. A goal tolerance below what the arm can
+actually achieve produces a controller that aborts every move; a tolerance of 0.0
+produces one that accepts every move. The correct value is the arm's own settling
+figure with a margin, taken from its datasheet or measured, and choosing it
+requires having that number rather than a guess at it.
 
 **Following error is not the same as goal error, and only one of them is about
 safety.** The arm always catches up at the end, because the trajectory stops
@@ -398,9 +399,10 @@ an enforcement. The distinction matters the moment a person is in the cell, and
 
 One more effect that surprises people. Slowing an arm down does not slow
 everything down proportionally. Following error generally falls, because the
-joints are asked for less. Contact forces on impact fall roughly with the square
-of the speed. But settling time at the end of the move does not improve, because
-it is set by the arm's own dynamics rather than by how fast it arrived. A move
+joints are asked for less. The kinetic energy carried into any unplanned contact
+falls with the square of the speed, since that is what kinetic energy does. But
+settling time at the end of the move does not improve, because it is set by the
+arm's own dynamics rather than by how fast it arrived. A move
 scaled to a tenth is not a tenth as accurate at the end; it is approximately as
 accurate, and takes ten times as long.
 

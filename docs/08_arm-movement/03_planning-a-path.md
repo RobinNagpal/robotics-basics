@@ -324,6 +324,9 @@ along it. How close together those points are is set by
 `longest_valid_segment_fraction`, and OMPL's default, as MoveIt's source records,
 is `0.01` — one hundredth of the whole joint space's extent. On an arm with wide
 joint limits that is on the order of ten degrees of joint motion between checks.
+That figure is an order of magnitude rather than a measurement, because the
+extent depends on how the state space weights each joint, and the point does not
+need a precise value.
 
 Anything thinner than the swept volume of ten degrees of motion can pass between
 two checks unnoticed. The planner will happily return a path through a plate, a

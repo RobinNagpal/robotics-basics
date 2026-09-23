@@ -98,13 +98,21 @@ check is on poses and the failure is on the path between them.
 **Turning the base does not help.** The hole is a solid of revolution about the
 base axis, so it is in the way for every direction the arm might approach from.
 
-**A real six-joint arm has the same hole, and it is bigger than the arithmetic
-suggests.** The wrist is offset sideways from the shoulder, so the dead region
-around the base axis is a cylinder rather than a point. The official Universal
-Robots description gives the UR5e a 133.3 mm offset between the forearm and the
-first wrist joint, which is the length that sets it. This is why an arm cannot
-reach the spot directly underneath its own shoulder, which is exactly where
-people like to put the part tray.
+**A real six-joint arm has the same hole, and it has a second one that the
+two-link arithmetic does not predict.** The wrist joints are offset sideways
+from the plane the two long links move in, so the arm cannot put its tool on the
+base's own axis of rotation. Taking the UR5e's link offsets from the official
+description — 133.3 mm from the forearm to the first wrist joint, and 99.7 mm
+from there to the second — and building the transform chain the URDF builds, the
+tool flange cannot come closer than **33.6 mm** to the base axis, which is
+exactly the difference between those two offsets. Sampling four hundred thousand
+random joint configurations reaches 33.7 mm and never closer, which is what a
+sampled minimum of an exact 33.6 mm should look like.
+
+Thirty-three millimetres sounds like nothing and behaves like something. It is
+the reason an arm cannot point its tool straight down at the spot directly under
+its own shoulder, and that spot is exactly where people like to put the part
+tray.
 
 The practical consequence is a rule worth adopting early: **put nothing important
 in the first fifth of the arm's reach, and nothing important in the last tenth.**
@@ -403,8 +411,10 @@ decision for you.
 maintained tool for this and is Apache-2.0. It was last pushed in March 2025, so
 it is stable rather than active. The older and better-known
 [Reuleaux](https://github.com/ros-industrial-consortium/reuleaux) has been moved
-into ROS-Industrial's attic and was last touched in July 2024; it is worth
-knowing the name because papers cite it, and it is not worth building.
+into ROS-Industrial's attic, was last touched in July 2024, and carries no
+licence file at all, which under default copyright means no permission to use it
+for anything. It is worth knowing the name because papers cite it, and it is not
+worth building on.
 
 **Running the planner.** The only thing that answers the fourth question. Costs
 the most and is the only honest test of "can the arm get there from here".

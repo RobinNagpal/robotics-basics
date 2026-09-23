@@ -177,7 +177,7 @@ finding: reachability analysis has no healthy open-source ecosystem.
 | Tool | Licence | State |
 | --- | --- | --- |
 | [reach](https://github.com/ros-industrial/reach) | Apache-2.0 | last pushed March 2025. The maintained option |
-| [Reuleaux](https://github.com/ros-industrial-consortium/reuleaux) | — | **in ROS-Industrial's attic**, last pushed July 2024. Papers still cite it; do not build on it |
+| [Reuleaux](https://github.com/ros-industrial-consortium/reuleaux) | **none at all** — no licence file in the repository | **in ROS-Industrial's attic**, last pushed July 2024. Papers still cite it; do not build on it |
 
 ### 2.5 Learned motion
 
@@ -265,9 +265,9 @@ The packages that matter for motion, with the licence of each:
 | `admittance_controller` | Apache-2.0 | the one contact controller the open stack ships |
 | `motion_primitives_controllers` | Apache-2.0 | sending PTP, LIN and CIRC to the vendor's own controller |
 | `force_torque_sensor_broadcaster` | Apache-2.0 | publishing the wrist sensor |
-| `octomap` | BSD | the occupancy map MoveIt uses for unknown obstacles |
+| `octomap` | BSD, declared in its `package.xml`; there is no root LICENSE file | the occupancy map MoveIt uses for unknown obstacles |
 | `ur_robot_driver` | BSD-3 | the Universal Robots driver, with an `osx-arm64` RoboStack build |
-| `franka_ros2` | Apache-2.0 | the Franka driver, and the route to joint impedance control |
+| `franka_ros2` | Apache-2.0 | the Franka driver. Its example controllers include joint and Cartesian impedance, which is the practical route to compliance on that arm |
 | `isaac_ros_cumotion` | **NVIDIA Isaac ROS Software License** | GPU planning — proprietary, see section 1.4 |
 
 One thing worth stating because it is a category error people make. **MoveIt's

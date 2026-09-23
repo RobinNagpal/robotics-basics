@@ -275,9 +275,11 @@ and they are not equally large.
 **Repeatability and accuracy are different numbers, and almost every datasheet
 quotes only the first.** Repeatability is how close the arm gets to the same
 place when sent there twice. Accuracy is how close it gets to the place you
-named. Industrial arms are repeatable to a fraction of a millimetre and accurate
-to something closer to a millimetre, because accuracy depends on the arm's model
-of its own dimensions and that model is nominal rather than measured. Any
+named. Industrial arms are far more repeatable than they are accurate,
+because accuracy depends on the arm's model of its own dimensions and that model
+is nominal rather than measured — the arm knows what the drawing said, not what
+was built. Both numbers come from the arm's datasheet, and most datasheets quote
+only the flattering one. Any
 workflow that commands a pose computed from a camera is using accuracy. Any
 workflow that replays a taught pose is using repeatability. The second is the
 better number and most projects quietly assume it while relying on the first.

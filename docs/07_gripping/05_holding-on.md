@@ -31,7 +31,7 @@ document builds on rather than repeats.
 2. [What force control a gripper actually gives you](#2-what-force-control-a-gripper-actually-gives-you)
 3. [Compliance: impedance and admittance](#3-compliance-impedance-and-admittance)
 4. [Slip, and the checks that cannot fire](#4-slip-and-the-checks-that-cannot-fire)
-5. [When the object moves in the fingers](#5-when-the-object-moves-in-the-fingers)
+5. [Feedback, and what to do with it](#5-feedback-and-what-to-do-with-it)
 6. [Regrasping](#6-regrasping)
 7. [In-hand manipulation](#7-in-hand-manipulation)
 8. [Letting go](#8-letting-go)
@@ -392,7 +392,44 @@ Five jobs it cannot do:
 - substitute for getting the grasp geometry right, which is where slip is
   actually prevented
 
-## 5. When the object moves in the fingers
+## 5. Feedback, and what to do with it
+
+Everything above produces signals. This section gathers them into one place,
+because the pieces are spread across the sections that introduced them and the
+useful question — *what can I actually know, and what do I do about it* — is
+answered by the set rather than by any one of them.
+
+### 5.1 Every signal you can get, and what each one settles
+
+Read the table as: what the signal is, what hardware it needs, the question it
+genuinely answers, and the question people wrongly believe it answers.
+
+| Signal | Needs | What it settles | What it cannot tell you |
+| --- | --- | --- | --- |
+| finger position and gap | any electric gripper | how wide the fingers ended up, so whether the object is the width you expected | whether the object is sliding out or turning — [it sees squashing only](#41-the-finger-gap-check-and-what-it-cannot-see) |
+| grasp-detected, `stalled` | any electric gripper | that something stopped the fingers early | *what* stopped them — [object, tote wall or jammed finger are identical](#23-the-grasp-detected-signal-answers-a-weaker-question-than-it-appears-to) |
+| commanded against achieved force | varies by product | roughly how hard you are pressing | the actual force, which [depends on the object's hardness](#21-the-command-is-a-torque-request-not-a-force) |
+| wrist force, world vertical | a wrist force-torque sensor | the weight, so whether you are holding anything at all | nothing, until the wrench is rotated into the world frame |
+| wrist torque | the same sensor | the centre-of-mass offset, and rotation in the fingers | which of the two changed, without the weight as well |
+| contact sensors on the pads | pad sensors | that the pads touched something | anything about what the *object* touched — its base is not the pads |
+| a tactile array | GelSight, DIGIT, a pressure grid | the shape of the contact patch, and incipient slip | where the object is, which is not a local measurement |
+| a second look | a wrist camera | the object's actual pose after the lift | anything quickly, and nothing if the gripper hides it |
+
+Two things fall out of that table and both are worth carrying.
+
+**No single signal confirms a good grasp.** The one people reach for —
+grasp-detected — is the weakest in the set. The pair that actually settles it is
+the finger gap agreeing with the measurement *and* the wrist taking the expected
+weight, which is two sensors answering two different questions.
+
+**Match the signal to the event.** Watch the sensor that observes the thing you
+care about rather than the one physically nearest to it. Setting an object down
+is a transfer of weight, not a touch, so the wrist settles it and the pad sensors
+cannot. This rule recurs throughout contact work and the perception area states
+it for [the guarded
+move](../06_object-perception/02_sensors.md#21-what-you-can-actually-do-with-it).
+
+### 5.2 The five responses, in order of cost
 
 Detecting slip is only useful if there is a response, and there are four, in
 increasing order of cost.

@@ -175,7 +175,7 @@ def error_budget() -> None:
     z = 0.340
     sources = [
         ('the mask edge is 1 px out\non each side', 2 * 1 * z / FX * 1000, BLUE),
-        ('the depth reading is 5 mm out\n(a good RGB-D camera at 340 mm)', 60 * 0.005 / FX * 1000, ORANGE),
+        ('the depth reading is 7 mm out\n(a RealSense D405, +/-2% of range)', 60 * 0.007 / FX * 1000, ORANGE),
         ('the depth reading is 20 mm out\n(the same camera at a shiny rim)', 60 * 0.020 / FX * 1000, RED),
         ('hand-eye calibration is 1 deg out\nover a 340 mm reach', np.tan(np.radians(1.0)) * 340, PURPLE),
     ]

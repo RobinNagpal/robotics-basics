@@ -24,6 +24,8 @@ own, with its own code, its own doc, and two or three commands.
 | [camera](docs/05_camera/01_basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
 | [numpy](docs/04_numpy/01_numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
 | [finding objects](docs/05_camera/02_finding-objects.md) | finding a thing in a picture: by colour, with depth, and with a trained model | `make camera.colour` |
+| [object segmentation](docs/06_object-segmentation/01_overview.md) | every way to answer "what is it, and which pixels is it on", compared | — |
+| [object dimensions](docs/07_object-dimension-detection/01_overview.md) | every way to turn those pixels into millimetres, compared | — |
 
 <p align="center">
   <img src="docs/images/rviz/scene.svg" width="31%" alt="A ball circling a grid in RViz">
@@ -41,6 +43,14 @@ The camera code is mostly NumPy, so if NumPy is new to you, read **numpy** befor
 **camera**; it needs no ROS, and each of its five files runs on its own.
 
 ## Beyond the areas
+
+**[Object segmentation](docs/06_object-segmentation/01_overview.md)** and
+**[object dimension detection](docs/07_object-dimension-detection/01_overview.md)**
+are the two halves of the perception question every arm project runs into: what
+is this thing and which pixels is it on, and then how big is it in millimetres.
+Each covers the techniques that need no model, the models you can download, the
+models you would train, the frameworks, and the licences — and for every one of
+them, five jobs it suits and five it does not. Read them after the camera area.
 
 **[Tools and libraries](docs/08_tools-and-libraries.md)** is a map of the main
 tools used with arms mounted on a table: ROS 2, URDF, MoveIt, ros2_control,

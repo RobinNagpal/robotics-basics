@@ -154,6 +154,98 @@ the edges gives you an object of the wrong size, not merely the wrong distance.
 Neither of these improves if you swap the segmentation model for a better one,
 which is the most common wrong response to a measurement that is off.
 
+## 5. Sensors that measure distance
+
+If you are going to measure the distance rather than infer it, this is what you
+can buy. The numbers below are the manufacturers' own published figures, checked
+against their data sheets in September 2026, and they are specifications rather
+than what you will get on a bad day.
+
+| Sensor | How it works | Published accuracy | Roughly |
+| --- | --- | --- | --- |
+| [RealSense D405](https://www.realsenseai.com/products/stereo-depth-camera-d405/) | active stereo, close range | ±2% at 50 cm, works from 7 cm | a few hundred pounds |
+| [RealSense D435i](https://www.realsenseai.com/products/depth-camera-d435i/) | active stereo, general purpose | under 2% at 2 m; RMS about 2 mm at 1 m | a few hundred pounds |
+| [Orbbec Gemini 335L](https://store.orbbec.com/products/gemini-335l) | active stereo, IP65 | 0.8% at 2 m, 1.6% at 4 m | a few hundred pounds |
+| [Orbbec Femto Bolt](https://www.orbbec.com/products/tof-camera/femto-bolt/) | time of flight | systematic error under 11 mm plus 0.1% of distance | a few hundred pounds |
+| [Zivid 2+](https://www.zivid.com/) | structured light | **±0.2 mm on a 100 mm distance at 1 m** | quote only, thousands |
+| [Photoneo PhoXi L](https://photoneo.com/products/phoxi-scan-l/) | structured light | point-to-point 0.524 mm, temporal noise 0.19 mm | quote only, thousands |
+| [Keyence LJ-X8000](https://www.keyence.com/products/measure/laser-2d/lj-x8000/) | laser profile | single-digit micrometres per point | quote only, thousands |
+
+The gap between rows four and five of that table is the whole story of this
+field. A consumer depth camera gets you to a few millimetres; an industrial
+scanner gets you to a fifth of a millimetre and costs twenty times as much. Which
+you need is decided by the tolerance of the job, and most table-top robot jobs are
+genuinely happy in the first group.
+
+Two pieces of news from 2025 and 2026 matter if you are choosing hardware now.
+Intel spun RealSense out as an independent company in July 2025, and on 22
+September 2026 Cognex agreed to acquire it for $500 million, with the deal
+expected to close in the last quarter of 2026 — the terms are in [Cognex's own
+filing with the Securities and Exchange
+Commission](https://www.sec.gov/Archives/edgar/data/0000851205/000085120526000071/cgnx-20260922.htm). The
+code has moved with it: `IntelRealSense/librealsense` now redirects to
+[`realsenseai/librealsense`](https://github.com/realsenseai/librealsense), which is
+still Apache-2.0 and still actively developed. The practical effect is that the
+cheap hobbyist depth camera and the expensive industrial vision vendor are about
+to be the same company.
+
+### 5.1 How the four sensing principles fail
+
+Every one of these sensors has a characteristic failure, and knowing which one you
+are buying matters more than the accuracy figure.
+
+**Passive stereo** matches features between two ordinary cameras. It works in
+sunlight and costs almost nothing, and it fails completely on a blank wall,
+because there is nothing to match.
+
+**Active stereo** — the RealSense and Orbbec Gemini families — projects a speckle
+pattern so that a blank surface has texture to match. That fixes the textureless
+case and leaves the others: the pattern goes straight through transparent things,
+bounces away from mirrored ones, and is washed out by strong sunlight.
+
+**Structured light** — Zivid, Photoneo — projects a coded pattern and reads it with
+one camera. It is the most accurate of the four by a wide margin. Its particular
+weakness is motion: the pattern is captured over several exposures, so anything
+that moves during the scan smears.
+
+**Time of flight** times the light's return, so there is no matching problem at
+all and blank surfaces are fine. Its particular weakness is multipath: light that
+bounces off a mirror or a polished surface on its way back arrives late, is added
+to the direct return, and produces a confidently wrong distance. It also produces
+"flying pixels" — points floating in mid-air at the edges of objects.
+
+All four share one blind spot. Semi-transparent materials — frosted glass, some
+plastics, skin — scatter light beneath the surface, which delays the return for
+time of flight and bends the pattern for the triangulating methods.
+
+Five jobs a depth sensor suits:
+
+- measuring opaque, matt objects, which is most of what a factory handles
+- finding the work surface, which nearly every other technique then builds on
+- obstacle avoidance, where approximate geometry is enough
+- bin picking, where you need the shape of a pile and not the identity of it
+- giving the scale that a colour camera cannot supply
+
+Five jobs it cannot do:
+
+- glass, clear plastic, and anything transparent
+- polished metal, chrome and mirrors
+- matt black surfaces, which absorb the projected pattern
+- objects smaller than the sensor's resolution at that range
+- measuring to better than a millimetre with anything in the consumer group
+
+### 5.2 Measuring by touch
+
+Touch is the other way to get a distance, and it is worth remembering that it is
+the most accurate instrument an arm has. A robot's own joint encoders locate the
+tool to a few hundredths of a millimetre, so a contact detected by a
+force-torque sensor is a far better measurement than any camera in the table above.
+
+In ROS 2 the pieces are the
+[`force_torque_sensor_broadcaster` and `admittance_controller`](https://control.ros.org/rolling/doc/ros2_controllers/doc/controllers_index.html)
+in [ros2_controllers](https://github.com/ros-controls/ros2_controllers)
+(Apache-2.0). Section 6.7 covers what it is good for.
+
 ## 6. Geometry you write yourself
 
 These are the methods with no model behind them. Between them they cover most of

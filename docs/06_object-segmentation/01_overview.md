@@ -430,3 +430,182 @@ Five jobs it cannot do:
 - give the size of the glass, which needs a side view and a measurement
 - work with a sensor that fills in missing depth automatically, which many
   cameras now do by default and which quietly destroys the signal
+
+## 5. Models you can download
+
+Everything in this section has weights you can fetch today and run without
+training anything. That is what makes it different from section 6, which is about
+models you would train on your own objects.
+
+Every licence below was read from the project's own `LICENSE` file or model card
+in September 2026, not from a blog post. Where the code and the weights carry
+different licences, both are given, because that catches people out regularly.
+
+### 5.1 Box detectors
+
+**What they are.** Models that return a rectangle and a class for each object they
+recognise. They are the cheapest useful answer, they run fastest, and for a robot
+working with well-separated objects on a table they are often all you need.
+
+The table lists the ones worth knowing. Read it as: the first column is the model,
+the second is what it is good at, and the third is the licence you would be
+agreeing to.
+
+| Model | What it is good at | Licence (code / weights) | Where |
+| --- | --- | --- | --- |
+| Ultralytics YOLO | the easiest to use, by a distance; fast; huge community | **AGPL-3.0** — see [section 10](#10-licences-and-the-one-that-will-catch-you-out) | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) |
+| RT-DETR | transformer detector with no need for non-maximum suppression; accurate at similar speed | Apache-2.0 / Apache-2.0 | [lyuwenyu/RT-DETR](https://github.com/lyuwenyu/RT-DETR), [weights](https://huggingface.co/PekingU/rtdetr_r50vd) |
+| D-FINE | a refinement of RT-DETR, currently among the strongest real-time detectors | Apache-2.0 | [Peterande/D-FINE](https://github.com/Peterande/D-FINE) |
+| DEIM | a training scheme that improves DETR-style detectors | Apache | [Intellindust-AI-Lab/DEIM](https://github.com/Intellindust-AI-Lab/DEIM) |
+| YOLOX | anchor-free YOLO with a genuinely permissive licence | Apache-2.0 | [Megvii-BaseDetection/YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) |
+| Faster R-CNN, RetinaNet | the classics, in torchvision, trivially available | BSD-3 | [pytorch/vision](https://github.com/pytorch/vision) |
+
+Five jobs a box detector suits:
+
+- picking well-separated objects off a table or a conveyor
+- counting things, where the box is only needed to say "one here"
+- cueing a promptable segmenter, which needs a box to start from
+- tracking objects between frames, where a box is enough to follow
+- any job where the object is roughly as wide as it is long, so the box fits it
+
+Five jobs it cannot do:
+
+- gripping an odd shape, where the box's corners are not the object
+- measuring, since the box of a tilted object belongs to no real dimension
+- separating objects that overlap, where boxes overlap too
+- anything needing the outline: avoiding a handle, finding a rim, fitting a
+  profile
+- finding an object whose class is not in the model's list
+
+### 5.2 Mask models
+
+**What they are.** Models that return the pixels of each object rather than a box.
+This is the answer a robot usually wants, because it supports measuring and
+gripping round a shape.
+
+| Model | What it is good at | Licence | Where |
+| --- | --- | --- | --- |
+| Mask R-CNN | the workhorse; well understood; easy to fine-tune | BSD-3 (torchvision), Apache-2.0 (Detectron2) | [pytorch/vision](https://github.com/pytorch/vision), [detectron2](https://github.com/facebookresearch/detectron2) |
+| Mask2Former | stronger masks; one architecture for all three kinds of segmentation | MIT, but the repository is **archived** | [facebookresearch/Mask2Former](https://github.com/facebookresearch/Mask2Former) |
+| OneFormer | one model trained once, doing semantic, instance and panoptic | MIT | [SHI-Labs/OneFormer](https://github.com/SHI-Labs/OneFormer) |
+| SegFormer | efficient semantic segmentation | **NVIDIA Source Code License — non-commercial** | [NVlabs/SegFormer](https://github.com/NVlabs/SegFormer) |
+| mmdetection / mmsegmentation | a large library of implementations to train from | Apache-2.0 | [mmdetection](https://github.com/open-mmlab/mmdetection), [mmsegmentation](https://github.com/open-mmlab/mmsegmentation) |
+
+Two notes that matter more than the accuracy numbers. Mask2Former's repository is
+archived, which means no fixes and no new dependencies supported; its weights
+still work and the code will rot. And mmdetection has not had a push since August
+2024, so while it is still the widest collection of implementations, it is drifting
+away from current PyTorch.
+
+Five jobs a mask model suits:
+
+- gripping round a shape, where the outline decides where the fingers go
+- measuring an object's silhouette, which is the input to the
+  [dimension document](../07_object-dimension-detection/01_overview.md)
+- separating touching objects of the same class, which instance segmentation does
+  by design
+- excluding a handle, a spout or a label from a grasp
+- any job where you need the area of something rather than a box around it
+
+Five jobs it cannot do:
+
+- run at high frame rate on a small computer, which is where a box detector wins
+- recognise objects outside its training classes
+- produce reliable boundaries on transparent or reflective objects
+- give orientation, which a mask does not contain
+- tell you anything in millimetres
+
+### 5.3 Promptable segmenters: the Segment Anything family
+
+**What it is.** You give the model a point, a box, or a rough region; it returns
+the exact mask containing it. It does not name anything. Its strength is the
+boundary, which is markedly better than anything trained per-class, and its
+weakness is that something else must decide where to point.
+
+**Why this rather than a mask model.** Because it works on objects it has never
+seen, which a closed-set mask model cannot. In a robot cell this is the difference
+between handling your five known parts and handling whatever a customer puts on
+the table.
+
+| Model | What it is | Licence (code / weights) | Where |
+| --- | --- | --- | --- |
+| SAM | the original; excellent boundaries; slow | Apache-2.0 / Apache-2.0 | [segment-anything](https://github.com/facebookresearch/segment-anything) |
+| SAM 2 | adds video and is faster; the safe default | Apache-2.0 / Apache-2.0 | [sam2](https://github.com/facebookresearch/sam2) |
+| SAM 3 | the newest, released late 2025 | **bespoke "SAM License"**, weights "other" | [sam3](https://github.com/facebookresearch/sam3) |
+| MobileSAM | a much smaller SAM for embedded use | Apache-2.0 | [MobileSAM](https://github.com/ChaoningZhang/MobileSAM) |
+| FastSAM | a fast approximation, built on Ultralytics | **AGPL-3.0** | [FastSAM](https://github.com/CASIA-IVA-Lab/FastSAM) |
+
+If the licence matters to you, SAM 2 is the one to reach for: it is the most
+recent of the family that is plainly Apache-2.0 in both code and weights. SAM 3's
+licence is a Meta community licence that does permit commercial use, but it is a
+bespoke agreement with its own acceptable-use terms rather than a standard open
+licence, so it needs reading rather than assuming. FastSAM is AGPL because it is
+built on Ultralytics, which is the most commonly missed licence inheritance in
+this whole field.
+
+Five jobs the SAM family suits:
+
+- objects the robot has never seen and you cannot enumerate
+- turning a detector's rough box into an accurate outline, which is the standard
+  pairing
+- labelling data: a human clicks, SAM produces the mask, which is how most
+  labelling tools now work
+- cluttered scenes where per-class models fall apart
+- anything where boundary quality is what limits you
+
+Five jobs it cannot do:
+
+- start a pipeline, since nothing in it decides what to point at
+- name the object, which is the entire "what is it" question
+- run fast on a small computer, unless you use MobileSAM and accept the drop
+- give consistent object identity across frames, without the video variant
+- handle transparent objects, whose boundary is genuinely ambiguous in the image
+
+### 5.4 Open-vocabulary models
+
+**What they are.** Models you prompt with words. They were trained on pictures
+paired with text, so they can find things that were never a class in any list.
+
+| Model | What it does | Licence (code / weights) | Where |
+| --- | --- | --- | --- |
+| Grounding DINO | text in, boxes out; the standard choice | Apache-2.0 / Apache-2.0 | [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO), [weights](https://huggingface.co/IDEA-Research/grounding-dino-base) |
+| Grounded-SAM | Grounding DINO for the box, SAM for the mask: text in, masks out | Apache-2.0 | [Grounded-Segment-Anything](https://github.com/IDEA-Research/Grounded-Segment-Anything) |
+| OWLv2 | open-vocabulary detection from Google; strong and simple to run | Apache-2.0 | [weights](https://huggingface.co/google/owlv2-base-patch16-ensemble) |
+| YOLO-World | real-time open-vocabulary detection | **GPL-3.0** | [YOLO-World](https://github.com/AILab-CVC/YOLO-World) |
+| Florence-2 | one small model doing captioning, detection and grounding | MIT | [weights](https://huggingface.co/microsoft/Florence-2-large) |
+
+The pairing worth knowing is **Grounding DINO plus SAM**, usually packaged as
+Grounded-SAM. Between them they take a phrase and return a mask, with no training
+and no class list, and both halves are Apache-2.0. For a robot that has to handle
+objects you cannot enumerate in advance, this is the current default.
+
+Five jobs open-vocabulary models suit:
+
+- objects you can describe but not collect pictures of
+- a long tail of rare items, as in a warehouse or a laboratory
+- prototypes, where the class list is still changing every week
+- taking an instruction in words — "pick up the blue mug" — and acting on it
+- generating training labels for a smaller, faster model you then train yourself
+
+Five jobs they cannot do:
+
+- run in a few milliseconds on a small computer, which they are far from
+- give repeatable answers to two phrasings of the same request
+- distinguish things whose difference has no ordinary name — two similar valve
+  bodies
+- work where the object has no common-language description at all, which is most
+  of manufacturing
+- offer any guarantee, which is why safety-relevant decisions are not made this
+  way
+
+### 5.5 Backbones and features
+
+**What they are.** Not object finders, but the feature extractors other things are
+built on. They matter here because a strong backbone with a small trained head is
+often the cheapest route to a good custom model.
+
+[DINOv2](https://github.com/facebookresearch/dinov2) is Apache-2.0 and produces
+features good enough that a simple classifier on top of them matches models
+trained end to end. [DINOv3](https://github.com/facebookresearch/dinov3) is newer
+and stronger, but is published under a bespoke DINOv3 licence rather than Apache,
+so it needs reading before commercial use.

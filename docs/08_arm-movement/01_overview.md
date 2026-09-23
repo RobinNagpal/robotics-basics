@@ -364,6 +364,8 @@ is about this, including when the framework does become worth its cost.
 
 ## 8. The five documents that follow
 
+The table lists them in reading order, with the question each one answers.
+
 | | What it answers |
 | --- | --- |
 | [Reaching and reachability](02_reaching-and-reachability.md) | can the arm get there at all: workspace, joint limits, singularities, elbow configurations, where to bolt the arm down, and how to find out before you commit |

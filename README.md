@@ -45,9 +45,9 @@ The camera code is mostly NumPy, so if NumPy is new to you, read **numpy** befor
 
 **[Object perception](docs/06_object-perception/01_overview.md)** is the question
 every arm project runs into: what is this thing and which pixels is it on, and
-then how big is it and which way is it turned. Six documents — the map, the
+then how big is it and which way is it turned. Seven documents — the map, the
 sensors, the methods you write yourself, the models that find, the models that
-measure, and the licences and platforms. Every technique carries five jobs it
+measure, the licences and platforms, and how to tell whether any of it works. Every technique carries five jobs it
 suits and five it does not, every licence was read from the project's own licence
 file, and everything says whether it runs on a Mac. Read it after the camera
 area.

@@ -214,7 +214,63 @@ Five jobs it cannot do:
 - act as a safety device unless it is certified equipment wired as such
 - give a usable reading off glass, which passes infrared much as it passes light
 
-### 1.4 Measuring by touch
+### 1.4 Where to put the camera
+
+The first decision in any cell, made before any of the choices above, and the one
+that quietly determines several of them. There are two places and the trade is
+real.
+
+**Eye-in-hand** means the camera is on the wrist. It can be carried to any
+viewpoint, so it can look straight down a glass from the side and then from a
+quarter turn round; and because resolution depends on how close it gets, it can
+have a good look at a small thing by moving nearer. The costs are that the
+background changes with every move, which rules out
+[background subtraction](03_programmed-methods.md#12-background-subtraction)
+entirely; that every picture has to be paired with the arm pose it was taken
+from, so the calibration you need is hand-eye; and that moving to look takes
+seconds the cell may not have.
+
+**Eye-to-hand** means the camera is fixed, usually above or beside the cell. The
+background is constant, so the cheap methods work; nothing has to move before you
+can look; and one picture covers the whole workspace. The costs are that the
+viewpoint is fixed, so whatever is hidden stays hidden; resolution is fixed too,
+so a small object far from the camera is small forever; and the arm itself will
+sooner or later be between the camera and the thing you want to see.
+
+| | Eye-in-hand | Eye-to-hand |
+| --- | --- | --- |
+| background | moves with the camera | constant |
+| resolution on a small object | improve it by going closer | fixed |
+| occlusion | move to see round it | permanent |
+| calibration needed | hand-eye | camera to robot base |
+| cheap methods that work | colour, depth clustering | those, plus background subtraction |
+| time cost per look | seconds | none |
+| the arm gets in the way | never | regularly |
+
+**A great many real cells have both**, and the division of labour is consistent:
+the fixed camera finds roughly where things are and decides what to do next, and
+the wrist camera goes and looks properly at the one object being worked on. That
+is also the structure the [glass case
+study](../08_one-arm-training/07_case-study/01_place-glass.md) uses, for exactly
+that reason.
+
+Five jobs a wrist camera suits:
+
+- measuring one object properly, from a viewpoint you choose
+- looking at the same object twice from different angles, to find a handle
+- a final check down the fingers just before they close
+- cells too large for one fixed camera to cover usefully
+- anything where the object may need to be approached before it can be understood
+
+Five jobs it does not:
+
+- watching the whole cell at once, which is what a fixed camera is for
+- anything using background subtraction, which needs a still background
+- high-rate work, since every look costs a move
+- seeing what the arm is about to collide with, being attached to the arm
+- keeping a view of an object while the arm does something else
+
+### 1.5 Measuring by touch
 
 Touch is the other way to get a distance, and it is worth remembering that it is
 the most accurate instrument an arm has. A robot's own joint encoders locate the
@@ -227,7 +283,7 @@ in [ros2_controllers](https://github.com/ros-controls/ros2_controllers)
 (Apache-2.0). [Measuring by touch](03_programmed-methods.md#27-measuring-by-touching-it)
 covers what it is good for.
 
-### 1.5 The software that comes with each sensor
+### 1.6 The software that comes with each sensor
 
 A sensor is only as useful as its driver, and the software is where most of the
 practical differences show up. Read this as: the library you talk to the sensor

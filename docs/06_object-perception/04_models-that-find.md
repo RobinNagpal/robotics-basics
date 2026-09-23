@@ -342,6 +342,37 @@ Five jobs it does not:
 - proving anything before the mechanical and lighting side is settled
 - one-off jobs, where an open-vocabulary model costs nothing and works today
 
+### 3.1 Making the training data in a simulator
+
+If you already have a simulator — and in this repo you do — it can generate
+labelled data, and the labels are free and perfect because the simulator knows
+where everything is. For a project whose objects are procedurally generated
+anyway, this is by some way the cheapest route to a trained model.
+
+| Tool | Licence | What it is |
+| --- | --- | --- |
+| [Kubric](https://github.com/google-research/kubric) | **Apache-2.0** | a Blender and PyBullet pipeline built for generating annotated video and image datasets |
+| [BlenderProc](https://github.com/DLR-RM/BlenderProc) | **GPL-3.0** | photorealistic rendering with annotations, from DLR; widely used for BOP-style pose data |
+| [Gazebo](https://gazebosim.org/docs) | Apache-2.0 | the simulator you are already running, scripted to vary the scene and dump labels |
+| [NVIDIA Replicator](https://developer.nvidia.com/omniverse) | closed, and NVIDIA hardware | the industrial version of the same idea |
+
+Note BlenderProc's GPL-3.0: the *data you generate* is yours, but the tool is
+copyleft, which matters if you plan to ship a pipeline that embeds it.
+
+**Domain randomisation** is what makes synthetic data transfer. Rather than
+trying to make the render look real, you vary everything you are not trying to
+teach — lighting, colours, textures, backgrounds, camera pose, object placement —
+so widely that the real world looks like one more variation. The model then
+cannot latch onto any of the details that differ between simulation and reality,
+because none of them were ever constant.
+
+The honest caveat is that a model trained purely on synthetic data usually needs
+either a lot of randomisation or a small amount of real data to fine-tune on, and
+which one is cheaper depends entirely on how hard your real data is to collect.
+[What simulation will not tell you](07_making-it-work.md#5-what-simulation-will-not-tell-you)
+is the wider version of the same warning.
+
+
 ## 4. Datasets
 
 If you are training, you need data, and the licences here are stricter than the

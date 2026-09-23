@@ -4,7 +4,7 @@ A robot that is going to pick something up has to answer two questions about it.
 **What is this, and which part of the picture is it on.** Then, before it can
 close its fingers, **how big is it and which way is it turned.**
 
-This area covers both, in six documents. This one is the map: the four shapes an
+This area covers both, in seven documents. This one is the map: the four shapes an
 answer can take, which of them your task actually needs, and the two facts that
 decide everything downstream — that a model only knows the classes it was trained
 on, and that a picture contains no sizes.
@@ -332,7 +332,7 @@ the edges gives you an object of the wrong size, not merely the wrong distance.
 Neither of these improves if you swap the segmentation model for a better one,
 which is the most common wrong response to a measurement that is off.
 
-## 9. The five documents that follow
+## 9. The six documents that follow
 
 | | What it answers |
 | --- | --- |
@@ -341,6 +341,7 @@ which is the most common wrong response to a measurement that is off.
 | [Models that find](04_models-that-find.md) | detectors, mask models, the Segment Anything family, open-vocabulary models, and training your own |
 | [Models that measure](05_models-that-measure.md) | learned depth, stereo, 6-DoF pose, and reconstruction |
 | [Licences and platforms](06_licences-and-platforms.md) | what you may ship, what runs on a Mac, ROS 2, and every method side by side |
+| [Making it work](07_making-it-work.md) | how to tell whether it is working, how fast it must be, and what to do when it is wrong |
 
 If you are starting a project rather than reading it through, the order that
 wastes least time is: this document, then

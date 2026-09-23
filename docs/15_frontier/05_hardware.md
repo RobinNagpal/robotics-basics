@@ -175,6 +175,14 @@ calls it the company's "7th generation robot family within the Gen 7 platform"
 and lists three models: the UR10g-1750 at 8 kg payload and 1750 mm reach, the
 UR17g-1300 at 15 kg and 1300 mm, and the UR18g-950 at 18 kg and 950 mm.
 
+[The UR10g-1750's own product page](https://www.universal-robots.com/products/ur10g-1750/)
+gives the figures that matter: an 8 kg payload, 10 kg in an extended
+configuration, a pose repeatability of ±0.08 mm to ISO 9283, a maximum tool speed
+of 5 m/s and a robot mass of 44.7 kg. The launch also brings a new CB7 controller,
+which Universal Robots describes as carrying 40 per cent more compute in a 30 per
+cent smaller footprint, a TP7 teach pendant more than 20 per cent lighter, and an
+SP7 flange panel.
+
 How it was achieved is stated plainly on that page, and the interesting part is
 not the arms. The g-Series brings "power, data, and safety connectivity directly
 to the tool flange", with integrated tool flange inputs and outputs at 24 or 48
@@ -182,6 +190,14 @@ volts, 5 A peak and 3 A continuous, and 1 gigabit Ethernet "for cameras and
 sensors". Universal Robots has moved the wiring for a camera and a smart gripper
 inside the arm. That is a response to the fact that almost every modern cell
 bolts a camera to the wrist and then runs a cable down the outside of the robot.
+
+One thing Gen 7 explicitly did not bring is worth recording because it is widely
+assumed. **The g-Series does not have joint torque sensors.** The specification
+page lists a force-torque sensor at the tool flange and gives no per-joint torque
+figure at all. A separate 2025 Universal Robots feature called Direct Torque
+Control, which gives "real-time control of all the joints in a UR cobot at 500
+Hz", is a torque *command* interface and says nothing about how torque is
+measured. [Section 9](#9-what-did-not-change) returns to this.
 
 Why it matters is that the cable you no longer have to route is one of the
 larger hidden costs of integrating an arm, and one gigabit at the flange is
@@ -632,10 +648,20 @@ putting six of them in a frame and selling it as an arm collapses.
 Why it matters is that the cheapest seven-axis arm is now cheaper than the
 cheapest six-axis industrial arm by a factor of five.
 
-What it still cannot do is come with a specification. Unitree publishes no
-payload, no reach and no repeatability for the R1-7a, only that it has high
-precision, bionic joints and open programming interfaces. Buying it is buying an
-unspecified arm.
+What it still cannot do is be stiff, and Unitree says so itself.
+[The R1-7a's product page](https://www.unitree.com/R1-7a) gives a 2 kg payload, a
+650 mm reach, a 5.5 kg arm and both force feedback and collision detection — and
+then adds a footnote that is more useful than the rest of the page: "Given the
+relatively low reduction ratio adopted for each joint, the overall
+positional-control stiffness of the robot arm is limited." A low reduction ratio
+is what makes a joint back-drivable and cheap, and it is also what makes the arm
+soft under load. That sentence is the trade, stated by the vendor, and it is the
+single most honest line on any arm page in this document.
+
+It also tells you what kind of force sensing you are buying. A joint with a low
+reduction ratio and no output-side sensor estimates its torque from motor current.
+That works, and it is not the same thing as the strain-gauge joint torque sensors
+in a Franka or a KUKA LBR iiwa — see [section 9](#9-what-did-not-change).
 
 Status: Shipping, for both.
 
@@ -1072,7 +1098,7 @@ are more than two years out of date.
 This moved further and faster than anything else in this document, and it moved
 mostly by getting cheap rather than by getting better.
 
-### 6.1 A six-axis force-torque sensor now has a published price
+### 6.1 The six-axis force-torque price floor did not move
 
 A force-torque sensor at the wrist measures the six numbers that describe how the
 tool is being pushed and twisted: three forces and three torques.
@@ -1080,37 +1106,81 @@ tool is being pushed and twisted: three forces and three torques.
 one](../07_gripping/02_grippers-and-hardware.md#81-force-and-torque-at-the-wrist)
 and records the Robotiq FT 300-S specification in detail.
 
-Before, no manufacturer published a price. ATI, Robotiq, Schunk and Bota all sold
-through integrators, and the figures in circulation were reseller quotes.
+Before, the cheapest six-axis sensor with a price its own maker published was Bota
+Systems' MiniONE at CHF 3,045.
 
-What changed is that [UFACTORY's shop lists a six-axis force-torque sensor at
-$3,000](https://www.ufactory.cc/xarm-collaborative-robot/), in the same public
-product feed as its arms. That is not a price cut, because there was no published
-price before it to cut. It is the appearance of a number where there had been
-none, which for a buyer is the more useful event.
+What changed is nothing. [Bota's own
+shop](https://shop.botasys.com/shop/category/force-torque-sensors-4) still lists
+the MiniONE Gen A at CHF 3,045.00, with its SensONE starting at CHF 4,882.50 and
+its Rokubi at CHF 5,407.50. The only new published figure anywhere is UFACTORY's,
+which [lists a six-axis force-torque sensor at
+$3,000](https://www.ufactory.cc/xarm-collaborative-robot/), marked down from
+$4,000 — and publishes no force range, no resolution and no sample rate to go with
+it. That is the trade in that listing: you get a price and you do not get a
+specification. ATI, Robotiq, OnRobot and Schunk publish nothing at all, exactly as
+they did in 2020.
 
-How it was achieved is the channel rather than the technology. A vendor selling
-arms from a web shop has to price the accessories in the same shop.
+So the honest answer to "did force sensing get cheaper" is no, not at the level
+anyone publishes. Every sub-thousand-dollar claim this document checked resolved
+to a marketplace listing with no verifiable specification, or to a research
+prototype.
 
-Why it matters is budgeting. A wrist force-torque sensor is the standard way to
-give a position-controlled arm a sense of contact, and until now you could not
-find out what one cost without a sales conversation.
+What did change is the top of the range and the ownership of it. ATI Industrial
+Automation has been owned by Novanta [since a $172 million acquisition announced
+on 19 July
+2021](https://www.therobotreport.com/novanta-acquiring-ati-industrial-automation-for-172m/),
+and now trades at ati.novanta.com. It added two sensors in 2026, and one of them
+is explicitly aimed at this document's subject:
+[the ATI Varo](https://ati.novanta.com/products/varo), for humanoids, rated at
+±3000 N in x and y, ±6000 N in z and ±120 Nm, with a resolution of 0.29 N,
+running at 8 kHz with under a millisecond of latency at 220 g. A companion sensor
+for robotic surgery, the Sano74, resolves 0.015 N.
 
-What it still cannot do is tell you how good it is. UFACTORY publishes the price
-and not the noise floor, and the noise floor is the number that decides what the
-sensor can detect. The Robotiq figures in the gripper document — a 0.1 N signal
-noise and a recommended 1 N contact-detection threshold — remain the only
-complete published set.
+Set that against the sensor most collaborative cells actually use. The Robotiq FT
+300-S product sheet is footer-dated February 2021 and its **data output rate is
+100 Hz**. Bota runs at 3800 Hz and ATI at 8 kHz. A 38-fold difference in sampling
+rate between the common choice and the high end is the real gap in this category,
+and it is not a price gap.
 
-Status: Shipping.
+There is one open-source option and it is worth knowing about for the right
+reasons. [CoinFT](https://coin-ft.github.io/), from Stanford, publishes a complete
+bill of materials totalling **$10.93** — two printed circuit boards with
+comb-shaped electrodes separated by cast silicone pillars, with one microcontroller
+recovering six axes from a single pair of sensing electrodes by switching modes.
+Its measured performance is a root-mean-square error of 0.16 N over a 0 to 14 N
+normal range, at 360 Hz sampling with a mechanical bandwidth of about 97 Hz. Two
+things stop it being the answer to the price floor. The mechanical bandwidth is an
+order of magnitude below an industrial sensor's, and the project is licensed
+**CC BY-NC-SA 4.0**, which forbids commercial use without a separate licence from
+Stanford. "Open source, therefore free to build a product on" is wrong here, and
+it is wrong in the same way for several projects in this document.
+
+Why any of this matters is budgeting. If your plan assumed that force sensing
+would follow arms down in price, it has not, and there is no published evidence
+that it is about to.
+
+What might change it is volume rather than design. Link-Touch, a Chinese force
+sensor maker, [raised over 100 million renminbi in April
+2026](https://kr-asia.com/link-touch-draws-backing-from-catl-agibot-as-force-sensors-gain-traction)
+from investors including AgiBot and Galbot, and expects to ship roughly 400,000
+joint force sensors and 30,000 to 40,000 six-axis force sensors in 2026, against a
+long-term target of a million and 200,000 a year. Those are the volumes that break
+a price floor. No published price has moved yet.
+
+Status: Bota, ATI, Robotiq, OnRobot and UFACTORY, all Shipping. CoinFT,
+Demonstrated, as files.
 
 ### 6.2 Touch sensing became something you buy for tens of dollars
 
 Before, a tactile sensor was a research instrument. GelSight Mini at $510, with
-replacement gels at $57 and a stated gel life of 1,000 coin presses, was
+replacement gels at $57, was
 [the only tactile product in the whole gripper document with a published
 price](../07_gripping/02_grippers-and-hardware.md#82-tactile-sensing-at-the-contact).
-Everything else was a paper with a repository attached.
+Everything else was a paper with a repository attached. That has not changed at
+GelSight: [its own store](https://www.gelsight.com/online-store/) still lists the
+Mini system at $510.00 and the robotics package at $560.00, the same product since
+2022, and its 2025 and 2026 announcements were all about surface metrology rather
+than robots.
 
 What changed is a manufacturing ecosystem around the open research designs. Read
 the table as: what the thing is, what it costs, and where the price comes from.
@@ -1120,15 +1190,26 @@ the table as: what the thing is, what it costs, and where the price comes from.
 | [eFlesh magnetometer board](https://shop.wowrobo.com/) | the recommended sensing board for the open eFlesh magnetic-skin project | $25 for one, $180 for ten |
 | [WowSkin](https://shop.wowrobo.com/) | a manufactured magnetic skin built on the open AnySkin and ReSkin designs, with mounts for SO-100, SO-101 and Koch | $48 for the skin alone, $128 with the structural part |
 | [OSMO tactile glove](https://shop.wowrobo.com/) | an open tactile glove with twelve three-axis sensors across the fingertips and palm, for recording human demonstrations | $100 for the skin, $780 for the complete set |
+| [PaXini PX6AX GEN4 fingertip](https://mall.paxini.com/) | a 15 by 10 by 7 mm three-axis tactile chip, 30 taxels per square centimetre, output at 1 kHz | ¥499, about $70 |
+| [GelSight DIGIT](https://www.gelsight.com/online-store/) | Meta's camera-behind-a-gel design, now manufactured and sold by GelSight | $355.00, replacement gel $42.00 |
 | [Robotiq TSF-85](https://robotiq.com/tactile-sensor-fingertips) | 28 taxels at 1000 Hz on a production gripper fingertip, [section 5.2](#52-tactile-fingertips-became-a-gripper-accessory) | none published |
 
 How it was achieved is the same mechanism as the arm kits in
-[section 3.2](#32-the-real-change-was-the-kit-ecosystem). AnySkin and ReSkin are
-open designs from academic groups, published with permissive licences — AnySkin's
-repository is MIT — and a manufacturer read the files and made them properly.
-Magnetic skin is also intrinsically cheap: it is a magnetised elastomer over a
-board of magnetometers, and magnetometers are a commodity part made in the
+[section 3.2](#32-the-real-change-was-the-kit-ecosystem). [AnySkin](https://any-skin.github.io/)
+and ReSkin are open designs from academic groups, published under permissive
+licences — AnySkin's repository is MIT, and so is
+[eFlesh](https://github.com/notvenky/eFlesh), its successor, which lets you print
+a tactile sensor in an arbitrary shape from a printer, magnets costing under $5
+and the same magnetometer board — and a manufacturer read the files and made them
+properly. Magnetic skin is also intrinsically cheap: it is a magnetised elastomer
+over a board of magnetometers, and magnetometers are a commodity part made in the
 billions for phones.
+
+There is a second, quieter reason it got cheap, and AnySkin's own paper states it:
+the sensing electronics are decoupled from the sensing surface. The board stays on
+the robot and the skin slips over it like a phone case, so the part that wears out
+is the cheap part. That is a design decision rather than a manufacturing one, and
+it is why a replacement costs $48 rather than the price of the sensor.
 
 Why it matters is that touch stopped being a project. A $48 skin on a $122 arm is
 a tactile robot for under two hundred dollars, and that was not possible in 2024
@@ -1177,6 +1258,49 @@ and the tactile version is often a separate more expensive product — AgiBot
 charges $940 for the option and Unitree's base Dex5-1 has no tactile sensing at
 all. If you want touch on a gripper you already own, the answer is section 6.2 or
 the Robotiq fingertips, not a hand.
+
+### 6.4 The announcement that never became a product: Meta's Digit 360
+
+This one is included because it is the clearest example in the whole document of
+why the maturity labels exist.
+
+Before, Meta's DIGIT was the standard cheap vision-based tactile sensor in
+research, and it is now sold by GelSight at $355.
+
+What was announced is
+[Digit 360](https://ai.meta.com/blog/fair-robotics-open-source/), on 31 October
+2024. Meta's own words: it "captures forces as small as 1 millinewton", carries
+"over 8 million taxels" and "over 18 sensing features" including vibration, heat
+and odour, with an on-device accelerator. [Its product
+page](https://digit.ml/digit360) adds spatial detail "as fine as 7 microns". And
+the announcement said plainly: "GelSight Inc. will manufacture and distribute
+Digit 360, available for purchase in 2025."
+
+What happened is that it was never sold. GelSight's store has no Digit 360
+product, and a search of GelSight's own store for it returns "No products were
+found". [The only distribution route, a free research
+programme](https://digit.ml/cfp), still shows proposals due on 20 January 2025 and
+acceptance notification "In progress", with delivery "To be confirmed upon
+acceptance" — twenty months later. The site footer still reads 2024. The
+companion announcement, a Wonik Allegro Hand integrated with Meta's Digit Plexus
+connector and "slated for 2025 launch", also did not happen: Wonik's current hands
+use capacitive pressure sensors and no Meta component appears on any of their
+product pages.
+
+Why it matters is not that Meta failed to ship something. It is that between
+October 2024 and today, a great deal of writing treated Digit 360's specification
+as a thing you could buy, and the correct label for it was never better than
+Announced with a date.
+
+What it still cannot do, even for the researchers who did receive units, is
+underpin a product. Every piece of Meta tactile hardware and every Meta tactile
+model — `digit360`, `digit-design`, `digit-plexus`, `sparsh` — is licensed
+**CC BY-NC 4.0**, read from each repository's own licence file. GitHub's licence
+detection reports all of them as unclassified, which is why they are so often
+described as open source. They are published, and they are not usable
+commercially. Only Meta's TACTO simulator is permissively licensed, under MIT.
+
+Status: Demonstrated. Not buyable at any price.
 
 ## 7. On-robot compute
 
@@ -1482,7 +1606,10 @@ marker for when a research idea has finished arriving.
 
 Elephant Robotics sells the [myController
 S570](https://shop.elephantrobotics.com/), described as a portable exoskeleton
-robot controller for data capture, at $1,300 on its own store. AgileX lists a
+robot controller for data capture, at $1,300 on its own store. Unitree prices a
+whole teleoperation rig rather than a device: its [D1-T
+arm](https://www.unitree.com/D1-T) is sold in a dual-arm teleoperation kit at
+under $8,500 and a quad-arm kit at under $16,000, both before tax and freight. AgileX lists a
 Universal Master Arm and the PIKA PRO handheld data-collection device on
 [its store](https://global.agilex.ai/), both without a published price. Trossen
 sells a teleoperation product called Glide with a Cockpit operator station, also
@@ -1565,6 +1692,26 @@ nothing in the period displaced a Schmalz cup or an ATI changer.
 **Nobody publishes a slip-detection latency.** The gripper document noted this
 gap and it is still a gap. A 1000 Hz sampling rate, which Robotiq's new tactile
 fingertips also quote, bounds the latency from below and is not the same number.
+
+**The six-axis force-torque price floor did not move.** Bota's MiniONE is still
+CHF 3,045, ATI and Robotiq and OnRobot and Schunk still publish nothing, and the
+only genuinely cheap option is a research design that forbids commercial use.
+[Section 6.1](#61-the-six-axis-force-torque-price-floor-did-not-move) has the
+detail.
+
+**No arm gained joint torque sensors.** A joint torque sensor is a strain gauge on
+the output side of the gearbox, measuring what the link actually feels. Every arm
+that ships them in September 2026 — the KUKA LBR iiwa, the Franka Research 3, the
+Agile Robots Diana 7, the Kinova Gen3, the Doosan M and H series — already shipped
+them in 2022, and not one of those vendors publishes a price, so no price trend
+for the capability can be established at all. Universal Robots' September 2026
+Gen 7 launch did not add them. The thing most likely to be mistaken for progress
+here is Unitree going from $15,999 to $1,650 on a force-controllable arm, and
+that arm estimates torque from motor current on a low-reduction-ratio drive, which
+[its own footnote admits](#42-two-arms-you-can-buy-without-the-robot). The
+component supply is densifying — PaXini sells a joint torque sensor at ¥999 and
+Link-Touch expects to ship roughly 400,000 joint force sensors in 2026 — but none
+of that has yet reached a cheap finished arm.
 
 ## 10. How to check an announcement yourself
 

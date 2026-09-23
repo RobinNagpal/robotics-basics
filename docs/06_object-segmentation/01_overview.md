@@ -41,18 +41,19 @@ and avoidable waste.
 1. [Four answers, and which one you need](#1-four-answers-and-which-one-you-need)
 2. [What you know before the robot looks](#2-what-you-know-before-the-robot-looks)
 3. [Closed set, open vocabulary, and promptable](#3-closed-set-open-vocabulary-and-promptable)
-4. [Techniques that do not learn anything](#4-techniques-that-do-not-learn-anything)
-5. [Models you can download](#5-models-you-can-download)
-6. [Models you would train yourself](#6-models-you-would-train-yourself)
-7. [Frameworks and libraries](#7-frameworks-and-libraries)
-8. [Datasets](#8-datasets)
-9. [Labelling tools](#9-labelling-tools)
-10. [Licences, and the one that will catch you out](#10-licences-and-the-one-that-will-catch-you-out)
-11. [What runs on an Apple Silicon Mac](#11-what-runs-on-an-apple-silicon-mac)
-12. [Putting it in ROS 2](#12-putting-it-in-ros-2)
-13. [The comparison grid](#13-the-comparison-grid)
-14. [What to actually reach for](#14-what-to-actually-reach-for)
-15. [Where to read more](#15-where-to-read-more)
+4. [The sensors, and the software that comes with each](#4-the-sensors-and-the-software-that-comes-with-each)
+5. [Techniques that do not learn anything](#5-techniques-that-do-not-learn-anything)
+6. [Models you can download](#6-models-you-can-download)
+7. [Models you would train yourself](#7-models-you-would-train-yourself)
+8. [Frameworks and libraries](#8-frameworks-and-libraries)
+9. [Datasets](#9-datasets)
+10. [Labelling tools](#10-labelling-tools)
+11. [Licences, and the one that will catch you out](#11-licences-and-the-one-that-will-catch-you-out)
+12. [What runs on an Apple Silicon Mac](#12-what-runs-on-an-apple-silicon-mac)
+13. [Putting it in ROS 2](#13-putting-it-in-ros-2)
+14. [The comparison grid](#14-the-comparison-grid)
+15. [What to actually reach for](#15-what-to-actually-reach-for)
+16. [Where to read more](#16-where-to-read-more)
 
 ---
 
@@ -152,7 +153,124 @@ that produces boxes, and the pair does what neither does alone.
 | open-vocabulary | a picture and a phrase | whatever matches the phrase | the phrase is ambiguous, or your object has no common name |
 | promptable | a picture and a point or box | the region around that point | nothing tells it where to point |
 
-## 4. Techniques that do not learn anything
+## 4. The sensors, and the software that comes with each
+
+Before the techniques, the instruments. What you can identify depends first on
+what the sensor can see, and each kind of sensor comes with its own driver, its
+own ROS 2 package and its own set of models that expect its output.
+
+The table is the summary. Each row is expanded below it.
+
+| Sensor | What it adds to identifying an object | Driver / SDK | ROS 2 driver |
+| --- | --- | --- | --- |
+| machine-vision colour camera | resolution and control of exposure, which is most of image quality | [Aravis](https://github.com/AravisProject/aravis) (LGPL) or the vendor's, e.g. [Basler pylon](https://github.com/basler/pylon-ros-camera) | [usb_cam](https://github.com/ros-drivers/usb_cam) for simple ones |
+| RGB-D camera | a distance for every pixel, which separates objects from their background | [librealsense](https://github.com/realsenseai/librealsense), [OrbbecSDK v2](https://github.com/orbbec/OrbbecSDK_v2) | [realsense-ros](https://github.com/realsenseai/realsense-ros), [OrbbecSDK_ROS2](https://github.com/orbbec/OrbbecSDK_ROS2) |
+| structured-light 3D scanner | sub-millimetre geometry, at a price | proprietary SDK | [zivid-ros](https://github.com/zivid/zivid-ros), [PhoXi-ROS-API](https://github.com/photoneo/PhoXi-ROS-API) |
+| event camera | microsecond response to change, and no motion blur | [OpenEB](https://github.com/prophesee-ai/openeb), [dv-processing](https://gitlab.com/inivation/dv/dv-processing) | [libcaer_driver](https://github.com/ros-event-camera/libcaer_driver) |
+| thermal camera | temperature, which identifies things colour cannot | vendor SDK | vendor-specific |
+| polarisation camera | the angle of reflected light, which is what glass changes | vendor SDK | vendor-specific |
+
+### 4.1 A plain colour camera
+
+Everything in sections 5 and 6 works on an ordinary colour image, and the
+quality of that image decides more than the choice of model does. The two things
+worth spending on are a lens that resolves the detail you care about, and control
+over exposure so the picture looks the same at nine in the morning and four in
+the afternoon.
+
+Industrial cameras speak **GenICam** over **GigE Vision** or **USB3 Vision**,
+which are standards rather than products, so one library can drive cameras from
+any vendor. The open one is [Aravis](https://github.com/AravisProject/aravis),
+under the LGPL. Vendors also ship their own — Basler's pylon has a
+[ROS 2 package](https://github.com/basler/pylon-ros-camera).
+
+For a webcam or a simple USB camera, [usb_cam](https://github.com/ros-drivers/usb_cam)
+is the ROS 2 driver, and everything it publishes is consumed by
+[cv_bridge](https://github.com/ros-perception/vision_opencv) (Apache-2.0).
+
+**The models that go with it:** all of them. Every detector and mask model in
+section 6 takes a colour image and nothing else.
+
+### 4.2 An RGB-D camera
+
+An RGB-D camera adds a distance for every pixel. For identification that is worth
+more than it sounds, because it lets you delete the background geometrically
+before you ever run a model, which is the
+[plane-removal recipe](#56-point-clouds-remove-the-plane-then-cluster) in the
+next section.
+
+The mainstream choices are the RealSense and Orbbec Gemini families. Both are
+covered in detail, with accuracy figures, in the
+[dimension document](../07_object-dimension-detection/01_overview.md#5-sensors-that-measure-distance);
+here what matters is the software. [librealsense](https://github.com/realsenseai/librealsense)
+and [OrbbecSDK v2](https://github.com/orbbec/OrbbecSDK_v2) are Apache-2.0 and MIT
+respectively, and both have maintained ROS 2 drivers.
+
+**The models that go with it:** everything in section 6 for the colour half, plus
+the point-cloud work in [Open3D](https://www.open3d.org/) and
+[PCL](https://pointclouds.org/) for the depth half. Note that on a Mac, PCL's
+Python bindings are dead — `python-pcl` last shipped in 2019 and `pclpy` is
+Windows-only — so in Python the answer is Open3D, which ships native
+Apple Silicon wheels.
+
+### 4.3 A structured-light 3D scanner
+
+Zivid and Photoneo sell scanners that are one to two orders of magnitude more
+accurate than a RealSense, and cost that much more. For identification they
+matter when the difference between two parts is geometric and small.
+
+Both have ROS 2 wrappers — [zivid-ros](https://github.com/zivid/zivid-ros) is
+BSD-3 and [PhoXi-ROS-API](https://github.com/photoneo/PhoXi-ROS-API) is MIT —
+but both wrap a **proprietary binary runtime**, and neither vendor supports
+macOS at all.
+
+### 4.4 An event camera
+
+An event camera has no frames. Each pixel reports independently, in microseconds,
+whenever the brightness it sees changes. That gives no motion blur, a dynamic
+range far beyond a normal sensor, and very little data when nothing is moving.
+
+For a robot arm it is a specialist tool — good for catching fast motion and for
+scenes with extreme lighting contrast, and awkward everywhere else, because
+almost every model in this document expects frames.
+
+The open software is Prophesee's [OpenEB](https://github.com/prophesee-ai/openeb)
+and iniVation's [dv-processing](https://gitlab.com/inivation/dv/dv-processing),
+with [libcaer_driver](https://github.com/ros-event-camera/libcaer_driver) for
+ROS 2. The research literature is collected in
+[this list](https://github.com/uzh-rpg/event-based_vision_resources).
+
+### 4.5 Thermal, polarisation and the rest
+
+**Thermal** cameras identify by temperature, which is sometimes exactly the
+distinguishing feature — a hot casting, an occupied seat, a person in a safety
+zone. They have low resolution and they are not what you segment a mug with.
+
+**Polarisation** cameras measure the angle of polarisation of the light, which is
+strongly changed by glass and by specular surfaces. It is frequently suggested as
+the answer for transparent objects, so it is worth saying plainly what a search
+of the open-source landscape in September 2026 turns up: **essentially nothing**.
+There are no maintained open repositories doing transparent-object grasping from
+polarisation. The published work on transparent objects has gone in a different
+direction — see [section 6.6](#67-transparent-and-shiny-objects).
+
+Five jobs where the sensor choice is the deciding factor:
+
+- glass and clear plastic, where an ordinary RGB-D camera returns nothing useful
+- parts that differ only in a fraction of a millimetre, which needs a real scanner
+- scenes with extreme contrast, where an event camera's dynamic range wins
+- anything moving fast enough to blur a normal frame
+- distinguishing objects by temperature rather than appearance
+
+Five where it is not:
+
+- ordinary opaque objects on a table, where a cheap camera and a good model win
+- anything where the limit is the model's class list rather than the picture
+- jobs where the object is large and the tolerance is loose
+- prototypes, where the wrong lesson is to buy hardware before trying software
+- any problem the lighting would have fixed more cheaply
+
+## 5. Techniques that do not learn anything
 
 These are the methods that have no model behind them. You write the rule, the
 computer applies it. They are unfashionable and they are still the right answer
@@ -169,7 +287,7 @@ licence](https://github.com/isl-org/Open3D/blob/main/LICENSE)) or the [Point
 Cloud Library](https://pointclouds.org/) ([BSD-3
 licence](https://github.com/PointCloudLibrary/pcl/blob/master/LICENSE.txt)).
 
-### 4.1 A colour range
+### 5.1 A colour range
 
 **What it is.** You state which colours count as the object, and every pixel in
 that range is kept. Almost always done in HSV — hue, saturation and value —
@@ -207,7 +325,7 @@ Five jobs it cannot do:
   into one region
 - transparent or mirrored objects, which have no colour of their own at all
 
-### 4.2 Background subtraction
+### 5.2 Background subtraction
 
 **What it is.** You learn what the empty scene looks like, then call anything
 that differs from it an object. The usual implementations model each pixel's
@@ -241,7 +359,7 @@ Five jobs it cannot do:
 - an object that arrives and then stays still for a long time, which is gradually
   absorbed into the background and disappears
 
-### 4.3 Edges, contours and connected components
+### 5.3 Edges, contours and connected components
 
 **What it is.** Three related steps. Edge detection, usually
 [Canny](https://github.com/opencv/opencv/blob/4.x/doc/py_tutorials/py_imgproc/py_canny/py_canny.markdown), marks where
@@ -279,7 +397,7 @@ Five jobs it cannot do:
 - cluttered scenes, where the number of contours explodes and none of them is
   clearly the object
 
-### 4.4 Template matching
+### 5.4 Template matching
 
 **What it is.** You keep a small picture of the object and slide it over the
 scene, scoring how well it matches at every position. The best-scoring position
@@ -319,7 +437,7 @@ Five jobs it cannot do:
   captured under
 - partially hidden objects, where most of the template has nothing to match against
 
-### 4.5 Watershed and GrabCut
+### 5.5 Watershed and GrabCut
 
 **What it is.** Two classical algorithms for splitting a region properly once you
 roughly know where it is.
@@ -352,7 +470,7 @@ Five jobs they cannot do:
 - reflective and transparent objects, whose apparent colour comes from elsewhere
   in the room
 
-### 4.6 Point clouds: remove the plane, then cluster
+### 5.6 Point clouds: remove the plane, then cluster
 
 **What it is.** The classic recipe for a table-top robot, and still the most
 reliable thing in this document. Take the depth picture as a cloud of 3D points.
@@ -395,7 +513,7 @@ Five jobs it cannot do:
 - transparent and shiny objects, which produce no depth points to cluster
 - scenes with no dominant plane, such as a cluttered shelf or a pile
 
-### 4.7 The depth hole, for glass and chrome
+### 5.7 The depth hole, for glass and chrome
 
 **What it is.** Not so much a technique as a fact worth exploiting. A depth camera
 returns nothing where a transparent object is, because the light goes through it
@@ -431,7 +549,7 @@ Five jobs it cannot do:
 - work with a sensor that fills in missing depth automatically, which many
   cameras now do by default and which quietly destroys the signal
 
-## 5. Models you can download
+## 6. Models you can download
 
 Everything in this section has weights you can fetch today and run without
 training anything. That is what makes it different from section 6, which is about
@@ -441,7 +559,7 @@ Every licence below was read from the project's own `LICENSE` file or model card
 in September 2026, not from a blog post. Where the code and the weights carry
 different licences, both are given, because that catches people out regularly.
 
-### 5.1 Box detectors
+### 6.1 Box detectors
 
 **What they are.** Models that return a rectangle and a class for each object they
 recognise. They are the cheapest useful answer, they run fastest, and for a robot
@@ -457,6 +575,7 @@ agreeing to.
 | RT-DETR | transformer detector with no need for non-maximum suppression; accurate at similar speed | Apache-2.0 / Apache-2.0 | [lyuwenyu/RT-DETR](https://github.com/lyuwenyu/RT-DETR), [weights](https://huggingface.co/PekingU/rtdetr_r50vd) |
 | D-FINE | a refinement of RT-DETR, currently among the strongest real-time detectors | Apache-2.0 | [Peterande/D-FINE](https://github.com/Peterande/D-FINE) |
 | DEIM | a training scheme that improves DETR-style detectors | Apache | [Intellindust-AI-Lab/DEIM](https://github.com/Intellindust-AI-Lab/DEIM) |
+| RF-DETR | Ultralytics-like ergonomics without the AGPL; actively developed | Apache-2.0 | [roboflow/rf-detr](https://github.com/roboflow/rf-detr) |
 | YOLOX | anchor-free YOLO with a genuinely permissive licence | Apache-2.0 | [Megvii-BaseDetection/YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) |
 | Faster R-CNN, RetinaNet | the classics, in torchvision, trivially available | BSD-3 | [pytorch/vision](https://github.com/pytorch/vision) |
 
@@ -477,7 +596,7 @@ Five jobs it cannot do:
   profile
 - finding an object whose class is not in the model's list
 
-### 5.2 Mask models
+### 6.2 Mask models
 
 **What they are.** Models that return the pixels of each object rather than a box.
 This is the answer a robot usually wants, because it supports measuring and
@@ -485,7 +604,7 @@ gripping round a shape.
 
 | Model | What it is good at | Licence | Where |
 | --- | --- | --- | --- |
-| Mask R-CNN | the workhorse; well understood; easy to fine-tune | BSD-3 (torchvision), Apache-2.0 (Detectron2) | [pytorch/vision](https://github.com/pytorch/vision), [detectron2](https://github.com/facebookresearch/detectron2) |
+| Mask R-CNN | the workhorse; well understood; easy to fine-tune | torchvision BSD-3 throughout; Detectron2 code Apache-2.0 but its **weights are CC BY-SA 3.0** | [pytorch/vision](https://github.com/pytorch/vision), [detectron2](https://github.com/facebookresearch/detectron2) |
 | Mask2Former | stronger masks; one architecture for all three kinds of segmentation | MIT, but the repository is **archived** | [facebookresearch/Mask2Former](https://github.com/facebookresearch/Mask2Former) |
 | OneFormer | one model trained once, doing semantic, instance and panoptic | MIT | [SHI-Labs/OneFormer](https://github.com/SHI-Labs/OneFormer) |
 | SegFormer | efficient semantic segmentation | **NVIDIA Source Code License — non-commercial** | [NVlabs/SegFormer](https://github.com/NVlabs/SegFormer) |
@@ -515,7 +634,7 @@ Five jobs it cannot do:
 - give orientation, which a mask does not contain
 - tell you anything in millimetres
 
-### 5.3 Promptable segmenters: the Segment Anything family
+### 6.3 Promptable segmenters: the Segment Anything family
 
 **What it is.** You give the model a point, a box, or a rough region; it returns
 the exact mask containing it. It does not name anything. Its strength is the
@@ -531,9 +650,11 @@ the table.
 | --- | --- | --- | --- |
 | SAM | the original; excellent boundaries; slow | Apache-2.0 / Apache-2.0 | [segment-anything](https://github.com/facebookresearch/segment-anything) |
 | SAM 2 | adds video and is faster; the safe default | Apache-2.0 / Apache-2.0 | [sam2](https://github.com/facebookresearch/sam2) |
-| SAM 3 | the newest, released late 2025 | **bespoke "SAM License"**, weights "other" | [sam3](https://github.com/facebookresearch/sam3) |
+| SAM 3 | the newest; segments *every* instance matching a phrase | **bespoke "SAM License"**, weights gated | [sam3](https://github.com/facebookresearch/sam3) |
+| SAM 3.1 | a drop-in update to SAM 3, March 2026 | same as SAM 3 | [weights](https://huggingface.co/facebook/sam3.1) |
+| EdgeSAM, EdgeTAM | the two that run properly on Apple hardware | EdgeSAM **non-commercial**; EdgeTAM Apache-2.0 | [EdgeSAM](https://github.com/chongzhou96/EdgeSAM), [EdgeTAM](https://github.com/facebookresearch/EdgeTAM) |
 | MobileSAM | a much smaller SAM for embedded use | Apache-2.0 | [MobileSAM](https://github.com/ChaoningZhang/MobileSAM) |
-| FastSAM | a fast approximation, built on Ultralytics | **AGPL-3.0** | [FastSAM](https://github.com/CASIA-IVA-Lab/FastSAM) |
+| FastSAM | a fast approximation, built on Ultralytics | **AGPL-3.0** | [FastSAM](https://github.com/CASIA-LMC-Lab/FastSAM) |
 
 If the licence matters to you, SAM 2 is the one to reach for: it is the most
 recent of the family that is plainly Apache-2.0 in both code and weights. SAM 3's
@@ -541,7 +662,15 @@ licence is a Meta community licence that does permit commercial use, but it is a
 bespoke agreement with its own acceptable-use terms rather than a standard open
 licence, so it needs reading rather than assuming. FastSAM is AGPL because it is
 built on Ultralytics, which is the most commonly missed licence inheritance in
-this whole field.
+this whole field — and note that FastSAM's own README claims Apache-2.0 while its
+`LICENSE` file is AGPL-3.0. When a repository contradicts itself, the licence file
+is the one that counts.
+
+SAM 3 is also more than a faster SAM. It does *promptable concept segmentation*:
+given a short phrase it returns **every** instance matching it, which is the job
+that previously needed Grounding DINO and SAM chained together. That makes it a
+replacement for the pairing described in section 6.4, at the cost of a licence
+that is not a standard open one.
 
 Five jobs the SAM family suits:
 
@@ -561,7 +690,7 @@ Five jobs it cannot do:
 - give consistent object identity across frames, without the video variant
 - handle transparent objects, whose boundary is genuinely ambiguous in the image
 
-### 5.4 Open-vocabulary models
+### 6.4 Open-vocabulary models
 
 **What they are.** Models you prompt with words. They were trained on pictures
 paired with text, so they can find things that were never a class in any list.
@@ -598,7 +727,7 @@ Five jobs they cannot do:
 - offer any guarantee, which is why safety-relevant decisions are not made this
   way
 
-### 5.5 Backbones and features
+### 6.5 Backbones and features
 
 **What they are.** Not object finders, but the feature extractors other things are
 built on. They matter here because a strong backbone with a small trained head is
@@ -609,3 +738,300 @@ features good enough that a simple classifier on top of them matches models
 trained end to end. [DINOv3](https://github.com/facebookresearch/dinov3) is newer
 and stronger, but is published under a bespoke DINOv3 licence rather than Apache,
 so it needs reading before commercial use.
+
+### 6.6 Open-vocabulary models that are not downloadable
+
+One correction that catches people regularly. **Grounding DINO 1.5, 1.6, 1.6 Pro
+and DINO-X have no open weights.** The repositories with those names contain
+client code for a paid hosted service, and the Apache-2.0 licence on them covers
+the client, not the model. Only the original Grounding DINO has downloadable
+weights. A great many blog posts present the later versions as though you could
+`pip install` them.
+
+Similarly, Ultralytics **YOLO27 is announced and not released**, and Depth
+Anything V2's Giant checkpoint has said "coming soon" for a long time.
+
+### 6.7 Transparent and shiny objects
+
+This deserves its own entry because it is the case that defeats everything above,
+and because the honest state of it is not what people expect.
+
+The classical approach is the depth hole from [section 5.7](#57-the-depth-hole-for-glass-and-chrome).
+The reference work is [Lysenkov, Eruhimov and Bradski, RSS
+2012](https://roboticsproceedings.org/rss08/p35.html), which deliberately used the
+depth sensor's *failure* as the segmentation cue. The code from that lineage
+([wg-perception/transparent_objects](https://github.com/wg-perception/transparent_objects))
+is long unmaintained.
+
+Since then the field has moved to learned depth completion, and the licensing is
+awkward:
+
+| Project | Licence | State |
+| --- | --- | --- |
+| [ClearGrasp](https://github.com/Shreeyak/cleargrasp) | Apache-2.0 | abandoned in 2021; still the standard citation for the problem |
+| TransCG | **CC BY-NC-SA 4.0** | abandoned in 2022; the largest real dataset, and non-commercial |
+| [ReMake](https://github.com/ChengYaofeng/ReMake) | **MIT** | 2026, and the most usable recent option: a monocular depth model plus an instance mask, completing the depth |
+| [FoundationStereo](https://github.com/NVlabs/FoundationStereo) | **NVIDIA, non-commercial** | excellent, and not shippable |
+
+Polarisation imaging is frequently suggested for this and, as
+[section 4.5](#45-thermal-polarisation-and-the-rest) says, there is essentially no
+open-source work behind the suggestion.
+
+## 7. Models you would train yourself
+
+Everything so far assumes somebody else's classes. The moment your objects are
+specific — your parts, your products — you train.
+
+**You almost never train from scratch.** You fine-tune: take a model that already
+knows what edges, textures and objects look like in general, and teach it your
+classes with a few hundred labelled pictures. The camera area
+[works through this](../05_camera/02_finding-objects.md#6-training-a-model-of-your-own)
+with eighty pictures of one object, which is enough to see it work.
+
+The choices, in the order most people should consider them:
+
+| Route | When it is right | Licence |
+| --- | --- | --- |
+| [RF-DETR](https://github.com/roboflow/rf-detr) | a permissive detector with good ergonomics; the sensible default in 2026 | Apache-2.0 |
+| [torchvision references](https://github.com/pytorch/vision/tree/main/references) | you want no framework at all, just PyTorch | BSD-3 |
+| [segmentation_models_pytorch](https://github.com/qubvel-org/segmentation_models.pytorch) | semantic segmentation with a wide choice of backbones | MIT |
+| [Hugging Face transformers](https://github.com/huggingface/transformers) | fine-tuning DETR, Mask2Former, OneFormer and friends | Apache-2.0 |
+| [Detectron2](https://github.com/facebookresearch/detectron2) | you specifically need its Mask R-CNN recipes | Apache-2.0 code, **CC BY-SA 3.0 weights** |
+| [Ultralytics](https://github.com/ultralytics/ultralytics) | the fastest path to a working model, if AGPL is acceptable | **AGPL-3.0** |
+| [mmdetection](https://github.com/open-mmlab/mmdetection) | you need an implementation that exists nowhere else | Apache-2.0, **last updated August 2024** |
+
+A newer route is worth knowing because it changes the economics. Use an
+open-vocabulary model to *label* your data — Grounding DINO or SAM 3 generating
+boxes and masks from a text prompt — then train a small, fast, permissively
+licensed model on those labels. You get a model that runs in milliseconds on a
+cheap computer, trained on data nobody had to draw by hand.
+
+Five jobs training your own model suits:
+
+- a fixed set of objects that a general model does not know
+- anything that has to run fast on a small computer
+- distinguishing objects that differ in ways with no common name
+- a task where you need to control and version the model's behaviour
+- meeting a licence constraint, by training your own weights on permissive code
+
+Five jobs it does not:
+
+- objects that change every week, where you would retrain every week
+- a long tail of thousands of rare items
+- projects with no way to collect and label a few hundred pictures
+- proving anything before the mechanical and lighting side is settled
+- one-off jobs, where an open-vocabulary model costs nothing and works today
+
+## 8. Frameworks and libraries
+
+Read this as: what state each one is in, verified by its last commit in September
+2026, because a stale framework is a slow problem rather than an obvious one.
+
+| Framework | Licence | State |
+| --- | --- | --- |
+| [OpenCV](https://github.com/opencv/opencv) | Apache-2.0 since 4.5; BSD-3 at 4.4 and earlier | very active. **5.0.0 shipped June 2026** and restructured the modules, so 4.x code does not port straight across; 4.x is still maintained in parallel |
+| [PyTorch](https://github.com/pytorch/pytorch) / [torchvision](https://github.com/pytorch/vision) | BSD-3 | the foundation of nearly everything here |
+| [Hugging Face transformers](https://github.com/huggingface/transformers) | Apache-2.0 | very active; version 5 landed January 2026 |
+| [Open3D](https://github.com/isl-org/Open3D) | MIT | active; v0.20.0 in September 2026, with native Apple Silicon wheels |
+| [PCL](https://github.com/PointCloudLibrary/pcl) | BSD-3 | active in C++; its **Python bindings are dead** |
+| [Detectron2](https://github.com/facebookresearch/detectron2) | Apache-2.0 | frozen — no tagged release since 2021 |
+| [mmdetection](https://github.com/open-mmlab/mmdetection) / [mmsegmentation](https://github.com/open-mmlab/mmsegmentation) | Apache-2.0 | **two years stale**, both last pushed August 2024 |
+| [supervision](https://github.com/roboflow/supervision) | MIT | active; the glue between detectors, trackers and annotations |
+| [ONNX Runtime](https://github.com/microsoft/onnxruntime) | MIT | the portable way to deploy, including on Apple hardware |
+| [coremltools](https://github.com/apple/coremltools) | BSD-3 | the route to Apple's Neural Engine |
+| [MLX](https://github.com/ml-explore/mlx) | MIT | Apple Silicon machine learning; the realistic way to run large vision-language models on a Mac |
+
+## 9. Datasets
+
+If you are training, you need data, and the licences here are stricter than the
+code licences. Read this table as: what the annotations allow, then separately
+what the images allow, because they are usually different and the images are
+where the restriction bites.
+
+| Dataset | Annotations | Images | Commercial use |
+| --- | --- | --- | --- |
+| [Open Images V7](https://storage.googleapis.com/openimages/web/index.html) | CC BY 4.0 | CC BY 2.0 | **yes — the only large one that is cleanly clear** |
+| [COCO](https://cocodataset.org/) | CC BY 4.0 | Flickr terms, copyright per image | annotations yes, images are your own risk |
+| [LVIS](https://www.lvisdataset.org/) | BSD | inherits COCO's | as COCO |
+| [ADE20K](https://groups.csail.mit.edu/vision/datasets/ADE20K/) | BSD-3 | **non-commercial research and education only** | **no** |
+| [Cityscapes](https://www.cityscapes-dataset.com/) | — | **non-commercial** | **no** |
+| [Objects365](https://www.objects365.org/) | CC BY 4.0 | **academic purposes only**, registration required | **no** |
+| [SA-1B](https://ai.meta.com/datasets/segment-anything/) | research licence | same | **no** |
+| [GraspNet-1Billion](https://graspnet.net/) | CC BY-NC-SA 4.0 | same | **no** |
+
+The short version for anyone building a product: **Open Images V7 is the one you
+can use without thinking about it.** COCO's annotations are fine and its images
+are a judgement call. The rest forbid commercial use, and a model trained on them
+inherits the problem.
+
+## 10. Labelling tools
+
+| Tool | Licence | Self-hosted | Notes |
+| --- | --- | --- | --- |
+| [CVAT](https://github.com/cvat-ai/cvat) | MIT | yes | the standard; has SAM-assisted labelling built in |
+| [Label Studio](https://github.com/HumanSignal/label-studio) | Apache-2.0 | yes | broader than vision; model-assisted via a backend |
+| [FiftyOne](https://github.com/voxel51/fiftyone) | Apache-2.0 | yes | for looking at and curating a dataset rather than drawing on it |
+| [X-AnyLabeling](https://github.com/CVHub520/X-AnyLabeling) | **GPL-3.0** | yes | a wide model zoo for assisted labelling |
+| [labelme](https://github.com/wkentaro/labelme) | **GPL-3.0** | yes | widely assumed to be MIT; it is not |
+| [Roboflow](https://roboflow.com/) | hosted service | no | see the note below |
+
+One thing about Roboflow's free tier that is easy to miss and matters
+commercially: on the free plan your **data and models are public** on Roboflow
+Universe. Keeping a dataset private requires a paid plan.
+
+## 11. Licences, and the one that will catch you out
+
+If you read one section of this document, read this one.
+
+**Ultralytics YOLO is AGPL-3.0.** It is the most popular object detector in the
+world, it is what almost every tutorial uses, and its licence obliges you to
+publish the source of anything you combine it with — including, because of the
+AGPL's network clause, software you never distribute but merely run as a service.
+Ultralytics' own documentation states that the pretrained weights carry the same
+terms regardless of how you obtained them. A commercial licence is available and
+is priced by negotiation.
+
+That is not a criticism of the licence, which is a legitimate choice. It is a
+warning that a great many projects have adopted it without noticing, and the
+noticing usually happens late.
+
+The same inheritance catches anything built on Ultralytics, including FastSAM,
+YOLOE, and the popular `yolo_ros` wrapper.
+
+**The permissive alternatives exist and are good.** RF-DETR, RT-DETR, D-FINE,
+DEIM and YOLOX are all Apache-2.0, all competitive, and none of them will make a
+lawyer unhappy.
+
+Beyond that, five patterns are worth recognising:
+
+- **Code permissive, weights not.** Depth Anything V2's small weights are
+  Apache-2.0 and its large ones are CC BY-NC. YOLO-NAS has Apache-2.0 code and
+  non-commercial weights. Detectron2's code is Apache-2.0 and its weights are
+  CC BY-SA. Always check the model card, not the repository badge.
+- **NVIDIA research licences are non-commercial** and asymmetric: they permit
+  NVIDIA to use the same work commercially. SegFormer, FoundationPose,
+  FoundationStereo, DOPE and CenterPose are all in this group.
+- **Open weights are not open source.** SAM 3, DINOv3 and the Gemma family ship
+  bespoke agreements that permit commercial use with conditions attached. They
+  need reading, not assuming.
+- **No licence is worse than a restrictive one.** SAM-6D has no licence file at
+  all, which means default copyright and no permission to use it for anything.
+- **The dataset licence flows into your model.** Training on ADE20K or
+  GraspNet-1Billion gives you weights with a provenance problem.
+
+## 12. What runs on an Apple Silicon Mac
+
+The general answer is better than its reputation, because of one pattern worth
+knowing.
+
+**A great many models whose original repository requires CUDA have a pure-PyTorch
+reimplementation in Hugging Face `transformers` that does not.** Deformable DETR's
+port falls back to `grid_sample` when the CUDA kernel is missing; Mask2Former's
+and OneFormer's ports never had one; Grounding DINO's port is pure PyTorch; and —
+the useful one — **SAM 3 is in `transformers` from version 5.0.0, with no compiled
+kernels at all**, including its tracker and video heads. So "the repository needs
+CUDA" and "it will not run on your Mac" are different statements, and the second
+is often false.
+
+| Works on Apple Silicon | Does not |
+| --- | --- |
+| OpenCV, Open3D (native wheels), PCL in C++ | NVIDIA Isaac ROS, entirely — it needs a Jetson or an Ampere-or-newer NVIDIA card |
+| torchvision detectors and Mask R-CNN, on MPS | Deformable DETR, DINO-DETR, Mask2Former and OneFormer **from their original repositories** |
+| RT-DETR, D-FINE, DEIM, RF-DETR, YOLOX — no compilation needed | Grounded-SAM's local install |
+| Ultralytics, with `device="mps"` | YOLACT++ and SOLOv2's deformable-convolution variants |
+| SAM, SAM 2 and SAM 3 via `transformers` | mmcv's CUDA operators |
+| EdgeSAM and EdgeTAM, which have real CoreML builds | NVIDIA TAO Toolkit |
+| ONNX Runtime, CoreML, MLX | TensorRT |
+
+Two measured figures worth quoting, because most Apple Silicon claims in this
+field are guesses: Depth Anything V2 Small runs in **24.6 ms on an M3 Max** through
+CoreML and the Neural Engine, and EdgeSAM runs at **38.7 frames per second on an
+iPhone 14**. Against that, MobileSAM — which is *designed* to be small — measures
+around 24 seconds per image on an M4 Air's CPU, far slower than FastSAM's 58
+milliseconds on the same machine. Small does not automatically mean fast on
+Apple hardware; what matters is whether anyone has done the CoreML work.
+
+## 13. Putting it in ROS 2
+
+ROS 2's current long-term release is **Lyrical Luth**, from May 2026. Jazzy
+Jalisco remains supported to 2029 and is the safer choice today.
+
+Perception results travel as
+[vision_msgs](https://github.com/ros-perception/vision_msgs) (Apache-2.0), which
+defines `Detection2DArray`, `Detection3DArray` and the classification types.
+Anything you write should publish those rather than invent its own.
+
+| Package | Licence | What it is for |
+| --- | --- | --- |
+| [vision_msgs](https://github.com/ros-perception/vision_msgs) | Apache-2.0 | the standard message types for detections |
+| [vision_opencv](https://github.com/ros-perception/vision_opencv) | Apache-2.0 | `cv_bridge`, between ROS images and OpenCV |
+| [image_pipeline](https://github.com/ros-perception/image_pipeline) | BSD | rectification, calibration, stereo |
+| [perception_pcl](https://github.com/ros-perception/perception_pcl) | BSD-3 | PCL inside ROS |
+| [yolo_ros](https://github.com/mgonzs13/yolo_ros) | **GPL-3.0** | the de facto Ultralytics wrapper — note the licence, twice over |
+| [Isaac ROS](https://github.com/NVIDIA-ISAAC-ROS) | mixed | see below |
+
+**A warning about Isaac ROS that is easy to miss.** Its perception packages are
+Apache-2.0, which looks reassuring. But `isaac_ros_nitros`, the zero-copy
+transport every one of those nodes depends on, is under NVIDIA's own proprietary
+Isaac ROS Software License. An Apache-2.0 badge on `isaac_ros_yolov8` does not
+make your deployment Apache-2.0. It also runs only on a Jetson or an
+Ampere-or-newer NVIDIA card — there is no CPU-only path and no Apple Silicon path.
+
+## 14. The comparison grid
+
+Everything in one table. Speed is an order of magnitude on ordinary hardware
+rather than a benchmark figure, because the benchmark figure depends on a card
+you probably do not have.
+
+| Approach | Gives you | Speed | Needs training | Unknown objects | Licence risk |
+| --- | --- | --- | --- | --- | --- |
+| colour range | mask | ~1 ms | no | no | none |
+| background subtraction | mask | ~1 ms | no | yes | none |
+| contours, connected components | regions | ~1 ms | no | yes | none |
+| template matching | position | ms to s | no | no | none |
+| watershed, GrabCut | mask | tens of ms | no | yes | none |
+| plane removal and clustering | 3D clumps | ~10 ms | no | **yes** | none |
+| depth hole | transparent regions | ~1 ms | no | yes | none |
+| box detector, trained | boxes and classes | ~10 ms | yes | no | **AGPL if Ultralytics** |
+| mask model, trained | masks and classes | tens of ms | yes | no | check the weights |
+| SAM family | masks, no labels | 0.1 to 1 s | no | **yes** | SAM 2 safest |
+| open-vocabulary | boxes or masks from text | 0.1 to 1 s | no | **yes** | mixed |
+| SAM 3 | every instance matching a phrase | ~30 ms on a large GPU | no | **yes** | bespoke licence |
+
+## 15. What to actually reach for
+
+Four recommendations, in the order you should consider them.
+
+**If the object is one strong colour on a background you control, use a colour
+range.** It takes an afternoon, runs in a millisecond and never surprises you. A
+surprising number of working cells are this.
+
+**If you need geometry and not identity, remove the plane and cluster.** For
+"pick up whatever is on this table" this is still the best answer in the
+document. It works on objects that did not exist when you wrote it, it needs no
+training data, and it hands you 3D positions directly.
+
+**If you need a trained detector, start with RF-DETR or RT-DETR, not
+Ultralytics.** They are permissively licensed, competitive, and they need no
+compilation, so they run on a Mac. Reach for Ultralytics when you have decided
+the AGPL is acceptable, not by default.
+
+**If you cannot enumerate the objects, use SAM 2 with a detector, or SAM 3
+alone.** SAM 2 with Grounding DINO is the fully Apache-2.0 route. SAM 3 does the
+same job in one model and better, under a licence you should read first.
+
+And one thing to do before any of it: fix the lighting. More perception problems
+are solved by a diffuser and a fixed exposure than by changing the model.
+
+## 16. Where to read more
+
+- [The camera area](../05_camera/01_basics.md) — how a camera works, and a
+  worked example of finding an object by colour, with depth, and with a trained
+  model.
+- [Object dimension detection](../07_object-dimension-detection/01_overview.md) —
+  the companion to this document, which turns these pixels into millimetres.
+- [Tools and libraries](../08_tools-and-libraries.md#9-perception-camera-drivers-opencv-and-open3d) —
+  where perception sits in the wider stack of a table-mounted arm.
+- [The glass case study](../09_one-arm-training/07_case-study/01_place-glass.md) —
+  one project that uses the depth hole, silhouettes and a measured profile
+  instead of any trained model at all.

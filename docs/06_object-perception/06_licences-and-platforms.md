@@ -122,7 +122,7 @@ is often false.
 | RT-DETR, D-FINE, DEIM, RF-DETR, YOLOX — no compilation needed | Grounded-SAM's local install |
 | Ultralytics, with `device="mps"` | YOLACT++ and SOLOv2's deformable-convolution variants |
 | SAM, SAM 2 and SAM 3 via `transformers` | mmcv's CUDA operators |
-| EdgeSAM and EdgeTAM, which have real CoreML builds | NVIDIA TAO Toolkit |
+| EdgeTAM, which has a real CoreML build; EdgeSAM too, but it is **S-Lab License 1.0, non-commercial** | NVIDIA TAO Toolkit |
 | ONNX Runtime, CoreML, MLX | TensorRT |
 
 Two measured figures worth quoting, because most Apple Silicon claims in this

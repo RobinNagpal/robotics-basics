@@ -27,7 +27,7 @@ than what you will get on a bad day.
 
 | Sensor | How it works | Published accuracy | Roughly |
 | --- | --- | --- | --- |
-| [RealSense D405](https://www.realsenseai.com/products/stereo-depth-camera-d405/) | active stereo, close range | ±2% at 50 cm, works from 7 cm | a few hundred pounds |
+| [RealSense D405](https://www.realsenseai.com/products/stereo-depth-camera-d405/) | **passive** stereo, close range — see [the wrist camera, §7](08_the-wrist-camera.md) | ±2% at 50 cm on a *textured* target, works from 7 cm | a few hundred pounds |
 | [RealSense D435i](https://www.realsenseai.com/products/depth-camera-d435i/) | active stereo, general purpose | under 2% at 2 m; RMS about 2 mm at 1 m | a few hundred pounds |
 | [Orbbec Gemini 335L](https://store.orbbec.com/products/gemini-335l) | active stereo, IP65 | 0.8% at 2 m, 1.6% at 4 m | a few hundred pounds |
 | [Orbbec Femto Bolt](https://www.orbbec.com/products/tof-camera/femto-bolt/) | time of flight | systematic error under 11 mm plus 0.1% of distance | a few hundred pounds |
@@ -64,8 +64,13 @@ are buying matters more than the accuracy figure.
 sunlight and costs almost nothing, and it fails completely on a blank wall,
 because there is nothing to match.
 
-**Active stereo** — the RealSense and Orbbec Gemini families — projects a speckle
-pattern so that a blank surface has texture to match. That fixes the textureless
+**Active stereo** — most of the RealSense and Orbbec Gemini families — projects a
+speckle pattern so that a blank surface has texture to match. The D405 is the
+exception and is worth singling out, because it is the one most often put on a
+wrist: its depth module has no infrared projector and carries an infrared-cut
+filter, so it is *passive*, and its published accuracy is measured on a textured
+target where the active models are measured on blank white. A featureless surface
+100 mm from the lens returns nothing. That fixes the textureless
 case and leaves the others: the pattern goes straight through transparent things,
 bounces away from mirrored ones, and is washed out by strong sunlight.
 

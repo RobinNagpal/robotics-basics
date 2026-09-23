@@ -59,7 +59,7 @@ assumes one.
 6. [What you know before you close the fingers](#6-what-you-know-before-you-close-the-fingers)
 7. [The three things every tutorial leaves out](#7-the-three-things-every-tutorial-leaves-out)
 8. [Knowing how much force was applied](#8-knowing-how-much-force-was-applied)
-9. [The six documents that follow](#9-the-six-documents-that-follow)
+9. [The seven documents that follow](#9-the-seven-documents-that-follow)
 
 ---
 
@@ -394,7 +394,7 @@ The short version is that you usually do not need the grip force itself. You nee
 to know whether the object is held, and the wrist force sensor answers that
 directly.
 
-## 9. The six documents that follow
+## 9. The seven documents that follow
 
 | | What it answers |
 | --- | --- |
@@ -403,6 +403,7 @@ directly.
 | [Models that grasp](04_models-that-grasp.md) | the models you download: GPD, Dex-Net, GraspNet, Contact-GraspNet, AnyGrasp, GraspGen, what each predicts, and the licences |
 | [Holding on](05_holding-on.md) | force control, how hard to squeeze, slip and its detection, compliance, regrasping, and letting go safely |
 | [The two-finger gripper](06_two-finger-gripper.md) | the whole area worked through on one gripper, with the ROS 2 calls and pseudo code |
+| [Checking an implementation](08_checking-an-implementation.md) | every trap in this area as a list you run down against your own code |
 | [Licences and platforms](07_licences-and-platforms.md) | what you may ship, what runs on a Mac, ROS 2 packages, and every approach side by side |
 
 If you are starting a project rather than reading through, the order that wastes

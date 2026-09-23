@@ -9,10 +9,10 @@ The shape is `NN_lower-hyphen-separated-name`. The prefix uses an **underscore**
 after the number. The name itself uses **hyphens** between words, all lower case.
 
 ```
-docs/06_object-segmentation/01_overview.md
-docs/06_object-segmentation/02_programmed-methods.md
+docs/06_object-perception/01_overview.md
+docs/06_object-perception/03_programmed-methods.md
 docs/05_camera/03_one-box-intro.md
-docs/11_stone-stacking.md
+docs/10_stone-stacking.md
 ```
 
 The point is that a reader opening the folder can see what to read first without
@@ -40,7 +40,7 @@ world if the insert is cosmetic.
   no reader benefit.
 - Image folders are named after the *document* they belong to, without its number:
   `docs/images/one-arm-training/overview/` holds the pictures for
-  `docs/09_one-arm-training/01_overview.md`. This keeps image paths stable when a
+  `docs/08_one-arm-training/01_overview.md`. This keeps image paths stable when a
   document is renumbered.
 
 ## Checking links after any rename

@@ -294,6 +294,35 @@ Five jobs it cannot do:
 - work with a sensor that fills in missing depth automatically, which many
   cameras now do by default and which quietly destroys the signal
 
+### 1.8 Reading a mask honestly
+
+Two corrections that apply to every method above, and that are wrong in most
+first implementations because both failures are silent.
+
+**A pixel's position is its centre, so measure to the outside of the edge
+pixels.** The distance from the leftmost glass pixel to the rightmost is one
+pixel *short* of the object's width, because it runs centre to centre. Take half
+a pixel off each end:
+
+    width = (rightmost − leftmost + 1) pixels
+
+That single pixel is a **bias, not noise** — it never averages out, and it is
+always in the same direction. At a third of a metre on a modest sensor it is
+about a millimetre, which is the same order as everything else in the error
+budget.
+
+**Check the mask's quality on the raw widths, never the smoothed ones.** Any
+sensible pipeline smooths the width profile, because a segmentation edge wanders
+by a pixel or two and an unsmoothed profile has a false narrowing in every
+wobble. The trap is applying the quality check afterwards. A five-row median
+makes *any* mask look clean, so a raggedness test downstream of it never fires,
+on good masks or bad.
+
+The check and the measurement want different inputs, and saying so is the whole
+fix: **ask the raw widths whether the mask was worth trusting, then measure the
+smoothed ones.** A check that never fails is worse than no check, because it is
+also reassuring.
+
 ## 2. Measuring the object
 
 Seven ways to turn those pixels into millimetres. Between them they cover most of
@@ -348,6 +377,33 @@ on this.
 tilted, stacked on another object, or in the gripper — the answer is confidently
 wrong.
 
+**And a bias that is easy to miss, because the method looks exact.** It is exact
+only for a point actually *on* the plane. Every point above it lands too far out.
+The ray from the camera through a feature at height `h` does not stop there; laid
+onto the table it carries on and strikes the plane further away, by a factor of
+
+    H / (H − h)
+
+where `H` is the camera's height above the table. That is a systematic error, not
+noise, and it grows fast. With a wrist camera 280 mm up:
+
+| Feature at | Reads this much too wide |
+| --- | --- |
+| on the table | exact |
+| 25 mm up | 10% over |
+| 50 mm up | 22% over |
+| 100 mm up | **55% over** |
+| 150 mm up | **115% over** |
+
+The widest part of a wine glass is around 100 mm up. Measured this way it comes
+back over half as wide again as it is — a real case had a 157 mm glass reported
+as 244 mm. Everything downstream then believes it, because nothing about the
+number looks wrong.
+
+The base of the glass is on the plane, so **the footprint is trustworthy and the
+silhouette above it is not.** Either use the plane only for what touches it, or
+recover the height with the next section.
+
 Five jobs it suits:
 
 - glassware, and anything else transparent, standing on a surface
@@ -365,7 +421,59 @@ Five jobs it cannot do:
 - anything where the plane's own measurement has drifted, which it does if the
   camera is knocked
 
-### 2.3 A marker of known size
+### 2.3 Two photos from one moving camera
+
+The fix for the bias above, and a technique that gets missed because it sits
+between two things people already know.
+
+Take a picture, move the camera a known distance sideways, take another. A
+feature standing on the plane does not move between the two views once both are
+laid onto the plane. A feature *above* the plane does, and how far it moves tells
+you how high it is.
+
+For a baseline `b`, the apparent position on the plane shifts by
+
+    Δ = b · h / (H − h)
+
+and rearranging gives the shrink factor that undoes the bias directly:
+
+    k = b / (b + Δ)          true width = apparent width × k
+                             height h   = H · (1 − k)
+
+Worked through on the case above: the glass reads 244 mm wide, the camera is
+280 mm up. Move the camera 40 mm and the apparent width shifts by 22.2 mm, so
+k = 40 / 62.2 = 0.643, and 244 × 0.643 = **157 mm**, which is the right answer.
+Any baseline gives the same k; a longer one just measures Δ more precisely.
+
+**This is not [stereo matching](05_models-that-measure.md#2-stereo-matching)**,
+and the difference is worth being clear about. Stereo uses two cameras and
+matches every pixel to build a dense disparity map. This uses *one* camera that
+the arm moves, and matches whole blobs — the object's outline in view A against
+its outline in view B. There is nothing dense about it and no matcher to tune.
+
+It also has a property a stereo rig does not: **the baseline comes from the arm's
+own encoders, so it is known exactly and for free.** A stereo rig's baseline is a
+calibration you have to establish and maintain. Here it is whatever the arm was
+told to move, to a few hundredths of a millimetre.
+
+Five jobs it suits:
+
+- undoing the outward bias of the plane method, which is what it was derived for
+- getting a height for an object a depth sensor cannot see
+- any cell where the camera is on the arm, since the move is free
+- checking a depth reading against something measured a different way
+- objects whose outline is clean enough to match as a whole
+
+Five jobs it cannot do:
+
+- dense depth over a scene, which is what stereo is for
+- work if the object moves between the two pictures
+- work on a fixed camera, having no way to make a baseline
+- resolve features smaller than the shift is precise
+- help at all when the object is lying on the plane, where there is no parallax
+  to measure
+
+### 2.4 A marker of known size
 
 **What it is.** Put a printed square of known dimensions in the scene. Because you
 know it is, say, 40 mm across and you can see how many pixels across it is, you
@@ -401,7 +509,7 @@ Five jobs it cannot do:
 - give a good angle estimate from a single small square, which is famously
   unstable near face-on
 
-### 2.4 The smallest rectangle round the mask
+### 2.5 The smallest rectangle round the mask
 
 **What it is.** Given the object's pixels, `cv2.minAreaRect` finds the smallest
 *rotated* rectangle that contains them, returning a centre, a width, a height and
@@ -430,7 +538,7 @@ Five jobs it cannot do:
 - giving any information about the third dimension
 - objects whose mask is broken into pieces
 
-### 2.5 An oriented box round the point cloud
+### 2.6 An oriented box round the point cloud
 
 **What it is.** The 3D version of the same idea. Take the object's points, find
 the directions they vary along most — which is principal component analysis — and
@@ -463,7 +571,7 @@ Five jobs it cannot do:
   arbitrarily between frames
 - work with fewer than a few hundred points, below which the axes are noise
 
-### 2.6 Silhouettes of a solid of revolution
+### 2.7 Silhouettes of a solid of revolution
 
 **What it is.** A special case that is worth knowing because it is unreasonably
 powerful when it applies. An object made on a lathe or a potter's wheel — a glass,
@@ -495,7 +603,39 @@ Five jobs it cannot do:
 - telling a solid from a hollow one, which is why the glass study weighs the
   glass instead
 
-### 2.7 Measuring by touching it
+### 2.8 From a measurement to a decision
+
+The last step is turning a number into a choice, and two patterns are worth
+naming because both are got wrong in the same way.
+
+**Work out what the measurement allows, rather than assuming a fixed tolerance.**
+An object going into a slot has `(spacing − width) / 2` of clearance each side,
+and because it pivots about its base as it goes down, the lean that uses up that
+clearance is
+
+    atan(clearance / height)
+
+which depends on *this* object's measured width and height, not on a number you
+chose in advance. Slots 100 mm apart give an 80 mm object 10 mm a side: 6.3
+degrees if it is 90 mm tall, 3.3 if it is 175 mm, and 1.6 if it is also 90 mm
+wide. If the arm holds 3 degrees, the first two are fine and the third must have
+the neighbouring slot left empty — which doubles the spacing and takes it to 17.4
+degrees. Same rule, three different answers, decided per object on the day.
+
+**Let the hardware bound the search, not the answer.** A gripper body is a solid
+object that arrives alongside whatever it grips, so there is a lowest height it
+can reach without fouling the table. That limit belongs in the search: look for a
+grip *within the reachable band*. Put it on the answer instead — find the best
+grip, then reject it for being too low — and a rule that would have found a
+perfectly good grip 10 mm higher instead reports that the object cannot be held
+at all.
+
+The distinction sounds pedantic and is not. Bounding the answer turns a
+constraint into a refusal; bounding the search turns it into a different, valid
+result. Every constraint the hardware imposes should be pushed into the search
+for the same reason.
+
+### 2.9 Measuring by touching it
 
 **What it is.** Move the gripper until a contact sensor fires, and record where
 the arm was. It is the oldest measuring method in robotics and it is still the

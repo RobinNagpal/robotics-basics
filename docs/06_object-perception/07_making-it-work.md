@@ -15,6 +15,7 @@ this field are measured on the thing you care about.
 3. [When it does not work: a diagnosis ladder](#3-when-it-does-not-work-a-diagnosis-ladder)
 4. [Occlusion and clutter](#4-occlusion-and-clutter)
 5. [What simulation will not tell you](#5-what-simulation-will-not-tell-you)
+6. [Declining, as a mechanism rather than an intention](#6-declining-as-a-mechanism-rather-than-an-intention)
 
 ---
 
@@ -84,6 +85,46 @@ The moment any code path the robot runs reads that file, every number you produc
 afterwards is meaningless. Keep the boundary explicit and obvious in the
 directory layout, not just in your intentions.
 
+### 1.4 Testing a rule is not testing a model
+
+Everything above assumes what you are evaluating is a model, scored against a
+dataset. If what you have written is a **rule** — hold the narrowest part below
+the widest, take the flattest band in the lower third — then dataset metrics are
+the wrong instrument entirely, and there is a better one.
+
+**Generate a family and test the rule against all of it.** Not one example.
+Forty, drawn across the whole plausible range of proportions, with the generator
+seeded so a failure can be reproduced exactly. Then assert a property that must
+hold for every one of them: *every object gets a grip the gripper can actually
+make*, say, or *no measurement is more than 2 mm from the truth the generator
+knows*.
+
+This is property testing, and it fits geometric rules the way mAP fits
+classifiers. The difference in what it catches is large, because a rule fails on
+*proportions* rather than on appearance, and a single test object has exactly one
+set of proportions. Real examples of faults that only a family finds:
+
+- a search that returns the first index of a plateau rather than its middle,
+  which is correct on a tapered object and wrong on one with a parallel section
+- a generated dimension drawn independently of another it should depend on, so
+  that one object in forty comes out with a base wider than its body and breaks
+  an assumption three functions away
+- a tolerance set from geometry rather than from the hardware, which quietly
+  refuses a whole class of shape
+
+None of those is a bug in the sense of a crash. Each is a rule that is true of
+the object the author had in mind, and the family is what reveals which object
+that was.
+
+**Assert the property, not the label.** A tempting test is that each generated
+object is classified as the kind it was generated as. That test is wrong, and it
+fails for a good reason: a very shallow cone is, physically, a nearly straight
+object, and the straight-object rule holds it perfectly well. Insisting on the
+generated label forces the classifier to preserve a distinction the gripper does
+not care about. Ask instead whether the object ends up with a rule that can hold
+it — harder to satisfy, impossible to satisfy by cheating, and the thing you
+actually want.
+
 ## 2. How fast does it actually have to be
 
 The honest answer for most arm work is **much slower than you think**, and
@@ -137,6 +178,14 @@ degree of hand-eye error costs almost 6 mm at a 340 mm reach.
 tool offset, the controller, or the planner. Command the arm to the point with no
 perception at all and see where it goes.
 
+**4a. Is a check passing or failing for the wrong reason?** Two failures look
+identical from outside and neither is perception. A check on a sensor that cannot
+observe the event always reports nothing — see [the guarded
+move](02_sensors.md#21-what-you-can-actually-do-with-it), where pad sensors
+cannot feel a held object's base touching down. And a quality check applied after
+a smoothing step never fires, because smoothing is what it was going to complain
+about. Both are silent, and both are reassuring, which is worse than an error.
+
 **5. Does it work standing still and fail in motion?** Timing. The picture and
 the arm pose have to be from the same instant; if the pose is read after the
 picture, an arm still settling gives a pose that is a few milliseconds and a few
@@ -154,7 +203,7 @@ when it is not, and they need different answers.
 **Partial occlusion**, where something covers part of the object, degrades a mask
 model gracefully and a geometric method abruptly. A silhouette with a corner
 missing is still mostly a silhouette; a
-[solid-of-revolution measurement](03_programmed-methods.md#26-silhouettes-of-a-solid-of-revolution)
+[solid-of-revolution measurement](03_programmed-methods.md#27-silhouettes-of-a-solid-of-revolution)
 with a corner missing is simply wrong, and nothing in the arithmetic notices.
 This is the main argument for checking the measurement against something else
 before acting on it — a touch, a second view, a weight.
@@ -184,7 +233,58 @@ Worth being explicit, since everything in this repo runs in a simulator.
 - **Nothing tells you what force breaks a real object.** Caps derived in
   simulation are guesses that need calibrating on hardware.
 
+Two traps are specific enough to be worth naming, because both have cost real
+days and neither announces itself.
+
+**Transparency may be applied to colour and not to depth.** In Gazebo, a material
+with an alpha value renders see-through in the camera image while the depth
+sensor returns the surface as though it were solid. That matters here more than
+it sounds, because it means **the depth-hole signal that
+[section 1.7 of programmed methods](03_programmed-methods.md#17-the-depth-hole-for-glass-and-chrome)
+recommends for glass does not exist in simulation.** The one honest way to
+develop against it is to manufacture the hole deliberately — mask out the depth
+where the glass is — and to be explicit in the code that you are simulating the
+sensor's failure rather than observing it. A pipeline that is never given the
+hole will not be ready for it.
+
+**Colour comes out gamma-encoded.** A material set to 2% reflectance does not
+arrive as 5 of 255. It arrives near 41, because the renderer writes sRGB. Any
+threshold picked by reasoning about the material rather than by looking at the
+pixels will be wrong, and wrong in the direction that makes a dark background
+read as an object. The whole horizon can come back as one enormous blob and the
+threshold looks perfectly sensible in the source. Pick thresholds from a
+histogram of the actual image, never from the number you typed into the world
+file.
+
 What simulation *does* tell you, and what makes it worth building in, is whether
 the reasoning holds: whether a rule stated as a sentence about a shape survives
 contact with a hundred objects nobody chose to suit it. That is a real result,
 and it is the one this repo is set up to produce.
+
+## 6. Declining, as a mechanism rather than an intention
+
+Several documents here say that a system handling anything fragile needs to be
+able to decline. That is easy to agree with and easy to leave as good intentions,
+so this is what it looks like as code.
+
+**Every check raises rather than returns a flag.** A rule that cannot find a grip
+raises; a measurement too ragged to trust raises; a mass beyond the cap raises. A
+boolean that the caller may forget to look at is not a refusal mechanism.
+
+**The exception carries the sentence, not a code.** `NoGrip("the rule wants the
+fingers 61 mm apart, outside the 4 to 40 mm a stemmed glass should ever need")`
+is worth more than `ERR_GRIP_INVALID`, because it survives into the report and
+tells you which threshold to argue with.
+
+**One place catches them all.** The module that knows the sequence catches each
+kind, writes down which object and which reason, marks that object as not to be
+retried, and moves to the next. Nothing below that layer decides whether to give
+up — they only state what is wrong.
+
+**And the report prints both columns with equal weight.** Completed and declined,
+side by side, with the reason beside each declined one. If the summary line
+counts only successes, every future change will be judged by a number that
+rewards pushing through doubt, and the mechanism above will slowly be tuned away.
+
+The test that this is working is that a declined object is boring: it produces a
+line in a report, not a traceback, not a stuck arm, and not a retry loop.

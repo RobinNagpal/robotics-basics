@@ -285,10 +285,10 @@ with, the ROS 2 package that wraps it, and what you would then run on its output
 | Photoneo PhoXi | PhoXi Control, dongle-licensed | closed, MIT wrapper | [PhoXi-ROS-API](https://github.com/photoneo/PhoXi-ROS-API) | the same |
 | a plain colour camera | [OpenCV](https://github.com/opencv/opencv) | Apache-2.0 | [usb_cam](https://github.com/ros-drivers/usb_cam), [image_pipeline](https://github.com/ros-perception/image_pipeline) | the geometry in [section 6](03_programmed-methods.md#2-measuring-the-object), or a depth model from [section 7](05_models-that-measure.md#1-depth-from-a-single-picture) |
 | a stereo pair | OpenCV `StereoSGBM`, or [RAFT-Stereo](https://github.com/princeton-vl/RAFT-Stereo) | Apache-2.0 / MIT | [image_pipeline](https://github.com/ros-perception/image_pipeline)'s `stereo_image_proc` | as for RGB-D, once you have the disparity |
-| a force-torque sensor | [ros2_controllers](https://github.com/ros-controls/ros2_controllers) | Apache-2.0 | `force_torque_sensor_broadcaster` | the probing in [section 6.7](03_programmed-methods.md#27-measuring-by-touching-it) |
+| a force-torque sensor | [ros2_controllers](https://github.com/ros-controls/ros2_controllers) | Apache-2.0 | `force_torque_sensor_broadcaster` | the probing in [section 2.9](03_programmed-methods.md#29-measuring-by-touching-it) |
 | scanning LiDAR | vendor SDK | Apache-2.0 drivers | [velodyne](https://github.com/ros-drivers/velodyne), [ouster-ros](https://github.com/ouster-lidar/ouster-ros), [livox_ros_driver2](https://github.com/Livox-SDK/livox_ros_driver2), [sick_scan_xd](https://github.com/SICKAG/sick_scan_xd) | [slam_toolbox](https://github.com/SteveMacenski/slam_toolbox) for mapping — not the methods in this area |
 | one-point infrared | [VL53L1X driver](https://github.com/stm32duino/VL53L1X) | BSD-3 | read over I2C from a microcontroller | nothing — it is one number |
-| a printed marker | [OpenCV ArUco](https://github.com/opencv/opencv), [AprilTag](https://github.com/AprilRobotics/apriltag) | Apache-2.0 / BSD-2 | [ros_aruco_opencv](https://github.com/fictionlab/ros_aruco_opencv), [apriltag_ros](https://github.com/christianrauch/apriltag_ros) | calibration, and the scale trick in [section 6.3](03_programmed-methods.md#23-a-marker-of-known-size) |
+| a printed marker | [OpenCV ArUco](https://github.com/opencv/opencv), [AprilTag](https://github.com/AprilRobotics/apriltag) | Apache-2.0 / BSD-2 | [ros_aruco_opencv](https://github.com/fictionlab/ros_aruco_opencv), [apriltag_ros](https://github.com/christianrauch/apriltag_ros) | calibration, and the scale trick in [section 6.3](03_programmed-methods.md#24-a-marker-of-known-size) |
 
 Three practical notes that are not obvious from the table.
 
@@ -338,12 +338,64 @@ contact sensor fires, and record the pose. This is the oldest measuring techniqu
 in robotics and still the most accurate. It is how you find the true height of a
 work surface, the top of a stack, or the bottom of a bore.
 
+**Check that the sensor you are waiting on can actually fire.** This sounds
+trivial and is the most common way a guarded move fails silently. Sensors on the
+gripper pads detect what the *pads* touch. Lower a held object onto a surface and
+the pads touch nothing whatever — the object's own base does. The descent then
+runs its full travel, reports that it found nothing, and gives up, while the
+object has been standing on the surface for the last forty millimetres.
+
+The signal that does fire is the one on the other side of the problem: **the load
+leaving the wrist.** When the surface takes the weight, the force sensor stops
+reading it. So the rule is to watch the sensor that observes the *event you care
+about*, which for setting something down is the transfer of weight and not a
+touch at all.
+
+**And contact is not support.** Having established that something touched, you
+have not established that it is being held up. An object whose rim has caught on
+the lip of a fixture registers a perfectly good contact while still hanging
+entirely from the gripper, and opening the fingers then drops it. Before
+releasing anything, confirm the weight has actually gone: the wrist should be
+back to reading the gripper alone. That check costs nothing and is the difference
+between a placement and a drop.
+
 **Weighing what is held.** A wrist force sensor reads everything below it, so
 subtracting the known weight of the gripper leaves the payload. This is the only
 way to learn the mass of an object whose wall thickness you cannot see, which is
 exactly the problem the [glass case
 study](../08_one-arm-training/07_case-study/01_place-glass.md) has: it lifts each
 glass ten millimetres and weighs it before committing to a squeeze.
+
+**And the sentence above is a trap as it stands.** "Everything below it" is only
+true along the world vertical, and a force sensor reports in the *tool's* frame.
+Point the tool straight down and the two agree, which is why this works in the
+first demonstration anybody writes. Grasp from the side — the tool's reach axis
+now horizontal — and gravity pulls across the sensor's axis rather than along it,
+so the naive reading of the tool's own z is **zero**. Every object weighs nothing,
+convincingly, and the bug survives a long time because nothing errors.
+
+The fix is one line and it is not optional: rotate the measured wrench into the
+world frame with the tool's current orientation, then take the world-vertical
+component.
+
+    weight = (R_tool_to_world · f_measured) · [0, 0, 1]
+
+Do that and the answer is right whatever angle the wrist is at, which also means
+you may weigh the object in whatever pose the grasp happened to need.
+
+**Filtering the reading, which needs more than you would think.** A wrist sensor
+watched during a grasp is not a quiet signal. Closing the fingers, starting a
+move and stopping one all put transients through it that are many times the
+payload — a real trace went from 0 g to 9577 g and back inside a fraction of a
+second, on an object weighing 200 g. A single sample taken at the wrong instant
+is worse than no measurement, because it is a plausible number.
+
+Take the **median of a few dozen samples** — around 32 at 100 Hz, so a third of a
+second — with the arm held still. The median rather than the mean, because these
+are spikes rather than noise, and a mean is dragged by one of them while a median
+ignores it entirely. Then weigh only when the arm has settled, which is a good
+reason to make the weighing a deliberate pause rather than something read on the
+move.
 
 **Detecting slip.** Two ways. The cheap one watches the gripper's finger gap and
 calls it slipping if the fingers creep closed. The good one reads shear or
@@ -364,7 +416,40 @@ capacitive sensor between the fingers reports an object arriving a centimetre
 early, giving you a chance to abort. See
 [section 1.3](#13-infrared-in-four-different-roles).
 
-### 2.2 The sensors
+### 2.2 Estimating a mass before you can weigh it
+
+The weighing above happens with the object already in the air, which is late: you
+had to choose a squeeze before lifting it. So there has to be an estimate first,
+and the way to make one is worth writing down because it is not obvious that it
+can be made at all.
+
+**Treat the object as a shell, not a solid.** The outline from a side-on
+measurement gives the surface swept by the wall. Multiply that area by a wall
+thickness and a density and you have a volume of material rather than a volume of
+object — which for anything hollow is the only figure that means anything. Add
+the base as a disc, because it is solid and on a short object it is a good
+fraction of the weight.
+
+The wall thickness is the part you cannot see, and the honest way to handle it is
+to stop pretending. Keep a **category** rather than a number — thin, normal,
+thick — attached to the *kind* of object, and note that this is a guess about a
+class and not a measurement of an instance. It is a fraction of a millimetre
+either way, and it is enough.
+
+**Expect the estimate to be about a third out in either direction**, and design
+for that rather than trying to improve it. A third is fine for choosing a first
+squeeze and useless as a final one, which is exactly why the sequence is estimate,
+grip gently, lift, weigh, correct. If the estimate were good you would not need
+the wrist sensor; if it were absent you would not know where to start.
+
+**The force cap is the other half.** Per kind of object, record the most force it
+can take before it is damaged — and treat exceeding it as a refusal rather than
+something to clamp to the limit and continue with. An object that turns out to
+need more grip than its walls can bear is an object that cannot be safely held,
+and the useful response is to say so. Clamping to the cap and lifting anyway is
+how you get a crack rather than a report.
+
+### 2.3 The sensors
 
 | Sensor | What it reports | Roughly |
 | --- | --- | --- |
@@ -382,7 +467,7 @@ photometric stereo turns that into a height map of the contact patch at a
 resolution finer than human touch. It gives you the *shape of the contact*, not
 the shape of the object, and not where the object is.
 
-### 2.3 The software
+### 2.4 The software
 
 | Tool | Licence | What it is for |
 | --- | --- | --- |
@@ -399,7 +484,7 @@ The two simulators are worth more than they look for a repo like this one. They
 let you build and test the tactile half of a pipeline with no sensor on the desk,
 the same way Gazebo lets you build the rest of it.
 
-### 2.4 Models
+### 2.5 Models
 
 There are far fewer than on the vision side, and the useful ones are recent.
 

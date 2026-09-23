@@ -837,4 +837,4 @@ personal fork, and none is usable as a dependency.
 
 **MuJoCo and its model collection run natively on Apple Silicon**, which makes
 them the practical route for developing gripping logic on a Mac. The full picture
-is in [licences and platforms](06_licences-and-platforms.md#2-what-runs-on-an-apple-silicon-mac).
+is in [licences and platforms](07_licences-and-platforms.md#2-what-runs-on-an-apple-silicon-mac).

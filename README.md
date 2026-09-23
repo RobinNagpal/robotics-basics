@@ -49,7 +49,8 @@ The camera code is mostly NumPy, so if NumPy is new to you, read **numpy** befor
 **[arm movement](docs/08_arm-movement/01_overview.md)** carry on from there, in
 six documents each and the same shape. Gripping covers the gripper families and
 their real numbers, choosing a grasp by geometry, the models that choose one for
-you, and holding on once you have it. Arm movement covers reach and
+you, holding on once you have it, and a document that works the whole area
+through on the two-finger gripper most arms actually carry. Arm movement covers reach and
 reachability, planning a path, controlling the move, learned motion, and the
 failures that are invisible until they happen — a straight line between two
 reachable poses that is itself unreachable, a controller shipping with its

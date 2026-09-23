@@ -44,7 +44,7 @@ Every technique and every model family has five jobs it suits and five it cannot
 do, because almost everything in this field works on the demonstration its
 authors chose. Every licence was read from the project's own licence file, which
 in this area catches out more people than in any other, for reasons
-[section 1 of licences and platforms](06_licences-and-platforms.md#1-licences-and-the-four-traps-in-this-area)
+[section 1 of licences and platforms](07_licences-and-platforms.md#1-licences-and-the-four-traps-in-this-area)
 sets out. And everything says whether it runs on an Apple Silicon Mac without an
 NVIDIA graphics card, because a large part of the grasp-model literature quietly
 assumes one.
@@ -58,7 +58,8 @@ assumes one.
 5. [Two payloads for one gripper](#5-two-payloads-for-one-gripper)
 6. [What you know before you close the fingers](#6-what-you-know-before-you-close-the-fingers)
 7. [The three things every tutorial leaves out](#7-the-three-things-every-tutorial-leaves-out)
-8. [The five documents that follow](#8-the-five-documents-that-follow)
+8. [Knowing how much force was applied](#8-knowing-how-much-force-was-applied)
+9. [The six documents that follow](#9-the-six-documents-that-follow)
 
 ---
 
@@ -368,7 +369,32 @@ by the gripper's own body *before* scoring, which
 works through. Putting the constraint at the end instead of the start is the
 single most common structural mistake in a grasp pipeline.
 
-## 8. The five documents that follow
+## 8. Knowing how much force was applied
+
+A question worth answering early, because the answer shapes what you can build.
+
+ROS 2 defines the interface cleanly. `control_msgs/GripperCommand` carries a
+`max_effort` in its goal and an `effort` in its result, and the message's own
+comment specifies the units: **"The current effort exerted (in Newtons)"**. So
+there is a standard, unambiguous way to ask for a force and read one back.
+
+Whether anything fills that field in is a separate question, and for the most
+common gripper in the world the answer is no. The official Robotiq ROS 2 driver
+exports exactly two state interfaces, position and velocity; there is no effort
+interface, so nothing downstream can report the force being applied, and the
+maximum force is a static parameter read from the URDF rather than something you
+set per grasp. That is a reasonable decision — the hardware reports motor
+current, and converting that to fingertip force depends on which grasp mode the
+linkage settled into — but it means a great deal of published example code reads
+a number that was never measured.
+
+The five routes that do work, and the one worth reaching for first, are set out
+in [the two-finger gripper document](06_two-finger-gripper.md#3-knowing-how-much-force-was-applied).
+The short version is that you usually do not need the grip force itself. You need
+to know whether the object is held, and the wrist force sensor answers that
+directly.
+
+## 9. The six documents that follow
 
 | | What it answers |
 | --- | --- |
@@ -376,7 +402,8 @@ single most common structural mistake in a grasp pipeline.
 | [Choosing a grip](03_choosing-a-grip.md) | the methods you write yourself: friction cones, antipodal grasps, force and form closure, centre-of-mass reasoning, quality metrics you can compute |
 | [Models that grasp](04_models-that-grasp.md) | the models you download: GPD, Dex-Net, GraspNet, Contact-GraspNet, AnyGrasp, GraspGen, what each predicts, and the licences |
 | [Holding on](05_holding-on.md) | force control, how hard to squeeze, slip and its detection, compliance, regrasping, and letting go safely |
-| [Licences and platforms](06_licences-and-platforms.md) | what you may ship, what runs on a Mac, ROS 2 packages, and every approach side by side |
+| [The two-finger gripper](06_two-finger-gripper.md) | the whole area worked through on one gripper, with the ROS 2 calls and pseudo code |
+| [Licences and platforms](07_licences-and-platforms.md) | what you may ship, what runs on a Mac, ROS 2 packages, and every approach side by side |
 
 If you are starting a project rather than reading through, the order that wastes
 least time is: this document, then

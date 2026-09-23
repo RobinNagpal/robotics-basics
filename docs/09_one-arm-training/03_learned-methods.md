@@ -553,4 +553,4 @@ called that surrounding classical code a "harness", which is exactly the right w
 for it.
 
 Next: back to [the overview](01_overview.md), or on to
-[what changes with two arms](../08_two-arm-training/01_overview.md).
+[what changes with two arms](../10_two-arm-training/01_overview.md).

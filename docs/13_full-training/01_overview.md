@@ -1,6 +1,6 @@
 # Training the whole thing: overview
 
-The [stone stacking doc](../09_stone-stacking.md) offers three ways to build the
+The [stone stacking doc](../11_stone-stacking.md) offers three ways to build the
 system, and this folder takes the second one — **train all of it** — and follows
 it from an empty folder to a measured success rate.
 
@@ -132,8 +132,8 @@ no way to demonstrate, or when the task is mostly geometry — which stone, whic
 way up — rather than touch.
 
 **In practice most working systems split it**, exactly as the
-[stone stacking doc suggests](../09_stone-stacking.md#6-programmed-or-trained) and
-as the [survey of methods](../07_one-arm-training/01_overview.md#9-what-real-systems-actually-do)
+[stone stacking doc suggests](../11_stone-stacking.md#6-programmed-or-trained) and
+as the [survey of methods](../09_one-arm-training/01_overview.md#9-what-real-systems-actually-do)
 shows across a dozen real systems:
 search for the pose with a physics engine, and train the last centimetre. Having
 read this folder you will know what the training half costs, which is the

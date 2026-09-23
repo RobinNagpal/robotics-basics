@@ -506,7 +506,7 @@ rather than a bug.
   for the third route in section 5.
 - [The learning path](../04_learning-path.md) has five projects to build in
   simulation; projects 1 and 2 between them cover most of what this task needs.
-- [Tools and libraries](../../06_tools-and-libraries.md) is the fuller version of
+- [Tools and libraries](../../08_tools-and-libraries.md) is the fuller version of
   [section 4](#4-which-part-uses-what).
 
 ---

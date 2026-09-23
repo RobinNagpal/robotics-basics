@@ -505,4 +505,4 @@ less of?
 Back to [the overview](01_overview.md), or on to
 [the programmed methods](02_programmed-methods.md) and
 [the learned methods](03_learned-methods.md). For what changes when two arms have to
-cooperate, see [the two-arm folder](../08_two-arm-training/01_overview.md).
+cooperate, see [the two-arm folder](../10_two-arm-training/01_overview.md).

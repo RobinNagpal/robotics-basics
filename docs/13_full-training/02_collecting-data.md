@@ -82,7 +82,7 @@ There is a second way to get demonstrations, and in simulation it is often the
 right one.
 
 **Let a program demonstrate.** The modular system from the
-[stone stacking doc](../09_stone-stacking.md#4-the-system-end-to-end) — segment the
+[stone stacking doc](../11_stone-stacking.md#4-the-system-end-to-end) — segment the
 scene, search for a stable pose in a physics engine, plan, place — is slow and
 fussy to run, but it does not get tired. Run it a few thousand times overnight,
 keep the attempts where the tower stood, and you have a dataset. Then train the

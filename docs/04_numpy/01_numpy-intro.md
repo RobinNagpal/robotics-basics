@@ -87,7 +87,7 @@ The third reason is that the libraries agree on it. `cv_bridge` turns a ROS
 picture into a NumPy array, OpenCV works on NumPy arrays, `image_geometry` and
 `depth_image_proc` give lens numbers and points, SciPy's `Rotation` turns
 quaternions into NumPy matrices, and Open3D, MuJoCo and Pinocchio all take and
-give NumPy arrays (the [tools and libraries](../06_tools-and-libraries.md) doc has
+give NumPy arrays (the [tools and libraries](../08_tools-and-libraries.md) doc has
 a few lines of each). Once your data is a NumPy array, it can go to any of them.
 
 NumPy has one main class, `ndarray`, short for n-dimensional array, which is

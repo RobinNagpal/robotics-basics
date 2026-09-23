@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/07_one-arm-training/.
+"""Generate the diagrams used in docs/09_one-arm-training/.
 
 Each picture belongs to one document and illustrates one specific idea from it,
 so the images go to docs/images/one-arm-training/<doc-name>/.

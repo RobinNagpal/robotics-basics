@@ -141,6 +141,47 @@ seating a connector, folding cloth, balancing a stone — are hard in force cont
 contact reasoning and error recovery, and several of them need almost no vision
 once contact is made. A task that needs all four vision answers is usually broad
 and shallow, not deep.
+### 2.1 When a model makes things worse
+
+The instinct, when a task has to cope with objects nobody has listed, is to reach
+for a bigger model. Three times out of four in robotics that is the wrong move,
+and it is worth knowing which three.
+
+**A model can make you *less* extensible, not more.** This is the one people get
+backwards. A rule — *hold the narrowest part below the widest* — is true of every
+stemmed glass ever made, and extending it to a new kind means writing another
+sentence and checking it against a few dozen generated examples. A trained
+classifier extends by collecting and labelling pictures of the new kind, and then
+retraining. If your objects vary in *proportion* rather than in *appearance*,
+measuring and applying a rule generalises further than recognising does, and it
+generalises immediately.
+
+**A model cannot refuse.** A detector always returns its best boxes; a policy
+always emits an action. Neither has a way to say *I do not know what that is, so I
+am leaving it alone.* Where the cost of being wrong is higher than the cost of
+doing nothing — glassware, anything fragile, anything near a person — you need a
+step that can decline, and that means a check with a threshold you chose, not a
+confidence score the model chose for itself.
+
+**A model can cost you the thing that made the project cheap to change.** If the
+deciding layer is plain arrays, its tests run in a second with no simulator, no
+weights and no graphics card, so trying a new rule is free. Put a model in that
+layer and the test loop needs downloads, a device, and a minute. The ability to
+iterate quickly is not separate from the architecture — it is caused by it.
+
+None of this says models are wrong here. It says they are wrong *in the deciding
+layer*. A model belongs where the alternative is genuinely worse:
+
+- the object set is open-ended and shares no structure you can write down
+- the distinguishing feature is appearance, not geometry — a label, a marking, a
+  brand
+- the object is transparent or mirrored, where geometry gets no signal at all and
+  [a learned segmenter](04_models-that-find.md#17-transparent-and-shiny-objects)
+  is the only route
+- you need a text prompt, because the class list changes weekly
+- you are labelling data for a small fast model, which is the best use of a large
+  slow one
+
 ## 3. What you know before the robot looks
 
 The single best predictor of which technique you should use is not how hard the

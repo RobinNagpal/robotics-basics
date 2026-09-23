@@ -18,9 +18,10 @@ platforms](06_licences-and-platforms.md).
 ## Contents
 
 1. [Models you can download](#1-models-you-can-download)
-2. [Models you would train yourself](#2-models-you-would-train-yourself)
-3. [Datasets](#3-datasets)
-4. [Labelling tools](#4-labelling-tools)
+2. [Models that choose where to grip](#2-models-that-choose-where-to-grip)
+3. [Models you would train yourself](#3-models-you-would-train-yourself)
+4. [Datasets](#4-datasets)
+5. [Labelling tools](#5-labelling-tools)
 
 ---
 
@@ -248,7 +249,55 @@ Polarisation imaging is frequently suggested for this and, as
 [section 4.5](02_sensors.md#22-thermal-polarisation-and-the-rest) says, there is essentially no
 open-source work behind the suggestion.
 
-## 2. Models you would train yourself
+## 2. Models that choose where to grip
+
+A fifth kind of answer, and the one most likely to be suggested when someone hears
+"objects we have never seen". A grasp model takes a point cloud and returns ranked
+gripper poses: not what the object is, not how big, but *how to hold it*.
+
+| Model | Licence | State |
+| --- | --- | --- |
+| [GPD](https://github.com/atenpas/gpd) | **BSD-2-Clause** | the one permissive option, and last touched in January 2022 |
+| [graspnet-baseline](https://github.com/graspnet/graspnet-baseline) | **academic and non-profit, non-commercial only** | trained on GraspNet-1Billion, which is also non-commercial |
+| [Contact-GraspNet](https://github.com/NVlabs/contact_graspnet) | NVIDIA, not a standard licence — read it | widely used, needs CUDA |
+| [AnyGrasp](https://github.com/graspnet/anygrasp_sdk) | **no licence file; a key you apply for, tied to a machine** | the strongest of them, and the least free |
+| [Dex-Net / GQ-CNN](https://github.com/BerkeleyAutomation/gqcnn) | UC Regents custom | the original of the family; old |
+
+The licence column is doing a lot of work there. Of five, one is permissive and
+stale, three are non-commercial or bespoke, and the best is licence-keyed to a
+machine you register.
+
+**Why they are less of an answer than they look.** A grasp network is trained to
+predict *will this grip hold* — that is, will the object not slip out. That is one
+of your constraints and usually not the only one. It has no way to know that a
+wine glass must be held on the stem rather than the bowl, or that a grip above
+half the glass's height cannot be inverted afterwards, or that the handle is the
+one place the fingers must not land. Those are task constraints, and there is
+nowhere to type them in.
+
+So the rule of thumb is: **if your object has a sentence — hold the narrowest part
+below the widest — the sentence beats the network**, because it encodes knowledge
+the network cannot be given. Grasp models earn their place when no such sentence
+exists, which is the genuinely open-ended case: a tote of mixed unknown goods.
+
+Five jobs a grasp model suits:
+
+- bin picking of mixed, unknown, opaque objects with no shared structure
+- warehouse totes, where the next item is genuinely unpredictable
+- a first pass at an object family before you have worked out a rule for it
+- suction grasping, where the question really is just "is this patch flat enough"
+- generating candidates for something else to filter against task constraints
+
+Five jobs it cannot do:
+
+- respect a constraint that is not about slipping — orientation, reachability
+  afterwards, a part of the object that must not be touched
+- work on transparent or reflective objects, having no point cloud to read
+- explain why it chose a grip, which matters when one fails
+- run without CUDA, for four of the five above
+- be shipped commercially, for four of the five above
+
+## 3. Models you would train yourself
 
 Everything so far assumes somebody else's classes. The moment your objects are
 specific — your parts, your products — you train.
@@ -293,7 +342,7 @@ Five jobs it does not:
 - proving anything before the mechanical and lighting side is settled
 - one-off jobs, where an open-vocabulary model costs nothing and works today
 
-## 3. Datasets
+## 4. Datasets
 
 If you are training, you need data, and the licences here are stricter than the
 code licences. Read this table as: what the annotations allow, then separately
@@ -316,7 +365,7 @@ can use without thinking about it.** COCO's annotations are fine and its images
 are a judgement call. The rest forbid commercial use, and a model trained on them
 inherits the problem.
 
-## 4. Labelling tools
+## 5. Labelling tools
 
 | Tool | Licence | Self-hosted | Notes |
 | --- | --- | --- | --- |

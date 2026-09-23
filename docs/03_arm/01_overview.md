@@ -647,3 +647,8 @@ are looking at before this area explains the maths underneath.
 
 Next area: [cameras](../05_camera/01_basics.md), which puts the transforms built here
 to work — moving a point measured by a camera into the room the arm moves in.
+
+This area is about describing *where things are*. Getting the arm to a place, and
+what stops it, is [arm movement](../08_arm-movement/01_overview.md): reach
+envelopes, singularities, planning a path, and controlling the move. It assumes
+the frames and transforms built here.

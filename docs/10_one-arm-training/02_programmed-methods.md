@@ -212,6 +212,10 @@ the easier place to start if you are more comfortable in Python.
 
 ## 4. Motion planning
 
+> This is the map of the families. For planning in practice — the planning scene's
+> defaults, Cartesian paths and what they are not, and when planning is the wrong
+> tool — see [planning a path](../08_arm-movement/03_planning-a-path.md).
+
 Given where the arm is now and where you want the gripper to end up, find a path
 that gets it there and collides with nothing on the way. The planner needs a model
 of the robot — a URDF file, of the kind built up in this repository's
@@ -315,6 +319,10 @@ well-documented reference implementation,
 [PDDLStream](https://github.com/caelan/pddlstream), last had a commit in 2023.
 
 ## 6. Feedback control
+
+> For these in practice, including impedance against admittance and what "the move
+> failed" actually means, see
+> [controlling the move](../08_arm-movement/04_controlling-the-move.md).
 
 Underneath every method in this document and in the next one, something has to
 convert an intention into actual currents in actual motors, and then react to what

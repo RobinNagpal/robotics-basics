@@ -8,7 +8,7 @@ trust.
 
 It is the other half of [models that grasp](04_models-that-grasp.md). Reach for
 this half first. When the object has a describable shape, a rule written as a
-sentence beats a network, for reasons [section 8](#8-why-a-rule-beats-a-network)
+sentence beats a network, for reasons [section 9](#9-why-a-rule-beats-a-network)
 sets out properly and the [perception
 overview](../06_object-perception/01_overview.md#21-when-a-model-makes-things-worse)
 argues in its general form.

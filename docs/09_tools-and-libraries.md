@@ -333,6 +333,11 @@ RViz is installed here. The slider tool is not; add it with
 
 ## 5. MoveIt 2: planning a safe path
 
+> This section is what MoveIt is and the job it does. For planning in practice —
+> what the planner is really searching, what the planning scene does not contain,
+> and the defaults that check nothing — see
+> [planning a path](08_arm-movement/03_planning-a-path.md).
+
 **What it is.** MoveIt is the main motion-planning framework for arms in ROS 2.
 You give it a goal, usually "put the gripper here, pointing this way". It works
 out how every joint should move to get there. The path must not hit the table,
@@ -419,6 +424,10 @@ These snippets were syntax-checked but not run.
 ---
 
 ## 6. ros2_control: driving the motors
+
+> This section is what ros2_control is. For what it means to execute a move, and
+> the tolerances that ship set to zero, see
+> [controlling the move](08_arm-movement/04_controlling-the-move.md).
 
 **What it is.** ros2_control is the layer between "a trajectory" and "the
 motors". It runs one loop at a fixed rate, often 100 to 1,000 times a second.
@@ -630,6 +639,10 @@ in a separate environment. The Gazebo ones were syntax-checked but not run.
 
 ## 8. Kinematics and maths: KDL, Pinocchio and SciPy
 
+> For what the solver's timeout does to a reachability survey, and why "unreachable"
+> often means "not found in fifty milliseconds", see
+> [reaching and reachability](08_arm-movement/02_reaching-and-reachability.md).
+
 **What it is.** The maths from the [arm area](03_arm/01_overview.md), done by
 libraries. There are three questions:
 
@@ -706,6 +719,10 @@ NumPy is installed here. Pinocchio and SciPy are not; add them with
 ---
 
 ## 9. Perception: camera drivers, OpenCV and Open3D
+
+> This section is the tooling. For the techniques, the models, the licences and the
+> traps, the [object perception area](06_object-perception/01_overview.md) covers
+> finding and measuring in seven documents.
 
 **What it is.** Turning pictures into objects. Three kinds of tool do it:
 

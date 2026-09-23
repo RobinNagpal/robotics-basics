@@ -25,6 +25,8 @@ own, with its own code, its own doc, and two or three commands.
 | [numpy](docs/04_numpy/01_numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
 | [finding objects](docs/05_camera/02_finding-objects.md) | finding a thing in a picture: by colour, with depth, and with a trained model | `make camera.colour` |
 | [object perception](docs/06_object-perception/01_overview.md) | finding an object and measuring it: every technique, model and licence, compared | — |
+| [gripping](docs/07_gripping/01_overview.md) | how to hold a thing once you have found it: grippers, grasp choice, force and slip | — |
+| [arm movement](docs/08_arm-movement/01_overview.md) | getting there and back: reach, planning, control, and what makes a move fail | — |
 
 <p align="center">
   <img src="docs/images/rviz/scene.svg" width="31%" alt="A ball circling a grid in RViz">
@@ -42,6 +44,16 @@ The camera code is mostly NumPy, so if NumPy is new to you, read **numpy** befor
 **camera**; it needs no ROS, and each of its five files runs on its own.
 
 ## Beyond the areas
+
+**[Gripping](docs/07_gripping/01_overview.md)** and
+**[arm movement](docs/08_arm-movement/01_overview.md)** carry on from there, in
+six documents each and the same shape. Gripping covers the gripper families and
+their real numbers, choosing a grasp by geometry, the models that choose one for
+you, and holding on once you have it. Arm movement covers reach and
+reachability, planning a path, controlling the move, learned motion, and the
+failures that are invisible until they happen — a straight line between two
+reachable poses that is itself unreachable, a controller shipping with its
+tolerances set to zero, a grasp choice that quietly makes the place impossible.
 
 **[Object perception](docs/06_object-perception/01_overview.md)** is the question
 every arm project runs into: what is this thing and which pixels is it on, and

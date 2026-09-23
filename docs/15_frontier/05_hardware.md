@@ -954,7 +954,13 @@ three fingers of three joints each, giving nine degrees of freedom, at 1,050 g �
 not the four-finger sixteen-degree-of-freedom device most descriptions assume,
 which is the V5 Plus. Wonik launched the **Allegro Hand V6 F** on 7 September
 2026 with five fingers, 20 active degrees of freedom and a mass of 1,150 g, and
-still publishes no price.
+still publishes no price. One wording change across that range is worth noticing
+because it runs the wrong way: the V4 page describes "sixteen independent
+**torque-controlled** joints", and [the V5 and V5 Plus
+pages](https://www.allegrohand.com/sub/product/p.php?idx=22) describe
+**current-controlled** joints. That is the same substitution
+[section 9](#9-what-did-not-change) describes for arms, appearing inside a single
+product line.
 
 **Unitree's Dex5-S is press reporting, not a product listing.** A 22-degree-of-
 freedom hand at ¥39,900 was reported on 22 September 2026. Unitree's own product
@@ -1218,11 +1224,21 @@ at any price a person would pay from their own pocket.
 What it still cannot do is any of the things the gripper document already lists.
 No manufacturer in this category publishes a slip-detection latency, which is the
 number you would most want. Magnetic skins drift with temperature and need
-re-zeroing. Gels wear out. And there is still no standard for tactile data, so a
-policy trained on one sensor does not transfer to another — which is exactly the
-gap that the tactile foundation models described in
+re-zeroing. Gels wear out. Five magnetometers give fifteen channels, which is
+force and slip rather than shape or texture.
+
+And there is still no standard for tactile data, so a policy trained on one sensor
+does not transfer to another — which is exactly the gap that the tactile
+foundation models described in
 [the mechanism document](../10_one-arm-training/05_what-is-changing.md#tactile-foundation-models)
-are trying to close, and they have not closed it yet.
+are trying to close, and they have not closed it yet. That gap now has a measured
+size, and it is the most useful number in this section for anyone about to buy.
+[A September 2026 study](https://arxiv.org/abs/2609.08673) reports that a frozen
+classifier built on Meta's Sparsh tactile model scores **6.86 per cent** on a
+sensor it was not trained on, rising to 87.09 per cent once 10 per cent of the
+target sensor's data is labelled. Buying the wrong tactile sensor does not cost
+you some accuracy. It costs you nearly all of it, and the recovery is a labelling
+exercise. Check which sensors a model was trained on before you buy the sensor.
 
 Status: Shipping, all of them.
 

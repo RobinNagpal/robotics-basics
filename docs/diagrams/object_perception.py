@@ -450,6 +450,195 @@ def error_budget() -> None:
     _save(fig, 'overview', 'error-budget.svg')
 
 
+# --------------------------------------------------------------------------
+# the-wrist-camera.md
+# --------------------------------------------------------------------------
+
+REACH_M: float = 0.340           # metres; the camera-to-object distance used throughout
+PIXEL_MM: float = REACH_M / FX * 1000.0          # 1.2270 mm, one pixel at 340 mm
+RANDOM_MM: float = 2.0 * PIXEL_MM                # 2.4540 mm, one pixel out on each edge
+SYSTEMATIC_MM: float = np.tan(np.radians(1.0)) * 340.0   # 5.9347 mm, hand-eye 1 degree
+
+
+def accuracy_against_views() -> None:
+    """What averaging more views buys, and what it cannot touch.
+
+    The random term falls as one over the square root of the number of views.
+    The systematic term does not move at all. Their sum in quadrature therefore
+    flattens onto a floor that no number of pictures ever crosses, and the right
+    panel shows the two things that do cross it.
+    """
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(14.6, 6.2),
+                                 gridspec_kw={'width_ratios': [1.5, 1.0]})
+
+    n = np.arange(1, 21)
+    random = RANDOM_MM / np.sqrt(n)
+    total = np.hypot(random, SYSTEMATIC_MM)
+
+    ax.plot(n, total, color=INK, lw=2.4, marker='o', ms=4.5,
+            label='total error, the two combined')
+    ax.plot(n, np.full_like(n, SYSTEMATIC_MM, dtype=float), color=PURPLE, lw=2.0,
+            ls=(0, (6, 3)), label='systematic: hand-eye 1 degree out')
+    ax.plot(n, random, color=BLUE, lw=2.0, marker='.', ms=6,
+            label='random: mask edge 1 px out each side')
+
+    ax.axhspan(SYSTEMATIC_MM - 0.11, SYSTEMATIC_MM + 0.11, color=PALE_PURPLE,
+               alpha=0.95, zorder=0)
+    ax.text(2.3, SYSTEMATIC_MM - 0.42,
+            'the floor: no number of pictures gets below it',
+            fontsize=10.0, color=PURPLE, ha='left', va='top')
+
+    # The two points the reader is being asked to compare.
+    for k, colour, dx, ha in ((2, ORANGE, 0.9, 'left'), (20, GREEN, -0.9, 'right')):
+        v = float(np.hypot(RANDOM_MM / np.sqrt(k), SYSTEMATIC_MM))
+        ax.plot([k], [v], marker='o', ms=10, color=colour, zorder=5)
+        ax.text(k + dx, v + 0.5, f'{k} views, {v:.2f} mm', fontsize=10.4,
+                color=colour, ha=ha, va='bottom')
+
+    gain = float(np.hypot(RANDOM_MM / np.sqrt(2), SYSTEMATIC_MM)
+                 - np.hypot(RANDOM_MM / np.sqrt(20), SYSTEMATIC_MM))
+    ax.annotate('', xy=(20.0, np.hypot(RANDOM_MM / np.sqrt(20), SYSTEMATIC_MM) - 0.12),
+                xytext=(20.0, 3.5),
+                arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.1))
+    ax.text(19.4, 3.3, f'eighteen extra pictures\nbuy {gain:.2f} mm',
+            fontsize=10.6, color=INK, ha='right', va='top', linespacing=1.7)
+
+    ax.set_xlabel('pictures averaged, all from about the same place', fontsize=10.4, color=INK)
+    ax.set_ylabel('millimetres of error at a 340 mm reach', fontsize=10.4, color=INK)
+    ax.set_xticks([1, 2, 5, 10, 15, 20])
+    ax.set_xlim(0.4, 21.4)
+    ax.set_ylim(0, 8.0)
+    ax.tick_params(labelsize=9.4, colors=INK)
+    for side in ('top', 'right'):
+        ax.spines[side].set_visible(False)
+    for side in ('left', 'bottom'):
+        ax.spines[side].set_color(GREY)
+    ax.legend(fontsize=9.6, loc='center left', bbox_to_anchor=(0.02, 0.56),
+              frameon=False)
+    ax.set_title('Averaging cuts one of the two terms, and only one',
+                 fontsize=12.4, color=INK, pad=12)
+
+    # ------------------------------------------------ what does cross the floor
+    options = [
+        ('twenty views,\nfrom 340 mm', float(np.hypot(RANDOM_MM / np.sqrt(20), SYSTEMATIC_MM)), GREY),
+        ('two views, after\nrecalibrating to 0.25 deg',
+         float(np.hypot(RANDOM_MM / np.sqrt(2), np.tan(np.radians(0.25)) * 340.0)), GREEN),
+        ('one view, taken\nfrom 150 mm instead',
+         float(np.hypot(2.0 * 0.150 / FX * 1000.0, np.tan(np.radians(1.0)) * 150.0)), ORANGE),
+    ]
+    y = np.arange(len(options))[::-1]
+    bx.barh(y, [o[1] for o in options], height=0.46,
+            color=[o[2] for o in options], alpha=0.88)
+    for yi, (_name, v, _c) in zip(y, options):
+        bx.text(v + 0.14, yi, f'{v:.2f} mm', fontsize=10.4, color=INK, va='center')
+    bx.axvline(SYSTEMATIC_MM, color=PURPLE, lw=1.6, ls=(0, (5, 3)))
+    bx.text(SYSTEMATIC_MM, -0.78, 'the floor from the left panel', fontsize=9.4,
+            color=PURPLE, ha='center', va='center')
+    bx.set_yticks(y)
+    bx.set_yticklabels([o[0] for o in options], fontsize=9.6, color=INK, linespacing=1.6)
+    bx.set_xlim(0, 7.6)
+    bx.set_ylim(-1.05, 2.5)
+    bx.set_xlabel('millimetres of error', fontsize=10.4, color=INK)
+    bx.tick_params(labelsize=9.4, colors=INK)
+    for side in ('top', 'right'):
+        bx.spines[side].set_visible(False)
+    for side in ('left', 'bottom'):
+        bx.spines[side].set_color(GREY)
+    bx.set_title('One move beats nineteen', fontsize=12.4, color=INK, pad=12)
+
+    fig.text(0.5, -0.045,
+             'Both panels are the repo camera, fx = 277.1 px, at a 340 mm reach. Twenty views land '
+             '0.4 per cent above a floor set by the calibration;\nfixing the calibration, or carrying '
+             'the camera to 150 mm, moves the floor itself. Moving the camera is the thing the wrist '
+             'can do and a fixed camera cannot.',
+             fontsize=10.2, color=INK, ha='center', va='top', linespacing=1.8)
+
+    _save(fig, 'the-wrist-camera', 'accuracy-against-views.svg')
+
+
+def baseline_beats_count() -> None:
+    """Where two rays cross decides the depth, and the count does not come into it.
+
+    Ten views packed into 40 mm intersect in a long thin sliver along the line of
+    sight. Two views 200 mm apart intersect in a compact patch. The shape of the
+    crossing is the whole of triangulation accuracy.
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(14.4, 7.0))
+
+    exaggeration = 6.0                      # the fans are drawn this much wider than 1 px
+    alpha = exaggeration / FX               # radians of half-fan, as drawn
+    z = REACH_M * 1000.0                    # 340 mm, object depth
+
+    def lozenge(b_mm: float):
+        """Corners of the region where the two outer rays' fans overlap."""
+        pts = []
+        for sl in (-1, 1):
+            for sr in (-1, 1):
+                xl, xr = -b_mm / 2.0, b_mm / 2.0
+                # each ray leaves its camera aimed at (0, z), tilted by s * alpha
+                ml = (0 - xl) / z + sl * alpha * (1 + (xl / z) ** 2)
+                mr = (0 - xr) / z + sr * alpha * (1 + (xr / z) ** 2)
+                zz = (xr - xl) / (ml - mr)
+                pts.append((xl + ml * zz, zz))
+        cx = sum(p[0] for p in pts) / 4.0
+        cy = sum(p[1] for p in pts) / 4.0
+        pts.sort(key=lambda p: np.arctan2(p[1] - cy, p[0] - cx))
+        return pts
+
+    panels = [
+        (axes[0], 40.0, 10, 'ten views, all inside 40 mm', RED, PALE_RED),
+        (axes[1], 200.0, 2, 'two views, 200 mm apart', GREEN, PALE_GREEN),
+    ]
+
+    for ax, b_mm, count, title, colour, pale in panels:
+        ax.set_xlim(-160, 150)
+        ax.set_ylim(-95, 425)
+        ax.axis('off')
+        ax.invert_yaxis()
+
+        # the camera positions along the arm's sweep
+        xs = np.linspace(-b_mm / 2.0, b_mm / 2.0, count)
+        for x in xs:
+            ax.add_patch(Rectangle((x - 1.7, -13), 3.4, 13, facecolor=PALE_GREY,
+                                   edgecolor=INK, lw=0.9, zorder=4))
+            ax.plot([x, 0], [0, z], color=GREY, lw=0.6, ls=(0, (4, 4)), zorder=1)
+
+        # the two outer rays, with their fans, stopped short of the caption
+        for x in (-b_mm / 2.0, b_mm / 2.0):
+            for s_ in (-1, 1):
+                m = (0 - x) / z + s_ * alpha * (1 + (x / z) ** 2)
+                ax.plot([x, x + m * 412], [0, 412], color=colour, lw=1.2, zorder=2)
+
+        ax.add_patch(Polygon(lozenge(b_mm), closed=True, facecolor=pale,
+                             edgecolor=colour, lw=1.8, zorder=3))
+        ax.plot([0], [z], marker='o', ms=7, color=INK, zorder=6)
+
+        depth_err = z * z * 1.0 / (FX * b_mm)
+        ax.text(-5, -62, title, fontsize=12.2, color=INK, ha='center', weight='bold')
+        ax.text(-5, -40, f'the arm moves {b_mm:.0f} mm between the outer two',
+                fontsize=9.6, color=MUTED, ha='center')
+        ax.text(16, z, 'the object,\n340 mm away', fontsize=9.6, color=INK,
+                va='center', linespacing=1.7)
+        ax.annotate('', xy=(-11, z), xytext=(-34, z),
+                    arrowprops=dict(arrowstyle='-|>', color=colour, lw=1.2))
+        ax.text(-96, z + 4,
+                f'the two rays cross\nover {depth_err:.1f} mm of depth',
+                fontsize=11.0, color=colour, ha='center', va='center', linespacing=1.7)
+
+    fig.text(0.5, 0.965,
+             'Two views with a wide baseline beat ten with a narrow one',
+             fontsize=13.4, color=INK, ha='center', weight='bold')
+    fig.text(0.5, 0.035,
+             'The ray fans are drawn six times wider than a one-pixel match error so the shape of the '
+             'crossing is visible; the millimetre figures are the true ones\nfor the repo camera, '
+             'fx = 277.1 px, and they come from z squared over fx times baseline. Averaging views inside '
+             'the 40 mm spread would need twenty-five of them\nto reach what the 200 mm pair reaches '
+             'with two, and each one costs a move of the arm.',
+             fontsize=10.2, color=INK, ha='center', va='top', linespacing=1.8)
+
+    _save(fig, 'the-wrist-camera', 'baseline-beats-count.svg')
+
+
 if __name__ == '__main__':
     four_answers()
     closed_vs_open()
@@ -457,3 +646,5 @@ if __name__ == '__main__':
     no_scale()
     pixels_to_mm()
     error_budget()
+    accuracy_against_views()
+    baseline_beats_count()

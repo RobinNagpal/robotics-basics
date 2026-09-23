@@ -83,11 +83,6 @@ system is built: what makes a stack stand up, what the second arm is for, the
 loop the robot runs once per stone, and which open frameworks do each stage. A
 map of the process, not code.
 
-**[Full training](docs/14_full-training/01_overview.md)** follows one branch of that
-map to the end: what it takes to train the whole thing, rather than programme
-it. The rig and the demonstrations, what a dataset of them looks like, the
-training run and what it costs, and how to evaluate it honestly and improve it.
-
 **[One-arm training](docs/10_one-arm-training/01_overview.md)** is the map above all of
 these: every way to programme or train a single arm, as a family tree, with a grid
 comparing eight families point by point, the mixes real systems actually use, and a

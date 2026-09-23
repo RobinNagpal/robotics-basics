@@ -109,7 +109,8 @@ overhead view to save a camera removes exactly the information the coordination
 depends on.
 
 This repo covers the practicalities in
-[collecting the data](../14_full-training/02_collecting-data.md#2-how-a-person-drives-two-arms).
+[where the data comes from](../15_frontier/03_data-and-demonstration.md), which
+goes through the rigs people actually use and what each one costs.
 
 ## 4. What the numbers actually look like
 

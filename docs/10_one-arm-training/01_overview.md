@@ -1008,8 +1008,7 @@ pictures, message passing — are the same either way.
   [finding objects](../05_camera/02_finding-objects.md) show a classical perception
   pipeline and a trained model doing the same job, which is the smallest clear
   illustration of the trade-off this whole document is about.
-- [Stone stacking](../12_stone-stacking.md) and
-  [full training](../14_full-training/01_overview.md) take a single task and work it
+- [Stone stacking](../12_stone-stacking.md) takes a single task and works it
   through the programmed way and then the trained way.
 - [Two-arm training](../11_two-arm-training/01_overview.md) is the companion folder for
   what a second arm changes.

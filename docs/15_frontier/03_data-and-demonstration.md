@@ -13,11 +13,9 @@ This is the *events* document for data. It says what was released, when, by whom
 on what terms, and what it can and cannot do. The mechanism behind the events —
 why the field moves the way it does, and how to judge a new announcement — is in
 [what is changing](../10_one-arm-training/05_what-is-changing.md), which is worth
-reading first if you want the reasoning rather than the record. The practical
-beginner's version of collecting your own demonstrations is in
-[collecting the data](../14_full-training/02_collecting-data.md), which covers
-the rig, the episode, the dataset format and the curation, and which this
-document assumes you have read. Overlap with both is deliberate and small.
+reading first if you want the reasoning rather than the record. Overlap with it
+is deliberate and small: that document explains why the field moves, and this one
+records what moved.
 
 ## Who this is for, and what it is for
 
@@ -107,8 +105,8 @@ trajectories or hours. Those units are not the same thing, and even within one
 unit the underlying object differs enough that arithmetic across datasets is
 meaningless. Three examples make the point.
 
-In the [ALOHA simulation tasks](../14_full-training/02_collecting-data.md#4-how-many-demonstrations)
-that most people start with, one episode is one continuous recording of a
+In the ALOHA simulation tasks that most people start with, one episode is one
+continuous recording of a
 two-armed robot performing one short task from a randomised start, typically
 around twenty seconds, recorded at 50 Hz with the leader-arm command stored as
 the action. Fifty of those is a working dataset for that task.
@@ -185,8 +183,7 @@ The mechanism is direct joint-to-joint puppeteering. Two full-size follower arms
 are driven by two smaller leader arms that the operator holds, one in each hand,
 with four cameras recording. The operator's hands are doing the task; the robot
 copies. That is why a person can control fourteen joints at once, which no
-gamepad or keyboard scheme achieves, and it is covered from the user's side in
-[how a person drives two arms](../14_full-training/02_collecting-data.md#2-how-a-person-drives-two-arms).
+gamepad or keyboard scheme achieves.
 
 It matters because it set the default recipe that everything since has reacted
 to, and because the data it produced is what most people's first policy is
@@ -926,9 +923,7 @@ reason it spread.
 
 The mechanism is the
 [LeRobotDataset](https://huggingface.co/docs/lerobot/lerobot-dataset-v3) format,
-which is described from a user's point of view in
-[collecting the data](../14_full-training/02_collecting-data.md#6-the-dataset-format).
-The short version is that frames go into Parquet files, pictures go into MP4
+which stores frames in Parquet files, pictures go into MP4
 shards, and a `meta/` folder carries the frame rate, the field shapes, the
 normalisation statistics and the task sentences. Because pictures are stored as
 video, a few hundred episodes are megabytes rather than gigabytes, and because
@@ -1133,8 +1128,8 @@ the same reason: the robot was not there.
 ### 9.1 The one published law
 
 Before October 2024, the honest answer to "how many demonstrations do I need" was
-that nobody knew, and the practical answer was
-[to train on 50, then 100, then 200 and plot the curve](../14_full-training/02_collecting-data.md#4-how-many-demonstrations).
+that nobody knew, and the practical answer was to train on 50, then 100, then
+200, and plot the curve.
 
 [Data Scaling Laws in Imitation Learning for Robotic
 Manipulation](https://arxiv.org/abs/2410.18647) is still the reference study, and
@@ -1214,8 +1209,7 @@ number is small, collecting more episodes is the wrong move and rearranging the
 room is the right one.
 
 Fifty demonstrations per pair is a defensible default, and it is the same number
-the [two-arm benchmark leaderboards](../14_full-training/02_collecting-data.md#4-how-many-demonstrations)
-settled on independently.
+the two-arm benchmark leaderboards settled on independently.
 
 Be careful about how many different people collect. The velocity-multimodality
 result means that three demonstrators who each have a personal style can be worse
@@ -1269,8 +1263,7 @@ incarnation RoboCasa365 supplies 365 tasks. [RoboTwin
 100,000 generated trajectories and strong domain randomisation; the RoboTwin
 platform repository is MIT-licensed. Both are **Downloadable**.
 
-The limitation both share is stated plainly in the
-[collecting-data document](../14_full-training/02_collecting-data.md#3-the-fork-a-person-or-a-program):
+The limitation both share is worth stating plainly:
 a generated demonstration is only as good as the program that generated it, and
 its contact behaviour is whatever the controller did, which is often unlike a
 person. For a task whose difficulty is in the last centimetre, that is exactly

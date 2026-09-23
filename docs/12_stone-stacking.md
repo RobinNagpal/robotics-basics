@@ -174,10 +174,9 @@ train a policy that maps camera pictures straight to arm motion, the way the
 does with ACT. It learns contact behaviour that nobody can write down. Its
 weakness is that stacking is long and the failure comes at the end, so the
 policy needs a lot of demonstrations to learn *why* something fell, and it will
-not tell you when it is about to fail. The
-[full-training folder](14_full-training/01_overview.md) follows this route all the
-way: the rig, the demonstrations, the dataset, the training run and the
-evaluation.
+not tell you when it is about to fail. What that route costs end to end — the
+rig, the demonstrations, the dataset and the training run — is set out in
+[where the data comes from](15_frontier/03_data-and-demonstration.md).
 
 **Programme the thinking, train the touching.** Keep the physics search for
 "which stone, which way up, where" — that part is well suited to search, and it

@@ -33,6 +33,8 @@ than what you will get on a bad day.
 | [Zivid 2+](https://www.zivid.com/) | structured light | **±0.2 mm on a 100 mm distance at 1 m** | quote only, thousands |
 | [Photoneo PhoXi L](https://photoneo.com/products/phoxi-scan-l/) | structured light | point-to-point 0.524 mm, temporal noise 0.19 mm | quote only, thousands |
 | [Keyence LJ-X8000](https://www.keyence.com/products/measure/laser-2d/lj-x8000/) | laser profile | single-digit micrometres per point | quote only, thousands |
+| [Livox Mid-360](https://www.livoxtech.com/mid-360) | scanning LiDAR | 3 cm at 0.2 m — see [1.2](#12-lidar-and-why-it-is-almost-never-on-the-arm) | a few hundred pounds |
+| [ST VL53 family](https://www.adafruit.com/product/5425) | one-point time of flight | a few mm over centimetres, in one direction only | a few pounds |
 
 The gap between rows four and five of that table is the whole story of this
 field. A consumer depth camera gets you to a few millimetres; an industrial
@@ -97,7 +99,122 @@ Five jobs it cannot do:
 - objects smaller than the sensor's resolution at that range
 - measuring to better than a millimetre with anything in the consumer group
 
-### 1.2 Measuring by touch
+### 1.2 LiDAR, and why it is almost never on the arm
+
+LiDAR is the sensor people ask about most and the one that fits this job worst,
+so it is worth being precise about both halves of that.
+
+**Half of it is already in the table above, under another name.** A time-of-flight
+camera *is* a LiDAR — the formal term is *scannerless* LiDAR, because it captures
+the whole scene with one pulse instead of sweeping a beam across it point by
+point. The Orbbec Femto Bolt is a LiDAR in exactly that sense. If you came here
+looking for LiDAR and found "time of flight", you have found it.
+
+**The other half — scanning LiDAR — is built for a different problem.** An
+[Ouster OS1](https://ouster.com/products/hardware/os1-lidar-sensor) or a
+[Livox Mid-360](https://www.livoxtech.com/mid-360) sweeps a beam over tens of
+metres and returns millions of points a second. That is the right instrument for
+a vehicle or a mobile robot, and the wrong one for an arm, for a reason the
+manufacturers' own numbers make plain.
+
+The Livox Mid-360 specifies a range precision of **≤2 cm at 10 m, and ≤3 cm at
+0.2 m** — the close figure is the *worse* of the two, because the sensor is
+designed for distance. Put those beside the sensors in the table above, at the
+range an arm actually works:
+
+| At roughly a third of a metre | Specified precision |
+| --- | --- |
+| Livox Mid-360 scanning LiDAR | about 30 mm |
+| RealSense D405 depth camera | about 7 mm |
+| Zivid 2+ structured-light scanner | about 0.2 mm |
+
+A scanning LiDAR is four times worse than a cheap depth camera and a hundred and
+fifty times worse than a scanner, at the only distance that matters to a gripper.
+It is also physically large, it usually spins, and several models have a blind
+zone that covers most of an arm's workspace.
+
+**Where LiDAR does belong on a robot with an arm is on its base.** The standard
+mobile-manipulator design has a LiDAR at ankle height for navigation and obstacle
+avoidance, and a depth camera on the wrist for manipulation. Two sensors, two
+jobs, and they never do each other's. The ROS 2 drivers are
+[velodyne](https://github.com/ros-drivers/velodyne),
+[ouster-ros](https://github.com/ouster-lidar/ouster-ros),
+[livox_ros_driver2](https://github.com/Livox-SDK/livox_ros_driver2) and
+[sick_scan_xd](https://github.com/SICKAG/sick_scan_xd), and what consumes them is
+mapping and localisation — [slam_toolbox](https://github.com/SteveMacenski/slam_toolbox)
+and friends — not anything in this area of the docs.
+
+Five jobs scanning LiDAR suits:
+
+- navigating the mobile base that carries the arm
+- obstacle detection over a whole room, where centimetres are fine
+- mapping a work cell once, to know where the fixed furniture is
+- outdoor work, where sunlight defeats projected-pattern sensors
+- safety-adjacent monitoring of a large area, as a non-rated supplement
+
+Five jobs it cannot do:
+
+- measure an object to millimetres, which is four times beyond its specification
+- see anything inside its blind zone, which on many models is the whole workspace
+- resolve a small object, since the beam spacing is angular and the object is near
+- fit on a wrist, being large, heavy and often rotating
+- handle glass or polished metal any better than the cheaper sensors above
+
+### 1.3 Infrared, in four different roles
+
+"IR sensor" covers four unrelated things, and mixing them up is common.
+
+**The projector inside an active stereo camera.** RealSense and Orbbec Gemini
+cameras throw an infrared speckle pattern onto the scene so that a blank surface
+has texture to match. This is invisible infrared doing the work, and it is why
+those cameras behave badly in direct sunlight — daylight contains enough infrared
+to wash the pattern out.
+
+**Thermal cameras**, which sense emitted long-wave infrared rather than reflected
+light, and therefore measure temperature. They are covered in
+[section 2.2](#22-thermal-polarisation-and-the-rest).
+
+**One-point distance sensors.** A chip such as ST's VL53 family
+([a typical breakout](https://www.adafruit.com/product/5425),
+[driver](https://github.com/stm32duino/VL53L1X)) measures time of flight over a
+few centimetres to a few metres, in one direction, for a couple of pounds. On a
+gripper these are genuinely useful as *pre-touch* sensors: mounted between the
+fingers, one tells you an object is about to be there before the fingers reach
+it, which is a cheap check on a camera measurement that might be wrong.
+
+**Photoelectric and break-beam sensors.** An emitter and a detector, and
+something has interrupted the beam or it has not.
+[Keyence](https://www.keyence.com/products/sensor/photoelectric/) and
+[SICK](https://www.sick.com/us/en/catalog/products/detection-sensors/photoelectric-sensors/c/g568801)
+sell them by the thousand. These are not perception in the sense of the rest of
+these documents — they answer one bit, presence or absence — and enormous amounts
+of working industrial automation runs on exactly that bit. A part-present check
+before the arm closes costs a few pounds and removes a whole class of failure.
+
+One warning about the fifth role, which is not on this list on purpose.
+**[Safety light curtains](https://www.sick.com/us/en/catalog/products/safety/safety-light-curtains/c/g190310)
+are also infrared, and they are not something you build.** They are rated
+equipment certified to standards such as IEC 61496, wired into a safety relay,
+and the certification is the product. An array of hobby IR sensors is not a light
+curtain and must never be used as one.
+
+Five jobs infrared sensing suits:
+
+- projecting texture so a stereo camera works on a blank surface
+- pre-touch proximity on a gripper, at a cost of a few pounds
+- part-present and part-absent checks, which need no vision at all
+- counting things passing a point on a conveyor
+- detecting temperature differences that no colour camera can see
+
+Five jobs it cannot do:
+
+- work reliably in direct sunlight, which floods the band with its own infrared
+- measure the shape of anything, being one point or one bit
+- see through or around anything, despite persistent folklore
+- act as a safety device unless it is certified equipment wired as such
+- give a usable reading off glass, which passes infrared much as it passes light
+
+### 1.4 Measuring by touch
 
 Touch is the other way to get a distance, and it is worth remembering that it is
 the most accurate instrument an arm has. A robot's own joint encoders locate the
@@ -110,7 +227,7 @@ in [ros2_controllers](https://github.com/ros-controls/ros2_controllers)
 (Apache-2.0). [Measuring by touch](03_programmed-methods.md#27-measuring-by-touching-it)
 covers what it is good for.
 
-### 1.3 The software that comes with each sensor
+### 1.5 The software that comes with each sensor
 
 A sensor is only as useful as its driver, and the software is where most of the
 practical differences show up. Read this as: the library you talk to the sensor
@@ -125,6 +242,8 @@ with, the ROS 2 package that wraps it, and what you would then run on its output
 | a plain colour camera | [OpenCV](https://github.com/opencv/opencv) | Apache-2.0 | [usb_cam](https://github.com/ros-drivers/usb_cam), [image_pipeline](https://github.com/ros-perception/image_pipeline) | the geometry in [section 6](03_programmed-methods.md#2-measuring-the-object), or a depth model from [section 7](05_models-that-measure.md#1-depth-from-a-single-picture) |
 | a stereo pair | OpenCV `StereoSGBM`, or [RAFT-Stereo](https://github.com/princeton-vl/RAFT-Stereo) | Apache-2.0 / MIT | [image_pipeline](https://github.com/ros-perception/image_pipeline)'s `stereo_image_proc` | as for RGB-D, once you have the disparity |
 | a force-torque sensor | [ros2_controllers](https://github.com/ros-controls/ros2_controllers) | Apache-2.0 | `force_torque_sensor_broadcaster` | the probing in [section 6.7](03_programmed-methods.md#27-measuring-by-touching-it) |
+| scanning LiDAR | vendor SDK | Apache-2.0 drivers | [velodyne](https://github.com/ros-drivers/velodyne), [ouster-ros](https://github.com/ouster-lidar/ouster-ros), [livox_ros_driver2](https://github.com/Livox-SDK/livox_ros_driver2), [sick_scan_xd](https://github.com/SICKAG/sick_scan_xd) | [slam_toolbox](https://github.com/SteveMacenski/slam_toolbox) for mapping — not the methods in this area |
+| one-point infrared | [VL53L1X driver](https://github.com/stm32duino/VL53L1X) | BSD-3 | read over I2C from a microcontroller | nothing — it is one number |
 | a printed marker | [OpenCV ArUco](https://github.com/opencv/opencv), [AprilTag](https://github.com/AprilRobotics/apriltag) | Apache-2.0 / BSD-2 | [ros_aruco_opencv](https://github.com/fictionlab/ros_aruco_opencv), [apriltag_ros](https://github.com/christianrauch/apriltag_ros) | calibration, and the scale trick in [section 6.3](03_programmed-methods.md#23-a-marker-of-known-size) |
 
 Three practical notes that are not obvious from the table.

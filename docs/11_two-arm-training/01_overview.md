@@ -16,11 +16,11 @@ arms doing unrelated things in a shared cell are **out of scope**, because that 
 not a two-arm problem. It is two single-arm problems plus a collision check, and
 the standard survey of the field puts it bluntly — uncoordinated two-arm work has
 "no intrinsic difference to single-arm systems". Solve it by running
-[the one-arm methods](../08_one-arm-training/01_overview.md) twice and keeping the arms
+[the one-arm methods](../10_one-arm-training/01_overview.md) twice and keeping the arms
 apart.
 
 **Read the one-arm documents first**, including
-[what is changing and why](../08_one-arm-training/05_what-is-changing.md) for the
+[what is changing and why](../10_one-arm-training/05_what-is-changing.md) for the
 direction the whole field is moving. Almost every method here is a single-arm
 method with a coordination problem bolted on, and the coordination problem is only
 legible once you know the method. This folder does not repeat them; it says what
@@ -216,7 +216,7 @@ rules.
 ## 4. The layer a second arm adds
 
 A single arm doing a real job answers four questions over and over, set out in
-[the one-arm overview](../08_one-arm-training/01_overview.md#3-the-four-layers-of-an-arm-system):
+[the one-arm overview](../10_one-arm-training/01_overview.md#3-the-four-layers-of-an-arm-system):
 what to do next, which skill and where, how to move, and how to touch. Coordinated
 two-arm work adds a fifth, and it sits near the top.
 
@@ -247,7 +247,7 @@ unchanged.
 Read a row to plan a system; read a column to see where a method earns its keep.
 
 The columns are the same nine as in
-[the one-arm grid](../08_one-arm-training/01_overview.md#5-which-method-for-which-task),
+[the one-arm grid](../10_one-arm-training/01_overview.md#5-which-method-for-which-task),
 and that document explains what each one *is* and what you would install. This
 section says something different and more useful here: **what actually changes for
 each when the arms must cooperate, and which of those tools support two arms at
@@ -422,7 +422,7 @@ argument of this folder in one column.
 
 This is the table this folder exists for: what the **second arm** adds to each
 method's bill, over and above what
-[the single-arm version](../08_one-arm-training/01_overview.md#8-what-each-method-costs-you)
+[the single-arm version](../10_one-arm-training/01_overview.md#8-what-each-method-costs-you)
 already demanded.
 
 The eight families are the same as in that document, which explains what each one is
@@ -577,7 +577,7 @@ base models support two arms, but you will be fine-tuning one yourself.
 
 **One honest expectation to set.** Coordinated two-arm work is, right now, a
 research skill rather than a billable one — the hiring evidence in
-[the one-arm overview](../08_one-arm-training/01_overview.md#10-what-you-can-realistically-do-in-the-next-year)
+[the one-arm overview](../10_one-arm-training/01_overview.md#10-what-you-can-realistically-do-in-the-next-year)
 finds vision-language-action and related terms at essentially zero across thousands
 of job postings, including in the corpora most biased towards this kind of work.
 Learn this because the unsolved problems live here and because every humanoid is

@@ -8,7 +8,7 @@ This doc is the high-level picture — what the system looks like, which parts a
 programmed and which are trained, and which open frameworks do each job. It is
 deliberately not code. It assumes any two open arms in simulation: two Franka
 Panda arms, two UR5s, or the ALOHA pair from the
-[two-arm doc](11_two-arm-manipulation.md), whichever your simulator already has.
+[two-arm doc](13_two-arm-manipulation.md), whichever your simulator already has.
 
 ## Contents
 
@@ -83,7 +83,7 @@ physics engine and keeps the ones that survive.
 
 One arm can stack stones. Two arms do three things one arm cannot, and they map
 onto the coordination kinds in the
-[two-arm doc](11_two-arm-manipulation.md#1-what-the-second-arm-adds):
+[two-arm doc](13_two-arm-manipulation.md#1-what-the-second-arm-adds):
 
 ![What the second arm is for](images/stone-stacking/roles.svg)
 
@@ -159,7 +159,7 @@ of this shape.
 You have three honest options, and the third is the one most working systems
 actually use. (For the full set of methods these three are drawn from, and how
 they compare, see
-[ways to programme or train two arms](09_two-arm-training/01_overview.md).)
+[ways to programme or train two arms](11_two-arm-training/01_overview.md).)
 
 **Programme all of it.** Perception, a physics-engine search for the pose,
 planning, compliant placement — no learning anywhere. This is how the published
@@ -170,12 +170,12 @@ approach is brittle.
 
 **Train all of it.** Collect demonstrations by teleoperating both arms, and
 train a policy that maps camera pictures straight to arm motion, the way the
-[two-arm doc's step 2](11_two-arm-manipulation.md#42-step-2-copy-demonstrations)
+[two-arm doc's step 2](13_two-arm-manipulation.md#42-step-2-copy-demonstrations)
 does with ACT. It learns contact behaviour that nobody can write down. Its
 weakness is that stacking is long and the failure comes at the end, so the
 policy needs a lot of demonstrations to learn *why* something fell, and it will
 not tell you when it is about to fail. The
-[full-training folder](12_full-training/01_overview.md) follows this route all the
+[full-training folder](14_full-training/01_overview.md) follows this route all the
 way: the rig, the demonstrations, the dataset, the training run and the
 evaluation.
 
@@ -197,7 +197,7 @@ That is usually the highest-value piece of learning in the whole system.
 ## 7. A staged plan
 
 Do this in simulation, and change one thing at a time, the same loop as the
-[two-arm doc](11_two-arm-manipulation.md#3-how-to-work-through-a-step).
+[two-arm doc](13_two-arm-manipulation.md#3-how-to-work-through-a-step).
 
 | Stage | The scene | What you are proving | Done when |
 | --- | --- | --- | --- |
@@ -274,7 +274,7 @@ Stacking gives better measurements than most tasks, so use them:
   together when the whole game is in the contact.
 
 Then, for the two-arm side of it: this repo's
-[two-arm manipulation doc](11_two-arm-manipulation.md), which lists the open
+[two-arm manipulation doc](13_two-arm-manipulation.md), which lists the open
 simulators, datasets and policies you would build any of this on, and says which
 of them run without an NVIDIA card.
 

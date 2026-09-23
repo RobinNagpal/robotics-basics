@@ -114,7 +114,7 @@ column carefully — it is where the effort usually goes that need not have.
 | **warehouse picking** | detection and instance segmentation | rarely pose. You grab it and drop it in a tote; which way up it was never mattered |
 | **sorting and kitting** | detection, with the class | no pose, no masks. "Which bin does this go in" is the entire question |
 | **fruit picking** | detection and segmentation | no classification — you know it is a strawberry. Segmentation earns its place by finding the stem |
-| **[the glass case study](../08_one-arm-training/07_case-study/01_place-glass.md)** | segmentation and measurement | no trained detector, no pose, no classifier. The kind is read off the measured profile |
+| **[the glass case study](../10_one-arm-training/07_case-study/01_place-glass.md)** | segmentation and measurement | no trained detector, no pose, no classifier. The kind is read off the measured profile |
 
 Three things follow from that table, and each of them saves work.
 
@@ -288,7 +288,7 @@ scanner. This is the most direct route and the one most robot cells take. Sectio
 **Know the surface the object sits on.** If the object is standing on a table, and
 you know where the table is, then you know the distance to the bottom of the
 object without measuring it. This is how the [glass-picking case
-study](../08_one-arm-training/07_case-study/01_place-glass.md) measures a glass
+study](../10_one-arm-training/07_case-study/01_place-glass.md) measures a glass
 that a depth camera cannot see at all. It costs nothing, it needs no extra
 hardware, and it fails the moment the object is not on the plane you assumed.
 

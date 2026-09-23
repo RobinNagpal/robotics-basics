@@ -6,7 +6,7 @@ another — are exactly the tasks nobody can write down, and the best-known bima
 system was built for two arms from the start rather than adapted to them.
 
 This document assumes you know
-[the single-arm versions](../08_one-arm-training/03_learned-methods.md) of these methods.
+[the single-arm versions](../10_one-arm-training/03_learned-methods.md) of these methods.
 It does not repeat them. It says what changes when two arms have to cooperate, and
 it is unusually specific about evidence, because **three claims that sound obviously
 true about two-arm learning turn out not to be supported** and each of them is
@@ -109,7 +109,7 @@ overhead view to save a camera removes exactly the information the coordination
 depends on.
 
 This repo covers the practicalities in
-[collecting the data](../12_full-training/02_collecting-data.md#2-how-a-person-drives-two-arms).
+[collecting the data](../14_full-training/02_collecting-data.md#2-how-a-person-drives-two-arms).
 
 ## 4. What the numbers actually look like
 
@@ -162,7 +162,7 @@ method is for.
 **Status in 2026:** this is how a good two-arm policy is made reliable, and the
 technique has merged with reinforcement learning — the human's take-overs become the
 learning signal. The strongest published results in this area
-([HIL-SERL, 100% on every task after one to two and a half hours](../08_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes))
+([HIL-SERL, 100% on every task after one to two and a half hours](../10_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes))
 are single-arm, so treat the two-arm case as the same method with less evidence
 behind it rather than as a proven recipe.
 

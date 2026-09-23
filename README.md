@@ -52,54 +52,54 @@ suits and five it does not, every licence was read from the project's own licenc
 file, and everything says whether it runs on a Mac. Read it after the camera
 area.
 
-**[Tools and libraries](docs/07_tools-and-libraries.md)** is a map of the main
+**[Tools and libraries](docs/09_tools-and-libraries.md)** is a map of the main
 tools used with arms mounted on a table: ROS 2, URDF, MoveIt, ros2_control,
 simulators, perception, calibration and more. For each it explains the job it
 does, then shows pseudo code and a few lines of real code. Read it after the
 areas, when you want to know what to reach for next.
 
-**[Two-arm manipulation](docs/11_two-arm-manipulation.md)** is a route into
+**[Two-arm manipulation](docs/13_two-arm-manipulation.md)** is a route into
 bimanual work, in five steps from "make two arms move" to "a long task, measured
 properly", using only projects whose code, simulator and data are all open. It
 says which ones run on this Mac, which need a Linux box with an NVIDIA card, and
 which well-known ones are not as open as they look.
 
-**[Stone stacking](docs/10_stone-stacking.md)** takes one hard two-arm task —
+**[Stone stacking](docs/12_stone-stacking.md)** takes one hard two-arm task —
 balancing rough stones on top of each other — and walks through how such a
 system is built: what makes a stack stand up, what the second arm is for, the
 loop the robot runs once per stone, and which open frameworks do each stage. A
 map of the process, not code.
 
-**[Full training](docs/12_full-training/01_overview.md)** follows one branch of that
+**[Full training](docs/14_full-training/01_overview.md)** follows one branch of that
 map to the end: what it takes to train the whole thing, rather than programme
 it. The rig and the demonstrations, what a dataset of them looks like, the
 training run and what it costs, and how to evaluate it honestly and improve it.
 
-**[One-arm training](docs/08_one-arm-training/01_overview.md)** is the map above all of
+**[One-arm training](docs/10_one-arm-training/01_overview.md)** is the map above all of
 these: every way to programme or train a single arm, as a family tree, with a grid
 comparing eight families point by point, the mixes real systems actually use, and a
 table of which to reach for when. It ends with an evidenced look at what is
 realistic to build — and to be paid for — in the next year. Start here.
 
-Two companions to it: **[a learning path](docs/08_one-arm-training/04_learning-path.md)**
+Two companions to it: **[a learning path](docs/10_one-arm-training/04_learning-path.md)**
 is five complete simulation projects on MuJoCo and Gazebo — from tidying a desk to
 learning a task from video of your own hand — each built four times, from
 hand-written code up to the current frontier, with the reason for every framework;
 and
-**[what is changing, and why](docs/08_one-arm-training/05_what-is-changing.md)** explains
+**[what is changing, and why](docs/10_one-arm-training/05_what-is-changing.md)** explains
 the direction of travel and the reasons behind it, which outlast any particular
 model name. There is also a
-**[glossary](docs/08_one-arm-training/06_glossary.md)** covering every term in that
+**[glossary](docs/10_one-arm-training/06_glossary.md)** covering every term in that
 folder, from what a degree of freedom is to what ACT and diffusion policy are.
 
-**[A case study](docs/08_one-arm-training/07_case-study/01_place-glass.md)** in the same
+**[A case study](docs/10_one-arm-training/07_case-study/01_place-glass.md)** in the same
 folder builds one household job four times over: pick up the *empty* glasses on a
 table, turn each one over, and stand it mouth-down on a drying rack. It says what
 makes that hard — a transparent object, a 180-degree turn, a fragile rim, and water
 that has to be spotted before the turn — and then names the tool for each part, from
 the segmentation model to the planner to the force loop.
 
-**[Two-arm training](docs/09_two-arm-training/01_overview.md)** is the companion folder
+**[Two-arm training](docs/11_two-arm-training/01_overview.md)** is the companion folder
 for what changes when two arms must **cooperate** on one job: whether your task
 needs a second arm at all, the two ways the arms can be coupled, and what that does
 to every method. Two arms doing unrelated things in one cell are deliberately out of

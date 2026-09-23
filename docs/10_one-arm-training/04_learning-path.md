@@ -899,7 +899,7 @@ will not have met the problem of making a model agree with reality. If you later
 a cheap arm, expect that to be the surprise.
 
 **Two arms.** Coordination is a genuinely different problem and has
-[its own folder](../09_two-arm-training/01_overview.md). Do this path first, because almost
+[its own folder](../11_two-arm-training/01_overview.md). Do this path first, because almost
 every two-arm method is a single-arm method with a coordination problem added on top.
 
 **Reinforcement learning from scratch.** It needs a simulator, a reward function and

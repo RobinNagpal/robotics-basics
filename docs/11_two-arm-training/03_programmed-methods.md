@@ -1,7 +1,7 @@
 # Programmed methods for two coordinated arms
 
 This document assumes you know
-[the single-arm versions](../08_one-arm-training/02_programmed-methods.md) of these
+[the single-arm versions](../10_one-arm-training/02_programmed-methods.md) of these
 methods. It does not repeat them. It says what changes when two arms have to
 cooperate — and the honest summary is that **one of these five methods handles the
 hard case and the other four work around it**.
@@ -226,7 +226,7 @@ attempts.
 
 ### A note on task and motion planning
 
-With two arms the appeal of [TAMP](../08_one-arm-training/02_programmed-methods.md#5-task-and-motion-planning)
+With two arms the appeal of [TAMP](../10_one-arm-training/02_programmed-methods.md#5-task-and-motion-planning)
 grows, because "which arm should do this step" is exactly the kind of decision a
 symbolic planner could make instead of a person — and re-grasping, the thing two
 arms are best at, is naturally expressed as a symbolic action with geometric

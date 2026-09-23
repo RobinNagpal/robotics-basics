@@ -429,7 +429,7 @@ connecting to motors. The controller moves the motors, reads where they actually
 are from their sensors, and publishes that on `/joint_states`. Everything after
 that, robot_state_publisher, TF and RViz, is exactly as it is here. Planning a
 safe path for a real arm, instead of swinging it, is the job of **MoveIt**, which
-the [tools and libraries](../07_tools-and-libraries.md) doc describes.
+the [tools and libraries](../09_tools-and-libraries.md) doc describes.
 
 Next: [ROS camera and arm](05_ros-camera-arm.md), which points the arm at what the
 camera sees.

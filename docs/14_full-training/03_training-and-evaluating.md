@@ -152,7 +152,7 @@ of a few ways, and the breakdown tells you what to do next:
 
 That table, with a count in each row, is worth more than the success rate alone.
 Benchmarks are moving this way too: DuoBench, in the
-[two-arm doc](../11_two-arm-manipulation.md#44-step-4-measure-generalisation),
+[two-arm doc](../13_two-arm-manipulation.md#44-step-4-measure-generalisation),
 scores by stage rather than pass or fail for the same reason.
 
 ## 5. The improvement loop
@@ -224,4 +224,4 @@ behaviour you need is the kind nobody can write down.
 ---
 
 Back to [the overview](01_overview.md), or out to
-[stone stacking](../10_stone-stacking.md), which this folder is one branch of.
+[stone stacking](../12_stone-stacking.md), which this folder is one branch of.

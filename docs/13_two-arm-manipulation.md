@@ -629,10 +629,10 @@ pieces you will meet:
   state, 14 of action, per frame, per episode.
 
 For one hard task worked through from end to end, see
-[stone stacking](10_stone-stacking.md): balancing rough stones needs all four
+[stone stacking](12_stone-stacking.md): balancing rough stones needs all four
 coordination kinds, and it shows where the pieces above actually go. For the
 wider map — every way of programming or training an arm, compared — see
-[ways to programme or train two arms](09_two-arm-training/01_overview.md).
+[ways to programme or train two arms](11_two-arm-training/01_overview.md).
 
 ---
 

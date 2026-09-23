@@ -960,11 +960,11 @@ and [the case study](01_place-glass.md) is where that is worked out.
   including [what to use for each job](01_place-glass.md#4-which-part-uses-what),
   [where to hold a glass and why the middle is wrong](01_place-glass.md#where-to-hold-it),
   and [what to do about a glass with no record](01_place-glass.md#5-when-an-unfamiliar-glass-turns-up).
-- [Tools and libraries](../../07_tools-and-libraries.md) explains each of the tools in
+- [Tools and libraries](../../09_tools-and-libraries.md) explains each of the tools in
   section 9 properly, with code, including
-  [MoveIt 2](../../07_tools-and-libraries.md#5-moveit-2-planning-a-safe-path),
-  [ros2_control](../../07_tools-and-libraries.md#6-ros2_control-driving-the-motors) and
-  [behaviour trees](../../07_tools-and-libraries.md#11-behaviour-trees-putting-a-task-in-order).
+  [MoveIt 2](../../09_tools-and-libraries.md#5-moveit-2-planning-a-safe-path),
+  [ros2_control](../../09_tools-and-libraries.md#6-ros2_control-driving-the-motors) and
+  [behaviour trees](../../09_tools-and-libraries.md#11-behaviour-trees-putting-a-task-in-order).
 - [Programmed methods](../02_programmed-methods.md) covers the
   [force control](../02_programmed-methods.md#6-feedback-control) that sections 6 and 8
   depend on.

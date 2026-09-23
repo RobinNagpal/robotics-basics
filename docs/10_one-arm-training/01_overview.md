@@ -96,7 +96,7 @@ driving 2026, what each new capability actually lets you do, and how to tell a r
 shift from a passing fashion. Read this when you want to understand the field rather
 than any particular method.
 
-There is also a companion folder, **[two-arm training](../09_two-arm-training/01_overview.md)**,
+There is also a companion folder, **[two-arm training](../11_two-arm-training/01_overview.md)**,
 covering what changes when a second arm is added. That turns out to be considerably
 more than you would guess, and none of it makes sense until the single-arm picture is
 clear, so start here.
@@ -1008,10 +1008,10 @@ pictures, message passing — are the same either way.
   [finding objects](../05_camera/02_finding-objects.md) show a classical perception
   pipeline and a trained model doing the same job, which is the smallest clear
   illustration of the trade-off this whole document is about.
-- [Stone stacking](../10_stone-stacking.md) and
-  [full training](../12_full-training/01_overview.md) take a single task and work it
+- [Stone stacking](../12_stone-stacking.md) and
+  [full training](../14_full-training/01_overview.md) take a single task and work it
   through the programmed way and then the trained way.
-- [Two-arm training](../09_two-arm-training/01_overview.md) is the companion folder for
+- [Two-arm training](../11_two-arm-training/01_overview.md) is the companion folder for
   what a second arm changes.
 
 **What was checked, and when.** The repository statistics, licences and activity

@@ -230,7 +230,7 @@ extraction](https://pointclouds.org/documentation/tutorials/cluster_extraction.h
 in PCL or [DBSCAN](https://www.open3d.org/docs/release/tutorial/geometry/pointcloud.html)
 in Open3D.
 
-The [tools and libraries doc](../07_tools-and-libraries.md#9-perception-camera-drivers-opencv-and-open3d)
+The [tools and libraries doc](../09_tools-and-libraries.md#9-perception-camera-drivers-opencv-and-open3d)
 shows this recipe as real code.
 
 **Why this rather than anything learned.** It works on objects it has never seen,
@@ -268,7 +268,7 @@ the depth, with something visible through it in colour, is a transparent object.
 
 This sounds like a trick and it is not. It is the same signal a real depth camera
 gives, and a pipeline built on it meets the same difficulty a real one does. The
-[glass-picking case study](../08_one-arm-training/07_case-study/01_place-glass.md)
+[glass-picking case study](../10_one-arm-training/07_case-study/01_place-glass.md)
 is built on exactly this.
 
 **What it costs.** It finds transparency, not identity, and it needs the object to
@@ -370,7 +370,7 @@ which gives the distance, which gives the scale.
 sensor cannot see. A wine glass returns no depth at all, but it stands on a table
 that does, so its height and its diameter at every height can be measured from a
 plain side-on picture. The [glass case
-study](../08_one-arm-training/07_case-study/01_place-glass.md) is built entirely
+study](../10_one-arm-training/07_case-study/01_place-glass.md) is built entirely
 on this.
 
 **What it costs.** The assumption. If the object is not on the plane — if it is
@@ -581,7 +581,7 @@ the diameter there. So one side-on picture gives the complete profile of the
 object.
 
 This is the technique the [glass case
-study](../08_one-arm-training/07_case-study/01_place-glass.md) is built on, and it
+study](../10_one-arm-training/07_case-study/01_place-glass.md) is built on, and it
 turns "measure this object" into "measure one silhouette".
 
 Five jobs it suits:

@@ -252,7 +252,7 @@ sooner or later be between the camera and the thing you want to see.
 the fixed camera finds roughly where things are and decides what to do next, and
 the wrist camera goes and looks properly at the one object being worked on. That
 is also the structure the [glass case
-study](../08_one-arm-training/07_case-study/01_place-glass.md) uses, for exactly
+study](../10_one-arm-training/07_case-study/01_place-glass.md) uses, for exactly
 that reason.
 
 Five jobs a wrist camera suits:
@@ -363,7 +363,7 @@ between a placement and a drop.
 subtracting the known weight of the gripper leaves the payload. This is the only
 way to learn the mass of an object whose wall thickness you cannot see, which is
 exactly the problem the [glass case
-study](../08_one-arm-training/07_case-study/01_place-glass.md) has: it lifts each
+study](../10_one-arm-training/07_case-study/01_place-glass.md) has: it lifts each
 glass ten millimetres and weighs it before committing to a squeeze.
 
 **And the sentence above is a trap as it stands.** "Everything below it" is only

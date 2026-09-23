@@ -8,7 +8,7 @@ that, and quite often it does not.
 This document is the honest answer to whether your task needs one. It is
 deliberately the first thing in this folder, because the most useful thing these
 documents can do for most readers is talk them out of a second arm and back to
-[one arm and a fixture](../08_one-arm-training/01_overview.md). The rest of the folder is
+[one arm and a fixture](../10_one-arm-training/01_overview.md). The rest of the folder is
 for the cases where that answer is no.
 
 **What this folder covers, and what it does not.** Everything here is about
@@ -16,7 +16,7 @@ for the cases where that answer is no.
 does depends on what the other is doing. Two arms that happen to share a cell while
 doing unrelated things are not covered, and deliberately so: that is not a two-arm
 problem at all. It is two single-arm problems plus a collision check, it is solved
-by running [the one-arm methods](../08_one-arm-training/01_overview.md) twice, and the
+by running [the one-arm methods](../10_one-arm-training/01_overview.md) twice, and the
 standard survey of the field says as much, noting that uncoordinated two-arm work
 has "no intrinsic difference to single-arm systems". If your two arms never need to
 agree with each other about anything, you are in the wrong folder, and that is good
@@ -177,7 +177,7 @@ arm, which is where it belongs.
 Here is the spread of real jobs where two arms *are* the right answer, in four
 groups ordered by how much is known in advance — the same lettering used throughout
 this folder and in
-[the one-arm documents](../08_one-arm-training/01_overview.md#1-what-an-arm-is-actually-asked-to-do).
+[the one-arm documents](../10_one-arm-training/01_overview.md#1-what-an-arm-is-actually-asked-to-do).
 Every row says **what the second arm is actually for**, because if you cannot
 answer that for your own task, the honest conclusion is that you do not need it.
 
@@ -261,7 +261,7 @@ the end with no yes, use one arm.
    that a two-armed robot fits a human workstation, say so. That is a legitimate
    reason, and it is a facilities argument, not a manipulation one.
 6. **Otherwise: one arm and a fixture.** Read
-   [the one-arm documents](../08_one-arm-training/01_overview.md) and spend the saved
+   [the one-arm documents](../10_one-arm-training/01_overview.md) and spend the saved
    money on better perception.
 
 ## 7. So why learn this at all?
@@ -302,5 +302,5 @@ different answers, and being clear about which one you are answering is most of
 what distinguishes good advice in this field from bad.
 
 Next: [the two-arm overview](01_overview.md) for what actually changes, or
-[the one-arm documents](../08_one-arm-training/01_overview.md) if the checklist sent you
+[the one-arm documents](../10_one-arm-training/01_overview.md) if the checklist sent you
 back there.

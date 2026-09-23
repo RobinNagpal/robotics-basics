@@ -229,6 +229,10 @@ that makes this worse. If your compliant insertion works against foam and
 chatters against metal, this is why, and the fix is more damping rather than more
 force resolution.
 
+The arm's side of this — what the controller is actually doing between a
+trajectory and the motors, and what happens at a singularity — is
+[controlling the move](../08_arm-movement/04_controlling-the-move.md).
+
 **One thing that is not compliance control.** A collaborative arm's safety
 function, which stops the arm when it detects an unexpected force, is not
 compliance. It is a monitor with a threshold, it acts by stopping rather than by

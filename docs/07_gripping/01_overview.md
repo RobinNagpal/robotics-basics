@@ -29,8 +29,8 @@ measurement already in hand and asks what to do with it.
 
 **Moving the arm is not here either.** Planning a path to the grasp pose,
 avoiding the table on the way in, and carrying the object afterwards belong to
-[arm movement](../08_arm-movement/). Where the two meet — a grasp that is
-geometrically perfect and kinematically unreachable — is called out in
+[arm movement](../08_arm-movement/01_overview.md). Where the two meet — a grasp
+that is geometrically perfect and kinematically unreachable — is called out in
 [section 7](#7-the-three-things-every-tutorial-leaves-out) and again in
 [choosing a grip](03_choosing-a-grip.md).
 
@@ -82,7 +82,7 @@ Written out at the level the hardware actually works at, a pick is seven steps.
 7. The arm moves, and the grip has to survive the acceleration.
 
 Steps 1, 3, 4, 6 and 7 belong to this area. Step 2 and the second half of step 7
-belong to [arm movement](../08_arm-movement/). The measurement that decided the
+belong to [arm movement](../08_arm-movement/01_overview.md). The measurement that decided the
 width in step 1 came from [object
 perception](../06_object-perception/01_overview.md).
 

@@ -486,7 +486,9 @@ and pass it through the same filters a geometric planner would apply, in this
 order:
 
 1. Reject any pose the arm cannot reach, which needs an inverse kinematics query
-   and not a guess.
+   and not a guess — the
+   [reachability document](../08_arm-movement/02_reaching-and-reachability.md)
+   is about how much that question hides.
 2. Reject any pose whose gripper body collides with the table, the tote or a
    neighbour — the [bound-the-search
    argument](03_choosing-a-grip.md#7-bounding-the-search-by-the-grippers-own-body),

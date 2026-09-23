@@ -490,6 +490,11 @@ that is already occupied. The fingers must pass either side of the object. The
 palm must clear the top of it. The body must clear the neighbours, the tote wall
 and the table.
 
+Which of those is binding is a question the arm answers rather than the gripper,
+and the [reachability document](../08_arm-movement/02_reaching-and-reachability.md)
+is where the workspace holes, the joint limits and the eight configurations that
+reach the same pose are set out.
+
 **The mistake is to score candidates first and check collisions afterwards.**
 It is a natural way to write it: generate antipodal pairs, rank them by quality,
 hand the best one to the motion planner, and let the planner reject it if it does

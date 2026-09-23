@@ -27,6 +27,7 @@ own, with its own code, its own doc, and two or three commands.
 | [object perception](docs/06_object-perception/01_overview.md) | finding an object and measuring it: every technique, model and licence, compared | — |
 | [gripping](docs/07_gripping/01_overview.md) | how to hold a thing once you have found it: grippers, grasp choice, force and slip | — |
 | [arm movement](docs/08_arm-movement/01_overview.md) | getting there and back: reach, planning, control, and what makes a move fail | — |
+| [the frontier](docs/15_frontier/01_overview.md) | what actually changed in robot arms in 2026, and what is coming | — |
 
 <p align="center">
   <img src="docs/images/rviz/scene.svg" width="31%" alt="A ball circling a grid in RViz">
@@ -82,6 +83,12 @@ balancing rough stones on top of each other — and walks through how such a
 system is built: what makes a stack stand up, what the second arm is for, the
 loop the robot runs once per stone, and which open frameworks do each stage. A
 map of the process, not code.
+
+**[The frontier](docs/15_frontier/01_overview.md)** is the record of what
+actually changed in 2026, in six documents: foundation models, where data comes
+from, simulation and evaluation, hardware, and what is coming in 2027. Every item
+says whether you can obtain it, every licence was read from the licence file, and
+every development says what it still cannot do. It is dated on purpose.
 
 **[One-arm training](docs/10_one-arm-training/01_overview.md)** is the map above all of
 these: every way to programme or train a single arm, as a family tree, with a grid

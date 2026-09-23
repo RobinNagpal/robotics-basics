@@ -246,6 +246,42 @@ In ROS 2 the pieces are the
 in [ros2_controllers](https://github.com/ros-controls/ros2_controllers)
 (Apache-2.0). Section 6.7 covers what it is good for.
 
+### 5.3 The software that comes with each sensor
+
+A sensor is only as useful as its driver, and the software is where most of the
+practical differences show up. Read this as: the library you talk to the sensor
+with, the ROS 2 package that wraps it, and what you would then run on its output.
+
+| Sensor | Library | Licence | ROS 2 driver | What you run on its output |
+| --- | --- | --- | --- | --- |
+| RealSense D4xx | [librealsense](https://github.com/realsenseai/librealsense) | Apache-2.0 | [realsense-ros](https://github.com/realsenseai/realsense-ros) | [Open3D](https://github.com/isl-org/Open3D) or [PCL](https://github.com/PointCloudLibrary/pcl) for plane fitting and oriented boxes |
+| Orbbec Gemini, Femto | [OrbbecSDK v2](https://github.com/orbbec/OrbbecSDK_v2) | MIT | [OrbbecSDK_ROS2](https://github.com/orbbec/OrbbecSDK_ROS2) | the same |
+| Zivid | proprietary SDK | closed, with a BSD-3 wrapper | [zivid-ros](https://github.com/zivid/zivid-ros) | the same, plus their own bin-picking tooling |
+| Photoneo PhoXi | PhoXi Control, dongle-licensed | closed, MIT wrapper | [PhoXi-ROS-API](https://github.com/photoneo/PhoXi-ROS-API) | the same |
+| a plain colour camera | [OpenCV](https://github.com/opencv/opencv) | Apache-2.0 | [usb_cam](https://github.com/ros-drivers/usb_cam), [image_pipeline](https://github.com/ros-perception/image_pipeline) | the geometry in [section 6](#6-geometry-you-write-yourself), or a depth model from [section 7](#7-depth-from-a-single-picture) |
+| a stereo pair | OpenCV `StereoSGBM`, or [RAFT-Stereo](https://github.com/princeton-vl/RAFT-Stereo) | Apache-2.0 / MIT | [image_pipeline](https://github.com/ros-perception/image_pipeline)'s `stereo_image_proc` | as for RGB-D, once you have the disparity |
+| a force-torque sensor | [ros2_controllers](https://github.com/ros-controls/ros2_controllers) | Apache-2.0 | `force_torque_sensor_broadcaster` | the probing in [section 6.7](#67-measuring-by-touching-it) |
+| a printed marker | [OpenCV ArUco](https://github.com/opencv/opencv), [AprilTag](https://github.com/AprilRobotics/apriltag) | Apache-2.0 / BSD-2 | [ros_aruco_opencv](https://github.com/fictionlab/ros_aruco_opencv), [apriltag_ros](https://github.com/christianrauch/apriltag_ros) | calibration, and the scale trick in [section 6.3](#63-a-marker-of-known-size) |
+
+Three practical notes that are not obvious from the table.
+
+**On a Mac, use Open3D and not PCL from Python.** PCL's C++ library installs
+cleanly through Homebrew with native Apple Silicon builds, but its Python
+bindings are dead: `python-pcl` last shipped in 2019 for x86 and Python 3.7, and
+`pclpy` is Windows-only. Open3D ships native `arm64` wheels and its
+`segment_plane` and `cluster_dbscan` cover the same ground.
+
+**For ArUco and AprilTag in ROS 2, the obvious package is the wrong one.** The
+official [AprilRobotics/apriltag_ros](https://github.com/AprilRobotics/apriltag_ros)
+has not been touched since 2024; [christianrauch/apriltag_ros](https://github.com/christianrauch/apriltag_ros)
+is the maintained one. Similarly the widely linked `pal-robotics/aruco_ros` is
+stuck on Humble, and [fictionlab/ros_aruco_opencv](https://github.com/fictionlab/ros_aruco_opencv)
+is current.
+
+**The industrial scanners give you ROS 2 but not macOS.** Both the Zivid and
+Photoneo wrappers are permissively licensed and both wrap a closed binary
+runtime that ships for Windows and Linux only.
+
 ## 6. Geometry you write yourself
 
 These are the methods with no model behind them. Between them they cover most of
@@ -759,3 +795,137 @@ The conclusion worth carrying away is one of proportion. With a consumer depth
 camera at two to five millimetres, a one-millimetre hand-eye error is not your
 problem. Fit a Zivid at 0.2 mm and that same one millimetre becomes the entire
 error. **Buying a better sensor without recalibrating buys you nothing.**
+
+## 12. Frameworks and libraries
+
+| Library | Licence | What it is for | Apple Silicon |
+| --- | --- | --- | --- |
+| [OpenCV](https://github.com/opencv/opencv) | Apache-2.0 since 4.5 | calibration, markers, contours, stereo | native wheels |
+| [Open3D](https://github.com/isl-org/Open3D) | MIT | point clouds, plane fitting, oriented boxes, registration | native `arm64` wheels |
+| [PCL](https://github.com/PointCloudLibrary/pcl) | BSD-3 | the same, in C++, and what ROS uses | C++ yes, Python no |
+| [trimesh](https://github.com/mikedh/trimesh) | MIT | meshes, volumes, oriented bounds, minimum cylinders | pure Python |
+| [COLMAP](https://github.com/colmap/colmap) | BSD-3 | photogrammetry; the reference implementation | prebuilt `arm64` build; **dense reconstruction needs CUDA** |
+| [OpenMVG](https://github.com/openMVG/openMVG) | MPL-2.0 | structure from motion | CPU |
+| [OpenMVS](https://github.com/cdcseacave/openMVS) | **AGPL-3.0** | dense reconstruction and meshing | CUDA disabled on macOS, so CPU |
+| [Nerfstudio](https://github.com/nerfstudio-project/nerfstudio) | Apache-2.0 | neural reconstruction | `nerfacto` works on MPS; `splatfacto` does not |
+| [Brush](https://github.com/ArthurBrussee/brush) | Apache-2.0 | Gaussian splatting | **yes, natively** — the only one in this list that is both permissive and Apple-native |
+| [mrcal](https://github.com/dkogan/mrcal) | Apache-2.0 | calibration with uncertainty estimates | CPU |
+| [CGAL](https://www.cgal.org/) | **split GPL and LGPL** | computational geometry | — |
+| [libigl](https://github.com/libigl/libigl) | core MPL-2.0, **some modules GPL** | geometry processing | — |
+
+Two licence notes. **CGAL's kernel is LGPL but most of the algorithms you would
+actually want are GPL**, so it must be checked package by package. And
+**libigl's GitHub badge says GPL-3.0 and is misleading** — the core is MPL-2.0
+and only some optional modules are GPL. In both cases, read the files.
+
+## 13. Datasets and benchmarks
+
+Measurement is harder to benchmark than detection, because ground truth has to be
+metric. The ones worth knowing:
+
+| Benchmark | What it measures | Licence |
+| --- | --- | --- |
+| [BOP](https://bop.felk.cvut.cz/) | 6-DoF pose, across many datasets | **per-dataset; some are CC BY-NC-SA** |
+| [DTU](https://roboimagedata.compute.dtu.dk/) | reconstruction accuracy, in millimetres | academic |
+| [NYU Depth v2](https://cs.nyu.edu/~fergus/datasets/nyu_depth_v2.html) | monocular depth, indoors | research |
+| [KITTI](https://www.cvlibs.net/datasets/kitti/) | depth and stereo, outdoors | CC BY-NC-SA |
+| [ETH3D](https://www.eth3d.net/) | stereo and multi-view | research |
+| [GraspNet-1Billion](https://graspnet.net/) | grasp poses on real scans | **CC BY-NC-SA 4.0** |
+
+BOP's newest group, **BOP-Industrial**, is the most relevant to a table-top or
+bin-picking cell: cluttered scenes of real industrial parts, contributed by XYZ
+Robotics, MVTec and Intrinsic.
+
+One caution about reading any of these. BOP's headline number, AR, is a recall
+rate — the fraction of object instances localised within a set of error
+thresholds. It is not millimetres and does not convert to millimetres.
+
+## 14. What runs on an Apple Silicon Mac
+
+Better than you would guess for geometry, worse than you would guess for anything
+learned.
+
+| Works | Does not |
+| --- | --- |
+| OpenCV, Open3D, trimesh, PCL in C++ | every NVIDIA research model: FoundationPose, FoundationStereo, Instant-NGP, Neuralangelo |
+| COLMAP's sparse reconstruction, from a prebuilt `arm64` build | COLMAP's **dense** stage, which needs CUDA |
+| OpenMVS, which disables CUDA on macOS | `gsplat`, and Nerfstudio's `splatfacto` |
+| Brush, for Gaussian splatting | NVIDIA Isaac ROS, entirely |
+| Marigold, which has an explicit `--apple_silicon` flag | Depth Anything 3 as documented, which expects XFormers |
+| HappyPose, which documents a CPU path | every other 6-DoF method in section 9 |
+| librealsense and OrbbecSDK v2, with some friction | Zivid and Photoneo, which have no macOS build at all |
+| ROS 2, through [RoboStack](https://robostack.github.io/) | ROS 2 from official binaries — Apple Silicon has no support tier at all |
+
+The last row is worth stating plainly, because it is not documented anywhere
+obvious. In every ROS 2 platform table, macOS appears only in the `amd64` row at
+tier 3. **The macOS cell in the `arm64` row is empty in every distribution.**
+RoboStack, a community conda redistribution, is the only practical route, and it
+is what this repo uses.
+
+## 15. Putting it in ROS 2
+
+| Package | Licence | What it is for |
+| --- | --- | --- |
+| [vision_opencv](https://github.com/ros-perception/vision_opencv) | Apache-2.0 | `image_geometry`'s `PinholeCameraModel` is the pixels-to-metres tool |
+| [image_pipeline](https://github.com/ros-perception/image_pipeline) | BSD | rectification, stereo, camera calibration |
+| [perception_pcl](https://github.com/ros-perception/perception_pcl) | BSD-3 | PCL inside ROS |
+| [octomap](https://github.com/OctoMap/octomap) | BSD | occupancy mapping, which MoveIt uses for obstacles |
+| [easy_handeye2](https://github.com/marcoesposito1988/easy_handeye2) | LGPL-3.0 | hand-eye calibration |
+| [happypose_ros](https://github.com/agimus-project/happypose_ros) | BSD-2 | 6-DoF pose, and the one with a CPU path |
+
+**One thing MoveIt's perception pipeline is not for.** It builds an octomap of
+unknown obstacles so the planner can avoid them. It does not measure objects and
+was never meant to. Using it for dimensioning is a category error, and a common
+one.
+
+## 16. The comparison grid
+
+| Approach | Gives you | Typical accuracy | Needs | Transparent objects |
+| --- | --- | --- | --- | --- |
+| known depth, two-line calculation | one dimension | a few per cent | a depth sensor | no |
+| the plane it stands on | full profile | about a millimetre | a calibrated table | **yes** |
+| a marker of known size | scale on that plane | 0.6 to 3 mm in X and Y, ~3x worse in Z | a printed marker | yes |
+| smallest rotated rectangle | length, width, angle | pixel-limited | a mask, and a face-on view | no |
+| oriented box from a point cloud | all three dimensions | as good as the cloud | a depth sensor | no |
+| solid of revolution | the complete profile | about a millimetre | one side-on picture | **yes** |
+| touch | one dimension | hundredths of a millimetre | a contact sensor, and seconds | **yes** |
+| consumer depth sensor | everything visible | 2 to 5 mm at 1 m | the sensor | no |
+| industrial scanner | everything visible | 0.2 to 0.5 mm | thousands of pounds | partly |
+| monocular metric depth | a dense guess | **5 to 20 per cent** | a GPU | no |
+| stereo matching | dense depth | baseline-limited | two cameras, calibrated | no |
+| 6-DoF pose from a model | position and orientation | millimetres | a CAD model | no |
+| photogrammetry or splatting | a full 3D model | sub-millimetre, **once scaled** | many views, and a scale | no |
+
+## 17. What to actually reach for
+
+**Start with a depth sensor and the two-line calculation.** For most table-top
+work, a RealSense or an Orbbec plus `depth / fx` is accurate enough, and the
+rest of this document is what you reach for when it is not.
+
+**If the object is transparent or shiny, stop using the depth sensor for it.**
+Use the plane it stands on, use its silhouette, or touch it. The
+[glass case study](../09_one-arm-training/07_case-study/01_place-glass.md) does all
+three.
+
+**Before buying a better sensor, calibrate the one you have.** A degree of
+hand-eye error costs almost 6 mm at a 340 mm reach, which is more than the
+difference between a good depth camera and a great one.
+
+**Do not use a monocular depth model as a measuring instrument.** Use it to
+recover a rough scale, then measure with geometry. The independent numbers are 5
+to 20 per cent, and a three-hundred-pound sensor does thirty times better.
+
+**If you need 6-DoF pose and you intend to ship, use HappyPose.** It is BSD-2,
+maintained, has a ROS 2 wrapper and runs without an NVIDIA card. FoundationPose
+is better and you cannot ship it.
+
+## 18. Where to read more
+
+- [Object segmentation](../06_object-segmentation/01_overview.md) — the companion
+  to this document, which finds the object whose size you are about to measure.
+- [The camera area](../05_camera/04_one-box-code.md) — the pixels-to-metres
+  calculation as running code, on a real picture.
+- [Tools and libraries](../08_tools-and-libraries.md#10-hand-eye-calibration-tying-the-camera-to-the-arm) —
+  hand-eye calibration in the context of the whole stack.
+- [The glass case study](../09_one-arm-training/07_case-study/01_place-glass.md) —
+  measuring an object a depth camera cannot see at all.

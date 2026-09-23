@@ -153,3 +153,230 @@ the edges gives you an object of the wrong size, not merely the wrong distance.
 
 Neither of these improves if you swap the segmentation model for a better one,
 which is the most common wrong response to a measurement that is off.
+
+## 6. Geometry you write yourself
+
+These are the methods with no model behind them. Between them they cover most of
+what a table-top arm actually needs, they run in microseconds, and their failure
+modes are ones you can reason about rather than discover.
+
+### 6.1 A known depth, and the two-line calculation
+
+**What it is.** Section 2, applied directly: take the mask, count its width in
+pixels, read the depth at the object, and multiply. This is the baseline every
+other method is compared against.
+
+**What it costs.** A depth sensor, and care about *which* depth you read. The
+depth at the centre of the object is the front face, not the middle, so an object
+50 mm deep measured this way is reported 25 mm too near. For a width measurement
+that hardly matters; for a grasp it can.
+
+Five jobs it suits:
+
+- boxes, blocks and flat-faced parts, measured face-on
+- any object where a few per cent is good enough
+- a first implementation, to find out what accuracy the rest of the system needs
+- checking a more elaborate method, since it is easy to get right
+- objects large enough that a pixel is a small fraction of them
+
+Five jobs it cannot do:
+
+- small objects far away, where the pixel count is too low to be precise
+- transparent or mirrored objects, which return no usable depth
+- measuring the dimension pointing away from the camera, which is invisible
+- objects seen at an angle, where the apparent width is foreshortened
+- anything needing better than about a millimetre with a consumer sensor
+
+### 6.2 The plane the object stands on
+
+**What it is.** Instead of measuring the distance to the object, measure the
+distance to the table once, and use the fact that the object is standing on it.
+The camera ray through the bottom of the object meets the table at a known point,
+which gives the distance, which gives the scale.
+
+**Why this rather than a depth reading.** Because it works on objects the depth
+sensor cannot see. A wine glass returns no depth at all, but it stands on a table
+that does, so its height and its diameter at every height can be measured from a
+plain side-on picture. The [glass case
+study](../09_one-arm-training/07_case-study/01_place-glass.md) is built entirely
+on this.
+
+**What it costs.** The assumption. If the object is not on the plane — if it is
+tilted, stacked on another object, or in the gripper — the answer is confidently
+wrong.
+
+Five jobs it suits:
+
+- glassware, and anything else transparent, standing on a surface
+- shiny metal parts, which also defeat depth sensors
+- any table-top cell, as a cheap check on the depth sensor's answer
+- measuring with an ordinary colour camera, with no depth sensor at all
+- measuring the height of an object, which is exactly the distance from the plane
+
+Five jobs it cannot do:
+
+- objects held in the gripper, which are no longer on the plane
+- stacked or leaning objects
+- scenes where the support surface is not flat or not visible
+- objects hanging, on a hook or a conveyor
+- anything where the plane's own measurement has drifted, which it does if the
+  camera is knocked
+
+### 6.3 A marker of known size
+
+**What it is.** Put a printed square of known dimensions in the scene. Because you
+know it is, say, 40 mm across and you can see how many pixels across it is, you
+have the scale everywhere on that plane. The common families are
+[ArUco](https://github.com/opencv/opencv_contrib/tree/4.x/modules/aruco), which
+ships with OpenCV's contrib modules under the [Apache 2.0
+licence](https://github.com/opencv/opencv_contrib/blob/4.x/LICENSE), and
+[AprilTag](https://github.com/AprilRobotics/apriltag), which is
+[BSD-2](https://github.com/AprilRobotics/apriltag/blob/master/LICENSE.md) and
+generally the more robust of the two at long range and shallow angles. ChArUco is
+a chessboard with ArUco markers in the white squares, and is the usual choice for
+calibration because it gives many precise corners.
+
+**What it costs.** Somebody has to put the marker there and keep it flat and
+clean. A bent or partly obscured marker gives a pose that is wrong in a way that
+looks plausible.
+
+Five jobs it suits:
+
+- calibration of every kind, which is where markers earn their keep
+- giving a robot a reliable reference frame on a table or a fixture
+- scaling a photogrammetric reconstruction, which otherwise has no size at all
+- locating a pallet, a tray or a fixture whose contents you then measure
+- checking that a camera has not moved, by watching a fixed marker
+
+Five jobs it cannot do:
+
+- measure an object that is not coplanar with the marker, without more geometry
+- work when the marker is hidden by the very object you are measuring
+- survive a dirty, wet or scratched environment
+- operate where you cannot attach anything to the scene, such as a customer's
+  goods
+- give a good angle estimate from a single small square, which is famously
+  unstable near face-on
+
+### 6.4 The smallest rectangle round the mask
+
+**What it is.** Given the object's pixels, `cv2.minAreaRect` finds the smallest
+*rotated* rectangle that contains them, returning a centre, a width, a height and
+an angle. It is the standard way to get a length, a width and an orientation from
+a mask in one call, and it is documented among [OpenCV's contour
+features](https://github.com/opencv/opencv/blob/4.x/doc/py_tutorials/py_imgproc/py_contours/py_contour_features/py_contour_features.markdown).
+
+**Why this rather than the bounding box from a detector.** A detector's box is
+axis-aligned, so for anything long and turned it reports a size that belongs to no
+real dimension of the object. The rotated rectangle reports the object's own
+length and width.
+
+Five jobs it suits:
+
+- long thin parts lying at any angle: screwdrivers, bars, cable segments
+- deciding which way to turn the gripper, from the rectangle's angle
+- measuring rectangular things, where the fit is exact
+- a quick length and width for sorting by size
+- anything flat, viewed from directly above
+
+Five jobs it cannot do:
+
+- round objects, where the angle it returns is meaningless noise
+- concave shapes, where the rectangle contains a great deal that is not object
+- objects seen at an angle, where the rectangle measures the projection
+- giving any information about the third dimension
+- objects whose mask is broken into pieces
+
+### 6.5 An oriented box round the point cloud
+
+**What it is.** The 3D version of the same idea. Take the object's points, find
+the directions they vary along most — which is principal component analysis — and
+fit a box aligned to those directions. Open3D does it with
+[`get_oriented_bounding_box`](https://www.open3d.org/docs/release/python_api/open3d.geometry.OrientedBoundingBox.html),
+and PCL with its [moment of
+inertia](https://pointclouds.org/documentation/tutorials/moment_of_inertia.html)
+estimator.
+
+**What it costs.** The result is only as good as the points. A camera sees one
+side of an object, so the cloud is a shell, and a box fitted to a shell is
+systematically too small in the direction pointing away from the camera. Fitting a
+box to two views taken from different sides fixes most of this.
+
+Five jobs it suits:
+
+- getting all three dimensions at once, when the point cloud is good
+- finding which way a part is lying, for planning an approach
+- boxes, cartons and pallets, where the fit is genuinely a box
+- feeding a collision model to a motion planner, where a slightly large box is
+  safe
+- comparing two objects for size without knowing what either is
+
+Five jobs it cannot do:
+
+- measure the hidden side, without a second viewpoint
+- fit anything round or irregular tightly — a box round a mug is mostly air
+- work on transparent objects, which have no points
+- distinguish orientation for a symmetric object, where the axes can swap
+  arbitrarily between frames
+- work with fewer than a few hundred points, below which the axes are noise
+
+### 6.6 Silhouettes of a solid of revolution
+
+**What it is.** A special case that is worth knowing because it is unreasonably
+powerful when it applies. An object made on a lathe or a potter's wheel — a glass,
+a bottle, a bearing, a turned leg — is a shape spun about an axis. Its outline
+looks the same from every side, and the width of that outline at any height *is*
+the diameter there. So one side-on picture gives the complete profile of the
+object.
+
+This is the technique the [glass case
+study](../09_one-arm-training/07_case-study/01_place-glass.md) is built on, and it
+turns "measure this object" into "measure one silhouette".
+
+Five jobs it suits:
+
+- glassware, bottles, cans, cups and jars
+- turned and machined parts: bushes, bearings, spacers, pulleys
+- measuring a full profile rather than a bounding size, which is what a shaped
+  grip needs
+- objects a depth sensor cannot see, since only the outline is needed
+- inspection, where the profile can be compared against a nominal one
+
+Five jobs it cannot do:
+
+- anything not round: a mug with a handle breaks the assumption exactly at the
+  handle
+- objects lying on their side, where the axis is no longer vertical
+- objects whose silhouette is hidden behind another object
+- internal features, which a silhouette cannot show
+- telling a solid from a hollow one, which is why the glass study weighs the
+  glass instead
+
+### 6.7 Measuring by touching it
+
+**What it is.** Move the gripper until a contact sensor fires, and record where
+the arm was. It is the oldest measuring method in robotics and it is still the
+most accurate one available to an arm, because it removes the camera from the
+chain entirely and leaves only the arm's own repeatability, which on an industrial
+arm is a few hundredths of a millimetre.
+
+**Why this rather than a camera.** Because for transparent, mirrored and matt
+black objects, touch works and vision does not. And because a contact reading is a
+fact about the world, where a camera reading is an inference about it.
+
+Five jobs it suits:
+
+- finding the exact top of a surface before placing something on it
+- measuring a feature the camera cannot see, such as the inside of a bore
+- glass and polished metal, which defeat every optical method here
+- verifying an optical measurement before committing to a delicate action
+- establishing the work surface's height at the start of a job
+
+Five jobs it cannot do:
+
+- measure quickly — each touch takes seconds, where a picture takes milliseconds
+- measure anything soft, which moves before the sensor fires
+- measure an object that is not fixed in place, which slides away
+- survey a scene, since you must already know roughly where to touch
+- measure anything fragile, which is why the glass study touches only with a
+  known, capped force

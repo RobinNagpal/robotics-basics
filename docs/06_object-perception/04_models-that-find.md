@@ -43,7 +43,7 @@ agreeing to.
 
 | Model | What it is good at | Licence (code / weights) | Where |
 | --- | --- | --- | --- |
-| Ultralytics YOLO | the easiest to use, by a distance; fast; huge community | **AGPL-3.0** — see [section 10](#10-licences-and-the-one-that-will-catch-you-out) | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) |
+| Ultralytics YOLO | the easiest to use, by a distance; fast; huge community | **AGPL-3.0** — see [licences](06_licences-and-platforms.md#1-licences-and-the-one-that-will-catch-you-out) | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) |
 | RT-DETR | transformer detector with no need for non-maximum suppression; accurate at similar speed | Apache-2.0 / Apache-2.0 | [lyuwenyu/RT-DETR](https://github.com/lyuwenyu/RT-DETR), [weights](https://huggingface.co/PekingU/rtdetr_r50vd) |
 | D-FINE | a refinement of RT-DETR, currently among the strongest real-time detectors | Apache-2.0 | [Peterande/D-FINE](https://github.com/Peterande/D-FINE) |
 | DEIM | a training scheme that improves DETR-style detectors | Apache | [Intellindust-AI-Lab/DEIM](https://github.com/Intellindust-AI-Lab/DEIM) |
@@ -246,7 +246,7 @@ awkward:
 | [FoundationStereo](https://github.com/NVlabs/FoundationStereo) | **NVIDIA, non-commercial** | excellent, and not shippable |
 
 Polarisation imaging is frequently suggested for this and, as
-[section 4.5](02_sensors.md#22-thermal-polarisation-and-the-rest) says, there is essentially no
+[section 4.5](02_sensors.md#32-thermal-polarisation-and-the-rest) says, there is essentially no
 open-source work behind the suggestion.
 
 ## 2. Models that choose where to grip

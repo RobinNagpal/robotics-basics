@@ -21,8 +21,8 @@ Apache-2.0 and free to use commercially, or in
 
 ## Contents
 
-1. [Techniques that do not learn anything](#1-techniques-that-do-not-learn-anything)
-2. [Geometry you write yourself](#2-geometry-you-write-yourself)
+1. [Finding the object](#1-finding-the-object)
+2. [Measuring the object](#2-measuring-the-object)
 
 ---
 

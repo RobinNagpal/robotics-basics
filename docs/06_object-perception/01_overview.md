@@ -44,7 +44,7 @@ avoidable waste.
 6. [The one calculation underneath everything](#6-the-one-calculation-underneath-everything)
 7. [The three ways to supply the missing fact](#7-the-three-ways-to-supply-the-missing-fact)
 8. [Where the millimetres go](#8-where-the-millimetres-go)
-9. [The five documents that follow](#9-the-five-documents-that-follow)
+9. [The six documents that follow](#9-the-six-documents-that-follow)
 
 ---
 
@@ -320,7 +320,7 @@ Two things in it are worth pulling out.
 A hand-eye calibration that is one degree out costs 5.9 mm at a 340 mm reach — more
 than twice what a one-pixel segmentation error costs. Calibration is the least
 glamorous item in this whole area and it is usually the largest term in the
-budget. [Sensors, section 3](02_sensors.md#3-calibration-which-decides-all-of-it)
+budget. [Sensors, section 4](02_sensors.md#4-calibration-which-decides-all-of-it)
 is about it.
 
 A depth reading that is 20 mm out — which is what a consumer depth camera does at

@@ -58,7 +58,7 @@ anchors={p:{slug(m) for m in re.findall(r'^#{1,6}\s+(.*)$',p.read_text(),re.M)} 
 bad=[]
 for p in docs:
     for _l,tg in re.findall(r'\[([^\]]*)\]\(([^)\s]+)\)',p.read_text()):
-        if tg.startswith(('http','mailto:','#')): continue
+        if tg.startswith(('http','mailto:')): continue
         pp,_,fr=tg.partition('#'); fr=urllib.parse.unquote(fr)
         t2=pathlib.Path((p.parent/pp).resolve()) if pp else p
         if pp and not t2.exists(): bad.append(f'{p}: missing file -> {tg}'); continue

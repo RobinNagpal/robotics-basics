@@ -13,8 +13,9 @@ you will get on a bad day.
 ## Contents
 
 1. [What each sensor gives you](#1-what-each-sensor-gives-you)
-2. [Event, thermal and polarisation cameras](#2-event-thermal-and-polarisation-cameras)
-3. [Calibration, which decides all of it](#3-calibration-which-decides-all-of-it)
+2. [Measuring by touch](#2-measuring-by-touch)
+3. [Event, thermal and polarisation cameras](#3-event-thermal-and-polarisation-cameras)
+4. [Calibration, which decides all of it](#4-calibration-which-decides-all-of-it)
 
 ---
 
@@ -172,7 +173,7 @@ to wash the pattern out.
 
 **Thermal cameras**, which sense emitted long-wave infrared rather than reflected
 light, and therefore measure temperature. They are covered in
-[section 2.2](#22-thermal-polarisation-and-the-rest).
+[section 3.2](#32-thermal-polarisation-and-the-rest).
 
 **One-point distance sensors.** A chip such as ST's VL53 family
 ([a typical breakout](https://www.adafruit.com/product/5425),
@@ -270,20 +271,7 @@ Five jobs it does not:
 - seeing what the arm is about to collide with, being attached to the arm
 - keeping a view of an object while the arm does something else
 
-### 1.5 Measuring by touch
-
-Touch is the other way to get a distance, and it is worth remembering that it is
-the most accurate instrument an arm has. A robot's own joint encoders locate the
-tool to a few hundredths of a millimetre, so a contact detected by a
-force-torque sensor is a far better measurement than any camera in the table above.
-
-In ROS 2 the pieces are the
-[`force_torque_sensor_broadcaster` and `admittance_controller`](https://control.ros.org/rolling/doc/ros2_controllers/doc/controllers_index.html)
-in [ros2_controllers](https://github.com/ros-controls/ros2_controllers)
-(Apache-2.0). [Measuring by touch](03_programmed-methods.md#27-measuring-by-touching-it)
-covers what it is good for.
-
-### 1.6 The software that comes with each sensor
+### 1.5 The software that comes with each sensor
 
 A sensor is only as useful as its driver, and the software is where most of the
 practical differences show up. Read this as: the library you talk to the sensor
@@ -321,10 +309,133 @@ is current.
 Photoneo wrappers are permissively licensed and both wrap a closed binary
 runtime that ships for Windows and Linux only.
 
-## 2. Event, thermal and polarisation cameras
+## 2. Measuring by touch
+
+Every sensor so far measures light. This one measures contact, and it is worth a
+section of its own for two reasons: it is the most accurate instrument an arm
+has, and it works on the things that defeat every optical method — glass, chrome,
+matt black, and anything in the dark.
+
+**The first thing to be clear about is which part does the measuring.** When an
+arm feels its way down and stops on contact, the measurement is not coming from
+the touch sensor. It comes from the **joint encoders**, which know where the tool
+was at the instant contact was reported. On an industrial arm that is repeatable
+to a few hundredths of a millimetre. The touch sensor's only job is to say
+*when*. That division matters, because it means a cheap contact switch and an
+expensive tactile array give you the same positional accuracy for a guarded move
+— what the expensive one buys you is everything in section 2.1 below.
+
+**The second thing is what touch cannot do.** It measures one contact at a time,
+over a patch a few millimetres across. It does not measure an object's
+dimensions; you build those up by touching repeatedly, which is slow. Treat touch
+as the thing that confirms and refines an optical measurement, or replaces it
+where optics has no signal at all — not as a survey instrument.
+
+### 2.1 What you can actually do with it
+
+**The guarded move.** Drive slowly in one direction until a force threshold or a
+contact sensor fires, and record the pose. This is the oldest measuring technique
+in robotics and still the most accurate. It is how you find the true height of a
+work surface, the top of a stack, or the bottom of a bore.
+
+**Weighing what is held.** A wrist force sensor reads everything below it, so
+subtracting the known weight of the gripper leaves the payload. This is the only
+way to learn the mass of an object whose wall thickness you cannot see, which is
+exactly the problem the [glass case
+study](../08_one-arm-training/07_case-study/01_place-glass.md) has: it lifts each
+glass ten millimetres and weighs it before committing to a squeeze.
+
+**Detecting slip.** Two ways. The cheap one watches the gripper's finger gap and
+calls it slipping if the fingers creep closed. The good one reads shear or
+high-frequency vibration off a tactile sensor and catches it before the object
+has visibly moved.
+
+**Localising the contact.** A tactile array says *where on the pad* the contact
+is, which tells you whether you gripped centrally or caught an edge — a check no
+camera can make once the fingers are closed.
+
+**Tactile exploration.** Touch an unknown object at many points and fit a surface
+through them. This is how you measure something the camera cannot see at all. It
+is genuinely slow — seconds per point — so it is used for the last millimetre of
+a critical feature, not for surveying.
+
+**Pre-touch**, which is sensing just before contact: a one-point infrared or
+capacitive sensor between the fingers reports an object arriving a centimetre
+early, giving you a chance to abort. See
+[section 1.3](#13-infrared-in-four-different-roles).
+
+### 2.2 The sensors
+
+| Sensor | What it reports | Roughly |
+| --- | --- | --- |
+| **6-axis wrist force-torque**: [ATI](https://www.ati-ia.com/products/ft/sensors.aspx), [Robotiq FT 300](https://robotiq.com/products/ft-300-force-torque-sensor), [Bota](https://www.botasys.com/force-torque-sensors) | three forces and three torques at the wrist | FT 300: 300 N and ±30 Nm at 100 Hz; hundreds to thousands of pounds |
+| **Joint torque sensing** | torque at every joint, so contact anywhere on the arm | built into Franka and KUKA iiwa; on a UR it is estimated from motor current and is much coarser |
+| **A contact switch or a simulated contact sensor** | one bit: touching or not | pennies, and enough for a guarded move |
+| **Vision-based tactile**: [GelSight Mini](https://www.gelsight.com/gelsightmini/), DIGIT, TacTip | a camera watching a gel deform, so a dense 3D map of the contact patch | GelSight Mini around $499 plus consumable gels |
+| **Magnetic skin**: [AnySkin](https://github.com/raunaqbhirangi/anyskin) | shear and normal force over a soft skin | cheap, and the skin is replaceable |
+| **Pressure arrays**: [Tekscan](https://www.tekscan.com/), [Contactile](https://www.contactile.com/) | a grid of pressures | industrial pricing |
+
+Vision-based tactile sensors are the interesting ones and the most
+misunderstood. A GelSight is literally a camera looking at the back of a soft gel
+pad: when the pad presses on something, the camera sees the deformation, and
+photometric stereo turns that into a height map of the contact patch at a
+resolution finer than human touch. It gives you the *shape of the contact*, not
+the shape of the object, and not where the object is.
+
+### 2.3 The software
+
+| Tool | Licence | What it is for |
+| --- | --- | --- |
+| [ros2_controllers](https://github.com/ros-controls/ros2_controllers) | Apache-2.0 | `force_torque_sensor_broadcaster` publishes the wrench; `admittance_controller` makes the arm comply with it |
+| [cartesian_controllers](https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers) | BSD-3 | FZI's force and compliance controllers; last pushed 2024 |
+| [franka_ros2](https://github.com/frankarobotics/franka_ros2) | Apache-2.0 | joint torques from an arm that really measures them |
+| [ros2_robotiq_gripper](https://github.com/PickNikRobotics/ros2_robotiq_gripper) | BSD-3 | a common gripper, with its finger position feedback |
+| [gsrobotics](https://github.com/gelsightinc/gsrobotics) | **GPL-3.0** | GelSight's own SDK — note the copyleft |
+| [digit-interface](https://github.com/facebookresearch/digit-interface) | **CC BY-NC 4.0** | Meta's DIGIT driver; non-commercial, and last touched in 2021 |
+| [TACTO](https://github.com/facebookresearch/tacto) | MIT | simulates a vision-based tactile sensor, so you can develop without hardware |
+| [Taxim](https://github.com/Robo-Touch/Taxim) | MIT | an example-based simulator for the same, with better realism |
+
+The two simulators are worth more than they look for a repo like this one. They
+let you build and test the tactile half of a pipeline with no sensor on the desk,
+the same way Gazebo lets you build the rest of it.
+
+### 2.4 Models
+
+There are far fewer than on the vision side, and the useful ones are recent.
+
+| Model | Licence | What it does |
+| --- | --- | --- |
+| [NeuralFeels](https://github.com/facebookresearch/neuralfeels) | **MIT** | fuses vision and touch into a neural field, recovering the shape *and* pose of an object being turned in the hand |
+| [Sparsh](https://huggingface.co/facebook/sparsh-vjepa-base) | **CC BY-NC 4.0** | self-supervised representations of tactile images, meant as a backbone for downstream tactile tasks |
+
+NeuralFeels is the one to look at if you want to see where this is going: it is
+the tactile answer to the problem the [reconstruction
+section](05_models-that-measure.md#4-reconstruction-when-you-do-not) solves with
+cameras, and it works in the case cameras cannot — an object held in the hand and
+therefore mostly hidden by it.
+
+Five jobs touch suits:
+
+- finding the true height of a surface before placing something on it
+- glass, polished metal and matt black, where every optical method fails
+- learning the weight of something, which no camera can see
+- verifying an optical measurement before committing to a delicate action
+- measuring a feature the camera cannot see into, such as a bore
+
+Five jobs it cannot do:
+
+- survey a scene — you must already know roughly where to reach
+- measure quickly, since each contact costs seconds where a picture costs
+  milliseconds
+- measure anything soft, which deforms before the sensor fires
+- measure anything unfixed, which slides away from the probe
+- measure anything fragile without a force limit, which is why the glass study
+  caps its squeeze per kind of glass
+
+## 3. Event, thermal and polarisation cameras
 Sensors that answer questions an ordinary camera cannot.
 
-### 2.1 Event cameras
+### 3.1 Event cameras
 
 An event camera has no frames. Each pixel reports independently, in microseconds,
 whenever the brightness it sees changes. That gives no motion blur, a dynamic
@@ -340,7 +451,7 @@ with [libcaer_driver](https://github.com/ros-event-camera/libcaer_driver) for
 ROS 2. The research literature is collected in
 [this list](https://github.com/uzh-rpg/event-based_vision_resources).
 
-### 2.2 Thermal, polarisation and the rest
+### 3.2 Thermal, polarisation and the rest
 
 **Thermal** cameras identify by temperature, which is sometimes exactly the
 distinguishing feature — a hot casting, an occupied seat, a person in a safety
@@ -370,7 +481,7 @@ Five where it is not:
 - prototypes, where the wrong lesson is to buy hardware before trying software
 - any problem the lighting would have fixed more cheaply
 
-## 3. Calibration, which decides all of it
+## 4. Calibration, which decides all of it
 Calibration is the least interesting subject in this document and it is usually
 the largest term in the error budget. The chart in [section
 4](01_overview.md#8-where-the-millimetres-go) makes the point numerically: a hand-eye

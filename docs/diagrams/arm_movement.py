@@ -542,9 +542,117 @@ def tolerance_not_enforced() -> None:
     _save(fig, 'controlling-the-move', 'tolerance-not-enforced.svg')
 
 
+def cycle_time_breakdown() -> None:
+    """Where the seconds actually go in one pick and place.
+
+    Every figure is the one computed in 09_the-cost-of-a-move.md, which sources
+    the speeds from vendor manuals and says plainly which it had to assume.
+    """
+    fig, (bar, saving) = plt.subplots(1, 2, figsize=(13.4, 5.0),
+                                      gridspec_kw={'width_ratios': [1.3, 1]})
+
+    parts = [('motion', 6.16, BLUE), ('settling', 0.90, ORANGE),
+             ('perception', 0.50, GREEN), ('gripper', 0.49, PURPLE),
+             ('planning', 0.17, GREY)]
+    left = 0.0
+    for name, secs, colour in parts:
+        bar.barh([0], [secs], left=left, height=0.5, color=colour, label=name)
+        # only the wide segments can carry a label inside them; the narrow ones
+        # are named by the legend and called out beneath instead.
+        if secs > 0.8:
+            bar.text(left + secs / 2, 0, f'{secs:.2f} s', ha='center', va='center',
+                     fontsize=9.5, color='white')
+        left += secs
+    bar.set_xlim(0, 8.6)
+    bar.set_ylim(-1.3, 1.1)
+    bar.set_yticks([])
+    bar.set_xlabel('seconds in one pick-and-place cycle', fontsize=9.5)
+    bar.legend(fontsize=8.8, frameon=False, ncol=5, loc='upper center')
+    bar.set_title('8.216 s, or 438 picks an hour', fontsize=11.5, color=INK, pad=12)
+    for side in ('top', 'right', 'left'):
+        bar.spines[side].set_visible(False)
+    bar.spines['bottom'].set_color(GREY)
+    bar.text(0, -0.72, 'perception 0.50 s   ·   gripper 0.49 s   ·   planning 0.17 s',
+             fontsize=9.0, color=MUTED)
+    bar.text(0, -1.05, 'Settling alone costs 1.8x what the model costs.',
+             fontsize=9.6, color=INK)
+
+    moves = [('make the model\nten times faster', 0.450, GREY),
+             ('overlap computing\nwith motion', 0.672, GREEN),
+             ('drop the second\nviewpoint', 1.057, GREEN)]
+    y = np.arange(len(moves))
+    saving.barh(y, [m[1] for m in moves], height=0.55, color=[m[2] for m in moves])
+    for yi, (_, secs, _) in zip(y, moves):
+        saving.text(secs + 0.03, yi, f'{secs:.3f} s', va='center', fontsize=9.6, color=INK)
+    saving.set_yticks(y)
+    saving.set_yticklabels([m[0] for m in moves], fontsize=9.4, linespacing=1.5)
+    saving.set_xlim(0, 1.45)
+    saving.set_xlabel('seconds saved', fontsize=9.5)
+    saving.set_title('What each change is worth', fontsize=11.5, color=INK, pad=12)
+    for side in ('top', 'right'):
+        saving.spines[side].set_visible(False)
+    for side in ('left', 'bottom'):
+        saving.spines[side].set_color(GREY)
+
+    fig.text(0.5, -0.06,
+             'Dropping one viewpoint is worth 2.35 times a tenfold model speed-up. And '
+             "MoveIt's shipped 0.1 velocity scaling, one line of\nconfiguration, turns "
+             '2.887 s of joint moves into 22.387 s — costing 43 times what the model '
+             'choice is worth.',
+             fontsize=10.2, color=INK, ha='center', va='top', linespacing=1.8)
+    _save(fig, 'the-cost-of-a-move', 'where-the-seconds-go.svg')
+
+
+def the_cost_ladder() -> None:
+    """Why you order feasibility tests cheapest first.
+
+    Timings measured over two million candidates in C on an Apple M4, against
+    twenty obstacle footprints; the last two rungs are MoveIt's own defaults.
+    """
+    fig, ax = plt.subplots(figsize=(11.8, 5.6))
+
+    rungs = [('approach direction\nagainst a cone', 0.2e-9, 83.4, GREEN),
+             ('distance against the\nreach envelope', 0.4e-9, 30.1, GREEN),
+             ('clearance against the\nnearest obstacle', 10e-9, 13.1, BLUE),
+             ('line of sight, a ray\nagainst 20 footprints', 49e-9, 41.7, BLUE),
+             ('inverse kinematics', 50e-3, None, ORANGE),
+             ('a full motion plan', 5.0, None, RED)]
+
+    y = np.arange(len(rungs))[::-1]
+    ax.barh(y, [r[1] for r in rungs], height=0.55, color=[r[3] for r in rungs])
+    for yi, (_, cost, rejected, colour) in zip(y, rungs):
+        label = f'{cost * 1e9:.1f} ns' if cost < 1e-6 else f'{cost * 1e3:.0f} ms' if cost < 1 else f'{cost:.0f} s'
+        ax.text(cost * 1.6, yi, label, va='center', fontsize=9.8, color=INK)
+        if rejected is not None:
+            ax.text(cost * 1.6, yi - 0.30, f'rejects {rejected:.1f}%', va='center',
+                    fontsize=8.6, color=MUTED)
+
+    ax.set_yticks(y)
+    ax.set_yticklabels([r[0] for r in rungs], fontsize=9.6, linespacing=1.5)
+    ax.set_xscale('log')
+    ax.set_xlim(1e-10, 2e3)
+    ax.set_xlabel('seconds per candidate, log scale', fontsize=9.5)
+    ax.set_title('Ten orders of magnitude between the cheapest test and the dearest',
+                 fontsize=11.5, color=INK, pad=12)
+    for side in ('top', 'right'):
+        ax.spines[side].set_visible(False)
+    for side in ('left', 'bottom'):
+        ax.spines[side].set_color(GREY)
+
+    fig.text(0.06, -0.09,
+             'A motion plan costs twenty-five thousand million times what an approach-'
+             'direction test costs. In the measured run the four cheap tests\nremoved '
+             '69.2% of candidates before a single ray was cast, and casting rays at '
+             'everything would have cost 1.14 ms against 0.46 ms\nfor the whole cascade.',
+             fontsize=10.2, color=INK, va='top', linespacing=1.8)
+    _save(fig, 'reaching-and-reachability', 'the-cost-ladder.svg')
+
+
 if __name__ == '__main__':
     kinds_of_move()
     workspace_hole()
     singularity_cost()
     joint_vs_cartesian()
     tolerance_not_enforced()
+    cycle_time_breakdown()
+    the_cost_ladder()

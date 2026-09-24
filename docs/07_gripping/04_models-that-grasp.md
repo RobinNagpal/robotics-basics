@@ -23,7 +23,7 @@ twelve specific cases.
 
 Someone who has decided a rule will not do, and now has to pick a grasp model and
 ship something. If you have not read [choosing a grip](03_choosing-a-grip.md),
-read at least [its section 9](03_choosing-a-grip.md#9-why-a-rule-beats-a-network)
+read at least [its section 10](03_choosing-a-grip.md#10-why-a-rule-beats-a-network)
 first, because the most common mistake in this area is reaching for a model
 before the cheaper option has genuinely run out.
 
@@ -99,7 +99,7 @@ that plausibly runs on a laptop.
 Dex-Net is the historically important one. [Dex-Net
 2.0](https://arxiv.org/abs/1703.09312) trained a network on millions of
 synthetic depth images labelled by an analytic grasp quality metric — the
-[epsilon metric](03_choosing-a-grip.md#8-grasp-quality-metrics-you-can-compute) —
+[epsilon metric](03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute) —
 rather than by real attempts. That is a genuinely clever move, because it means
 the labels are free and exact, and it is also the family's limitation: the model
 learned to reproduce an analytic metric, so it inherits that metric's blind spots

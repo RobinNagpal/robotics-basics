@@ -8,7 +8,7 @@ trust.
 
 It is the other half of [models that grasp](04_models-that-grasp.md). Reach for
 this half first. When the object has a describable shape, a rule written as a
-sentence beats a network, for reasons [section 9](#9-why-a-rule-beats-a-network)
+sentence beats a network, for reasons [section 10](#10-why-a-rule-beats-a-network)
 sets out properly and the [perception
 overview](../06_object-perception/01_overview.md#21-when-a-model-makes-things-worse)
 argues in its general form.
@@ -36,9 +36,10 @@ introduced there runs through everything here.
 5. [The centre of mass, and the torque nobody budgets for](#5-the-centre-of-mass-and-the-torque-nobody-budgets-for)
 6. [Rules from a measured profile](#6-rules-from-a-measured-profile)
 7. [Bounding the search by the gripper's own body](#7-bounding-the-search-by-the-grippers-own-body)
-8. [Grasp quality metrics you can compute](#8-grasp-quality-metrics-you-can-compute)
-9. [Why a rule beats a network](#9-why-a-rule-beats-a-network)
-10. [Testing a grip rule](#10-testing-a-grip-rule)
+8. [Clearance: the room the gripper needs to close](#8-clearance-the-room-the-gripper-needs-to-close)
+9. [Grasp quality metrics you can compute](#9-grasp-quality-metrics-you-can-compute)
+10. [Why a rule beats a network](#10-why-a-rule-beats-a-network)
+11. [Testing a grip rule](#11-testing-a-grip-rule)
 
 ---
 
@@ -51,7 +52,7 @@ attempt it at all.
 
 That last item is not decoration. A grip planner that always returns its best
 candidate is a planner that will happily recommend an impossible grasp on a bad
-measurement, and the whole of [section 10](#10-testing-a-grip-rule) is about
+measurement, and the whole of [section 11](#11-testing-a-grip-rule) is about
 making refusal a mechanism rather than an intention — the same argument the
 perception area makes about [declining as a
 mechanism](../06_object-perception/07_making-it-work.md#6-declining-as-a-mechanism-rather-than-an-intention).
@@ -61,7 +62,7 @@ code, because they fail differently.
 
 **Where the fingers go** is geometry. It comes from the shape, it is checkable
 against the shape, and when it is wrong you can usually see that it is wrong by
-drawing it. Sections 2 to 7 are about this.
+drawing it. Sections 2 to 8 are about this.
 
 **How hard the fingers squeeze** is mechanics. It comes from the mass, the
 friction and the acceleration, none of which are in the picture, and when it is
@@ -250,8 +251,9 @@ Five jobs it cannot do:
 - account for the object's weight, its centre of mass or the acceleration
 - handle a deformable object, whose normals change as you squeeze
 - work from a silhouette alone without the error in 3.3
-- say anything about whether the gripper can physically get there, which is
-  [section 7](#7-bounding-the-search-by-the-grippers-own-body)
+- say anything about whether the gripper can physically get there, which is what
+  [section 7](#7-bounding-the-search-by-the-grippers-own-body) and
+  [section 8](#8-clearance-the-room-the-gripper-needs-to-close) are for
 
 ## 4. How hard to squeeze, from first principles
 
@@ -454,7 +456,7 @@ object is a solid of revolution.* *This assumes the mass is evenly distributed.*
 Written down, those become the first two things you check when the rule fails.
 
 **It is tested on a generated family, not on one object.** See
-[section 10](#10-testing-a-grip-rule).
+[section 11](#11-testing-a-grip-rule).
 
 Five jobs a geometric rule suits:
 
@@ -518,6 +520,8 @@ scoring anything:
 3. Reject any approach direction along which a swept volume of the open gripper
    intersects the table, the tote wall, or another object's point cloud. This is a
    cheap test against a voxel grid and it removes most candidates in clutter.
+   [Section 8](#8-clearance-the-room-the-gripper-needs-to-close) works out how
+   large that swept volume actually is, which is larger than most people guess.
 4. Reject any candidate whose finger contact points fall on a region marked as
    not-to-be-touched.
 5. Only now, score what is left.
@@ -534,7 +538,286 @@ are still subject to the equilibrium line rule. If your gripper model in softwar
 carries the catalogue stroke while the hardware carries your fingertips, every
 bound above is wrong by a few millimetres in the unsafe direction.
 
-## 8. Grasp quality metrics you can compute
+## 8. Clearance: the room the gripper needs to close
+
+Section 7 asked whether the gripper's body fits where the fingers want to be.
+This section asks the question underneath it, which is skipped more often than
+any other check in a grasp pipeline: how much empty space must surround the
+object before the gripper can arrive at that pose and close on it.
+
+*Clearance* here means free space around the object, measured outward from its
+surface, into which nothing else may intrude. It is not the same thing as the
+gripper touching nothing at the instant of the grasp, and it is a great deal
+larger than that.
+
+### 8.1 The final pose is the wrong thing to check
+
+The gripper does not appear at the grasp pose. It opens wider than the object, it
+travels in along the approach direction from a *pre-grasp standoff* — a point set
+back along that direction, usually somewhere between 50 and 150 mm — and only
+then does it close. Three different volumes are therefore in play: what the
+gripper occupies at the end, what it sweeps on the way in with its fingers open,
+and what the fingers sweep as they close. A *swept volume* is the union of every
+position a moving body passes through, and it is the swept volumes that have to
+be free, not the final one.
+
+The sizes are not close. Take a Robotiq 2F-85 approaching 100 mm with its fingers
+fully open, using the figures in [Robotiq's 2F-85 and 2F-140 instruction
+manual](https://assets.robotiq.com/website-assets/support_documents/document/2F-85_2F-140_Instruction_Manual_e-Series_PDF_20190206.pdf).
+The fingers alone sweep a box 152.7 mm wide, 35 mm deep and 100 mm long, which is
+534 cubic centimetres. The two silicone pads at the grasp pose measure 38 by 22
+by 6.5 mm each, which is 11 cubic centimetres between them. Both figures
+over-state the solid they describe, and they still differ by a factor of nearly
+fifty.
+
+So a pipeline that collision-checks the grasp pose and nothing else accepts
+grasps that cannot be performed. The failure then shows up in the motion planner,
+which cannot find a path to the pose it was handed, and because the planner is
+where the error surfaces it is recorded as a planning problem. It is not. The
+grasp was never feasible, and the planner was the first component honest enough
+to notice. Leaving the check to the planner is weaker than it sounds for a second
+reason as well: a planner tests for collisions at sampled points along the path
+rather than continuously, so a thin obstacle between two samples is missed
+entirely, which [planning a
+path](../08_arm-movement/03_planning-a-path.md#72-collisions-are-checked-at-sampled-points-not-continuously)
+sets out.
+
+### 8.2 The clearance a jaw needs, read off its own drawing
+
+The requirement is arithmetic on four numbers you can read from the gripper's own
+dimensioned drawing: the opening, the thickness of a fingertip, how far the
+finger body stands outboard of that fingertip, and the half-width of the widest
+part of the gripper.
+
+Picture the open gripper from the front, in the plane the fingers move in. The
+outline is a staircase that widens as you go back from the fingertips. For the
+first 38 mm, which is the length of the pad, the two fingers present a pair of
+slabs whose outer faces are 98 mm apart with the 85 mm channel between them.
+Behind the pads the finger bodies step out to 123.5 mm. Behind those the knuckles
+bulge to 152.7 mm, which is the widest the gripper ever gets. No part of it is
+narrower than the fingertip, and the fingertip is the only part a final-pose
+check tends to look at.
+
+Each row of the table below is one cross-section through that staircase, taken
+with the gripper fully open and fitted with the standard flat silicone fingertip.
+The first column is the figure the manual prints, the second is half of it, which
+is the distance from the grasp centre line to the outside of the gripper.
+
+| Measured across | 2F-85, fully open | Half-width from the centre line |
+| --- | --- | --- |
+| the pad faces, which is the opening | 85 mm | 42.5 mm |
+| the outside of the two fingertips | 98 mm | 49 mm |
+| the outside of the two finger bodies | 123.5 mm | 61.75 mm |
+| the widest part of the gripper | 152.7 mm | 76.35 mm |
+
+Two spacings fall straight out of that table and they are the constants of the
+gripper. A fingertip is `t = (98 - 85) / 2 = 6.5 mm` thick. A finger body stands
+`f = (123.5 - 98) / 2 = 12.75 mm` outboard of its own fingertip. The 2F-140 gives
+the same two numbers from its own drawing — 6.35 mm and 12.75 mm — because the
+two grippers share a chassis, which is a useful check that the reading is right.
+
+Now let `w` be the object's width across the grasp and let the gripper be opened
+to some commanded opening. The *opening margin* is the air between each pad and
+the object as it approaches:
+
+    m = (opening - w) / 2
+
+and the clearance the object needs on each side, measured outward from its own
+surface, is
+
+    at the fingertip   m + t
+    at the finger      m + t + f
+    at the widest part b - w / 2
+
+where `b` is the half-width of the widest part, 76.35 mm for a fully open 2F-85.
+That last figure shrinks as the gripper closes, because the knuckles that make it
+swing inward: the 2F-85 measures 126.4 mm across when fully closed against
+152.7 mm when fully open. Use the open figure anyway, because the gripper is open
+for the whole of the approach and only closes once it has arrived.
+
+Worked for a 40 mm object with the gripper opened all the way to 85 mm, so
+`m = 22.5 mm`: the fingertip needs 29 mm each side, the finger needs 41.75 mm,
+and the widest part needs 56.35 mm. A 40 mm object therefore needs more free
+space on each side than the object is wide. Open to 60 mm instead of 85 mm and
+`m` drops to 10 mm, which takes the first two figures to 16.5 mm and 29.25 mm.
+
+The useful way to hold this is to add the two sides and the object together. The
+free lane the open gripper needs is `opening + 2t + 2f`, which for a fully open
+2F-85 is 123.5 mm at the fingers and 152.7 mm at the widest part. The object's
+width has cancelled out. The lane is set by how wide you opened the gripper and
+not by what you are picking, because opening wider for a bigger object is exactly
+offset by the object filling more of the opening.
+
+**The opening margin is set by your perception error, not by preference.** If `m`
+is smaller than the error in the estimated position and width of the object, a
+pad strikes the object on the way in instead of closing on it. The perception
+area's [error budget](../06_object-perception/01_overview.md#8-where-the-millimetres-go)
+puts the realistic total at several millimetres for a consumer depth camera on a
+well-calibrated arm, so 10 mm is a defensible default and 2 mm is wishful. Every
+millimetre of margin is also a millimetre of clearance the scene has to provide,
+which makes this one number the link between how well you see and how tightly you
+can pack.
+
+**The body behind the fingers needs clearance too, and it is never the narrowest
+part.** Perpendicular to the finger plane the picture turns round: the fingers
+are 35 mm thick in that direction and the gripper's base is a circle 75 mm
+across, so there the body is more than twice the width of the fingers. Whichever
+way the gripper is turned, its widest cross-section is behind the fingertips.
+Anything bolted to the wrist — a camera, a cable gland, a tool changer — makes it
+wider still, and the collision model in software usually carries the bare gripper
+only.
+
+**One warning about catalogue numbers.** The 2F-85's mechanical specification
+table gives a maximum width of 148.6 mm while Figure 6-1 of the same manual
+dimensions the open gripper at 152.7 mm. The 2F-140 shows the same disagreement,
+202.1 mm against 206.9 mm. Four to five millimetres is a large fraction of a
+sensible opening margin, so take the larger figure, and measure the gripper you
+actually have before you commit a layout to it.
+
+### 8.3 The two sweeps, and the one that is forgotten
+
+The approach sweep runs along the approach direction and is the one people think
+of. The closing sweep is the one that is forgotten, and on an underactuated
+gripper it does not point where you expect.
+
+The 2F-85's linkage carries its fingertips further from the wrist as it closes.
+The manual's drawings give the overall length as 149.3 mm with the fingers open
+and 162.8 mm with them closed, so the tips advance 13.5 mm along the approach
+direction in the course of closing. The 2F-140 advances 23 mm, from 209.8 mm to
+232.8 mm. That is a net figure for the extreme point; the path the tip takes
+between the two is a curve rather than a straight line.
+
+The consequence is a specific failure. Arrive with the fingertips 5 mm above the
+table, close, and the tips drive 13.5 mm further down into it. Picking a thin
+object lying flat on a table is precisely this case, and the symptom is that the
+fingers stall on the table before they reach the object, which the gripper
+reports as a closure at a width the camera did not predict — the check in [the
+two-finger gripper document](06_two-finger-gripper.md#4-the-grasp-as-pseudo-code)
+catches it, and catching it is not the same as avoiding it. Your clearance budget
+must therefore include the space *beyond* the grasp point along the approach
+direction, and for a 2F-85 13.5 mm of it is the floor rather than a comfort
+margin.
+
+### 8.4 Turning clearance into a spacing for the scene
+
+When the obstacle is a neighbouring object rather than a wall, the clearance
+requirement becomes a spacing, and a spacing is something a cell can be designed
+around. Take a row of identical objects of width `w` standing on a table, each to
+be picked by approaching straight down with the finger plane along the row, which
+is the worst case. *Pitch* is the distance from the centre of one object to the
+centre of the next. The outside of the finger must clear the neighbour's near
+surface:
+
+    pitch  >=  w/2 + m + t + f  +  w/2  =  w + m + t + f
+
+and the free gap left between two objects is that pitch less the objects
+themselves:
+
+    gap  =  pitch - w  =  m + t + f
+
+which does not contain `w` at all. The gap a neighbour must leave is a property
+of the gripper and of your perception error, and nothing else. For a 2F-85 with a
+10 mm opening margin it is 29.25 mm, and it is 29.25 mm for a 10 mm part and for
+a 60 mm part alike.
+
+The table below applies both bounds to three object sizes, again for a 2F-85 with
+a 10 mm opening margin. Read the second column when only the fingertips come down
+as far as the neighbour, and the third when the grasp is deep enough that the
+widest part of the gripper reaches the neighbour's height as well, in which case
+the binding half-width is 76.35 mm and the pitch is `76.35 + w/2`.
+
+| Object width across the grasp | Minimum pitch, fingertips level with the neighbour | Minimum pitch, widest part level with the neighbour |
+| --- | --- | --- |
+| 20 mm | 49.3 mm | 86.4 mm |
+| 40 mm | 69.3 mm | 96.4 mm |
+| 60 mm | 89.3 mm | 106.4 mm |
+
+Those are numbers worth having before a cell is laid out rather than after.
+Fixture pitch, tote dividers and pallet spacing are decided months before anybody
+writes a grasp planner, and a 50 mm pitch chosen because the parts are 40 mm wide
+leaves 10 mm of gap where the fingers need 29 mm. No pick along that row is then
+possible, and the cell depends entirely on the crosswise approach in 8.5 fitting
+instead. The same arithmetic run backwards answers the other question a layout
+raises, which is the largest gripper a fixed spacing can accept.
+
+### 8.5 The approach direction is the free variable
+
+When clearance fails from one direction it very often succeeds from another,
+because the gripper's envelope is not a circle. In the finger plane the open
+2F-85 spans 152.7 mm; across that plane it spans 35 mm. Rotating the tool a
+quarter turn about the approach axis changes the footprint from 152.7 by 35 mm to
+35 by 152.7 mm and changes nothing at all about the grasp: the same two contacts,
+the same opening, the same squeeze. A row of parts with little room along the row
+and plenty across it is picked by putting the finger plane across the row.
+
+That rotation is already one of the five numbers in
+[section 1](#1-the-question-a-grip-planner-actually-answers), so searching over
+it costs one loop in code you have written anyway. The cost comparison is what
+makes this the first thing to try. Rejecting a candidate on clearance is one test
+of a swept box against a voxel grid, which is microseconds. Moving a neighbour
+out of the way is an extra pick, an extra place, a fresh measurement afterwards,
+and a fresh opportunity to knock something over, which is seconds. Enumerate the
+approach directions exhaustively before you consider changing the world.
+
+### 8.6 What to do when the clearance is not there
+
+Four moves, cheapest first.
+
+**Change the approach direction**, as above, including tilting it away from
+straight down. This costs nothing but search.
+
+**Change the grasp.** Reduce the opening margin, but only as far as your
+perception error genuinely allows. Grasp higher up the object so the widest part
+of the gripper stays above the neighbours. Take a different pair of faces, which
+the antipodal search has usually already offered you.
+
+**Move something.** Push the neighbour aside, or pick an easier object first and
+come back for this one. That is a different subject with its own failure modes,
+and [singulation and pre-grasp](10_singulation-and-pre-grasp.md) covers it.
+
+**Decline.** A refusal that names the clearance that failed and by how many
+millimetres is a useful output, and it is the same mechanism
+[section 11](#11-testing-a-grip-rule) asks every rule to have. An attempt that
+proceeds with 3 mm of clearance where 29 mm was needed will strike the neighbour,
+and saying so before the arm moves costs nothing.
+
+Clearance applies section 7's rule to a different obstacle, and it is worth
+saying so directly. Section 7 says to bound the search by the gripper's body
+rather than to score first and check collisions afterwards, and its obstacles are
+the fixed furniture: the table, the tote wall, the region you are not allowed to
+touch. This section changes the obstacle to the object's neighbours and the test
+from the occupied volume to the swept one, and the structural advice is
+unchanged. Reject on clearance inside the candidate loop, before anything is
+scored, which is step 3 of that list. The reason for repeating it is that the
+neighbours behave differently from the furniture: the table is in your model
+permanently and the neighbours arrive with every new scene, which makes it easy
+to write a system that checks the first properly and the second not at all.
+
+Five jobs clearance reasoning suits:
+
+- deciding whether a geometrically valid grasp can actually be executed, before
+  the motion planner is called
+- laying out a cell, where it gives fixture pitch, tote dividers and pallet
+  spacing as numbers
+- choosing between candidate approach directions in clutter, which is the
+  cheapest repair available
+- explaining a failure that presents as a planner problem and is not
+- sizing the opening margin against the perception error you actually have
+
+Five jobs it cannot do:
+
+- say whether the *arm* can hold the gripper in that pose, which is joint limits,
+  self-collision and [reachability](../08_arm-movement/02_reaching-and-reachability.md)
+- see an obstacle perception did not see, such as a neighbour hidden behind the
+  target
+- handle a neighbour that would yield rather than resist, such as a cloth bag,
+  since it treats everything as rigid
+- account for the object moving as the fingers touch it, which changes the
+  clearance during the grasp rather than before it
+- replace a collision check on the whole trajectory, since it tests one straight
+  approach segment and the closing motion and nothing else
+
+## 9. Grasp quality metrics you can compute
 
 The antipodal test answers yes or no. When several candidates pass, you need a
 score. There is a substantial literature on grasp quality measures — Roa and
@@ -542,7 +825,7 @@ Suárez's review in [Autonomous
 Robots](https://link.springer.com/article/10.1007/s10514-014-9402-3) surveys
 them — and for a two-finger gripper on a table you need very few of them.
 
-### 8.1 The ones worth computing
+### 9.1 The ones worth computing
 
 **Distance from the grasp line to the centre of mass.** Smaller is better,
 directly, for the reasons in section 5. This is one subtraction and it is the
@@ -575,7 +858,7 @@ trained against, and [Murray, Li and Sastry's *A Mathematical Introduction to
 Robotic Manipulation*](https://www.cds.caltech.edu/~murray/books/MLS/pdf/mls94-complete.pdf)
 is the textbook treatment of the wrench algebra underneath it.
 
-### 8.2 The trap in the epsilon metric
+### 9.2 The trap in the epsilon metric
 
 The epsilon metric mixes forces, measured in newtons, with torques, measured in
 newton-metres. Those are different units, so taking the radius of a ball in the
@@ -590,7 +873,7 @@ normalised torques by the object's bounding radius and the other by the distance
 to the object's centroid. Neither documents the choice. A published quality
 number with no stated torque scale is not comparable with anything.
 
-For a two-finger gripper picking table-top objects, the simpler scores in 8.1 are
+For a two-finger gripper picking table-top objects, the simpler scores in 9.1 are
 more informative and much harder to get wrong. Reach for the epsilon metric when
 you have more than two contacts and genuinely need a single number.
 
@@ -604,13 +887,14 @@ Five jobs a computed quality score suits:
 
 Five jobs it cannot do:
 
-- rank grasps the gripper cannot reach, which is section 7's job and comes first
+- rank grasps the gripper cannot reach or cannot approach, which is the job of
+  sections 7 and 8 and comes first
 - capture a task constraint you did not encode as a term
 - be compared against a number from another paper, for the unit reason above
 - account for the object's deformation under the squeeze
 - predict whether the grasp survives the placement, which loads it differently
 
-## 9. Why a rule beats a network
+## 10. Why a rule beats a network
 
 The [perception overview makes the general
 argument](../06_object-perception/01_overview.md#21-when-a-model-makes-things-worse).
@@ -661,7 +945,7 @@ decider*. They belong where the alternative is genuinely worse:
   packaging
 - you are generating labels for a small fast model of your own
 
-## 10. Testing a grip rule
+## 11. Testing a grip rule
 
 A grip rule is not a model, so dataset metrics are the wrong instrument. The
 right one is property testing, and the perception area describes the method in

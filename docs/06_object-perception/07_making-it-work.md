@@ -16,6 +16,8 @@ this field are measured on the thing you care about.
 4. [Occlusion and clutter](#4-occlusion-and-clutter)
 5. [What simulation will not tell you](#5-what-simulation-will-not-tell-you)
 6. [Declining, as a mechanism rather than an intention](#6-declining-as-a-mechanism-rather-than-an-intention)
+7. [Report the margin, not the verdict](#7-report-the-margin-not-the-verdict)
+8. [Making a run traceable](#8-making-a-run-traceable)
 
 ---
 
@@ -124,6 +126,129 @@ generated label forces the classifier to preserve a distinction the gripper does
 not care about. Ask instead whether the object ends up with a rule that can hold
 it — harder to satisfy, impossible to satisfy by cheating, and the thing you
 actually want.
+
+### 1.5 Merge and split are two failures, and only one of them announces itself
+
+Everything above treats a detection failure as one kind of event. It is two kinds,
+and they behave so differently once the arm starts moving that averaging them
+together discards the distinction you most need.
+
+A **split** is one object reported as two. A **merge** is two objects reported as
+one. Both are boundary errors, both come out of the same segmentation step, and it
+is natural to file them under one heading. The reason not to is that a split
+announces itself and a merge does not.
+
+A split announces itself because the arm tries to pick up half a thing. The width
+it was given is too small, the fingers meet the object before they reach the
+commanded opening, and the attempt fails visibly on the first try. Nobody has to
+be told. A merge is the dangerous one because it produces a plausible object: a
+region with a sensible outline, a sensible width and a centroid that the rest of
+the pipeline has no reason to doubt. That centroid is in a place where nothing is.
+
+Work it through on the repo's camera, which has a focal length `fx` of 277.1
+pixels on a 320 by 240 image. At 340 mm one pixel covers `0.340 / 277.1` =
+1.227 mm. Put two objects 40 mm wide on the table with a 10 mm gap between them.
+Each is `40 / 1.227` = 32.6 pixels wide and the gap is 8.2 pixels.
+
+If the segmenter merges them, the reported region is 40 + 10 + 40 = 90 mm wide and
+its centroid sits at the middle of the pair. That centroid is 25 mm from the centre
+of either real object. Compare that with [the error
+budget](01_overview.md#8-where-the-millimetres-go), where one degree of hand-eye
+error costs 5.9 mm at this reach and a 20 mm depth error costs 4.3 mm. A single
+merge is more than four times the largest term in that budget, and unlike every
+term in it the merge arrives with no symptom at all.
+
+Now split the 73.6 mm object that budget is worked for, down the middle. Each
+fragment is reported as 36.8 mm wide with its centroid 18.4 mm from the true
+centre. The arm is told to close to 36.8 mm on an object 73.6 mm across. It cannot,
+so it fails where you can see it.
+
+**A single detection accuracy hides the difference completely.** Take two runs of a
+hundred objects that both report ninety-six correct detections. The first made four
+splits and wasted four attempts. The second made four merges and sent the arm into
+four places where there was nothing, each time with a grip width that belonged to no
+object present. Those are different systems and the headline number is the same.
+
+**Count them by matching in both directions.** Match predicted regions against the
+objects the simulator spawned, and then count the matches from each side rather than
+from one.
+
+1. For each spawned object, find every predicted region that covers at least a third
+   of it.
+2. For each predicted region, find every spawned object of which it covers at least a
+   third.
+3. A spawned object covered by two or more predictions is one split. Record how many
+   pieces it came back in.
+4. A prediction covering two or more spawned objects is one merge. Record how many
+   objects it swallowed.
+5. What is left over is the ordinary bookkeeping: a prediction that covers nothing is
+   a false positive, and an object covered by nothing is a miss.
+
+Use coverage — how much of the object lies inside the prediction — rather than IoU
+for steps 1 and 2. This is the part that is easy to get wrong, and getting it wrong
+is exactly how a merge disappears. The merged region above has an IoU of `40 / 90` =
+0.44 against each of the two objects it contains, because the union includes the
+other object. At the usual 0.5 bar it matches neither, so standard scoring records
+one false positive and two misses — the same score as a detector that saw nothing
+there at all. The one outcome you were trying to separate has been filed as its
+opposite.
+
+Set the coverage bar low, at a third rather than a half, because an object split
+three ways gives fragments covering a third each, and a bar of a half would record
+that as three false positives and a miss.
+
+**The two failures have different causes, and the causes overlap in a revealing
+way.** Merges are caused by:
+
+- objects touching or nearly touching, so there is no background between them to
+  draw a boundary through
+- a morphological closing step, which fills small gaps by design; on this camera at
+  340 mm a 3 by 3 closing bridges about two pixels, which is 2.5 mm of table
+- a clustering tolerance larger than the gap, since point-cloud clustering joins
+  points closer together than a distance you set, and a 10 mm tolerance joins the
+  10 mm gap above
+- a colour threshold that also accepts the shadow lying between the two objects
+- non-maximum suppression, the step that deletes duplicate boxes, set to a loose
+  overlap so that two genuine boxes collapse into one
+
+Splits are caused by:
+
+- something crossing the object, such as a wire, a handle or the shadow of the
+  gripper
+- a specular highlight, meaning a bright mirror-like reflection, which leaves the
+  colour range the rest of the object sits in
+- a hole in the depth image across the middle of the object, which is what a shiny
+  or a very dark surface gives you
+- an erosion or opening step aggressive enough to cut through a thin waist
+- non-maximum suppression set too tight, so two boxes on one object both survive
+
+The same two steps appear in both lists with their settings turned in opposite
+directions. That is the whole argument for counting the two failures separately:
+every knob you have trades one against the other, and a single accuracy number
+tells you nothing about which way to turn it.
+
+Five jobs that counting merges and splits apart suits:
+
+- deciding whether to buy a better segmenter or to add a step that separates the
+  objects before anything looks at them
+- tuning a morphological kernel or a clustering tolerance, where the two errors move
+  in opposite directions and one number cannot show it
+- setting a policy for when to decline, because a merge is a good reason to decline
+  and a split usually is not
+- choosing between two models that score the same overall
+- writing the acceptance test for a cell where a wrong centroid is expensive
+
+Five jobs it cannot do:
+
+- work without ground truth, which means it works in simulation and not on a real
+  run; the substitute on hardware is a plausibility check on the size, since a
+  90 mm region where 40 mm was expected is a fact you have without knowing the truth
+- tell a merge from a genuinely single object of that size
+- notice a merge of two objects when only one of them is in the frame
+- say anything about the millimetres, since a merge with a clean boundary and a
+  merge with a ragged one score identically
+- replace looking at the mask overlay, which is still where the cause becomes
+  visible
 
 ## 2. How fast does it actually have to be
 
@@ -261,6 +386,119 @@ the reasoning holds: whether a rule stated as a sentence about a shape survives
 contact with a hundred objects nobody chose to suit it. That is a real result,
 and it is the one this repo is set up to produce.
 
+### 5.1 Contact, and which of its numbers you can measure
+
+The second bullet above says contact is the weakest part of any physics engine. It
+deserves more than a bullet, for two reasons. It is the part manipulation depends on
+most, since every pick ends in contact. And it is the one place where the simulator
+is not merely approximate but is answering a different question from the one you
+asked.
+
+The examples below are MuJoCo's, because MuJoCo documents its contact model in
+public and the [repository](https://github.com/google-deepmind/mujoco) is
+Apache-2.0, so the behaviour can be checked rather than assumed. The shape of the
+problem is the same in every engine.
+
+**A friction coefficient is a property of a pair of surfaces, not of a material.**
+There is no such thing as the friction of steel. There is the friction of this steel
+against that rubber, at this normal load, at this sliding speed, with this much dust
+on it, after being pressed together for this long. Textbook tables give one number
+per material pair and omit the rest of that list, which is why the grip document
+warns that [textbook friction coefficients are the largest single source of confident
+wrong answers](../07_gripping/03_choosing-a-grip.md) in the subject.
+
+Simulators store friction per object rather than per pair, because the pairs
+multiply: ten objects and three fingertip materials is thirty pairs, and every one
+needs its own measurement. In MuJoCo a geom carries three friction numbers, with
+defaults `1 0.005 0.0001` for sliding, torsional and rolling friction. When two
+geoms touch and neither has been given priority, the contact takes the **element-wise
+maximum** of the two geoms' coefficients. So the pad-against-object pair you care
+about most gets whichever of the two numbers happens to be larger, which is a rule
+about bookkeeping and not about physics. The fix is to declare the pair explicitly,
+with its own measured coefficients, for the handful of pairs that matter.
+
+The cost of leaving the default in place is easy to put a number on. The squeeze a
+two-pad grip needs to hold a mass `m` against gravity is `F = m * g * S / (2 * mu)`,
+for a safety factor `S` you choose. For 500 g at a safety factor of 2, the default
+sliding friction of 1.0 asks for `0.5 * 9.81 * 2 / (2 * 1.0)` = 4.9 N per pad. A
+coefficient of 0.3, which is the order of the measured figure a gripper manufacturer
+publishes for its own pads and the value [the grip
+document](../07_gripping/03_choosing-a-grip.md) works its examples at, asks for
+`0.5 * 9.81 * 2 / (2 * 0.3)` = 16.4 N. The simulation holds the object with a third of the force the bench needs,
+and the grip that looked comfortable slips.
+
+**Pressure distribution across the contact patch is essentially never modelled.** A
+real pad on a flat face presses over an area, and the pressure is not even across
+that area. How it is distributed is what decides the torque the contact can resist,
+and therefore whether a pushed or held object rotates instead of translating. A
+physics engine resolves the contact at a small number of points instead. MuJoCo's
+concession to the patch is one number: raise `condim` to 4 and you get a torsional
+friction coefficient whose units are length, which the documentation says can be
+interpreted as the diameter of the contact patch. One scalar stands in for the whole
+distribution. The default `condim` is 3, which has no torsional term at all, so
+unless you changed it the simulated object is free to spin about the contact normal
+with nothing resisting it.
+
+**Compliance is a solver parameter wearing the clothes of a material property.** A
+pad deforms under load, and the newtons per millimetre of that deformation is a real
+quantity you could in principle measure. What the model gives you instead is
+`solref`, whose two numbers are a time constant and a damping ratio — how quickly the
+solver pushes penetration back out, not how stiff the rubber is. Tuning it until the
+simulation looks right is tuning the solver. Nobody measures the pad, because
+measuring it needs a load cell and a displacement gauge, and the datasheet offers a
+durometer rating instead, which is a hardness reading from a spring-loaded indenter
+and does not convert into a stiffness for your pad's geometry.
+
+**Restitution, the bounciness of an impact, is not a parameter you can set.** MuJoCo
+has no coefficient of restitution. You obtain a bounce by writing `solref` in its
+negative form, as a stiffness and a damping, and setting the damping to zero; the
+documentation is explicit that even then energy is not exactly preserved, because the
+contact is soft and lasts several timesteps. A bounce you see in simulation is
+therefore something you tuned, not something the material did.
+
+The table below says, for each of those four, whether you can settle the number on
+your own hardware. Read the middle column as the answer and the right-hand column as
+the method, or the reason there is none.
+
+| Contact property | Measurable on your hardware | How, or why not |
+| --- | --- | --- |
+| friction for one pad-and-object pair | yes | a tilt test: raise a plate until the object slides, and `mu` is the tangent of that angle. A coefficient of 0.3 is a slide at 16.7 degrees |
+| friction across the whole object set | not in practice | one measurement per pair, repeated for scatter. Ten objects and three fingertips is thirty of them, and they change as the pads wear |
+| pressure distribution across the patch | no | it needs pressure-sensitive film or a tactile array at the pad, and even then you get the real patch rather than a parameter the engine can accept |
+| pad compliance | yes, with effort | press the pad a measured distance into a scale and read the force, which gives newtons per millimetre directly |
+| restitution | yes, for one pair of surfaces | drop from a known height onto a fixed surface and measure the rebound height |
+
+The pattern in that table is the useful part. The two properties you can measure
+cheaply, friction for one pair and restitution, are also the two the engine has a
+parameter for. Pressure distribution is the one that decides rotation under a push
+or a squeeze, and it is both unmeasurable in a form the engine accepts and absent
+from the model. That is the contact gap, stated concretely.
+
+Five things about contact you can settle by measuring on hardware:
+
+- the sliding friction of the two or three pairs your cell actually uses
+- whether a given squeeze holds a given object, which is one pull test
+- the pad's stiffness, if you care enough to build the rig
+- how much the friction falls when the object is wet, oily or dusty, by repeating the
+  tilt test in that state
+- how much the friction falls as a pad wears, by repeating the tilt test monthly
+
+Five things you cannot:
+
+- the pressure distribution in a form you can put back into the model
+- the friction of every pair in an open-ended object set
+- how an object rotates under a push, which follows from the distribution you could
+  not measure
+- the contact stiffness the solver is actually using, which is not the pad's
+- what happens at a contact you have no sensor at, which for most cells is all of
+  them, and [sensors](02_sensors.md) is about the instruments that would change
+  that
+
+The practical consequence is narrow and worth stating plainly. Use simulation to
+check that the reasoning about shape and geometry holds. Do not use it to choose a
+squeeze force, a friction margin or a push. Those are the numbers to calibrate on
+hardware, and the cheapest of them is a plate and a protractor.
+
 ## 6. Declining, as a mechanism rather than an intention
 
 Several documents here say that a system handling anything fragile needs to be
@@ -288,3 +526,194 @@ rewards pushing through doubt, and the mechanism above will slowly be tuned away
 
 The test that this is working is that a declined object is boring: it produces a
 line in a report, not a traceback, not a stuck arm, and not a retry loop.
+
+## 7. Report the margin, not the verdict
+
+Section 6 is about a check that can stop the arm. This section is about what that
+check should hand back when it does not stop the arm, and the answer is: how close
+it came.
+
+A check that returns `true` has thrown away everything except the answer. A check
+passed by half a millimetre and a check passed by five millimetres are the same
+`true`, and they are not the same result. The first is a warning and the second is
+comfortable, and by the time the value reaches the caller there is no way to tell
+which one happened.
+
+**The general form is one line. Return the margin, and threshold it at the call
+site.** Instead of
+
+    def fits(width_mm):
+        return 4.0 <= width_mm <= 40.0
+
+write
+
+    def fit_margin_mm(width_mm):
+        """How many millimetres of room the gripper has. Negative means it does
+        not fit."""
+        return min(width_mm - 4.0, 40.0 - width_mm)
+
+and let whoever calls it decide what margin is enough. The check keeps the
+arithmetic, which is the part it knows about. The caller keeps the threshold, which
+is the part it knows about, and different callers want different thresholds: the bar
+before a fragile grasp and the bar before a shove are not the same bar. When the
+threshold lives inside the check, the second caller writes a second copy of the
+function.
+
+**The reason this matters here rather than in general is that a margin can be
+compared with the error budget.** Take an object measured at 38.4 mm against the 4
+to 40 mm range a stemmed glass should ever need. The margin is 1.6 mm. Now look at
+what the measurement is worth. One pixel covers 1.227 mm at 340 mm on this camera, so
+one pixel of segmentation error on each edge is `2 * 1.227` = 2.45 mm, and one degree
+of hand-eye error is 5.9 mm at the same reach. Added in quadrature, which is how
+independent errors combine, `sqrt(2.45^2 + 5.9^2)` = 6.4 mm. The check passed by
+1.6 mm on a number that is uncertain by 6.4 mm. It did not pass. A boolean cannot
+show you that, and no amount of staring at `true` will.
+
+Four checks from this area, and what each should return instead of a verdict.
+
+**A detection score.** Return the score itself, and return the runner-up's score
+beside it. The gap between the best and the second best is a different quantity from
+the best, and it is the one that says whether the decision was close. Remember that
+the score's scale is the model's own, so it is comparable between runs of the same
+model and with nothing else.
+
+**A plane fit.** Fitting a plane to a patch of point cloud — the step underneath
+table removal and underneath most flatness checks — has a natural margin already:
+the root mean square residual, meaning the typical distance from a point to the
+fitted plane, in millimetres. A fit at 0.4 mm and a fit at 2.9 mm both clear a 3 mm
+bar, and only one of them is a plane. Return the residual.
+
+**A size-range check.** The example above. Return the signed distance to the nearer
+end of the range, in millimetres, so the sign carries the pass or fail and the
+magnitude carries the confidence.
+
+**An association gate.** When a detection has to be matched to a track, or to the
+object you expected to be there, the match is accepted if the distance is below a
+gate. Return two numbers: the distance to the accepted match and the distance to the
+nearest rejected one. A match at 3 mm with the runner-up at 40 mm and a match at
+3 mm with the runner-up at 4 mm are the same boolean and completely different
+events, and the second is where an object swap comes from.
+
+This is already stated in one place in this repository, for one case. The section on
+grasp quality metrics in [choosing a grip](../07_gripping/03_choosing-a-grip.md) says
+that reporting the margin inside the friction cone rather than the boolean is nearly
+free and turns a pass into a ranking. The generalisation is that this is true
+of every check with a threshold in it, not only that one, and the grasp case is
+simply where it was noticed first.
+
+It also joins up with section 6. The sentence carried by an exception — the fingers
+want to be 61 mm apart, outside the 4 to 40 mm range — is the margin written out in
+words. A check that already computes its margin can raise that sentence for free,
+and one that computes only a boolean has to reconstruct the numbers to say anything
+useful.
+
+Five jobs that returning a margin suits:
+
+- ranking several candidates that all passed, which a boolean cannot order at all
+- deciding which object to attempt first when the arm can only do one at a time
+- triaging a report after a run, by reading the margins of the calls that were nearly
+  wrong rather than only the ones that failed
+- choosing a threshold from data, by running once and looking at the distribution of
+  margins for the attempts that worked against the ones that did not
+- comparing the margin against the error budget, which is the only way to notice that
+  a check is finer than the measurement feeding it
+
+Five jobs it cannot do:
+
+- make a badly chosen check meaningful, since a precise margin on the wrong quantity
+  is a precise number about nothing
+- be compared between two checks measured in different units, so every margin needs
+  its unit printed beside it
+- rescue a check applied to the wrong input; rung 4a of [the diagnosis
+  ladder](#3-when-it-does-not-work-a-diagnosis-ladder) describes a check downstream of
+  a smoothing step, and it never fires whatever it returns
+- carry a confidence the model did not have, since a detector's score is a number the
+  model chose for itself
+- remove the need to choose a threshold, which it moves to the call site rather than
+  abolishing
+
+## 8. Making a run traceable
+
+Section 1.3 says to score against the simulator's ground truth. This section is about
+the step that makes such a score usable: being able to take any number in the report
+and get back to the picture and the arm pose that produced it.
+
+The test is a single question. Given a line in the report, can you reach the inputs
+that produced it without re-running anything? If not, every surprising number becomes
+a re-run, and a re-run of a pipeline with any randomness in it is not the same run.
+Put a number on what that costs: with the ten-second pick cycle from section 2, a
+five-hundred attempt run takes about 5000 seconds, which is 83 minutes. That is the
+price of finding out what one attempt saw.
+
+**Give every attempt an identifier, and write the inputs and the outputs of each step
+under it.** One directory per attempt, named by the identifier, and the identifier
+printed in the report line. A report that says `object 7: declined, NoGrip` and a
+directory called `attempt_0031` with nothing connecting them is not traceable, and
+the missing piece is one string.
+
+**The rule for what to log is that you log what you cannot recompute.** The camera
+frame, the depth frame, the arm pose with its own timestamp, the random seed, the
+version of the code, and the thresholds that were in force are all inputs. None of
+them can be reconstructed afterwards and all of them change the answer. The mask, the
+measured width, the chosen grasp and the margins are outputs of those inputs, so in
+principle you do not need to store them. In practice store the numbers, which are
+tiny, and do not store the intermediate arrays, which are not.
+
+**The one output worth storing as a picture is the mask overlay.** Rung 1 of [the
+diagnosis ladder](#3-when-it-does-not-work-a-diagnosis-ladder) is looking at the mask
+drawn on top of the image, and it resolves about half of all reports. A picture you
+have to regenerate before you can look at it is a picture you do not look at. Write
+it during the run, when the mask is already in memory and the cost is one file.
+
+The sizes make this argument concrete rather than theoretical. A 320 by 240 colour
+frame at three bytes a pixel is 230,400 bytes. The depth frame at four bytes a pixel
+is 307,200 bytes, so an attempt that keeps both raw costs 537,600 bytes. Five hundred
+attempts is 269 MB. Store depth as 16-bit millimetres instead, which is lossless at
+any range a table-top arm works over, and the frame is 153,600 bytes and the run is
+192 MB. Neither figure is a reason to throw the frames away, which is worth knowing
+because "it would be too much data" is the usual reason given and it is usually
+false.
+
+**What not to log is anything that grows with the loop rather than with the
+attempt.** A line per attempt is five hundred lines. A line per solver iteration, per
+candidate grasp or per point in the cloud is however many the run happened to need,
+which is the log that fills the disk and, worse, the log nobody reads because it
+cannot be read. If you want per-iteration detail, write it for the attempts that
+failed and discard it for the ones that did not.
+
+Keep the ground truth in the run record as well, on the report side of the boundary
+that [section 1.3](#13-use-the-simulators-ground-truth--for-scoring-never-for-acting)
+insists on. It is an input to the score and not to the robot, and writing it into the
+same directory as the frames is how the comparison becomes a two-line script later.
+
+Two pieces of existing software do the recording part if you are already on ROS.
+[rosbag2](https://github.com/ros2/rosbag2) records and replays message streams and is
+Apache-2.0. Its default storage format is [MCAP](https://github.com/foxglove/mcap),
+MIT-licensed, which is a container that keeps heterogeneous timestamped messages in
+one file with an index. Both save you writing the part that is about files rather
+than about robots. If you are not on ROS, a directory per attempt and plain files are
+enough, and the discipline matters more than the format.
+
+Five jobs a run record like this suits:
+
+- answering which picture produced a number that looks wrong
+- reproducing one attempt without re-running the batch
+- showing that a change helped, by comparing two runs attempt by attempt rather than
+  summary against summary
+- building a regression set out of the attempts that failed, since their inputs are
+  already saved in a form the pipeline can be pointed at
+- letting somebody who was not in the room read the report
+
+Five jobs it cannot do:
+
+- record what you did not think to record, since the frame you skipped is gone
+- make a stochastic pipeline reproducible unless the seed is in the record too
+- help at all if the identifier is missing from the report line
+- explain a cause that is not among the recorded inputs, such as an arm that reported
+  a pose it had not yet reached
+- outlive a change in the pipeline's shape, since a record of a step that no longer
+  exists only explains old failures
+
+The test that this is working is the same shape as the test in section 6. When a
+number in the report looks wrong, the next action is opening a file, not starting the
+run again.

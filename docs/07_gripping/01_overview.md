@@ -404,6 +404,8 @@ directly.
 | [Holding on](05_holding-on.md) | force control, how hard to squeeze, slip and its detection, compliance, regrasping, and letting go safely |
 | [The two-finger gripper](06_two-finger-gripper.md) | the whole area worked through on one gripper, with the ROS 2 calls and pseudo code |
 | [Checking an implementation](08_checking-an-implementation.md) | every trap in this area as a list you run down against your own code |
+| [Pushing and sliding](09_pushing-and-sliding.md) | moving things without grasping them, and whether a push slides or topples |
+| [Singulation and pre-grasp](10_singulation-and-pre-grasp.md) | what to do when the grasp you want is not available yet |
 | [Licences and platforms](07_licences-and-platforms.md) | what you may ship, what runs on a Mac, ROS 2 packages, and every approach side by side |
 
 If you are starting a project rather than reading through, the order that wastes

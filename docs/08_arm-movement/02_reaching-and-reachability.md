@@ -28,7 +28,8 @@ transforms of the [arm area](../03_arm/01_overview.md).
 6. [Redundancy, and the seventh joint](#6-redundancy-and-the-seventh-joint)
 7. [Where to bolt the arm down](#7-where-to-bolt-the-arm-down)
 8. [Finding out before you commit](#8-finding-out-before-you-commit)
-9. [The five failures that do not announce themselves](#9-the-five-failures-that-do-not-announce-themselves)
+9. [Cheap tests before expensive ones](#9-cheap-tests-before-expensive-ones)
+10. [The five failures that do not announce themselves](#10-the-five-failures-that-do-not-announce-themselves)
 
 ---
 
@@ -449,7 +450,322 @@ Three practical responses:
   (BSD-3) is the maintained modern alternative inside MoveIt and is under active
   development.
 
-## 9. The five failures that do not announce themselves
+## 9. Cheap tests before expensive ones
+
+Section 8 put four ways of answering the reachability question in order of what
+they cost. Section 8.1 then showed that the expensive answer is also the least
+trustworthy one, because "unreachable" turned out to mean "not found in fifty
+milliseconds". Both of those are cases of a more general idea, and the general
+idea is worth stating on its own, because it changes the shape of the code
+rather than one parameter in it.
+
+**A planner charges you the same whether the answer is yes or no.** Every
+request costs milliseconds or seconds, and a request that fails costs the most,
+because a planner that cannot find a route spends its whole time budget
+discovering that. Meanwhile most of the candidate poses a real system produces
+can be thrown away by arithmetic that costs nanoseconds. So the rule is to put
+your tests in order of what they cost, run the cheap ones first, and never ask
+an expensive question about a candidate that a cheap question could have
+rejected.
+
+### 9.1 The order, and what each test costs
+
+The table below is that order, cheapest first. The second column is what one
+candidate pose costs. The first four figures are measured: a loop over two
+million candidates written in C, compiled with `cc -O2` on an Apple M4, with
+twenty obstacles in the scene for the two tests that need them. They are
+per-candidate costs inside a batch, which is how a filter is actually run. The
+last two figures are not measurements but budgets — the default time MoveIt
+allows one call before it gives up — because what you must plan against is the
+failing call that uses all of it. Read the last column as the reason the row
+below it still has to exist.
+
+| Test | Cost per candidate | What it rules out | What it cannot see |
+| --- | --- | --- | --- |
+| approach direction, against the cone the task allows | 0.2 ns | grasps that come in from a direction the task forbids | whether the arm can achieve that direction at that place |
+| distance from the shoulder, against the reach envelope | 0.4 ns | points no joint configuration can put the tool at | orientation, obstacles, and everything else |
+| clearance, distance to the nearest obstacle | 10 ns | poses with no room for the gripper's own body | contact along the approach, and the arm's own links |
+| line of sight, a ray against the known obstacles | 49 ns | viewpoints from which the target is hidden | anything the world model does not contain |
+| inverse kinematics | up to 50 ms | poses with no joint solution | collisions, unless a planning scene is attached |
+| a motion plan | up to 5 s | goals with no route from where the arm is now | nothing |
+
+The two ends of that order are ten orders of magnitude apart. Fifty
+milliseconds of inverse kinematics is 125 million times the 0.4 nanoseconds of
+the reach test. Five seconds of planning is 102 million times the 49
+nanoseconds of a ray cast, and 25 thousand million times the 0.2 nanoseconds of
+the approach cone. Put the other way round: in the time one failing planning
+request takes, the reach test can be run on about twelve thousand million
+candidates.
+
+Those figures come from one machine and one compiler, and a single isolated
+call costs more than a call inside a loop. None of that matters, because the
+decision they support only needs the orders of magnitude to be right, and ten
+orders of magnitude survive any amount of measurement error.
+
+One refinement changes the order in some scenes. The right thing to sort by is
+not cost on its own but cost divided by the fraction of candidates the test
+rejects, smallest first, because a test that costs twice as much and rejects
+five times as many candidates should go earlier rather than later. In the run
+above, the approach cone rejected 83.4 per cent of candidates, the reach test
+30.1 per cent, the ray cast 41.7 per cent and the clearance test 13.1 per cent.
+Dividing through gives 0.24, 1.3, 118 and 76 nanoseconds per rejection, which
+is the same order that cost alone gives. That is a coincidence of these
+particular numbers and not a rule, so measure your own rejection rates before
+deciding you have the order right.
+
+
+![Ten orders of magnitude between the cheapest test and the dearest](../images/arm-movement/reaching-and-reachability/the-cost-ladder.svg)
+
+### 9.2 Reach as arithmetic
+
+An **annulus** is the region between two circles that share a centre. Its
+three-dimensional version, the region between two spheres that share a centre,
+is what section 2 showed the reachable region to be for a two-link arm. Testing
+a point against one is three subtractions, three multiplications, two additions
+and two comparisons.
+
+```
+dx = p.x - shoulder.x
+dy = p.y - shoulder.y
+dz = p.z - shoulder.z
+d2 = dx*dx + dy*dy + dz*dz          # squared, so there is no square root
+
+reject if d2 < r_min_squared or d2 > r_max_squared
+```
+
+The two squared radii are computed once, when the arm is chosen, and never
+again. The absence of the square root is the reason this costs less than a
+nanosecond.
+
+The radii come from the arm's published dimensions. Taking the UR5e's official
+ROS 2 description again, this time
+[config/ur5e/default_kinematics.yaml](https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/ros2/config/ur5e/default_kinematics.yaml),
+the upper arm is 425 mm, the forearm is 392.2 mm, and the three offsets below
+the forearm are 133.3 mm, 99.7 mm and 99.6 mm. Sampling four hundred thousand
+random joint configurations puts the tool flange between 33.8 mm and 968.8 mm
+from the shoulder point.
+
+Do not use the sampled maximum as `r_max`. A sampled maximum is always an
+underestimate, and a test built on it will reject poses the arm can reach. The
+figure that is safe is the sum of every offset below the shoulder, because no
+chain of links can put its end further away than the sum of their lengths, and
+`425 + 392.2 + 133.3 + 99.7 + 99.6` comes to 1149.8 mm. That is 181 mm larger than
+the sampled envelope, so it rejects fewer candidates, and every candidate it
+does reject is genuinely out of reach. Use the sum when the filter must never
+be wrong, and use a measured envelope from a reachability map — section 8's
+third level — when you have built one and can defend it.
+
+How much work the test does depends entirely on where the candidates come from,
+and the difference is larger than people expect. The table below takes the same
+annulus, with `r_min` of 33.6 mm from section 2 and `r_max` of 968.8 mm, and
+applies it to a million points drawn uniformly from four different regions.
+Read it as a warning against assuming the test is doing work it is not doing.
+
+| Where the candidate positions come from | Fraction the reach test rejects |
+| --- | --- |
+| a 2.0 by 2.0 by 0.6 m cell centred on the arm | 30.1 per cent |
+| a 2.0 by 1.6 by 0.6 m area in front of the arm | 56.3 per cent |
+| a 1.2 by 0.8 by 0.3 m bench in front of the arm | 0.3 per cent |
+| a 0.3 m bin standing 0.5 m from the base | 0.0 per cent |
+
+A filter that rejects nothing is still worth keeping at 0.4 nanoseconds, but it
+is not the thing protecting your cycle time, and believing otherwise is how a
+pipeline ends up with no protection at all.
+
+Two limits on the test are worth naming. The reachable set is not really an
+annulus: section 2 showed the UR5e has a second hole, 33.6 mm wide, around its
+own base axis, and a radial test from the shoulder does not model that at all.
+And passing the test says nothing about orientation. The dexterous workspace
+from section 1 — the positions reachable with every tool direction — is a much
+smaller region inside the same annulus, so a point can pass the reach test and
+still have no solution with the direction the task requires.
+
+### 9.3 Line of sight is a precondition, not a difficulty
+
+A **ray cast** is the test of whether the straight line from one point to
+another passes through anything. For a camera looking at a grasp, the two
+points are the lens and the target, and the things in the way are the objects
+the perception system has already found. Testing the segment against a circular
+footprint is a projection, a clamp and one comparison of squared distances, and
+twenty of them came to 49 nanoseconds above. For a full three-dimensional
+occupancy map, [OctoMap](https://github.com/OctoMap/octomap) provides the same
+test, as a method called `castRay`, and its library is under the three-clause
+BSD licence, read from `octomap/LICENSE.txt` in the repository.
+
+Choosing viewpoints properly is a subject of its own, and [choosing where to
+look](../06_object-perception/09_choosing-where-to-look.md) in the perception
+area treats it as one. The point that belongs here is narrower and is about
+movement.
+
+**Visibility and reachability are independent filters, and both are cheaper
+than planning.** A viewpoint can be comfortably inside the arm's envelope and
+see nothing, because a box is in the way. A viewpoint with a completely clear
+view of the target can be outside the envelope entirely, or inside it and only
+reachable in a configuration that puts the elbow through the bench. Neither
+test predicts the other, so neither can be skipped, and running both still
+costs about fifty nanoseconds against a planner call's milliseconds. The
+mistake this prevents is the common one of treating occlusion as something the
+planner will sort out. It will not. It will plan a perfectly good motion to a
+pose from which the camera sees a box.
+
+### 9.4 Clearance is a precondition too
+
+Clearance is the free space a gripper needs around the object before its
+fingers can close on it, and how much it needs follows from the jaw geometry.
+The gripping area derives that properly in [choosing a
+grip](../07_gripping/03_choosing-a-grip.md), which is where the numbers belong.
+The movement-side point is that the derived figure is a distance, and a
+distance can be tested against a scene by arithmetic, long before anything is
+asked to plan.
+
+The test is the same shape as the reach test: for each obstacle, compare the
+squared distance from the grasp point to the obstacle against the squared sum
+of the obstacle's radius and the clearance the gripper needs. Twenty obstacles
+came to 10 nanoseconds above.
+
+**A pipeline that collision-checks only the final pose will miss this.** The
+closed grasp pose is a pose in which the fingers are around the object and
+touching nothing, so it passes. What fails is the open gripper arriving: the
+jaws are wider apart on the way in than they are at the end, and the last
+hundred millimetres of the approach sweeps a volume that the final pose does
+not occupy. Checking the goal and not the approach is one of the reasons a
+grasp that looked fine in simulation knocks its neighbour over on the bench.
+
+When you do want the exact answer rather than the cheap one,
+[FCL](https://github.com/flexible-collision-library/fcl) is the library
+MoveIt's default collision checking is built on. It answers distance queries as
+well as collision queries, and a distance query is what clearance needs. It is
+under the three-clause BSD licence, read from its `LICENSE` file.
+
+### 9.5 What the cheap tests cannot tell you
+
+They fail in two directions and the two are not equally dangerous.
+
+**A conservative bound produces false negatives, and they are silent.** The
+1149.8 mm figure above is correct and loose. Any candidate it rejects is
+genuinely unreachable, but a tighter bound you cannot prove would have rejected
+more, and a looser one rejects fewer. The cost of getting this wrong in the
+safe direction is work you did not need to do. The cost of getting it wrong in
+the other direction is a rejected candidate that was fine, never looked at
+again, and never reported, because a filter that discards a candidate writes
+nothing anywhere.
+
+**An incomplete world model produces false positives, and those are the ones
+that break things.** Every test in this section is a test against a model of
+the scene, not against the scene. The model does not contain the cable, the
+clamp somebody left on the bench, the second object that moved after the last
+camera frame, or the operator's hand. A candidate that passes every cheap test
+and then collides is a candidate the model said was fine, and no amount of
+making the tests cheaper or faster addresses that.
+
+The rule that follows is short. **Write the cheap tests so they can only ever
+reject.** A rejection from a sound bound is a real answer. An acceptance is not
+an answer at all; it is permission to ask the next, more expensive question.
+The cheap tests raise how many candidates you can consider. They do not replace
+the collision check on the trajectory that is actually going to be executed,
+and a system that treats them as though they do has moved its failures from the
+planner, where they were reported, to the hardware, where they are not.
+
+### 9.6 A worked ordering
+
+A candidate grasp pose arrives from whatever produced it — a grasp sampler, a
+model, a taught list — and passes through the filters in cost order. The cost
+against each line is per candidate, measured for the cheap ones and budgeted
+for the expensive ones, as in the table above.
+
+```
+# one candidate grasp pose, filtered cheapest test first
+
+# 0.2 ns: approaching from a direction the task forbids
+if dot(candidate.approach_axis, task.required_axis) < cos(task.tolerance):
+    reject
+
+# 0.4 ns: outside the reach envelope
+dx, dy, dz = candidate.position - arm.shoulder_point
+if not (r_min_squared <= dx*dx + dy*dy + dz*dz <= r_max_squared):
+    reject
+
+# 10 ns for twenty obstacles: no room for the gripper's own body
+for each obstacle in scene:
+    need = obstacle.radius + jaw_clearance
+    if squared_distance(candidate.position, obstacle) < need*need:
+        reject
+
+# 49 ns: the grasp cannot be seen from where the camera is
+if ray_hits_anything(camera.position, candidate.position, scene):
+    reject
+
+# 49 ns: the approach itself is blocked
+if ray_hits_anything(candidate.approach_start, candidate.position, scene):
+    reject
+
+# up to 50 ms: no joint solution was found, which is not the same
+# as none existing -- section 8.1
+q = inverse_kinematics(candidate.pose,
+                       seed  = arm.current_joints,
+                       valid = not colliding in the planning scene)
+if q is None:
+    reject
+
+# up to 5 s: no route from where the arm is now. This is the call
+# every line above it exists to avoid making.
+plan = motion_plan(arm.current_joints, q)
+if plan is None:
+    reject
+
+return plan
+```
+
+Three things in that sequence are the reason for writing it out rather than
+describing it.
+
+**The clearance test comes before both ray casts, and that is deliberate.** A
+ray cast costs 49 nanoseconds and the clearance test costs 10, so putting the
+clearance test first means the two rays are only run on candidates that already
+have room for the gripper. Here that saves a few tens of nanoseconds and
+nothing else. It is worth doing anyway, because it is the same reasoning that
+saves seconds when applied to the bottom two lines.
+
+**The collision check happens inside the inverse kinematics call.** MoveIt
+takes a validity callback, so the solver rejects a colliding solution and keeps
+searching instead of returning one you then have to discard. The second and
+third questions in section 1's table are answered by one call, and that call
+was going to be made anyway.
+
+**The last two lines carry almost all of the cost and they are the only two
+that answer the question.** Everything above them is a way of reaching them
+less often. Nothing above them can tell you a path exists, and if a candidate
+reaches the bottom of the list and fails there, no cheap test was wrong — none
+of them ever claimed it would work.
+
+**Five jobs this approach suits:**
+
+- bin picking, where a grasp sampler produces hundreds of candidates per camera
+  frame and there is time to plan for perhaps three of them
+- deciding where to stand a mobile base, or where to bolt a fixed one, which is
+  a search over hundreds of base positions with every task pose to check at
+  each
+- deciding which of several objects on a table to reach for first, where most
+  of the answer is which ones are reachable and visible at all
+- choosing where to move a wrist camera, where a large majority of candidate
+  viewpoints are either blind or out of the envelope
+- any cell with a cycle-time budget, where the planner gets one attempt and a
+  failed attempt spends the budget without producing anything
+
+**Five jobs it cannot do:**
+
+- tell you a path exists, which is the fourth question in section 1 and which
+  only a planner run for real answers
+- see anything the world model does not contain, which is where the failures
+  that hurt come from
+- choose between two candidates that both pass, because a filter sorts nothing
+  and every survivor looks identical to it
+- catch the failure in section 2, where both ends of a move pass every test and
+  the middle of it is outside the workspace
+- replace the collision check on the trajectory that will actually run, which
+  stays exactly where it was
+
+## 10. The five failures that do not announce themselves
 
 Collected here because they are the return on reading this document.
 

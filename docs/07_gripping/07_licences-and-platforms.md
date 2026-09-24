@@ -330,7 +330,7 @@ Read this as: what it holds, how much, how fast, and what disqualifies it.
 | [the antipodal test](03_choosing-a-grip.md#32-the-antipodal-test) | pass or fail per candidate | ~1 ms for thousands | no | **yes** | **yes** |
 | [a geometric rule](03_choosing-a-grip.md#6-rules-from-a-measured-profile) | one grip, with a reason, or a refusal | ~1 ms | no | within a family | **yes** |
 | [centre-of-mass ranking](03_choosing-a-grip.md#5-the-centre-of-mass-and-the-torque-nobody-budgets-for) | a score per candidate | ~1 ms | no | **yes** | **yes** |
-| [the epsilon metric](03_choosing-a-grip.md#8-grasp-quality-metrics-you-can-compute) | a single quality number | ms | no | **yes** | **yes** |
+| [the epsilon metric](03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute) | a single quality number | ms | no | **yes** | **yes** |
 | a planar grasp model | grasp rectangles, top-down only | tens of ms | pretrained | **yes** | probably |
 | sampling and scoring, GPD | ranked 6-DoF poses | 0.1 to 1 s | pretrained | **yes** | in principle |
 | a learned 6-DoF model | ranked 6-DoF poses | 0.1 to 1 s on a GPU | pretrained | **yes** | **no** |

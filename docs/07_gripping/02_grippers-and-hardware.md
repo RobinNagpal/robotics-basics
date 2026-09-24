@@ -31,6 +31,7 @@ mechanisms; this document is the hardware itself. If you are trying to decide
 7. [Tool changers, and custom tooling](#7-tool-changers-and-custom-tooling)
 8. [The sensors that go on a gripper](#8-the-sensors-that-go-on-a-gripper)
 9. [Drivers, ROS 2 packages and licences](#9-drivers-ros-2-packages-and-licences)
+10. [Hardware for touching what you are not grasping](#10-hardware-for-touching-what-you-are-not-grasping)
 
 ---
 
@@ -838,3 +839,325 @@ personal fork, and none is usable as a dependency.
 **MuJoCo and its model collection run natively on Apple Silicon**, which makes
 them the practical route for developing gripping logic on a Mac. The full picture
 is in [licences and platforms](07_licences-and-platforms.md#2-what-runs-on-an-apple-silicon-mac).
+
+## 10. Hardware for touching what you are not grasping
+
+An arm does not always have to pick an object up to move it. It can push it
+across the table, nudge it away from its neighbour, drag it to an edge, or topple
+it onto a face the gripper can reach. The physics of what happens when it does is
+in [pushing and sliding](09_pushing-and-sliding.md), and the decision of when a
+push is the right move rather than a pick is in [singulation and
+pre-grasp](10_singulation-and-pre-grasp.md). Both of those assume there is
+something on the end of the arm making the contact. This section is about what
+that something is.
+
+The short answer is that you almost certainly already own it, that the parts you
+can buy are sold for a different job, and that the rest is made in the workshop.
+The rest of this section says why, and what each option costs.
+
+### 10.1 The gripper you already have, used closed
+
+The cheapest pusher is the gripper on the arm with its fingers commanded shut,
+and it is what most cells use. It costs nothing, it needs no tool change, and it
+is available on every cycle. It is also worth understanding before you trust it.
+
+Three published properties of a closed two-finger gripper decide what it can do.
+
+**A closed electric gripper holds its position without help.** Robotiq's manual
+states plainly that "the Gripper is self-locking", so once the fingers are shut
+the motor is not fighting the push and the fingers do not open under load. That
+is what makes the closed gripper a usable rigid tool rather than a spring.
+
+**The force you may push with is much smaller than the force you may grip with.**
+[Section 2.4](#24-the-limits-that-are-not-the-grip-force) has the numbers: the
+2F-85 may take 50 N in any direction through the gripper, and 25 N on the 2F-140,
+against a grip force of up to 235 N and 125 N respectively. So the gripper can
+squeeze roughly five times harder than the arm may push with it. If your push
+needs more than 50 N you need different hardware, and no amount of care in the
+trajectory will change that.
+
+**The moment limit binds at the same time as the force limit.** Robotiq allow
+5 Nm about x and y, measured, as their manual says, from the base of the
+fingertips. Fifty newtons applied 100 mm from that base is exactly 5 Nm, and
+100 mm is exactly the maximum fingertip height Robotiq permit on a custom design.
+The two limits therefore meet at the longest fingertip the manual allows. With
+the standard silicone fingertip the lever
+arm is far shorter than 100 mm, so force is the limit that binds first; put a
+long custom pusher on the fingers and the moment becomes the limit instead.
+
+The contact geometry is the part people get wrong. A closed two-finger gripper is
+not a flat plate. It presents two fingertips side by side with the finger
+structure between them, so the contact is a small, hard, roughly rectangular
+region, or often two regions with a gap. You have to know that geometry to a
+millimetre to predict anything, for the reason in
+[section 10.3](#103-why-the-contact-patch-matters-more-here-than-in-grasping).
+
+A second geometric point is easy to miss and changes the friction. The silicone
+pads face inwards, because they exist to grip. Unless you push with the bottom
+edge of the closed fingers, the surface that touches the object is the outer face
+of the fingertip, which is not the pad. Robotiq publish a tested static friction
+coefficient of 0.3 for their silicone fingertip against a lubricated steel
+object, and publish nothing at all for the outside of the fingertip. The surface
+you have characterised is not the surface you are pushing with.
+
+Robotiq do publish the fingertip as a dimensioned drawing, Figure 6-14 in the
+[instruction
+manual](https://assets.robotiq.com/website-assets/support_documents/document/2F-85_2F-140_Instruction_Manual_e-Series_PDF_20190206.pdf),
+and that drawing is where the contact geometry comes from. No pad dimension is
+quoted here, because the dimensions in that manual are inside the drawings rather
+than in a table, and measuring the fingertip you actually have is the more
+reliable route in any case.
+
+### 10.2 Dedicated pusher tooling
+
+If the closed gripper is not good enough, the next step is a tool whose only job
+is to touch things. There are three shapes and they behave very differently.
+
+**A rod, or a pin, gives you something close to a point contact.** Its virtue is
+that you know exactly where the force is applied, to the accuracy of the arm. Its
+vice is that you have no control at all over how hard you are pushing, because
+the contact is stiff and the arm is a position device. A number already in this
+document shows the scale of the problem: the Robotiq FT 300-S deflects 0.01 mm at
+its maximum load of 300 N, which is a stiffness of about 30,000 N per millimetre.
+The arm and the object are softer than that, so the real figure is lower, but a
+stiff chain turns a fraction of a millimetre of commanded overtravel into
+hundreds of newtons. Setting a push force by commanding a position does not work
+against a rigid contact.
+
+**A flat plate gives you a wide contact.** It is the shape that makes a push
+travel straight, and [section 10.3](#103-why-the-contact-patch-matters-more-here-than-in-grasping)
+explains why. It costs you reach, because the
+plate is in the way of everything else, and it costs you the ability to reach
+into a gap.
+
+**A compliant tip changes the contact from a point to a patch.** Put a few
+millimetres of polyurethane, silicone or foam on the end of a rod and three
+things change at once. The tip spreads under load, so the contact becomes an area
+rather than a point. The contact stiffness falls by orders of magnitude, so a
+position error of a millimetre produces a few newtons instead of hundreds. And
+the friction within that patch resists the object sliding sideways off a curved
+surface, which a point contact does not.
+
+A compliant tip takes back the one thing a rigid rod gave you. You no longer know
+exactly where the contact is. The tip deflects by an amount you did not measure,
+so the object's position relative to the flange is uncertain by that deflection. Rubber creeps and
+takes a set, so the deflection changes over the tool's life. And the compliance
+sits in series with the wrist sensor, so it acts as a low-pass filter on
+everything [section 10.4](#104-sensing-a-push) wants to detect.
+
+The bought version of a compliant tip is a compliance device, and those do exist.
+Read the table as: what the device does, how far it gives, and how hard it can
+push. Both PushCorp figures are from the manufacturer's own product pages.
+
+| Device | Kind | Maximum force | Compliant stroke | Weight |
+| --- | --- | --- | --- | --- |
+| [PushCorp AFD62](https://pushcorp.com/product/afd62/) | passive compliance | 120 N, quoted as 27.0 lbf | 20 mm, quoted as 0.8 in | 1.9 to 2.0 kg by variant |
+| [PushCorp AFD120](https://pushcorp.com/product/afd120/) | active force control | 120 N, quoted as 27 lbf | 20 mm | 2.3 kg, maximum payload 12.3 kg |
+
+The AFD120 also publishes a force resolution of ±1.0 N, which is the figure that
+matters if you intend to command a push force rather than a push position. Twenty
+millimetres of stroke is the other number to notice: it means a position error of
+a millimetre is absorbed entirely, which is the whole point of the device.
+
+[ATI sell a compliance device
+family](https://www.ati-ia.com/products/compliance/Compensator_Main.aspx) of three
+kinds — a lateral compensator, a universal compensator that gives in lateral,
+rotational and compression directions, and a remote centre compensator built from
+elastomer shear pads. Their overview page publishes no travel, force or weight
+figure for any of them, so none is quoted here.
+
+[FerRobotics sell the Active Contact
+Flange](https://www.ferrobotics.com/en/services/products/active-contact-flange/)
+in three sizes, described as ACF XS, ACF and ACF HD. The product exists and the
+page describes real force control with gravity compensation, but it publishes no
+force, stroke, weight or response figure; the numbers are in downloadable
+datasheets. No figure for it is quoted here for that reason.
+
+None of PushCorp, ATI or FerRobotics publishes a price for any of these.
+
+### 10.3 Why the contact patch matters more here than in grasping
+
+This is the hardware consequence of the physics in [pushing and
+sliding](09_pushing-and-sliding.md), and it is the reason the shape of the thing
+on the end of the arm matters more for a push than for a pick.
+
+A grasp is mostly a question of force. The Coulomb friction model that
+[the friction cone](03_choosing-a-grip.md#31-the-cone) is built on says the
+available friction is the coefficient multiplied by the normal force, and it does
+not contain the contact area at all. That is why the sections above dwell on how
+hard each gripper squeezes and say very little about the size of the patch it
+squeezes with. Within reason, a grasp cares that the force is big enough and that
+it points into the cone.
+
+A push is a question of where. The object slides on the table, and whether it
+also rotates depends on where the pushing force's line of action passes relative
+to the friction spread under the object. A force through the middle of that
+distribution pushes the object straight. The same force applied a centimetre to
+one side pushes it and turns it. Nothing about the magnitude changes that; only
+the position does.
+
+The hardware follows directly. A contact patch that is wide compared with the
+object behaves like a single force through its middle, and it also resists the
+object rotating within the contact, because friction across the width of the
+patch opposes the turn. A point contact does neither. It applies the force at one
+place you must have located correctly, and it lets the object pivot around that
+place freely. That is the whole argument for a flat plate over a rod, and for a
+compliant tip over a hard one.
+
+It is also the argument for measuring the closed gripper you are using as a
+pusher. Two fingertips separated by a gap apply the force at two places, and if
+the object is not centred between them the pair applies a turning moment you did
+not ask for. A gripper closed on nothing is a worse-defined tool than it looks.
+
+### 10.4 Sensing a push
+
+The instrument that tells you a push is happening is the wrist force-torque
+sensor, which [section 8.1](#81-force-and-torque-at-the-wrist) covers as
+hardware. Its behaviour during a push is different enough from its behaviour
+during a grasp to be worth setting out on its own.
+
+Start from the published figures for the Robotiq FT 300-S: a range of ±300 N, a
+signal noise of 0.1 N, a recommended contact-detection threshold of 1 N, and an
+output rate of 100 Hz.
+
+The sensor resolves four things well during a push. It tells you contact has
+happened, as soon as the force passes the 1 N threshold. It tells you the
+magnitude and direction of the resultant force, which is the push force plus
+everything else acting on the tool. It tells you when that force changes, which
+is how you detect that the object has stopped moving. And it tells you when the
+force falls away, which is how you detect that the object has left the tool or
+has fallen off the edge you pushed it towards.
+
+Detecting a jam is the case worth doing the arithmetic for. When a pushed object
+runs into something fixed, the force rises from the sliding friction level to
+whatever the arm can deliver, within a few milliseconds. At 100 Hz you learn about
+it up to 10 ms late, and 10 ms at a push speed of 100 mm/s is a millimetre of
+extra travel; at 250 mm/s it is two and a half millimetres. That figure, not the
+sensor's force resolution, is what bounds how gently a stop-on-jam can stop.
+
+There are four things it cannot resolve, and each of them matters more during a
+push than during a grasp.
+
+**It cannot tell you where on the tool the contact is.** It reports six numbers
+at one point, its own origin. You can recover a contact position from the
+moments if you assume there is exactly one contact, and that inverse is badly
+conditioned when the force is small or when the contact is close to the sensor's
+axis. Two simultaneous contacts are indistinguishable from their resultant, so
+the two-fingertip contact of
+[section 10.3](#103-why-the-contact-patch-matters-more-here-than-in-grasping) reads
+as one force in a place neither fingertip touched.
+
+**It cannot see the pressure distribution in the patch**, which is the quantity
+that decides whether the object rotates. The sensor tells you the object is being
+pushed. It cannot tell you the object is about to spin.
+
+**It cannot separate the push force from the tool's own inertia.** This is the
+sharpest difference from grasping. While the gripper holds an object the arm is
+often stationary or moving gently, so the reading is close to static and you can
+average over many samples to get below the noise. While pushing, the arm is
+moving, accelerating and changing orientation, so the tool's mass times its
+acceleration is added to everything. A one-kilogram pusher accelerated at
+1 m/s² contributes 1 N, which is exactly the recommended contact threshold. A
+push controller has to compensate for the tool's weight and its inertia, and a
+grasp controller usually gets away with compensating for weight alone.
+
+**It cannot see a push much lighter than a newton.** A one-kilogram object on a
+surface with a friction coefficient of 0.3 needs about 2.9 N to keep sliding,
+which is only three times the threshold. Push a light object on a smooth surface
+and the whole signal sits near the sensor's floor. The answer there is the same
+as in [section 8.1](#81-force-and-torque-at-the-wrist): a gentler approach and a
+lighter tool, not a lower threshold.
+
+The alternative instrument is the arm's own joint torque sensing, on an arm that
+has it. It sees contact anywhere on the arm rather than only below the wrist,
+which matters when the thing you collide with is the object's neighbour rather
+than the object. It is coarser at the tool, because it is looking at the tool
+through the arm's own friction and inertia.
+
+### 10.5 Swapping between a gripper and a pusher
+
+A tool changer makes it possible to carry a proper pusher and a proper gripper
+and use each in turn. [Section 7.1](#71-tool-changers) has the products. Whether
+it is worth doing comes down to two numbers on those datasheets, and the answer
+is usually no.
+
+The first is the operating life. OnRobot publish 5,000 tool changes for the Quick
+Changer. Suppose a cell pushes on one pick in five, and each push costs two
+changes, out to the pusher and back to the gripper. That is 0.4 changes per pick,
+so 5,000 changes is 12,500 picks. At a ten-second cycle, 12,500 picks is about
+thirty-five hours of running. The changer is a consumable with a life of under a
+week on one shift, used that way.
+
+The second is the repeatability, which is ±0.02 mm on the OnRobot changer and
+0.010 mm on the ATI QC-11. That is small, but it is added to every push and every
+pick afterwards, and it is added afresh after every change rather than once at
+commissioning.
+
+Neither manufacturer publishes a time for a tool change on the datasheets cited
+in [section 7.1](#71-tool-changers), so no cycle-time figure is quoted here. What
+can be said without a published number is that a change is a move to the dock, an
+unlock, a retract, a move to the second dock, a lock and a move back, and that
+this is several robot moves against the fraction of a second a push itself takes.
+
+So the honest position is this. A changer earns its place when the pushing is
+batched — separate everything in the tote, change once, then pick everything —
+because then the change happens twice per tote rather than twice per pick. It
+does not earn its place when pushing and picking alternate. In that case the
+answer most cells reach is to stop changing tools and put the pusher permanently
+on the gripper: a machined fingertip with a flat outer face, a spur on the side
+of the gripper body, or a plate bolted to the coupling beside it. That costs
+payload and collision volume and nothing else, and both tools are then present on
+every cycle.
+
+### 10.6 What you can actually buy
+
+Dedicated pusher tooling is not a product category, as far as this document could
+establish. None of the gripper vendors above publishes a product described as a
+pusher. Their ranges cover fingers, cups, magnets, soft fingers, hands, changers
+and sensors, and stop there. That is a negative finding from their published
+ranges rather than a proof, and it is weaker for Schunk than for the others,
+because their pages are rendered in the browser and cannot be read from the
+served page at all, as section 7.1 records.
+
+What is sold, and is the closest thing available, is hardware for controlling the
+force of a contact with a fixed surface rather than for moving a loose object.
+The PushCorp AFD family and the FerRobotics Active Contact Flange are sold for
+sanding, grinding and polishing. ATI's compliance devices are sold for assembly
+misalignment and peg-in-hole work. ATI also sell [robotic collision
+sensors](https://www.ati-ia.com/products/collision_sensor/robot_collision_sensor.aspx),
+which break the connection to the tool when a crash exceeds a trip level and are
+worth knowing about if you intend to push into fixtures, though that page
+publishes no trip force or repeatability figure and none is quoted here. All of
+these are useful for pushing and none was designed for it.
+
+Everything else is shop-made, and the vendors expect it to be. Robotiq publish the
+distal phalanx that holds a fingertip as a dimensioned drawing, allow custom
+fingertips up to 100 mm in height and width, and state in the manual that "the
+user can customize their own fingertips from blanks or create them from
+scratch". That is a manufacturer documenting how to make your own tool, because
+they do not sell the one you want. [Section 7.2](#72-custom-tooling) makes the
+general case for custom tooling. A pusher is the clearest example of it, because
+there is no bought alternative to compare it against.
+
+Five jobs a pushing tool suits:
+
+- moving an object that has no graspable feature at all, such as a flat part
+  lying flush on a table
+- separating objects that are touching, so that a grasp becomes possible
+  afterwards
+- clearing an object out of the way, at a fraction of the cycle time of a pick
+  and a place
+- driving an object against a wall or a fixture, which replaces a pose estimate
+  with a known position
+- toppling or rolling an object onto a face the gripper can take
+
+Five jobs it cannot do:
+
+- move an object to a predictable pose without knowing the friction underneath it
+- push harder than the wrist's external force limit, which is 50 N through a
+  Robotiq 2F-85 and 25 N through a 2F-140
+- push with the gripper's own gripping surface, since the silicone pads face
+  inwards and the outer face has no published friction figure
+- tell you where on the tool the contact happened, from a wrist force-torque
+  sensor alone
+- be bought as a catalogue pusher from any gripper vendor in this document

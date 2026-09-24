@@ -33,7 +33,7 @@ becomes "cannot be held". →
 Five pass/fail checks mean the first acceptable grip wins even when a better one
 exists two millimetres away. The margin inside the friction cone costs nothing
 extra and turns a pass into a ranking. →
-[choosing a grip, §8.1](03_choosing-a-grip.md#81-the-ones-worth-computing)
+[choosing a grip, §9.1](03_choosing-a-grip.md#91-the-ones-worth-computing)
 
 **Is the centre of mass assumed to be the centre of the outline, and is that
 written down?**
@@ -127,7 +127,7 @@ with. →
 
 **Is the rule tested against a generated family, or against one object?**
 A rule fails on proportions, and one test object has one set of proportions. →
-[choosing a grip, §10](03_choosing-a-grip.md#10-testing-a-grip-rule)
+[choosing a grip, §11](03_choosing-a-grip.md#11-testing-a-grip-rule)
 
 **Are the simplifications written down where the next person will find them?**
 This is the only question on the list with no wrong answer, and the one most

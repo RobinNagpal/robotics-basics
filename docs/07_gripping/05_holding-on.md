@@ -13,6 +13,11 @@ slip check watching a sensor that cannot observe slipping reports "no slip"
 forever. A release that has not actually released looks like a successful place
 until the arm moves away.
 
+The first eight sections follow the object from the moment the fingers close to
+the moment they let go. The last two are not steps in that sequence. They are two
+standing rules that apply to all of it: what to do when a reading cannot be
+produced, and which of these quantities a simulator can be trusted about.
+
 ## Who this is for
 
 Someone whose robot picks things up and sometimes drops them, or crushes them, or
@@ -35,6 +40,8 @@ document builds on rather than repeats.
 6. [Regrasping](#6-regrasping)
 7. [In-hand manipulation](#7-in-hand-manipulation)
 8. [Letting go](#8-letting-go)
+9. [Never fall back silently](#9-never-fall-back-silently)
+10. [Sim-to-real for contact](#10-sim-to-real-for-contact)
 
 ---
 
@@ -597,3 +604,470 @@ A release sequence that works, in order:
 Step 6 is optional in the sense that most cells skip it, and it is the difference
 between a cell that reports a failed placement and one that carries on stacking
 onto a gap.
+
+## 9. Never fall back silently
+
+Everything above this point is a step in the business of holding something. This
+section and the next one are not steps. They are two rules that apply to all of
+the steps, and they sit at the end because each is easier to state once the whole
+sequence is on the page.
+
+The rule in this section is one sentence. **When a reading cannot be produced,
+refusing is recoverable and substituting a default is not.** A default here means
+a number your own code invented because the real one was unavailable: a zero, a
+configured constant, a value left over from last time. The rest of the section is
+why that is worse than it sounds, the shapes it takes in contact work, and how to
+write code that cannot do it.
+
+The repository has said this several times already in passing. The squeeze
+sequence in [section 1](#1-the-squeeze-sequence) refuses rather than clamping to
+the damage cap and lifting anyway. The list of responses in
+[section 5.2](#52-the-five-responses-in-order-of-cost) refuses to correct a grasp
+point from measurements that are now stale. It is worth having once as a rule
+with examples, because a principle you have met in passing is not a thing you
+reach for at four in the afternoon with a line down.
+
+### 9.1 Why a default is worse than an error
+
+An error stops the run. It stops it at the line where the problem was, with the
+name of the sensor in the message, and somebody reads that message within minutes.
+That is a failure that looks expensive and is cheap to diagnose.
+
+A default does not stop the run. It hands a wrong number to the next step, and the
+next step has no way to tell that it is wrong, because a defaulted mass of 0.8 kg
+is bit-for-bit identical to a measured mass of 0.8 kg. The code downstream is not
+being careless when it accepts the number. There is nothing in the number to
+reject.
+
+Work one through
+[the squeeze formula](03_choosing-a-grip.md#4-how-hard-to-squeeze-from-first-principles),
+which is `F = m * (g + a) * S / (2 * mu)`. Take a cell that handles two parts, one
+of 0.8 kg and one of 1.2 kg, on pads with a friction coefficient of 0.4, at a
+safety factor of 2, on a move slow enough to treat the acceleration as zero. The
+1.2 kg part needs `1.2 * 9.81 * 2 / (2 * 0.4)`, which is 29.4 N per pad. Suppose
+the weighing step fails on that part and the code quietly reuses the last mass it
+managed to measure, 0.8 kg. It then applies `0.8 * 9.81 * 2 / (2 * 0.4)`, which is
+19.6 N.
+
+Nothing visible goes wrong. Two pads at 19.6 N with a coefficient of 0.4 produce
+`2 * 0.4 * 19.62`, which is 15.7 N of friction, against a weight of
+`1.2 * 9.81`, which is 11.8 N. The part is held, with a real safety factor of
+`15.7 / 11.8`, which is 1.33 rather than the 2 the engineer asked for. It stays
+held on the bench, it stays held through a slow demonstration, and it lets go when
+the effective weight reaches 15.7 N. That happens at an upward acceleration of
+`15.7 / 1.2 - 9.81`, which is 3.3 m/s². A collaborative arm running a production
+cycle passes 3.3 m/s² without anybody thinking of it as fast.
+
+That is the whole argument. The bug was in the weighing step, the symptom is a
+dropped part during a fast move weeks later, and the two are joined by a number
+that carried no evidence of where it came from. **The failure surfaces somewhere
+else entirely, which is why this class of bug is expensive to diagnose and cheap
+to prevent.** A refusal at the weighing step would have cost one aborted cycle and
+named the sensor.
+
+### 9.2 The shapes it takes in contact work
+
+The same mistake wears five different faces in this area. Each is worth
+recognising on sight, because none of them looks like a fallback when you write
+it.
+
+**The code reads the force before the sensor has settled.** The reading is real,
+the sensor is publishing, and the value is wrong because the mechanical transient
+has not died away. [Section 1.1](#11-what-this-costs-in-cycle-time) puts the settling
+time at roughly the same third of a second as the median over 32 samples at
+100 Hz, which is 0.32 s. Code that reads immediately after commanding a grip is
+not defaulting in the obvious sense, but it is substituting a number produced by
+the wrong physical process for the one it wanted, and the result is the same.
+
+**The library returns zero when the sensor is not publishing.** This is the
+purest form. A wrist force-torque sensor that has stopped sending gives a client
+library nothing to return, and a great deal of code returns 0.0 N. Zero is inside
+the normal range. It means "nothing is being held", which is a legitimate reading with
+a legitimate consequence, so the release logic in [section 8](#8-letting-go) will
+cheerfully conclude that the weight has left the wrist and open the fingers.
+
+**The code coerces a `NaN` to zero.** `NaN` is short for "not a number", the
+special floating-point value that arithmetic produces when there is no answer,
+and its useful property is that it poisons everything it touches: any sum or mean that
+includes one is also `NaN`. That property is the whole point of it, and a line
+like `if math.isnan(v): v = 0.0` throws it away. The one signal in the system that
+was designed to be impossible to ignore has been converted into a plausible
+measurement.
+
+**The code reuses a last-known-good value after the thing it described has
+moved.** This is the case worked through in 9.1, and it is the most
+defensible-looking of the five, because the number was measured, once, from a
+real sensor. What has gone is not
+the provenance but the validity: the object it described is no longer the object
+in the fingers. A cached mass, a cached grasp pose and a cached friction
+coefficient all fail this way.
+
+**The code treats a timeout as a successful grasp.** The gripper was commanded, no
+confirmation came back within the window, and the code continues. This is the
+worst of the five because it is not even a number. It is a control-flow default:
+the absence of an answer has been read as the answer you hoped for. The honest
+reading of a timeout is that the state of the gripper is unknown, and unknown is
+not a synonym for closed.
+
+### 9.3 A default is not a fallback, and the difference is the whole rule
+
+The rule as stated so far would forbid a lot of good engineering, so it needs the
+distinction that makes it usable.
+
+**A default is a value you invented. A fallback is a different method producing a
+real value.** Returning 0.0 N because the force sensor is silent is a default,
+because no instrument produced that zero. Weighing the object with the wrist
+sensor and, when that is unavailable, falling back to the geometric mass estimate
+from [the perception
+area](../06_object-perception/02_sensors.md#22-estimating-a-mass-before-you-can-weigh-it)
+is a fallback, because the estimate is a real computation over real measured
+geometry with its own known error of about a third.
+
+Fallbacks are fine and often good. The condition is that the record says which
+method produced the number. A mass that arrives at the force calculation as a bare
+float is indistinguishable whichever way it came; a mass that arrives as a value
+plus the name of the method that produced it lets the force calculation choose a
+larger safety factor for the estimate than for the measurement, lets the log
+explain a later failure, and lets somebody grep for how often the wrist sensor is
+actually working. The cost is one extra field. The benefit is that the chain of
+custody survives.
+
+The practical test is a question. If this number turns out to be wrong later, will
+anything in the system be able to say where it came from? A default fails that
+test by construction, because it came from nowhere.
+
+### 9.4 How to write code that cannot do it
+
+Three changes are enough, and none of them is difficult.
+
+**Raise rather than return a sentinel.** A sentinel is a value chosen to mean
+"there is no value", such as -1 for a distance or 0.0 for a force. Every sentinel
+depends on every caller remembering to check for it, and callers written later by
+other people do not. An exception does not depend on anybody remembering. It is
+the difference between a convention and a mechanism, and the reason to prefer the
+mechanism is that the convention has no way to tell you it was forgotten.
+
+**Make the absence of a reading a distinct state rather than a value inside the
+normal range.** If the interface cannot raise, return something that is not a
+float: an option type, a result object, a tuple of value and validity. The
+property you want is that the absence cannot be arithmetic on by accident. A force
+of 0.0 N can be multiplied by a friction coefficient; a `None` cannot, and the
+`TypeError` it produces arrives at the line that made the mistake.
+
+**Record the method next to the number.** This is the fallback discipline from 9.3
+in code. Carry the provenance with the value rather than in a log line somebody has
+to correlate afterwards.
+
+### 9.5 The one legitimate exception, and why it is narrower than it looks
+
+There is one case where a special value in the data is right, and it is worth
+stating precisely, because it is the case people cite to justify all the others.
+**A special value is legitimate when it has a documented meaning and downstream
+code checks for it.** Both halves are required.
+
+The clearest worked example in robotics is [REP
+117](https://github.com/ros-infrastructure/rep/blob/master/rep-0117.rst), a ROS
+Enhancement Proposal, which is the ROS project's form of design document. REP 117
+covers distance measurements, and it defines three conditions that are not
+distances: a reading too close to measure is negative infinity, a reading with no
+return within range is positive infinity, and an erroneous or missing measurement
+is `NaN`. The document is in the public domain, so there is no licence question in
+quoting it.
+
+Two things about REP 117 are the reason to cite it here rather than in the
+perception area. The first is that it exists at all: the meanings are written
+down, in a numbered document, so a special value arriving at a consumer has a
+definition to be read against rather than a convention to be guessed at. The
+second is the failure it was written to fix. REP 117 records that the previous
+practice was to mark an invalid point as "maximum range plus one", and it notes
+that data logged under that practice cannot afterwards be separated into real
+readings and discarded ones. That is exactly the failure this section is about,
+discovered in a field that had already paid for it.
+
+REP 117 also does the thing that makes the exception safe. It publishes the check
+before it publishes the values, as a reference implementation, and it works
+through what happens to code that does not run the check. **The check must exist
+before the value does.** A special value invented without a consumer that
+recognises it is not an exception to the rule in this section. It is the rule, with
+a comment.
+
+Five jobs refusing suits:
+
+- any measurement that feeds a force calculation, where a wrong number becomes a
+  wrong squeeze with no intermediate step that could notice
+- the weighing step in [section 1](#1-the-squeeze-sequence), where the whole point
+  of the step is that the estimate might be wrong
+- the release sequence in [section 8](#8-letting-go), where the confirmation that
+  the weight has gone is the only thing standing between a place and a drop
+- any cell where a dropped or crushed object costs more than an aborted cycle,
+  which is most of them
+- collecting honest statistics about how often a sensor is unavailable, which a
+  default destroys permanently
+
+Five jobs it cannot do:
+
+- keep a cell running when a sensor genuinely fails, which is what a real fallback
+  method is for
+- catch a reading that is wrong but in range, such as an unsettled force reading,
+  since refusing only fires when the reading is absent
+- help if the refusal is caught and swallowed by a caller, which is the same bug
+  one level up
+- substitute for a timeout, which still has to be chosen and still has to be
+  treated as unknown rather than as failure
+- tell you what to do next, which is a question about the cell and not about the
+  reading
+
+## 10. Sim-to-real for contact
+
+Sim-to-real is the problem of making something developed in a simulator work on
+the real machine. The perception area covers it in general terms in [what
+simulation will not tell
+you](../06_object-perception/07_making-it-work.md#5-what-simulation-will-not-tell-you),
+and the frontier area covers what research has done about it in [simulation, world
+models and
+evaluation](../15_frontier/04_simulation-and-evaluation.md#5-sim-to-real-what-actually-closed-the-gap).
+This section is the gripping half, and it is here rather than there because
+grasping and holding depend on precisely the quantities that simulate worst.
+
+The argument in one sentence is that every number deciding whether a grip holds is
+either a property of two things that the model stores on one of them, or a solver
+parameter with no physical instrument behind it. Free motion simulates honestly.
+Contact does not.
+
+The simulators referred to below are the ones this repository uses or is likely to
+meet: [MuJoCo](https://github.com/google-deepmind/mujoco), Apache-2.0;
+[Gazebo](https://github.com/gazebosim/gz-sim), Apache-2.0, which delegates physics
+to [gz-physics](https://github.com/gazebosim/gz-physics), Apache-2.0, which by
+default loads the [DART](https://github.com/dartsim/dart) engine, BSD-2-Clause; and
+[Bullet](https://github.com/bulletphysics/bullet3), whose LICENSE file states the
+zlib licence for everything outside `Extras` and `examples/ThirdPartyLibs`. The
+world file format is SDFormat, the Simulation Description Format, whose
+specification is in [sdformat](https://github.com/gazebosim/sdformat), Apache-2.0.
+
+### 10.1 Friction is a property of a pair, not of a material
+
+There is no such thing as the friction coefficient of steel. Friction is a
+property of two surfaces in contact, so steel on steel, steel on silicone and
+silicone on glass are three unrelated numbers, and none of them belongs to either
+material on its own.
+
+Every simulator ignores this, because it has to. A model file describes one body
+at a time, and the body's collision shape gets one friction number. The pair
+coefficient is then manufactured at contact time by combining the two stored
+numbers, and the combining rule is a choice each engine made separately. Read the
+table as: the engine, the term its model file uses for a collision shape, how it
+turns two friction numbers into one, and how it does the same for restitution.
+Each row was read from the engine's own source or specification in September 2026.
+
+| Engine | Shape term | Friction of a pair | Restitution of a pair |
+| --- | --- | --- | --- |
+| MuJoCo | `geom` | the **element-wise maximum** of the two, unless one shape has higher `priority`, in which case its numbers win outright | no coefficient of restitution exists as a parameter |
+| DART, and so Gazebo by default | shape node | the **minimum** of the two | the **product** of the two |
+| Bullet | collision object | the **product** of the two | the **product** of the two |
+
+The disagreement is not academic, because the squeeze force depends on the
+coefficient directly. Author a silicone pad at 0.9 and a steel part at 0.4, which
+are both defensible numbers, and ask each engine what the pair coefficient is.
+MuJoCo takes the maximum and says 0.9. DART takes the minimum and says 0.4. Bullet
+takes the product and says `0.9 * 0.4`, which is 0.36. Now put a 0.5 kg part
+through `F = m * (g + a) * S / (2 * mu)` at a safety factor of 2 and no
+acceleration. At 0.9 the answer is `0.5 * 9.81 * 2 / (2 * 0.9)`, which is 5.5 N.
+At 0.4 it is 12.3 N. At 0.36 it is 13.6 N. **The same two numbers in the same
+model file produce a required squeeze that differs by a factor of 2.5 depending on
+which engine read the file**, and none of the three engines is wrong, because none
+of them was given the quantity that actually exists.
+
+There is a second trap underneath the first. SDFormat gives the ODE friction
+coefficient `mu` a default of 1, and the Gazebo physics plugin reads the surface
+element in a way that creates it with defaults when the model file omits it. So a
+collision shape with no friction specified is simulated at a coefficient of 1.0,
+which is roughly dry rubber on dry concrete and about the most generous value
+anybody would defend. Nobody chose it. It is what an unmentioned surface gets, and
+it is the surface most tutorial worlds are built from.
+
+The practical reading is that a friction number tuned until a simulated grasp held
+is a number about that engine's combining rule, and it does not transfer to
+another engine, let alone to a pad.
+
+### 10.2 Pressure across the pad, and why a held object turns
+
+A real pad touches over an area, and the pressure is not the same everywhere in
+it. That distribution is what decides how much torque about the contact normal the
+grip resists, which is to say whether the object turns in the fingers. Rotation in
+the fingers is the failure in [section
+4.1](#41-the-finger-gap-check-and-what-it-cannot-see) that the finger-gap check
+cannot see, so this is not a detail.
+
+Simulators reduce the patch to a small number of contact points. Each point
+carries a normal force and a tangential friction force, and by default it carries
+no torque about the normal at all. MuJoCo makes this legible, because its
+dimensionality parameter `condim` defaults to 3, which its documentation describes
+as a regular frictional contact generating normal and tangential force only.
+Setting `condim` to 4 adds torsional friction, the resistance to twisting about
+the contact normal, and MuJoCo's own documentation says that this "is useful for
+modeling soft fingers, and can substantially improve the stability of simulated
+grasping". The same documentation notes that torsional friction coefficients have
+units of length, interpretable as the diameter of the contact patch.
+
+Read that carefully, because it says two things at once. The parameter that
+decides whether a simulated grasp resists turning is off by default. And when you
+turn it on, the number it asks you for is the diameter of a contact patch you have
+not measured, on a pad whose pressure distribution you have no instrument for.
+
+The consequence for anybody developing a grasp in simulation is that a simulated
+object which never rotates in the fingers has told you nothing. It may be held
+well. It may be in a model with no rotational resistance and no rotational
+disturbance, where nothing could have turned it either way.
+
+### 10.3 Compliance and contact stiffness, whose numbers are invented
+
+Real surfaces do not pass through each other. Simulated ones do, slightly, and
+contact stiffness is the fiction that pushes them back apart: force per unit of
+interpenetration. It is not a material property, it is a solver parameter, and
+there is no instrument that measures it.
+
+The numbers in the specifications make the point without help. SDFormat's ODE
+contact block gives `kp`, described as the stiffness-equivalent coefficient for
+contact joints, a default of 1000000000000.0, which is 10^12 newtons per metre,
+and gives `kd`, the damping-equivalent, a default of 1.0. A stiffness of a
+million million newtons per metre is a number chosen to mean "rigid", not a
+measurement of anything.
+
+The situation is worse than invented numbers, and this is the part worth checking
+before you spend a day tuning. Gazebo's default physics plugin reads, from a
+collision's `<surface>` element, the friction coefficients `mu` and `mu2`, the
+slip compliances, the friction direction, the restitution coefficient, and the two
+collision bitmasks. From the `<contact>` element it takes the bitmasks and nothing
+else. **`kp`, `kd`, `soft_cfm`, `soft_erp`, `max_vel` and `min_depth` are parsed
+by SDFormat and never reach the solver.** The file validates, no warning is
+printed, and the stiffness you tuned has no effect on anything. That is an
+instance of the failure in [section 9](#9-never-fall-back-silently), committed by
+the tooling rather than by you, and it is the reason to check what your engine
+consumes rather than what your file format accepts.
+
+MuJoCo's equivalents are `solref` and `solimp`, which its documentation places in
+the solver chapter rather than anywhere near materials. They are combined across a
+pair by a weighted average using a `solmix` attribute, or by the element-wise
+minimum when either is given in the direct stiffness-and-damping format. A
+weighted average of two invented numbers is an invented number.
+
+This lands directly on [section 3](#3-compliance-impedance-and-admittance). An
+admittance controller tuned against a simulated contact has been tuned against a
+stiffness nobody measured, and the instability that section warns about — the
+buzzing against a stiff surface — is precisely the behaviour that appears only
+when the surface is real. A compliant insertion that works in simulation and
+chatters on the bench has not regressed. It was never tested.
+
+### 10.4 Restitution
+
+Restitution is how bouncy a collision is: the fraction of the approach speed that
+comes back as separation speed. Zero means the object stops dead, one means it
+leaves as fast as it arrived.
+
+Three facts about it are worth having. DART's default restitution coefficient is
+0.0 and it combines a pair by multiplication, so a single unspecified body makes
+every collision it takes part in perfectly inelastic. SDFormat's bounce element
+defaults its restitution coefficient to 0 as well, and pairs it with a `threshold`
+described as the capture velocity below which the effective coefficient is 0,
+defaulted to 100000; Gazebo's default physics plugin does not read that threshold
+at all. And real restitution is not a constant: it falls as the impact speed
+rises, and against a soft pad most of the energy goes into deforming the pad
+rather than into either body's rebound.
+
+For holding things, restitution is the least important of the parameters in this
+section, and it is the one most often quoted as though it were a material
+constant. It matters at exactly one moment, which is when the fingers close on a
+hard object faster than the loop can stop them, and at that moment what you
+actually want is a lower closing speed rather than a better bounce model.
+
+### 10.5 What changes when the pad is soft
+
+Almost every gripper worth using has a compliant fingertip, and almost every
+simulation of one models the pad as rigid with a friction coefficient attached.
+Five things change when the pad is genuinely soft, and none of them is in that
+model.
+
+The contact patch grows with the applied force, because the pad wraps further
+around the object the harder it is pressed. That breaks the proportionality that
+`F = m * (g + a) * S / (2 * mu)` assumes, in the helpful direction: the effective
+holding capacity rises faster than the squeeze does. It is one of the reasons a
+real silicone pad outperforms its own coefficient.
+
+The patch resists turning, which a point contact does not, and this is the
+physical mechanism behind MuJoCo's remark in 10.2 about soft fingers improving
+grasp stability. A soft pad is the cheapest fix available for rotation in the
+fingers, and it does not appear in a default simulation at all.
+
+The pad stores energy while it is squeezed and gives it back when the fingers
+open, which is one of the mechanisms behind objects that do not release cleanly in
+[section 8](#8-letting-go). A rigid model releases instantaneously and always
+correctly.
+
+The finger gap now reports pad compression as well as object deformation. The one
+thing the finger-gap check could see in [section
+4.1](#41-the-finger-gap-check-and-what-it-cannot-see) becomes a mixture of two
+causes, which makes the cheapest check less informative rather than more.
+
+The contact stiffness that matters becomes the pad's rather than the object's, and
+this is the single case in this section where a stiffness number is genuinely
+measurable: press a pad against a load cell with a dial indicator on it and read
+force against displacement. It is also the case where the simulator has nowhere
+sensible to put the answer.
+
+### 10.6 What you can calibrate in an afternoon, and what you cannot
+
+The useful question is not whether these parameters are wrong. They are. It is
+which of them you can fix cheaply on real hardware and which you should stop
+trying to fix. Read the table as: the quantity, how you would actually measure it
+with equipment a small cell has, and whether an afternoon is enough.
+
+| Quantity | How you would measure it | An afternoon? |
+| --- | --- | --- |
+| friction coefficient for one pad against one object | tilt a sample of the pad material until the object slides, and take the tangent of the angle | **yes**, minutes per pair |
+| the force the gripper actually delivers at each setting | close the fingers onto a load cell and sweep the force setting | **yes** |
+| the mass and the centre-of-mass offset | the wrist sensor, exactly as in [section 1](#1-the-squeeze-sequence) | **yes** |
+| the damage cap for a kind of object | squeeze spare parts until they fail, and record the force | **yes**, if you can spare the parts |
+| settling time and noise of the force sensor | log it at rest, then log it after a step | **yes** |
+| pressure distribution across the pad | a tactile array, if you have one | **no** |
+| contact stiffness and the solver parameters | nothing measures it; you fit it to observed behaviour | **no** |
+| restitution at the speeds you care about | drop tests at several speeds, since it is not a constant | **no** |
+| how friction moves with dust, oil, humidity and wear | the same measurement repeated over weeks | **no** |
+
+The tilt test in the first row is worth spelling out because it is the highest
+value hour in the list. An object resting on an inclined surface begins to slide
+when the tangent of the angle reaches the friction coefficient, so the coefficient
+is `tan(theta)` at the angle where it moves. An object that slides at 22 degrees
+gives `tan(22)`, which is 0.40. That one number replaces the most consequential
+guess in the whole squeeze calculation, and it costs a protractor and an offcut of
+pad material.
+
+The pattern across the table is simple enough to use as a rule. Anything you can
+put a number on with a force sensor, a protractor and a stopwatch is an afternoon.
+Anything that is a distribution across a surface, a parameter of a solver, or a
+trend over time is not, and the honest response to those is to widen the safety
+factor rather than to keep tuning the model.
+
+Five jobs developing contact behaviour in simulation suits:
+
+- checking that the sequence of steps is right, such as whether the code weighs
+  before it corrects and refuses when it should
+- reachability and collision checking for the approach, which is geometry and
+  simulates honestly
+- generating labelled training data for a grasp model, where the labels are free
+  and exact
+- exercising the failure branches, because a simulator can make a sensor go silent
+  or an object slip on demand and a real cell cannot
+- teaching the system to somebody new, at no risk to the hardware or the object
+
+Five jobs it cannot do:
+
+- tell you the squeeze that holds a real object, because the pair coefficient is
+  manufactured by a rule that differs between engines
+- predict whether a held object turns, because the default contact carries no
+  torque about the normal
+- tune a compliance controller, because contact stiffness is a solver parameter
+  and may not even reach the solver
+- tell you the force at which anything breaks, which has to come from destroying
+  real samples
+- tell you whether a grasp survives dust, oil, a worn pad or a wet object, none of
+  which the model contains

@@ -3,8 +3,9 @@
 What you can identify and what you can measure are both decided first by the
 instrument. This document is the instruments: what each kind of sensor gives you,
 how each one fails, what accuracy you can actually expect, the library you talk
-to it with, the ROS 2 package that wraps it — and the calibration without which
-none of those numbers mean anything.
+to it with, the ROS 2 package that wraps it — and the two things without which
+none of those numbers mean anything, which are the calibration and the frame each
+reading arrives in.
 
 The accuracy figures are the manufacturers' own published specifications, checked
 against their data sheets in September 2026. They are specifications, not what
@@ -16,6 +17,7 @@ you will get on a bad day.
 2. [Measuring by touch](#2-measuring-by-touch)
 3. [Event, thermal and polarisation cameras](#3-event-thermal-and-polarisation-cameras)
 4. [Calibration, which decides all of it](#4-calibration-which-decides-all-of-it)
+5. [Frames, and which one a reading is in](#5-frames-and-which-one-a-reading-is-in)
 
 ---
 
@@ -379,14 +381,17 @@ now horizontal — and gravity pulls across the sensor's axis rather than along 
 so the naive reading of the tool's own z is **zero**. Every object weighs nothing,
 convincingly, and the bug survives a long time because nothing errors.
 
-The fix is one line and it is not optional: rotate the measured wrench into the
-world frame with the tool's current orientation, then take the world-vertical
-component.
+The fix is one line and it is not optional: rotate the measured wrench — the six
+numbers of a force and a torque taken together, which is what a six-axis sensor
+produces — into the world frame with the tool's current orientation, then take the
+world-vertical component.
 
     weight = (R_tool_to_world · f_measured) · [0, 0, 1]
 
 Do that and the answer is right whatever angle the wrist is at, which also means
-you may weigh the object in whatever pose the grasp happened to need.
+you may weigh the object in whatever pose the grasp happened to need. This is one
+instance of a general problem, and
+[section 5](#5-frames-and-which-one-a-reading-is-in) treats it properly.
 
 **Filtering the reading, which needs more than you would think.** A wrist sensor
 watched during a grasp is not a quiet signal. Closing the fingers, starting a
@@ -400,7 +405,8 @@ second — with the arm held still. The median rather than the mean, because the
 are spikes rather than noise, and a mean is dragged by one of them while a median
 ignores it entirely. Then weigh only when the arm has settled, which is a good
 reason to make the weighing a deliberate pause rather than something read on the
-move.
+move. [Section 2.6](#26-conditioning-a-force-or-contact-reading) works through how
+to choose that window and what the choice costs you.
 
 **Detecting slip.** Two ways. The cheap one watches the gripper's finger gap and
 calls it slipping if the fingers creep closed. The good one reads shear or
@@ -522,6 +528,161 @@ Five jobs it cannot do:
 - measure anything fragile without a force limit, which is why the glass study
   caps its squeeze per kind of glass
 
+### 2.6 Conditioning a force or contact reading
+
+Section 2.1 says to take the median of a few dozen samples. That one sentence
+hides most of the work, so this subsection does it properly. It answers four
+questions: why a single sample is not a measurement, why the median rather than
+the mean, how long the window should be, and what the filtering costs you. It is
+for anyone about to read a number off a force sensor and act on it.
+
+**A single sample from a force sensor is not a measurement of the thing you asked
+about.** The sensor reports the total force passing through the wrist at that
+instant. While the arm is moving, that total is made up of the arm's own
+acceleration, the gripper motor's reaction as the fingers close, the structure
+still oscillating after the last stop, and the payload — in roughly that order of
+size. The trace quoted in section 2.1 ran from 0 g to 9577 g and back inside a
+fraction of a second while the object on the end weighed 200 g. Sampling once
+takes whichever of those numbers happened to be passing.
+
+**Noise and transients are different problems, and they want different filters.**
+Noise is small, present in every sample, and roughly symmetric about the true
+value; it comes from the electronics and from the quantisation of the reading. A
+transient is large, rare, one-sided, and caused by a real mechanical event such as
+the fingers closing or the arm stopping. Averaging is the right answer to noise,
+because errors that are symmetric about the truth cancel as you add them up.
+Averaging is the wrong answer to transients, because a single large value drags
+the mean by its own size divided by the number of samples, and 9577 g divided by
+32 samples is still 299 g of error on a 200 g object.
+
+Here are seven samples of that 200 g object, one of which caught the spike.
+
+    198, 201, 199, 9577, 200, 202, 199
+
+They sum to 10776, so the mean is 10776 / 7 = 1539 g, which is more than seven
+times the true weight. Sorted, the same samples are 198, 199, 199, 200, 201, 202,
+9577, and the middle one is 200 g. The median did not average the spike down. It
+discarded it, because a median depends only on the order of the samples and not
+at all on how far the extreme ones lie.
+
+That property has a number attached. A median tolerates just under half the
+samples being arbitrarily wrong before it leaves the range of the good ones: with
+a window of 33 samples, 16 of them can be spikes of any size whatever and the
+middle value still comes from clean data. A mean tolerates none, because one
+sample of sufficient size moves it wherever you like. Use an odd window so that
+the median is a real sample rather than the average of the two middle ones, since
+averaging two samples reintroduces a small amount of the sensitivity you were
+trying to remove.
+
+**Settling time is the delay between the end of the motion command and the point
+where the reading stays inside a band you have chosen around its final value.**
+It is not the end of the trajectory. The controller finishes when it runs out of
+trajectory points; the mechanism finishes when it has actually stopped moving,
+and the gap between the two is the arm flexing and then ringing. Ringing is the
+decaying oscillation a flexible structure is left with after it has been stopped
+abruptly. A worked illustration, with its assumptions stated because they differ
+from arm to arm: suppose the arm's structure flexes most readily at 8 Hz, which
+is its dominant mode, so one cycle lasts 1 / 8 = 0.125 s,
+and suppose each cycle loses 40% of the amplitude. To fall from a 5 N swing to
+0.1 N the amplitude has to reach 0.1 / 5 = 0.02 of its starting value. Multiplying
+0.6 by itself seven times gives 0.028, which is not yet there, and eight times
+gives 0.017, which is. Eight cycles at 0.125 s each is 1.0 s.
+
+Three further effects add to that figure, which is why settling time is usually
+longer than people expect. The sensor has its own internal filter with a delay of
+its own. A payload held in a compliant gripper swings on the fingers after the
+wrist has stopped. And the strain gauges inside a force sensor drift thermally
+for seconds after the load on them changes. A second is a realistic settling time
+for a light arm carrying something, and a twentieth of a second is not, so a
+pipeline that pauses for 50 ms before weighing is measuring the ring rather than
+the payload.
+
+**The window then follows from the sensor's rate and the residual motion.** Once
+the arm has settled there is still a little movement at the same 8 Hz, so the
+window should span at least three cycles for the median to land in the middle of
+the residual rather than on one side of it. Three cycles of 8 Hz is 3 / 8 =
+0.375 s. At the 100 Hz output rate of a sensor such as the Robotiq FT 300 in
+section 2.3 that is 0.375 × 100 = 38 samples, so take 39 and keep it odd. The 32
+samples suggested in section 2.1 are 32 / 100 = 0.32 s, which is 0.32 × 8 = 2.6
+cycles: about the shortest window that works. Run the same calculation for a
+sensor publishing a thousand times a second and it gives 0.375 × 1000 = 375
+samples. The rate changes the sample count and leaves the duration alone, and it
+is the duration that decides whether the filter works.
+
+**Filtering costs you time, and the cost is half the window.** A median over 33
+samples reports a value from the middle of its window, so at 100 Hz it lags
+reality by 16 samples, which is 16 / 100 = 0.16 s. An arm descending at 50 mm/s
+while you watch the filtered signal for contact travels 50 × 0.16 = 8 mm past the
+surface before the filter notices. That is why the guarded move and the weighing
+in section 2.1 must not share a filter. Contact detection wants a short window or
+a raw threshold and accepts the occasional false trigger; measurement wants a
+long window and accepts the delay.
+
+**Percentile filters do the same job when you want an extreme rather than the
+middle.** A percentile is the value below which a stated fraction of the samples
+lie once they are sorted. The median is the 50th percentile, and the same sorting
+gives you any other one, and the useful ones are near the ends. If you want the
+largest force the gripper applied while closing, so as to check it against the
+force cap in section 2.2, the maximum is the wrong statistic: the maximum is by
+construction the single most extreme sample, which makes it the one most likely
+to be a spike. The 95th
+percentile of 200 samples is the 190th in sorted order, so ten spikes can sit
+above it without moving it at all. The 5th percentile does the same work at the
+other end, which is what you want for noticing the instant the load left the
+wrist during a placement.
+
+**A reading taken while the arm is moving answers a different question from one
+taken while it is still.** Read the table below as the question each kind of
+reading actually answers, which is not always the question the code thinks it
+asked.
+
+| When the reading is taken | What it tells you | What it cannot tell you |
+| --- | --- | --- |
+| stationary, settled, filtered | the static load below the wrist, which is the payload plus the gripper | anything about what happened during the move |
+| while moving | whether something is resisting the motion right now | the payload's weight, which the inertia and friction terms swamp |
+
+Both readings are useful and they are not interchangeable. Compliance control and
+collision detection want the moving reading, and want it filtered lightly enough
+to still be timely. Weighing, taring and any comparison against a threshold in
+newtons want the stationary one. A pipeline that weighs on the move is not
+measuring a light object at all; it is measuring its own acceleration.
+
+Two practical points close this off. The tare comes first, because a wrist
+reading includes the gripper's own weight: the quantity you want is the
+difference between a settled reading with the object and a settled reading
+without it, taken at the same wrist orientation, for the reason section 2.1
+gives. And the filter belongs in the same place as the frame conversion in
+[section 5.4](#54-the-rule-that-prevents-it) — applied once, at the boundary
+where readings arrive, with only the conditioned value passed onward.
+
+Read the software table as: what to call, where it comes from, and the licence as
+read from that project's own LICENSE file.
+
+| Tool | Licence | What it does here |
+| --- | --- | --- |
+| [NumPy](https://github.com/numpy/numpy) `median` and `percentile` | BSD-3-Clause | one number out of a buffer you have already collected |
+| [SciPy](https://github.com/scipy/scipy) `ndimage.median_filter` and `ndimage.percentile_filter` | BSD-3-Clause | a running filter across a whole recorded trace, for looking at afterwards |
+| [ros2_controllers](https://github.com/ros-controls/ros2_controllers) `force_torque_sensor_broadcaster` | Apache-2.0 | publishes the wrench, and subtracts a constant `offset` per axis — which is a tare, not a filter |
+
+Five jobs a median over a settled window suits:
+
+- weighing a held object, which is what section 2.1 uses it for
+- taking a zero before a grasp, so the gripper's own weight drops out
+- rejecting the spike the fingers make as they close
+- checking a settled force against a damage cap before committing to a lift
+- turning a noisy tactile pressure into a number you can threshold
+
+Five jobs it cannot do:
+
+- detect the instant of contact, since it reports the middle of its window
+- measure anything that is genuinely changing, which it smooths into a value that
+  is wrong in a believable way
+- find a peak, which it discards by construction — use a high percentile instead
+- correct a sensor whose zero has drifted, since the median of a biased signal is
+  biased by exactly the same amount
+- rescue a window that straddles a real event, which returns a value that was
+  never true at any instant
+
 ## 3. Event, thermal and polarisation cameras
 Sensors that answer questions an ordinary camera cannot.
 
@@ -607,3 +768,278 @@ camera at two to five millimetres, a one-millimetre hand-eye error is not your
 problem. Fit a Zivid at 0.2 mm and that same one millimetre becomes the entire
 error. **Buying a better sensor without recalibrating buys you nothing.**
 
+## 5. Frames, and which one a reading is in
+Every number produced by every sensor in this document is a number in some frame
+of reference, and almost none of them say which. This section answers one question: when a
+sensor hands you three numbers, what are they three numbers *of*? It is for
+anyone writing the code between a sensor and a motion command, and it comes last
+because it depends on the calibration in section 4 being done — a frame is only
+useful once you know where it is.
+
+It earns a section rather than a footnote for one reason. Using a reading in the
+wrong frame does not raise an error. It produces a plausible number.
+
+### 5.1 The frames in a typical cell
+
+A frame of reference is an origin and three axes. A reading expressed in one
+frame is a different set of numbers from the same physical fact expressed in
+another, and converting between them needs a transform, which is a rotation and a
+translation. A robot arm cell normally has at least six frames in use at once.
+
+Read the table below as: the name the frame usually goes by, where its origin
+sits physically, and how its axes are oriented.
+
+| Frame | Where its origin sits | How the axes point |
+| --- | --- | --- |
+| `world` | a fixed point in the cell, chosen once and never moved | x forward, y left, z up |
+| `base_link`, the robot base | the centre of the arm's mounting face | the same convention; this is the frame the arm reports its own tool pose in |
+| `tool0`, the flange | the arm's output flange, before any gripper | set by the arm vendor, usually with z out along the reach axis |
+| the tool centre point | between the fingertips, or wherever the work happens | set by you, in the gripper's model |
+| `camera_link` | somewhere in the camera body that the vendor chose | x forward, y left, z up — the body convention |
+| the camera optical frame | the same physical place as `camera_link` | z forward, x right, y down |
+| the force sensor frame | the sensor's own mounting face, inside the wrist | whatever the bolt pattern allowed, which is often not aligned with the flange |
+
+Those conventions are ROS's, and they are written down in
+[REP 103](https://github.com/ros-infrastructure/rep/blob/master/rep-0103.rst). A
+REP is a ROS Enhancement Proposal, which is the document type ROS uses for its
+standards, and this one fixes units and coordinate conventions across the whole
+system. It says that all
+systems are right-handed, and that in relation to a body the axes are x forward, y
+left, z up. It then defines the exception that catches nearly everybody: a camera
+usually has a second frame whose name ends in `_optical`, and that frame uses z
+forward, x right, y down. Two frames, the same physical point, and a rotation
+between them.
+[REP 105](https://github.com/ros-infrastructure/rep/blob/master/rep-0105.rst) names
+the fixed frames for a robot that drives around — `earth`, `map`, `odom` and
+`base_link` — which matters if the arm sits on a mobile base, because then "world"
+is a chain of four frames rather than one.
+
+**The idea to carry away is that a frame belongs to a reading, not to the robot.**
+There is no such thing as "the robot's frame". Two readings taken at the same
+instant by two sensors bolted a centimetre apart are in two different frames. A
+reading's frame is a property of that reading in the same way its units are, and
+it has to travel with the reading for the same reason.
+
+### 5.2 Every sensor reports in its own frame, and almost none of them say so
+
+Each instrument in this document answers in the frame that is natural to its own
+construction, which is rarely the frame you want.
+
+A wrist force-torque sensor reports three forces along its own axes and three
+torques about them. Those axes rotate with the wrist, so the same hanging weight
+produces different numbers at different wrist orientations, which is the whole
+content of the trap in section 2.1.
+
+A camera reports in its optical frame. Every pixel coordinate, every depth value
+and every pose recovered from a marker comes out in z forward, x right, y down,
+because that is the convention the projection geometry is written in. This is
+*not* the frame the camera link uses, and both frames usually exist in the same
+robot model with names that differ by one suffix.
+
+A point cloud may be in either. Which one it is in is a decision the driver made,
+so read the cloud's own frame name rather than assuming; two drivers for two
+cameras in the same cell may differ.
+
+The joint encoders report angles about each joint's own axis. Forward kinematics —
+the calculation that turns a set of joint angles into the pose of the tool —
+turns those into a pose in the base frame, and that pose is the one output of the
+whole arm that arrives in a frame you chose rather than one the hardware imposed.
+
+A one-point range sensor of the kind in section 1.3 reports a distance along its
+own axis and has no frame in its output at all, because it has no message — it has
+a number on a bus.
+
+ROS 2 does carry the frame. Every stamped message has a `header.frame_id` naming
+the frame its contents are in. Two things then go wrong. The first is that the
+field is filled in by the driver, so a driver that names the link frame while
+publishing optical-frame data is perfectly well-formed and completely wrong. The
+second does more damage: the frame survives exactly as long as the message does.
+The moment you write `f = msg.wrench.force.z` you are holding a single number,
+and that number carries no frame with it.
+
+Outside ROS there is usually no frame at all. A vendor SDK returns six doubles; a
+research code base returns an array of three numbers; neither carries a name, and
+the convention lives in a comment if it lives anywhere.
+
+One project takes the naming seriously enough to be worth copying.
+[ros2_controllers](https://github.com/ros-controls/ros2_controllers), Apache-2.0
+as read from its LICENSE file, gives `force_torque_sensor_broadcaster` a
+`frame_id` parameter validated as not empty, so the controller refuses to start
+until it has been told which frame it is publishing in. That is the right amount
+of pedantry for a value that is about to be turned into motion.
+
+### 5.3 The bug, in four instances
+
+The four below look like four unrelated faults. They are one fault, and the
+generalisation at the end is the part worth remembering.
+
+**The wrist force sensor read along the wrong axis.** This is the instance already
+described in section 2.1. A wrist sensor reports in the tool frame, so taking the
+tool's own z as the weight works perfectly while the tool points down and returns
+zero for a side grasp, because gravity then pulls across that axis instead of
+along it. Every object weighs nothing, convincingly.
+
+**A depth point read in the wrong camera frame.** Take a point the camera sees
+300 mm ahead of it, 50 mm to its right and 100 mm below the optical axis. In the
+optical frame that point is (0.05, 0.10, 0.30) in metres, because x is right, y is
+down and z is forward. In the camera's link frame the same point is (0.30, −0.05,
+−0.10), because x is forward, y is left and z is up. Hand the optical triple to
+code expecting the link convention and the object is reported 0.05 m in front of
+the camera instead of 0.30, 0.10 m to the left instead of 0.05 to the right, and
+0.30 m above instead of 0.10 below. The three errors are 0.25 m, 0.15 m and
+0.40 m. Each of those numbers is a perfectly sensible distance in a table-top
+cell, so the planner finds a route and the arm moves confidently to the wrong
+place.
+
+**An orientation applied in the wrong frame.** A grasp direction is a rotation,
+usually held as a quaternion, which is a set of four numbers of which a valid
+rotation uses only those of unit length. A unit quaternion is still a unit
+quaternion after a change of frame, so checks for validity, normalisation and
+magnitude all pass whatever frame the rotation was worked out in. Apply an
+approach direction computed in the camera's optical frame as though it were in
+the tool frame and the gripper arrives rotated by whatever the camera-to-tool
+rotation happens to be — and between a camera's optical frame and its own link
+frame that is already a pair of right angles, before the mounting is counted. The
+fingers then close across the object's long axis instead of along it, and the
+failure gets reported as a mechanical one: the gripper is too narrow for this
+object.
+
+**The right frame at the wrong instant.** A transform between two moving frames is
+a function of time, so looking one up with "now" instead of the reading's own
+timestamp is a frame error of the temporal kind. A wrist camera moving at 0.25 m/s
+with a transform 50 ms out of date places the picture 0.25 × 0.05 = 0.0125 m, or
+12.5 mm, from where the arm believes it was taken. Nothing in the pipeline is
+wrong except the moment it was asked about. The [wrist camera
+document](08_the-wrist-camera.md) goes into what staleness costs at various
+speeds.
+
+**The shape all four share.** A frame error applies a rotation, a translation, or
+both, to a quantity that was already correct. A rotation does not change a
+vector's length, and a translation inside a work cell is a few tens of
+centimetres. So the wrong answer comes out with the right units, a magnitude in
+the right range, and a direction that is wrong. Every check that looks only at
+size passes: it is a number, it is finite, it is inside the workspace, the
+quaternion is normalised. Only a check that compares *direction* against an
+independent reference catches it, which is what section 5.5 is about.
+
+### 5.4 The rule that prevents it
+
+Four habits, none of which costs anything at the time.
+
+**Name the frame in the variable.** Write `force_tool`, `point_cam_optical` and
+`pose_base`, never `force`, `point` and `pose`. The benefit is that the bug
+becomes visible where the value is used rather than only once the arm moves:
+`weight = force_tool.z` invites the question that `weight = force.z` does not.
+Apply the same rule to function arguments and to the names of the values a
+function returns.
+
+**Name the direction of a transform too**, because applying a transform backwards
+is the second most common version of this bug. Write `T_base_from_camera`, so that
+reading left to right, `T_base_from_camera · point_camera = point_base` and the
+adjacent labels cancel the way units cancel in a physics calculation. A chain then
+checks itself by inspection. `T_base_from_tool · T_tool_from_camera ·
+point_camera` is right, and swapping either term leaves a `camera` next to a
+`tool`, which is visibly wrong on the page.
+
+**Convert at the boundary.** The function that receives a message converts it once,
+immediately, into the single frame the rest of the code works in, and everything
+downstream is in that frame by construction. In ROS 2 that means tf2, the
+transform library described in section 5.5: its buffer from `tf2_ros`, together
+with the `doTransform` helpers in `tf2_geometry_msgs`, which handle points, poses,
+quaternions, vectors and wrenches.
+
+A wrench is worth a paragraph of its own here, because transforming one is not
+just a rotation. The `doTransform` for a wrench in
+[geometry2](https://github.com/ros2/geometry2) rotates the force, rotates the
+torque, and then adds the extra torque that the translation creates, which is the
+cross product of the offset with the rotated force. A 5 N force referred to a
+point 100 mm away picks up 5 × 0.1 = 0.5 Nm of torque that was not in the original
+reading. That torque is real rather than an artefact — it is the moment about the
+new origin — and code that rotates the force by hand and leaves the torque
+untouched is quietly wrong about it.
+
+**Never let a raw reading travel more than one function without its frame
+attached.** Pass the stamped message, or a small pair of frame name and value, and
+not a bare array. Once a number has been through three functions as a plain
+float, the only way to recover its frame is to read every one of them.
+
+There is a ready-made example of the boundary rule in the same repository as the
+broadcaster above. `force_torque_sensor_broadcaster` ships a wrench transformer
+node that subscribes to the raw wrench and republishes it, on a separate topic for
+each frame, into every frame named in its `target_frames` parameter, using tf2
+with a lookup timeout that defaults to 0.1 s. The conversion happens once, in one
+place, and each consumer subscribes to the frame it actually wants.
+
+### 5.5 How to check
+
+There are two checks. One is in software and one uses your hands, and neither
+substitutes for the other.
+
+**tf2 answers where any frame was relative to any other, at a stated time.** It is
+the transform library in [geometry2](https://github.com/ros2/geometry2),
+BSD-3-Clause as read from its LICENSE file. The obvious alternative is to write
+the camera-to-base transform into whichever node needs it as a fixed matrix, and
+tf2 is worth preferring because that alternative keeps the same geometry in
+several places, so recalibrating corrects some copies and leaves the rest wrong.
+What tf2 costs you is that the tree has to be complete and continuously
+published: a node that stops publishing its transform takes every query through
+it down with it. Nodes publish transforms, tf2
+assembles them into a tree and interpolates between the published samples, and
+`lookup_transform` takes two frame names and a timestamp. Passing the reading's
+own stamp rather than the current time is exactly what avoids the fourth instance
+in section 5.3. The buffer keeps a finite history — `BUFFER_CORE_DEFAULT_CACHE_TIME`
+in `tf2/buffer_core.hpp` is 10 seconds — so a lookup for an older stamp fails
+instead of extrapolating, which is the behaviour you want. To look at the tree,
+`ros2 run tf2_tools view_frames` renders it to a file, `ros2 run tf2_ros tf2_echo`
+prints a single transform as it changes, and rviz2 draws every frame's axes in
+three dimensions, which is the quickest way to notice that a camera's axes point
+somewhere unexpected.
+
+The limit of tf2 has to be stated plainly, because it is often misread as a
+guarantee. tf2 tells you when a transform is *missing*. It cannot tell you when a
+transform is *wrong*. A tree built on a bad hand-eye calibration is complete,
+well-formed and self-consistent, and it answers every query promptly with the
+wrong number.
+
+**So the second check is physical, and it is the only one that tests the numbers
+against the world.** Put a known object at a known place and compare what the
+pipeline reports with what you measured. Tape a printed marker to the table and
+measure its centre from the robot base with a rule. Choose a position that is
+asymmetric in all three axes — not straight ahead, not level with the base — so
+that a swapped pair of axes or a wrong sign gives a visibly different answer
+instead of the same one. Say you measure the marker at 400 mm forward, 150 mm to
+the left and 20 mm above the base plane, which in the convention of section 5.1 is
+(0.400, 0.150, 0.020) in the base frame. If the pipeline reports (0.150, 0.400,
+0.020) you have swapped x and y. If it reports (0.400, −0.150, 0.020) your y sign
+is inverted. If it reports the three numbers you measured, the chain is right for
+that point.
+
+Then repeat at three places that are not in a straight line. A single point can be
+matched by a great many wrong transforms, since any rotation about the axis
+through that point leaves it where it is. Three points that are not collinear pin
+a rigid transform down completely, so agreement at all three means the rotation is
+right as well as the offset.
+
+There is a version of this check for the frames a camera cannot see, and it uses
+the guarded move from section 2.1. Drive the tool slowly to the position the
+pipeline reported and let it make contact. The joint encoders then tell you where
+the tool really was at the instant it touched, in the base frame, and the
+difference between that and the reported position is the error of the entire
+chain, calibration included.
+
+Five jobs tf2 suits:
+
+- answering where the camera was at the instant a particular picture was taken
+- composing a chain of transforms without writing the matrix algebra by hand
+- holding one definition of the cell's geometry that every node shares
+- catching a missing calibration, since a disconnected tree raises rather than
+  guessing
+- letting you look at every frame's axes in rviz2 and spot a wrong one at once
+
+Five jobs it cannot do:
+
+- tell you a transform is wrong, as opposed to absent
+- restore the frame of a reading you have already stripped down to a bare number
+- correct a driver that filled its `frame_id` in wrongly, which it cannot detect
+- answer for a stamp older than its buffer, which by default holds ten seconds
+- give a frame to a vendor SDK whose output never had one

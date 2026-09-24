@@ -108,7 +108,8 @@ knowing.
 
 **A great many models whose original repository requires CUDA have a pure-PyTorch
 reimplementation in Hugging Face `transformers` that does not.** Deformable DETR's
-port falls back to `grid_sample` when the CUDA kernel is missing; Mask2Former's
+port now uses plain PyTorch `grid_sample` by default, with the compiled kernel an
+opt-in download; Mask2Former's
 and OneFormer's ports never had one; Grounding DINO's port is pure PyTorch; and —
 the useful one — **SAM 3 is in `transformers` from version 5.0.0, with no compiled
 kernels at all**, including its tracker and video heads. So "the repository needs
@@ -125,13 +126,25 @@ is often false.
 | EdgeTAM, which has a real CoreML build; EdgeSAM too, but it is **S-Lab License 1.0, non-commercial** | NVIDIA TAO Toolkit |
 | ONNX Runtime, CoreML, MLX | TensorRT |
 
-Two measured figures worth quoting, because most Apple Silicon claims in this
-field are guesses: Depth Anything V2 Small runs in **24.6 ms on an M3 Max** through
-CoreML and the Neural Engine, and EdgeSAM runs at **38.7 frames per second on an
-iPhone 14**. Against that, MobileSAM — which is *designed* to be small — measures
-around 24 seconds per image on an M4 Air's CPU, far slower than FastSAM's 58
-milliseconds on the same machine. Small does not automatically mean fast on
-Apple hardware; what matters is whether anyone has done the CoreML work.
+Four measured figures worth quoting, because most Apple Silicon claims in this
+field are guesses. Each is given with its source, since that is the difference
+between a figure and a rumour.
+
+| Figure | Machine | Source |
+| --- | --- | --- |
+| Depth Anything V2 Small, **24.58 ms** | M3 Max, Neural Engine dominant | [Apple's own model card](https://huggingface.co/apple/coreml-depth-anything-v2-small) |
+| the same model, **32.80 ms** | M1 Max | the same card |
+| EdgeSAM, **38.7 frames per second** | iPhone 14 | [the authors' own table](https://github.com/chongzhou96/EdgeSAM) |
+| FastSAM-s **58.0 ms**, MobileSAM **23,802 ms** | 2025 M4 Air, 16 GB, CPU | [Ultralytics' benchmark](https://docs.ultralytics.com/models/fast-sam/) |
+
+The last row looks like a four-hundredfold difference between two models that are
+both meant to be small, and it is worth reading the footnote before drawing that
+conclusion. Ultralytics measured the YOLO-derived models through ONNX Runtime and
+the SAM-derived ones through PyTorch, so part of that gap is the runtime rather
+than the model. The safe reading is the weaker one: **on Apple hardware, what
+decides your speed is usually whether anyone has done the export work — to CoreML,
+to ONNX — and not how many parameters the model has.** A small model nobody has
+exported is a slow model.
 
 ### 3.1 For measuring objects
 
@@ -155,7 +168,9 @@ is what this repo uses.
 
 ## 4. Putting it in ROS 2
 
-ROS 2's current long-term release is **Lyrical Luth**, from May 2026. Jazzy
+ROS 2's current long-term release is **Lyrical Luth**, from May 2026 — listed as
+active in `rosdistro`'s own index, though note that REP 2000 has not been updated
+to carry it and still ends at Kilted Kaiju. Jazzy
 Jalisco remains supported to 2029 and is the safer choice today.
 
 Perception results travel as

@@ -194,7 +194,8 @@ non-commercial.
 The headline is better than its reputation, and it is not documented anywhere
 obvious, so this section is the result of checking rather than of reading.
 
-**ROS 2 has no official Apple Silicon support at all.** In REP-2000, which
+**ROS 2 has no official Apple Silicon support at all.** In REP-2000 — whose last
+distribution section is Kilted Kaiju, so Lyrical's own dates are not in it —
 defines the target platforms for every distribution, macOS appears only in the
 `amd64` row at tier 3, for both Jazzy and Kilted. The `arm64` row has no macOS
 cell. This is the same finding

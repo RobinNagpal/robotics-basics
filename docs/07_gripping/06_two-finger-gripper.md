@@ -61,10 +61,19 @@ The published numbers for the two common sizes, from Robotiq's own manuals:
 | grip force | 20 to 235 N | 10 to 125 N |
 | rated payload, friction grasp | 5 kg | 2.5 kg |
 | finger speed | 20 to 150 mm/s | 30 to 250 mm/s |
-| closing time | 0.03 to 0.07 s | 0.03 to 0.07 s |
+| full-stroke closing time | 0.57 to 4.3 s, computed | 0.56 to 4.7 s, computed |
 
 Read the force row as a *range you select*, not an accuracy. What arrives at the
 object also depends on the object, which section 3 returns to.
+
+The closing-time row is computed from the finger speed, not published: Robotiq's
+specification table gives a speed and no time. Dividing the stroke by the speed
+gives 85 / 150 = 0.57 s at full speed and 85 / 20 = 4.3 s at the slowest
+setting. A real close is shorter than the full stroke, because the fingers start
+partly closed and stop on the object — so treat these as an upper bound and
+measure your own. Anyone quoting a figure of a few tens of milliseconds for this
+gripper has taken it from somewhere other than the manual; the mechanism cannot
+move 85 mm that fast.
 
 ## 2. The ROS 2 interfaces, concretely
 

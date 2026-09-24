@@ -342,6 +342,8 @@ which is the most common wrong response to a measurement that is off.
 | [Models that measure](05_models-that-measure.md) | learned depth, stereo, 6-DoF pose, and reconstruction |
 | [Licences and platforms](06_licences-and-platforms.md) | what you may ship, what runs on a Mac, ROS 2, and every method side by side |
 | [Making it work](07_making-it-work.md) | how to tell whether it is working, how fast it must be, and what to do when it is wrong |
+| [Choosing where to look](09_choosing-where-to-look.md) | picking viewpoints, and ruling them out geometrically before a planner is asked |
+| [Tracking and association](10_tracking-and-association.md) | deciding that this object is the same one you saw before |
 
 If you are starting a project rather than reading it through, the order that
 wastes least time is: this document, then

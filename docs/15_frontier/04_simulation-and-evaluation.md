@@ -340,7 +340,12 @@ graphics-card-parallel manipulation environments outside the NVIDIA and MuJoCo s
 [Its installation
 page](https://maniskill.readthedocs.io/en/latest/user_guide/getting_started/installation.html)
 says: "We currently best support Linux based systems. There is limited support for
-windows and no support for MacOS at the moment." Status: **Shipped**.
+windows and no support for MacOS at the moment." **That sentence has since gone:**
+the project now publishes a [macOS install
+page](https://maniskill.readthedocs.io/en/latest/user_guide/getting_started/macos_install.html)
+saying it supports macOS for CPU simulation and standard rendering, through the
+Vulkan SDK and MoltenVK, with GPU simulation still unsupported. Status:
+**Shipped**.
 
 [robosuite](https://github.com/ARISE-Initiative/robosuite) (MIT, read from its licence
 file) is the MuJoCo-based framework that LIBERO and RoboCasa are both built on. Its
@@ -375,7 +380,7 @@ means it runs on the Mac's own graphics processor.
 | Isaac Lab | No | no macOS in its docs; every backend needs Isaac Sim or CUDA |
 | Isaac Lab Arena | No | its LeRobot page requires "Linux (Ubuntu 22.04 / 24.04)" |
 | Genesis World | Yes, including simulation on the Metal GPU | its support table, quoted below |
-| ManiSkill | CPU simulation and rendering only | "no support for MacOS at the moment" |
+| ManiSkill | CPU simulation and rendering, via MoltenVK; no GPU simulation | its own macOS install page |
 | Gazebo Jetty | Yes, via Homebrew | the macOS install page |
 | robosuite | Yes, it is MuJoCo underneath | MuJoCo's own Mac support |
 | LIBERO through LeRobot | No | the LeRobot page requires `sys_platform == 'linux'` |

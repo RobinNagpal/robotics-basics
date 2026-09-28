@@ -207,7 +207,7 @@ second.
 ## 3. How the code works
 
 All of it lives in one file:
-[`marker_publisher.py`](../../src/rviz_basics/rviz_basics/marker_publisher.py).
+[`marker_publisher.py`](../../code/src/rviz_basics/rviz_basics/marker_publisher.py).
 
 The snippets below are trimmed so they stay readable. Type hints and docstrings
 are left out, a few repeated lines are joined into one, and some comments are
@@ -528,7 +528,7 @@ so you can swap it for any path you like and nothing else changes.
 If you change the radius or the lap time, redraw the pictures in this file:
 
 ```
-pixi run python docs/diagrams/rviz.py
+pixi run python ../docs/diagrams/rviz.py
 ```
 
 ---

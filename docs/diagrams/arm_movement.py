@@ -15,7 +15,7 @@ The joint speed limit drawn on the singularity picture is 180 degrees per second
 which is the value the official Universal Robots description package gives for
 every joint of a UR5e, in config/ur5e/joint_limits.yaml.
 
-Run with:  pixi run python docs/diagrams/arm_movement.py
+Run with:  pixi run python ../docs/diagrams/arm_movement.py
 """
 
 import math

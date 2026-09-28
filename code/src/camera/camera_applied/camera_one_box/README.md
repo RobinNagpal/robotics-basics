@@ -6,9 +6,9 @@ real robot arm's perception code is, and it uses the same libraries.
 
 This file is about running the code and finding your way around it. The ideas
 behind it, and the maths, are explained in
-[docs/camera/one-box-intro.md](../../../../docs/camera/one-box-intro.md), which builds
-on [docs/camera/basics.md](../../../../docs/camera/basics.md), and
-[docs/camera/one-box-code.md](../../../../docs/camera/one-box-code.md) explains the
+[docs/camera/one-box-intro.md](../../../../../docs/camera/one-box-intro.md), which builds
+on [docs/camera/basics.md](../../../../../docs/camera/basics.md), and
+[docs/camera/one-box-code.md](../../../../../docs/camera/one-box-code.md) explains the
 code and the basics of every library it uses.
 
 ## Contents
@@ -106,8 +106,8 @@ After changing the world or the camera, record them again and redraw the
 pictures:
 
 ```
-pixi run python docs/diagrams/record_camera.py
-pixi run python docs/diagrams/camera.py
+pixi run python ../docs/diagrams/record_camera.py
+pixi run python ../docs/diagrams/camera.py
 ```
 
 ## 2. The main Python files

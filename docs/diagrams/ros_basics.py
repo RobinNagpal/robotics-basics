@@ -2,7 +2,7 @@
 
 The images go to docs/images/ros/ros-basics/.
 
-Run with:  pixi run python docs/diagrams/ros_basics.py
+Run with:  pixi run python ../docs/diagrams/ros_basics.py
 """
 
 import math

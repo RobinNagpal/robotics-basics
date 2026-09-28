@@ -6,7 +6,7 @@ is used for — a node, a topic, a parameter, a service, an action, a frame, and
 launch file that starts several together — so that each idea can be read, run
 and changed without anything else getting in the way.
 
-The code is in [`src/ros/ros_basics/`](../../src/ros/ros_basics). The three
+The code is in [`src/ros/ros_basics/`](../../code/src/ros/ros_basics). The three
 worked examples that put these together into something a robot does — a camera,
 an arm, and the two at once — are in `src/ros/ros_applied/`, and their docs are
 [ROS camera](03_ros-camera.md), [ROS arm](04_ros-arm.md) and

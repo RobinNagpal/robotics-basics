@@ -8,7 +8,7 @@ cannot drift from what that code does.
 
 The model parts need PyTorch, so run this in the vision environment:
 
-  pixi run -e vision python docs/diagrams/finding_objects.py
+  pixi run -e vision python ../docs/diagrams/finding_objects.py
 
 The last figure needs the trained weights, which are made by:
 
@@ -20,7 +20,7 @@ import sys
 import textwrap
 
 REPO_ROOT: pathlib.Path = pathlib.Path(__file__).resolve().parents[2]
-CODE: pathlib.Path = REPO_ROOT / 'src' / 'camera' / 'camera_basics'
+CODE: pathlib.Path = REPO_ROOT / 'code' / 'src' / 'camera' / 'camera_basics'
 sys.path.insert(0, str(CODE))
 
 import cv2  # noqa: E402

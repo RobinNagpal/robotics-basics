@@ -1,0 +1,130 @@
+/* Syntax colours for highlight.js class names, in light and dark. */
+
+.hljs {
+  color: var(--text);
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #8a8f98;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag,
+.hljs-meta .hljs-keyword {
+  color: #b4236d;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-meta .hljs-string {
+  color: #1a7f4b;
+}
+
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-variable.constant_ {
+  color: #b35900;
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-section {
+  color: #2458c6;
+}
+
+.hljs-title.class_,
+.hljs-type,
+.hljs-built_in {
+  color: #7a3ec2;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-property,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-params {
+  color: #0f6f78;
+}
+
+.hljs-meta,
+.hljs-tag,
+.hljs-name {
+  color: #6a707b;
+}
+
+.hljs-deletion {
+  color: #c0362c;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+[data-theme='dark'] .hljs-comment,
+[data-theme='dark'] .hljs-quote {
+  color: #6f7783;
+}
+
+[data-theme='dark'] .hljs-keyword,
+[data-theme='dark'] .hljs-selector-tag,
+[data-theme='dark'] .hljs-literal,
+[data-theme='dark'] .hljs-doctag,
+[data-theme='dark'] .hljs-meta .hljs-keyword {
+  color: #ff7ab2;
+}
+
+[data-theme='dark'] .hljs-string,
+[data-theme='dark'] .hljs-regexp,
+[data-theme='dark'] .hljs-addition,
+[data-theme='dark'] .hljs-meta .hljs-string {
+  color: #7ee2a8;
+}
+
+[data-theme='dark'] .hljs-number,
+[data-theme='dark'] .hljs-symbol,
+[data-theme='dark'] .hljs-bullet,
+[data-theme='dark'] .hljs-variable.constant_ {
+  color: #ffb86b;
+}
+
+[data-theme='dark'] .hljs-title,
+[data-theme='dark'] .hljs-title.function_,
+[data-theme='dark'] .hljs-section {
+  color: #82aaff;
+}
+
+[data-theme='dark'] .hljs-title.class_,
+[data-theme='dark'] .hljs-type,
+[data-theme='dark'] .hljs-built_in {
+  color: #c7a2ff;
+}
+
+[data-theme='dark'] .hljs-attr,
+[data-theme='dark'] .hljs-attribute,
+[data-theme='dark'] .hljs-property,
+[data-theme='dark'] .hljs-variable,
+[data-theme='dark'] .hljs-template-variable,
+[data-theme='dark'] .hljs-params {
+  color: #6fd6d9;
+}
+
+[data-theme='dark'] .hljs-meta,
+[data-theme='dark'] .hljs-tag,
+[data-theme='dark'] .hljs-name {
+  color: #9aa3ae;
+}
+
+[data-theme='dark'] .hljs-deletion {
+  color: #ff8a80;
+}

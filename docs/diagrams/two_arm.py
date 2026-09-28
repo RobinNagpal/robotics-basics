@@ -2,7 +2,7 @@
 
 The images go to docs/images/two-arm-manipulation/.
 
-Run with:  pixi run python docs/diagrams/two_arm.py
+Run with:  pixi run python ../docs/diagrams/two_arm.py
 """
 
 import math

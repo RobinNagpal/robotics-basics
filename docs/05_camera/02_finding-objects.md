@@ -7,7 +7,7 @@ camera picture, with the three tools every project uses: a **colour range**, a
 new object, which is what you do when no ready-made model knows the thing your
 robot handles.
 
-The code is in [`src/camera/camera_basics/`](../../src/camera/camera_basics), four small
+The code is in [`src/camera/camera_basics/`](../../code/src/camera/camera_basics), four small
 programs that each print what they are doing, and every number quoted here came
 from running them.
 

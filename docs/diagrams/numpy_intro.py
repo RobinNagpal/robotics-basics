@@ -2,7 +2,7 @@
 
 The images go to docs/images/numpy/numpy-intro/.
 
-Run with:  pixi run python docs/diagrams/numpy_intro.py
+Run with:  pixi run python ../docs/diagrams/numpy_intro.py
 
 The numbers in every diagram come from the files in src/numpy, so the diagrams
 match what those files print. This script is not called numpy.py, because a
@@ -18,7 +18,7 @@ import sys
 # The files in src/numpy (arrays, indexing, linear_algebra, maths and sampling) are
 # imported from there, so this adds that folder to where Python looks.
 REPO_ROOT: pathlib.Path = pathlib.Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / 'src' / 'numpy'))
+sys.path.insert(0, str(REPO_ROOT / 'code' / 'src' / 'numpy'))
 
 import arrays  # noqa: E402
 import indexing  # noqa: E402

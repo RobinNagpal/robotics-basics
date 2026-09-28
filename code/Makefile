@@ -1,7 +1,7 @@
 # robotics-basics — one entry point for everything.
 #
 # The repo is split into areas. Each area has its code under src/ (a ROS
-# package, or for numpy, plain Python files) and one folder under docs/. Area commands are named <area>.<action>, and each area
+# package, or for numpy, plain Python files) and one folder under ../docs/. Area commands are named <area>.<action>, and each area
 # keeps to two or three of them so this list stays readable as areas are added.
 #
 # Run `make` on its own to see what is available.
@@ -26,7 +26,7 @@ help: ## Show this help
 		/^##@/ { printf "\n  \033[1m%s\033[0m\n", substr($$0, 5) } \
 		/^[a-zA-Z_.-]+:.*?##/ { printf "    \033[36m%-19s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo ""
-	@echo "  Area commands are <area>.<action>. Docs for an area are in docs/<area>/."
+	@echo "  Area commands are <area>.<action>. Docs for an area are in ../docs/<area>/."
 	@echo ""
 
 ##@ Project
@@ -41,7 +41,7 @@ test: ## Run every test
 	pixi run test
 
 lint: ## Check code style everywhere
-	pixi run flake8 src/ docs/ --max-line-length=100
+	pixi run flake8 src/ ../docs/ --max-line-length=100
 
 clean: ## Remove build/, install/ and log/
 	pixi run clean

@@ -1,5 +1,13 @@
 # Project rules
 
+## Layout
+
+The repo has three folders. `docs/` holds the docs. `code/` holds `src/`, the
+Makefile and the pixi environment; run every `make` and `pixi` command from inside
+`code/`, and a diagram script as `pixi run python ../docs/diagrams/<name>.py`.
+`website/` is the Next.js site that reads `docs/` directly; which chapters go in
+which book is set in `website/lib/books.config.ts`.
+
 ## IMPORTANT: naming inside `docs/`
 
 **Every document and every folder inside `docs/` must start with a two-digit number

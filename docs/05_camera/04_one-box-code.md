@@ -1057,8 +1057,8 @@ It will not overwrite an existing folder, so delete the old one first.
 after changing the world or the camera, record the captures again and redraw:
 
 ```
-pixi run python docs/diagrams/record_camera.py
-pixi run python docs/diagrams/camera.py
+pixi run python ../docs/diagrams/record_camera.py
+pixi run python ../docs/diagrams/camera.py
 ```
 
 **Use a real camera.** The box locator only reads the topics in section 4.3 and

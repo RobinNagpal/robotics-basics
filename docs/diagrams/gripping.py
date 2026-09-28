@@ -16,7 +16,7 @@ against its source:
     6 kg rating for the VGC10 with three 40 mm cups.
   * The friction cone half-angle is arctan(mu), computed here.
 
-Run with:  pixi run python docs/diagrams/gripping.py
+Run with:  pixi run python ../docs/diagrams/gripping.py
 """
 
 import pathlib

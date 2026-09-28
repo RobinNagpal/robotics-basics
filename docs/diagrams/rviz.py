@@ -3,7 +3,7 @@
 Images go to docs/images/<area>/, matching the docs/<area>/ folder that uses
 them.
 
-Run with:  pixi run python docs/diagrams/rviz.py
+Run with:  pixi run python ../docs/diagrams/rviz.py
 
 The figures read their numbers from the node's defaults, so if you change the
 orbit radius or period in marker_publisher.py, regenerate rather than editing

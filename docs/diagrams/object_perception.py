@@ -8,7 +8,7 @@ The measuring diagrams use the repo's own camera: fx = fy = 277.1 px, cx = 160,
 cy = 120, a 320x240 sensor with a 60 degree horizontal field of view. The same
 four numbers the camera area uses, so every millimetre can be checked by hand.
 
-Run with:  pixi run python docs/diagrams/object_perception.py
+Run with:  pixi run python ../docs/diagrams/object_perception.py
 """
 
 import pathlib

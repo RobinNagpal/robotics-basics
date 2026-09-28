@@ -6,7 +6,7 @@ so the images go to docs/images/frontier/<doc-name>/.
 Every number here is quoted in the documents and sourced there. Nothing is
 invented for the sake of a shape.
 
-Run with:  pixi run python docs/diagrams/frontier.py
+Run with:  pixi run python ../docs/diagrams/frontier.py
 """
 
 import pathlib

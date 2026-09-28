@@ -3,7 +3,7 @@
 Each picture belongs to one document and illustrates one specific idea from it,
 so the images go to docs/images/one-arm-training/<doc-name>/.
 
-Run with:  pixi run python docs/diagrams/one_arm_training.py
+Run with:  pixi run python ../docs/diagrams/one_arm_training.py
 """
 
 import pathlib

@@ -6,9 +6,26 @@ ROS is the Robot Operating System, a set of libraries and tools for writing
 robot software. RViz, short for ROS Visualization, is the 3D viewer that comes
 with it. This project uses ROS 2, the current version.
 
+The repo has three folders:
+
+- `docs/` holds the docs, numbered in reading order.
+- `code/` holds the runnable examples and the pixi environment. Every `make` and
+  `pixi` command, here and in the docs, is run from inside `code/`.
+- `website/` holds a Next.js site that presents the docs as three mini books. It
+  reads `docs/` directly, so it never needs its own copy.
+
 ```
+cd code
 make setup    # the first run downloads ROS 2, a few gigabytes
 make          # list everything you can run
+```
+
+To read the docs in the browser:
+
+```
+cd website
+npm install
+npm run dev   # http://localhost:3000
 ```
 
 ## Areas
@@ -130,12 +147,12 @@ not have to guess where to start.
 ## Layout
 
 ```
-Makefile              every command
-pixi.toml             what to install
 docs/NN_<area>/       the docs for each area, numbered in reading order
 docs/images/<area>/   its pictures (not numbered: nobody reads these in order)
 docs/diagrams/        the scripts that draw them
-src/                  the code for each area:
+code/Makefile         every command
+code/pixi.toml        what to install
+code/src/             the code for each area:
   ros/ros_basics/       one small program for each thing ROS is used for
   ros/ros_applied/      the three worked ROS examples, one package each
   camera/camera_basics/    finding an object by colour, by depth, and with a model
@@ -143,9 +160,12 @@ src/                  the code for each area:
   numpy/                five plain Python files, not a ROS package
   rviz_basics/          a marker in a moving frame
   arm_transforms/       position, frames and transforms, in five steps
+website/              the Next.js site that shows docs/ as three mini books
 ```
 
 ## Repo-wide commands
+
+Run these from `code/`.
 
 ```
 make build     rebuild everything

@@ -2,7 +2,7 @@
 
 The images go to docs/images/stone-stacking/.
 
-Run with:  pixi run python docs/diagrams/stone_stacking.py
+Run with:  pixi run python ../docs/diagrams/stone_stacking.py
 """
 
 import math

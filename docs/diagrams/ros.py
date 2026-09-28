@@ -1,8 +1,8 @@
-"""Generate the diagrams used in the docs/01_ros/ docs.
+"""Generate the diagrams used in the docs/01_robotics-intro/01_ros/ docs.
 
 Each doc's images go to a folder named after it, under docs/images/ros/.
 
-Run with:  pixi run python docs/diagrams/ros.py
+Run with:  pixi run python ../docs/diagrams/ros.py
 
 The camera picture is drawn by the ros_camera package's own code, the arm's
 sizes are read from its URDF, and the pixel-to-angle example uses the
@@ -15,8 +15,8 @@ import sys
 import xml.etree.ElementTree as ElementTree
 
 REPO_ROOT: pathlib.Path = pathlib.Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / 'src' / 'ros' / 'ros_applied' / 'ros_camera'))
-sys.path.insert(0, str(REPO_ROOT / 'src' / 'ros' / 'ros_applied' / 'ros_camera_arm'))
+sys.path.insert(0, str(REPO_ROOT / 'code' / 'src' / 'ros' / 'ros_applied' / 'ros_camera'))
+sys.path.insert(0, str(REPO_ROOT / 'code' / 'src' / 'ros' / 'ros_applied' / 'ros_camera_arm'))
 
 import matplotlib  # noqa: E402
 matplotlib.use('Agg')
@@ -32,7 +32,8 @@ from ros_camera.camera_subscriber import find_ball  # noqa: E402
 from ros_camera_arm.follower import pixel_to_angles  # noqa: E402
 
 IMAGES: pathlib.Path = REPO_ROOT / 'docs' / 'images' / 'ros'
-URDF: pathlib.Path = REPO_ROOT / 'src' / 'ros' / 'ros_applied' / 'ros_arm' / 'urdf' / 'arm.urdf'
+URDF: pathlib.Path = (REPO_ROOT / 'code' / 'src' / 'ros' / 'ros_applied' / 'ros_arm'
+                      / 'urdf' / 'arm.urdf')
 
 INK: str = '#222222'
 MUTED: str = '#777777'

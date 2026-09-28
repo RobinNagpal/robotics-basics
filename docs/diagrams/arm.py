@@ -1,9 +1,9 @@
-"""Generate the diagrams used in docs/03_arm/overview.md.
+"""Generate the diagrams used in docs/01_robotics-intro/03_arm/overview.md.
 
 Images go to docs/images/<area>/, matching the docs/<area>/ folder that uses
 them.
 
-Run with:  pixi run python docs/diagrams/arm.py
+Run with:  pixi run python ../docs/diagrams/arm.py
 
 There is one picture per idea in the doc, and they all draw the same arm, so a
 reader can carry positions from one to the next. The link lengths come from
@@ -24,7 +24,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from numpy.typing import NDArray  # noqa: E402
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / 'src' / 'arm_transforms'))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]
+                       / 'code' / 'src' / 'arm_transforms'))
 # Imported after the sys.path line above, which flake8's import rules cannot see.
 from arm_transforms.arm_math import (  # noqa: E402,I100,I202
     gripper_in_base, LINK1_M, LINK2_M, rotate_point, Transform2D)

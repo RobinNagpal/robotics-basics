@@ -1,6 +1,6 @@
 """Record the Gazebo captures that the camera diagrams are drawn from.
 
-Run with:  pixi run python docs/diagrams/record_camera.py
+Run with:  pixi run python ../docs/diagrams/record_camera.py
 
 The pictures in the camera docs are real captures from the camera_one_box
 simulation, not drawings. For each camera setting below, this starts the
@@ -22,6 +22,8 @@ import time
 
 REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 CAPTURES: Path = REPO_ROOT / 'docs' / 'diagrams' / 'captures' / 'camera'
+# The colcon workspace, where install/setup.bash is.
+WORKSPACE: Path = REPO_ROOT / 'code'
 
 #: name: (pixels across, pixels down, field of view in degrees). "wrist" is the
 #: camera the doc uses. The others change one thing at a time, for section 7
@@ -49,12 +51,12 @@ def record(name: str, width: int, height: int, hfov_deg: int) -> None:
     simulation: subprocess.Popen[bytes] = subprocess.Popen(
         ros('ros2 launch camera_one_box one_box.launch.py rviz:=false '
             f'width:={width} height:={height} hfov_deg:={hfov_deg}'),
-        cwd=REPO_ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        cwd=WORKSPACE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         start_new_session=True)
     try:
         time.sleep(6)       # Gazebo loads the world and the camera appears in it
         subprocess.run(ros(f'ros2 run camera_one_box save_snapshot {out}'),
-                       cwd=REPO_ROOT, check=True, timeout=90)
+                       cwd=WORKSPACE, check=True, timeout=90)
     finally:
         simulation.send_signal(signal.SIGINT)
         try:

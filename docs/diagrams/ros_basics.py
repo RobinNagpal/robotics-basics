@@ -1,8 +1,8 @@
-"""Generate the diagrams used in docs/01_ros/02_ros-basics.md.
+"""Generate the diagrams used in docs/01_robotics-intro/01_ros/02_ros-basics.md.
 
 The images go to docs/images/ros/ros-basics/.
 
-Run with:  pixi run python docs/diagrams/ros_basics.py
+Run with:  pixi run python ../docs/diagrams/ros_basics.py
 """
 
 import math

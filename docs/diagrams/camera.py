@@ -3,7 +3,7 @@
 Each doc's images go to a folder named after it: docs/images/camera/basics/,
 docs/images/camera/one-box-intro/ and docs/images/camera/one-box-code/.
 
-Run with:  pixi run python docs/diagrams/camera.py
+Run with:  pixi run python ../docs/diagrams/camera.py
 
 The pictures here are not drawn by hand. They are real captures from the
 camera_one_box simulation in Gazebo, recorded by docs/diagrams/record_camera.py
@@ -22,7 +22,7 @@ import xml.etree.ElementTree as ElementTree
 
 REPO_ROOT: pathlib.Path = pathlib.Path(__file__).resolve().parents[2]
 # The diagrams turn pixels into points with the same code the box locator uses.
-sys.path.insert(0, str(REPO_ROOT / 'src' / 'camera' / 'camera_applied' / 'camera_one_box'))
+sys.path.insert(0, str(REPO_ROOT / 'code' / 'src' / 'camera' / 'camera_applied' / 'camera_one_box'))
 
 from cv_bridge import CvBridge  # noqa: E402
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3  # noqa: E402
@@ -50,7 +50,8 @@ from camera_one_box.measure import depth_to_points, to_world, transform_matrix  
 
 IMAGES: pathlib.Path = REPO_ROOT / 'docs' / 'images' / 'camera'
 CAPTURES: pathlib.Path = REPO_ROOT / 'docs' / 'diagrams' / 'captures' / 'camera'
-CAMERA_ONE_BOX: pathlib.Path = REPO_ROOT / 'src' / 'camera' / 'camera_applied' / 'camera_one_box'
+CAMERA_ONE_BOX: pathlib.Path = (REPO_ROOT / 'code' / 'src' / 'camera' / 'camera_applied'
+                                / 'camera_one_box')
 WORLD: pathlib.Path = CAMERA_ONE_BOX / 'worlds' / 'one_box.sdf'
 
 #: Where _save writes. The main block at the bottom points it at each doc's

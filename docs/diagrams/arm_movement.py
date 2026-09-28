@@ -1,10 +1,10 @@
-"""Generate the diagrams used in docs/08_arm-movement/.
+"""Generate the diagrams used in docs/03_frameworks/03_arm-movement/.
 
 Each picture belongs to one document and illustrates one specific idea from it,
 so the images go to docs/images/arm-movement/<doc-name>/.
 
 Three of the five are computed on the repo's own arm, the two-link planar arm of
-docs/03_arm/01_overview.md: L1 = 3 m, L2 = 2 m, both joints revolute. That arm
+docs/01_robotics-intro/03_arm/01_overview.md: L1 = 3 m, L2 = 2 m, both joints revolute. That arm
 was chosen there because every number in it can be checked by hand, and the same
 property is what makes it useful here. Its reachable set is the annulus between
 1 m and 5 m, its Jacobian determinant is exactly L1 * L2 * sin(q2), and its two
@@ -15,7 +15,7 @@ The joint speed limit drawn on the singularity picture is 180 degrees per second
 which is the value the official Universal Robots description package gives for
 every joint of a UR5e, in config/ur5e/joint_limits.yaml.
 
-Run with:  pixi run python docs/diagrams/arm_movement.py
+Run with:  pixi run python ../docs/diagrams/arm_movement.py
 """
 
 import math

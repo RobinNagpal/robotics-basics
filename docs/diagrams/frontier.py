@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/15_frontier/.
+"""Generate the diagrams used in docs/03_frameworks/08_frontier/.
 
 Each picture belongs to one document and illustrates one specific idea from it,
 so the images go to docs/images/frontier/<doc-name>/.

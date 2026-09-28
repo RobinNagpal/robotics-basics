@@ -16,20 +16,26 @@ development, or on the next build. To read docs from somewhere else, set
 
 ## How the books are built
 
-`lib/books.config.ts` is the only place the grouping lives.
+The folders in `docs/` are the structure. There is no separate list to keep in
+sync: add, move or renumber a doc and the site follows on the next refresh.
 
-| Book | Chapters (from `docs/`) |
-| --- | --- |
-| 1. Robotics Intro | ros, rviz, arm, numpy |
-| 2. Perception | camera, object-perception |
-| 3. Frameworks & Manipulation | tools-and-libraries, gripping, arm-movement, one-arm-training, two-arm-training, two-arm-manipulation, stone-stacking, frontier |
+```
+docs/01_robotics-intro/        book       -> /robotics-intro
+  03_arm/                      chapter    -> /robotics-intro/arm
+    01_overview.md             section    -> /robotics-intro/arm/overview
+docs/03_frameworks/
+  01_tools-and-libraries.md    a chapter with one section
+  04_one-arm-training/
+    07_case-study/             a labelled group of sections in the chapter
+```
 
-- A top-level folder in `docs/` is a **chapter**. Each `.md` file in it is a
-  **section**, in the order its number prefix gives. Files in a sub-folder
-  (such as `07_case-study/`) appear as a labelled group inside the chapter.
-- A top-level `.md` file is a chapter with one section.
-- Anything in `docs/` that is not listed in the config goes into the last book,
-  so a new doc is never silently left out.
+- Books, chapters and sections are ordered by their number prefix. The number
+  is dropped from the URL, so renumbering does not change links.
+- `docs/images/` and `docs/diagrams/` are not books.
+- `lib/books.config.ts` holds only display text: each book's title, subtitle,
+  description and colour, and friendlier chapter names. A book or chapter that
+  is not listed there still appears, with a title taken from its folder name or
+  its first doc.
 
 The doc content is not changed. When a doc is rendered, the site:
 

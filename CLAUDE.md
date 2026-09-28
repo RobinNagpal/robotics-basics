@@ -5,8 +5,9 @@
 The repo has three folders. `docs/` holds the docs. `code/` holds `src/`, the
 Makefile and the pixi environment; run every `make` and `pixi` command from inside
 `code/`, and a diagram script as `pixi run python ../docs/diagrams/<name>.py`.
-`website/` is the Next.js site that reads `docs/` directly; which chapters go in
-which book is set in `website/lib/books.config.ts`.
+`website/` is the Next.js site that reads `docs/` directly. The folders in `docs/`
+are its structure, so moving a doc moves it on the site too;
+`website/lib/books.config.ts` only holds display text such as book titles.
 
 ## IMPORTANT: naming inside `docs/`
 
@@ -17,11 +18,20 @@ The shape is `NN_lower-hyphen-separated-name`. The prefix uses an **underscore**
 after the number. The name itself uses **hyphens** between words, all lower case.
 
 ```
-docs/06_object-perception/01_overview.md
-docs/06_object-perception/03_programmed-methods.md
-docs/05_camera/03_one-box-intro.md
-docs/12_stone-stacking.md
+docs/02_perception/02_object-perception/01_overview.md
+docs/02_perception/02_object-perception/03_programmed-methods.md
+docs/02_perception/01_camera/03_one-box-intro.md
+docs/03_frameworks/07_stone-stacking.md
 ```
+
+`docs/` has three levels, and the website reads them as they are:
+
+- A top-level folder is a **book**: `01_robotics-intro`, `02_perception`,
+  `03_frameworks`.
+- A folder inside a book is a **chapter**, and each `.md` file in it is a
+  **section**. A `.md` file directly inside a book is a chapter with one section.
+- A folder inside a chapter, such as `07_case-study/`, shows as a labelled group of
+  sections in that chapter.
 
 The point is that a reader opening the folder can see what to read first without
 having to guess. The numbers are the reading order, not an alphabetical accident.
@@ -48,8 +58,8 @@ world if the insert is cosmetic.
   no reader benefit.
 - Image folders are named after the *document* they belong to, without its number:
   `docs/images/one-arm-training/overview/` holds the pictures for
-  `docs/10_one-arm-training/01_overview.md`. This keeps image paths stable when a
-  document is renumbered.
+  `docs/03_frameworks/04_one-arm-training/01_overview.md`. This keeps image paths
+  stable when a document is renumbered or moved to another book.
 
 ## Checking links after any rename
 

@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/07_gripping/.
+"""Generate the diagrams used in docs/03_frameworks/02_gripping/.
 
 Each picture belongs to one document and illustrates one specific idea from it,
 so the images go to docs/images/gripping/<doc-name>/.

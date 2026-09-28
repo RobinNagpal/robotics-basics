@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/06_object-perception/.
+"""Generate the diagrams used in docs/02_perception/02_object-perception/.
 
 Each picture belongs to one document and illustrates one specific idea from it,
 so the images go to docs/images/object-perception/<doc-name>/. All six belong to

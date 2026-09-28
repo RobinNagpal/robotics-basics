@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { BOOKS, CHAPTER_TITLES, type Accent } from './books.config';
+import { ACCENTS, BOOK_INFO, CHAPTER_TITLES, type Accent } from './books.config';
 
 // The docs are read straight from ../docs in this repo, so the site always
 // shows the current content. Override with ROBOTICS_DOCS_DIR if it lives elsewhere.
@@ -158,50 +158,40 @@ function scan(): Library {
     );
   }
 
-  const top = fs
-    .readdirSync(DOCS_DIR, { withFileTypes: true })
-    .filter((e) => !e.name.startsWith('.') && !NON_READING_DIRS.has(e.name))
-    .filter((e) => e.isDirectory() || e.name.toLowerCase().endsWith('.md'))
-    .sort((a, b) => byReadingOrder(a.name, b.name));
+  const readDir = (rel: string) =>
+    fs
+      .readdirSync(path.join(DOCS_DIR, rel), { withFileTypes: true })
+      .filter((e) => !e.name.startsWith('.'))
+      .filter((e) => e.isDirectory() || e.name.toLowerCase().endsWith('.md'))
+      .sort((a, b) => byReadingOrder(a.name, b.name));
 
-  const lastBook = BOOKS[BOOKS.length - 1];
-  const buckets = new Map(BOOKS.map((b) => [b.slug, [] as typeof top]));
-  for (const e of top) {
-    const key = stripNumber(e.name);
-    const owner = BOOKS.find((b) => b.chapters.includes(key)) ?? lastBook;
-    buckets.get(owner.slug)!.push(e);
-  }
+  // Each top-level folder in docs/ is a book.
+  const bookDirs = readDir('').filter((e) => e.isDirectory() && !NON_READING_DIRS.has(e.name));
 
   const urlByRel = new Map<string, string>();
 
-  const books: Book[] = BOOKS.map((cfg) => {
-    // Configured chapters in configured order, then any unlisted ones by number.
-    const entries = buckets.get(cfg.slug)!.sort((a, b) => {
-      const ia = cfg.chapters.indexOf(stripNumber(a.name));
-      const ib = cfg.chapters.indexOf(stripNumber(b.name));
-      return (ia < 0 ? 1e6 : ia) - (ib < 0 ? 1e6 : ib) || byReadingOrder(a.name, b.name);
-    });
+  const books: Book[] = bookDirs.map((dir, bookIndex) => {
+    const bookSlug = stripNumber(dir.name);
+    const info = BOOK_INFO[bookSlug];
 
-    const chapters: Chapter[] = entries.map((e, i) => {
+    // Each folder or .md file inside a book is a chapter.
+    const chapters: Chapter[] = readDir(dir.name).map((e, i) => {
       const slug = stripNumber(e.name);
-      const chapterUrl = `/${cfg.slug}/${slug}`;
-      const files: FoundFile[] = e.isDirectory() ? walkChapter(e.name) : [{ rel: e.name }];
-      const chapterRel = e.isDirectory() ? e.name : '';
-      const sections = files.map((f) =>
-        e.isDirectory()
-          ? buildSection(f, chapterRel, (s) => `${chapterUrl}/${s}`)
-          : buildSection({ rel: f.rel }, '', () => `${chapterUrl}/${slug}`),
-      );
+      const chapterRel = `${dir.name}/${e.name}`;
+      const chapterUrl = `/${bookSlug}/${slug}`;
+      const sections = e.isDirectory()
+        ? walkChapter(chapterRel).map((f) => buildSection(f, chapterRel, (s) => `${chapterUrl}/${s}`))
+        : [buildSection({ rel: chapterRel }, dir.name, () => `${chapterUrl}/${slug}`)];
       // A single-file chapter uses the chapter slug for its only section.
       if (!e.isDirectory()) sections[0].slug = slug;
 
       for (const s of sections) urlByRel.set(s.rel, s.url);
       if (e.isDirectory() && sections[0]) {
-        urlByRel.set(e.name, sections[0].url);
+        urlByRel.set(chapterRel, sections[0].url);
         // Nested folders link to their first file too.
         for (const s of sections) {
-          const dir = path.posix.dirname(s.rel);
-          if (!urlByRel.has(dir)) urlByRel.set(dir, s.url);
+          const sub = path.posix.dirname(s.rel);
+          if (!urlByRel.has(sub)) urlByRel.set(sub, s.url);
         }
       }
 
@@ -216,17 +206,20 @@ function scan(): Library {
       };
     });
 
+    const withSections = chapters.filter((c) => c.sections.length > 0);
+    if (withSections[0]) urlByRel.set(dir.name, withSections[0].sections[0].url);
+
     return {
-      slug: cfg.slug,
-      number: cfg.number,
-      title: cfg.title,
-      subtitle: cfg.subtitle,
-      description: cfg.description,
-      accent: cfg.accent,
-      chapters: chapters.filter((c) => c.sections.length > 0),
+      slug: bookSlug,
+      number: bookIndex + 1,
+      title: info?.title ?? humanize(bookSlug),
+      subtitle: info?.subtitle ?? '',
+      description: info?.description ?? '',
+      accent: info?.accent ?? ACCENTS[bookIndex % ACCENTS.length],
+      chapters: withSections,
       sectionCount: chapters.reduce((n, c) => n + c.sections.length, 0),
       minutes: chapters.reduce((n, c) => n + c.minutes, 0),
-      url: `/${cfg.slug}`,
+      url: `/${bookSlug}`,
     };
   }).filter((b) => b.chapters.length > 0);
 

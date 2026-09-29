@@ -345,7 +345,7 @@ was, take `.copy()`, which makes an independent array, as the last line shows.
 ### 3.6 Bytes and files: an array in a ROS message
 
 A ROS `sensor_msgs/Image` carries its pixels as one long row of bytes, row after
-row ([ROS camera, section 2.1](../01_ros/03_ros-camera.md#21-image-one-picture)).
+row ([ROS camera, section 2.1](../../04_ros-and-rviz/01_ros/03_ros-camera.md#21-image-one-picture)).
 `tobytes()` gives exactly that, and it is how a camera driver fills in
 `image.data`. `np.frombuffer` goes back: it reads the bytes as numbers of the
 dtype you give, and `reshape` puts them back into rows, columns and colours,
@@ -873,7 +873,7 @@ top of the box, as in the
 ### 6.4 The camera matrix k
 
 The camera's lens is the 3 × 3 matrix k, which ROS sends in every CameraInfo
-message ([ROS camera, section 2.3](../01_ros/03_ros-camera.md#23-k-in-detail-what-it-is-why-the-camera-sends-it-and-who-reads-it)).
+message ([ROS camera, section 2.3](../../04_ros-and-rviz/01_ros/03_ros-camera.md#23-k-in-detail-what-it-is-why-the-camera-sends-it-and-who-reads-it)).
 `k @ point` gives `(fx x + cx z, fy y + cy z, z)`, and dividing by the last
 number, z, gives the pixel the point lands on:
 
@@ -1138,7 +1138,7 @@ recording, tells you how much to trust it.
 ## 8. Writing NumPy types
 
 The code in this repo states the type of every value, as the
-[ROS intro explains in section 2](../01_ros/01_ros-intro.md#2-nodes-topics-and-messages).
+[ROS intro explains in section 2](../../04_ros-and-rviz/01_ros/01_ros-intro.md#2-nodes-topics-and-messages).
 For arrays, the type is `NDArray`, from `numpy.typing`, with the dtype in square
 brackets:
 

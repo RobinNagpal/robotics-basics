@@ -553,5 +553,5 @@ in rqt on macOS. You can ignore it.
 Keep `pixi.lock` in git. It is what lets someone else end up with the exact same
 setup as you.
 
-Next area: [position, frames and transforms](../03_arm/01_overview.md), which works
+Next area: [position, frames and transforms](../../01_robotics-intro/03_arm/01_overview.md), which works
 out the maths this one takes for granted, on a two-joint robot arm.

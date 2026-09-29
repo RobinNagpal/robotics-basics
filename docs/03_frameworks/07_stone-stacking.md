@@ -282,4 +282,4 @@ of them run without an NVIDIA card.
 This doc is a map, not a manual: no part of it has been built here. The
 [camera area](../02_perception/01_camera/01_basics.md) covers the perception ideas it leans on, the
 [arm area](../01_robotics-intro/03_arm/01_overview.md) the frames and transforms, and the
-[ROS basics](../01_robotics-intro/01_ros/02_ros-basics.md) the actions and controllers that would drive it.
+[ROS basics](../04_ros-and-rviz/01_ros/02_ros-basics.md) the actions and controllers that would drive it.

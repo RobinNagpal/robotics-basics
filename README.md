@@ -11,7 +11,7 @@ The repo has three folders:
 - `docs/` holds the docs, numbered in reading order.
 - `code/` holds the runnable examples and the pixi environment. Every `make` and
   `pixi` command, here and in the docs, is run from inside `code/`.
-- `website/` holds a Next.js site that presents the docs as three mini books. It
+- `website/` holds a Next.js site that presents the docs as four mini books. It
   reads `docs/` directly, so it never needs its own copy.
 
 ```
@@ -35,11 +35,15 @@ own, with its own code, its own doc, and two or three commands.
 
 | Area | What it covers | Start with |
 | --- | --- | --- |
-| [ros](docs/01_robotics-intro/01_ros/01_ros-intro.md) | the basics of ROS, one program per idea, then a camera, an arm, and the two together | `make ros.basics` |
-| [rviz](docs/01_robotics-intro/02_rviz/01_overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
+| [python](docs/01_robotics-intro/01_python-and-numpy/01_python-basics.md) | the Python a beginner needs for robot arm code | `make python.learn` |
+| [numpy](docs/01_robotics-intro/01_python-and-numpy/02_numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
+| [maths](docs/01_robotics-intro/02_maths/01_angles-and-trigonometry.md) | angles, trigonometry, vectors and matrices, explained on a robot arm | `make maths.learn` |
 | [arm](docs/01_robotics-intro/03_arm/01_overview.md) | position, frames and transforms | `make arm.learn` |
+| [kinematics](docs/01_robotics-intro/04_kinematics/01_forward-kinematics.md) | forward and inverse kinematics: joint angles to gripper position, and back | `make kinematics.learn` |
+| [arm types](docs/01_robotics-intro/05_arm-types/01_joints-and-degrees-of-freedom.md) | joints, degrees of freedom, five common arms, and the six-joint arm in detail | `make arms.learn` |
+| [ros](docs/04_ros-and-rviz/01_ros/01_ros-intro.md) | the basics of ROS, one program per idea, then a camera, an arm, and the two together | `make ros.basics` |
+| [rviz](docs/04_ros-and-rviz/02_rviz/01_overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
 | [camera](docs/02_perception/01_camera/01_basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
-| [numpy](docs/01_robotics-intro/04_numpy/01_numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
 | [finding objects](docs/02_perception/01_camera/02_finding-objects.md) | finding a thing in a picture: by colour, with depth, and with a trained model | `make camera.colour` |
 | [object perception](docs/02_perception/02_object-perception/01_overview.md) | finding an object and measuring it: every technique, model and licence, compared | — |
 | [gripping](docs/03_frameworks/02_gripping/01_overview.md) | how to hold a thing once you have found it: grippers, grasp choice, force and slip | — |
@@ -52,14 +56,18 @@ own, with its own code, its own doc, and two or three commands.
   <img src="docs/images/camera/basics/pinhole.svg" width="31%" alt="A pixel is a direction, not a place">
 </p>
 
-New to this? Start with **ros**, which explains what ROS is: first one small
-program for each thing ROS does — a node, a topic, a parameter, a service, an
-action, a frame, a launch file — and then three worked examples, one that works
-with a camera, one that moves an arm, and one that uses both. Then **rviz**, which shows you what
-you are looking at before the arm area explains the maths behind it. Then
-**arm**, then **camera**, which uses that maths to turn a picture into points.
-The camera code is mostly NumPy, so if NumPy is new to you, read **numpy** before
-**camera**; it needs no ROS, and each of its five files runs on its own.
+New to this? Start with Book 1, which assumes you know nothing about robots. It
+starts with **python** and **numpy**, the language robot code is written in. Then
+**maths** covers the angles, vectors and matrices an arm needs, explained on an
+arm rather than in the abstract. Then **arm** builds frames and transforms, and
+**kinematics** uses them to turn joint angles into a gripper position and back.
+Book 1 ends with **arm types**: how joints work together, five common kinds of
+arm, and the six-joint arm in detail. None of Book 1 needs ROS (Robot Operating
+System), except the last two steps of **arm**, which you can come back to.
+
+**ros** and **rviz** are in Book 4. They explain what ROS is, one small program
+for each thing ROS does, then three worked examples, and the 3D viewer. Read
+them before the **camera** area, which runs on ROS.
 
 ## Beyond the areas
 
@@ -139,16 +147,17 @@ scope — that is the one-arm problem, twice.
 
 ## How the docs are ordered
 
-The docs are grouped into three mini books, the same ones the website shows:
+The docs are grouped into four mini books, the same ones the website shows:
 
 ```
-docs/01_robotics-intro/   ROS, RViz, frames and transforms, NumPy
+docs/01_robotics-intro/   robot arm basics: Python, NumPy, maths, frames, kinematics, arm types
 docs/02_perception/       cameras, and finding and measuring objects
 docs/03_frameworks/       tools and simulators, gripping, arm movement, training arms
+docs/04_ros-and-rviz/     ROS and the RViz 3D viewer
 ```
 
 Everything is numbered in the order it is meant to be read: the books, the chapter
-folders inside them, and the files inside those. So `01_robotics-intro/01_ros/`
+folders inside them, and the files inside those. So `01_robotics-intro/01_python-and-numpy/`
 comes before `01_robotics-intro/03_arm/`, and inside a folder `01_overview.md`
 comes before `02_programmed-methods.md`. You do not have to guess where to start.
 
@@ -165,10 +174,14 @@ code/src/             the code for each area:
   ros/ros_applied/      the three worked ROS examples, one package each
   camera/camera_basics/    finding an object by colour, by depth, and with a model
   camera/camera_applied/   the Gazebo depth camera that finds and measures a box
+  python_basics/        the Python a beginner needs, plain Python files
   numpy/                five plain Python files, not a ROS package
+  maths/                angles, vectors and matrices, plain Python files
+  kinematics/           forward and inverse kinematics, plain Python files
+  arm_types/            joints, and the six-joint arm, plain Python files
   rviz_basics/          a marker in a moving frame
   arm_transforms/       position, frames and transforms, in five steps
-website/              the Next.js site that shows docs/ as three mini books
+website/              the Next.js site that shows docs/ as four mini books
 ```
 
 ## Repo-wide commands

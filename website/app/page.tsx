@@ -15,10 +15,10 @@ export default function Home() {
       <section className="hero">
         <p className="eyebrow">Robotics, from first principles</p>
         <h1>
-          Learn robotics in <span className="hero-accent">three short books</span>.
+          Learn robotics in <span className="hero-accent">four short books</span>.
         </h1>
         <p className="hero-lede">
-          Start with frames and positions, learn how a robot sees, then move on to the frameworks, simulators and
+          Start with the basics of a robot arm, learn how a robot sees, then move on to the frameworks, simulators and
           methods used to make real arms work. Every chapter comes from the robotics-basics docs and follows their
           reading order.
         </p>

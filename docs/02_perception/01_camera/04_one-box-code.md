@@ -251,7 +251,7 @@ its callback.
 
 The code in this doc, and in the project, writes down the **type** of every value
 with Python's type hints, as the [ROS intro explains in section
-2](../../01_robotics-intro/01_ros/01_ros-intro.md#2-nodes-topics-and-messages). `msg: Image` says that the
+2](../../04_ros-and-rviz/01_ros/01_ros-intro.md#2-nodes-topics-and-messages). `msg: Image` says that the
 callback receives an `Image` message, and `-> None` says that the method gives
 nothing back. Python does not check them when the program runs. They are there so
 that the reader knows what every value is without having to work it out.

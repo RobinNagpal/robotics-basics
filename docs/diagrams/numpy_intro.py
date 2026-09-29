@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/01_robotics-intro/04_numpy/numpy-intro.md.
+"""Generate the diagrams used in docs/01_robotics-intro/01_python-and-numpy/02_numpy-intro.md.
 
 The images go to docs/images/numpy/numpy-intro/.
 

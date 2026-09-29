@@ -1000,7 +1000,7 @@ deliberate. The learned methods are much easier to understand once you know what
 they are replacing, and the pieces they quietly assume — frames, transforms, depth
 pictures, message passing — are the same either way.
 
-- [ROS basics](../../01_robotics-intro/01_ros/02_ros-basics.md) is the plumbing that every method above runs on.
+- [ROS basics](../../04_ros-and-rviz/01_ros/02_ros-basics.md) is the plumbing that every method above runs on.
 - [The arm area](../../01_robotics-intro/03_arm/01_overview.md) covers frames, transforms and kinematics: the
   model that classical methods need explicitly and that learned ones absorb
   implicitly.

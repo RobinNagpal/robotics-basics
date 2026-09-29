@@ -18,6 +18,7 @@ ros = pixi run bash -c 'source install/setup.bash && $(1)'
         rviz.demo rviz.check arm.learn arm.demo arm.watch \
         camera.one_box camera.pixels camera.check \
         numpy.learn numpy.run numpy.check \
+        python.learn maths.learn kinematics.learn arms.learn \
         camera.colour camera.model camera.train
 
 help: ## Show this help
@@ -149,6 +150,32 @@ camera.check: ## Show what the simulation is publishing (run camera.one_box firs
 		ros2 topic echo --once --no-arr /camera/points; \
 		echo; echo "--- the measured box ---"; \
 		ros2 topic echo --once /detections | head -40'
+
+##@ book 1 — robot arm basics, plain Python, no ROS needed
+
+python.learn: ## Run the Python basics files in order
+	@for file in values_and_lists functions_and_loops classes; do \
+		echo; echo "===== src/python_basics/$$file.py ====="; \
+		pixi run python src/python_basics/$$file.py || exit 1; \
+	done
+
+maths.learn: ## Angles, trigonometry, vectors and matrices on an arm
+	@for file in angles vectors_and_matrices; do \
+		echo; echo "===== src/maths/$$file.py ====="; \
+		pixi run python src/maths/$$file.py || exit 1; \
+	done
+
+kinematics.learn: ## Forward and inverse kinematics of a flat arm
+	@for file in forward inverse; do \
+		echo; echo "===== src/kinematics/$$file.py ====="; \
+		pixi run python src/kinematics/$$file.py || exit 1; \
+	done
+
+arms.learn: ## Joints and degrees of freedom, then the six-joint UR5e arm
+	@for file in joints ur5e; do \
+		echo; echo "===== src/arm_types/$$file.py ====="; \
+		pixi run python src/arm_types/$$file.py || exit 1; \
+	done
 
 ##@ numpy — the parts of NumPy robotics uses most
 

@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/01_robotics-intro/02_rviz/overview.md.
+"""Generate the diagrams used in docs/04_ros-and-rviz/02_rviz/01_overview.md.
 
 Images go to docs/images/<area>/, matching the docs/<area>/ folder that uses
 them.

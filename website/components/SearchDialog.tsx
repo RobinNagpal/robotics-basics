@@ -175,7 +175,7 @@ export default function SearchDialog() {
             <ul className="search-results" ref={listRef}>
               {error && <li className="search-empty">Could not load the search index.</li>}
               {!error && !docs && <li className="search-empty">Loading…</li>}
-              {docs && !query && <li className="search-empty">Type to search every section of all three books.</li>}
+              {docs && !query && <li className="search-empty">Type to search every section of all four books.</li>}
               {docs && query && hits.length === 0 && <li className="search-empty">No results for “{query}”.</li>}
               {hits.map((hit, i) => (
                 <li key={hit.doc.u}>

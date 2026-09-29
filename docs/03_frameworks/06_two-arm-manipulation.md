@@ -615,7 +615,7 @@ one of the four tests, and it is worth knowing which.
 Nothing here is a prerequisite for this repo, but the areas do line up with the
 pieces you will meet:
 
-- **[ROS basics](../01_robotics-intro/01_ros/02_ros-basics.md)** — topics, services and especially
+- **[ROS basics](../04_ros-and-rviz/01_ros/02_ros-basics.md)** — topics, services and especially
   **actions** are how a real two-arm robot is commanded: a long job with
   feedback and the ability to cancel is exactly what "move both arms there" is.
 - **[The arm area](../01_robotics-intro/03_arm/01_overview.md)** — frames and transforms. With two arms
@@ -625,7 +625,7 @@ pieces you will meet:
   [finding objects](../02_perception/01_camera/02_finding-objects.md)** — every policy above eats
   pictures. Knowing what a depth picture is, and how a pixel becomes metres, is
   what makes a policy's input legible instead of magic.
-- **[NumPy](../01_robotics-intro/04_numpy/01_numpy-intro.md)** — the datasets are arrays: 14 numbers of
+- **[NumPy](../01_robotics-intro/01_python-and-numpy/02_numpy-intro.md)** — the datasets are arrays: 14 numbers of
   state, 14 of action, per frame, per episode.
 
 For one hard task worked through from end to end, see

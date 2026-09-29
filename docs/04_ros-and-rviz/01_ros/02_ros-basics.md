@@ -416,7 +416,7 @@ except TransformException as error:
 
 In a real robot the two halves are in different programs: `robot_state_publisher`
 reads the URDF and publishes every joint, and any node that needs a position
-looks it up. The [arm area](../03_arm/01_overview.md) explains what a transform
+looks it up. The [arm area](../../01_robotics-intro/03_arm/01_overview.md) explains what a transform
 actually is and how they join together; here it is enough to see the two calls.
 
 ```

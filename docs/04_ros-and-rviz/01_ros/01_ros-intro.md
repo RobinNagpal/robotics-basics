@@ -354,7 +354,7 @@ point has different numbers in each of them.
 frame sits compared with every other one. The frames form a tree, in which each
 frame has one parent, and TF can answer the question "where is this frame,
 measured in that one?" for any two frames in the tree. Frames and transforms are
-explained in detail in the [arm area](../03_arm/01_overview.md).
+explained in detail in the [arm area](../../01_robotics-intro/03_arm/01_overview.md).
 
 To know where each part of an arm is, ROS needs a description of the arm: its
 parts, and how they are joined. **URDF**, the Unified Robot Description Format, is

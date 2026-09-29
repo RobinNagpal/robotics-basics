@@ -89,7 +89,7 @@ this folder needs no ROS and no simulator running:
 On a real robot those three arrive from the camera driver as two
 `sensor_msgs/Image` messages and one `sensor_msgs/CameraInfo`, and `cv_bridge`
 turns the pictures into exactly these arrays. The
-[ROS camera doc](../../01_robotics-intro/01_ros/03_ros-camera.md#2-the-cameras-two-message-classes)
+[ROS camera doc](../../04_ros-and-rviz/01_ros/03_ros-camera.md#2-the-cameras-two-message-classes)
 explains those messages, and the
 [camera basics](01_basics.md#6-the-lens-as-four-numbers) explain where `fx`, `fy`,
 `cx` and `cy` come from and why the focal length is counted in pixels.
@@ -302,7 +302,7 @@ return float(np.median(readings))
 
 `(mask > 0) & np.isfinite(depth)` is one NumPy mask built from two: the pixels
 that are part of the object **and** were measured. The
-[NumPy doc](../../01_robotics-intro/04_numpy/01_numpy-intro.md#42-boolean-masks) explains masks.
+[NumPy doc](../../01_robotics-intro/01_python-and-numpy/02_numpy-intro.md#42-boolean-masks) explains masks.
 
 ### 4.3 The two lines that do it
 
@@ -675,7 +675,7 @@ running them again.
 - [Locating a single box: the code](04_one-box-code.md) — the ROS version of all
   this: a node that subscribes to the camera, measures the box and publishes
   what it found.
-- [ROS camera](../../01_robotics-intro/01_ros/03_ros-camera.md) — the messages a camera sends, and the
+- [ROS camera](../../04_ros-and-rviz/01_ros/03_ros-camera.md) — the messages a camera sends, and the
   smallest node that receives them.
-- [NumPy for robotics](../../01_robotics-intro/04_numpy/01_numpy-intro.md) — masks, medians and the
+- [NumPy for robotics](../../01_robotics-intro/01_python-and-numpy/02_numpy-intro.md) — masks, medians and the
   array arithmetic used throughout this doc.

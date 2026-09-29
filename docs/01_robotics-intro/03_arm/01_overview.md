@@ -7,6 +7,13 @@ That sounds easy. It is not, and the way robots answer it is the foundation for
 almost everything else they do. This area works up to the answer over five small
 programs you can read and run.
 
+This doc is for a beginner who has read the two chapters before it: Python and
+NumPy, then angles, vectors and matrices. Steps 1 to 3 are plain Python. Steps 4
+and 5 hand the arm to ROS (Robot Operating System), which is taught later, in the
+[ROS and RViz book](../../04_ros-and-rviz/01_ros/01_ros-intro.md). On a first
+read, stop after step 3 and come back to steps 4 and 5 once you have met ROS.
+Nothing in the next chapters needs them.
+
 ## The arm used in this doc
 
 Everything below is explained on one example arm. It is worth fixing in your
@@ -463,7 +470,7 @@ star is different in each, because that is the table's answer.
 
 Move the arm and run step 3 again. The description in the `gripper` frame does
 not change. The answer on the table does. This is the same idea as the ball in
-the [RViz area](../02_rviz/01_overview.md): you do not move the thing, you move the
+the [RViz area](../../04_ros-and-rviz/02_rviz/01_overview.md): you do not move the thing, you move the
 frame it is attached to.
 
 This is `Transform2D.apply()`.
@@ -471,6 +478,10 @@ This is `Transform2D.apply()`.
 ---
 
 ## 6. Step 4: hand the arm to ROS
+
+This step and the next one need ROS. If you have not read the
+[ROS and RViz book](../../04_ros-and-rviz/01_ros/01_ros-intro.md) yet, skip to
+[section 8](#8-making-the-arm-bigger).
 
 File: `step4_broadcast.py`. This is the first one that uses ROS.
 
@@ -641,14 +652,16 @@ up and one direction of movement quietly disappears. Four numbers have no such
 case. `yaw_to_quaternion()` does the conversion for you, and you can use it
 without following the theory.
 
-If you have not read the [RViz area](../02_rviz/01_overview.md) yet, it covers markers
-and the 3D viewer itself. It is the easier of the two, and it shows you what you
-are looking at before this area explains the maths underneath.
+The [RViz area](../../04_ros-and-rviz/02_rviz/01_overview.md), in the ROS and RViz
+book, covers markers and the 3D viewer that steps 4 and 5 draw the arm in.
 
-Next area: [cameras](../../02_perception/01_camera/01_basics.md), which puts the transforms built here
-to work — moving a point measured by a camera into the room the arm moves in.
+Next chapter: [forward kinematics](../04_kinematics/01_forward-kinematics.md), which
+uses these transforms to turn a list of joint angles into a gripper position, and
+then asks the harder question backwards.
 
 This area is about describing *where things are*. Getting the arm to a place, and
 what stops it, is [arm movement](../../03_frameworks/03_arm-movement/01_overview.md): reach
 envelopes, singularities, planning a path, and controlling the move. It assumes
-the frames and transforms built here.
+the frames and transforms built here. The transforms are put to work again in
+[cameras](../../02_perception/01_camera/01_basics.md), which moves a point measured
+by a camera into the room the arm moves in.

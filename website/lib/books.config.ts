@@ -20,10 +20,10 @@ export const ACCENTS: Accent[] = ['teal', 'violet', 'amber'];
 
 export const BOOK_INFO: Record<string, BookInfo> = {
   'robotics-intro': {
-    title: 'Robotics Intro',
-    subtitle: 'Frames, positioning and reference',
+    title: 'Robot Arm Basics',
+    subtitle: 'Python, maths, frames, kinematics and arm types',
     description:
-      'Start here. What ROS is and how its pieces talk to each other, how to see a robot in RViz, and the maths of position: frames, reference points and transforms. It ends with the NumPy that robotics code is written in.',
+      'Start here if you know nothing about robots. The Python and NumPy that robot code is written in, the angles, vectors and matrices an arm needs, frames and transforms, forward and inverse kinematics, and the common kinds of robot arm, with the six-joint arm in detail.',
     accent: 'teal',
   },
   perception: {
@@ -40,15 +40,25 @@ export const BOOK_INFO: Record<string, BookInfo> = {
       'The tools and simulators the field is built on, MuJoCo and Gazebo among them, and what you do with them: gripping, moving an arm, programming and training one or two arms, worked case studies, and what changed at the frontier in 2026.',
     accent: 'amber',
   },
+  'ros-and-rviz': {
+    title: 'ROS and RViz',
+    subtitle: 'The robot software stack and its 3D viewer',
+    description:
+      'What ROS is and how its programs talk to each other, one small program per idea, then a camera, an arm and the two together. It ends with RViz, the 3D viewer that shows you what the robot thinks is happening.',
+    accent: 'teal',
+  },
 };
 
 // Display names for chapters. A chapter not listed here uses the title of its
 // first document.
 export const CHAPTER_TITLES: Record<string, string> = {
+  'python-and-numpy': 'Python and NumPy',
+  maths: 'Angles, Vectors and Matrices',
+  arm: 'Frames, Position and Transforms',
+  kinematics: 'Forward and Inverse Kinematics',
+  'arm-types': 'Joints and Types of Arm',
   ros: 'ROS Basics',
   rviz: 'RViz and the 3D View',
-  arm: 'Frames, Position and Transforms',
-  numpy: 'NumPy for Robotics',
   camera: 'Cameras',
   'object-perception': 'Object Perception',
   gripping: 'Gripping',

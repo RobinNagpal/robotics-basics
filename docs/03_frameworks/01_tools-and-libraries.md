@@ -244,7 +244,7 @@ URDF is installed here. xacro is not; add it with `pixi add ros-jazzy-xacro`.
 
 ## 3. robot_state_publisher and TF2: where every part is
 
-**What it is.** TF2 keeps track of frames, and the [rviz](../01_robotics-intro/02_rviz/01_overview.md) and
+**What it is.** TF2 keeps track of frames, and the [rviz](../04_ros-and-rviz/02_rviz/01_overview.md) and
 [arm](../01_robotics-intro/03_arm/01_overview.md) areas cover it in detail. **robot_state_publisher** is
 the node that fills TF for an arm. It reads the URDF once, listens for joint
 angles, and publishes where every link is.
@@ -306,7 +306,7 @@ Installed here.
 **What it is.** RViz — ROS Visualization — draws what is on the topics, in 3D.
 For an arm, its **RobotModel** display draws the arm itself: it reads the URDF
 from `/robot_description` and places each link where TF says it is. The
-[rviz area](../01_robotics-intro/02_rviz/01_overview.md) of this repo is all about it.
+[rviz area](../04_ros-and-rviz/02_rviz/01_overview.md) of this repo is all about it.
 
 **Pseudo code**
 

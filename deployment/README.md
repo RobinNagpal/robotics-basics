@@ -1,97 +1,80 @@
 # Deployment
 
-The docs are served at **https://docs.dodao.io** from the same Lightsail
-instance that already runs [courtpot](https://github.com/RobinNagpal/courtpot)
-and [interestled](https://github.com/RobinNagpal/interestled) — one box, one
-application per port:
+The docs are served at **https://docs.dodao.io** as a static site out of S3,
+with CloudFront in front of it:
 
 ```
-                    shared Lightsail instance  (13.216.34.24, medium_3_0)
-                    ┌──────────────────────────────────────────────┐
-docs.dodao.io    ──▶│ Caddy :443   api.courtpot.com     → :7071     │
-  Route 53 A        │  (Let's       api.interestled.com → :7072     │
-                    │   Encrypt)    docs.dodao.io       → :7073     │
-                    │                                              │
-                    │ systemd  courtpot-api.service       :7071     │
-                    │ systemd  interestled-api.service    :7072     │
-                    │ systemd  robotics-basics-api.service :7073    │
-                    └──────────────────────────────────────────────┘
-
-s3://robotics-basics-web-<account-id>/current/   the generated docs, versioned
+docs.dodao.io
+   │  Route 53 alias (A and AAAA)
+   ▼
+CloudFront ── ACM certificate, us-east-1 ──────────► HTTPS
+   │          viewer-request function: /a/b/ → /a/b/index.html
+   │          403 and 404 → /404.html
+   │  Origin Access Control (the bucket stays private)
+   ▼
+S3  robotics-basics-web-<account-id>
 ```
 
-**There is no CloudFront here, and that is deliberate.** The other two projects
-put a distribution in front of a private S3 bucket because a bucket cannot
-serve HTTPS on a custom domain by itself. This site does not need one: Caddy is
-already terminating TLS on that host for two other names, so adding a third
-costs nothing and gives the same certificate handling, obtained and renewed by
-the host. A distribution would be a second place to invalidate and a second
-thing to debug for no gain at this size.
-
-## What is deployed
-
-The site is a **static export**. `website/` is a Next.js app, but it is built
-with `output: 'export'`, so `npm run build` writes a directory of plain HTML,
-JSON and assets rather than producing a server to run. Two consequences worth
-knowing:
+Nothing runs on a server. The site is a **static export** — `website/` is a
+Next.js app built with `output: 'export'`, so `npm run build` writes a
+directory of plain HTML, JSON and assets rather than something that has to be
+kept running. Two consequences worth holding on to:
 
 - **The docs are read at build time.** Editing Markdown under `docs/` changes
-  the site on the next build, not on the next request. The workflow therefore
-  triggers on `docs/**` as well as on `website/**`.
-- **Nothing renders in production.** What runs on the host is
-  [`scripts/serve-static.js`](scripts/serve-static.js), a dependency-free file
-  server over the exported directory. It exists only so this site has the same
-  shape as every other application on that host — one Node process at
-  `/srv/<app>/current/index.js` on its own port — which is what lets it be
-  added without changing how the host is provisioned.
+  the site on the next build, not on the next request, which is why the deploy
+  workflow triggers on `docs/**` as well as on `website/**`.
+- **The bucket is private.** CloudFront reads it through Origin Access Control
+  and nothing else can, so there is no public bucket anywhere in this.
 
-S3 holds the published export and is the rollback point. The bucket is
-versioned, so a bad build can be recovered by syncing an earlier version back
-out; the host keeps only the current copy and the one before it.
+## Why CloudFront is here
 
-## The entry this needs on the shared host
+Not for caching, though it does that too. S3 cannot serve HTTPS on a name of
+our own: its REST endpoint carries a certificate for `amazonaws.com`, and its
+website endpoint — the only one that resolves `index.html` inside a directory —
+speaks plain HTTP and nothing else. A distribution is the supported way to have
+both TLS and a private bucket, so it would be here even with every cache turned
+off.
 
-**This lives in the courtpot repository**, because the shared host belongs to
-none of the three applications on it and its stack is applied by an
-administrator. It is one entry in the `apps` map in
-`deployment/terraform/shared-host/variables.tf`:
+It also does the URL mapping the export needs. The site is built with
+`trailingSlash: true`, so a page is a directory containing `index.html`, and
+S3-as-an-origin has no notion of an index document. The
+[viewer-request function](terraform/functions/viewer-request.js) maps `/a/b/`
+onto `/a/b/index.html`, passes real files through untouched, and redirects
+`/a/b` to `/a/b/` so each page has exactly one URL — which matters because a
+relative link inside the page resolves differently under the two.
 
-```hcl
-robotics-basics = {
-  port     = 7073
-  api_host = "docs.dodao.io"
-}
-```
+## What the caching costs, which is nothing
 
-`terraform output -raw shared_host_apps_entry` prints it as JSON if you would
-rather paste than type.
+Caching is **on**, for the pages and for the hashed assets. It was briefly off
+while the docs were changing daily, on the theory that holding pages at the
+edge costs money. It does not, and the arithmetic is worth writing down because
+it is the opposite of the intuition:
 
-`api_host` is a slightly wrong name for a docs site, and the systemd unit it
-produces is `robotics-basics-api.service`. Both are the shared host's naming,
-kept rather than special-cased: the alternative is a change to `provision.sh`,
-which every application on the box shares.
+- **Holding an object at an edge is not billed.** CloudFront charges for data
+  transferred out and for requests. Caching lowers both, by keeping requests
+  away from S3 — so the cached arrangement is the cheaper one.
+- **A full flush is one path.** `/*` counts as a single invalidation path
+  however many objects it matches, and the first **1,000 paths a month are
+  free**. Every deploy issues one `/*`, so thirty deploys a month spends thirty
+  of the thousand.
+- **Listing individual URLs is what costs.** Twenty URLs is twenty paths.
+  Beyond the free thousand that is $0.005 each. There is no case here where
+  naming URLs is cheaper than `/*` — only more precise.
 
-**Apply it by re-running the provisioning script over SSH, not with
-`terraform apply`.** The map is part of `user_data`, and changing `user_data`
-destroys and recreates the instance — which would take the other two
-applications down with it:
+So freshness is bought by invalidating, not by refusing to cache. Two flags in
+[`variables.tf`](terraform/variables.tf) turn it off if you ever want to rule
+the cache out while chasing something:
 
-```sh
-ssh -i ~/.ssh/shared-apps.pem ubuntu@13.216.34.24 \
-  "sudo APPS_JSON='<the new map as JSON>' \
-        DEPLOY_PUBLIC_KEY=\"\$(cat /home/deploy/.ssh/authorized_keys)\" \
-        bash /root/provision.sh"
-```
+| Flag | Default | What it holds |
+|---|---|---|
+| `cache_pages` | `true` | the HTML, the search index, the doc assets |
+| `cache_immutable_assets` | `true` | `/_next/static/*` |
 
-`provision.sh` is idempotent and derives everything from `APPS_JSON`, so a
-re-run converges: it adds the third systemd unit and the third Caddy site and
-leaves the other two alone. Commit the `variables.tf` change too, so the next
-instance is built with all three.
-
-> Caddy will try to obtain a certificate for `docs.dodao.io` as soon as the
-> site block exists, so create the DNS record first — `terraform apply` in this
-> repository — or the HTTP-01 challenge fails and Caddy backs off before
-> retrying.
+The second is safe to leave on whatever the first is doing: those filenames
+contain a hash of their own contents, so a changed file is a changed URL and a
+held copy can never be stale. 404s are never cached at all, whatever either
+flag says — a page that exists now must not keep being denied because it did
+not exist when somebody first asked.
 
 ## One-time setup
 
@@ -105,11 +88,13 @@ terraform init -backend-config="bucket=robotics-basics-tfstate-<account-id>"
 terraform apply
 ```
 
-That creates the docs bucket, the `docs.dodao.io` A record pointing at the
-shared host's static IP, and a `robotics-basics-deployer` IAM user scoped to
-exactly one thing: writing that bucket. It reads the shared host's state
-read-only to find the IP, and can change nothing about the host — getting files
-onto the box is SSH, not AWS.
+That creates the bucket, the certificate (DNS-validated in the existing
+`dodao.io` zone), the distribution, the `docs.dodao.io` records, and a
+`robotics-basics-deployer` IAM user scoped to exactly two things: writing that
+bucket and invalidating that distribution.
+
+> The first apply takes 5–10 minutes. Nearly all of it is waiting for the
+> certificate to validate and the distribution to deploy.
 
 Then wire up GitHub Actions (**Settings → Secrets and variables → Actions**):
 
@@ -117,76 +102,72 @@ Then wire up GitHub Actions (**Settings → Secrets and variables → Actions**)
 |---|---|---|
 | Secret | `AWS_ACCESS_KEY_ID` | `terraform output -raw deployer_access_key_id` |
 | Secret | `AWS_SECRET_ACCESS_KEY` | `terraform output -raw deployer_secret_access_key` |
-| Secret | `SSH_PRIVATE_KEY` | shared-host stack: `terraform output -raw deploy_private_key` |
 | Variable | `S3_BUCKET` | `terraform output -raw web_bucket` |
-| Variable | `DEPLOY_HOST` | `terraform output -raw shared_host_ip` |
-| Variable | `SSH_HOST_KEY` | `ssh-keyscan -t rsa,ecdsa,ed25519 13.216.34.24` |
-
-`SSH_HOST_KEY` is **pinned** rather than accepted on first use, so a hijacked
-record cannot collect a key that reaches a box running three applications.
-Recreating the instance changes it — re-run `ssh-keyscan` and update the
-variable, or every deploy fails at the SSH step.
-
-There is no `CLOUDFRONT_DISTRIBUTION_ID` and no `DATABASE_URL`: no
-distribution, and the site has no database.
+| Variable | `CLOUDFRONT_DISTRIBUTION_ID` | `terraform output -raw cloudfront_distribution_id` |
 
 ## Every deploy after that
 
-Push to `main` with a change under `docs/`, `website/` or the server script.
+Push to `main` with a change under `docs/` or `website/`.
 [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml):
 
-1. builds the export and checks `out/index.html` and `out/search-index.json`
-   both exist, which is how a server build that silently stopped being static
-   would be caught;
-2. assembles `index.js` + `site/` — exactly what `/srv/robotics-basics/current`
-   holds — so the copy in S3 and the copy on the host are identical by
-   construction;
-3. syncs that tree to `s3://<bucket>/current/` with `--delete`;
-4. rsyncs it to `/srv/robotics-basics/next` on the host, rotates `current` to
-   `previous`, swaps `next` into `current`, and restarts the service;
-5. polls `https://docs.dodao.io/` until it answers 200, and dumps the service's
-   journal if it never does.
+1. builds the export, and checks `out/index.html`, `out/search-index.json` and
+   `out/404.html` all exist — a build that quietly stopped being static would
+   otherwise be found by an empty bucket;
+2. writes the commit SHA to `out/_build.txt`;
+3. uploads `_next/static/` **first, without `--delete`**, with a one-year
+   `Cache-Control`. Assets before pages, so a page never arrives referencing a
+   bundle that is not there yet;
+4. uploads everything else **with `--delete`** and `max-age=0,
+   must-revalidate`, so pages are always revalidated and anything removed from
+   the site leaves the bucket;
+5. invalidates `/*` and waits for it to complete;
+6. fetches `/_build.txt` and checks it matches the commit. Checking the SHA
+   rather than a 200 is what catches a stale edge or a sync that uploaded
+   nothing.
 
-Staging and swapping matters for the same reason it does in the other two
-projects: the service must not be able to restart into a half-transferred tree.
+## Flushing the cache by hand
 
-## Operating it
+[`.github/workflows/flush-cache.yml`](../.github/workflows/flush-cache.yml) is
+a manually-triggered job: **Actions → Flush the CDN cache → Run workflow**.
+Anyone with write access to the repository can run it, which is the point —
+nobody needs AWS credentials to clear the cache.
+
+It takes what to flush (`/*` by default, which is everything and is billed as
+one path) and an optional reason, and records both in the run summary along
+with who asked, so the history explains itself. It waits for the invalidation
+to complete rather than firing and forgetting.
+
+An ordinary deploy already flushes everything, so this is for the times the
+bucket changed without one: an object edited or rolled back by hand, a change
+to the caching flags, or a page that looks stale and you want the cache ruled
+out before looking further.
+
+## Rolling back
+
+The bucket is versioned, and old versions are kept for 30 days. To go back,
+sync the previous build out and in again, then flush:
 
 ```sh
-ssh -i ~/.ssh/shared-apps.pem ubuntu@13.216.34.24
-
-sudo journalctl -u robotics-basics-api -f   # this site's logs
-sudo journalctl -u caddy -f                 # TLS and routing for all three
-curl localhost:8080                         # host liveness, no certificate involved
-curl localhost:7073/_health                 # this site, bypassing Caddy
-curl -I localhost:7073/                     # and its actual output
-cat /srv/robotics-basics/current/site/_build.txt   # which commit is live
+# what is there now, and when
+aws s3api list-object-versions --bucket robotics-basics-web-<account-id> \
+  --prefix index.html --query 'Versions[].{v:VersionId,t:LastModified}' --output table
 ```
 
-**Rolling back** is the previous tree, still on disk:
-
-```sh
-ssh deploy@13.216.34.24 \
-  'rm -rf /srv/robotics-basics/current && \
-   mv /srv/robotics-basics/previous /srv/robotics-basics/current && \
-   sudo systemctl restart robotics-basics-api'
-```
-
-Further back than that is S3: the bucket is versioned, so an earlier export can
-be synced out and rsynced up. Nothing is lost by recreating the instance either
-— the site is a build artifact and CI rebuilds it — but all three applications
-are down until each project's workflow runs again, and `SSH_HOST_KEY` must be
-updated in all three repositories.
+Redeploying the previous commit through the workflow is usually simpler and
+leaves a better trail: re-run the last good run from the Actions tab.
 
 ## Notes
 
 - **Terraform state** lives in `robotics-basics-tfstate-<account-id>`, private,
   versioned and encrypted. It contains the deployer's secret access key.
-- **Costs.** This adds no recurring cost worth naming. The instance is already
-  paid for and shared; the bucket holds ~30 MB and its old versions expire
-  after 30 days; `docs.dodao.io` sits in a hosted zone that already exists.
-  Serving from the shared host rather than from CloudFront is also what keeps
-  it at zero.
-- **Ports.** 7071 courtpot, 7072 interestled, 7073 here. The shared-host stack
-  validates that no two applications share one, which is the single failure
-  that arrangement cannot absorb.
+- **Costs.** Effectively nothing. The site is ~30 MB, CloudFront's free tier
+  covers 1 TB out and 10 M requests a month, invalidations are one path per
+  deploy against a thousand free, S3 storage is pennies with old versions
+  expiring after 30 days, and the hosted zone already exists.
+- **`price_class`** is `PriceClass_100` — North America and Europe. The whole
+  estate is in `us-east-1` and the readership is not global enough to pay for
+  the other two; raising it is one variable.
+- **This used to run on the shared Lightsail host** alongside courtpot and
+  interestled, on port 7073 behind Caddy. That worked and gave HTTPS without a
+  distribution, but it tied a static site to a box shared with two services.
+  Nothing in this repository depends on that host any more.

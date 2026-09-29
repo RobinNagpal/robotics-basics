@@ -1,15 +1,13 @@
-# Where the generated docs live.
+# Where the generated docs live, and what is actually served.
 #
 # The site is a static export — `next build` with `output: 'export'` writes a
-# directory of plain files — and this bucket is the published copy of it. The
-# deploy uploads here first and the shared host pulls from here, so the bucket
-# is the record of what is live rather than a staging area: versioning means a
-# bad build can be rolled back by re-syncing an earlier version, and the host
-# holds no history of its own.
+# directory of plain files — and this bucket holds it. It is the origin rather
+# than a staging area: what is in here is what the world gets, and versioning
+# means a bad build can be undone by syncing an earlier version back out.
 #
-# It is private. Nothing reads it over the internet, because the site is served
-# by Caddy from the host's disk — that is what gives it HTTPS without a
-# CloudFront distribution in front of a public bucket.
+# It is private, with every public-access block on. CloudFront reads it through
+# Origin Access Control and nothing else can — see cloudfront.tf for why a
+# distribution is needed at all, which is TLS rather than caching.
 resource "aws_s3_bucket" "web" {
   bucket = "${var.app_name}-web-${data.aws_caller_identity.current.account_id}"
 
@@ -71,4 +69,38 @@ resource "aws_s3_bucket_lifecycle_configuration" "web" {
   }
 
   depends_on = [aws_s3_bucket_versioning.web]
+}
+
+# The only reader is this distribution, named specifically. Origin Access
+# Control signs CloudFront's requests to S3, so the bucket can keep every
+# public-access block on and still be served to the world over HTTPS — which
+# is the arrangement that makes a distribution worth having in front of it.
+data "aws_iam_policy_document" "web_bucket" {
+  statement {
+    sid       = "AllowCloudFrontRead"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.web.arn}/*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    # Without this any CloudFront distribution in any account could read the
+    # bucket: the service principal alone does not say whose distribution.
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [aws_cloudfront_distribution.web.arn]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "web" {
+  bucket = aws_s3_bucket.web.id
+  policy = data.aws_iam_policy_document.web_bucket.json
+
+  # The access block has to land first, or the policy is briefly the only thing
+  # standing between the bucket and the internet.
+  depends_on = [aws_s3_bucket_public_access_block.web]
 }

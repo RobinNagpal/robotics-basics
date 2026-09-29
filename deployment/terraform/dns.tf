@@ -1,36 +1,35 @@
-# The shared Lightsail host, read read-only. This stack needs one value from
-# it — the static IP the site's record points at — and must never write it:
-# the host is shared with courtpot and interestled, and its stack is applied by
-# an administrator from the courtpot repository.
-data "terraform_remote_state" "shared_host" {
-  backend = "s3"
-
-  config = {
-    bucket = var.shared_host_state_bucket
-    key    = "shared-host/terraform.tfstate"
-    region = var.aws_region
-  }
+# Z2FDTNDATAQYW2 is CloudFront's own hosted zone id. It is the same fixed value
+# for every distribution in every account, which is why it is a literal rather
+# than something looked up.
+locals {
+  cloudfront_zone_id = "Z2FDTNDATAQYW2"
 }
 
-# The zone already exists and holds a great many other records. This stack adds
-# exactly one name to it and manages nothing else in it.
-data "aws_route53_zone" "main" {
-  name         = "${var.zone_name}."
-  private_zone = false
-}
-
-# A plain A record, not an alias: the target is a Lightsail static IP, which is
-# an address rather than an AWS-hosted zone target, so there is nothing to
-# alias to. The address is static precisely so this record survives the
-# instance being recreated.
-#
-# Caddy on that host answers for this name and serves the exported site from
-# disk. There is no ACM certificate anywhere in this stack — Let's Encrypt
-# issues one on the host, which is what removes the need for CloudFront.
-resource "aws_route53_record" "site" {
+# An alias rather than a CNAME, so the name can be a subdomain and still
+# resolve without the extra lookup a CNAME costs — and so Route 53 answers for
+# it directly rather than handing out CloudFront's own name.
+resource "aws_route53_record" "site_a" {
   zone_id = data.aws_route53_zone.main.zone_id
   name    = var.site_host
   type    = "A"
-  ttl     = 300
-  records = [data.terraform_remote_state.shared_host.outputs.static_ip]
+
+  alias {
+    name                   = aws_cloudfront_distribution.web.domain_name
+    zone_id                = local.cloudfront_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# The distribution answers on IPv6, so the record set should too. Without this
+# an IPv6-only client cannot reach the site at all.
+resource "aws_route53_record" "site_aaaa" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = var.site_host
+  type    = "AAAA"
+
+  alias {
+    name                   = aws_cloudfront_distribution.web.domain_name
+    zone_id                = local.cloudfront_zone_id
+    evaluate_target_health = false
+  }
 }

@@ -8,19 +8,22 @@ output "web_bucket" {
   value       = aws_s3_bucket.web.bucket
 }
 
-output "site_host" {
-  description = "The name Caddy terminates TLS for. Must match api_host in the shared-host apps map."
-  value       = var.site_host
+output "cloudfront_distribution_id" {
+  description = "The CLOUDFRONT_DISTRIBUTION_ID Actions variable, used to invalidate on deploy and by hand."
+  value       = aws_cloudfront_distribution.web.id
 }
 
-output "site_port" {
-  description = "The port this application listens on behind Caddy. Must match its port in the shared-host apps map."
-  value       = var.site_port
+output "cloudfront_domain_name" {
+  description = "The distribution's own name. Useful for testing before the DNS record has propagated."
+  value       = aws_cloudfront_distribution.web.domain_name
 }
 
-output "shared_host_ip" {
-  description = "Static IP of the shared Lightsail instance — the DEPLOY_HOST Actions variable."
-  value       = data.terraform_remote_state.shared_host.outputs.static_ip
+output "caching" {
+  description = "What the distribution is currently holding, so `terraform output` answers it without reading the plan."
+  value = {
+    pages            = var.cache_pages ? "cached (Managed-CachingOptimized)" : "not cached (Managed-CachingDisabled)"
+    immutable_assets = var.cache_immutable_assets ? "cached (Managed-CachingOptimized)" : "not cached (Managed-CachingDisabled)"
+  }
 }
 
 output "deployer_access_key_id" {
@@ -32,18 +35,4 @@ output "deployer_secret_access_key" {
   description = "Set as the AWS_SECRET_ACCESS_KEY Actions secret."
   value       = var.create_deployer_access_key ? aws_iam_access_key.deployer[0].secret : null
   sensitive   = true
-}
-
-# The entry this application needs in the shared-host stack's `apps` map,
-# printed rather than described so it can be pasted. That map lives in the
-# courtpot repository and is applied by an administrator; this stack cannot
-# write it, which is the whole reason for printing it here.
-output "shared_host_apps_entry" {
-  description = "Add this to the apps map in courtpot's deployment/terraform/shared-host/variables.tf."
-  value = jsonencode({
-    (var.app_name) = {
-      port     = var.site_port
-      api_host = var.site_host
-    }
-  })
 }

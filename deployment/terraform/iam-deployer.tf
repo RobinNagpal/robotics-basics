@@ -1,12 +1,8 @@
-# CI deploy user for GitHub Actions, scoped to exactly what a deploy does to
-# AWS: write the docs bucket, and read it back. It can touch nothing else in
-# the account.
-#
-# The other half of a deploy uses no AWS credentials at all. Getting the files
-# onto the shared host is an rsync over SSH, authorised by the SSH_PRIVATE_KEY
-# secret that the shared-host stack issues — which is why this policy has no
-# Lightsail permissions in it, and why nothing here can disturb the two other
-# applications on that box.
+# CI deploy user for GitHub Actions, scoped to exactly what a deploy does:
+# write the docs bucket, and invalidate the one distribution in front of it. It
+# can touch nothing else in the account, and in particular it cannot change the
+# distribution, the certificate or the DNS — those are Terraform's, applied by
+# an administrator.
 resource "aws_iam_user" "deployer" {
   name = "${var.app_name}-deployer"
   path = "/${var.app_name}/"
@@ -18,8 +14,8 @@ resource "aws_iam_user" "deployer" {
 
 data "aws_iam_policy_document" "deployer" {
   # ListBucket is on the bucket itself rather than its contents, and `aws s3
-  # sync` needs it: without it the sync cannot see what is already there and
-  # has nothing to compare against, so it uploads everything every time.
+  # sync` needs it: without it the sync cannot see what is already there, so it
+  # has nothing to compare against and uploads every file every time.
   statement {
     sid       = "WebBucketList"
     actions   = ["s3:ListBucket"]
@@ -34,6 +30,20 @@ data "aws_iam_policy_document" "deployer" {
       "s3:DeleteObject",
     ]
     resources = ["${aws_s3_bucket.web.arn}/*"]
+  }
+
+  # Deploying uploads new bytes under URLs that have not changed, so without
+  # this the edges would go on serving the previous build until their own TTLs
+  # ran out. GetInvalidation is included so the workflow can wait for one and
+  # report honestly rather than assuming it worked.
+  statement {
+    sid = "InvalidateCache"
+    actions = [
+      "cloudfront:CreateInvalidation",
+      "cloudfront:GetInvalidation",
+      "cloudfront:ListInvalidations",
+    ]
+    resources = [aws_cloudfront_distribution.web.arn]
   }
 }
 

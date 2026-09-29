@@ -5,9 +5,9 @@
 #
 #   bootstrap-state-bucket.sh        # robotics-basics-tfstate-<account-id>
 #
-# The shared Lightsail host has a state bucket of its own, created from the
-# courtpot repository, because that host belongs to none of the applications on
-# it. This script never touches it.
+# One bucket, one stack. The state records the deployer's secret access key
+# among everything else, which is why the bucket is private, versioned and
+# encrypted rather than merely somewhere to put a file.
 set -euo pipefail
 
 prefix="${1:-robotics-basics}"

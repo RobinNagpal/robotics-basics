@@ -1,0 +1,82 @@
+name: Flush the CDN cache
+
+# Run by hand from the Actions tab: pick this workflow, press "Run workflow".
+# Anyone with write access to the repository can, which is what makes this the
+# thing to reach for rather than handing out AWS credentials.
+#
+# An ordinary deploy already flushes everything, so this is for the times when
+# the bucket changed without one: an object edited or rolled back by hand, a
+# Terraform change to the caching flags, or a page that is somehow stale and
+# you want the cache ruled out before looking further.
+on:
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: 'What to flush. /* is everything, and counts as ONE path.'
+        required: true
+        default: '/*'
+        type: string
+      reason:
+        description: 'Why (recorded in the run, so the history explains itself)'
+        required: false
+        type: string
+
+concurrency:
+  # Shares a group with nothing else on purpose: a flush during a deploy is
+  # harmless, since the deploy issues its own afterwards.
+  group: flush-docs-cache-${{ github.run_id }}
+
+permissions:
+  contents: read
+
+jobs:
+  flush:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Say what is being done and by whom
+        run: |
+          {
+            echo "### Flushing the docs CDN cache"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Paths | \`${{ inputs.paths }}\` |"
+            echo "| Requested by | @${{ github.actor }} |"
+            echo "| Reason | ${{ inputs.reason || '_not given_' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # The input is split on whitespace so several paths can be given at once.
+      # Worth knowing before doing that: /* is billed as one path however much
+      # it matches, while a list of twenty URLs is billed as twenty. Beyond the
+      # first thousand a month that is $0.005 each, so listing URLs is only
+      # cheaper than /* in the sense that it is more precise — never in money.
+      - name: Create the invalidation
+        id: invalidate
+        run: |
+          read -r -a paths <<< "${{ inputs.paths }}"
+          id=$(aws cloudfront create-invalidation \
+                 --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+                 --paths "${paths[@]}" \
+                 --query 'Invalidation.Id' --output text)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "invalidation $id created for ${#paths[@]} path(s)"
+
+      - name: Wait for the edges to catch up
+        run: |
+          aws cloudfront wait invalidation-completed \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --id "${{ steps.invalidate.outputs.id }}"
+
+      - name: Record the result
+        if: always()
+        run: |
+          echo "| Invalidation | \`${{ steps.invalidate.outputs.id }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Outcome | ${{ job.status }} |" >> "$GITHUB_STEP_SUMMARY"

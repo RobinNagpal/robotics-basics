@@ -402,10 +402,14 @@ because 1 m short is as close as a 5 m arm can get.
 
 ## 9. What comes next
 
+Inverse kinematics gives the joint angles for the end of a move. The
+[next doc](03_moving-between-poses.md) asks how the arm gets there: the two basic
+ways to move between two poses, and how to start and stop smoothly.
+
 This chapter used a flat arm, so every joint turned about the same axis. Real
 arms turn in 3D, and they use different kinds of joint in different layouts.
 
-The next chapter starts with
+After that, the next chapter starts with
 [joints and degrees of freedom](../05_arm-types/01_joints-and-degrees-of-freedom.md):
 what kinds of joint exist, and why a real arm usually has six of them. It ends
 with [the six-joint arm](../05_arm-types/03_the-six-joint-arm.md), where the

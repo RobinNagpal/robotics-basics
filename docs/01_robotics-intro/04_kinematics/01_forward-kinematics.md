@@ -184,7 +184,7 @@ the gripper points. Once the point is chosen, the gripper's angle is decided for
 you.
 
 A third joint fixes that. The arm from
-[section 8 of the frames doc](../03_arm/01_overview.md#8-making-the-arm-bigger)
+[section 6 of the frames doc](../03_arm/01_overview.md#6-making-the-arm-bigger)
 adds a third link, 1 m long, turned by `q3`. Its pose now has three numbers:
 `x`, `y`, and the gripper's angle, written `φ` (the Greek letter phi).
 

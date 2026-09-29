@@ -167,7 +167,6 @@ leaves a better trail: re-run the last good run from the Actions tab.
 - **`price_class`** is `PriceClass_100` — North America and Europe. The whole
   estate is in `us-east-1` and the readership is not global enough to pay for
   the other two; raising it is one variable.
-- **This used to run on the shared Lightsail host** alongside courtpot and
-  interestled, on port 7073 behind Caddy. That worked and gave HTTPS without a
-  distribution, but it tied a static site to a box shared with two services.
-  Nothing in this repository depends on that host any more.
+- **Nothing here runs on a server.** There is no instance to keep alive, no
+  process to restart and nothing to SSH into: a deploy is a file sync and a
+  cache flush, and the site stays up whatever else in the estate is doing.

@@ -1,8 +1,16 @@
-# Each folder keeps its own ignores: code/.gitignore and website/.gitignore.
+# pixi
+.pixi/
 
-# python, for docs/diagrams
+# colcon
+build/
+install/
+log/
+
+# python
 __pycache__/
 *.py[cod]
+*.egg-info/
+.pytest_cache/
 
 # editors / IDEs
 .idea/
@@ -11,3 +19,19 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# camera_basics: downloaded model weights, drawn training pictures, training
+# runs and annotated output. All of it is remade by the scripts.
+src/camera/camera_basics/models/
+src/camera/camera_basics/datasets/
+src/camera/camera_basics/runs/
+src/camera/camera_basics/out/
+.env
+.envrc
+# Terraform: the provider cache and any local state. The lock file is NOT
+# ignored — it pins provider versions and belongs in the repository. Real state
+# lives in S3, but a stray local copy would contain the deployer's secret key.
+deployment/terraform/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan

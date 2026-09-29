@@ -1,0 +1,119 @@
+name: Deploy docs
+
+# The docs are read at build time, so a change to anything under docs/ needs a
+# rebuild just as much as a change to the site's own code does.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'website/**'
+      - 'deployment/scripts/serve-static.js'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  # Two deploys swapping /srv/robotics-basics/current at once would interleave.
+  group: deploy-docs
+  cancel-in-progress: false
+
+env:
+  APP_NAME: robotics-basics
+  SITE_URL: https://docs.dodao.io
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Build the static export
+        working-directory: website
+        run: |
+          npm ci
+          npm run build
+          test -f out/index.html          # the export ran, rather than a server build
+          test -f out/search-index.json   # the force-static route handler ran too
+
+      - name: Assemble what ships
+        # index.js and site/ together are exactly what /srv/<app>/current holds,
+        # so the same tree is uploaded to S3 and rsynced to the host. Building
+        # it here rather than on the box keeps the two identical by construction.
+        run: |
+          mkdir -p release/site
+          cp deployment/scripts/serve-static.js release/index.js
+          cp -R website/out/. release/site/
+          echo "${{ github.sha }}" > release/site/_build.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Publish the generated docs to S3
+        # The bucket is the record of what is live and the rollback point; the
+        # bucket is versioned, so the previous export stays retrievable. --delete
+        # keeps it a mirror rather than an accumulation of every file ever built.
+        run: |
+          aws s3 sync release/ "s3://${{ vars.S3_BUCKET }}/current/" \
+            --delete --no-progress
+
+      - name: Trust the host key
+        # Pinned, not accepted on first use: a hijacked A record must not be
+        # able to collect a key that can reach a box shared with two other
+        # applications. Recreating the instance changes this — re-run
+        # `ssh-keyscan` and update the SSH_HOST_KEY variable when it does.
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ vars.SSH_HOST_KEY }}" > ~/.ssh/known_hosts
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy ~/.ssh/known_hosts
+
+      - name: Ship it to the shared host
+        # Staged beside the live directory and swapped, never written in place:
+        # systemd must not be able to restart into a half-transferred tree, and
+        # a reader mid-request must not have files pulled out from under it.
+        run: |
+          ssh -i ~/.ssh/deploy "deploy@${{ vars.DEPLOY_HOST }}" \
+            "rm -rf /srv/$APP_NAME/next && mkdir -p /srv/$APP_NAME/next"
+
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy" \
+            release/ "deploy@${{ vars.DEPLOY_HOST }}:/srv/$APP_NAME/next/"
+
+          ssh -i ~/.ssh/deploy "deploy@${{ vars.DEPLOY_HOST }}" bash -euo pipefail <<EOF
+            rm -rf /srv/$APP_NAME/previous
+            if [ -d /srv/$APP_NAME/current ]; then
+              mv /srv/$APP_NAME/current /srv/$APP_NAME/previous
+            fi
+            mv /srv/$APP_NAME/next /srv/$APP_NAME/current
+            sudo systemctl restart $APP_NAME-api
+          EOF
+
+      - name: Wait for it to answer
+        run: |
+          for attempt in $(seq 1 30); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "$SITE_URL/" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "up after $attempt attempt(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::$SITE_URL did not answer 200 within 60s"
+          exit 1
+
+      - name: Say what went wrong
+        if: failure()
+        run: |
+          ssh -i ~/.ssh/deploy "deploy@${{ vars.DEPLOY_HOST }}" \
+            "journalctl -u $APP_NAME-api -n 80 --no-pager" || true

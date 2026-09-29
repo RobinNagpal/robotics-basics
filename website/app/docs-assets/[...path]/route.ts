@@ -3,6 +3,10 @@ import path from 'node:path';
 import { DOCS_DIR } from '@/lib/content';
 
 // Serves the images and other files that the docs link to, straight from docs/.
+//
+// The site is exported as static files, so this runs at build time rather than
+// per request: generateStaticParams below lists every asset the docs hold, and
+// each one is written out as a real file. Nothing here executes in production.
 
 const TYPES: Record<string, string> = {
   '.svg': 'image/svg+xml',
@@ -18,6 +22,47 @@ const TYPES: Record<string, string> = {
   '.json': 'application/json',
   '.txt': 'text/plain; charset=utf-8',
 };
+
+export const dynamic = 'force-static';
+
+/**
+ * Every asset under docs/, as path segments.
+ *
+ * An export has to be told what to write, and a catch-all route is given no
+ * list of its own. Walking the directory is that list, and it is the same
+ * source of truth the rest of the site uses: add an image to docs/ and the
+ * next build publishes it, with nothing to keep in step by hand.
+ *
+ * Only extensions in TYPES are returned. The Markdown itself is read by the
+ * page routes and must not be published as a downloadable copy alongside them.
+ */
+export async function generateStaticParams(): Promise<{ path: string[] }[]> {
+  const found: { path: string[] }[] = [];
+
+  async function walk(dir: string, segments: string[]): Promise<void> {
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      return; // a docs tree without this folder is not an error
+    }
+
+    for (const entry of entries) {
+      // Leading dots are editor and VCS clutter, never linked from a doc.
+      if (entry.name.startsWith('.')) continue;
+
+      const next = [...segments, entry.name];
+      if (entry.isDirectory()) {
+        await walk(path.join(dir, entry.name), next);
+      } else if (TYPES[path.extname(entry.name).toLowerCase()]) {
+        found.push({ path: next });
+      }
+    }
+  }
+
+  await walk(DOCS_DIR, []);
+  return found;
+}
 
 export async function GET(_req: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const parts = (await params).path.map((p) => decodeURIComponent(p));

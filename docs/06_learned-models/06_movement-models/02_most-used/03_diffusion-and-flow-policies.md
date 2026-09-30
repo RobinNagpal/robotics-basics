@@ -1,15 +1,18 @@
 # Diffusion and flow policies
 
-This page answers one question. When people show a robot arm the same task in
-different ways, how can a model copy them without mixing the ways together? The
-answer is a kind of movement model called a diffusion policy, and its faster
-relative, the flow policy.
+The previous page said that action chunking reduces the adding-up of small
+mistakes, but it left one fault unfixed: when people show the same task in two
+different ways, the model still blends the two. So this page answers one
+question: when people show a robot arm the same task in different ways, how can
+a model copy them without mixing the ways together? The answer is a kind of
+movement model called a diffusion policy, together with its faster relative, the
+flow policy.
 
 The page is for a reader who has met the two pages before it:
 [behaviour cloning](01_behaviour-cloning.md), which copies demonstrations, and
 [action chunking transformers](02_action-chunking-transformers.md), which plan a
-short run of movements at a time. You do not need any maths. Every new word is
-explained where it first appears.
+short run of movements at a time. You do not need any maths, because every new word
+is explained where it first appears.
 
 ## Contents
 
@@ -29,64 +32,69 @@ explained where it first appears.
 
 ## 1. What it is
 
-Here is the one-sentence idea. A diffusion policy starts from a random guess at
-the arm's next movements, and cleans that guess up in several small steps until it
-looks like something a person really did.
+The introduction named the problem, so this section gives the idea that answers
+it in one sentence. In short, a diffusion policy starts from a random guess at
+the arm's next movements, and it cleans that guess up in several small steps,
+until the guess looks like something a person really did.
 
-A **policy** is the name for any model that decides what the arm does next. It
-looks at the world and gives back an action. An **action** is a movement command,
-such as "move the gripper 1 cm to the left and close it a little".
+A **policy** is the name for any model that decides what the arm does next,
+which it does by looking at the world and giving back an action. An **action**
+is a movement command, such as "move the gripper 1 cm to the left and close it a
+little".
 
-To see why a new kind of policy was needed, think about an everyday example. You
-ask six people to carry a mug from one side of a table to the other. There is a
-box in the middle. Three people go round the left of the box. Three people go
-round the right. All six did the job well.
+But to see why a new kind of policy was needed, think about an everyday example.
+You ask six people to carry a mug from one side of a table to the other, and
+there is a box in the middle. Three people go round the left of the box, and
+three people go round the right, so all six did the job well.
 
-Now suppose a simple model learns from these six people. A simple model gives one
-answer for each situation, and it tries to be as close as possible to all six
-people at once. The answer closest to "three go left and three go right" is the
-middle. So the model learns to go straight through the middle, into the box. None
-of the six people ever did that.
+Now suppose a simple model learns from these six people. This is a model that
+gives one answer for each situation, and it tries to be as close as possible to
+all six people at once. But the answer closest to "three go left and three go
+right" is the middle. So the model learns to go straight through the middle,
+into the box, which is something none of the six people ever did.
 
 ![Demonstrations go over or under a box; the average of them goes into the box](../../../images/movement-models/diffusion-and-flow-policies/average-goes-through.svg)
 
-The left picture shows the problem: the red dashed line is the average of the
-pale demonstrations, and it runs into the box. The right picture shows what a
-diffusion policy does instead: each time it runs, it picks one whole path that
-looks like a real demonstration.
+The left picture shows the problem, because the red dashed line is the average
+of the pale demonstrations, and it runs into the box. But the right picture
+shows what a diffusion policy does instead, which is that each time it runs it
+picks one whole path that looks like a real demonstration.
 
-A task with more than one good way to do it is called **multi-modal**. A **mode**
-is one of the good ways. Going left is one mode and going right is another.
-Diffusion policies were built to handle multi-modal tasks. They learn the whole
-spread of ways that people did the task, and each time they run, they pick one of
-them.
+A task with more than one good way to do it is called **multi-modal**, and a
+**mode** is one of those good ways, so going left is one mode and going right is
+another. Diffusion policies were built to handle multi-modal tasks, because they
+learn the whole spread of ways that people did the task, and each time they run they
+pick one of them.
 
-A **flow policy** does the same job with a method called **flow matching**. It
+A **flow policy** does the same job with a method called **flow matching**, and it
 usually needs fewer clean-up steps, so it runs faster.
-[Section 4](#4-diffusion-and-flow-matching-the-difference) explains the difference.
+[Section 4](#4-diffusion-and-flow-matching-the-difference) explains where that
+difference comes from.
 
 ---
 
 ## 2. What goes in and what comes out
 
-A diffusion policy for a robot arm takes in three things.
+Section 1 said that the policy starts from a random guess, so that random guess
+is one of its inputs. So a diffusion policy for a robot arm takes in three
+things altogether.
 
 - **The latest camera pictures.** Often there is one camera looking at the table
   and one camera on the wrist of the arm. Some policies take the last two or three
-  pictures, so they can see which way things are moving.
+  pictures, so that they can see which way things are moving.
 - **The arm's own state.** This is the angle of each joint and how open the
-  gripper is. The arm's own sensors measure these numbers.
-- **Some random numbers.** This is the starting guess that gets cleaned up. It is
-  called **noise**, because it is random and has no meaning yet.
+  gripper is, and the arm's own sensors measure these numbers.
+- **Some random numbers.** This is the starting guess that gets cleaned up, and it
+  is called **noise**, because it is random and has no meaning yet.
 
-It gives back a **chunk** of actions. A chunk is a short list of the next
+Then it gives back a **chunk** of actions, which is a short list of the next
 movements, one after another, such as the next sixteen positions for the gripper.
 The [action chunking page](02_action-chunking-transformers.md) explains why a chunk
-works better than one action at a time. Diffusion policies use chunks for the same
-reasons.
+works better than one action at a time, and diffusion policies use chunks for the
+same reasons.
 
-The table below shows one concrete example. Read each row as one kind of input or
-output, with what it looks like for an arm picking up a mug.
+The table below turns that list into one concrete example. Read each row as one
+kind of input or output, with what it looks like for an arm picking up a mug.
 
 | | What it is | An example for picking up a mug |
 | --- | --- | --- |
@@ -99,43 +107,45 @@ output, with what it looks like for an arm picking up a mug.
 
 ## 3. How it works inside
 
-The cleaning-up happens in steps. Each step uses the same neural network. A
+Section 2 listed the noise as an input, and this section follows what happens to it.
+The cleaning-up happens in steps, and each step uses the same neural network. A
 **neural network** is a large calculation with many adjustable numbers, which a
 computer tunes by showing it examples. Chapter 1 explains this in
 [inside a neural network](../../01_what-models-are/03_inside-a-neural-network.md).
 
 Here is what happens each time the policy is asked for a new chunk.
 
-1. The policy looks at the camera pictures and the arm state. A part of the
+1. The policy looks at the camera pictures and the arm state, and a part of the
    network turns them into a list of numbers that describes the scene.
-2. The policy makes a random chunk. Every position in it is random, so the chunk
-   is a messy scatter of points.
-3. The network looks at three things: the scene description, the messy chunk, and
-   how many clean-up steps are left. It works out which way each point should move
-   to look more like a real movement.
-4. The policy moves each point a little in that direction.
-5. Steps 3 and 4 repeat. After the last step, the chunk is a clean, smooth path.
-6. The arm plays the first part of the chunk. Then the policy looks again and makes
-   a new chunk.
+2. The policy makes a random chunk, where every position in it is random, so the
+   chunk starts as a messy scatter of points.
+3. The network looks at three things, which are the scene description, the messy
+   chunk, and how many clean-up steps are left. From those it works out which way
+   each point should move to look more like a real movement.
+4. The policy moves each point a little way in that direction.
+5. Steps 3 and 4 repeat, and after the last step the chunk is a clean, smooth path.
+6. The arm plays the first part of the chunk, and then the policy looks again and
+   makes a new chunk.
 
 ![Random dots are moved a little at each step until they form a clean path round the box](../../../images/movement-models/diffusion-and-flow-policies/noise-to-path.svg)
 
-The picture shows one chunk being cleaned up. At the start the dots are random. At
-each step every dot moves a little, and by the last step they form a path from the
-start round the box to the mug.
+The picture shows one chunk being cleaned up. At the start the dots are random.
+Then at each step every dot moves a little, so by the last step they form a path
+from the start, round the box, to the mug.
 
-Why does this avoid the average? The answer is in step 2. The random start is
-different each time. If the random dots happen to lean a little towards the top,
-the clean-up pulls them into the "go over" path. If they lean towards the bottom,
-the clean-up pulls them into the "go under" path. The network has learned where
-real paths are. It has not learned a single answer. So the random start decides
-which real path you get, and you never get the impossible middle.
+But why does this whole procedure avoid the average? The answer is in step 2,
+because the random start is different each time. If the random dots happen to
+lean a little towards the top, then the clean-up pulls them into the "go over"
+path. But if they lean towards the bottom, the clean-up pulls them into the "go
+under" path. The network has learned where real paths are, rather than a single
+answer. So the random start decides which real path you get, and you never get
+the impossible middle.
 
 The last step in the list, playing only part of the chunk, matters on a real
-robot. The world can change while the arm moves. A mug can be nudged. So the
-policy plays a few movements, looks again, and plans again. This pattern is
-sometimes called **receding horizon**, because the plan always reaches a fixed
-distance ahead of where the arm is now.
+robot. This is because the world can change while the arm moves, since a mug can
+be nudged. So the policy plays a few movements, looks again, and plans again.
+This is sometimes called **receding horizon**, because the plan always reaches a
+fixed distance ahead of where the arm is now.
 
 ![Each plan is eight positions; the arm plays four, then a new plan starts](../../../images/movement-models/diffusion-and-flow-policies/predict-play-repeat.svg)
 
@@ -147,32 +157,36 @@ where it now is.
 
 ## 4. Diffusion and flow matching: the difference
 
-Diffusion and flow matching both turn noise into a good chunk. They differ in how
-the network learns the way from noise to the answer.
+Section 3 described the clean-up steps without saying how the network learned to
+take them, and there are two ways to do that. Diffusion and flow matching both
+turn noise into a good chunk, but they differ in how the network learns the way
+from noise to the answer.
 
-In **diffusion**, the network learns to remove a little noise at a time. The idea
-came from models that make pictures. Those models learn to turn a screen of random
-coloured dots into a photo. A diffusion policy does the same thing with a list of
-arm positions instead of a picture. The path from noise to answer is wiggly, so it
-usually takes many small steps.
+In **diffusion**, the network learns to remove a little noise at a time. This is
+an idea that came from models that make pictures, because those models learn to
+turn a screen of random coloured dots into a photo. So a diffusion policy does
+the same thing with a list of arm positions instead of a picture. But the path
+from noise to answer is wiggly, so it usually takes many small steps.
 
-In **flow matching**, the network learns a direction to travel from the noise to
-the answer. During training, the method connects each noise sample to a real chunk
-by a straight line, and the network learns to point along those lines. Because the
-lines are straight, the policy can take a few big steps instead of many small ones.
+Instead, in **flow matching**, the network learns a direction to travel from the
+noise to the answer. During training, the method connects each noise sample to a
+real chunk by a straight line, and the network learns to point along those
+lines. Because the lines are straight, the policy can take a few big steps
+instead of many small ones.
 
 ![Diffusion walks from noise to an answer in many small steps; flow matching takes a few straight steps](../../../images/movement-models/diffusion-and-flow-policies/many-steps-or-few.svg)
 
-The left picture shows the many small, wobbly steps of diffusion. The right picture
-shows the few straight steps of flow matching, which end at the same kind of answer
-in less time.
+The left picture shows the many small, wobbly steps of diffusion. The right
+picture shows the few straight steps of flow matching, which end at the same
+kind of answer in less time.
 
-Speed matters here because the network runs once per step. If a policy needs many
-steps and each takes a few thousandths of a second, the arm waits. Fewer steps
-means the arm can get a new chunk more often. This is one main reason most large
-robot models built in 2025 and 2026 use flow matching for their actions.
+Speed matters here because the network runs once per step. So if a policy needs
+many steps and each takes a few thousandths of a second, then the arm waits.
+Fewer steps means the arm can get a new chunk more often. This is one main
+reason most large robot models built in 2025 and 2026 use flow matching for
+their actions.
 
-The table below compares the two. Read across each row.
+The table below compares the two methods, and you read across each row.
 
 | | Diffusion | Flow matching |
 | --- | --- | --- |
@@ -186,62 +200,69 @@ The table below compares the two. Read across each row.
 
 ## 5. How it is trained
 
-A diffusion policy learns from **demonstrations**. A demonstration is one recording
-of a person doing the task by driving the robot. The recording keeps the camera
-pictures, the joint angles, and the commands the person gave, all at the same
-moments. Chapter 1 explains where such recordings come from, in
+Sections 3 and 4 described a network that already knows where real paths are, and
+this section says how it learned that. A diffusion policy learns from
+**demonstrations**, where a demonstration is one recording of a person doing the
+task by driving the robot. The recording keeps the camera pictures, the joint
+angles, and the commands the person gave, all at the same moments. Chapter 1
+explains where such recordings come from, in
 [where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md).
 
-Training a diffusion policy works like this.
+So training a diffusion policy works in the six steps below.
 
-1. Take a short piece of one demonstration: the pictures at one moment, and the
-   next sixteen actions the person really took.
-2. Add a known amount of random noise to those sixteen actions, so they become
+1. Take a short piece of one demonstration, which is the pictures at one moment and
+   the next sixteen actions the person really took.
+2. Add a known amount of random noise to those sixteen actions, so that they become
    messy.
-3. Ask the network which way the messy actions should move to get back to the
-   real ones.
+3. Ask the network which way the messy actions should move to get back to the real
+   ones.
 4. Compare its answer with the right answer, which you know, because you added the
    noise yourself.
-5. Adjust the network's numbers a little so the next answer is closer.
+5. Adjust the network's numbers a little, so that the next answer is closer.
 6. Repeat with many pieces and many different amounts of noise.
 
-Flow matching training is almost the same. The difference is in step 3: the network
-is asked for the straight-line direction from the noise to the real actions.
+Flow matching training is almost the same, and the difference is in step 3.
+There the network is asked for the straight-line direction from the noise to the
+real actions.
 
-How much data does this need? For one task, such as "put the mug on the plate",
-people usually record somewhere between tens and a few hundred demonstrations.
-Large general models that do many tasks are trained on far more, pooled from many
-robots, and then adjusted to a new task with a smaller set. The
+So how much recorded data does a diffusion policy need? For one task, such as "put
+the mug on the plate",
+people usually record somewhere between tens and a few hundred demonstrations. Large
+general models that do many tasks are trained on far more, pooled from many robots,
+and then adjusted to a new task with a smaller set, and the
 [vision-language-action page](../../07_language-models/02_most-used/01_vision-language-action-models.md)
 covers those.
 
-Training needs a computer with a graphics card. A **graphics card**, or graphics
-processing unit (GPU), is a chip that does many small sums at once, which is what
-training a network mostly is.
+In every case, training needs a computer with a graphics card. A **graphics
+card**, or graphics processing unit (GPU), is a chip that does many small sums
+at once, which is what training a network mostly is.
 
 ---
 
 ## 6. Well-known models of this kind
 
-These are real, published models. Each line says what it is in plain words.
+Section 5 described the training that all of these models share, and the list
+below gives the published models themselves. Each line says what one model is in
+plain words.
 
 - **Diffusion Policy** (Columbia University, Toyota Research Institute and MIT,
-  2023). This is the paper that made the idea popular for robot arms. It takes camera
-  pictures and makes a chunk of actions by diffusion. It showed clearly that the
-  approach copes with tasks that have several good ways to do them.
+  2023). This is the paper that made the idea popular for robot arms, because it
+  takes camera pictures and makes a chunk of actions by diffusion. It showed clearly
+  that the approach copes with tasks that have several good ways to do them.
 - **3D Diffusion Policy, or DP3** (2024). It does the same job, but its input is a
   3D point cloud instead of flat pictures. A **point cloud** is a list of 3D dots
-  on the surfaces a depth camera sees. The
+  on the surfaces a depth camera sees, and the
   [point cloud models page](../../04_3d-models/02_most-used/01_point-cloud-models.md) explains these.
 - **Consistency Policy** (2024). It takes a trained diffusion policy and teaches a
-  second network to jump to the answer in one or a few steps, so it runs much faster.
-- **Octo** (2024). An early open, general model trained on many robots' data. It
-  uses a small diffusion part at the end to produce its actions.
-- **RDT-1B** (Tsinghua University, 2024). A large diffusion model built for robots
-  with two arms working together.
-- **π0, said "pi zero"** (Physical Intelligence, 2024). A large model that
-  understands pictures and words. It uses flow matching in a separate part, called
-  the action expert, to turn its understanding into arm movements.
+  second network to jump to the answer in one or a few steps, so it runs much
+  faster.
+- **Octo** (2024). This is an early open, general model trained on many robots'
+  data, and it uses a small diffusion part at the end to produce its actions.
+- **RDT-1B** (Tsinghua University, 2024). This is a large diffusion model built for
+  robots with two arms working together.
+- **π0, said "pi zero"** (Physical Intelligence, 2024). This is a large model that
+  understands pictures and words, and it uses flow matching in a separate part,
+  called the action expert, to turn its understanding into arm movements.
 
 You can download and run Diffusion Policy inside the LeRobot framework, which the
 [learned motion document](../../../03_frameworks/03_arm-movement/05_learned-motion.md#2-policies-you-can-download)
@@ -251,17 +272,19 @@ lists together with each project's licence.
 
 ## 7. A worked example: reaching round a box to a mug
 
-Suppose you want a small arm to pick up a mug and put it on a plate. A cereal box
-stands between the arm and the mug. You record 100 demonstrations. In some of them
-you went round the left of the box, and in some you went round the right, because
-that is what felt natural each time.
+The models in section 6 are large, so this section follows one small task
+instead, and it compares the two kinds of policy on the same recordings. Suppose
+you want a small arm to pick up a mug and put it on a plate, and a cereal box
+stands between the arm and the mug. You record 100 demonstrations, and in some
+of them you went round the left of the box. In others you went round the right,
+because that is what felt natural each time.
 
-First, you train a plain behaviour-cloning policy on the recordings. On the robot,
-it heads for the box, slows down near it, and bumps into it. It learned the middle
-of the two ways.
+First, you train a plain behaviour-cloning policy on the recordings. On the
+robot it heads for the box, slows down near it, and bumps into it, because it
+learned the middle of the two ways.
 
-Next, you train a diffusion policy on the same recordings. Here is what happens on
-the robot.
+Next, you train a diffusion policy on the same recordings. Here is what then
+happens when you run it on the robot.
 
 1. The two cameras send a picture each, and the arm reports its joint angles.
 2. The policy makes a random chunk of sixteen gripper positions and cleans it up in
@@ -272,41 +295,45 @@ the robot.
    round the left. It does not switch sides halfway, because a path that switches
    halfway does not look like any demonstration.
 5. Near the mug, the chunks slow down and bring the gripper round the handle, as the
-   demonstrations did. The gripper closes.
-6. The policy carries the mug to the plate in the same way and opens the gripper.
+   demonstrations did, and then the gripper closes.
+6. The policy carries the mug to the plate in the same way, and opens the gripper.
 
-The next time you run it, the random start may lean right. Then the arm goes round
-the right. Both runs are correct. They are also different, and section 8 explains
-why that can be a problem.
+The next time you run it, the random start may lean right, and then the arm goes
+round the right instead. Both runs are correct, but they are also different, and
+section 8 explains why that can be a problem.
 
 ---
 
 ## 8. What goes wrong, and what people do about it
 
+The worked example ended with two correct runs that took different paths, and
+that is the first of several costs. Each problem below is followed by what
+people do about it.
+
 **It is slower than a plain policy.** Each chunk needs several passes through the
-network, where a plain policy needs one. People reduce the number of steps with
-flow matching or with a faster version such as Consistency Policy. They also run
-the next chunk's clean-up while the arm is still playing the current chunk.
+network, where a plain policy needs only one. So people reduce the number of steps
+with flow matching, or with a faster version such as Consistency Policy. They also
+run the next chunk's clean-up while the arm is still playing the current chunk.
 
 **It does not do the same thing twice.** Two runs from the same start can take
-different paths, by design. A factory cell that must repeat exactly the same motion
-cannot accept that. People fix the random start to the same numbers each time, or
-they put a classical check above the policy.
+different paths, and that is by design. But a factory cell that must repeat exactly
+the same motion cannot accept that, so people fix the random start to the same
+numbers each time, or they put a classical check above the policy.
 
 **It only knows the situations it was shown.** Like every copying method, it is
-confused by a scene unlike its demonstrations: a new table colour, a camera moved
-by a few centimetres, or a mug it has never seen. The fix is more varied
-demonstrations, which cost time.
+confused by a scene unlike its demonstrations. For example, a new table colour, a
+camera moved by a few centimetres, or a mug it has never seen will all confuse it.
+The fix is more varied demonstrations, which cost time.
 
 **It has no idea of obstacles it was not shown.** The policy does not check for
-collisions. If you put a new object in the way, it may drive into it. A separate
-safety layer under the policy has to stop the arm. The
+collisions, so if you put a new object in the way, it may drive into it. So a
+separate safety layer under the policy has to stop the arm. The
 [learned motion document](../../../03_frameworks/03_arm-movement/05_learned-motion.md#5-the-four-things-a-policy-does-not-have)
 lists what a policy lacks and what has to sit around it.
 
-**Its advantage is not always proven.** A 2026 study found that on its tests,
-flow matching did no better than plain copying, while running several times more
-slowly. The
+**Its advantage is not always proven.** A 2026 study found that on its tests, flow
+matching did no better than plain copying, while running several times more slowly.
+The
 [what is changing document](../../../03_frameworks/04_one-arm-training/05_what-is-changing.md#flow-matching-and-an-honest-doubt-about-it)
 describes it. So try the simpler policy first, and measure whether the diffusion
 version really helps on your task.
@@ -315,23 +342,27 @@ version really helps on your task.
 
 ## 9. Why this kind, and what it costs
 
-The obvious alternative is plain behaviour cloning, which gives one answer for each
-situation. It is simpler, faster, and easier to understand.
+Section 8 listed what goes wrong, so this section asks when the method is worth
+it anyway. The obvious alternative is plain behaviour cloning, which gives one
+answer for each situation, and which is simpler, faster and easier to
+understand.
 
 You choose a diffusion or flow policy when your demonstrations really contain
-several good ways to do the task, and averaging them would be wrong. Reaching round
-an obstacle is one example. Grasping a mug by the handle or by the rim is another.
-Folding a cloth, where people fold in different orders, is a third.
+several good ways to do the task, so that averaging them would be wrong. For
+example, reaching round an obstacle is one such task, grasping a mug by the
+handle or by the rim is another, and folding a cloth, where people fold in
+different orders, is a third.
 
-What it gives you is a policy that stays inside one of the real ways of doing the
-task, instead of a blend that nobody ever performed.
+What it gives you is a policy that stays inside one of the real ways of doing
+the task, instead of a blend that nobody ever performed.
 
-What it costs you is speed and repeatability. It needs several network passes per
-chunk. Its results vary from run to run. It also needs the same amount of careful
-demonstration data as any copying method, and a graphics card to train on.
+What it costs you is speed, and also repeatability. It needs several network
+passes per chunk, and its results vary from run to run. It also needs the same
+amount of careful demonstration data as any copying method, and a graphics card
+to train on.
 
-The table below sums up the choice. Read each row as a question you might ask about
-your task.
+The table below sums up the choice in four questions. Read each row as a
+question you might ask about your task.
 
 | Question about your task | If the answer is yes |
 | --- | --- |
@@ -344,24 +375,29 @@ your task.
 
 ## 10. The written alternative
 
-The written way to reach round an obstacle is a motion planner. [Sampling-based
+The table above ended with programmed motion, so this section says what that written
+code would be. The written way to reach round an obstacle is a motion planner.
+[Sampling-based
 planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
 is told where the box is, finds one route round it, and checks that route for
 collisions. It returns one route, so it never blends a way round the left with a way
 round the right. [Trajectory
 generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
-then makes that route smooth. Book 3's [planning a
+then makes that route smooth, and Book 3's [planning a
 path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) explains how
 these planners behave on a real arm.
 
-The written way wins when the obstacles can be measured and the motion must be the
-same on every run. A diffusion or flow policy wins when the task has several good
-ways that are easy to show but hard to write down, such as folding a cloth in
-different orders.
+The written way is better when the obstacles can be measured and the motion must
+be the same on every run. But a diffusion or flow policy is better when the task
+has several good ways that are easy to show and hard to write down, such as
+folding a cloth in different orders.
 
 ---
 
 ## 11. Where to read next
+
+This page finishes the three copying policies, so the reading below either goes
+back over them or moves on to the methods that do not copy at all.
 
 In this chapter:
 
@@ -370,7 +406,7 @@ In this chapter:
 - [Action chunking transformers](02_action-chunking-transformers.md) explains chunks
   in detail.
 - [Reinforcement learning policies](../03_also-used/01_reinforcement-learning-policies.md) is the
-  next page. It learns by trying and scoring, instead of by copying.
+  next page, and it learns by trying and scoring, instead of by copying.
 - [The movement models overview](../01_overview.md) compares every kind in this
   chapter.
 

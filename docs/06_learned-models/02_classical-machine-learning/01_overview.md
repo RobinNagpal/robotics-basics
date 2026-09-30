@@ -1,18 +1,19 @@
 # Classical machine learning
 
-Not every learned model on a robot is a neural network. Older learning methods,
-often called **classical machine learning**, are still used every day next to
-neural networks. This chapter covers them. This first page is its overview. It
-answers four questions. What is classical machine learning? Why does it still
-matter on robot arms in 2026? Which methods does this chapter cover, and which
-one fits which job? And when does a small dataset make one of them a better
-choice than a network?
+Not every learned model on a robot is a neural network, because the older
+learning methods, often called **classical machine learning**, are still used
+every day next to neural networks. This chapter covers those older methods, and
+this first page is its overview, so it answers four questions. What is classical
+machine learning? Why does it still matter on robot arms in 2026? Which methods
+does this chapter cover, and which one fits which job? And when does a small
+dataset make one of them a better choice than a network?
 
 It is for a reader who has read the first chapter of this book, especially
 [what a model is](../01_what-models-are/01_what-a-model-is.md) and
-[how a model learns](../01_what-models-are/02_how-a-model-learns.md). You need to
-know what an example, a label, a weight, a test set and overfitting are. Nothing
-else about machine learning is assumed.
+[how a model learns](../01_what-models-are/02_how-a-model-learns.md). So you
+need to know what an example, a label, a weight, a test set and overfitting are
+before you start, because this chapter builds on all five of them. Nothing else
+about machine learning is assumed in this chapter.
 
 ## Contents
 
@@ -28,79 +29,90 @@ else about machine learning is assumed.
 
 ## 1. What classical machine learning is
 
-**Classical machine learning** means the learning methods that were worked out
-before neural networks took over, and that are not neural networks. Most of them
-date from the 1950s to the 2000s. They are still learning methods: each one
-turns examples into a model that makes predictions, and none of them is written
-by hand as a rule.
+The name is the place to start, because it says what these methods are not as
+much as what they are. **Classical machine learning** means the learning methods
+that were worked out before neural networks took over, and that are not
+themselves neural networks. Most of them date from the 1950s to the 2000s.
+They are still learning methods, because each one turns examples into a model
+that makes predictions, and none of them is a rule that a person wrote by hand.
 
-Here is an everyday example. A shop wants to guess how long a delivery will take
-from the distance. It has fifty past deliveries. Nobody would build a large
-neural network for this. You would draw a line or a smooth curve through the
-fifty points and read the answer off it. That is what classical machine learning
-does. It fits a simple shape to a small table of numbers.
+For example, a shop wants to guess how long a delivery will take from the
+distance it has to travel, and it has fifty past deliveries to learn from.
+Nobody would build a large neural network for fifty rows, so instead you would
+draw a line or a smooth curve through the fifty points and read the answer off
+it. In other words, classical machine learning fits a simple shape to a small
+table of numbers.
 
-A **neural network** is a different kind of tool. It has many adjustable weights,
-and it can learn very complicated shapes, such as how pixels make up a mug. But it
-needs many examples to set all those weights, and a lot of computing to train.
-Classical methods have far fewer settings. They usually take a short list of
-numbers that already mean something, such as a distance, a force or a joint
-angle. These input numbers are called **features**. The methods do not read raw
-pictures well.
+A **neural network** works differently, because it has many adjustable weights
+and can learn very complicated shapes, such as how pixels make up a mug.
+However, it needs many examples to set all those weights, and a lot of computing
+to train them. Instead, classical methods have far fewer settings, so they
+usually take a short list of numbers that already mean something, such as a
+distance, a force or a joint angle. These input numbers are called **features**,
+and because these methods work on features rather than on pixels, they do not
+read raw pictures well.
 
 ---
 
 ## 2. Why it still matters on arms in 2026
 
-The rest of this book is about neural networks, and large networks now do most of
-the seeing and much of the moving on robot arms. Classical methods still matter for
+Fitting a simple shape to a small table of numbers sounds like a weak tool next
+to a neural network. The rest of this book is indeed about neural networks,
+because large networks now do most of the seeing and much of the moving on robot
+arms. However, classical methods still matter beside them, and they matter for
 four reasons.
 
-- **Small data.** Many jobs on an arm come with tens or hundreds of examples, not
-  millions. Each calibration run, each logged grasp and each demonstration costs
-  robot time and a person's time. With so few examples, a classical method usually
-  learns as well as a network or better. Section 5 shows this with real numbers.
-- **Error bars.** Some classical methods, such as Gaussian processes, say how sure
-  they are at every input, with no extra work. A robot can use that to refuse an
-  action, or to measure again, when the model is unsure.
-- **Speed.** They train in seconds on an ordinary computer, with no graphics card.
-  Many of them predict in microseconds, fast enough for a control loop that runs a
-  thousand times a second.
-- **Explainability.** You can read a regression's weights, or follow a small tree's
-  questions. When the arm does something wrong, a person can see why, and a safety
-  review can check it.
+- **Small data.** Many jobs on an arm come with tens or hundreds of examples
+  rather than millions, because each calibration run, each logged grasp and each
+  demonstration costs robot time and a person's time. With so few examples a
+  classical method usually learns as well as a network or better, and Section 5
+  shows this with real numbers.
+- **Error bars.** Some classical methods, such as Gaussian processes, say how
+  sure they are at every input with no extra work, so a robot can use that
+  number to refuse an action, or to measure again, when the model is unsure.
+- **Speed.** They train in seconds on an ordinary computer with no graphics
+  card, and many of them predict in microseconds, which is fast enough for a
+  control loop that runs a thousand times a second.
+- **Explainability.** You can read a regression's weights or follow a small
+  tree's questions, so when the arm does something wrong a person can see why,
+  and a safety review can check the reasoning.
 
-Classical and neural methods are also often used together. A pretrained network
-turns a picture into a short list of numbers, and a classical method learns the
-robot's own job on top of those numbers.
+Because each family covers the other's weakness, classical and neural methods
+are also often used together. For example, a pretrained network turns a picture
+into a short list of numbers, and a classical method then learns the robot's own
+job on top of those numbers.
 
 ---
 
 ## 3. The pages in this chapter
 
-The chapter has this overview and eight pages, in two groups.
+Because those four reasons do not all apply to every method, the chapter sorts
+its eight pages into two groups after this overview.
 
-The **most used** group holds four general tools. Each one learns from a table of
-numbers, and each one can be used for almost any job where the input is a few
-measured numbers. They are the ones a robot arm project reaches for first:
+The **most used** group holds four general tools, and each one of them learns
+from a table of numbers. Because they are so general, each can be used for
+almost any job where the input is a few measured numbers, and they are the ones
+a robot arm project reaches for first:
 
 1. [Linear and logistic regression](02_most-used/01_linear-and-logistic-regression.md).
-   A weighted sum of features, for a number or for the chance of a yes. Also ridge
-   regression and weighted least squares.
+   A weighted sum of features that predicts either a number or the chance of a
+   yes, and the page also covers ridge regression and weighted least squares.
 2. [Decision trees and forests](02_most-used/02_decision-trees-and-forests.md).
-   Chains of yes-or-no questions, grown one at a time or many together, including
-   gradient-boosted trees.
+   Chains of yes-or-no questions, grown either one tree at a time or many trees
+   together, which is where gradient-boosted trees belong.
 3. [Gaussian processes and Bayesian optimisation](02_most-used/03_gaussian-processes-and-bayesian-optimisation.md).
    A smooth curve with an error bar at every point, and a way to use those error bars
    to tune settings in a few tries.
 4. [Nearest neighbours and locally weighted regression](02_most-used/04_nearest-neighbours-and-locally-weighted-regression.md).
-   Keep every example, and predict from the ones most like the new input.
+   These methods keep every example they were given, so they predict from the
+   stored ones that are most like the new input.
 
-The **also used** group holds methods with a narrower job. Two of them are built for
-motions and sequences over time, which is why they are common in robot learning from
-demonstrations. One is a helper that makes data smaller before another method uses
-it. And one was once the leading method for classification, and is now used less
-because trees and networks usually do better:
+The **also used** group holds methods with a narrower job. Two of them are built
+for motions and sequences over time, which is why they are common in robot
+learning from demonstrations. Another one is a helper that makes the data
+smaller before a second method uses it. The last one was once the leading method
+for classification, and it is used less now because trees and networks usually
+do better:
 
 1. [Mixture models and hidden Markov models](03_also-used/01_mixture-models-and-hidden-markov-models.md).
    Data described as a few overlapping blobs, a motion learned from those blobs, and
@@ -112,16 +124,18 @@ because trees and networks usually do better:
 4. [Support vector machines](03_also-used/04_support-vector-machines.md). A dividing
    line between two classes, placed as far as possible from both.
 
-Read the four most-used pages first, in order. The also-used pages can be read in any
-order, when your task needs them.
+So read the four most-used pages first, and read them in order, because they are
+the ones a project reaches for first. The also-used pages can then be read in
+any order, whenever your own task needs them.
 
 ---
 
 ## 4. The methods side by side
 
-The table below compares the methods of this chapter. Read each row across: the
-method, what it predicts, the data it needs, one place it is used on a robot arm, and
-the page that explains it.
+Section 3 listed the pages in reading order, and the table below puts the same
+methods side by side so that you can pick one for a job you already have. Read
+each row across: the method, what it predicts, the data it needs, one place it
+is used on a robot arm, and the page that explains it.
 
 | Method | What it predicts | Data it needs | An arm example | Page |
 | --- | --- | --- | --- | --- |
@@ -136,36 +150,40 @@ the page that explains it.
 | Principal component analysis | a few numbers that stand for many | unlabelled rows | shrinking a hand's many joint angles to two or three that matter | [PCA](03_also-used/03_pca-and-shrinking-data.md) |
 | Support vector machine | a class | tens to thousands of labelled rows | telling contact from no contact in a force signal | [support vector machines](03_also-used/04_support-vector-machines.md) |
 
-All of these take a short list of meaningful numbers as input, or a short recording
-of them. None of them reads a raw picture well. That is the job of the neural
-network chapters.
+Every method in the table takes a short list of meaningful numbers as input, or
+a short recording of such numbers. None of them reads a raw picture well, so raw
+pictures are left to the neural network chapters.
 
 ---
 
 ## 5. When a small dataset makes them the better choice
 
-This test shows the small-data point with real numbers. It comes from the diagram
-script `docs/diagrams/what_models_are_3.py`, and the data is simulated so that the
-true answer is known.
+The first of the four reasons in Section 2 was small data, and this test shows
+that point with real numbers. It comes from the diagram script
+`docs/diagrams/what_models_are_3.py`, and the data is simulated so that the true
+answer is known and every error can be measured against it.
 
-A robot arm has a **depth camera**: a camera that also measures how far away each
-pixel is. Its readings are a little wrong, and the error changes with distance. To
-correct it, the robot measures a flat board at known distances from 0.3 to 1.5
-metres. Each measurement is one example. The input is the distance, and the label is
-the error of the reading in millimetres (mm), with about 1 mm of random noise.
+A robot arm has a **depth camera**, which is a camera that also measures how far
+away each pixel is. Its readings are a little wrong, and the error changes with
+distance, so to correct it the robot measures a flat board at known distances
+from 0.3 to 1.5 metres. Each measurement is one example, where the input is the
+distance and the label is the error of the reading in millimetres (mm), with
+about 1 mm of random noise.
 
 The script trained four classical methods and a small neural network on this
-problem, with more and more examples. The network had one hidden layer of 64 neurons
-and was trained by gradient descent. For each number of examples, each method was
-trained 8 times on fresh random examples. Each was scored by the **root mean square
-error (RMSE)** against the true curve: square each difference, take the average, and
-take the square root. It is a typical size of the error, in millimetres. Lower is
-better.
+problem, with more and more examples each time. The network had one hidden layer
+of 64 neurons and was trained by gradient descent. For each number of examples,
+every method was trained 8 times on fresh random examples, so that one lucky
+draw of the data could not decide the result. Then each run was scored by the
+**root mean square error (RMSE)** against the true curve, which means squaring
+each difference, taking the average and then taking the square root. This is a
+typical size of the error in millimetres, so a lower number is better.
 
 ![Error against number of examples for ridge regression, a Gaussian process, boosted trees, k-nearest neighbours and a small neural network](../../images/what-models-are/classical-machine-learning/small-data-curve.svg)
 
-The table below gives the same results. Read each column as one number of training
-examples. Each number is the average error in millimetres.
+The table below gives the same results as the picture. Read each column as one
+number of training examples, and read each figure in it as the average error in
+millimetres.
 
 | Method | 10 | 20 | 40 | 80 | 160 | 320 | 640 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -175,25 +193,28 @@ examples. Each number is the average error in millimetres.
 | k-nearest (k = 5) | 2.68 | 1.22 | 0.65 | 0.47 | 0.46 | 0.44 | 0.44 |
 | Small neural network | 1.97 | 0.82 | 0.40 | 0.32 | 0.18 | 0.15 | 0.09 |
 
-Four things stand out.
+Four things stand out in these numbers, and together they say when the extra
+power of a network is worth its cost.
 
 - With 10 examples, the network is worse than the Gaussian process, ridge
   regression and the boosted trees.
-- With 20 examples, the Gaussian process is clearly the best, at 0.56 mm against the
-  network's 0.82 mm.
-- By about 80 examples, the network has caught up with the Gaussian process and ridge
-  regression. From there on the three are close.
-- On this problem the network never pulls ahead. The input is one number and the
-  curve is smooth, so a network's extra power has nothing to do.
+- With 20 examples, the Gaussian process is clearly the best, at 0.56 mm against
+  the network's 0.82 mm.
+- By about 80 examples the network has caught up with the Gaussian process and
+  ridge regression, and from there on the three stay close to each other.
+- On this problem the network never pulls ahead, because the input is one number
+  and the curve is smooth, so a network's extra power has nothing to do.
 
-A network pulls ahead when the input is large and complicated, such as a picture or
-a long recording, and there are many examples. Then no simple shape can describe the
-answer, and only a network can learn one. So the rule of thumb is:
+A network pulls ahead when the input is large and complicated, such as a picture
+or a long recording, and there are many examples to learn from. In that case no
+simple shape can describe the answer, so only a network can learn one, which
+gives the rule of thumb below:
 
-- With a few numbers in and tens to hundreds of examples, try ridge regression, a
-  Gaussian process or boosted trees first.
-- With a picture, a point cloud or a sound in, and thousands of examples or more,
-  use a neural network, usually one that someone else has already trained, as in
+- With a few numbers in and tens to hundreds of examples, try ridge regression,
+  a Gaussian process or boosted trees first.
+- With a picture, a point cloud or a sound in, and thousands of examples or
+  more, use a neural network, usually one that someone else has already trained,
+  as in
   [fine-tuning](../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md).
 - With both, a common mix is a network that turns a picture into a short list of
   numbers, and a classical method on top of those numbers.
@@ -202,10 +223,14 @@ answer, and only a network can learn one. So the rule of thumb is:
 
 ## 6. How this chapter connects to the rest
 
-**To Book 5.** Many classical methods share their maths with a written technique in
-[Book 5](../../05_programming-techniques/01_what-techniques-are/01_programmed-not-learned.md).
-The difference is the purpose. Book 5 fits a formula it already knows, and this
-chapter learns a shape nobody wrote down. Linear regression is
+This chapter is not a separate world, since its methods connect backwards to
+Book 5 and forwards to the neural network chapters of this book.
+
+Many classical methods share their maths with a written technique in
+[Book 5](../../05_programming-techniques/01_what-techniques-are/01_programmed-not-learned.md),
+so the difference between the two books is the purpose rather than the formula.
+This means Book 5 fits a formula it already knows, while this chapter learns a
+shape that nobody wrote down. Linear regression is
 [least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 used to predict. k-nearest neighbours is built on
 [nearest-neighbour search](../../05_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md).
@@ -218,16 +243,17 @@ learned versions of the curves in
 [trajectory generation](../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md).
 And Bayesian optimisation is a careful relative of
 [sampling-based optimisation](../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md),
-built for when each try is expensive. Each technique page names its written
-alternative.
+built for when each try is expensive. So each method page in this chapter names
+its written alternative in Book 5.
 
-**To the neural network chapters.** The later chapters of this book are about neural
-networks, and they meet the methods of this chapter in several places.
-[Movement models](../06_movement-models/01_overview.md) learn from demonstrations, as
-movement primitives do, but from camera pictures and many more demonstrations.
+**To the neural network chapters.** The later chapters of this book are about
+neural networks, and they meet the methods of this chapter in several places.
+[Movement models](../06_movement-models/01_overview.md) learn from
+demonstrations, as movement primitives do, but from camera pictures and many
+more demonstrations.
 [Grasp quality models](../05_grasp-models/03_also-used/02_grasp-quality-models.md)
-score grasps with a network, where a logistic regression or boosted trees would score
-them from a few numbers.
+score grasps with a network, where a logistic regression or boosted trees would
+score them from a few numbers.
 [Learned arm models](../09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 describes the Gaussian-process and locally weighted work on learning how an arm
 moves, which came before deep networks.
@@ -242,14 +268,14 @@ whether to act.
 ## 7. Where to read next
 
 - The first page of this chapter is
-  [linear and logistic regression](02_most-used/01_linear-and-logistic-regression.md).
-  Every other method in the chapter is easier once you know it.
-- [The map of models](../01_what-models-are/06_the-map-of-models.md) shows where this
-  chapter sits among all the chapters of the book.
+  [linear and logistic regression](02_most-used/01_linear-and-logistic-regression.md),
+  and every other method in the chapter is easier once you know it.
+- [The map of models](../01_what-models-are/06_the-map-of-models.md) shows where
+  this chapter sits among all the chapters of the book.
 - [Uncertainty and confidence](../10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md)
   explains how a robot turns an error bar into a decision.
 - [Fine-tuning](../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md)
-  covers adapting a pretrained network, including training a small classical model on
-  top of it.
+  covers adapting a pretrained network, including training a small classical
+  model on top of it.
 - [Least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   in Book 5 explains the maths under linear regression.

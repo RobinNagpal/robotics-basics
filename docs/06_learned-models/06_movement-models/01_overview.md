@@ -2,18 +2,19 @@
 
 This chapter is about models that move a robot arm. The earlier chapters of this
 book were about models that look at a picture and say what is in it, or where to
-hold an object. The models in this chapter go one step further. They decide how the
-arm should move, moment by moment.
+hold an object. However, none of those models moves the arm itself. The models
+in this chapter go one step further, because they decide how the arm should
+move, moment by moment.
 
-This page is the overview of the chapter. It answers four questions. What is a
-movement model for? Why do people call it a policy? What kinds are there, and how do
-they differ? And how does this kind of model connect to the other kinds in this
-book?
+This page is the overview of the chapter, so it answers four questions before
+the later pages go into detail. It says what a movement model is for, why people
+call it a policy, and what kinds of movement model there are. It also says how
+this kind of model connects to the other kinds in this book.
 
 It is for a reader who has read
 [what a model is](../01_what-models-are/01_what-a-model-is.md) and
 [how a model learns](../01_what-models-are/02_how-a-model-learns.md). You do not
-need anything else. Every new word is explained where it first appears.
+need anything else, because every new word is explained where it first appears.
 
 ## Contents
 
@@ -29,93 +30,103 @@ need anything else. Every new word is explained where it first appears.
 
 ## 1. What a movement model is for
 
-Movement models decide how the arm should move, moment by moment.
+The introduction said that a movement model decides how the arm should move,
+moment by moment. So this section explains what that means in practice, and it
+starts with a job that people do every day.
 
-Think about picking up a mug from a table. A person does not plan every tiny
-movement of the hand before starting. They look, move the hand a little, look
-again, and move a little more. When the hand gets close, they slow down. If the mug
-slides, they follow it. The movement is made of many small decisions, and each one
-uses what the person can see at that moment.
+Think about picking up a mug from a table, because a person does that without
+planning every tiny movement of the hand in advance. Instead they look, move the
+hand a little, look again, and move a little more. When the hand gets close they
+slow down, and if the mug slides they follow it. So the movement is made of many
+small decisions, and each one uses what the person can see at that moment.
 
-A movement model does the same job for a robot arm. The question it answers is
-this:
+A movement model does the same job for a robot arm. So the question it answers
+at every moment is this:
 
 > Given what the camera sees now, and where the joints are now, what should the arm
 > do next?
 
-The answer is a small move. It might be "turn joint 1 by 2 degrees and joint 2 by
-minus 1 degree, and keep the gripper open". The arm makes that move. Then the model
-looks again and chooses the next move. This repeats many times a second until the
-job is done.
+The answer is a small move, such as "turn joint 1 by 2 degrees and joint 2 by
+minus 1 degree, and keep the gripper open". The arm makes that move, and then
+the model looks again and chooses the next one. So the whole loop repeats many
+times a second until the job is done.
 
-This is different from the other models in this book. A seeing model says "there is
-a mug here". A grasp model says "hold the mug by its handle, with the gripper turned
-this way". Neither of them moves the arm. A movement model is the one that actually
-produces the motion.
+This is different from the other models in this book, because none of those
+models produces motion. A seeing model says "there is a mug here", and a grasp
+model says "hold the mug by its handle, with the gripper turned this way". But
+neither of those answers moves the arm, so a movement model is the one that
+actually produces the motion.
 
 ---
 
 ## 2. Why a movement model is called a policy
 
-People who work on robot learning usually call a movement model a **policy**. You
-will see this word everywhere, so it is worth knowing where it comes from.
+The previous section described what a movement model does, and people who work
+on robot learning usually call such a model a **policy**. You will see this word
+in almost every paper and code library in this field, so it is worth knowing
+where it comes from.
 
-In everyday life, a policy is a rule that says what to do in each situation. A shop
-might have a returns policy: if the item is unused and you have the receipt, you get
-your money back. The rule does not care who you are. It looks at the situation and
-gives an answer.
+In everyday life, a policy is a rule that says what to do in each situation. For
+example, a shop might have a returns policy: if the item is unused and you have
+the receipt, you get your money back. Because it only looks at the situation,
+the rule does not care who you are.
 
-In robot learning, a policy is the same kind of thing. It is a rule that looks at
-the situation and gives the action to take. The difference is that nobody writes
-this rule by hand. The rule is a trained neural network. It learned what to do from
+In robot learning, a policy is the same kind of thing: a rule that looks at the
+situation and gives the action to take. But nobody writes this rule by hand,
+since the rule is a trained neural network that learned what to do from
 examples, or from practice.
 
-Two more words go with it.
+Two more words go with it, and both of them come back on every later page of
+this chapter.
 
-- An **observation** is what the policy is given about the situation. For an arm, it
-  is usually one or more camera pictures plus the current joint angles. A **joint
-  angle** is how far a joint is turned, read from a sensor in the joint.
-- An **action** is what the policy gives back. For an arm, it is usually the joint
-  angles the arm should move to next, or how far the gripper should move, plus
-  whether the gripper should open or close.
+- An **observation** is what the policy is given about the situation, and for an arm
+  it is usually one or more camera pictures plus the current joint angles. A
+  **joint angle** is how far a joint is turned, read from a sensor in the joint.
+- An **action** is what the policy gives back, and for an arm it is usually the
+  joint angles the arm should move to next, or how far the gripper should move,
+  plus whether the gripper should open or close.
 
-So a policy turns an observation into an action. The page
-[actions and observations](02_most-used/04_actions-and-observations.md) looks at
-these numbers in detail. The picture below shows the loop.
+So a policy turns an observation into an action, and it does that again and again.
+The page [actions and observations](02_most-used/04_actions-and-observations.md)
+looks at these numbers in detail, and the picture below shows the loop they run in.
 
 ![A policy takes a picture and the joint angles, chooses a small move, and the loop repeats](../../images/movement-models/overview/policy-loop.svg)
 
-The camera and the joint sensors give the observation. The policy turns it into the
-next small move, the arm makes that move, and then the policy looks again.
+The camera and the joint sensors give the observation. Then the policy turns it
+into the next small move, the arm makes that move, and the policy looks again.
 
-How often does the loop run? The policies in this chapter usually choose a new
-action somewhere between 10 and 50 times a second. The motors run much faster than
-that, so there is always ordinary control code underneath the policy. That code
-takes each target and moves the motors smoothly towards it.
+How often does this loop run on a real robot? The policies in this chapter
+usually choose a new action somewhere between 10 and 50 times a second. But the
+motors run much faster than that, so there is always ordinary control code
+underneath the policy. That code takes each target and moves the motors smoothly
+towards it.
 
 ---
 
 ## 3. What a policy takes over, and what it leaves alone
 
-A policy does not replace everything that moves an arm. This matters, because it is
-easy to picture a policy as one network that does the whole job.
+Now that the word policy is clear, the next question is how much of the arm's
+software a policy replaces. It is easy to picture a policy as one network that
+does the whole job, but a policy does not replace everything that moves an arm.
 
 A robot arm that does not use learning at all has several layers of ordinary code.
-One layer chooses the route through free space, so that the arm does not hit the
-table. This is called a **motion planner**. Another layer turns each target into
-motor commands, and keeps the motors within their speed limits. This is called the
-**controller**. Book 3 explains both, in
+One layer chooses the route through free space so that the arm does not hit the
+table, and that layer is called a **motion planner**. Another layer turns each
+target into motor commands and keeps the motors within their speed limits, and that
+layer is called the **controller**. Book 3 explains both of them in
 [the arm movement chapter](../../03_frameworks/03_arm-movement/01_overview.md).
 
-Most policies take over one part of this: choosing the next small move, especially
-close to the object. That is where the hard part of the task usually is. The mug
-might be in a slightly different place each time. The drawer might stick. The towel
-might fold in a new way. These things are hard to write rules for, and easy to show
-by example.
+Most policies take over one part of this, which is choosing the next small move
+close to the object. This is where the hard part of the task usually is. The mug
+might be in a slightly different place each time, the drawer might stick, and
+the towel might fold in a new way. These things are hard to write rules for, but
+they are easy to show by example. That is why a learned policy is used for them
+at all.
 
-The policy still needs a controller underneath it. And for a long move through free
-space, the ordinary planner is usually still the better tool. It is fast, it checks
-for collisions, and it gives the same answer every time. The Book 3 page
+The policy still needs a controller underneath it, and for a long move through free
+space the ordinary planner is usually still the better tool. This is because the
+ordinary planner is fast, it checks for collisions, and it gives the same answer
+every time. The Book 3 page
 [learned motion](../../03_frameworks/03_arm-movement/05_learned-motion.md#1-which-part-of-the-move-a-policy-stands-in-for)
 goes through this layer by layer.
 
@@ -123,75 +134,84 @@ goes through this layer by layer.
 
 ## 4. The pages in this chapter
 
-The chapter has eight pages, in two groups. Most of them describe one kind of
-movement model. The kinds differ in how they learn, and in what they give back.
+Section 3 said which part of the job a policy takes over, and the rest of the
+chapter describes the kinds of policy that do it. The chapter has eight pages in
+two groups, and most of them describe one kind of movement model. These kinds
+differ in how they learn, and in what they give back.
 
 The first group, **most used**, holds the pages you need for almost any learned
-policy on a robot arm today. Three of them are the copying models that most real
-systems are built from. The fourth is about the numbers those models take in and
-give out, which every policy depends on.
+policy on a robot arm today. Three of them describe the copying models that most
+real systems are built from. The fourth is about the numbers those models take
+in and give out, which every policy depends on.
 
 - [Behaviour cloning](02_most-used/01_behaviour-cloning.md). A person does the task many times,
   and the model learns to copy what the person did at each moment. This is the
-  simplest kind and the base for most of the others. It also shows how to tell a
-  policy which of several tasks to do.
+  simplest kind, and it is the base for most of the others. It also shows how to
+  tell a policy which of several tasks to do.
 - [Action chunking transformers](02_most-used/02_action-chunking-transformers.md). A copying
   model that chooses a whole burst of moves at once, instead of one move at a time.
   The best-known example is ACT, which is short for Action Chunking with
   Transformers.
 - [Diffusion and flow policies](02_most-used/03_diffusion-and-flow-policies.md). A copying model
   that starts from a random guess of the next moves and cleans it up, step by step,
-  into a good path. This lets it keep two different good ways of doing a task
-  apart, instead of mixing them.
+  into a good path. This lets it keep two different good ways of doing a task apart,
+  instead of mixing them together.
 - [Actions and observations](02_most-used/04_actions-and-observations.md). Not a kind of
   model, but the numbers every kind uses: joint angles or gripper position, a place
   or a change, how a turn is written, and how every number is rescaled. These
-  choices decide whether data from another robot can be used.
+  choices decide whether data from another robot can be used, so they are worth
+  settling before you record anything.
 
-The second group, **also used**, holds kinds that are used often, but less. Each
-one solves a problem that copying alone cannot: no person can show the task, the
-ordinary planner is too slow, nobody can write a score, or there are too few robot
-recordings.
+The second group, **also used**, holds kinds that are used often, but less than
+the first three. Each one solves a problem that copying alone cannot solve, and
+there are four such problems. Either no person can show the task, or the
+ordinary planner is too slow, or nobody can write a score, or there are too few
+robot recordings.
 
 - [Reinforcement learning policies](03_also-used/01_reinforcement-learning-policies.md). A model
   that learns by trying the task many times, usually in a computer simulation, and
-  getting a score for each try.
+  getting a score for each try. So it needs no person who can already do the task.
 - [Learned motion planners](03_also-used/02_learned-motion-planners.md). A model that learns to
-  do one job of the ordinary planning code, such as finding a route around
-  obstacles or working out joint angles, much faster than the ordinary code can.
+  do one job of the ordinary planning code, such as finding a route around obstacles
+  or working out joint angles. It does that job much faster than the ordinary code
+  can.
 - [Reward and progress models](03_also-used/03_reward-and-progress-models.md). A model that
-  looks at the camera pictures of an attempt and judges how well it is going. It
-  gives reinforcement learning a score when nobody can write one by hand, and it
-  can tell a copying policy's owner which attempts failed.
+  looks at the camera pictures of an attempt and judges how well it is going. So it
+  gives reinforcement learning a score when nobody can write one by hand, and it can
+  also tell a copying policy's owner which attempts failed.
 - [Learning from human video](03_also-used/04_learning-from-human-video.md). Models that
-  take something useful for the robot out of videos of people using their hands,
-  so the robot needs fewer recordings of its own.
+  take something useful for the robot out of videos of people using their hands, so
+  the robot needs fewer recordings of its own.
 
-The picture below shows the idea behind the first five kinds in one small drawing.
+The picture below shows the idea behind the first five kinds in one small
+drawing.
 
 ![One small drawing of the idea behind each of the five kinds of movement model](../../images/movement-models/overview/five-kinds.svg)
 
-The first three kinds all learn from people doing the task. The fourth learns from
-its own tries. The fifth learns from the output of an ordinary planner. The two
-newer kinds, judge models and learning from human video, help the others: one
-supplies a score, and the other supplies cheaper data.
+The first three kinds all learn from people doing the task. The fourth learns
+from its own tries, and the fifth learns from the output of an ordinary planner.
+The two newer kinds, judge models and learning from human video, help the others
+rather than replacing them. This is because one of them supplies a score, and
+the other supplies cheaper data.
 
-One classical way to learn a motion from demonstrations lives in another chapter.
+One classical way to learn a motion from demonstrations lives in another chapter, so
+it is worth naming here before you read on.
 [Movement primitives](../02_classical-machine-learning/03_also-used/02_movement-primitives.md)
 learn one smooth motion, such as a pour or a wiping stroke, from one to a few
 hand-guided demonstrations, with no camera and no neural network. They adapt the
-motion to a new goal, but they do not react to what the camera sees during it. They
-suit a single smooth motion with few demonstrations; a policy suits a task where the
-arm must react as it goes.
+motion to a new goal, but they do not react to what the camera sees during it. So
+they suit a single smooth motion with few demonstrations, while a policy suits a
+task where the arm must react as it goes.
 
 ---
 
 ## 5. The kinds side by side
 
-The table below compares the kinds, with one row for each page. Read each row
-across to see what one kind learns from, what it gives back, what it is good at,
-and what it costs. Read down a column to compare the kinds on one point. The actions page
-row is not a kind of model, because it applies to all of them. The last row is
+The list above described each page on its own, and the table below puts the
+kinds next to each other instead. Read each row across to see what one kind
+learns from, what it gives back, what it is good at, and what it costs. Then
+read down a column to compare the kinds on one point. The actions page row is
+not a kind of model, because it applies to all of them, and the last row is
 movement primitives, the classical method from chapter 2.
 
 | Page | Group | What it learns from | What it gives back | What it is good at | What it costs |
@@ -206,72 +226,76 @@ movement primitives, the classical method from chapter 2.
 | Learning from human video | also used | videos of people using their hands, plus a little robot data | hand movements, or a head start, for a robot policy | using video that is cheap and plentiful | a hand is not a gripper, so some robot data is still needed |
 | Movement primitives (classical chapter) | classical | one to a few hand-guided demonstrations | a whole smooth path to a given goal | one smooth motion from very few demonstrations, with no camera | one motion per model; it does not react to what it sees |
 
-Two things stand out in the table. First, the three copying kinds need a person who
-can do the task. Reinforcement learning does not, but it needs a score and a lot of
-practice instead, and a judge model is one way to get that score. Second, only
-learned motion planners are aimed at the free-space part of the move. The others
-are mostly used close to the object.
+Two things stand out when you read the table down its columns. First, the three
+copying kinds all need a person who can do the task, while reinforcement
+learning does not. Instead, reinforcement learning needs a score and a lot of
+practice, and a judge model is one way to get that score. Second, only learned
+motion planners are aimed at the free-space part of the move. So the others are
+mostly used close to the object.
 
 ---
 
 ## 6. How movement models connect to the other kinds
 
-A movement model rarely works alone. It uses, or sits next to, most of the other
-categories in [the map of models](../01_what-models-are/06_the-map-of-models.md).
+The table compared the kinds of movement model with each other, but a movement model
+rarely works alone. Instead it uses, or sits next to, most of the other categories
+in [the map of models](../01_what-models-are/06_the-map-of-models.md).
 
-The first link is to seeing. Inside almost every policy that takes a camera picture,
-the first part is a seeing network. It turns the picture into a list of numbers
-before the rest of the policy decides what to do. So everything in
+The first link is to seeing, because inside almost every policy that takes a camera
+picture, the first part is a seeing network. It turns the picture into a list of
+numbers before the rest of the policy decides what to do. So everything in
 [seeing models](../03_seeing-models/01_overview.md) about how a network reads a
 picture applies here too.
 
 The second link is to grasp models, which are the main alternative for pick-up
 tasks. A [grasp model](../05_grasp-models/01_overview.md) chooses where to hold an
-object, and then an ordinary planner moves the arm there. A policy does both in one
-network. The grasp-model way is easier to check and is more common in factories.
-The policy way copes better with soft objects and with tasks that are more than one
-grasp.
+object, and then an ordinary planner moves the arm there. A policy instead does both
+of those jobs in one network. The grasp-model way is easier to check, and it is more
+common in factories. But the policy way copes better with soft objects, and with
+tasks that are more than one grasp.
 
-The third link is to language. A plain policy does one task. If you want to tell
-the arm which task to do in words, you need a model that understands language. The
-[language models chapter](../07_language-models/01_overview.md) covers this. Its
-page on
+The third link is to language, because a plain policy does only one task. So if you
+want to tell the arm which task to do in words, you need a model that understands
+language. The [language models chapter](../07_language-models/01_overview.md) covers
+this, and its page on
 [vision-language-action models](../07_language-models/02_most-used/01_vision-language-action-models.md)
 describes very large policies that take a sentence as part of the observation. They
-are movement models too. They use the same ideas as this chapter, such as chunks of
-actions and flow matching. Large vision-language models are also used as judges,
-as the page on
+are movement models too, since they use the same ideas as this chapter, such as
+chunks of actions and flow matching. Large vision-language models are also used as
+judges, as the page on
 [reward and progress models](03_also-used/03_reward-and-progress-models.md)
 describes.
 
-The fourth link is to prediction. A
+The fourth link is to prediction, because a
 [world model](../08_world-models/01_overview.md) predicts what will happen if the
-arm makes a move. Some reinforcement learning methods train a policy inside such a
-model, instead of on the real arm, because the tries are free there.
+arm makes a move. Some reinforcement learning methods therefore train a policy
+inside such a model instead of on the real arm, because the tries are free there.
 
-The last link is to touch. Most policies only look at pictures and joint angles. For
-tasks with a lot of contact, such as pushing in a plug, force readings help a great
-deal. [Touch and body models](../09_touch-and-body-models/01_overview.md) turn those
+The last link is to touch, because most policies only look at pictures and joint
+angles. For tasks with a lot of contact, such as pushing in a plug, force readings
+help a great deal. So
+[touch and body models](../09_touch-and-body-models/01_overview.md) turn those
 readings into something a policy can use.
 
 ---
 
 ## 7. Where to read next
 
-Start with [behaviour cloning](02_most-used/01_behaviour-cloning.md). The idea of copying
-recorded moves is the base for the next two pages, and its main problem, small
-mistakes that add up, explains why they exist. Then read
+Now that you know what the chapter holds, start with
+[behaviour cloning](02_most-used/01_behaviour-cloning.md). The idea of copying
+recorded moves is the base for the next two pages, and its main problem, which is
+small mistakes that add up, explains why those two pages exist. Then read
 [actions and observations](02_most-used/04_actions-and-observations.md) before you
-record or train anything, because it decides how your data is written down.
+record or train anything, since it decides how your data is written down.
 
 If you want to know where the recordings come from, read
 [where the data comes from](../01_what-models-are/05_where-the-data-comes-from.md).
-If you want to know how a trained policy is run on a real arm, read
+And if you want to know how a trained policy is run on a real arm, read
 [running a model on a robot](../10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md).
 
 For a deeper and more critical view, Book 3 has two pages on this subject.
 [Learned methods for one arm](../../03_frameworks/04_one-arm-training/03_learned-methods.md)
-compares every way of learning to move an arm and says which ones are worth your
+compares every way of learning to move an arm, and says which ones are worth your
 time. [Learned motion](../../03_frameworks/03_arm-movement/05_learned-motion.md)
-says which part of the arm's software a policy replaces, and lists policies you can
-download.
+says which part of the arm's software a policy replaces, and it lists policies you
+can download.

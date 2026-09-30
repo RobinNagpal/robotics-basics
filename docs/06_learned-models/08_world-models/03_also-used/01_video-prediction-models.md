@@ -1,16 +1,17 @@
 # Video prediction models
 
-This page explains world models that predict future camera pictures. It answers
-four questions. What does it mean for a model to "predict a picture"? How can a
-robot arm use a predicted picture to decide what to do? Why do predicted
-pictures often come out blurry? And when is this kind of model worth its large
-cost?
+This page explains world models that predict future camera pictures, and it answers
+four questions about them: what it means for a model to "predict a picture", how a
+robot arm can use a predicted picture to decide what to do, why predicted pictures
+often come out blurry, and when this kind of model is worth its large cost.
 
-It is for a reader who has read the [world models overview](../01_overview.md) and
-the page on [learned dynamics models](../02_most-used/01_learned-dynamics-models.md). You should
-know what a model, a state, an action and a rollout are. The page also assumes
+It is written for a reader who has already read the
+[world models overview](../01_overview.md) and the page on
+[learned dynamics models](../02_most-used/01_learned-dynamics-models.md), so you
+should know what a model, a state, an action and a rollout are. It also assumes
 you know that a camera picture is a grid of numbers, one per colour per pixel,
-from [what a model is](../../01_what-models-are/01_what-a-model-is.md).
+which [what a model is](../../01_what-models-are/01_what-a-model-is.md)
+explains.
 
 ## Contents
 
@@ -36,24 +37,27 @@ A video prediction model predicts the next camera pictures from the recent
 pictures and, usually, the actions the arm is about to take.
 
 A learned dynamics model needs a short list of numbers, such as the position of
-a cube. Somebody must measure those numbers first. A video prediction model
-skips that step. It works directly on the pictures from the camera. Its
-"state" is simply what the camera sees.
+a cube, and somebody must measure those numbers first. A video prediction model
+skips that step, because it works directly on the pictures from the camera. In
+other words, its "state" is simply what the camera sees.
 
-Here is an everyday example. Watch the first half of a video of someone
-knocking over a row of dominoes, then pause it. You can picture the next few
-seconds: the dominoes keep falling, one after another, from left to right. You
-did not measure any positions. You just pictured what you would see. A video
-prediction model does the same thing, one frame at a time.
+Here is an everyday example of the same skill, using a video of falling
+dominoes. Watch the first half of a video of someone knocking over a row of
+dominoes, and then pause the video there. You can picture
+the next few seconds, because the dominoes keep falling, one after another, from
+left to right. You did not measure any positions, and you only pictured what you
+would see. So a video prediction model does the same thing, one frame at a time.
 
-A **frame** is one picture in a video. A camera on a robot arm usually records
+A **frame** is one picture in a video, and a camera on a robot arm usually records
 between 10 and 30 frames every second.
 
 ---
 
 ## 2. What goes in and what comes out
 
-A video prediction model for a robot arm takes two things in and gives one back.
+Now that the idea is clear, here is what actually passes in and out of such a
+model. A video prediction model for a robot arm takes two things in and gives
+one back.
 
 - **The recent frames.** For example, the last three pictures from a camera
   above the table.
@@ -64,19 +68,19 @@ A video prediction model for a robot arm takes two things in and gives one back.
   show the gripper moving right and pushing the cube along.
 
 The picture below shows this with tiny pictures of 14 × 14 pixels, so that you
-can see each pixel. Real models use pictures with a few hundred pixels on each
-side.
+can see each pixel. However, real models use pictures with a few hundred pixels
+on each side.
 
 ![Three camera pictures and three planned moves go into a video model, which draws three future pictures](../../../images/world-models/video-prediction-models/frames-in-frames-out.svg)
 
 The predicted pictures get blurrier the further ahead they are, because the
 model is less sure what will happen.
 
-A model that takes the actions as an input is called **action-conditioned**. It
-predicts a different future for each different action. That is what makes it a
-world model and not only a video generator. A video generator that ignores the
-action can show you *a* future. An action-conditioned model can show you the
-future *that your action would cause*.
+A model that takes the actions as an input is called **action-conditioned**,
+because it predicts a different future for each different action. That is what
+makes it a world model and not only a video generator. A video generator that
+ignores the action can show you *a* future. Instead, an action-conditioned model
+can show you the future *that your action would cause*.
 
 ---
 
@@ -84,7 +88,9 @@ future *that your action would cause*.
 
 ### Drawing the next picture
 
-A video prediction model has three parts. They run in this order.
+The last section said what goes in and what comes out, so this section says what
+happens in between. A video prediction model has three parts, and they run in
+the order below.
 
 1. **An encoder** turns each recent frame into a smaller grid of numbers that
    describes what is in it. Seeing models use the same kind of part; the
@@ -95,50 +101,52 @@ A video prediction model has three parts. They run in this order.
 3. **A decoder** turns the result back into a full picture, pixel by pixel.
 
 To see further ahead, the model feeds its own predicted frame back in, like the
-rollout on the [learned dynamics models](../02_most-used/01_learned-dynamics-models.md#many-steps-in-a-row)
-page. The same problem appears: errors add up from frame to frame.
+rollout on the
+[learned dynamics models](../02_most-used/01_learned-dynamics-models.md#many-steps-in-a-row)
+page, and the same problem appears here: errors add up from frame to frame.
 
-Some older models do not draw the new frame from nothing. They predict how each
-pixel moves: "this group of red pixels shifts two pixels to the right". Then they
-move the pixels of the last frame. This works well for pushing, where most of the
-scene stays the same and only a few things move.
+Some older models do not draw the new frame from nothing. Instead, they predict
+how each pixel moves, as in "this group of red pixels shifts two pixels to the
+right", and then they move the pixels of the last frame. So this works well for
+pushing, where most of the scene stays the same and only a few things move.
 
-Most newer models are **diffusion models**. A diffusion model starts from a
-picture of pure random noise, like the snow on an old television. It then
-removes the noise a little at a time, over many passes, until a clear picture is
-left. At each pass, it uses the recent frames and the action to decide what
-the clean picture should look like. The
+Most newer models are **diffusion models**, which build the picture in a different
+way. A diffusion model starts from a picture of pure random noise, like the snow on
+an old television. It then removes the noise a little at a time, over many passes,
+until a clear picture is left. At each pass, it uses the recent frames and the action
+to decide what the clean picture should look like. The
 [diffusion and flow policies](../../06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
-page explains the same method used to produce arm movements. Diffusion models
-draw sharp pictures, but the many passes make them slow.
+page explains the same method used to produce arm movements. So diffusion models draw
+sharp pictures, but the many passes make them slow.
 
 ### Why the future comes out blurry
 
-The future is often uncertain, even when the action is known. Suppose the
-gripper pushes a cube exactly at its middle. Sometimes the cube slides to the
-left. Sometimes it slides to the right. Both happen in the training videos.
+The future is often uncertain, even when the action is known. For example,
+suppose the gripper pushes a cube exactly at its middle. Sometimes the cube
+slides to the left, and sometimes it slides to the right, and both of those
+happen in the training videos.
 
 A simple model is trained to make its picture as close as possible to the real
 one, on average. The safest picture, on average, is a mix of both futures: half
-a cube on the left and half a cube on the right. So that is what the model
-draws.
+a cube on the left and half a cube on the right. So that is what a simple model
+draws instead of one clear future.
 
 ![The gripper pushes a cube at its middle; in the data it slides left or right; a simple model draws faint half cubes in both places](../../../images/world-models/video-prediction-models/blurry-future.svg)
 
 The right-hand picture is the average of the two real futures, and it matches
 neither of them.
 
-People fix this by letting the model pick one future at a time. They give the
-model an extra input of random numbers. Different random numbers make it draw
-different, sharp futures: one with the cube on the left, one with it on the
-right. Diffusion models do this naturally, because they start from random noise.
-Running the model several times then shows several possible futures, which is
-more honest than one blurry picture.
+People fix this by letting the model pick one future at a time, and they do that
+by giving the model an extra input of random numbers. Different random numbers
+then make it draw different, sharp futures: one with the cube on the left, and
+one with it on the right. Diffusion models do this naturally, because they start
+from random noise. So running the model several times shows several possible
+futures, which is more honest than one blurry picture.
 
 ### Four ways a robot uses the pictures
 
-A predicted picture does not move the arm by itself. Robots use video
-prediction in four ways.
+A predicted picture does not move the arm by itself, so something has to use it,
+and robots use video prediction in the four ways listed below.
 
 1. **To plan.** The robot imagines many action sequences, predicts the pictures
    for each one, and picks the sequence whose final picture looks most like the
@@ -167,29 +175,30 @@ orange box, into one arm command.
 
 ## 4. How it is trained
 
-A video prediction model learns from videos. It sees the first few frames of a
-clip, predicts the next ones, and is corrected by the real next frames. This
-needs no labels written by people. The video itself is the answer. That is the
-main attraction of this kind of model.
+The last section described how the model draws a frame, and this section says
+where it learns to do that. A video prediction model learns from videos: it sees
+the first few frames of a clip, predicts the next ones, and is corrected by the
+real next frames. This needs no labels written by people, because the video
+itself is the answer, and that is the main attraction of this kind of model.
 
 The videos come from two sources, and most modern models use both.
 
 - **Robot videos with actions.** The robot records its camera and, at the same
-  time, the actions it took. These teach the model what each action does. They
-  are slow to collect, because a real arm must do every one.
+  time, the actions it took, so these teach the model what each action does.
+  However, they are slow to collect, because a real arm must do every one.
 - **Ordinary videos without actions.** Videos of people cooking, cleaning or
-  building things show how objects move, fall, pour and fold. There are vastly
+  building things show how objects move, fall, pour and fold, and there are vastly
   more of these than robot videos. They teach the model how the world looks and
   moves, even though they carry no robot actions.
 
-A common recipe is to train first on a large amount of ordinary video, and then
-to train a little more on robot video with actions, so that the model learns to
-follow the arm's commands. Book 3's
+A common recipe is to train first on a large amount of ordinary video, and then to
+train a little more on robot video with actions, so that the model learns to follow
+the arm's commands. Book 3's
 [what is changing](../../../03_frameworks/04_one-arm-training/05_what-is-changing.md#world-models)
 explains why this matters: robot demonstrations are scarce, and video is not.
 
-Large video models are trained on far more video than any single robot lab
-could record, on many graphics cards, for weeks. Small models for one task,
+Large video models are trained on far more video than any single robot lab could
+record, on many graphics cards, for weeks. However, small models for one task,
 such as pushing objects on one table, can learn from a few hours of the robot's
 own video.
 
@@ -197,7 +206,8 @@ own video.
 
 ## 5. Well-known models of this kind
 
-These are real, published models.
+The models below are all real, published models rather than examples invented
+for this page.
 
 - **Finn, Goodfellow and Levine (2016)** trained an action-conditioned model on
   a large set of videos of robot arms pushing objects. It predicts how pixels
@@ -225,8 +235,9 @@ These are real, published models.
 
 ## 6. A worked example: sliding a cube to a clicked spot
 
-Here is how Visual Foresight style planning moves a cube to a spot on the table.
-No part of it measures the cube's position in centimetres.
+Here is how Visual Foresight style planning moves a cube to a spot on the table,
+step by step. Notice that no part of it measures the cube's position in
+centimetres.
 
 1. **Set the goal.** A person looks at the camera picture on a screen. They
    click on the cube, and then click the spot where the cube should end up.
@@ -239,51 +250,56 @@ No part of it measures the cube's position in centimetres.
    step 2.
 
 The same arm can push a mug, a toy or a sponge without any change, as long as
-objects like them appeared in the training videos. That is the benefit of
-working on pictures. The cost is time. Each planning round needs hundreds of
-predicted videos, so the arm pauses between pushes.
+objects like them appeared in the training videos, and that is the benefit of
+working on pictures. However, the cost is time, because each planning round
+needs hundreds of predicted videos, so the arm pauses between pushes.
 
 ---
 
 ## 7. What goes wrong, and what people do about it
 
+The sections above described this kind of model at its best. This section lists
+the five things that go wrong in practice, and what people do about each one.
+
 **Pictures get blurry or wrong further ahead.** Errors add up from frame to
-frame, and uncertain futures blur. People predict only a short time ahead,
+frame, and uncertain futures blur. So people predict only a short time ahead,
 replan often, and use models that draw one sharp future at a time.
 
 **Objects change or disappear.** A model may let a cube melt into the table, turn
-a red cube orange, or make the gripper pass through an object. It learned what
-videos usually look like, not the rules that objects must obey. People check the
-prediction with other models, keep predictions short, and train on more robot
-video of close contact.
+a red cube orange, or make the gripper pass through an object. This happens
+because it learned what videos usually look like, not the rules that objects
+must obey. So people check the prediction with other models, keep predictions
+short, and train on more robot video of close contact.
 
 **It looks right but the physics is wrong.** A predicted video can look
-convincing while the cube moves too far or too little. For a robot, the distance
-matters more than the look. The frontier document
+convincing while the cube moves too far or too little, and for a robot the
+distance matters more than the look. The frontier document
 [simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies)
 notes that no published evidence yet shows these models are accurate enough
 about contact to plan with.
 
 **It is slow.** A large diffusion model can take seconds or more to draw a short
-clip on a powerful computer. That is far too slow for an arm that must react
-many times a second. People use smaller models, predict fewer pixels, or use the
-model only during training and not on the robot.
+clip on a powerful computer, which is far too slow for an arm that must react
+many times a second. So people use smaller models, predict fewer pixels, or use
+the model only during training and not on the robot.
 
 **The camera moves.** If the camera is on the arm's wrist, the whole picture
 changes with every move. This is harder to predict than a fixed camera above the
-table. Many systems use a fixed camera for this reason.
+table, so many systems use a fixed camera for that reason.
 
 ---
 
 ## 8. Why this kind, and what it costs
 
-The obvious alternative is a [learned dynamics model](../02_most-used/01_learned-dynamics-models.md)
-that works on a few measured numbers. It is small and fast. But it needs a way to
-measure those numbers, and it cannot describe things that have no short list of
-numbers, such as a crumpled towel or a pile of beans.
+The last section listed what goes wrong, so this section says when this kind of
+model is still worth choosing. The obvious alternative is a
+[learned dynamics model](../02_most-used/01_learned-dynamics-models.md)
+that works on a few measured numbers, and it is small and fast. However, it
+needs a way to measure those numbers, and it cannot describe things that have no
+short list of numbers, such as a crumpled towel or a pile of beans.
 
-A video prediction model needs no measurement at all. It works for any object the
-camera can see. And it can learn from ordinary video, which is available in
+A video prediction model needs no measurement at all, so it works for any object
+the camera can see. It can also learn from ordinary video, which is available in
 enormous amounts. That is why the largest companies in the field are building
 very large video world models.
 
@@ -295,23 +311,22 @@ What it costs you:
 - **Trust.** A picture that looks right can be wrong in the details that matter
   to the arm, such as a few centimetres of sliding.
 - **Detail you do not need.** The model spends its effort drawing every pixel,
-  including the colour of the table and the shadows. The robot rarely needs
-  those. [Latent world models](03_latent-world-models.md) avoid this by
+  including the colour of the table and the shadows, which the robot rarely needs.
+  [Latent world models](03_latent-world-models.md) avoid this by
   predicting a short code instead of a picture.
 
 ---
 
 ## 9. The written alternative
 
-The written alternative measures the object instead of drawing it. The camera finds
-the cube with [thresholding and colour
-masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md),
-and a written model of pushing predicts how it will move. Book 3's [quasi-static
-planar
-pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing)
+This page has assumed all along that the model draws pictures, but a robot can avoid
+pictures altogether. So the written alternative measures the object instead of
+drawing it. The camera finds the cube with
+[thresholding and colour masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+, and a written model of pushing predicts how it will move. Book 3's
+[quasi-static planar pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing)
 is that model. The planning loop in section 6 is written code either way.
-[Sampling-based optimisation and model predictive
-control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+[Sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 tries many sequences of moves, does the first move of the best one, and plans again.
 
 The written way wins for rigid objects that the camera can measure, because it is

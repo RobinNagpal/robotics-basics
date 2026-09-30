@@ -1,14 +1,15 @@
 # Finite state machines
 
-This page explains the finite state machine: the oldest and simplest way to write
-the logic that decides what a robot does next. It answers five questions. What is a
-state machine? How does it run, step by step? Where does a robot arm use one? When
-does it stop being a good idea? And which libraries give you one ready-made?
+This page explains the finite state machine, which is the oldest and simplest way to
+write the logic that decides what a robot does next, and it answers five questions.
+What is a state machine, and how does it run step by step? Where does a robot arm use
+one, when does it stop being a good idea, and which libraries give you one
+ready-made?
 
-It is for a reader who has read the [chapter overview](../01_overview.md) and knows
-what an arm, a gripper and a camera are. It does not assume any course on
-algorithms. The running example is a pick-and-place task: move mugs from a table to
-a bin, and try again when a grasp fails.
+It is written for a reader who has read the [chapter overview](../01_overview.md) and
+who knows what an arm, a gripper and a camera are, but it does not assume any course
+on algorithms. The running example is a pick-and-place task, where the arm moves mugs
+from a table to a bin and tries again when a grasp fails.
 
 ## Contents
 
@@ -33,37 +34,39 @@ a bin, and try again when a grasp fails.
 
 ## 1. Introduction
 
-A robot arm program must always know what it is doing right now. Is it looking for
-a mug? Is it moving? Is it waiting for the gripper to close? The answer decides what
-the program does with the next piece of news. The news "the gripper has closed"
-means one thing while the arm is grasping, and nothing at all while it is carrying.
+A robot arm program must always know what it is doing right now. Is it looking for a
+mug, is it moving, or is it waiting for the gripper to close? That answer decides what
+the program does with the next piece of news, because the news "the gripper has
+closed" means one thing while the arm is grasping and nothing at all while it is
+carrying.
 
-A finite state machine is a way to write this down so that nothing is left to
-chance. You list every situation the robot can be in. For each situation, you list
-the pieces of news that matter, and where each one leads. Then a very small loop
-follows your list.
+A finite state machine is a way to write all of this down so that nothing is left to
+chance. First you list every situation the robot can be in, and then, for each
+situation, you list the pieces of news that matter and where each one leads. After
+that a very small loop follows your list.
 
-State machines are everywhere in robots, often where you do not see them. The
+State machines are everywhere in robots, often where you do not see them, because the
 gripper driver, the controller's safety modes and the start-up of a camera are all
-state machines. Learning to read one is useful even if you later write your task
+state machines. So learning to read one is useful even if you later write your task
 logic with a [behaviour tree](02_behaviour-trees.md).
 
 ---
 
 ## 2. The idea in one sentence
 
-A finite state machine is a fixed list of named situations, called states, and a
-table that says which event moves the program from one state to the next.
+Since the program has to know what it is doing, here is the technique in one sentence.
+A finite state machine is a fixed list of named situations, called states, and a table
+that says which event moves the program from one state to the next.
 
-Here is an everyday example. A washing machine has states such as "filling",
-"washing", "rinsing", "spinning" and "done". It is always in exactly one of them.
-Events move it on: the drum is full, the timer ran out, the door was opened. The
-door-opened event means "stop and wait" while washing, but it means nothing when the
-machine is done. The machine does not need to remember the whole past. Knowing its
-current state is enough to decide what to do with the next event.
+Here is an everyday example of the same idea, a washing machine with states such as
+"filling", "washing", "rinsing", "spinning" and "done". It is always in exactly one of
+them, and events move it on: the drum is full, the timer ran out, the door was opened.
+The door-opened event means "stop and wait" while washing, but it means nothing when
+the machine is done. So the machine does not need to remember the whole past, because
+knowing its current state is enough to decide what to do with the next event.
 
-"Finite" means the list of states is fixed and has an end. The program cannot invent
-a new state while it runs.
+The word "finite" means that the list of states is fixed and has an end, so the
+program cannot invent a new state while it runs.
 
 ---
 
@@ -71,7 +74,7 @@ a new state while it runs.
 
 ### States, events and transitions
 
-A state machine has three parts.
+Once the idea is clear, a state machine turns out to have only three parts.
 
 1. A **state** is a named situation, such as "grasp". The machine is in exactly one
    state at a time. While it is in a state, it usually does one thing: in "grasp", it
@@ -81,26 +84,27 @@ A state machine has three parts.
 3. A **transition** is a rule of the form "in state A, event E moves the machine to
    state B". It is drawn as an arrow from A to B, with E written on it.
 
-All the transitions together form the **transition table**. It is a lookup: given
-the current state and an event, it gives the next state. If the table has no entry
-for that pair, the event is ignored in that state.
+All the transitions together form the **transition table**, which is a lookup: given
+the current state and an event, it gives back the next state. So if the table has no
+entry for that pair, the event is simply ignored in that state.
 
-One state is marked as the **start state**. Some states can be marked as **final
-states**, where the machine stops.
+One state is also marked as the **start state**, and some states can be marked as
+**final states**, where the machine stops.
 
 ### The pick-and-place machine
 
-The picture below shows a state machine for the running example. It has eight
-working states, a final state called "done" and a state called "ask for help".
+Because those three parts are easier to see on a real task, the picture below shows a
+state machine for the running example. It has eight working states, a final state
+called "done" and a state called "ask for help".
 
 ![The pick-and-place state machine with its states and labelled transitions](../../../images/decisions-and-task-logic/finite-state-machines/pick-and-place-states.svg)
 
 The normal path runs clockwise, from "detect" through "approach", "grasp", "check
-grasp", "lift", "carry", "release" and "home", and back to "detect" for the next
-mug. The orange arrow over the top is the retry. The three red arrows lead to "ask
-for help".
+grasp", "lift", "carry", "release" and "home", and then back to "detect" for the next
+mug. Meanwhile the orange arrow over the top is the retry, and the three red arrows
+lead to "ask for help".
 
-Here is what each state does.
+Here is what each of those states does in turn.
 
 - **detect**: run the camera and the detector, and turn the mug's pixels into a
   position. The event is "mug found" or "no mug left".
@@ -114,40 +118,44 @@ Here is what each state does.
   gripper, and go back to the home pose. "carry" can also give "dropped", if the
   finger width suddenly drops to zero.
 
-The machine has 13 transitions in all. Eleven are plain entries in a table. The
-other two are the retry arrow and the "tries = 3" arrow, which need a counter.
+The machine has 13 transitions in all, and eleven of them are plain entries in a
+table. But the other two are the retry arrow and the "tries = 3" arrow, which need a
+counter.
 
 ### Adding a counter for retries
 
-A plain state machine has no memory beyond its current state. But the retry rule
-needs to know how many times the grasp has already failed. So the machine carries
-one extra number, a **counter** called `tries`.
+A plain state machine has no memory beyond its current state, but the retry rule needs
+to know how many times the grasp has already failed. So the machine carries one extra
+number, a **counter** called `tries`.
 
-A transition can then have a **guard**: a condition that must be true for the arrow
-to be taken. It can also have an **action**: a small change made when the arrow is
-taken. The two arrows out of "check grasp" on the event "empty" are:
+A transition can then have a **guard**, meaning a condition that must be true for the
+arrow to be taken, and it can also have an **action**, meaning a small change made
+when the arrow is taken. So the two arrows out of "check grasp" on the event "empty"
+are these:
 
 - "empty and tries < 3" goes back to "detect", and adds 1 to `tries`.
 - "empty and tries = 3" goes to "ask for help".
 
-The arrow "holding" sets `tries` back to 0, so that the next mug starts fresh.
+Then the arrow "holding" sets `tries` back to 0, so that the next mug starts fresh.
 
-Going back to "detect", not just to "grasp", is a deliberate choice. A grasp often
-fails because the mug is not quite where the camera said. Looking again fixes that.
+Going back to "detect", rather than only to "grasp", is a deliberate choice. A grasp
+often fails because the mug is not quite where the camera said it was, so looking
+again is what fixes it.
 
 A state machine with extra numbers such as `tries` is sometimes called an
-**extended state machine**. Almost every real one is of this kind.
+**extended state machine**, and almost every real one is of this kind.
 
 ### A worked run with real numbers
 
-The diagram script for this page holds this exact machine and runs it. It uses two
-mugs. The first grasp on mug 1 closes on nothing; every other grasp works. Each
-state takes a fixed time: 0.4 s to detect, 2.0 s to approach, 1.0 s to grasp, 0.2 s
-to check, 0.8 s to lift, 2.5 s to carry, 0.5 s to release and 2.0 s to go home.
+Since the machine above is easier to trust once you have seen it run, the diagram
+script for this page holds that exact machine and runs it on two mugs. The first grasp
+on mug 1 closes on nothing, while every other grasp works. Each state takes a fixed
+time: 0.4 s to detect, 2.0 s to approach, 1.0 s to grasp, 0.2 s to check, 0.8 s to
+lift, 2.5 s to carry, 0.5 s to release and 2.0 s to go home.
 
-The table below is the start of the run, as the script printed it. Each row is one
-state. The last column is the event that ended the state, which chooses the next
-row.
+The table below is the start of that run, as the script printed it. Read each row as
+one state, where the last column is the event that ended the state and so chose the
+next row.
 
 | Start (s) | End (s) | State | Event that ended it | Next state |
 |---|---|---|---|---|
@@ -164,24 +172,26 @@ row.
 | 10.5 | 11.0 | release | gripper open | home |
 | 11.0 | 13.0 | home | at home | detect |
 
-Mug 2 then takes the same path without the failure. The run visits 21 states and
-ends in "done" at 22.8 s. The picture below shows the whole run.
+Mug 2 then takes the same path without the failure, so the run visits 21 states in all
+and ends in "done" at 22.8 s. The picture below shows that whole run as a bar for each
+state.
 
 ![The state the machine was in at each moment of the run](../../../images/decisions-and-task-logic/finite-state-machines/one-run-over-time.svg)
 
-Each horizontal bar is time spent in one state. The early drop to "check grasp" and
-the jump back up to "detect" is the failed grasp and its retry. Mug 1 reaches the
-bin at 11.0 s and mug 2 at 20.4 s.
+Each horizontal bar is the time spent in one state, and the early drop to "check
+grasp" followed by the jump back up to "detect" is the failed grasp and its retry. So
+mug 1 reaches the bin at 11.0 s and mug 2 at 20.4 s.
 
-You can read the cost of one failure straight off the table. The retry repeated
-"detect", "approach", "grasp" and "check grasp", which is 0.4 + 2.0 + 1.0 + 0.2 =
-3.6 s. Without the failure, mug 1 would have been in the bin at 7.4 s.
+You can also read the cost of one failure straight off the table. The retry repeated
+"detect", "approach", "grasp" and "check grasp", which comes to 0.4 + 2.0 + 1.0 + 0.2
+= 3.6 s. So without the failure, mug 1 would have been in the bin at 7.4 s.
 
 ### Pseudocode
 
-The whole machine is a table and a loop. The loop waits for an event, looks up the
-next state, and starts that state's action. The pseudocode below is written for
-this page's machine and does not depend on any programming language.
+Once the table and the counter are settled, the whole machine is just a table and a
+loop. The loop waits for an event, looks up the next state, and then starts that
+state's action. The pseudocode below is written for this page's machine, and it does
+not depend on any programming language.
 
 ```
 table:  (state, event) -> next state
@@ -216,52 +226,56 @@ repeat until state is done or ask for help:
     start the action of state
 ```
 
-Two details matter in real code. First, "start the action" must not block the
-loop. The action, such as a long move, runs on its own, and sends an event when it
-ends. The loop stays free to receive other events, such as a stop button. Second,
-every state that waits for something should also have a **timeout**: a timer that
-sends its own event, such as "took too long", if the expected event never comes.
+Two details matter once this is written in real code. First, "start the action" must
+not block the loop,
+because the action, such as a long move, runs on its own and sends an event when it
+ends. This means the loop stays free to receive other events, such as a stop button.
+Second, every state that waits for something should also have a **timeout**, meaning a
+timer that sends its own event, such as "took too long", if the expected event never
+comes.
 
 ### How many tries to allow
 
-The retry limit is a real decision, and it is easy to reason about with numbers.
-Say one grasp works 70 % of the time, and each try is independent of the last. The
-chance that all of `n` tries fail is 0.3 multiplied by itself `n` times. So the
-chance of success within `n` tries is 1 − 0.3ⁿ. The picture below shows it for one
-to five tries.
+The machine above allowed three tries, and that limit is a real decision which is easy
+to reason about with numbers. Say one grasp works 70 % of the time, and that each try
+is independent of the last. Then the chance that all of `n` tries fail is 0.3
+multiplied by itself `n` times, so the chance of success within `n` tries is 1 − 0.3ⁿ.
+The picture below shows that for one to five tries.
 
 ![The share of mugs picked without help for retry limits from one to five](../../../images/decisions-and-task-logic/finite-state-machines/retry-limit.svg)
 
-One try picks 70.0 % of mugs. Two tries pick 91.0 %, three pick 97.3 %, and five
-pick 99.8 %. Each extra try helps less than the one before. Real failures are also
-often not independent: if a mug is lying on its side, every try fails the same way.
-So a limit of two or three, followed by asking for help, is common.
+One try picks 70.0 % of mugs, while two tries pick 91.0 %, three pick 97.3 %, and five
+pick 99.8 %. So each extra try helps less than the one before it. Real failures are
+also often not independent, because if a mug is lying on its side, every try fails in
+the same way. So a limit of two or three tries, followed by asking for help, is
+common.
 
 ### Nested states
 
-A plain state machine grows badly. Suppose you add a stop button that must work in
-every state. You need a new arrow from each of the eight working states to a new
-"stopped" state. To resume, you need eight more arrows back, one to each state. The
-left half of the picture below shows the first eight.
+The machine above has only nine states, but a plain state machine grows badly as
+states are added. Suppose you add a stop button that must work in every state. Then you
+need a new arrow from each of the eight working states to a new "stopped" state, and to
+resume you need eight more arrows back, one to each state. The left half of the picture
+below shows the first eight.
 
 ![A stop button drawn flat, with an arrow from every state, and nested, with one arrow from a parent state](../../../images/decisions-and-task-logic/finite-state-machines/flat-or-nested-stop.svg)
 
-The fix, on the right, is a **hierarchical state machine**, also called a nested
-state machine. The eight working states sit inside one parent state called
-"working". A transition drawn from the parent applies to every state inside it. So
-one arrow handles "stop pressed" from anywhere. The circle marked H is a **history**
-marker. It means "go back into whichever inner state the machine was in last", so one
-arrow also handles "resume".
+The fix, on the right, is a **hierarchical state machine**, also called a nested state
+machine. Here the eight working states sit inside one parent state called "working",
+and a transition drawn from the parent applies to every state inside it. So a single arrow now
+handles "stop pressed" from anywhere in the machine. The circle marked H is a **history** marker,
+which means "go back into whichever inner state the machine was in last", so one arrow
+also handles "resume".
 
-Nested states are the main tool for keeping a state machine readable. The drawings
-in this style are called **statecharts**. Most state machine libraries support them.
+Nested states are the main tool for keeping a state machine readable, and drawings in
+this style are called **statecharts**, which most state machine libraries support.
 
 ---
 
 ## 4. Where it is used on a robot arm
 
-State machines appear at every level of a robot arm system. Here are several
-concrete places.
+Because a state machine is small and easy to check, state machines appear at every
+level of a robot arm system, and the list below gives several concrete places.
 
 - **The task itself.** The pick-and-place machine above is a real pattern. Small
   cells with one fixed job, such as moving parts from a conveyor to a tray, often use
@@ -296,14 +310,15 @@ concrete places.
 
 ## 5. Where it is useful, and where it is not
 
-A state machine works well when the number of states is small, and when the robot
-really is in one clear situation at a time. It is easy to draw, easy to test and
-easy to check by hand. Every possible situation is written down, so you can ask of
-each state: "what happens if the stop button is pressed here?".
+All the uses above are small, because a state machine works well when the number of
+states is small and the robot really is in one clear situation at a time. It is then
+easy to draw, easy to test and easy to check by hand, since every possible situation is
+written down, so you can ask of each state: "what happens if the stop button is pressed
+here?".
 
-It stops working well when the task grows. The table below lists the usual
-problems. Each row gives what goes wrong, the sign you would see on the robot, and
-what people use instead.
+But it stops working well as soon as the task grows, and the table below lists the
+usual problems. Read each row as one thing that goes wrong, giving the sign you would
+see on the robot and what people use instead.
 
 | Problem | The sign you would see | What people do instead |
 |---|---|---|
@@ -314,9 +329,9 @@ what people use instead.
 | The same steps are needed in two places, such as "detect" before picking and before placing. | States are copied, and the copies drift apart. | Nested machines that can be reused as one state, or behaviour tree subtrees. |
 | The task changes every day. | Someone must redraw the machine for each new job. | A task planner, or a [language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md) that picks the steps. |
 
-A rough guide is this. Up to about ten states, a flat state machine is often the
-clearest choice. Beyond that, use nested states or move to a behaviour tree. The
-book's
+A rough guide is this: up to about ten states a flat state machine is often the
+clearest choice, but beyond that you should use nested states or move to a behaviour
+tree. The book's
 [programmed methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#3-scripted-logic-state-machines-and-behaviour-trees)
 page makes the same point: the number of possible arrows grows with the square of the
 number of states.
@@ -325,10 +340,10 @@ number of states.
 
 ## 6. Libraries that provide it
 
-You can write a small state machine yourself, as the pseudocode shows. A library
-adds nested states, a viewer that draws the machine while it runs, and tested
-handling of timeouts and stop requests. The table below lists well-known ones. The
-third column names the main class or module to look for.
+You can write a small state machine yourself, as the pseudocode above shows. But a
+library adds nested states, a viewer that draws the machine while it runs, and tested
+handling of timeouts and stop requests. The table below lists the well-known ones, and
+the third column names the main class or module to look for.
 
 | Library | Languages | Where to start | Note |
 |---|---|---|---|
@@ -340,10 +355,10 @@ third column names the main class or module to look for.
 | Boost.MSM and Boost.Statechart | C++ | the `boost::msm` and `boost::statechart` libraries | Two general C++ state machine libraries. Boost.MSM builds the transition table when the code is compiled, so it is very fast. |
 | ROS 2 managed nodes | C++, Python | `rclcpp_lifecycle::LifecycleNode` | The fixed start-up state machine for ROS 2 programs, described in section 4. |
 
-Industrial arm controllers also have their own ways to write state machines. Many
-programmable logic controllers (PLCs), the small computers that run factory cells,
-use a graphical language called Sequential Function Chart. It is a state machine
-drawn as steps and transitions.
+Industrial arm controllers also have their own ways to write state machines. For
+example, many programmable logic controllers (PLCs), the small computers that run
+factory cells, use a graphical language called Sequential Function Chart, which is a
+state machine drawn as steps and transitions.
 
 ---
 
@@ -353,34 +368,37 @@ This section answers the four questions for a state machine: what it is, what it
 for you, why it rather than the obvious alternative, and what it costs.
 
 A state machine is a fixed list of states and a table of transitions between them.
-It gives you a complete, written list of every situation the robot can be in, and
-what each event does in each one. That makes the behaviour easy to check. You can
-test it state by state, and you can show the drawing to someone who does not read
-code.
+This means it gives you a complete, written list of every situation the robot can be
+in, and of what each event does in each one. That in turn makes the behaviour easy to
+check, because you can test it state by state, and you can show the drawing to someone
+who does not read code.
 
-The first obvious alternative is plain code: a long function with `if` statements
-and loops. For three steps with no failures, that is simpler. But the state lives
-in which line of code is running. You cannot ask the program "what are you doing
-now?", and you cannot stop it cleanly in the middle. A state machine makes the state
-a named value that you can print, log and check.
+The first obvious alternative is plain code, meaning a long function with `if`
+statements and loops. For three steps with no failures, that is simpler. But the state
+then lives in which line of code is running, so you cannot ask the program "what are
+you doing now?", and you cannot stop it cleanly in the middle. A state machine, in
+contrast, makes the state a named value that you can print, log and check.
 
-The second obvious alternative is a [behaviour tree](02_behaviour-trees.md). A
-behaviour tree handles retries and fallbacks by its shape, and grows more gracefully.
+The second obvious alternative is a [behaviour tree](02_behaviour-trees.md), which
+handles retries and fallbacks by its shape and so grows more gracefully.
 Choose a state machine when the situations are few and clearly separate, and when
 you must be able to prove what happens in each one, as in a safety mode or a device
 driver. Choose a behaviour tree for a task with many steps and many ways to recover.
 
-The costs are these. You must list every state and every arrow in advance. The
-number of arrows grows fast as you add features, and each new recovery touches
-several states. Extra memory, such as the retry counter, lives outside the drawing
-and is easy to forget. And the machine only reacts to events that you planned for.
+The costs are these. You must list every state and every arrow in advance, and the
+number of arrows then grows fast as you add features, because each new recovery touches
+several states. Extra memory, such as the retry counter, also lives outside the drawing
+and so is easy to forget. And the machine only ever reacts to the events that you
+planned for.
 
 ---
 
 ## 8. The learned alternative
 
-A [language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
-from Book 6 chooses the robot's steps from a request in plain words, and fills in
+Because a state machine only handles the situations you listed, the learned
+alternative is a
+[language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
+from Book 6, which chooses the robot's steps from a request in plain words and fills in
 steps the person never said. It wins when the request changes from one day to the
 next and nobody can list every request in advance. A state machine still wins for
 a task that stays the same, because it is free to run, fast, and does the same

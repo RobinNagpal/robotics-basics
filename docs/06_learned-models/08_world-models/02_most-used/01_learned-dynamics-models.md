@@ -1,15 +1,17 @@
 # Learned dynamics models
 
-This page explains the simplest kind of world model: a learned dynamics model.
-It answers four questions. What does such a model predict? How does a robot arm
-use the prediction to choose what to do? How is the model trained? And when is
-it the right tool?
+This page explains the simplest kind of world model, which is a learned dynamics
+model. It answers four questions: what such a model predicts, how a robot arm
+uses the prediction to choose what to do, how the model is trained, and when it
+is the right tool.
 
-It is for a reader who has read the [world models overview](../01_overview.md) and
-the first chapter of this book, [What models are](../../01_what-models-are/01_what-a-model-is.md).
-You should know that a model takes a list of numbers in and gives a list of
-numbers back, and that it learns from examples. No other machine learning is
-needed.
+It is written for a reader who has already read the
+[world models overview](../01_overview.md) and the first chapter of this book,
+[What models are](../../01_what-models-are/01_what-a-model-is.md). Because those
+pages explain what a model is, you should already know that a model takes a list
+of numbers in and gives a list of numbers back, and that it learns from
+examples. Beyond that starting point, no other machine learning is needed
+here.
 
 > Before this page, it helps to have read
 > [sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md),
@@ -49,30 +51,32 @@ needed.
 A learned dynamics model predicts the next state of the arm and the objects from
 the current state and an action.
 
-Two words in that sentence need explaining. The **state** is a short list of
-numbers that describes the scene right now. For a cube on a table, the state
-could be three numbers: where the cube is from left to right, where it is from
-front to back, and how far it is turned. The word **dynamics** means "how things
-move over time". So a dynamics model is a model of how the state changes.
+Two words in that sentence need explaining, and the first of them is **state**,
+which is a short list of numbers that describes the scene right now. For
+example, for a cube on a table the state could be three numbers: where the cube
+is from left to right, where it is from front to back, and how far it is turned.
+The second word is **dynamics**, which means "how things move over time". So a
+dynamics model is a model of how the state changes over time.
 
-Here is an everyday example. Picture a shopping trolley in a car park. You know
-where it is now, and you know how hard you push it. From those two things you
-can guess where it will be one second later. If you push it often enough, your
-guesses get good. You learn, without any formula, that a full trolley moves less
-than an empty one and that it drifts to one side. A learned dynamics model makes
-the same kind of guess, and it gets good at it in the same way: by seeing many
-pushes and where they ended up.
+Here is an everyday example of the same idea, using a shopping trolley in a car
+park. You know where the trolley is now, and you know how hard you push it. So
+from those two things you can guess where it will be one second later, and if
+you push it often enough, your guesses get good. Then you learn, without any
+formula, that a full trolley moves less than an empty one and that it drifts to
+one side. A learned dynamics model makes the same kind of guess, and it gets
+good at it in the same way, by seeing many pushes and where they ended up.
 
-The word "learned" separates it from the dynamics written in a physics
+The word "learned" separates this model from the dynamics written in a physics
 textbook. A textbook formula for a sliding cube needs its weight and the
-friction between the cube and the table. A learned model needs neither. It only
-needs examples of the cube being pushed.
+friction between the cube and the table. A learned model needs neither of those
+numbers, because it only needs examples of the cube being pushed.
 
 ---
 
 ## 2. What goes in and what comes out
 
-A learned dynamics model takes two lists of numbers in and gives one list back.
+Now that those two words are explained, here are the numbers themselves. A
+learned dynamics model takes two lists of numbers in and gives one list back.
 
 - **The state now.** For example, the cube is at x = 0.30 m and y = 0.20 m, and
   it is turned 0°.
@@ -80,24 +84,25 @@ A learned dynamics model takes two lists of numbers in and gives one list back.
 - **The output: the predicted state after the action.** For example, the cube
   will be at x = 0.38 m and y = 0.21 m, turned 15°.
 
-The picture below shows this. Four numbers go in: three for the cube and one for
-the push. Three numbers come out.
+The picture below shows this exchange of numbers. In this example four numbers
+go in, three for the cube and one for the push, and three numbers come out.
 
 ![The state and the action go into a small network, which predicts the next state; the prediction is compared with what really happened](../../../images/world-models/learned-dynamics-models/state-action-next-state.svg)
 
 The dashed outline is the prediction, the solid cube is what really happened,
 and training tries to make the gap between them smaller.
 
-Notice that the cube moved less than the push. The gripper travelled 10 cm, but
-the cube moved about 8 cm and turned, because it slid and caught on one corner.
-A textbook formula would need the friction to predict that. The learned model
-picks it up from examples.
+Notice that the cube moved less than the push itself. The gripper travelled a full 10
+cm, but the cube moved only about 8 cm and turned, because it slid and caught on one
+corner. A textbook formula would need the friction between the cube and the table to
+predict that. Instead, the learned model picks that friction up from the examples.
 
-On a real arm, the state usually has more numbers. It holds the angle and speed
-of each joint, the position of each object, and sometimes how fast each object is
-moving. A six-joint arm and one object can easily make a state of 20 numbers.
-The action is usually a small change in the gripper's position, or a target
-angle for each joint.
+However, on a real arm the state usually has many more numbers than three. It
+holds the
+angle and speed of each joint, the position of each object, and sometimes how
+fast each object is moving. So a six-joint arm and one object can easily make a
+state of 20 numbers. The action is usually a small change in the gripper's
+position, or a target angle for each joint.
 
 ---
 
@@ -107,9 +112,9 @@ angle for each joint.
 
 The model itself is a small neural network of the kind described in
 [inside a neural network](../../01_what-models-are/03_inside-a-neural-network.md).
-The state numbers and the action numbers are placed side by side in one list.
-That list goes in at one end of the network. The predicted state comes out at the
-other end.
+The state numbers and the action numbers are placed side by side in one list,
+and that list goes in at one end of the network. Then the predicted state comes
+out at the other end.
 
 Many dynamics models predict the **change** in the state, not the new state
 itself. They output "the cube moves 8 cm along x and turns 15°", and the program
@@ -118,22 +123,23 @@ change is small and it looks similar wherever the cube is on the table.
 
 ### Many steps in a row
 
-One step is usually a short time, such as a tenth of a second. To see further
-ahead, you use the model again and again. You feed its prediction back in as the
-next "state now", add the next action, and get the step after that. This is
-called **rolling the model forward**, and the list of predicted states is called
-a **rollout**.
+One step is usually a short time, such as a tenth of a second. So to see further
+ahead, you have to use the model again and again. You feed its prediction back
+in as the next "state now", add the next action, and get the step after that.
+This is called **rolling the model forward**, and the list of predicted states is
+called a **rollout**.
 
 Every step starts from the last prediction, not from the truth. So if step one is
-slightly wrong, step two starts from a wrong place and adds its own error. The
-errors add up. This is called **compounding error**, and it is the main weakness
-of every world model in this chapter.
+slightly wrong, step two starts from a wrong place and adds its own error, and
+the errors add up over the rollout. This is called **compounding error**, and it
+is the main weakness of every world model in this chapter.
 
-A common way to see how far a rollout can be trusted is to train several copies
-of the model. Each copy starts from different random numbers, so each one learns
-slightly differently. This group of copies is called an **ensemble**. Where the
-copies agree, the prediction is probably right. Where they disagree, the model
-has not seen enough examples of that situation.
+Because the errors add up, you need a way to see how far a rollout can be
+trusted, and the usual way is to train several copies of the model. Each copy
+starts from different random numbers, so each one learns slightly differently.
+This group of copies is called an **ensemble**, and it is read in a simple way.
+Where the copies agree, the prediction is probably right, and where they
+disagree, the model has not seen enough examples of that situation.
 
 ![Five model copies chain their own predictions; they stay close to the real path for a few steps and then spread apart](../../../images/world-models/learned-dynamics-models/rolling-forward.svg)
 
@@ -142,23 +148,24 @@ and spread apart further into the future.
 
 ### Planning with it
 
-Planning means choosing actions by asking the model "what if?". A planner makes
-up many sequences of actions, rolls each one forward through the model, scores
-where each one ends up, and keeps the best. A method called the **cross-entropy
-method**, or **CEM**, repeats this a few times and narrows the search towards the
-best sequences. The arm then does only the **first** action, measures the real
-state again and plans again from there. This loop is called **model predictive
-control**, or **MPC**. Because the plan is thrown away after one step, a wrong
-prediction five steps ahead does little harm. Book 5's
+Rolling the model forward is only useful if something then chooses the actions. That
+is what planning does, because planning means choosing actions by asking the model
+"what if?". A planner makes up many sequences of actions, rolls each one forward
+through the model, scores where each one ends up, and keeps the best. A method called
+the **cross-entropy method**, or **CEM**, repeats this a few times and narrows the
+search towards the best sequences. The arm then does only the **first** action,
+measures the real state again and plans again from there, and this loop is called
+**model predictive control**, or **MPC**. Because the plan is thrown away after one
+step, a wrong prediction five steps ahead does little harm. Book 5's
 [sampling-based optimisation and MPC](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 page teaches these methods step by step, with real numbers.
 
-Two things change when the model is learned. First, the planner searches for
-whatever the model says works best, so it is drawn to the places where the model
-is wrong in a hopeful direction. Second, the model is only trustworthy near its
-training records. This is why the ensemble matters. The planner uses the copies'
-average as the prediction and prefers sequences on which the copies agree. The
-Book 5 page has a
+However, two things change when the model is learned. First, the planner searches for
+whatever the model says works best, so it is drawn to the places where the model is
+wrong in a hopeful direction. Second, the model is only trustworthy near its training
+records. This is why the ensemble matters: the planner uses the copies' average as
+the prediction, and it prefers sequences on which the copies agree. The Book 5 page
+has a
 [worked example of a learned ensemble inside MPC](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#a-learned-model-inside-mpc)
 that shows how much this helps.
 
@@ -171,13 +178,14 @@ small step before it plans again.
 
 ## 4. How it is trained
 
-A dynamics model learns from records of the arm acting. Each record has three
-parts: the state before, the action, and the state after. The state is measured
-by the arm's joint sensors and, for objects, by a camera and a
-[seeing model](../../03_seeing-models/01_overview.md) or by markers stuck on the
-objects.
+Planning only works once the model has been trained, so this section says where
+that training comes from. A dynamics model learns from records of the arm
+acting, and each record has three parts: the state before, the action, and the
+state after. The state is measured by the arm's joint sensors and, for objects,
+by a camera and a [seeing model](../../03_seeing-models/01_overview.md) or by
+markers stuck on the objects.
 
-The records come from three places.
+The records come from three places, and the list below describes each one.
 
 - **Random play.** The arm makes random pushes and small moves, and the system
   records what happens. This is simple, and it covers many situations.
@@ -187,22 +195,25 @@ The records come from three places.
   with it and tries the task. Each attempt gives new records, especially in the
   places where the model was wrong. The model is retrained, and the cycle repeats.
 
-Training works as described in
+Once the records exist, training works as described in
 [how a model learns](../../01_what-models-are/02_how-a-model-learns.md). The
 network predicts the state after, the program measures the gap to the recorded
 state after, and it adjusts the network to make that gap smaller.
 
-How much data is needed depends on the task. A dynamics model for one simple
-task, such as pushing one cube, is small, and it can often learn from tens of
-thousands of steps. If the arm records 10 steps a second, 10,000 steps is under
-17 minutes of recording. A model that must cover many objects and many tasks needs
-far more.
+How much data is needed depends on the task itself. A dynamics model for one
+simple
+task, such as pushing one cube, is small, so it can often learn from tens of
+thousands of steps. For example, if the arm records 10 steps a second, then
+10,000 steps is under 17 minutes of recording. A model that must cover many
+objects and many tasks needs far more than that.
 
 ---
 
 ## 5. Well-known models of this kind
 
-These are real, published models. Each one added an idea that is still used.
+The ideas above are easier to follow next to real examples of them, so the
+models below are real and published ones. Each of them added an idea that is
+still used.
 
 - **PILCO** (Deisenroth and Rasmussen, 2011) is not a neural network. It uses a
   different kind of model that states how sure it is of each prediction. It
@@ -249,31 +260,34 @@ works for pushing a mug out of the way before grasping it.
 7. **Improve.** Every real push is also a new training record. Overnight, the
    model is retrained on everything, and it gets better where it was worst.
 
-The arm never needs to know the cube's weight or the friction of the table. If
-someone swaps the wooden cube for a heavier metal one, the first few pushes fall
-short. Planning again after each push corrects for this. Retraining on the new
-records fixes it for good.
+The arm never needs to know the cube's weight or the friction of the table. For
+example, if someone swaps the wooden cube for a heavier metal one, the first few
+pushes fall short. However, planning again after each push corrects for this,
+and retraining on the new records fixes it for good.
 
 ---
 
 ## 7. Learning only the part physics gets wrong: residual models
 
 So far the network on this page has learned everything about how the cube moves,
-from nothing. There is a cheaper way when a physics formula already gets the answer
-roughly right. You keep the formula, and the network learns only the difference
-between the formula and what really happens. That difference is called the
-**residual**, which means "what is left over". A model built this way is called a
-**residual model**. Some people call the method **residual physics**.
+starting from nothing. However, there is a cheaper way when a physics formula
+already gets the answer roughly right. You keep the formula, and the network
+learns only the difference between the formula and what really happens. That
+difference is called the **residual**, which means "what is left over", and a
+model built this way is called a **residual model**. Some people call the method
+**residual physics**.
 
-Here is an everyday example. A satnav says the drive to work takes 20 minutes. You
-have driven it many times, and you know it always takes about 5 minutes longer on
-a Monday morning. You do not throw away the satnav and learn the whole road map
-yourself. You keep the satnav's answer and add your own small correction. The
-satnav is the formula. Your 5 minutes is the residual.
+Here is an everyday example of the same split. A satnav, which is the device in
+a car that works out how long a journey will take, says the drive to work takes
+20 minutes. However, you have driven it many times, and you know it always takes
+about 5 minutes longer on a Monday morning. You do not throw away the satnav and
+learn the whole road map yourself. Instead, you keep the satnav's answer and add
+your own small correction. In that example the satnav is the formula, and your
+5 minutes is the residual.
 
 ### How it works
 
-The prediction is made in two parts, which are added together.
+So the prediction is made in two parts, which are then added together.
 
 1. **The physics part.** A formula, or a physics simulator, predicts the next
    state from the current state and the action. It uses values from a table or a
@@ -282,79 +296,85 @@ The prediction is made in two parts, which are added together.
    predicts how wrong the physics part will be.
 3. **The prediction** is the physics answer plus the correction.
 
-Training is the same as in [section 4](#4-how-it-is-trained), with one change. For
-each record, the program first works out the physics answer. The network's target
-is then the recorded answer minus the physics answer, not the recorded answer
-itself.
+Training is the same as in [section 4](#4-how-it-is-trained), with one change.
+For each record, the program first works out the physics answer. Then the
+network's target is the recorded answer minus the physics answer, not the
+recorded answer itself.
 
 ### A worked example: how far a pushed block slides
 
 Here is a small example that the script for this page computes for real. The
-gripper pushes a wooden block along the table and lets go. The question is how far
-the block slides after that.
+gripper pushes a wooden block along the table and then lets go, and the question
+is how far the block slides after that.
 
 The physics formula for a sliding block says it stops after a distance of
 v² / (2 μ g). Here v is the speed when the gripper lets go, g is 9.81 m/s², the
-pull of gravity, and μ is the **friction coefficient**, a number that says how
-grippy the two surfaces are. A table of materials gives μ = 0.30 for wood on wood.
+pull of gravity, and μ is the **friction coefficient**, which is a number that
+says how strongly the two surfaces resist sliding on each other. A table of
+materials gives μ = 0.30 for wood on wood.
 
-The "real" block in the script is made to be a little different, as real blocks
-are. Its friction is higher than the table says, and it rises with speed. The
-recorded distances also have up to about 2 mm of measuring error. The learned part
-is a small model made of 8 smooth bumps, fitted by
-[least squares](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md).
-It stands in for a small network, and it behaves the same way for this purpose.
+The "real" block in the script is made to be a little different from those table
+numbers, as real blocks are. Its friction is higher than the table says, and it also
+rises with speed. The recorded distances have up to about 2 mm of measuring error as
+well. The learned part is a small model made of 8 smooth bumps, fitted by
+[least squares](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+. It stands in for a small network, because it behaves the same way for this purpose.
 
 ![Left: 12 measured pushes, the textbook formula, which predicts too far, and the formula plus a learned correction, which follows the pushes. Right: what the formula gets wrong at each speed, and the learned correction](../../../images/world-models/learned-dynamics-models/physics-plus-correction.svg)
 
-On the left, the dashed line is the formula. It predicts too far at every speed.
-At 0.5 m/s it says 4.25 cm, but the block slides 3.44 cm. On the right are the 12
-measured pushes minus the formula. This is all the network has to learn: a smooth
-curve from about 0 to about −2 cm. After fitting it to those 12 pushes, the formula
+On the left, the dashed line is the formula, and it predicts too far at every
+speed. For example, at 0.5 m/s it says 4.25 cm, but the block slides 3.44 cm. On
+the right are the 12 measured pushes minus the formula, and this is all the
+network has to learn: a smooth curve from about 0 to about −2 cm. After fitting
+it to those 12 pushes, the formula
 plus the correction predicts 3.36 cm at 0.5 m/s. At 0.7 m/s the formula says
 8.32 cm, the block slides 6.47 cm, and the formula plus the correction says
 6.50 cm.
 
 ### Why it needs less data
 
-The next picture trains the same small model in two ways. In one, it learns the
-whole slide from nothing. In the other, it learns only the correction to the
-formula. Each point is the typical error over 200 repeats with different random
-pushes.
+The correction is easier to learn than the whole slide, and the next picture
+shows how much easier. It trains the same small model in two ways: in one the
+model learns the whole slide from nothing, and in the other it learns only the
+correction to the formula. Each point is the typical error over 200 repeats with
+different random pushes.
 
 ![The typical error against the number of training pushes. The model that learns only the correction is better at every size, and much better with only a few pushes](../../../images/world-models/learned-dynamics-models/residual-needs-less-data.svg)
 
-With 3 pushes, the model that learns the whole slide is wrong by 1.33 cm. That is
-worse than the formula alone, which is wrong by 1.14 cm. The residual model is
-wrong by 0.50 cm. With 12 pushes the two are at 0.32 cm and 0.20 cm. With 100
-pushes both are good, at 0.09 cm and 0.06 cm.
+With 3 pushes, the model that learns the whole slide is wrong by 1.33 cm, which
+is worse than the formula alone at 1.14 cm. The residual model is wrong by only
+0.50 cm. With 12 pushes the two are at 0.32 cm and 0.20 cm, and with 100 pushes
+both are good, at 0.09 cm and 0.06 cm.
 
-The reason is simple. The formula already knows the shape of the answer: faster
-pushes slide much further, and a push at zero speed slides nowhere. The model that
-learns everything has to discover that shape from the data. The residual model
-only has to learn a small, smooth correction, and a small, smooth thing takes few
-examples to learn.
+The reason is simple, because the formula already knows the shape of the answer:
+faster pushes slide much further, and a push at zero speed slides nowhere. The
+model that learns everything has to discover that shape from the data. Instead,
+the residual model only has to learn a small, smooth correction, and a small,
+smooth correction takes few examples to learn.
 
 ### Why it fails more gracefully
 
-The last picture asks both models about pushes that are harder than any they were
-trained on. Both were trained on 20 pushes at speeds between 0.1 and 0.45 m/s.
+The last picture asks both models about pushes that are harder than any they
+were trained on, because that is where a model usually breaks. Both were trained
+on 20 pushes at speeds between 0.1 and 0.45 m/s.
 
 ![Trained only on gentle pushes, the whole-learned model predicts almost no slide for harder pushes, while the residual model falls back to the formula](../../../images/world-models/learned-dynamics-models/residual-outside-the-data.svg)
 
-Inside the shaded band, both are close to the real block. Outside it, the model
-that learned everything falls to almost zero. At 0.6 m/s it predicts 0.03 cm,
-when the block slides 4.85 cm. That is not a small error. It is a nonsense answer.
-The residual model falls back to the formula. It predicts 6.11 cm, which is too far,
-but it is the right kind of answer, and it is exactly as wrong as the formula
-alone.
+Inside the shaded band, both models are close to the real block. Outside it,
+however, the model that learned everything falls to almost zero. At 0.6 m/s it
+predicts 0.03 cm, when the block really slides 4.85 cm. That is not a small
+error, because it is a nonsense answer. The residual model instead falls back to
+the formula, and it predicts 6.11 cm. This is too far, but it is the right kind
+of answer, and it is exactly as wrong as the formula alone.
 
-Be careful with this. The bump model used here gives a correction of zero far from
-its data, so the residual model falls back to the formula by itself. A real
-network does not always do that. Some networks carry on in a straight line outside
-their data, so the correction can grow large. People keep the correction small on
-purpose. They add a penalty on its size during training, cap it at a fixed limit,
-or use an ensemble and trust only the formula where the copies disagree.
+Be careful with that result, because it depends on the kind of model used. The
+bump model used here gives a correction of zero far from its data, so the
+residual model falls back to the formula by itself. However, a real network does
+not always do that. Some networks carry on in a straight line outside their
+data, so the correction can grow large. This is why people keep the correction
+small on purpose. They add a penalty on its size during training, cap it at a
+fixed limit, or use an ensemble and trust only the formula where the copies
+disagree.
 
 ### Where it is used on a robot arm
 
@@ -373,8 +393,9 @@ or use an ensemble and trust only the formula where the copies disagree.
   physics simulator, to learn the contact and friction effects that the simulator's
   formulas leave out.
 
-The same idea is also used for policies. A **residual policy** keeps an ordinary
-hand-written controller and learns only a correction to its commands.
+The same idea is also used for policies, and not only for models. A **residual
+policy** keeps an ordinary hand-written controller and learns only a correction
+to its commands.
 
 ### Where it does not help
 
@@ -391,71 +412,83 @@ hand-written controller and learns only a correction to its commands.
   explains how. A residual model is worth it when the error has a shape that no
   single number fixes.
 
-There is no special library for residual models. The physics part is your own
-formula, or a simulator such as MuJoCo or PyBullet. The learned part is an ordinary
-small network, usually written in PyTorch. The code that adds the two together is a
-few lines.
+There is no special library for residual models, because you build one out of
+parts you already have. The physics part is your own formula, or a simulator
+such as MuJoCo or PyBullet, and the learned part is an ordinary small network,
+usually written in PyTorch. The code that adds the two together is only a few
+lines.
 
 ---
 
 ## 8. What goes wrong, and what people do about it
 
+The sections above described how a learned dynamics model works when it works.
+This section lists the five things that go wrong in practice, and what people do
+about each one.
+
 **Errors add up over many steps.** This was shown in
-[many steps in a row](#many-steps-in-a-row). People plan only a few steps ahead
-and plan again after every action. They also use ensembles to see where the
-prediction stops being trustworthy.
+[many steps in a row](#many-steps-in-a-row). Because of that, people plan only a
+few steps ahead and plan again after every action. They also use ensembles to
+see where the prediction stops being trustworthy.
 
 **The planner finds the model's mistakes.** The planner looks for the action
-with the best predicted result. If the model wrongly predicts that a strange
-push sends the cube straight to the goal, the planner will choose that push.
-People reduce this by preferring actions where the ensemble copies agree, and by
+with the best predicted result, so it is drawn to any action the model is
+hopeful about. For example, if the model wrongly predicts that a strange push
+sends the cube straight to the goal, the planner will choose that push. People
+reduce this by preferring actions where the ensemble copies agree, and by
 retraining on the records from those failed attempts.
 
 **Someone must measure the state.** The model works on numbers such as the
-cube's position. Something must produce those numbers from the camera, and
+cube's position, so something must produce those numbers from the camera, and
 that part can be wrong too. For many objects, or for soft objects, there is no
 short list of numbers at all. The other three kinds of world model deal with
-this. [Video prediction models](../03_also-used/01_video-prediction-models.md) work straight on
+this in their own ways.
+[Video prediction models](../03_also-used/01_video-prediction-models.md) work straight on
 pictures, and [learned simulators](../03_also-used/02_learned-simulators.md) follow many small
 pieces.
 
-**Sudden changes are hard.** A network gives smooth outputs. Contact is not
-smooth. A small change in a push can decide whether the gripper touches the cube
-at all. Models predict these sudden changes badly. People add more records near
-contact, or they use a physics formula for the smooth part and let the network
-learn only the correction. This is called a **residual model**, and
+**Sudden changes are hard.** A network gives smooth outputs, but contact is not
+smooth. For example, a small change in a push can decide whether the gripper
+touches the cube at all. So models predict these sudden changes badly. People
+add more records near contact, or they use a physics formula for the smooth part
+and let the network learn only the correction. This is called a **residual
+model**, and
 [section 7](#7-learning-only-the-part-physics-gets-wrong-residual-models) explains
 it.
 
-**New objects break it.** A model trained on one cube does not know about a
-ball. People train on many objects, or they give the model a few numbers that
-describe the object, such as its size.
+**New objects break it.** A model trained on one cube does not know anything
+about a ball. So people train on many objects, or they give the model a few
+numbers that describe the object, such as its size.
 
 ---
 
 ## 9. Why this kind, and what it costs
 
-A learned dynamics model is the right choice when the state can be written as a
-short list of numbers, and when a textbook formula for the motion is missing or
-wrong. Pushing, sliding and holding objects on a table are typical cases.
+The last section listed what goes wrong, so this section weighs those problems
+against what the model gives you. A learned dynamics model is the right choice
+when the state can be written as a short list of numbers, and when a textbook
+formula for the motion is missing or wrong. Pushing, sliding and holding objects
+on a table are typical cases.
 
 There are two obvious alternatives, and it is worth naming both.
 
 The first is a **hand-written physics simulator**, such as MuJoCo. A simulator
-needs every object's weight, shape and friction. It is often wrong about sliding
-and catching, which is exactly what matters for pushing. A learned model learns
-the real behaviour from the real cube. Choose the simulator when you can
-describe the objects well and do not have a real arm to collect data on. When
+needs every object's weight, shape and friction, and it is often wrong about
+sliding and catching, which is exactly what matters for pushing. Instead, a
+learned model learns the real behaviour from the real cube. So choose the
+simulator when you can describe the objects well and do not have a real arm to
+collect data on. When
 the simulator is roughly right, you can also keep it and learn only what it gets
 wrong, as
 [section 7](#7-learning-only-the-part-physics-gets-wrong-residual-models) shows.
 
 The second is a policy that learns without any model, which Book 3 calls
-**model-free** learning. It connects the state straight to an action. It is
+**model-free** learning. It connects the state straight to an action, so it is
 simpler, but it needs far more attempts, because every attempt teaches it only
-one thing. A dynamics model learns how the world works from each attempt, and
-the planner can reuse that for any goal. The same model that pushes the cube to
-one mark can push it to a different mark tomorrow, with no new training.
+one thing. A dynamics model instead learns how the world works from each
+attempt, and the planner can reuse that for any goal. So the same model that
+pushes the cube to one mark can push it to a different mark tomorrow, with no
+new training.
 
 What it costs you:
 
@@ -469,14 +502,17 @@ What it costs you:
 
 ## 10. The written alternative
 
-The written alternative keeps the planner and replaces the learned model with a
-written one. The planning loop in section 3 is written code either way. Book 5's
+The sections above assumed that the model is learned, but the planner does not
+require that. The written alternative keeps the planner and replaces the learned
+model with a written one, because the planning loop in section 3 is written code
+either way. Book 5's
 [sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 explains random shooting, the cross-entropy method and model predictive control in
 full. The model can then be a physics formula for pushing, such as Book 3's
-[quasi-static planar pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing),
-with its numbers measured by
-[system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md).
+[quasi-static planar pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing)
+, with its numbers measured by
+[system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+.
 
 The written model wins when the objects are simple and a formula with a few measured
 numbers predicts them well, because it needs no recordings and can be checked. The

@@ -4,18 +4,19 @@ This page explains how a program finds an object's full pose from one colour
 picture. The object's **pose** is where it is and which way it is turned: three
 numbers for its position and three for its rotation, six in all. Robotics people
 call this a **six degrees of freedom (6-DoF)** pose. The method on this page is
-called **Perspective-n-Point**, or **PnP**. It answers four questions. What does
-PnP need? How does it find the pose? What happens when some of its inputs are
-wrong? And why is a flat printed marker hard to read when it faces the camera
-squarely?
+called **Perspective-n-Point**, or **PnP**, and it answers four questions. What
+does PnP need? How does it find the pose? What happens when some of its inputs
+are wrong? And why is a flat printed marker hard to read when it faces the
+camera squarely?
 
 It is for a reader who has read the three pages before this one.
-[The pinhole camera model](01_pinhole-camera-model.md) turns a point into a pixel.
-[Rigid transforms](02_rigid-transforms.md) describe a pose as a rotation and a
-shift. [Calibration](03_calibration.md) already uses PnP once, to find the board in
-each picture. This page opens that step up. Every number on this page comes from a
-real run of the diagram script, `docs/diagrams/geometry_and_cameras_2.py`, with
-Book 2's camera: 320 × 240 pixels, `fx` = `fy` = 277.1, `cx` = 160, `cy` = 120.
+[The pinhole camera model](01_pinhole-camera-model.md) turns a point into a
+pixel, while [rigid transforms](02_rigid-transforms.md) describe a pose as a
+rotation and a shift. [Calibration](03_calibration.md) already uses PnP once, to
+find the board in each picture, and this page opens that step up. Every number
+on this page comes from a real run of the diagram script,
+`docs/diagrams/geometry_and_cameras_2.py`, with Book 2's camera: 320 × 240
+pixels, `fx` = `fy` = 277.1, `cx` = 160, `cy` = 120.
 
 ## Contents
 
@@ -41,20 +42,21 @@ Book 2's camera: 320 × 240 pixels, `fx` = `fy` = 277.1, `cx` = 160, `cy` = 120.
 ## 1. The idea in one sentence
 
 **If you know where some points are on an object, and you can see which pixels
-they land on, there is only one pose of the object that puts all of them on those
-pixels.**
+they land on, there is only one pose of the object that puts all of them on
+those pixels.**
 
 Here is an everyday example. You are lost in a town, but you can see three
 landmarks you know: a church tower, a bridge and a tall chimney. You know where
-each one is on your map. You can also see in which direction each one lies from
-where you stand. Only one spot on the map gives those three directions at once.
-That spot is where you are. Sailors call this "taking a fix".
+each one is on your map, and you can also see in which direction each one lies
+from where you stand. Only one spot on the map gives those three directions at
+once, so that spot is where you are. Sailors call this "taking a fix".
 
-PnP is the same idea. The "map" is the object's own shape, written as points in
-millimetres. The "directions" are the pixels, because each pixel is a direction
-from the camera, as [the pinhole camera model](01_pinhole-camera-model.md) shows.
-The answer is the object's pose relative to the camera. Turned around, it is also
-the camera's pose relative to the object, which is exactly what calibration needs.
+PnP is the same idea, and the "map" is the object's own shape, written as points
+in millimetres. The "directions" are the pixels, because each pixel is a
+direction from the camera, as
+[the pinhole camera model](01_pinhole-camera-model.md) shows. The answer is the
+object's pose relative to the camera. Turned around, it is also the camera's
+pose relative to the object, which is exactly what calibration needs.
 
 ---
 
@@ -62,7 +64,8 @@ the camera's pose relative to the object, which is exactly what calibration need
 
 ### What goes in and what comes out
 
-PnP needs three things.
+Section 1 gave the idea, so this section turns it into a method. PnP needs three
+things before it can start.
 
 1. **The object's points, in the object's own frame.** For a 6 cm cube, the corners
    are at (±30, ±30, 0) mm and (±30, ±30, 60) mm, measured from the middle of its
@@ -71,104 +74,112 @@ PnP needs three things.
 2. **The pixel where each of those points appears.** Something else finds these: a
    corner detector, a marker detector, a feature matcher, or a neural network that
    finds keypoints. PnP does not look at the picture at all.
-3. **The camera's lens numbers**, `fx`, `fy`, `cx` and `cy`, and its distortion.
-   [Calibration](03_calibration.md) measures them.
+3. **The camera's lens numbers**, `fx`, `fy`, `cx` and `cy`, and its distortion,
+which [calibration](03_calibration.md) measures.
 
-Each point must be paired with its own pixel. The pairing is called a
-**correspondence**: "this pixel shows that corner". PnP trusts the pairing
-completely. Section 3 deals with pairings that are wrong.
+Each point must be paired with its own pixel, and that pairing is called a
+**correspondence**, meaning "this pixel shows that corner". PnP trusts the
+pairing completely, so section 3 deals with pairings that are wrong.
 
-What comes out is a rotation `R` and a shift `t`. Together they are the transform
-`T_camera_object`. It moves a point from the object's frame into the camera's frame.
-[Rigid transforms](02_rigid-transforms.md) then carry it into the arm's base frame.
+What comes out is a rotation `R` and a shift `t`, which together are the
+transform `T_camera_object`. That transform moves a point from the object's
+frame into the camera's frame, and [rigid transforms](02_rigid-transforms.md)
+then carry it into the arm's base frame.
 
 ### Reprojection error, again
 
-Suppose you guess a pose. With that guess, you can place each object point in the
-camera's frame and project it to a pixel. That is **reprojection**. The distance
-between where a point reprojects and where it was really seen is its
-**reprojection error**, in pixels. The [calibration](03_calibration.md#reprojection-error-the-number-the-method-makes-small)
-page introduced it.
+Suppose you guess a pose. With that guess, you can place each object point in
+the camera's frame and then project it to a pixel, which is **reprojection**.
+The distance between where a point reprojects and where it was really seen is
+its **reprojection error**, in pixels, as the
+[calibration](03_calibration.md#reprojection-error-the-number-the-method-makes-small)
+page explained.
 
-PnP is a search for the pose with the smallest reprojection error. It combines the
-errors of all the points into one number, the **root mean square (RMS)**: square
-each distance, take the mean, and take the square root. When the pose is right, the
-RMS is about as large as the noise in the pixels, usually a few tenths of a pixel.
+So PnP is a search for the pose with the smallest reprojection error. It combines
+the errors of all the points into one number, the **root mean square (RMS)**:
+square each distance, take the mean, and take the square root. When the pose is
+right, the RMS is about as large as the noise in the pixels, usually a few
+tenths of a pixel.
 
 ### A first guess, then refinement
 
-The projection formula divides by depth, so the error is not a simple straight-line
-function of the pose. PnP therefore works in two stages, like calibration does.
+Because the projection formula divides by depth, the error is not a simple
+straight-line function of the pose. So PnP works in two stages, in the same way
+as calibration does.
 
 1. **A first guess.** A short formula gives an approximate pose directly. The
    simplest one is the **direct linear transform (DLT)**. It treats the 12 numbers
    of the 3 × 4 matrix `[R | t]` as unknowns, writes two straight-line equations
    for each point, and solves them all at once. It needs six or more points that
-   are not all on one plane. Better formulas exist. **EPnP** (efficient PnP) needs
-   only four points and is very fast. **P3P** (perspective-three-point) uses exactly
-   three.
+   are not all on one plane, but better formulas exist. **EPnP** (efficient PnP)
+   needs only four points and is very fast, while **P3P**
+   (perspective-three-point) uses exactly three.
 2. **Refinement.** Starting from the guess, the program nudges all six pose numbers
-   at once in the direction that shrinks the RMS fastest. It repeats until the RMS
-   stops falling. The usual method is **Levenberg–Marquardt**, the same one
+   at once in the direction that shrinks the RMS fastest, and it repeats until
+   the RMS stops falling. The usual method is **Levenberg–Marquardt**, the same
+   one
    calibration uses. It is fast because there are only six unknowns.
 
-The first guess matters. Refinement only walks downhill from where it starts. If
-the start is poor, it can settle in the wrong valley. Section 4 shows this happening
-with flat markers.
+The first guess matters, because refinement only walks downhill from where it
+starts. So if the start is poor, it can settle in the wrong valley, and section
+4 shows this happening with flat markers.
 
 ### A worked run: the red cube
 
-Here is a real run. Book 2's red box, a 6 cm cube, stands on the table, turned 20°.
-The camera is the tilted one from the pinhole page: 0.40 m above the table, 0.20 m
-back from its middle, and looking 60° down. From there it can see six corners of the
-cube: the four on top and the two bottom corners of the near face.
+So here is a real run. Book 2's red box, a 6 cm cube, stands on the table,
+turned 20°. The camera is the tilted one from the pinhole page: 0.40 m above the table,
+0.20 m back from its middle, and looking 60° down. From there it can see six
+corners of the cube: the four on top and the two bottom corners of the near
+face.
 
-We projected those six corners with the true pose, then added random noise of 0.3
-pixels to each pixel, which is what a good corner detector achieves. We then gave
-the refinement a deliberately poor start: the cube in the middle of the table, not
-turned. The picture shows the start and the end.
+We projected those six corners with the true pose, then added random noise of
+0.3 pixels to each pixel, which is what a good corner detector achieves. Then we
+gave the refinement a deliberately poor start, with the cube in the middle of
+the table and not turned. So the picture below shows both the start and the end.
 
 ![Six known corners: where a rough guess puts them, and where the fitted pose puts them](../../../images/geometry-and-cameras/pose-from-points/guess-then-fit.svg)
 
-On the left, the orange cube is where the first guess puts the corners. The red lines
-are the reprojection errors. Their RMS is 50.46 pixels. On the right, after the
-refinement, every orange dot sits on its black cross. The RMS fell like this, one
-step at a time:
+On the left, the orange cube is where the first guess puts the corners, and the
+red lines are the reprojection errors, whose RMS is 50.46 pixels. On the right,
+after the refinement, every orange dot sits on its black cross. The RMS fell
+like this, one step at a time:
 
 | Step | 0 | 1 | 2 | 3 | 4 and after |
 | --- | --- | --- | --- | --- | --- |
 | RMS reprojection error (pixels) | 50.46 | 5.25 | 0.43 | 0.30 | 0.30 |
 
-Read the table from left to right. Three steps took the error from 50 pixels to the
-noise level, and the steps after that changed nothing. The final pose was 3.3 mm and
-0.51° from the truth. The cube was about 0.47 m from the camera, where one pixel
-covers 1.7 mm, so 3.3 mm is about what 0.3 pixels of noise on six points allows.
+Read the table from left to right, because three steps took the error from 50
+pixels to the noise level, and the steps after that changed nothing. The final pose was
+3.3 mm and 0.51° from the truth. The cube was about 0.47 m from the camera,
+where one pixel covers 1.7 mm, so 3.3 mm is about what 0.3 pixels of noise on
+six points allows.
 
 For comparison, the DLT first guess on the same six points gave an RMS of 2.80
-pixels, a position 5.1 mm off, and a rotation 4.6° off. The DLT is a good place to
-start, but not a place to stop.
+pixels, a position 5.1 mm off, and a rotation 4.6° off. The DLT is a good place
+to start, but not a place to stop.
 
 ### How many points are needed
 
-A pose has six unknown numbers, and each point gives two measurements: its `u` and
-its `v`. So three points give six measurements, which is just enough. But three
-points can fit up to four different poses, so a fourth point is needed to choose
-between them. In practice:
+A pose has six unknown numbers, and each point gives two measurements: its `u`
+and its `v`. So three points give six measurements, which is just enough. But
+three points can fit up to four different poses, so a fourth point is needed to
+choose between them. In practice:
 
 - **3 points** give up to four answers. This is P3P, used inside RANSAC.
 - **4 points** give one answer, if they are well spread. A square marker has four
   corners.
 - **6 or more points** make the answer steady, because the noise averages out.
 
-Points that are close together, or almost in a straight line, give a poor pose even
-when there are many of them. Spread matters as much as count. The object should
-also fill a fair part of the picture. A small object far away gives short
-distances between its pixels, and the same noise then means a larger turn.
+Points that are close together, or almost in a straight line, give a poor pose
+even when there are many of them, so spread matters as much as count. The object
+should also fill a fair part of the picture, because a small object far away
+gives short distances between its pixels, and the same noise then means a larger
+turn.
 
 ### Pseudocode
 
-Here is PnP in plain steps. The first-guess formula is named rather than written
-out, because every library provides one.
+So here is the whole of PnP in plain steps. The first-guess formula is named
+rather than written out, because every library provides one.
 
 ```
 inputs: object_points (N points, in the object's frame, in metres)
@@ -194,83 +205,89 @@ return T_camera_object = (R, t), rms
 
 ## 3. PnP inside RANSAC: when some matches are wrong
 
-In real pictures, the pairings are not all right. A feature matcher pairs a pattern
-on one side of a box with a similar pattern on the other side. A keypoint model
-puts a point on a reflection. One wrong pairing can pull the whole pose away,
-because refinement tries to satisfy every pairing at once.
+Section 2 assumed that every pairing of a point with a pixel is correct, but in
+real pictures they are not all right. For example, a feature matcher pairs a
+pattern on one side of a box with a similar pattern on the other side, and a
+keypoint model puts a point on a reflection. One wrong pairing can then pull the
+whole pose away, because refinement tries to satisfy every pairing at once.
 
-**RANSAC (random sample consensus)** is the standard cure. The
-[RANSAC page](../../04_fitting-and-estimation/02_most-used/02_ransac.md) explains
-it for lines and planes. For PnP it works like this.
+**RANSAC (random sample consensus)** is the standard cure for this. The
+[RANSAC page](../../04_fitting-and-estimation/02_most-used/02_ransac.md)
+explains it for lines and planes, and for PnP it works like this.
 
 1. Pick a few pairings at random: 3 or 4 for P3P or EPnP.
 2. Find the pose that those few imply.
 3. Reproject every object point with that pose. Count the pairings whose
-   reprojection error is under a limit, such as 3 pixels. These are the
-   **inliers**: the pairings that agree.
+   reprojection error is under a limit, such as 3 pixels, and those are the
+   **inliers**, the pairings that agree.
 4. Repeat many times. Keep the pose with the most inliers.
 5. Refine that pose using only its inliers.
 
-We tested this on a printed box, 120 × 80 × 100 mm, with 40 matched features on its
-top and front faces. We gave the true pixels 0.5 pixels of noise. Then we replaced
-12 of the 40 pixels, 30 per cent, with random places in the picture. Our RANSAC drew
-6 pairings per try, because our simple DLT needs six, and made 200 tries.
+So we tested this on a printed box, 120 × 80 × 100 mm, with 40 matched features
+on its top and front faces. Then we gave the true pixels 0.5 pixels of noise. Then we
+replaced 12 of the 40 pixels, 30 per cent, with random places in the picture.
+Our RANSAC drew 6 pairings per try, because our simple DLT needs six, and made
+200 tries.
 
 ![Forty matched features, twelve of them wrong: least squares on all of them, and RANSAC](../../../images/geometry-and-cameras/pose-from-points/ransac-ignores-wrong-matches.svg)
 
-The grey box is the truth. On the left, refinement on all 40 pairings produced the
-orange box. It is 49.8 mm and 47.0° away from the truth, which is useless. On the
-right, RANSAC found 28 inliers. They were exactly the 28 right pairings: it caught
-all 12 wrong ones and dropped none of the right ones. The final pose was 0.4 mm and
-0.1° from the truth.
+In the picture, the grey box is the truth. On the left, refinement on all 40
+pairings produced the orange box, which is 49.8 mm and 47.0° away from the truth
+and therefore useless. On the right, RANSAC found 28 inliers, and they were exactly the 28
+right pairings, so it caught all 12 wrong ones and dropped none of the right
+ones. The final pose was then 0.4 mm and 0.1° from the truth.
 
-How many tries are enough? A try succeeds when every pairing it draws is right. With
-70 per cent right pairings, a draw of 6 is all right with a chance of 0.7⁶, about
-12 per cent. To be 99 per cent sure of at least one clean draw, you need about 37
-tries. A draw of 4 is all right 24 per cent of the time, and needs about 17 tries.
-That is why real libraries use four-point or three-point solvers inside RANSAC.
+How many tries are enough? A try succeeds when every pairing it draws is right.
+With 70 per cent right pairings, a draw of 6 is all right with a chance of 0.7⁶,
+about 12 per cent. To be 99 per cent sure of at least one clean draw, you need
+about 37 tries. A draw of 4 is all right 24 per cent of the time, and needs
+about 17 tries. That is why real libraries use four-point or three-point solvers
+inside RANSAC.
 
 ---
 
 ## 4. A flat target, and why face-on is unstable
 
-Many robot cells find objects with a **fiducial marker**: a printed black-and-white
-square, such as an ArUco or AprilTag marker, stuck on the object or on a fixture.
-Its pattern tells the detector which marker it is and which corner is which. Book 2
-describes them in
+Section 3 dealt with pairings that are wrong, and this section deals with a
+target whose pairings are all right but whose shape still makes the pose hard.
+Many robot cells find objects with a **fiducial marker**, which is a printed
+black-and-white square, such as an ArUco or AprilTag marker, stuck on the object
+or on a fixture. Its pattern tells the detector which marker it is and which
+corner is which, and Book 2 describes them in
 [a marker of known size](../../../02_perception/02_object-perception/03_programmed-methods.md#24-a-marker-of-known-size).
-The four corners of the square, with the marker's known size, are exactly a PnP
-problem with four points on one plane.
+So the four corners of the square, with the marker's known size, are exactly a
+PnP problem with four points on one plane.
 
-Four points on a plane are enough in theory. In practice there is a trap. When the
-marker is nearly face-on to the camera, **two different poses fit the corners almost
-equally well**. One is tilted a little towards the camera; the other is tilted the
-same amount away. The picture shows this for a 40 mm marker, 0.34 m away, tilted
-12° one way or the other.
+Four points on a plane are enough in theory, but in practice there is a trap.
+When the marker is nearly face-on to the camera, **two different poses fit the
+corners almost equally well**, because one is tilted a little towards the camera
+while the other is tilted the same amount away. The picture shows this for a 40
+mm marker, 0.34 m away, tilted 12° one way or the other.
 
 ![A flat marker tilted +12° and -12°: nearly the same pixels](../../../images/geometry-and-cameras/pose-from-points/flat-marker-two-poses.svg)
 
-On the left, the two markers are seen from the side. They face clearly different
-ways: the arrows show the direction each one faces, 24° apart. On the right are the
-four corners each pose puts in the picture. They differ by at most 1.27 pixels. At
-5° of tilt, the gap is only 0.53 pixels. A corner detector with 0.3 pixels of noise
-cannot reliably tell the two apart.
+On the left, the two markers are seen from the side, and they face clearly
+different ways, because the arrows show the direction each one faces, 24° apart.
+On the right are the four corners each pose puts in the picture, and they differ
+by at most 1.27 pixels. At 5° of tilt the gap is only 0.53 pixels, so a corner
+detector with 0.3 pixels of noise cannot reliably tell the two apart.
 
-The reason is perspective. When the marker is tilted, its near edge looks a little
-longer than its far edge. That small difference is the only clue to which way it
-tilts. A marker 40 mm wide at 0.34 m covers only 32.6 pixels, so the difference is
-a fraction of a pixel.
+The reason is perspective. When the marker is tilted, its near edge looks a
+little longer than its far edge, and that small difference is the only clue to
+which way the marker tilts. A marker 40 mm wide at 0.34 m covers only 32.6
+pixels, so the difference is a fraction of a pixel.
 
-We measured how bad this is. For each tilt, we added 0.3 pixels of noise to the four
-corners 300 times, solved each time from both possible starting poses, and kept the
-one with the smaller reprojection error. This is what the solvers built for squares
-do. The chart shows the error in the direction the marker faces.
+So we measured how bad this is. For each tilt, we added 0.3 pixels of noise to
+the four corners 300 times, solved each time from both possible starting poses,
+and kept the one with the smaller reprojection error. This is what the solvers
+built for squares do, and the chart below shows the error in the direction the
+marker faces.
 
 ![How wrong the marker's facing direction comes out, against how far it is tilted](../../../images/geometry-and-cameras/pose-from-points/face-on-is-unstable.svg)
 
-The table gives the same numbers. Read each row as one tilt: the typical error, the
-error that the worst tenth of runs reached or passed, and how often the solver chose
-the wrong one of the two poses.
+The table gives the same numbers, so read each row as one tilt: the typical
+error, the error that the worst tenth of runs reached or passed, and how often the
+solver chose the wrong one of the two poses.
 
 | Tilt | Median error | Worst tenth | Chose the mirrored pose |
 | --- | --- | --- | --- |
@@ -281,12 +298,12 @@ the wrong one of the two poses.
 | 30° | 1.3° | 2.5° or more | none |
 | 60° | 0.7° | 1.3° or more | none |
 
-Face-on, the facing direction is typically 7.4° wrong. At 30° of tilt, the same
-marker and the same noise give 1.3°. The distance to the marker, by contrast, came
-out about 2 mm wrong at every tilt. **A small, face-on marker gives a good position
-and a poor rotation.**
+Face-on, the facing direction is typically 7.4° wrong, while at 30° of tilt the
+same marker and the same noise give 1.3°. The distance to the marker, by
+contrast, came out about 2 mm wrong at every tilt. **A small, face-on marker
+gives a good position and a poor rotation.**
 
-Here is what people do about it.
+So here is what people do about it in practice.
 
 - **Tilt the camera or the marker** so that the marker is seen at 20° to 45°, not
   face-on.
@@ -305,8 +322,9 @@ Here is what people do about it.
 
 ## 5. Where it is used on a robot arm
 
-PnP runs wherever a program knows an object's shape and can find points on it in a
-colour picture. Here are concrete places.
+Sections 2 to 4 described the method and its weak spot, and this section says
+where an arm uses it. PnP runs wherever a program knows an object's shape and
+can find points on it in a colour picture, and here are the concrete places.
 
 - **Reading a fiducial marker.** A marker on a fixture, a tray or a rack gives its
   pose in one picture. Book 3's
@@ -316,7 +334,7 @@ colour picture. Here are concrete places.
   the camera's frame. Hand-eye calibration then compares those poses with the arm's,
   as the [calibration](03_calibration.md#a-x--x-b-in-plain-words) page shows.
 - **Keypoint models.** A neural network finds named points on an object, such as a
-  mug's handle and rim. PnP turns them into a pose. Book 6's
+  mug's handle and rim, and PnP turns them into a pose. Book 6's
   [keypoints and object pose](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md#from-keypoints-to-pose)
   describes this split: the network finds the points, and geometry does the rest.
 - **Matching against a stored picture.** A program stores a picture of a boxed
@@ -334,8 +352,9 @@ colour picture. Here are concrete places.
 
 ## 6. Where it works, and where it does not
 
-PnP is exact geometry, so it fails only when its inputs are wrong or too weak. The
-table lists the common failures. Read each row as: what goes wrong, what you see,
+The uses in section 5 all depend on good points and good pairings. PnP is exact
+geometry, so it fails only when its inputs are wrong or too weak, and the table
+below lists the common failures. Read each row as what goes wrong, what you see,
 and what to do.
 
 | What goes wrong | The sign you see | What to do instead |
@@ -348,9 +367,9 @@ and what to do.
 | a poor first guess with few points | refinement settles on a wrong pose with a moderate RMS | use a proper first-guess solver such as EPnP or SQPnP |
 | the object is symmetric | two or more poses fit equally well; the answer flips | use a feature that breaks the symmetry, or accept the ambiguity |
 
-PnP cannot find points itself. It cannot tell which pixel shows which corner. And
-it gives no answer for an object whose shape you do not know. For those, a depth
-camera and a matching method such as
+PnP also cannot find points itself, and it cannot tell which pixel shows which
+corner. It gives no answer at all for an object whose shape you do not know, so
+for those a depth camera and a matching method such as
 [iterative closest point](../../03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
 are the usual choice.
 
@@ -358,8 +377,9 @@ are the usual choice.
 
 ## 7. Libraries that provide it
 
-PnP is in almost every computer vision library. The table lists well-known ones.
-Read each row as: where to find it, which languages, and what to call.
+PnP is in almost every computer vision library, and the table below lists the
+well-known ones. Read each row as where to find it, which languages it covers,
+and what to call.
 
 | Library | Languages | What to call | Note |
 | --- | --- | --- | --- |
@@ -373,26 +393,26 @@ Read each row as: where to find it, which languages, and what to call.
 
 ## 8. Why PnP, and what it costs
 
-This section answers the four questions for PnP: what it is, what it does for you,
-why it rather than the obvious alternative, and what it costs.
+This section answers the four questions for PnP: what it is, what it does for
+you, why it rather than the obvious alternative, and what it costs.
 
-PnP is the geometry that turns known points and their pixels into a pose. It gives
-you a full 6-DoF pose from one colour picture, in well under a millisecond, with a
-reprojection error that tells you how well it fits.
+PnP is the geometry that turns known points and their pixels into a pose. So it
+gives you a full 6-DoF pose from one colour picture, in well under a
+millisecond, with a reprojection error that tells you how well it fits.
 
-The obvious alternative is a depth camera. A depth camera gives a 3D point for
-every pixel, and a matching method such as iterative closest point fits the
-object's shape to those points. That needs no printed marker and no known feature
-points. But depth cameras struggle with shiny, black and see-through surfaces, and
-their depth noise at 0.4 m is a millimetre or more. PnP needs only a colour camera,
-works on objects that depth cameras cannot see, and is precise when the points are
-well spread. Many systems use both: PnP for a marker on a fixture, and depth for
-the parts in it.
+The obvious alternative is a depth camera, which gives a 3D point for every
+pixel, so that a matching method such as iterative closest point can fit the
+object's shape to those points. That needs no printed marker and no known
+feature points. However, depth cameras struggle with shiny, black and
+see-through surfaces, and their depth noise at 0.4 m is a millimetre or more.
+PnP, in contrast, needs only a colour camera, works on objects that depth
+cameras cannot see, and is precise when the points are well spread. So many
+systems use both: PnP for a marker on a fixture, and depth for the parts in it.
 
-The cost is this. You need the object's shape as points, and a reliable way to find
-those points in the picture. You need a calibrated camera. You need RANSAC when
-pairings can be wrong. And for flat targets you must plan the viewing angle,
-because a face-on marker gives a poor rotation.
+The cost is this. You need the object's shape as points, a reliable way to find
+those points in the picture, and a calibrated camera. You also need RANSAC
+whenever some pairings can be wrong. And for flat targets you must plan the
+viewing angle, because a face-on marker gives a poor rotation.
 
 ---
 
@@ -400,17 +420,17 @@ because a face-on marker gives a poor rotation.
 
 Book 6's
 [keypoints and object pose](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-describes two learned ways to get the same six numbers. A keypoint model, such as
-DOPE, finds named points on the object in a messy picture, and PnP from this page
-still turns those points into the pose: the network does the finding, and geometry
-does the rest. A render-and-compare model, such as MegaPose or FoundationPose,
-draws the object's CAD model at a guessed pose and corrects the guess until the
-drawing matches the photo. It needs no chosen points, and it works on an object it
-was not trained on. The learned models win in clutter, and on objects with no marker or
-clear corners to find. PnP alone still wins when you can put a marker or known
-points on the object, because it needs no training and no graphics processor, and
-its reprojection error tells you how well the pose fits, while a pose model gives
-no warning when it is wrong.
+describes two learned ways to get the same six numbers. A keypoint model, such
+as DOPE, finds named points on the object in a messy picture, and PnP from this
+page still turns those points into the pose. In other words, the network does
+the finding and the geometry does the rest. A render-and-compare model, such as MegaPose or
+FoundationPose, draws the object's CAD model at a guessed pose and corrects the
+guess until the drawing matches the photo. It needs no chosen points, and it
+works on an object it was not trained on. The learned models win in clutter, and
+on objects with no marker or clear corners to find. PnP alone still wins when
+you can put a marker or known points on the object, because it needs no training
+and no graphics processor. Its reprojection error also tells you how well the
+pose fits, while a pose model gives no warning when it is wrong.
 
 ---
 

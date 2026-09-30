@@ -1,24 +1,25 @@
 # Arm dynamics
 
-This page explains **arm dynamics**: how the torques at an arm's joints and the
-arm's motion are tied together. It answers five questions. What torque does each
-joint need to make a given move? What happens to the arm when you send it a given
-torque? How does a controller use those answers to hold the arm still and to follow
-fast moves closely? What changes when the gripper picks up a load? And how do you
-find out how heavy the parts of your own arm are?
+This page explains **arm dynamics**, which is how the torques at an arm's joints and
+the arm's motion are tied together. It answers five questions. What torque does each
+joint need to make a given move, and what happens to the arm when you send it a
+given torque? How does a controller use those answers to hold the arm still and to
+follow fast moves closely? And what changes when the gripper picks up a load, and
+how do you find out how heavy the parts of your own arm are?
 
-It is for a reader who has read the page on [PID control](01_pid-control.md). That
-page explains torque, error, feedback and feed-forward on a single joint, and
-mentions gravity compensation in one paragraph. This page takes that paragraph and
-builds it out for a whole arm. You do not need any mechanics beyond knowing that a
-heavier thing is harder to speed up. Every number on this page comes from a real run
-of the diagram script, `docs/diagrams/control_and_motion_2.py`, which simulates a
-two-joint arm rather than drawing its curves by hand.
+It is written for a reader who has already read the page on
+[PID control](01_pid-control.md). That page explains torque, error, feedback and
+feed-forward on a single joint, and it mentions gravity compensation in one
+paragraph. So this page takes that paragraph and builds it out for a whole arm. You
+do not need any mechanics beyond knowing that a heavier thing is harder to speed up.
+Every number on this page comes from a real run of the diagram script,
+`docs/diagrams/control_and_motion_2.py`, which simulates a two-joint arm rather than
+drawing its curves by hand.
 
 Dynamics is one of the most used techniques in arm software, even though most users
-never see it. It runs inside the drives of every torque-controlled arm, inside every
-arm simulator, and inside the collision detectors that stop an arm when it bumps a
-person.
+never see it. Instead it runs inside the drives of every torque-controlled arm,
+inside every arm simulator, and inside the collision detectors that stop an arm when
+it bumps a person.
 
 ## Contents
 
@@ -46,40 +47,42 @@ person.
 ## 1. What this page answers
 
 The [PID control](01_pid-control.md) page drives one joint that has a fixed inertia
-and a fixed pull of gravity. A real arm is not like that. The pull of gravity on the
-shoulder depends on how far out the rest of the arm reaches. The effort needed to
-speed up the shoulder depends on whether the elbow is bent or straight. And when one
-joint swings fast, it pushes and pulls on the others.
+and a fixed pull of gravity, but a real arm is not like that. The pull of gravity on
+the shoulder depends on how far out the rest of the arm reaches. In the same way, the
+effort needed to speed up the shoulder depends on whether the elbow is bent or
+straight. On
+top of that, when one joint swings fast it pushes and pulls on the others.
 
 A PID loop can still cope, because it corrects whatever error it measures. But it
-only corrects an error after the error has appeared. On a fast move, that means the
-arm always lags. The PID page's table of failures says what people add in that case:
-a torque worked out from a model of the arm's dynamics.
+only corrects an error after that error has appeared, so on a fast move the arm
+always lags behind. That is why the PID page's table of failures points to a torque
+worked out from a model of the arm's dynamics.
 
 This page is about that model. The **dynamics** of an arm are the rules that link
-the forces on it to the way it moves. Once you have them, you can work out, before
-the arm moves, most of the torque each motor will need. The feedback loop then only
-has to clean up the small part the model got wrong.
+the forces on it to the way it moves. So once you have them, you can work out most of
+the torque each motor will need before the arm moves at all. This means the feedback
+loop then only has to clean up the small part that the model got wrong.
 
 ---
 
 ## 2. The idea in one sentence
 
-The torque each joint needs is the sum of three parts: the arm's inertia times the
-acceleration you want, the pull of gravity on the arm in its current pose, and a
-part that depends on how fast the joints are already turning.
+Since the model has to cover gravity, inertia and the push between joints, here it
+is in one sentence. The torque each joint needs is the sum of three parts: the arm's
+inertia times the acceleration you want, the pull of gravity on the arm in its
+current pose, and a part that depends on how fast the joints are already turning.
 
-Here is an everyday example: carrying a full shopping bag at arm's length. Just
-holding the bag still takes effort, and more effort the further out your arm
-reaches. That is the gravity part. Swinging the bag up quickly takes extra effort
-at the start of the swing, and you must hold back at the end to stop it. That is the
-inertia part. And if you spin round on the spot while holding the bag, you feel it
-pull outwards, even though you are not trying to move your arm at all. That is the
-speed part.
+Here is an everyday example of those three parts, carrying a full shopping bag at
+arm's length. Just holding the bag still takes effort, and more effort the further
+out your arm reaches, and that is the gravity part. Swinging the bag up quickly takes
+extra effort at the start of the swing, and you must hold back at the end to stop it.
+That is the inertia part. And if you spin round on the spot while holding the
+bag, you feel it pull outwards even though you are not trying to move your arm at
+all, and that is the speed part.
 
-A robot arm's software does the same sums. It knows, from the arm's description,
-how heavy each link is and where its weight sits. From that it works out all three
-parts, for every joint, a thousand times a second.
+A robot arm's software does exactly the same sums. It knows from the arm's
+description how heavy each link is and where its weight sits. So from that it works
+out all three parts, for every joint, a thousand times a second.
 
 ---
 
@@ -87,10 +90,11 @@ parts, for every joint, a thousand times a second.
 
 ### The arm in the examples
 
-Every picture on this page uses the same arm. It has the same shape as the book's
-two-link arm from Book 1's [arm overview](../../../01_robotics-intro/03_arm/01_overview.md),
-but it is scaled down to the size of a real table-top arm, and it swings in a
-**vertical** plane, so that gravity pulls on it.
+Because the three parts are easier to compare on one example, every picture on this
+page uses the same arm. It has the same shape as the book's two-link arm from Book
+1's [arm overview](../../../01_robotics-intro/03_arm/01_overview.md). But it is
+scaled down to the size of a real table-top arm, and it swings in a **vertical**
+plane, so that gravity pulls on it.
 
 - Link 1, from the shoulder to the elbow, is 0.30 m long and weighs 2.0 kg.
 - Link 2, from the elbow to the tip, is 0.25 m long and weighs 1.0 kg.
@@ -105,7 +109,7 @@ but it is scaled down to the size of a real table-top arm, and it swings in a
 
 ### The three parts of a joint torque
 
-Written as one line, the torque the two joints need is:
+Once that arm is fixed, the torque its two joints need can be written as one line:
 
 ```
 torque = M(q) × acceleration  +  c(q, speed)  +  g(q)
@@ -114,24 +118,24 @@ torque = M(q) × acceleration  +  c(q, speed)  +  g(q)
 Here `q` stands for the two joint angles together. Each of the three parts has a
 name.
 
-**M(q) is the mass matrix.** It is the arm's inertia, as the joints feel it. A
-**matrix** here is just a small table of numbers, two rows by two columns for two
-joints. The top-left number is how hard it is to speed up the shoulder. It depends
-on the pose. With the elbow straight, the shoulder feels 0.246 kg m². With the elbow
-bent at a right angle, link 2 sits closer to the shoulder, and the shoulder feels
-only 0.171 kg m². The two numbers off the diagonal say how much speeding up one joint
+**M(q) is the mass matrix.** It is the arm's inertia as the joints feel it. Here a
+**matrix** is just a small table of numbers, two rows by two columns for two joints.
+The top-left number is how hard it is to speed up the shoulder, and it depends on the
+pose. With the elbow straight the shoulder feels 0.246 kg m². But with the elbow bent
+at a right angle, link 2 sits closer to the shoulder, so the shoulder feels only
+0.171 kg m². The two numbers off the diagonal say how much speeding up one joint
 pushes on the other.
 
 **c(q, speed) is the speed-dependent part.** It is often called the **Coriolis and
 centrifugal** part, after the two effects it contains. The **centrifugal** effect is
-the outward pull you feel when you spin a bag. The **Coriolis** effect is a sideways
-push that appears when one joint turns while another joint changes the distance from
-its axis. Both are zero when the arm is still, and both grow with the square of the
-speed.
+the outward pull you feel when you spin a bag. Meanwhile the **Coriolis** effect is a
+sideways push that appears when one joint turns while another joint changes the
+distance from its axis. Both are zero when the arm is still, because both grow with
+the square of the speed.
 
 **g(q) is the gravity part.** It is the torque each joint needs just to hold the arm
-up in this pose. It is largest when the arm reaches out flat and zero when the arm
-points straight up.
+up in this pose. So it is largest when the arm reaches out flat, and zero when the
+arm points straight up.
 
 The picture below splits the torque into these three parts for one fast move. The
 arm swings from (−45°, 90°) to (60°, −30°) in 0.8 seconds, along a smooth path that
@@ -140,26 +144,27 @@ starts and ends at rest, like the ones on the
 
 ![A two-joint arm swinging up in 0.8 s, and the torque at each joint split into inertia, speed and gravity parts](../../../images/control-and-motion/arm-dynamics/torque-parts.svg)
 
-The left panel shows the move. The two charts show, for each joint, the three parts
-as coloured lines and their sum as a dashed black line.
+The left panel shows the move itself, while the two charts show, for each joint, the
+three parts as coloured lines and their sum as a dashed black line.
 
-Read the shoulder chart first. Gravity is the largest part the whole time. It is
-between 4.0 and 6.8 N m. The inertia part is between −2.9 and +2.5 N m. It is
-positive while the arm speeds up and negative while it slows down. The speed part is
-small here, at most 0.45 N m. The total the shoulder needs goes from 1.5 up to
-8.8 N m.
+Read the shoulder chart first. Gravity is the largest part the whole time, at between
+4.0 and 6.8 N m, while the inertia part is between −2.9 and +2.5 N m. That inertia
+part is positive while the arm speeds up and negative while it slows down. The speed
+part is small here, at most 0.45 N m, so the total the shoulder needs goes from 1.5
+up to 8.8 N m.
 
-The elbow chart looks different. Its gravity part is small and steady, about 0.9 to
-1.1 N m. The speed part reaches 0.46 N m, which is almost as large as the inertia
-part and half of gravity. So on the lighter, outer joints of an arm, the speed part
-cannot be ignored on a fast move.
+The elbow chart looks different. Its gravity part is small and steady, at about 0.9
+to 1.1 N m. But its speed part reaches 0.46 N m, which is almost as large as the
+inertia part and half of gravity. So on the lighter, outer joints of an arm, the
+speed part cannot be ignored on a fast move.
 
 ### A worked example: one instant by hand
 
-Here is the torque at one instant, worked out by hand. The arm is at q1 = 30° and
-q2 = 45°. The shoulder is turning at 1 rad/s and the elbow at 2 rad/s. We want the
-shoulder to speed up at 3 rad/s² and the elbow to slow down at 2 rad/s². The numbers
-below come from the script.
+Since the three parts are easier to trust once you have seen them worked out, here
+is the torque at one instant, done by hand. The arm is at q1 = 30° and q2 = 45°, while the
+shoulder is turning at 1 rad/s and the elbow at 2 rad/s. So we want the shoulder to
+speed up at 3 rad/s² and the elbow to slow down at 2 rad/s². The numbers below all
+come from the script.
 
 First the mass matrix at this pose:
 
@@ -185,112 +190,115 @@ The gravity part:
 - shoulder: (2.0 × 0.15 + 1.0 × 0.30) × 9.81 × cos 30° + 0.3174 = 5.4148 N m
 
 The totals are 0.5769 − 0.2121 + 5.4148 = **5.7796 N m** at the shoulder and
-0.1004 + 0.0265 + 0.3174 = **0.4443 N m** at the elbow. More than nine tenths of the
-shoulder's torque, even in the middle of a move, is holding the arm up.
+0.1004 + 0.0265 + 0.3174 = **0.4443 N m** at the elbow. This means more than nine
+tenths of the shoulder's torque is holding the arm up, even in the middle of a move.
 
 The script also computes the same torques a second way, with the
-**recursive Newton–Euler algorithm**. It works outwards from the base, link by
-link, to find each link's acceleration. Then it works back inwards, adding up the
-force each joint must pass on to the links beyond it. That is the method most
-libraries use, because it works for any number of joints. It gives 5.7796 and
-0.4443 too, and along the whole move the two methods never differ by more than
+**recursive Newton–Euler algorithm**. It works outwards from the base, link by link,
+to find each link's acceleration. Then it works back inwards, adding up the force
+each joint must pass on to the links beyond it. That is the method most libraries
+use, because it works for any number of joints. It gives 5.7796 and 0.4443 too, and
+along the whole move the two methods never differ by more than
 0.000000000000004 N m.
 
 ### Inverse and forward dynamics
 
-The same equation can be used in two directions.
+That same equation can be used in two directions, and each direction has its own
+name.
 
 **Inverse dynamics** goes from motion to torques. You give it the angles, the speeds
 and the accelerations you want, and it gives back the torque each joint needs. The
-worked example above is inverse dynamics. A controller uses it to decide what to
+worked example above is inverse dynamics, and a controller uses it to decide what to
 send to the motors.
 
-**Forward dynamics** goes from torques to motion. You give it the angles, the speeds
-and the torques, and it gives back the accelerations that will result. To get them,
-it solves the equation for the acceleration:
+**Forward dynamics** goes the other way, from torques to motion. You give it the
+angles, the speeds and the torques, and it gives back the accelerations that will
+result. To find them, it solves the equation for the acceleration:
 
 ```
 acceleration = M(q)⁻¹ × (torque − c(q, speed) − g(q))
 ```
 
 The `⁻¹` means "undo the matrix", which a program does by solving two equations in
-two unknowns. Fed the 5.7796 and 0.4443 N m from the worked example, forward
-dynamics gives back exactly 3 and −2 rad/s².
+two unknowns. So when it is fed the 5.7796 and 0.4443 N m from the worked example,
+forward dynamics gives back exactly 3 and −2 rad/s².
 
-Forward dynamics is what a **simulator** does. It starts from a pose, works out the
-accelerations, moves the arm on by a tiny step of time, and repeats. The left panel
-of the next picture shows forward dynamics with zero torque: the arm starts still at
-(30°, 45°) and the motors are switched off.
+Forward dynamics is also what a **simulator** does, because it starts from a pose,
+works out the accelerations, moves the arm on by a tiny step of time, and repeats.
+The left panel of the next picture shows forward dynamics with zero torque, where the
+arm starts still at (30°, 45°) and the motors are switched off.
 
 ![With zero torque the arm falls and folds; with PD control alone it sags, and with gravity compensation it holds the target exactly](../../../images/control-and-motion/arm-dynamics/fall-and-hold.svg)
 
-The arm does not simply drop like a stiff stick. After 0.15 s the shoulder has
-fallen to 5.9°, but the elbow has bent up from 45° to 80.6°. After 0.25 s the
-shoulder is at −35.4° and the elbow at 98.7°. The falling upper link flings the lower
-link round. That folding comes from the off-diagonal numbers in the mass matrix and
-from the speed part. A controller that treats each joint on its own knows nothing
-about it.
+The arm does not simply drop as a stiff stick would. After 0.15 s the shoulder has
+fallen to 5.9°, but the elbow has bent up from 45° to 80.6°. Then after 0.25 s the
+shoulder is at −35.4° and the elbow at 98.7°. This happens because the falling upper
+link flings the lower link round, and that folding comes from the off-diagonal
+numbers in the mass matrix and from the speed part. So a controller that treats each
+joint on its own knows nothing about it.
 
 ### Gravity compensation: holding still with no error
 
-When the arm is still, the speed and the acceleration are both zero. The equation
-then shrinks to one part:
+The simplest use of that equation is the one where nothing moves at all. When the
+arm is still, the speed and the acceleration are both zero, so the equation shrinks
+to a single part:
 
 ```
 torque needed to hold still = g(q)
 ```
 
-Adding g(q) to the controller's output is called **gravity compensation**. The PID
-page describes it in one paragraph. The right panel of the picture above shows what
-it does.
+Adding g(q) to the controller's output is called **gravity compensation**, and the
+PID page describes it in one paragraph. The right panel of the picture above shows
+what it does.
 
 A proportional-derivative (PD) controller, meaning a PID with no integral term, holds
-the arm at (30°, 45°) for 3 seconds. The pale blue arm is the target. Without gravity
-compensation, the red arm sags 5.5° at the shoulder and 0.9° at the elbow. A PD
-controller only pushes when there is an error, so it must keep an error to hold the
-arm up, just as the P controller did on the PID page. With gravity compensation, the
-green arm sits exactly on the target, with no error at all. The torque it sends is
-5.4148 N m at the shoulder and 0.3174 N m at the elbow, which is g(q) at that pose.
-The feedback part of the controller has nothing left to do.
+the arm at (30°, 45°) for 3 seconds, and the pale blue arm is the target. Without
+gravity compensation the red arm sags 5.5° at the shoulder and 0.9° at the elbow.
+This is because a PD controller only pushes when there is an error, so it must keep
+an error to hold the arm up, just as the P controller did on the PID page. With gravity
+compensation, however, the green arm sits exactly on the target with no error at all.
+The torque it sends is 5.4148 N m at the shoulder and 0.3174 N m at the elbow, which
+is g(q) at that pose. So the feedback part of the controller has nothing left to do.
 
-An integral term could also remove the sag, by slowly finding the same 5.4 N m. But it
-takes time to find it, and it must find it again every time the pose changes, because
-g(q) changes with the pose. Gravity compensation gives the right answer at every pose
-at once.
+An integral term could also remove the sag, by slowly finding the same 5.4 N m. But
+it takes time to find it, and it must find it again every time the pose changes,
+because g(q) changes with the pose. Gravity compensation, in contrast, gives the
+right answer at every pose at once.
 
 Gravity compensation is also how a **hand-guided** arm works. If the controller sends
-g(q) and nothing else, the arm floats. A person can push it anywhere and it stays
+g(q) and nothing else, the arm floats, so a person can push it anywhere and it stays
 where it is left. This is the "free drive" or "teach" mode of many arms.
 
 ### Feed-forward plus PID, and computed-torque control
 
-On a moving arm there are two common ways to use the whole model.
+Once the arm moves, gravity alone is not enough, so there are two common ways to use
+the whole model instead.
 
-The first is **feed-forward plus PID**. The controller works out the torque the
-planned motion needs, with inverse dynamics, and adds it to the output of an
-ordinary PID loop on each joint. The model supplies nearly all of the torque. The
-PID supplies the rest.
+The first is **feed-forward plus PID**. The controller works out the torque that the
+planned motion needs, using inverse dynamics, and adds it to the output of an
+ordinary PID loop on each joint. This means the model supplies nearly all of the
+torque and the PID supplies only the rest.
 
-The second is **computed-torque control**. The controller works out, from the
-errors, the acceleration it wants each joint to have: the planned acceleration, plus
-a spring-like pull towards the planned angle, plus a damper-like pull towards the
-planned speed. It then uses inverse dynamics, at the arm's measured pose and speed, to
-turn that acceleration into torques. Because the mass matrix is inside the loop, the
-same two gains give the same behaviour at every pose. In this example both joints are
-tuned to respond at 20 radians per second.
+The second is **computed-torque control**. Here the controller first works out, from the
+errors, the acceleration it wants each joint to have. That is the planned
+acceleration, plus a spring-like pull towards the planned angle, plus a damper-like
+pull towards the planned speed. Then it uses inverse dynamics, at the arm's measured pose and speed,
+to turn that acceleration into torques. Because the mass matrix is inside the loop,
+the same two gains give the same behaviour at every pose, and in this example both
+joints are tuned to respond at 20 radians per second.
 
-The picture below runs the same 0.8-second move four times, each with a different
-controller, and shows the error of each joint.
+The picture below runs the same 0.8-second move four times, each time with a
+different controller, and shows the error of each joint.
 
 ![The error of each joint during the move under four controllers: PID only, PID with gravity compensation, PID with full feed-forward, and computed torque](../../../images/control-and-motion/arm-dynamics/three-controllers.svg)
 
-The grey area is the move itself. The white area after it is 0.7 seconds of holding
-the end pose. The PID-only run starts with its integral already holding the arm up at
-the start pose, as it would after standing there for a while.
+The grey area is the move itself, while the white area after it is 0.7 seconds of
+holding the end pose. The PID-only run starts with its integral already holding the
+arm up at the start pose, as it would after standing there for a while.
 
-The table below collects the four runs. Each row is one controller. The columns give
-the largest error of each joint during the move, and the error of each joint at the
-end of the hold.
+The table below collects those four runs so that they can be compared directly. Read
+each row as one controller. The columns give the largest error of each joint during
+the move, and then the error of each joint at the end of the hold.
 
 | Controller | Largest shoulder error | Largest elbow error | Shoulder error at the end | Elbow error at the end |
 | --- | --- | --- | --- | --- |
@@ -300,49 +308,51 @@ end of the hold.
 | Computed torque | 0.092° | 0.38° | less than 0.0001° | less than 0.0001° |
 
 Gravity compensation alone helps the shoulder and the hold, but it does not help much
-while the arm is moving; at the elbow it is even slightly worse. Most of the moving
-error comes from the inertia and speed parts, which gravity compensation leaves out.
-The two controllers that use the whole model do much better. At the shoulder they cut
-the largest error by 50 to 500 times. At the elbow, feed-forward cuts it by 40 times
-and computed torque by about 4 times. The error they leave comes from the friction
-value that is 20 per cent too low. The computed-torque run shows it more than the
-feed-forward run, because it has no integral term to slowly push it away.
+while the arm is moving, and at the elbow it is even slightly worse. This happens
+because most of the moving error comes from the inertia and speed parts, which gravity
+compensation leaves out. So the two controllers that use the whole model do much
+better: at the shoulder they cut the largest error by 50 to 500 times, while at the
+elbow feed-forward cuts it by 40 times and computed torque by about 4 times. The error
+they do leave comes from the friction value that is 20 per cent too low. But the
+computed-torque run shows it more than the feed-forward run, because it has no
+integral term to slowly push it away.
 
 ### A payload changes the numbers
 
-A **payload** is whatever the gripper is holding. It adds mass at the very end of the
-arm, where it has the most leverage. A 0.5 kg payload at the tip of this arm is only
-one sixth of the arm's own 3 kg. Yet it raises the gravity torque at (30°, 45°) from
-5.41 to 7.01 N m at the shoulder, and from 0.32 to 0.63 N m at the elbow: the elbow's
-number doubles. On the 0.8-second move, the largest torque the shoulder needs rises
-from 8.8 to 12.1 N m.
+All the numbers above are for an empty gripper. But a **payload**, meaning whatever
+the gripper is holding, adds mass at the very end of the arm, where it has the most
+leverage. A 0.5 kg payload at the tip of this arm is only one sixth of the arm's own
+3 kg. Yet it raises the gravity torque at (30°, 45°) from 5.41 to 7.01 N m at the
+shoulder, and from 0.32 to 0.63 N m at the elbow, so the elbow's number doubles. On
+the 0.8-second move, the largest torque the shoulder needs rises from 8.8 to
+12.1 N m.
 
-If the controller's model does not know about the payload, it sends the wrong torque.
-The left panel below runs computed-torque control on the move with the 0.5 kg payload
-in the gripper.
+So if the controller's model does not know about the payload, it sends the wrong
+torque. The left panel below runs computed-torque control on the move with the 0.5 kg
+payload in the gripper.
 
 ![An unknown payload makes computed torque sag by 10 degrees at the elbow; fitting the holding torques at 20 still poses finds the payload's mass](../../../images/control-and-motion/arm-dynamics/payload-and-identification.svg)
 
 When the model thinks the gripper is empty, the elbow falls behind by up to 12.5°
-during the move, and it is still 10.5° low at the end of the hold. The shoulder ends
-1.1° off. When the model is told about the payload, the largest elbow error is 0.24°
-and the end error is zero.
+during the move, it is still 10.5° low at the end of the hold, and the shoulder ends
+1.1° off. But when the model is told about the payload, the largest elbow error is
+0.24° and the end error is zero.
 
 This is why arm makers ask you to enter the payload's mass and where its centre of
 mass sits, and why a gripper that picks up objects of different weights needs the
-controller to be told each time, or a feedback loop with an integral term to absorb
-the difference.
+controller to be told each time, or else a feedback loop with an integral term to
+absorb the difference.
 
 ### Finding the arm's masses
 
-All of this needs the masses, the centres of mass and the inertias of the links.
-The arm maker's description gives values, but they are often rounded, and they do
-not include your gripper, your cables or your payload. Measuring them on the real
-arm is called **identification**.
+Everything above needs the masses, the centres of mass and the inertias of the links.
+The arm maker's description gives values for them, but they are often rounded, and
+they do not include your gripper, your cables or your payload. So measuring them on
+the real arm has a name of its own: **identification**.
 
-The key fact that makes it easy is this: the torque is a sum of known terms, each
-multiplied by an unknown number made from the masses. For the gravity part of this
-arm, it is:
+The key fact that makes identification easy is that the torque is a sum of known
+terms, each multiplied by an unknown number made from the masses. For the gravity
+part of this arm, it looks like this:
 
 ```
 g1 = a × cos(q1) + b × cos(q1 + q2)
@@ -351,30 +361,32 @@ g2 =               b × cos(q1 + q2)
 
 Here a = (m1 × lc1 + m2 × L1) × 9.81 and b = m2 × lc2 × 9.81, where lc1 and lc2 are
 the distances from each joint to its link's centre of mass. The cosines can be worked
-out from the measured angles. Only a and b are unknown. That is a straight-line fit,
-the same problem the [least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+out from the measured angles, so only a and b are unknown. That makes it a
+straight-line fit, which is the same problem the
+[least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 page solves.
 
-The right panel of the picture shows it done. The arm stops at 20 random poses and
-records the torque each joint uses to hold still, with sensor noise of 0.05 N m added.
-Each dot is one pose. Plotted against cos(q1 + q2), the elbow's torques lie on a
-straight line through zero whose slope is b. The fit gives b = 1.232 N m with the
-gripper empty (the true value is 1.226) and b = 2.450 N m with the payload (true
-2.453). The payload's mass is the change in b divided by 9.81 × 0.25 m, which gives
-**0.50 kg**, the true value.
+The right panel of the picture shows that fit done. The arm stops at 20 random poses
+and records the torque each joint uses to hold still, with sensor noise of 0.05 N m
+added. So each dot in the panel is one pose. Plotted against cos(q1 + q2), the elbow's torques lie
+on a straight line through zero whose slope is b. The fit gives b = 1.232 N m with
+the gripper empty (the true value is 1.226) and b = 2.450 N m with the payload (true
+2.453). So the payload's mass is the change in b divided by 9.81 × 0.25 m, which
+gives **0.50 kg**, the true value.
 
 The inertias need more work, because they only show up when the arm accelerates. The
 usual method runs the arm along a special path that shakes every joint at several
-speeds, called an **exciting trajectory**, records the angles and motor currents, and
-fits all the unknowns at once with least squares. The
+speeds, called an **exciting trajectory**. Then it records the angles and motor
+currents, and fits all the unknowns at once with least squares. The
 [system identification](../../04_fitting-and-estimation/03_also-used/01_system-identification.md)
 page explains this in general. Friction is fitted at the same time, with its own
 unknown numbers.
 
 ### The steps as pseudocode
 
-The pseudocode below uses plain names and works in any language. The first part is
-inverse dynamics for the two-joint arm. A general library does the same with the
+Once all those pieces are in place, the whole method fits in a page of pseudocode.
+The code below uses plain names, so it works in any language, and the first part is
+inverse dynamics for the two-joint arm. A general library does the same job with the
 recursive Newton–Euler algorithm, for any number of joints.
 
 ```
@@ -424,55 +436,61 @@ returned, added to a PD or PID output.
 
 ## 4. Where it is used on a robot arm
 
+Because a dynamics model answers both "what torque?" and "what motion?", it turns up
+in many places on and around an arm, and the list below gives the main ones.
+
 **Inside the drives of torque-controlled arms.** Collaborative arms such as the Franka
 arms and the KUKA LBR iiwa run gravity compensation and dynamics feed-forward inside
-their controllers. libfranka's `franka::Model` class gives a program the arm's mass
-matrix, its Coriolis torques and its gravity torques at the current pose, so that a
-user's own torque controller can use them.
+their controllers. So libfranka's `franka::Model` class gives a program the arm's mass
+matrix, its Coriolis torques and its gravity torques at the current pose, which a
+user's own torque controller can then use.
 
 **Hand guiding and teaching.** The "free drive" button on many arms switches to pure
 gravity compensation. The arm holds itself up, and a person moves it by hand to teach
 it poses.
 
-**Impedance control.** An impedance controller makes the arm act like a soft spring.
-It only works if gravity is compensated, or the soft arm sags. The
+**Impedance control.** An impedance controller makes the arm act like a soft spring,
+but it only works if gravity is compensated, because otherwise the soft arm sags. The
 [impedance and force control](../03_also-used/01_impedance-and-force-control.md) page
 says that if the gravity model is wrong the arm drifts as soon as it is made soft;
 this page is where that model comes from.
 
 **Collision detection.** A collision detector compares the torque each joint is
-using with the torque inverse dynamics says it should need. A large gap means
-something the model does not know about is pushing on the arm, such as a person.
+actually using with the torque that inverse dynamics says it should need. So a large
+gap means something the model does not know about is pushing on the arm, such as a
+person.
 Book 6's [collision and failure detection](../../../06_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md#31-the-gap-between-expected-and-measured)
 page calls this the "expected torque". The better the model, the lower the alarm
 line can be set. The [safety monitoring](04_safety-monitoring.md) page covers the
 checks that act on such alarms.
 
 **Simulators.** Gazebo, MuJoCo, Drake and Isaac Sim all run forward dynamics, a
-thousand or more times per simulated second, to move a simulated arm. A policy trained
-in simulation, as described in Book 6, only works on the real arm if the simulator's
-masses are close to the real ones.
+thousand or more times per simulated second, to move a simulated arm. So a policy
+trained in simulation, as described in Book 6, only works on the real arm if the
+simulator's masses are close to the real ones.
 
 **Checking a trajectory before running it.** Inverse dynamics along a planned move
-gives the torque each motor will need. If that is above a motor's limit, the move
-must be slowed down before it is sent. Time-parameterisation tools such as TOPP-RA,
-named on the [trajectory generation](02_trajectory-generation.md) page, can take torque
-limits for exactly this reason.
+gives the torque each motor will need. So if that is above a motor's limit, the move
+must be slowed down before it is sent. That is why time-parameterisation tools such as
+TOPP-RA, named on the [trajectory generation](02_trajectory-generation.md) page, can
+take torque limits.
 
 **Payload checks.** After a grasp, the arm can hold still for a moment and compare its
-joint torques with the gravity model. The difference tells it the mass of what it
-picked up, as in the identification example. A result of zero means the grasp missed.
+joint torques with the gravity model. The difference then tells it the mass of what it
+picked up, as in the identification example, so a result of zero means the grasp
+missed.
 
 ---
 
 ## 5. Where it is useful, and where it is not
 
-A dynamics model helps most on fast moves, heavy arms, soft (impedance) control and
-collision detection. It helps least on slow moves of a stiff, geared, position-controlled
-arm, where the drive's own PID loops already keep the error small.
+The uses above are not all equally worthwhile, because a dynamics model helps most on
+fast moves, heavy arms, soft (impedance) control and collision detection. It helps
+least on slow moves of a stiff, geared, position-controlled arm, where the drive's own
+PID loops already keep the error small.
 
-The table below lists the common failures. Each row gives the situation, the sign you
-would see, and what people use instead or add.
+The table below lists the common failures. Read each row as one situation, giving the
+sign you would see and what people use instead or add to fix it.
 
 | Situation | The sign you would see | What people use instead or add |
 | --- | --- | --- |
@@ -484,20 +502,21 @@ would see, and what people use instead or add.
 | The arm touches something | the model's torque no longer matches, because the contact force is missing from it | [impedance and force control](../03_also-used/01_impedance-and-force-control.md), and a force sensor |
 | The arm only accepts position commands | there is no place to send a computed torque | use the dynamics only for checks and collision detection; leave control to the drive |
 
-The last row matters in practice. Many industrial arms, and most low-cost ones, only
-accept joint positions. Their drives do their own control inside. On such an arm you
-can still use dynamics to check torques and detect collisions, but you cannot send
-the controller's torque yourself.
+The last row of that table matters most in practice. Many industrial arms, and most
+low-cost ones, only accept joint positions, because their drives do their own control
+inside. So on such an arm you can still use dynamics to check torques and detect
+collisions, but you cannot send the controller's torque yourself.
 
 ---
 
 ## 6. Libraries that provide it
 
-You almost never write dynamics by hand for a real arm. You give a library the arm's
-description, usually a Unified Robot Description Format (URDF) file, which lists each
-link's mass, centre of mass and inertia. The library does the rest. The table below
-lists well-known ones. Each row gives the library, the languages it is used from, the
-functions to call, and a note.
+Since the equations grow quickly with the number of joints, you almost never write
+dynamics by hand for a real arm. Instead you give a library the arm's description,
+usually a Unified Robot Description Format (URDF) file, which lists each link's mass,
+centre of mass and inertia, and the library does the rest. The table below lists the
+well-known ones. Read each row as one library, giving the languages it is used from,
+the functions to call, and a note on what it is for.
 
 | Library | Languages | Functions or classes | Note |
 | --- | --- | --- | --- |
@@ -508,37 +527,37 @@ functions to call, and a note.
 | RBDL (Rigid Body Dynamics Library) | C++, Python | `InverseDynamics`, `ForwardDynamics`, `NonlinearEffects` | a small library with the same algorithms |
 | libfranka | C++ | `franka::Model` with `mass`, `coriolis`, `gravity` | the Franka arm's own model, identified by the maker |
 
-For identification there are also dedicated tools built on these, but the core is a
-least-squares fit, which NumPy's `numpy.linalg.lstsq` does in one call, as the diagram
-script shows.
+For identification there are dedicated tools built on these as well. But the core of
+it is a least-squares fit, which NumPy's `numpy.linalg.lstsq` does in one call, as the
+diagram script shows.
 
 ---
 
 ## 7. Why a dynamics model, and what it costs
 
-A dynamics model is the set of equations that link the torques at the joints to the
-arm's motion. It gives a controller most of the torque each joint needs before any
-error appears, holds the arm still against gravity with no error at all, and lets a
-simulator predict what the real arm will do.
+To put all of the above together, a dynamics model is the set of equations that link
+the torques at the joints to the arm's motion. This means it gives a controller most
+of the torque each joint needs before any error appears, holds the arm still against
+gravity with no error at all, and lets a simulator predict what the real arm will do.
 
 The obvious alternative is to use no model and let the feedback loop do all the work,
 with higher gains or a stronger integral term. That is what most position-controlled
 arms do, and on slow moves it works. But feedback only corrects an error after it has
 appeared, so the error grows with speed. In the example on this page, PID alone left a
-4.95° error at the shoulder on a 0.8-second move. Adding the model cut it to 0.009°,
-with the same PID gains. Higher gains would shrink the error too, but they make the
-arm stiff and noisy, and they push harder on anything it touches, which is the wrong
-direction for an arm that works near people.
+4.95° error at the shoulder on a 0.8-second move. But adding the model cut that to
+0.009°, with the same PID gains. Higher gains would shrink the error too, but they
+make the arm stiff and noisy, and they push harder on anything it touches, which is
+the wrong direction for an arm that works near people.
 
 The second alternative is a learned model of the arm.
 [Section 8](#8-the-learned-alternative) says why the usual practice is to use both.
 
 The costs are these. You need the masses, centres of mass and inertias of every link,
-and the maker's values may be rough. You must tell the controller about every payload.
-The model leaves out friction, cables and bending unless you add them. The equations
-are hard to check by hand beyond two or three joints, so you depend on a library and on
-a correct URDF file. And the full benefit needs an arm that accepts torque commands,
-which many arms do not.
+and the maker's values may be rough, while you must also tell the controller about
+every payload. The model leaves out friction, cables and bending unless you add them.
+The equations are hard to check by hand beyond two or three joints, so you depend on a
+library and on a correct URDF file. And the full benefit needs an arm that accepts
+torque commands, which many arms do not.
 
 ---
 
@@ -549,11 +568,11 @@ Book 6's
 are the learned version of this page. Most keep this physics model and add a small
 network that learns only what is left over: the gearbox friction, cable pull and
 wear that the equations leave out. A learned correction wins when those effects do
-not fit a simple number, such as friction that changes with speed and temperature,
-and it trains on the arm's own recordings, which are cheap and safe to collect. The
-physics model still wins as the base, because it needs only a handful of numbers
-per link and gives sensible answers everywhere, while a learned model needs hours
-of varied data and can give strange answers for moves it has not seen. That is why
+not fit a simple number, such as friction that changes with speed and temperature.
+It also trains on the arm's own recordings, which are cheap and safe to collect. But
+the physics model still wins as the base, because it needs only a handful of numbers
+per link and gives sensible answers everywhere. A learned model, in contrast, needs
+hours of varied data and can give strange answers for moves it has not seen. That is why
 the usual practice is to keep the physics model and let a learned model correct
 it. Book 6's
 [learned dynamics models](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)

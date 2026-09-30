@@ -1,16 +1,17 @@
 # Searching and matching
 
 This chapter covers the techniques that find the closest thing, and decide which
-thing is which. It answers three questions that come up again and again in
-robot-arm software. Which point, object or pose is nearest to this one? Where
-exactly is a known part, given a scan of it? And which of the objects seen now
-is which of the objects seen before? A fourth question comes up with camera
-pictures: which small spots in one picture show the same thing as spots in another?
+thing is which. Between them they answer three questions that come up again and
+again in robot-arm software. Which point, object or pose is nearest to this one?
+Where exactly is a known part, given a scan of it? And which of the objects seen
+now is which of the objects seen before? A fourth question comes up with camera
+pictures: which small spots in one picture show the same thing as spots in
+another?
 
 It is for a reader who knows what a point cloud, a frame and a camera picture
 are, from Books 1 and 2, but who has not met these algorithms before. This page
-is the map of the chapter. Each technique then has its own page with a worked
-example, pseudocode and a list of libraries.
+is the map of the chapter, and each technique then has its own page with a
+worked example, pseudocode and a list of libraries.
 
 ## Contents
 
@@ -24,37 +25,41 @@ example, pseudocode and a list of libraries.
 
 ## 1. What these techniques are for
 
-This family of techniques does one job: finding the closest thing, and deciding
-which thing is which.
+Those four questions look different from each other, but this family of
+techniques does one job behind all of them: finding the closest thing, and
+deciding which thing is which.
 
-A robot arm meets this job all the time. A depth camera gives a cloud of tens of
-thousands of points. The software needs, for each point, the few points next to
-it, to work out which way the surface faces. A gripper tip moves over a table,
-and the software needs the object nearest to it. A camera sees three mugs, and
-the software needs to know which mug is the one it was already carrying.
+A robot arm meets this job all the time, because a depth camera gives a cloud of
+tens of thousands of points. So for each of those points the software needs the
+few points next to it, to work out which way the surface faces. In the same way,
+a gripper tip moves over a table, and the software needs the object nearest to
+it. A camera sees three mugs, for example, and the software needs to know which
+mug is the one it was already carrying.
 
-The picture below shows the three questions on one table, seen from above. Each
-answer in it was computed by the diagram script, not drawn by hand.
+The picture below shows the three questions on one table, seen from above, and
+each answer in it was computed by the diagram script rather than drawn by hand.
 
 ![The three questions this chapter answers, on one table](../../images/searching-and-matching/overview/three-questions.svg)
 
 The first panel finds the object nearest to the gripper. The second moves a
-stored outline of a bracket onto a scan of the real bracket. The third pairs
+stored outline of a bracket onto a scan of the real bracket, and the third pairs
 each mug seen now with a mug seen one frame ago.
 
-All three share one idea. You measure how far apart two things are, with a
-number called a **distance** or a **cost**. Then you look for the smallest
-distance, or the set of pairs whose distances add up to the smallest total.
+All three panels share one idea, because in each of them you measure how far
+apart two things are with a number called a **distance** or a **cost**. Then you
+look for the smallest distance, or for the set of pairs whose distances add up
+to the smallest total.
 
 ---
 
 ## 2. The four techniques, in two groups
 
-The chapter has four technique pages, in two groups.
+Since every one of those jobs comes down to a distance, the chapter has four
+technique pages, split into two groups.
 
 The **most used** group holds the three techniques that nearly every robot arm with
-a camera runs, often many times a second. The other techniques in this book lean on
-them too.
+a camera runs, often many times a second. The other techniques in this book depend
+on them too.
 
 - [Nearest-neighbour search](02_most-used/01_nearest-neighbour-search.md) finds, for a query
   point, the closest point in a set, or the k closest, or all points within a
@@ -62,12 +67,13 @@ them too.
   measure the distance to every point.
 - [Iterative closest point (ICP)](02_most-used/02_iterative-closest-point.md) moves a model
   of a part onto a scan of the part. It pairs each model point with its nearest
-  scan point, moves the model to fit those pairs, and repeats.
+  scan point, moves the model to fit those pairs, and then repeats those two
+  steps.
 - [Assignment and matching](02_most-used/03_assignment-and-matching.md) pairs up two lists,
   such as the mugs seen one frame ago and the mugs seen now, so that each thing
   gets at most one partner and the total cost is as small as possible. The
-  Hungarian algorithm does this exactly. A greedy method does it approximately.
-  ICP's page also has a section on
+  Hungarian algorithm does this exactly, while a greedy method does it
+  approximately. ICP's page also has a section on
   [getting a first guess](02_most-used/02_iterative-closest-point.md#5-getting-a-first-guess-3d-features-and-global-registration)
   from 3D shape features, for when the part could be turned any way at all.
 
@@ -80,9 +86,9 @@ those that must find objects with printing or texture on them from a camera pict
   one movement of the object. It finds a known flat object, such as a label, and
   gives the pairs that a 3D pose calculation needs.
 
-The table below compares the four. Read it one row at a time: the row names the
-technique, and the columns say what goes in, what comes out, and where the
-technique usually fails.
+The table below compares the four techniques, so read it one row at a time. The
+row names the technique, while the columns say what goes in, what comes out, and
+where the technique usually fails.
 
 | Technique | What goes in | What comes out | Where it usually fails |
 |---|---|---|---|
@@ -91,48 +97,54 @@ technique usually fails.
 | Assignment (Hungarian or greedy) | two lists and a cost for every possible pair | a one-to-one pairing, and the things left without a partner | the costs are wrong, or objects are closer together than the measurement error |
 | Image features and matching | a stored picture of an object and a camera picture | pairs of matching spots, and the homography or pose that most of them agree on | the object has no texture, or a repeated pattern |
 
-The four build on each other. ICP runs a nearest-neighbour search in every
-round. Assignment often uses nearest-neighbour search to fill in its table of
-costs, or to throw away pairs that are clearly too far apart before it starts.
-Image feature matching pairs spots with a nearest-neighbour search among their
-descriptions, and its answer is often the first guess that ICP then makes exact.
+The four build on each other, because ICP runs a nearest-neighbour search in
+every round. Assignment often uses nearest-neighbour search to fill in its table
+of costs, or to throw away pairs that are clearly too far apart before it
+starts. Image feature matching pairs spots with a nearest-neighbour search among
+their descriptions, and its answer is often the first guess that ICP then makes
+exact.
 
 ---
 
 ## 3. Why the obvious method is not enough
 
-For each question there is an obvious method that is always right: try every
-possibility. For the nearest point, measure the distance to every point. For the
-best pairing, try every possible way of pairing the objects up.
+Each of those four techniques exists to avoid a simpler method, because for
+every one of the questions there is an obvious method that is always right: try
+every possibility. For the nearest point, that means measuring the distance to
+every point, and for the best pairing it means trying every possible way of
+pairing the objects up.
 
-The obvious method is often the right choice when the numbers are small. A
-table with ten objects needs ten distance checks, which takes no time. The
-trouble is how fast the work grows. The picture below shows it.
+Since a table with ten objects needs only ten distance checks, the obvious
+method is often the right choice when the numbers are small. The trouble is how
+fast the work grows as the numbers get bigger, and the picture below shows that
+growth.
 
 ![Trying every possibility grows much faster than the clever method](../../images/searching-and-matching/overview/work-grows.svg)
 
 The left panel matches every point of one scan to its nearest point in a second
 scan of the same size. Checking every pair needs 9,000,000 distance checks for
-3,000 points. The k-d tree in the diagram script needed 44,425, about 15 per
-point. The right panel pairs up objects. Trying every pairing of 12 objects
-means trying 479,001,600 pairings. The Hungarian algorithm needs roughly 12 × 12
-× 12 = 1,728 steps.
+3,000 points. However, the k-d tree in the diagram script needed 44,425, about
+15 per point. The right panel pairs up objects, where trying every pairing of 12
+objects means trying 479,001,600 pairings. Instead, the Hungarian algorithm
+needs roughly 12 × 12 × 12 = 1,728 steps.
 
 A depth camera with a 640 by 480 picture gives up to 307,200 points in each
-picture, and it gives 30 pictures a second. So checking every pair is not possible on a live camera, and
-the k-d tree is what makes point cloud work run at all.
+picture, and it gives 30 pictures a second. So checking every pair is not
+possible on a live camera, and the k-d tree is what makes point cloud work run
+at all.
 
 ---
 
 ## 4. How this chapter connects to the others
 
-This is the second of the seven families of techniques in this book. The
+These techniques are used throughout the book, because searching and matching is
+the second of the seven families of techniques in it. The
 [map of techniques](../01_what-techniques-are/04_the-map-of-techniques.md) shows
-all seven. Searching and matching connects to the others in these ways.
+all seven, and the list below says how this chapter connects to the others.
 
 - [Geometry and cameras](../02_geometry-and-cameras/01_overview.md) turns
-  pixels and depth into 3D points in the arm's frame. Those points are what this
-  chapter searches. ICP's answer is a
+  pixels and depth into 3D points in the arm's frame, and those points are what
+  this chapter searches. ICP's answer is a
   [rigid transform](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md), the same
   rotation and shift that chapter explains. Its
   [pose from points](../02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
@@ -153,18 +165,22 @@ all seven. Searching and matching connects to the others in these ways.
   and solves larger assignment problems with the
   [optimisation solvers](../08_decisions-and-task-logic/03_also-used/02_optimisation-solvers.md).
 
-Learned models, described in Book 6, do some of the same jobs. A learned tracker
-can follow objects from frame to frame, as
+Learned models, described in Book 6, do some of the same jobs. For example, a
+learned tracker can follow objects from frame to frame, as
 [tracking and motion](../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
-explains. A learned pose model can find where a known part is without ICP, as
+explains, and a learned pose model can find where a known part is without ICP, as
 [keypoints and object pose](../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-explains. Even then, the programmed techniques stay in the pipeline. A learned
-tracker still usually pairs its boxes with the Hungarian algorithm, and a learned
-pose is often finished off with a few rounds of ICP to make it more exact.
+explains. Even then, the programmed techniques stay in the pipeline, because a
+learned tracker still usually pairs its boxes with the Hungarian algorithm. A
+learned pose is also often finished off with a few rounds of ICP to make it more
+exact.
 
 ---
 
 ## 5. Where to read next
+
+The pages in this chapter build on one another, so the order below is the one to
+read them in.
 
 - Start with [nearest-neighbour search](02_most-used/01_nearest-neighbour-search.md). The
   other two pages use it.

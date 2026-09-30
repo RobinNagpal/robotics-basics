@@ -1,21 +1,24 @@
 # Fine-tuning
 
 This page answers one question. You have downloaded a model that someone else
-trained, and it almost does what your robot needs. How do you teach it the last
-part, using a small amount of your own data?
+trained, and it almost does what your robot needs, so how do you teach it the last
+part using only a small amount of your own data?
 
-The page explains the three usual ways to do this. You can freeze most of the model
-and train only a new last layer. You can add a small side path, called LoRA, and
-train only that. Or you can train every number in the model. The page says how much
-data and how much memory each way needs, what the model can forget along the way,
-and how to choose.
+The page explains the three usual ways to do this, and they differ mainly in how
+much of the model you allow training to change. You can freeze most of the model and
+train only a new last layer, or you can add a small side path called LoRA and train
+only that, or you can train every number in the model. For each of the three the
+page says how much data and how much memory it needs, what the model can forget
+along the way, and how to choose between them.
 
-It is for a reader who has read the chapter so far. You should know what a layer, a
-backbone, a head and a parameter are, from
+It is for a reader who has read the chapter so far, because it uses words that the
+earlier pages introduced. You should know what a layer, a backbone, a head and a
+parameter are, from
 [inside a neural network](../../01_what-models-are/03_inside-a-neural-network.md). You should also know what
 pretraining is, from
 [where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md#7-pretraining-then-fine-tuning).
-That page introduced fine-tuning in one section. This page goes inside it.
+That page introduced fine-tuning in a single section, whereas this page goes inside
+it and explains how the work is actually done.
 
 ## Contents
 
@@ -39,10 +42,11 @@ Fine-tuning means taking a model that was already trained on a large, general pi
 of data, and training it a little more on a small pile of your own data, so that it
 does your job.
 
-Here is an everyday example. An experienced lorry driver joins a new company. The
-driver does not relearn how to steer or brake. The driver learns the new routes and
-where the loading bays are. In the same way, a pretrained seeing model already knows
-edges, surfaces and shapes. It only needs to learn what your parts look like.
+Here is an everyday example. When an experienced lorry driver joins a new company,
+the driver does not relearn how to steer or brake, and instead learns only the new
+routes and where the loading bays are. In the same way a pretrained seeing model
+already knows about edges, surfaces and shapes, so it only needs to learn what your
+own parts look like.
 
 The model you start from is called the **pretrained model**. Its numbers are the
 **pretrained weights**. Most pretrained models are split into a **backbone**, the
@@ -55,8 +59,9 @@ describes this split for pictures.
 
 ## 2. Three ways to fine-tune
 
-The three ways differ in which numbers training is allowed to change. A number that
-training may not change is called **frozen**.
+The three ways differ in which numbers training is allowed to change, and that
+single difference is what decides their cost. A number that training may not change
+is called **frozen**.
 
 ![The same small network three times: only the head is red; a small side path and the head are red; everything is red](../../../images/what-models-are/fine-tuning/three-ways-to-fine-tune.svg)
 
@@ -64,25 +69,30 @@ Grey parts are frozen and red parts are trained. The counts under each network a
 for the small network of the worked example in [section 4](#4-a-worked-example-50-examples-four-ways).
 
 **Way 1: freeze the backbone and train a new head.** You keep every number in the
-backbone as it was. You throw away the old head and put a new, small head in its
-place. Only the new head is trained. People also call this a **linear probe** when
-the new head is a single layer. It is the cheapest way. It works when the backbone
-already turns your pictures into numbers that separate your answers well.
+backbone exactly as it was, and then you throw away the old head and put a new, small
+head in its place, so that only the new head is trained. People also call this a
+**linear probe** when the new head is a single layer. It is the cheapest of the three
+ways, because so few numbers change, and it works whenever the backbone already turns
+your pictures into numbers that separate your answers well.
 
 **Way 2: add a small side path and train only that.** You keep every original number
-frozen. You add a few small extra layers next to or inside the old ones, and train
-only those, plus usually a new head. These extra layers are called **adapters**. The
-most used kind of adapter is **LoRA**, which stands for **low-rank adaptation**.
-[Section 3](#3-lora-in-plain-words-with-real-counts) explains it. This way lets the
-backbone's behaviour change a little, while training very few numbers.
+frozen, but you add a few small extra layers next to or inside the old ones, and then
+train only those together with a new head. These extra layers are called
+**adapters**, and the most used kind of adapter is **LoRA**, which stands for
+**low-rank adaptation** and is explained in
+[section 3](#3-lora-in-plain-words-with-real-counts). This way is useful because it
+lets the backbone's behaviour change a little while still training very few
+numbers.
 
-**Way 3: full fine-tuning.** Every number in the model may change. This is the most
-flexible way. It needs the most memory, and it is the most likely to forget what the
-model knew before.
+**Way 3: full fine-tuning.** Every number in the model may change, which makes this
+the most flexible of the three ways. However that flexibility has a price, because it
+needs the most memory and it is the most likely to forget what the model knew
+before.
 
-There are mixtures too. A common one is to freeze the first layers of the backbone
-and train the rest. The first layers find edges and colours, which are the same for
-every job, so they rarely need to change.
+There are mixtures of these three ways as well, and a common one is to freeze the
+first layers of the backbone while training all the rest. This works because the
+first layers find edges and colours, which look the same for every job, so they
+rarely need to change at all.
 
 ---
 
@@ -93,18 +103,19 @@ numbers into 4,096 numbers has a grid of 4,096 rows and 4,096 columns. That is
 16,777,216 numbers. The large language models inside vision-language-action models,
 such as the one inside OpenVLA, are built from many layers of about this size.
 
-Full fine-tuning would change all 16,777,216 numbers in this one grid. LoRA leaves the
-grid frozen. Instead it adds a change to the grid, and it builds that change from two
-thin grids multiplied together.
+Full fine-tuning would change all 16,777,216 numbers in this one grid, whereas LoRA
+leaves the grid frozen and adds a separate change to it, building that change from
+two thin grids multiplied together.
 
 - Grid A has a few rows and 4,096 columns.
 - Grid B has 4,096 rows and a few columns.
 - B multiplied by A gives a full 4,096 by 4,096 grid of changes.
 
-The "few" is called the **rank**. A rank of 32 means grid A has 32 rows and grid B has
-32 columns. The two thin grids together hold 32 x (4,096 + 4,096) = 262,144 numbers.
-That is 1.56 % of the full grid. The layer then works out its answer with the frozen
-grid plus the change, so the original numbers are never touched.
+The "few" is called the **rank**, so a rank of 32 means that grid A has 32 rows and
+grid B has 32 columns. Together the two thin grids then hold 32 x (4,096 + 4,096) =
+262,144 numbers, which is only 1.56 % of the full grid. The layer works out its answer
+using the frozen grid plus the change, which means the original numbers are never
+touched.
 
 ![A 4,096 by 4,096 grid next to two thin grids B and A, and a bar chart of the trained share for ranks 4 to 64](../../../images/what-models-are/fine-tuning/lora-in-numbers.svg)
 
@@ -123,14 +134,14 @@ many numbers LoRA trains for this one layer, and what share of the full grid tha
 | 64 | 524,288 | 3.12 % |
 
 Why does such a thin change work? The authors of LoRA found that the change which
-fine-tuning makes to a large pretrained model usually has a simple shape. A simple
-change can be written well with two thin grids. You lose a little flexibility. In
-return you train and store far fewer numbers.
+fine-tuning makes to a large pretrained model usually has a simple shape, and a
+simple change can be written well with only two thin grids. You do lose a little
+flexibility this way, but in return you train and store far fewer numbers.
 
-LoRA has two further benefits on a robot. First, the side path is a small separate
-file. You can keep one pretrained model and several small LoRA files, one per task,
-and load the one you need. Second, you can switch the side path off. The model is
-then exactly the pretrained model again.
+LoRA has two further benefits on a robot. First, because the side path is a small
+separate file, you can keep one pretrained model together with several small LoRA
+files, one for each task, and load only the one you need. Second, you can switch the
+side path off, and the model is then exactly the pretrained model again.
 
 OpenVLA's own LoRA script uses a rank of 32 and adds LoRA to every fully connected
 layer. The [LoRA paper](https://arxiv.org/abs/2106.09685) reports that, for the
@@ -157,9 +168,10 @@ The set-up is this.
 4. The network is trained four ways, for 3,000 steps each, and tested on 2,000 new
    examples it never saw.
 
-The error is the **mean squared error**: the average of the squared difference between
-the answer and the right answer. Lower is better. A model that always guessed the
-average answer would score 0.487.
+The error is the **mean squared error**, which is the average of the squared
+difference between the answer and the right answer, so a lower number is better. To
+give the numbers a scale, a model that always guessed the average answer would score
+0.487.
 
 The table below gives the result. Read each row as one way of training: how many
 numbers it trained, its error on the new job, and its error on the old job afterwards.
@@ -187,44 +199,48 @@ Four things show up.
   fine-tuning pulls ahead.
 - **Full fine-tuning damaged the old job.** The next section is about this.
 
-This is one small run. With another set-up the order of the first three rows can
-change. The first and last points above hold in general.
+This is only one small run, so with another set-up the order of the first three rows
+can change. However the first and the last of the four points above hold in
+general.
 
 ---
 
 ## 5. Forgetting
 
-When full fine-tuning changes the backbone, it changes the features that the old
-head relied on. The old job gets worse. This is called **catastrophic forgetting**.
-The word "catastrophic" is historical. The loss is often partial, as here.
+When full fine-tuning changes the backbone, it also changes the features that the
+old head relied on, so the old job gets worse. This is called **catastrophic
+forgetting**, although the word "catastrophic" is historical and the loss is often
+only partial, as it is here.
 
 ![Two panels of training curves: on the left all fine-tuning ways reach low error on the new job; on the right, full fine-tuning's error on the old job jumps to 0.098 while head-only stays at 0](../../../images/what-models-are/fine-tuning/forgetting-in-a-real-run.svg)
 
 The left panel shows the error on the new job during training. The right panel shows
 the error on the old job during the same training.
 
-On the right, the green line stays at 0. Freezing the backbone means the old job's
-features cannot change. The red line jumps to 0.098 within 50 steps: full
-fine-tuning bent the backbone towards the new job straight away. The orange line is
-LoRA with its side path switched on. It damages the old job too, by 0.049. But
-switching the side path off gives back the pretrained model exactly, with an error
-of 0.000.
+On the right, the green line stays at 0, because freezing the backbone means the old
+job's features cannot change at all. The red line jumps to 0.098 within 50 steps,
+which shows that full fine-tuning bent the backbone towards the new job straight
+away. The orange line is LoRA with its side path switched on, and it damages the old
+job too, by 0.049. However switching that side path off gives back the pretrained
+model exactly, with an error of 0.000.
 
 Forgetting matters on a robot in two places.
 
 - A vision-language-action model fine-tuned on your task can lose some of its general
-  knowledge of objects and words. It may follow your task well and then fail on a
-  new instruction. The
+  knowledge of objects and words, so it may follow your task well and then fail on a
+  new instruction it would once have understood. The
   [vision-language-action page](../../07_language-models/02_most-used/01_vision-language-action-models.md)
   describes how laboratories mix general data into training to reduce this.
 - A detector fine-tuned only on your five parts can stop finding people and hands,
-  if it once did. If a safety check depends on those classes, keep a separate model
-  for them.
+  if it once found them, so if a safety check depends on those classes you should
+  keep a separate model for them.
 
-The usual defences are these. Freeze more of the model. Use LoRA and keep the
-pretrained model beside it. Mix some of the original kind of data into your
-fine-tuning data. Train for fewer steps with a small **learning rate**, which is the
-size of each step in training.
+There are four usual defences against forgetting, and they can be combined. You can
+freeze more of the model, so that fewer of the old features are able to move. You can
+use LoRA and keep the pretrained model beside it, because the side path can then be
+switched off. You can mix some of the original kind of data into your fine-tuning
+data, so that the old job is still being practised. Finally you can train for fewer
+steps with a small **learning rate**, which is the size of each step in training.
 
 ---
 
@@ -242,8 +258,8 @@ usually start with.
 | Detector for your parts | a few hundred labelled pictures; 80 drawn pictures in a simple case | [object detection](../../03_seeing-models/02_most-used/01_object-detection.md), [Book 2's worked example](../../../02_perception/01_camera/02_finding-objects.md#64-fine-tuning-why-80-pictures-are-enough) |
 | Vision-language-action model for a new task | tens to hundreds of demonstrations | [vision-language-action models](../../07_language-models/02_most-used/01_vision-language-action-models.md) |
 
-With data at the small end of these ranges, freeze more. With data at the large end,
-you can afford to train more of the model.
+When your data is at the small end of these ranges you should freeze more of the
+model, whereas at the large end you can afford to train more of it.
 
 ### Memory
 
@@ -269,8 +285,9 @@ and the [OpenVLA README](https://github.com/openvla/openvla) gives its own.
 
 ![Horizontal bars of memory: openpi inference above 8 GB, openpi LoRA above 22.5 GB, OpenVLA LoRA about 27 GB and 72 GB, openpi full fine-tuning above 70 GB, with lines at 24 GB and 80 GB](../../../images/what-models-are/fine-tuning/memory-by-way-of-fine-tuning.svg)
 
-Each bar is a figure that a project states in its README. The two dotted lines are
-common graphics card sizes.
+Each bar is a figure that a project states in its own README, and the two dotted
+lines are common graphics card sizes, so you can see at a glance which jobs fit on
+which card.
 
 The table below gives the same figures. Read each row as: the project, what you want
 to do, and the memory its README states.
@@ -285,11 +302,12 @@ to do, and the memory its README states.
 | OpenVLA | full fine-tuning | a full node of 8 A100 cards |
 
 A **batch** is the number of examples the training program looks at before it makes
-one change. A smaller batch needs less memory, which is why OpenVLA's LoRA figure
-has two rows.
+one change, and a smaller batch needs less memory, which is why OpenVLA's LoRA figure
+appears as two separate rows.
 
-For a detector, memory is rarely the problem. A small YOLO model fine-tunes on an
-ordinary processor, with no graphics card at all, as the Book 2 example shows.
+For a detector, memory is rarely the problem at all, because a small YOLO model
+fine-tunes on an ordinary processor with no graphics card whatsoever, as the Book 2
+example shows.
 
 ---
 
@@ -297,8 +315,9 @@ ordinary processor, with no graphics card at all, as the Book 2 example shows.
 
 ### Fine-tuning a detector on your parts
 
-A cell sorts five kinds of machined bracket off a conveyor. A detector trained on the
-COCO photo collection knows cups and bottles, but not brackets.
+A cell sorts five kinds of machined bracket off a conveyor, however a detector
+trained on the COCO photo collection knows about cups and bottles and has never seen
+a bracket.
 
 1. Take a few hundred pictures of the brackets with the robot's own camera, in the
    cell's own light, with the parts in many positions.
@@ -310,8 +329,8 @@ COCO photo collection knows cups and bottles, but not brackets.
 4. Test on pictures the model never saw, including awkward ones: parts touching,
    parts half out of the picture, the light turned down.
 
-This works well because the job is close to the pretrained job. Finding objects is
-the same skill. Only the names and the shapes are new.
+This works well because the new job is close to the pretrained job, since finding
+objects is the same skill either way and only the names and the shapes are new.
 
 ### Fine-tuning a vision-language-action model on 50 demonstrations
 
@@ -329,21 +348,22 @@ A lab wants a vision-language-action model to put a cup on a saucer, on its own 
 4. Test on the real arm, with the cup in places the demonstrations did not use.
    Count successes out of, say, 20 tries.
 
-Fifty demonstrations is at the small end of the usual range. It can be enough when
-the scene stays much like the demonstrations. If the model fails when the cup moves,
-the usual fix is more demonstrations with more variety, not a different way of
-fine-tuning.
+Fifty demonstrations is at the small end of the usual range, so it can be enough as
+long as the scene stays much like the demonstrations themselves. If the model fails
+once the cup moves, then the usual fix is more demonstrations with more variety in
+them, rather than a different way of fine-tuning.
 
 ---
 
 ## 8. Where it works and where it does not
 
-Fine-tuning works when the new job is close to what the model was pretrained on. A
-detector pretrained on everyday photos adapts well to parts on a table, because both
-are colour pictures of solid objects.
+The two examples above both worked, so it is worth saying plainly when fine-tuning
+does not. Fine-tuning works when the new job is close to what the model was
+pretrained on, which is why a detector pretrained on everyday photos adapts well to
+parts on a table: both are colour pictures of solid objects.
 
-It works badly in these cases. The table gives each one, the sign you would see, and
-what people do instead.
+It works badly in the cases below, and the table gives each one together with the
+sign you would see and what people do instead.
 
 | When it goes wrong | The sign you would see | What people do instead |
 | --- | --- | --- |
@@ -357,7 +377,8 @@ what people do instead.
 
 ## 9. Libraries and scripts
 
-These are real tools. Each one is named with what it does for you.
+These are all real tools that you can download today, and each one is named below
+together with what it does for you.
 
 - **[Hugging Face PEFT](https://huggingface.co/docs/peft/index)** is a Python library
   for "parameter-efficient fine-tuning", which means training a small part of a model.
@@ -371,8 +392,8 @@ These are real tools. Each one is named with what it does for you.
 - **[openpi](https://github.com/Physical-Intelligence/openpi)** fine-tunes the π0 and
   π0.5 models. You first run `scripts/compute_norm_stats.py`, which measures the range
   of your robot's numbers, and then `scripts/train.py` with a training configuration.
-  Its original version uses the JAX library. Its newer PyTorch version does not yet
-  support LoRA training.
+  Its original version uses the JAX library, whereas its newer PyTorch version does
+  not yet support LoRA training.
 - **[Ultralytics](https://docs.ultralytics.com/modes/train/)** fine-tunes YOLO
   detectors with one call, `model.train(...)`. Its `freeze` option freezes the first
   layers. Book 2 has a

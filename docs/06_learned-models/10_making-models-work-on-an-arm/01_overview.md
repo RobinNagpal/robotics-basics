@@ -2,18 +2,20 @@
 
 The seven chapters before this one each describe a family of models: what they take
 in, what they give back and how they are trained. This chapter is about what happens
-after that. You have a model that works in a notebook, which here means a program on
-a computer that is right on a set of test pictures. How do you get from there to a
-model that works on a real robot arm, every day?
+after that, because having a model is not the same as having a working robot. You
+have a model that works in a notebook, which here means a program on a computer that
+is right on a set of test pictures, and the question this chapter answers is how you
+get from there to a model that works on a real robot arm, every day.
 
-This page is the chapter overview. It says what the chapter is for, lists its four
-pages in their two groups, and says how the chapter connects to the frontier pages in
-Book 3.
+This page is the chapter overview, so it says what the chapter is for, lists its four
+pages in their two groups, and then says how the chapter connects to the frontier
+pages in Book 3.
 
 It is for a reader who has read the first chapter of this book,
 [what models are](../01_what-models-are/01_what-a-model-is.md), and at least one of
-the family chapters. You should know what training, a test set and fine-tuning mean.
-[Learning signals](../01_what-models-are/04_learning-signals.md) and
+the family chapters. You should know what training, a test set and fine-tuning mean,
+and if you do not, then
+[learning signals](../01_what-models-are/04_learning-signals.md) and
 [where the data comes from](../01_what-models-are/05_where-the-data-comes-from.md)
 explain them.
 
@@ -29,15 +31,18 @@ explain them.
 
 ## 1. What this chapter is for
 
-A model that works in a notebook has passed one test. It gave the right answers on
-pictures that were kept back from training. That is a good start, but a robot arm
-asks much more of it.
+A model that works in a notebook has passed exactly one test, because it gave the
+right answers on pictures that were deliberately kept back from training. That is a
+good start, however it is only a start, since a robot arm asks much more of a model
+than a set of held-back pictures ever does.
 
-On an arm, the model sees your objects, in your light, from your camera. It may never
-have seen those in training. It must answer within a fixed time, many times a second,
-while the arm is moving. When it is wrong, the arm does something in the real world,
-and a wrong grasp can break a mug or hit a person. And it must keep working after
-the first good demonstration, on the hundredth try and on a different day.
+On an arm the model sees your objects, in your light, from your camera, and it may
+never have seen any of those during training. It must also answer within a fixed
+time, many times a second, while the arm is still moving. When it is wrong the arm
+does something in the real world, so a wrong grasp can break a mug or hit a person,
+which is a cost that a wrong answer in a notebook never carries. Finally it must keep
+working long after the first good demonstration, on the hundredth try and on a
+different day.
 
 So the gap between "it works in a notebook" and "it works on the arm" is really four
 separate questions. Does the model know your objects? Is it fast enough, and does it
@@ -48,15 +53,16 @@ when it is unsure? Each page of this chapter answers one of them.
 
 ## 2. The four pages
 
-The picture shows the four questions in the order a project usually meets them. A
-model has to pass all four before the arm can rely on it.
+Because the gap is four separate questions, this chapter has one page for each of
+them. The picture shows those four questions in the order a project usually meets
+them, and a model has to pass all four before the arm can rely on it.
 
 ![Four boxes in a row between "works in a notebook" and "works on the arm": fine-tuning, running a model on a robot and evaluation and failure in the most-used group, and uncertainty and confidence in the also-used group, each with the question it answers](../../images/making-models-work-on-an-arm/overview/notebook-to-arm.svg)
 
 Like every chapter in this book, this one splits its pages into two groups. The
 **most used** group holds the steps that nearly every project with a model on an arm
-goes through. The **also used** group holds a step that many projects need, but not
-all.
+goes through, whereas the **also used** group holds a step that many projects need
+but not all of them.
 
 The table below lists the four pages. Read each row across: the page, its group, and
 the question it answers.
@@ -68,29 +74,31 @@ the question it answers.
 | [Evaluation and failure](02_most-used/03_evaluation-and-failure.md) | most used | How do I measure whether the model really works on the arm, and how do I find and sort the ways it fails? |
 | [Uncertainty and confidence](03_also-used/01_uncertainty-and-confidence.md) | also used | How can the robot tell when the model is unsure, and what should it do then? |
 
-The three most-used pages follow one model through a project. Fine-tuning adapts it.
-Running it on the robot puts it in the loop. Evaluation checks whether the result is
-good enough and shows where it breaks. The also-used page adds one more safeguard. It
-lets the robot stop, look again or ask a person when the model is not sure, instead
-of acting on a guess.
+The three most-used pages follow one model through a whole project, so they are best
+read as one story. Fine-tuning adapts the model to your objects, then running it on
+the robot puts it inside the loop that drives the arm, and evaluation finally checks
+whether the result is good enough while showing you where it breaks. The also-used
+page then adds one more safeguard, because it lets the robot stop, look again or ask
+a person when the model is not sure, instead of acting on a guess.
 
 ---
 
 ## 3. In what order to read them
 
-Read the three most-used pages in order. Each one uses the words of the page before
-it. Fine-tuning comes first because it is usually the first thing you do to a
-downloaded model. Evaluation comes last because you can only measure a model once it
-runs on the arm.
+Since the three most-used pages follow one model through a project, you should read
+them in order, and each one also uses the words that the page before it introduced.
+Fine-tuning comes first because adapting a downloaded model is usually the first
+thing a project does to it, and evaluation comes last because you can only measure a
+model once it is already running on the arm.
 
 Read the uncertainty page when your robot must decide by itself whether to act on an
-answer. That is most robots that work near people, or with objects that break. It
-builds on section 5 of
+answer, which is the case for most robots that work near people or handle objects
+that break. It builds on section 5 of
 [running a model on a robot](02_most-used/02_running-a-model-on-a-robot.md#5-how-sure-the-model-is-and-why-it-can-be-sure-and-wrong),
-which shows that a model can be sure and wrong.
+which shows that a model can be sure and wrong at the same time.
 
-If you use only written techniques and no learned models, you do not need this
-chapter. Book 5 covers those, and its
+If you use only written techniques and no learned models, then you do not need this
+chapter at all. Book 5 covers those techniques instead, and its
 [safety monitoring](../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
 page is the written check that sits around any model as well.
 
@@ -98,10 +106,12 @@ page is the written check that sits around any model as well.
 
 ## 4. How this chapter connects to Book 3
 
-Book 3's [frontier chapter](../../03_frameworks/08_frontier/01_overview.md) records
-what actually happened to robot arm manipulation in 2026: which models exist, which
-data they were trained on and how they were measured. This chapter explains the ideas
-you need to read those pages. Those pages say what is true today.
+This chapter explains ideas rather than current results, so it has a partner
+elsewhere in the docs. Book 3's
+[frontier chapter](../../03_frameworks/08_frontier/01_overview.md) records what
+actually happened to robot arm manipulation in 2026: which models exist, which data
+they were trained on and how they were measured. This chapter explains the ideas you
+need in order to read those pages, whereas those pages tell you what is true today.
 
 Each page here has a partner there:
 

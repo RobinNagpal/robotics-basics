@@ -6,16 +6,16 @@ real arm, and what should the arm do on the runs where it is not?
 
 It is for a beginner who has read the earlier pages of this chapter, especially
 [running a model on a robot](02_running-a-model-on-a-robot.md) and
-[fine-tuning](01_fine-tuning.md). It covers test sets and real trials, how many
-trials you need, what to write down on every trial, how to sort failures, how the
-arm should behave when it fails, and how to move a model from simulation to the
-real arm.
+[fine-tuning](01_fine-tuning.md), because it uses the words those pages introduced.
+It covers test sets and real trials, how many trials you need, what to write down on
+every trial, how to sort failures, how the arm should behave when it fails, and
+finally how to move a model from simulation to the real arm.
 
 Every number on this page comes from a real run of the diagram script
-[`making_models_work.py`](../../../diagrams/making_models_work.py). The
-confidence intervals are computed exactly from the binomial distribution. The
-trial log in the worked example is a made-up example, and the page says so where
-it is used.
+[`making_models_work.py`](../../../diagrams/making_models_work.py), and the
+confidence intervals in it are computed exactly from the binomial distribution. The
+only exception is the trial log in the worked example, which is a made-up example,
+and the page says so again where it is used.
 
 ## Contents
 
@@ -42,10 +42,10 @@ A model is good enough for an arm when it succeeds often enough in real trials,
 counted over enough trials to be sure of the number, and when the arm does
 something safe on the trials where it fails.
 
-Here is an everyday example. A new driver who passes a written test knows the
-rules, but you only learn whether they can drive by watching them drive, many
-times, on different roads. You also want to know what they do when something goes
-wrong.
+Here is an everyday example. A new driver who passes a written test knows the rules,
+however you only learn whether they can actually drive by watching them drive many
+times on different roads. You also want to know what they do when something goes
+wrong, which the written test never shows you.
 
 ---
 
@@ -56,62 +56,69 @@ model on them and compare its answers with the right answers. The
 [how a model learns](../../01_what-models-are/02_how-a-model-learns.md) page
 explains why these examples must be kept back from training.
 
-A **trial** is one real attempt at the whole job on the arm. For example: start
-with a mug on a rack, and end with the mug on a tray. A trial either succeeds or
-fails. The **success rate** is the share of trials that succeed.
+A **trial**, by contrast, is one real attempt at the whole job on the arm, such as
+starting with a mug on a rack and ending with that mug on a tray. A trial either
+succeeds or fails outright, and the **success rate** is simply the share of trials
+that succeed.
 
-A test set score is quick and cheap. It is still worth having, because it catches a
-broken model before it goes near the arm. But it answers a different question.
-There are three reasons it does not predict the success rate.
+A test set score is quick and cheap, so it is still worth having, because it catches
+a broken model before it ever goes near the arm. However it answers a different
+question from the one you care about, and there are three reasons why it does not
+predict the success rate.
 
-- **The test set checks single steps. A trial is many steps in a row.** A movement
-  model decides a new action many times a second. A tiny mistake on one step moves
-  the arm a little off course, and the next picture is then one the model has never
-  seen. The [behaviour cloning](../../06_movement-models/02_most-used/01_behaviour-cloning.md#small-mistakes-add-up)
+- **The test set checks single steps, whereas a trial is many steps in a row.** A
+  movement model decides a new action many times a second, so a tiny mistake on one
+  step moves the arm a little off course, which means the next picture is one the
+  model has never seen. The [behaviour cloning](../../06_movement-models/02_most-used/01_behaviour-cloning.md#small-mistakes-add-up)
   page calls this compounding error.
-- **The test set measures closeness to a person's answer, not success.** A grasp
-  1 cm away from the one in the demonstration counts as an error on the test set.
-  On the arm, it may work perfectly. And a grasp that is very close may still let
-  the mug slip.
+- **The test set measures closeness to a person's answer rather than success.** A
+  grasp 1 cm away from the one in the demonstration counts as an error on the test
+  set, and yet on the arm it may work perfectly well. The reverse also happens,
+  because a grasp that is very close to the demonstration may still let the mug
+  slip.
 - **The test set was recorded on another day.** The light, the camera position and
   the objects in real trials are never quite the same.
 
-The picture below shows the first reason with simple numbers. Suppose each step of a
-trial is right with a fixed chance, and any one wrong step spoils the trial. Then a
-trial of N steps is clean with that chance multiplied by itself N times.
+The picture below shows that first reason with simple numbers. Suppose each step of a
+trial is right with some fixed chance, and suppose any single wrong step spoils the
+whole trial, so that a trial of N steps is clean only with that chance multiplied by
+itself N times.
 
 ![Three curves falling as trials get longer: a step that is right 99% of the time gives 61% clean trials at 50 steps and 13% at 200 steps](../../../images/making-models-work-on-an-arm/evaluation-and-failure/steps-and-trials.svg)
 
-Read each curve as one model. The red model is right on 99% of steps. That sounds
-very good. But at 10 decisions a second, a 5-second trial has 50 steps, and only
-60.5% of its trials are clean. A 20-second trial has 200 steps, and only 13.4% are
-clean. Even the green model, right on 99.9% of steps, has only 81.9% clean trials
-at 200 steps.
+Read each curve as one model. The red model is right on 99% of steps, which sounds
+very good indeed. However at 10 decisions a second a 5-second trial has 50 steps, so
+only 60.5% of its trials are clean, and a 20-second trial has 200 steps, where only
+13.4% are clean. Even the green model, which is right on 99.9% of steps, has only
+81.9% clean trials at 200 steps.
 
-Real trials are kinder than this. A good policy often recovers from a small mistake,
-and many wrong steps do no harm. So the curves are a warning, not a forecast. The
-point is that a per-step score can look almost perfect while the trial success
-rate is poor. The only way to know the success rate is to run trials.
+Real trials are kinder than this arithmetic suggests, because a good policy often
+recovers from a small mistake and many wrong steps do no harm at all. The curves are
+therefore a warning rather than a forecast, and the point they make is that a
+per-step score can look almost perfect while the trial success rate is poor. The only
+way to know the success rate is to run real trials.
 
 ---
 
 ## 3. Counting successes, and how sure the count is
 
-Say a model succeeds in 18 of 20 trials. The success rate is 90%. But if you ran 20
-more trials, you might see 16, or 20. The true success rate, the one you would see
-over thousands of trials, is somewhere near 90%, but you do not know exactly where.
+Say a model succeeds in 18 of 20 trials, which gives a success rate of 90%. However
+if you ran 20 more trials you might see 16, or you might see 20, so the true success
+rate, meaning the one you would see over thousands of trials, is somewhere near 90%
+without your knowing exactly where.
 
 A **confidence interval** gives the range. A 95% confidence interval is a range
 worked out so that, if you repeated the whole experiment many times, the range
 would contain the true rate 95 times in 100. The standard one for a count of
-successes is the **Clopper-Pearson interval**, also called the exact interval. You
-do not need its formula. A library computes it in one line, as
-[section 12](#12-libraries-and-tools) shows.
+successes is the **Clopper-Pearson interval**, which is also called the exact
+interval. You do not need its formula at all, because a library computes it in one
+line, as [section 12](#12-libraries-and-tools) shows.
 
 ![Left: six rows that all scored 90%, from 9 of 10 to 450 of 500, with their ranges shrinking. Right: a new model and an old method, 18 of 20 against 15 of 20, and 90 of 100 against 75 of 100](../../../images/making-models-work-on-an-arm/evaluation-and-failure/trials-and-intervals.svg)
 
-The left half of the picture shows what the number of trials does. Every row scored
-90%. The table gives the same ranges as numbers. Read each row as one experiment.
+The left half of the picture shows what the number of trials does, and every row in
+it scored exactly 90%. The table below gives the same ranges as numbers, so read each
+row as one experiment.
 
 | Successes | Success rate | 95% confidence interval |
 | --- | --- | --- |
@@ -122,39 +129,43 @@ The left half of the picture shows what the number of trials does. Every row sco
 | 180 of 200 | 90% | 85.0% to 93.8% |
 | 450 of 500 | 90% | 87.0% to 92.5% |
 
-So 18 of 20 only tells you the model is somewhere between fairly poor and nearly
-perfect. 90 of 100 tells you it is somewhere between 82% and 95%. To halve the width
-of the range, you need about four times as many trials.
+So 18 of 20 only tells you that the model is somewhere between fairly poor and nearly
+perfect, whereas 90 of 100 tells you it is somewhere between 82% and 95%. To halve
+the width of the range you need about four times as many trials.
 
-The right half shows the question people usually ask: is the new model better than
-the old method? With 20 trials each, 18 against 15 looks like a clear win. But the
-ranges, 68.3% to 98.8% and 50.9% to 91.3%, overlap a lot. With 100 trials each, 90
-against 75, the ranges are 82.4% to 95.1% and 65.3% to 83.1%. They only just
-overlap. That is when the difference starts to be real.
+The right half shows the question people usually ask, which is whether the new model
+is better than the old method. With 20 trials each, 18 against 15 looks like a clear
+win, however the two ranges of 68.3% to 98.8% and 50.9% to 91.3% overlap a great
+deal. With 100 trials each, 90 against 75, the ranges become 82.4% to 95.1% and 65.3%
+to 83.1%, so they only just overlap, and that is the point at which the difference
+starts to be real.
 
 Two more cases come up often.
 
-- **No failures at all.** If a model succeeds in 20 of 20 trials, the true failure
-  rate could still be as high as 16.8%. A quick rule, called the **rule of three**,
-  says that with no failures in N trials, the failure rate is probably below 3 / N.
-  For 20 trials that is 15%, close to the exact 16.8%. For 300 trials it is 1%.
-- **Two close methods.** Checking that two ranges do not overlap is a simple, rough
-  test. For a close comparison, run both methods on the same list of starting
-  setups and compare them setup by setup. This is called a **paired comparison**.
+- **No failures at all.** If a model succeeds in 20 of 20 trials, then the true
+  failure rate could still be as high as 16.8%. A quick rule called the **rule of
+  three** says that with no failures in N trials the failure rate is probably below
+  3 / N, so for 20 trials that gives 15%, which is close to the exact 16.8%, and for
+  300 trials it gives 1%.
+- **Two close methods.** Checking that two ranges do not overlap is a simple but
+  rough test, so for a close comparison you should run both methods on the same list
+  of starting setups and compare them setup by setup, which is called a **paired
+  comparison**.
 
 Book 3's
 [simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#82-the-statistical-problem-underneath)
-page makes the same point about research papers. It shows that 20 of 25 and 19 of
-25, as papers often report, cannot be told apart, and it describes the benchmarks
-and the efforts to fix them. This page does not repeat that. It is about your own
-model on your own arm.
+page makes the same point about research papers, because it shows that 20 of 25 and
+19 of 25, as papers often report, cannot be told apart at all, and it describes the
+benchmarks and the efforts to fix them. This page does not repeat any of that, since
+it is about your own model on your own arm.
 
 ---
 
 ## 4. Running fair trials
 
-A success rate means something only if the trials were fair. These rules make them
-fair.
+Since the number of trials decides how much the success rate tells you, the next
+question is how those trials are run. A success rate means something only if the
+trials were fair, and the six rules below are what make them fair.
 
 1. **Write down what success means before you start.** For example: "the mug is
    upright on the tray within 30 seconds, and nothing was touched except the mug".
@@ -177,9 +188,10 @@ fair.
 
 ## 5. What to log on every trial
 
-A success rate tells you how often the model fails. The log tells you why. Record
-these things on every trial, successes included, because a success that nearly
-failed is a warning too.
+Fair trials give you a success rate, which tells you how often the model fails,
+whereas a log is what tells you why it failed. Record the things below on every
+trial, including the successes, because a success that nearly failed is a warning
+as well.
 
 | What to log | Why |
 | --- | --- |
@@ -192,18 +204,20 @@ failed is a warning too.
 | every safety check that fired, and every time a person stepped in | these are failures, even if the trial ended well |
 | the result, the time taken, and a short note from the person watching | the note is often the fastest way to sort the failure |
 
-This is more data than it sounds. A few minutes of pictures from two cameras can be
-hundreds of megabytes. Keep it anyway. A failure you cannot replay is a failure you
-can only guess about. The tools in [section 12](#12-libraries-and-tools) store it in
-standard formats.
+This is more data than it sounds, because a few minutes of pictures from two cameras
+can come to hundreds of megabytes. Keep it anyway, since a failure you cannot replay
+is a failure you can only guess about. The tools in
+[section 12](#12-libraries-and-tools) store it in standard formats.
 
 ---
 
 ## 6. Sorting failures into kinds
 
-After a batch of trials, go through every failure and give it one kind. Useful
-kinds are named after the part of the system that went wrong, such as seeing,
-grasping, the movement policy, safety or time. Then count them.
+Once you have a log for every trial, you can use it to sort the failures. After a
+batch of trials, go through every failure and give it exactly one kind, where the
+useful kinds are named after the part of the system that went wrong, such as seeing,
+grasping, the movement policy, safety or time. Then count how many of each kind you
+have.
 
 ![Ten failures from 100 example trials, sorted by kind: five slips, two wrong spots, one timeout, one safety stop and one person stepping in](../../../images/making-models-work-on-an-arm/evaluation-and-failure/failure-kinds.svg)
 
@@ -213,35 +227,40 @@ causes half of all failures. The top two kinds cause 70%.
 
 Sorting pays off in three ways.
 
-- **It tells you what to fix first.** Fixing the slips could remove half the
-  failures. Fixing the one timeout would remove a tenth.
-- **It tells you whether a model is the problem at all.** A slip may be the
-  gripper's force, not the model. A wrong spot may be a camera that has moved and
-  needs [calibration](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md)
+- **It tells you what to fix first.** Fixing the slips could remove half of the
+  failures, whereas fixing the one timeout would remove only a tenth of them.
+- **It tells you whether a model is the problem at all.** A slip may come from the
+  gripper's force rather than from the model, and a wrong spot may come from a camera
+  that has moved and needs
+  [calibration](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md)
   again.
 - **It tells you what data to collect.** If most failures are slips, the next
   demonstrations should include lifts that almost slip and are caught. The
   [fine-tuning](01_fine-tuning.md) page shows how to train on them.
 
-After a fix, run the same list of setups again and sort again. A fix often moves
-failures from one kind to another rather than removing them.
+After making a fix, run the same list of setups again and sort the failures again,
+because a fix often moves failures from one kind to another instead of removing
+them.
 
 ---
 
 ## 7. What the arm should do when it fails
 
-Every model fails sometimes, so the arm needs a plan for it. The plan is not part
-of the model. It is written by people, usually as a
+Sorting failures tells you what to improve later, but the arm also needs to do
+something sensible at the moment a failure happens. Every model fails sometimes, so
+the arm needs a plan for it, and that plan is not part of the model at all. It is
+written by people, usually as a
 [behaviour tree](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
 or a [finite state machine](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
 around the model.
 
 ![A decision chart: a check says something is wrong; if anyone is at risk, stop; otherwise look again, retry, hand back to the written method, or ask a person](../../../images/making-models-work-on-an-arm/evaluation-and-failure/what-to-do-on-failure.svg)
 
-First, something must notice the failure. That can be a programmed check, such as
-"the gripper closed fully, so it holds nothing", or a learned
+First something must notice the failure, and that can be either a programmed check,
+such as "the gripper closed fully, so it holds nothing", or a learned
 [failure detector](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md).
-Then the arm chooses one of five responses, in this order.
+Once the failure has been noticed, the arm chooses one of five responses, and the
+order below matters.
 
 - **Stop.** If anything or anyone is at risk, the arm stops and waits for a person.
   This comes before everything else, and it is done by the
@@ -256,28 +275,31 @@ Then the arm chooses one of five responses, in this order.
   arm can retry the same failing grasp for ever.
 - **Hand back to the written method.** If the model fails the same step twice, the
   arm switches to a programmed method for this one job, if there is one. For
-  example, a slow, careful top-down grasp worked out from the geometry of the mug.
-  It is less clever, but it behaves the same way every time. Book 3's
+  example, a slow and careful top-down grasp worked out from the geometry of the
+  mug. Such a method is less clever than the model, however it behaves the same way
+  every time, which is exactly what you want after two failures. Book 3's
   [programmed methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md)
   page describes such methods.
 - **Ask a person.** If none of these apply, the arm stops the job and asks for help.
   The trial is saved, so it can become a new training example.
 
-Every one of these responses should also be logged, as in section 5. A model that
-succeeds only after two retries is not as good as its success rate says.
+Every one of these five responses should also be logged, exactly as section 5
+describes, because a model that succeeds only after two retries is not as good as its
+success rate alone would suggest.
 
 ---
 
 ## 8. From simulation to the real arm
 
-Real trials are slow. A **simulator**, a program that pretends to be the real world,
-can run thousands of trials overnight. So a common plan is to test in simulation
-first, and to run real trials only for models that pass. The difference between how
-a model does in simulation and how it does on the real arm is called the
+Running enough real trials takes a long time, which is why people try to do some of
+the work elsewhere first. A **simulator**, meaning a program that pretends to be the
+real world, can run thousands of trials overnight, so a common plan is to test in
+simulation first and to run real trials only for the models that pass. The difference
+between how a model does in simulation and how it does on the real arm is called the
 **sim-to-real gap**.
 
-Three methods shrink the gap. Other pages explain them in full, so this section
-only says how they fit into evaluation.
+Three methods shrink that gap. Other pages explain each of them in full, so this
+section only says how they fit into evaluation.
 
 - **Domain randomisation.** The simulator changes colours, light, masses and
   friction at random during training, so the real world looks like one more random
@@ -287,35 +309,37 @@ only says how they fit into evaluation.
   frictions, and set the simulator to match. Book 5's
   [system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
   page shows how.
-- **Test in simulation first.** Use the simulator as a filter. A model that fails in
-  simulation will almost certainly fail on the arm. A model that passes has earned
-  real trials, nothing more.
+- **Test in simulation first.** Use the simulator as a filter, because a model that
+  fails in simulation will almost certainly fail on the arm as well. A model that
+  passes has earned real trials, and nothing more than that.
 
 Book 3's
 [sim-to-real section](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#5-sim-to-real-what-actually-closed-the-gap)
 separates the gap into three parts: how things look, how the arm moves, and how
 things feel when touched. It explains that the first two now have good answers and the
-third does not. So for any job where the grip matters, a simulated success rate says
-little. Keep the two numbers apart. Report the simulated rate and the real rate
-separately, and never let a simulated rate stand in for a real one.
+third does not, so for any job where the grip matters a simulated success rate tells
+you very little. Keep the two numbers apart by reporting the simulated rate and the
+real rate separately, and never let a simulated rate stand in for a real one.
 
 ---
 
 ## 9. A worked example: a mug-picking model, from test set to 100 trials
 
-Here is the whole process for one job. A movement model has been
-[fine-tuned](01_fine-tuning.md) to pick a mug from a rack and put it on a tray. The
-old way is a written method that works out a grasp from the mug's shape.
+The sections above cover each part of evaluation separately, so here is the whole
+process for one job, from beginning to end. A movement model has been
+[fine-tuned](01_fine-tuning.md) to pick a mug from a rack and put it on a tray, and
+the old way of doing the job is a written method that works out a grasp from the
+mug's shape.
 
-1. **Test set.** On kept-back demonstration steps, the model's actions are very
-   close to the person's. This shows the training worked. It does not show the arm
-   will succeed, for the reasons in section 2.
-2. **Simulation.** In a simulated copy of the rack, the model succeeds in most
-   trials. This is enough to try it on the real arm, slowly, with a person at the
+1. **Test set.** On kept-back demonstration steps the model's actions are very close
+   to the person's, which shows that the training worked. However it does not show
+   that the arm will succeed, for the three reasons given in section 2.
+2. **Simulation.** In a simulated copy of the rack the model succeeds in most trials,
+   which is enough to justify trying it on the real arm, slowly, with a person at the
    emergency stop.
-3. **Twenty real trials.** The model succeeds 18 times. The written method, on the
-   same 20 setups, succeeds 15 times. The ranges are 68.3% to 98.8% and 50.9% to
-   91.3%. They overlap too much to say the model is better.
+3. **Twenty real trials.** The model succeeds 18 times, while the written method
+   succeeds 15 times on the same 20 setups. The two ranges are 68.3% to 98.8% and
+   50.9% to 91.3%, so they overlap far too much to say the model is better.
 4. **A hundred real trials each.** On a fixed list of 100 setups, in mixed order,
    the model succeeds 90 times and the written method 75 times. The ranges are 82.4%
    to 95.1% and 65.3% to 83.1%. They only just overlap. The model is probably

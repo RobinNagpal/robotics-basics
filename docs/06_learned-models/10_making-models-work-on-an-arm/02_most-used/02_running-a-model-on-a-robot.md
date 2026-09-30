@@ -4,13 +4,14 @@ The earlier documents in this chapter were about making a model: what it is, how
 learns and where its examples come from. This document is about what happens next,
 when a finished model is put on a real robot arm and used.
 
-It answers six questions. What is the difference between training a model and using
-it? How fast must a model be? Why do models run on a graphics card? Why are big
-models slower? What does it mean when a model is "sure", and why can it be sure and
-wrong? And what else must sit around a model to keep the arm safe?
+It answers six questions, and they follow one after another. What is the difference
+between training a model and using it? How fast must a model be? Why do models run on
+a graphics card? Why are big models slower? What does it mean when a model is "sure",
+and why can it be sure and wrong? And what else must sit around a model to keep the
+arm safe?
 
-It is for a complete beginner. You need to know what a robot arm and a camera are,
-and you should have read [what a model is](../../01_what-models-are/01_what-a-model-is.md). Nothing else is
+It is written for a complete beginner, so you only need to know what a robot arm and
+a camera are, and you should have read [what a model is](../../01_what-models-are/01_what-a-model-is.md). Nothing else is
 assumed.
 
 ## Contents
@@ -29,82 +30,87 @@ assumed.
 
 ## 1. Training and using are two different jobs
 
-A model has two lives.
+A model has two lives, and almost everything in this document follows from the
+difference between them.
 
-The first is **training**. The model is shown many examples and its numbers are
-changed, a little at a time, until its answers are good. Training happens once, or a
-few times. It usually happens on powerful computers in a data centre, away from the
-robot. It can take hours, days or weeks.
+The first life is **training**, during which the model is shown many examples and its
+numbers are changed a little at a time until its answers are good. Training happens
+once, or at most a few times, and it usually happens on powerful computers in a data
+centre far away from the robot, where it can take hours, days or even weeks.
 
-The second is using the model. The numbers are now fixed. The robot gives the model
-an input, such as a camera picture, and the model gives back an answer, such as
-"there is a mug at this spot". Using a trained model to get an answer is called
-**inference**. The word means "working something out".
+The second life is using the model, and by then its numbers are fixed. The robot
+gives the model an input, such as a camera picture, and the model gives back an
+answer, such as "there is a mug at this spot". Using a trained model to get an answer
+in this way is called **inference**, which is a word that simply means "working
+something out".
 
-During inference the model does not learn. If it gives a wrong answer, its numbers
-do not change. It will give the same wrong answer the next time it sees the same
-picture. To fix it, somebody must collect new examples and train it again.
+During inference the model does not learn at all, so if it gives a wrong answer its
+numbers do not change, which means it will give exactly the same wrong answer the
+next time it sees the same picture. To fix it, somebody must collect new examples and
+train the model again.
 
-The two jobs need different things. Training needs a lot of computing power and a lot
-of memory, but it does not need to be quick. Nobody is waiting for any single step.
-Inference needs much less computing power for each answer, but it must be quick,
-because the robot is waiting for the answer. The rest of this document is about
-inference.
+Because the two lives are so different, they need different things from a computer.
+Training needs a great deal of computing power and memory, but it does not need to be
+quick, since nobody is waiting for any single step of it. Inference needs much less
+computing power for each answer, however it must be quick, because the robot really
+is waiting for that answer. The rest of this document is about inference.
 
 ---
 
 ## 2. How fast is fast enough
 
-The time a model takes to give one answer is called its **latency**. It is measured
-in **milliseconds (ms)**. A millisecond is one thousandth of a second.
+Since inference must be quick, the next question is how quick. The time a model takes
+to give one answer is called its **latency**, and it is measured in **milliseconds
+(ms)**, where a millisecond is one thousandth of a second.
 
-How much latency is acceptable depends on the job. Three jobs on a robot arm run at
-very different speeds.
+How much latency is acceptable depends entirely on the job, because three jobs on a
+robot arm run at very different speeds.
 
-A typical camera takes 30 pictures every second. That is one new picture every
-33 milliseconds. A model that looks at every picture must finish within 33 ms, or it
-falls behind.
+A typical camera takes 30 pictures every second, which is one new picture every
+33 milliseconds, so a model that looks at every picture must finish within 33 ms or
+it falls behind.
 
 The **control loop** is the part of the robot's software that tells the motors what
-to do. It reads the joint sensors, works out a small correction, and sends a new
-command to each motor. Many arms run this loop hundreds of times a second. At 500
-times a second, each pass has only 2 ms.
+to do, because it reads the joint sensors, works out a small correction and then
+sends a new command to each motor. Many arms run this loop hundreds of times a
+second, so at 500 times a second each pass has only 2 ms to finish in.
 
 Deciding the next step of a task, such as "now pick up the mug", happens much less
-often. Taking a second or more to decide is usually fine, because the arm is busy
-doing the current step.
+often than either of those, so taking a second or more to decide is usually fine,
+because the arm is still busy doing the current step while the decision is made.
 
 ![One tenth of a second, showing control-loop ticks, camera pictures and three model speeds](../../../images/what-models-are/running-a-model-on-a-robot/time-budgets.svg)
 
-The picture shows one tenth of a second. The control loop ticks fifty times in that
-time. The camera takes three pictures. A small model finishes well within each
-picture's time, a medium one only just keeps up, and a large one is still busy at
-the end.
+The picture shows one tenth of a second, during which the control loop ticks fifty
+times while the camera takes only three pictures. A small model finishes well within
+each picture's time, a medium one only just keeps up, and a large one is still busy
+at the end.
 
-This is why a neural network is almost never placed inside the control loop itself.
-It is usually too slow to answer every 2 ms. Instead the work is split. The model
-runs at its own slower speed and gives a goal, such as a target position or a short
-list of the next few movements. A simple, fast, programmed controller then follows
-that goal at hundreds of steps a second. Some
+This is why a neural network is almost never placed inside the control loop itself,
+since it is usually far too slow to answer every 2 ms. Instead the work is split
+between two parts. The model runs at its own slower speed and gives a goal, such as a
+target position or a short list of the next few movements, and then a simple, fast,
+programmed controller follows that goal at hundreds of steps a second. Some
 [movement models](../../06_movement-models/01_overview.md) are designed around this
 idea. The [action chunking page](../../06_movement-models/02_most-used/02_action-chunking-transformers.md)
 shows one that gives a whole chunk of movements at once, so that it needs to be asked
 less often.
 
-Latency is not the only kind of speed. **Throughput** is how many answers a model
-gives each second. A slow model can sometimes have good throughput by working on
-several pictures at the same time. But a robot usually cares about latency, because
-it needs the answer about this picture, now.
+Latency is not the only kind of speed, because **throughput** is how many answers a
+model gives each second. A slow model can sometimes have good throughput by working
+on several pictures at the same time, however a robot usually cares about latency
+instead, since it needs the answer about this picture now.
 
 ---
 
 ## 3. CPU and GPU
 
-A computer has a main processor called the **CPU (central processing unit)**. A CPU
-has a small number of powerful workers, called **cores**. A typical CPU has between
-a few and a few dozen cores. Each core can do almost any job, one step after
-another, very quickly. The CPU runs the operating system, the robot's programs and
-the control loop.
+Meeting those time budgets depends on which processor the model runs on. A computer
+has a main processor called the **CPU (central processing unit)**, and a CPU has a
+small number of powerful workers called **cores**, usually between a few and a few
+dozen of them. Each core can do almost any job very quickly, one step after another,
+which is why the CPU runs the operating system, the robot's programs and the control
+loop.
 
 Many computers also have a **GPU (graphics processing unit)**. A GPU was first built
 to draw pictures on a screen. Drawing a picture means doing the same small sum for
@@ -133,23 +139,25 @@ GPU.
 
 ## 4. Model size and speed
 
-The size of a model is usually given as the number of numbers inside it. These
+Whichever processor you use, the model's own size decides much of its speed. The
+size of a model is usually given as the number of numbers inside it, and those
 numbers are called **parameters**, or **weights**. A small seeing model may have a
-few million. A large language model may have many billions.
+few million of them, whereas a large language model may have many billions.
 
-Every parameter is used at least once each time the model gives an answer. So more
-parameters mean more multiplications, and more multiplications take more time.
-Bigger models are usually slower.
+Every parameter is used at least once each time the model gives an answer, so more
+parameters mean more multiplications, and more multiplications take more time. That
+is why bigger models are usually slower.
 
-Bigger models also need more memory. Every parameter must be stored in the memory
-of the chip that runs the model. If each parameter takes 2 bytes of memory, a model
-with 1 billion parameters needs about 2 gigabytes just to hold its numbers. A model
-with 7 billion parameters needs about 14 gigabytes. A small robot computer may not
-have that much memory.
+Bigger models also need more memory, because every parameter must be stored in the
+memory of the chip that runs the model. If each parameter takes 2 bytes, then a model
+with 1 billion parameters needs about 2 gigabytes just to hold its numbers, and a
+model with 7 billion parameters needs about 14 gigabytes, which a small robot
+computer may simply not have.
 
-Bigger models are often better, though. They can hold more knowledge, and they cope
-better with unusual pictures. So choosing a model size is a trade. You want the
-largest model that still answers fast enough on the computer your robot has.
+Bigger models are often better, though, because they hold more knowledge and cope
+better with unusual pictures. Choosing a model size is therefore a trade, and what
+you want is the largest model that still answers fast enough on the computer your
+robot actually has.
 
 There are ways to make a model smaller or faster:
 
@@ -163,38 +171,40 @@ There are ways to make a model smaller or faster:
 - **Use a smaller picture.** A model that looks at a picture half as wide and half as
   tall has a quarter as many pixels to process.
 
-Each of these costs some accuracy. You check how much by testing the smaller model
-on the same tasks as the large one.
+Each of these four costs some accuracy, so you check how much it costs by testing the
+smaller model on exactly the same tasks as the large one.
 
 ---
 
 ## 5. How sure the model is, and why it can be sure and wrong
 
-Many models give a number with each answer that says how sure the model is. This
-number is called the **confidence**, or the **score**. It usually goes from 0 to 1.
-A score of 0.96 next to the word "mug" means the model is very sure it sees a mug.
+Speed is not the only thing a robot needs from a model, because it also needs to know
+how far to trust the answer. Many models give a number with each answer that says how
+sure the model is, and that number is called the **confidence**, or the **score**. It
+usually runs from 0 to 1, so a score of 0.96 next to the word "mug" means the model is
+very sure it sees a mug.
 
-The score is useful. A robot can ignore answers with a low score, or look again from
-another angle.
+The score is useful, because a robot can ignore answers with a low score, or go and
+look again from another angle.
 
-But the score is not a promise. A common kind of model can only choose from the
-names it was trained on. Suppose a model was trained to tell apart just three
-things: "mug", "bottle" and "box". Its scores for those three always add up to 1. It
-has no way to say "none of these". So when it is shown something it has never seen,
-such as a shoe, it must still share its score between "mug", "bottle" and "box". It
-may well give most of it to one of them.
+However the score is not a promise, since a common kind of model can only choose from
+the names it was trained on. Suppose a model was trained to tell apart just three
+things: "mug", "bottle" and "box". Its scores for those three always add up to 1, so
+it has no way at all to say "none of these". When it is then shown something it has
+never seen, such as a shoe, it must still share its score between "mug", "bottle" and
+"box", and it may well give most of that score to one of them.
 
 ![Scores from a model that knows only mug, bottle and box, for a mug, a bowl and a shoe](../../../images/what-models-are/running-a-model-on-a-robot/confidently-wrong.svg)
 
-The scores in this picture are made-up examples. They show what can happen. The
-model is right and sure about the mug, and it is also sure about the bowl and the
-shoe, where it is wrong.
+The scores in this picture are made-up examples that show what can happen. The model
+is right and sure about the mug, but it is equally sure about the bowl and the shoe,
+where it is wrong.
 
-A model is most trustworthy on pictures that look like its training examples. A
-picture unlike any of them is called **out of distribution**. The phrase means "out
+A model is most trustworthy on pictures that look like its training examples, and a
+picture unlike any of them is called **out of distribution**, which simply means "out
 of the range of things it was trained on". On such pictures the score can be high for
-no good reason. A new kind of object, strange lighting, a dirty camera lens or a
-reflection in a window can all cause this.
+no good reason at all, and a new kind of object, strange lighting, a dirty camera lens
+or a reflection in a window can each cause it.
 
 People do several things about it:
 
@@ -207,15 +217,17 @@ People do several things about it:
 - They test the model on pictures from the real place where the robot will work,
   not only on the pictures it was trained on.
 
-None of these makes the score perfect. So a robot should treat a model's answer as a
-good guess, and the rest of the system must be ready for it to be wrong.
+None of these four makes the score perfect, so a robot should treat a model's answer
+as a good guess rather than a fact, and the rest of the system must always be ready
+for that guess to be wrong.
 
 ---
 
 ## 6. The model is one part of a loop
 
-A model on its own does not move anything. It sits inside a loop with other parts.
-Each part does one job and passes its result on.
+Because a model's answer is only a good guess, it is never the whole system. A model
+on its own does not move anything, so it sits inside a loop together with other
+parts, where each part does one job and then passes its result on.
 
 1. The **camera** takes a picture.
 2. The **model** looks at the picture and gives an answer, such as "the mug is here,
@@ -225,16 +237,18 @@ Each part does one job and passes its result on.
    makes sure the path does not hit the table or anything else.
 5. The **controller** turns the path into motor commands, hundreds of times a
    second, and the arm moves.
-6. The world changes. The mug has moved, or the gripper has closed. The camera takes
-   a new picture, and the loop starts again.
+6. The world changes, because the mug has moved or the gripper has closed, so the
+   camera takes a new picture and the whole loop starts again.
 
 ![The camera, model, safety checks, planner, controller and arm in one loop](../../../images/what-models-are/running-a-model-on-a-robot/the-loop.svg)
 
-The picture shows the loop. If the safety checks do not accept the model's answer,
-the arm does not move on that answer. It stops, or the model is asked again.
+The picture shows that loop. If the safety checks do not accept the model's answer,
+then the arm does not move on it at all, and instead the arm stops or the model is
+asked again.
 
-The planner and the controller are often not neural networks. They are usually
-programs written by people, using the geometry of the arm. Book 3 covers them in
+The planner and the controller are often not neural networks, because they are
+usually programs written by people from the geometry of the arm. Book 3 covers them
+in
 [planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) and
 [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md).
 Some models do more than one of these jobs at once. A
@@ -248,9 +262,9 @@ between it and the motors.
 ## 7. Safety checks around a model
 
 Because a model can be wrong, and sure while it is wrong, the rest of the robot must
-not trust it blindly. Most real systems wrap a model in simple checks written by
-people. These checks are plain rules, so people can read them and know exactly what
-they do.
+not trust it blindly, which is why most real systems wrap a model in simple checks
+written by people. These checks are plain rules, so anyone can read them and know
+exactly what they do, which is the opposite of a model's numbers.
 
 The table below lists common checks. Read each row across: what is checked, and what
 the check stops from going wrong.
@@ -266,39 +280,42 @@ the check stops from going wrong.
 | After grasping, is the gripper really holding something? | carrying on as if the grasp worked when it did not |
 
 The speed and force limits usually live inside the controller or in the arm's own
-safety system, not in the robot's main program. That way they still work even if the
-main program has a mistake. Most industrial arms also have an **emergency stop**: a
-large red button that cuts the motors straight away.
+safety system rather than in the robot's main program, because that way they still
+work even if the main program has a mistake in it. Most industrial arms also have an
+**emergency stop**, which is a large red button that cuts power to the motors
+straight away.
 
-When a model is new, people also test it slowly. They run the arm at low speed, with
-a person watching and a hand near the emergency stop. They start with soft objects
-and an empty table. Only when the model has done well many times do they let it run
-faster.
+When a model is new, people also test it slowly at first. They run the arm at low
+speed with a person watching and a hand near the emergency stop, and they start with
+soft objects on an empty table. Only when the model has done well many times do they
+let it run faster.
 
 ---
 
 ## 8. Why use a model at all, and what it costs
 
-The obvious alternative to a neural network is a programmed rule. For example: "the
-mug is the largest red patch in the picture". A programmed rule is fast. It runs
-easily on a CPU. It is never sure and wrong in a surprising way, because you can read
-it and see what it does.
+Given everything a model costs, it is worth asking why anyone uses one. The obvious
+alternative to a neural network is a programmed rule, such as "the mug is the largest
+red patch in the picture". A programmed rule is fast and runs easily on a CPU, and it
+is never sure and wrong in a surprising way, because you can read it and see exactly
+what it does.
 
-The problem is that a rule breaks as soon as the world changes. A blue mug, a red
-plate or a shadow over the mug can each defeat "the largest red patch". A model
-trained on many varied examples copes with such changes far better. That is why
-models are used for jobs where the world varies a lot, such as recognising objects,
-choosing grasps and following spoken instructions.
+The problem is that such a rule breaks as soon as the world changes, since a blue
+mug, a red plate or a shadow over the mug can each defeat "the largest red patch". A
+model trained on many varied examples copes with those changes far better, which is
+why models are used for jobs where the world varies a lot, such as recognising
+objects, choosing grasps and following spoken instructions.
 
-The cost is everything in this document. A model needs a computer fast enough to run
-it, often with a GPU. It needs to be small enough to answer in time. Its answers come
-with a score that you cannot fully trust. And it needs programmed checks around it,
-because nobody can read its numbers and know what it will do on a picture it has
-never seen.
+The cost is everything else in this document. A model needs a computer fast enough to
+run it, often with a GPU, and it needs to be small enough to answer in time. Its
+answers come with a score that you cannot fully trust, and it needs programmed checks
+around it, because nobody can read its numbers and know what it will do on a picture
+it has never seen.
 
-So most robots mix the two. A model does the part that needs to cope with variety,
-such as finding the mug. Programmed parts do the parts that must be exact and safe,
-such as planning the path, driving the motors and checking the limits. The
+So most robots mix the two approaches rather than choosing between them. A model does
+the part that has to cope with variety, such as finding the mug, while programmed
+parts do everything that must be exact and safe, such as planning the path, driving
+the motors and checking the limits. The
 [programmed methods document](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md)
 describes those parts.
 

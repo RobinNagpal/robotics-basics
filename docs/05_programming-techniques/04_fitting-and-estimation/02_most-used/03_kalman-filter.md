@@ -2,20 +2,21 @@
 
 This page explains the Kalman filter: a way to keep a running estimate of a
 quantity that is measured again and again with noise, such as the distance to a
-table or the position of a part on a moving belt. It answers four questions.
-What do the two steps, predict and update, do? How much should each new reading
-be trusted? Where does a robot arm use the filter? And what makes it go wrong?
+table or the position of a part on a moving belt, and it answers four questions
+about doing that. What do the two steps, predict and update, do? How much should
+each new reading be trusted? Where does a robot arm use the filter? And what
+makes it go wrong?
 
 It is for a reader who has read the page on
 [least-squares fitting](01_least-squares-fitting.md), or who knows what an
 average and a spread of readings are. The page starts with a single number and
-moves to a position on a table. Every number on this page comes from a real run
-of the diagram script, `docs/diagrams/fitting_and_estimation.py`.
+then moves to a position on a table. Every number on this page comes from a real
+run of the diagram script, `docs/diagrams/fitting_and_estimation.py`.
 
-The filter is named after Rudolf Kálmán, who published it in 1960. It is used in
-nearly every machine that moves and senses: phones, drones, cars and robot arms.
-On an arm it appears most often in tracking objects the camera sees, and in
-smoothing sensor readings.
+The filter is named after Rudolf Kálmán, who published it in 1960, and it is
+used in nearly every machine that moves and senses: phones, drones, cars and
+robot arms. On an arm it appears most often in tracking objects the camera sees,
+and in smoothing sensor readings.
 
 ## Contents
 
@@ -47,18 +48,18 @@ smoothing sensor readings.
 
 ## 1. What this page answers
 
-Many readings on a robot arm come in a stream. A camera gives a picture 30 times
-a second. A force sensor gives a reading 1000 times a second. Each reading is a
-little wrong, and sometimes a reading is missing, for example when the arm's own
-body hides an object from the camera.
+Many readings on a robot arm come in a stream, because a camera gives a picture
+30 times a second and a force sensor gives a reading 1000 times a second. Each
+reading is a little wrong, and sometimes a reading is missing, for example when
+the arm's own body hides an object from the camera.
 
 The arm wants one steady value at each moment, not a shaking one. It also wants
 to know how far that value might be off. And when the quantity is changing, such
-as a part moving on a belt, it wants a value for the part's position now and a
-guess for its position a moment from now.
+as a part moving on a belt, it wants a value for the part's position now. It
+also wants a guess for its position a moment from now.
 
-The Kalman filter gives all three. It keeps an estimate and a measure of how
-sure it is, and improves both each time a reading arrives. It can also run
+The Kalman filter gives all three, because it keeps an estimate and a measure of
+how sure it is, and improves both each time a reading arrives. It can also run
 without a reading, which lets it carry on through a short gap.
 
 ---
@@ -69,16 +70,17 @@ without a reading, which lets it carry on through a short gap.
 moving; then move the prediction towards the reading by an amount that depends
 on which of the two you trust more.**
 
-Here is an everyday example. You are walking to a friend's house in the dark,
-and you know you walk about one metre per step. After ten steps you think you
+That one sentence describes the whole loop, and an everyday example shows how it
+feels. You are walking to a friend's house in the dark, and you know you walk
+about one metre per step. After ten steps you think you
 are about ten metres along, but you are not quite sure: each step could have
 been a little long or short. Then you see a lamp post you know is at eleven
 metres, but it is dark and you cannot judge exactly how far away it is. You do
-not throw away your step count, and you do not ignore the lamp post. You settle
+not throw away your step count, and you do not ignore the lamp post, but settle
 on something in between, closer to whichever you trust more. Then you carry on
 counting steps from that new position.
 
-Counting steps is the **predict** step. Looking at the lamp post is the
+Counting steps is the **predict** step, while looking at the lamp post is the
 **update** step. The Kalman filter does exactly this, with numbers for "how
 sure".
 
@@ -88,7 +90,8 @@ sure".
 
 ### What the filter keeps
 
-The filter keeps two things at all times.
+Since the filter has to carry its belief from one reading to the next, it keeps
+two things at all times.
 
 - The **estimate**: its best value for the quantity. For a part on a belt this
   could be its position in millimetres.
@@ -97,8 +100,9 @@ The filter keeps two things at all times.
   5 mm means the true value is usually within about 5 mm of the estimate, and
   gives a variance of 25 mm².
 
-Variances are used inside the filter because they add up simply. When two
-independent uncertainties combine, their variances add. Spreads do not.
+Variances are used inside the filter because they add up simply: when two
+independent uncertainties combine, their variances add, while their spreads do
+not.
 
 The filter also needs two numbers from you, both as variances.
 
@@ -110,10 +114,10 @@ The filter also needs two numbers from you, both as variances.
 
 ### Predict
 
-In the predict step the filter moves its estimate forward to the time of the
-next reading, using what it knows about how the quantity moves. If a belt
-carries the part 5 mm between pictures, the predicted position is the last
-estimate plus 5 mm.
+Once those four numbers are in place, the predict step moves the filter's
+estimate forward to the time of the next reading. It does this using what it
+knows about how the quantity moves. For example, if a belt carries the part 5 mm
+between pictures, the predicted position is the last estimate plus 5 mm.
 
 The prediction is less certain than the last estimate, because the belt might
 have slipped or sped up a little. So the variance grows by the process noise:
@@ -125,9 +129,10 @@ predicted variance = last variance + q
 
 ### Update
 
-In the update step a reading arrives. The filter compares it with the
-prediction. The difference, reading minus prediction, is called the
-**innovation**: it is the part of the reading the prediction did not expect.
+After that prediction, a reading arrives in the update step, and the filter
+compares it with the prediction. The difference, reading minus prediction, is
+called the **innovation**, because it is the part of the reading the prediction
+did not expect.
 
 The filter then moves the prediction part of the way towards the reading. The
 share it moves is called the **Kalman gain**, written `K`, and it is a number
@@ -139,22 +144,23 @@ new estimate = predicted estimate + K × (reading − predicted estimate)
 new variance = (1 − K) × predicted variance
 ```
 
-Read the gain like this. If the prediction is very unsure compared with the
-sensor, `K` is close to 1 and the new estimate is almost the reading. If the
-sensor is very noisy compared with the prediction, `K` is close to 0 and the
-reading barely moves the estimate. The new variance is always smaller than both
-the predicted variance and the sensor noise: combining two pieces of evidence
-gives a result more certain than either one alone.
+The gain reads like this: if the prediction is very unsure compared with the
+sensor, `K` is close to 1 and the new estimate is almost the reading. However,
+if the sensor is very noisy compared with the prediction, `K` is close to 0 and
+the reading barely moves the estimate. The new variance is always smaller than
+both the predicted variance and the sensor noise, because combining two pieces
+of evidence gives a result more certain than either one alone.
 
 ### A worked example: a block on a belt
 
-A block rides on a conveyor belt at 50 mm per second. A camera takes 10 pictures
-a second, so the block moves 5 mm between pictures. The camera's position
+Those two steps are easiest to follow on real numbers, so imagine a block riding
+on a conveyor belt at 50 mm per second. A camera takes 10 pictures a second, so
+the block moves 5 mm between pictures. The camera's position
 readings scatter by 4 mm, so `r = 16`. The belt is steady but not perfect, so
 `q = 1`. The filter starts with an estimate of 100 mm and a spread of 5 mm, a
 variance of 25.
 
-Step 1 goes like this.
+Starting from those numbers, the first step goes like this.
 
 1. Predict: the estimate becomes 100 + 5 = 105 mm. The variance becomes
    25 + 1 = 26, a spread of 5.1 mm.
@@ -163,18 +169,19 @@ Step 1 goes like this.
 4. The new estimate is 105 + 0.619 × 2 = 106.24 mm.
 5. The new variance is (1 − 0.619) × 26 = 9.90, a spread of 3.15 mm.
 
-The picture below shows this step as bell-shaped curves. Each curve's peak is at
-the value, and its width is the spread.
+The picture below shows this step as bell-shaped curves, where each curve's peak
+is at the value and its width is the spread.
 
 ![The last estimate, the prediction 5 mm further on, the measurement and the narrower updated estimate between them, drawn as bell curves](../../../images/fitting-and-estimation/kalman-filter/predict-and-update.svg)
 
 The prediction (blue) is the last estimate (dotted) moved 5 mm to the right and
 made a little wider. The measurement (red) is narrower than the prediction,
-because the camera's 4 mm spread is smaller than the prediction's 5.1 mm. So the
-updated estimate (orange) lands closer to the measurement, and it is narrower
-than either.
+because the camera's 4 mm spread is smaller than the prediction's 5.1 mm. That
+is why the updated estimate (orange) lands closer to the measurement, and it is
+narrower than either.
 
-The table below lists all four steps of the same run. Each row is one picture.
+Then the table below lists all four steps of the same run, and each row is one
+picture.
 
 | Step | Predicted (mm) | Predicted variance | Reading (mm) | Gain K | Updated (mm) | Updated spread (mm) |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -183,14 +190,14 @@ The table below lists all four steps of the same run. Each row is one picture.
 | 3 | 115.33 | 7.48 | 118 | 0.319 | 116.18 | 2.26 |
 | 4 | 121.18 | 6.10 | 121 | 0.276 | 121.13 | 2.10 |
 
-Notice the gain falls from 0.619 to 0.276. As the filter becomes surer, each new
-reading moves it less. After four readings the spread is 2.1 mm, about half the
-spread of a single camera reading.
+Notice that the gain falls from 0.619 to 0.276, because as the filter becomes
+surer each new reading moves it less. So after four readings the spread is
+2.1 mm, about half the spread of a single camera reading.
 
 ### The steps as pseudocode
 
-The pseudocode below is the one-number filter used above. The known change per
-step can be 0 for a quantity that should stay still.
+The pseudocode below is the one-number filter used above, where the known change
+per step can be 0 for a quantity that should stay still.
 
 ```
 function kalman_1d(readings, start_estimate, start_variance, q, r, change_per_step):
@@ -226,20 +233,21 @@ process and sensor noise as tables.
     P = (identity − K · H) · P
 ```
 
-Each line matches a line of the one-number version. `S` plays the part of
+Each line matches a line of the one-number version, so `S` plays the part of
 `p + r`, and the rest follows the same pattern.
 
 ### The two settings: sensor noise and process noise
 
-The sensor noise `r` can be measured: hold the sensor still and record the
-spread of its readings. The process noise `q` is harder. It says how much the
-quantity can change in ways the prediction does not model, and it sets how
-quickly the filter follows real changes.
+Both versions of the filter need the same two settings. The sensor noise `r` is
+the easy one, because you can measure it: hold the sensor still and record the
+spread of its readings. However, the process noise `q` is harder, since it says
+how much the quantity can change in ways the prediction does not model. It
+therefore sets how quickly the filter follows real changes.
 
-The picture below shows the difference. A depth camera on the wrist reads the
-distance to the table, 400 mm, with a 4 mm spread, 10 times a second. After
-3.5 seconds the arm lowers the camera by 20 mm. Two filters run on the same
-readings, one with `q = 0.01` and one with `q = 4`.
+The picture below shows the difference. In it, a depth camera on the wrist reads
+the distance to the table, 400 mm, with a 4 mm spread, 10 times a second.
+After 3.5 seconds the arm lowers the camera by 20 mm. Then two filters run on
+the same readings, one with `q = 0.01` and one with `q = 4`.
 
 ![Noisy depth readings, a smooth filter that lags badly after a 20 mm drop, and a quicker filter that is noisier but follows the drop](../../../images/fitting-and-estimation/kalman-filter/smoothing-a-reading.svg)
 
@@ -248,8 +256,8 @@ the two. From the 11th to the 35th reading its average error is 0.77 mm, against
 1.67 mm for the other filter and 2.76 mm for the raw readings. But when the
 camera drops, the small-`q` filter believes the distance cannot change, so it
 drifts down very slowly. At the end of the run, 2.4 seconds later, it still
-reads 388.7 mm, 8.7 mm too far. The filter with `q = 4` is within 5 mm of the new distance by
-the second reading after the drop.
+reads 388.7 mm, 8.7 mm too far. However, the filter with `q = 4` is within 5 mm
+of the new distance by the second reading after the drop.
 
 The next picture shows why, by plotting the gain and the spread over time for
 the steady part.
@@ -257,24 +265,25 @@ the steady part.
 ![The Kalman gain and the spread of the estimate over 60 steps for the two process noise settings](../../../images/fitting-and-estimation/kalman-filter/gain-settles.svg)
 
 With `q = 0.01` the gain keeps falling: 0.5 at the first step, 0.168 at the
-fifth, 0.093 at the tenth and 0.027 at the sixtieth. The filter trusts its own
-estimate more and more, and each reading counts less. That is what makes it
-smooth, and also what makes it slow to follow a real change. With `q = 4` the
-gain settles at 0.39 within a few steps, and the spread settles at 2.5 mm. That
-filter always gives each reading a fair share.
+fifth, 0.093 at the tenth and 0.027 at the sixtieth. As a result, the filter trusts its
+own estimate more and more, and each reading counts less. This is what makes it
+smooth, and also what makes it slow to follow a real change. With `q = 4`,
+however, the gain settles at 0.39 within a few steps, and the spread settles at
+2.5 mm. So that filter always gives each reading a fair share.
 
-There is no single right `q`. Choose it from how fast the real quantity can
+There is no single right `q`, so choose it from how fast the real quantity can
 change. If you know the arm is about to move the camera, you can also tell the
 filter so: the move is a known change, just like the belt's 5 mm per step.
 
 ### Tracking a position and a speed together
 
-A part on a belt has a position and a speed. The camera measures only the
-position, but the filter can estimate the speed too, by putting both in its
-state. This is called a **constant-velocity** model: the predict step assumes
-the part keeps its speed, and adds the speed times the time step to the
-position. The update step corrects the position from the reading, and the
-covariance links position and speed, so the speed is corrected too.
+So far the filter has tracked one number at a time, but a part on a belt has a
+position and a speed. The camera measures only the position, but the filter can
+estimate the speed too, by putting both in its state. This is called a
+**constant-velocity** model: the predict step assumes the part keeps its speed,
+and adds the speed times the time step to the position. The update step corrects
+the position from the reading, and the covariance links position and speed, so
+the speed is corrected too.
 
 The picture below tracks a part moving across a belt at about 60 mm/s, with the
 camera's positions scattering by 4 mm. For 0.8 seconds the arm reaches in and
@@ -283,12 +292,12 @@ hides the part, so there are 8 pictures with no reading.
 ![A part's true path, camera detections, the Kalman estimate that carries on through a gap in the detections, and uncertainty ellipses that grow during the gap](../../../images/fitting-and-estimation/kalman-filter/tracking-through-a-gap.svg)
 
 Before the gap, the filter has learned a speed of 58.7 mm/s along the belt and
-16.8 mm/s across it. During the gap it keeps predicting with that speed. The red
-ellipses show where the filter thinks the part could be. They grow during the
-gap, because there are no readings to shrink them: the spread along the belt
+16.8 mm/s across it. During the gap it keeps predicting with that speed, and the
+red ellipses show where the filter thinks the part could be. They grow during
+the gap, because there are no readings to shrink them: the spread along the belt
 rises from 2.0 mm to 5.0 mm. At the end of the gap the estimate is 3.6 mm from
 the true position, close enough to match the next detection to the same part.
-When readings return, the ellipses shrink again.
+Then, once readings return, the ellipses shrink again.
 
 The same growing ellipse tells a tracker how far from the prediction a new
 detection may be and still count as the same part. Book 2 explains this idea,
@@ -296,9 +305,10 @@ called **gating**, in
 [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md#33-a-predictor-constant-velocity-then-the-kalman-filter).
 
 The Kalman filter as described here assumes the motion and the measurement are
-straight-line relationships, like "position plus speed times time". Many real
-problems are not. An object turning on a turntable, or a camera measuring an
-angle and a distance, bends the relationship. Section 4 explains what goes
+straight-line relationships, like "position plus speed times time". However,
+many real problems are not, because an object turning on a turntable, or a
+camera measuring an angle and a distance, bends the relationship. Section 4
+explains what goes
 wrong then, and the three filters people use instead: the extended Kalman
 filter, the unscented Kalman filter and the particle filter.
 
@@ -306,57 +316,59 @@ filter, the unscented Kalman filter and the particle filter.
 
 ## 4. When things are not straight lines: EKF, UKF and the particle filter
 
-This section is for the case the rest of the page leaves out: a motion or a
+So this section is for the case the rest of the page leaves out: a motion or a
 measurement that is not a straight-line relationship. It uses the same predict
-and update words as section 3. The numbers come from a real run of a second
+and update words as section 3, and the numbers come from a real run of a second
 diagram script, `docs/diagrams/fitting_and_estimation_2.py`.
 
 ### What breaks when the relationship bends
 
-The Kalman filter describes what it believes as one bell curve: an estimate and a
-spread. That works because of one fact. Push a bell curve through a
+The Kalman filter describes what it believes as one bell curve: an estimate and
+a spread. That works because of one fact: push a bell curve through a
 straight-line relationship, such as "position plus speed times time", and you
-get another bell curve. The filter only has to work out its new centre and
-width.
+get another bell curve. As a result, the filter only has to work out its new
+centre and width.
 
-Push a bell curve through a bent relationship and the result is no longer a bell
-curve. Angles are the common cause on an arm. A sensor that measures a distance
-and an angle, or a camera that sees a turning part side-on, gives a bent
-relationship between what it reads and where the thing is.
+However, push a bell curve through a bent relationship and the result is no
+longer a bell curve. Angles are the common cause of this on an arm. For example,
+a sensor may measure a distance and an angle, or a camera may see a turning part
+side-on. Then the relationship between what it reads and where the thing is
+becomes bent.
 
-The picture below shows this. A sensor says an object is 400 mm away, give or
-take 5 mm, straight ahead, give or take 25°. The blue dots are 5000 positions
-drawn from that belief. They form a curved band, not an oval.
+The picture below shows this, using a sensor that says an object is 400 mm away,
+give or take 5 mm, straight ahead, give or take 25°. The blue dots are 5000
+positions drawn from that belief, and they form a curved band, not an oval.
 
 ![5000 possible positions forming a curved band, with the EKF's flat ellipse centred at 400 mm and the UKF's ellipse centred at 364 mm near the real average](../../../images/fitting-and-estimation/kalman-filter/bent-measurement.svg)
 
 The real average of the dots is 364 mm forward, not 400 mm, because the ends of
-the band curve back towards the sensor. Their forward spread is 49 mm, not 5 mm.
-A filter that simply converts the best guess, 400 mm straight ahead, gets both of
-those wrong.
+the band curve back towards the sensor. Their forward spread is 49 mm, not 5 mm,
+so a filter that simply converts the best guess, 400 mm straight ahead, gets
+both of those wrong.
 
 ### The extended Kalman filter: straighten the bend at the estimate
 
-The **extended Kalman filter (EKF)** replaces the bent relationship with a
-straight one that touches it at the current estimate. It is like laying a ruler
-against a curve at one point. The slope of that ruler is called the
+The first way round that problem is the **extended Kalman filter (EKF)**, which
+replaces the bent relationship with a straight one that touches it at the
+current estimate. It is like laying a ruler against a curve at one point. The slope of that ruler is called the
 **Jacobian**: a table of how much each output changes when each input changes a
 little. The filter then runs the usual predict and update steps with the ruler
 in place of the curve.
 
-This works well when the bend is gentle over the width of the bell curve. It
-works badly when the bell curve is wide. In the picture, the EKF's ellipse (red)
-is centred at 400 mm and has a forward spread of only 5 mm. It is sure of
+This works well when the bend is gentle over the width of the bell curve, but
+badly when the bell curve is wide. In the picture, the EKF's ellipse (red) is
+centred at 400 mm and has a forward spread of only 5 mm. So it is sure of
 something that is wrong.
 
 ### The unscented Kalman filter: push a few sample points through
 
-The **unscented Kalman filter (UKF)** does not straighten anything. It picks a
-small set of sample points, called **sigma points**, around the estimate: the
-estimate itself, plus two points one step out along each direction of the
-spread. For two numbers that makes five points. It pushes each point through the
-real, bent relationship. Then it works out a new centre and spread from where the
-points landed, each point with a fixed weight.
+The **unscented Kalman filter (UKF)** does not straighten anything at all.
+Instead, it picks a small set of sample points, called **sigma points**, around
+the estimate: the estimate itself, plus two points one step out along each
+direction of the spread. So for two numbers that makes five points, and
+it pushes each point through the real, bent relationship. Then it works out a
+new centre and spread from where the points landed, each point with a fixed
+weight.
 
 In the picture, the five purple rings are the sample points after the push. The
 UKF's ellipse (dashed) is centred at 364 mm, the same as the real average, with a
@@ -367,13 +379,13 @@ the relationship `2n + 1` times per step for `n` numbers in the state.
 
 ### The particle filter: many guesses, weighted and resampled
 
-Both Kalman filters still hold one bell curve. Sometimes the belief is not one
-hump at all. A part seen side-on on a turntable, for example, could be at an
+Both Kalman filters still hold one bell curve, but sometimes the belief is not
+one hump at all. A part seen side-on on a turntable, for example, could be at an
 angle `a` or at the mirror angle `−a`: both give the same sideways position. The
 belief has two humps, and one bell curve cannot hold two.
 
-A **particle filter** holds the belief as a crowd of guesses instead. Each guess
-is called a **particle**. Each step has three parts.
+A **particle filter** holds the belief as a crowd of guesses instead, and each
+guess is called a **particle**. Each step then has three parts.
 
 1. **Move.** Push every particle through the motion model, adding a little random
    jitter for the process noise.
@@ -385,17 +397,17 @@ is called a **particle**. Each step has three parts.
    several times. Light ones die out.
 
 The picture below shows one weigh and resample step with only 12 guesses of a
-part's angle, spaced 14° apart. The camera read a sideways position of 122 mm.
-To make the bars easy to see, this picture uses a sensor spread of 15 mm rather
-than the 5 mm of the run below.
+part's angle, spaced 14° apart. In it, the camera read a sideways position of
+122 mm. To make the bars easy to see, this picture uses a sensor spread of 15 mm
+rather than the 5 mm of the run below.
 
 ![Weights of 12 angle guesses, highest at plus and minus 35 degrees, and the number of copies each one gets after resampling](../../../images/fitting-and-estimation/kalman-filter/weigh-and-resample.svg)
 
-The guesses at −35° and +35° explain the reading best, with a weight of 0.25 each.
-After resampling they have three copies each. The guesses at ±63° and ±77° had
-weights near zero and are gone. Notice that both the positive and the negative
-angles survive: the particle filter keeps both answers until later readings
-decide between them.
+The guesses at −35° and +35° explain the reading best, with a weight of 0.25
+each. After resampling they have three copies each, while the guesses at ±63°
+and ±77° had weights near zero and are gone. Notice that both the positive and
+the negative angles survive: the particle filter keeps both answers until later
+readings decide between them.
 
 In pseudocode, one step looks like this:
 
@@ -412,15 +424,15 @@ function particle_filter_step(particles, reading):
 
 ### A small run: a part on a turntable
 
-A part sits 150 mm from the centre of a turntable that turns at a known
-0.5 rad/s. A camera looks along the table and sees only the part's sideways
+To compare the three filters on one problem, a part sits 150 mm from the centre
+of a turntable that turns at a known 0.5 rad/s. A camera looks along the table and sees only the part's sideways
 position, `x = 150 × cos(angle)`, with a spread of 5 mm, 10 times a second.
 The motion is a straight line (the angle grows by 0.05 rad each step), but the
 measurement is bent. The true angle starts at 37°, and the first reading is
 122.5 mm.
 
-Three filters run on the same 45 readings. The EKF and the UKF start from a
-wrong guess of −34°, with a spread of 29°. That is the mirror answer: it
+Three filters run on the same 45 readings, and the EKF and the UKF start from a
+wrong guess of −34°, with a spread of 29°. That is the mirror answer, because it
 explains the first reading just as well. The particle filter starts with 1000
 particles spread evenly all round the table, meaning it has no idea where the
 part is.
@@ -429,31 +441,33 @@ part is.
 
 The EKF (red) and the UKF (dashed orange) both stay on the wrong side. Every
 reading fits the mirror angle almost as well as the true one, so each update
-pulls them back to it. After one second they are 121° off, and over the last three
-seconds they are 119° off on average. Worse, at the end they report a spread of
-only 1.7°: they are sure, and wrong. Started at the right angle instead, the same
-EKF tracks the part with an average error of 1.2°. So the EKF is fine once it is
-near the answer; it just cannot choose between two answers.
+pulls them back to it. After one second they are 121° off, and over the last
+three seconds they are 119° off on average. Worse, at the end they report a
+spread of only 1.7°: they are sure, and wrong. Started at the right angle
+instead, the same EKF tracks the part with an average error of 1.2°. So the EKF
+is fine once it is near the answer; it just cannot choose between two answers.
 
 The particle filter (green) finds the right side within three readings. Its first
 estimate is 39° off, because it averages two humps and lands between them. By
 the third reading it is 1.3° off, and over the last three seconds its average
 error is 1.2°, the same as the well-started EKF.
 
-The picture below shows why. It draws the particles on the turntable, larger
-when their weight is larger.
+The picture below shows why, because it draws the particles on the turntable,
+larger when their weight is larger.
 
 ![Particles spread round the turntable at the start, split into two clusters after the first reading, and gathered into one cluster at the true part by reading 4](../../../images/fitting-and-estimation/kalman-filter/particles-on-a-turntable.svg)
 
 After the first reading, the weight is split almost evenly between two clusters,
-48% on the mirror side and 52% on the true side. The table then turns. On the
-true side, the part's sideways position shrinks as the angle grows. On the
-mirror side, it would grow. The readings shrink, so the mirror particles lose
-their weight. By the fourth reading, all the weight is on the true side.
+48% on the mirror side and 52% on the true side. The table then turns, and on
+the true side the part's sideways position shrinks as the angle grows, while on
+the mirror side it would grow. Since the readings shrink, the mirror particles
+lose their weight, and by the fourth reading all the weight is on the true
+side.
 
 ### Where each one is used, where it fails, and libraries
 
-On a robot arm, the three filters appear in these places.
+Once you know how each filter behaves, it is easier to see where the three
+appear on a robot arm.
 
 - **EKF.** Tracking an object with a camera that measures pixels, because the
   [pinhole camera model](../../02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md)
@@ -467,8 +481,8 @@ On a robot arm, the three filters appear in these places.
   touch contacts. Deciding which of two symmetric ways round a part is, as in the
   turntable run.
 
-Each has its own way to fail. The table below gives the cause, the sign you would
-see, and what people do about it.
+Each has its own way to fail, so the table below gives the cause, the sign you
+would see, and what people do about it.
 
 | Filter and cause | The sign you would see | What to do |
 | --- | --- | --- |
@@ -487,16 +501,17 @@ particle filter that finds a mobile base on a map. GTSAM, listed in section 7,
 handles bent relationships by re-straightening them over a window of past steps
 rather than only at the latest one.
 
-The particle filter's cost is speed. The run above updated 1000 particles every
-step, where the EKF updated one number and one spread. For a small state that is
-still fast. For a large one, a Kalman filter that is started near the right
-answer is the practical choice.
+The particle filter's cost is speed, because the run above updated 1000
+particles every step, where the EKF updated one number and one spread. For a
+small state that is still fast, but for a large one a Kalman filter that is
+started near the right answer is the practical choice.
 
 ---
 
 ## 5. Where it is used on a robot arm
 
-The filter appears in perception, sensing and the arm's own state.
+Whichever version of the filter is used, it appears in perception, sensing and
+the arm's own state.
 
 - **Tracking objects the camera sees.** A tracker runs one filter per object.
   Each picture, it predicts every object forward, matches detections to the
@@ -529,12 +544,13 @@ The filter appears in perception, sensing and the arm's own state.
 
 ## 6. Where it is useful, and where it is not
 
-The filter works best when you can say how the quantity moves from one moment to
-the next, the noise is roughly bell-shaped and does not depend on the last
-reading, and the readings arrive regularly with known times.
+In all of those places, the filter works best when you can say how the quantity
+moves from one moment to the next. It also needs noise that is roughly
+bell-shaped and does not depend on the last reading, and readings that arrive
+regularly with known times.
 
-The table below lists the ways it goes wrong. Each row gives the cause, the sign
-you would see, and what people use instead.
+However, the table below lists the ways it goes wrong, and each row gives the
+cause, the sign you would see, and what people use instead.
 
 | What goes wrong | The sign you would see | What to use instead |
 | --- | --- | --- |
@@ -551,9 +567,10 @@ you would see, and what people use instead.
 
 ## 7. Libraries that provide it
 
-The one-number filter is ten lines of code, and many projects write it
-themselves. For more, the libraries below are well known. Each row gives the
-library, the languages it is used from, the class or package, and a note.
+Since the one-number filter is ten lines of code, many projects write it
+themselves. For more than that, the libraries below are well known. Each row
+gives the library, the languages it is used from, the class or package, and a
+note.
 
 | Library | Languages | Class or package | Note |
 | --- | --- | --- | --- |
@@ -567,27 +584,28 @@ library, the languages it is used from, the class or package, and a note.
 
 ## 8. Why a Kalman filter, and what it costs
 
-The Kalman filter is a loop that predicts a quantity forward and then corrects
-it with each new reading, weighting the two by how much each is trusted. It
-gives the arm a steady value, a measure of how sure that value is, and a
-prediction for the next moment, even through short gaps.
+As a result, the Kalman filter is a loop that predicts a quantity forward and
+then corrects it with each new reading, weighting the two by how much each is
+trusted. It gives the arm a steady value, a measure of how sure that value is,
+and a prediction for the next moment, even through short gaps.
 
-The obvious alternative is a moving average: average the last ten readings. It
-is simpler and needs no model. On the steady part of the depth example, a
+The obvious alternative is a moving average: average the last ten readings,
+which is simpler and needs no model. On the steady part of the depth example, a
 10-reading average has an average error of 1.08 mm, close to the Kalman filters.
-But it has three drawbacks. It always lags: after the 20 mm drop it took seven
-readings to get within 5 mm, against two for the `q = 4` filter. It
-cannot predict ahead, so it cannot help an arm meet a moving part. And it gives
-no spread, so a tracker cannot tell how far to look for the next detection.
+However, it has three drawbacks, and the first is that it always lags. After the
+20 mm drop it took seven readings to get within 5 mm, against two for the
+`q = 4` filter. It cannot predict ahead, so it cannot help an arm meet a moving
+part. And it gives no spread, so a tracker cannot tell how far to look for the
+next detection.
 
 A second alternative is to fit a line through the last few positions with
 [least squares](01_least-squares-fitting.md) and extend it forward. That gives a
-speed and a prediction. But it forgets everything older than its window, and it
+speed and a prediction, but it forgets everything older than its window, and it
 does not say how sure it is. The Kalman filter keeps all past readings in two
 small numbers, the estimate and the covariance, and costs the same on every
 step however long it runs.
 
-The costs are these. You need a model of how the quantity moves, and the filter
+The costs are these: you need a model of how the quantity moves, and the filter
 is only as good as that model. You must choose the process noise, and a poor
 choice gives either a laggy or a noisy result without any error message. The
 filter's confidence is highest just before an object does something new, such as
@@ -598,7 +616,8 @@ or a bug can affect many steps after it.
 
 ## 9. The learned alternative
 
-The learned trackers in Book 6's
+Those costs raise the question of a learned alternative, but the learned
+trackers in Book 6's
 [tracking and motion](../../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
 mostly keep the filter rather than replace it. Methods such as SORT and ByteTrack
 take boxes from a trained detector and use a Kalman filter to predict where each
@@ -610,12 +629,15 @@ it needs those recordings, and its errors add up over many steps. For touch,
 [force and slip models](../../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
 recognise patterns such as the fast shaking of a slip, which a filter that smooths
 the reading cannot tell apart from noise. For a steady estimate of a position or a
-speed, the Kalman filter still wins, because it needs no training data, costs a few
-lines of arithmetic per reading, and says how sure it is.
+speed, the Kalman filter is still the better choice, because it needs no
+training data, costs a few lines of arithmetic per reading, and says how sure it
+is.
 
 ---
 
 ## 10. Where to read next
+
+The pages below cover what this filter builds on, and where its output is used.
 
 - [Least-squares fitting](01_least-squares-fitting.md) is the batch version of
   the same idea. For a quantity that does not change, the Kalman filter gives the

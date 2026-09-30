@@ -1,16 +1,16 @@
 # The map of models
 
-This book, **Learned Models**, describes many learned models. Most of them are neural
-network models. They have different names, take in different things and give out
-different answers. This document is the map of all of them. It sorts the neural
-network models into seven kinds, which this book calls **categories**. For each
-category it says what the models do and where to read about them. It also lists
-every page of the book's chapter on classical machine learning, the learning methods
-that are not neural networks.
+This book, **Learned Models**, describes many learned models, and most of them are
+neural network models. They have different names, take in different things and give out
+different answers, so this document is the map of all of them. It sorts the neural
+network models into seven kinds, which this book calls **categories**, and for each
+category it says what the models do and where to read about them. It also lists every
+page of the book's chapter on classical machine learning, the learning methods that are
+not neural networks.
 
-It answers three questions. What are the seven kinds of model? Where does each kind
-do its job when one robot arm does one task? And in what order should you read the
-chapters of this book?
+It answers three questions: what are the seven kinds of model, where does each kind do
+its job when one robot arm does one task, and in what order should you read the chapters
+of this book?
 
 It is for a complete beginner who has read the earlier documents in this chapter,
 especially [what a model is](01_what-a-model-is.md). You can also come back to it at
@@ -39,17 +39,18 @@ any time, when you want to see where one chapter fits among the others.
 
 ## 1. One task, seven kinds of model
 
-The easiest way to see all seven categories is to follow one task. A person says to
-a robot arm: "Put the red mug in the sink." The arm has a camera on its wrist. There
-is a red mug and a blue mug on the counter, and a sink at one end.
+The easiest way to see all seven categories is to follow one task. A person says to a
+robot arm: "Put the red mug in the sink." The arm has a camera on its wrist, and there
+is a red mug and a blue mug on the counter, with a sink at one end.
 
-To do this, the robot must do several separate things. It must understand the words.
-It must find the red mug in the camera picture, and not the blue one. It must work
-out the mug's exact shape and position in space. It must choose where to put its
-fingers. It must move there, pick the mug up and carry it. It must feel whether the
-mug is slipping. And it helps if it can predict what will happen when it lets go.
+To do this, the robot must do several separate things. First it must understand the
+words, and then it must find the red mug in the camera picture, and not the blue one. It
+must work out the mug's exact shape and position in space, so that it can choose where
+to put its fingers. Then it must move there, pick the mug up and carry it, while feeling
+whether the mug is slipping. And it helps if it can predict what will happen when it
+lets go.
 
-Each of these jobs is done by a different kind of model.
+So each of these jobs is done by a different kind of model.
 
 ![One robot arm putting the red mug in the sink, with each kind of model marked where it does its job](../../images/what-models-are/the-map-of-models/one-task-seven-models.svg)
 
@@ -58,94 +59,98 @@ sits next to the part of the scene that the model works on: the words, the camer
 picture, the mug's shape, the finger positions, the path, the sink and the
 fingertips.
 
-A real robot does not always use all seven. Many robots use only two or three. Some
-large models do several of these jobs at once. But every model in this book does at
-least one of these jobs.
+A real robot does not always use all seven, because many robots use only two or three,
+and some large models do several of these jobs at once. But every model in this book
+does at least one of these jobs.
 
 ---
 
 ## 2. The seven categories
 
-Each category below has one paragraph that says what its models do, followed by a
-link to the chapter overview. The overview lists every kind of model in that
+Now that one task has shown where the seven kinds fit, this section describes each of
+them. Each category below has one paragraph that says what its models do, followed by a
+link to the chapter overview, and that overview lists every kind of model in the
 category.
 
 ### Seeing models
 
-Seeing models turn a picture into names, boxes, outlines, poses or depth. They take
-a camera picture and say what is in it and where. The simplest ones give one name for
-the whole picture. Others draw a box around each object, trace its exact outline,
-find special points such as a mug's handle, or guess how far away each pixel is.
-Some can be told what to look for in ordinary words, such as "the red mug". In the
-mug task, a seeing model finds the red mug in the picture. Read the
-[seeing models overview](../03_seeing-models/01_overview.md).
+Seeing models turn a picture into names, boxes, outlines, poses or depth, which means
+they take a camera picture and say what is in it and where. The simplest ones give one
+name for the whole picture. But others draw a box around each object, trace its exact
+outline, find special points such as a mug's handle, or guess how far away each pixel
+is. Some can even be told what to look for in ordinary words, such as "the red mug". So
+in the mug task, a seeing model finds the red mug in the picture, and the [seeing models
+overview](../03_seeing-models/01_overview.md) lists every kind.
 
 ### 3D models
 
 3D models work on 3D points and whole scenes instead of flat pictures. A depth camera
-gives many points, each with a position in space. Together these points are called a
-**point cloud**. 3D models can say which points belong to the mug, guess the shape of
-the side of the mug that the camera cannot see, or build a full 3D copy of the
-room from many pictures. In the mug task, a 3D model gives the mug's exact shape and
-position, so the gripper does not bump into it. Read the
-[3D models overview](../04_3d-models/01_overview.md).
+gives many points, each with a position in space, and together these points are called a
+**point cloud**. 3D models can say which points belong to the mug, or guess the shape of
+the side of the mug that the camera cannot see. They can also build a full 3D copy of
+the room from many pictures. So in the mug task, a 3D model gives the mug's exact shape
+and position, which keeps the gripper from bumping into it, and the [3D models
+overview](../04_3d-models/01_overview.md) lists every kind.
 
 ### Grasp models
 
-Grasp models decide where and how to hold an object. They take a picture or a point
+Grasp models decide where and how to hold an object, so they take a picture or a point
 cloud and give one or more grasps. A **grasp** is a position and direction for the
-gripper, and how wide to open its fingers. Some grasp models also say where a
-suction cup should go, or which part of an object is meant to be held, such as a
-mug's handle. Others score a grasp to say how likely it is to work. In the mug task,
-a grasp model chooses where the fingers go on the mug. Read the
-[grasp models overview](../05_grasp-models/01_overview.md).
+gripper, together with how wide to open its fingers. Some grasp models also say where a
+suction cup should go, or which part of an object is meant to be held, such as a mug's
+handle. Others instead score a grasp to say how likely it is to work. So in the mug
+task, a grasp model chooses where the fingers go on the mug, and the [grasp models
+overview](../05_grasp-models/01_overview.md) lists every kind.
 
 ### Movement models
 
-Movement models decide how the arm should move, moment by moment. They take what the
-robot sees and feels now, and give the next movement, or the next few movements.
-Many of them learn by copying people who drove the robot. Others learn by trial and
-error, in the real world or in a simulator. Some help a programmed planner by
-checking paths or suggesting them. In the mug task, a movement model guides the arm
-to the mug and on to the sink. Read the
-[movement models overview](../06_movement-models/01_overview.md).
+Movement models decide how the arm should move, moment by moment, so they take what the
+robot sees and feels now and give the next movement, or the next few movements. Many of
+them learn by copying people who drove the robot, while others learn by trial and error,
+in the real world or in a simulator. Some only help a programmed planner, by checking
+paths or suggesting them. So in the mug task, a movement model guides the arm to the mug
+and on to the sink, and the [movement models
+overview](../06_movement-models/01_overview.md) lists every kind.
 
 ### Language models
 
-Language models understand words, and connect words to pictures and actions. A
-language model can turn "put the red mug in the sink" into a list of steps. A
-vision-language model can answer questions about a picture, such as "is the mug in
-the sink now?". A vision-language-action model takes a picture and an instruction and
-gives arm movements directly. In the mug task, a language model turns the person's
-words into steps: find the red mug, pick it up, put it in the sink. Read the
-[language models overview](../07_language-models/01_overview.md).
+Language models understand words, and connect words to pictures and actions. For
+example, a language model can turn "put the red mug in the sink" into a list of steps. A
+vision-language model can instead answer questions about a picture, such as "is the mug
+in the sink now?". A vision-language-action model goes further and takes a picture and
+an instruction and gives arm movements directly. So in the mug task, a language model
+turns the person's words into steps: find the red mug, pick it up, put it in the sink,
+and the [language models overview](../07_language-models/01_overview.md) lists every
+kind.
 
 ### World models
 
-World models predict what will happen next if the arm does something. They take the
-state of the scene now and a planned action, and give the state that should follow.
-Some predict positions, some predict whole future pictures, and some predict how
-cloth or liquid will move. A robot can use this to try out actions in its
-"imagination" before doing them for real. In the mug task, a world model predicts
-whether the mug will land upright if the gripper lets go at a certain point. Read the
-[world models overview](../08_world-models/01_overview.md).
+World models predict what will happen next if the arm does something, so they take the
+state of the scene now and a planned action and give the state that should follow. Some
+predict positions, some predict whole future pictures, and some predict how cloth or
+liquid will move. A robot can use this to try out actions in its "imagination" before
+doing them for real. So in the mug task, a world model predicts whether the mug will
+land upright if the gripper lets go at a certain point, and the [world models
+overview](../08_world-models/01_overview.md) lists every kind.
 
 ### Touch and body models
 
 Touch and body models make sense of touch, force and the arm's own body. They take
-signals from touch sensors on the fingers, from force sensors in the wrist, or from
-the arm's own motors. They say whether the fingers are touching something, how hard
-they are pressing and whether the object is slipping. They can also notice when the
-arm has bumped into something it should not have, and learn how the arm itself
-really moves. In the mug task, a touch model notices if the mug starts to slip out of
-the fingers. Read the [touch and body models overview](../09_touch-and-body-models/01_overview.md).
+signals from touch sensors on the fingers, from force sensors in the wrist, or from the
+arm's own motors. So they can say whether the fingers are touching something, how hard
+they are pressing and whether the object is slipping. They can also notice when the arm
+has bumped into something it should not have, and learn how the arm itself really moves.
+So in the mug task, a touch model notices if the mug starts to slip out of the fingers,
+and the [touch and body models overview](../09_touch-and-body-models/01_overview.md)
+lists every kind.
 
 ---
 
 ## 3. All seven in one table
 
-The table below puts the seven categories side by side. Read each row across: what
-the model is given, what it gives back, and one question it answers for a robot arm.
+Now that each category has been described, the table below puts them side by side. Read
+each row across: what the model is given, what it gives back, and one question it
+answers for a robot arm.
 
 | Category | Input (what goes in) | Output (what comes out) | Example question |
 | --- | --- | --- | --- |
@@ -157,9 +162,9 @@ the model is given, what it gives back, and one question it answers for a robot 
 | [World models](../08_world-models/01_overview.md) | the scene now and a planned action | the scene a moment later | "If I let go here, where will the mug end up?" |
 | [Touch and body models](../09_touch-and-body-models/01_overview.md) | touch, force and motor signals | contact, force, slip, or a warning | "Is the mug slipping out of my fingers?" |
 
-The first three categories look at the world. The next one acts in it. Language
-models connect people's words to the rest. World models look ahead in time. Touch and
-body models check what is happening at the fingers and inside the arm.
+The first three categories look at the world, while the next one acts in it. Language
+models connect people's words to the rest, world models look ahead in time, and touch
+and body models check what is happening at the fingers and inside the arm.
 
 ---
 
@@ -198,11 +203,11 @@ family chapters below:
   and
   [support vector machines](../02_classical-machine-learning/03_also-used/04_support-vector-machines.md).
 
-Each of the seven family chapters after that starts with an overview page. The rest
-of its pages are split into two groups. The **most used** group holds the kinds of
-model that robot arm projects use most often, or that matter most. Read these first.
-The **also used** group holds kinds of model that are used often, but less. Some of
-them do a narrower job. Others are newer and are not yet in everyday use.
+Each of the seven family chapters after that starts with an overview page, and the rest
+of its pages are split into two groups. The **most used** group holds the kinds of model
+that robot arm projects use most often, or that matter most, so read these first. The
+**also used** group holds kinds of model that are used often, but less, because some of
+them do a narrower job, while others are newer and are not yet in everyday use.
 
 The table below lists every page in the seven family chapters. Read each row as one
 chapter: its overview, then its most-used pages, then its also-used pages.
@@ -217,14 +222,15 @@ chapter: its overview, then its most-used pages, then its also-used pages.
 | [World models](../08_world-models/01_overview.md) | [Learned dynamics models](../08_world-models/02_most-used/01_learned-dynamics-models.md) | [Video prediction models](../08_world-models/03_also-used/01_video-prediction-models.md), [Learned simulators](../08_world-models/03_also-used/02_learned-simulators.md), [Latent world models](../08_world-models/03_also-used/03_latent-world-models.md) |
 | [Touch and body models](../09_touch-and-body-models/01_overview.md) | [Force and slip models](../09_touch-and-body-models/02_most-used/01_force-and-slip-models.md), [Collision and failure detection](../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md) | [Touch sensing models](../09_touch-and-body-models/03_also-used/01_touch-sensing-models.md), [Learned arm models](../09_touch-and-body-models/03_also-used/02_learned-arm-models.md) |
 
-The split is about how often a page's kind of model is used, not about how good it
-is. An also-used model can be the right choice for your task. For example, if your
-robot must learn a skill by trial and error, reinforcement learning is the page to
-read, even though it sits in the also-used group.
+The split is about how often a page's kind of model is used, not about how good it is,
+so an also-used model can still be the right choice for your task. For example, if your
+robot must learn a skill by trial and error, reinforcement learning is the page to read,
+even though it sits in the also-used group.
 
-The last chapter, [making models work on an arm](../10_making-models-work-on-an-arm/01_overview.md),
-is not a family of models. It is about what every model needs before a real arm can
-rely on it. It has an overview and the same two groups:
+The last chapter, [making models work on an
+arm](../10_making-models-work-on-an-arm/01_overview.md), is not a family of models,
+because it is about what every model needs before a real arm can rely on it. It has an
+overview and the same two groups:
 
 - Most used: [fine-tuning](../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md),
   which adapts a model that someone else trained to your own robot and objects;
@@ -239,20 +245,19 @@ rely on it. It has an overview and the same two groups:
 
 ## 5. When each kind does its job
 
-The map picture shows where each kind of model works. It is also useful to see when
-each one works. The same task can be split into six steps: hear the words, find the
-mug, choose the grip, reach and close the gripper, carry the mug to the sink, and let
-go.
+The map picture shows where each kind of model works, but it is also useful to see when
+each one works. The same task can be split into six steps: hear the words, find the mug,
+choose the grip, reach and close the gripper, carry the mug to the sink, and let go.
 
 ![A timeline of the mug task, showing which kind of model is busy in each step](../../images/what-models-are/the-map-of-models/when-each-model-acts.svg)
 
-Each coloured bar shows the steps during which one kind of model is busy. Language
-works first and briefly. Seeing keeps working while the arm reaches, because the mug
-may move. Movement, world and touch models take over once the arm is moving.
+Each coloured bar shows the steps during which one kind of model is busy. Language works
+first and only briefly, while seeing keeps working as the arm reaches, because the mug
+may move. Movement, world and touch models then take over once the arm is moving.
 
-This is one possible way to build the task, not the only one. A robot built around a
-single vision-language-action model would have one long bar that covers language,
-seeing and movement at once.
+This is one possible way to build the task, and not the only one. For example, a robot
+built around a single vision-language-action model would have one long bar that covers
+language, seeing and movement at once.
 
 ---
 
@@ -261,34 +266,35 @@ seeing and movement at once.
 The seven categories are separate chapters, but the models in them depend on each
 other. The output of one is very often the input of the next.
 
-A seeing model finds the mug. A 3D model takes the points inside the mug's outline
-and gives its shape. A grasp model takes that shape and chooses a grasp. A movement
-model, or a programmed planner, moves the arm to the grasp. A touch model checks the
-grip. This chain, from picture to movement, is the most common way to build a
-picking robot.
+A seeing model finds the mug, and then a 3D model takes the points inside the mug's
+outline and gives its shape. A grasp model takes that shape and chooses a grasp, and a
+movement model, or a programmed planner, moves the arm to that grasp, while a touch
+model checks the grip. This chain, from picture to movement, is the most common way to
+build a picking robot.
 
-Some models cross the borders between categories. An open-vocabulary seeing model
-uses language to know what to look for, so it belongs partly to seeing models and
+Some models cross the borders between two categories or more. An open-vocabulary seeing
+model uses language to know what to look for, so it belongs partly to seeing models and
 partly to language models. A vision-language-action model does the jobs of seeing,
-language and movement in one network. A world model can be used inside a movement
-model, so the movement model can try actions in its imagination first. The chapters
-point out these links where they matter.
+language and movement in one network. A world model can be used inside a movement model,
+so the movement model can try actions in its imagination first. The chapters point out
+these links where they matter.
 
-The categories also share their data sources. The
-[where the data comes from](05_where-the-data-comes-from.md) document described
-them. Seeing and language models learn mostly from pictures and text, often from the
-internet. Movement models learn mostly from demonstrations and simulation. Touch and
-body models learn from the robot's own sensors. And almost all of them run inside
-the loop described in [running a model on a robot](../10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md).
+The categories also share their data sources, which the [where the data comes
+from](05_where-the-data-comes-from.md) document described. Seeing and language models
+learn mostly from pictures and text, often from the internet, while movement models
+learn mostly from demonstrations and simulation. Touch and body models learn from the
+robot's own sensors. And almost all of them run inside the loop described in [running a
+model on a
+robot](../10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md).
 
 ---
 
 ## 7. Find a method by job
 
-Most people come to these books with a job in mind, not a method. This section
-starts from the job. Read each row across: a job the arm must do, the Book 2 or
-Book 3 page that helps you choose how to do it, the written techniques in Book 5 that
-can do it, and the learned models in Book 6 that can do it.
+Most people come to these books with a job in mind, not a method, so this section starts
+from the job instead. Read each row across: a job the arm must do, the Book 2 or Book 3
+page that helps you choose how to do it, the written techniques in Book 5 that can do
+it, and the learned models in Book 6 that can do it.
 
 | Job on the arm | Book 2 or 3 page that helps choose | Written techniques (Book 5) | Learned models (Book 6) |
 | --- | --- | --- | --- |
@@ -314,24 +320,24 @@ can do it, and the learned models in Book 6 that can do it.
 | check that the task worked | [judging whether it works](../../03_frameworks/03_arm-movement/05_learned-motion.md#6-judging-whether-it-works) | [behaviour trees](../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md), [thresholding and colour masks](../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) | [vision-language models](../07_language-models/02_most-used/02_vision-language-models.md), [reward and progress models](../06_movement-models/03_also-used/03_reward-and-progress-models.md) |
 
 Most jobs have both a written and a learned answer, and the Book 2 or Book 3 page says
-which one suits which case. Two rows have only one side. No learned model is in
-common use to check whether the arm can reach a pose, because inverse kinematics
-already gives an exact answer quickly. And no written technique can follow an
-instruction in free wording, because a person can say the same thing in too many
-ways to list them all. Many real arms mix the two sides: a learned model finds
-the object, and written techniques do the rest.
+which one suits which case. Two rows in the table have only one side, however. No
+learned model is in common use to check whether the arm can reach a pose, because
+inverse kinematics already gives an exact answer quickly. And no written technique can
+follow an instruction in free wording, because a person can say the same thing in too
+many ways to list them all. Many real arms mix the two sides, so a learned model finds
+the object and written techniques do the rest.
 
-The classical machine learning methods of chapter 2 appear in the rows where the
-input is a few measured numbers: correcting a sensor, tuning a controller's gains,
-learning a motion from a few demonstrations, and scoring grasps or spotting faults
-from logged numbers.
+So the classical machine learning methods of chapter 2 appear in the rows where the
+input is a few measured numbers. Those jobs are correcting a sensor, tuning a
+controller's gains, learning a motion from a few demonstrations, and scoring grasps or
+spotting faults from logged numbers.
 
 ---
 
 ## 8. A suggested reading order
 
-You can read the chapters of this book in any order, because each one explains its
-own terms. But some chapters are easier after others. The list below is the order
+You can read the chapters of this book in any order, because each one explains its own
+terms. But some chapters are easier to follow after others. The list below is the order
 this book suggests, with the reason for each step.
 
 1. This chapter, [what models are](01_what-a-model-is.md). Everything else uses

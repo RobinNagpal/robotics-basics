@@ -1,9 +1,10 @@
 # The map of techniques
 
-This book describes 34 programming techniques. They have different names, take in
-different things and give back different answers. This page is the map of all of
-them. It sorts them into seven kinds, which this book calls **categories**. For
-each category it says what the techniques do and where to read about them.
+This book describes 34 programming techniques, and they have different names,
+take in different things and give back different answers. This page is the map
+of all of them, because it sorts them into seven kinds, which this book calls
+**categories**. For each category it then says what the techniques do and where
+to read about them.
 
 It answers three questions. What are the seven categories, and which techniques
 are in each? Where does each category do its job when one robot arm does one
@@ -11,8 +12,8 @@ task? And in what order should you read the chapters of this book?
 
 It is for a reader who has read the earlier pages of this chapter, especially
 [programmed, not learned](01_programmed-not-learned.md). You can also come back
-to it at any time, when you want to see where one technique fits among the others.
-Book 6 has a page with the same shape for learned models,
+to it at any time, when you want to see where one technique fits among the
+others. Book 6 has a page with the same shape for learned models,
 [the map of models](../../06_learned-models/01_what-models-are/06_the-map-of-models.md).
 
 ## Contents
@@ -37,21 +38,22 @@ Book 6 has a page with the same shape for learned models,
 
 ## 1. One task, seven kinds of technique
 
-The easiest way to see all seven categories is to follow one task. A robot arm
-has a camera on its wrist. There are three mugs on a table, and a rack with pegs
-at one end. The task is: find the mugs with the wrist camera, and hang each one
-on the rack.
+The easiest way to see all seven categories is to follow one task from start to
+finish. A robot arm has a camera on its wrist, and there are three mugs on a
+table with a rack of pegs at one end. The task is to find the mugs with the
+wrist camera and hang each one on the rack.
 
 To do this, the robot must do several separate things. It must turn what the
-camera sees into positions measured from its own base. It must pick the mug
+camera sees into positions measured from its own base, and it must pick the mug
 pixels out of the picture and ignore the table. It must find the table top and
-keep each mug's position steady while the camera moves. It must decide which mug
-is which from one picture to the next. It must find a path to each mug and on to
-the rack that hits nothing. It must drive its motors smoothly along that path. And
-it must keep track of the whole job: which mug is next, and what to do if a grasp
-fails.
+keep each mug's position steady while the camera moves, and then decide which
+mug is which from one picture to the next. After that it must find a path to
+each mug and on to the rack that hits nothing, and drive its motors smoothly
+along that path. Finally it must keep track of the whole job: which mug is next,
+and what to do if a grasp fails.
 
-Each of these jobs is done by a different kind of technique.
+Each of these jobs is done by a different kind of technique, and those kinds are
+the seven categories.
 
 ![A robot arm with a wrist camera above three mugs and beside a rack, with seven numbered markers and a legend naming each category of technique](../../images/what-techniques-are/the-map-of-techniques/one-task.svg)
 
@@ -60,165 +62,178 @@ next to the part of the scene that its techniques work on: the camera, the mugs,
 the table top, the mug pixels, the path to the rack, the joints and the task
 list.
 
-A real arm does not always use every technique in this book. A simple
-pick-and-place arm may use only six or seven of them. But almost every arm task
-uses at least one technique from each of the seven categories.
+A real arm does not always use every technique in this book, and a simple
+pick-and-place arm may use only six or seven of them. However, almost every arm
+task uses at least one technique from each of the seven categories.
 
 ---
 
 ## 2. The seven categories
 
-Each category below has one paragraph that says what its techniques do, followed
-by a link to the chapter overview. The overview explains each technique in one
-line and compares them.
+Section 1 numbered the seven categories on the picture, so this section
+describes each of them in turn. Each category below has one paragraph that says
+what its techniques do, followed by a link to the chapter overview, which
+explains each technique in one line and compares them.
 
-Inside each chapter, the technique pages are split into two groups. The
-**most used** group holds the techniques that nearly every arm program needs, or
-that matter most when they go wrong. The **also used** group holds techniques that
-are used often, but only for some tasks or some kinds of arm. Read the most used
-group of a chapter first. Each paragraph below names the most used techniques
-first and then the also used ones.
+Inside each chapter, the technique pages are split into two groups. The **most
+used** group holds the techniques that nearly every arm program needs, or that
+matter most when they go wrong. However, the **also used** group holds
+techniques that are used often, but only for some tasks or some kinds of arm. So read the
+most used group of a chapter first, and each paragraph below names the most used
+techniques first and then the also used ones.
 
 ### Geometry and cameras
 
 Geometry and cameras turn pixels, frames and joint angles into positions you can
-trust. Four techniques are most used. The
+trust, and four of these techniques are most used. The
 [pinhole camera model](../02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md)
 says which pixel a point in space lands on, and turns a pixel and its depth back
-into a point. [Rigid transforms](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+into a point.
+[Rigid transforms](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
 move a position from one frame to another, such as from the camera to the arm's
-base. [Calibration](../02_geometry-and-cameras/02_most-used/03_calibration.md) measures the
-numbers that the other two need: the camera's own settings, and where the camera
-sits on the arm. [Pose from points](../02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
+base. [Calibration](../02_geometry-and-cameras/02_most-used/03_calibration.md)
+measures the numbers that the other two need: the camera's own settings, and
+where the camera sits on the arm.
+[Pose from points](../02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
 finds where a known object sits from a few of its points seen in one picture, a
 problem called perspective-n-point (PnP). One technique is also used:
 [multi-view geometry](../02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md)
 combines pictures taken from different places to find where points are in space.
-In the mug task, these techniques turn each mug's pixels into a position the arm
-can reach. Read the
-[geometry and cameras overview](../02_geometry-and-cameras/01_overview.md).
+So in the mug task, these techniques turn each mug's pixels into a position the
+arm can reach. Read the [geometry and cameras overview](../02_geometry-and-cameras/01_overview.md).
 
 ### Searching and matching
 
-Searching and matching find the closest thing, and decide which thing is which.
-Three techniques are most used.
+Searching and matching find the closest thing, and decide which thing is which,
+and three of these techniques are most used.
 [Nearest-neighbour search](../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
 finds the point or object closest to a given one, as in the closest-mug example
-on [the first page](01_programmed-not-learned.md#2-a-first-technique-the-closest-mug).
+on
+[the first page](01_programmed-not-learned.md#2-a-first-technique-the-closest-mug).
 [Iterative closest point](../03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
-lines up two sets of points, such as a stored 3D model of a mug and a fresh scan.
+lines up two sets of points, such as a stored 3D model of a mug and a fresh
+scan.
 [Assignment and matching](../03_searching-and-matching/02_most-used/03_assignment-and-matching.md)
-pairs up two lists, such as the mugs seen in this picture and the mugs seen in the
-last one. One technique is also used:
+pairs up two lists, such as the mugs seen in this picture and the mugs seen in
+the last one. One technique is also used:
 [image features and matching](../03_searching-and-matching/03_also-used/01_image-features-and-matching.md)
-finds the same small spots in two pictures and pairs them up. In the mug task,
-these techniques make sure that "mug 2" in one picture is still "mug 2" in the
-next. Read the
+finds the same small spots in two pictures and pairs them up. So in the mug
+task, these techniques make sure that "mug 2" in one picture is still "mug 2" in
+the next. Read the
 [searching and matching overview](../03_searching-and-matching/01_overview.md).
 
 ### Fitting and estimation
 
 Fitting and estimation get a clean shape or a steady number out of noisy
-measurements. Four techniques are most used.
+measurements, and four of these techniques are most used.
 [Least-squares fitting](../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 finds the line, plane or circle that is closest to many points.
 [Random sample consensus (RANSAC)](../04_fitting-and-estimation/02_most-used/02_ransac.md)
-does the same while
-ignoring points that are plainly wrong. The
-[Kalman filter](../04_fitting-and-estimation/02_most-used/03_kalman-filter.md) combines each new
-reading with what it already knew, to give a steady estimate of something that
-may be moving. [Sensor streams](../04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
-covers how to handle readings that arrive one after another from many sensors, at
-different rates and times. One technique is also used:
+does the same while ignoring points that are plainly wrong. The
+[Kalman filter](../04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+combines each new reading with what it already knew, to give a steady estimate
+of something that may be moving.
+[Sensor streams](../04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
+covers how to handle readings that arrive one after another from many sensors,
+at different rates and times. One technique is also used:
 [system identification](../04_fitting-and-estimation/03_also-used/01_system-identification.md)
-measures the numbers inside a physical model of the arm, such as a joint's friction
-or the mass in the gripper. In the mug task, RANSAC finds the table top, and a
-Kalman filter keeps each mug's position steady as the camera moves. Read the
+measures the numbers inside a physical model of the arm, such as a joint's
+friction or the mass in the gripper. So in the mug task, RANSAC finds the table
+top, and a Kalman filter keeps each mug's position steady as the camera moves.
+Read the
 [fitting and estimation overview](../04_fitting-and-estimation/01_overview.md).
 
 ### Image and point cloud processing
 
-Image and point cloud processing clean up and cut up pictures and point clouds so
-objects stand out. Three techniques are most used.
+Image and point cloud processing clean up and cut up pictures and point clouds
+so objects stand out, and three of these techniques are most used.
 [Thresholding and colour masks](../05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 keep the pixels whose colour or depth is in a chosen range.
 [Morphology and the distance transform](../05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md)
 tidy up those pixels, and find the point most central in a shape.
 [Clustering](../05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
-groups nearby points into separate objects. Two techniques are also used.
-[Edges and contours](../05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md)
-find the outline of each shape.
-[Volumetric maps](../05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
-divide the space around the arm into small cubes and record which ones are full,
-empty or not yet seen. In the mug task, a depth threshold removes the table, and
-clustering splits the remaining points into one group per mug. Read the
+groups nearby points into separate objects. Two techniques are also used, and
+the first of them,
+[edges and contours](../05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md),
+finds the outline of each shape. The second,
+[volumetric maps](../05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md),
+divides the space around the arm into small cubes and records which ones are
+full, empty or not yet seen. So in the mug task, a depth threshold removes the
+table, and clustering splits the remaining points into one group per mug. Read
+the
 [image and point cloud processing overview](../05_image-and-point-cloud-processing/01_overview.md).
 
 ### Planning and search
 
 Planning and search find a way for the arm to get from here to there without
-hitting anything. Three techniques are most used.
+hitting anything, and three of these techniques are most used.
 [Sampling-based planning](../06_planning-and-search/02_most-used/01_sampling-based-planning.md)
 tries random arm poses and joins the safe ones into a path.
 [Numerical inverse kinematics](../06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
 finds the joint angles that put the gripper at a chosen pose.
 [Trajectory optimisation](../06_planning-and-search/02_most-used/03_trajectory-optimisation.md)
 takes a path and makes it shorter, smoother and further from obstacles. Three
-techniques are also used. [Graph search](../06_planning-and-search/03_also-used/01_graph-search.md)
-finds the shortest route through a grid or a graph of poses.
+techniques are also used, and the first of them,
+[graph search](../06_planning-and-search/03_also-used/01_graph-search.md), finds
+the shortest route through a grid or a graph of poses.
 [Sampling-based optimisation and model predictive control (MPC)](../06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
-tries many random plans, keeps the best, and plans again a moment later from where
-the arm now is. [Visibility and next best view](../06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
-works out what a camera can see from a pose, and chooses where to look next. In the
-mug task, inverse kinematics turns "gripper above mug 2" into joint angles, and a
-planner finds a path to the rack that does not hit the rack itself. Read the
-[planning and search overview](../06_planning-and-search/01_overview.md).
+tries many random plans, keeps the best, and plans again a moment later from
+where the arm now is.
+[Visibility and next best view](../06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
+works out what a camera can see from a pose, and chooses where to look next. So
+in the mug task, inverse kinematics turns "gripper above mug 2" into joint
+angles, and a planner finds a path to the rack that does not hit the rack
+itself. Read
+the [planning and search overview](../06_planning-and-search/01_overview.md).
 
 ### Control and motion
 
-Control and motion turn a planned path into smooth, safe motor commands. Four
-techniques are most used.
+Control and motion turn a planned path into smooth, safe motor commands, and
+four of these techniques are most used.
 [Proportional-integral-derivative (PID) control](../07_control-and-motion/02_most-used/01_pid-control.md)
 makes each joint follow its target angle, many times a second.
 [Trajectory generation](../07_control-and-motion/02_most-used/02_trajectory-generation.md)
 decides how fast to move along the path at each moment, so the arm starts and
-stops smoothly. [Arm dynamics](../07_control-and-motion/02_most-used/03_arm-dynamics.md)
-works out the torque each joint needs to hold the arm up and to speed it up, so the
+stops smoothly.
+[Arm dynamics](../07_control-and-motion/02_most-used/03_arm-dynamics.md) works
+out the torque each joint needs to hold the arm up and to speed it up, so the
 controller does not have to wait for an error.
 [Safety monitoring](../07_control-and-motion/02_most-used/04_safety-monitoring.md)
 checks the arm's limits in software and stops it when one is broken or a person
 comes too close. One technique is also used:
 [impedance and force control](../07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
-makes the arm give way when it touches something, and stop if it pushes too hard.
-In the mug task, these techniques move the arm to each mug, and let it feel the
-peg when it hangs the mug on the rack. Read the
+makes the arm give way when it touches something, and stop if it pushes too
+hard. So in the mug task, these techniques move the arm to each mug, and let it
+feel the peg when it hangs the mug on the rack. Read the
 [control and motion overview](../07_control-and-motion/01_overview.md).
 
 ### Decisions and task logic
 
-Decisions and task logic decide what the robot does next, and in what order. Two
-techniques are most used. A
+Decisions and task logic decide what the robot does next, and in what order, and
+two of these techniques are most used. A
 [finite state machine](../08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
-moves the robot from one named step to the next, such as "looking", "picking" and
-"hanging". A [behaviour tree](../08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
-arranges the steps as a tree, which makes it easier to add retries and fallbacks.
-Two techniques are also used.
-[Greedy algorithms and set cover](../08_decisions-and-task-logic/03_also-used/01_greedy-algorithms-and-set-cover.md)
-make a good choice quickly by taking the best-looking option at each step.
+moves the robot from one named step to the next, such as "looking", "picking"
+and "hanging". A
+[behaviour tree](../08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
+arranges the steps as a tree, which makes it easier to add retries and
+fallbacks. Two techniques are also used, and the first of them,
+[greedy algorithms and set cover](../08_decisions-and-task-logic/03_also-used/01_greedy-algorithms-and-set-cover.md),
+makes a good choice quickly by taking the best-looking option at each step.
 [Optimisation solvers](../08_decisions-and-task-logic/03_also-used/02_optimisation-solvers.md)
-find the best order or assignment when the greedy choice is not good enough. In
-the mug task, a state machine runs the job, and a greedy rule picks the closest
-mug next. Read the
+find the best order or assignment when the greedy choice is not good enough. So
+in the mug task, a state machine runs the job, and a greedy rule picks the
+closest mug next. Read the
 [decisions and task logic overview](../08_decisions-and-task-logic/01_overview.md).
 
 ---
 
 ## 3. All 34 techniques in one table
 
-The table below lists every technique page in the book, in the order of the
-chapters. Read each row across: the category, the technique, whether it is in the
-chapter's most used or also used group, what it does in one line, and what it does
-in the mug task. The technique names are links to their pages.
+Section 2 described the categories one at a time, and the table below now
+gathers every technique page in the book into one place, in the order of the
+chapters. Read each row across: the category, the technique, whether it is in
+the chapter's most used or also used group, what it does in one line, and what
+it does in the mug task. The technique names are links to their pages.
 
 | Category | Technique | Group | What it does | In the mug task |
 | --- | --- | --- | --- | --- |
@@ -257,11 +272,12 @@ in the mug task. The technique names are links to their pages.
 | Decisions and task logic | [Greedy algorithms and set cover](../08_decisions-and-task-logic/03_also-used/01_greedy-algorithms-and-set-cover.md) | also used | takes the best-looking option at each step | picks the closest mug next; picks the fewest camera views that see every mug |
 | Decisions and task logic | [Optimisation solvers](../08_decisions-and-task-logic/03_also-used/02_optimisation-solvers.md) | also used | finds the best order or assignment | chooses which peg each mug goes on |
 
-Of the 34 pages, 23 are in a most used group and 11 are in an also used group.
+So of the 34 pages, 23 are in a most used group and 11 are in an also used
+group.
 
-A few of these do the same job in two ways. Finite state machines and behaviour
-trees both run the task. Least squares and RANSAC both fit shapes. Graph search
-and sampling-based planning both find paths. The
+A few of these do the same job in two ways. For example, finite state machines
+and behaviour trees both run the task, least squares and RANSAC both fit shapes,
+and graph search and sampling-based planning both find paths. So the
 [choosing a technique](03_choosing-a-technique.md) page explains how to pick
 between them, and each technique page compares itself with its neighbour.
 
@@ -269,10 +285,10 @@ between them, and each technique page compares itself with its neighbour.
 
 ## 4. When each kind does its job
 
-The map picture shows where each category works. It is also useful to see when
-each one works. The task for one mug can be split into seven steps: look from
-above, find the mugs, choose the next mug, plan the reach, reach and grasp, carry
-the mug to the rack, and hang it and let go.
+The map picture in section 1 shows where each category works, but it is also
+useful to see when each one works. So the task for one mug can be split into
+seven steps: look from above, find the mugs, choose the next mug, plan the reach,
+reach and grasp, carry the mug to the rack, and hang it and let go.
 
 ![A timeline of seven steps for one mug, with a coloured bar for each category showing the steps in which it is busy](../../images/what-techniques-are/the-map-of-techniques/when-each-runs.svg)
 
@@ -282,44 +298,47 @@ start, and control is busy from the reach to the end.
 
 Read the picture from left to right. At the start, image and point cloud
 processing and geometry turn the camera's pictures into mug positions. Fitting
-and searching then tidy those positions and match them to the mugs seen before.
-Planning works out the reach. Control then drives the arm for the rest of the
-task. Geometry and fitting come back during the grasp, because the camera takes a
-closer look as the gripper comes down. Decisions and task logic run from start to
-finish, because they decide when every other step begins.
+and searching then tidy those positions and match them to the mugs seen before,
+and planning works out the reach. After that, control drives the arm for the
+rest of the task. Geometry and fitting come back during the grasp, because the
+camera takes a closer look as the gripper comes down. Decisions and task logic
+run from start to finish, because they decide when every other step begins.
 
-This is one way to build the task, not the only one. A task where the mugs are
-always in the same place would not need the perception bars at all. A task where
-the arm must avoid people would have planning running during the carry as well.
+This is one way to build the task, not the only one. For example, a task where
+the mugs are always in the same place would not need the perception bars at all.
+However, a task where the arm must avoid people would have planning running
+during the carry as well.
 
 ---
 
 ## 5. How the categories connect
 
-The seven categories are separate chapters, but the techniques in them depend on
-each other. The output of one is very often the input of the next.
+Section 4 showed when each category is busy, and this section shows how they
+hand work to each other. The seven categories are separate chapters, but the
+techniques in them depend on each other, because the output of one is very often
+the input of the next.
 
-A threshold and clustering cut the mugs out of the depth picture. The pinhole
-camera model turns each mug's pixels into points. A rigid transform moves those
-points into the base frame. RANSAC and least squares fit the table and the mug's
-rim. Nearest-neighbour search and assignment keep track of which mug is which. A
-greedy rule chooses the next mug. Inverse kinematics and a planner find the
-joint angles and the path. Trajectory generation and PID control drive the
-motors, with arm dynamics supplying most of the torque and safety monitoring
-watching every command. A state machine or behaviour tree runs all of it in order. This chain,
-from picture to motors, is the most common way to build a programmed picking
-robot.
+First a threshold and clustering cut the mugs out of the depth picture, and then
+the pinhole camera model turns each mug's pixels into points. A rigid transform
+moves those points into the base frame, and RANSAC and least squares fit the
+table and the mug's rim. Nearest-neighbour search and assignment then keep track
+of which mug is which, so that a greedy rule can choose the next mug. After
+that, inverse kinematics and a planner find the joint angles and the path. Then
+trajectory generation and PID control drive the motors, with arm dynamics
+supplying most of the torque and safety monitoring watching every command. A
+state machine or behaviour tree runs all of it in order, and this chain, from
+picture to motors, is the most common way to build a programmed picking robot.
 
-Many of the categories share the building blocks from
-[the building blocks](02_the-building-blocks.md). Planning and decisions both use
-graphs. Fitting, planning and optimisation solvers all minimise a cost function.
-Geometry and planning both use transforms. So once you know one chapter, the next
-one is easier.
+Many of the categories also share the building blocks from
+[the building blocks](02_the-building-blocks.md). Planning and decisions both
+use graphs, while fitting, planning and optimisation solvers all minimise a cost
+function, and geometry and planning both use transforms. So once you know one
+chapter, the next one is easier.
 
-The categories also connect to Book 6. Some steps in the chain are often done by
-a learned model instead of a written technique. The table below shows the most
-common swaps. Read each row as one job: the written technique in this book, and
-the kind of learned model that can replace it.
+The categories also connect to Book 6, because some steps in the chain are often
+done by a learned model instead of a written technique. The table below shows
+the most common swaps, so read each row as one job: the written technique in
+this book, and the kind of learned model that can replace it.
 
 | Job | Written technique (this book) | Learned model (Book 6) |
 | --- | --- | --- |
@@ -332,17 +351,19 @@ the kind of learned model that can replace it.
 | decide the steps of a task | [behaviour trees](../08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md) | [language models as planners](../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md) |
 
 Even when a learned model takes over one job, the written techniques around it
-usually stay. A detection model gives a box in the picture. The pinhole camera
-model and a rigid transform still turn that box into a position the arm can reach.
+usually stay. For example, a detection model gives only a box in the picture, so
+the pinhole camera model and a rigid transform still have to turn that box into
+a position the arm can reach.
 
 ---
 
 ## 6. Find a method by job
 
-Most people come to these books with a job in mind, not a method. This section
-starts from the job. Read each row across: a job the arm must do, the Book 2 or
-Book 3 page that helps you choose how to do it, the written techniques in Book 5 that
-can do it, and the learned models in Book 6 that can do it.
+Most people come to these books with a job in mind rather than a method, so this
+section starts from the job instead of the technique. Read each row across: a
+job the arm must do, the Book 2 or Book 3 page that helps you choose how to do
+it, the written techniques in Book 5 that can do it, and the learned models in
+Book 6 that can do it.
 
 | Job on the arm | Book 2 or 3 page that helps choose | Written techniques (Book 5) | Learned models (Book 6) |
 | --- | --- | --- | --- |
@@ -367,28 +388,31 @@ can do it, and the learned models in Book 6 that can do it.
 | predict what happens next | [learned world models](../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#4-learned-world-models) | [arm dynamics](../07_control-and-motion/02_most-used/03_arm-dynamics.md), [system identification](../04_fitting-and-estimation/03_also-used/01_system-identification.md) | [learned dynamics models](../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md), [video prediction models](../../06_learned-models/08_world-models/03_also-used/01_video-prediction-models.md), [learned simulators](../../06_learned-models/08_world-models/03_also-used/02_learned-simulators.md) |
 | check that the task worked | [judging whether it works](../../03_frameworks/03_arm-movement/05_learned-motion.md#6-judging-whether-it-works) | [behaviour trees](../08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md), [thresholding and colour masks](../05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) | [vision-language models](../../06_learned-models/07_language-models/02_most-used/02_vision-language-models.md), [reward and progress models](../../06_learned-models/06_movement-models/03_also-used/03_reward-and-progress-models.md) |
 
-Most jobs have both a written and a learned answer, and the Book 2 or Book 3 page says
-which one suits which case. Two rows have only one side. No learned model is in
-common use to check whether the arm can reach a pose, because inverse kinematics
-already gives an exact answer quickly. And no written technique can follow an
-instruction in free wording, because a person can say the same thing in too many
-ways to list them all. Many real arms mix the two sides: a learned model finds
-the object, and written techniques do the rest.
+Most jobs have both a written and a learned answer, and the Book 2 or Book 3
+page says which one suits which case. However, two rows have only one side. No
+learned model is in common use to check whether the arm can reach a pose,
+because inverse kinematics already gives an exact answer quickly. And no written
+technique can follow an instruction in free wording, because a person can say
+the same thing in too many ways to list them all. Many real arms therefore mix
+the two sides, so that a learned model finds the object and written techniques
+do the rest.
 
-The learned column includes the methods of Book 6's
+The learned column also includes the methods of Book 6's
 [classical machine learning](../../06_learned-models/02_classical-machine-learning/01_overview.md)
-chapter, which are not neural networks. They appear in the rows where the input is
-a few measured numbers: correcting a sensor, tuning a controller's gains, learning
-a motion from a few demonstrations, and scoring grasps or spotting faults from
-logged numbers.
+chapter, which are not neural networks. They appear in the rows where the input
+is only a few measured numbers: correcting a sensor, tuning a controller's
+gains, learning a motion from a few demonstrations, and scoring grasps or
+spotting faults from logged numbers.
 
 ---
 
 ## 7. A suggested reading order
 
-The chapters are numbered in the order this book suggests. Read them from 01 to 08,
-the same order as the folders. Each chapter explains its own terms, so you can also
-start anywhere. The list below gives the reason for each step.
+Section 6 lets you jump to a technique by job, but if you want to read the book
+through, the chapters are numbered in the order this book suggests. Read them
+from 01 to 08, which is the same order as the folders. Each chapter explains its
+own terms, so you can also start anywhere, and the list below gives the reason
+for each step.
 
 1. This chapter, starting with [programmed, not learned](01_programmed-not-learned.md).
    Everything else uses its words: technique, parameter, frame, graph, noise, cost
@@ -409,15 +433,16 @@ start anywhere. The list below gives the reason for each step.
    ties all the others together into a whole task.
 
 Chapters 03, 04 and 05 lean on each other, so you can read those three in any
-order. Each one uses a little of the other two. Clustering, in chapter 05, uses the
-nearest-neighbour search from chapter 03. RANSAC, in chapter 04, is often run on the
-points that chapter 05 cut out. And the matching in chapter 03 often works on
-positions that a Kalman filter from chapter 04 has made steady. Whichever of the
-three you read first, the other two will be easier after it.
+order, because each one uses a little of the other two. For example, clustering
+in chapter 05 uses the nearest-neighbour search from chapter 03, while RANSAC in
+chapter 04 is often run on the points that chapter 05 cut out. And the matching
+in chapter 03 often works on positions that a Kalman filter from chapter 04 has
+made steady. So whichever of the three you read first, the other two will be
+easier after it.
 
-If you have one job in mind, you can jump straight to its chapter. For example, if
-you only want the arm to move smoothly to a known pose, read planning and search,
-and then control and motion.
+So if you have one job in mind, you can jump straight to its chapter. For example,
+if you only want the arm to move smoothly to a known pose, read planning and
+search, and then control and motion.
 
 ---
 

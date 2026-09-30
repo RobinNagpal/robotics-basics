@@ -1,19 +1,21 @@
 # Uncertainty and confidence
 
-A model always gives an answer. It gives one even when it has no good reason to.
-This page answers one question: how can a robot tell when a model is unsure, and
-what should it do then?
+A model always gives an answer, and it gives one even when it has no good reason to.
+This page therefore answers one question: how can a robot tell when a model is
+unsure, and what should it do about it?
 
 It is for a beginner who has read the earlier pages of this chapter, especially
-[running a model on a robot](../02_most-used/02_running-a-model-on-a-robot.md). Section 5 of that
-page showed that a model can be sure and wrong. This page goes further. It shows how
-to check a model's scores, how to fix them, how to measure how unsure a model is,
-and how to turn that into a decision: act, look again, or ask a person.
+[running a model on a robot](../02_most-used/02_running-a-model-on-a-robot.md),
+because section 5 of that page showed that a model can be sure and wrong at the same
+time. This page goes further than that, since it shows how to check a model's scores,
+how to fix them, how to measure how unsure a model really is, and finally how to turn
+all of that into one decision: act, look again, or ask a person.
 
 Every number on this page comes from a real run of the diagram script
-`docs/diagrams/what_models_are_3.py`. The model and its pictures are simulated. The
-script makes up a five-class "model" and draws its right answers at random, so that
-we know the truth exactly. The methods run on those numbers are the real ones.
+`docs/diagrams/what_models_are_3.py`, although the model and its pictures are
+simulated. The script makes up a five-class "model" and draws its right answers at
+random, so that we know the truth exactly, however the methods run on those numbers
+are the real ones.
 
 > Before this page, it helps to have read [the Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#what-the-filter-keeps), which explains the spread of a set of readings and how a program keeps track of how unsure it is.
 
@@ -41,53 +43,59 @@ A model's confidence is only useful if a score of 0.9 really means "right about 
 times in 10", so you first check and fix the scores, and then let the robot act
 only when the chance of being right is high enough for what a mistake would cost.
 
-Here is an everyday example. A weather forecast says "70% chance of rain". A good
-forecaster is right about this in a simple way. On all the days they said 70%, it
-rained on about 70 of every 100. A forecaster who says 70% but gets rain on only 40
-of every 100 such days is not useful, even if they are often right about sunny
-days. You would also act differently on the same forecast depending on what is at
-stake. For a walk to the shop you might ignore a 30% chance of rain. For a wedding
-outdoors you would put up a tent.
+Here is an everyday example. A weather forecast says "70% chance of rain", and a good
+forecaster is right about this in a simple way, because on all the days they said 70%
+it rained on about 70 of every 100. A forecaster who says 70% but gets rain on only
+40 of every 100 such days is not useful at all, even if they are often right about
+sunny days. You would also act differently on the very same forecast depending on
+what is at stake, since for a walk to the shop you might ignore a 30% chance of rain,
+whereas for a wedding outdoors you would put up a tent.
 
-A robot needs both halves of this. It needs scores that mean what they say. And it
-needs a rule that turns a score into an action, based on what a mistake costs.
+A robot needs both halves of this. It needs scores that mean what they say, and it
+also needs a rule that turns a score into an action, based on what a mistake would
+cost.
 
 ---
 
 ## 2. A score is not a probability until it is checked
 
-The last layer of a classifying network gives one number per class. These raw
-numbers are called **logits**. They can be any size and can be negative. A small
-function called **softmax** then turns them into scores between 0 and 1 that add up
-to 1. Softmax makes big logits bigger and small ones smaller, in proportion. The
+Since a robot needs scores that mean what they say, it is worth knowing where those
+scores come from. The last layer of a classifying network gives one number per class,
+and these raw numbers are called **logits**, which can be any size and can be
+negative. A small function called **softmax** then turns them into scores between 0
+and 1 that add up to 1, and it does this by making big logits bigger and small ones
+smaller, in proportion. The
 [what a model is](../../01_what-models-are/01_what-a-model-is.md#3-everything-is-numbers) page showed two
 such scores for "mug" and "bowl".
 
-Scores that add up to 1 look like probabilities. A **probability** is a number that
-says how often something happens. A probability of 0.9 means "9 times in 10". But
-nothing in training forces the scores to match how often the model is right.
-Training only pushes the score of the right class up. A large network trained for a
-long time learns to push it very high, even on examples it gets wrong. So modern
-networks are often **overconfident**: they give scores that are higher than their
-real rate of being right.
+Scores that add up to 1 look like probabilities, and a **probability** is a number
+that says how often something happens, so a probability of 0.9 means "9 times in 10".
+However nothing in training forces the scores to match how often the model is
+actually right, because training only pushes the score of the right class upwards. A
+large network trained for a long time learns to push that score very high indeed,
+even on the examples it gets wrong, which is why modern networks are often
+**overconfident**: they give scores that are higher than their real rate of being
+right.
 
-The simulated model on this page shows the problem. It was tested on 2,000
-pictures of five kinds of object: mug, cup, bowl, jar and box. It gave the right
-class for 80.5% of them. But its average score for its chosen class was 0.957. It
-said "about 96% sure" while being right about 80% of the time. On the 1,751 test
-pictures where its score was above 0.9, it was right on only 85.6% of them.
+The simulated model on this page shows the problem clearly. It was tested on 2,000
+pictures of five kinds of object, namely mug, cup, bowl, jar and box, and it gave the
+right class for 80.5% of them. However its average score for its chosen class was
+0.957, so it said "about 96% sure" while being right about 80% of the time. On the
+1,751 test pictures where its score was above 0.9, it was right on only 85.6% of
+them.
 
-A score that matches how often the model is right is called **calibrated**. The
-next two sections show how to check this and how to fix it.
+A score that matches how often the model is right is called **calibrated**, so the
+next two sections show first how to check this and then how to fix it.
 
 ---
 
 ## 3. Checking the scores: the reliability curve
 
-The check needs pictures the model did not train on, with the right answers known.
-A test set, as described in
-[how a model learns](../../01_what-models-are/02_how-a-model-learns.md#6-keeping-some-examples-back-the-test-set),
-works. The check has four steps:
+Because a score only means something once it has been checked, the check comes first.
+It needs pictures the model did not train on, with the right answers already known,
+so a test set works, as described in
+[how a model learns](../../01_what-models-are/02_how-a-model-learns.md#6-keeping-some-examples-back-the-test-set).
+The check itself has four steps.
 
 1. Run the model on every test picture. Write down its top score and whether its
    answer was right.
@@ -104,31 +112,32 @@ right". A bar below the line means the model was overconfident in that group.
 
 ![Reliability curve for 2,000 simulated test pictures before and after temperature scaling](../../../images/what-models-are/uncertainty-and-confidence/reliability-curve.svg)
 
-The left half of the picture shows the raw scores. Almost all the pictures, 1,751 of
-2,000, fall in the top group, with an average score of 0.99. The model was right on
-only 0.86 of them. The lower groups are further below the line still. Groups with
-fewer than 20 pictures are left out, because a share from a handful of pictures is
-mostly chance.
+The left half of the picture shows the raw scores, and almost all the pictures, 1,751
+of 2,000, fall into the top group with an average score of 0.99, where the model was
+right on only 0.86 of them. The lower groups sit further below the line still. Groups
+with fewer than 20 pictures are left out, because a share worked out from a handful
+of pictures is mostly chance.
 
-To sum up the whole curve in one number, people use the **expected calibration
-error (ECE)**. It is the gap between each bar and the diagonal, averaged over all
-pictures. Each group counts in proportion to how many pictures it holds. For the raw
-scores the ECE is 0.153. That means the scores are off by about 15 percentage
-points on average.
+To sum up the whole curve in a single number, people use the **expected calibration
+error (ECE)**, which is the gap between each bar and the diagonal, averaged over all
+the pictures so that each group counts in proportion to how many pictures it holds.
+For the raw scores the ECE is 0.153, which means the scores are off by about 15
+percentage points on average.
 
 ---
 
 ## 4. Fixing the scores: temperature scaling
 
-The simplest fix is called **temperature scaling**. It divides every logit by one
-number, T, before softmax. T is called the **temperature**. A temperature above 1
-pulls the logits closer together, so softmax gives less extreme scores. A
-temperature below 1 does the opposite. The name comes from physics, where a hotter
+Once the check has shown that the scores are wrong, the next step is to fix them, and
+the simplest fix is called **temperature scaling**. It divides every logit by one
+number, T, before softmax, and T is called the **temperature**. A temperature above 1
+pulls the logits closer together, so softmax then gives less extreme scores, whereas
+a temperature below 1 does the opposite. The name comes from physics, where a hotter
 system is more spread out.
 
-T is chosen on a set of pictures kept aside for this, called the **calibration
-set** or validation set. It must not be the test set, or the check in section 3
-would no longer be honest. The steps are:
+T is chosen on a set of pictures kept aside for exactly this purpose, called the
+**calibration set** or validation set, and it must not be the test set, because
+otherwise the check in section 3 would no longer be honest. The steps are these.
 
 1. Run the model once on the calibration pictures and store the logits.
 2. Try many values of T. For each one, divide the logits by T, apply softmax, and
@@ -140,35 +149,37 @@ would no longer be honest. The steps are:
 4. From then on, divide the logits by that T every time the model runs.
 
 The script tried every T from 0.50 to 5.00 in steps of 0.01 on 1,000 calibration
-pictures. The best was T = 2.48. The right half of the picture above shows the test
-pictures with that temperature. The bars now sit close to the diagonal. The ECE
-fell from 0.153 to 0.023. Of the 970 test pictures that now score above 0.9, the
-model was right on 95.3%.
+pictures, and the best value was T = 2.48. The right half of the picture above shows
+the test pictures with that temperature applied, and the bars now sit close to the
+diagonal, because the ECE fell from 0.153 to 0.023. Of the 970 test pictures that now
+score above 0.9, the model was right on 95.3%.
 
-Temperature scaling has one very useful property. Dividing every logit by the same
-positive number never changes which logit is largest. So the model's answers do not
-change at all. Its accuracy stays at exactly 80.5%. Only the scores change. That
-makes it a safe step to add to any trained classifier.
+Temperature scaling has one very useful property, which is that dividing every logit
+by the same positive number never changes which logit is largest. This means the
+model's answers do not change at all and its accuracy stays at exactly 80.5%, so only
+the scores change, which makes temperature scaling a safe step to add to any trained
+classifier.
 
-Two other fixes are common. **Platt scaling** fits a small formula with two numbers
-instead of one. **Isotonic regression** fits a staircase that maps each raw score to
-a calibrated one. Isotonic regression can fix more shapes of error, but it needs
-more calibration pictures, because it has more numbers to fit.
+Two other fixes are also common. **Platt scaling** fits a small formula with two
+numbers instead of one, whereas **isotonic regression** fits a staircase that maps
+each raw score to a calibrated one. Isotonic regression can fix more shapes of error,
+however it needs more calibration pictures, because it has more numbers to fit.
 
 ---
 
 ## 5. Measuring how unsure a model is: ensembles and dropout
 
-Calibration fixes the scores on pictures like the calibration pictures. It does not
-tell you when an input is unlike anything the model has seen. For that you need a
-second kind of signal: does the model's answer depend on luck?
+Calibration fixes the scores on pictures that look like the calibration pictures,
+however it does not tell you when an input is unlike anything the model has ever
+seen. For that you need a second kind of signal, which answers a different question:
+does the model's answer depend on luck?
 
-The idea is simple. Train the same kind of model more than once, with different
-random starting weights. Where there were many training examples, the copies are
-forced to agree, because they all had to match the same examples. Where there were
-none, nothing forced them to agree, and they give different answers. The spread
-between their answers is a measure of how unsure the model is. It is often called
-**model uncertainty**.
+The idea behind that signal is simple. You train the same kind of model more than
+once, each time with different random starting weights. Where there were many
+training examples the copies are forced to agree, because they all had to match the
+same examples, whereas where there were no examples nothing forced them to agree, so
+they give different answers. The spread between their answers is therefore a measure
+of how unsure the model is, and it is often called **model uncertainty**.
 
 There are two common ways to get several answers.
 
@@ -176,17 +187,18 @@ There are two common ways to get several answers.
   [learned dynamics models](../../08_world-models/02_most-used/01_learned-dynamics-models.md)
   page uses one to see how far a prediction can be trusted. Five copies is a common
   choice.
-- **Dropout** is a trick used during training. At each training step it switches
-  off a random share of the neurons, for example one in five. It was invented to
-  stop overfitting. **Monte Carlo dropout** (MC dropout) keeps it switched on when
-  the model is used, and runs the model many times on the same input. Each run
-  switches off different neurons, so each run gives a slightly different answer.
-  "Monte Carlo" is a name for any method that uses repeated random tries.
+- **Dropout** is a trick used during training, because at each training step it
+  switches off a random share of the neurons, for example one in five, and it was
+  invented to stop overfitting. **Monte Carlo dropout** (MC dropout) keeps dropout
+  switched on when the model is used and runs the model many times on the same
+  input, so that each run switches off different neurons and therefore gives a
+  slightly different answer. "Monte Carlo" is simply a name for any method that uses
+  repeated random tries.
 
-The script tested both on a small example. A network learns how hard a gripper must
-squeeze to hold an object, from the object's mass. It has 25 training examples, all
-with masses between 0.1 and 1.0 kilograms. The true curve is made up, and the
-network does not know it.
+The script tested both of these on a small example. A network learns how hard a
+gripper must squeeze to hold an object, using the object's mass as its only input,
+and it has 25 training examples, all with masses between 0.1 and 1.0 kilograms. The
+true curve is made up, and the network does not know it.
 
 ![Five separately trained networks agree where there were examples and spread apart beyond them; dropout spreads much less](../../../images/what-models-are/uncertainty-and-confidence/ensemble-spread.svg)
 
@@ -200,11 +212,12 @@ their average. Read each row as one mass.
 | 1.5 kg (outside) | 31.9 N | 26.0 ± 3.4 N | 25.4 ± 1.0 N |
 | 2.0 kg (far outside) | 46.0 N | 29.6 ± 5.1 N | 28.1 ± 1.1 N |
 
-Inside the training range, both methods agree closely with each other and with the
-truth. Outside it, the ensemble's copies spread apart. That spread is the warning
-sign: "I have not seen objects this heavy." MC dropout also spreads a little more
-outside the range, but much less than the ensemble. Its answers are all wrong in the
-same direction. This is a known weakness. MC dropout is cheaper, because it needs
+Inside the training range both methods agree closely with each other and with the
+truth. Outside that range, however, the ensemble's copies spread apart, and that
+spread is exactly the warning sign you want, because it says "I have not seen objects
+this heavy". MC dropout also spreads a little more outside the range, but much less
+than the ensemble does, and its answers are all wrong in the same direction, which is
+a known weakness of it. MC dropout is cheaper, because it needs
 only one trained network, but it tends to report too little uncertainty. An ensemble
 costs more to train and to run, and usually gives a more honest spread.
 
@@ -221,14 +234,14 @@ not be trusted. That is what the robot needs to know.
 
 ## 6. A guaranteed set of answers: conformal prediction
 
-Sections 3 and 4 made the scores match the truth on average. **Conformal
-prediction** goes one step further. It gives a promise you can write down: "the
-right answer will be in this set of answers at least 90% of the time."
+Sections 3 and 4 made the scores match the truth on average, whereas **conformal
+prediction** goes one step further, because it gives a promise you can write down:
+"the right answer will be in this set of answers at least 90% of the time."
 
-Instead of one answer, the model gives a **prediction set**: a short list of
-answers. When the model is sure, the list has one answer. When it is unsure, the
-list has two or more. The list is never empty in practice, and its length is itself
-a measure of how unsure the model is.
+Instead of one answer, the model gives a **prediction set**, which is a short list of
+answers. When the model is sure the list holds one answer, whereas when it is unsure
+the list holds two or more. The list is never empty in practice, so its length is
+itself a measure of how unsure the model is.
 
 The simplest version, called **split conformal prediction**, needs a calibration
 set and works in two steps.
@@ -238,9 +251,9 @@ set and works in two steps.
 1. Choose how often you are willing to miss. Call it alpha. Here alpha is 0.1, which
    means "miss at most 10% of the time".
 2. For each calibration picture, look at the score the model gave to the right
-   answer. Work out the **surprise**: 1 minus that score. A surprise near 0 means
-   the model gave the right answer a high score. A surprise near 1 means it gave the
-   right answer almost nothing.
+   answer, and work out the **surprise**, which is 1 minus that score. A surprise
+   near 0 therefore means the model gave the right answer a high score, whereas a
+   surprise near 1 means it gave the right answer almost nothing.
 3. Sort the surprises. Find the value q that 90% of them are below. (For exactness,
    the formula uses a slightly higher share: (n + 1) × 0.9 / n of them, where n is the
    number of calibration pictures.)
@@ -249,15 +262,15 @@ set and works in two steps.
 
 4. Put into the set every answer whose score is at least 1 − q.
 
-The script did this with the temperature-scaled scores from section 4, on 1,000
-calibration pictures that were not used to choose T. It found q = 0.889. So each set
-holds every answer with a score of at least 0.111.
+The script did this with the temperature-scaled scores from section 4, using 1,000
+calibration pictures that were not used to choose T, and it found q = 0.889, which
+means each set holds every answer with a score of at least 0.111.
 
 ![A histogram of 1,000 calibration surprises with the 90% line, then three test pictures and the sets they get](../../../images/what-models-are/uncertainty-and-confidence/conformal-sets.svg)
 
-The left part of the picture is step 1. Most calibration pictures have a small
-surprise, and a few have a large one. The red line is q. The three parts on the
-right are step 2, for three test pictures:
+The left part of the picture shows step 1, where most calibration pictures have a
+small surprise and only a few have a large one, and the red line is q. The three
+parts on the right then show step 2, for three test pictures.
 
 - Picture 1 gives "box" a score of 0.78 and every other class 0.09 or less. Only
   "box" clears 0.111, so the set is {box}.
@@ -266,21 +279,23 @@ right are step 2, for three test pictures:
 - Picture 3 gives "cup" 0.43, "mug" 0.26 and "box" 0.15. All three clear the line,
   so the set is {mug, cup, box}. The model is plainly unsure.
 
-On the 2,000 test pictures, 71.4% of the sets had one answer, 16.5% had two, 8.6%
-had three, 3.2% had four and 0.3% had all five. The average set had 1.44 answers.
-The right answer was in the set for 88.3% of the test pictures. Compare that with
-the single best guess, which was right for only 80.5%.
+On the 2,000 test pictures, 71.4% of the sets had one answer, 16.5% had two, 8.6% had
+three, 3.2% had four and 0.3% had all five, so the average set held 1.44 answers. The
+right answer was inside the set for 88.3% of the test pictures, which is worth
+comparing with the single best guess, since that was right for only 80.5%.
 
-88.3% is a little under 90%. That is not a fault. The promise is about the average
-over many possible calibration sets, and any one set of pictures wobbles a little
-around it. The script checked this. It mixed the 3,000 pictures and split them into
-a new calibration set and a new test set, 200 times. The average coverage was 90.1%.
-The lowest was 87.3% and the highest was 92.8%.
+88.3% is a little under 90%, however this is not a fault, because the promise is
+about the average over many possible calibration sets and any one set of pictures
+wobbles a little around it. The script checked exactly this by mixing the 3,000
+pictures and splitting them into a new calibration set and a new test set 200 times,
+and the average coverage was 90.1%, with the lowest at 87.3% and the highest at
+92.8%.
 
-The promise needs one condition. The new pictures must come from the same kind of
-situation as the calibration pictures. The technical word is **exchangeable**: you
-could swap a calibration picture with a new picture and not be able to tell which
-was which. If the robot moves to a darker room, the promise no longer holds.
+The promise does need one condition, which is that the new pictures must come from
+the same kind of situation as the calibration pictures. The technical word for this
+is **exchangeable**, meaning that you could swap a calibration picture with a new
+picture and not be able to tell which was which. So if the robot moves to a darker
+room, the promise no longer holds.
 
 Conformal prediction also works for numbers, not only for names. Then it gives a
 range, such as "the object is between 41 and 47 centimetres away", instead of a set.
@@ -293,15 +308,16 @@ Once a robot has a trustworthy measure of how sure a model is, it can choose not
 act on some answers. This is called the **reject option**. The model is allowed to
 say "I don't know".
 
-The simplest rule is a threshold. The robot acts only when the calibrated score is
-at least some value t. The higher t is, the fewer pictures it acts on, and the fewer
-of those it gets wrong.
+The simplest rule is a threshold, where the robot acts only when the calibrated score
+is at least some value t. The higher t is, the fewer pictures the robot acts on, and
+the fewer of those it gets wrong.
 
 ![Left: as the threshold rises, the robot acts on fewer pictures and gets fewer wrong. Right: expected cost of acting or asking, for a sponge and a glass](../../../images/what-models-are/uncertainty-and-confidence/reject-and-cost.svg)
 
-The left half of the picture shows this for the 2,000 calibrated test pictures. The
-table below gives five points on that curve. Read each row as one threshold: the
-share of pictures the robot acts on, and the share of those it gets wrong.
+The left half of the picture shows this for the 2,000 calibrated test pictures, and
+the table below gives five points on that curve. Read each row as one threshold,
+showing the share of pictures the robot acts on and the share of those it gets
+wrong.
 
 | Act only if score is at least | Acts on | Wrong on |
 | --- | --- | --- |
@@ -311,11 +327,11 @@ share of pictures the robot acts on, and the share of those it gets wrong.
 | 0.90 | 48.5% | 4.7% |
 | 0.95 | 32.0% | 2.3% |
 
-So declining is not free. To cut mistakes from 19.5% to 2.3%, the robot must
-decline on 68% of the pictures. What it does with the declined pictures matters as
-much as the threshold.
+So declining is not free, because to cut mistakes from 19.5% down to 2.3% the robot
+must decline on 68% of the pictures. This means what the robot does with the declined
+pictures matters just as much as the threshold itself.
 
-A robot has three useful things to do instead of acting:
+A robot has three useful things it can do instead of acting.
 
 - **Look again.** Move the camera to a different angle, turn on a light, or wait for
   the arm to move out of the view, and ask the model again. A picture from a new
@@ -332,19 +348,21 @@ A robot has three useful things to do instead of acting:
   slow, so it suits rare cases. The person's answer can also be saved as a new
   training example, so the model improves where it was weakest.
 
-With conformal sets, the rule is even simpler. If the set has one answer, act. If
-it has more than one, look again or ask.
+With conformal sets the rule becomes even simpler, because if the set holds one
+answer the robot acts, whereas if it holds more than one the robot looks again or
+asks.
 
 ---
 
 ## 8. Setting the threshold from the cost of being wrong
 
-Which threshold is right? It depends on what a mistake costs, compared with what
-declining costs. The answer comes from a short calculation.
+Section 7 showed that the threshold decides how often the robot declines, so the next
+question is which threshold is right. That depends on what a mistake costs compared
+with what declining costs, and the answer comes from a short calculation.
 
-Say the calibrated probability that the model is right is p. Say a mistake costs W,
-and asking a person costs A. Both are in the same made-up units, such as seconds of
-a person's time or money.
+Say the calibrated probability that the model is right is p, that a mistake costs W,
+and that asking a person costs A, where both costs are in the same made-up units,
+such as seconds of a person's time or money.
 
 - If the robot acts, it is wrong with probability 1 − p. The **expected cost**, the
   average cost over many such cases, is (1 − p) × W.
@@ -355,37 +373,42 @@ a person's time or money.
 The right half of the picture in section 7 shows two examples, with asking costing
 1 unit:
 
-- **A sponge.** Dropping a sponge costs little: a second try, 2 units. The
-  threshold is 1 − 1/2 = 0.50. Act on any grasp that is more likely right than wrong.
-- **A glass.** Dropping a glass costs a broken glass and a clean-up: 50 units. The
-  threshold is 1 − 1/50 = 0.98. Act only when the model is very sure.
+- **A sponge.** Dropping a sponge costs little, because it only means a second try,
+  which is 2 units, so the threshold is 1 − 1/2 = 0.50 and the robot acts on any
+  grasp that is more likely right than wrong.
+- **A glass.** Dropping a glass costs a broken glass and a clean-up, which is 50
+  units, so the threshold is 1 − 1/50 = 0.98 and the robot acts only when the model
+  is very sure.
 
-The same model and the same calibrated scores give different thresholds for
-different objects. This is the right way to set a threshold. A fixed number, such as
-"always 0.8", is a guess. A threshold from the costs has a reason behind it.
+The same model and the same calibrated scores therefore give different thresholds for
+different objects, and this is the right way to set a threshold. A fixed number, such
+as "always 0.8", is only a guess, whereas a threshold worked out from the costs has a
+reason behind it.
 
-This calculation only works if the scores are calibrated. With the raw scores in
-section 2, a score of 0.99 meant "right 86% of the time". A robot that trusted it
-with the glass would break about one glass in seven.
+This calculation only works if the scores are calibrated, however. With the raw
+scores from section 2, a score of 0.99 meant "right 86% of the time", so a robot that
+trusted that score with the glass would break about one glass in seven.
 
 ---
 
 ## 9. Where it is used on a robot arm
 
-The ideas on this page appear in many places on a robot arm:
+Now that the whole method is in place, it is worth seeing where it is actually used,
+because the ideas on this page appear in many places on a robot arm.
 
 - **Before a grasp.** A grasp model gives each candidate grasp a score. The
   [grasp quality models](../../05_grasp-models/03_also-used/02_grasp-quality-models.md)
   page describes these. With calibrated scores, the arm tries a grasp only when its
   chance of success is high enough for the object.
-- **Object detection.** A detector's scores decide which boxes the robot believes.
-  Calibrating them, and using a cost-based threshold, avoids reaching for objects
-  that are not there.
+- **Object detection.** A detector's scores decide which boxes the robot believes, so
+  calibrating those scores and then using a cost-based threshold is what stops the
+  arm reaching for objects that are not there.
 - **Sorting and picking in a warehouse.** A cascade sends the rare unclear item to a
-  person, while the arm handles the rest. Many commercial picking cells work this way.
-- **Movement models.** An ensemble of movement policies, or of world models, can
-  warn when the robot is in a situation none of its demonstrations covered. The
-  robot can then slow down or stop. See the
+  person while the arm handles all the rest, which is how many commercial picking
+  cells work.
+- **Movement models.** An ensemble of movement policies, or of world models, can warn
+  when the robot is in a situation that none of its demonstrations covered, so that
+  the robot can then slow down or stop. See the
   [learned dynamics models](../../08_world-models/02_most-used/01_learned-dynamics-models.md)
   page.
 - **Checking success.** A model that answers "did the grasp work?" or "is the task

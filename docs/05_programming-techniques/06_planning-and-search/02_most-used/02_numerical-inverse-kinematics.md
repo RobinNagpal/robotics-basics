@@ -1,23 +1,22 @@
 # Numerical inverse kinematics
 
 This page explains how a program finds the joint angles that put a gripper at a
-chosen place, when there is no neat formula to do it. It answers five questions.
-How does the guess-and-correct loop work? What is the Jacobian, and why does the
-loop need it? Why does the plain loop go wild when the arm is nearly straight?
-How does **damped least squares**, the method most solvers use, fix that? And
-what happens when the target cannot be reached at all?
+chosen place, when there is no neat formula to do it. It does that with a
+guess-and-correct loop, so the page answers five questions about it. How does the
+guess-and-correct loop work? What is the Jacobian, and why does the loop need it?
+Why does the plain loop go wild when the arm is nearly straight? How does **damped
+least squares**, the method most solvers use, fix that? And what happens when the
+target cannot be reached at all?
 
-It is for a reader who has read
-[inverse kinematics](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md)
+It is for a reader who has read [inverse kinematics](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md)
 in Book 1. That page solves the same small arm with a triangle formula, and then
-introduces the guess-and-correct loop in
-[its section 6](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md#6-numerical-inverse-kinematics-guess-and-correct).
-This page picks up where that one stops. It uses the same arm, the same target
-and the same first guess, so you can compare the numbers.
+introduces the guess-and-correct loop in [its section 6](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md#6-numerical-inverse-kinematics-guess-and-correct).
+This page picks up where that one stops. So it uses the same arm, the same target
+and the same first guess, and you can compare the numbers directly.
 
-The arm has two links lying flat: link 1 is 3 m and link 2 is 2 m. The target is
-`(2.598, 3.5)`, which is where the gripper sits when `q1 = 30°` and `q2 = 60°`.
-Every number on this page is printed by the diagram script
+The arm has two links lying flat, and link 1 is 3 m while link 2 is 2 m. The
+target is `(2.598, 3.5)`, which is where the gripper sits when `q1 = 30°` and `q2
+= 60°`. Every number on this page is printed by the diagram script
 `docs/diagrams/planning_and_search_2.py`.
 
 ## Contents
@@ -48,43 +47,47 @@ Guess the joint angles, see how far the gripper misses the target, work out whic
 small turn of each joint shrinks that miss, make the turn, and repeat until the
 miss is tiny.
 
-Here is an everyday example. Think of parking a car close to a kerb with the
-help of a mirror. You do not work out the steering angle in advance. You look in
-the mirror, see that you are 40 cm out, turn the wheel a little, roll back, and
-look again. Each look tells you the miss. You know from experience which way to
-turn the wheel to shrink it. You keep going until you are close enough.
+Here is an everyday example of that loop: think of parking a car close to a kerb
+with the help of a mirror. You do not work out the steering angle in advance.
+Instead you look in the mirror, see that you are 40 cm out, turn the wheel a
+little, roll back, and look again. Each look tells you the miss, and you know from
+experience which way to turn the wheel to shrink it. In other words, you keep
+going until you are close enough.
 
-A program does the same. Forward kinematics is its mirror: it says where the
-gripper is for any set of joint angles. The **Jacobian** is its experience: it
-says which way the gripper moves when each joint turns. Inverse kinematics is
-often shortened to **IK**, and this page uses that short form from here on.
+A program does the same thing, and forward kinematics is its mirror, because
+forward kinematics says where the gripper is for any set of joint angles. The
+**Jacobian** is its experience, because the Jacobian says which way the gripper
+moves when each joint turns. Inverse kinematics is often shortened to **IK**, and
+this page uses that short form from here on.
 
 ---
 
 ## 2. How it works
 
-The steps below go in the order the program runs them.
+Section 1 gave the whole loop in one sentence, so the steps below take it apart,
+in the order the program runs them.
 
 ### Step 1: measure the miss
 
-The program starts from a guess for the joint angles. On a real robot the guess
-is usually the arm's current angles. Here it is `q1 = 0°`, `q2 = 30°`, the same
-guess Book 1 uses.
+The program starts from a guess for the joint angles, and on a real robot that
+guess is usually the arm's current angles. Here it is `q1 = 0°`, `q2 = 30°`, which
+is the same guess Book 1 uses.
 
-It runs forward kinematics on the guess to find where the gripper is. Then it
-subtracts that from the target. The result is the **miss**: an arrow from the
-gripper to the target, with an `x` part and a `y` part. Its length is how far off
-the gripper is. For the first guess the length is 3.287 m.
+It runs forward kinematics on the guess to find where the gripper is, and then it
+subtracts that position from the target. The result is the **miss**, which is an
+arrow from the gripper to the target, with an `x` part and a `y` part. Its length
+is how far off the gripper is, and for the first guess that length is 3.287 m.
 
 ### Step 2: the Jacobian
 
-The Jacobian is a small table with one column per joint. Each column says how
-far the gripper moves, in `x` and in `y`, when that joint turns by one radian. It
-only holds for small turns, and it changes as the arm moves, so the program
-works it out again at every step.
+Step 1 measured the miss, so the next question is which joint turn will shrink it,
+and the Jacobian is what answers that. It is a small table with one column per
+joint. Each column says how far the gripper moves, in `x` and in `y`, when that
+joint turns by one radian. It only holds for small turns, and it changes as the
+arm moves, so the program works it out again at every step.
 
 Book 1 finds each column by turning one joint a millionth of a radian and seeing
-where the gripper goes. For this arm there is also a short formula. At
+where the gripper goes. However, for this arm there is also a short formula. At
 `(30°, 60°)` the table is:
 
 ```
@@ -93,51 +96,52 @@ gripper x:       -3.500     -2.000
 gripper y:        2.598      0.000
 ```
 
-Read the first column as: turning joint 1 by a small amount `a` radians moves the
-gripper `-3.5 a` in `x` and `2.598 a` in `y`. Joint 1 swings the whole arm, so the
-gripper moves at right angles to the line from the base. Joint 2 only swings the
-last link, so the gripper moves at right angles to that link.
+Read the first column like this: turning joint 1 by a small amount `a` radians
+moves the gripper `-3.5 a` in `x` and `2.598 a` in `y`. Joint 1 swings the whole
+arm, so the gripper moves at right angles to the line from the base. Joint 2,
+however, only swings the last link, so the gripper moves at right angles to that
+link.
 
 ![The two columns of the Jacobian drawn at the gripper, for a bent arm and a nearly straight one](../../../images/planning-and-search/numerical-inverse-kinematics/jacobian-columns.svg)
 
 On the left, with the elbow at 60°, the two columns point in clearly different
-directions, so together they can move the gripper any way; on the right, with the
-elbow at 5°, both point almost the same way, and neither moves the gripper along
-the arm.
+directions, so together they can move the gripper any way. But on the right, with
+the elbow at 5°, both point almost the same way, and neither moves the gripper
+along the arm.
 
 ### Step 3: turning the Jacobian round
 
-The Jacobian answers "if I turn the joints this much, where does the gripper
-go?". IK needs the opposite: "to move the gripper along the miss, how much
-should I turn the joints?". So the program solves this for the joint step
-`dq`:
+The Jacobian from step 2 answers one question: if I turn the joints this much,
+where does the gripper go? However, IK needs the opposite question, which is how
+much I should turn the joints to move the gripper along the miss. So the program
+solves this for the joint step `dq`:
 
 ```
 J · dq = miss
 ```
 
 With two joints and two numbers in the miss, this is two equations with two
-unknowns, and it has one answer as long as the columns point different ways.
-Book 1 does this with `np.linalg.pinv`, the **pseudo-inverse**, which also works
-when the table is not square. The
-[NumPy page](../../../01_robotics-intro/01_python-and-numpy/02_numpy-intro.md#66-moving-an-arm-a-little-the-jacobian-and-pinv)
+unknowns, so it has one answer as long as the columns point different ways. Book 1
+does this with `np.linalg.pinv`, the **pseudo-inverse**, which also works when the
+table is not square, and the [NumPy page](../../../01_robotics-intro/01_python-and-numpy/02_numpy-intro.md#66-moving-an-arm-a-little-the-jacobian-and-pinv)
 explains it.
 
-One number tells you how easy the table is to turn round: its **determinant**.
-For this arm it is `L1 · L2 · sin(q2) = 6 · sin(q2)`, as
+One number tells you how easy the table is to turn round, and that number is its
+**determinant**. For this arm it is `L1 · L2 · sin(q2) = 6 · sin(q2)`, as
 [the arm movement overview](../../../03_frameworks/03_arm-movement/01_overview.md#5-the-one-calculation-underneath-everything)
-shows. At `(30°, 60°)` it is 5.196. It is zero when the elbow is straight or
-folded back. That pose is a **singularity**: a pose where the arm cannot move
-its gripper in some direction, however fast the joints turn.
+shows, and at `(30°, 60°)` it is 5.196. It falls to zero when the elbow is
+straight or folded back. That pose is a **singularity**, which is a pose where the
+arm cannot move its gripper in some direction, however fast the joints turn.
 
 ### Step 4: why the plain answer goes wild near a straight arm
 
-The trouble starts before the singularity. As the elbow straightens, both columns
-of the Jacobian point almost the same way, as the right-hand picture above shows.
-Neither of them moves the gripper along the arm, towards or away from the base.
-Asked to move that way, the plain answer asks for a huge turn.
+Step 3 named the singularity, but the trouble starts well before the arm reaches
+one. As the elbow straightens, both columns of the Jacobian point almost the same
+way, as the right-hand picture above shows. This means neither of them moves the
+gripper along the arm, towards or away from the base. Asked to move that way, the
+plain answer therefore asks for a huge turn.
 
-The program tests this directly. It puts joint 1 at 0° and asks each method for
+The program tests this directly. So it puts joint 1 at 0° and asks each method for
 the step that moves the gripper 10 cm towards the base, for smaller and smaller
 elbow angles.
 
@@ -157,47 +161,49 @@ and the size of the joint step, in degrees, that each method asks for.
 | 0.1° | 2946.4° | 0.04° | 0.01° |
 
 To pull the gripper in by 10 cm from a nearly straight arm, the true answer bends
-the elbow to 23.44°. The plain inverse asks for eight full turns of the joints in
-one step. Book 1 avoids this by capping every step at 30° per joint. A cap works,
-but it is a blunt tool: it cuts the step to the same size whether the arm is near
-a singularity or far from it.
+the elbow to 23.44°. But the plain inverse asks for eight full turns of the joints
+in one step. Book 1 avoids this by capping every step at 30° per joint. A cap does
+work, but it is a blunt tool. This is because it cuts the step to the same size
+whether the arm is near a singularity or far from it.
 
 ### Step 5: damped least squares
 
-Damped least squares asks a slightly different question. Instead of "which step
-removes the whole miss?", it asks:
+Because a cap is so blunt, damped least squares asks a slightly different
+question. Instead of asking "which step removes the whole miss?", it asks this:
 
-> Which step makes (the miss left over)² + λ² × (the size of the step)² as small as possible?
+> Which step makes (the miss left over)² + λ² × (the size of the step)² as small
+as possible?
 
-The first part wants the miss gone. The second part charges a price for every
-bit of joint turn. The number `λ` (lambda) is the **damping**, and it sets the
-price. Here it is measured in metres, because the miss is in metres.
+The first part of that sum wants the miss gone, while the second part charges a
+price for every bit of joint turn. The number `λ` (lambda) is the **damping**, and
+it sets that price. Here it is measured in metres, because the miss is in metres.
 
-When the arm is well bent, a small turn removes a lot of miss, so the price
-hardly matters and the step is close to the plain answer. When the arm is nearly
-straight, removing the miss along the arm would need a huge turn, so the price
-wins and the step stays small. The method gives up, for now, on the direction
-the arm cannot move in, and moves in the directions it can.
+When the arm is well bent, a small turn removes a lot of miss. This means the
+price hardly matters, and the step is close to the plain answer. When the arm is
+nearly straight, removing the miss along the arm would need a huge turn. So the
+price wins, and the step stays small. The method gives up, for now, on the
+direction the arm cannot move in, and moves in the directions it can.
 
-The answer has a short formula. `Jᵀ` is the Jacobian with rows and columns
-swapped, and `I` is the table with 1 on the diagonal and 0 elsewhere:
+The answer to that question has a short formula, in which `Jᵀ` is the Jacobian
+with rows and columns swapped, and `I` is the table with 1 on the diagonal and 0
+elsewhere:
 
 ```
 dq = Jᵀ · (J · Jᵀ + λ² · I)⁻¹ · miss
 ```
 
-With `λ = 0` this is the plain answer again. With a large `λ` it becomes a small
-step along `Jᵀ · miss`, which is plain gradient descent on the squared miss,
-called the **Jacobian transpose** method. Damped least squares sits between the
-two. The same idea, a least-squares fit with a price on large answers, appears
-in [least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md).
+With `λ = 0` this is the plain answer again. But with a large `λ` it becomes a
+small step along `Jᵀ · miss`, which is plain gradient descent on the squared miss,
+called the **Jacobian transpose** method. Damped least squares therefore sits
+between those two. The same idea, a least-squares fit with a price on large
+answers, appears in [least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md).
 The name **Levenberg–Marquardt** is used when the program also changes `λ` as it
 goes, which step 7 shows.
 
 ### Step 6: a worked run
 
-Here is damped least squares with `λ = 1.0`, from the guess `(0°, 30°)`. The
-program has no step cap.
+Here is damped least squares with `λ = 1.0`, run from the guess `(0°, 30°)`, and
+this time the program has no step cap at all.
 
 ```
 step  0: q1 =    0.00, q2 =   30.00, miss = 3.286921 m
@@ -217,12 +223,12 @@ step 17: q1 =   30.00, q2 =   60.00, miss = 0.000001 m
 The palest arm is the first guess, each darker arm is one step later, and the
 purple dots trace the gripper; the first two steps do most of the work.
 
-It finds `(30°, 60°)`, the elbow-down answer, in 17 steps. From the guess
-`(90°, -30°)` it would find the elbow-up answer instead, as Book 1 shows: the
-loop finds the answer nearest its guess.
+It finds `(30°, 60°)`, the elbow-down answer, in 17 steps. From the guess `(90°,
+-30°)` it would find the elbow-up answer instead, as Book 1 shows, because the
+loop always finds the answer nearest its guess.
 
-For comparison, here is the plain pseudo-inverse from the same guess, with no
-step cap:
+For comparison, here is the plain pseudo-inverse from the same guess, with no step
+cap:
 
 ```
 step  0: q1 =    0.00, q2 =   30.00, miss = 3.286921 m
@@ -234,32 +240,34 @@ step  5: q1 =   29.94, q2 =   60.11, miss = 0.002675 m
 step  6: q1 =   30.00, q2 =   60.00, miss = 0.000002 m
 ```
 
-Its first step folds the elbow to 175°, almost flat against link 1, and the miss
-gets *bigger*. It recovers, and it finishes sooner, in 7 steps. Near the answer,
-the plain method is the fastest there is, because it removes the whole miss at
-every step. Damped least squares gives up some of that speed to keep every step
-safe.
+Its first step folds the elbow to 175°, almost flat against link 1, so the miss
+gets *bigger*. But it recovers, and it finishes sooner, in 7 steps. Near the
+answer the plain method is the fastest there is, because it removes the whole miss
+at every step. So damped least squares gives up some of that speed in order to
+keep every step safe.
 
 ![The miss at every step for three methods, on a reachable target and on one out of reach](../../../images/planning-and-search/numerical-inverse-kinematics/miss-per-step.svg)
 
-On the left, the pseudo-inverse and damped least squares both reach a miss below
-a micrometre, while the Jacobian transpose is still 3.2 cm off after 40 steps;
-on the right, the target is out of reach, the damped method settles at the best
-pose, and the pseudo-inverse jumps about.
+On the left, the pseudo-inverse and damped least squares both reach a miss below a
+micrometre, while the Jacobian transpose is still 3.2 cm off after 40 steps; on
+the right, the target is out of reach, the damped method settles at the best pose,
+and the pseudo-inverse jumps about.
 
 ### Step 7: a target out of reach, and choosing the damping
 
-The target `(6, 0)` is 6 m from the base, and the arm is 5 m long. No answer
-exists. The best the arm can do is point straight at it, with a miss of 1 m.
+The target `(6, 0)` is 6 m from the base while the arm is only 5 m long, so no
+answer exists at all. The best the arm can do is point straight at it, with a miss
+of 1 m.
 
 From the guess `(10°, 20°)`, damped least squares with `λ = 1.0` gets there in a
-few steps and stays there: the arm straight, the miss 1.000 m. The plain
-pseudo-inverse never settles. After 100 steps its miss is 7.171 m, and its joint
-angles have wound up to hundreds of degrees.
+few steps and stays there. The arm is straight, and the miss is 1.000 m. The plain
+pseudo-inverse, however, never settles, because after 100 steps its miss is 7.171
+m and its joint angles have wound up to hundreds of degrees.
 
-The right damping is a trade. The table below shows what five values do. Read
-each row as one value of `λ`: how many steps it takes to reach `(2.598, 3.5)`
-from `(0°, 30°)`, and what it does when asked for the out-of-reach `(6, 0)`.
+The right damping is therefore a trade, and the table below shows what five values
+do. Read each row as one value of `λ`, with how many steps it takes to reach
+`(2.598, 3.5)` from `(0°, 30°)`. Then the last column says what it does when asked
+for the out-of-reach `(6, 0)`.
 
 | Damping λ | Steps to reach the target | Out of reach, after 100 steps |
 | --- | --- | --- |
@@ -269,38 +277,39 @@ from `(0°, 30°)`, and what it does when asked for the out-of-reach `(6, 0)`.
 | 1.0 | 17 | settles straight, miss 1.000 m |
 | 2.0 | 44 | settles straight, miss 1.000 m |
 
-Small damping is fast when the target is easy and wild when it is not. Large
-damping is safe and slow. The `λ = 0.5` row is worth a second look: it swaps
-every step between `(11.56°, -30.9°)` and `(-11.56°, 30.9°)`, two poses with the
-same miss. A program that only checks whether the miss is small would see a
-steady 1.175 m and not notice that the arm is being told to swing back and forth.
+So small damping is fast when the target is easy and wild when it is not, while
+large damping is safe and slow. The `λ = 0.5` row is worth a second look, because
+it swaps every step between `(11.56°, -30.9°)` and `(-11.56°, 30.9°)`, which are
+two poses with the same miss. A program that only checks whether the miss is small
+would see a steady 1.175 m. This means it would not notice that the arm is being
+told to swing back and forth.
 
 The usual answer is to change the damping as the loop runs, which is the
 **Levenberg–Marquardt** method. After a step that makes the miss smaller, the
-program keeps the step and halves `λ`. After a step that makes the miss larger,
-it throws the step away, doubles `λ` and tries again. Starting from `λ = 1.0`, it
-reaches `(2.598, 3.5)` in 5 kept steps, and settles on the straight pose for
-`(6, 0)` in 9.
+program keeps the step and halves `λ`. But after a step that makes the miss
+larger, it throws the step away, doubles `λ` and tries again. Starting from `λ =
+1.0`, it reaches `(2.598, 3.5)` in 5 kept steps, and settles on the straight pose
+for `(6, 0)` in 9.
 
-The nearly-straight case shows the difference most clearly. Start the arm at
-`(0°, 0.1°)`, almost straight, and ask for `(4.9, 0)`, 10 cm towards the base.
-The answer is `(-9.34°, 23.44°)`.
+The nearly-straight case shows the difference most clearly. So start the arm at
+`(0°, 0.1°)`, almost straight, and ask for `(4.9, 0)`, which is 10 cm towards the
+base. The answer is `(-9.34°, 23.44°)`, and the methods below reach it in very
+different ways.
 
 - The plain pseudo-inverse gets there in 16 steps, but one step turns a joint by
   8634.9°. It ends at `(3230.66°, -5376.56°)`, which is the right pose after many
-  full turns. A real joint with limits would have hit them on the first step.
+  full turns, so a real joint with limits would have hit them on the first step.
 - Damped least squares with `λ = 1.0` never turns a joint more than 0.9° in one
   step, but it needs 119 steps, because near the singularity it moves very
   cautiously.
-- With `λ = 0.5` it needs 36 steps, with no step over 3.0°.
-- Levenberg–Marquardt needs 8 kept steps.
+- With `λ = 0.5` it needs 36 steps, and no step is over 3.0°.
+- Levenberg–Marquardt needs only 8 kept steps.
 
 ### Step 8: more joints than the task needs
 
-Add a third link, 1 m long, and ask only for the gripper's position, not its
-angle. Now three joints meet two numbers, so the arm is **redundant**: it has
-endless answers, as
-[Book 1's section 5](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md#5-three-joints-endless-answers-and-how-to-pick-one)
+Now add a third link, 1 m long, and ask only for the gripper's position and not
+for its angle. Then three joints meet two numbers, so the arm is **redundant**,
+which means it has endless answers, as [Book 1's section 5](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md#5-three-joints-endless-answers-and-how-to-pick-one)
 explains. The Jacobian is now 2 rows by 3 columns, and the same formula still
 works, because `J · Jᵀ` is still a 2 by 2 table.
 
@@ -311,16 +320,15 @@ from (0, 30, 0):   (21.01, 54.98,  3.66) in 9 steps, gripper angle 79.65
 from (90, -30, 0): (77.16, -54.31, -5.51) in 8 steps, gripper angle 17.35
 ```
 
-Both reach the point. They choose very different poses and gripper angles. The
-loop does not pick "the best" answer. It picks one near the guess, with small
-joint turns. When the gripper angle matters, you must add it to the miss as a
-third number, and then the arm is no longer redundant.
+Both reach the point, but they choose very different poses and gripper angles.
+This is because the loop does not pick "the best" answer, since it picks one near
+the guess, with small joint turns. So when the gripper angle matters, you must add
+it to the miss as a third number, and then the arm is no longer redundant.
 
-A real six-joint arm works the same way with bigger tables. The miss has six
-numbers: three for position and three for rotation. The Jacobian has six rows and
-one column per joint. The page on
-[rigid transforms](../../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md) explains how
-a rotation miss is written as three numbers.
+A real six-joint arm works the same way, only with bigger tables. Its miss has six
+numbers, three for position and three for rotation, and its Jacobian has six rows
+and one column per joint. The page on [rigid transforms](../../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+explains how a rotation miss is written as three numbers.
 
 ### Pseudocode
 
@@ -348,39 +356,41 @@ function solve_ik(target, guess, damping, tolerance, max_steps, time_limit):
     else: return "not found", q, length(miss)
 ```
 
-Two things in the last lines matter. The loop must say when it failed, and how
-far off it was. And "not found" is not the same as "no answer exists", which
-section 4 comes back to.
+Two things in the last lines matter, and the first is that the loop must say when
+it failed and how far off it was. The second is that "not found" is not the same
+as "no answer exists", which section 4 comes back to.
 
 ---
 
 ## 3. Where it is used on a robot arm
 
-**Turning a grasp into joint angles.** A grasp model or a detector gives a
-gripper pose in the camera frame. The program moves it into the arm's frame and
-calls IK. The result is the goal a planner then plans to. This is the most common
-IK call in a pick-and-place program.
+Section 2 built the loop up step by step, so this section lists the jobs a real
+arm calls it for.
+
+**Turning a grasp into joint angles.** A grasp model or a detector gives a gripper
+pose in the camera frame. Then the program moves that pose into the arm's frame
+and calls IK. The result is the goal a planner then plans to, and this is the most
+common IK call in a pick-and-place program.
 
 **Checking many grasps before moving.** A grasp model may offer 50 candidate
-grasps. The program runs IK on each one, throws away the ones with no answer,
+grasps. So the program runs IK on each one, throws away the ones with no answer,
 and scores the rest by how far the answer is from joint limits and from a
-singularity. Book 3 describes this check in
-[reaching and reachability](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#8-finding-out-before-you-commit).
+singularity. Book 3 describes this check in [reaching and reachability](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#8-finding-out-before-you-commit).
 
 **Straight-line moves.** To move the gripper straight down onto a part, the
-program splits the line into small steps and calls IK at each one, seeded with
-the answer from the step before. MoveIt's Cartesian path function works this way.
-Near a singularity the IK step fails, and the line stops short, as
+program splits the line into small steps and calls IK at each one, seeded with the
+answer from the step before. This is how MoveIt's Cartesian path function works.
+However, near a singularity the IK step fails, and the line stops short, as
 [planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md#5-cartesian-paths-and-what-they-are-not)
 warns.
 
-**Jogging and following.** When an operator jogs the gripper with a joystick, or
-the arm follows a moving target seen by the wrist camera, the program runs one
-step of this loop every control cycle, for example 500 times a second. The miss
-is replaced by the wanted gripper velocity, and damped least squares keeps the
-joints from spinning up when the arm passes near a singularity. In ROS 2,
-MoveIt Servo does this job; it slows the motion down as the arm nears a
-singularity.
+**Jogging and following.** An operator may jog the gripper with a joystick, or the
+arm may follow a moving target seen by the wrist camera. In either case the
+program runs one step of this loop every control cycle, for example 500 times a
+second. The miss is replaced by the wanted gripper velocity, and damped least
+squares keeps the joints from spinning up when the arm passes near a singularity.
+In ROS 2, MoveIt Servo does this job, and it slows the motion down as the arm
+nears a singularity.
 
 **Pointing a camera.** To look at a point on the table with a wrist camera, the
 miss is "how far the camera's centre line is from the point". That is only two
@@ -388,9 +398,8 @@ numbers, so a six-joint arm has spare joints, and the loop picks a pose near the
 current one.
 
 **Finishing a learned guess.** A learned IK model gives an answer that is close
-but not exact. The numerical loop, seeded with that answer, finishes the job in
-a step or two. Book 6 describes this in
-[learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics).
+but not exact. So the numerical loop, seeded with that answer, finishes the job in
+a step or two. Book 6 describes this in [learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics).
 
 **Inside other planners.** Trajectory optimisation turns an obstacle push on a
 point of the arm into joint turns with the same Jacobian, as
@@ -401,8 +410,9 @@ explains.
 
 ## 4. Where it works, and where it does not
 
-The table below lists the common failures. Read each row as one failure: what
-causes it, the sign you would see, and what people do about it.
+Section 3 listed the jobs this loop does well, so this section lists the ways it
+fails. Read each row of the table below as one failure, with what causes it, the
+sign you would see, and what people do about it.
 
 | Failure | The sign you would see | What people do |
 | --- | --- | --- |
@@ -415,19 +425,19 @@ causes it, the sign you would see, and what people do about it.
 | A time limit that is too short | "no solution" for a pose that does have one | raise the limit when surveying; try several seeds |
 | Only one answer returned | the planner fails later, because that pose leads nowhere | an analytic solver, or several seeds, to list the choices |
 
-The time limit row deserves a sentence of its own. MoveIt's default solver, KDL,
-stops after 0.05 seconds. As
-[reaching and reachability](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#81-the-solvers-answer-is-weaker-than-it-looks)
-explains, "unreachable" from such a solver means "not found in 50 ms from these
-guesses". That is why TRAC-IK runs two solvers at once and takes whichever
+The time limit row deserves a sentence of its own, because MoveIt's default
+solver, KDL, stops after 0.05 seconds. As [reaching and reachability](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#81-the-solvers-answer-is-weaker-than-it-looks)
+explains, "unreachable" from such a solver means only "not found in 50 ms from
+these guesses". That is why TRAC-IK runs two solvers at once and takes whichever
 answers first, and why many programs try several random guesses.
 
 ---
 
 ## 5. Libraries that provide it
 
-The table below lists well-known libraries. Read each row as one library: the
-languages you can call it from, the function or class, and a note.
+Because the failures above are well known, the libraries have already dealt with
+them, so the table below lists the well-known ones. Read each row as one library,
+with the languages you can call it from, the function or class, and a note.
 
 | Library | Languages | Function or class | Note |
 | --- | --- | --- | --- |
@@ -443,45 +453,48 @@ languages you can call it from, the function or class, and a note.
 | NumPy, Eigen | Python, C++ | `np.linalg.solve`, `np.linalg.pinv`; Eigen's matrix decompositions | enough to write the loop yourself, as the diagram script does |
 
 For a ROS 2 arm, start with the solver MoveIt already uses, and switch to TRAC-IK
-or pick_ik if it fails on poses you know are reachable. Write your own loop when
-you need it inside a control cycle, or when the miss is not a pose at all, as in
-the camera-pointing example.
+or pick_ik if it fails on poses you know are reachable. Write your own loop only
+when you need it inside a control cycle, or when the miss is not a pose at all, as
+in the camera-pointing example.
 
 ---
 
 ## 6. Why numerical inverse kinematics, and what it costs
 
-This section answers the four questions: what it is, what it does for you, why
-it rather than the obvious alternative, and what it costs.
+With the libraries named, this section answers the four questions: what it is,
+what it does for you, why it rather than the obvious alternative, and what it
+costs.
 
-It is a loop that finds joint angles for a target by repeatedly measuring the
-miss and correcting it with the Jacobian. Damped least squares is the version
-that stays calm near singularities and when the target is out of reach. It gives
-you joint angles for any arm that has forward kinematics, whatever its shape, and
-for any kind of target you can write as a miss.
+It is a loop that finds joint angles for a target by repeatedly measuring the miss
+and correcting it with the Jacobian. Damped least squares is the version that
+stays calm near singularities and when the target is out of reach. It gives you
+joint angles for any arm that has forward kinematics, whatever its shape, and for
+any kind of target you can write as a miss.
 
-The obvious alternative is an analytic solver: a formula worked out for one arm
-design, like the triangle formula in Book 1. Tools such as IKFast generate such
-formulas automatically for many six-joint arms. A formula is faster, it lists
+The obvious alternative is an analytic solver, which is a formula worked out for
+one arm design, like the triangle formula in Book 1. Tools such as IKFast generate
+such formulas automatically for many six-joint arms. A formula is faster, it lists
 every answer, and it says for certain when there is none. Book 1 measured it at
 about 332 times faster on this arm. So why use a loop? Because many arms have no
 formula: arms with seven joints, arms whose wrist axes do not meet at one point,
 and any arm whose task is not a plain pose. The loop needs only forward
 kinematics, so the same code serves every arm.
 
-The costs are these. The loop finds one answer, the one nearest its guess, and
-does not tell you others exist. It needs a sensible guess. It is slower than a
-formula, and its time is not fixed: easy targets take a few steps, hard ones may
-run out of time. It cannot tell "no answer exists" from "not found yet". And it
-has settings, the damping and the time limit, whose right values depend on the
-arm and the task. Damped least squares removes the worst failure, the wild jump
-near a singularity, at the price of slower progress near one.
+Against all of that, the costs are these. The loop finds one answer, the one
+nearest its guess, and it does not tell you that others exist. This means it needs
+a sensible guess to start from. It is slower than a formula, and its time is not
+fixed, because easy targets take a few steps while hard ones may run out of time.
+It cannot tell "no answer exists" from "not found yet". It also has settings, the
+damping and the time limit, whose right values depend on the arm and the task. In
+short, damped least squares removes the worst failure, which is the wild jump near
+a singularity, at the price of slower progress near one.
 
 ---
 
 ## 7. The learned alternative
 
-A learned IK solver, described in Book 6's
+Section 6 weighed this loop against an analytic formula, but there is a third
+option as well. A learned IK solver, described in Book 6's
 [learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics),
 is a network trained on many pairs of joint angles and the gripper poses forward
 kinematics gives for them. It answers in one pass, and some, such as IKFlow, give
@@ -491,26 +504,24 @@ for this loop, which finishes the job in a step or two, as section 3 showed. For
 one target at a time, the loop alone is still the usual choice, because it is
 exact, needs no training, and works on a new arm without retraining. A
 [learned arm model](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
-does a different job: it learns the small bends and gear play that make the real
+does a different job. It learns the small bends and gear play that make the real
 tool miss the pose that forward kinematics predicts.
 
 ---
 
 ## 8. Where to read next
 
-- [Trajectory optimisation](03_trajectory-optimisation.md) uses the same step-by-step
-  lowering of a cost for a whole path instead of one pose.
-- The [planning and search overview](../01_overview.md) places this technique among
-  the others in the chapter.
+- [Trajectory optimisation](03_trajectory-optimisation.md) uses the same
+  step-by-step lowering of a cost, but for a whole path instead of one pose.
+- The [planning and search overview](../01_overview.md) places this technique
+  among the others in the chapter.
 - [Least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   explains the least-squares idea that damped least squares is built on.
-- [Rigid transforms](../../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md) explains
-  the poses and rotations that a full six-number miss is made from.
-- [PID control](../../07_control-and-motion/02_most-used/01_pid-control.md) is what turns the joint
-  angles this page finds into motor commands.
+- [Rigid transforms](../../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+  explains the poses and rotations that a full six-number miss is made from.
+- [PID control](../../07_control-and-motion/02_most-used/01_pid-control.md) is
+  what turns the joint angles this page finds into motor commands.
 - Book 1 has the formula method and the first version of this loop in
   [inverse kinematics](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md).
-- Book 3 covers singularities in
-  [reaching and reachability](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#3-singularities-and-what-the-controller-does-at-one),
-  and the libraries in
-  [tools and libraries](../../../03_frameworks/01_tools-and-libraries.md#8-kinematics-and-maths-kdl-pinocchio-and-scipy).
+- Book 3 covers singularities in [reaching and reachability](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#3-singularities-and-what-the-controller-does-at-one),
+  and the libraries in [tools and libraries](../../../03_frameworks/01_tools-and-libraries.md#8-kinematics-and-maths-kdl-pinocchio-and-scipy).

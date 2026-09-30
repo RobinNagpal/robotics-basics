@@ -1,12 +1,13 @@
 # Visibility and next-best-view
 
-This page explains two linked techniques. The first is **visibility**: working out
-what a camera can see from a given place, and what is hidden behind something. The
-second is **next-best-view planning**: choosing where to put the camera next, so
-that it sees as much as possible of what the robot does not know yet. The page
-answers four questions. How do you test whether one object hides another? How do you
-score a place to look from? Where does a robot arm use these? And when is a fixed
-list of views the better choice?
+This page explains two linked techniques. The first is **visibility**, which means
+working out what a camera can see from a given place, and what is hidden behind
+something. The second is **next-best-view planning**, which means choosing where
+to put the camera next. This is done so that it sees as much as possible of what
+the robot does not know yet. The page answers four questions, and the first two
+are about the technique itself. How do you test whether one object hides another,
+and how do you score a place to look from? Then come the practical ones: where
+does a robot arm use these, and when is a fixed list of views the better choice?
 
 It is for a reader who has read the [chapter overview](../01_overview.md) and knows
 what a camera pose is, at the level of the
@@ -17,8 +18,8 @@ this page comes from a real run of
 
 Book 2's [choosing where to look](../../../02_perception/02_object-perception/09_choosing-where-to-look.md)
 covers the same subject from the camera's side, with real camera sizes and
-measured timings. This page is the technique underneath it: the test itself, and
-the loop that uses it.
+measured timings. This page is instead the technique underneath it, which means the
+test itself and the loop that uses it.
 
 ## Contents
 
@@ -44,36 +45,41 @@ the loop that uses it.
 
 A camera sees a point only if the straight line from the camera to that point passes
 through nothing on the way. To choose where to look next, test that line for every
-point you still know nothing about, from every place the camera could go, and go to
-the place that would show you the most.
+point you still know nothing about, from every place the camera could go. Then go
+to the place that would show you the most.
 
-Here is an everyday example. You are looking for your keys on a crowded shelf. From
-where you stand, a tall vase hides a patch of the shelf behind it. You do not know
-whether the keys are in that patch. So you think about where to stand. Standing a
-step to the left would show you the patch behind the vase. Standing on a chair would
-show you the whole shelf top, but the chair is in the next room. You take the step
-to the left, because it shows you the most for a place you can actually get to. Then
-you look again and decide again.
+An everyday example shows the idea before any robot arm is involved. You are looking
+for your keys on a crowded shelf, and from where you stand a tall vase hides a patch
+of the shelf behind it. You do not know whether the keys are in that patch, so you
+think about where to stand instead. Standing a step to the left would show you the
+patch behind the vase. However, standing on a chair would show you the whole shelf
+top, but the chair is in the next room. So you take the step to the left, because
+it shows you the most for a place you can actually get to. Then you look again from
+the new place and decide again.
 
-That is the whole technique. The rest of this page makes each part exact: what
-"passes through nothing" means for a real shape, how to count what a view would
-show, and how to handle the places the arm cannot reach.
+That everyday choice is already the whole technique. The rest of this page then
+makes each part exact: what "passes through nothing" means for a real shape, how
+to count what a view would show, and how to handle the places the arm cannot
+reach.
 
 ---
 
 ## 2. Lines of sight and shadows
 
-A **line of sight**, also called a **sight line** or a **ray**, is the straight line
-from the camera's centre to a point in the scene. Light travels along it. If an
-object sits across that line, the point is **occluded**, which means hidden.
+Before any of that can be counted, the two words the whole page rests on need
+definitions. A **line of sight**, also called a **sight line** or a **ray**, is the
+straight line from the camera's centre to a point in the scene, and light travels
+along it. So if an object sits across that line, the point is **occluded**, which
+means hidden.
 
-Each object hides a region behind it. This region is called its **shadow**, or its
-**occlusion shadow**. It is the same shape as a real shadow would be if the camera
-were a lamp. The camera cannot see anything inside it.
+Each object therefore hides a region behind it, and this region is called its
+**shadow**, or its **occlusion shadow**. It is the same shape as a real shadow would
+be if the camera were a lamp, and the camera cannot see anything inside it.
 
-The scene on this page is a row of four upright cylinders on a table. Units are
-centimetres. The table top is at height 0. The table below lists them. Read each row
-as one object: where its centre is along the table, its radius, and its height.
+The scene on this page is a row of four upright cylinders on a table, with all units
+in centimetres and the table top at height 0. The table below lists them, and you
+read each row as one object: where its centre is along the table, its radius, and
+its height.
 
 | Object | Centre along the table | Radius | Height |
 | --- | --- | --- | --- |
@@ -82,42 +88,44 @@ as one object: where its centre is along the table, its radius, and its height.
 | bottle 2 | 70 cm | 3.5 cm | 26 cm |
 | cup 2 | 82 cm | 5 cm | 8 cm |
 
-The picture below shows the row from the side. Seen from the side, each cylinder is
-a rectangle. The grey regions are the shadows. The script found them by testing the
-sight line to every point on a 2.5 mm grid, from the table to 45 cm up.
+The picture below shows the row from the side, where each cylinder appears as a
+rectangle. The grey regions are the shadows. The script found them by testing
+the sight line to every point on a 2.5 mm grid, from the table to 45 cm up.
 
 ![A camera at the side sees only the front of the first bottle; a camera above sees nearly everything](../../../images/planning-and-search/visibility-and-next-best-view/seen-from-side-and-above.svg)
 
-On the left, the camera is at the side of the table, 20 cm up. That is lower than
-the first bottle. So the first bottle's shadow covers everything behind it: both cups
-and the second bottle. 55% of the free space in the dashed box is hidden. The
-camera cannot see the top of any object. It would report one bottle and nothing
-else.
+On the left, the camera is at the side of the table, 20 cm up, which is lower than
+the first bottle. So the first bottle's shadow covers everything behind it,
+meaning both cups and the second bottle. As a result, 55% of the free space in the
+dashed box is hidden. The camera cannot see the top of any object, so it would
+report one bottle and nothing else.
 
 On the right, the camera is 60 cm above the middle of the table, looking down. Each
-bottle now casts a thin shadow that leans away from the camera. Only 11% of the free
-space is hidden. The camera sees the tops of both bottles and cup 1. It sees only a
-small part of the top of cup 2, because bottle 2's shadow falls across it.
+bottle now casts a thin shadow that leans away from the camera, so only 11% of the
+free space is hidden. The camera sees the tops of both bottles and cup 1. It sees
+only a small part of the top of cup 2, because bottle 2's shadow falls across it.
 
-Two things follow from this picture. First, a tall object close to the camera hides
+Two things follow from this picture, and both of them matter later. First, a tall
+object close to the camera hides
 far more than a short object further away. Second, the same scene can be almost
-invisible from one place and almost fully visible from another. That is why it is
-worth choosing where to look.
+invisible from one place and almost fully visible from another, which is why it is
+worth choosing where to look at all.
 
 ---
 
 ## 3. How it works, step by step
 
-The technique has two layers. The lower layer is a test: is this one point visible
-from this one camera position? The upper layer is a loop: use the test many times to
-score each place the camera could go, then pick the best.
+Now that shadows have a definition, the technique that uses them has two layers. The
+lower layer is a test that answers one question: is this one point visible from this
+one camera position? The upper layer is a loop that uses the test many times, to
+score each place the camera could go and then pick the best.
 
 ### Testing one sight line against one cylinder
 
-Many objects on a table are close to upright cylinders: bottles, cups, cans, jars
-and posts. An upright cylinder has a very simple exact test. It is exact because it
-uses the real shape, not a grid of points. A test like this, done with a formula
-rather than by trying many points, is called an **analytic** test.
+Many objects on a table are close to upright cylinders, such as bottles, cups, cans,
+jars and posts. An upright cylinder has a very simple exact test, and it is exact
+because it uses the real shape rather than a grid of points. A test like this, done
+with a formula rather than by trying many points, is called an **analytic** test.
 
 Write every point on the sight line as
 
@@ -126,7 +134,7 @@ point(t) = camera + t × (target − camera)
 ```
 
 The number `t` says how far along the line the point is. At `t = 0` the point is at
-the camera. At `t = 1` it is at the target. Halfway along, `t = 0.5`.
+the camera, at `t = 1` it is at the target, and halfway along `t` is 0.5.
 
 A point is inside a solid upright cylinder when two things are true at the same
 time.
@@ -141,14 +149,16 @@ time.
    The point's height must be between 0 and the cylinder's height. The height changes
    in a straight line with `t`, so this gives one more stretch of `t`.
 
-Each test gives a stretch of `t`, called an **interval**. The cylinder blocks the
-sight line only if the two intervals overlap, and the overlap lies between the
-camera and the target, which means somewhere between `t = 0` and `t = 1`.
+Each test gives a stretch of `t`, called an **interval**. So the cylinder blocks
+the sight line only if the two intervals overlap. That overlap must also lie
+between the camera and the target, which means somewhere between `t = 0` and
+`t = 1`.
 
-It is tempting to test from above only, or from the side only. Both are wrong. From
-above, a sight line can cross a cup's circle while passing well over the cup's top.
-From the side, a sight line can cross a bottle's rectangle while passing beside
-the bottle. The next example shows both mistakes.
+It is tempting to test from above only, or from the side only, but both are wrong
+on their own. For example, a sight line seen from above can cross a cup's circle
+while passing well over the cup's top. Seen from the side, a sight line can cross
+a bottle's rectangle while passing beside the bottle. The next example shows both
+mistakes on the same scene.
 
 For a box whose sides line up with the table, the same idea works with three
 intervals, one for each direction. That is the **slab method** in Book 2's
@@ -156,16 +166,16 @@ intervals, one for each direction. That is the **slab method** in Book 2's
 
 ### A worked example with two sight lines
 
-A camera sits at the left end of the table, 10 cm in front of the row of objects and
-30 cm up. Its position is (0, −10, 30). The first two numbers are the position on
-the table, and the third is the height. The red sight line goes to the middle of the
-top of cup 1, at (50, 0, 10). The green sight line goes to the middle of the top of
-bottle 2, at (70, 0, 26).
+To see the two traps in action, put a camera at the left end of the table, 10 cm in
+front of the row of objects and 30 cm up. Its position is (0, −10, 30), where the
+first two numbers are the position on the table and the third is the height. The red
+sight line goes to the middle of the top of cup 1, at (50, 0, 10). The green sight
+line goes instead to the middle of the top of bottle 2, at (70, 0, 26).
 
 ![Each sight line is blocked only when "inside the circle" and "below the top" happen at the same t](../../../images/planning-and-search/visibility-and-next-best-view/cylinder-sight-line-test.svg)
 
-Here is the red line against bottle 1, worked by hand. Bottle 1's centre is at
-(35, 0), and its radius is 4.
+Here is the red line against bottle 1, worked by hand, where bottle 1's centre is at
+(35, 0) and its radius is 4.
 
 1. The line moves 50 across, 10 sideways and −20 in height from the camera to the
    target.
@@ -179,21 +189,21 @@ Here is the red line against bottle 1, worked by hand. Bottle 1's centre is at
    camera and the target. So bottle 1 blocks the red line, and the camera cannot see
    the top of cup 1.
 
-The green line gives the two opposite traps.
+The green line then gives the two opposite traps, one for each incomplete test.
 
-- Against cup 1, it is inside the circle from `t = 0.68` to `t = 0.76`. But it is
+- Against cup 1, it is inside the circle from `t = 0.68` to `t = 0.76`, but it is
   below the cup's top only from `t = 5.0` onwards, far past the target. Over that
-  stretch the line is about 27 cm up, and the cup is 10 cm tall. There is no
-  overlap, so cup 1 does not block it. A test from above alone would have said it
-  did.
+  stretch the line is about 27 cm up, while the cup is only 10 cm tall. There is no
+  overlap, so cup 1 does not block it, although a test from above alone would have
+  said it did.
 - Against bottle 1, it is below the top all the way, because the camera is at the
-  same height as the bottle's top. But from above it never enters bottle 1's circle.
-  So bottle 1 does not block it either. A test from the side alone would have said
-  it did.
+  same height as the bottle's top. However, from above it never enters bottle 1's
+  circle, so bottle 1 does not block it either, although a test from the side alone
+  would have said it did.
 
 The script tests both lines against all four cylinders. The red line is blocked by
-bottle 1 only. The green line is blocked by nothing, so the camera can see the top of
-bottle 2.
+bottle 1 only, while the green line is blocked by nothing, so the camera can see the
+top of bottle 2.
 
 The test costs one square root and a few multiplications per cylinder. Book 2
 [measured](../../../02_perception/02_object-perception/09_choosing-where-to-look.md#33-what-it-costs-measured)
@@ -202,54 +212,58 @@ thousands of sight lines against dozens of objects in well under a millisecond.
 
 ### Choosing where to look next
 
-The loop that uses the test is called **next-best-view planning**. The chosen pose is
-the **next best view**. Here are its steps.
+With a cheap test in hand, the upper layer can afford to run it everywhere, and that
+loop is called **next-best-view planning**. The pose it chooses is the **next best
+view**, and these are its steps.
 
 1. **Keep a record of what you do not know yet.** The usual record is a grid of small
-   cells covering the work area. Each cell is marked free, occupied or **unknown**.
-   At the start, every cell is unknown. The page on
+   cells covering the work area, where each cell is marked free, occupied or
+   **unknown**, and at the start every cell is unknown. The page on
    [volumetric maps](../../05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
    covers these grids.
 2. **List the candidate poses.** A **candidate** is one place the camera could go,
-   with the direction it would face. A common choice is a ring or a half-sphere of
-   points around the work area, each one facing its centre.
-3. **Remove the ones the arm cannot reach.** The cheapest check is distance: a pose
-   further from the arm's shoulder than the arm is long is out. A stricter check asks
+   together with the direction it would face. A common choice is a ring or a
+   half-sphere of points around the work area, each one facing its centre.
+3. **Remove the ones the arm cannot reach.** The cheapest check is distance, because
+   a pose further from the arm's shoulder than the arm is long is out. A stricter
+   check asks
    [inverse kinematics](../02_most-used/02_numerical-inverse-kinematics.md) for joint
    angles that put the camera there.
 4. **Predict what each one would reveal.** For each remaining candidate, test the
-   sight line to every unknown cell. Count the cells that are inside the camera's
-   picture and not hidden. This count is the candidate's **gain**. The gain can also
-   be the number of objects not yet seen, or any other count of new information.
-5. **Take the best.** Move the camera to the candidate with the highest gain. Take a
-   picture. Mark every cell it saw as known.
+   sight line to every unknown cell, and count the cells that are inside the camera's
+   picture and not hidden. This count is the candidate's **gain**, and the gain can
+   also be the number of objects not yet seen, or any other count of new information.
+5. **Take the best.** Move the camera to the candidate with the highest gain, take a
+   picture, and mark every cell it saw as known.
 6. **Repeat** from step 4, because the gains have changed. Stop when the budget runs
    out, or when no candidate would reveal enough to be worth the move.
 
-Step 6 matters. After the first view, the cells it saw are no longer unknown. So a
-candidate that looks at the same region from nearly the same place now gains almost
-nothing, even though it scored well in round 1.
+Step 6 is the one that matters, because after the first view the cells it saw are no
+longer unknown. So a candidate that looks at the same region from nearly the same
+place now gains almost nothing, even though it scored well in round 1.
 
 ### A worked example with eleven candidate views
 
-The scene is the same row of four cylinders, seen from the side. The unknown space
-is the region from the table to 32 cm up, over the whole 100 cm of table, cut into
-2 cm squares. Leaving out the squares inside objects, that makes 629 unknown cells.
+To see that recounting happen, the scene is the same row of four cylinders, seen
+from the side. The unknown space is the region from the table to 32 cm up, over the
+whole 100 cm of table, cut into 2 cm squares. So leaving out the squares inside
+objects makes 629 unknown cells.
 
-There are 11 candidate views. They sit on a half circle of radius 55 cm around the
-middle of the table, every 15 degrees from 15° to 165°. The angle is measured from
-the right-hand end of the table. Each camera faces a point 5 cm above the middle of
-the table. Its picture is 70 degrees wide. The arm's shoulder is 10 cm to the left
-of the table, and the arm can hold the camera at most 100 cm from the shoulder. The
-budget is three views.
+There are 11 candidate views, and they sit on a half circle of radius 55 cm around
+the middle of the table, every 15 degrees from 15° to 165°. The angle is measured
+from the right-hand end of the table, and each camera faces a point 5 cm above the
+middle of the table, with a picture 70 degrees wide. The arm's shoulder is 10 cm to
+the left of the table, and the arm can hold the camera at most 100 cm from the
+shoulder. The budget for the whole loop is three views.
 
 ![Eleven candidate cameras; three are out of reach; the one at 105 degrees would see the most unknown cells](../../../images/planning-and-search/visibility-and-next-best-view/candidate-views-and-reach.svg)
 
-Step 3 removes the three candidates at the right-hand end. They are 114.0, 111.1 and
-106.3 cm from the shoulder. The one at 60° is 99.6 cm away, so it just stays in.
+Step 3 removes the three candidates at the right-hand end, because they are 114.0,
+111.1 and 106.3 cm from the shoulder. The one at 60° is 99.6 cm away, so it just
+stays in.
 
-Step 4 gives the round 1 gains. The table below lists them. Read each column as one
-candidate and the number of unknown cells it would see.
+Step 4 then gives the round 1 gains, which the table below lists. You read each
+column as one candidate and the number of unknown cells it would see.
 
 | Candidate | 60° | 75° | 90° | 105° | 120° | 135° | 150° | 165° |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -257,29 +271,29 @@ candidate and the number of unknown cells it would see.
 | Round 2 gain | 48 | 22 | 17 | taken | 42 | **129** | 114 | 117 |
 | Round 3 gain | 30 | 13 | 14 | taken | 6 | taken | 51 | **72** |
 
-The loop runs three rounds.
+The loop then runs three rounds, one per line of the table.
 
 1. Round 1 takes 105°, which would see 218 cells. That is 35% of the unknown space.
 2. Round 2 recounts. The views at 75° and 90° looked strong in round 1, with 194 cells
    each. Now they would add only 22 and 17, because most of what they see was seen
-   from 105°. The view at 135° adds 129. It sees the space just left of bottle 1,
-   which was in bottle 1's shadow from 105°, and a strip high up at the right-hand
-   end. The known space rises to 347 cells, 55%.
+   from 105°. The view at 135° adds 129, because it sees the space just left of
+   bottle 1, which was in bottle 1's shadow from 105°, and a strip high up at the
+   right-hand end. The known space rises to 347 cells, which is 55%.
 3. Round 3 takes 165°, a low view from the left end of the table. It adds 72 cells
-   near the table at the left end. The known space rises to 419 cells, 67%.
+   near the table at the left end, so the known space rises to 419 cells, or 67%.
 
 ![Three rounds: each takes the view that adds the most unknown cells, so later views fill in what earlier ones missed](../../../images/planning-and-search/visibility-and-next-best-view/three-rounds-of-next-best-view.svg)
 
-After three views, most of the right-hand end is still unknown. The reason is reach.
-The views that look into the region behind bottle 2 from the right are the three
-out-of-reach candidates. The one at 45° alone would see 195 cells. A robot in this
-position would need to move its base, or accept that the right-hand end stays
-unknown. The loop tells you this plainly, which is useful in itself.
+After three views, most of the right-hand end is still unknown, and the reason is
+reach. The views that look into the region behind bottle 2 from the right are the
+three out-of-reach candidates, and the one at 45° alone would see 195 cells. So a
+robot in this position would need to move its base, or accept that the right-hand
+end stays unknown. The loop tells you this plainly, which is useful in itself.
 
 ### The pseudocode
 
-The pseudocode below is the whole loop. `blocked` is the cylinder test from earlier
-on this page.
+The pseudocode below is the whole loop, where `blocked` is the cylinder test from
+earlier on this page.
 
 ```
 function blocked(camera, target, cylinder):
@@ -317,20 +331,22 @@ function next_best_views(candidates, unknown_cells, objects, budget):
     return chosen
 ```
 
-On a real robot, the line "update the map" uses the real picture, not the
-prediction. The prediction assumed that unknown cells are empty. If the picture
-shows a new object, the map gains an occupied region, and that object will cast
-its own shadow in the next round's predictions.
+On a real robot, the line "update the map" uses the real picture rather than the
+prediction, because the prediction assumed that unknown cells are empty. If the
+picture shows a new object, the map gains an occupied region, and that object will
+cast its own shadow in the next round's predictions.
 
 ### Choosing several views at once
 
-The loop above chooses one view, looks, and then chooses again. That is right when
-each picture can change the plan. Sometimes the objects are known in advance, and
-the task is to pick a fixed set of views, all at once, that together see everything.
+The loop above chooses one view, looks, and then chooses again, which is right when
+each picture can change the plan. Sometimes the objects are known in advance
+instead, and the task is to pick a fixed set of views, all at once, that together
+see everything.
 
-That is a different problem called **set cover**: each view is a set of things it
-sees, and you want the fewest sets that together cover everything. The same greedy
-rule solves it well: take the view that adds the most, then the next, and so on.
+That is a different problem called **set cover**. In it, each view is a set of
+things it sees, and you want the fewest sets that together cover everything. The
+same greedy rule solves it well, because you take the view that adds the most, then
+the next, and so on.
 [Greedy algorithms and set cover](../../08_decisions-and-task-logic/03_also-used/01_greedy-algorithms-and-set-cover.md#2-set-cover-the-problem-greedy-is-best-known-for)
 works an example with eight glasses and shows how far from the best the greedy
 choice can be. The visibility test on this page is what builds the sets that page
@@ -340,7 +356,8 @@ takes as given.
 
 ## 4. Where it is used on a robot arm
 
-Here are the places where an arm cell uses visibility tests or a next-best-view loop.
+Both layers earn their place, but in different tasks, so here are the places where
+an arm cell uses a visibility test or a full next-best-view loop.
 
 - **Throwing away useless camera poses early.** Before any view reaches the motion
   planner, the visibility test removes the ones from which the target is hidden.
@@ -349,21 +366,22 @@ Here are the places where an arm cell uses visibility tests or a next-best-view 
   [section on occlusion](../../../02_perception/02_object-perception/09_choosing-where-to-look.md#3-occlusion-as-a-precondition-not-a-difficulty).
 - **Picking a small fixed set of views for a cell.** When the objects are roughly
   known, an engineer runs the visibility test on many candidates once, offline,
-  and keeps two or three good ones. The arm then drives to them by name every cycle.
+  and keeps two or three good ones, so the arm then drives to them by name every
+  cycle.
 - **Looking into a bin or a shelf.** The sides of a bin, and the objects near the
-  front of a shelf, hide what is behind them. A next-best-view loop with an unknown
-  grid finds a view down past the edge.
+  front of a shelf, hide what is behind them, so a next-best-view loop with an
+  unknown grid finds a view down past the edge.
 - **Finding a hidden object.** When the object the robot needs is not in the first
-  picture, the unknown cells are the only places it can be. The loop scores views by
-  how many of those cells they would show.
+  picture, the unknown cells are the only places it can be, so the loop scores views
+  by how many of those cells they would show.
 - **Building a model of an unfamiliar object.** To scan an object it has never seen,
-  the robot needs many views. Each new view should show surface that the earlier
+  the robot needs many views, and each new view should show surface that the earlier
   ones missed. This is the job next-best-view planning was invented for.
 - **Checking a grasp before committing.** A grasp chosen from a single view may land
-  on a side the camera never saw. A second view aimed at that side, chosen by the
+  on a side the camera never saw, so a second view aimed at that side, chosen by the
   same test, confirms the surface is there.
 - **Keeping the camera's view clear while the arm moves.** A camera on a post can be
-  hidden by the arm itself. The same sight-line test, with the arm's links as the
+  hidden by the arm itself, so the same sight-line test, with the arm's links as the
   obstacles, tells the planner which arm poses would block the camera's view of the
   gripper.
 
@@ -371,10 +389,11 @@ Here are the places where an arm cell uses visibility tests or a next-best-view 
 
 ## 5. Where it is useful, and where it is not
 
-The visibility test is exact for the shapes it models. The next-best-view loop is
-only as good as its record of the unknown and its list of candidates. The table below
-lists the common problems. Read each row as a problem, the sign you would see, and
-what people do instead.
+Those uses divide along one line, and it is worth saying which side each falls on.
+The visibility test is exact for the shapes it models. However, the next-best-view
+loop is only as good as its record of the unknown and its list of candidates. The
+table below lists the common problems, and you read each row as a problem, the
+sign you would see, and what people do instead.
 
 | Problem | The sign you would see | What people do instead |
 | --- | --- | --- |
@@ -388,21 +407,22 @@ what people do instead.
 | Gains assume unknown cells are empty | a view that should see behind a box sees a new object instead | nothing to fix: update the map from the real picture and score again |
 | The number of rounds varies with the scene | the cycle time is different every run and hard to guarantee | cap the budget; fall back to a fixed set when the cap is reached |
 
-The first row is the most important. Book 2
+The first row is the most important one. Book 2
 [counts the views each task needs](../../../02_perception/02_object-perception/08_the-wrist-camera.md#2-how-many-pictures-each-task-needs)
 and finds that most arm tasks need one or two. A fixed set of views can also be
 tested and signed off, which a loop that decides at run time cannot. So the
-visibility test is almost always worth having, and the full loop is worth having only
-when the robot genuinely does not know what is in front of it.
+visibility test is almost always worth having, while the full loop is worth having
+only when the robot genuinely does not know what is in front of it.
 
 ---
 
 ## 6. Libraries that provide it
 
-The cylinder test and the loop on this page are a few dozen lines of plain code, and
-no library is needed for them. The libraries below give you ray casting against more
-complex shapes, or the grid of unknown cells. Read each row as one library, the
-languages it serves, the names to look for, and a note.
+Because both layers are short, the cylinder test and the loop on this page are a few
+dozen lines of plain code. So no library is needed for them. The libraries below
+give you ray casting against more complex shapes, or the grid of unknown cells.
+Then you read each row as one library, the languages it serves, the names to look
+for, and a note.
 
 | Library | Languages | Function or class | Note |
 | --- | --- | --- | --- |
@@ -421,52 +441,55 @@ gives the licence of each of these and says which run on an Apple Silicon Mac.
 
 ## 7. Why this, and what it costs
 
-This section answers the four questions for visibility and next-best-view planning:
-what it is, what it does for you, why it rather than the obvious alternative, and
-what it costs.
+With the test, the loop and the libraries covered, this section answers the four
+questions for visibility and next-best-view planning. What is it, what does it do
+for you, why choose it rather than the obvious alternative, and what does it cost?
 
 The visibility test checks whether a straight line from the camera to a point passes
-through any object. For simple shapes such as upright cylinders and boxes it is an
-exact formula. Next-best-view planning uses that test to score candidate camera
-poses by how much new they would show, then takes the best one and repeats.
+through any object. For simple shapes such as upright cylinders and boxes, it is
+an exact formula. Next-best-view planning then uses that test to score candidate
+camera poses by how much new they would show, and takes the best one and repeats.
 
 What it does for you is replace guessing with counting. Without it, a program
 chooses a view, drives there, takes a picture, and only then finds out the target
-was behind a bottle. With it, the program knows before the arm moves. Each wasted
-move costs between a few hundred milliseconds and a couple of seconds on a real arm,
-and the test costs microseconds.
+was behind a bottle. With it, the program knows before the arm moves at all. Each
+wasted move costs between a few hundred milliseconds and a couple of seconds on a
+real arm, while the test itself costs microseconds.
 
-The obvious alternative is to **render** each candidate view: draw the whole scene
-as a picture from that pose, as a game engine would, and look at the picture. That
-works for any shape and gives a full image. But it is far slower than a few sight
-lines, and it needs a full model of the scene. For the question "is this target
-hidden from here?", a handful of sight-line tests answers it exactly. Choose
-rendering when you need the whole predicted picture, for example to predict what a
-detector will see. Choose sight lines when you need a yes or no, or a count.
+The obvious alternative is to **render** each candidate view, which means drawing
+the whole scene as a picture from that pose, as a game engine would, and looking at
+the picture. That works for any shape and gives a full image. However, it is far
+slower than a few sight lines, and it needs a full model of the scene. For the
+question "is this target hidden from here?", a handful of sight-line tests answers
+it exactly. So choose rendering when you need the whole predicted picture,
+for example to predict what a detector will see. Choose sight lines instead when you
+need a yes or no, or a count.
 
-The second alternative is to skip the loop and use a **fixed list of views**. For
-most arm tasks this is the better choice, as section 5 says. The loop earns its place
-when the robot does not know the scene in advance.
+The second alternative is to skip the loop and use a **fixed list of views**, which
+for most arm tasks is the better choice, as section 5 says. The loop earns its place
+only when the robot does not know the scene in advance.
 
-The costs are these. You must model each object as a simple shape, and a shape that
-is too small lets a blocked view through. The loop needs a record of the unknown
-space, which is a map you now have to keep correct. Its cycle time depends on the
-scene, so it is harder to promise a fixed time per task. And its choices are only as
-good as its candidate list: it cannot choose a view you did not offer it.
+The costs come in four parts. First, you must model each object as a simple shape,
+and a shape that is too small lets a blocked view through. Second, the loop needs a
+record of the unknown space, which is a map you now have to keep correct. Third,
+its cycle time depends on the scene, so it is harder to promise a fixed time per
+task. Fourth, its choices are only as good as its candidate list, because it cannot
+choose a view you did not offer it.
 
 ---
 
 ## 8. The learned alternative
 
-There is no learned model in Book 6 that replaces the sight-line test, because
-the test is an exact formula that runs in microseconds, and a network could only
-copy it less exactly. The nearest learned alternative is to skip the extra view.
-A [shape completion](../../../06_learned-models/04_3d-models/03_also-used/01_shape-completion.md)
-model guesses the hidden back of an object from one picture, which wins when the
+Since the test is written by hand, the last question is what a learned model would
+do in its place. There is no learned model in Book 6 that replaces the sight-line
+test. This is because the test is an exact formula that runs in microseconds, and
+a network could only copy it less exactly. The nearest learned alternative is
+instead to skip the extra view altogether. A [shape completion](../../../06_learned-models/04_3d-models/03_also-used/01_shape-completion.md)
+model guesses the hidden back of an object from one picture. So it wins when the
 camera cannot get round the object, such as in a bin or on a shelf, or when every
-extra move costs too much time. But the back it gives is invented, not measured,
-so Book 6's rule is to use completion when you cannot look, and to look when you
-can afford it. The two also work together: a model's low
+extra move costs too much time. However, the back it gives is invented rather than
+measured, so Book 6's rule is to use completion when you cannot look, and to look
+when you can afford it. The two also work together, because a model's low
 [confidence](../../../06_learned-models/10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md#7-declining-to-act-the-reject-option-and-cascades)
 is the signal to look again, and this page then chooses where.
 

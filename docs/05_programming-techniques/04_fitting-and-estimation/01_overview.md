@@ -1,12 +1,13 @@
 # Fitting and estimation: an overview
 
 This chapter is about getting a clean shape or a steady number out of noisy
-measurements. Every sensor on a robot arm gives readings that are a little
-wrong. A depth camera's points scatter a millimetre or two either side of the
-real surface. A detector's box jumps by a few pixels from one picture to the
-next. A force sensor's reading shakes even when nothing touches it. The
-techniques in this chapter take many such readings and give back one answer
-that is better than any single reading.
+measurements. This is difficult because every sensor on a robot arm gives
+readings that are a little wrong. For example, a depth camera's points scatter a
+millimetre or two either side of the real surface. A detector's box jumps by a
+few pixels from one picture to the next, and a force sensor's reading shakes
+even when nothing touches it. That is why the techniques in this chapter take
+many such readings and give back one answer that is better than any single
+reading.
 
 This page is for a reader who knows what a point cloud, a camera frame and a
 joint angle are, as Books 1 and 2 explain, but who has not met these techniques
@@ -27,32 +28,35 @@ of this book and to the learned models in Book 6.
 
 ## 1. What fitting and estimation are for
 
-**Fitting** means choosing the shape that best matches a set of measured
-points. The shape is described by a few numbers. A line has a slope and an
-offset. A plane has a direction it faces and a distance from the origin. A
-circle has a centre and a radius. Fitting finds the values of those numbers
-that put the shape as close as possible to all the points at once.
+Fitting and estimation are the two ideas named in the chapter's title, and they
+are easiest to understand one at a time. **Fitting** means choosing the shape
+that best matches a set of measured points, and that shape is described by a few
+numbers. For example, a line has a slope and an offset, while a plane has a
+direction it faces and a distance from the origin. Once again, a circle has a
+centre and a radius. So fitting finds the values of those numbers that put the
+shape as close as possible to all the points at once.
 
 **Estimation** means working out a number you cannot measure directly, or cannot
-measure without noise, from the readings you do have. The position of a part on
-a moving belt is an example. The camera gives a slightly wrong position in every
-picture, and sometimes no position at all. Estimation combines the pictures over
-time into one position that is steadier than any single picture.
+measure without noise, from the readings you do have. For example, a camera
+watching a part on a moving belt gives a slightly wrong position in every
+picture, and sometimes no position at all. Estimation therefore combines those
+pictures over time into one position that is steadier than any single picture.
 
-The two ideas overlap. Fitting a line to points is an estimate of the line's
-slope and offset. The difference is mostly in how the data arrives. Fitting
-usually takes a batch of points measured at one moment. Estimation over time
-takes one reading after another, and updates its answer as each one arrives.
+The two ideas overlap, because fitting a line to points is itself an estimate of
+the line's slope and offset. So what separates them is mostly how the data
+arrives. Fitting usually takes a batch of points measured at one moment. Instead,
+estimation over time takes one reading after another, and it updates its answer
+as each one arrives.
 
-An everyday example shows the core idea. Suppose you weigh a bag of flour five
-times on a kitchen scale and get 1003 g, 998 g, 1001 g, 997 g and 1002 g. You
-would not trust any one reading. You would take the average, 1000.2 g. That
-average is the simplest possible fit: the single number closest to all five
-readings. Every technique in this chapter is a more careful version of that
-average.
+An everyday example shows the same core idea at work. Suppose you weigh a bag of
+flour five times on a kitchen scale and get 1003 g, 998 g, 1001 g, 997 g and
+1002 g. You would not trust any one reading, so you would take the average,
+1000.2 g. That average is the simplest possible fit, because it is the single
+number closest to all five readings. Every technique in this chapter is a more
+careful version of that average.
 
-The picture below shows three of the jobs this chapter covers, on made-up but
-realistic data.
+For example, the picture below shows three of the jobs this chapter covers, on
+made-up but realistic data.
 
 ![A line through noisy points, a line that ignores stray points, and a steady estimate from a noisy reading](../../images/fitting-and-estimation/overview/three-jobs.svg)
 
@@ -67,15 +71,18 @@ about 4 mm into an estimate that stays within a millimetre or so of the true
 
 ## 2. The question they answer for an arm
 
-The question is: **given these noisy readings, what is really there, and how
-sure can I be?**
+Those two definitions come together on an arm, where fitting and estimation
+answer a single question: **given these noisy readings, what is really there,
+and how sure can I be?**
 
-An arm needs clean numbers because it acts on them. A gripper that closes 3 mm
-to the side of a glass knocks it over. A camera that believes the table is 2°
-tilted when it is level puts every object at the wrong height. The arm cannot
-wait for a perfect sensor. It has to make the best of the readings it has.
+An arm needs clean numbers because it acts on them, so a small error in a number
+becomes a physical mistake. For example, a gripper that closes 3 mm to the side
+of a glass knocks it over. In the same way, a camera that believes the table is
+2° tilted when it is level puts every object at the wrong height. Because the
+arm cannot wait for a perfect sensor, it has to make the best of the readings it
+already has.
 
-Here are typical places on an arm where the question comes up:
+So the list below gives typical places on an arm where the question comes up.
 
 - Finding the table in a depth camera's point cloud, so that everything that is
   not table can be treated as an object.
@@ -109,30 +116,32 @@ for a cup that is 40 mm in radius.
 
 ## 3. The techniques, in two groups
 
-The chapter has five technique pages. Each one answers a slightly different
-version of the question above. They are split into two groups. The **most used**
-group holds the four techniques that nearly every arm with a camera or a sensor
-runs, often on every frame. The **also used** group holds a technique that
-matters a great deal when it is needed, but that an arm runs less often: when it
-is set up, when it picks up a new part, or while it warms up.
+Because that one question comes up in so many places, the chapter answers it on
+five technique pages. Each page takes a slightly different version of the
+question, and the five are split into two groups by how often an arm runs them.
+The **most used** group holds the four techniques that nearly every arm with a
+camera or a sensor runs, often on every frame. The **also used** group holds a
+technique that matters a great deal when it is needed, but that an arm runs less
+often. It comes up when the arm is set up, when it picks up a new part, or while
+it warms up.
 
-The most used group, in `02_most-used/`:
+The most used group, in `02_most-used/`, holds these four pages:
 
 - [Least-squares fitting](02_most-used/01_least-squares-fitting.md) finds the line, plane
   or circle that is closest to all the points, where "closest" means the sum of
   the squared distances is as small as possible. It is fast, exact and has no
-  settings to tune. It assumes every point belongs to the shape.
+  settings to tune, but it assumes every point belongs to the shape.
 - [RANSAC](02_most-used/02_ransac.md), short for random sample consensus, finds the shape
   that the largest number of points agree with. It tries many shapes, each
   through a few randomly chosen points, and keeps the one with the most points
-  close to it. It copes with data where a third or even half of the points
+  close to it, so it copes with data where a third or even half of the points
   belong to something else.
 - The [Kalman filter](02_most-used/03_kalman-filter.md) keeps a running estimate of a
   changing quantity, such as the position and speed of a moving part. At each
   new reading it first predicts where the quantity should be, then corrects
-  the prediction with the reading. It also keeps track of how sure it is. Its
-  section 4 covers the extended and unscented Kalman filters and the particle
-  filter, for motions and measurements that are not straight-line
+  the prediction with the reading, and it also keeps track of how sure it is.
+  Its section 4 covers the extended and unscented Kalman filters and the
+  particle filter, for motions and measurements that are not straight-line
   relationships, such as angles.
 - [Sensor streams](02_most-used/04_sensor-streams.md) covers the timing and
   filtering of sensor data before any of the other techniques sees it: pairing
@@ -141,7 +150,7 @@ The most used group, in `02_most-used/`:
   and median filters, working out how fast a reading is changing, and switching
   on a threshold without flickering, using two limits (called hysteresis).
 
-The also used group, in `03_also-used/`:
+The also used group, in `03_also-used/`, holds one page:
 
 - [System identification](03_also-used/01_system-identification.md) measures the
   numbers inside a physical model of the arm, such as a joint's friction, a
@@ -150,22 +159,23 @@ The also used group, in `03_also-used/`:
   with recursive least squares, and states an error bar for each one, so the arm
   can act on the cautious end of the range.
 
-The techniques are often used together. A typical table-top pipeline first
-lines up each depth picture with the arm's joint readings from the same moment,
-as the sensor streams page explains. It then runs RANSAC to find which points
-belong to the table, then least squares on just those points to get the most
-accurate plane. Later, a Kalman filter smooths the position of each object from
-picture to picture. System identification sits underneath all of this: it gives
-the controller the friction and payload numbers it needs to move the arm
-accurately.
+In practice the techniques are often used together, as a typical table-top
+pipeline shows. That pipeline first lines up each depth picture with the arm's
+joint readings from the same moment, as the sensor streams page explains. It
+then runs RANSAC to find which points belong to the table, and after that least
+squares on just those points to get the most accurate plane. Later, a Kalman
+filter smooths the position of each object from picture to picture. System
+identification sits underneath all of this, because it gives the controller the
+friction and payload numbers it needs to move the arm accurately.
 
 ---
 
 ## 4. How they compare
 
-The table below compares the five techniques. Read each row as one property,
-and each column as one technique. The first four columns are the most used
-group; the last is the also used group.
+Since the five pages answer such different versions of the question, the table
+below compares them side by side. Read each row as one property and each column
+as one technique. The first four columns hold the most used group, and the last
+column holds the also used group.
 
 | Property | Least squares | RANSAC | Kalman filter | Sensor streams | System identification |
 | --- | --- | --- | --- | --- | --- |
@@ -181,31 +191,32 @@ group; the last is the also used group.
 
 ## 5. How this chapter connects to the others
 
-Fitting and estimation sit between the raw sensor and the decisions the arm
-makes. The chapter uses ideas from earlier chapters and feeds results to later
-ones.
+The table shows what each technique does on its own, but none of them works
+alone. This is because fitting and estimation sit between the raw sensor and
+the decisions the arm makes. This means the chapter takes ideas from earlier
+chapters and feeds its results to later ones.
 
 - From [geometry and cameras](../02_geometry-and-cameras/01_overview.md) it
-  takes the step that turns pixels and depths into 3D points. Every fit in this
-  chapter starts from points that the
+  takes the step that turns pixels and depths into 3D points, so every fit in
+  this chapter starts from points that the
   [pinhole camera model](../02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md)
   produced.
 - From [searching and matching](../03_searching-and-matching/01_overview.md) it
   takes the nearest points around each point, which is how a surface's direction
   is found at each point. [Iterative closest
   point](../03_searching-and-matching/02_most-used/02_iterative-closest-point.md) runs a
-  least-squares fit inside every one of its steps. A Kalman filter's prediction
-  is what [assignment and
+  least-squares fit inside every one of its steps, and a Kalman filter's
+  prediction is what [assignment and
   matching](../03_searching-and-matching/02_most-used/03_assignment-and-matching.md) compares
   new detections against.
 - It hands the points left over after the table is removed to
   [clustering](../05_image-and-point-cloud-processing/02_most-used/03_clustering.md), which
   splits them into objects.
 - In [planning and search](../06_planning-and-search/01_overview.md), numerical
-  inverse kinematics solves a least-squares problem at every step. The page on
+  inverse kinematics solves a least-squares problem at every step, as the page on
   [numerical inverse
   kinematics](../06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
-  explains this.
+  explains.
 - In [control and motion](../07_control-and-motion/01_overview.md), a
   controller such as [PID](../07_control-and-motion/02_most-used/01_pid-control.md) often
   acts on a filtered reading rather than the raw one. The equations of
@@ -213,28 +224,33 @@ ones.
   contain the masses and friction numbers that
   [system identification](03_also-used/01_system-identification.md) measures.
 
-Book 6 covers learned models that do some of the same jobs. A
+Book 6 covers learned models that do some of the same jobs in a different way.
+For example, a
 [point cloud model](../../06_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
-can label which points are table and which are object. A
+can label which points are table and which are object, and a
 [keypoint and pose model](../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 can give an object's position and direction directly from a picture. A learned
 tracker, described in
 [tracking and motion](../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md),
-can follow objects that a constant-speed model cannot. The written techniques in
-this chapter need no training data, give the same answer for the same input
-(apart from RANSAC's random choices), and state how far off they might be. The
-learned models handle shapes and movements that are hard to write down as a few
-numbers. Many arms use both: a model finds the object, and a fit measures it.
+can follow objects that a constant-speed model cannot. However, the written
+techniques in this chapter need no training data, give the same answer for the
+same input (apart from RANSAC's random choices), and state how far off they
+might be. The learned models, in return, handle shapes and movements that are
+hard to write down as a few numbers. That is why many arms use both: a model
+finds the object, and a fit measures it.
 
-Even the learned models rest on this chapter. Training a neural network means
-making the sum of its squared errors, or a similar number, as small as possible,
-which is the same idea as least squares. The page
+Even the learned models rest on this chapter, because training a neural network
+means making the sum of its squared errors, or a similar number, as small as
+possible. That is the same idea as least squares, as the page
 [how a model learns](../../06_learned-models/01_what-models-are/02_how-a-model-learns.md)
-explains that.
+explains.
 
 ---
 
 ## 6. Where to read next
+
+Once you know what each technique is for, the order below is the one to read the
+pages in.
 
 - Start with [least-squares fitting](02_most-used/01_least-squares-fitting.md). The other
   pages build on it.

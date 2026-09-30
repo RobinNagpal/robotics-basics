@@ -1,18 +1,20 @@
 # Clustering
 
 This page explains how a program splits a mask or a point cloud into separate
-objects. It answers four questions. How does a program number the separate
-blobs in a mask? How does it group 3D points into objects by how close they are?
-How does DBSCAN do the same while also marking stray points as noise? And why is
-a point cloud usually thinned out onto a grid of small cubes before any of this
-runs? A later section adds two methods that look for the centre of each crowd of
-points instead: k-means, which must be told how many groups there are, and mean
-shift, which is not.
+objects. It answers four questions, and the first two are about grouping things
+that lie close together: how a program numbers the separate blobs in a mask, and
+how it groups 3D points into objects by how close they are. The other two ask how
+DBSCAN does the same while also marking stray points as noise, and why a point
+cloud is usually thinned out onto a grid of small cubes before any of this runs. A
+later section then adds two methods that look for the centre of each crowd of
+points instead. Those two are k-means, which must be told how many groups there
+are, and mean shift, which is not.
 
-It is for a reader who knows what a mask and a point cloud are. A **mask** is a
-picture in which each pixel is either "object" or "not object"; the page on
-[thresholding and colour masks](01_thresholding-and-colour-masks.md) makes one.
-A **point cloud** is a list of 3D points, one for each depth pixel, that a depth
+It is for a reader who already knows what a mask and a point cloud are. A
+**mask** is a picture in which each pixel is either "object" or "not object", and
+the page on
+[thresholding and colour masks](01_thresholding-and-colour-masks.md) makes one. A
+**point cloud** is a list of 3D points, one for each depth pixel, that a depth
 camera measures on the surfaces in front of it.
 
 Clustering is the step that turns "these pixels, or these points, are not table"
@@ -46,33 +48,37 @@ one object at a time.
 
 ## 1. The idea in one sentence
 
-**Clustering** puts two pixels or two points in the same group whenever they are
-close enough to each other, and keeps doing so until every group stops growing.
+The whole technique fits into one sentence, and the rest of this page fills that
+sentence in. **Clustering** puts two pixels or two points in the same group
+whenever they are close enough to each other, and it keeps doing so until every
+group stops growing.
 
-Here is an everyday example. Scatter some rice, some lentils and a few coins on
-a dark table and look at it from above. You see three heaps and a few loose
-grains. You do not need to know what rice is to see the heaps. You see them
-because the grains in one heap touch each other, and there is bare table between
-heaps. Clustering uses the same rule. It does not know what the objects are. It
-only knows which points are near which.
+For an everyday example, scatter some rice, some lentils and a few coins on a dark
+table and look at it from above. You see three heaps and a few loose grains, and
+you do not need to know what rice is in order to see those heaps. You see them
+because the grains in one heap touch each other, while there is bare table between
+one heap and the next. Clustering uses the same rule, so it does not know what the
+objects are, and it only knows which points are near which.
 
-This is why clustering works on objects the robot has never seen. It is also
-why it fails when two objects touch: then there is no bare table between them.
+This is why clustering works on objects the robot has never seen before. It is
+also why it fails when two objects touch, because then there is no bare table
+between them.
 
 ---
 
 ## 2. How it works
 
-This section covers three grouping methods and one preparation step. Connected
-components works on a mask, which is a grid of pixels. Euclidean clustering and
-DBSCAN work on a point cloud, where the points have no grid. Voxel downsampling
-thins a point cloud before it is clustered.
+That one rule takes three different forms, so this section covers three grouping
+methods and one preparation step. Connected components works on a mask, which is a
+grid of pixels, whereas Euclidean clustering and DBSCAN work on a point cloud,
+where the points have no grid. Voxel downsampling then thins a point cloud before
+it is clustered.
 
 A point cloud of a table scene normally goes through two steps before clustering.
-First, points too far away are cut off. Second, the table itself is found and
-removed, usually with [RANSAC](../../04_fitting-and-estimation/02_most-used/02_ransac.md). What is
-left is a set of points that are not table. Those are the points that clustering
-splits into objects.
+First, points that are too far away are cut off. Second, the table itself is found
+and removed, usually with [RANSAC](../../04_fitting-and-estimation/02_most-used/02_ransac.md). What is
+left is a set of points that are not table, and those are the points that
+clustering splits into objects.
 
 ### Connected components: blobs in a mask
 
@@ -80,12 +86,12 @@ splits into objects.
 object pixels belong to the same blob if you can walk from one to the other by
 stepping only on object pixels.
 
-The only choice is what counts as a step. With **four-connectivity**, you may
-step up, down, left or right. With **eight-connectivity**, you may also step
-diagonally. The difference matters when two blobs touch only at a corner.
+So the only choice left is what counts as a step. With **four-connectivity** you
+may step up, down, left or right, while with **eight-connectivity** you may also
+step diagonally. The difference matters when two blobs touch only at a corner.
 
-The method is a **flood fill**, the same as the paint-bucket tool in a drawing
-program.
+The method itself is a **flood fill**, which is the same thing as the paint-bucket
+tool in a drawing program.
 
 ```
 function connected_components(mask, neighbours):   # neighbours: 4 or 8 steps
@@ -106,38 +112,39 @@ function connected_components(mask, neighbours):   # neighbours: 4 or 8 steps
     return label, next_label
 ```
 
-Here is a worked example. The picture below shows a mask 10 pixels wide and 7
-high, labelled both ways.
+Here is a worked example, in which the picture below shows a mask 10 pixels wide
+and 7 high, labelled both ways.
 
 ![The same mask gives 6 blobs with four-connectivity and 4 blobs with eight-connectivity](../../../images/image-and-point-cloud-processing/clustering/connected-components.svg)
 
 Each coloured square is an object pixel, and the number on it is the label the
 flood fill gave it.
 
-With four-connectivity the program finds 6 blobs. Blob 3, blob 5 and blob 6 form
-a diagonal line of pixels. They touch only at corners, so four-connectivity keeps
-them apart. With eight-connectivity the diagonal steps are allowed, so these
-three join into one blob and the program finds 4. Neither answer is wrong. You
-choose eight-connectivity when a thin diagonal part, such as a wire, should stay
-in one piece. You choose four-connectivity when objects that touch only at a
-corner should stay apart. OpenCV and scikit-image use eight-connectivity by default, and SciPy uses
-four-connectivity by default, so check which one your library uses.
+With four-connectivity the program finds 6 blobs, because blob 3, blob 5 and blob
+6 form a diagonal line of pixels. They touch only at corners, so four-connectivity
+keeps them apart. With eight-connectivity the diagonal steps are allowed, so these
+three join into one blob and the program finds 4 instead. Neither answer is wrong,
+so the choice depends on the job. You choose eight-connectivity when a thin
+diagonal part, such as a wire, should stay in one piece, and four-connectivity
+when objects that touch only at a corner should stay apart. OpenCV and
+scikit-image use eight-connectivity by default, while SciPy uses
+four-connectivity, so check which one your library uses.
 
-Once each blob has a number, the program can measure each one: its area in
-pixels, its bounding box and its centroid. It then throws away blobs that are
-too small to be an object. This size filter removes specks of noise left over
+Once each blob has a number, the program can measure each one, giving its area in
+pixels, its bounding box and its centroid. It then throws away blobs that are too
+small to be an object, so this size filter removes the specks of noise left over
 from the threshold.
 
 The flood fill visits each pixel a fixed number of times, so its time grows in
-step with the number of pixels. On a camera picture it takes about a
-millisecond.
+step with the number of pixels. This means that on a camera picture it takes about
+a millisecond.
 
 ### Euclidean clustering: groups of nearby points
 
-A point cloud has no grid, so "neighbour" cannot mean "the next pixel". Instead,
-two points are neighbours if the straight-line distance between them is below a
-chosen value. This value is called the **cluster tolerance**. "Euclidean" just
-means this ordinary straight-line distance.
+A point cloud has no grid, so "neighbour" cannot mean "the next pixel" any more.
+Instead, two points are neighbours if the straight-line distance between them is
+below a chosen value, and that value is called the **cluster tolerance**. The word
+"Euclidean" just means this ordinary straight-line distance.
 
 **Euclidean cluster extraction** is then the same flood fill as above, with that
 new meaning of "neighbour".
@@ -162,17 +169,17 @@ function euclidean_clusters(points, tolerance, min_size):
 ```
 
 The line "each point within tolerance of q" is a **radius search**. Written
-simply, it compares `q` with every other point, which is slow for a large
-cloud. Real libraries build a k-d tree first, so that each search only looks at
+simply, it compares `q` with every other point, which is slow for a large cloud.
+So real libraries build a k-d tree first, and then each search only looks at
 nearby points. The page on
 [nearest-neighbour search](../../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
 explains how.
 
-Here is a worked example. The points below are what is left on a table after the
-table plane was removed, seen from above. There is a round cup, a box, a small
-block and 7 scattered stray points, 323 points in all. The points on each object
-are about 6 mm apart, with a little random noise, and the objects are at least
-43 mm apart.
+Here is a worked example, in which the points below are what is left on a table
+after the table plane was removed, seen from above. There is a round cup, a box, a
+small block and 7 scattered stray points, which is 323 points in all. The points
+on each object are about 6 mm apart, with a little random noise, and the objects
+are at least 43 mm apart.
 
 ![Euclidean clustering splits the table points into a cup, a box and a block, and drops the stray points](../../../images/image-and-point-cloud-processing/clustering/euclidean-clusters.svg)
 
@@ -183,16 +190,16 @@ each cluster written on it.
 With a tolerance of 10 mm, the flood fill first finds 9 groups: the box with 153
 points, the cup with 126, the block with 37, one pair of stray points and five
 single stray points. A minimum size of 10 points then throws away the 6 small
-groups. The result is 3 clusters, which is right. These numbers come from
+groups, so the result is 3 clusters, which is right. These numbers come from
 running the code behind the picture on these points.
 
 ### DBSCAN: nearby points, with a noise rule
 
-Euclidean clustering has one known weakness. It **chains**: if A is near B and B
-is near C, then A, B and C are one group, even if A and C are far apart. So a
-thin line of stray points between two objects joins them into one cluster. Such
-lines are common. Depth cameras make stray points along the edges of objects,
-and a cable or a speck of dust can lie between two parts.
+Euclidean clustering has one known weakness, which is that it **chains**. If A is
+near B and B is near C, then A, B and C are one group, even if A and C are far
+apart, so a thin line of stray points between two objects joins them into one
+cluster. Such lines are common, because depth cameras make stray points along the
+edges of objects, and a cable or a speck of dust can lie between two parts.
 
 **DBSCAN**, short for "density-based spatial clustering of applications with
 noise", fixes this with one extra rule. It sorts every point into one of three
@@ -205,9 +212,9 @@ kinds, using a radius `eps` (the same idea as the tolerance) and a count
   point. It sits on the edge of a crowded area.
 - A **noise point** is neither. It sits alone.
 
-Clusters then grow like Euclidean clusters, with one change: a cluster only
-keeps growing from core points. A border point joins the cluster, but the
-search does not continue from it. Noise points join nothing.
+Clusters then grow as Euclidean clusters do, with one change: a cluster only
+keeps growing from core points. So a border point joins the cluster, but the
+search does not continue from it, and noise points join nothing at all.
 
 ```
 function dbscan(points, eps, min_pts):
@@ -238,44 +245,46 @@ and `min_pts` of 5.
 Filled dots are core points, open circles are border points, and crosses are
 noise; the red circle shows the 10 mm radius round one core point.
 
-DBSCAN finds the same 3 clusters: 153, 126 and 37 points. Of the 323 points, 305
-are core points, 11 are border points and 7 are noise. The border points sit on
-the corners and outer edges of the objects, where a point has fewer neighbours. The 7 noise
-points are exactly the stray points that Euclidean clustering removed with its
-size filter. Here the two methods agree.
+DBSCAN finds the same 3 clusters, of 153, 126 and 37 points. Of the 323 points,
+305 are core points, 11 are border points and 7 are noise. The border points sit
+on the corners and outer edges of the objects, because a point there has fewer
+neighbours. The 7 noise points are exactly the stray points that Euclidean
+clustering removed with its size filter, so here the two methods agree.
 
-They disagree when stray points form a bridge. The picture below shows two
-blocks 30 mm apart, with a line of 4 stray points between them.
+However, they disagree when stray points form a bridge, and the picture below
+shows two blocks 30 mm apart with a line of 4 stray points between them.
 
 ![A line of stray points joins two blocks under Euclidean clustering, but not under DBSCAN](../../../images/image-and-point-cloud-processing/clustering/stray-points-bridge.svg)
 
 The same 132 points and the same 10 mm distance give one cluster on the left and
 two on the right.
 
-The stray points are about 7 mm apart, so each is within 10 mm of the next.
-Euclidean clustering walks along the line from one block to the other and
-reports one cluster of 132 points. DBSCAN counts neighbours first. Three of the
-four stray points have only 3 points within 10 mm, counting themselves, which is
-below `min_pts` of 5. So they are not core points, and the search cannot pass
-through them. DBSCAN reports two clusters of 65 and 66 points and marks 1 point
-as noise.
+The stray points are about 7 mm apart, so each one is within 10 mm of the next.
+Euclidean clustering therefore walks along the line from one block to the other,
+and it reports one cluster of 132 points. DBSCAN counts neighbours first, and
+three of the four stray points have only 3 points within 10 mm, counting
+themselves, which is below `min_pts` of 5. So they are not core points, and the
+search cannot pass through them. This means DBSCAN reports two clusters of 65 and
+66 points, and marks 1 point as noise.
 
-DBSCAN's `min_pts` does two jobs at once, and Book 2 warns about mixing them. It
-is a noise filter, which decides whether a point sits in a crowded area. It is
-not a size filter for whole objects. A program still throws away clusters that
-are too small as a separate step. Book 2's
+DBSCAN's `min_pts` looks as though it does two jobs at once, and Book 2 warns
+about mixing them. It is a noise filter, which decides whether a point sits in a
+crowded area, so it is not a size filter for whole objects. This means a program
+still throws away clusters that are too small, as a separate step. Book 2's
 [choosing the grouping distance](../../../02_perception/02_object-perception/03_programmed-methods.md#19-choosing-the-grouping-distance-and-clustering-on-the-plane)
 works through both numbers for a real camera.
 
 ### Voxel downsampling: preparing the cloud
 
-A depth camera with 640 by 480 pixels gives up to 307,200 points per picture.
-Clustering them all is slow, and it is not needed: two points 1 mm apart on the
-same surface tell the program nothing new. So the cloud is thinned first.
+A depth camera with 640 by 480 pixels gives up to 307,200 points per picture, and
+clustering them all is slow. It is also not needed, because two points 1 mm apart
+on the same surface tell the program nothing new. So the cloud is thinned out
+first.
 
-**Voxel downsampling** divides space into small cubes of equal size. Each cube is
-called a **voxel**, short for "volume pixel". Every cube that holds at least one
-point is replaced by one point: the average of the points inside it.
+**Voxel downsampling** divides space into small cubes of equal size, and each cube
+is called a **voxel**, short for "volume pixel". Every cube that holds at least
+one point is then replaced by a single point, which is the average of the points
+inside it.
 
 ```
 function voxel_downsample(points, size):
@@ -290,8 +299,8 @@ a box.
 
 ![Voxel downsampling turns 3,000 points into 68, one per occupied 10 mm cell](../../../images/image-and-point-cloud-processing/clustering/voxel-downsampling.svg)
 
-The left panel has 3,000 points. The right panel has one average point for each
-occupied 10 mm cell, which is 68 points.
+The left panel has 3,000 points, while the right panel has one average point for
+each occupied 10 mm cell, which comes to 68 points.
 
 The table below shows how the cell size sets the number of points left from the
 same 3,000. Read each row as "with cubes of this size, this many points remain".
@@ -303,23 +312,23 @@ same 3,000. Read each row as "with cubes of this size, this many points remain".
 | 20 mm | 26 | 0.9% |
 
 Downsampling does three useful things for clustering. It makes clustering much
-faster, because there are far fewer points to search. It makes the point
-spacing even, so one tolerance works everywhere: near the camera the points are
-crowded, far away they are sparse, and the grid removes that difference. And it
-averages away some of the depth noise.
+faster, because there are far fewer points to search through. It also makes the
+point spacing even, so one tolerance works everywhere: near the camera the points
+are crowded and far away they are sparse, and the grid removes that difference. It
+then averages away some of the depth noise as well.
 
-It also sets a limit. After downsampling, the points on one surface are about
-one cell apart, and up to one cell diagonal apart. A cube of side 10 mm has a
-diagonal of 10 × √3 = 17.3 mm. So the cluster tolerance must be larger than
-that, or one object will break into several clusters. The page
+It also sets a limit on the tolerance. After downsampling, the points on one
+surface are about one cell apart, and up to one cell diagonal apart. A cube of
+side 10 mm has a diagonal of 10 × √3 = 17.3 mm. So the cluster tolerance must be
+larger than that, or one object will break into several clusters. The page
 [singulation and pre-grasp manipulation](../../../03_frameworks/02_gripping/10_singulation-and-pre-grasp.md#21-every-cheap-perception-method-merges-touching-objects)
 works through this link between the cell size and the tolerance, using the
 settings from the Point Cloud Library's own tutorial.
 
 ### Choosing the distance
 
-The tolerance, or `eps`, is the one setting that decides the result. It must lie
-between two limits.
+Every method so far rests on one number, because the tolerance, or `eps`, is the
+setting that decides the result. It must lie between two limits.
 
 - It must be **larger than the gaps between points on one object**. If it is
   smaller, one object breaks into many small clusters.
@@ -339,46 +348,49 @@ these clusters and drops this many points".
 | 30 mm | 2 (281, 37) | 5 |
 | 50 mm | 1 (322) | 1 |
 
-At 5 mm and 6 mm the tolerance is below the point spacing, and the objects
-shatter. From 8 mm to 20 mm the answer is right and does not change. At 30 mm
-the cup and the box join, together with two stray points. At 50 mm everything
-joins. The wide range from 8 mm to 20 mm with the same answer is what you look
-for when you tune: pick a value in the middle of it. The robot-arm-projects
-repository explains the same two limits for glasses on a table, in plain words,
-in
+At 5 mm and 6 mm the tolerance is below the point spacing, so the objects
+shatter. From 8 mm to 20 mm the answer is right and does not change, whereas at
+30 mm the cup and the box join, together with two stray points, and at 50 mm
+everything joins. So the wide range from 8 mm to 20 mm with the same answer is
+what you look for when you tune, and you pick a value in the middle of it. The
+robot-arm-projects repository explains the same two limits for glasses on a table,
+in plain words, in
 [cluster on the table](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/docs/problem-2/solutions/02-cluster-on-the-table.md).
 
-One more trick helps a great deal. Objects on a table stand on the same plane.
-If the program first flattens the points onto the table plane, and clusters in
-2D, then the height of the objects no longer matters. A tall object and a short
-one next to it are then compared only by the gap between them on the table.
+One more trick helps a great deal, because objects on a table all stand on the
+same plane. If the program first flattens the points onto that table plane and
+clusters in 2D, then the height of the objects no longer matters. So a tall object
+and a short one next to it are compared only by the gap between them on the
+table.
 
 ## 3. Finding the peaks: k-means and mean shift
 
-Every grouping method in section 2 uses one rule: two points are in the same
-group if a chain of close neighbours joins them. This section covers two methods
-with a different rule. They look for **centres**: places where points crowd
-together. Each point then belongs to the centre it is nearest to, or the centre
-it climbs to.
+Every grouping method in section 2 uses one rule, which is that two points are in
+the same group if a chain of close neighbours joins them. This section covers two
+methods with a different rule, because they look for **centres**, meaning places
+where points crowd together. Each point then belongs to the centre it is nearest
+to, or to the centre it climbs to.
 
 The two methods differ in one important way. **K-means** must be told how many
-groups to find. **Mean shift** finds the number for itself. Section 7 says that
-k-means is the wrong tool for counting objects, because on a robot the number of
-objects is usually the thing you want to find out. That is still true. But there
-are jobs on a robot arm where the number of groups is known in advance, and there
-k-means is the simplest tool. And there are jobs where you want the crowded
-middle of each group, not the whole group. Mean shift is made for those.
+groups to find, whereas **mean shift** finds the number for itself. Section 7 says
+that k-means is the wrong tool for counting objects, because on a robot the number
+of objects is usually the thing you want to find out. That is still true. However,
+there are jobs on a robot arm where the number of groups is known in advance, and
+there k-means is the simplest tool. There are also jobs where you want the crowded
+middle of each group rather than the whole group, and mean shift is made for
+those.
 
-Here is an everyday example. A school has three buses, and each child must walk
-to one bus stop. K-means is the planner who is told "place three stops". The
-planner puts the stops where they make the total walking shortest. Mean shift is
-what happens with no planner. Each child walks towards where most other children
-are standing, again and again, until the children stand in a few tight crowds.
-The number of crowds is whatever it turns out to be.
+For an everyday example, imagine a school with three buses, where each child must
+walk to one bus stop. K-means is the planner who is told "place three stops", and
+the planner puts the stops where they make the total walking shortest. Mean shift
+is what happens with no planner at all. Each child walks towards where most other
+children are standing, again and again, until the children stand in a few tight
+crowds. So the number of crowds is whatever it turns out to be.
 
 ### K-means: k centres, moved to the average
 
-K-means has one setting: `k`, the number of groups. It works in rounds.
+K-means has one setting, which is `k`, the number of groups, and it works in
+rounds.
 
 1. Choose `k` starting centres. The simplest way is to pick `k` of the points at
    random.
@@ -398,54 +410,57 @@ function kmeans(points, k):
     return group, centres
 ```
 
-Here is a worked example on a job where `k` is known. A camera looks at red and
-blue parts on a grey table. The program must find the three colours in the
-picture, so that it can build a colour mask for each kind of part. Each pixel's
-colour has a red amount and a blue amount, each from 0 to 255. So each pixel can
-be drawn as one point, with its red amount across and its blue amount up. The
-picture has 500 pixels: 300 of table, 120 of red parts and 80 of blue parts.
+Here is a worked example on a job where `k` is known in advance. A camera looks
+at red and blue parts on a grey table, and the program must find the three colours
+in the picture, so that it can build a colour mask for each kind of part. Each
+pixel's colour has a red amount and a blue amount, each from 0 to 255. So each
+pixel can be drawn as one point, with its red amount across and its blue amount
+up. The picture has 500 pixels: 300 of table, 120 of red parts and 80 of blue
+parts.
 
 ![K-means moves three centres from random pixels to the middle of the three colours](../../../images/image-and-point-cloud-processing/clustering/k-means-steps.svg)
 
 In each panel, the crosses are the centres and each dot is coloured by the
 centre it is nearest to.
 
-The random start is poor. It picks one red pixel and two blue pixels, and no
-table pixel. After the first round, the orange centre has moved from
+The random start here is poor, because it picks one red pixel and two blue pixels,
+and no table pixel at all. After the first round, the orange centre has moved from
 (74.3, 194.4) to (115.0, 132.8), because most of its group was table pixels. The
 blue centre has moved from (210.4, 61.7) to (176.7, 76.8), pulled towards the
-table. After 3 rounds the centres are at (205.7, 54.6), (60.6, 184.9) and
-(125.4, 119.9). A fourth round changes nothing, so the method stops. The groups
-hold exactly 120, 80 and 300 pixels, one group per real colour.
+table. After 3 rounds the centres are at (205.7, 54.6), (60.6, 184.9) and (125.4,
+119.9), and a fourth round changes nothing, so the method stops. The groups then
+hold exactly 120, 80 and 300 pixels, which is one group per real colour.
 
 A start can be so poor that k-means stops at a wrong answer. Out of 10 different
-random starts on these pixels, 8 give the answer above. The other 2 end with two
-centres inside one colour and one centre between the other two colours. The fix
-is simple. Run k-means several times from different starts, and keep the answer
-with the smallest **spread**, which is the sum, over all pixels, of the squared
-distance to their centre. Libraries do this for you. They also choose the starts
-more carefully, with a method called **k-means++** that picks starting centres
-far apart from each other.
+random starts on these pixels, 8 give the answer above, while the other 2 end with
+two centres inside one colour and one centre between the other two colours. The
+fix is simple, because you can run k-means several times from different starts and
+keep the answer with the smallest **spread**, which is the sum, over all pixels, of
+the squared distance to their centre. Libraries do this for you, and they also
+choose the starts more carefully, with a method called **k-means++** that picks
+starting centres far apart from each other.
 
-The picture below shows what happens when `k` is wrong. Each panel keeps the best
-of 10 starts.
+The picture below shows what happens when `k` itself is wrong, and each panel
+keeps the best of 10 starts.
 
 ![With k = 2 two colours merge, with k = 3 each colour is one group, and with k = 4 the table splits in two](../../../images/image-and-point-cloud-processing/clustering/k-means-wrong-k.svg)
 
 With `k` = 2, the blue parts are lumped in with the table, and the spread is
 640,122. With `k` = 3, the spread drops to 108,302. With `k` = 4, the grey table
 is cut into two halves of 153 and 147 pixels, and the spread drops again, to
-89,061. So a smaller spread does not mean a better answer. The spread always
-falls as `k` grows, until every pixel is its own group. The usual sign of the
-right `k` is where the spread stops falling steeply: here from 640,122 to
-108,302 is a big drop, and from 108,302 to 89,061 is a small one.
+89,061. So a smaller spread does not mean a better answer, because the spread
+always falls as `k` grows, until every pixel is its own group. The usual sign of
+the right `k` is where the spread stops falling steeply. So here the fall from
+640,122 to 108,302 counts as a big drop, while the fall from 108,302 to 89,061 is
+a small one.
 
 ### Mean shift: every point climbs to its crowd
 
-Mean shift has one setting too, but it is a distance, not a count. It is called
-the **bandwidth** or the **window**. The method treats the points like a hilly
-landscape, where the ground is highest where the points are most crowded. From
-each point it climbs uphill until it reaches a top, called a **peak**.
+Mean shift has one setting too, but it is a distance rather than a count, and it
+is called the **bandwidth** or the **window**. The method treats the points like a
+hilly landscape, where the ground is highest where the points are most crowded. So
+from each point it climbs uphill until it reaches a top, which is called a
+**peak**.
 
 1. Put a round window of the chosen radius on a starting point.
 2. Move the window's centre to the average of all points inside the window.
@@ -454,8 +469,8 @@ each point it climbs uphill until it reaches a top, called a **peak**.
 5. Each point belongs to the peak it climbed to.
 
 The average of the points in the window always lies a little further into the
-crowd than the window's centre, because more points sit on the crowded side. So
-each step moves uphill.
+crowd than the window's centre, because more points sit on the crowded side. This
+means every step moves uphill.
 
 ```
 function mean_shift(points, window):
@@ -474,29 +489,30 @@ function mean_shift(points, window):
     return peaks, label
 ```
 
-Here is a worked example. A grasp model looked at a table with a mug, a box and a
-small block. It proposed 150 grasp centres, seen from above and measured in
+Here is a worked example, in which a grasp model looked at a table with a mug, a
+box and a small block. It proposed 150 grasp centres, seen from above and measured in
 millimetres: 70 round the mug, 45 round the box, 20 round the block and 15
 scattered at random. The arm wants one grasp per object, at the middle of each
 crowd of proposals.
 
 ![One mean shift climb from a point between the objects to the middle of the mug's crowd](../../../images/image-and-point-cloud-processing/clustering/mean-shift-climb.svg)
 
-The picture follows one climb, with a window of radius 30 mm. It starts at
+The picture follows one climb, with a window of radius 30 mm, and it starts at
 (112, 60), between the mug and the block. The average of the points in the first
-window is (105.0, 67.6), a small step towards the mug. The next window holds more
-mug points, so the next step is bigger, to (85.4, 83.9). Then comes (79.0, 90.1),
-and then (78.8, 90.3), where the window stops moving. The mug's proposals were
-spread round the point (80, 90), so the peak is within 2 mm of it.
+window is (105.0, 67.6), which is a small step towards the mug. The next window
+holds more mug points, so the next step is bigger, to (85.4, 83.9). Then comes
+(79.0, 90.1), and then (78.8, 90.3), where the window stops moving. The mug's
+proposals were spread round the point (80, 90), so the peak is within 2 mm of it.
 
-Run from all 150 points with the same 30 mm window, mean shift finds 7 peaks. The
-3 largest are reached from 72, 49 and 23 points. They are at (78.8, 90.3) for the
-mug, (198.5, 108.3) for the box and (149.1, 32.0) for the block. The other 4
-peaks are reached from only 1 or 2 points each. They are stray proposals with no
-crowd round them, and a size limit throws them away, just as in section 2.
+Run from all 150 points with the same 30 mm window, mean shift finds 7 peaks, and
+the 3 largest are reached from 72, 49 and 23 points. They lie at (78.8, 90.3) for
+the mug, (198.5, 108.3) for the box and (149.1, 32.0) for the block. The other 4
+peaks are reached from only 1 or 2 points each. This is because they are stray
+proposals with no crowd round them, so a size limit throws them away, just as in
+section 2.
 
-The window is the one number that matters. The picture below runs the same
-points with three windows.
+The window is the one number that matters here, and the picture below runs the
+same points with three different windows.
 
 ![Mean shift with windows of 10, 30 and 90 mm gives 20, 7 and 1 peaks](../../../images/image-and-point-cloud-processing/clustering/mean-shift-bandwidth.svg)
 
@@ -516,14 +532,15 @@ from at least 10 points".
 | 60 mm | 3 | 3 |
 | 90 mm | 1 | 1 (at (98.8, 78.5), between the objects) |
 
-A window from 20 mm to 60 mm gives the three right crowds. That wide, steady
+A window from 20 mm to 60 mm gives the three right crowds, and that wide, steady
 range is what you look for, as with the tolerance in section 2. A window that is
-too small splits one crowd into several. A window that is too large joins
+too small splits one crowd into several, whereas a window that is too large joins
 everything into one peak, which may lie on bare table between the objects.
 
 ### Where each fits on a robot arm
 
-K-means fits where the number of groups is fixed by the job.
+K-means therefore fits the jobs where the number of groups is fixed in advance by
+the job itself.
 
 - **Finding the colours of a known set of parts.** As in the example, k-means
   finds the `k` main colours in a picture. Their centres give the colour ranges
@@ -538,7 +555,8 @@ K-means fits where the number of groups is fixed by the job.
   barcode says the tray holds exactly 3 parts, k-means with `k` = 3 splits the
   tray's points into 3 groups, even where connected components sees one blob.
 
-Mean shift fits where you want the crowded middle, and the count is unknown.
+Mean shift, by contrast, fits the jobs where you want the crowded middle and the
+count is unknown.
 
 - **Merging many proposals into a few.** A grasp model, an object detector run on
   several frames, or several camera views each give many nearby guesses for the
@@ -556,22 +574,22 @@ Mean shift fits where you want the crowded middle, and the count is unknown.
 
 ### Where they fail
 
-K-means fails in these ways. With the wrong `k`, objects merge or split, as in
-the picture above. From a poor start it can stop at a wrong answer; you would
-see a different answer on each run. Use k-means++ starts and several runs. It
-expects groups that are round and of similar size. A long thin object, such as a
-pen, gets split, and a big group steals points from a small one next to it. And a
-few far-away points pull a centre away from its crowd, because every point counts
-in the average. For objects on a table, the methods of section 2 are usually the
-better choice.
+K-means fails in four ways. With the wrong `k`, objects merge or split, as in the
+picture above. From a poor start it can also stop at a wrong answer, and you would
+see a different answer on each run, so use k-means++ starts and several runs. It
+expects groups that are round and of similar size. So a long thin object such as a
+pen gets split, and a big group steals points from a small one next to it.
+Finally, a few far-away points pull a centre away from its crowd, because every
+point counts in the average. So for objects on a table, the methods of section 2
+are usually the better choice.
 
-Mean shift fails in these ways. With a poor window, peaks split or merge, as the
-table shows. It is slow on large clouds: each step of each climb searches all
-the points, so it is run on a few hundred proposals, not on 300,000 camera
-points. Downsample first, or start climbs only from a grid of seed points. And a
-peak can lie between two objects when the window is large, as in the 90 mm
-panel. Always check a peak against the points near it before sending the arm
-there.
+Mean shift fails in three ways. With a poor window, peaks split or merge, as the
+table above shows. It is also slow on large clouds, because each step of each
+climb searches all the points, so it is run on a few hundred proposals rather than
+on 300,000 camera points. So downsample first, or start climbs only from a grid of
+seed points. Finally, a peak can lie between two objects when the window is large,
+as in the 90 mm panel. So always check a peak against the points near it before
+sending the arm there.
 
 ### Libraries
 
@@ -587,8 +605,9 @@ a window from the data. SciPy provides `scipy.cluster.vq.kmeans2`.
 
 ## 4. Where it is used on a robot arm
 
-Clustering is used wherever a program has "not background" and needs "separate
-objects". Here are concrete places.
+Both families of method serve the same need, because clustering is used wherever
+a program has "not background" and needs "separate objects". The list below gives
+concrete places.
 
 - **The table-top pick pipeline.** Take the depth picture as a point cloud,
   downsample it, remove the table plane with RANSAC, cluster the rest, and pick
@@ -626,9 +645,9 @@ objects". Here are concrete places.
 
 ## 5. Where it works, and where it does not
 
-Clustering works best when objects stand apart on a known surface, the depth
-measurements are good, and the objects are about the same size. It fails in a
-few common ways.
+All of those uses share the same conditions, because clustering works best when
+objects stand apart on a known surface, the depth measurements are good, and the
+objects are about the same size. So it fails in a few common ways.
 
 The table below lists them. Read each row as: this is what goes wrong, this is
 what you would see, and this is what people use instead.
@@ -647,9 +666,9 @@ what you would see, and this is what people use instead.
 
 ## 6. Libraries that provide it
 
-Every method on this page is available in well-known libraries. Read the table
-below as: this library, used from these languages, provides this method under
-this name.
+Because those failures are well known, so are the methods themselves, and every
+method on this page is available in well-known libraries. Read the table below as:
+this library, used from these languages, provides this method under this name.
 
 | library | languages | function or class | note |
 |---|---|---|---|
@@ -669,50 +688,54 @@ this name.
 
 ## 7. Why clustering, and what it costs
 
-This section answers the four questions for this technique: what it is, what it
-does for you, why it rather than the obvious alternative, and what it costs.
+With the libraries in hand, the remaining question is when to reach for
+clustering at all. So this section answers the four standard questions: what it
+is, what it does for you, why it rather than the obvious alternative, and what it
+costs.
 
 Clustering is a set of flood-fill rules that group pixels or points by how close
-they are. Connected components does it on a grid of pixels. Euclidean clustering
-does it on 3D points with a distance. DBSCAN adds a rule that keeps stray points
-out. Voxel downsampling prepares the points so the other steps run fast.
+they are. Connected components does it on a grid of pixels, while Euclidean
+clustering does it on 3D points with a distance. DBSCAN then adds a rule that
+keeps stray points out, and voxel downsampling prepares the points so that the
+other steps run fast.
 
 What it does for you is split "not background" into separate objects without
-knowing what the objects are. It works on a part the robot has never seen, on
-the first day, with no training data. It has one main setting, the distance, and
-that setting can be worked out from the camera's point spacing and the smallest
-gap between objects.
+knowing what those objects are. So it works on a part the robot has never seen, on
+the first day, with no training data at all. It has one main setting, the
+distance, and that setting can be worked out from the camera's point spacing and
+the smallest gap between objects.
 
-There are two obvious alternatives. The first is **k-means**, the clustering
-method most people meet first. K-means must be told how many groups to find. On
-a robot, the number of objects is usually the thing you want to find out, so
-k-means is the wrong tool for that job. Euclidean clustering and DBSCAN find the
-number for themselves. K-means is still useful when the number of groups is
-fixed by the job, such as the colours of a known set of parts;
-[section 3](#3-finding-the-peaks-k-means-and-mean-shift) shows where. The second alternative is a trained segmentation model or point cloud model;
+There are two obvious alternatives. The first is **k-means**, which is the
+clustering method most people meet first, and it must be told how many groups to
+find. On a robot, the number of objects is usually the thing you want to find out,
+so k-means is the wrong tool for that job. However, Euclidean clustering and
+DBSCAN find the number for themselves. K-means is still useful when the number of groups
+is fixed by the job, such as the colours of a known set of parts, and
+[section 3](#3-finding-the-peaks-k-means-and-mean-shift) shows where. The second alternative is a trained segmentation model or point cloud model, and
 [section 8](#8-the-learned-alternative) says when each is the better choice.
 
-The costs are these. Clustering merges objects that touch, and nothing in the
-method can fix that. You must choose the tolerance, the minimum size and the
-voxel size, and they depend on each other and on the camera's distance from the
-table. It needs good depth, so glass and shiny metal are hard. And a radius
-search on a large cloud is slow unless you downsample first and use a k-d tree.
+Against all that, clustering merges objects that touch, and nothing in the method
+itself can fix that. You must choose the tolerance, the minimum size and the voxel
+size, and they depend on each other and on the camera's distance from the table.
+It also needs good depth, so glass and shiny metal are hard. And a radius search
+on a large cloud is slow unless you downsample first and use a k-d tree.
 
 ---
 
 ## 8. The learned alternative
 
-Two kinds of model in Book 6 do this job. A
+That second alternative is worth a closer look, because two kinds of model in
+Book 6 do this job. A
 [segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
 gives one mask per object in the colour picture, and the depth points inside each
 mask become that object's points. A
 [point cloud model](../../../06_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
 names every 3D point directly. Either one can split objects that touch, which
-clustering cannot do, and it can also say what each object is. But a model needs
-labelled training data and a computer that can run it, and it only knows the kinds
-of object it was trained on. Choose clustering when objects stand apart, or when
-the robot can push them apart; choose a model when touching objects are the normal
-case. Book 6's
+clustering cannot do, and it can also say what each object is. However, a model
+needs labelled training data and a computer that can run it, and it only knows the
+kinds of object it was trained on. So choose clustering when objects stand apart,
+or when the robot can push them apart, and choose a model when touching objects
+are the normal case. Book 6's
 [Gaussian mixture models](../../../06_learned-models/02_classical-machine-learning/03_also-used/01_mixture-models-and-hidden-markov-models.md)
 are the learned cousin of k-means: each cluster becomes a soft, stretched blob, and
 every point gets a chance of belonging to each cluster instead of one hard answer.

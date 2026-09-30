@@ -1,21 +1,22 @@
 # Impedance and force control
 
-This page explains impedance and force control: the techniques that decide how an
-arm behaves when it touches something. It answers four questions. Why does an
-ordinary position controller push so hard in contact? How do you make an arm behave
-like a spring instead? How do you find a surface safely by touch? And why does a
-compliant arm sometimes bounce or buzz against a hard surface?
+This page explains impedance and force control, which are the techniques that decide
+how an arm behaves when it touches something. It answers four questions. Why does an
+ordinary position controller push so hard in contact, and how do you make an arm
+behave like a spring instead? How do you find a surface safely by touch, and why does
+a compliant arm sometimes bounce or buzz against a hard surface?
 
-It is for a reader who has read the [overview](../01_overview.md) of this chapter and
-the [PID control](../02_most-used/01_pid-control.md) page. You need to know what a force in newtons
-(N) is, and that a spring pushes back harder the further it is squeezed. Every number
-on this page comes from a real run of the diagram script,
-`docs/diagrams/control_and_motion.py`, which simulates a tool pressing on a surface.
+It is written for a reader who has read the [overview](../01_overview.md) of this
+chapter and the [PID control](../02_most-used/01_pid-control.md) page. You also need
+to know what a force in newtons (N) is, and that a spring pushes back harder the
+further it is squeezed. Every number on this page comes from a real run of the diagram
+script, `docs/diagrams/control_and_motion.py`, which simulates a tool pressing on a
+surface.
 
-Contact is where most hard arm tasks are decided: inserting a peg, pressing a
-connector home, putting a part down on a table whose height is not quite known,
-wiping a surface. A good plan and a good trajectory do not help with any of these.
-What helps is choosing what the arm does when it meets resistance.
+Contact is where most hard arm tasks are decided. Examples are inserting a peg,
+pressing a connector home, putting a part down on a table whose height is not quite
+known, and wiping a surface. A good plan and a good trajectory do not help with any of
+those, because what helps is choosing what the arm does when it meets resistance.
 
 ## Contents
 
@@ -41,19 +42,20 @@ What helps is choosing what the arm does when it meets resistance.
 
 ## 1. What this page answers
 
-The [PID control](../02_most-used/01_pid-control.md) page builds a loop that drives a joint to a
-target angle and holds it there. That loop is excellent in free space. In contact it
-has a serious fault.
+The [PID control](../02_most-used/01_pid-control.md) page builds a loop that drives a
+joint to a target angle and holds it there. That loop is excellent in free space, but
+in contact it has a serious fault.
 
-Suppose the target is one millimetre inside a table. The table does not move. The
-controller sees an error it cannot remove. Its integral term keeps growing, so it
-pushes harder, and harder, until the motor reaches its limit or something breaks.
-This is not a bug. It is exactly what a position controller is for. The Book 3 page
+Suppose the target is one millimetre inside a table. The table does not move, so the
+controller sees an error it cannot remove. Its integral term therefore keeps growing,
+so it pushes harder and harder, until the motor reaches its limit or something breaks.
+This is not a bug, because it is exactly what a position controller is for. The Book 3
+page
 [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#4-position-stiffness-and-force)
 calls it the most important single idea in the whole area.
 
-The fix is to stop commanding only a position, and to command how the arm should
-respond to force. This page shows three ways to do that:
+So the fix is to stop commanding only a position, and to command how the arm should
+respond to force instead. This page shows three ways of doing that:
 
 - **impedance control**, which makes the arm behave like a spring and a damper with
   a stiffness you choose
@@ -61,24 +63,26 @@ respond to force. This page shows three ways to do that:
   position commands, by reading a force sensor
 - **guarded moves**, which move until a force is felt and then stop
 
-It also shows the two ways these go wrong: bouncing off a hard surface, and buzzing
-against it.
+It also shows the two ways these go wrong, which are bouncing off a hard surface and
+buzzing against it.
 
 ---
 
 ## 2. The idea in one sentence
 
-Impedance control sets the force the arm applies to be a stiffness times the distance
-from where it was told to be, minus a damping times its speed, so that unexpected
-contact produces a small, chosen force instead of an ever-growing one.
+Since the fix is to command a response to force, here is the main technique in one
+sentence. Impedance control sets the force the arm applies to be a stiffness times the
+distance from where it was told to be, minus a damping times its speed, so that
+unexpected contact produces a small, chosen force instead of an ever-growing one.
 
-Here is an everyday example. Put a plate into a dish rack without looking. You do not
-hold your arm rigid and drive the plate to where you think the slot is. If you did,
-and you were a few millimetres out, you would push the plate hard into a prong. You
-hold your wrist loosely instead. When the plate touches a prong, it pushes your hand a
-little to one side, and the plate slides into the slot. Your arm is acting as a soft
-spring around the place you aimed for. A stiff arm needs perfect aim. A soft one only
-needs to be close.
+Here is an everyday example of the same idea, putting a plate into a dish rack without
+looking. You do not hold your arm rigid and drive the plate to where you think the
+slot is. If you did, and you were a few millimetres out, you would push the plate hard
+into a prong. Instead you hold your wrist loosely. Then when the plate
+touches a prong, it pushes your hand a little to one side, and the plate slides into
+the slot. In other words, your arm is acting as a soft spring around the place you
+aimed for. So a stiff arm needs perfect aim, while a soft one only needs to be
+close.
 
 ---
 
@@ -86,10 +90,12 @@ needs to be close.
 
 ### The tool and the wall in the examples
 
-The simulations on this page use one straight line of motion: a tool moving towards a
-wall. Everything is along that line.
+Because the effects are easiest to see on one example, the simulations on this page
+all use a single straight line of motion, with a tool moving towards a wall.
+Everything below happens along that one line.
 
-- The tool, with the part of the arm that moves with it, has a mass of 2 kg.
+- The tool, together with the part of the arm that moves with it, has a mass of
+  2 kg.
 - The wall is stiff: it pushes back with 50 N for every millimetre the tool presses
   into it. That is 50,000 newtons per metre (N/m). Real metal is stiffer still, but the
   arm, the sensor and the gripper all bend a little, and together they behave like a
@@ -100,178 +106,187 @@ wall. Everything is along that line.
 
 ### Why a position controller pushes too hard
 
-The left panel of the picture below uses a stiff PID position loop, running 1,000
-times a second, like the one inside an ordinary joint drive. The motor can push with
-at most 150 N.
+The first thing to see is what goes wrong without any of these techniques. The left
+panel of the picture below uses a stiff PID position loop, running 1,000 times a
+second, like the one inside an ordinary joint drive. Here the motor can push with at
+most 150 N.
 
 ![A position controller drives the force to the motor's limit; an impedance controller settles at a small force](../../../images/control-and-motion/impedance-and-force-control/into-the-wall.svg)
 
-The tool touches the wall at 0.5 s. The force then rises steeply, passes 140 N at
+The tool touches the wall at 0.5 s. Then the force rises steeply, passes 140 N at
 0.66 s, and stays at the motor's limit of 150 N, ringing a little. If the motor had no
-limit, the integral term would keep pushing until the tool was 5 mm into the wall,
-which for this wall means 250 N.
+limit at all, the integral term would keep pushing until the tool was 5 mm into the
+wall, which for this wall means 250 N.
 
-The right panel uses impedance control on the same task, with two stiffness settings.
-Note that its scale is ten times smaller. With a stiffness of 2,000 N/m the force
-settles at 9.6 N. With 500 N/m it settles at 2.5 N. The target is just as impossible
-as before. The difference is that the force no longer depends on how hard the motor
-can push. It depends on a number you chose.
+The right panel uses impedance control on the same task, with two stiffness settings,
+and note that its scale is ten times smaller. With a stiffness of 2,000 N/m the force
+settles at 9.6 N, while with 500 N/m it settles at 2.5 N. The target is just as
+impossible as before, so the difference is that the force no longer depends on how
+hard the motor can push. Instead it depends on a number you chose.
 
-There is a first spike in each impedance run, up to 6.5 N with 500 N/m. That is the
-impact: the tool arrives at 20 mm/s and has to stop. A slower approach makes it
-smaller, as the guarded move section shows.
+There is still a first spike in each impedance run, up to 6.5 N with 500 N/m. That is
+the impact, because the tool arrives at 20 mm/s and has to stop. But a slower approach
+makes it smaller, as the guarded move section shows.
 
 ### The impedance law: a spring and a damper
 
-The impedance controller computes the force to apply from two terms:
+The law behind that right panel is short, because the impedance controller computes
+the force to apply from only two terms:
 
 ```
 force = K × (target_position − position) − D × speed
 ```
 
 **K** is the **stiffness**, in newtons per metre. It says how hard the arm pushes back
-for each metre it is away from its target. A high K is a stiff arm. A low K is a soft
-one.
+for each metre it is away from its target, so a high K is a stiff arm and a low K is a
+soft one.
 
 **D** is the **damping**, in newton seconds per metre (N s/m). It is a force against
-the speed, like moving through thick oil. It stops the spring from bouncing.
+the speed, in the way that moving through thick oil resists you, and it is what stops
+the spring from bouncing.
 
-This looks like a PD controller from the [PID page](../02_most-used/01_pid-control.md), and in form it
-is. The difference is in purpose and in size. A position PD loop uses the largest gains
-that stay stable, so that the arm reaches its target whatever resists it. An
-impedance controller chooses K and D to be a particular spring, often a soft one, and
-has no integral term, because the whole point is that it does not insist on reaching
-the target.
+This looks like a PD controller from the [PID page](../02_most-used/01_pid-control.md),
+and in form it is. But the difference is in purpose and in size. A position PD loop
+uses the largest gains that stay stable, so that the arm reaches its target whatever
+resists it. An impedance controller, in contrast, chooses K and D to be a particular
+spring, often a soft one. It also has no integral term, because the whole point is
+that it does not insist on reaching the target.
 
-Here is one tick worked by hand, with K = 500 N/m and D = 44.3 N s/m. The tool is
-2 mm short of its target and moving towards it at 10 mm/s.
+Here is one tick of that law worked by hand, with K = 500 N/m and D = 44.3 N s/m. The
+tool is 2 mm short of its target and moving towards it at 10 mm/s.
 
 - The spring term is 500 × 0.002 = 1.0 N, towards the target.
 - The damping term is 44.3 × 0.010 = 0.443 N, against the motion.
 - The force to apply is 1.0 − 0.443 = 0.557 N.
 
-Where does the final force in the simulation come from? At rest, the arm's spring and
-the wall form two springs in a line. The arm is set 5 mm too far. The force is
+Where does the final force in the simulation come from? At rest the arm's spring and
+the wall form two springs in a line, and the arm is set 5 mm too far. So the force
+is
 
 ```
 force = (K × wall_stiffness) ÷ (K + wall_stiffness) × 5 mm
 ```
 
 For K = 500 N/m that is (500 × 50,000) ÷ 50,500 × 0.005 = 2.48 N, and the tool sits
-0.05 mm into the wall. For K = 2,000 N/m it is 9.62 N. When the wall is much stiffer
-than the arm's spring, the answer is close to K times the error: 500 × 0.005 = 2.5 N.
-So you can choose the largest force a given position error will cause, just by
-choosing K.
+0.05 mm into the wall, while for K = 2,000 N/m it is 9.62 N. When the wall is much
+stiffer than the arm's spring, the answer is close to K times the error, which is
+500 × 0.005 = 2.5 N. So you can choose the largest force a given position error will
+cause, just by choosing K.
 
-On a real arm the law is usually written for the tool in all six directions: three
-along the axes and three around them. Each direction gets its own stiffness and
+On a real arm the law is usually written for the tool in all six directions, three
+along the axes and three around them. Each direction then gets its own stiffness and
 damping, so the arm can be stiff sideways and soft along the tool, for example. The
-force at the tool is turned into joint torques using the **Jacobian**, the table of
-numbers that relates small joint movements to small tool movements. The
+force at the tool is turned into joint torques using the **Jacobian**, which is the
+table of numbers that relates small joint movements to small tool movements. The
 [numerical inverse kinematics](../../06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
-page explains it. The controller also adds the torque needed to hold the arm up against
-gravity, from a model of the arm. If that model is wrong, the arm drifts as soon as it
-is made soft.
+page explains it. The controller also adds the torque needed to hold the arm up
+against gravity, taken from a model of the arm. So if that model is wrong, the arm
+drifts as soon as it is made soft.
 
 ### Choosing the damping
 
-A spring with too little damping bounces. On an arm that means the tool hits the
-surface, bounces off, hits it again, and so on.
+Choosing K sets the force, but D still has to be chosen, because a spring with too
+little damping bounces. On an arm that means the tool hits the surface, bounces off,
+hits it again, and so on.
 
-A common rule sets the damping from the stiffness and the mass:
+So a common rule sets the damping from the stiffness and the mass:
 
 ```
 D = 2 × ζ × √(K × mass)
 ```
 
-The number ζ (the Greek letter zeta) is the **damping ratio**. At ζ = 1 the spring
+Here the number ζ (the Greek letter zeta) is the **damping ratio**. At ζ = 1 the spring
 returns to rest as fast as it can without swinging past, which is called **critical
-damping**. Below 1 it swings; above 1 it creeps.
+damping**, while below 1 it swings and above 1 it creeps.
 
 The picture below shows the tool hitting the stiff wall at 50 mm/s under impedance
-control with K = 1,000 N/m and three damping values.
+control with K = 1,000 N/m and three different damping values.
 
 ![Too little damping bounces the tool off the wall many times](../../../images/control-and-motion/impedance-and-force-control/damping-and-bounce.svg)
 
 With D = 9 N s/m (ζ = 0.1) the tool leaves the wall 14 times in the first second, and
 the force peaks at 31 N each time it hits. With D = 63 N s/m (ζ = 0.7) it leaves the
-wall twice. With D = 134 N s/m (ζ = 1.5) it never leaves. All three end at the same
-steady force, 4.9 N, because the damping only acts while the tool is moving.
+wall twice, while with D = 134 N s/m (ζ = 1.5) it never leaves at all. But all three
+end at the same steady force of 4.9 N, because the damping only acts while the tool is
+moving.
 
 The middle case is worth a closer look. A damping ratio of 0.7 is a common choice for
 free motion, and it is well damped for the arm's own spring of 1,000 N/m. But once the
-tool touches the wall, the tool is sitting on the wall's spring, which is 50 times
-stiffer. For that much stiffer spring, the same damping is far too little. So a
-damping that is right in free space is too small in contact with something hard. On a
-real arm the damping is set with the stiffest surface in mind, or raised when contact
-is detected.
+tool touches the wall, it is sitting on the wall's spring, which is 50 times stiffer,
+and for that much stiffer spring the same damping is far too little. So a damping that
+is right in free space is too small in contact with something hard. This means that on
+a real arm the damping is set with the stiffest surface in mind, or else raised when
+contact is detected.
 
 ### Impedance and admittance: two ways to build it
 
-There are two ways to make an arm behave like a spring, and they need different
-hardware. Book 3's
+The law and its two numbers are the same whatever the hardware, but there are two ways
+to build the behaviour, and they need different hardware. Book 3's
 [holding on](../../../03_frameworks/02_gripping/05_holding-on.md#3-compliance-impedance-and-admittance)
-compares them in a table. In short:
+compares them in a table, and in short they work like this.
 
 **Impedance control** measures the arm's position and commands a force. It is the law
-above, sent as joint torques. It needs an arm whose joints accept torque commands, which
-in practice means an arm with torque sensing in every joint or very good motor current
-control. It behaves well against stiff surfaces, because the torque loop is fast.
+above, sent as joint torques. So it needs an arm whose joints accept torque commands,
+which in practice means an arm with torque sensing in every joint or very good motor
+current control. But it behaves well against stiff surfaces, because the torque loop
+is fast.
 
-**Admittance control** measures a force and commands a position. A force-torque sensor
-at the wrist reads the contact force. The controller works out how a virtual mass,
-spring and damper would move under that force, and sends the result as a position
-target to an ordinary position-controlled arm. It works on nearly any industrial arm
-with a sensor bolted on, which is why the open-source ROS 2 stack ships an admittance
-controller and not an impedance one.
+**Admittance control** goes the other way, measuring a force and commanding a position.
+A force-torque sensor at the wrist reads the contact force. Then the controller works
+out how a virtual mass, spring and damper would move under that force, and it sends the
+result as a position target to an ordinary position-controlled arm. This means it
+works on nearly any industrial arm with a sensor bolted on, which is why the
+open-source ROS 2 stack ships an admittance controller and not an impedance one.
 
-Admittance has a known weakness, which the simulation below reproduces. The loop
+But admittance has a known weakness, which the simulation below reproduces. The loop
 through the force sensor and the arm's position controller has delay in it. Here the
-sensor is read 500 times a second with a delay of 8 milliseconds, and the arm's own
-position loop takes a few tens of milliseconds to follow a new target. The task is to
-press on a surface with 10 N.
+sensor is read 500 times a second with a delay of 8 milliseconds, while the arm's own
+position loop takes a few tens of milliseconds to follow a new target. The task is
+to press on a surface with 10 N.
 
 ![Admittance control settles on foam, bounces on metal, and settles on metal only with much more damping](../../../images/control-and-motion/impedance-and-force-control/admittance-buzz.svg)
 
-On foam, which gives 2 N per millimetre, a damping of 200 N s/m works well: the force
-settles at 10 N within about 0.2 s of touching. On metal, 100 times stiffer, the same
-setting hits the surface with 268 N and bounces off. A damping of 1,000 N s/m still
-bounces on and off the surface about five times a second, with peaks of 58 N. Only
-5,000 N s/m settles, at 10 N.
+On foam, which gives 2 N per millimetre, a damping of 200 N s/m works well, because
+the force settles at 10 N within about 0.2 s of touching. But on metal, which is 100
+times stiffer, the same setting hits the surface with 268 N and bounces off. A damping
+of 1,000 N s/m still bounces on and off the surface about five times a second, with
+peaks of 58 N, so only 5,000 N s/m settles, at 10 N.
 
-The reason is the delay. Against a stiff surface, a tiny movement makes a large change
-in force. By the time the controller reads that force and the arm responds, the tool
-has already moved further, so each correction is too large and too late. More damping
-makes each correction smaller and slower, which is why it cures the problem. This
-agrees with Book 3: the fix for an admittance controller that chatters against metal is
-more damping, not more force resolution.
+The reason for all of that is the delay. Against a stiff surface a tiny movement makes
+a large change in force. So by the time the controller reads that force and the arm
+responds, the tool has already moved further, which makes each correction too large
+and too late. More damping makes each correction smaller and slower, which is why it cures
+the problem. This agrees with Book 3, because the fix for an admittance controller that
+chatters against metal is more damping, not more force resolution.
 
-The cure has a price, and the same simulation shows it. With 5,000 N s/m of damping the
-arm approaches the surface at only 2 mm/s, because the push of 10 N divided by the
+But the cure has a price, and the same simulation shows it. With 5,000 N s/m of damping
+the arm approaches the surface at only 2 mm/s, because the push of 10 N divided by the
 damping gives that speed. On foam, the same setting has reached only 1.8 N after one
 second, 4.5 N after two, and 6.3 N after three. So a setting that is safe on a hard
 surface is slow on a soft one.
 
 ### Guarded moves: stop when you feel it
 
-A **guarded move** is the simplest force technique of all. The arm moves slowly in one
-direction, and stops as soon as a sensor reading passes a threshold. It is how an arm
-finds a surface whose position it does not know exactly.
+Impedance and admittance both shape a whole response, but the simplest force technique
+of all is a **guarded move**. The arm moves slowly in one direction and stops as soon
+as a sensor reading passes a threshold, so it is how an arm finds a surface whose
+position it does not know exactly.
 
-The picture below simulates one. The arm creeps towards a surface 20 mm away. The
+The picture below simulates one. The arm creeps towards a surface 20 mm away, and that
 surface gives 5 N per millimetre, like a plastic part. The force sensor is read 500
-times a second, with some noise, and the last 5 readings are averaged. When the average
-passes 1 N, the arm waits one tick and then brakes at 0.5 m/s².
+times a second, with some noise, and the last 5 readings are averaged. Then when the
+average passes 1 N, the arm waits one tick and brakes at 0.5 m/s².
 
 ![A slow guarded move stops almost at the surface; a fast one presses in and hits 14.7 N](../../../images/control-and-motion/impedance-and-force-control/guarded-move.svg)
 
 At 10 mm/s the sensor fires at 20.26 mm, the arm stops at 20.37 mm, and the largest
 force is 1.8 N. At 50 mm/s it fires at 20.40 mm, but the arm needs 2.5 mm to brake from
-that speed and stops at 22.95 mm. The largest force is 14.7 N, eight times as much. The
-braking distance grows with the square of the speed, so going five times faster costs
-25 times the braking distance.
+that speed and stops at 22.95 mm. So the largest force is 14.7 N, eight times as
+much.
+This happens because the braking distance grows with the square of the speed, so going
+five times faster costs 25 times the braking distance.
 
-Three rules follow, and Book 3's section on
+So three rules follow from that, and Book 3's section on
 [guarded moves](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#5-guarded-moves-and-what-the-sensor-can-actually-observe)
 states them in full.
 
@@ -290,30 +305,33 @@ states them in full.
 ### Force limits, and direct force control
 
 Impedance control makes the force predictable, but a large position error can still
-make a large force. Two more tools keep force inside a safe range.
+make a large force, so two more tools keep the force inside a safe range.
 
-A **force limit** clips the force the controller will ever command, just as the PID page
-clips torque. With impedance control you can also limit the distance between the target
-and the actual position. With K = 500 N/m and at most 20 mm of difference allowed, the
-spring can never push harder than 500 × 0.020 = 10 N, however wrong the target is.
+So a **force limit** clips the force the controller will ever command, just as the PID
+page clips torque. With impedance control you can also limit the distance between the target
+and the actual position. So with K = 500 N/m and at most 20 mm of difference allowed,
+the spring can never push harder than 500 × 0.020 = 10 N, however wrong the target is.
 
-**Direct force control** commands a force instead of a position along some directions.
-"Press down with 20 N while following this path across the surface" is the usual
-example. Along the pressing direction a PI loop acts on the force error; along the
-other directions an ordinary position or impedance loop follows the path. This mix is
-called **hybrid force-position control**. It is what wiping, sanding and polishing need.
+**Direct force control** commands a force instead of a position along some directions,
+and the usual example is "press down with 20 N while following this path across the
+surface". Along the pressing direction a PI loop acts on the force error, while along
+the other directions an ordinary position or impedance loop follows the path. This mix
+is called **hybrid force-position control**, and it is what wiping, sanding and
+polishing need.
 
-One thing is not force control. A collaborative arm's safety function, which stops the
-arm when it detects an unexpected force, is a monitor with a threshold. It acts by
-stopping, not by giving way, and it can fire in the middle of a planned insertion. Book
+But one thing is not force control at all. A collaborative arm's safety function,
+which stops the arm when it detects an unexpected force, is a monitor with a threshold.
+It acts by stopping rather than by giving way, and it can fire in the middle of a
+planned insertion. Book
 3's [holding on](../../../03_frameworks/02_gripping/05_holding-on.md#3-compliance-impedance-and-admittance)
 makes this point, and it is easy to confuse the two.
 
 ### The steps as pseudocode
 
-The pseudocode below shows one tick of each technique on this page, for one direction
-of motion. It works in any language. On a real arm each quantity has six parts, one per
-direction, and the impedance force is turned into joint torques with the Jacobian.
+Once all three techniques are clear, each of them fits in a few lines. The pseudocode
+below shows one tick of each, for one direction of motion, and it works in any
+language. On a real arm each quantity has six parts, one per direction, and the
+impedance force is turned into joint torques with the Jacobian.
 
 ```
 # impedance control: needs an arm that accepts torque or force commands
@@ -351,37 +369,41 @@ every tick:
 
 ## 4. Where it is used on a robot arm
 
+Because contact is where the position of things stops being known exactly, these
+techniques turn up wherever an arm touches its work, and the list below gives the main
+places.
+
 **Inserting a part.** A peg that must go into a hole with less clearance than the arm's
 accuracy is the classic case. The arm is made soft sideways and moderately stiff along
-the peg. When the peg meets the edge of the hole, the side force pushes it towards the
-centre and it slides in. Book 3's
+the peg, so when the peg meets the edge of the hole, the side force pushes it towards
+the centre and it slides in. Book 3's
 [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#4-position-stiffness-and-force)
 lists the jobs compliance suits.
 
-**Putting something down.** The height of the table under a part is never known exactly.
-A guarded move lowers the part until the force rises, and the arm stops and opens the
-gripper. With impedance control the part is placed gently even if the table is a few
-millimetres higher than expected.
+**Putting something down.** The height of the table under a part is never known
+exactly. So a guarded move lowers the part until the force rises, and then the arm
+stops and opens the gripper. With impedance control the part is placed gently even if the table
+is a few millimetres higher than expected.
 
-**Finding things by touch.** A guarded move measures a height, finds the edge of a part,
-or confirms that a part is present. The glass-pushing project above uses it for every
-contact.
+**Finding things by touch.** A guarded move measures a height, finds the edge of a
+part, or confirms that a part is present. So the glass-pushing project above uses it
+for every contact.
 
 **Pressing a connector home.** The force during the last millimetre tells you whether it
-seated: a sharp rise and then a drop is a click. A force limit stops the arm pushing on
-if it jammed.
+seated, because a sharp rise and then a drop is a click. A force limit then stops the
+arm pushing on if it jammed instead.
 
 **Wiping, sanding and polishing.** Hybrid force-position control holds a set force on a
-surface the arm cannot model exactly. For fast work the force loop often lives in a
-spring-loaded flange between the arm and the tool, not in the arm, as
+surface the arm cannot model exactly. But for fast work the force loop often lives in a
+spring-loaded flange between the arm and the tool rather than in the arm, as
 [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#4-position-stiffness-and-force)
 explains, because a heavy arm cannot correct fast enough.
 
-**Hand guiding.** A person pushes the arm to show it a pose. The arm is made very soft,
-with gravity compensation so it does not sag, and follows the push.
+**Hand guiding.** A person pushes the arm to show it a pose, so the arm is made very
+soft, with gravity compensation so that it does not sag, and it follows the push.
 
-**Gripping.** A gripper's squeeze is a crude kind of force control: the fingers close
-until the motor current reaches a limit. Book 3's
+**Gripping.** A gripper's squeeze is a crude kind of force control, because the fingers
+close until the motor current reaches a limit. Book 3's
 [holding on](../../../03_frameworks/02_gripping/05_holding-on.md#2-what-force-control-a-gripper-actually-gives-you)
 explains why that limit is not the same as a force.
 
@@ -389,12 +411,12 @@ explains why that limit is not the same as a force.
 
 ## 5. Where it is useful, and where it is not
 
-These techniques are useful whenever the arm touches something whose position is not
-known precisely. They do not help in free space, and they cannot make up for missing
-hardware.
+The uses above all share one condition, because these techniques are useful whenever
+the arm touches something whose position is not known precisely. But they do not help
+in free space, and they cannot make up for missing hardware.
 
-The table below lists the common problems. Each row gives the situation, the sign you
-would see, and what people use instead or add.
+The table below lists the common problems. Read each row as one situation, giving the
+sign you would see and what people use instead or add to fix it.
 
 | Situation | The sign you would see | What people use instead or add |
 | --- | --- | --- |
@@ -408,8 +430,8 @@ would see, and what people use instead or add.
 | Needing both accuracy and softness at once | a stiff arm that pushes too hard, or a soft one that misses | stiff in some directions and soft in others; switch settings between phases |
 | No force sensor and no torque-controlled joints | there is nothing to measure force with | motor current as a rough force estimate; a compliant pad or flange on the tool |
 
-The row about the axis the sensor does not measure is the most dangerous, because
-nothing looks wrong. Book 3's
+The row about the axis the sensor does not measure is the most dangerous one, because
+nothing looks wrong when it happens. Book 3's
 [section on guarded moves](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#5-guarded-moves-and-what-the-sensor-can-actually-observe)
 gives three concrete cases.
 
@@ -417,9 +439,10 @@ gives three concrete cases.
 
 ## 6. Libraries that provide it
 
-The open-source choice is narrower here than for the other techniques in this chapter.
-The table below lists the well-known options. Each row gives the library, the languages
-it is used from, the controller or class, and a note. Book 3's
+The open-source choice is narrower here than for the other techniques in this chapter,
+because contact control needs hardware support. The table below lists the well-known
+options. Read each row as one library, giving the languages it is used from, the
+controller or class, and a note on what it offers. Book 3's
 [holding on](../../../03_frameworks/02_gripping/05_holding-on.md#31-what-ros-2-actually-ships)
 gives the licences and how active each project is.
 
@@ -432,13 +455,13 @@ gives the licences and how active each project is.
 | Pinocchio | C++, Python | `computeGeneralizedGravity`, `computeJointJacobians`, `getFrameJacobian` | the gravity torque and the Jacobian that an impedance controller needs |
 | MoveIt 2 | C++, Python | none | plans collision-free motion only; it has no force control |
 
-A guarded move needs no special library. It is a loop over the force sensor's topic,
-such as the one published by `force_torque_sensor_broadcaster`, with a stop command and
-a travel limit.
+A guarded move needs no special library at all. It is only a loop over the force
+sensor's topic, such as the one published by `force_torque_sensor_broadcaster`, with a
+stop command and a travel limit.
 
-Simulators deserve a warning. In a simulator, the stiffness of a contact is a solver
-setting that nobody measured. A compliance controller tuned against a simulated contact
-has been tuned against an invented number. Book 3's section on
+Simulators, however, deserve a warning. In a simulator the stiffness of a contact is a
+solver setting that nobody measured, so a compliance controller tuned against a
+simulated contact has been tuned against an invented number. Book 3's section on
 [compliance and contact stiffness in simulation](../../../03_frameworks/02_gripping/05_holding-on.md#103-compliance-and-contact-stiffness-whose-numbers-are-invented)
 explains this, and it applies to every simulation on this page too: the wall
 stiffnesses here were chosen to show the effects clearly, not measured.
@@ -447,38 +470,40 @@ stiffnesses here were chosen to show the effects clearly, not measured.
 
 ## 7. Why impedance and force control, and what it costs
 
-Impedance control makes the arm apply a force equal to a chosen stiffness times its
-distance from the target, minus a chosen damping times its speed. Admittance control
-gives the same behaviour through a force sensor and a position-controlled arm. A guarded
-move stops when a force threshold is passed. Together they let an arm touch things
-without knowing exactly where they are, with forces you chose in advance.
+To put all of the above together, impedance control makes the arm apply a force equal
+to a chosen stiffness times its distance from the target, minus a chosen damping times
+its speed. Admittance control gives the same behaviour through a force sensor and a
+position-controlled arm, while a guarded move simply stops when a force threshold is
+passed. Together they let an arm touch things without knowing exactly where they are,
+with forces you chose in advance.
 
-The obvious alternative is to make the positions accurate enough that contact is never a
-surprise: calibrate the camera better, measure the table, build a precise fixture. That
-works, and in a factory with fixed parts it is often the right answer. But it moves the
-cost into calibration and fixtures, and a 5 mm error, as the simulation shows, turns a
-position controller into a 150 N press. Compliance is chosen because being close and
-soft is cheaper than being exact and stiff.
+The obvious alternative is to make the positions accurate enough that contact is never
+a surprise, by calibrating the camera better, measuring the table and building a precise
+fixture. That works, and in a factory with fixed parts it is often the right answer. But
+it moves the cost into calibration and fixtures, and a 5 mm error, as the simulation
+shows, turns a position controller into a 150 N press. So compliance is chosen because
+being close and soft is cheaper than being exact and stiff.
 
-The second alternative is a stiff position controller with a force limit, so it cannot
-push past a set force. That is simple, and a gripper does exactly this. But the limit
-acts only at the extreme: below it the arm is as stiff as ever, and a sideways error
-still jams a peg rather than guiding it in. Impedance control shapes the whole response,
-not only its maximum.
+The second alternative is a stiff position controller with a force limit, so that it
+cannot push past a set force. That is simple, and a gripper does exactly this. But the
+limit acts only at the extreme, because below it the arm is as stiff as ever, and a
+sideways error still jams a peg rather than guiding it in. Impedance control, in
+contrast, shapes the whole response rather than only its maximum.
 
-The costs are these. You need the right hardware: a wrist force sensor for admittance, or
-torque-controlled joints for impedance. You need an accurate model of the arm's masses,
-or the arm drifts when it is made soft. A soft arm is an inaccurate arm, because any load
-pushes it off target. Stiffness and damping must be tuned for the stiffest surface the
-arm will meet, and a setting that is safe on metal is slow on foam. And outside ROS 2's
-admittance controller, much of this is code you write yourself or buy from the arm's
-maker, as Book 3 warns.
+The costs are these. You need the right hardware, meaning a wrist force sensor for
+admittance or torque-controlled joints for impedance. You also need an accurate model of
+the arm's masses, or the arm drifts when it is made soft. A soft arm is in any case an
+inaccurate arm, because any load pushes it off target. Stiffness and damping must be
+tuned for the stiffest surface the arm will meet, so a setting that is safe on metal is
+slow on foam. And outside ROS 2's admittance controller, much of this is code you write
+yourself or buy from the arm's maker, as Book 3 warns.
 
 ---
 
 ## 8. The learned alternative
 
-The learned alternative for contact is a
+Because the right reaction to a force can be hard to write down, the learned
+alternative for contact is a
 [reinforcement learning policy](../../../06_learned-models/06_movement-models/03_also-used/01_reinforcement-learning-policies.md),
 which learns by trying, usually in simulation, how to react to the force it
 feels; Book 6's worked example pushes a peg into a tight hole. It wins when the

@@ -3,22 +3,23 @@
 This chapter is about turning a planned path into smooth, safe motor commands. It
 covers five techniques: proportional-integral-derivative (PID) control,
 trajectory generation, arm dynamics, safety monitoring, and impedance and force
-control. Each one is a written set of rules that a program follows many times a
-second. None of them is trained.
+control. All five are written sets of rules that a program follows many times a second. That
+means none of them is trained from data.
 
-This page is the overview of the chapter. It answers four questions. What job do
-these techniques do for an arm? What does each of the five do, in one line? How
-do they work together on one real move? And how does this chapter connect to the
-rest of the book, and to the learned movement models in Book 6?
+This page is the overview of the chapter, and it answers four questions. What job
+do these techniques do for an arm, and what does each of the five do in one line?
+How do they work together on one real move, and how does this chapter connect to
+the rest of the book and to the learned movement models in Book 6?
 
-It is for a reader who knows what a joint, a joint angle and a motor are, at the
-level of Book 1's [arm overview](../../01_robotics-intro/03_arm/01_overview.md).
-It helps to have read the [planning and search overview](../06_planning-and-search/01_overview.md),
-because this chapter starts where that one stops. You do not need any control
-theory. Every number on these pages comes from a real run of a diagram script,
-such as `docs/diagrams/control_and_motion.py`, which simulates a joint, a move and a
-contact rather than drawing them by hand. The arm dynamics page uses
-`docs/diagrams/control_and_motion_2.py`, which simulates a two-joint arm.
+It is written for a reader who knows what a joint, a joint angle and a motor are,
+at the level of Book 1's [arm overview](../../01_robotics-intro/03_arm/01_overview.md).
+It also helps to have read the [planning and search overview](../06_planning-and-search/01_overview.md),
+because this chapter starts where that one stops, though you do not need any
+control theory beforehand. Every number on these pages comes from a real run of a
+diagram script, such as `docs/diagrams/control_and_motion.py`, which simulates a
+joint, a move and a contact rather than drawing them by hand, while the arm
+dynamics page uses `docs/diagrams/control_and_motion_2.py`, which simulates a
+two-joint arm.
 
 ## Contents
 
@@ -39,14 +40,16 @@ The book's [map of techniques](../01_what-techniques-are/04_the-map-of-technique
 describes this category in one line: turning a planned path into smooth, safe
 motor commands.
 
-Here is the job in everyday terms. You carry a full mug of coffee from the kitchen
-to a desk. You already know the route. What is left is how you walk it. You do not
-start at full speed, because the coffee would slop. You do not stop dead at the
-desk for the same reason. While you walk, you keep correcting your hand, because
-the mug is never quite where you meant it to be. And when you put the mug down,
-you lower it until you feel the desk, and then you stop pushing.
+Here is that same job in everyday terms, where you carry a full mug of coffee from
+the kitchen to a desk. Since you already know the route, what is left is how you
+walk it. You do not start at full speed, because the coffee would slop, and you do
+not stop dead at the desk for the same reason. While you walk, you keep correcting
+your hand, because the mug is never quite where you meant it to be. Then when you
+put the mug down, you lower it until you feel the desk, and only then do you stop
+pushing.
 
-An arm has the same three jobs every time it moves.
+Because an arm carrying a mug faces the same problem, it has the same three jobs
+every time it moves.
 
 1. It must decide how fast to go along the route at each moment, without going
    faster, or speeding up faster, than the motors allow.
@@ -57,63 +60,69 @@ An arm has the same three jobs every time it moves.
    way a little instead of pushing harder.
 
 The planner from the [planning and search](../06_planning-and-search/01_overview.md)
-chapter does not do any of these. It hands over a list of joint angles to pass
-through. It says where to pass, but not when, and it knows nothing about motors or
-contact.
+chapter does none of those three jobs, because all it hands over is a list of joint
+angles to pass through. That means it says where to pass but not when, and it knows
+nothing at all about motors or contact.
 
 ---
 
 ## 2. Three layers, three questions
 
-The work is split into layers. Each layer answers one question and hands its
-answer to the layer below.
+Because those three jobs are so different from one another, the work is split into
+layers, where each layer answers one question and hands its answer to the layer
+below it.
 
-The **trajectory** layer answers "where should each joint be at each instant?". A
-**trajectory** is a path with times attached. The same path can be driven slowly or
-quickly, and with gentle or sudden changes of speed. This layer chooses.
+The **trajectory** layer answers "where should each joint be at each instant?", and
+a **trajectory** is simply a path with times attached to it. Since the same path can
+be driven slowly or quickly, and with gentle or sudden changes of speed, this is the
+layer that chooses which of those it will be.
 
 The **controller** layer answers "what torque should each motor produce right now,
-so that the joint is where the trajectory says?". A **torque** is a turning force,
-measured in newton metres (N m). The controller reads the joint's sensor, compares
-the reading with the target, and chooses a torque. It does this again and again,
-often 1,000 times a second. This is called a **feedback loop**, because the
-measurement is fed back into the next decision.
+so that the joint is where the trajectory says?", where a **torque** is a turning
+force measured in newton metres (N m). Then the controller reads the joint's sensor,
+compares the reading with the target, and chooses a torque, and it does this again
+and again, often 1,000 times a second. This repeated correction is called a
+**feedback loop**, because the measurement is fed back into the next decision.
 
-The controller works better when it knows the arm's body. The arm's **dynamics**
-say how much torque each joint needs to hold the arm up against gravity and to speed
-it up. A controller that adds that torque before any error appears follows fast
-moves far more closely than one that waits for the error.
+The controller does that job better when it knows the arm's own body, and the arm's
+**dynamics** are what describe that body. That means they say how much torque each joint
+needs to hold the arm up against gravity and to speed it up. Because a controller can add
+that torque before any error appears, it follows fast moves far more closely than
+one that waits for an error to show up first.
 
 The **contact** layer answers "what should happen when the arm touches something?".
-A plain position controller has only one answer: push harder until the joint is
-where it was told to be. The contact layer replaces that answer with a chosen
-behaviour, such as "act like a soft spring" or "stop when the force passes 1
+But a plain position controller has only one answer, which is to push harder until
+the joint is where it was told to be. Instead of that, the contact layer lets you choose
+the behaviour, such as "act like a soft spring" or "stop when the force passes 1
 newton".
 
-Beside all three layers runs a **safety monitor**. It does not command the arm. It
-watches the commands and the measurements, and stops the arm when a speed, a force, a
-position or a distance to a person goes outside its limit, or when a loop stops
-sending commands.
+Beside all three layers runs a **safety monitor**, which does not command the arm
+itself. Instead it watches the commands and the measurements, and it stops the arm
+when a speed, a force, a position or a distance to a person goes outside its limit,
+or when a loop stops sending commands.
 
 The Book 3 page on [controlling the move](../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
-describes the same layers in ROS 2, where they are the
+describes these same layers in ROS 2, where they appear as the
 [ros2_control](../../03_frameworks/01_tools-and-libraries.md#6-ros2_control-driving-the-motors)
-framework and its controllers. This chapter explains the techniques inside them.
+framework and its controllers. While that page shows how to use them, this chapter
+explains the techniques inside them.
 
 ---
 
 ## 3. The five techniques
 
-Each page in this chapter explains one technique in depth. The pages are split into
-two groups. The **most used** group holds the four techniques that run on nearly
-every arm, every time it moves: PID control, trajectory generation, arm dynamics and
-safety monitoring. Even an arm that only moves between fixed poses uses all four,
-although the dynamics and the safety checks are often hidden inside the arm maker's
-controller. The **also used** group holds impedance and force control. It is used
-often, but only in tasks where the arm touches things on purpose, such as pressing,
-inserting or being guided by hand, and it needs an arm or a sensor that supports it.
+Each page in this chapter explains one of those layers in depth, and the pages are
+split into two groups by how often you will meet them. The **most used** group holds
+the four techniques that run on nearly every arm, every time it moves: PID control,
+trajectory generation, arm dynamics and safety monitoring. Even an arm that only
+moves between fixed poses uses all four, although the dynamics and the safety checks
+are often hidden inside the arm maker's controller. The **also used** group holds
+impedance and force control, which is used often, but only in tasks where the arm
+touches things on purpose, such as pressing, inserting or being guided by hand. It
+also needs an arm or a sensor that supports it, which not every arm does.
 
-Here is each technique in a line or two. The first four are the most used group.
+Here is each technique in a line or two, and the first four of them make up the most
+used group.
 
 - [PID control](02_most-used/01_pid-control.md) makes one joint follow its target. It adds up
   three pushes: one in proportion to the error now, one that grows while an error
@@ -133,7 +142,7 @@ Here is each technique in a line or two. The first four are the most used group.
   when a loop stops sending commands. **Speed and separation monitoring** slows the
   arm as a person comes closer, and stops it if they come too close.
 
-The last one is the also used group.
+Then comes the remaining technique, which is the one in the also used group.
 
 - [Impedance and force control](03_also-used/01_impedance-and-force-control.md) decides how the
   arm behaves in contact. It makes the arm act like a spring with a stiffness you
@@ -144,9 +153,10 @@ The last one is the also used group.
 
 ## 4. The five side by side
 
-The table below compares the five techniques. Read each row as one technique.
-The columns say what goes in, what comes out, how often it runs, and the sign that
-tells you it is set up badly.
+Since each of the five techniques has now been described in a line, the table below
+sets them side by side. Read each row as one technique, and read the columns as what
+goes in, what comes out, how often it runs, and the sign that tells you the technique
+is set up badly.
 
 | Technique | What goes in | What comes out | How often it runs | The sign of a bad setup |
 | --- | --- | --- | --- | --- |
@@ -160,83 +170,90 @@ tells you it is set up badly.
 
 ## 5. How they work together on one move
 
-Here is one real move of two joints, simulated in the diagram script. The planner
-has given four waypoints in the space of joint angles. The trajectory layer draws
-a smooth curve through them and gives it times. The controller layer drives each
-joint along the curve with the PID controller from [the PID page](02_most-used/01_pid-control.md).
+The layers above are easier to follow on one real move of two joints, which the
+diagram script simulates. Once the planner has given four waypoints in the space of joint
+angles, the trajectory layer draws a smooth curve through them and gives it
+times. After that the controller layer drives each joint along the curve, using the
+PID controller from [the PID page](02_most-used/01_pid-control.md).
 
 ![One move passing through the three layers](../../images/control-and-motion/overview/one-move-three-layers.svg)
 
-The left panel is the planner's output, and the curve the trajectory layer draws
-through it. The middle panel is the timing: the speed of each joint over the
-2.4 seconds of the move. The right panel is the error of each joint, meaning the
-target angle minus the measured angle.
+The left panel is the planner's output, together with the curve that the trajectory
+layer draws through it. The middle panel is the timing, meaning the speed of each
+joint over the 2.4 seconds of the move, while the right panel is the error of each
+joint, which is the target angle minus the measured angle.
 
-Three things in that picture are worth reading closely.
+Because each one shows a different layer doing its own job, three things in that
+picture are worth reading closely.
 
-First, the planner's waypoints have no times. The trajectory layer chose them. In
-this run it gave each stretch of the path a share of the 2.4 seconds in proportion
-to its length, so the waypoints are passed at 0, 0.91, 1.70 and 2.40 seconds. Both
-joints start and end at zero speed.
+First, the planner's waypoints have no times of their own, so the trajectory layer
+is what chose them. In this run it gave each stretch of the path a share of the
+2.4 seconds in proportion to its length, so the waypoints are passed at 0, 0.91,
+1.70 and 2.40 seconds, and both joints start and end at zero speed.
 
-Second, the controller never follows the trajectory exactly. It lags behind while
-the joint is moving. The largest error is 3.4 degrees on joint 1 and 4.3 degrees
-on joint 2. This lag is called the **following error**. It is normal, and it is
-the thing the Book 3 page means when it warns that a controller with its
-tolerances set to zero never checks it; see
+Second, the controller never follows the trajectory exactly, because it lags behind
+while the joint is moving. The largest error is 3.4 degrees on joint 1 and 4.3
+degrees on joint 2. This lag is called the **following error**, and it is perfectly
+normal. That is why the Book 3 page warns that a controller with its tolerances set
+to zero never checks it; see
 [what "the move failed" actually means](../../03_frameworks/03_arm-movement/04_controlling-the-move.md#3-what-the-move-failed-actually-means).
 
-Third, the error is not zero when the trajectory ends. At 2.4 seconds joint 1 is
-still 1.85 degrees off, and half a second later it is still 0.96 degrees off. The
-controller keeps working after the trajectory has stopped changing, and it closes
-the gap slowly. That is why a move that is "done" by the clock is not always done
-at the joint. The Book 3 page on
+Third, the error is still not zero when the trajectory ends. At 2.4 seconds joint 1
+is still 1.85 degrees off, and half a second later it is still 0.96 degrees off.
+This happens because the controller keeps working after the trajectory has stopped
+changing, and it closes the remaining gap slowly. That is why a move that is "done"
+by the clock is not always done at the joint, and the Book 3 page on
 [the cost of a move](../../03_frameworks/03_arm-movement/09_the-cost-of-a-move.md#3-settling-time-the-cost-people-forget)
 calls this settling time.
 
-This move has no contact in it. If the gripper were lowering a mug onto a table,
-the last few millimetres would be handed to the contact layer, as the
+This move has no contact in it, so the contact layer never runs. However, if the
+gripper were lowering a mug onto a table, the last few millimetres would be handed
+to that layer, as the
 [impedance and force control](03_also-used/01_impedance-and-force-control.md) page shows.
 
 ---
 
 ## 6. Loops that run at different rates
 
-The three layers do not run at the same speed. A planner runs once per move, and
-may take a tenth of a second or more. A controller runs every millisecond. Some
-sources of targets sit in between. A camera-based loop may send a new target 30
-times a second. A learned policy from Book 6 often sends one 10 to 15 times a
-second.
+The move above hid one thing, which is that the three layers do not run at the same
+speed. A planner runs once per move and may take a tenth of a second or more, while
+a controller runs every millisecond. But some sources of targets sit in between those
+two: a camera-based loop may send a new target 30 times a second, and a learned
+policy from Book 6 often sends one 10 to 15 times a second.
 
-Something has to fill the gap between a slow stream of targets and a fast
-controller. The picture below shows why that matters. The same 10 targets a second
-are sent to the same joint in two ways.
+Because of that gap, something has to fill it between a slow stream of targets and a
+fast controller. The picture below shows why that matters, by sending the same 10
+targets a second to the same joint in two different ways.
 
 ![Targets fed straight in give a torque kick at each one; ramped targets give smooth torque](../../images/control-and-motion/overview/slow-commands.svg)
 
-The red run sends each target straight to the controller and holds it for 100
-milliseconds. The green run moves the target smoothly, 1,000 times a second, from
-the previous value to the newest one.
+The red run sends each target straight to the controller and holds it there for 100
+milliseconds, while the green run moves the target smoothly, 1,000 times a second,
+from the previous value to the newest one.
 
-In the red run, every new target is a small step. The controller answers each step
-with a sudden rise in torque. The largest change from one millisecond to the next
-is 2.48 N m, and the arm moves in small jerks. In the green run the largest change
-in one millisecond is 0.03 N m. The cost of the green run is also visible: it is
-always one target behind, a tenth of a second late. The Book 3 page on
+Because every new target in the red run is a small step, the controller answers each
+step with a sudden rise in torque. As a result, the largest change from one
+millisecond to the next is 2.48 N m, and the arm moves in small jerks. In the green
+run, however, the largest change in one millisecond is only 0.03 N m. But the green
+run has a cost of its own, because it is always one target behind, a tenth of a
+second late. The Book 3 page on
 [learned motion](../../03_frameworks/03_arm-movement/05_learned-motion.md) describes
 exactly this trade, and it is the reason learned policies still need the trajectory
 and controller layers underneath them.
 
-The general rule is simple. Every loop should hand the loop below it a signal that
-changes smoothly at the lower loop's rate. The [trajectory generation](02_most-used/02_trajectory-generation.md)
-page shows how.
+The general rule that follows from this is simple: every loop should hand the loop
+below it a signal that changes smoothly at the lower loop's own rate. The
+[trajectory generation](02_most-used/02_trajectory-generation.md) page shows how to
+build such a signal.
 
 ---
 
 ## 7. How this chapter connects to the others
 
-Control and motion sits at the end of the chain. The techniques in the other
-chapters decide what to do and where to go. This chapter makes it happen.
+Because everything above turns a decision that has already been made into motor
+commands, control and motion sits at the end of the chain. The techniques in the
+other chapters decide what to do and where to go, and this chapter is what makes it
+actually happen.
 
 - [Planning and search](../06_planning-and-search/01_overview.md) hands over the
   path. [Trajectory optimisation](../06_planning-and-search/02_most-used/03_trajectory-optimisation.md)
@@ -256,24 +273,26 @@ chapters decide what to do and where to go. This chapter makes it happen.
   guarded move for the last 30 millimetres, then switch to impedance control to
   press.
 
-Book 6 has learned models that do parts of this job. A
+Book 6 has learned models that do parts of this job as well. For example, a
 [movement model](../../06_learned-models/06_movement-models/01_overview.md)
-decides where the arm should go next, from camera pictures. It replaces the planner
-and sometimes the trajectory layer, but not the controller: its output is still a
-stream of joint targets that a PID loop must follow. A
+decides where the arm should go next, from camera pictures, so it replaces the
+planner and sometimes the trajectory layer, but not the controller: its output is
+still a stream of joint targets that a PID loop must follow. A
 [learned arm model](../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
-predicts the torque a joint needs. It usually corrects the physics model from the
-[arm dynamics](02_most-used/03_arm-dynamics.md) page rather than replacing it, and
-the result is added to a PID loop to make it follow more closely. A [force and slip model](../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
-reads touch signals that a force controller could act on. None of these removes the
-need for the programmed loops on this chapter's pages. They sit on top of them.
+predicts the torque a joint needs, and it usually corrects the physics model from the
+[arm dynamics](02_most-used/03_arm-dynamics.md) page rather than replacing it, so
+that the result can be added to a PID loop to make it follow more closely. A
+[force and slip model](../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+reads the touch signals that a force controller could then act on. None of these
+removes the need for the programmed loops on this chapter's pages, because they sit
+on top of those loops rather than in place of them.
 
 ---
 
 ## 8. Where to read next
 
-- Start with [PID control](02_most-used/01_pid-control.md). It is the loop inside every joint,
-  and the other pages build on it.
+- Start with [PID control](02_most-used/01_pid-control.md), because it is the loop inside every
+  joint and the other pages all build on it.
 - Then read [trajectory generation](02_most-used/02_trajectory-generation.md), which makes the
   targets that PID follows.
 - Then read [arm dynamics](02_most-used/03_arm-dynamics.md), which adds the torque a

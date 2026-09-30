@@ -1,18 +1,18 @@
 # The pinhole camera model
 
 This page explains the pinhole camera model as a technique you can use in any
-program. It answers four questions. How does a camera turn a point in the room into
-a pixel? How do you turn a pixel and a depth reading back into a point? How many
-millimetres does one pixel cover? And how do you find a point when the camera gives
-no depth at all?
+program, and it answers four questions. How does a camera turn a point in the
+room into a pixel? How do you turn a pixel and a depth reading back into a
+point? How many millimetres does one pixel cover? And how do you find a point
+when the camera gives no depth at all?
 
 It is for a reader who has read Book 2's
-[cameras: the basics](../../../02_perception/01_camera/01_basics.md), which explains
-pixels, focal length and the four lens numbers from the start, and
-[finding one box](../../../02_perception/01_camera/03_one-box-intro.md), which works
-through one pixel slowly. This page does not repeat those explanations. It
-collects the formulas into one method, adds the parts those pages leave out, and
-shows where the method is used on an arm.
+[cameras: the basics](../../../02_perception/01_camera/01_basics.md), which
+explains pixels, focal length and the four lens numbers from the start, and
+[finding one box](../../../02_perception/01_camera/03_one-box-intro.md), which
+works through one pixel slowly. This page does not repeat those explanations,
+but instead collects the formulas into one method, adds the parts those pages
+leave out, and shows where the method is used on an arm.
 
 ## Contents
 
@@ -40,69 +40,72 @@ shows where the method is used on an arm.
 **Every pixel looks out from one point along one straight line, and a camera
 records only which line, never how far along it.**
 
-The one point is called the **pinhole**, or the camera's **optical centre**. In a
-real camera it is the middle of the lens. The straight line through the pinhole and
-a pixel is called that pixel's **ray**.
-
-Here is an everyday example. Hold up a finger at arm's length and close one eye.
-Your finger covers a distant tree. Both the finger and the tree lie on the same
-line from your eye, so they land on the same spot in your eye. Your one eye cannot
-tell which is nearer. A camera has the same limit. The pinhole model is the
+The one point is called the **pinhole**, or the camera's **optical centre**, and
+in a real camera it is the middle of the lens. The straight line through the
+pinhole and a pixel is called that pixel's **ray**. Here is an everyday example.
+Hold up a finger at arm's length, close one eye, and line the finger up with a
+distant tree. Both the finger and the tree then lie on the same line from your
+eye, so they land on the same spot in your eye and your one eye cannot tell
+which is nearer. A camera has the same limit, and the pinhole model is the
 arithmetic of that line.
 
-The picture below shows two rays out of a pinhole, drawn from the side.
+So the picture below shows two rays out of a pinhole, drawn from the side.
 
 ![All points along one ray land on the same pixel](../../../images/geometry-and-cameras/pinhole-camera-model/one-ray-many-points.svg)
 
-The blue ray goes straight ahead and lands on the middle of the picture, pixel
-u = 160. The orange ray lands on pixel u = 212.5. The three red points sit on that
-ray at 0.20 m, 0.34 m and 0.50 m ahead. They are different points in the room, but
-all three land on the same pixel.
+The blue ray goes straight ahead and lands on the middle of the picture, at
+pixel u = 160, while the orange ray lands on pixel u = 212.5. The three red
+points sit on that orange ray at 0.20 m, 0.34 m and 0.50 m ahead, so they are
+different points in the room, but all three land on the same pixel.
 
 ---
 
 ## 2. How it works
 
-The whole model is two formulas, one for each direction. This section writes them
-out, puts them in matrix form, and then adds the practical pieces around them.
+Section 1 said in words what a camera records, so this section writes the same
+thing as arithmetic. The whole model is two formulas, one for each direction,
+and this section writes them out, puts them in matrix form, and then adds the
+practical pieces around them.
 
-Every number on this page uses Book 2's simulated camera. Its picture is 320 × 240
-pixels. Its four lens numbers are `fx` = `fy` = 277.1 pixels, `cx` = 160 and
-`cy` = 120. It hangs 0.40 m above the middle of a table and looks straight down.
-The numbers were checked by running the formulas in Python.
+Every number on this page uses Book 2's simulated camera, whose picture is 320 ×
+240 pixels. Its four lens numbers are `fx` = `fy` = 277.1 pixels, `cx` = 160 and
+`cy` = 120, and it hangs 0.40 m above the middle of a table and looks straight
+down. The numbers were checked by running the formulas in Python.
 
 ### Projection: a point to a pixel
 
-**Projection** takes a point measured from the camera and gives the pixel it lands
-on. The camera's axes follow the picture: `x` points right, `y` points down, and
-`z` points straight out of the lens. This frame is called the camera's **optical
-frame**.
+**Projection** takes a point measured from the camera and gives the pixel it
+lands on. The camera's axes follow the picture, so `x` points right, `y` points
+down, and `z` points straight out of the lens, and this frame is called the
+camera's **optical frame**.
 
 ```
 u = fx · (x / z) + cx
 v = fy · (y / z) + cy
 ```
 
-In words: divide the sideways distance by the distance ahead, multiply by the focal
-length in pixels, and add the position of the middle of the picture.
+In other words, divide the sideways distance by the distance ahead, multiply by
+the focal length in pixels, and add the position of the middle of the picture.
 
-Take the spot on top of the red box from Book 2. It is at `x` = 0.06442 m,
-`y` = -0.04110 m and `z` = 0.340 m from the camera.
+For example, take the spot on top of the red box from Book 2, which is at `x` =
+0.06442 m, `y` = -0.04110 m and `z` = 0.340 m from the camera.
 
 ```
 u = 277.1 · (0.06442 / 0.340) + 160 = 277.1 · 0.18946 + 160 = 212.5
 v = 277.1 · (-0.04110 / 0.340) + 120 = 277.1 · -0.12089 + 120 = 86.5
 ```
 
-The spot lands on pixel (212.5, 86.5). Now double all three distances, to
-(0.12884, -0.08220, 0.680). The ratios `x / z` and `y / z` do not change, so the
-pixel does not change either. That is the ray from the picture above, written as
-arithmetic. The division by `z` is exactly where the distance is lost.
+So the spot lands on pixel (212.5, 86.5). Now double all three distances, to
+(0.12884, -0.08220, 0.680), and the ratios `x / z` and `y / z` do not change, so
+the pixel does not change either. That is the ray from the picture above,
+written as arithmetic, and the division by `z` is exactly where the distance is
+lost.
 
 ### The same rule as one matrix
 
 Libraries store the four lens numbers as a 3 × 3 grid called the **intrinsic
-matrix**, written `K`. Book 2 shows it arriving in ROS's `CameraInfo` message, in
+matrix**, written `K`. Book 2 shows it arriving in ROS's `CameraInfo` message,
+in
 [k in detail](../../../04_ros-and-rviz/01_ros/03_ros-camera.md#23-k-in-detail-what-it-is-why-the-camera-sends-it-and-who-reads-it).
 
 ```
@@ -111,23 +114,25 @@ K  =  [  0  fy   cy ] = [   0    277.1  120 ]
       [  0   0    1 ]   [   0      0      1 ]
 ```
 
-Projection is then one multiplication followed by one division. Multiply `K` by the
-point, and you get three numbers. Divide the first two by the third.
+Projection is then one multiplication followed by one division. That means you
+multiply `K` by the point to get three numbers, and then divide the first two by
+the third.
 
 ```
 K · (0.06442, -0.04110, 0.340) = (72.25, 29.41, 0.340)
 pixel = (72.25 / 0.340, 29.41 / 0.340) = (212.5, 86.5)
 ```
 
-The third number is the depth. The division by it is the step that loses distance.
-You will see this form in every library, and in papers, where it is often written
-with a scale factor: `s · (u, v, 1) = K · (x, y, z)`, with `s` equal to `z`.
+The third number is the depth, so the division by it is the step that loses
+distance. You will see this form in every library, and in papers, where it is
+often written with a scale factor: `s · (u, v, 1) = K · (x, y, z)`, with `s`
+equal to `z`.
 
 ### Back-projection: a pixel and a depth to a point
 
-**Back-projection** runs the formula the other way. It is also called
-**deprojection**, and Book 2 uses that word. It needs one extra number: the depth
-reading for that pixel, from a depth camera.
+**Back-projection** runs the formula the other way, and it is also called
+**deprojection**, which is the word Book 2 uses. However, it needs one extra
+number, which is the depth reading for that pixel from a depth camera.
 
 ```
 x = (u - cx) · depth / fx
@@ -143,47 +148,51 @@ y = ( 86.5 - 120) · 0.340 / 277.1 = -33.5 · 0.0012270 = -0.04110 m
 z = 0.340 m
 ```
 
-That is the point we started from. Book 2 walks through the same four steps with
-pictures of the two similar triangles in
+That is the point we started from, so the two formulas undo each other exactly.
+Book 2 walks through the same four steps with pictures of the two similar
+triangles in
 [pixel plus depth gives back the point](../../../02_perception/01_camera/03_one-box-intro.md#11-pixel-plus-depth-gives-back-the-point).
 
-Two details decide whether the answer is right.
+However, two details decide whether the answer is right in practice.
 
-First, the depth must be the distance straight ahead, along `z`, not the distance
-along the slanted ray. Nearly every depth camera reports it this way, and
+First, the depth must be the distance straight ahead, along `z`, not the
+distance along the slanted ray. Nearly every depth camera reports it this way,
+and
 [depth is not distance](../../../02_perception/01_camera/01_basics.md#depth-is-not-distance)
 explains why. If a sensor reports the slanted distance instead, divide it by the
 length of the ray direction `((u - cx) / fx, (v - cy) / fy, 1)` first. For our
 pixel that length is 1.0249, so a slanted reading of 0.3485 m becomes a depth of
 0.340 m.
 
-Second, `u` and `v` should be the middle of the pixel. Pixel number 212 covers the
-strip from 212 to 213, so its middle is 212.5. Using 212 moves the point by half a
-pixel, which is 0.61 mm at this depth.
+Second, `u` and `v` should be the middle of the pixel, because pixel number 212
+covers the strip from 212 to 213 and its middle is therefore 212.5. Using 212
+instead moves the point by half a pixel, which is 0.61 mm at this depth.
 
 ### A whole depth picture at once
 
-A depth camera gives a depth for every pixel. Back-projecting all of them gives a
-**point cloud**: a list of 3D points, one per pixel. Book 2's camera makes 76,800
-points from one picture.
+Because a depth camera gives a depth for every pixel, back-projecting all of
+them gives a **point cloud**, which is a list of 3D points, one per pixel. Book
+2's camera makes 76,800 points from one picture.
 
-The picture below shows one row of pixels, `v` = 120, across the table and the red
-box. The left side is what the camera gives: one depth per pixel. The right side is
-what back-projection makes: one point per pixel, placed along its ray.
+For example, the picture below shows one row of pixels, `v` = 120, across the
+table and the red box. On the left is what the camera gives, which is one depth
+per pixel, and on the right is what back-projection makes, which is one point
+per pixel placed along its ray.
 
 ![One row of depth readings becomes one row of points](../../../images/geometry-and-cameras/pinhole-camera-model/depth-row-to-points.svg)
 
-The picture draws every eighth pixel. The table pixels read 0.400 m and the box-top
-pixels read 0.340 m. Just to the left of the box, one drawn pixel sees the box's
-side and reads 0.396 m, in between. To the right of the
-box there is a gap in the points. The box hides that strip of table from the
+The picture draws every eighth pixel, and the table pixels read 0.400 m while
+the box-top pixels read 0.340 m. Just to the left of the box, one drawn pixel
+sees the box's side and reads 0.396 m, in between. To the right of the box there
+is a gap in the points, because the box hides that strip of table from the
 camera, so no pixel ever looks at it. This missing strip is called a **shadow**,
 and every point cloud from one camera has them.
 
-In a program you rarely loop over pixels one at a time. You compute the `x` and `y`
-factors once for every pixel, `(u - cx) / fx` and `(v - cy) / fy`, and multiply the
-whole depth picture by them in one step. The factors never change while the camera
-and resolution stay the same, so they can be stored.
+However, in a program you rarely loop over pixels one at a time. Instead, you
+compute the `x` and `y` factors once for every pixel, `(u - cx) / fx` and `(v -
+cy) / fy`, and multiply the whole depth picture by them in one step. The factors
+never change while the camera and resolution stay the same, so they can be
+stored.
 
 ### Pixels to millimetres
 
@@ -197,29 +206,30 @@ at 0.400 m: 0.400 / 277.1 = 0.001444 m = 1.444 mm
 ```
 
 This is the most useful single number for judging whether a camera can do a job.
-If a gap you must measure is 1 mm wide, and one pixel covers 1.4 mm, no program can
-measure it. The chart below shows the number against depth for Book 2's camera and
-for the same lens on a sensor with twice the pixels across.
+If a gap you must measure is 1 mm wide, and one pixel covers 1.4 mm, no program
+can measure it. So the chart below shows the number against depth for Book 2's
+camera, and for the same lens on a sensor with twice the pixels across.
 
 ![How much of the table one pixel covers, against depth](../../../images/geometry-and-cameras/pinhole-camera-model/millimetres-per-pixel.svg)
 
-Both lines are straight, because the width grows in proportion to depth. Doubling
-the resolution halves the width at every depth. Book 2 explains the trade between
-field of view and resolution in
+Both lines are straight, because the width grows in proportion to depth, and
+doubling the resolution halves the width at every depth. Book 2 explains the
+trade between field of view and resolution in
 [field of view and resolution are separate knobs](../../../02_perception/01_camera/01_basics.md#7-field-of-view-and-resolution-are-separate-knobs).
 
-The same rule measures size. The red box's top is 6 cm wide. At 0.340 m, 6 cm
-covers `0.060 / 0.001227` = 48.9 pixels. Read the other way, a box 48.9 pixels wide
-at 0.340 m is 6 cm wide.
+The same rule also measures size. The red box's top is 6 cm wide, so at 0.340 m
+it covers `0.060 / 0.001227` = 48.9 pixels. Read the other way, a box 48.9
+pixels wide at 0.340 m is 6 cm wide.
 
 ### No depth: where a pixel's ray meets a known plane
 
-A colour-only camera gives no depth. But if you know the surface the object lies
-on, you can still find the point. The ray from the pixel is known. The plane of the
-table is known. The point is where the two meet. Book 2 calls this
+A colour-only camera gives no depth, but if you know the surface the object lies
+on, you can still find the point. The ray from the pixel is known and the plane
+of the table is known, so the point is where the two meet. Book 2 calls this
 [knowing the surface the object sits on](../../../02_perception/02_object-perception/01_overview.md#7-the-three-ways-to-supply-the-missing-fact).
 
-The method has three steps.
+So the method has three steps, which turn the pixel into a ray and then follow
+that ray down to the table.
 
 1. Turn the pixel into a ray direction in the camera's frame:
    `d = ((u - cx) / fx, (v - cy) / fy, 1)`.
@@ -230,29 +240,30 @@ The method has three steps.
    `c + t · d'`, where `t = -c_z / d'_z`. Because `d` had a 1 in its `z` place, `t`
    is also the depth that pixel would have read.
 
-The picture below uses a tilted camera, the usual case on a wrist. The camera is
-0.40 m above the table and 0.20 m back from its middle, looking forward and 60°
-down.
+For example, the picture below uses a tilted camera, which is the usual case on
+a wrist. The camera is 0.40 m above the table and 0.20 m back from its middle,
+looking forward and 60° down.
 
 ![A pixel's ray meets the table at one point](../../../images/geometry-and-cameras/pinhole-camera-model/ray-meets-table.svg)
 
-The middle pixel (160, 120) looks straight along the camera's axis. Its ray meets
-the table after a depth of 0.4619 m, at (0.0000, 0.0309) m in the room. Pixel
-(200, 150) meets the table after 0.4347 m, at (0.0628, -0.0234) m. Neither number
-came from a depth sensor. Both came from the pixel, the lens numbers, the camera's
-pose, and the fact that the table is flat.
+The middle pixel (160, 120) looks straight along the camera's axis, and its ray
+meets the table after a depth of 0.4619 m, at (0.0000, 0.0309) m in the room.
+Then pixel (200, 150) meets the table after 0.4347 m, at (0.0628, -0.0234) m.
+Neither number came from a depth sensor, because both came from the pixel, the
+lens numbers, the camera's pose, and the fact that the table is flat.
 
-The method breaks the moment the object is not on the plane you assumed. A pixel
-on top of a box 6 cm tall would give a point on the table behind the box instead.
+However, the method breaks the moment the object is not on the plane you
+assumed. For example, a pixel on top of a box 6 cm tall would give a point on
+the table behind the box instead.
 
 ### Lens distortion: where the pinhole stops being true
 
-A real lens bends light a little, so straight lines in the room come out slightly
-curved in the picture. The pinhole model assumes no bending. So real programs
-correct the bending first, and then use the pinhole formulas on the corrected
-pixels. The correction step is called **undistortion**.
+A real lens bends light a little, so straight lines in the room come out
+slightly curved in the picture. The pinhole model assumes no bending, so real
+programs correct the bending first and then use the pinhole formulas on the
+corrected pixels, and that correction step is called **undistortion**.
 
-The bending is described by a few more numbers, usually five, called the
+This bending is described by a few more numbers, usually five, called the
 **distortion coefficients**. They are measured by
 [calibration](03_calibration.md), which also shows how large the bending can be:
 several pixels near the corners of a wide lens. Book 2's simulated camera has no
@@ -260,7 +271,7 @@ bending at all, so its five distortion numbers are zero.
 
 ### Pseudocode
 
-Here is the whole technique in plain steps. It works in any language.
+Here is the whole technique in plain steps, and it works in any language.
 
 ```
 lens numbers: fx, fy, cx, cy
@@ -292,16 +303,17 @@ ray_meets_plane(u, v, camera_rotation, camera_position, plane_height):
     return camera_position + t * d
 ```
 
-Note the checks. A missing depth reading is common on shiny or clear objects, and
-many cameras report it as 0. Back-projecting a 0 puts a point right on the lens,
-which later code will happily treat as a real object.
+Note the checks in that pseudocode. A missing depth reading is common on shiny
+or clear objects, and many cameras report it as 0. So back-projecting a 0 puts a
+point right on the lens, which later code will happily treat as a real object.
 
 ---
 
 ## 3. Where it is used on a robot arm
 
-The pinhole model is under almost every camera measurement on an arm. Here are
-concrete places.
+Section 2 gave the formulas, and this section says where an arm program actually
+calls them. The pinhole model is under almost every camera measurement on an
+arm, and here are the concrete places.
 
 - **Turning a detection into a grasp target.** A detector gives a box around a mug.
   The program takes the middle pixel, reads its depth, and back-projects it. That
@@ -335,9 +347,11 @@ concrete places.
 
 ## 4. Where it works, and where it does not
 
-The pinhole model is exact for an ideal camera. Real cameras differ from it in a
-few ways, and each one shows itself with a sign you can look for. The table below
-lists them. Read each row as: what goes wrong, what you see, and what to do.
+The uses in section 3 all assume that the model describes the camera well, which
+it usually does. The pinhole model is exact for an ideal camera, but real
+cameras differ from it in a few ways, and each difference shows itself with a
+sign you can look for. The table below lists them, so read each row as what goes
+wrong, what you see, and what to do.
 
 | What goes wrong | The sign you see | What to do instead |
 | --- | --- | --- |
@@ -350,16 +364,16 @@ lists them. Read each row as: what goes wrong, what you see, and what to do.
 | rolling shutter on a moving arm | straight edges lean while the arm moves | stop the arm before taking the picture, or use a camera with a global shutter |
 
 Where it works well: any ordinary camera lens with a field of view up to about
-90°, after calibration. That covers almost every camera that is fixed on or near a
-robot arm.
+90°, after calibration. That covers almost every camera that is fixed on or near
+a robot arm.
 
 ---
 
 ## 5. Libraries that provide it
 
 You rarely need to write these formulas yourself, although they are short enough
-that many projects do. The table lists libraries that provide them. Read each row
-as: where to find it, which languages, and what to call.
+that many projects do. The table below lists the libraries that provide them, so
+read each row as where to find it, which languages it covers, and what to call.
 
 | Library | Languages | What to call | Note |
 | --- | --- | --- | --- |
@@ -372,33 +386,35 @@ as: where to find it, which languages, and what to call.
 | Eigen | C++ | plain matrix arithmetic | the usual choice when writing it yourself in C++ |
 
 Whatever you use, check which frame it expects. OpenCV and `image_geometry` use
-the optical frame, with `z` ahead and `y` down. A robot model's `camera_link`
-frame has `x` ahead and `z` up instead. Book 3 explains the difference in
+the optical frame, with `z` ahead and `y` down, while a robot model's
+`camera_link` frame has `x` ahead and `z` up instead. Book 3 explains the
+difference in
 [the camera link and the camera optical frame](../../../03_frameworks/03_arm-movement/08_frames-and-conventions.md#22-the-camera-link-and-the-camera-optical-frame).
 
 ---
 
 ## 6. Why this model, and what it costs
 
-This section answers the four questions for the pinhole model: what it is, what it
-does for you, why it rather than the obvious alternative, and what it costs.
+This section answers the four questions for the pinhole model: what it is, what
+it does for you, why it rather than the obvious alternative, and what it costs.
 
 It is the rule that a camera is one point with rays out of it, and that a pixel
-records only which ray. It lets you go from a point to a pixel and, with a depth,
-from a pixel back to a point, using four numbers that the camera reports.
+records only which ray. So it lets you go from a point to a pixel and, with a
+depth, from a pixel back to a point, using four numbers that the camera reports.
 
-The obvious alternative is a **lookup table**: put a marker at many known places,
-record which pixel each lands on, and interpolate between them. Some old industrial
-systems did this. It needs no model at all. But it only works at the heights where
-you measured, it must be redone whenever the camera moves, and it needs hundreds of
-measurements. The pinhole model needs four numbers, works at every depth, and moves
-with the camera through one transform.
+The obvious alternative is a **lookup table**: put a marker at many known
+places, record which pixel each lands on, and interpolate between them. Some old
+industrial systems did this, and it needs no model at all. However, it only
+works at the heights where you measured, it must be redone whenever the camera
+moves, and it needs hundreds of measurements. The pinhole model, in contrast,
+needs four numbers, works at every depth, and moves with the camera through one
+transform.
 
 The cost is this. The model is only as good as its four numbers and its
-distortion numbers, so you must calibrate. It needs a depth reading or a known
-plane, because the camera alone never records distance. And it describes one
-camera. A stereo pair or a colour camera beside a depth sensor needs one model per
-lens, plus the transform between them.
+distortion numbers, so you must calibrate. It also needs a depth reading or a
+known plane, because the camera alone never records distance. And it describes
+one camera only, so a stereo pair or a colour camera beside a depth sensor needs
+one model per lens, plus the transform between them.
 
 ---
 
@@ -409,14 +425,16 @@ measure need the same rule. Book 6's
 [depth from pictures](../../../06_learned-models/03_seeing-models/03_also-used/02_depth-from-pictures.md)
 guesses a depth for each pixel from colour alone, and
 [keypoints and object pose](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-finds named points on an object in the picture. Both answers still go through the
-projection or back-projection formula on this page. The real alternative is to skip
-the camera model and train a **policy**, a network that turns pictures straight into
-arm movements, as Book 6's [movement models](../../../06_learned-models/06_movement-models/01_overview.md)
-do. Such a policy absorbs distortion and odd lenses without anyone describing them.
-But it needs tens to hundreds of demonstrations for each task, a camera moved by a
-few centimetres can confuse it, and it cannot tell you when it is wrong, while every
-number in the pinhole model can be checked with a ruler.
+finds named points on an object in the picture. Both answers still go through
+the projection or back-projection formula on this page. The real alternative is
+to skip the camera model and train a **policy**, a network that turns pictures
+straight into arm movements, as Book 6's
+[movement models](../../../06_learned-models/06_movement-models/01_overview.md)
+do. Such a policy absorbs distortion and odd lenses without anyone describing
+them. But it needs tens to hundreds of demonstrations for each task, and a
+camera moved by a few centimetres can confuse it. It also cannot tell you when
+it is wrong, while every number in the pinhole model can be checked with a
+ruler.
 
 ---
 

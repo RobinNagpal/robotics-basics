@@ -2,25 +2,25 @@
 
 This page explains the software layer that watches every command on its way to
 the arm and stops or limits the ones that are unsafe. It answers five questions.
-What does the layer check? How does each check work, with real numbers? How do
-you check the commands of a learned policy, which can output anything? What
-happens when the commands stop arriving? And what is this layer **not**: where
-does it stop, and where must certified safety equipment take over?
+What does the layer check, and how does each check work with real numbers? How do
+you check the commands of a learned policy, which can output anything, and what
+happens when the commands stop arriving? And what is this layer **not**, meaning
+where does it stop and where must certified safety equipment take over?
 
-It is for a reader who has read the [PID control](01_pid-control.md) and
-[trajectory generation](02_trajectory-generation.md) pages, or who knows what a
-joint limit and a speed limit are. It helps to have read the
+It is written for a reader who has read the [PID control](01_pid-control.md) and
+[trajectory generation](02_trajectory-generation.md) pages, or who already knows
+what a joint limit and a speed limit are. It also helps to have read the
 [sensor streams](../../04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
 page, because a safety check is a threshold on a stream. Every number on this
 page comes from a real run of the diagram script,
 `docs/diagrams/sensor_streams_and_safety.py`.
 
-**Read this first.** Nothing on this page is a certified safety function. A
-certified safety function is one that has been designed, tested and approved to
-a safety standard, and that runs on hardware built for it. The software layer
-described here runs on an ordinary computer, in ordinary code. It catches
-mistakes and makes the arm better behaved. It must never be the only thing
-between the arm and a person. Section 7 draws this line in full.
+**Read this first.** Nothing on this page is a certified safety function, meaning
+one that has been designed, tested and approved to a safety standard and that runs
+on hardware built for it. The software layer described here runs on an ordinary
+computer, in ordinary code, so it catches mistakes and makes the arm better
+behaved. But it must never be the only thing between the arm and a person, and
+section 7 draws that line in full.
 
 ## Contents
 
@@ -47,18 +47,19 @@ between the arm and a person. Section 7 draws this line in full.
 
 ## 1. What this page answers
 
-An arm does whatever its commands say. The commands come from a planner, a
-teleoperation joystick, a visual servo loop or a learned policy. Any of them can
-be wrong. A planner can be given a bad goal. A network cable can drop. A learned
-policy can output a target a metre away for no reason anyone can see.
+An arm does whatever its commands say, and those commands come from a planner, a
+teleoperation joystick, a visual servo loop or a learned policy. But any of them
+can be wrong. For example, a planner can be given a bad goal, a network cable can
+drop, and a learned policy can output a target a metre away for no reason anyone
+can see.
 
-A **safety monitor** is a small piece of code between the command sources and
-the arm's controller. It checks every command against a list of rules. If a
-command breaks a rule, the monitor limits it, refuses it, or stops the arm. It
-also watches the arm's sensors, so it can stop the arm when something is
-happening that no command asked for.
+Because of that, a **safety monitor** is a small piece of code placed between the
+command sources and the arm's controller. It checks every command against a list
+of rules, and if a command breaks a rule, the monitor limits it, refuses it, or
+stops the arm. It also watches the arm's sensors, so it can stop the arm when
+something is happening that no command asked for.
 
-The rules fall into six groups, and section 3 takes them in turn.
+Those rules fall into six groups, and section 3 takes them in turn.
 
 - Joint position, speed and torque limits.
 - Checks on a learned policy's output.
@@ -71,18 +72,19 @@ The rules fall into six groups, and section 3 takes them in turn.
 
 ## 2. The idea in one sentence
 
-**Check every command against simple, fixed rules just before it reaches the
-arm, and when a rule is broken, prefer stopping and saying so over quietly
-changing the command.**
+Since those six groups of rules all do the same kind of job, here is that job in
+one sentence. **Check every command against simple, fixed rules just before it
+reaches the arm, and when a rule is broken, prefer stopping and saying so over
+quietly changing the command.**
 
-Here is an everyday example. A driving instructor's car has a second brake pedal
-on the passenger side. The learner does the driving. The instructor does not
-steer, and does not try to drive better than the learner. The instructor watches
-for a few simple things: too fast, too close, the wrong side of the road. When
-one happens, the instructor brakes. The second pedal is not a replacement for
-seat belts and airbags, which work even if both people make a mistake. A safety
-monitor is the instructor's pedal. The certified safety functions in section 7
-are the seat belts.
+Here is an everyday example of the same idea, a driving instructor's car with a
+second brake pedal on the passenger side. The learner does the driving, while the
+instructor does not steer and does not try to drive better than the learner.
+Instead the instructor watches for a few simple things: too fast, too close, the
+wrong side of the road. When one of them happens, the instructor brakes. But that
+second pedal is not a replacement for seat belts and airbags, which work even if
+both people make a mistake. So a safety monitor is the instructor's pedal, while
+the certified safety functions in section 7 are the seat belts.
 
 ---
 
@@ -90,9 +92,11 @@ are the seat belts.
 
 ### Where the layer sits
 
-The monitor sits after every command source and before the controller. The Book 3
-page on [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
-describes that controller layer in ROS 2. Two facts from that page matter here.
+Because the monitor has to see every command, it sits after every command source
+and before the controller. The Book 3 page on
+[controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
+describes that controller layer in ROS 2, and two facts from that page matter
+here.
 
 - The standard trajectory controller checks less than people assume. Its
   tolerances default to zero, and zero means "do not check". So by default
@@ -105,41 +109,43 @@ describes that controller layer in ROS 2. Two facts from that page matter here.
   says so. A software speed limit is also a request, only a more careful one.
   Enforcement belongs to the certified functions in the robot's own controller.
 
-The monitor runs at the control rate, often 100 to 1,000 times a second. Each
-check must take a tiny, fixed amount of time, so the checks are kept simple:
-comparisons, clamps and a few multiplications.
+The monitor runs at the control rate, often 100 to 1,000 times a second. So each
+check must take a tiny, fixed amount of time, which is why the checks are kept
+simple: comparisons, clamps and a few multiplications.
 
 ### Joint limits and clamping
 
-Every joint has a range it can move through, a top speed, and a largest torque.
-A **torque** is a turning force, measured in newton metres (N m). The arm maker
-gives the hardware limits. A monitor uses **software limits** set a little inside
-them, so that the software stops the joint before the hardware has to.
+The simplest rules are the ones about a single joint. Every joint has a range it
+can move through, a top speed, and a largest torque, where a **torque** is a
+turning force measured in newton metres (N m). The arm maker gives the hardware
+limits, so a monitor uses **software limits** set a little inside them, and the
+software then stops the joint before the hardware has to.
 
-There are two ways to apply a limit. **Clamping** replaces a value outside the
-range with the nearest value inside it. **Refusing** rejects the command, keeps
-the arm where it is, and reports a fault. Clamping keeps the arm moving.
-Refusing tells you something is wrong. Book 1's
+There are two ways to apply such a limit. **Clamping** replaces a value outside
+the range with the nearest value inside it, while **refusing** rejects the
+command, keeps the arm where it is, and reports a fault. So clamping keeps the arm
+moving, whereas refusing tells you that something is wrong. Book 1's
 [joint class](../../../01_robotics-intro/01_python-and-numpy/01_python-basics.md#11-classes-a-joint-that-knows-its-limits)
 shows both, and the Book 3 gripper pages prefer refusing when a force cap is
 exceeded.
 
-A speed limit is applied by **rate limiting**: the target may move at most
-`speed limit × time step` from one tick to the next. At 2.5 rad/s and 100 ticks
-a second, that is 0.025 rad per tick.
+A speed limit is applied by **rate limiting**, which means the target may move at
+most `speed limit × time step` from one tick to the next. At 2.5 rad/s and 100
+ticks a second, that comes to 0.025 rad per tick.
 
 ### Checking a learned policy's commands
 
-A learned policy is a neural network that turns camera pictures and joint angles
-into commands. Book 6's
+The joint limits above apply to any command source, but one source needs more care
+than the rest. A learned policy is a neural network that turns camera pictures and
+joint angles into commands, and Book 6's
 [movement models](../../../06_learned-models/06_movement-models/01_overview.md)
 chapter describes them. Unlike a planner, a policy has no built-in idea of the
-arm's limits or of obstacles. Book 3's
+arm's limits or of obstacles, and Book 3's
 [learned motion](../../../03_frameworks/03_arm-movement/05_learned-motion.md#5-the-four-things-a-policy-does-not-have)
-page lists what it lacks. So its output must be checked every time.
+page lists what it lacks. So its output must be checked every single time.
 
-The picture below shows one elbow joint driven by a policy. The policy sends a
-new target 10 times a second. The monitor runs 100 times a second.
+The picture below shows one elbow joint driven by such a policy. The policy sends
+a new target 10 times a second, while the monitor runs 100 times a second.
 
 ![Joint targets from a policy, which go above a 1.6 rad limit and include one bad output of plus 0.9 rad. The clamped and speed-limited version moves towards the bad target; the refusing version holds still](../../../images/control-and-motion/safety-monitoring/limits-and-clamping.svg)
 
@@ -150,18 +156,18 @@ Two things go wrong in the policy's output.
 - At 2.0 s, one output jumps 0.9 rad above its neighbours for 0.1 s. The biggest
   step in the raw targets is 1.10 rad in one tick.
 
-The orange line clamps and rate limits. It never moves faster than 2.5 rad/s, so
-its biggest step is 0.025 rad per tick. But it still moves towards the bad
+The orange line clamps and rate limits, so it never moves faster than 2.5 rad/s
+and its biggest step is 0.025 rad per tick. But it still moves towards the bad
 target, and the joint goes 0.25 rad (about 14 degrees) the wrong way before the
-next good output arrives. Rate limiting has turned a jump into a smooth,
-believable mistake.
+next good output arrives. In other words, rate limiting has turned a jump into a
+smooth, believable mistake.
 
-The blue dashed line adds one more rule. It compares each new output with the
-last good one. A step of more than 0.3 rad per output is refused, the joint
-holds the last good target, and a fault is logged. It logs exactly one fault, at
-2.0 s, and the joint never moves towards the bad target.
+The blue dashed line adds one more rule, because it compares each new output with
+the last good one. A step of more than 0.3 rad per output is refused, so the joint
+holds the last good target and a fault is logged. As a result it logs exactly one
+fault, at 2.0 s, and the joint never moves towards the bad target.
 
-This is why a monitor for a learned policy checks more than limits. The usual
+This is why a monitor for a learned policy checks more than the limits. The usual
 checks are these.
 
 1. The output is a real number: no NaN (not a number) and no infinity.
@@ -180,67 +186,75 @@ gives the same list from the model's side.
 
 ### Workspace boxes and keep-out zones
 
-A **workspace box** is a region the tool must stay inside. A **keep-out zone** is
-a region inside it that the tool must never enter, such as a camera stand, a
-fixture, or the part of the table where a person works. Both are usually boxes,
-because the check is then a few comparisons.
+The checks so far were all on joint angles, but some rules are easier to state in
+the space the tool moves through. A **workspace box** is a region the tool must
+stay inside, while a **keep-out zone** is a region inside that box which the tool
+must never enter, such as a camera stand, a fixture, or the part of the table
+where a person works. Both are usually boxes, because the check is then only a few
+comparisons.
 
-The tool is not a point. So each check treats the gripper as a sphere around the
-tool point, 40 mm in radius here. That is the same as moving the box's walls in
+But the tool is not a point, so each check treats the gripper as a sphere around
+the tool point, 40 mm in radius here. That is the same as moving the box's walls in
 by 40 mm and the keep-out zone's walls out by 40 mm.
 
 ![Top view of a table: a green allowed box, a red keep-out zone for a camera stand, and a tool path that stops 380 mm along, just before the gripper would touch the keep-out zone. A goal outside the box is refused before moving](../../../images/control-and-motion/safety-monitoring/workspace-and-keep-out.svg)
 
 In the picture, the box runs from 150 to 700 mm away from the base and from −450
-to 450 mm across. The camera stand's keep-out zone runs from 380 to 560 mm and
-from 180 to 320 mm. A command asks the tool to go in a straight line from
-(300, −200) to (600, 380). The whole path is 653 mm long. The goal itself is
-inside the box, so a check on the goal alone would pass.
+to 450 mm across, while the camera stand's keep-out zone runs from 380 to 560 mm
+and from 180 to 320 mm. A command asks the tool to go in a straight line from
+(300, −200) to (600, 380), and the whole path is 653 mm long. The goal itself is
+inside the box, so a check on the goal alone would pass it.
 
-The monitor checks points every 5 mm along the path. At 380 mm, the gripper's
-sphere would come within 40 mm of the keep-out zone, so the monitor stops the
-tool there, at (475, 138). A second goal, at (260, 530), is outside the box. It
-is refused before the arm moves at all.
+Instead the monitor checks points every 5 mm along the path. At 380 mm the
+gripper's sphere would come within 40 mm of the keep-out zone, so the monitor
+stops the tool there, at (475, 138). A second goal, at (260, 530), is outside the
+box altogether, so it is refused before the arm moves at all.
 
 A path planner with a collision model also avoids the camera stand, as the
 [planning and search](../../06_planning-and-search/01_overview.md) chapter
-explains. The monitor is still useful, because it also checks commands that did
-not come from the planner: a joystick, a servo loop, a policy.
+explains. But the monitor is still useful, because it also checks the commands
+that did not come from the planner: a joystick, a servo loop, a policy.
 
 ### A watchdog for commands that stop arriving
 
-Many command sources send a stream: "move at this speed" 100 times a second. If
-the sender freezes or the network drops, the last command may stay in force. The
-arm then keeps going at the last speed.
+The checks above all assume that commands keep arriving, but many command sources
+send a stream, such as "move at this speed" 100 times a second. So if the sender
+freezes or the network drops, the last command may stay in force, and the arm then
+keeps going at the last speed.
 
-A **watchdog** is a timer that is reset by every new command. If the timer runs
-past a **timeout** with no new command, the watchdog stops the arm. The name
-comes from a dog that barks when it stops hearing its owner.
+Because of that, a **watchdog** is used, which is a timer that every new command
+resets. If the timer runs past a **timeout** with no new command, the watchdog
+stops the arm. The name comes from a dog that barks when it stops hearing its
+owner.
 
 ![Speed commands arrive 100 times a second until 1.0 s, then stop. Without a watchdog the tool keeps moving at 200 mm/s. With a 0.1 s timeout it brakes and stops at 1.19 s](../../../images/control-and-motion/safety-monitoring/watchdog.svg)
 
-In the picture, the tool is commanded at 200 mm/s. The sender freezes at 1.0 s.
-Without a watchdog, the tool has moved 200 mm further by 2.0 s, and it would keep
-going until something else stopped it. With a 0.1 s timeout and braking at 2
+In the picture the tool is commanded at 200 mm/s, and the sender freezes at 1.0 s.
+Without a watchdog the tool has moved 200 mm further by 2.0 s, and it would keep
+going until something else stopped it. But with a 0.1 s timeout and braking at 2
 m/s², the tool stops at 1.19 s, 28 mm after the last command arrived.
 
-The timeout is a trade. A short one stops the arm sooner, but it also stops it
-whenever the computer is briefly busy. A common choice is a few times the normal
-gap between commands. The braking distance after the timeout must also fit
+The timeout itself is a trade. A short one stops the arm sooner, but it also stops
+it whenever the computer is briefly busy, so a common choice is a few times the
+normal gap between commands. The braking distance after the timeout must also fit
 inside the free space around the arm.
 
-A watchdog can run in both directions. The arm's driver watches the computer,
-and the computer's monitor watches the arm's state messages. If the state
-messages stop, the monitor cannot see the arm, and it should stop sending motion.
+A watchdog can also run in both directions, because the arm's driver watches the
+computer while the computer's monitor watches the arm's state messages. So if the
+state messages stop, the monitor cannot see the arm, and it should stop sending
+motion.
 
 ### Speed and separation monitoring
 
-**Speed and separation monitoring** slows the arm as a person comes closer, and
-stops it when the person is too close. It needs a sensor that measures where
-people are, such as a laser scanner on the floor or a camera above the cell.
+The rules so far protected the arm and the work, but two of the six groups are
+about people. **Speed and separation monitoring** slows the arm as a person comes
+closer, and stops it when the person is too close, so it needs a sensor that
+measures where people are, such as a laser scanner on the floor or a camera above
+the cell.
 
-The rule comes from one question: if the person walked straight at the arm now,
-could the arm stop before they met? The gap needed is the sum of four distances:
+The rule itself comes from one question: if the person walked straight at the arm
+now, could the arm stop before they met? The gap needed is the sum of four
+distances:
 
 1. how far the person walks while the system notices and while the arm brakes;
 2. how far the arm moves before it starts braking;
@@ -248,45 +262,47 @@ could the arm stop before they met? The gap needed is the sum of four distances:
 4. a margin for sensor error and the size of a hand or arm.
 
 The picture below uses illustrative numbers, not numbers from any standard. The
-person walks at 1.6 m/s. The sensor and software take 0.1 s to react. The arm
-brakes at 2 m/s². The margin is 0.1 m. The arm's top speed is 0.5 m/s.
+person walks at 1.6 m/s, while the sensor and software take 0.1 s to react. The
+arm brakes at 2 m/s², the margin is 0.1 m, and the arm's top speed is 0.5 m/s.
 
 ![Left: the allowed arm speed is zero below 0.26 m, rises steadily, and reaches 0.5 m/s at 0.77 m. Right: as a person walks up the arm slows and stops, and when they walk away it speeds up again](../../../images/control-and-motion/safety-monitoring/speed-and-separation.svg)
 
-At full speed the arm needs a gap of 0.77 m. At a standstill it still needs
-0.26 m, because the person keeps walking while the system reacts. In between,
-the monitor chooses the highest speed whose gap fits. At 0.6 m, that is
-about 0.34 m/s. On the right, a person walks up from 2.6 m. The arm starts slowing at
-1.98 s and is stopped at 2.25 s, when the person is 0.25 m away. When they walk
-away, it speeds up again.
+At full speed the arm needs a gap of 0.77 m, and at a standstill it still needs
+0.26 m, because the person keeps walking while the system reacts. In between, the
+monitor chooses the highest speed whose gap fits, so at 0.6 m that is about
+0.34 m/s. On the right, a person walks up from 2.6 m, and the arm starts slowing
+at 1.98 s and is stopped at 2.25 s, when the person is 0.25 m away. Then when they
+walk away, it speeds up again.
 
-A software version of this is useful for keeping a cell running smoothly. But
-the version that protects people must use a safety-rated sensor and a
-safety-rated controller, with the distances and speeds worked out by the method
-in the standards. Section 7 says more.
+A software version of this is useful for keeping a cell running smoothly. But the
+version that protects people must use a safety-rated sensor and a safety-rated
+controller, with the distances and speeds worked out by the method in the
+standards, and section 7 says more about that.
 
 ### Power and force limiting
 
-**Power and force limiting** is the other way to work near people. The arm is
-allowed to touch a person, but only gently: the force and the pressure of any
-contact stay below set values. Collaborative arms, often called cobots, are
-built for this. They are light, have rounded shapes, and sense force in their
-joints or estimate it from the motor currents.
+Instead of keeping people away, **power and force limiting** is the other way to
+work near them. The arm is allowed to touch a person, but only gently, so that the
+force and the pressure of any contact stay below set values. Collaborative arms,
+often called cobots, are built for exactly this, because they are light, have
+rounded shapes, and sense force in their joints or estimate it from the motor
+currents.
 
-Two things decide how hard a contact is. The first is the force the controller
-is pushing with. The [impedance and force control](../03_also-used/01_impedance-and-force-control.md#force-limits-and-direct-force-control)
-page shows how to cap it. The second is the energy of the moving arm when it
-meets something. Kinetic energy grows with the square of the speed. A moving
-mass of 2 kg at 0.25 m/s carries 0.0625 J. At 1 m/s it carries 1 J, sixteen
+Two things decide how hard a contact is. The first is the force the controller is
+pushing with, and the
+[impedance and force control](../03_also-used/01_impedance-and-force-control.md#force-limits-and-direct-force-control)
+page shows how to cap it. The second is the energy of the moving arm when it meets
+something, and that kinetic energy grows with the square of the speed. A moving
+mass of 2 kg at 0.25 m/s carries 0.0625 J, while at 1 m/s it carries 1 J, sixteen
 times as much. This is why power and force limiting always comes with a speed
-limit.
+limit as well.
 
-A software force monitor watches the wrist force or the gap between the expected
+A software force monitor watches the wrist force, or the gap between the expected
 and the measured joint torques. It uses a filtered signal, a threshold with
 hysteresis, and a short debounce, as the
 [sensor streams](../../04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
-page explains. The debounce must be short, because every millisecond of waiting
-lets the force grow. Book 6's
+page explains. But the debounce must be short, because every millisecond of
+waiting lets the force grow further. Book 6's
 [collision and failure detection](../../../06_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
 page covers the expected-against-measured torque method, and the learned
 versions of it.
@@ -331,8 +347,9 @@ stop(reason):        brake along the path, then hold; log; wait for a person to 
 
 ## 4. Where it is used on a robot arm
 
-A software safety layer is used almost everywhere an arm moves under program
-control. Here are the common places.
+Because every command source can be wrong in one of the ways above, a software
+safety layer is used almost everywhere an arm moves under program control. Here
+are the common places.
 
 - **Running a learned policy.** Every output is checked for limits, jumps and
   workspace before it reaches the arm. The first runs are made slowly with a
@@ -360,14 +377,14 @@ control. Here are the common places.
 
 ## 5. Where it is useful, and where it is not
 
-The software layer is the right tool for catching mistakes in commands, for
-keeping a cell running smoothly, and for protecting the arm, the tools and the
-work. It is quick to change, it can know about the task, and it can report why
-it stopped.
+The uses above all point the same way, because the software layer is the right
+tool for catching mistakes in commands, for keeping a cell running smoothly, and
+for protecting the arm, the tools and the work. It is quick to change, it can know
+about the task, and it can report why it stopped.
 
-It is not the right tool for protecting people on its own. The table below lists
-the ways it fails. Each row gives the cause, the sign you would see, and what
-people use instead or in addition.
+But it is not the right tool for protecting people on its own. The table below
+lists the ways it fails. Read each row as one cause, giving the sign you would see
+and what people use instead or in addition.
 
 | What goes wrong | The sign you would see | What to use instead |
 | --- | --- | --- |
@@ -384,8 +401,9 @@ people use instead or in addition.
 
 ## 6. Libraries that provide it
 
-The table below lists well-known tools. Each row gives the tool, the languages it
-is used from, the part that does the checking, and a note.
+Since most of these checks already exist in the usual tools, the table below lists
+the well-known ones. Read each row as one tool, giving the languages it is used
+from, the part that does the checking, and a note on what it covers.
 
 | Tool | Languages | Part | Note |
 | --- | --- | --- | --- |
@@ -396,10 +414,10 @@ is used from, the part that does the checking, and a note.
 | libfranka | C++ | `franka::limitRate`; `Robot::setCollisionBehavior` | rate limiting of commands, and the thresholds of the arm's own contact detection |
 | the arm maker's safety settings | set on the teach pendant | joint limits, tool speed, force limits, safety planes, stopping behaviour | these run in the robot's own controller; some are safety-rated, check which in the manual |
 
-The last row is the most important. The arm's own controller usually offers
-limits of the same kinds as this page, and on collaborative arms some of them
-are certified. Set those first. The software layer then adds the checks that
-only your program can know about.
+The last row of that table is the most important one. The arm's own controller
+usually offers limits of the same kinds as this page, and on collaborative arms
+some of them are certified, so set those first. The software layer then adds only
+the checks that your program alone can know about.
 
 ---
 
@@ -409,8 +427,8 @@ This section draws the line that Book 3 draws in
 [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#8-speed-and-acceleration-scaling):
 a software limit is a request, and a safety-rated function is an enforcement.
 
-A **safety-rated** or **certified** safety function has four things the software
-on this page does not.
+Because of that difference, a **safety-rated** or **certified** safety function
+has four things that the software on this page does not.
 
 - It runs on hardware built for safety, often with two channels that check each
   other, so that one failed part cannot hide a fault.
@@ -420,61 +438,62 @@ on this page does not.
 - Its stopping times and distances have been measured on the real arm.
 
 Two standards cover this for robot arms. **ISO 10218**, in two parts, sets the
-safety requirements for industrial robots and for the cells they are built into.
-**ISO/TS 15066** is a technical specification for collaborative robots, where
-people and arms share a space. Together they describe the ways a person may work
-with an arm, including a safety-rated monitored stop, hand guiding, speed and
+safety requirements for industrial robots and for the cells they are built into,
+while **ISO/TS 15066** is a technical specification for collaborative robots,
+where people and arms share a space. Together they describe the ways a person may
+work with an arm, including a safety-rated monitored stop, hand guiding, speed and
 separation monitoring, and power and force limiting. They also give the methods
 for working out separation distances and allowed contact forces. This page does
-not quote their numbers. Take them from the standards themselves, in their
+not quote their numbers, so take those from the standards themselves, in their
 current editions.
 
 Two more things sit outside software entirely. An **emergency stop** is a large
-red button wired to cut the motors' power directly. A **risk assessment** is a
-written study of how the cell could hurt someone and what reduces each risk. The
-standards expect one for every cell. The Book 3
+red button wired to cut the motors' power directly, while a **risk assessment** is
+a written study of how the cell could hurt someone and what reduces each risk. The
+standards expect one risk assessment for every cell. The Book 3
 [one-arm overview](../../../03_frameworks/04_one-arm-training/01_overview.md#and-be-honest-about-where-the-paid-work-is)
 notes that the robot safety standards were republished in 2025, which is one more
 reason to read the current editions.
 
-So the layering is this. The certified functions and the emergency stop protect
-people. The software monitor on this page protects the arm and the work, catches
-mistakes early, and keeps the arm away from the certified limits so they rarely
-trip.
+So the layering is this. The certified functions and the emergency stop are what
+protect people, while the software monitor on this page protects the arm and the
+work, catches mistakes early, and keeps the arm away from the certified limits so
+that they rarely have to trip.
 
 ---
 
 ## 8. Why a software safety layer, and what it costs
 
-A software safety monitor is a set of simple rules that checks every command and
-every sensor reading just before the arm's controller. It gives the arm limits
-that know about the task, a stop when commands stop arriving, and a clear record
-of why it stopped.
+To put all of the above together, a software safety monitor is a set of simple
+rules that checks every command and every sensor reading just before the arm's
+controller. This means it gives the arm limits that know about the task, a stop
+when commands stop arriving, and a clear record of why it stopped.
 
 The obvious alternative is to rely on the arm's built-in safety functions alone.
-They are essential, and they are certified. But they are set for the arm, not
-for your task. They do not know that a camera stand is on the table, or that a
-policy's output jumped. When they act, they usually stop the arm hard, which
-ends the task. The software layer can refuse one bad command and carry on, slow
-down smoothly, and say which rule was broken.
+They are essential, and they are certified. But they are set for the arm rather
+than for your task, so they do not know that a camera stand is on the table, or
+that a policy's output jumped. And when they act, they usually stop the arm hard,
+which ends the task. The software layer, in contrast, can refuse one bad command
+and carry on, slow down smoothly, and say which rule was broken.
 
-A second alternative is to trust the planner. A planner checks the path it
-makes. It checks nothing else: not a joystick, not a servo loop, not a policy,
-and not a path that goes wrong while it runs.
+A second alternative is to trust the planner. But a planner only checks the path
+it makes, and it checks nothing else: not a joystick, not a servo loop, not a
+policy, and not a path that goes wrong while it runs.
 
 The costs are these. Every rule needs a limit, and every limit must be measured
-and maintained. Limits set too tight cause false stops, and false stops lead
-people to loosen or disable them. The checks add a little delay, and a debounce
-adds more. The monitor can fail with the computer it runs on. And the largest
-cost is a false sense of safety: a monitor that works well in testing can make
-people treat it as a certified function, which it is not.
+and maintained. Limits set too tight cause false stops, and false stops then lead
+people to loosen or disable them. The checks also add a little delay, and a
+debounce adds more, while the monitor can fail together with the computer it runs
+on. But the largest cost is a false sense of safety, because a monitor that works
+well in testing can make people treat it as a certified function, which it is
+not.
 
 ---
 
 ## 9. The learned alternative
 
-There is no learned model that replaces this layer, because its value is that
-every rule is plain, can be read, and does the same thing every time. Book 6 says
+Because the value of this layer is that every rule is plain, can be read, and does
+the same thing every time, there is no learned model that replaces it. Book 6 says
 the same from the model's side: its
 [safety checks around a model](../../../06_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
 are rules written by people, like the ones on this page. Learned models can add

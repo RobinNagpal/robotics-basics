@@ -1,17 +1,17 @@
 # Latent world models
 
-This page explains world models that predict the future as a short code
-instead of as a picture. The best-known family of them is called Dreamer. The
-page answers four questions. What is the "short code", and where does it come
-from? How can a robot practise a task inside the model's predictions? How is
-such a model trained? And why would anyone choose it over the other kinds of
-world model?
+This page explains world models that predict the future as a short code instead
+of as a picture, and the best-known family of them is called Dreamer. The page
+answers four questions: what the "short code" is and where it comes from, how a
+robot can practise a task inside the model's predictions, how such a model is
+trained, and why anyone would choose it over the other kinds of world model.
 
-It is for a reader who has read the [world models overview](../01_overview.md), the
-page on [learned dynamics models](../02_most-used/01_learned-dynamics-models.md) and the page on
-[video prediction models](01_video-prediction-models.md). You should know what a
-state, an action, a rollout and a policy are. This page joins ideas from both of
-those pages.
+It is written for a reader who has already read the
+[world models overview](../01_overview.md), the page on
+[learned dynamics models](../02_most-used/01_learned-dynamics-models.md) and the
+page on [video prediction models](01_video-prediction-models.md), so you should
+know what a state, an action, a rollout and a policy are, because this page
+joins ideas from both of those last two pages.
 
 ## Contents
 
@@ -36,29 +36,31 @@ those pages.
 A latent world model turns each camera picture into a short list of numbers,
 called a **code**, and predicts how that code will change when the arm acts.
 
-The word **latent** means "hidden". The code is hidden in the sense that no
-person chose what its numbers mean. Nobody decided "number 3 is the cube's
-position". The model found, during training, a set of numbers that keeps what
-matters about the picture and drops the rest.
+The word **latent** means "hidden", and the code is hidden in the sense that no
+person chose what its numbers mean. Nobody decided that "number 3 is the cube's
+position". Instead, the model found during training a set of numbers that keeps
+what matters about the picture and drops the rest.
 
-Here is an everyday example. Imagine you are planning how to carry a sofa up a
-narrow staircase. You do not picture every thread of the sofa's fabric or the
-colour of the walls. You think about a few things only: how long the sofa is,
-how wide the stairs are, and where the corner is. You try out a few ways in your
-head before you lift anything. A latent world model plans in the same kind of
-reduced description. It keeps the things that matter for the task and drops
-the rest.
+Here is an everyday example of the same habit. Imagine you are planning how to carry
+a sofa up a narrow staircase. While you plan it, you do not picture every thread of
+the sofa's fabric or the colour of the walls. Instead, you think about a few things
+only: how long the sofa is, how wide the stairs are, and where the corner is. Then
+you try out a few ways in your head before you lift anything. A latent world model
+plans in the same kind of reduced description, because it keeps the things that
+matter for the task and drops the rest.
 
-This joins the two earlier pages. Like a [learned dynamics model](../02_most-used/01_learned-dynamics-models.md),
-it predicts a short list of numbers, which is fast. Like a
-[video prediction model](01_video-prediction-models.md), it learns straight from
+This kind of model joins the two earlier pages together in one design. Like a
+[learned dynamics model](../02_most-used/01_learned-dynamics-models.md) , it predicts
+a short list of numbers, which is fast. Like a
+[video prediction model](01_video-prediction-models.md) , it learns straight from
 camera pictures, so nobody has to measure positions by hand.
 
 ---
 
 ## 2. What goes in and what comes out
 
-A latent world model for a robot arm has one input at the start and then works
+Now that the code has a name, here is what actually passes in and out. A latent
+world model for a robot arm has one input at the start, and after that it works
 only with codes.
 
 - **At the start: a camera picture.** For example, the picture from a camera
@@ -70,59 +72,64 @@ only with codes.
   otherwise.
 
 The model can also turn a code back into a picture, so that a person can check
-what it is thinking. But it does not need to do this in order to plan or
+what it is thinking. However, it does not need to do that in order to plan or
 practise.
 
-A typical code has a few hundred to a few thousand numbers. That sounds like a
-lot. But a camera picture of 64 × 64 pixels, with 3 colours for each pixel, is
-already 12,288 numbers. Real camera pictures are much larger than that.
+A typical code has a few hundred to a few thousand numbers, which sounds like a
+lot. However, a camera picture of 64 × 64 pixels, with 3 colours for each pixel,
+is already 12,288 numbers, and real camera pictures are much larger than
+that.
 
 ---
 
 ## 3. How it works inside
 
-A latent world model has four parts. The first turns a picture into a code. The
-second predicts the next code. The third predicts the score. The fourth turns a
-code back into a picture, and it is used mainly during training.
+The last section said what passes in and out, so this section says what is
+inside. A latent world model has four parts, and each one has a single job. The
+first turns a picture into a code, the second predicts the next code, and the
+third predicts the score. Then the fourth turns a code back into a picture, and it
+is used mainly during training.
 
 ### Squeezing a picture into a code
 
 The **encoder** is a network that takes a camera picture and gives back a short
-code. The **decoder** is a network that does the opposite: it takes a code and
-draws a picture.
+code. The **decoder** is a network that does the opposite, because it takes a
+code and draws a picture from it.
 
-During training, the two are joined. The picture goes into the encoder, the
-code goes into the decoder, and the picture that comes out is compared with the
-one that went in. The training makes the two pictures as close as it can. The
-only way to do that is for the code to keep the important things about the
-picture: where the gripper is, where the cube is, whether the gripper is open.
+During training, the encoder and the decoder are joined together. The picture goes
+into the encoder, the code goes into the decoder, and the picture that comes out is
+compared with the one that went in. The training then makes the two pictures as close
+as it can. The only way to do that is for the code to keep the important things about
+the picture: where the gripper is, where the cube is, and whether the gripper is
+open.
 
 ![A camera picture goes through an encoder into six numbers, and a decoder draws the picture back from those six numbers](../../../images/world-models/latent-world-models/picture-to-short-code.svg)
 
 Here a picture of 768 numbers is squeezed into 6, and the picture drawn back is
 close to the original but slightly blurred.
 
-The drawing uses a tiny picture and a tiny code so that you can see each part.
-Real codes are larger, as the last section said, but the idea is the same.
+Once again, the drawing uses a tiny picture and a tiny code so that you can see
+each part. Real codes are larger, as the last section said, but the idea behind
+them is the same.
 
 ### Predicting the next code
 
-The **dynamics part** is a network that takes the code now and an action, and
-gives back the next code. This is exactly the learned dynamics model from the
-[previous pages](../02_most-used/01_learned-dynamics-models.md#one-step), working on codes
-instead of measured positions.
+The **dynamics part** is a network that takes the code now and an action, and gives
+back the next code. This is exactly the learned dynamics model from the
+[previous pages](../02_most-used/01_learned-dynamics-models.md#one-step) , working on
+codes instead of measured positions.
 
-Most latent world models also keep a **memory**: a second list of numbers that is
-carried from step to step. The memory lets the model remember things that the
-current picture does not show, such as a cube that the gripper is now hiding.
+Most latent world models also keep a **memory**, which is a second list of
+numbers carried from step to step. That memory lets the model remember things
+the current picture does not show, such as a cube the gripper is now hiding.
 
 The **score part** is a small network that looks at a code and predicts the
 reward. It lets the model say not only "what will the scene be?" but also "is
 that good for the task?".
 
-With these parts, the model can run forward on its own. It starts from the code
-of one real picture. It then predicts the next code for each action, again and
-again, without drawing a single picture.
+Once these parts are in place, the model can run forward on its own. It starts from
+the code of one real picture, and then it predicts the next code for each
+action, again and again, without drawing a single picture.
 
 ![From one real picture, the model predicts codes step by step for three actions, with a predicted score at each step, and draws no pictures in between](../../../images/world-models/latent-world-models/imagining-in-code.svg)
 
@@ -130,18 +137,16 @@ Only the first picture is real, and every later code and score is a prediction;
 the numbers are made up to show the idea.
 
 Predicting codes is much faster than drawing pictures, because a code has far
-fewer numbers than a picture. A small network can predict many steps in the time
-a large video model takes to draw one frame. That speed is what makes the next
-idea possible.
+fewer numbers than a picture. So a small network can predict many steps in the
+time a large video model takes to draw one frame, and that speed is what makes
+the next idea possible.
 
 ### Practising inside the model
 
-The model's predictions are sometimes called **imagination**, or a **dream**. The
-names only mean "a rollout that the model made up, not one that happened". The
-key idea of the Dreamer family is that a policy can practise inside this
-imagination.
-
-It works in three steps.
+Because the model is fast, its predictions are sometimes called **imagination**,
+or a **dream**. Those names only mean "a rollout that the model made up, not one
+that happened". The key idea of the Dreamer family is that a policy can practise
+inside this imagination, and it works in the three steps below.
 
 1. **Start from real moments.** Take codes from real pictures that the robot saw
    earlier.
@@ -150,13 +155,13 @@ It works in three steps.
 3. **Improve the policy.** Change the policy so that it chooses actions that led
    to higher predicted scores.
 
-A second small network helps with step 3. It is called the **critic**. It looks
-at a code and guesses the total score still to come from there. This lets the
-policy learn from imagined stretches that are too short to reach the end of the
-task.
+Then a second small network helps with step 3, and it is called the **critic**. It
+looks at a code and guesses the total score still to come from there. This lets
+the policy learn from imagined stretches that are too short to reach the end of
+the task.
 
 Many of these imagined stretches can run in the time the real arm makes one
-move. The real arm is used only to collect new pictures now and then, and to
+move. So the real arm is used only to collect new pictures now and then, and to
 check that the policy works.
 
 ![On the left, three practice attempts on the real arm; on the right, many imagined attempts inside the world model](../../../images/world-models/latent-world-models/real-vs-imagined.svg)
@@ -168,11 +173,11 @@ times inside it.
 
 ## 4. How it is trained
 
-A latent world model learns from the robot's own recordings. Each recording is
-a sequence of camera pictures, the action taken after each one, and the reward
-at each step.
-
-Training repeats a cycle of three stages.
+The sections above described the parts, and this section says how they are
+trained together. A latent world model learns from the robot's own recordings,
+and each recording is a sequence of camera pictures, the action taken after each
+one, and the reward at each step. Training then repeats a cycle of three
+stages.
 
 1. **Collect.** The robot tries the task on the real arm with its current
    policy, and records everything. At first the policy is random.
@@ -182,24 +187,27 @@ Training repeats a cycle of three stages.
 3. **Train the policy.** The policy and the critic practise inside the world
    model, as described above.
 
-Then the cycle starts again. The better policy collects more useful recordings,
-which make the world model better, which makes the practice better.
+Then the cycle starts again, because the better policy collects more useful
+recordings, which make the world model better, which in turn makes the practice
+better.
 
-The reward must come from somewhere. In a simulator, a program can compute it
-exactly. On a real arm, it might come from a sensor, from a person pressing a
-button, or from another model that looks at the camera and says whether the task
-succeeded. The [vision-language models](../../07_language-models/02_most-used/02_vision-language-models.md)
+The reward itself must come from somewhere, and that is easy in some places and hard
+in others. In a simulator, a program can compute it exactly. On a real arm, however,
+it might come from a sensor, from a person pressing a button, or from another model
+that looks at the camera and says whether the task succeeded. The
+[vision-language models](../../07_language-models/02_most-used/02_vision-language-models.md)
 page describes models that can check success from a picture.
 
 How much real data is needed depends on the task, but it is usually far less
-than for a policy that learns without a model. That is the whole reason for
-this kind of model.
+than for a policy that learns without a model. That saving is the whole reason
+for this kind of model.
 
 ---
 
 ## 5. Well-known models of this kind
 
-These are real, published models.
+The models below are all real, published models rather than examples invented
+for this page.
 
 - **World Models** (Ha and Schmidhuber, 2018) gave the field its name. It
   squeezed game pictures into codes, predicted the next code, and trained a very
@@ -229,7 +237,7 @@ These are real, published models.
 ## 6. A worked example: learning to put a cube in a bowl
 
 Here is how a Dreamer-style latent world model teaches a real arm to put a cube
-in a bowl, from pictures alone.
+in a bowl, from pictures alone and step by step.
 
 1. **Set up.** A camera looks down at the table. A small program detects
    whether the cube is inside the bowl. It gives a reward of 1 when it is, and 0
@@ -249,56 +257,62 @@ in a bowl, from pictures alone.
    accurate as the recordings grow, and the policy gets better with it.
 
 At no point did anyone measure the cube's position or write down the physics of
-the gripper. Everything the robot knows came from its own camera and its own
-tries.
+the gripper. Instead, everything the robot knows came from its own camera and
+its own tries.
 
 ---
 
 ## 7. What goes wrong, and what people do about it
 
+The sections above described this kind of model at its best. This section lists
+the five things that go wrong in practice, and what people do about each one.
+
 **Nobody can read the code.** When the model makes a wrong prediction, you
-cannot look at the code to see why. People use the decoder to draw the predicted
-codes as pictures. That shows what the model imagines, even though the planning
-does not use those pictures.
+cannot look at the code to see why. So people use the decoder to draw the
+predicted codes as pictures, which shows what the model imagines, even though
+the planning does not use those pictures.
 
 **The decoder wastes effort.** A model that must draw pictures back spends
-effort on the table's colour and on shadows. It can miss a small object that
-matters, such as a screw, because a screw is only a few pixels. Models such as
-TD-MPC2 and V-JEPA 2 drop the decoder. They must then use other training tricks
-to stop the codes from becoming useless, for example the same code for every
-picture, which would be trivially easy to predict.
+effort on the table's colour and on shadows. It can also miss a small object
+that matters, such as a screw, because a screw is only a few pixels. So models
+such as TD-MPC2 and V-JEPA 2 drop the decoder altogether. They must then use
+other training tricks to stop the codes from becoming useless, for example the
+same code for every picture, which would be trivially easy to predict.
 
 **The policy finds the model's mistakes.** The policy is trained to get high
-predicted scores. If the model wrongly predicts a high score for some strange
-move, the policy learns that move. The real arm then fails. People keep the
+predicted scores. So if the model wrongly predicts a high score for some strange
+move, the policy learns that move, and the real arm then fails. People keep the
 imagined stretches short, and they keep collecting real data so that the
 mistakes get corrected.
 
-**The reward is hard to get on a real arm.** In a game, the score is given. On a
-real arm, someone has to build a reliable success check. A wrong check teaches
-the wrong task.
+**The reward is hard to get on a real arm.** In a game the score is given, but
+on a real arm someone has to build a reliable success check, and a wrong check
+teaches the wrong task.
 
 **It still needs data for each task.** Latent world models need far less real
-practice than learning with no model, but usually still hours of it for each
-new task. Pretraining on large amounts of video, as V-JEPA 2 does, is the main
+practice than learning with no model, but usually still hours of it for each new
+task. So pretraining on large amounts of video, as V-JEPA 2 does, is the main
 way people are trying to reduce this.
 
 ---
 
 ## 8. Why this kind, and what it costs
 
-There are two obvious alternatives, one on each side.
+The last section listed what goes wrong, so this section weighs those problems
+against the alternatives. There are two obvious alternatives, one on each side.
 
-The first is a [video prediction model](01_video-prediction-models.md). It also
-learns from pictures, and its predictions are easy for a person to check,
-because they are pictures. But drawing pictures is slow. A latent world model
-predicts codes instead, which is fast enough to practise thousands of times per
-real move. When the goal is to *practise* inside the model, speed wins.
+The first is a [video prediction model](01_video-prediction-models.md), which
+also learns from pictures. Its predictions are easy for a person to check,
+because they are pictures themselves. However, drawing pictures is slow. A latent world
+model predicts codes instead, which is fast enough to practise thousands of
+times per real move. So when the goal is to *practise* inside the model, speed
+wins.
 
-The second is a [reinforcement learning policy](../../06_movement-models/03_also-used/01_reinforcement-learning-policies.md)
-that learns with no world model at all. It is simpler, and it has fewer parts to
-go wrong. But it learns only from real tries, and on a real arm it needs far
-more of them than the arm can make in a sensible time. A latent world model
+The second is a
+[reinforcement learning policy](../../06_movement-models/03_also-used/01_reinforcement-learning-policies.md)
+that learns with no world model at all. It is simpler, and it has fewer parts to go
+wrong. However, it learns only from real tries, and on a real arm it needs far more
+of them than the arm can make in a sensible time. Instead, a latent world model
 reuses each real try for many imagined ones.
 
 What it costs you:
@@ -316,15 +330,15 @@ What it costs you:
 
 ## 9. The written alternative
 
-The written alternative replaces the learned code with a few numbers that a person
-chooses and measures. In the cube-and-bowl example, the camera finds the cube with
-[thresholding and colour
-masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md),
-and a [Kalman
-filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
-keeps its position steady from frame to frame. [Sampling-based optimisation and
-model predictive
-control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+This page has assumed that the code is learned, but a person can choose the numbers
+instead. So the written alternative replaces the learned code with a few numbers that
+a person chooses and measures. In the cube-and-bowl example, the camera finds the
+cube with
+[thresholding and colour masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+, and a
+[Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+keeps its position steady from frame to frame.
+[Sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 then plans the moves with a written model of what each move does. PlaNet, in section
 5, plans in the same way, but inside a learned code.
 

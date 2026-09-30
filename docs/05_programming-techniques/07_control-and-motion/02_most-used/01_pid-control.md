@@ -35,7 +35,8 @@ last thing you need.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why PID, and what it costs](#7-why-pid-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -459,7 +460,24 @@ push as hard as the motor allows to reach a target inside a solid object.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+There is no learned model that replaces the PID loop, because the loop must answer
+every few milliseconds and a network is almost never fast enough to sit inside it.
+Book 6's
+[running a model on a robot](../../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#2-how-fast-is-fast-enough)
+explains the usual split: a learned policy runs at its own slower speed and gives
+targets, and a fast programmed loop such as PID follows them. A
+[learned arm model](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
+helps the loop instead of replacing it. It learns the torque each joint needs,
+including gearbox friction and cable pull that the textbook model leaves out, and
+that torque is added to the PID output as feed-forward. This pays off when wear or
+a new gripper makes plain PID lag, and the size of the learned correction should
+be limited, because a learned model gives no guarantee.
+
+---
+
+## 9. Where to read next
 
 - The next page is [trajectory generation](02_trajectory-generation.md). It makes the
   smooth, moving targets that a PID loop follows, instead of sudden steps.
@@ -470,5 +488,3 @@ push as hard as the motor allows to reach a target inside a solid object.
 - Book 3's [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
   shows the ROS 2 controllers that contain these loops, and the tolerances that decide
   whether a move "succeeded".
-- Book 6's [learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
-  learn the torque a joint needs, which can be added to a PID loop as feed-forward.

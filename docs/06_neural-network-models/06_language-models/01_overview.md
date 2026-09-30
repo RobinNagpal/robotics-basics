@@ -25,7 +25,7 @@ Every new word is explained where it first appears.
 
 ## 1. What language models are for
 
-The [map of models](../01_what-models-are/09_the-map-of-models.md) sorts the models
+The [map of models](../01_what-models-are/07_the-map-of-models.md) sorts the models
 in this book into seven families. This chapter covers the fifth one:
 
 > Language models — understand words, and connect words to pictures and actions.

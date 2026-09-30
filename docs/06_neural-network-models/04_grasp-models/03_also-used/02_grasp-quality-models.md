@@ -27,7 +27,8 @@ the training loop this page relies on.
 6. [A worked example: a mug on a table](#6-a-worked-example-a-mug-on-a-table)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -238,7 +239,7 @@ A depth camera looks down on a mug. The arm has a parallel-jaw gripper.
 - It can be sure and wrong. A score of 0.95 is the model's guess, not a
   promise. On a shape unlike anything in training, it may give a high score to a
   grasp that fails. The
-  [running a model on a robot](../../01_what-models-are/05_running-a-model-on-a-robot.md#5-how-sure-the-model-is-and-why-it-can-be-sure-and-wrong)
+  [running a model on a robot](../../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#5-how-sure-the-model-is-and-why-it-can-be-sure-and-wrong)
   page explains why.
 - It knows nothing about the task. Like every grasp model, it scores whether
   the object stays in the gripper, and nothing else.
@@ -277,7 +278,21 @@ longer than one pass of a generator. The training data needs either thousands of
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written scorer is in Book 3. Its [grasp quality
+metrics](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute) compute, from physics
+formulas, how much push or twist a grasp can resist, and its [antipodal
+test](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#3-friction-cones-and-the-antipodal-test) checks that the two
+contacts face each other. The sampler is written code in both cases. Its better
+version, the [cross-entropy method](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#the-cross-entropy-method-narrow-the-search), is explained in Book 5. The formulas
+win when you have a full 3D model of the object and know exactly where it is.
+The quality model wins when you have only one noisy depth picture of an object
+it has never seen.
+
+---
+
+## 10. Where to read next
 
 - [Six-degree-of-freedom grasps](../02_most-used/01_six-dof-grasps.md) covers the generators that
   most quality models are paired with today.

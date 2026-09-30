@@ -30,7 +30,8 @@ shows where the method is used on an arm.
 4. [Where it works, and where it does not](#4-where-it-works-and-where-it-does-not)
 5. [Libraries that provide it](#5-libraries-that-provide-it)
 6. [Why this model, and what it costs](#6-why-this-model-and-what-it-costs)
-7. [Where to read next](#7-where-to-read-next)
+7. [The learned alternative](#7-the-learned-alternative)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -393,13 +394,6 @@ you measured, it must be redone whenever the camera moves, and it needs hundreds
 measurements. The pinhole model needs four numbers, works at every depth, and moves
 with the camera through one transform.
 
-A second alternative is a **learned model** that maps pixels straight to arm
-positions, trained on examples. It can absorb distortion and odd lenses without
-anyone describing them. But it needs thousands of examples, it has to be retrained
-when the camera moves, and it cannot tell you when it is wrong. The pinhole model
-has no training data, and every one of its numbers means something you can check
-with a ruler.
-
 The cost is this. The model is only as good as its four numbers and its
 distortion numbers, so you must calibrate. It needs a depth reading or a known
 plane, because the camera alone never records distance. And it describes one
@@ -408,7 +402,25 @@ lens, plus the transform between them.
 
 ---
 
-## 7. Where to read next
+## 7. The learned alternative
+
+No learned model replaces the pinhole model itself, because learned models that
+measure need the same rule. Book 6's
+[depth from pictures](../../../06_neural-network-models/02_seeing-models/03_also-used/02_depth-from-pictures.md)
+guesses a depth for each pixel from colour alone, and
+[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+finds named points on an object in the picture. Both answers still go through the
+projection or back-projection formula on this page. The real alternative is to skip
+the camera model and train a **policy**, a network that turns pictures straight into
+arm movements, as Book 6's [movement models](../../../06_neural-network-models/05_movement-models/01_overview.md)
+do. Such a policy absorbs distortion and odd lenses without anyone describing them.
+But it needs tens to hundreds of demonstrations for each task, a camera moved by a
+few centimetres can confuse it, and it cannot tell you when it is wrong, while every
+number in the pinhole model can be checked with a ruler.
+
+---
+
+## 8. Where to read next
 
 - The next page is [rigid transforms](02_rigid-transforms.md). It moves the points
   this page makes from the camera's frame into the arm's frame.
@@ -419,9 +431,6 @@ lens, plus the transform between them.
   work on the point clouds that back-projection makes.
 - [Clustering](../../05_image-and-point-cloud-processing/02_most-used/03_clustering.md) splits those
   point clouds into objects.
-- Book 6's [depth from pictures](../../../06_neural-network-models/02_seeing-models/03_also-used/02_depth-from-pictures.md)
-  guesses the depth from colour alone. The guess still goes through the
-  back-projection formula on this page.
 - Book 2 goes deeper in [cameras: the basics](../../../02_perception/01_camera/01_basics.md),
   [finding one box](../../../02_perception/01_camera/03_one-box-intro.md) and
   [the wrist camera, end to end](../../../02_perception/02_object-perception/08_the-wrist-camera.md).

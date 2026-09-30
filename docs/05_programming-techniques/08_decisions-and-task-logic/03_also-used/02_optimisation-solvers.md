@@ -33,7 +33,8 @@ before it is too heavy? These are the questions in the worked examples below.
 5. [Where a solver is useful, and where it is not](#5-where-a-solver-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why a solver, and what it costs](#7-why-a-solver-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -472,7 +473,21 @@ arm cannot use.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+No model in Book 6 finds the best assignment, order or packing under hard rules.
+A network gives no proof that its answer obeys every rule, or of how far it is
+from the best, and a solver gives both. The nearest learned model is a
+[language model as planner](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md),
+which turns a request in plain words into a sequence of steps. It wins when the
+task itself changes from day to day and is easier to say than to write as a
+model, but it can write steps that sound right and are wrong, so its plan needs a
+checker in ordinary code. A common design uses both: the language model writes
+the goal and the rules, and a solver finds the order.
+
+---
+
+## 9. Where to read next
 
 - [Greedy algorithms and set cover](01_greedy-algorithms-and-set-cover.md), the
   page before this one, is the fast approximate alternative.
@@ -488,8 +503,3 @@ arm cannot use.
   [ordering and rearrangement](../../../03_frameworks/03_arm-movement/07_ordering-and-rearrangement.md)
   explains where ordering rules come from, and why the plan should be recomputed
   after every move.
-- Book 6's
-  [language models as planners](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md)
-  describes a learned way to turn a task into a sequence of steps. A common design
-  lets the language model write the goal and rules, and lets a solver find the
-  order.

@@ -32,7 +32,8 @@ when there are many possible choices and some are better than others.
 6. [Where greedy is good enough, and where it is not](#6-where-greedy-is-good-enough-and-where-it-is-not)
 7. [Libraries that provide it](#7-libraries-that-provide-it)
 8. [Why greedy, and what it costs](#8-why-greedy-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The learned alternative](#9-the-learned-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -416,7 +417,24 @@ rule to the loop by hand.
 
 ---
 
-## 9. Where to read next
+## 9. The learned alternative
+
+There is no learned model in Book 6 that replaces greedy set cover, because the
+problem is only counting which views see which objects, greedy already solves it
+in a fraction of a millisecond with a proven limit, and an exact solver is there
+when greedy is not good enough. Where learning appears around greedy choices, it
+supplies the scores that greedy ranks. A
+[grasp quality model](../../../06_neural-network-models/04_grasp-models/03_also-used/02_grasp-quality-models.md)
+scores each candidate grasp, and a bin-picking cell then takes the highest score
+first, as section 5 described; a detector's confidences decide in the same way
+which box non-maximum suppression keeps. A
+[language model as planner](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md)
+also chooses one step at a time, but it chooses which task step to do next from a
+request in words, not which set of views covers every object.
+
+---
+
+## 10. Where to read next
 
 - [Optimisation solvers](02_optimisation-solvers.md), the next page, solves
   ordering, assignment and packing problems exactly, and shows where greedy loses
@@ -434,7 +452,3 @@ rule to the loop by hand.
 - Book 3's
   [ordering and rearrangement](../../../03_frameworks/03_arm-movement/07_ordering-and-rearrangement.md)
   covers the order in which to move objects.
-- Book 6's
-  [language models as planners](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md)
-  describes a learned way to choose the next action, which is also made one step
-  at a time.

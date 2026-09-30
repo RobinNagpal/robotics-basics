@@ -14,6 +14,8 @@ Every number on this page comes from a real run of the diagram script
 `docs/diagrams/what_models_are_3.py`. The data is simulated, so that we know the true
 answer exactly. The methods are real, written in NumPy.
 
+> Before this page, it helps to have read [least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md), which linear regression in section 3 uses, and [nearest-neighbour search](../../05_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md), which k-nearest neighbours in section 6 uses.
+
 ## Contents
 
 1. [The idea in one sentence](#1-the-idea-in-one-sentence)
@@ -158,7 +160,7 @@ At 1.70 metres the prediction is poor, 7.1 against a true 14.0. But the GP says 
 its range, from about 0 to 14.3, is wide and does include the truth. A robot can use
 this. It can refuse to correct readings beyond 1.4 metres, or it can measure the
 board again there. The
-[uncertainty and confidence](06_uncertainty-and-confidence.md) page explains how a
+[uncertainty and confidence](../09_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md) page explains how a
 robot turns such a range into a decision.
 
 The cost is speed. A plain GP compares every new input with every example. Training
@@ -272,7 +274,7 @@ answer, and only a network can learn one. So the rule of thumb is:
   Gaussian process or boosted trees first.
 - **A picture, a point cloud or a sound in, thousands of examples or more:** use a
   neural network, usually one that someone else has already trained, as in
-  [fine-tuning](07_fine-tuning.md).
+  [fine-tuning](../09_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md).
 - **Both:** a common mix is a network that turns a picture into a short list of
   numbers, and a classical method on top of those numbers.
 
@@ -364,7 +366,7 @@ methods are the better choice for four reasons:
 - They train in seconds on an ordinary computer, with no graphics card.
 - Some are easy to inspect. You can read a ridge regression's weights. A Gaussian
   process says how sure it is at every input, without the extra work of the
-  ensembles in [uncertainty and confidence](06_uncertainty-and-confidence.md).
+  ensembles in [uncertainty and confidence](../09_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md).
 
 What they cost:
 
@@ -381,11 +383,11 @@ What they cost:
 
 ## 12. Where to read next
 
-- [The map of models](09_the-map-of-models.md) is the next page. It shows every kind
+- [The map of models](07_the-map-of-models.md) is the next page. It shows every kind
   of neural network model in this book.
-- [Uncertainty and confidence](06_uncertainty-and-confidence.md) explains how a
+- [Uncertainty and confidence](../09_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md) explains how a
   robot uses an error bar, like the Gaussian process's, to decide whether to act.
-- [Fine-tuning](07_fine-tuning.md) covers adapting a pretrained network, including
+- [Fine-tuning](../09_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md) covers adapting a pretrained network, including
   training a small head on top of it.
 - [Learned dynamics models](../07_world-models/02_most-used/01_learned-dynamics-models.md)
   covers learning a correction on top of a physics formula.

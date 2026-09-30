@@ -39,7 +39,8 @@ hexagon or a circle?". They cost a few milliseconds and need no training data.
 5. [Where it works, and where it does not](#5-where-it-works-and-where-it-does-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why edges and contours, and what they cost](#7-why-edges-and-contours-and-what-they-cost)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -602,16 +603,8 @@ angle, the width and the shape class. Every one of those numbers is easy to
 check by hand, and when one is wrong you can see why by drawing the contour on
 the picture.
 
-The obvious alternative is a trained
-[segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
-or [object detector](../../../06_neural-network-models/02_seeing-models/02_most-used/01_object-detection.md).
-A model copes with texture, clutter and shadows that break contours. But it needs
-labelled training pictures, a computer that can run it, and it can fail in ways
-that are hard to explain. Choose contours when the scene is controlled: a plain
-table, good light, parts that stand apart, and shapes that differ in clear
-geometric ways. Choose a model when the scene is not controlled. Even then,
-programs often run contour steps on the model's output mask, because the mask
-still needs to be turned into a centre, an angle and a size.
+The obvious alternative is a trained segmentation model or object detector.
+[Section 8](#8-the-learned-alternative) says when each is the better choice.
 
 The costs are these. You must control the scene, because every method on this
 page depends on a clear border. You must choose thresholds: the two Canny
@@ -622,7 +615,23 @@ height or about the parts of the object the camera cannot see.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+A [segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+or an [object detector](../../../06_neural-network-models/02_seeing-models/02_most-used/01_object-detection.md)
+from Book 6 finds the object's outline or box, and a
+[keypoint and pose model](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+finds which way it is turned. A model copes with texture, clutter and shadows that
+break contours. But it needs labelled training pictures and a computer that can
+run it, and it can fail in ways that are hard to explain. Choose contours when the
+scene is controlled: a plain table, good light, parts that stand apart, and shapes
+that differ in clear geometric ways. Even with a model, programs often run contour
+steps on its output mask, because the mask still needs to be turned into a centre,
+an angle and a size.
+
+---
+
+## 9. Where to read next
 
 - The next page is [clustering](../02_most-used/03_clustering.md). It groups mask pixels into
   separate objects with connected components, and does the same for 3D points
@@ -637,9 +646,6 @@ height or about the parts of the object the camera cannot see.
   the edge points are wrong.
 - The chapter [overview](../01_overview.md) compares all the techniques in this
   chapter.
-- Book 6's [segmentation](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
-  and [keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-  pages do the same jobs with learned models.
 - Book 2's
   [methods you write yourself](../../../02_perception/02_object-perception/03_programmed-methods.md)
   puts edges and contours next to the other programmed perception methods, and

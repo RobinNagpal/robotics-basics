@@ -50,7 +50,8 @@ two-joint arm. Sections 4 and 6 come from
 8. [Where it is useful, and where it is not](#8-where-it-is-useful-and-where-it-is-not)
 9. [Libraries that provide it](#9-libraries-that-provide-it)
 10. [Why sampling, and what it costs](#10-why-sampling-and-what-it-costs)
-11. [Where to read next](#11-where-to-read-next)
+11. [The learned alternative](#11-the-learned-alternative)
+12. [Where to read next](#12-where-to-read-next)
 
 ---
 
@@ -721,9 +722,8 @@ would see, and what people use instead.
 The narrow gap problem deserves a sentence more. The chance that a random sample
 lands in a gap is the gap's share of the whole space. A gap that is 1% as wide as
 the space, in each of six joints, holds a tiny fraction of the samples. This is the
-case where Book 6's learned samplers help, as the
-[learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md#3-how-a-learned-route-planner-works)
-page explains.
+case where a learned sampler helps, as
+[section 11](#11-the-learned-alternative) explains.
 
 ---
 
@@ -780,7 +780,25 @@ two checks.
 
 ---
 
-## 11. Where to read next
+## 11. The learned alternative
+
+Book 6's
+[learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md)
+page covers networks that help this planner or stand in for it. A
+[learned sampler](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md#3-how-a-learned-route-planner-works)
+picks its samples where routes usually pass, such as the front of a gap between
+shelves, which is the fix for the narrow gap in section 8. A learned route
+planner, such as Motion Policy Networks, gives a whole route from a point cloud in
+about the same short time every run, and a learned collision checker gives a
+quick guess for the thousands of checks a search makes. These win when planning is
+usually fast but sometimes far too slow, in a cell with a strict cycle time. In
+open space the ordinary planner still wins: it is fast enough, free, and checks
+every move, and even beside a learned helper it stays in the system, because a
+network gives no guarantee and the exact checker must test the final route.
+
+---
+
+## 12. Where to read next
 
 - [Trajectory optimisation](03_trajectory-optimisation.md) takes a sampler's path
   and makes it smooth and clear of obstacles.
@@ -792,8 +810,5 @@ two checks.
   no gradient.
 - [Nearest-neighbour search](../../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
   is the step that every RRT try uses to find the closest node.
-- Book 6's [learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md)
-  covers learned samplers and learned collision checkers, which speed up exactly the
-  two expensive steps on this page.
 - Book 3's [planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md)
   covers MoveIt's defaults, the planning scene, and when planning is the wrong tool.

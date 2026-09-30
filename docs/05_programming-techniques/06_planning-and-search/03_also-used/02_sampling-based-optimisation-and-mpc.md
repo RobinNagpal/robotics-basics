@@ -26,11 +26,13 @@ to follow. Every number and picture on this page comes from a real run of
    · [The three on the same budget](#the-three-on-the-same-budget)
    · [Model predictive control: plan, do one step, look again](#model-predictive-control-plan-do-one-step-look-again)
    · [The pseudocode](#the-pseudocode)
+   · [A learned model inside MPC](#a-learned-model-inside-mpc)
 4. [Where it is used on a robot arm](#4-where-it-is-used-on-a-robot-arm)
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why sampling, and what it costs](#7-why-sampling-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -260,6 +262,79 @@ Random shooting is `cem` with one round and a very wide spread. CMA-ES replaces
 the two update lines with its own updates for the mean, the covariance matrix and
 the step size.
 
+### A learned model inside MPC
+
+The MPC above scored its plans with a push model written by hand: the block
+slides 0.8 times as far as the pusher and drifts 0.15 times to the left.
+Sometimes nobody can write such a model. Then the model can be learned from
+records of the arm pushing the block. The planner does not change at all. CEM,
+the horizon of 5 pushes, the warm start, the score and "do only the first push"
+all stay the same. Only the prediction step, the call to the push model inside
+`score_by_simulating`, is replaced. Book 6's
+[learned dynamics models](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md)
+page explains how such a model is built and trained.
+
+A single learned model has a danger that a written one does not. The planner
+searches for the plan with the best predicted score. Where the model has seen no
+records, its predictions are guesses, and the planner is drawn to any guess that
+looks good. So the usual choice is an **ensemble**: several copies of the network,
+each trained from different random starting numbers on its own resampled copy of
+the records. Where the records are dense, the copies agree. Where there are none,
+they disagree. The planner uses the copies' average as the prediction, and adds a
+cost for how far apart they end up. This keeps the plans where the model knows
+what happens. Only the scoring line of the pseudocode changes:
+
+```
+for each copy m of the ensemble:
+    path[m] = roll plan[k] forward from state_now through copy m
+middle   = the average of the paths
+spread   = how far the paths are from middle, added up over the horizon
+score[k] = score_of_path(middle) + weight * spread
+```
+
+The example runs in [`making_models_work.py`](../../../diagrams/making_models_work.py).
+Its "real" block differs from the one above in two ways. Every push has 0.15 cm
+of random scatter. And a push longer than 3 cm starts to turn the block, so it
+drifts a further 0.3 cm for every centimetre beyond 3 cm. The arm records 200
+random pushes, each at most 3 cm long. Five small networks, each with 16 hidden
+neurons, learn from them. Each copy's average training error is about 0.18 cm,
+which is about the size of the scatter.
+
+![Left: forward slide against push length. Right: sideways drift. Inside the grey band of recorded pushes the five learned copies match the real block; beyond 3 cm they spread apart and all miss the extra drift; the written model is off everywhere](../../../images/planning-and-search/sampling-based-optimisation-and-mpc/learned-push-model.svg)
+
+Up to 3 cm, the five copies sit on the real block's line, and they are closer to
+it than the written model is. At 3 cm they end 0.05 cm apart on average. Beyond
+3 cm, where there are no records, they spread to 0.17 cm apart at 4 cm and 0.30 cm
+at 5 cm. None of them knows about the extra drift. The spread is the only warning
+the planner gets.
+
+Each version of MPC then ran 60 times on the real block, with 12 pushes per run.
+Read each row of the table as one prediction step inside the same planner.
+
+| Prediction step | Median distance from target at the end | Runs ending within 1 cm | Runs that touched the mug | Pushes longer than 3 cm |
+| --- | --- | --- | --- | --- |
+| Written push model | 0.6 cm | 51 of 60 | 22 of 60 | 72% |
+| Learned ensemble, average only | 0.6 cm | 50 of 60 | 26 of 60 | 58% |
+| Learned ensemble, plus a cost of 0.5 per cm of spread | 0.5 cm | 55 of 60 | 13 of 60 | 53% |
+
+![Three panels of 60 real runs each, around the mug to the target: the written model, the learned average, and the learned average with a cost for disagreement](../../../images/planning-and-search/sampling-based-optimisation-and-mpc/learned-model-in-mpc.svg)
+
+The learned model on its own was no better than the written one. It was accurate
+where it had records, but the planner still chose long pushes, where it was
+guessing. With the cost for disagreement, the planner chose fewer long pushes, and
+the runs that touched the mug fell from 26 to 13 of 60. Sixty runs is only just
+enough to show this. The 95% confidence intervals are 30.6% to 56.8% and 12.1% to
+34.2%, which barely overlap. Book 6's
+[evaluation and failure](../../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md#3-counting-successes-and-how-sure-the-count-is)
+page explains these intervals.
+
+The weight on the spread is a setting to choose. Too much makes the planner timid.
+With a weight of 2 instead of 0.5, only 4 of 60 runs touched the mug, but only 4
+of 60 ended within 1 cm, and the median run ended 3.9 cm short. The planner
+refused the long pushes it needed. PETS, described on the Book 6 page, is the
+standard published version of this method, and mbrl-lib in
+[section 6](#6-libraries-that-provide-it) provides it.
+
 ---
 
 ## 4. Where it is used on a robot arm
@@ -376,7 +451,23 @@ of method alone changed the result from 9.2 cm to 0.2 cm.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+[A learned model inside MPC](#a-learned-model-inside-mpc) in section 3 keeps the
+search and learns only the prediction. The other learned alternative replaces the
+search itself. A policy that learns without a model, such as a
+[reinforcement learning policy](../../../06_neural-network-models/05_movement-models/03_also-used/01_reinforcement-learning-policies.md),
+turns the state straight into the next action in one pass, with no rollouts at
+each step, so it wins when each decision must be fast and the task stays fixed.
+But Book 6 says it
+[needs far more attempts to learn](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md#9-why-this-kind-and-what-it-costs),
+and it learns one task, while MPC with a model can push the block to a different
+mark tomorrow just by changing the score. Choose MPC when the goal changes or the
+search fits in the time between steps.
+
+---
+
+## 9. Where to read next
 
 - [Trajectory optimisation](../02_most-used/03_trajectory-optimisation.md)
   covers the gradient methods, and STOMP, the sampling method for whole paths.

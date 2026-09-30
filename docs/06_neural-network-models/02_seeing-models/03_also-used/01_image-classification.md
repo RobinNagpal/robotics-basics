@@ -24,7 +24,8 @@ every later page.
 6. [Where it is used on a robot arm](#6-where-it-is-used-on-a-robot-arm)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why classification, and what it costs](#8-why-classification-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -298,7 +299,21 @@ answer, such as trying again.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+Book 5 answers some yes-or-no questions about a picture with a written rule.
+[Thresholding and colour masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) can check that the gripper holds
+something, by counting the depth pixels nearer than the fingertips. [Edges and
+contours](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md) can name the shape of a flat part, such as a triangle or a
+hexagon, by counting the corners of its outline. The written rule wins when the
+scene is controlled and the answer depends on one thing you can measure, such as
+a height, a colour or a number of corners. The classifier wins when the answer
+depends on how things look in general, such as "scratched" or "good", or when
+the light and the objects vary.
+
+---
+
+## 10. Where to read next
 
 - The next page is [object detection](../02_most-used/01_object-detection.md). It adds boxes, so
   the robot knows where each object is.

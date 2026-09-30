@@ -99,6 +99,7 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'language-models': 'Language Models',
   'world-models': 'World Models',
   'touch-and-body-models': 'Touch and Body Models',
+  'making-models-work-on-an-arm': 'Making Models Work on an Arm',
   'what-techniques-are': 'What Techniques Are',
   'geometry-and-cameras': 'Geometry and Cameras',
   'searching-and-matching': 'Searching and Matching',

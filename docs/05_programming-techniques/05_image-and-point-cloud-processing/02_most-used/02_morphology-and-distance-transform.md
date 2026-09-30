@@ -30,7 +30,8 @@ run of the diagram script.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why these techniques, and what they cost](#7-why-these-techniques-and-what-they-cost)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -422,10 +423,8 @@ fall off the part. The distance transform costs a little more, and it never
 chooses a point outside the mask.
 
 The obvious alternative for splitting touching objects is a learned
-[segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
-that gives one mask per object from the start. The model handles long, thin and
-oddly shaped objects that defeat the distance transform. But it needs training
-pictures and a bigger computer.
+segmentation model. [Section 8](#8-the-learned-alternative) says when it is the
+better choice.
 
 The costs are these. You must choose the brush size, and that one number trades
 two errors against each other. A bigger brush removes more noise, but it also
@@ -437,7 +436,24 @@ central point is confidently wrong too.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+A [segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+in Book 6 gives one mask per object from the start, so it splits touching objects
+without the distance transform and watershed. It wins on long, thin and oddly
+shaped objects that defeat the distance transform, but it needs training pictures
+and a bigger computer. A
+[suction model](../../../06_neural-network-models/04_grasp-models/02_most-used/02_suction-and-affordance.md)
+scores every pixel for where a cup would seal, which is the job the most central
+point does on this page. Book 6 says plain geometry is hard to beat for suction,
+and that a model pays off only when the geometry keeps choosing badly, such as on
+lumpy bags or surfaces that look flat but leak. There is no learned model that
+replaces opening and closing, because they are a cheap clean-up step that runs on
+any mask, including a model's own, as section 4 showed.
+
+---
+
+## 9. Where to read next
 
 - The next page is [edges and contours](../03_also-used/01_edges-and-contours.md). It traces the
   outline of a tidy mask and fits shapes to it.
@@ -447,8 +463,5 @@ central point is confidently wrong too.
   makes the masks that this page tidies.
 - [Nearest-neighbour search](../../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
   is how radius outlier removal finds each point's neighbours.
-- [Segmentation](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
-  and [suction and affordance](../../../06_neural-network-models/04_grasp-models/02_most-used/02_suction-and-affordance.md)
-  in Book 6 are the learned models that make masks and choose suction points.
 - The [glass-picking project's notes on splitting a blob](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/docs/problem-2/solutions/01-split-the-blob-in-the-picture.md)
   show in detail why the distance transform fails on tall thin objects.

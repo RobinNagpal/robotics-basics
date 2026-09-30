@@ -13,7 +13,7 @@ It is for a reader who has read the earlier pages of this chapter, especially
 [programmed, not learned](01_programmed-not-learned.md). You can also come back
 to it at any time, when you want to see where one technique fits among the others.
 Book 6 has a page with the same shape for learned models,
-[the map of models](../../06_neural-network-models/01_what-models-are/09_the-map-of-models.md).
+[the map of models](../../06_neural-network-models/01_what-models-are/07_the-map-of-models.md).
 
 ## Contents
 
@@ -29,8 +29,9 @@ Book 6 has a page with the same shape for learned models,
 3. [All 34 techniques in one table](#3-all-34-techniques-in-one-table)
 4. [When each kind does its job](#4-when-each-kind-does-its-job)
 5. [How the categories connect](#5-how-the-categories-connect)
-6. [A suggested reading order](#6-a-suggested-reading-order)
-7. [Where to read next](#7-where-to-read-next)
+6. [Find a method by job](#6-find-a-method-by-job)
+7. [A suggested reading order](#7-a-suggested-reading-order)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -336,23 +337,60 @@ model and a rigid transform still turn that box into a position the arm can reac
 
 ---
 
-## 6. A suggested reading order
+## 6. Find a method by job
 
-You can read the chapters of this book in any order, because each one explains
-its own terms. But some chapters are easier after others. The list below is the
-order this book suggests, with the reason for each step.
+Most people come to these books with a job in mind, not a method. This section
+starts from the job. Read each row across: a job the arm must do, the Book 2 or
+Book 3 page that helps you choose how to do it, the written techniques in Book 5 that
+can do it, and the learned models in Book 6 that can do it.
+
+| Job on the arm | Book 2 or 3 page that helps choose | Written techniques (Book 5) | Learned models (Book 6) |
+| --- | --- | --- | --- |
+| find an object in a picture | [object perception](../../02_perception/02_object-perception/01_overview.md) (Book 2) | [thresholding and colour masks](../05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md), [clustering](../05_image-and-point-cloud-processing/02_most-used/03_clustering.md), [edges and contours](../05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md) | [object detection](../../06_neural-network-models/02_seeing-models/02_most-used/01_object-detection.md), [segmentation](../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md), [open-vocabulary models](../../06_neural-network-models/02_seeing-models/02_most-used/03_open-vocabulary-models.md) |
+| turn a pixel into a position the arm can reach | [frames and conventions](../../03_frameworks/03_arm-movement/08_frames-and-conventions.md) | [pinhole camera model](../02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md), [rigid transforms](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md), [calibration](../02_geometry-and-cameras/02_most-used/03_calibration.md) | [depth from pictures](../../06_neural-network-models/02_seeing-models/03_also-used/02_depth-from-pictures.md) |
+| measure an object's pose | [models that measure](../../02_perception/02_object-perception/05_models-that-measure.md) (Book 2) | [pose from points](../02_geometry-and-cameras/02_most-used/04_pose-from-points.md), [iterative closest point](../03_searching-and-matching/02_most-used/02_iterative-closest-point.md) | [keypoints and object pose](../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md), [point cloud models](../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md) |
+| build a 3D map of the space round the arm | [the planning scene](../../03_frameworks/03_arm-movement/03_planning-a-path.md#7-the-planning-scene-and-what-collision-checking-really-checks) | [volumetric maps](../05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md), [multi-view geometry](../02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md) | [scene reconstruction](../../06_neural-network-models/03_3d-models/02_most-used/02_scene-reconstruction.md), [shape completion](../../06_neural-network-models/03_3d-models/03_also-used/01_shape-completion.md), [3D feature maps](../../06_neural-network-models/03_3d-models/03_also-used/02_3d-feature-maps.md) |
+| track an object over time | [tracking and association](../../02_perception/02_object-perception/10_tracking-and-association.md) (Book 2) | [Kalman filter](../04_fitting-and-estimation/02_most-used/03_kalman-filter.md), [assignment and matching](../03_searching-and-matching/02_most-used/03_assignment-and-matching.md), [sensor streams](../04_fitting-and-estimation/02_most-used/04_sensor-streams.md) | [tracking and motion](../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md) |
+| choose a grasp | [choosing a grip](../../03_frameworks/02_gripping/03_choosing-a-grip.md), [models that grasp](../../03_frameworks/02_gripping/04_models-that-grasp.md) | [morphology and distance transform](../05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md), [least-squares fitting](../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md) | [six-DoF grasps](../../06_neural-network-models/04_grasp-models/02_most-used/01_six-dof-grasps.md), [suction and affordance](../../06_neural-network-models/04_grasp-models/02_most-used/02_suction-and-affordance.md), [grasp quality models](../../06_neural-network-models/04_grasp-models/03_also-used/02_grasp-quality-models.md) |
+| check the arm can reach a pose | [reaching and reachability](../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md) | [numerical inverse kinematics](../06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md) | none in common use |
+| plan a motion that hits nothing | [planning a path](../../03_frameworks/03_arm-movement/03_planning-a-path.md) | [sampling-based planning](../06_planning-and-search/02_most-used/01_sampling-based-planning.md), [trajectory optimisation](../06_planning-and-search/02_most-used/03_trajectory-optimisation.md), [graph search](../06_planning-and-search/03_also-used/01_graph-search.md) | [learned motion planners](../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md) |
+| control the joints along the plan | [controlling the move](../../03_frameworks/03_arm-movement/04_controlling-the-move.md) | [trajectory generation](../07_control-and-motion/02_most-used/02_trajectory-generation.md), [PID control](../07_control-and-motion/02_most-used/01_pid-control.md), [arm dynamics](../07_control-and-motion/02_most-used/03_arm-dynamics.md) | [learned arm models](../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md) |
+| go straight from what the camera sees to a movement | [learned motion](../../03_frameworks/03_arm-movement/05_learned-motion.md) | [sampling-based optimisation and MPC](../06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md) | [behaviour cloning](../../06_neural-network-models/05_movement-models/02_most-used/01_behaviour-cloning.md), [diffusion and flow policies](../../06_neural-network-models/05_movement-models/02_most-used/03_diffusion-and-flow-policies.md), [reinforcement learning policies](../../06_neural-network-models/05_movement-models/03_also-used/01_reinforcement-learning-policies.md) |
+| react to contact and force | [holding on](../../03_frameworks/02_gripping/05_holding-on.md) | [impedance and force control](../07_control-and-motion/03_also-used/01_impedance-and-force-control.md) | [force and slip models](../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md), [touch sensing models](../../06_neural-network-models/08_touch-and-body-models/03_also-used/01_touch-sensing-models.md) |
+| notice a collision and stop | [what "the move failed" actually means](../../03_frameworks/03_arm-movement/04_controlling-the-move.md#3-what-the-move-failed-actually-means) | [safety monitoring](../07_control-and-motion/02_most-used/04_safety-monitoring.md) | [collision and failure detection](../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md) |
+| decide the next step | [scripted logic](../../03_frameworks/04_one-arm-training/02_programmed-methods.md#3-scripted-logic-state-machines-and-behaviour-trees) | [finite state machines](../08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md), [behaviour trees](../08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md) | [language models as planners](../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md) |
+| choose the order to deal with objects | [ordering and rearrangement](../../03_frameworks/03_arm-movement/07_ordering-and-rearrangement.md) | [greedy algorithms and set cover](../08_decisions-and-task-logic/03_also-used/01_greedy-algorithms-and-set-cover.md), [optimisation solvers](../08_decisions-and-task-logic/03_also-used/02_optimisation-solvers.md) | [language models as planners](../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md) |
+| follow an instruction in words | [directed by language](../../03_frameworks/04_one-arm-training/03_learned-methods.md#5-directed-by-language) | none: a written program only accepts commands it was given in a fixed form | [vision-language-action models](../../06_neural-network-models/06_language-models/02_most-used/01_vision-language-action-models.md), [vision-language models](../../06_neural-network-models/06_language-models/02_most-used/02_vision-language-models.md) |
+| predict what happens next | [learned world models](../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#4-learned-world-models) | [arm dynamics](../07_control-and-motion/02_most-used/03_arm-dynamics.md), [system identification](../04_fitting-and-estimation/03_also-used/01_system-identification.md) | [learned dynamics models](../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md), [video prediction models](../../06_neural-network-models/07_world-models/03_also-used/01_video-prediction-models.md), [learned simulators](../../06_neural-network-models/07_world-models/03_also-used/02_learned-simulators.md) |
+| check that the task worked | [judging whether it works](../../03_frameworks/03_arm-movement/05_learned-motion.md#6-judging-whether-it-works) | [behaviour trees](../08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md), [thresholding and colour masks](../05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) | [vision-language models](../../06_neural-network-models/06_language-models/02_most-used/02_vision-language-models.md), [reward and progress models](../../06_neural-network-models/05_movement-models/03_also-used/03_reward-and-progress-models.md) |
+
+Most jobs have both a written and a learned answer, and the Book 2 or Book 3 page says
+which one suits which case. Two rows have only one side. No learned model is in
+common use to check whether the arm can reach a pose, because inverse kinematics
+already gives an exact answer quickly. And no written technique can follow an
+instruction in free wording, because a person can say the same thing in too many
+ways to list them all. Many real arms mix the two sides: a learned model finds
+the object, and written techniques do the rest.
+
+---
+
+## 7. A suggested reading order
+
+The chapters are numbered in the order this book suggests. Read them from 01 to 08,
+the same order as the folders. Each chapter explains its own terms, so you can also
+start anywhere. The list below gives the reason for each step.
 
 1. This chapter, starting with [programmed, not learned](01_programmed-not-learned.md).
    Everything else uses its words: technique, parameter, frame, graph, noise, cost
    and loop.
 2. [Geometry and cameras](../02_geometry-and-cameras/01_overview.md). Every other
    chapter needs positions in the right frame.
-3. [Image and point cloud processing](../05_image-and-point-cloud-processing/01_overview.md).
-   Most arm tasks start by finding the objects in a picture.
+3. [Searching and matching](../03_searching-and-matching/01_overview.md). It finds
+   the closest thing and decides which thing is which.
 4. [Fitting and estimation](../04_fitting-and-estimation/01_overview.md). It turns
    noisy pixels and points into clean shapes and steady numbers.
-5. [Searching and matching](../03_searching-and-matching/01_overview.md). It keeps
-   track of which object is which, once you can find them.
+5. [Image and point cloud processing](../05_image-and-point-cloud-processing/01_overview.md).
+   It cuts the objects out of a picture or a point cloud.
 6. [Planning and search](../06_planning-and-search/01_overview.md). It needs
    positions and shapes from the chapters before it.
 7. [Control and motion](../07_control-and-motion/01_overview.md). It carries out
@@ -360,17 +398,24 @@ order this book suggests, with the reason for each step.
 8. [Decisions and task logic](../08_decisions-and-task-logic/01_overview.md). It
    ties all the others together into a whole task.
 
+Chapters 03, 04 and 05 lean on each other, so you can read those three in any
+order. Each one uses a little of the other two. Clustering, in chapter 05, uses the
+nearest-neighbour search from chapter 03. RANSAC, in chapter 04, is often run on the
+points that chapter 05 cut out. And the matching in chapter 03 often works on
+positions that a Kalman filter from chapter 04 has made steady. Whichever of the
+three you read first, the other two will be easier after it.
+
 If you have one job in mind, you can jump straight to its chapter. For example, if
 you only want the arm to move smoothly to a known pose, read planning and search,
 and then control and motion.
 
 ---
 
-## 7. Where to read next
+## 8. Where to read next
 
 - The [geometry and cameras overview](../02_geometry-and-cameras/01_overview.md)
   is the next chapter in the suggested order.
-- [The map of models](../../06_neural-network-models/01_what-models-are/09_the-map-of-models.md)
+- [The map of models](../../06_neural-network-models/01_what-models-are/07_the-map-of-models.md)
   in Book 6 does the same job for learned models.
 - [Programmed methods for one arm](../../03_frameworks/04_one-arm-training/02_programmed-methods.md)
   in Book 3 shows how these techniques are combined into whole systems.

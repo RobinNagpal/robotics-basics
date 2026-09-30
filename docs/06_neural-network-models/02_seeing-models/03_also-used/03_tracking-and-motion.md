@@ -11,6 +11,8 @@ Every other page in this chapter looks at one photo at a time. This page looks a
 video, which is a series of photos, called **frames**, taken one after another. It
 covers three kinds of model: optical flow, point tracking and object tracking.
 
+> Before this page, it helps to have read the [Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md) and [assignment and matching](../../../05_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md). The object trackers in section 3 are built from both: the filter predicts where each object will be, and assignment pairs each new box with an object.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -21,7 +23,8 @@ covers three kinds of model: optical flow, point tracking and object tracking.
 6. [A worked example: picking a box off a moving belt](#6-a-worked-example-picking-a-box-off-a-moving-belt)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -279,7 +282,21 @@ follow in the first place.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+Object tracking is already mostly written code. A [Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+predicts where each object will be, and [assignment and matching](../../../05_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md) decides
+which new box belongs to which object. So a tracker such as SORT needs no
+training beyond its detector. To follow one coloured object with no detector at
+all, the mean shift method on the [clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md) page moves a window to the
+matching pixels in each new frame. The written way wins for a few objects that
+move smoothly, such as boxes on a belt. The optical flow and point tracking
+models win when the robot must follow every pixel, or points on something that
+bends, such as a towel, and keep them through hidden spells.
+
+---
+
+## 10. Where to read next
 
 - [Open-vocabulary models](../02_most-used/03_open-vocabulary-models.md) is the page before this
   one. It shows where SAM 2 comes from, and how to choose the object to follow.

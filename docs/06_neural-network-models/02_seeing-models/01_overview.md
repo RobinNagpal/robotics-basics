@@ -176,7 +176,7 @@ Second, they all learn from labelled pictures. A **label** is the correct answer
 that a person wrote down for one picture. For a classifier the label is a name.
 For a detector it is a box and a name for each object. For a segmentation model
 it is an outline for each object. The page
-[where the data comes from](../01_what-models-are/04_where-the-data-comes-from.md)
+[where the data comes from](../01_what-models-are/05_where-the-data-comes-from.md)
 explains how people collect these.
 
 Third, they only know what they were trained on. A model trained on kitchen photos
@@ -184,7 +184,7 @@ may miss a metal part in a factory. It does not say "I do not know". It usually
 gives a wrong answer, or no answer. The usual fix is to collect a few hundred
 pictures of your own objects and train the model a little more on them. This is
 called **fine-tuning**. The chapter-one page
-[fine-tuning](../01_what-models-are/07_fine-tuning.md) explains the ways to do it and
+[fine-tuning](../09_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md) explains the ways to do it and
 what each costs. Each of the next pages says how it is done for that kind.
 
 ---
@@ -213,7 +213,7 @@ picture into facts about objects. The other kinds of model use those facts.
   of touch, force and the arm's own body. Some touch sensors produce pictures, and
   the same kinds of network read them.
 
-The page [the map of models](../01_what-models-are/09_the-map-of-models.md) shows
+The page [the map of models](../01_what-models-are/07_the-map-of-models.md) shows
 all seven kinds of model together.
 
 ---

@@ -33,7 +33,8 @@ Book 2's camera: 320 × 240 pixels, `fx` = `fy` = 277.1, `cx` = 160, `cy` = 120.
 6. [Where it works, and where it does not](#6-where-it-works-and-where-it-does-not)
 7. [Libraries that provide it](#7-libraries-that-provide-it)
 8. [Why PnP, and what it costs](#8-why-pnp-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The learned alternative](#9-the-learned-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -388,11 +389,6 @@ works on objects that depth cameras cannot see, and is precise when the points a
 well spread. Many systems use both: PnP for a marker on a fixture, and depth for
 the parts in it.
 
-A second alternative is a neural network that outputs the pose directly. That
-removes the need for known points on the object, but it must be trained for each
-object, and it gives no reprojection error to check. Most learned pose methods keep
-PnP as their last step for that reason.
-
 The cost is this. You need the object's shape as points, and a reliable way to find
 those points in the picture. You need a calibrated camera. You need RANSAC when
 pairings can be wrong. And for flat targets you must plan the viewing angle,
@@ -400,7 +396,25 @@ because a face-on marker gives a poor rotation.
 
 ---
 
-## 9. Where to read next
+## 9. The learned alternative
+
+Book 6's
+[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+describes two learned ways to get the same six numbers. A keypoint model, such as
+DOPE, finds named points on the object in a messy picture, and PnP from this page
+still turns those points into the pose: the network does the finding, and geometry
+does the rest. A render-and-compare model, such as MegaPose or FoundationPose,
+draws the object's CAD model at a guessed pose and corrects the guess until the
+drawing matches the photo. It needs no chosen points, and it works on an object it
+was not trained on. The learned models win in clutter, and on objects with no marker or
+clear corners to find. PnP alone still wins when you can put a marker or known
+points on the object, because it needs no training and no graphics processor, and
+its reprojection error tells you how well the pose fits, while a pose model gives
+no warning when it is wrong.
+
+---
+
+## 10. Where to read next
 
 - [Calibration](03_calibration.md) uses PnP on every picture of the board.
 - [Multi-view geometry](../03_also-used/01_multi-view-geometry.md) finds points from
@@ -409,6 +423,4 @@ because a face-on marker gives a poor rotation.
   explains the tries formula used in section 3.
 - [Image features and matching](../../03_searching-and-matching/03_also-used/01_image-features-and-matching.md)
   finds the pairings PnP needs, when there is no marker.
-- Book 6's [keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-  shows neural networks finding the points and PnP finishing the job.
 - The [overview](../01_overview.md) shows where this page sits in the chapter.

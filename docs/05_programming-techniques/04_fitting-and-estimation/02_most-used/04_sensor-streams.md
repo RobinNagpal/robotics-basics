@@ -37,7 +37,8 @@ on something.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why these techniques, and what they cost](#7-why-these-techniques-and-what-they-cost)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -446,7 +447,26 @@ in a steady way: the median of a drifting sensor drifts with it.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+There is no learned model that replaces time stamps and clock correction, because
+pairing readings by time is bookkeeping with one right answer. For thresholds,
+Book 6 has two learned models that read a short window of readings, as the filters
+on this page do. A learned collision detector, from
+[collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md),
+tells a gentle bump from a fast movement by the shape of the torque gap over time,
+which one fixed stop line cannot. A slip model, from
+[force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md),
+calls a slip from the pattern of the force signal, where a fixed rule needs a
+friction number that changes when the surface is wet. Both need recorded examples,
+including collisions or slips caused on purpose, and retraining when the gripper or
+payload changes, and Book 6 says a learned detector adds to the certified safety
+function and never replaces it. So the filters, hysteresis and debouncing on this
+page stay underneath as the check that always works.
+
+---
+
+## 9. Where to read next
 
 - The [Kalman filter](03_kalman-filter.md) combines readings over time with a
   model, and tracks a value and its speed together.

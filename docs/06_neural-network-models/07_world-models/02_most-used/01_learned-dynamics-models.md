@@ -11,6 +11,14 @@ You should know that a model takes a list of numbers in and gives a list of
 numbers back, and that it learns from examples. No other machine learning is
 needed.
 
+> Before this page, it helps to have read
+> [sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md),
+> which explains the cross-entropy method and model predictive control that
+> section 3 uses to plan, and
+> [system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
+> which measures the numbers a physics model needs. Section 7 compares a learned
+> model with that.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -31,7 +39,8 @@ needed.
    · [Where it does not help](#where-it-does-not-help)
 8. [What goes wrong, and what people do about it](#8-what-goes-wrong-and-what-people-do-about-it)
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -133,27 +142,25 @@ and spread apart further into the future.
 
 ### Planning with it
 
-Planning means choosing actions by asking the model "what if?". The simplest way
-works in four steps.
+Planning means choosing actions by asking the model "what if?". A planner makes
+up many sequences of actions, rolls each one forward through the model, scores
+where each one ends up, and keeps the best. A method called the **cross-entropy
+method**, or **CEM**, repeats this a few times and narrows the search towards the
+best sequences. The arm then does only the **first** action, measures the real
+state again and plans again from there. This loop is called **model predictive
+control**, or **MPC**. Because the plan is thrown away after one step, a wrong
+prediction five steps ahead does little harm. Book 5's
+[sampling-based optimisation and MPC](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+page teaches these methods step by step, with real numbers.
 
-1. **Make up many action sequences.** For example, 500 random sequences of
-   five pushes each.
-2. **Roll each one forward** through the model, and look at where the cube ends
-   up.
-3. **Score each one.** The score could be the distance from the predicted final
-   position to the goal. Smaller is better.
-4. **Pick the sequence with the best score.**
-
-A better version repeats steps 1 to 4 a few times. Each time, it makes up new
-sequences that are close to the best ones from the last round. This is called
-the **cross-entropy method**, or **CEM**. The name comes from statistics. You
-only need to know that it narrows the search towards good sequences.
-
-The arm does not carry out the whole chosen sequence. It does only the **first**
-action. Then it measures the real state again and plans again from there. This
-is called **model predictive control**, or **MPC**. Because the plan is thrown
-away after one step, a wrong prediction five steps ahead does little harm. The
-arm corrects itself at every step using what really happened.
+Two things change when the model is learned. First, the planner searches for
+whatever the model says works best, so it is drawn to the places where the model
+is wrong in a hopeful direction. Second, the model is only trustworthy near its
+training records. This is why the ensemble matters. The planner uses the copies'
+average as the prediction and prefers sequences on which the copies agree. The
+Book 5 page has a
+[worked example of a learned ensemble inside MPC](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#a-learned-model-inside-mpc)
+that shows how much this helps.
 
 ![Left: many imagined push sequences, with the one ending nearest the goal in green. Right: the arm does only the first push, then plans again](../../../images/world-models/learned-dynamics-models/try-many-plans.svg)
 
@@ -175,7 +182,7 @@ The records come from three places.
 - **Random play.** The arm makes random pushes and small moves, and the system
   records what happens. This is simple, and it covers many situations.
 - **Demonstrations.** A person guides the arm through the task, as described in
-  [where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md).
+  [where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md).
 - **The robot's own attempts.** Once the model is roughly right, the robot plans
   with it and tries the task. Each attempt gives new records, especially in the
   places where the model was wrong. The model is retrained, and the cycle repeats.
@@ -460,7 +467,25 @@ What it costs you:
 
 ---
 
-## 10. Where to read next
+## 10. The written alternative
+
+The written alternative keeps the planner and replaces the learned model with a
+written one. The planning loop in section 3 is written code either way. Book 5's
+[sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+explains random shooting, the cross-entropy method and model predictive control in
+full. The model can then be a physics formula for pushing, such as Book 3's
+[quasi-static planar pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing),
+with its numbers measured by
+[system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md).
+
+The written model wins when the objects are simple and a formula with a few measured
+numbers predicts them well, because it needs no recordings and can be checked. The
+learned model wins when sliding and catching do not follow the formula, and you can
+record the real arm pushing the real objects.
+
+---
+
+## 11. Where to read next
 
 - The [next page](../03_also-used/01_video-prediction-models.md) covers video prediction models,
   which predict whole camera pictures instead of a few numbers.

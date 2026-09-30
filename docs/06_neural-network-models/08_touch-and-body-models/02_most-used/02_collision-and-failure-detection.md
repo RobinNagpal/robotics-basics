@@ -11,6 +11,13 @@ helps to have read [how a model learns](../../01_what-models-are/02_how-a-model-
 You do not need to know any physics beyond this: a motor that has to push harder
 uses more electric current.
 
+> Before this page, it helps to have read [arm
+> dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md),
+> which works out the torque each joint should need, and [sensor
+> streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md),
+> which turns a noisy reading into a clean alarm. This page uses the first as the
+> expected torque and the second to raise the alarm.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -21,7 +28,8 @@ uses more electric current.
 6. [A worked example: a pick-and-place cell next to a person](#6-a-worked-example-a-pick-and-place-cell-next-to-a-person)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this rather than the obvious alternative, and what it costs](#8-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -268,7 +276,24 @@ What it costs you:
   wear changes.
 - No guarantee. It adds to the certified safety function and never replaces it.
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written alternative is the expected-against-measured check with a textbook
+physics model, the second alternative in section 8. Book 5 gives the pieces. [Arm
+dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
+works out the torque each joint should need, and [sensor
+streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
+turns the gap into an alarm that does not flicker. [Safety
+monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
+covers the software checks that act on such an alarm, and where certified safety
+equipment must take over.
+
+The written check wins on most arms, because it is fast, needs no training data and
+is well understood. A learned model wins when the textbook model's errors force the
+stop line so high that gentle contacts are missed, or when the failure is not a
+collision at all, such as a dropped mug.
+
+## 10. Where to read next
 
 In this chapter:
 

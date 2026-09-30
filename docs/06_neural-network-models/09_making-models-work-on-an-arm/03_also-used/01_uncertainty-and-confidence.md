@@ -5,7 +5,7 @@ This page answers one question: how can a robot tell when a model is unsure, and
 what should it do then?
 
 It is for a beginner who has read the earlier pages of this chapter, especially
-[running a model on a robot](05_running-a-model-on-a-robot.md). Section 5 of that
+[running a model on a robot](../02_most-used/02_running-a-model-on-a-robot.md). Section 5 of that
 page showed that a model can be sure and wrong. This page goes further. It shows how
 to check a model's scores, how to fix them, how to measure how unsure a model is,
 and how to turn that into a decision: act, look again, or ask a person.
@@ -14,6 +14,8 @@ Every number on this page comes from a real run of the diagram script
 `docs/diagrams/what_models_are_3.py`. The model and its pictures are simulated. The
 script makes up a five-class "model" and draws its right answers at random, so that
 we know the truth exactly. The methods run on those numbers are the real ones.
+
+> Before this page, it helps to have read [the Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#what-the-filter-keeps), which explains the spread of a set of readings and how a program keeps track of how unsure it is.
 
 ## Contents
 
@@ -58,7 +60,7 @@ The last layer of a classifying network gives one number per class. These raw
 numbers are called **logits**. They can be any size and can be negative. A small
 function called **softmax** then turns them into scores between 0 and 1 that add up
 to 1. Softmax makes big logits bigger and small ones smaller, in proportion. The
-[what a model is](01_what-a-model-is.md#3-everything-is-numbers) page showed two
+[what a model is](../../01_what-models-are/01_what-a-model-is.md#3-everything-is-numbers) page showed two
 such scores for "mug" and "bowl".
 
 Scores that add up to 1 look like probabilities. A **probability** is a number that
@@ -84,7 +86,7 @@ next two sections show how to check this and how to fix it.
 
 The check needs pictures the model did not train on, with the right answers known.
 A test set, as described in
-[how a model learns](02_how-a-model-learns.md#6-keeping-some-examples-back-the-test-set),
+[how a model learns](../../01_what-models-are/02_how-a-model-learns.md#6-keeping-some-examples-back-the-test-set),
 works. The check has four steps:
 
 1. Run the model on every test picture. Write down its top score and whether its
@@ -100,7 +102,7 @@ This drawing is called a **reliability curve**, or reliability diagram. If the m
 is calibrated, every bar reaches the diagonal line, where "score" equals "how often
 right". A bar below the line means the model was overconfident in that group.
 
-![Reliability curve for 2,000 simulated test pictures before and after temperature scaling](../../images/what-models-are/uncertainty-and-confidence/reliability-curve.svg)
+![Reliability curve for 2,000 simulated test pictures before and after temperature scaling](../../../images/what-models-are/uncertainty-and-confidence/reliability-curve.svg)
 
 The left half of the picture shows the raw scores. Almost all the pictures, 1,751 of
 2,000, fall in the top group, with an average score of 0.99. The model was right on
@@ -171,7 +173,7 @@ between their answers is a measure of how unsure the model is. It is often calle
 There are two common ways to get several answers.
 
 - An **ensemble** is a group of separately trained copies of the model. The
-  [learned dynamics models](../07_world-models/02_most-used/01_learned-dynamics-models.md)
+  [learned dynamics models](../../07_world-models/02_most-used/01_learned-dynamics-models.md)
   page uses one to see how far a prediction can be trusted. Five copies is a common
   choice.
 - **Dropout** is a trick used during training. At each training step it switches
@@ -186,7 +188,7 @@ squeeze to hold an object, from the object's mass. It has 25 training examples, 
 with masses between 0.1 and 1.0 kilograms. The true curve is made up, and the
 network does not know it.
 
-![Five separately trained networks agree where there were examples and spread apart beyond them; dropout spreads much less](../../images/what-models-are/uncertainty-and-confidence/ensemble-spread.svg)
+![Five separately trained networks agree where there were examples and spread apart beyond them; dropout spreads much less](../../../images/what-models-are/uncertainty-and-confidence/ensemble-spread.svg)
 
 The table below gives the average answer and the spread at three masses. The spread
 is the **standard deviation**: a measure of how far the answers typically sit from
@@ -251,7 +253,7 @@ The script did this with the temperature-scaled scores from section 4, on 1,000
 calibration pictures that were not used to choose T. It found q = 0.889. So each set
 holds every answer with a score of at least 0.111.
 
-![A histogram of 1,000 calibration surprises with the 90% line, then three test pictures and the sets they get](../../images/what-models-are/uncertainty-and-confidence/conformal-sets.svg)
+![A histogram of 1,000 calibration surprises with the 90% line, then three test pictures and the sets they get](../../../images/what-models-are/uncertainty-and-confidence/conformal-sets.svg)
 
 The left part of the picture is step 1. Most calibration pictures have a small
 surprise, and a few have a large one. The red line is q. The three parts on the
@@ -295,7 +297,7 @@ The simplest rule is a threshold. The robot acts only when the calibrated score 
 at least some value t. The higher t is, the fewer pictures it acts on, and the fewer
 of those it gets wrong.
 
-![Left: as the threshold rises, the robot acts on fewer pictures and gets fewer wrong. Right: expected cost of acting or asking, for a sponge and a glass](../../images/what-models-are/uncertainty-and-confidence/reject-and-cost.svg)
+![Left: as the threshold rises, the robot acts on fewer pictures and gets fewer wrong. Right: expected cost of acting or asking, for a sponge and a glass](../../../images/what-models-are/uncertainty-and-confidence/reject-and-cost.svg)
 
 The left half of the picture shows this for the 2,000 calibrated test pictures. The
 table below gives five points on that curve. Read each row as one threshold: the
@@ -319,7 +321,7 @@ A robot has three useful things to do instead of acting:
   the arm to move out of the view, and ask the model again. A picture from a new
   angle often removes the doubt. Choosing the best new viewpoint is its own
   technique, covered in Book 5's
-  [visibility and next-best-view](../../05_programming-techniques/06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
+  [visibility and next-best-view](../../../05_programming-techniques/06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
   page.
 - **Ask a bigger model.** A **cascade** is a chain of models, from cheap to
   expensive. The small, fast model answers first. Only when it is unsure does the
@@ -373,7 +375,7 @@ with the glass would break about one glass in seven.
 The ideas on this page appear in many places on a robot arm:
 
 - **Before a grasp.** A grasp model gives each candidate grasp a score. The
-  [grasp quality models](../04_grasp-models/03_also-used/02_grasp-quality-models.md)
+  [grasp quality models](../../04_grasp-models/03_also-used/02_grasp-quality-models.md)
   page describes these. With calibrated scores, the arm tries a grasp only when its
   chance of success is high enough for the object.
 - **Object detection.** A detector's scores decide which boxes the robot believes.
@@ -384,15 +386,15 @@ The ideas on this page appear in many places on a robot arm:
 - **Movement models.** An ensemble of movement policies, or of world models, can
   warn when the robot is in a situation none of its demonstrations covered. The
   robot can then slow down or stop. See the
-  [learned dynamics models](../07_world-models/02_most-used/01_learned-dynamics-models.md)
+  [learned dynamics models](../../07_world-models/02_most-used/01_learned-dynamics-models.md)
   page.
 - **Checking success.** A model that answers "did the grasp work?" or "is the task
   done?" should also be able to say "not sure". The
-  [collision and failure detection](../08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+  [collision and failure detection](../../08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
   page covers such models.
 - **Learning with error bars.** A Gaussian process gives a range with every
   prediction, as shown in
-  [classical machine learning](08_classical-machine-learning.md). It is often used
+  [classical machine learning](../../01_what-models-are/06_classical-machine-learning.md). It is often used
   when a robot tunes a setting, such as grip force, from a few tries.
 
 ---
@@ -471,15 +473,15 @@ expensive.
 
 ## 13. Where to read next
 
-- [Fine-tuning](07_fine-tuning.md) is the next page. It shows how to adapt a
+- [Fine-tuning](../02_most-used/01_fine-tuning.md) shows how to adapt a
   trained model to your own robot. After fine-tuning, calibrate the scores again.
-- [Classical machine learning](08_classical-machine-learning.md) covers Gaussian
+- [Classical machine learning](../../01_what-models-are/06_classical-machine-learning.md) covers Gaussian
   processes, which give a range with every prediction.
-- [Running a model on a robot](05_running-a-model-on-a-robot.md) describes the loop
+- [Running a model on a robot](../02_most-used/02_running-a-model-on-a-robot.md) describes the loop
   and the safety checks that use these scores.
-- [Learned dynamics models](../07_world-models/02_most-used/01_learned-dynamics-models.md)
+- [Learned dynamics models](../../07_world-models/02_most-used/01_learned-dynamics-models.md)
   shows an ensemble used to decide how far ahead a prediction can be trusted.
-- [Grasp quality models](../04_grasp-models/03_also-used/02_grasp-quality-models.md)
+- [Grasp quality models](../../04_grasp-models/03_also-used/02_grasp-quality-models.md)
   are the models whose scores most often decide whether an arm acts.
-- [Safety monitoring](../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
+- [Safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
   in Book 5 covers the programmed checks that stop an arm whatever a model says.

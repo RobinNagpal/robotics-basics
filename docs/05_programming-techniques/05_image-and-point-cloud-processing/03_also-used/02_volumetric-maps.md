@@ -39,7 +39,8 @@ not only the surfaces.
 4. [Where it is useful, and where it is not](#4-where-it-is-useful-and-where-it-is-not)
 5. [Libraries that provide it](#5-libraries-that-provide-it)
 6. [Why a volumetric map, and what it costs](#6-why-a-volumetric-map-and-what-it-costs)
-7. [Where to read next](#7-where-to-read-next)
+7. [The learned alternative](#7-the-learned-alternative)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -426,11 +427,8 @@ the difference between safe and unsafe. Choose the raw cloud when the scene is
 fully in view and nothing is hidden. Choose a map when the camera moves, when
 parts of the scene are hidden, or when the robot must be sure a space is empty.
 
-A second alternative is a learned model that fills in the 3D shape, such as the
-[shape completion](../../../06_neural-network-models/03_3d-models/03_also-used/01_shape-completion.md)
-models of Book 6. A model can guess the hidden back of an object. A volumetric
-map will never guess: it keeps the back as unknown. For collision avoidance that
-honesty is what you want. The two are often used together.
+A second alternative is a learned model that fills in the 3D shape.
+[Section 7](#7-the-learned-alternative) compares the two.
 
 The costs are these. The map is only as good as the camera's pose, so it needs a
 good calibration and exact timing. You must choose the voxel size, and it is a
@@ -443,7 +441,25 @@ grasp.
 
 ---
 
-## 7. Where to read next
+## 7. The learned alternative
+
+No model in Book 6 replaces the map as the record of free, occupied and unseen
+space, but three kinds of model help it. A
+[shape completion](../../../06_neural-network-models/03_3d-models/03_also-used/01_shape-completion.md)
+model guesses the hidden back of an object from one view, where the map keeps it
+as unknown. [Scene reconstruction](../../../06_neural-network-models/03_3d-models/02_most-used/02_scene-reconstruction.md)
+builds a 3D scene from colour photos, so it sees glass and shiny surfaces that
+leave holes in a depth map, but it takes seconds to minutes and the scene must
+stay still. A learned collision checker, from
+[learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md#4-learned-collision-checking),
+gives a fast distance to obstacles like an ESDF, but it is least reliable near
+the edge of an obstacle. For collision avoidance the map still wins, because it
+never guesses: it keeps unseen space as unknown, and that honesty is what keeps
+the arm safe. The map and the models are often used together.
+
+---
+
+## 8. Where to read next
 
 - [Clustering](../02_most-used/03_clustering.md) covers voxel downsampling, the
   same grid of cubes used to thin a point cloud.
@@ -457,8 +473,6 @@ grasp.
   uses the unknown voxels to choose where the camera should look.
 - Book 2's [choosing where to look](../../../02_perception/02_object-perception/09_choosing-where-to-look.md#32-the-ray-cast-in-three-dimensions)
   casts rays in 3D to test what a camera can see.
-- Book 6's [scene reconstruction](../../../06_neural-network-models/03_3d-models/02_most-used/02_scene-reconstruction.md)
-  builds a 3D scene from photos with learned models instead.
 - The chapter [overview](../01_overview.md) compares all the techniques in this
   chapter.
 - The diagrams on this page are drawn by `docs/diagrams/image_processing_3.py`.

@@ -26,7 +26,8 @@ from them.
 6. [A worked example: "pick up the mug by its handle"](#6-a-worked-example-pick-up-the-mug-by-its-handle)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this rather than asking about each photo, and what it costs](#8-why-this-rather-than-asking-about-each-photo-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -284,7 +285,20 @@ changing, asking about the latest photo is simpler.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+None for the meaning, because the link between words and what things look like
+comes from an image model trained on millions of pictures with captions. The map
+underneath does have a written form. [Volumetric maps](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md) combine many
+depth pictures into one 3D map, and they merge the many readings of each small
+cube into one answer, as the fusion step on this page does with lists of
+numbers. [Clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md) groups the points above the table into objects, so
+a written program can keep a list of where each object is. That is enough when
+the robot only needs to know where things are, not what they are called.
+
+---
+
+## 10. Where to read next
 
 - [Open-vocabulary models](../../02_seeing-models/02_most-used/03_open-vocabulary-models.md) explains
   CLIP, Grounding DINO and SAM, the image models these maps borrow from.

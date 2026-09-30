@@ -35,7 +35,8 @@ This page explains how it works inside.
 7. [Where it works, and where it does not](#7-where-it-works-and-where-it-does-not)
 8. [Libraries that provide it](#8-libraries-that-provide-it)
 9. [Why calibrate, and what it costs](#9-why-calibrate-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The learned alternative](#10-the-learned-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -504,13 +505,6 @@ really sits, and a drawing does not know where the optical centre is inside the
 camera body. On a wrist camera, an error of 1° from the drawing costs about 6 mm at a
 normal working distance. Calibration measures the actual camera on the actual arm.
 
-A second alternative is to skip the numbers and let a learned model map pictures
-straight to arm movements, as some of Book 6's
-[movement models](../../../06_neural-network-models/05_movement-models/01_overview.md)
-do. That removes calibration from the plan. But the model then learns one camera in
-one place, and it has to be retrained when either changes. A calibrated camera can
-be moved and recalibrated in half an hour.
-
 The cost is this. You need a flat, accurately printed board. You need 15 to 25
 careful pictures, and 10 to 20 careful arm poses. You need to check the result
 separately, because the tools always return an answer. And you need to do it again
@@ -518,7 +512,26 @@ whenever the camera is bumped, refocused, or moved to a different resolution.
 
 ---
 
-## 10. Where to read next
+## 10. The learned alternative
+
+No model in Book 6 measures a camera's lens numbers or its place on the arm. The
+learned alternative is to skip calibration. A **policy**, a network from Book 6's
+[movement models](../../../06_neural-network-models/05_movement-models/01_overview.md),
+turns pictures straight into arm movements, so no lens numbers or hand-eye transform
+appear anywhere in the plan. But the policy then learns one camera in one place.
+Book 6's
+[diffusion and flow policies](../../../06_neural-network-models/05_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
+notes that a camera moved by a few centimetres can confuse it, and the fix is more
+demonstrations, while a calibrated camera can be moved and recalibrated in half an
+hour. For the arm's own geometry, Book 6's
+[learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
+describes a small network that learns what kinematic calibration leaves out, such
+as links that bend under their own weight, and adds it on top of the calibrated
+numbers rather than replacing them.
+
+---
+
+## 11. Where to read next
 
 - The previous pages, [the pinhole camera model](01_pinhole-camera-model.md) and
   [rigid transforms](02_rigid-transforms.md), use every number this page measures.
@@ -528,9 +541,6 @@ whenever the camera is bumped, refocused, or moved to a different resolution.
   explains the kind of problem that calibration solves, on simpler examples.
 - [RANSAC](../../04_fitting-and-estimation/02_most-used/02_ransac.md) is how some tools reject bad
   pictures or bad corners before fitting.
-- Book 6's [learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
-  covers models that learn an arm's own behaviour, a job next to kinematic
-  calibration.
 - Book 2 goes deeper into why calibration matters in
   [calibration, which decides all of it](../../../02_perception/02_object-perception/02_sensors.md#4-calibration-which-decides-all-of-it)
   and [the wrist camera, end to end](../../../02_perception/02_object-perception/08_the-wrist-camera.md).

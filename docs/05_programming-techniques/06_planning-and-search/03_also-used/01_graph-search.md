@@ -33,7 +33,8 @@ it every time it finds a route.
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why graph search, and what it costs](#7-why-graph-search-and-what-it-costs)
 8. [Doing things in the right order: topological sort](#8-doing-things-in-the-right-order-topological-sort)
-9. [Where to read next](#9-where-to-read-next)
+9. [The learned alternative](#9-the-learned-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -569,7 +570,25 @@ none does.
 
 ---
 
-## 9. Where to read next
+## 9. The learned alternative
+
+A learned route planner, described in Book 6's
+[learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md),
+guesses a route for the arm directly from a point cloud, in about the same time
+every run. It is built for large joint spaces, where a grid is hopeless; in the
+small spaces and roadmaps this page is for, graph search is already fast. Graph
+search also gives what no network gives: the best route on its graph, the same
+route every run, and a certain "no route" when there is none, which is why a
+learned planner's answer is still checked by an ordinary planner. For the order
+of a task, a
+[language model as planner](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md)
+chooses the steps from a request in plain words, which suits requests that change
+every day. For a task that stays the same, a search or a topological sort is free
+and fast, and gives the same valid order every time.
+
+---
+
+## 10. Where to read next
 
 - The next page is [sampling-based planning](../02_most-used/01_sampling-based-planning.md). It
   covers the planners that take over when the grid becomes too large.
@@ -579,9 +598,6 @@ none does.
   is the other search every planner leans on.
 - [Greedy algorithms and set cover](../../08_decisions-and-task-logic/03_also-used/01_greedy-algorithms-and-set-cover.md)
   shows the opposite approach: take the best-looking step and never look back.
-- Book 6's [learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md)
-  covers networks that guess a route directly, and why an ordinary search still
-  checks the answer.
 - Book 3's [planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md)
   covers planning in practice with MoveIt.
 - Book 3's [ordering and rearrangement](../../../03_frameworks/03_arm-movement/07_ordering-and-rearrangement.md)

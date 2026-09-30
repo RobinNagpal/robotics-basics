@@ -26,7 +26,8 @@ on this page starts from a point cloud.
 6. [A worked example: clearing a tote](#6-a-worked-example-clearing-a-tote)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -170,7 +171,7 @@ Two datasets built this way are used most.
 The simulator's pictures are cleaner than a real camera's. Real depth cameras miss
 thin edges and add noise. Training therefore adds noise and gaps to the simulated
 point clouds on purpose, so the model is not surprised by the real thing. The
-[where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md#4-simulation)
+[where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md#4-simulation)
 page explains this gap between simulation and the real world.
 
 ---
@@ -296,7 +297,20 @@ What it costs you is large.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written way to choose a grasp is in Book 3, not Book 5. [Choosing a
+grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md) finds pairs of surface points that face each other, checks that
+the gripper has room to close, and writes rules for known kinds of object. Book 5
+prepares the shape those rules work on. [Clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md) cuts each object out
+of the point cloud, and [RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md) fits a plane or a cylinder to it to
+measure it. The written way wins when the objects are known or have a shape you
+can describe. The model wins when the next object could be anything, lying at
+any angle in clutter.
+
+---
+
+## 10. Where to read next
 
 - [Grasp quality models](../03_also-used/02_grasp-quality-models.md) explains the scoring half of
   these models on its own.

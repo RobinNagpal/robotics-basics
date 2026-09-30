@@ -28,7 +28,8 @@ adding up that is described there.
 7. [A worked example: a cup into a box with a cheap arm](#7-a-worked-example-a-cup-into-a-box-with-a-cheap-arm)
 8. [What goes wrong](#8-what-goes-wrong)
 9. [Why ACT, and what it costs](#9-why-act-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -336,7 +337,25 @@ and safety code underneath it.
 
 ---
 
-## 10. Where to read next
+## 10. The written alternative
+
+ACT does the same job as behaviour cloning, so its written alternative is the same:
+a route from [sampling-based
+planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md),
+turned into smooth joint targets by [trajectory
+generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md).
+A written motion is planned as one whole movement, so it does not have the adding-up
+of small mistakes that chunking was built to fix. Book 3's [programmed
+methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md) shows
+the written parts working together on one arm.
+
+The written motion wins when the objects and the task stay the same, because you can
+check it before it runs. ACT wins when the task is fine and easier to show than to
+write down, and you can record a few dozen demonstrations of it.
+
+---
+
+## 11. Where to read next
 
 The next page, [diffusion and flow policies](03_diffusion-and-flow-policies.md),
 keeps the chunks and adds a way to choose cleanly between different ways of doing a
@@ -347,7 +366,7 @@ To see how chunks of actions are used in very large policies that also take
 sentences, read
 [vision-language-action models](../../06_language-models/02_most-used/01_vision-language-action-models.md).
 To see how a trained policy is run on a robot, read
-[running a model on a robot](../../01_what-models-are/05_running-a-model-on-a-robot.md).
+[running a model on a robot](../../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md).
 
 For deeper reading in Book 3,
 [learned motion](../../../03_frameworks/03_arm-movement/05_learned-motion.md#1-which-part-of-the-move-a-policy-stands-in-for)

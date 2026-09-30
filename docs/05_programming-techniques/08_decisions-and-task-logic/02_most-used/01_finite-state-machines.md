@@ -26,7 +26,8 @@ a bin, and try again when a grasp fails.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why a state machine, and what it costs](#7-why-a-state-machine-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -376,7 +377,24 @@ and is easy to forget. And the machine only reacts to events that you planned fo
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+A [language model as planner](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md)
+from Book 6 chooses the robot's steps from a request in plain words, and fills in
+steps the person never said. It wins when the request changes from one day to the
+next and nobody can list every request in advance. A state machine still wins for
+a task that stays the same, because it is free to run, fast, and does the same
+thing every time, and you can check what happens in every state; even with a
+planner, Book 6 puts a checker in ordinary code between the planner and the robot.
+More often, learned models feed a state machine instead of replacing it. The
+[collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+page shows a learned model that can send the "empty" or "dropped" event, and
+[force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+shows how a slip can be caught before the mug falls.
+
+---
+
+## 9. Where to read next
 
 - The next page is [behaviour trees](02_behaviour-trees.md). It writes the same
   pick-and-place task as a tree and compares the two.
@@ -386,10 +404,5 @@ and is easy to forget. And the machine only reacts to events that you planned fo
 - The [building blocks](../../01_what-techniques-are/02_the-building-blocks.md) page
   explains loops that run at a fixed rate, which is how the state machine's loop
   usually runs.
-- Book 6's
-  [collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
-  page shows a learned model that can send the "empty" or "dropped" event, and
-  [force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
-  shows how a slip can be caught before the mug falls.
 - Book 3 compares state machines with behaviour trees in
   [scripted logic](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#3-scripted-logic-state-machines-and-behaviour-trees).

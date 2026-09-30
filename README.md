@@ -159,13 +159,20 @@ fails, and lists the libraries that already provide it.
 **[Neural network models](docs/06_neural-network-models/01_what-models-are/01_what-a-model-is.md)**
 is Book 6, and it assumes you have never met a model. Its first chapter explains
 what a model is, how one learns from examples, what is inside a neural network,
-where the training data comes from, and what changes when a model runs on a
-robot. [The map of models](docs/06_neural-network-models/01_what-models-are/09_the-map-of-models.md)
+the kinds of learning, and where the training data comes from.
+[The map of models](docs/06_neural-network-models/01_what-models-are/07_the-map-of-models.md)
 then splits the field into seven families — models that see, that work in 3D,
 that choose a grasp, that move the arm, that understand words, that predict
 what happens next, and that make sense of touch and force — and each family has
-an overview page and one page per kind of model, with diagrams on every page The
-most used kinds come first in each family, then the ones used less often.
+an overview page and one page per kind of model, with diagrams on every page. The
+most used kinds come first in each family, then the ones used less often. The
+last chapter takes a model onto the arm: fine-tuning it, running it, testing it
+properly, and knowing when it is unsure.
+
+Books 5 and 6 are written to be read together. Every Book 5 page ends with the
+learned model that does the same job, every Book 6 page ends with the written
+technique, and both maps share one table that starts from the job the arm has
+to do.
 
 ## How the docs are ordered
 

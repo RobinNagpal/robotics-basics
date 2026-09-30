@@ -26,7 +26,8 @@ those pages.
 6. [A worked example: learning to put a cube in a bowl](#6-a-worked-example-learning-to-put-a-cube-in-a-bowl)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -313,7 +314,27 @@ What it costs you:
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written alternative replaces the learned code with a few numbers that a person
+chooses and measures. In the cube-and-bowl example, the camera finds the cube with
+[thresholding and colour
+masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md),
+and a [Kalman
+filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+keeps its position steady from frame to frame. [Sampling-based optimisation and
+model predictive
+control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+then plans the moves with a written model of what each move does. PlaNet, in section
+5, plans in the same way, but inside a learned code.
+
+The written way wins when a few measured numbers describe the task and the physics
+is simple. The latent world model wins when nobody can say which numbers matter, or
+measure them from the picture.
+
+---
+
+## 10. Where to read next
 
 - Go back to the [world models overview](../01_overview.md) for how the four kinds
   compare.

@@ -30,7 +30,8 @@ two pages, [iterative closest point](02_iterative-closest-point.md) and
 4. [Where it is useful, and where it is not](#4-where-it-is-useful-and-where-it-is-not)
 5. [Libraries that provide it](#5-libraries-that-provide-it)
 6. [Why a k-d tree, and what it costs](#6-why-a-k-d-tree-and-what-it-costs)
-7. [Where to read next](#7-where-to-read-next)
+7. [The learned alternative](#7-the-learned-alternative)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -372,7 +373,22 @@ return the second-nearest point.
 
 ---
 
-## 7. Where to read next
+## 7. The learned alternative
+
+There is no learned model that replaces nearest-neighbour search, because it gives
+the exact answer to a plain question, and a network could only guess that answer.
+Learned models use the search instead. Book 6's
+[point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
+describes PointNet++, which collects the points within a small distance of each
+centre, and DGCNN, which links each point to its nearest neighbours, so both run
+this search inside the network. The
+[k-nearest neighbours](../../../06_neural-network-models/01_what-models-are/06_classical-machine-learning.md#6-k-nearest-neighbours)
+learning method in Book 6 is built on it too: it predicts by copying the answers of
+the most similar stored examples.
+
+---
+
+## 8. Where to read next
 
 - [Iterative closest point](02_iterative-closest-point.md) uses nearest-neighbour
   search in every round to line a model up with a scan.
@@ -382,7 +398,5 @@ return the second-nearest point.
   radius search to group points into objects.
 - [Least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   fits the plane through each point's neighbours to get its normal.
-- Book 6's [point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
-  shows learned models that are built on the same nearest-neighbour groups.
 - Book 2's [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md#31-nearest-neighbour-with-a-gate)
   uses nearest neighbour with a gate to match objects over time.

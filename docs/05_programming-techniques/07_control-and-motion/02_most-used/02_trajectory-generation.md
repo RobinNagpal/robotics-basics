@@ -35,7 +35,8 @@ arms that jerk when driven from a slow stream of targets.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why trajectory generation, and what it costs](#7-why-trajectory-generation-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -455,7 +456,25 @@ fresh plan.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+A learned policy from Book 6 does part of this job itself. An
+[action chunking transformer](../../../06_neural-network-models/05_movement-models/02_most-used/02_action-chunking-transformers.md#blending-overlapping-chunks)
+gives a whole chunk of targets at once and blends the chunks where they overlap,
+so its motion is smooth without a hand-written profile, and its timing is copied
+from the person who showed the task. That wins when the right speed depends on
+the task, such as slowing down near the object, and is easier to show than to
+write down. But a policy does not know the joints' speed, acceleration and jerk
+limits, and it sends targets far more slowly than the controller runs. So a
+trajectory generator still sits under it, filling in the ticks between targets as
+section 4 showed, and a programmed check keeps speed within set limits, as Book
+6's [safety checks around a model](../../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
+describes. For a planned move through free space, where only the limits decide
+the timing, the generator alone is the right tool.
+
+---
+
+## 9. Where to read next
 
 - The next page is [impedance and force control](../03_also-used/01_impedance-and-force-control.md),
   which takes over when the trajectory ends in contact.
@@ -465,6 +484,3 @@ fresh plan.
   smooths the path before it is timed, and can time it too.
 - Book 3's [planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md#8-turning-a-path-into-a-trajectory)
   shows where TOTG, Ruckig and TOPP-RA sit in MoveIt.
-- Book 6's [action chunking transformers](../../../06_neural-network-models/05_movement-models/02_most-used/02_action-chunking-transformers.md)
-  explains how a learned policy produces a short stretch of targets at once, which
-  is its own answer to the same smoothing problem.

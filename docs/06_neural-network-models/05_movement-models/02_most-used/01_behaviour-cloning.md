@@ -34,7 +34,8 @@ answer, and adjusting.
    · [Hindsight relabelling](#hindsight-relabelling)
    · [Where it fails, and the tools](#where-it-fails-and-the-tools)
 9. [Why behaviour cloning, and what it costs](#9-why-behaviour-cloning-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -151,7 +152,7 @@ record them.
 How many demonstrations are needed? For one narrow task, such as picking up one mug
 from different places on a table, people usually record from a few dozen to a few
 hundred. The more the task varies, the more demonstrations it needs. The page
-[where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md)
+[where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md)
 explains how people collect data at larger scale.
 
 Training a small behaviour cloning policy on one graphics card usually takes hours,
@@ -489,7 +490,27 @@ next pages.
 
 ---
 
-## 10. Where to read next
+## 10. The written alternative
+
+The written way to do the same job is to find the object, plan a route to it, and
+move the arm along that route. Book 5 covers the three parts. [Sampling-based
+planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
+finds a route that hits nothing. [Trajectory
+generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
+turns the route into smooth targets for each joint, and [PID
+control](../../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md)
+makes each joint follow them. Book 3's [programmed
+methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md) shows
+how these parts are put together on one arm.
+
+The written way wins when the objects are rigid, their shape is known, and the task
+is the same every time. It can be checked before it runs, and it does the same thing
+on every run. Behaviour cloning wins when the task is easier to show than to
+describe, such as folding a towel or wiping a spill.
+
+---
+
+## 11. Where to read next
 
 The next page, [action chunking transformers](02_action-chunking-transformers.md),
 shows how choosing a burst of moves at once reduces the adding-up of small
@@ -502,7 +523,7 @@ To compare copying with learning by trial, read
 to the list of all the kinds, read [the chapter overview](../01_overview.md).
 
 For more on where demonstrations come from, read
-[where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md),
+[where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md),
 and for the rigs people use to record them, Book 3's
 [data and demonstration page](../../../03_frameworks/08_frontier/03_data-and-demonstration.md).
 For a more critical account of behaviour cloning, with published numbers, read

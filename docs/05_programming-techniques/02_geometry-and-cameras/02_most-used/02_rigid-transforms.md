@@ -30,7 +30,8 @@ piece is used on a real arm with a camera.
 4. [Where it works, and where it goes wrong](#4-where-it-works-and-where-it-goes-wrong)
 5. [Libraries that provide it](#5-libraries-that-provide-it)
 6. [Why transforms, and what they cost](#6-why-transforms-and-what-they-cost)
-7. [Where to read next](#7-where-to-read-next)
+7. [The learned alternative](#7-the-learned-alternative)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -459,7 +460,23 @@ readings, and the calibration.
 
 ---
 
-## 7. Where to read next
+## 7. The learned alternative
+
+There is no learned model that replaces rigid transforms, because joining, undoing
+and blending them is exact arithmetic, and a network could only make it
+approximate. Learned models produce transforms instead. Book 6's
+[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+estimates an object's rigid transform from a picture with a trained model, and that
+answer still has to be joined into the chain on this page to reach the arm's base.
+Where a part of the arm is not quite rigid, such as a link that bends a little
+under its own weight, Book 6's
+[learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
+describes a small network that learns the leftover error and adds a correction to
+the tool's position. The transforms still do the main work.
+
+---
+
+## 8. Where to read next
 
 - The next page is [calibration](03_calibration.md). It measures the transform from
   the flange to the camera, which this page took as given.
@@ -471,7 +488,5 @@ readings, and the calibration.
   runs the transform chain backwards, from a wanted pose to joint angles.
 - [Trajectory generation](../../07_control-and-motion/02_most-used/02_trajectory-generation.md)
   uses slerp to move the gripper smoothly between orientations.
-- Book 6's [keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-  estimates an object's rigid transform from a picture with a trained model.
 - Book 3's [frames, conventions, and the bug class that comes from mixing them](../../../03_frameworks/03_arm-movement/08_frames-and-conventions.md)
   goes much deeper into the conventions and how to check them.

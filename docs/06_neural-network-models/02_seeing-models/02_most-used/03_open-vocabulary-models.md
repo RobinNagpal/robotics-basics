@@ -21,7 +21,8 @@ finding outlines from a click, and general-purpose picture features.
 6. [A worked example: "pick up the blue mug"](#6-a-worked-example-pick-up-the-blue-mug)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -174,7 +175,7 @@ same picture and learns to give them similar embeddings. It also learns to fill 
 the embedding of a hidden patch from its neighbours. No human says what anything
 is.
 
-The page [where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md)
+The page [where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md)
 explains these kinds of data in general.
 
 ---
@@ -287,7 +288,19 @@ licences that must be read carefully before commercial use.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+None for finding things from words, because the link between a word and what the
+thing looks like can only be learned from a very large number of pictures with
+captions. Only the click-to-outline half has a partial written stand-in. After
+the table is removed, [clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md) splits the depth points that are left
+into separate objects without knowing what they are, as long as they stand
+apart. The robot can then choose an object by its place, such as the nearest
+one, but not by its name.
+
+---
+
+## 10. Where to read next
 
 - [Tracking and motion](../03_also-used/03_tracking-and-motion.md) is the next page. It shows how
   SAM 2 and other models follow an object through a video.

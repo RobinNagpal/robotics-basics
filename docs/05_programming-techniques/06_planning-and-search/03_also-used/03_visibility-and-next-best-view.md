@@ -35,7 +35,8 @@ the loop that uses it.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why this, and what it costs](#7-why-this-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -455,7 +456,23 @@ good as its candidate list: it cannot choose a view you did not offer it.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+There is no learned model in Book 6 that replaces the sight-line test, because
+the test is an exact formula that runs in microseconds, and a network could only
+copy it less exactly. The nearest learned alternative is to skip the extra view.
+A [shape completion](../../../06_neural-network-models/03_3d-models/03_also-used/01_shape-completion.md)
+model guesses the hidden back of an object from one picture, which wins when the
+camera cannot get round the object, such as in a bin or on a shelf, or when every
+extra move costs too much time. But the back it gives is invented, not measured,
+so Book 6's rule is to use completion when you cannot look, and to look when you
+can afford it. The two also work together: a model's low
+[confidence](../../../06_neural-network-models/09_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md#7-declining-to-act-the-reject-option-and-cascades)
+is the signal to look again, and this page then chooses where.
+
+---
+
+## 9. Where to read next
 
 - Book 2's [choosing where to look](../../../02_perception/02_object-perception/09_choosing-where-to-look.md)
   applies this page with a real camera: distance, viewing angle, reach, and the

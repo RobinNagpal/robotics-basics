@@ -169,7 +169,7 @@ arm it was trained on. The pages that follow return to these costs for each kind
 ## 7. How this chapter connects to the others
 
 The book has seven families of model. [The map of
-models](../01_what-models-are/09_the-map-of-models.md) lists them all. Here is how
+models](../01_what-models-are/07_the-map-of-models.md) lists them all. Here is how
 this one fits with the other six.
 
 - [Seeing models](../02_seeing-models/01_overview.md) turn a picture into names,

@@ -37,7 +37,8 @@ Every number on this page is printed by the diagram script
 4. [Where it works, and where it does not](#4-where-it-works-and-where-it-does-not)
 5. [Libraries that provide it](#5-libraries-that-provide-it)
 6. [Why numerical inverse kinematics, and what it costs](#6-why-numerical-inverse-kinematics-and-what-it-costs)
-7. [Where to read next](#7-where-to-read-next)
+7. [The learned alternative](#7-the-learned-alternative)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -478,7 +479,24 @@ near a singularity, at the price of slower progress near one.
 
 ---
 
-## 7. Where to read next
+## 7. The learned alternative
+
+A learned IK solver, described in Book 6's
+[learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics),
+is a network trained on many pairs of joint angles and the gripper poses forward
+kinematics gives for them. It answers in one pass, and some, such as IKFlow, give
+many different answers at once, which helps when a seven-joint arm needs a choice
+of poses. But its answer is close, not exact, so it is used as the starting guess
+for this loop, which finishes the job in a step or two, as section 3 showed. For
+one target at a time, the loop alone is still the usual choice, because it is
+exact, needs no training, and works on a new arm without retraining. A
+[learned arm model](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
+does a different job: it learns the small bends and gear play that make the real
+tool miss the pose that forward kinematics predicts.
+
+---
+
+## 8. Where to read next
 
 - [Trajectory optimisation](03_trajectory-optimisation.md) uses the same step-by-step
   lowering of a cost for a whole path instead of one pose.
@@ -490,10 +508,6 @@ near a singularity, at the price of slower progress near one.
   the poses and rotations that a full six-number miss is made from.
 - [PID control](../../07_control-and-motion/02_most-used/01_pid-control.md) is what turns the joint
   angles this page finds into motor commands.
-- Book 6 does the same job with learning in
-  [learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics),
-  and learns the arm's own shape in
-  [learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md).
 - Book 1 has the formula method and the first version of this loop in
   [inverse kinematics](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md).
 - Book 3 covers singularities in

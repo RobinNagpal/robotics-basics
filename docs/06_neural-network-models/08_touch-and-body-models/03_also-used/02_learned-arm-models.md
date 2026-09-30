@@ -10,6 +10,13 @@ the first chapter of this book. You should know from Book 1 that an arm is a cha
 of joints and links, and that each joint has a motor and an encoder, which is the
 sensor that measures the joint's angle.
 
+> Before this page, it helps to have read [arm
+> dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md),
+> which explains the textbook model of the torque each joint needs, and [system
+> identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
+> which measures the numbers inside it. This page learns the part that those two
+> leave out.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -20,7 +27,8 @@ sensor that measures the joint's angle.
 6. [A worked example: a heavier gripper on an old arm](#6-a-worked-example-a-heavier-gripper-on-an-old-arm)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this rather than the obvious alternative, and what it costs](#8-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -235,7 +243,7 @@ months and compares the new residual with the old one.
   use an arm that measures joint torque directly.
 - **Speed.** The controller needs a torque answer many hundreds of times a second.
   A large network may be too slow. People use small networks for this job. [Running
-  a model on a robot](../../01_what-models-are/05_running-a-model-on-a-robot.md)
+  a model on a robot](../../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
   explains the trade-off.
 - **No guarantee.** A learned correction can make things worse in an odd pose. A
   controller that uses one should limit how large the correction may be.
@@ -266,7 +274,25 @@ What it costs you:
 - A model that gives no guarantee. Keep the physics model underneath, and limit the
   size of the learned correction.
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written alternative is the textbook model with its numbers measured on your own
+arm, the first alternative in section 8. Book 5's [arm
+dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
+explains the model. [System
+identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+explains how to move the arm so that the data can tell the numbers apart, and how to
+fit them. The geometry calibration in section 3.4 is written code too: a fit of the
+kind that [least-squares
+fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+explains.
+
+The written model wins as a first step, and it is often enough on its own, because
+it needs little data and behaves sensibly everywhere. A learned correction wins only
+for effects that are not a simple number to fit, such as friction that changes with
+temperature, or a cable that pulls differently in each pose.
+
+## 10. Where to read next
 
 In this chapter:
 

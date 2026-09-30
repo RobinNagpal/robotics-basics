@@ -20,7 +20,8 @@ compares the two.
 6. [A worked example: fetching the right mug](#6-a-worked-example-fetching-the-right-mug)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why use a vision-language model, and what it costs](#8-why-use-a-vision-language-model-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -262,7 +263,24 @@ measurement.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+There is no full written alternative, because no written program can answer a
+question that nobody planned for. The two jobs a vision-language model does most on
+an arm do have written versions. To pick out an object by a fixed property, such as
+"the red mug", [thresholding and colour
+masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+is fast and exact. To check that a step worked, a measurement is more reliable.
+[Sensor
+streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
+turns how far the gripper closed, or the weight on a scale, into a clean yes or no.
+
+The written way wins whenever the question is fixed and a colour or a sensor reading
+answers it. The vision-language model wins when the question itself changes.
+
+---
+
+## 10. Where to read next
 
 - [Vision-language-action models](01_vision-language-action-models.md) takes a
   vision-language model and teaches it to output arm movements as well as words.

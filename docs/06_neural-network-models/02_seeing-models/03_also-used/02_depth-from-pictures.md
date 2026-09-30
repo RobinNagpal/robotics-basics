@@ -11,6 +11,8 @@ It covers three kinds of model. The first guesses depth from one photo. The seco
 measures depth from two photos taken side by side. The third repairs the holes that
 a depth camera leaves on shiny and clear objects.
 
+> Before this page, it helps to have read [multi-view geometry](../../../05_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md), which explains how the shift of a point between two pictures gives its depth. The stereo models on this page learn the matching and keep that geometry.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -21,7 +23,8 @@ a depth camera leaves on shiny and clear objects.
 6. [A worked example: picking a glass](#6-a-worked-example-picking-a-glass)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -296,7 +299,21 @@ several of the best models have research-only licences.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+[Multi-view geometry](../../../05_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md) in Book 5 measures depth with no model. It finds
+the depth of a point from two pictures taken from known places, and from one
+picture when the point is known to lie on the table. Most depth cameras already
+do this inside the camera, with a projected pattern of dots to help the
+matching. For glass, which a depth camera cannot see, the same page measures
+height from how far the outline shifts when a wrist camera slides sideways. The
+written way gives measured distances in metres, with no training. The models win
+on plain and shiny surfaces, where written matching finds nothing to match, and
+when there is only one picture and no table to measure from.
+
+---
+
+## 10. Where to read next
 
 - [Keypoints and object pose](../02_most-used/04_keypoints-and-object-pose.md) is the page before
   this one. Most pose models need good depth.
@@ -305,7 +322,7 @@ several of the best models have research-only licences.
 - [Point cloud models](../../03_3d-models/02_most-used/01_point-cloud-models.md) and
   [shape completion](../../03_3d-models/03_also-used/01_shape-completion.md) work on the 3D points a
   depth map turns into.
-- [Running a model on a robot](../../01_what-models-are/05_running-a-model-on-a-robot.md)
+- [Running a model on a robot](../../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
   explains why a GPU matters and how fast a model must be.
 - For the sensors themselves, read
   [the sensors, and the software for each](../../../02_perception/02_object-perception/02_sensors.md).

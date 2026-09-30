@@ -26,7 +26,8 @@ is a kind of segmentation model.
 6. [A worked example: a tote and a kitchen drawer](#6-a-worked-example-a-tote-and-a-kitchen-drawer)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -295,7 +296,21 @@ list of jobs.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+For suction, the plain geometry that section 8 describes is built from Book 5
+pages. [RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md) fits flat patches to the depth points. The
+[distance transform](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md) finds the point of a part's mask that is furthest
+from every edge, and says whether the cup fits there. For affordances, the
+written way is a rule for each kind of object, such as "hold a knife by the
+handle", written as Book 3's [rules from a measured
+profile](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#6-rules-from-a-measured-profile) describes. The written methods
+win on boxes and on tools you have listed. The models win on lumpy bags, tight
+clutter, surfaces that look flat but leak, and tools nobody has listed.
+
+---
+
+## 10. Where to read next
 
 - [Grasp quality models](../03_also-used/02_grasp-quality-models.md) scores one grasp at a time,
   including suction grasps.

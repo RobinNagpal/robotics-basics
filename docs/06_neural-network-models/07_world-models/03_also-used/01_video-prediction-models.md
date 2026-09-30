@@ -25,7 +25,8 @@ from [what a model is](../../01_what-models-are/01_what-a-model-is.md).
 6. [A worked example: sliding a cube to a clicked spot](#6-a-worked-example-sliding-a-cube-to-a-clicked-spot)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -300,7 +301,26 @@ What it costs you:
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written alternative measures the object instead of drawing it. The camera finds
+the cube with [thresholding and colour
+masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md),
+and a written model of pushing predicts how it will move. Book 3's [quasi-static
+planar
+pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing)
+is that model. The planning loop in section 6 is written code either way.
+[Sampling-based optimisation and model predictive
+control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+tries many sequences of moves, does the first move of the best one, and plans again.
+
+The written way wins for rigid objects that the camera can measure, because it is
+fast and its predictions can be checked. The video model wins when the objects have
+no short description, or when one model must handle many kinds of object.
+
+---
+
+## 10. Where to read next
 
 - The [next page](02_learned-simulators.md) covers learned simulators, which
   follow cloth, liquids and other soft materials piece by piece.

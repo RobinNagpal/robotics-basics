@@ -24,7 +24,8 @@ explained where it first appears.
 7. [Well-known models and libraries](#7-well-known-models-and-libraries)
 8. [What goes wrong, and what people do about it](#8-what-goes-wrong-and-what-people-do-about-it)
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -372,7 +373,25 @@ right column as what people usually use.
 
 ---
 
-## 10. Where to read next
+## 10. The written alternative
+
+The written alternative is a rule on a measurement, as section 9 says. Book 5 shows
+how to build such rules. [Sensor
+streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
+turns a reading, such as how far the gripper closed or the weight on a scale, into a
+clean yes-or-no flag. [Thresholding and colour
+masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+checks a picture for a known colour in a known place. [Pose from
+points](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
+measures where an object with a printed marker is.
+
+The written rule wins whenever a measurement like these answers "is it done?",
+because it is fast and easy to check. A judge model wins only when the answer can
+only be seen, such as whether a towel is folded neatly.
+
+---
+
+## 11. Where to read next
 
 In this chapter:
 

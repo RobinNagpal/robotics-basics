@@ -212,7 +212,7 @@ with a worked example of a pushed block.
 Start with [learned dynamics models](02_most-used/01_learned-dynamics-models.md). It is the
 simplest kind, and the planning idea it explains is used by the other three.
 
-For the other chapters, the [map of models](../01_what-models-are/09_the-map-of-models.md)
+For the other chapters, the [map of models](../01_what-models-are/07_the-map-of-models.md)
 lists all seven. The two closest to this one are
 [movement models](../05_movement-models/01_overview.md), which decide what the arm
 does, and [reinforcement learning policies](../05_movement-models/03_also-used/01_reinforcement-learning-policies.md),

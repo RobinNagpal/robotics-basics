@@ -34,7 +34,8 @@ page explains what it needs.
    · [Where it is used, where it fails, and libraries](#55-where-it-is-used-where-it-fails-and-libraries)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why ICP, and what it costs](#7-why-icp-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -470,13 +471,6 @@ as: what goes wrong, the sign you see, and what people use instead.
 | The part is a small share of a cluttered scan | RANSAC fits the move to the table or a neighbouring part | cut the part out of the scan first, for example with [clustering](../../05_image-and-point-cloud-processing/02_most-used/03_clustering.md) |
 | The part is symmetric | the pose flips between look-alike turns | accept the ambiguity, or use a marking that breaks the symmetry |
 
-Learned 3D features, which a network computes from the points, are more reliable on
-noisy and partial scans. Book 6's
-[point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
-describes networks that read point clouds, and
-[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-describes networks that give a pose directly. ICP is still used after them.
-
 The table below lists the functions to look up. Each row is one library.
 
 | Library | Languages | Functions or classes |
@@ -524,8 +518,7 @@ corners, between the model and the scan, and fit the pose to those matches with
 RANSAC. Feature matching does not need a first guess, which is its great advantage.
 But it is less exact, because it uses only a few points. So the usual answer is to
 use both: features for the first guess, then ICP to make it exact, as
-[section 5](#5-getting-a-first-guess-3d-features-and-global-registration) shows. A
-learned pose model can take the place of the features.
+[section 5](#5-getting-a-first-guess-3d-features-and-global-registration) shows.
 
 The costs are these. ICP needs a first guess, and it gives a confident wrong answer
 when the guess is poor, so you must check the final gap. It needs a model of the
@@ -536,7 +529,26 @@ And it cannot tell apart poses that a symmetric part makes look the same.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+Book 6's
+[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+describes networks that give an object's pose directly from a picture. Models such
+as MegaPose and FoundationPose need only the part's CAD model, or for FoundationPose
+a few photos of it. They cope with clutter and need no first guess, so they can take the place of the 3D features and RANSAC in
+[section 5](#5-getting-a-first-guess-3d-features-and-global-registration).
+FoundationPose can also follow a moving part's pose from frame to frame, the job
+ICP does from the last pose. Networks that read point clouds, from Book 6's
+[point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md),
+can learn their own 3D features in place of hand-written ones. But a pose model
+needs a graphics processor, and it gives no warning when it is wrong, so ICP is still
+run after it, as [section 3](#3-where-it-is-used-on-a-robot-arm) describes, and
+ICP's final gap is the check. ICP alone still wins when a first guess is already at
+hand, such as the last frame's pose or a part in a fixed tray.
+
+---
+
+## 9. Where to read next
 
 - [Nearest-neighbour search](01_nearest-neighbour-search.md) is the search inside
   every ICP round.
@@ -548,8 +560,7 @@ And it cannot tell apart poses that a symmetric part makes look the same.
 - [Least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   explains "the smallest sum of squared distances", the measure ICP's best-move
   step uses.
-- Book 6's [keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-  finds a pose with a learned model, and
+- Book 6's
   [scene reconstruction](../../../06_neural-network-models/03_3d-models/02_most-used/02_scene-reconstruction.md)
   builds a 3D scene from many views with learning.
 - [Image features and matching](../03_also-used/01_image-features-and-matching.md)

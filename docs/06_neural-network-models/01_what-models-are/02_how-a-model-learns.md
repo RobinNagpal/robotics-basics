@@ -14,6 +14,8 @@ By the end you will know the words that every later page uses: example,
 label, loss, gradient descent, learning rate, epoch, training set, test set,
 overfitting, underfitting and checkpoint.
 
+> Before this page, it helps to have read [least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md), which finds the two numbers of a line by making the sum of squared errors as small as possible. Training a model does the same job for many more numbers.
+
 ## Contents
 
 1. [Examples and labels](#1-examples-and-labels)
@@ -48,7 +50,7 @@ about 1.2 million training photos sorted into 1,000 kinds of object.
 The label must match what you want the model to output. If you want the model
 to draw a box around the mug, each label must be a box, drawn by a person. If
 you want the model to move the arm, each label must be the arm movement that a
-person made. The [data page](04_where-the-data-comes-from.md) covers how robot
+person made. The [data page](05_where-the-data-comes-from.md) covers how robot
 labels are collected.
 
 Learning from examples that have labels is called **supervised learning**. The
@@ -258,7 +260,7 @@ People do four main things about overfitting:
 - Stop training when the validation loss stops going down. This is called
   **early stopping**.
 - Use a smaller model, or start from a model that was already trained on a much
-  larger dataset. The [data page](04_where-the-data-comes-from.md) explains
+  larger dataset. The [data page](05_where-the-data-comes-from.md) explains
   this second idea, which is called fine-tuning.
 
 Underfitting has the opposite fixes: a bigger model, or more training.
@@ -301,7 +303,7 @@ book have billions of weights, and their files are many gigabytes.
 Using a trained model to get an answer is called **inference**. Inference only
 does the forward calculation, from input to output. It does not change the
 weights, and it needs far less computing power than training. The
-[running-a-model page](05_running-a-model-on-a-robot.md) covers inference on a
+[running-a-model page](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md) covers inference on a
 real robot arm.
 
 ---
@@ -339,7 +341,7 @@ Gradient descent costs you three things.
 - [Inside a neural network](03_inside-a-neural-network.md) is the next page. It
   shows what a single neuron calculates, and the layers used for pictures and
   sentences.
-- [Where the data comes from](04_where-the-data-comes-from.md) explains how
+- [Where the data comes from](05_where-the-data-comes-from.md) explains how
   labelled examples for a robot arm are collected, and how fine-tuning reuses a
   model trained on other data.
 - [The glossary in Book 3](../../03_frameworks/04_one-arm-training/06_glossary.md#learning)

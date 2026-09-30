@@ -26,7 +26,8 @@ explains the convolutional layers this kind of model is built from.
 6. [A worked example: a mug on a table](#6-a-worked-example-a-mug-on-a-table)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -267,7 +268,20 @@ run on current software.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+A written top-down grasp is built from Book 5's picture methods and Book 3's
+rules. A depth limit from [thresholding and colour masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) marks what
+stands above the table. [Edges and contours](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md) traces each object's
+outline. The smallest turned rectangle round that outline gives the angle for
+the wrist, and the outline's width checks that the part fits between the
+fingers. Book 3's [choosing a grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md) then chooses where on the outline to
+close. The written way wins for known objects spread out on a flat surface. The
+model wins on objects nobody has listed.
+
+---
+
+## 10. Where to read next
 
 - [Six-degree-of-freedom grasps](../02_most-used/01_six-dof-grasps.md) removes the straight-down
   limit.

@@ -28,7 +28,8 @@ fast enough for a live camera.
 6. [Where it is used on a robot arm](#6-where-it-is-used-on-a-robot-arm)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why detection, and what it costs](#8-why-detection-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -199,7 +200,7 @@ example with 80 pictures in
 Some projects make their training pictures in a simulator instead. The simulator
 draws the objects and knows exactly where every box is, so nobody has to label by
 hand. The page
-[where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md)
+[where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md)
 explains this.
 
 ---
@@ -328,7 +329,24 @@ model and its trained weights before you ship your robot.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+Book 5 finds objects with written rules instead of a trained network. First,
+[thresholding and colour masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) marks the pixels that have a chosen
+colour, or the points that stand above the table in a depth picture. Then
+[clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md) splits those pixels or points into separate objects, and
+gives each one a box and a centre. For one known object with printing on it,
+such as a boxed product, [image features and matching](../../../05_programming-techniques/03_searching-and-matching/03_also-used/01_image-features-and-matching.md) finds it by
+matching small spots against a stored picture. The written way wins in a cell
+you control, for example parts in colours nothing else shares, standing apart on
+a plain table: it needs no labelled pictures and gives the same answer every
+time. The detector wins when there are many kinds of object, when colours are
+shared or the light changes, and when the robot must say what each object is,
+which a threshold cannot do.
+
+---
+
+## 10. Where to read next
 
 - The next page is [segmentation](02_segmentation.md). It replaces the box with the
   exact outline of each object.
@@ -338,7 +356,7 @@ model and its trained weights before you ship your robot.
   without training on them first.
 - [Tracking and motion](../03_also-used/03_tracking-and-motion.md) follows detected objects from
   one picture to the next.
-- [Running a model on a robot](../../01_what-models-are/05_running-a-model-on-a-robot.md)
+- [Running a model on a robot](../../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
   explains how fast a model must be, and where it runs.
 - Book 2 goes deeper in
   [finding an object in a picture](../../../02_perception/01_camera/02_finding-objects.md),

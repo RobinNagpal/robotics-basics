@@ -26,7 +26,8 @@ explaining them again.
 6. [Where it is used on a robot arm](#6-where-it-is-used-on-a-robot-arm)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why segmentation, and what it costs](#8-why-segmentation-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -328,7 +329,21 @@ is still only a flat shape: to reach for the object, the robot still needs depth
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+Book 5 makes masks with written rules. [Thresholding and colour
+masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) makes a mask from a colour, a brightness or a height above the
+table. [Morphology and the distance transform](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md) removes specks, fills
+holes, and can split parts that touch. [Clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md) then turns the mask,
+or the depth points above the table, into one piece per object. The written way
+wins when each object has a colour or a height that nothing else shares: it runs
+in milliseconds and needs no traced outlines. The segmentation model wins when
+objects touch as a matter of course, when they share colours with the
+background, or when they vary too much for one rule.
+
+---
+
+## 10. Where to read next
 
 - The next page is [keypoints and object pose](04_keypoints-and-object-pose.md). It
   finds named points on an object and which way the object faces.

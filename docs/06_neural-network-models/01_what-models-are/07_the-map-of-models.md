@@ -28,8 +28,9 @@ any time, when you want to see where one chapter fits among the others.
 4. [Every page in this book](#4-every-page-in-this-book)
 5. [When each kind does its job](#5-when-each-kind-does-its-job)
 6. [How the categories connect](#6-how-the-categories-connect)
-7. [A suggested reading order](#7-a-suggested-reading-order)
-8. [Where to read next](#8-where-to-read-next)
+7. [Find a method by job](#7-find-a-method-by-job)
+8. [A suggested reading order](#8-a-suggested-reading-order)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -164,20 +165,17 @@ body models check what is happening at the fingers and inside the arm.
 This section lists every page in the book, so you can find any one of them from here.
 
 The first chapter, the one this page is in, explains the ideas that every later page
-uses. Its nine pages are meant to be read in order:
+uses. Its seven pages are meant to be read in order:
 
 1. [What a model is](01_what-a-model-is.md)
 2. [How a model learns](02_how-a-model-learns.md)
 3. [Inside a neural network](03_inside-a-neural-network.md)
-4. [Where the data comes from](04_where-the-data-comes-from.md)
-5. [Running a model on a robot](05_running-a-model-on-a-robot.md)
-6. [Uncertainty and confidence](06_uncertainty-and-confidence.md): how to tell when
-   a model is unsure, and what the robot should do then.
-7. [Fine-tuning](07_fine-tuning.md): how to adapt a model that someone else trained
-   to your own robot and objects.
-8. [Classical machine learning](08_classical-machine-learning.md): learning methods
+4. [Learning signals](04_learning-signals.md): the four ways a model is taught,
+   which are supervised, self-supervised, imitation and reinforcement learning.
+5. [Where the data comes from](05_where-the-data-comes-from.md)
+6. [Classical machine learning](06_classical-machine-learning.md): learning methods
    that are not neural networks but are used next to them on robots.
-9. The map of models. This page.
+7. The map of models. This page.
 
 Each of the seven family chapters after that starts with an overview page. The rest
 of its pages are split into two groups. The **most used** group holds the kinds of
@@ -202,6 +200,19 @@ The split is about how often a page's kind of model is used, not about how good 
 is. An also-used model can be the right choice for your task. For example, if your
 robot must learn a skill by trial and error, reinforcement learning is the page to
 read, even though it sits in the also-used group.
+
+The last chapter, [making models work on an arm](../09_making-models-work-on-an-arm/01_overview.md),
+is not a family of models. It is about what every model needs before a real arm can
+rely on it. It has an overview and the same two groups:
+
+- Most used: [fine-tuning](../09_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md),
+  which adapts a model that someone else trained to your own robot and objects;
+  [running a model on a robot](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md),
+  which puts the model inside the loop that drives the arm; and
+  [evaluation and failure](../09_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md),
+  which measures whether it really works and how it fails.
+- Also used: [uncertainty and confidence](../09_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md),
+  which tells the robot when a model is unsure, and what to do then.
 
 ---
 
@@ -243,23 +254,60 @@ model, so the movement model can try actions in its imagination first. The chapt
 point out these links where they matter.
 
 The categories also share their data sources. The
-[where the data comes from](04_where-the-data-comes-from.md) document described
+[where the data comes from](05_where-the-data-comes-from.md) document described
 them. Seeing and language models learn mostly from pictures and text, often from the
 internet. Movement models learn mostly from demonstrations and simulation. Touch and
 body models learn from the robot's own sensors. And almost all of them run inside
-the loop described in [running a model on a robot](05_running-a-model-on-a-robot.md).
+the loop described in [running a model on a robot](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md).
 
 ---
 
-## 7. A suggested reading order
+## 7. Find a method by job
+
+Most people come to these books with a job in mind, not a method. This section
+starts from the job. Read each row across: a job the arm must do, the Book 2 or
+Book 3 page that helps you choose how to do it, the written techniques in Book 5 that
+can do it, and the learned models in Book 6 that can do it.
+
+| Job on the arm | Book 2 or 3 page that helps choose | Written techniques (Book 5) | Learned models (Book 6) |
+| --- | --- | --- | --- |
+| find an object in a picture | [object perception](../../02_perception/02_object-perception/01_overview.md) (Book 2) | [thresholding and colour masks](../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md), [clustering](../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md), [edges and contours](../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md) | [object detection](../02_seeing-models/02_most-used/01_object-detection.md), [segmentation](../02_seeing-models/02_most-used/02_segmentation.md), [open-vocabulary models](../02_seeing-models/02_most-used/03_open-vocabulary-models.md) |
+| turn a pixel into a position the arm can reach | [frames and conventions](../../03_frameworks/03_arm-movement/08_frames-and-conventions.md) | [pinhole camera model](../../05_programming-techniques/02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md), [rigid transforms](../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md), [calibration](../../05_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md) | [depth from pictures](../02_seeing-models/03_also-used/02_depth-from-pictures.md) |
+| measure an object's pose | [models that measure](../../02_perception/02_object-perception/05_models-that-measure.md) (Book 2) | [pose from points](../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md), [iterative closest point](../../05_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md) | [keypoints and object pose](../02_seeing-models/02_most-used/04_keypoints-and-object-pose.md), [point cloud models](../03_3d-models/02_most-used/01_point-cloud-models.md) |
+| build a 3D map of the space round the arm | [the planning scene](../../03_frameworks/03_arm-movement/03_planning-a-path.md#7-the-planning-scene-and-what-collision-checking-really-checks) | [volumetric maps](../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md), [multi-view geometry](../../05_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md) | [scene reconstruction](../03_3d-models/02_most-used/02_scene-reconstruction.md), [shape completion](../03_3d-models/03_also-used/01_shape-completion.md), [3D feature maps](../03_3d-models/03_also-used/02_3d-feature-maps.md) |
+| track an object over time | [tracking and association](../../02_perception/02_object-perception/10_tracking-and-association.md) (Book 2) | [Kalman filter](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md), [assignment and matching](../../05_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md), [sensor streams](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md) | [tracking and motion](../02_seeing-models/03_also-used/03_tracking-and-motion.md) |
+| choose a grasp | [choosing a grip](../../03_frameworks/02_gripping/03_choosing-a-grip.md), [models that grasp](../../03_frameworks/02_gripping/04_models-that-grasp.md) | [morphology and distance transform](../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md), [least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md) | [six-DoF grasps](../04_grasp-models/02_most-used/01_six-dof-grasps.md), [suction and affordance](../04_grasp-models/02_most-used/02_suction-and-affordance.md), [grasp quality models](../04_grasp-models/03_also-used/02_grasp-quality-models.md) |
+| check the arm can reach a pose | [reaching and reachability](../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md) | [numerical inverse kinematics](../../05_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md) | none in common use |
+| plan a motion that hits nothing | [planning a path](../../03_frameworks/03_arm-movement/03_planning-a-path.md) | [sampling-based planning](../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md), [trajectory optimisation](../../05_programming-techniques/06_planning-and-search/02_most-used/03_trajectory-optimisation.md), [graph search](../../05_programming-techniques/06_planning-and-search/03_also-used/01_graph-search.md) | [learned motion planners](../05_movement-models/03_also-used/02_learned-motion-planners.md) |
+| control the joints along the plan | [controlling the move](../../03_frameworks/03_arm-movement/04_controlling-the-move.md) | [trajectory generation](../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md), [PID control](../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md), [arm dynamics](../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md) | [learned arm models](../08_touch-and-body-models/03_also-used/02_learned-arm-models.md) |
+| go straight from what the camera sees to a movement | [learned motion](../../03_frameworks/03_arm-movement/05_learned-motion.md) | [sampling-based optimisation and MPC](../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md) | [behaviour cloning](../05_movement-models/02_most-used/01_behaviour-cloning.md), [diffusion and flow policies](../05_movement-models/02_most-used/03_diffusion-and-flow-policies.md), [reinforcement learning policies](../05_movement-models/03_also-used/01_reinforcement-learning-policies.md) |
+| react to contact and force | [holding on](../../03_frameworks/02_gripping/05_holding-on.md) | [impedance and force control](../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md) | [force and slip models](../08_touch-and-body-models/02_most-used/01_force-and-slip-models.md), [touch sensing models](../08_touch-and-body-models/03_also-used/01_touch-sensing-models.md) |
+| notice a collision and stop | [what "the move failed" actually means](../../03_frameworks/03_arm-movement/04_controlling-the-move.md#3-what-the-move-failed-actually-means) | [safety monitoring](../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md) | [collision and failure detection](../08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md) |
+| decide the next step | [scripted logic](../../03_frameworks/04_one-arm-training/02_programmed-methods.md#3-scripted-logic-state-machines-and-behaviour-trees) | [finite state machines](../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md), [behaviour trees](../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md) | [language models as planners](../06_language-models/03_also-used/01_language-models-as-planners.md) |
+| choose the order to deal with objects | [ordering and rearrangement](../../03_frameworks/03_arm-movement/07_ordering-and-rearrangement.md) | [greedy algorithms and set cover](../../05_programming-techniques/08_decisions-and-task-logic/03_also-used/01_greedy-algorithms-and-set-cover.md), [optimisation solvers](../../05_programming-techniques/08_decisions-and-task-logic/03_also-used/02_optimisation-solvers.md) | [language models as planners](../06_language-models/03_also-used/01_language-models-as-planners.md) |
+| follow an instruction in words | [directed by language](../../03_frameworks/04_one-arm-training/03_learned-methods.md#5-directed-by-language) | none: a written program only accepts commands it was given in a fixed form | [vision-language-action models](../06_language-models/02_most-used/01_vision-language-action-models.md), [vision-language models](../06_language-models/02_most-used/02_vision-language-models.md) |
+| predict what happens next | [learned world models](../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#4-learned-world-models) | [arm dynamics](../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md), [system identification](../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md) | [learned dynamics models](../07_world-models/02_most-used/01_learned-dynamics-models.md), [video prediction models](../07_world-models/03_also-used/01_video-prediction-models.md), [learned simulators](../07_world-models/03_also-used/02_learned-simulators.md) |
+| check that the task worked | [judging whether it works](../../03_frameworks/03_arm-movement/05_learned-motion.md#6-judging-whether-it-works) | [behaviour trees](../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md), [thresholding and colour masks](../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) | [vision-language models](../06_language-models/02_most-used/02_vision-language-models.md), [reward and progress models](../05_movement-models/03_also-used/03_reward-and-progress-models.md) |
+
+Most jobs have both a written and a learned answer, and the Book 2 or Book 3 page says
+which one suits which case. Two rows have only one side. No learned model is in
+common use to check whether the arm can reach a pose, because inverse kinematics
+already gives an exact answer quickly. And no written technique can follow an
+instruction in free wording, because a person can say the same thing in too many
+ways to list them all. Many real arms mix the two sides: a learned model finds
+the object, and written techniques do the rest.
+
+---
+
+## 8. A suggested reading order
 
 You can read the chapters of this book in any order, because each one explains its
 own terms. But some chapters are easier after others. The list below is the order
 this book suggests, with the reason for each step.
 
 1. This chapter, [what models are](01_what-a-model-is.md). Everything else uses
-   its words: model, training, neural network, data, inference, confidence and
-   fine-tuning. Its nine pages are listed in [section 4](#4-every-page-in-this-book).
+   its words: model, training, neural network, learning signal and data. Its seven
+   pages are listed in [section 4](#4-every-page-in-this-book).
 2. [Seeing models](../02_seeing-models/01_overview.md). Most robot arms start
    with a camera, and most other models use what a seeing model finds.
 3. [3D models](../03_3d-models/01_overview.md). They take the step from flat
@@ -276,7 +324,11 @@ this book suggests, with the reason for each step.
    which makes most sense once you know what a movement model does with a
    prediction.
 8. [Touch and body models](../08_touch-and-body-models/01_overview.md). They
-   finish the book with the sense that works closest to the object itself.
+   finish the families with the sense that works closest to the object itself.
+9. [Making models work on an arm](../09_making-models-work-on-an-arm/01_overview.md).
+   It takes any of the models above from a notebook to a real arm: fine-tuning,
+   running it in the robot's loop, measuring it, and knowing when it is unsure. Read
+   it once you have a model you want to use.
 
 If you have one specific job in mind, you can also jump straight to its chapter. For
 example, if you only want to pick objects from a bin, read seeing models and then
@@ -287,11 +339,11 @@ whichever also-used pages fit your task.
 
 ---
 
-## 8. Where to read next
+## 9. Where to read next
 
 - The [seeing models overview](../02_seeing-models/01_overview.md) is the next
   chapter in the suggested order.
-- [Running a model on a robot](05_running-a-model-on-a-robot.md) explains the loop
+- [Running a model on a robot](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md) explains the loop
   that every one of these models runs inside.
 - [Foundation models and generalist policies](../../03_frameworks/08_frontier/02_foundation-models.md)
   in Book 3 lists the large models that try to do many of these jobs at once.

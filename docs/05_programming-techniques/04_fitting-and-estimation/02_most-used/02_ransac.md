@@ -32,7 +32,8 @@ is still the first thing most perception pipelines run on a new point cloud.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why RANSAC, and what it costs](#7-why-ransac-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -344,7 +345,24 @@ least-squares refit at the end to get the best accuracy.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+A segmentation model from Book 6's
+[point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
+gives every point a name, such as "mug", "box" or "table". That replaces RANSAC when
+no single shape dominates the scene, such as a cluttered pile of parts. For shapes
+that need many points to define, a pose model from
+[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+finds the object's pose directly. But a point cloud model needs labelled 3D data,
+which is much scarcer than labelled photos, it needs a graphics card for large
+clouds, and it knows only the kinds of object it was trained on. RANSAC still wins
+for the table, the walls of a bin and other simple shapes, because it needs no
+training, runs on an ordinary processor and says exactly which points belong to the
+shape.
+
+---
+
+## 9. Where to read next
 
 - [Least-squares fitting](01_least-squares-fitting.md) explains the final refit
   and the plane and circle fits that RANSAC calls.
@@ -354,8 +372,5 @@ least-squares refit at the end to get the best accuracy.
   the points left after the table is removed and splits them into objects.
 - [Nearest-neighbour search](../../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
   finds the neighbours used to compute each point's normal before a cylinder fit.
-- [Point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
-  in Book 6 label each point with a class, which replaces RANSAC when no single
-  shape dominates the scene.
 - Book 2 shows the full recipe in
   [remove the plane, then cluster](../../../02_perception/02_object-perception/03_programmed-methods.md#16-point-clouds-remove-the-plane-then-cluster).

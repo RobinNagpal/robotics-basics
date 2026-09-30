@@ -15,6 +15,8 @@ This page goes one step further than those two. A box says roughly where an obje
 is. An outline says which pixels belong to it. Neither says which way the object is
 turned. That is the job of the models on this page.
 
+> Before this page, it helps to have read [pose from points](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md), which explains Perspective-n-Point (PnP), the geometry that section 3 uses to turn keypoints into a pose.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -26,7 +28,8 @@ turned. That is the job of the models on this page.
 7. [Following a pose over time: 6D pose tracking](#7-following-a-pose-over-time-6d-pose-tracking)
 8. [What goes wrong](#8-what-goes-wrong)
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -173,7 +176,7 @@ So most pose models learn from pictures made in a computer. A program places CAD
 models of objects in a virtual scene, at poses it chooses. Then it renders a photo.
 Because the program chose the poses, it knows the right answer for every object,
 with no human effort. These pictures are called **synthetic data**. The page
-[where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md)
+[where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md)
 explains synthetic data in general.
 
 A model trained only on clean computer pictures often fails on real photos, because
@@ -477,7 +480,23 @@ wrong, so the robot needs some other check before it does anything risky.
 
 ---
 
-## 10. Where to read next
+## 10. The written alternative
+
+Book 5 finds poses with written geometry, and section 9 above says when that
+is enough. [Pose from points](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md) is the same PnP step that section 3 uses.
+When the points come from a printed marker, or from spots matched against a
+stored picture, no network is needed at all. [Iterative closest point](../../../05_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md),
+or ICP, lines up a CAD model with a depth scan and turns a rough pose into one
+that is often right to within a millimetre, but it needs a good first guess.
+[RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md), a method that fits a shape when some of the points belong to
+something else, fits a plane, a circle or a cylinder to depth points, which is
+enough for simple shapes. The written way wins for one known part, a fixture
+with a marker, or a simple shape on a clean table. The model wins in clutter,
+for shapes that are not simple, and for many different objects of one kind.
+
+---
+
+## 11. Where to read next
 
 - [Depth from pictures](../03_also-used/02_depth-from-pictures.md) is the next page. Most pose
   methods need good depth, and that page explains where depth comes from.

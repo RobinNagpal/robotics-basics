@@ -8,6 +8,11 @@ know what a language model is, and that it turns words into tokens and tokens in
 numbers. You do not need to know how to program a robot. The page uses a few lines
 of Python in one example, and explains each line.
 
+> Before this page, it helps to have read [behaviour
+> trees](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md),
+> which shows how the steps and retries of a task are written by hand. The planner
+> on this page chooses the same kind of steps from a request in words.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -23,7 +28,8 @@ of Python in one example, and explains each line.
 6. [A worked example: putting the cups away](#6-a-worked-example-putting-the-cups-away)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why use a planner, and what it costs](#8-why-use-a-planner-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -298,7 +304,26 @@ planner and the robot.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written alternative is a task program that a person writes in advance. [Finite
+state
+machines](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
+and [behaviour
+trees](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
+hold the steps, the checks and the retries, and the robot follows them exactly. When
+the order of the steps depends on where things are, Book 3's [task and motion
+planning](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#5-task-and-motion-planning)
+searches for an order the arm can really carry out.
+
+The written program wins when the task is known in advance, because it is fast, free
+to run and can be checked. The language model wins when the requests change and
+nobody can list them all. Even then, a checker in ordinary code stays between the
+planner and the robot.
+
+---
+
+## 10. Where to read next
 
 - [Vision-language models](../02_most-used/02_vision-language-models.md) adds a camera picture, so
   the model can see the table instead of being told about it.

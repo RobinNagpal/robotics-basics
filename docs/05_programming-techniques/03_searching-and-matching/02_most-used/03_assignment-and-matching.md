@@ -33,7 +33,8 @@ underneath it.
 4. [Where it is useful, and where it is not](#4-where-it-is-useful-and-where-it-is-not)
 5. [Libraries that provide it](#5-libraries-that-provide-it)
 6. [Why the Hungarian algorithm, and what it costs](#6-why-the-hungarian-algorithm-and-what-it-costs)
-7. [Where to read next](#7-where-to-read-next)
+7. [The learned alternative](#7-the-learned-alternative)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -378,7 +379,24 @@ objects" needs a more general solver.
 
 ---
 
-## 7. Where to read next
+## 7. The learned alternative
+
+There is no learned model that replaces the pairing step itself, because once the
+costs are known, the Hungarian algorithm finds the best pairing exactly and quickly.
+What learning improves is the cost. Book 6's
+[tracking and motion](../../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md)
+describes trackers that also compare how the objects look, using an **embedding**,
+a list of numbers that describes each box. Two look-alike objects that pass close
+to each other are then less likely to swap names, and a matching step still makes
+the pairs. SAM 2 works differently: you click once on an object, and it follows the
+object's outline through a video from its memory of how it looked, with no pairing
+step, but it needs a smooth video and cannot bridge a gap between separate photos.
+Position costs and this page's method are enough when objects stand well apart;
+learned appearance is worth adding when similar objects cross.
+
+---
+
+## 8. Where to read next
 
 - [Nearest-neighbour search](01_nearest-neighbour-search.md) fills in costs quickly
   and throws out pairs that are clearly too far apart.
@@ -388,8 +406,6 @@ objects" needs a more general solver.
   shows where the greedy idea works well, and where it fails, beyond matching.
 - [Optimisation solvers](../../08_decisions-and-task-logic/03_also-used/02_optimisation-solvers.md)
   solve the larger assignment problems that plain assignment cannot express.
-- Book 6's [tracking and motion](../../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md)
-  covers learned trackers, which do the same job with learned appearance.
 - Book 2's [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md)
   is the deep version of this page for a robot arm, including what to do when
   matching fails and how to keep an object's name through a grasp.

@@ -36,7 +36,8 @@ pixels, `fx` = `fy` = 277.1, `cx` = 160, `cy` = 120, 0.40 m above the table.
 4. [Where it works, and where it does not](#4-where-it-works-and-where-it-does-not)
 5. [Libraries that provide it](#5-libraries-that-provide-it)
 6. [Why two views, and what it costs](#6-why-two-views-and-what-it-costs)
-7. [Where to read next](#7-where-to-read-next)
+7. [The learned alternative](#7-the-learned-alternative)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -215,9 +216,7 @@ white table has nothing to match, and neither does a shiny surface that reflects
 different things into each camera. Many stereo depth cameras add a projector that
 throws a dot pattern onto the scene to give plain surfaces some texture. Book 2
 compares these sensors in
-[sensors](../../../02_perception/02_object-perception/02_sensors.md), and Book 6
-describes learned stereo matchers in
-[depth from pictures](../../../06_neural-network-models/02_seeing-models/03_also-used/02_depth-from-pictures.md#two-photos).
+[sensors](../../../02_perception/02_object-perception/02_sensors.md).
 
 ### Parallax: height from a sliding camera
 
@@ -377,11 +376,6 @@ choose the baseline: a 200 mm slide is about eleven times more precise than an
 18 mm built-in stereo baseline. The ground-plane constraint needs no second view at
 all, but only works for things that lie flat.
 
-A second alternative is a neural network that guesses depth from one picture. It
-needs no second view and no matching. But its depth has no fixed scale, and it can
-be wrong by centimetres on objects unlike its training pictures. Two views give a
-measured depth.
-
 The cost is this. You need to know the two camera poses accurately, which means a
 good calibration and pictures taken while the arm is still. You need a reliable
 match for every point. You need a second picture, which takes time when the arm has
@@ -389,7 +383,25 @@ to move. And you need a wide enough baseline, which the working space may not al
 
 ---
 
-## 7. Where to read next
+## 7. The learned alternative
+
+Book 6's
+[depth from pictures](../../../06_neural-network-models/02_seeing-models/03_also-used/02_depth-from-pictures.md)
+covers two learned models for this job. A learned stereo model, such as RAFT-Stereo
+or FoundationStereo, does the matching with a network, then turns each shift into a
+depth with the same rule as this page, so its answer is still in real metres; Book 6
+suggests it when you pick your own cameras, or work in bright light or at longer
+range, and like a written matcher it still struggles on a plain white surface. A
+**monocular** depth model, one that uses a single camera, guesses depth from one
+picture with no second view and no matching. But its errors are often several centimetres at one metre, many versions
+give no fixed scale, and Book 6 keeps it for rough jobs such as telling the
+foreground from the background. The geometry on this page still wins when you need
+a measured depth for a grasp, want no graphics processor, or can choose a wide
+baseline by moving the wrist camera.
+
+---
+
+## 8. Where to read next
 
 - [The pinhole camera model](../02_most-used/01_pinhole-camera-model.md) gives the ray
   for each pixel, and the ray-and-plane method in full.
@@ -401,6 +413,4 @@ to move. And you need a wide enough baseline, which the working space may not al
   matches before the essential matrix is fitted.
 - Book 2's [the wrist camera, end to end](../../../02_perception/02_object-perception/08_the-wrist-camera.md)
   uses the baseline arithmetic to plan where to take the second picture.
-- Book 6's [depth from pictures](../../../06_neural-network-models/02_seeing-models/03_also-used/02_depth-from-pictures.md)
-  covers learned stereo and single-picture depth.
 - The [overview](../01_overview.md) shows where this page sits in the chapter.

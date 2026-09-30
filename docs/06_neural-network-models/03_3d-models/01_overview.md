@@ -195,7 +195,7 @@ the other.
 - [World models](../07_world-models/01_overview.md) can predict how points will move
   when the arm pushes something. That is the same kind of input, used to look ahead.
 
-The [map of models](../01_what-models-are/09_the-map-of-models.md) shows all seven
+The [map of models](../01_what-models-are/07_the-map-of-models.md) shows all seven
 families on one page.
 
 ---

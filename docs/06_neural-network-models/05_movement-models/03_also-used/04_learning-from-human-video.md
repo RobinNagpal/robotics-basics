@@ -25,7 +25,8 @@ Every new word is explained where it first appears.
 7. [Well-known models and libraries](#7-well-known-models-and-libraries)
 8. [The gap between a hand and a gripper](#8-the-gap-between-a-hand-and-a-gripper)
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -373,7 +374,25 @@ right column as what people usually do.
 
 ---
 
-## 10. Where to read next
+## 10. The written alternative
+
+Human video is a source of training data, not a way to move the arm. So its written
+alternative is to program the task instead of teaching it. Book 3's [teach and
+replay](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#1-teach-and-replay)
+records a motion from a person with no model at all: the person moves the arm to
+each position, by buttons or by hand, and the arm plays the positions back. The
+retargeting steps on this page are written code themselves. [Rigid
+transforms](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+moves the hand points into the robot's frame, and [sensor
+streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#smoothing-moving-average-exponential-and-median-filters)
+explains the median filter that cleans the pinch.
+
+The written way wins when one fixed motion is enough. Learning from video wins when
+you need variety that nobody could program, or record on a robot.
+
+---
+
+## 11. Where to read next
 
 In this chapter:
 
@@ -389,7 +408,7 @@ In other chapters of this book:
 - [Keypoints and object pose](../../02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
   explains how models find points in a picture, which is what a hand pose estimator
   does for the joints of a hand.
-- [Where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md)
+- [Where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md)
   compares human video with every other source of training data.
 - [Video prediction models](../../07_world-models/03_also-used/01_video-prediction-models.md)
   are close relatives of latent-action models: they learn from video what happens

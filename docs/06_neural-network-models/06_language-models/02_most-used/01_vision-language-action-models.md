@@ -30,7 +30,8 @@ which records what each laboratory has released or shown, as of September 2026.
 6. [A worked example: teaching a small arm to put a mug in a bowl](#6-a-worked-example-teaching-a-small-arm-to-put-a-mug-in-a-bowl)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why use a vision-language-action model, and what it costs](#8-why-use-a-vision-language-action-model-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -172,7 +173,7 @@ A **demonstration** is one recording of the task being done well. A person usual
 drives the robot through the task, and the robot records the camera pictures and
 joint angles many times a second. Each recording also has a sentence that says what
 the task was. The page on
-[where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md)
+[where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md)
 describes how demonstrations are recorded.
 
 1. **Train on many robots.** The model is trained on a large pool of demonstrations,
@@ -329,7 +330,25 @@ of today's best VLAs are well below what a production line needs.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written alternative is a pipeline made only of ordinary code. A [behaviour
+tree](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
+holds the order of the steps and the retries. [Pose from
+points](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
+finds a known object, and [sampling-based
+planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
+moves the arm to it. Book 3's [programmed
+methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md) shows
+these parts working together on one arm.
+
+The written pipeline wins for one fixed task with known objects. Each part can be
+tested on its own, and it does the same thing every time. The VLA wins when the
+objects and the instructions keep changing.
+
+---
+
+## 10. Where to read next
 
 - [Foundation models and generalist policies](../../../03_frameworks/08_frontier/02_foundation-models.md)
   is the record of the current state of the art. It covers every important VLA as of

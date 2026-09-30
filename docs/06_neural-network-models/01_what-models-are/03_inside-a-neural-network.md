@@ -510,7 +510,7 @@ A bigger model can learn more patterns, and usually needs more examples to
 train. It also takes more arithmetic every time it runs, so it is slower and
 needs a stronger computer. On a robot arm that must react many times a second,
 this matters a lot. The
-[running-a-model page](05_running-a-model-on-a-robot.md) covers this choice.
+[running-a-model page](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md) covers this choice.
 
 ---
 
@@ -556,9 +556,11 @@ graphics card.
 
 ## 11. Where to read next
 
-- [Where the data comes from](04_where-the-data-comes-from.md) is the next page.
-  It explains how the examples for robot models are collected.
-- [The map of models](09_the-map-of-models.md) shows the seven families of
+- [Learning signals](04_learning-signals.md) is the next page. It explains the
+  kinds of learning, from labelled examples to trial and error.
+- [Where the data comes from](05_where-the-data-comes-from.md) explains how the
+  examples for robot models are collected.
+- [The map of models](07_the-map-of-models.md) shows the seven families of
   models in this book, and which of these layers each family uses.
 - [Image classification](../02_seeing-models/03_also-used/01_image-classification.md) is
   the simplest seeing model: a CNN or vision transformer that names the object

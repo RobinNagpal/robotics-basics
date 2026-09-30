@@ -10,6 +10,11 @@ because this page uses the moving dots from its section 4.3. You should also kno
 from [how a model learns](../../01_what-models-are/02_how-a-model-learns.md) what it
 means to train a model on examples.
 
+> Before this page, it helps to have read [sensor
+> streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md),
+> which explains windows of readings, smoothing, rates of change and thresholds that
+> do not flicker. A slip model reads the same kind of window.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -21,7 +26,8 @@ means to train a model on examples.
 7. [A worked example: carrying a wet mug](#7-a-worked-example-carrying-a-wet-mug)
 8. [What goes wrong](#8-what-goes-wrong)
 9. [Why this rather than the obvious alternative, and what it costs](#9-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -270,7 +276,22 @@ What it costs you:
   still confirm, with the wrist sensor, that the object has the expected weight
   before a long carry.
 
-## 10. Where to read next
+## 10. The written alternative
+
+The written alternative is the fixed rule in section 9, built with the tools in Book
+5's [sensor
+streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md).
+That page shows how to smooth a force reading, find how fast it is changing, and
+turn it into a flag that does not flicker on and off. Book 3's [slip, and the checks
+that cannot
+fire](../../../03_frameworks/02_gripping/05_holding-on.md#4-slip-and-the-checks-that-cannot-fire)
+explains which sensors can see slip at all.
+
+The written rule wins for rigid objects with a known, steady friction, because it
+needs no data and is easy to check. The slip model wins when the friction is unknown
+or changing, as with wet, oily or dusty objects.
+
+## 11. Where to read next
 
 In this chapter:
 

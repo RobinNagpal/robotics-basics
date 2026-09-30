@@ -33,7 +33,8 @@ that describes what the picture looks like around it.
 4. [Where it is useful, and where it is not](#4-where-it-is-useful-and-where-it-is-not)
 5. [Libraries that provide it](#5-libraries-that-provide-it)
 6. [Why feature matching, and what it costs](#6-why-feature-matching-and-what-it-costs)
-7. [Where to read next](#7-where-to-read-next)
+7. [The learned alternative](#7-the-learned-alternative)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -350,18 +351,6 @@ When nothing on the object can be relied on, people often stick a printed marker
 it, such as an ArUco or AprilTag marker. A marker is a black and white square designed
 to be found and identified without any matching step.
 
-**Learned features.** Since about 2018, neural networks have been trained to do steps
-one to four. SuperPoint finds keypoints and describes them in one network.
-LightGlue, from 2023, and the earlier SuperGlue, pair the keypoints of two pictures
-by looking at all of them together, instead of one at a time. LoFTR skips keypoints
-and matches the two pictures directly. They find many more right pairs on hard
-pictures, such as large changes of angle, poor light and little texture. RANSAC is
-still used after them. They need a graphics processor to run at camera rate. Book 6's
-[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-describes learned models that find keypoints and poses, and
-[tracking and motion](../../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md)
-describes learned models that follow points from picture to picture.
-
 ---
 
 ## 5. Libraries that provide it
@@ -402,12 +391,6 @@ slides, and a partly covered object never looks like the stored picture. Feature
 matching handles all of these, because it only needs some of the spots to be
 visible, and each spot is described in a way that survives turning.
 
-The second alternative is a learned matcher, such as LightGlue. It gives more right
-pairs on hard pictures. It costs a graphics processor, a large set of model weights,
-and a harder check of what went wrong when it fails. A classical matcher is the
-better first choice when the object has good texture and the camera angle does not
-change much.
-
 The costs are these. The object must have texture or printing. Wrong pairs are
 normal, so RANSAC and a minimum inlier count are always needed. The thresholds, such
 as the ratio 0.8, the 3-pixel limit and the minimum number of inliers, need tuning
@@ -418,7 +401,27 @@ arm.
 
 ---
 
-## 7. Where to read next
+## 7. The learned alternative
+
+Since about 2018, neural networks have been trained to do steps one to four.
+SuperPoint finds and describes keypoints in one network, SuperGlue and the later
+LightGlue, from 2023, pair the keypoints of two pictures by looking at all of them
+together, and LoFTR skips keypoints and matches the two pictures directly. They find
+many more right pairs on hard pictures, such as large changes of angle, poor light
+and little texture, and RANSAC is still used after them. But they need a graphics
+processor to run at camera rate and a large set of model weights, and it is harder
+to see what went wrong when they fail. Book 6's
+[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+describes networks that find an object's named points and its pose directly, and
+[tracking and motion](../../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md)
+describes point trackers that follow spots from picture to picture. A classical
+matcher is still the better first choice when the object has good texture and the
+camera angle does not change much, because it needs no training and one stored
+picture is enough.
+
+---
+
+## 8. Where to read next
 
 - [RANSAC](../../04_fitting-and-estimation/02_most-used/02_ransac.md) explains the
   clean-up step in more depth, including how many tries are enough.
@@ -432,6 +435,3 @@ arm.
   [getting a first guess](../02_most-used/02_iterative-closest-point.md#5-getting-a-first-guess-3d-features-and-global-registration)
   uses 3D features in the same way that this page uses picture features.
 - [The chapter overview](../01_overview.md) shows how this page fits with the others.
-- Book 6's
-  [keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
-  finds a pose with a learned model instead.

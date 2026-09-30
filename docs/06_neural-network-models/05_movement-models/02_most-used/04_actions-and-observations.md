@@ -16,6 +16,11 @@ knows what a policy, an observation and an action are. These choices look like
 small details. In practice they decide whether a policy trains at all, and whether
 someone else's recordings are any use to you.
 
+> Before this page, it helps to have read [rigid
+> transforms](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md),
+> which explains frames, rotation matrices and quaternions. Sections 3 to 5 of this
+> page use all three.
+
 ## Contents
 
 1. [The idea in one sentence](#1-the-idea-in-one-sentence)
@@ -31,7 +36,8 @@ someone else's recordings are any use to you.
 11. [What goes wrong](#11-what-goes-wrong)
 12. [Libraries and models](#12-libraries-and-models)
 13. [Why these choices matter, and what they cost](#13-why-these-choices-matter-and-what-they-cost)
-14. [Where to read next](#14-where-to-read-next)
+14. [The written alternative](#14-the-written-alternative)
+15. [Where to read next](#15-where-to-read-next)
 
 ---
 
@@ -297,7 +303,7 @@ seconds. A chunk of 16 steps at 50 Hz covers only a third of a second.
 So when you use a policy or a dataset, write down three things together: the
 control rate, the chunk length, and how many steps of each chunk the arm plays
 before the policy is asked again. How fast the policy itself must run is covered
-in [running a model on a robot](../../01_what-models-are/05_running-a-model-on-a-robot.md#2-how-fast-is-fast-enough).
+in [running a model on a robot](../../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#2-how-fast-is-fast-enough).
 
 ---
 
@@ -481,7 +487,24 @@ What it costs you:
 
 ---
 
-## 14. Where to read next
+## 14. The written alternative
+
+None, because this page does not describe a model that does a job. It describes the
+numbers that every policy reads and writes. Written code makes the same choices, and
+Book 5 explains them there. [Rigid
+transforms](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+covers the ways to write down a turn, and [numerical inverse
+kinematics](../../../05_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
+turns a gripper pose into joint angles.
+
+The difference is what a bad choice costs. A number that jumps, such as a yaw angle
+passing 180°, can trouble written code too, but a programmer can handle the jump
+with a special case. A network cannot. It learns the average of the two sides
+instead, as section 5 shows.
+
+---
+
+## 15. Where to read next
 
 - [Action chunking transformers](02_action-chunking-transformers.md) use absolute
   joint-angle chunks, and are a good place to see these choices in a working

@@ -15,6 +15,11 @@ For moving an arm through open space, an ordinary planner is usually the better
 tool. It is fast enough, it checks every move for collisions, and it is free. A
 learned planner earns its place in a smaller set of jobs, which this page describes.
 
+> Before this page, it helps to have read [sampling-based
+> planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md),
+> which explains the ordinary planner and the collision checker that the networks on
+> this page learn from. Section 1 gives just enough of it if you have not.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -27,7 +32,8 @@ learned planner earns its place in a smaller set of jobs, which this page descri
 8. [A worked example: reaching into a shelf](#8-a-worked-example-reaching-into-a-shelf)
 9. [What goes wrong, and what people do about it](#9-what-goes-wrong-and-what-people-do-about-it)
 10. [Why this kind, and what it costs](#10-why-this-kind-and-what-it-costs)
-11. [Where to read next](#11-where-to-read-next)
+11. [The written alternative](#11-the-written-alternative)
+12. [Where to read next](#12-where-to-read-next)
 
 ---
 
@@ -314,7 +320,27 @@ the usual choice.
 
 ---
 
-## 11. Where to read next
+## 11. The written alternative
+
+The written alternative is the set of ordinary tools these networks learn from.
+[Sampling-based
+planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
+finds the route and checks it for collisions, and [numerical inverse
+kinematics](../../../05_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
+finds the joint angles. When an optimiser needs a smooth distance to obstacles, the
+written tool is a distance field, which [volumetric
+maps](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
+explains. Book 3's [planning a
+path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) explains how
+these planners behave on a real arm.
+
+The written tools win for most moves through free space, and they stay in the system
+even when a learned helper is added. A learned helper wins only when the written
+tools are too slow, or too uneven in their speed, for the job.
+
+---
+
+## 12. Where to read next
 
 In this chapter:
 

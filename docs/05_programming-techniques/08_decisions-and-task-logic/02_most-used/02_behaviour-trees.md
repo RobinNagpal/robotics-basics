@@ -28,7 +28,8 @@ tree, so the two can be compared directly.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why a behaviour tree, and what it costs](#7-why-a-behaviour-tree-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -402,7 +403,26 @@ own.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+Book 6 compares a behaviour tree directly with a
+[language model as planner](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md),
+which chooses the order of the robot's steps from a request in plain words. The
+planner earns its place when the request changes from one day to the next and
+nobody can list every request in advance. For a task that never changes, such as
+the same box packed the same way every day, Book 6 says the tree is the better
+choice, because it is free to run, fast, and always does the same thing. A
+[vision-language-action model](../../../06_neural-network-models/06_language-models/02_most-used/01_vision-language-action-models.md)
+goes further and turns pictures and an instruction straight into arm movements,
+but its success rates are still well below what a production line needs. In
+practice the two meet: a language model picks a subtree, as section 4 showed, and
+a learned model such as
+[collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+can serve as a condition such as "grasp failed?".
+
+---
+
+## 9. Where to read next
 
 - The [finite state machines](01_finite-state-machines.md) page writes the same task
   as states and arrows. Reading them side by side is the fastest way to see the
@@ -410,12 +430,6 @@ own.
 - The [chapter overview](../01_overview.md) shows how task logic fits with the
   choosers: [greedy algorithms and set cover](../03_also-used/01_greedy-algorithms-and-set-cover.md)
   and [optimisation solvers](../03_also-used/02_optimisation-solvers.md).
-- Book 6's
-  [language models as planners](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md)
-  explains when a language model should choose the steps instead of a fixed tree.
-- Book 6's
-  [collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
-  shows a learned model that can serve as a condition such as "grasp failed?".
 - Book 3 has real code in
   [behaviour trees: putting a task in order](../../../03_frameworks/01_tools-and-libraries.md#11-behaviour-trees-putting-a-task-in-order),
   a comparison with state machines in

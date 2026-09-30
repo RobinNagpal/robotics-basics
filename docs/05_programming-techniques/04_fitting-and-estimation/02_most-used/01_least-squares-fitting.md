@@ -31,7 +31,8 @@ the other techniques in this chapter are built on top of it.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why least squares, and what it costs](#7-why-least-squares-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -407,7 +408,24 @@ front of the fit.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+Fitting a known shape, such as a table plane or a cup's rim, has no learned
+replacement, because the shape's formula is known and least squares gives its best
+fit exactly, in one step. Learning takes over when nobody knows the shape in
+advance. Book 6's
+[classical machine learning](../../../06_neural-network-models/01_what-models-are/06_classical-machine-learning.md)
+page shows that linear regression is least squares itself. It also shows that a
+**Gaussian process**, a method that gives an error bar with each prediction, or a
+small neural network can learn a curve that nobody wrote down, such as a depth
+camera's error against distance. With a few input numbers and tens to hundreds of
+examples, the classical methods do as well as the network or better. A network
+pulls ahead only when the input is a picture, a point cloud or a long recording, and
+there are many examples.
+
+---
+
+## 9. Where to read next
 
 - The next page is [RANSAC](02_ransac.md). It finds which points belong to the
   shape, so that least squares can then fit only those.

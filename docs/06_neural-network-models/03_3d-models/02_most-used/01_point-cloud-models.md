@@ -11,6 +11,8 @@ explains what a point cloud is. You should also know, from
 a network is made of layers that turn a list of numbers into another list of
 numbers.
 
+> Before this page, it helps to have read [clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md), which splits a point cloud into objects with written rules and thins it onto small cubes called voxels. This page shows what a trained model adds.
+
 ## Contents
 
 1. [What it is](#1-what-it-is)
@@ -25,7 +27,8 @@ numbers.
 6. [A worked example: picking a mug from a cluttered table](#6-a-worked-example-picking-a-mug-from-a-cluttered-table)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this rather than an image model, and what it costs](#8-why-this-rather-than-an-image-model-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -311,7 +314,21 @@ labels, for example when parts in a bin all look alike.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+Book 5 finds objects in a point cloud with a written recipe, the one Book 2's
+section 1.6 describes. [RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md), a method that fits a shape when many of
+the points belong to something else, finds the table plane so that it can be
+removed. [Clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md) then groups the points that are left into one
+cluster per object. The recipe needs no labelled clouds, and it works on objects
+the robot has never seen. The point cloud model wins when objects touch, as in a
+full bin, because clustering merges touching objects and nothing in it can fix
+that. It also wins when the robot must name the parts of an object, such as a
+handle.
+
+---
+
+## 10. Where to read next
 
 - [Shape completion](../03_also-used/01_shape-completion.md) is the next page. It deals with the
   missing back of the object.

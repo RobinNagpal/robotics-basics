@@ -22,7 +22,8 @@ of small squares called pixels, each with a number for its brightness.
 7. [A worked example: checking the grip on a mug](#7-a-worked-example-checking-the-grip-on-a-mug)
 8. [What goes wrong](#8-what-goes-wrong)
 9. [Why this rather than the obvious alternative, and what it costs](#9-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -176,7 +177,7 @@ learns by solving a made-up puzzle: parts of each picture are hidden, and it mus
 guess what was hidden. To do that well, it must learn what tactile pictures are
 like in general. Afterwards, a small extra part is trained on a few labelled
 examples for the task you actually need. [Where the data comes
-from](../../01_what-models-are/04_where-the-data-comes-from.md) explains this idea in
+from](../../01_what-models-are/05_where-the-data-comes-from.md) explains this idea in
 more detail.
 
 There is a second route to lots of data: simulation. A tactile simulator draws the
@@ -285,7 +286,23 @@ What it costs you:
   anything in its training set, so a program that uses it should still check the
   wrist force before trusting a grip.
 
-## 10. Where to read next
+## 10. The written alternative
+
+Part of the written alternative is already on this page. Photometric stereo, in
+section 4.1, turns the tactile picture into a height map with no learning. For the
+cheaper choice of no tactile sensor, Book 5's [sensor
+streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
+explains how to turn the finger position and the wrist force into clean yes-or-no
+checks, such as "the fingers stopped on something". Book 3's [the finger-gap check,
+and what it cannot
+see](../../../03_frameworks/02_gripping/05_holding-on.md#41-the-finger-gap-check-and-what-it-cannot-see)
+explains what those checks miss.
+
+The written way wins when a height map, or the finger position and the weight,
+answers your question. The learned model wins when you need force, slip, or whether
+the grasp will hold.
+
+## 11. Where to read next
 
 In this chapter:
 

@@ -207,7 +207,7 @@ are mostly used close to the object.
 ## 6. How movement models connect to the other kinds
 
 A movement model rarely works alone. It uses, or sits next to, most of the other
-categories in [the map of models](../01_what-models-are/09_the-map-of-models.md).
+categories in [the map of models](../01_what-models-are/07_the-map-of-models.md).
 
 The first link is to seeing. Inside almost every policy that takes a camera picture,
 the first part is a seeing network. It turns the picture into a list of numbers
@@ -255,9 +255,9 @@ mistakes that add up, explains why they exist. Then read
 record or train anything, because it decides how your data is written down.
 
 If you want to know where the recordings come from, read
-[where the data comes from](../01_what-models-are/04_where-the-data-comes-from.md).
+[where the data comes from](../01_what-models-are/05_where-the-data-comes-from.md).
 If you want to know how a trained policy is run on a real arm, read
-[running a model on a robot](../01_what-models-are/05_running-a-model-on-a-robot.md).
+[running a model on a robot](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md).
 
 For a deeper and more critical view, Book 3 has two pages on this subject.
 [Learned methods for one arm](../../03_frameworks/04_one-arm-training/03_learned-methods.md)

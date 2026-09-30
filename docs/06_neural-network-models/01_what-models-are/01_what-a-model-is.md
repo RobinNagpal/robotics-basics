@@ -274,31 +274,41 @@ name, the question it answers for a robot arm, and the link to its overview.
 Each family chapter splits its pages into two groups. The **most used** group
 holds the kinds of model that robot arm projects use most often, or that matter
 most. The **also used** group holds kinds that are used often, but less. The
-[map of models](09_the-map-of-models.md#4-every-page-in-this-book) lists every
+[map of models](07_the-map-of-models.md#4-every-page-in-this-book) lists every
 page of every chapter, in its group.
 
 Before those seven chapters comes this first chapter. It explains the ideas
-that every later page uses. It has nine pages:
+that every later page uses. It has seven pages:
 
 1. What a model is. This page.
 2. [How a model learns](02_how-a-model-learns.md). Examples, guesses, measuring
    how wrong a guess is, and changing the weights a little at a time.
 3. [Inside a neural network](03_inside-a-neural-network.md). Neurons, layers,
    and the special layers for pictures and sentences.
-4. [Where the data comes from](04_where-the-data-comes-from.md). How people
+4. [Learning signals](04_learning-signals.md). The four ways a model is taught:
+   from a person's labels, from the data itself, by copying a person, and by
+   trial and error with a score.
+5. [Where the data comes from](05_where-the-data-comes-from.md). How people
    collect the examples a robot model learns from.
-5. [Running a model on a robot](05_running-a-model-on-a-robot.md). What
-   happens when a trained model is used on a real arm.
-6. [Uncertainty and confidence](06_uncertainty-and-confidence.md). How to tell
-   when a model is unsure, and what the robot should do when it is.
-7. [Fine-tuning](07_fine-tuning.md). How to adapt a model that someone else
-   trained to your own robot and your own objects.
-8. [Classical machine learning](08_classical-machine-learning.md). Learning
+6. [Classical machine learning](06_classical-machine-learning.md). Learning
    methods that are not neural networks, and when a small dataset makes them
    the better choice.
-9. [The map of models](09_the-map-of-models.md). All seven families on one
+7. [The map of models](07_the-map-of-models.md). All seven families on one
    page, every page of the book in its group, and how the families work
    together on one task.
+
+After the seven family chapters comes one last chapter,
+[making models work on an arm](../09_making-models-work-on-an-arm/01_overview.md).
+It is about taking any model from "it works in a notebook" to "it works on the
+arm". Its most-used pages are
+[fine-tuning](../09_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md),
+which adapts a model that someone else trained to your own robot and objects;
+[running a model on a robot](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md),
+which covers what happens when a trained model is used on a real arm; and
+[evaluation and failure](../09_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md),
+which measures whether it really works. Its also-used page is
+[uncertainty and confidence](../09_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md),
+which says how to tell when a model is unsure, and what the robot should do then.
 
 ---
 
@@ -315,8 +325,11 @@ follow the same order. They say what the model is, what goes in and what comes
 out, how it works inside, how it is trained, which well-known models are of
 this kind, where it is used on a robot arm, and what goes wrong.
 
+Read the last chapter, on making models work on an arm, once you have a model
+you want to use on a real arm.
+
 If you want a quick overview first, read the
-[map of models](09_the-map-of-models.md) next, and then come back to the
+[map of models](07_the-map-of-models.md) next, and then come back to the
 [next page](02_how-a-model-learns.md).
 
 This book explains ideas, not code. Books 2 and 3 show how to download, run and

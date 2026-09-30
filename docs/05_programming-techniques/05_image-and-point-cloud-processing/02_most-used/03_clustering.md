@@ -39,7 +39,8 @@ one object at a time.
 5. [Where it works, and where it does not](#5-where-it-works-and-where-it-does-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why clustering, and what it costs](#7-why-clustering-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -688,13 +689,8 @@ a robot, the number of objects is usually the thing you want to find out, so
 k-means is the wrong tool for that job. Euclidean clustering and DBSCAN find the
 number for themselves. K-means is still useful when the number of groups is
 fixed by the job, such as the colours of a known set of parts;
-[section 3](#3-finding-the-peaks-k-means-and-mean-shift) shows where. The second alternative is a trained
-[segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
-or a [point cloud model](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md).
-A model can split objects that touch, which clustering cannot do. But it needs
-labelled training data and a computer that can run it. Choose clustering when
-objects stand apart, or when the robot can push them apart. Choose a model when
-touching objects are the normal case.
+[section 3](#3-finding-the-peaks-k-means-and-mean-shift) shows where. The second alternative is a trained segmentation model or point cloud model;
+[section 8](#8-the-learned-alternative) says when each is the better choice.
 
 The costs are these. Clustering merges objects that touch, and nothing in the
 method can fix that. You must choose the tolerance, the minimum size and the
@@ -704,7 +700,23 @@ search on a large cloud is slow unless you downsample first and use a k-d tree.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+Two kinds of model in Book 6 do this job. A
+[segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+gives one mask per object in the colour picture, and the depth points inside each
+mask become that object's points. A
+[point cloud model](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
+names every 3D point directly. Either one can split objects that touch, which
+clustering cannot do, and it can also say what each object is. But a model needs
+labelled training data and a computer that can run it, and it only knows the kinds
+of object it was trained on. Choose clustering when objects stand apart, or when
+the robot can push them apart; choose a model when touching objects are the normal
+case.
+
+---
+
+## 9. Where to read next
 
 - The previous page is [edges and contours](../03_also-used/01_edges-and-contours.md). It traces
   the outline of each blob that connected components finds.
@@ -717,9 +729,6 @@ search on a large cloud is slow unless you downsample first and use a k-d tree.
   before clustering.
 - The chapter [overview](../01_overview.md) compares all the techniques in this
   chapter.
-- Book 6's [point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
-  and [segmentation](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
-  pages do the same job with learned models.
 - Book 2's
   [methods you write yourself](../../../02_perception/02_object-perception/03_programmed-methods.md#19-choosing-the-grouping-distance-and-clustering-on-the-plane)
   goes deeper into choosing the grouping distance for a real camera, and

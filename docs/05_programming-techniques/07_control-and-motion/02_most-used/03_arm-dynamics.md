@@ -38,7 +38,8 @@ person.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why a dynamics model, and what it costs](#7-why-a-dynamics-model-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -529,13 +530,8 @@ with the same PID gains. Higher gains would shrink the error too, but they make 
 arm stiff and noisy, and they push harder on anything it touches, which is the wrong
 direction for an arm that works near people.
 
-The second alternative is a learned model of the arm, as in Book 6's
-[learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md).
-A learned model can capture friction and cable forces that the physics leaves out. But
-it needs hours of recorded data, and it can give strange answers for moves it has not
-seen. The physics model needs only a handful of numbers per link, and it gives
-sensible answers everywhere. That is why the usual practice is to keep the physics
-model and let a learned model correct it.
+The second alternative is a learned model of the arm.
+[Section 8](#8-the-learned-alternative) says why the usual practice is to use both.
 
 The costs are these. You need the masses, centres of mass and inertias of every link,
 and the maker's values may be rough. You must tell the controller about every payload.
@@ -546,7 +542,27 @@ which many arms do not.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+Book 6's
+[learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
+are the learned version of this page. Most keep this physics model and add a small
+network that learns only what is left over: the gearbox friction, cable pull and
+wear that the equations leave out. A learned correction wins when those effects do
+not fit a simple number, such as friction that changes with speed and temperature,
+and it trains on the arm's own recordings, which are cheap and safe to collect. The
+physics model still wins as the base, because it needs only a handful of numbers
+per link and gives sensible answers everywhere, while a learned model needs hours
+of varied data and can give strange answers for moves it has not seen. That is why
+the usual practice is to keep the physics model and let a learned model correct
+it. Book 6's
+[learned dynamics models](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md)
+do a wider job: they predict how the whole scene moves when the arm acts, not just
+the arm.
+
+---
+
+## 9. Where to read next
 
 - [PID control](01_pid-control.md) is the feedback loop that runs on top of the
   model on this page and cleans up what the model gets wrong.
@@ -559,9 +575,5 @@ which many arms do not.
 - [Least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   and [system identification](../../04_fitting-and-estimation/03_also-used/01_system-identification.md)
   explain the fitting used to find the arm's masses.
-- Book 6's [learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
-  learn the part of the torque that this page's physics leaves out, and its
-  [learned dynamics models](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md)
-  learn how whole scenes move, not just the arm.
 - Book 3's [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#4-position-stiffness-and-force)
   shows where position, stiffness and torque control sit in ROS 2.

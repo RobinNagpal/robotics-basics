@@ -40,7 +40,8 @@ between the arm and a person. Section 7 draws this line in full.
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [This is not a certified safety function](#7-this-is-not-a-certified-safety-function)
 8. [Why a software safety layer, and what it costs](#8-why-a-software-safety-layer-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The learned alternative](#9-the-learned-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -174,7 +175,7 @@ checks are these.
 6. The expected force is within limits, and the measured force is too.
 
 Book 6's
-[safety checks around a model](../../../06_neural-network-models/01_what-models-are/05_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
+[safety checks around a model](../../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
 gives the same list from the model's side.
 
 ### Workspace boxes and keep-out zones
@@ -336,7 +337,7 @@ control. Here are the common places.
 - **Running a learned policy.** Every output is checked for limits, jumps and
   workspace before it reaches the arm. The first runs are made slowly with a
   person holding the emergency stop, as Book 6's
-  [running a model on a robot](../../../06_neural-network-models/01_what-models-are/05_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
+  [running a model on a robot](../../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
   page describes.
 - **Teleoperation.** A person steers the arm with a joystick or a second arm. A
   watchdog stops the arm if the link drops, and a workspace box stops the person
@@ -439,10 +440,7 @@ reason to read the current editions.
 So the layering is this. The certified functions and the emergency stop protect
 people. The software monitor on this page protects the arm and the work, catches
 mistakes early, and keeps the arm away from the certified limits so they rarely
-trip. Book 6's
-[collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
-page puts learned detectors in the same place: on top of the certified function,
-never instead of it.
+trip.
 
 ---
 
@@ -473,7 +471,24 @@ people treat it as a certified function, which it is not.
 
 ---
 
-## 9. Where to read next
+## 9. The learned alternative
+
+There is no learned model that replaces this layer, because its value is that
+every rule is plain, can be read, and does the same thing every time. Book 6 says
+the same from the model's side: its
+[safety checks around a model](../../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
+are rules written by people, like the ones on this page. Learned models can add
+to one part of the layer, the contact checks. Book 6's
+[collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+page covers detectors that learn the normal gap between expected and measured
+torque, or notice a dropped object, and says they are worth adding when the
+textbook model's errors force the stop line so high that gentle bumps are missed.
+Like this layer, they sit on top of the certified safety function, never instead
+of it.
+
+---
+
+## 10. Where to read next
 
 - [PID control](01_pid-control.md) shows torque limits and clamping inside the
   joint loop.

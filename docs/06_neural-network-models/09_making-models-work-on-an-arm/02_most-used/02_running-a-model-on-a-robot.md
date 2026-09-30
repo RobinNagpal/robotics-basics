@@ -10,7 +10,7 @@ models slower? What does it mean when a model is "sure", and why can it be sure 
 wrong? And what else must sit around a model to keep the arm safe?
 
 It is for a complete beginner. You need to know what a robot arm and a camera are,
-and you should have read [what a model is](01_what-a-model-is.md). Nothing else is
+and you should have read [what a model is](../../01_what-models-are/01_what-a-model-is.md). Nothing else is
 assumed.
 
 ## Contents
@@ -74,7 +74,7 @@ Deciding the next step of a task, such as "now pick up the mug", happens much le
 often. Taking a second or more to decide is usually fine, because the arm is busy
 doing the current step.
 
-![One tenth of a second, showing control-loop ticks, camera pictures and three model speeds](../../images/what-models-are/running-a-model-on-a-robot/time-budgets.svg)
+![One tenth of a second, showing control-loop ticks, camera pictures and three model speeds](../../../images/what-models-are/running-a-model-on-a-robot/time-budgets.svg)
 
 The picture shows one tenth of a second. The control loop ticks fifty times in that
 time. The camera takes three pictures. A small model finishes well within each
@@ -86,8 +86,8 @@ It is usually too slow to answer every 2 ms. Instead the work is split. The mode
 runs at its own slower speed and gives a goal, such as a target position or a short
 list of the next few movements. A simple, fast, programmed controller then follows
 that goal at hundreds of steps a second. Some
-[movement models](../05_movement-models/01_overview.md) are designed around this
-idea. The [action chunking page](../05_movement-models/02_most-used/02_action-chunking-transformers.md)
+[movement models](../../05_movement-models/01_overview.md) are designed around this
+idea. The [action chunking page](../../05_movement-models/02_most-used/02_action-chunking-transformers.md)
 shows one that gives a whole chunk of movements at once, so that it needs to be asked
 less often.
 
@@ -113,7 +113,7 @@ kind of sum at the same time, on different numbers.
 
 A neural network, inside, is mostly one kind of work. It multiplies a very large
 number of numbers together and adds up the results. The
-[inside a neural network](03_inside-a-neural-network.md) document showed why. Every
+[inside a neural network](../../01_what-models-are/03_inside-a-neural-network.md) document showed why. Every
 one of these multiplications is small and independent of the others. That is exactly
 the kind of work a GPU was built for. So a GPU can often run a neural network many
 times faster than a CPU can.
@@ -184,7 +184,7 @@ has no way to say "none of these". So when it is shown something it has never se
 such as a shoe, it must still share its score between "mug", "bottle" and "box". It
 may well give most of it to one of them.
 
-![Scores from a model that knows only mug, bottle and box, for a mug, a bowl and a shoe](../../images/what-models-are/running-a-model-on-a-robot/confidently-wrong.svg)
+![Scores from a model that knows only mug, bottle and box, for a mug, a bowl and a shoe](../../../images/what-models-are/running-a-model-on-a-robot/confidently-wrong.svg)
 
 The scores in this picture are made-up examples. They show what can happen. The
 model is right and sure about the mug, and it is also sure about the bowl and the
@@ -228,17 +228,17 @@ Each part does one job and passes its result on.
 6. The world changes. The mug has moved, or the gripper has closed. The camera takes
    a new picture, and the loop starts again.
 
-![The camera, model, safety checks, planner, controller and arm in one loop](../../images/what-models-are/running-a-model-on-a-robot/the-loop.svg)
+![The camera, model, safety checks, planner, controller and arm in one loop](../../../images/what-models-are/running-a-model-on-a-robot/the-loop.svg)
 
 The picture shows the loop. If the safety checks do not accept the model's answer,
 the arm does not move on that answer. It stops, or the model is asked again.
 
 The planner and the controller are often not neural networks. They are usually
 programs written by people, using the geometry of the arm. Book 3 covers them in
-[planning a path](../../03_frameworks/03_arm-movement/03_planning-a-path.md) and
-[controlling the move](../../03_frameworks/03_arm-movement/04_controlling-the-move.md).
+[planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) and
+[controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md).
 Some models do more than one of these jobs at once. A
-[vision-language-action model](../06_language-models/02_most-used/01_vision-language-action-models.md)
+[vision-language-action model](../../06_language-models/02_most-used/01_vision-language-action-models.md)
 takes the picture and gives arm movements directly, doing the job of the model and
 the planner together. Even then, a programmed controller and safety checks still sit
 between it and the motors.
@@ -299,23 +299,25 @@ never seen.
 So most robots mix the two. A model does the part that needs to cope with variety,
 such as finding the mug. Programmed parts do the parts that must be exact and safe,
 such as planning the path, driving the motors and checking the limits. The
-[programmed methods document](../../03_frameworks/04_one-arm-training/02_programmed-methods.md)
+[programmed methods document](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md)
 describes those parts.
 
 ---
 
 ## 9. Where to read next
 
-- [The map of models](09_the-map-of-models.md) is the next document. It shows every
+- [Evaluation and failure](03_evaluation-and-failure.md) is the next page. It
+  shows how to tell whether the model is good enough to leave running.
+- [The map of models](../../01_what-models-are/07_the-map-of-models.md) shows every
   kind of model in this book and where each one sits in the loop above.
-- [Where the data comes from](04_where-the-data-comes-from.md) explains the data
+- [Where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md) explains the data
   that a model is trained on before it ever runs on a robot.
-- [Movement models](../05_movement-models/01_overview.md) are the models that work
+- [Movement models](../../05_movement-models/01_overview.md) are the models that work
   closest to the control loop, so speed matters most for them.
-- [Collision and failure detection](../08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+- [Collision and failure detection](../../08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
   covers models that help check whether something has gone wrong.
-- [Models that find](../../02_perception/02_object-perception/04_models-that-find.md)
+- [Models that find](../../../02_perception/02_object-perception/04_models-that-find.md)
   in Book 2 compares real seeing models that you can download and use.
-- [Working without a GPU](../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md)
+- [Working without a GPU](../../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md)
   in Book 3 says what robot arm work you can still do on a computer with no NVIDIA
   graphics card, such as an Apple Silicon Mac.

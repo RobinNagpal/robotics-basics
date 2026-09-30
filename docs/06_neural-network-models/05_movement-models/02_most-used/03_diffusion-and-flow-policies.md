@@ -22,7 +22,8 @@ explained where it first appears.
 7. [A worked example: reaching round a box to a mug](#7-a-worked-example-reaching-round-a-box-to-a-mug)
 8. [What goes wrong, and what people do about it](#8-what-goes-wrong-and-what-people-do-about-it)
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [Where to read next](#10-where-to-read-next)
+10. [The written alternative](#10-the-written-alternative)
+11. [Where to read next](#11-where-to-read-next)
 
 ---
 
@@ -189,7 +190,7 @@ A diffusion policy learns from **demonstrations**. A demonstration is one record
 of a person doing the task by driving the robot. The recording keeps the camera
 pictures, the joint angles, and the commands the person gave, all at the same
 moments. Chapter 1 explains where such recordings come from, in
-[where the data comes from](../../01_what-models-are/04_where-the-data-comes-from.md).
+[where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md).
 
 Training a diffusion policy works like this.
 
@@ -341,7 +342,26 @@ your task.
 
 ---
 
-## 10. Where to read next
+## 10. The written alternative
+
+The written way to reach round an obstacle is a motion planner. [Sampling-based
+planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
+is told where the box is, finds one route round it, and checks that route for
+collisions. It returns one route, so it never blends a way round the left with a way
+round the right. [Trajectory
+generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
+then makes that route smooth. Book 3's [planning a
+path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) explains how
+these planners behave on a real arm.
+
+The written way wins when the obstacles can be measured and the motion must be the
+same on every run. A diffusion or flow policy wins when the task has several good
+ways that are easy to show but hard to write down, such as folding a cloth in
+different orders.
+
+---
+
+## 11. Where to read next
 
 In this chapter:
 
@@ -358,7 +378,7 @@ In other chapters of this book:
 
 - [Vision-language-action models](../../06_language-models/02_most-used/01_vision-language-action-models.md)
   are large models that use flow matching inside them.
-- [Running a model on a robot](../../01_what-models-are/05_running-a-model-on-a-robot.md)
+- [Running a model on a robot](../../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
   explains why speed matters on a real arm.
 
 Deeper documents elsewhere in this repository:

@@ -12,9 +12,9 @@ and how to choose.
 
 It is for a reader who has read the chapter so far. You should know what a layer, a
 backbone, a head and a parameter are, from
-[inside a neural network](03_inside-a-neural-network.md). You should also know what
+[inside a neural network](../../01_what-models-are/03_inside-a-neural-network.md). You should also know what
 pretraining is, from
-[where the data comes from](04_where-the-data-comes-from.md#7-pretraining-then-fine-tuning).
+[where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md#7-pretraining-then-fine-tuning).
 That page introduced fine-tuning in one section. This page goes inside it.
 
 ## Contents
@@ -48,7 +48,7 @@ The model you start from is called the **pretrained model**. Its numbers are the
 **pretrained weights**. Most pretrained models are split into a **backbone**, the
 large first part that turns the input into useful numbers, and a **head**, the small
 last part that turns those numbers into the answer. The
-[seeing models overview](../02_seeing-models/01_overview.md#5-what-they-have-in-common)
+[seeing models overview](../../02_seeing-models/01_overview.md#5-what-they-have-in-common)
 describes this split for pictures.
 
 ---
@@ -58,7 +58,7 @@ describes this split for pictures.
 The three ways differ in which numbers training is allowed to change. A number that
 training may not change is called **frozen**.
 
-![The same small network three times: only the head is red; a small side path and the head are red; everything is red](../../images/what-models-are/fine-tuning/three-ways-to-fine-tune.svg)
+![The same small network three times: only the head is red; a small side path and the head are red; everything is red](../../../images/what-models-are/fine-tuning/three-ways-to-fine-tune.svg)
 
 Grey parts are frozen and red parts are trained. The counts under each network are
 for the small network of the worked example in [section 4](#4-a-worked-example-50-examples-four-ways).
@@ -106,7 +106,7 @@ The "few" is called the **rank**. A rank of 32 means grid A has 32 rows and grid
 That is 1.56 % of the full grid. The layer then works out its answer with the frozen
 grid plus the change, so the original numbers are never touched.
 
-![A 4,096 by 4,096 grid next to two thin grids B and A, and a bar chart of the trained share for ranks 4 to 64](../../images/what-models-are/fine-tuning/lora-in-numbers.svg)
+![A 4,096 by 4,096 grid next to two thin grids B and A, and a bar chart of the trained share for ranks 4 to 64](../../../images/what-models-are/fine-tuning/lora-in-numbers.svg)
 
 The left side shows the frozen grid and the two thin grids that LoRA trains. The bar
 chart shows how the trained share grows with the rank, for the same layer.
@@ -142,7 +142,7 @@ layer. The [LoRA paper](https://arxiv.org/abs/2106.09685) reports that, for the
 ## 4. A worked example: 50 examples, four ways
 
 This example is a real run in numpy, in the diagram script
-[`models_extras.py`](../../diagrams/models_extras.py). The network is tiny, so that
+[`models_extras.py`](../../../diagrams/models_extras.py). The network is tiny, so that
 the run takes seconds, but the steps are the same as for a large model.
 
 The set-up is this.
@@ -180,7 +180,7 @@ Four things show up.
   the 50 examples perfectly, with a training error of 0.000, and still did worse on
   new examples than the two cheaper ways. It had enough freedom to learn the
   examples' noise as well as their pattern. This is called **overfitting**, as
-  [how a model learns](02_how-a-model-learns.md) explains.
+  [how a model learns](../../01_what-models-are/02_how-a-model-learns.md) explains.
 - **Here the new job was close to the old one.** So a new head on the frozen backbone
   was enough, and it did slightly better than LoRA. When the new job needs features
   the backbone does not make, the head alone cannot fit it, and LoRA or full
@@ -198,7 +198,7 @@ When full fine-tuning changes the backbone, it changes the features that the old
 head relied on. The old job gets worse. This is called **catastrophic forgetting**.
 The word "catastrophic" is historical. The loss is often partial, as here.
 
-![Two panels of training curves: on the left all fine-tuning ways reach low error on the new job; on the right, full fine-tuning's error on the old job jumps to 0.098 while head-only stays at 0](../../images/what-models-are/fine-tuning/forgetting-in-a-real-run.svg)
+![Two panels of training curves: on the left all fine-tuning ways reach low error on the new job; on the right, full fine-tuning's error on the old job jumps to 0.098 while head-only stays at 0](../../../images/what-models-are/fine-tuning/forgetting-in-a-real-run.svg)
 
 The left panel shows the error on the new job during training. The right panel shows
 the error on the old job during the same training.
@@ -215,7 +215,7 @@ Forgetting matters on a robot in two places.
 - A vision-language-action model fine-tuned on your task can lose some of its general
   knowledge of objects and words. It may follow your task well and then fail on a
   new instruction. The
-  [vision-language-action page](../06_language-models/02_most-used/01_vision-language-action-models.md)
+  [vision-language-action page](../../06_language-models/02_most-used/01_vision-language-action-models.md)
   describes how laboratories mix general data into training to reduce this.
 - A detector fine-tuned only on your five parts can stop finding people and hands,
   if it once did. If a safety check depends on those classes, keep a separate model
@@ -239,8 +239,8 @@ usually start with.
 
 | Kind of model | Usual amount of your own data | Where this book says so |
 | --- | --- | --- |
-| Detector for your parts | a few hundred labelled pictures; 80 drawn pictures in a simple case | [object detection](../02_seeing-models/02_most-used/01_object-detection.md), [Book 2's worked example](../../02_perception/01_camera/02_finding-objects.md#64-fine-tuning-why-80-pictures-are-enough) |
-| Vision-language-action model for a new task | tens to hundreds of demonstrations | [vision-language-action models](../06_language-models/02_most-used/01_vision-language-action-models.md) |
+| Detector for your parts | a few hundred labelled pictures; 80 drawn pictures in a simple case | [object detection](../../02_seeing-models/02_most-used/01_object-detection.md), [Book 2's worked example](../../../02_perception/01_camera/02_finding-objects.md#64-fine-tuning-why-80-pictures-are-enough) |
+| Vision-language-action model for a new task | tens to hundreds of demonstrations | [vision-language-action models](../../06_language-models/02_most-used/01_vision-language-action-models.md) |
 
 With data at the small end of these ranges, freeze more. With data at the large end,
 you can afford to train more of the model.
@@ -264,10 +264,10 @@ be held. At 2 bytes each, 7 billion weights take about 14 GB.
 
 The real figures come from the projects themselves. Book 3 collects the openpi
 figures in
-[working without a GPU](../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md#12-can-i-train-it),
+[working without a GPU](../../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md#12-can-i-train-it),
 and the [OpenVLA README](https://github.com/openvla/openvla) gives its own.
 
-![Horizontal bars of memory: openpi inference above 8 GB, openpi LoRA above 22.5 GB, OpenVLA LoRA about 27 GB and 72 GB, openpi full fine-tuning above 70 GB, with lines at 24 GB and 80 GB](../../images/what-models-are/fine-tuning/memory-by-way-of-fine-tuning.svg)
+![Horizontal bars of memory: openpi inference above 8 GB, openpi LoRA above 22.5 GB, OpenVLA LoRA about 27 GB and 72 GB, openpi full fine-tuning above 70 GB, with lines at 24 GB and 80 GB](../../../images/what-models-are/fine-tuning/memory-by-way-of-fine-tuning.svg)
 
 Each bar is a figure that a project states in its README. The two dotted lines are
 common graphics card sizes.
@@ -320,11 +320,11 @@ A lab wants a vision-language-action model to put a cup on a saucer, on its own 
 1. Record 50 demonstrations. A person drives the arm through the task with a
    leader arm or a hand controller, and the robot records the camera pictures, the
    joint angles and the instruction "put the cup on the saucer". The page
-   [where the data comes from](04_where-the-data-comes-from.md) describes recording.
+   [where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md) describes recording.
 2. Convert the recordings into the format that the model's scripts expect. openpi
    reads the LeRobot dataset format, and OpenVLA reads a format called RLDS.
 3. Run LoRA fine-tuning. This fits the memory of one rented card, as the
-   [Book 3 cost section](../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md#64-rent-a-machine-by-the-hour)
+   [Book 3 cost section](../../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md#64-rent-a-machine-by-the-hour)
    works out.
 4. Test on the real arm, with the cup in places the demonstrations did not use.
    Count successes out of, say, 20 tries.
@@ -376,7 +376,7 @@ These are real tools. Each one is named with what it does for you.
 - **[Ultralytics](https://docs.ultralytics.com/modes/train/)** fine-tunes YOLO
   detectors with one call, `model.train(...)`. Its `freeze` option freezes the first
   layers. Book 2 has a
-  [complete worked example](../../02_perception/01_camera/02_finding-objects.md#6-training-a-model-of-your-own).
+  [complete worked example](../../../02_perception/01_camera/02_finding-objects.md#6-training-a-model-of-your-own).
 - **[LeRobot](https://github.com/huggingface/lerobot)** trains and fine-tunes smaller
   robot policies, such as SmolVLA and ACT, and runs on a Mac.
 
@@ -415,16 +415,17 @@ the part that decides whether the robot works.
 
 ## 11. Where to read next
 
-- [Classical machine learning](08_classical-machine-learning.md) is the next page.
-  It covers smaller models that are not neural networks, which sometimes need no
+- [Running a model on a robot](02_running-a-model-on-a-robot.md) is the next
+  page. It covers what changes once the fine-tuned model runs on the arm.
+- [Classical machine learning](../../01_what-models-are/06_classical-machine-learning.md)
+  covers smaller models that are not neural networks, which sometimes need no
   fine-tuning at all.
-- [Uncertainty and confidence](06_uncertainty-and-confidence.md) is the page before
-  this one. A fine-tuned model can still be sure and wrong, and that page explains
-  how to tell.
-- [Object detection](../02_seeing-models/02_most-used/01_object-detection.md) explains
+- [Uncertainty and confidence](../03_also-used/01_uncertainty-and-confidence.md)
+  explains how to tell when a fine-tuned model is sure and wrong.
+- [Object detection](../../02_seeing-models/02_most-used/01_object-detection.md) explains
   the detectors that you would fine-tune on your parts.
-- [Vision-language-action models](../06_language-models/02_most-used/01_vision-language-action-models.md)
+- [Vision-language-action models](../../06_language-models/02_most-used/01_vision-language-action-models.md)
   explains the models that are fine-tuned on demonstrations.
-- [Working without a GPU](../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md)
+- [Working without a GPU](../../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md)
   in Book 3 says what training you can do on your own computer, and what it costs to
   rent a machine for the rest.

@@ -228,4 +228,4 @@ that a person can look at, check and filter before the arm moves.
 - For what happens after the fingers close, read
   [holding on](../../03_frameworks/02_gripping/05_holding-on.md).
 - To see where grasp models sit among all the kinds in this book, go back to
-  [the map of models](../01_what-models-are/09_the-map-of-models.md).
+  [the map of models](../01_what-models-are/07_the-map-of-models.md).

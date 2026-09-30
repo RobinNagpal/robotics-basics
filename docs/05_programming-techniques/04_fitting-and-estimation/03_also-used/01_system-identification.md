@@ -33,7 +33,8 @@ page comes from a real run of the diagram script,
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why system identification, and what it costs](#7-why-system-identification-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -464,14 +465,7 @@ percent. A payload's mass and grasp position are not in any datasheet at all.
 And a datasheet value comes with no error bar, so the arm cannot tell whether it
 is safe to act on.
 
-A second alternative is to **learn the whole model with a neural network**, as
-Book 6's [learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
-page describes. It can capture effects no textbook equation has. But it needs
-far more data, its internal numbers have no physical meaning you can check, and
-it can behave oddly in poses it has not seen. That page itself recommends
-identifying the physics model first and learning only what is left over.
-
-A third alternative, used for simulators, is **domain randomisation**: training
+A second alternative, used for simulators, is **domain randomisation**: training
 across many random guesses of the numbers so that the real arm falls somewhere
 inside. It avoids measuring, but wide random ranges make the result more
 cautious than it needs to be. Identifying the numbers first lets you randomise
@@ -486,7 +480,26 @@ drift or jump when the arm stands still.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+Book 6's
+[learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
+covers networks that learn how the arm's body behaves from its own recordings. A
+network can learn the whole model and capture effects no textbook equation has. But
+it needs far more data, its internal numbers have no physical meaning you can check,
+and it can behave oddly in movements it has not seen. The usual choice is
+**residual learning**: keep the identified physics model and train a small network
+only on what it gets wrong, such as friction that changes with speed and
+temperature, or a cable that pulls differently in each pose. Book 6 calls system
+identification the right first step, and often enough on its own, so add the
+learned correction only when the residuals still show a pattern after the missing
+terms are in the model.
+[Learned dynamics models](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md#7-learning-only-the-part-physics-gets-wrong-residual-models)
+uses the same idea for objects the arm pushes.
+
+---
+
+## 9. Where to read next
 
 - [Least-squares fitting](../02_most-used/01_least-squares-fitting.md) explains
   the solve that every fit on this page uses.
@@ -498,7 +511,7 @@ drift or jump when the arm stands still.
   gives the full equations whose masses and friction this page measures.
 - [Impedance and force control](../../07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
   uses identified stiffness and payload values.
-- [Uncertainty and confidence](../../../06_neural-network-models/01_what-models-are/06_uncertainty-and-confidence.md)
+- [Uncertainty and confidence](../../../06_neural-network-models/09_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md)
   in Book 6 covers error bars for learned models.
 - The [chapter overview](../01_overview.md) shows how this page fits with the
   others in the chapter.

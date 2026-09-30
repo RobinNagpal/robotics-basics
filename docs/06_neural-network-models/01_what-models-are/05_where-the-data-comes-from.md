@@ -1,7 +1,8 @@
 # Where the data comes from
 
-A model learns from examples. The [previous document](03_inside-a-neural-network.md)
-showed what is inside a neural network, and
+A model learns from examples. [Inside a neural network](03_inside-a-neural-network.md)
+showed what is inside a neural network,
+[learning signals](04_learning-signals.md) showed the kinds of learning, and
 [how a model learns](02_how-a-model-learns.md) showed how the numbers inside it are
 changed, one example at a time. This document answers the question that comes before
 both of them. Where do the examples come from?
@@ -353,8 +354,8 @@ self-supervised learning for general knowledge, simulation for volume, and real
 demonstrations for the final, exact skill.
 
 That mix has its own costs. Pretrained models are large, and large models are slower
-to run on a robot. The [next document](05_running-a-model-on-a-robot.md) is about
-that. You also depend on whoever did the pretraining, and on the licence they chose.
+to run on a robot. [Running a model on a robot](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md),
+in the last chapter of this book, is about that. You also depend on whoever did the pretraining, and on the licence they chose.
 And a model built from many sources is harder to understand when it fails, because
 you did not see most of the data it learned from.
 
@@ -362,9 +363,9 @@ you did not see most of the data it learned from.
 
 ## 11. Where to read next
 
-- [Running a model on a robot](05_running-a-model-on-a-robot.md) is the next
+- [Running a model on a robot](../09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md) is the next
   document. It explains what happens after training, when the model is used.
-- [The map of models](09_the-map-of-models.md) shows every kind of model in this book
+- [The map of models](07_the-map-of-models.md) shows every kind of model in this book
   and what data each one uses.
 - [How a model learns](02_how-a-model-learns.md) explains what the model does with
   each example.

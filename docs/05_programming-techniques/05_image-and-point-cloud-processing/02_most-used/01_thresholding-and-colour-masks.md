@@ -30,7 +30,8 @@ that the later steps tidy, trace and group.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why thresholding, and what it costs](#7-why-thresholding-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -372,13 +373,8 @@ well under a millisecond, needs no training and no graphics card, and gives the
 same answer every time for the same picture. When it goes wrong, you can find out
 why by reading one pixel's numbers.
 
-The obvious alternative is a learned
-[segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md).
-A model handles mixed colours, clutter and changing light much better. Choose a
-threshold when the object has a property that nothing else shares: a colour you
-chose, a height above a known table, a brightness against a backlit tray. In a
-robot cell you often control these things, so a threshold is right more often
-than its simplicity suggests. Choose a model when you cannot control the scene.
+The obvious alternative is a learned segmentation model.
+[Section 8](#8-the-learned-alternative) says when each one is the better choice.
 
 The second obvious alternative is to skip the mask and go straight to 3D
 [clustering](03_clustering.md). Clustering needs a depth camera, and it still
@@ -393,7 +389,23 @@ object is.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+Book 6 has two kinds of model that do this job. A
+[segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+marks the pixels of each object without any hand-set limits, and an
+[object detector](../../../06_neural-network-models/02_seeing-models/02_most-used/01_object-detection.md)
+puts a named box round each object. A model wins when you cannot control the
+scene: it handles mixed colours, clutter and changing light much better, and it
+copes with many kinds of part without a new rule for each one. A threshold still
+wins when the object has a property that nothing else shares: a colour you chose,
+a height above a known table, a brightness against a backlit tray. In a robot cell
+you often control these things, so a threshold is right more often than its
+simplicity suggests.
+
+---
+
+## 9. Where to read next
 
 - The next page is [morphology and the distance transform](02_morphology-and-distance-transform.md).
   It removes the specks and fills the holes that a threshold leaves behind.
@@ -403,8 +415,6 @@ object is.
   height threshold is measured from.
 - The [pinhole camera model](../../02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md)
   turns the middle of a mask into a 3D point.
-- [Segmentation](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
-  in Book 6 is the learned model that makes masks without hand-set limits.
 - Book 2 has real code for an HSV mask in
   [finding an object in a picture](../../../02_perception/01_camera/02_finding-objects.md#32-the-steps),
   and a summary of colour ranges in

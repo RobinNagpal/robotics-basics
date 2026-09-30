@@ -40,7 +40,8 @@ smoothing sensor readings.
 6. [Where it is useful, and where it is not](#6-where-it-is-useful-and-where-it-is-not)
 7. [Libraries that provide it](#7-libraries-that-provide-it)
 8. [Why a Kalman filter, and what it costs](#8-why-a-kalman-filter-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The learned alternative](#9-the-learned-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -595,7 +596,26 @@ or a bug can affect many steps after it.
 
 ---
 
-## 9. Where to read next
+## 9. The learned alternative
+
+The learned trackers in Book 6's
+[tracking and motion](../../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md)
+mostly keep the filter rather than replace it. Methods such as SORT and ByteTrack
+take boxes from a trained detector and use a Kalman filter to predict where each
+object should be, and some also compare how the objects look, so that two similar
+objects are not swapped. When the motion is too complex to write down, a
+[learned dynamics model](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md)
+predicts the next state from recordings of the real arm instead of a formula, but
+it needs those recordings, and its errors add up over many steps. For touch,
+[force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+recognise patterns such as the fast shaking of a slip, which a filter that smooths
+the reading cannot tell apart from noise. For a steady estimate of a position or a
+speed, the Kalman filter still wins, because it needs no training data, costs a few
+lines of arithmetic per reading, and says how sure it is.
+
+---
+
+## 10. Where to read next
 
 - [Least-squares fitting](01_least-squares-fitting.md) is the batch version of
   the same idea. For a quantity that does not change, the Kalman filter gives the
@@ -606,11 +626,5 @@ or a bug can affect many steps after it.
   matches new detections to the filter's predictions.
 - [PID control](../../07_control-and-motion/02_most-used/01_pid-control.md) often acts on a
   filtered reading.
-- [Tracking and motion](../../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md)
-  in Book 6 covers learned trackers, which follow objects by their appearance as
-  well as their motion.
-- [Force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
-  in Book 6 cover learned ways to read touch and force signals, which a filter
-  alone cannot interpret.
 - Book 2 goes deeper into tracking on a real arm in
   [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md).

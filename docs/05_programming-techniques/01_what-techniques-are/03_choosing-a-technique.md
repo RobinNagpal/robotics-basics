@@ -313,7 +313,7 @@ names what people use instead.
   all 34 techniques in this book and places them on one arm task.
 - [RANSAC](../04_fitting-and-estimation/02_most-used/02_ransac.md) explains the robust fit from
   section 4 in full.
-- [Running a model on a robot](../../06_neural-network-models/01_what-models-are/05_running-a-model-on-a-robot.md)
+- [Running a model on a robot](../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
   in Book 6 shows the time budget from the learned side.
 - [Making it work](../../02_perception/02_object-perception/07_making-it-work.md)
   in Book 2 is about testing perception on real scenes, which is how you answer

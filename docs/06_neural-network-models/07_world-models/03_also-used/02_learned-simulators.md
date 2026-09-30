@@ -26,7 +26,8 @@ a learned simulator often starts from a point cloud.
 6. [A worked example: folding a towel in half](#6-a-worked-example-folding-a-towel-in-half)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -272,7 +273,28 @@ What it costs you:
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+The written alternative is a hand-written physics simulator, given the right
+material numbers. Book 3's [the
+simulators](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#2-the-simulators)
+describes the ones people run. Book 5's [system
+identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+explains how to measure the numbers inside a physical model from the real thing. It
+works when there are a few numbers, such as a joint's friction or a finger's
+stiffness. That page itself notes that cloth, soft objects and tangled cables have
+no small set of numbers that fits.
+
+So the written simulator wins for rigid objects and for materials whose numbers are
+known. The learned simulator wins for a real towel or real dough. In both cases, the
+planning in section 6 is written code, of the kind [sampling-based optimisation and
+model predictive
+control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+explains.
+
+---
+
+## 10. Where to read next
 
 - The [next page](03_latent-world-models.md) covers latent world models, which
   predict a short code instead of particles or pictures.

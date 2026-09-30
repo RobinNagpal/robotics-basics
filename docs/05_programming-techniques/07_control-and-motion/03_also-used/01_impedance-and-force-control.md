@@ -34,7 +34,8 @@ What helps is choosing what the arm does when it meets resistance.
 5. [Where it is useful, and where it is not](#5-where-it-is-useful-and-where-it-is-not)
 6. [Libraries that provide it](#6-libraries-that-provide-it)
 7. [Why impedance and force control, and what it costs](#7-why-impedance-and-force-control-and-what-it-costs)
-8. [Where to read next](#8-where-to-read-next)
+8. [The learned alternative](#8-the-learned-alternative)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -475,7 +476,27 @@ maker, as Book 3 warns.
 
 ---
 
-## 8. Where to read next
+## 8. The learned alternative
+
+The learned alternative for contact is a
+[reinforcement learning policy](../../../06_neural-network-models/05_movement-models/03_also-used/01_reinforcement-learning-policies.md),
+which learns by trying, usually in simulation, how to react to the force it
+feels; Book 6's worked example pushes a peg into a tight hole. It wins when the
+right reaction depends on forces too complicated to write rules for, the task is
+easy to score, and the contact can be simulated. Impedance control with a
+hand-written search pattern still wins when it is good enough, which is often,
+because it is easy to understand and check and needs no simulator, reward or
+training; it also wins when the contact cannot be simulated. A policy does not
+replace the force limits either, because nothing inside it stops it pushing too
+hard, so a programmed layer under it still limits forces and speeds. Book 6's
+[force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+and [collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+read the same force signals with learned models, to catch slip and unexpected
+contact.
+
+---
+
+## 9. Where to read next
 
 - [PID control](../02_most-used/01_pid-control.md) is the position loop this page modifies, and the loop
   inside an admittance controller's arm.
@@ -486,6 +507,3 @@ maker, as Book 3 warns.
 - Book 3's [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
   and [holding on](../../../03_frameworks/02_gripping/05_holding-on.md) cover the same ideas
   with the ROS 2 packages, licences and hardware.
-- Book 6's [force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
-  and [collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
-  read the same force signals with learned models.

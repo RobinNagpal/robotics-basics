@@ -23,7 +23,8 @@ its shape.
 6. [A worked example: grasping a box from the side](#6-a-worked-example-grasping-a-box-from-the-side)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this rather than looking again, and what it costs](#8-why-this-rather-than-looking-again-and-what-it-costs)
-9. [Where to read next](#9-where-to-read-next)
+9. [The written alternative](#9-the-written-alternative)
+10. [Where to read next](#10-where-to-read-next)
 
 ---
 
@@ -274,7 +275,21 @@ afford it.
 
 ---
 
-## 9. Where to read next
+## 9. The written alternative
+
+No written method can guess the back of a new object, because the guess comes
+from having seen thousands of similar objects. Book 5 offers three written ways
+around the problem. For one known part, [iterative closest point](../../../05_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md) lines
+up the stored 3D model with the seen points, and the model then gives the whole
+shape, measured rather than guessed. For a simple shape, [RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md) fits a
+cylinder or a plane to the seen points, and the fitted shape covers the hidden
+side too. To look instead of guess, [visibility and next-best-view](../../../05_programming-techniques/06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
+chooses where to move the camera to see most of what is hidden. Shape completion
+wins for new objects of familiar kinds when the camera cannot move.
+
+---
+
+## 10. Where to read next
 
 - [Scene reconstruction](../02_most-used/02_scene-reconstruction.md) is the next page. It covers the
   "look again" route in full: building a whole scene from many photos.

@@ -105,10 +105,14 @@ rviz.check: ## Show what the demo is publishing (run rviz.demo first)
 
 ##@ arm — position, frames and transforms
 
-arm.learn: build ## Work through the maths, steps 1 to 3, then exit
+arm.learn: build ## Frames in 2D (steps 1 to 3), then frames in 3D
 	@$(call ros,ros2 run arm_transforms arm_step1_positions)
 	@echo; $(call ros,ros2 run arm_transforms arm_step2_frames)
 	@echo; $(call ros,ros2 run arm_transforms arm_step3_chain)
+	@for file in orientation cell_chain; do \
+		echo; echo "===== src/frames_3d/$$file.py ====="; \
+		pixi run python src/frames_3d/$$file.py || exit 1; \
+	done
 
 arm.demo: build ## Step 4: publish the arm to TF and draw it in RViz
 	$(call ros,ros2 launch arm_transforms arm_demo.launch.py)
@@ -165,8 +169,8 @@ maths.learn: ## Angles, trigonometry, vectors and matrices on an arm
 		pixi run python src/maths/$$file.py || exit 1; \
 	done
 
-kinematics.learn: ## Forward and inverse kinematics of a flat arm
-	@for file in forward inverse; do \
+kinematics.learn: ## Forward and inverse kinematics of a flat arm, then moving between poses
+	@for file in forward inverse motion; do \
 		echo; echo "===== src/kinematics/$$file.py ====="; \
 		pixi run python src/kinematics/$$file.py || exit 1; \
 	done

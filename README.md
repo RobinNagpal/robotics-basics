@@ -38,10 +38,10 @@ own, with its own code, its own doc, and two or three commands.
 | [python](docs/01_robotics-intro/01_python-and-numpy/01_python-basics.md) | the Python a beginner needs for robot arm code | `make python.learn` |
 | [numpy](docs/01_robotics-intro/01_python-and-numpy/02_numpy-intro.md) | the parts of NumPy robotics code uses most: arrays, masks, transforms, grids | `make numpy.learn` |
 | [maths](docs/01_robotics-intro/02_maths/01_angles-and-trigonometry.md) | angles, trigonometry, vectors and matrices, explained on a robot arm | `make maths.learn` |
-| [arm](docs/01_robotics-intro/03_arm/01_overview.md) | position, frames and transforms | `make arm.learn` |
-| [kinematics](docs/01_robotics-intro/04_kinematics/01_forward-kinematics.md) | forward and inverse kinematics: joint angles to gripper position, and back | `make kinematics.learn` |
+| [arm](docs/01_robotics-intro/03_arm/01_overview.md) | position, frames and transforms, in 2D and then 3D | `make arm.learn` |
+| [kinematics](docs/01_robotics-intro/04_kinematics/01_forward-kinematics.md) | forward and inverse kinematics: joint angles to gripper position, and back, then moving between poses | `make kinematics.learn` |
 | [arm types](docs/01_robotics-intro/05_arm-types/01_joints-and-degrees-of-freedom.md) | joints, degrees of freedom, five common arms, and the six-joint arm in detail | `make arms.learn` |
-| [ros](docs/04_ros-and-rviz/01_ros/01_ros-intro.md) | the basics of ROS, one program per idea, then a camera, an arm, and the two together | `make ros.basics` |
+| [ros](docs/04_ros-and-rviz/01_ros/01_ros-intro.md) | the basics of ROS, one program per idea, then a camera, an arm, the two together, and the arm's frames in TF | `make ros.basics` |
 | [rviz](docs/04_ros-and-rviz/02_rviz/01_overview.md) | markers, frames and the 3D viewer | `make rviz.demo` |
 | [camera](docs/02_perception/01_camera/01_basics.md) | how a camera works, then a depth camera in Gazebo that finds a box | `make camera.one_box` |
 | [finding objects](docs/02_perception/01_camera/02_finding-objects.md) | finding a thing in a picture: by colour, with depth, and with a trained model | `make camera.colour` |
@@ -63,7 +63,7 @@ arm rather than in the abstract. Then **arm** builds frames and transforms, and
 **kinematics** uses them to turn joint angles into a gripper position and back.
 Book 1 ends with **arm types**: how joints work together, five common kinds of
 arm, and the six-joint arm in detail. None of Book 1 needs ROS (Robot Operating
-System), except the last two steps of **arm**, which you can come back to.
+System).
 
 **ros** and **rviz** are in Book 4. They explain what ROS is, one small program
 for each thing ROS does, then three worked examples, and the 3D viewer. Read

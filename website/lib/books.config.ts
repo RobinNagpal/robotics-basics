@@ -26,7 +26,7 @@ export const BOOK_INFO: Record<string, BookInfo> = {
     shortTitle: 'Basics',
     subtitle: 'Python, maths, frames, kinematics and arm types',
     description:
-      'Start here if you know nothing about robots. The Python and NumPy that robot code is written in, the angles, vectors and matrices an arm needs, frames and transforms, forward and inverse kinematics, and the common kinds of robot arm, with the six-joint arm in detail.',
+      'Start here if you know nothing about robots. The Python and NumPy that robot code is written in, the angles, vectors and matrices an arm needs, frames and transforms, forward and inverse kinematics, moving between poses, and the common kinds of robot arm, with the six-joint arm in detail.',
     accent: 'teal',
   },
   perception: {

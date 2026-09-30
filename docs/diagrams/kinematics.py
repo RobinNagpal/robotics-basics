@@ -4,6 +4,7 @@ Each doc's pictures go to a folder named after it:
 
   docs/images/kinematics/forward-kinematics/
   docs/images/kinematics/inverse-kinematics/
+  docs/images/kinematics/moving-between-poses/
 
 Run with:  pixi run python ../docs/diagrams/kinematics.py
 Add --png DIR to also write a PNG copy of every picture into DIR, for checking.
@@ -32,10 +33,13 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / 'code' / 's
 # Imported after the sys.path line above, which flake8's import rules cannot see.
 from planar_arm import (forward, numerical_ik, points, three_joint_ik,  # noqa: E402,I100,I202
                         THREE_LINKS, two_joint_ik, TWO_LINKS)
+from motion import (along, cartesian_path, elbow_down, END, FAIL_END,  # noqa: E402,I100
+                    FAIL_START, joint_space_path, smooth, smooth_speed, START)
 
 IMAGES: pathlib.Path = pathlib.Path(__file__).resolve().parents[1] / 'images' / 'kinematics'
 FK_DIR: pathlib.Path = IMAGES / 'forward-kinematics'
 IK_DIR: pathlib.Path = IMAGES / 'inverse-kinematics'
+MOVE_DIR: pathlib.Path = IMAGES / 'moving-between-poses'
 PNG_DIR: pathlib.Path | None = None
 
 GRID: str = '#d6d6d6'
@@ -452,9 +456,142 @@ def numerical() -> None:
     _save(fig, IK_DIR, 'numerical-steps')
 
 
+# --------------------------------------------------------------------------
+# moving between poses
+# --------------------------------------------------------------------------
+
+def _gripper_path(joint_list: list[tuple[float, float]]) -> tuple[list[float], list[float]]:
+    xs: list[float] = []
+    ys: list[float] = []
+    for q in joint_list:
+        x, y, _ = forward(list(q), TWO_LINKS)
+        xs.append(x)
+        ys.append(y)
+    return xs, ys
+
+
+def joint_vs_straight() -> None:
+    """Draw one move made two ways: joints turned evenly, or the gripper kept on a line."""
+    fig: Figure
+    axes: NDArray[np.object_]       # a NumPy array holding one Axes per panel
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.6), facecolor='white')
+    q_start = elbow_down(*START)
+    q_end = elbow_down(*END)
+    ghosts_joint = joint_space_path(q_start, q_end, 4)
+    ghosts_line = [q for q in cartesian_path(START, END, 4) if q is not None]
+    fine_joint = joint_space_path(q_start, q_end, 100)
+    shades: list[str] = ['#b9d3ea', '#9bbfe1', '#7eabd7', '#5f96cd', LINK]
+    panels = ((axes[0], ghosts_joint, 'joint-space move: every joint turns evenly', GREEN),
+              (axes[1], ghosts_line, 'straight-line move: IK at every step', PURPLE))
+    for ax, ghosts, title, path_color in panels:
+        _axes(ax, (-1.2, 5.6), (-1.2, 5.0))
+        _base(ax)
+        for q, shade in zip(ghosts, shades):
+            _arm(ax, points(list(q), TWO_LINKS), color=shade, width=4.5, gripper=False)
+        if ax is axes[0]:
+            xs, ys = _gripper_path(fine_joint)
+            ax.plot(xs, ys, color=path_color, lw=2.6, zorder=5)
+            _dashed(ax, START, END, color=MUTED, lw=1.1)
+            _text(ax, 4.05, 3.3, 'strays up to\n0.949 m from\nthe straight line',
+                  color=path_color, size=9.5, mono=False)
+        else:
+            ax.plot([START[0], END[0]], [START[1], END[1]], color=path_color, lw=2.6, zorder=5)
+        _star(ax, START, color=GRIP, size=14)
+        _star(ax, END, color=GRIP, size=14)
+        _text(ax, START[0], START[1] - 0.45, 'start (4.5, 0.5)', size=9.5)
+        _text(ax, END[0] - 0.1, END[1] + 0.45, 'end (0.5, 4.0)', size=9.5)
+        ax.set_title(title, color=path_color, fontsize=11.5)
+    _title(fig, 'Same start, same end, two different paths for the gripper')
+    fig.subplots_adjust(top=0.86, wspace=0.05)
+    _save(fig, MOVE_DIR, 'joint-vs-straight')
+
+
+def straight_line_fails() -> None:
+    """Draw a straight line whose middle passes closer to the base than the arm can reach."""
+    fig: Figure
+    ax: Axes
+    fig, ax = _figure((7.6, 7.0))
+    _axes(ax, (-5.4, 5.6), (-6.0, 5.4))
+    ax.add_patch(Circle((0, 0), L1 + L2, color=REACH, zorder=0))
+    ax.add_patch(Circle((0, 0), L1 - L2, color='white', zorder=0))
+    for r in (L1 - L2, L1 + L2):
+        ax.add_patch(Circle((0, 0), r, fill=False, color=MUTED, lw=1.0, zorder=1))
+
+    # The straight line, split where it enters and leaves the 1 m hole.
+    fine = [along(FAIL_START, FAIL_END, i / 400) for i in range(401)]
+    inside = [math.hypot(*p) < L1 - L2 for p in fine]
+    first_in: int = inside.index(True)
+    last_in: int = len(inside) - 1 - inside[::-1].index(True)
+    for segment, color in ((fine[:first_in + 1], GREEN), (fine[last_in:], GREEN),
+                           (fine[first_in:last_in + 1], GRIP)):
+        ax.plot([p[0] for p in segment], [p[1] for p in segment], color=color, lw=3.0,
+                zorder=5)
+
+    # The last pose before the hole and the first after it: the elbow must swing over.
+    path = cartesian_path(FAIL_START, FAIL_END, 8)
+    before = path[3]
+    after = path[6]
+    assert before is not None and after is not None
+    _arm(ax, points(list(before), TWO_LINKS), color=LINK, width=5)
+    _arm(ax, points(list(after), TWO_LINKS), color='#86aed8', width=5)
+    _star(ax, FAIL_START, color=INK, size=14)
+    _star(ax, FAIL_END, color=INK, size=14)
+    _text(ax, FAIL_START[0] + 0.2, FAIL_START[1] + 0.45, 'start (3, -1)', ha='left', size=9.5)
+    _text(ax, FAIL_END[0] - 0.2, FAIL_END[1] + 0.45, 'end (-2, 1.5)', ha='right', size=9.5)
+    e_before: Point = points(list(before), TWO_LINKS)[1]
+    e_after: Point = points(list(after), TWO_LINKS)[1]
+    _text(ax, e_before[0], e_before[1] - 0.85,
+          f'last pose before the gap\nq1 = {math.degrees(before[0]):.2f}°',
+          color=LINK, size=9.5, mono=False)
+    _text(ax, e_after[0] + 0.35, e_after[1] + 0.55,
+          f'first pose after the gap\nq1 = {math.degrees(after[0]):.2f}°',
+          color='#5f86b8', size=9.5, mono=False)
+    _text(ax, -2.6, -2.2, 'the red part has no answer:\nit passes 0.447 m from the base,\n'
+          'inside the 1 m the arm cannot reach', color=GRIP, size=9.5, mono=False)
+    _text(ax, 0.0, -5.6, f'joint 1 would have to jump '
+          f'{math.degrees(after[0] - before[0]):.0f}° to cross it', color=MUTED, mono=False)
+    _title(fig, 'A straight line can leave the part the arm can reach')
+    _save(fig, MOVE_DIR, 'straight-line-fails')
+
+
+def smooth_timing() -> None:
+    """Plot position and speed over one second: even speed against a smooth start and stop."""
+    fig: Figure
+    axes: NDArray[np.object_]       # a NumPy array holding one Axes per panel
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.4), facecolor='white')
+    t: NDArray[np.float64] = np.linspace(0.0, 1.0, 201)
+    smooth_pos: NDArray[np.float64] = np.array([smooth(float(v)) for v in t])
+    smooth_vel: NDArray[np.float64] = np.array([smooth_speed(float(v)) for v in t])
+    pos_ax, vel_ax = axes[0], axes[1]
+    pos_ax.plot(t, 100 * t, color=GRIP, lw=2.4, label='even speed')
+    pos_ax.plot(t, 100 * smooth_pos, color=GREEN, lw=2.4, label='smooth start and stop')
+    pos_ax.set_ylabel('how far along (%)')
+    pos_ax.set_title('position', fontsize=11.5)
+    pos_ax.legend(frameon=False, loc='upper left', fontsize=10)
+    vel_ax.plot([0, 0, 1, 1], [0, 1, 1, 0], color=GRIP, lw=2.4)
+    vel_ax.plot(t, smooth_vel, color=GREEN, lw=2.4)
+    vel_ax.set_ylabel('speed (× average)')
+    vel_ax.set_title('speed', fontsize=11.5)
+    vel_ax.set_ylim(-0.08, 1.75)
+    vel_ax.annotate('jumps from 0 to full\nspeed in no time', xy=(0.0, 0.55), xytext=(0.2, 0.35),
+                    fontsize=9.5, color=GRIP,
+                    arrowprops={'arrowstyle': '-|>', 'color': GRIP, 'lw': 1.2})
+    vel_ax.text(0.5, 1.6, 'peaks at 1.5 × average', color=GREEN, fontsize=9.5, ha='center')
+    for ax in axes:
+        ax.set_xlabel('time (s)')
+        ax.set_xlim(-0.03, 1.03)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.grid(color=GRID, lw=0.6)
+    _title(fig, 'The same one-second move, timed two ways')
+    fig.subplots_adjust(top=0.82, wspace=0.28)
+    _save(fig, MOVE_DIR, 'smooth-timing')
+
+
 FIGURES: tuple[Callable[[], None], ...] = (
     joint_vs_task_space, three_joint_pose, workspace_ring, joint_limits,
-    law_of_cosines, two_answers, reach_cases, redundant, numerical)
+    law_of_cosines, two_answers, reach_cases, redundant, numerical,
+    joint_vs_straight, straight_line_fails, smooth_timing)
 
 if __name__ == '__main__':
     if '--png' in sys.argv:

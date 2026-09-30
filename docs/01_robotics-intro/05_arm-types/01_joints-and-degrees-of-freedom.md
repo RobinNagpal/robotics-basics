@@ -8,7 +8,7 @@ It is for a beginner who has read the chapters before it. You should know what a
 angle is and how `sin` and `cos` turn an angle into a position. The
 [frames and transforms chapter](../03_arm/01_overview.md) did that on a two-joint arm.
 This document uses the same arm with the 1 m third link that the frames chapter
-added in its section 8, [making the arm bigger](../03_arm/01_overview.md#8-making-the-arm-bigger). It uses that arm to explain words that every later chapter
+added in its section 6, [making the arm bigger](../03_arm/01_overview.md#6-making-the-arm-bigger). It uses that arm to explain words that every later chapter
 uses: joint, link, chain, joint limit and degree of freedom.
 
 All the numbers below come from one small program, `src/arm_types/joints.py`. The

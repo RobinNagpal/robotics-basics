@@ -4,15 +4,18 @@ A robot arm has to answer one question, over and over: **where is my gripper
 right now?**
 
 That sounds easy. It is not, and the way robots answer it is the foundation for
-almost everything else they do. This area works up to the answer over five small
-programs you can read and run.
+almost everything else they do. This doc works up to the answer over three small
+plain-Python programs you can read and run.
 
 This doc is for a beginner who has read the two chapters before it: Python and
-NumPy, then angles, vectors and matrices. Steps 1 to 3 are plain Python. Steps 4
-and 5 hand the arm to ROS (Robot Operating System), which is taught later, in the
-[ROS and RViz book](../../04_ros-and-rviz/01_ros/01_ros-intro.md). On a first
-read, stop after step 3 and come back to steps 4 and 5 once you have met ROS.
-Nothing in the next chapters needs them.
+NumPy, then angles, vectors and matrices. It works on a flat arm, so every
+position is two numbers and every turn is one angle. The
+[next doc](02_frames-in-3d.md) takes the same ideas into 3D and names the frames
+you meet on a real arm.
+
+Once you know ROS (Robot Operating System), the
+[ROS TF doc](../../04_ros-and-rviz/01_ros/06_ros-tf-arm.md) in the ROS and RViz
+book hands this same arm to ROS. Nothing in Book 1 needs it.
 
 ## The arm used in this doc
 
@@ -66,12 +69,10 @@ first: a single joint with a single link.
 5. [Step 3: backwards, and carrying a point](#5-step-3-backwards-and-carrying-a-point)
    · [Flipping a transform](#flipping-a-transform)
    · [Carrying a point](#carrying-a-point)
-6. [Step 4: hand the arm to ROS](#6-step-4-hand-the-arm-to-ros)
-7. [Step 5: ask instead of working it out](#7-step-5-ask-instead-of-working-it-out)
-8. [Making the arm bigger](#8-making-the-arm-bigger)
-9. [All the maths on one page](#9-all-the-maths-on-one-page)
-10. [Running it](#10-running-it)
-11. [Notes](#11-notes)
+6. [Making the arm bigger](#6-making-the-arm-bigger)
+7. [All the maths on one page](#7-all-the-maths-on-one-page)
+8. [Running it](#8-running-it)
+9. [What comes next](#9-what-comes-next)
 
 ---
 
@@ -218,13 +219,11 @@ Same spot, two frames, two answers, and neither is more correct than the other.
 That is the whole reason frames exist: each part of a robot has its own natural
 way to describe where things are, and it is usually the simple one.
 
-This arm has four frames:
+This arm has four frames. Each one hangs off the one before it, and the words on
+each arrow say how to get from one frame to the next:
 
-```mermaid
-flowchart LR
-    base_link -->|"turn by q1"| link1
-    link1 -->|"move L1, turn by q2"| link2
-    link2 -->|"move L2"| gripper
+```
+base_link --(turn by q1)--> link1 --(move L1, turn by q2)--> link2 --(move L2)--> gripper
 ```
 
 | Frame | Stuck to |
@@ -267,7 +266,8 @@ that joint could have written it down without knowing what the rest of the robot
 looks like.
 
 The last row never changes at all. It was measured once, when the arm was built.
-TF does not treat it differently from the joints — a transform is a transform.
+The maths below does not treat it differently from the joints. A transform is a
+transform, whether it changes or not.
 
 ### Turning a point
 
@@ -469,78 +469,14 @@ tip's description in the `gripper` frame and it never changes. The number by the
 star is different in each, because that is the table's answer.
 
 Move the arm and run step 3 again. The description in the `gripper` frame does
-not change. The answer on the table does. This is the same idea as the ball in
-the [RViz area](../../04_ros-and-rviz/02_rviz/01_overview.md): you do not move the thing, you move the
-frame it is attached to.
+not change. The answer on the table does. You never move the tip itself. You move
+the frame it is attached to, and the tip goes along with it.
 
 This is `Transform2D.apply()`.
 
 ---
 
-## 6. Step 4: hand the arm to ROS
-
-This step and the next one need ROS. If you have not read the
-[ROS and RViz book](../../04_ros-and-rviz/01_ros/01_ros-intro.md) yet, skip to
-[section 8](#8-making-the-arm-bigger).
-
-File: `step4_broadcast.py`. This is the first one that uses ROS.
-
-So far everything has been one program talking to itself. Nothing else on the
-robot could ask where the gripper was.
-
-**TF** fixes that. It is the part of ROS that keeps track of frames, and the
-name is just short for *transform*. Programs publish the transforms they know
-about, and TF joins them up for anyone who asks.
-
-Step 4 publishes the arm's three transforms, thirty times a second, as the
-joints swing:
-
-```
-base_link -> link1      turn by q1              (joint 1)
-link1     -> link2      move L1, turn by q2     (joint 2)
-link2     -> gripper    move L2                 (bolted on)
-```
-
-The maths did not change at all. Step 4 imports the same list of transforms
-step 2 used, and only turns each one into a ROS message before sending it.
-
-Two things are worth noticing.
-
-**Each link is published on its own.** Step 4 never publishes `base_link` →
-`gripper`, even though it could work it out easily. Each program publishes only
-what it actually knows.
-
-**The shapes are drawn in their own frames.** The bar for link 1 is described
-inside `link1`, and it never moves there. TF moves the frame, and the bar goes
-along with it. Five shapes, none of which are ever repositioned.
-
----
-
-## 7. Step 5: ask instead of working it out
-
-File: `step5_lookup.py`. This is where it pays off.
-
-Nobody published `base_link` → `gripper`. This program asks for it anyway:
-
-```python
-buffer.lookup_transform('base_link', 'gripper', Time())
-```
-
-TF joins the three published links and answers.
-
-Now open the file and look for trigonometry. There is none. No `cos`, no `sin`,
-no `q1 + q2`. It never imports `arm_math`. It does not know how long the links
-are, how many joints there are, or that the arm is flat.
-
-It only knows two frame names.
-
-That is the reason for all the work in steps 2 and 3. Describe each part once,
-in the one place that knows it. Publish that. Then any other program can ask
-about any pair of frames, without knowing how the robot is built.
-
----
-
-## 8. Making the arm bigger
+## 6. Making the arm bigger
 
 Everything above was shown on two joints. Here is what actually changes when the
 arm grows.
@@ -553,7 +489,7 @@ link3 -> gripper   move L3
 ```
 
 Nothing else changes. Joining still adds the angles, so `q1 + q2 + q3` appears
-on its own. Step 5 does not change at all — it still asks for two frame names.
+on its own, with no new code.
 
 ![A third joint changes nothing](../../images/arm/three_joints.svg)
 
@@ -563,20 +499,21 @@ formula was needed to work that out.
 
 **A gripper that can turn.** Right now the gripper is bolted on, so its row
 never changes. Give it a joint and that row starts changing with `q3` like any
-other. Nothing else cares: TF treats a moving transform and a fixed one exactly
-the same.
+other. Nothing else needs to change, because the joining treats a moving
+transform and a fixed one exactly the same.
 
 **Moving to 3D.** A position becomes three numbers, and a rotation needs three
 angles instead of one. Each of the four operations gets more arithmetic inside
 it, but there are still only four of them. This is the point where real code
-stops writing the formulas out and calls a matrix library instead.
+stops writing the formulas out and uses matrices instead. The
+[next doc](02_frames-in-3d.md) shows what else changes in 3D.
 
 The pattern holds at every size: describe each part once, against its immediate
 parent, and let the joining do the rest.
 
 ---
 
-## 9. All the maths on one page
+## 7. All the maths on one page
 
 Four operations. Everything above is one of them.
 
@@ -610,58 +547,44 @@ to find the gripper on the table:
 
 ---
 
-## 10. Running it
+## 8. Running it
+
+Run this from `code/`:
 
 ```
 make arm.learn     steps 1 to 3: the maths, printed, then it exits
-make arm.demo      step 4: publish the arm and draw it in RViz
-make arm.watch     step 5: ask TF where the gripper is (needs arm.demo running)
 ```
 
 `make arm.learn` runs the three plain-Python steps back to back. Step 1 prints
 the one-joint table, then the two-joint one. Step 2 prints the link-by-link
 build-up, and its check against step 1. Step 3 flips a transform, and carries
-the tool tip onto the table. Every number in that output is whole.
+the tool tip onto the table.
 
-`make arm.demo` opens RViz with the arm swinging. The two joints move at
-different speeds, so it keeps finding new poses instead of repeating a short
-loop. You should see:
-
-- two blue bars, one per link
-- a yellow ball at each joint
-- a red ball at the gripper
-- frame arrows moving along with all of them
-
-`make arm.watch` prints one line a second:
+The check in step 2 is the line to look for. Step 2 compares its answer with step
+1 at five poses, and it prints the biggest difference it found:
 
 ```
-gripper at (+4.037, +2.713) facing   +17.4°   tool tip at (+4.991, +3.012)
+Biggest difference across every pose: 0.00e+00 metres.
+The two agree. Same maths, assembled differently.
 ```
-
-The arm is swinging through every angle, so these are whatever the moment gives.
-But the gap between the two pairs is always 1 m, whatever the arm does. That point never moved. It is fixed in the
-`gripper` frame, and only the frame went anywhere.
 
 ---
 
-## 11. Notes
+## 9. What comes next
 
-ROS stores a rotation as four numbers, called a **quaternion**, rather than as
-angles. Three angles have an awkward case in 3D: at certain poses two axes line
-up and one direction of movement quietly disappears. Four numbers have no such
-case. `yaw_to_quaternion()` does the conversion for you, and you can use it
-without following the theory.
+The [next doc](02_frames-in-3d.md) takes frames into 3D. A position becomes three
+numbers and a turn becomes three angles. It also names the frames you meet on a
+real arm, such as the tool and the camera.
 
-The [RViz area](../../04_ros-and-rviz/02_rviz/01_overview.md), in the ROS and RViz
-book, covers markers and the 3D viewer that steps 4 and 5 draw the arm in.
+After that, the [forward kinematics](../04_kinematics/01_forward-kinematics.md)
+chapter uses these transforms to turn a list of joint angles into a gripper
+position, and then asks the harder question backwards.
 
-Next chapter: [forward kinematics](../04_kinematics/01_forward-kinematics.md), which
-uses these transforms to turn a list of joint angles into a gripper position, and
-then asks the harder question backwards.
-
-This area is about describing *where things are*. Getting the arm to a place, and
-what stops it, is [arm movement](../../03_frameworks/03_arm-movement/01_overview.md): reach
-envelopes, singularities, planning a path, and controlling the move. It assumes
-the frames and transforms built here. The transforms are put to work again in
-[cameras](../../02_perception/01_camera/01_basics.md), which moves a point measured
-by a camera into the room the arm moves in.
+Two later docs build on this one. The
+[ROS TF doc](../../04_ros-and-rviz/01_ros/06_ros-tf-arm.md), in the ROS and RViz
+book, hands this arm to ROS, so that any program can ask where the gripper is.
+[Arm movement](../../03_frameworks/03_arm-movement/01_overview.md) covers getting
+the arm to a place, and what stops it: reach, singularities, planning a path, and
+controlling the move. The transforms are also put to work in
+[cameras](../../02_perception/01_camera/01_basics.md), which moves a point
+measured by a camera into the room the arm moves in.

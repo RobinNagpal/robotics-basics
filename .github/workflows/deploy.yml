@@ -9,6 +9,7 @@ on:
     paths:
       - 'docs/**'
       - 'website/**'
+      - 'narration/manifest.json'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
@@ -78,6 +79,7 @@ jobs:
           aws s3 sync website/out/ "s3://${{ vars.S3_BUCKET }}/" \
             --no-progress --delete \
             --exclude '_next/static/*' \
+            --exclude 'audio/*' \
             --cache-control 'public, max-age=0, must-revalidate'
 
       # One path, not one per URL. CloudFront counts /* as a single path

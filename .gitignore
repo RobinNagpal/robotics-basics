@@ -35,3 +35,9 @@ deployment/terraform/.terraform/
 *.tfstate
 *.tfstate.*
 *.tfplan
+
+# Narration: the recordings are large and can be remade from the transcripts,
+# so they live in S3 rather than here. The transcripts and the manifest are
+# committed, because the transcript is the part worth reviewing and the
+# manifest is what tells the site which pages have a player.
+narration/audio/

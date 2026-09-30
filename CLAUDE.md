@@ -2,10 +2,13 @@
 
 ## Layout
 
-The repo has three folders. `docs/` holds the docs. `code/` holds `src/`, the
+The repo has four folders. `docs/` holds the docs. `code/` holds `src/`, the
 Makefile and the pixi environment; run every `make` and `pixi` command from inside
 `code/`, and a diagram script as `pixi run python ../docs/diagrams/<name>.py`.
-`website/` is the Next.js site that reads `docs/` directly. The folders in `docs/`
+`website/` is the Next.js site that reads `docs/` directly. `narration/` turns
+pages into spoken recordings: `narrate.py` asks a model for a transcript and then
+reads it aloud, the transcripts are committed because they are the part worth
+checking, and the recordings themselves go to S3 rather than into the repository. The folders in `docs/`
 are its structure, so moving a doc moves it on the site too;
 `website/lib/books.config.ts` only holds display text such as book titles.
 

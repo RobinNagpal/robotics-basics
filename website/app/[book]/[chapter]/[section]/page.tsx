@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getLibrary, locate } from '@/lib/content';
+import { audioFor } from '@/lib/audio';
 import { renderSection } from '@/lib/markdown';
 import BookSidebar, { type SidebarChapter } from '@/components/BookSidebar';
 import Toc from '@/components/Toc';
 import ReaderEffects from '@/components/ReaderEffects';
 import MobileNavToggle from '@/components/MobileNavToggle';
+import PageAudio from '@/components/PageAudio';
 
 type Params = { params: Promise<{ book: string; chapter: string; section: string }> };
 
@@ -31,6 +33,8 @@ export default async function SectionPage({ params }: Params) {
   const { book, chapter, section, index, total, prev, next } = found;
   const { html, toc } = await renderSection(section);
   const sectionNumber = chapter.sections.indexOf(section) + 1;
+  // Null for a page that has not been narrated yet, which renders no player.
+  const narration = audioFor(section.url);
 
   const sidebar: SidebarChapter[] = book.chapters.map((c) => ({
     slug: c.slug,
@@ -87,6 +91,8 @@ export default async function SectionPage({ params }: Params) {
             </span>
           </div>
         </header>
+
+        {narration && <PageAudio src={narration.src} title={section.title} />}
 
         {toc.length > 2 && (
           <details className="toc-inline">

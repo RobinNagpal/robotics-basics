@@ -2011,3 +2011,136 @@ kbd {
     transition: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Listening to a page
+
+   The recording is not the page read out word for word: a model wrote a
+   transcript first that describes the diagrams and explains the code in
+   ordinary words. The player sits directly under the page title, because
+   somebody who wants to listen decides that before they start reading, not
+   after.
+--------------------------------------------------------------------------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.page-audio {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0 8px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.page-audio-play {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #fff;
+  background: var(--accent);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.page-audio-play:hover { filter: brightness(1.08); }
+.page-audio-play:active { transform: scale(0.95); }
+
+/* The play triangle is visually off-centre inside a circle unless it is nudged. */
+.page-audio-play svg { margin-left: 1px; }
+.page-audio-play:has(rect) svg { margin-left: 0; }
+
+.page-audio-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.page-audio-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.page-audio-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.page-audio-time {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.page-audio-seek {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.page-audio-controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-audio-controls button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.page-audio-controls button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.page-audio-speed select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+/* Under about 560px the row runs out of width, so the controls drop below the
+   seek bar rather than squeezing the time out of sight. */
+@media (max-width: 560px) {
+  .page-audio {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .page-audio-body { order: 3; flex-basis: 100%; }
+  .page-audio-controls { margin-left: auto; }
+}

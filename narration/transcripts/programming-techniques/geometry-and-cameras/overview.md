@@ -1,0 +1,61 @@
+Geometry and cameras: overview. This chapter covers the techniques that turn pixels, frames and joint angles into positions you can trust. A robot arm can only move to a place given in metres, measured from its own base, but a camera only gives it pixels. So the techniques in this chapter connect the two.
+
+The chapter is for a reader who knows what a camera, a pixel, a frame and a transform are, from Books 1 and 2. However, it does not assume that you have seen those ideas written as general methods that work on any arm and any camera. This page says what the five techniques are for, how they fit together, which ones are used most, and how they connect to the rest of the book.
+
+The first section explains what this family of techniques is for. Every robot arm program that uses a camera has to answer the same question many times a second: where is that thing, in the arm's own terms? The camera sees a red box at pixel 212, 86, but the arm needs to hear that the box is 0.33 metres in front of its base, 0.26 metres to the right, and 0.06 metres up. Nothing else in the program can start until that sentence exists, because everything else works on positions rather than on pixels.
+
+The techniques in this chapter build that sentence, and they are pieces of geometry, which means fixed rules about straight lines, angles and distances. They do not learn anything and they do not guess, so given the same numbers in, they give the same numbers out, every time. That is why they sit underneath almost every other technique in this book.
+
+Think of an everyday example, such as giving someone directions to a shop, where you say it is two streets north of the station. That only helps if they know where the station is and which way north is, and a robot has the same problem. A position is only useful when it comes with its starting point and its directions, so this chapter is about writing positions down with their starting points, and moving them from one starting point to another.
+
+The next part states the exact question these techniques answer for an arm. The question is: which point in the arm's space does this pixel show? It splits into three smaller questions, and each of the first three techniques in this chapter answers one of them.
+
+First, which direction does a pixel look along, and how far along that direction is the surface? This is what the pinhole camera model answers, because it turns a pixel and a depth reading into a point measured from the camera. Second, how do you move that point from the camera's frame into the arm's base frame? This is what rigid transforms answer, because they turn and shift a point from one frame into another, and join several such moves into one. Third, where do the numbers for the first two steps come from? This is what calibration answers, because it measures the camera's lens numbers and the camera's exact place on the arm or in the room.
+
+A diagram on the page shows a pixel becoming a point in the arm's base frame in three steps. It illustrates a scene where a camera hangs 0.40 metres above a table and looks straight down at a red box, with a robot arm standing to one side. An orange line shows the direction that pixel 212.5, 86.5 looks along. The depth reading says the surface is 0.340 metres ahead, which gives the point in the camera's frame. A rigid transform then moves it into the arm base's frame, where it becomes 0.329, negative 0.258, and 0.060 metres. Calibration measured the numbers that both of those steps use.
+
+Two more techniques answer the questions that come next. When there is no depth reading, pose from points finds a whole object's position and rotation from the pixels of points whose places on the object are known. Finally, multi-view geometry finds depth from two pictures taken from two known places, or from one picture and the fact that the point lies on the table. This is the same scene that Book 2 uses in its basics and finding one box pages. The numbers match those pages, so you can check each step against them.
+
+Moving on, the page details the five techniques. Each technique has its own page, and the pages sit in two groups.
+
+The most used group holds the four techniques that nearly every arm with a camera needs. The first three come in the order the steps happen in a running program, except that calibration comes third. This is because calibration happens first on a real robot, but only makes sense once you know what it is measuring. Pose from points comes fourth, because it builds on all three, and calibration already uses it on every picture of the board.
+
+First is the pinhole camera model. This is the rule for how a camera turns a point in the world into a pixel, and how to turn a pixel and a depth back into a point. It covers the four lens numbers, how many millimetres one pixel covers, and how to find a point with no depth reading when you know the table it stands on. 
+
+Second are rigid transforms. These are the rule for moving a point from one frame to another. They cover rotation matrices, the four by four matrix that holds a turn and a shift together, joining frames in a chain, undoing a transform, and quaternions, which are the four numbers most robot software uses for a rotation. 
+
+Third is calibration, which is the method for measuring the numbers the other two need. It covers intrinsic calibration with a printed checkerboard, which finds the lens numbers, and hand-eye calibration, which finds where the camera sits relative to the arm. 
+
+Fourth is pose from points, also called Perspective-n-Point, or PnP. This finds an object's full pose, meaning its position and its rotation, from the pixels of points whose places on the object are known. It covers the reprojection error, using PnP inside RANSAC for wrong matches, and why a small printed marker seen face-on gives a poor rotation.
+
+The second group is the also used group. It holds one technique that many arms use, but not all. Most table-top arms get depth from a depth camera, so they do not need to work it out from two pictures themselves. However, arms with a wrist camera, a stereo pair, or no depth sensor at all use it often. This technique is multi-view geometry, which finds depth from two pictures. It covers triangulation, epipolar lines and the essential matrix, rectified stereo and disparity, height from how far a point shifts when the camera slides, and depth from one camera when the point is known to lie on the table.
+
+The next section compares these techniques side by side. The first three do different jobs, so they are not alternatives to each other, and a working arm with a camera uses all three. The last two are two ways of getting 3D information when a depth reading is missing or not good enough. 
+
+The page provides a table showing what goes in, what comes out, when it runs, and the most common way it goes wrong for each technique. The pattern across the table is that each technique takes raw data like pixels, depths, or pictures, and outputs a refined position, rotation, or calibration number. For example, the pinhole camera model takes in a pixel, a depth, and four lens numbers, and outputs a point in the camera's frame in metres. It runs for every pixel on every picture, and its usual mistake is using a focal length from a different resolution. Calibration takes in pictures of a known pattern and the arm's joint readings, and outputs the lens numbers and the camera's place on the arm. It runs only once at set-up, and the usual mistake is trusting a low error number from poor pictures. Pose from points takes known points on an object and their pixels, and outputs the object's position and rotation. It runs on every picture where the object is found, and its common mistake is trusting the rotation of a small marker seen face-on.
+
+The first two techniques are short formulas that run in microseconds, while pose from points is a small search over six numbers that runs in well under a millisecond. Calibration is a larger optimisation that runs for seconds, and it runs only once. However, calibration decides how accurate all the others can be, as the next section shows.
+
+This section explains why small mistakes here matter so much. The formulas in this chapter are exact, but the numbers you feed them are not. Every error in a lens number or a camera pose becomes an error in where the arm goes, and most of these errors grow with distance.
+
+A chart shows four small mistakes, each on its own, and how far off each one puts a point as the object gets further from the camera. The numbers use the Book 2 camera, with f x equal to 277.1 pixels. The chart shows that each small mistake becomes millimetres, and most grow with distance. A one-pixel mistake in finding the object costs 1.227 millimetres at a distance of 340 millimetres, because one pixel covers the depth divided by f x there. However, a camera pose that is turned one degree away from the truth costs 5.935 millimetres at the same distance, which is nearly five times as much. So that larger cost is a calibration error, not a vision error.
+
+The lesson is the same one Book 2 draws in its section on where the millimetres go: a better object detector cannot fix a camera whose position was measured badly. Calibration is usually the largest error in a robot cell, and it is the one nobody sees, because the program still produces sensible-looking numbers.
+
+The next part describes how this chapter connects to the others. The other six chapters of this book all use points, frames, and transforms, which is why this chapter comes first after the introduction. 
+
+First, searching and matching works on the 3D points the pinhole model makes. Nearest-neighbour search and iterative closest point both need points in one shared frame, and the iterative closest point's answer is itself a rigid transform. Its page on image features then finds the matched points that pose from points and multi-view geometry need. 
+
+Second, fitting and estimation fits planes and shapes to those points, and its RANSAC page is how pose from points and the essential matrix cope with wrong matches. Calibration is itself a fitting problem, because it finds the lens numbers that best explain the pictures, by least squares. 
+
+Third, image and point cloud processing decides which pixels belong to an object. The pinhole model then turns just those pixels into points. 
+
+Fourth, planning and search needs the goal pose in the arm's base frame, and numerical inverse kinematics chains the same rigid transforms that this chapter explains. 
+
+Fifth, control and motion moves the arm between poses, and blending two orientations smoothly uses the quaternion blend from the rigid transforms page. 
+
+Finally, decisions and task logic chooses where the camera should look next, which needs the camera's pose for each candidate view.
+
+Book 6 has learned models that do parts of this job differently. The page on depth from pictures guesses a depth for every pixel from a colour picture alone, or from a stereo pair. This replaces the depth sensor but not the pinhole model, because the guessed depth still goes through the same formula. So multi-view geometry is the measured alternative to that guess. The page on keypoints and object pose estimates an object's full pose, a rotation and a shift, which is a rigid transform in the camera's frame. Most of those models find keypoints and then hand them to pose from points for the last step. Both kinds of model still need the lens numbers and the camera's pose that calibration measures, so no learned model removes the need for this chapter.
+
+The final section suggests where to read next. It recommends starting with the pinhole camera model. After calibration, read pose from points, then multi-view geometry. The map of techniques shows where this chapter sits among all seven. The building blocks introduces frames and transforms as one of the common ingredients. Book 1's section on position, frames, and transforms builds transforms by hand on a flat two-joint arm, and is the gentlest start. Lastly, Book 3's page on frames, conventions, and the bug class that comes from mixing them lists the conventions that differ between libraries, and the bugs they cause.

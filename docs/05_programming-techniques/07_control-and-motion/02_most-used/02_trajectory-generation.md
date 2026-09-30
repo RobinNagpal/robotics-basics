@@ -459,7 +459,7 @@ fresh plan.
 ## 8. The learned alternative
 
 A learned policy from Book 6 does part of this job itself. An
-[action chunking transformer](../../../06_neural-network-models/05_movement-models/02_most-used/02_action-chunking-transformers.md#blending-overlapping-chunks)
+[action chunking transformer](../../../06_learned-models/06_movement-models/02_most-used/02_action-chunking-transformers.md#blending-overlapping-chunks)
 gives a whole chunk of targets at once and blends the chunks where they overlap,
 so its motion is smooth without a hand-written profile, and its timing is copied
 from the person who showed the task. That wins when the right speed depends on
@@ -468,9 +468,12 @@ write down. But a policy does not know the joints' speed, acceleration and jerk
 limits, and it sends targets far more slowly than the controller runs. So a
 trajectory generator still sits under it, filling in the ticks between targets as
 section 4 showed, and a programmed check keeps speed within set limits, as Book
-6's [safety checks around a model](../../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
+6's [safety checks around a model](../../../06_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
 describes. For a planned move through free space, where only the limits decide
-the timing, the generator alone is the right tool.
+the timing, the generator alone is the right tool. Between the two sit Book 6's
+[movement primitives](../../../06_learned-models/02_classical-machine-learning/03_also-used/02_movement-primitives.md), which learn the
+shape of a move from a few demonstrations and replay it smoothly to a new goal,
+but still need the limits on this page checked on what they produce.
 
 ---
 

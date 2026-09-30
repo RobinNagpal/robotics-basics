@@ -1,4 +1,4 @@
-"""Generate the diagrams for the second half of docs/05_neural-network-models/02_seeing-models/.
+"""Generate the diagrams for the second half of docs/06_learned-models/03_seeing-models/.
 
 The pages covered here are 05_keypoints-and-object-pose, 06_depth-from-pictures,
 07_open-vocabulary-models and 08_tracking-and-motion. Each page's pictures go to a

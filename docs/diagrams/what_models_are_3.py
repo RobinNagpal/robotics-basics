@@ -1,4 +1,4 @@
-"""Generate the diagrams for two pages of docs/06_neural-network-models/01_what-models-are/.
+"""Generate the diagrams for two pages of docs/06_learned-models/01_what-models-are/.
 
     06_uncertainty-and-confidence.md   -> images/what-models-are/uncertainty-and-confidence/
     08_classical-machine-learning.md   -> images/what-models-are/classical-machine-learning/

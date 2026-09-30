@@ -240,9 +240,9 @@ Two other families use its output.
   many pictures, as obstacles.
 
 Book 6 has learned models that do the same job. A
-[segmentation model](../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+[segmentation model](../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
 gives a mask for each object straight from the picture, and a
-[point cloud model](../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
+[point cloud model](../../06_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
 labels each point. A learned model copes with cluttered scenes, mixed colours and
 changing light far better than a written rule. But it needs training pictures, a
 bigger computer and more time for each frame. And when it fails, it is much harder
@@ -269,5 +269,5 @@ shows a real example.
   [finding an object in a picture](../../02_perception/01_camera/02_finding-objects.md#3-finding-it-by-colour),
   and describes many more written methods in
   [methods you write yourself](../../02_perception/02_object-perception/03_programmed-methods.md).
-- [Segmentation](../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+- [Segmentation](../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
   in Book 6 is the learned model that does the same job as this whole chapter.

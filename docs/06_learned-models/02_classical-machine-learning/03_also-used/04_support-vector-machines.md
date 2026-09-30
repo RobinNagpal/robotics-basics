@@ -1,0 +1,391 @@
+# Support vector machines
+
+This page explains support vector machines (SVMs): classifiers that split two
+groups of examples with the line that leaves the widest possible gap between
+them. It answers five questions. Which line does an SVM choose, and why? What
+happens when the groups overlap? How can it draw a curved boundary? Where were
+SVMs used on robot arms? And why do trees and small networks usually do their job
+today?
+
+It is for a reader who has read Book 6 chapter 1, in particular
+[how a model learns](../../01_what-models-are/02_how-a-model-learns.md). You need
+to know what an example, a label, a feature and overfitting are. It helps to have
+read [linear and logistic regression](../02_most-used/01_linear-and-logistic-regression.md),
+because a linear SVM also scores an input with a weighted sum of its features.
+
+SVMs were the most common classifier in robotics research from the late 1990s to
+the early 2010s. They are in the "also used" group of this chapter, because new
+projects seldom choose them now. You will still meet them in older papers, in
+older code, and in a few small problems where they remain a sound choice.
+
+Every number on this page comes from a real run of the diagram script
+`docs/diagrams/classical_ml_2.py`. The data is simulated from a made-up rule, so
+that we know the true answer. The SVM is real, trained in NumPy.
+
+## Contents
+
+1. [The idea in one sentence](#1-the-idea-in-one-sentence)
+2. [How it works](#2-how-it-works)
+   · [The widest gap](#the-widest-gap)
+   · [The soft margin: when the groups overlap](#the-soft-margin-when-the-groups-overlap)
+   · [The kernel trick: curved boundaries](#the-kernel-trick-curved-boundaries)
+   · [SVMs for predicting a number](#svms-for-predicting-a-number)
+3. [How it is trained: what data, and how much](#3-how-it-is-trained-what-data-and-how-much)
+4. [Where it was used on a robot arm](#4-where-it-was-used-on-a-robot-arm)
+5. [What goes wrong](#5-what-goes-wrong)
+6. [Libraries](#6-libraries)
+7. [Why an SVM, and what it costs](#7-why-an-svm-and-what-it-costs)
+8. [The written alternative](#8-the-written-alternative)
+9. [Where to read next](#9-where-to-read-next)
+
+---
+
+## 1. The idea in one sentence
+
+A **support vector machine** separates two groups of examples with the straight
+line that stays as far as possible from the nearest example on each side.
+
+Here is an everyday example. A council paints a line down the middle of a park
+path to separate walkers from cyclists. It could paint the line anywhere between
+the two streams of people. The sensible place is right in the middle of the gap,
+as far from both streams as it can be. Then a walker who drifts a little to one
+side still ends up on the walkers' half. The SVM makes the same choice for data.
+A new example that lands a little off from the training examples is still likely
+to fall on the right side.
+
+---
+
+## 2. How it works
+
+The example on this page is contact detection. A robot arm moves through free
+space, and sometimes it touches something. From its sensors, the program computes
+two **features**, each scaled to run from about 0 to 1:
+
+- the **jump in wrist force**: how much the force at the wrist sensor changed in
+  the last few milliseconds;
+- the **unexpected torque**: the gap between the torque the arm's joints measure
+  and the torque the arm's model says it should need.
+
+Each example is one short moment, labelled "touching" or "moving freely".
+
+### The widest gap
+
+A linear SVM gives each feature a weight, multiplies, adds the results and adds a
+constant. Call the result the **score**. A positive score means "touching", and a
+negative score means "moving freely". The points where the score is exactly zero
+form a straight line: the **decision boundary**. With three features it is a flat
+plane, and with more it is the same idea in more directions.
+
+When the two groups do not overlap, many lines separate them. The picture below
+shows 40 examples and three lines that all split them without a mistake.
+
+![Left: three lines that all separate the two groups. Right: the SVM's line, its gap and its three support vectors](../../../images/classical-machine-learning/support-vector-machines/widest-gap.svg)
+
+Each of the three lines on the left passes close to some example. The **gap**, or
+**margin**, of a line is the width of the empty band around it, from the nearest
+example on one side to the nearest on the other. The three lines have gaps of
+0.08, 0.06 and 0.13. The SVM chooses the line with the widest possible gap. Here
+that gap is 0.22 wide, shown shaded on the right.
+
+Only three examples touch the edges of the gap. They are circled. These are the
+**support vectors**, and they give the method its name. The line depends only on
+them. You could move or delete any of the other 37 examples, as long as it
+stayed outside the gap, and the line would not change.
+
+The SVM sets its weights so that the score is exactly +1 on one edge of the gap
+and −1 on the other. The larger the weights, the faster the score changes across
+the plane, and the narrower the band between −1 and +1. So "make the gap as wide
+as possible" becomes "make the weights as small as possible, while every example
+still has a score of at least +1 or at most −1 on its own side".
+
+### The soft margin: when the groups overlap
+
+Real data overlaps. A light touch can look like free motion, and a fast turn can
+look like a touch. Then no line separates the groups, and the rule above has no
+answer.
+
+The **soft margin** lets some examples sit inside the gap, or even on the wrong
+side, but charges a cost for each one. The cost is zero for an example outside
+the gap on its own side. It grows in a straight line with how far the example
+sits inside the gap or beyond it. This cost is called the **hinge loss**, because
+its graph is flat and then bends upward, like an opened hinge.
+
+The SVM now balances two wishes: a wide gap, and a small total cost. A setting
+called **C** decides the balance. A large C makes each example inside the gap
+expensive, so the SVM narrows the gap to keep examples out. A small C makes them
+cheap, so the SVM keeps a wide gap and lets many examples in.
+
+The script trained two SVMs on the same 80 overlapping examples, and tested each
+on 4,000 new ones.
+
+![The same overlapping data with a soft, wide gap (small C) and a strict, narrow gap (large C)](../../../images/classical-machine-learning/support-vector-machines/soft-margin.svg)
+
+The table below gives the results. Read each row as one setting of C.
+
+| Setting | Gap width | Support vectors | Training examples on the wrong side | Right on new data |
+| --- | --- | --- | --- | --- |
+| C = 0.42, soft | 0.58 | 54 | 4 | 95.6% |
+| C = 125, strict | 0.14 | 10 | 2 | 95.0% |
+
+With a soft margin, every example inside the gap or on the wrong side is also a
+support vector, so there are many more of them. The soft line rests on 54 examples
+rather than 10. So one odd example moves it less. Here that gave a slightly better
+score on new data. The two lines are close, but that is not always so. As with the
+depth of a tree, the right C is found by trying several and testing each on
+examples it did not train on.
+
+### The kernel trick: curved boundaries
+
+Sometimes no straight line can do the job at all. The next example is about
+grasping. A gripper closes on a small object, and the features are how far the
+gripper's centre was from the object's centre, left-right and front-back, in
+millimetres. The made-up rule is that the grasp holds when the gripper is within
+11 millimetres of the centre, in any direction. So the "held" examples form a disc
+in the middle, with "failed" examples all around it.
+
+![Left: no straight line works. Middle: with a new column, a straight cut works. Right: that cut is a circle in the original picture](../../../images/classical-machine-learning/support-vector-machines/kernel-trick.svg)
+
+The left panel shows a linear SVM on the two offsets. No straight line can put a
+disc on one side and a ring on the other. The best it can do is to call every
+grasp a failure. Since 76% of the new grasps did fail, that scores 76%, and it is
+useless.
+
+The middle panel adds a third column: the left-right offset squared plus the
+front-back offset squared. That is the squared distance from the centre. In this
+new column, every "held" example has a small value and every "failed" example a
+large one. Now a straight cut works. The right panel shows the same cut back in
+the original picture. It is a circle, with a radius of about 10.9 millimetres
+against the true 11. This SVM gets 97.3% of the new grasps right.
+
+The script built the new column by hand. The **kernel trick** is a way to get
+the same effect without building the columns at all. The training and the
+prediction of an SVM can be written so that they never need the features on their
+own. They only need a similarity number between pairs of examples. A **kernel** is
+a formula that gives this number directly from the original features. Each kernel
+matches some set of extra columns. With the right kernel, the SVM works as if it
+had many extra columns, even an endless number, while computing only one number
+per pair of examples.
+
+The most used kernel is the **radial basis function (RBF) kernel**. It says that
+two examples are similar when they are close together, and the similarity fades
+with distance. An SVM with this kernel can draw almost any smooth boundary. It has
+one more setting, often called gamma, that says how fast the similarity fades. A
+large gamma gives a wiggly boundary that can overfit. The
+[Gaussian processes](../02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
+page uses the same kind of kernel, for the same reason.
+
+### SVMs for predicting a number
+
+An SVM can also predict a number. This is **support vector regression (SVR)**.
+Instead of a gap that should stay empty, it fits a **tube** around a line, and
+examples should stay inside it. Errors smaller than the tube's half-width cost
+nothing. Larger errors cost in a straight line with their size. As before, only
+the examples on the tube's edge or outside it decide where the line goes.
+
+The script fitted a linear SVR to 30 readings of a force sensor with nothing
+attached, at different sensor temperatures. The reading drifts as the sensor
+warms up. Two readings were hit by a knock and are far too high.
+
+![A support vector regression line with its tube, next to a least-squares line](../../../images/classical-machine-learning/support-vector-machines/svm-regression.svg)
+
+The tube's half-width is 0.2 newtons. Only the 2 knocked readings sit outside it.
+The SVR found a drift of 0.089 newtons per degree, against the true 0.090.
+Plain least squares found 0.091, which is just as good here. SVR is seldom the
+best choice for a number on a robot. Ridge regression, Gaussian processes and
+trees usually do the job with less tuning.
+
+---
+
+## 3. How it is trained: what data, and how much
+
+An SVM needs a table of examples, as a tree does. Each row is one example, each
+column one number, and the label is one of two classes. For more than two
+classes, libraries train one SVM per pair of classes, or one per class against
+the rest, and combine their answers.
+
+Training means choosing the weights. For a linear SVM, the quantity to make small
+is the size of the weights, which keeps the gap wide, plus the average hinge loss
+over the examples, which keeps examples out of the gap. The script does this with
+**subgradient descent**. It is the same as the gradient descent in
+[how a model learns](../../01_what-models-are/02_how-a-model-learns.md), with one
+detail: the hinge loss has a sharp bend, where the slope is not defined, so the
+script uses the slope on one side of the bend. The steps are:
+
+1. Start with all weights at zero.
+2. Find every example that is inside the gap or on the wrong side.
+3. Move the weights a little toward scoring those examples correctly, and shrink
+   all weights a little, which widens the gap.
+4. Make the step a little smaller than last time, and go back to step 2.
+
+The script ran 40,000 to 100,000 such steps. It took a few seconds. Libraries use
+faster, exact methods for the same problem.
+
+Kernel SVMs are trained in a different form, which works with the similarity of
+every pair of examples. That is why they slow down so much as the data grows. A
+few thousand examples train in seconds. Tens of thousands take minutes. Beyond
+about a hundred thousand, a kernel SVM is usually too slow, and people switch to a
+linear SVM, trees or a network.
+
+SVMs do well with small datasets: from a few dozen to a few thousand examples. The
+columns must be scaled to similar ranges first, for example each to run from 0
+to 1. Otherwise the column with the largest numbers decides what "wide" means.
+
+---
+
+## 4. Where it was used on a robot arm
+
+**Grasp classifiers.** Before deep learning, many grasp studies described each
+candidate grasp with a hand-made list of numbers, such as the object's shape, the
+hand's pose and the finger positions. An SVM learned which ones would hold.
+Pelossof and others, in "An SVM learning approach to robotic grasping" (2004),
+is an early example. Today networks score grasps straight from a picture or a
+point cloud, as in
+[grasp quality models](../../05_grasp-models/03_also-used/02_grasp-quality-models.md).
+
+**Contact, slip and material classifiers.** Features from force sensors or tactile
+sensors, such as how much the signal shakes or how fast it changes, went into an
+SVM that said "slip" or "hold", or named the material being touched. This is a
+small-feature problem, where an SVM fits well. The page
+[force and slip models](../../09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+describes the modern versions.
+
+**Collision detection.** A few numbers from the joints, such as the gap between
+expected and measured torque, went into an SVM that told a collision from normal
+motion. The page
+[collision and failure detection](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+covers this job.
+
+**Finding objects in pictures.** A well-known detector from 2005, by Dalal and
+Triggs, described each patch of a picture with a list of edge directions and used
+a linear SVM to decide whether it held a person. Robots used detectors built the
+same way to find objects, until the network-based detectors in
+[object detection](../../03_seeing-models/02_most-used/01_object-detection.md)
+replaced them.
+
+**A small head on a big network.** A linear SVM can still sit on top of the list
+of numbers a pretrained network makes from a picture, to learn a few new classes
+from a few dozen examples. Logistic regression does the same job and gives a
+chance, so it is the more common choice.
+
+---
+
+## 5. What goes wrong
+
+Each problem below has a usual fix.
+
+Unscaled columns spoil the gap. If one column is in newtons from 0 to 50 and
+another is in radians from 0 to 0.1, the gap is measured almost entirely in
+newtons. The fix is to scale every column to a similar range before training, and
+to scale new inputs the same way.
+
+The settings matter a lot. C, and for the RBF kernel gamma, can move the score on
+new data from poor to good. The fix is to try a grid of values and test each on
+held-out examples.
+
+There is no chance, only a score. An SVM says which side of the line an example
+is on, and how far. It does not say how likely each class is. A robot that must
+weigh a 60% chance of slip against the cost of squeezing harder needs a chance.
+The fix is an extra fitting step that turns scores into chances, called **Platt
+scaling**, which scikit-learn runs when you set `probability=True` in `SVC`. Or use
+logistic regression or trees, which give chances directly.
+
+Kernel SVMs are slow on large data. Training time grows much faster than the
+number of examples, and every prediction compares the input with every support
+vector. The fix is a linear SVM, or a switch to boosted trees or a network.
+
+It cannot read raw input. Like the other methods in this chapter, an SVM needs a
+short list of meaningful numbers. Feeding it raw pixels or a raw force recording
+works poorly. The fix is to compute good features first, or to use a network.
+
+---
+
+## 6. Libraries
+
+The table below lists real libraries for SVMs. Read each row as one library: what
+it provides, and when to use it.
+
+| Library | What it provides | When to use it |
+| --- | --- | --- |
+| scikit-learn | `SVC`, `LinearSVC`, `SVR` and `LinearSVR` in `sklearn.svm` | the place to start, in Python |
+| LIBSVM | kernel SVMs in C++, with interfaces for many languages | the library behind scikit-learn's `SVC`; use it directly from C++ |
+| LIBLINEAR | linear SVMs and logistic regression in C++ | fast on large, linear problems; behind `LinearSVC` |
+| OpenCV | `cv::ml::SVM` in C++, `cv2.ml.SVM_create()` in Python | when the robot program already uses OpenCV |
+
+In scikit-learn, put `StandardScaler` from `sklearn.preprocessing` and the SVM in
+one `Pipeline` from `sklearn.pipeline`. The pipeline then scales new inputs the
+same way as the training data, which fixes the first problem in section 5.
+
+---
+
+## 7. Why an SVM, and what it costs
+
+This section answers the four questions: what an SVM is, what it does for you, why
+it rather than the obvious alternative, and what it costs.
+
+An SVM is a classifier that chooses the boundary with the widest gap, and with a
+kernel it can draw curved boundaries. It gives a good yes-or-no answer from a
+small table of scaled numbers, and its answer depends only on the few examples
+near the boundary.
+
+In its time, it won over the alternatives of the day. It found good boundaries
+from a few hundred examples, it was hard to overfit with a sensible C, and its
+training always reaches the single best answer, so two runs give the same result.
+Neural networks of that time were hard to train and needed more data.
+
+Today the obvious alternatives usually win:
+
+- **Boosted trees**, on the
+  [decision trees and forests](../02_most-used/02_decision-trees-and-forests.md)
+  page, handle columns in different units without scaling, train quickly on
+  millions of rows, give chances, and report which columns mattered. On most
+  tables they match or beat an SVM with less tuning.
+- **Small neural networks** learn their own features from raw signals and
+  pictures, so nobody has to design the list of numbers. That design work was
+  most of the effort in an SVM project.
+- **Logistic regression** does the linear SVM's job and gives a chance as well.
+
+An SVM is still a reasonable choice for a small, clean table of well-scaled
+features, a few hundred to a few thousand rows, where a curved boundary is needed
+and you have time to tune C and gamma.
+
+What it costs:
+
+- You must scale the columns and tune C, and for a kernel also gamma.
+- It gives a score, not a chance, without an extra step.
+- Kernel SVMs become slow beyond tens of thousands of examples.
+- A kernel SVM is hard to read. You cannot easily say which columns mattered.
+- Someone must design the features.
+
+---
+
+## 8. The written alternative
+
+Book 5 detects contact without learning. The guarded moves in
+[impedance and force control](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
+stop the arm when the measured force passes a set limit. The power and force
+limits in
+[safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md#power-and-force-limiting)
+do the same for the whole arm. Each is a boundary set by hand: one threshold on one
+number, or a straight line through two numbers.
+
+A linear SVM is the learned version of that line. The hand-set line wins when one
+or two numbers clearly show contact, because it needs no data and a person can
+check it. The learned line wins when the right place for it depends on the arm,
+the tool and the speed in ways that are hard to work out by hand. A useful middle
+way is to train the SVM, read its weights, and then fix a hand-checked line close
+to it.
+
+---
+
+## 9. Where to read next
+
+- [Decision trees and forests](../02_most-used/02_decision-trees-and-forests.md)
+  covers the methods that replaced SVMs for most tables.
+- [Linear and logistic regression](../02_most-used/01_linear-and-logistic-regression.md)
+  covers the other linear classifier, which gives a chance.
+- [Gaussian processes and Bayesian optimisation](../02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
+  uses the same kind of kernel, to give a prediction with an error bar.
+- [The overview of this chapter](../01_overview.md) compares classical methods
+  with a small network as the data grows.
+- [Collision and failure detection](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+  covers contact detection with learned models today.

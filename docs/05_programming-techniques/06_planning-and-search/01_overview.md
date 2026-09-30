@@ -249,7 +249,7 @@ first four and hands its result to the sixth.
   it may use graph search itself.
 
 Book 6 has learned versions of some of these techniques.
-[Learned motion planners](../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md)
+[Learned motion planners](../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md)
 covers networks that suggest routes, networks that check for collisions, and
 networks that do inverse kinematics. That page's advice agrees with this chapter:
 for moving through open space, an ordinary planner is usually the better tool,

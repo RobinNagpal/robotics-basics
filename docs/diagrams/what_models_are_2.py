@@ -1,4 +1,4 @@
-"""Generate the diagrams for the second half of docs/05_neural-network-models/01_what-models-are/.
+"""Generate the diagrams for the second half of docs/06_learned-models/01_what-models-are/.
 
 That is the three documents 04_where-the-data-comes-from.md,
 05_running-a-model-on-a-robot.md and 06_the-map-of-models.md. Each document's

@@ -401,7 +401,7 @@ would see, and what people use instead or add.
 | Admittance control against a stiff surface | the tool bounces or buzzes on the surface, often loudly | more damping; a softer tool or pad; impedance control on a torque-controlled arm |
 | Too little damping for the contact | the force trace shows repeated peaks with zero force between them | set the damping for the stiffest surface, or raise it on contact |
 | A soft arm holding a heavy tool | the tool sags below its target | accurate gravity compensation; stiffer settings in the vertical direction |
-| A wrong mass model | the arm drifts or creeps as soon as it is made soft | identify the arm's masses; a [learned arm model](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md) for the leftover error |
+| A wrong mass model | the arm drifts or creeps as soon as it is made soft | identify the arm's masses; a [learned arm model](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md) for the leftover error |
 | A guarded move that is too fast | a large force spike and a stop well past the surface | slow down near the expected surface; lower the braking latency |
 | A threshold above the force that moves the object | the object slides away and the move never fires | lower the threshold, above the sensor noise; average the readings |
 | A contact on an axis the sensor does not measure | the guarded move never fires, and never reports an error | watch every axis the contact could appear on; always set a travel limit |
@@ -479,7 +479,7 @@ maker, as Book 3 warns.
 ## 8. The learned alternative
 
 The learned alternative for contact is a
-[reinforcement learning policy](../../../06_neural-network-models/05_movement-models/03_also-used/01_reinforcement-learning-policies.md),
+[reinforcement learning policy](../../../06_learned-models/06_movement-models/03_also-used/01_reinforcement-learning-policies.md),
 which learns by trying, usually in simulation, how to react to the force it
 feels; Book 6's worked example pushes a peg into a tight hole. It wins when the
 right reaction depends on forces too complicated to write rules for, the task is
@@ -489,10 +489,14 @@ because it is easy to understand and check and needs no simulator, reward or
 training; it also wins when the contact cannot be simulated. A policy does not
 replace the force limits either, because nothing inside it stops it pushing too
 hard, so a programmed layer under it still limits forces and speeds. Book 6's
-[force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
-and [collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+[force and slip models](../../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+and [collision and failure detection](../../../06_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
 read the same force signals with learned models, to catch slip and unexpected
-contact.
+contact. For tuning the stiffness and damping of the impedance controller itself,
+Book 6's
+[Bayesian optimisation](../../../06_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
+chooses each next setting to try from the scores of the tries so far, so a good
+setting is found in a few tens of real insertions.
 
 ---
 

@@ -257,14 +257,14 @@ chapters decide what to do and where to go. This chapter makes it happen.
   press.
 
 Book 6 has learned models that do parts of this job. A
-[movement model](../../06_neural-network-models/05_movement-models/01_overview.md)
+[movement model](../../06_learned-models/06_movement-models/01_overview.md)
 decides where the arm should go next, from camera pictures. It replaces the planner
 and sometimes the trajectory layer, but not the controller: its output is still a
 stream of joint targets that a PID loop must follow. A
-[learned arm model](../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
+[learned arm model](../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 predicts the torque a joint needs. It usually corrects the physics model from the
 [arm dynamics](02_most-used/03_arm-dynamics.md) page rather than replacing it, and
-the result is added to a PID loop to make it follow more closely. A [force and slip model](../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+the result is added to a PID loop to make it follow more closely. A [force and slip model](../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
 reads touch signals that a force controller could act on. None of these removes the
 need for the programmed loops on this chapter's pages. They sit on top of them.
 
@@ -286,5 +286,5 @@ need for the programmed loops on this chapter's pages. They sit on top of them.
   shows these layers in ROS 2, with the settings that ship with them.
 - Book 3's [holding on](../../03_frameworks/02_gripping/05_holding-on.md#3-compliance-impedance-and-admittance)
   covers impedance and admittance from the gripper's point of view.
-- Book 6's [movement models overview](../../06_neural-network-models/05_movement-models/01_overview.md)
+- Book 6's [movement models overview](../../06_learned-models/06_movement-models/01_overview.md)
   shows what a learned policy takes over, and what it still leaves to these loops.

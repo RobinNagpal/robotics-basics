@@ -28,7 +28,7 @@ docs/03_frameworks/07_stone-stacking.md
 
 - A top-level folder is a **book**: `01_robotics-intro`, `02_perception`,
   `03_frameworks`, `04_ros-and-rviz`, `05_programming-techniques`,
-  `06_neural-network-models`.
+  `06_learned-models`.
 - A folder inside a book is a **chapter**, and each `.md` file in it is a
   **section**. A `.md` file directly inside a book is a chapter with one section.
 - A folder inside a chapter, such as `07_case-study/`, shows as a labelled group of

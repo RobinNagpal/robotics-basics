@@ -573,7 +573,7 @@ none does.
 ## 9. The learned alternative
 
 A learned route planner, described in Book 6's
-[learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md),
+[learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md),
 guesses a route for the arm directly from a point cloud, in about the same time
 every run. It is built for large joint spaces, where a grid is hopeless; in the
 small spaces and roadmaps this page is for, graph search is already fast. Graph
@@ -581,7 +581,7 @@ search also gives what no network gives: the best route on its graph, the same
 route every run, and a certain "no route" when there is none, which is why a
 learned planner's answer is still checked by an ordinary planner. For the order
 of a task, a
-[language model as planner](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md)
+[language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
 chooses the steps from a request in plain words, which suits requests that change
 every day. For a task that stays the same, a search or a topological sort is free
 and fast, and gives the same valid order every time.

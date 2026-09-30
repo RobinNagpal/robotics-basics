@@ -478,7 +478,7 @@ arm cannot use.
 No model in Book 6 finds the best assignment, order or packing under hard rules.
 A network gives no proof that its answer obeys every rule, or of how far it is
 from the best, and a solver gives both. The nearest learned model is a
-[language model as planner](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md),
+[language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md),
 which turns a request in plain words into a sequence of steps. It wins when the
 task itself changes from day to day and is easier to say than to write as a
 model, but it can write steps that sound right and are wrong, so its plan needs a

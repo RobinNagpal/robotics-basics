@@ -317,7 +317,7 @@ colour picture. Here are concrete places.
   as the [calibration](03_calibration.md#a-x--x-b-in-plain-words) page shows.
 - **Keypoint models.** A neural network finds named points on an object, such as a
   mug's handle and rim. PnP turns them into a pose. Book 6's
-  [keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md#from-keypoints-to-pose)
+  [keypoints and object pose](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md#from-keypoints-to-pose)
   describes this split: the network finds the points, and geometry does the rest.
 - **Matching against a stored picture.** A program stores a picture of a boxed
   product with the 3D position of each of its features. At run time it matches
@@ -399,7 +399,7 @@ because a face-on marker gives a poor rotation.
 ## 9. The learned alternative
 
 Book 6's
-[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+[keypoints and object pose](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 describes two learned ways to get the same six numbers. A keypoint model, such as
 DOPE, finds named points on the object in a messy picture, and PnP from this page
 still turns those points into the pose: the network does the finding, and geometry

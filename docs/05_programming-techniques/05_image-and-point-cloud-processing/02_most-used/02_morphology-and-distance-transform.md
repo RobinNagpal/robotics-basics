@@ -347,7 +347,7 @@ as: this goes wrong, this is what you see, and this is what people use instead.
 | Closing bridges the gap between two nearby objects | The object count drops by one when two parts come close | A smaller brush for closing, or splitting with the distance transform afterwards |
 | Specks bigger than the brush | Small false objects survive opening | Throw away every patch smaller than a set area, using [connected components](03_clustering.md) |
 | Holes bigger than the brush | A large hole stays; the most central point lands next to it | A bigger closing brush, or filling all holes inside the outer [contour](../03_also-used/01_edges-and-contours.md) |
-| Long thin objects standing side by side | Their distance transform has a ridge along each object, not a peak; two touching ridges join, so there is only one seed | A different cue, such as where each object meets the table, or a [segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md) |
+| Long thin objects standing side by side | Their distance transform has a ridge along each object, not a peak; two touching ridges join, so there is only one seed | A different cue, such as where each object meets the table, or a [segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md) |
 | A part cut off by the edge of the picture | The most central point sits near the picture edge | Ignore parts that touch the picture edge, or move the camera |
 | A mask with ragged edges from noise | The distance values near the edge jump about, and the central point moves between frames | Opening and closing before the distance transform |
 
@@ -438,12 +438,12 @@ central point is confidently wrong too.
 
 ## 8. The learned alternative
 
-A [segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+A [segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
 in Book 6 gives one mask per object from the start, so it splits touching objects
 without the distance transform and watershed. It wins on long, thin and oddly
 shaped objects that defeat the distance transform, but it needs training pictures
 and a bigger computer. A
-[suction model](../../../06_neural-network-models/04_grasp-models/02_most-used/02_suction-and-affordance.md)
+[suction model](../../../06_learned-models/05_grasp-models/02_most-used/02_suction-and-affordance.md)
 scores every pixel for where a cup would seal, which is the job the most central
 point does on this page. Book 6 says plain geometry is hard to beat for suction,
 and that a model pays off only when the geometry keeps choosing badly, such as on

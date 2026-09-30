@@ -368,7 +368,7 @@ another. Here are concrete places.
 - **Grasp poses stored relative to the object.** A good grasp on a mug is stored
   once, in the mug's own frame. When the mug is found at a new pose, one join gives
   the grasp in the base frame. Book 6's
-  [six-DoF grasps](../../../06_neural-network-models/04_grasp-models/02_most-used/01_six-dof-grasps.md)
+  [six-DoF grasps](../../../06_learned-models/05_grasp-models/02_most-used/01_six-dof-grasps.md)
   output poses that go through this step.
 - **Merging views.** Point clouds from three camera positions are each moved into
   the world frame and added together. The result of
@@ -465,12 +465,12 @@ readings, and the calibration.
 There is no learned model that replaces rigid transforms, because joining, undoing
 and blending them is exact arithmetic, and a network could only make it
 approximate. Learned models produce transforms instead. Book 6's
-[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+[keypoints and object pose](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 estimates an object's rigid transform from a picture with a trained model, and that
 answer still has to be joined into the chain on this page to reach the arm's base.
 Where a part of the arm is not quite rigid, such as a link that bends a little
 under its own weight, Book 6's
-[learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
+[learned arm models](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
 describes a small network that learns the leftover error and adds a correction to
 the tool's position. The transforms still do the main work.
 

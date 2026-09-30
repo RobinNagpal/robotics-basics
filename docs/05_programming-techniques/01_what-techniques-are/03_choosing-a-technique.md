@@ -211,7 +211,7 @@ it, or must I guess and test it? And what change in the scene would make it wron
 The fifth question is whether a written technique is the right kind of tool at all.
 [Programmed, not learned](01_programmed-not-learned.md#4-written-rules-or-a-trained-model)
 showed a written rule failing on a glass. Book 6 explains the alternative:
-[a model learned from examples](../../06_neural-network-models/01_what-models-are/01_what-a-model-is.md).
+[a model learned from examples](../../06_learned-models/01_what-models-are/01_what-a-model-is.md).
 
 The main thing that decides is how much the scene varies. If the objects, their
 places and the light are the same every time, a written rule can describe them
@@ -239,7 +239,7 @@ These are the signs that a written technique is still the right choice:
 - You have no examples to learn from, or cannot afford to collect them.
 
 Most arms mix the two. A learned model does the part that needs variety, such as
-[object detection](../../06_neural-network-models/02_seeing-models/02_most-used/01_object-detection.md)
+[object detection](../../06_learned-models/03_seeing-models/02_most-used/01_object-detection.md)
 to find the mugs in a colour picture. Written techniques do the parts that need
 exactness: turning pixels into positions, planning the path and driving the
 motors. When you switch, you usually replace one step in the chain, not the whole
@@ -263,7 +263,7 @@ There are four candidates:
 3. Fit a plane with [RANSAC](../04_fitting-and-estimation/02_most-used/02_ransac.md), which
    ignores points that are not on the plane, such as mugs.
 4. Use a learned model that labels which pixels are table, such as a
-   [segmentation](../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md) model.
+   [segmentation](../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md) model.
 
 The table below runs the five questions on each candidate. Read each row across to
 see how one candidate does on all five.
@@ -313,7 +313,7 @@ names what people use instead.
   all 34 techniques in this book and places them on one arm task.
 - [RANSAC](../04_fitting-and-estimation/02_most-used/02_ransac.md) explains the robust fit from
   section 4 in full.
-- [Running a model on a robot](../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
+- [Running a model on a robot](../../06_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
   in Book 6 shows the time budget from the learned side.
 - [Making it work](../../02_perception/02_object-perception/07_making-it-work.md)
   in Book 2 is about testing perception on real scenes, which is how you answer

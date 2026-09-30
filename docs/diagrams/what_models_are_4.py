@@ -1,4 +1,4 @@
-"""Generate the diagrams for two pages of docs/06_neural-network-models/.
+"""Generate the diagrams for two pages of docs/06_learned-models/.
 
     01_what-models-are/04_learning-signals.md
         -> images/what-models-are/learning-signals/

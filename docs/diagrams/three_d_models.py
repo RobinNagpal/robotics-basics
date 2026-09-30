@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/05_neural-network-models/03_3d-models/.
+"""Generate the diagrams used in docs/06_learned-models/04_3d-models/.
 
 Each document's pictures go to a folder named after it, under
 docs/images/3d-models/.

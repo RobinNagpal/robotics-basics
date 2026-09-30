@@ -378,11 +378,11 @@ return the second-nearest point.
 There is no learned model that replaces nearest-neighbour search, because it gives
 the exact answer to a plain question, and a network could only guess that answer.
 Learned models use the search instead. Book 6's
-[point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
+[point cloud models](../../../06_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
 describes PointNet++, which collects the points within a small distance of each
 centre, and DGCNN, which links each point to its nearest neighbours, so both run
 this search inside the network. The
-[k-nearest neighbours](../../../06_neural-network-models/01_what-models-are/06_classical-machine-learning.md#6-k-nearest-neighbours)
+[k-nearest neighbours](../../../06_learned-models/02_classical-machine-learning/02_most-used/04_nearest-neighbours-and-locally-weighted-regression.md)
 learning method in Book 6 is built on it too: it predicts by copying the answers of
 the most similar stored examples.
 

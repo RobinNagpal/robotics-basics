@@ -466,11 +466,11 @@ shows.
 ## 8. The learned alternative
 
 Book 6 has learned helpers for this method and one learned way to replace it. From
-[learned motion planners](../../../06_neural-network-models/05_movement-models/03_also-used/02_learned-motion-planners.md),
+[learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md),
 a learned collision distance gives the obstacle cost a smooth distance without a
 distance field, and a learned route planner gives a quick first guess, which is
 what this method depends on most; the exact check still tests the final path. A
-[diffusion or flow policy](../../../06_neural-network-models/05_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
+[diffusion or flow policy](../../../06_learned-models/06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
 replaces the optimiser: it learns whole stretches of motion from people's
 demonstrations, and it picks one real way round an obstacle instead of a blend of
 them. It wins when the right motion is easier to show than to write as a cost,

@@ -16,7 +16,7 @@ and 2. You do not need to know any programming language well, and you do not
 need any maths beyond adding, multiplying and square roots.
 
 Book 5 has a partner. Book 6,
-[neural network models](../../06_neural-network-models/01_what-models-are/01_what-a-model-is.md),
+[neural network models](../../06_learned-models/01_what-models-are/01_what-a-model-is.md),
 covers the other way of building robot software: models that are learned from
 examples. This book covers the methods that people write by hand. A real robot
 arm uses both, and this page says how they fit together.
@@ -214,7 +214,7 @@ inputs, each with the right output written next to it. A program then adjusts
 millions of numbers inside a **model** until the model gives the right outputs for
 the examples. This adjusting is called **training**, and software built this way
 is called **learned**. Book 6 explains it, starting with
-[what a model is](../../06_neural-network-models/01_what-models-are/01_what-a-model-is.md).
+[what a model is](../../06_learned-models/01_what-models-are/01_what-a-model-is.md).
 
 Here is one job done by a written rule, to show where a rule is strong and where it
 is weak. A depth camera looks straight down at a table. For each pixel, it
@@ -395,7 +395,7 @@ pick up drinking glasses. The technique pages mention it where it helps.
 
 - [The building blocks](02_the-building-blocks.md) is the next page. It explains
   the ingredients that almost every technique uses.
-- [What a model is](../../06_neural-network-models/01_what-models-are/01_what-a-model-is.md)
+- [What a model is](../../06_learned-models/01_what-models-are/01_what-a-model-is.md)
   is the first page of Book 6. It explains learned models, the other half of
   robot arm software.
 - [Methods you write yourself](../../02_perception/02_object-perception/03_programmed-methods.md)

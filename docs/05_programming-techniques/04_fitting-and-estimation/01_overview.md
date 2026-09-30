@@ -214,12 +214,12 @@ ones.
   [system identification](03_also-used/01_system-identification.md) measures.
 
 Book 6 covers learned models that do some of the same jobs. A
-[point cloud model](../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
+[point cloud model](../../06_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
 can label which points are table and which are object. A
-[keypoint and pose model](../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+[keypoint and pose model](../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 can give an object's position and direction directly from a picture. A learned
 tracker, described in
-[tracking and motion](../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md),
+[tracking and motion](../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md),
 can follow objects that a constant-speed model cannot. The written techniques in
 this chapter need no training data, give the same answer for the same input
 (apart from RANSAC's random choices), and state how far off they might be. The
@@ -229,7 +229,7 @@ numbers. Many arms use both: a model finds the object, and a fit measures it.
 Even the learned models rest on this chapter. Training a neural network means
 making the sum of its squared errors, or a similar number, as small as possible,
 which is the same idea as least squares. The page
-[how a model learns](../../06_neural-network-models/01_what-models-are/02_how-a-model-learns.md)
+[how a model learns](../../06_learned-models/01_what-models-are/02_how-a-model-learns.md)
 explains that.
 
 ---

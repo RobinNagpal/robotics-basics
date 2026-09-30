@@ -61,12 +61,12 @@ export const BOOK_INFO: Record<string, BookInfo> = {
       'The written, language-independent techniques behind seeing, planning and moving: camera geometry, pose from points and calibration, matching and registration, least squares, RANSAC and filters, masks, clustering and 3D maps, sampling-based planning, inverse kinematics and MPC, PID, dynamics and safety monitoring, and state machines and behaviour trees. Each chapter puts the most used techniques first. Each page says where a technique is used on an arm, where it fails, and which library already does it.',
     accent: 'green',
   },
-  'neural-network-models': {
-    title: 'Neural Network Models',
+  'learned-models': {
+    title: 'Learned Models',
     shortTitle: 'Models',
-    subtitle: 'Every kind of model a robot arm uses, in plain words',
+    subtitle: 'Every kind of learned model a robot arm uses, in plain words',
     description:
-      'What a model is, how it learns and how it runs on a robot, for a reader who has never met one. Then seven families of models, each with a page per kind: models that see, that work in 3D, that choose a grasp, that move the arm, that understand words, that predict what happens next, and that make sense of touch and force.',
+      'What a model is, how it learns and where its data comes from, for a reader who has never met one. Then classical machine learning, from regression and decision trees to Gaussian processes and movement primitives, and seven families of neural network models: models that see, that work in 3D, that choose a grasp, that move the arm, that understand words, that predict what happens next, and that make sense of touch and force. It ends with fine-tuning, running, testing and trusting a model on a real arm.',
     accent: 'rose',
   },
 };
@@ -99,6 +99,7 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'language-models': 'Language Models',
   'world-models': 'World Models',
   'touch-and-body-models': 'Touch and Body Models',
+  'classical-machine-learning': 'Classical Machine Learning',
   'making-models-work-on-an-arm': 'Making Models Work on an Arm',
   'what-techniques-are': 'What Techniques Are',
   'geometry-and-cameras': 'Geometry and Cameras',

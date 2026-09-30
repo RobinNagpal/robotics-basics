@@ -288,7 +288,7 @@ would see, and what people use instead.
 | Distance limit too large | flat objects vanish with the table; the bottom of every object is cut off | lower the limit; keep points just above the plane for small objects |
 | Shape needs many points to define | very many tries, slow | a method that starts from a good guess, such as [iterative closest point](../../03_searching-and-matching/02_most-used/02_iterative-closest-point.md), or a learned model |
 | You need the same answer every run | tiny differences between runs, which make tests flaky | fix the random seed, or refit with least squares on the inliers (which is usually stable) |
-| No shape dominates (a cluttered pile of parts) | low inlier counts for every try | a [point cloud model](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md) that labels each point, or [clustering](../../05_image-and-point-cloud-processing/02_most-used/03_clustering.md) first |
+| No shape dominates (a cluttered pile of parts) | low inlier counts for every try | a [point cloud model](../../../06_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md) that labels each point, or [clustering](../../05_image-and-point-cloud-processing/02_most-used/03_clustering.md) first |
 
 ---
 
@@ -348,11 +348,11 @@ least-squares refit at the end to get the best accuracy.
 ## 8. The learned alternative
 
 A segmentation model from Book 6's
-[point cloud models](../../../06_neural-network-models/03_3d-models/02_most-used/01_point-cloud-models.md)
+[point cloud models](../../../06_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
 gives every point a name, such as "mug", "box" or "table". That replaces RANSAC when
 no single shape dominates the scene, such as a cluttered pile of parts. For shapes
 that need many points to define, a pose model from
-[keypoints and object pose](../../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+[keypoints and object pose](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 finds the object's pose directly. But a point cloud model needs labelled 3D data,
 which is much scarcer than labelled photos, it needs a graphics card for large
 clouds, and it knows only the kinds of object it was trained on. RANSAC still wins

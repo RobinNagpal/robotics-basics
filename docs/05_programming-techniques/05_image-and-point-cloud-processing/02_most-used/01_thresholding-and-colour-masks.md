@@ -310,7 +310,7 @@ Here are some concrete places.
   than a set number of pixels become nearer than the empty floor, something has
   entered, and the arm slows down or stops.
 - A threshold turns a learned model's scores into a mask. A
-  [segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+  [segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
   gives each pixel a number from 0 to 1: how sure it is that the pixel belongs to
   an object. A threshold, often 0.5, turns that into a mask. So even a learned
   pipeline ends in a threshold.
@@ -328,12 +328,12 @@ wrong, this is what you see, and this is what people use instead.
 | --- | --- | --- |
 | The light changes, for example daylight through a window | The mask shrinks or grows during the day; the part is lost in the evening | HSV instead of RGB; Otsu's method; a lamp you control; a depth threshold |
 | Uneven light, bright on one side of the table and dark on the other | Otsu's limit is right on one side and wrong on the other | An **adaptive threshold**, which picks a separate limit for each small area of the picture |
-| The object is the same colour as the background, such as a white mug on a white table | The mask is empty, or it covers the whole table | A depth threshold, or a [segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md) |
+| The object is the same colour as the background, such as a white mug on a white table | The mask is empty, or it covers the whole table | A depth threshold, or a [segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md) |
 | Two objects of the same colour touch | One patch in the mask where there should be two | [The distance transform](02_morphology-and-distance-transform.md) and watershed, or 3D [clustering](03_clustering.md) |
 | A shiny highlight on the object | A hole in the middle of the mask | [Closing](02_morphology-and-distance-transform.md) to fill the hole |
 | Camera noise near the limit | Single specks scattered across the mask | [Opening](02_morphology-and-distance-transform.md), or a small blur before the threshold |
-| Glass, mirrors and polished metal | Zeros in the depth picture; colour taken from whatever is behind | Treat the zeros as a signal, or use a learned depth model such as [depth from pictures](../../../06_neural-network-models/02_seeing-models/03_also-used/02_depth-from-pictures.md) |
-| Many kinds of object, each a different colour | One mask per colour, and a new rule every time a new part arrives | A trained [object detector](../../../06_neural-network-models/02_seeing-models/02_most-used/01_object-detection.md) |
+| Glass, mirrors and polished metal | Zeros in the depth picture; colour taken from whatever is behind | Treat the zeros as a signal, or use a learned depth model such as [depth from pictures](../../../06_learned-models/03_seeing-models/03_also-used/02_depth-from-pictures.md) |
+| Many kinds of object, each a different colour | One mask per colour, and a new rule every time a new part arrives | A trained [object detector](../../../06_learned-models/03_seeing-models/02_most-used/01_object-detection.md) |
 
 Book 2 lists the same failures from the other side in
 [when colour stops working](../../../02_perception/01_camera/02_finding-objects.md#36-when-colour-stops-working).
@@ -392,9 +392,9 @@ object is.
 ## 8. The learned alternative
 
 Book 6 has two kinds of model that do this job. A
-[segmentation model](../../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md)
+[segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
 marks the pixels of each object without any hand-set limits, and an
-[object detector](../../../06_neural-network-models/02_seeing-models/02_most-used/01_object-detection.md)
+[object detector](../../../06_learned-models/03_seeing-models/02_most-used/01_object-detection.md)
 puts a named box round each object. A model wins when you cannot control the
 scene: it handles mixed colours, clutter and changing light much better, and it
 copes with many kinds of part without a new rule for each one. A threshold still

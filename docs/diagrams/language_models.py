@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/05_neural-network-models/06_language-models/.
+"""Generate the diagrams used in docs/06_learned-models/07_language-models/.
 
 Each document's pictures go to a folder named after it, under
 docs/images/language-models/. Every picture shows one idea from its own

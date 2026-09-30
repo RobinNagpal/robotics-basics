@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first half of docs/05_neural-network-models/01_what-models-are/.
+"""Generate the diagrams for the first half of docs/06_learned-models/01_what-models-are/.
 
 Each document's pictures go to a folder named after it, under
 docs/images/what-models-are/:

@@ -443,7 +443,7 @@ this page is where that model comes from.
 **Collision detection.** A collision detector compares the torque each joint is
 using with the torque inverse dynamics says it should need. A large gap means
 something the model does not know about is pushing on the arm, such as a person.
-Book 6's [collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md#31-the-gap-between-expected-and-measured)
+Book 6's [collision and failure detection](../../../06_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md#31-the-gap-between-expected-and-measured)
 page calls this the "expected torque". The better the model, the lower the alarm
 line can be set. The [safety monitoring](04_safety-monitoring.md) page covers the
 checks that act on such alarms.
@@ -477,7 +477,7 @@ would see, and what people use instead or add.
 | Situation | The sign you would see | What people use instead or add |
 | --- | --- | --- |
 | The payload in the model is wrong or missing | the arm sags or lags after a grasp; false collision alarms while carrying a load | set the payload in the controller after each grasp; estimate it from the holding torques; keep an integral term |
-| Friction in the gearboxes is large, as in most geared arms | the model's torque is right in theory but the arm still lags, worst when it starts or reverses | identify a friction model with the masses; a [learned arm model](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md) for the part physics leaves out |
+| Friction in the gearboxes is large, as in most geared arms | the model's torque is right in theory but the arm still lags, worst when it starts or reverses | identify a friction model with the masses; a [learned arm model](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md) for the part physics leaves out |
 | Cables, hoses and springs pull on the arm | a steady error that changes with pose but not with load | identify the pull as an extra term; a learned correction |
 | The link masses in the description are rounded or wrong | gravity compensation leaves a small sag that changes with pose | identification from still poses and an exciting trajectory |
 | The links or gearboxes bend | the arm rings after fast moves even with an accurate model | lower speeds and smoother [trajectories](02_trajectory-generation.md); a flexible-joint model |
@@ -545,7 +545,7 @@ which many arms do not.
 ## 8. The learned alternative
 
 Book 6's
-[learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
+[learned arm models](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 are the learned version of this page. Most keep this physics model and add a small
 network that learns only what is left over: the gearbox friction, cable pull and
 wear that the equations leave out. A learned correction wins when those effects do
@@ -556,7 +556,7 @@ per link and gives sensible answers everywhere, while a learned model needs hour
 of varied data and can give strange answers for moves it has not seen. That is why
 the usual practice is to keep the physics model and let a learned model correct
 it. Book 6's
-[learned dynamics models](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md)
+[learned dynamics models](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
 do a wider job: they predict how the whole scene moves when the arm acts, not just
 the arm.
 

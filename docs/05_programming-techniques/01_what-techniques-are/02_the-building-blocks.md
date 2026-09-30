@@ -317,7 +317,7 @@ each row as one block, with the chapters in which it does most of the work.
 Learned models in Book 6 use the same building blocks. A model's input is an
 array. Its training minimises a cost function, which Book 6 calls a loss. And a
 trained model runs inside a loop at a rate, as
-[running a model on a robot](../../06_neural-network-models/09_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
+[running a model on a robot](../../06_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
 describes.
 
 ---
@@ -330,5 +330,5 @@ describes.
   in Book 1 explains the maths behind rotations and translations.
 - [Rigid transforms](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md) takes
   section 1 into three dimensions.
-- [How a model learns](../../06_neural-network-models/01_what-models-are/02_how-a-model-learns.md)
+- [How a model learns](../../06_learned-models/01_what-models-are/02_how-a-model-learns.md)
   in Book 6 shows a cost function being used to train a model.

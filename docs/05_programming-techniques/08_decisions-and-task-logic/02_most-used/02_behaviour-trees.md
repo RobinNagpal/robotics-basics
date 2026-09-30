@@ -321,7 +321,7 @@ and control. Here are several concrete places.
   tree for driving and another for the arm.
 - **Under a language model.** A language model can choose which subtree to run from
   a spoken request, while the tree still does the running. Book 6's
-  [language models as planners](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md)
+  [language models as planners](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
   page describes this.
 
 ---
@@ -406,18 +406,18 @@ own.
 ## 8. The learned alternative
 
 Book 6 compares a behaviour tree directly with a
-[language model as planner](../../../06_neural-network-models/06_language-models/03_also-used/01_language-models-as-planners.md),
+[language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md),
 which chooses the order of the robot's steps from a request in plain words. The
 planner earns its place when the request changes from one day to the next and
 nobody can list every request in advance. For a task that never changes, such as
 the same box packed the same way every day, Book 6 says the tree is the better
 choice, because it is free to run, fast, and always does the same thing. A
-[vision-language-action model](../../../06_neural-network-models/06_language-models/02_most-used/01_vision-language-action-models.md)
+[vision-language-action model](../../../06_learned-models/07_language-models/02_most-used/01_vision-language-action-models.md)
 goes further and turns pictures and an instruction straight into arm movements,
 but its success rates are still well below what a production line needs. In
 practice the two meet: a language model picks a subtree, as section 4 showed, and
 a learned model such as
-[collision and failure detection](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+[collision and failure detection](../../../06_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
 can serve as a condition such as "grasp failed?".
 
 ---

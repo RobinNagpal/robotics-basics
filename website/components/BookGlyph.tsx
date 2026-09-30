@@ -75,7 +75,7 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
   }
 
   // Book 6: a small neural network, three layers of neurons joined by weights.
-  if (slug === 'neural-network-models') {
+  if (slug === 'learned-models') {
     const left = [18, 40, 62];
     const mid = [12, 30, 50, 68];
     const right = [28, 52];

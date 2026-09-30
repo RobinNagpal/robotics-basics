@@ -425,7 +425,7 @@ you would see, and what people use instead.
 | Forgetting factor too small | the numbers shake from reading to reading | raise `λ`; or run a slower filter on the numbers |
 | Rare large readings (a bump, a missed sample) | one reading moves the fit a long way | throw away readings with a large residual, as [RANSAC](../02_most-used/02_ransac.md) does for points |
 | The number depends on something you did not vary (temperature, load, pose) | a model that fits the probe well and the real task badly | probe under the task's conditions; or track the number with RLS |
-| Physics too complex to write down (cloth, a soft object, a tangled cable) | no small set of numbers fits | a learned model; see [learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md) |
+| Physics too complex to write down (cloth, a soft object, a tangled cable) | no small set of numbers fits | a learned model; see [learned arm models](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md) |
 
 ---
 
@@ -483,7 +483,7 @@ drift or jump when the arm stands still.
 ## 8. The learned alternative
 
 Book 6's
-[learned arm models](../../../06_neural-network-models/08_touch-and-body-models/03_also-used/02_learned-arm-models.md)
+[learned arm models](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 covers networks that learn how the arm's body behaves from its own recordings. A
 network can learn the whole model and capture effects no textbook equation has. But
 it needs far more data, its internal numbers have no physical meaning you can check,
@@ -493,8 +493,13 @@ only on what it gets wrong, such as friction that changes with speed and
 temperature, or a cable that pulls differently in each pose. Book 6 calls system
 identification the right first step, and often enough on its own, so add the
 learned correction only when the residuals still show a pattern after the missing
-terms are in the model.
-[Learned dynamics models](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md#7-learning-only-the-part-physics-gets-wrong-residual-models)
+terms are in the model. When the leftover error depends on only a few numbers,
+such as a joint's speed and temperature, Book 6's
+[Gaussian processes](../../../06_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
+learn that correction from tens to hundreds of samples and say how sure they are,
+and [linear regression](../../../06_learned-models/02_classical-machine-learning/02_most-used/01_linear-and-logistic-regression.md)
+fits it with the same least squares this page uses.
+[Learned dynamics models](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#7-learning-only-the-part-physics-gets-wrong-residual-models)
 uses the same idea for objects the arm pushes.
 
 ---
@@ -511,7 +516,7 @@ uses the same idea for objects the arm pushes.
   gives the full equations whose masses and friction this page measures.
 - [Impedance and force control](../../07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
   uses identified stiffness and payload values.
-- [Uncertainty and confidence](../../../06_neural-network-models/09_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md)
+- [Uncertainty and confidence](../../../06_learned-models/10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md)
   in Book 6 covers error bars for learned models.
 - The [chapter overview](../01_overview.md) shows how this page fits with the
   others in the chapter.

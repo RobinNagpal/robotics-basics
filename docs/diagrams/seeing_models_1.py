@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first half of docs/05_neural-network-models/02_seeing-models/.
+"""Generate the diagrams for the first half of docs/06_learned-models/03_seeing-models/.
 
 This covers 01_overview, 02_image-classification, 03_object-detection and
 04_segmentation. Each document's pictures go to a folder named after it, under

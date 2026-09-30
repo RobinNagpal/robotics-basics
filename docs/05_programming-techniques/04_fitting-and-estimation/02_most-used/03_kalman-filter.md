@@ -545,7 +545,7 @@ you would see, and what people use instead.
 | Irregular timing (dropped frames, late messages) | speed estimate jumps; prediction off by one frame | use each reading's real timestamp for the time step, not a nominal rate |
 | Strongly bent relationships (angles, rotations) | the filter becomes over-confident and then drifts | EKF, UKF or a particle filter, as [section 4](#4-when-things-are-not-straight-lines-ekf-ukf-and-the-particle-filter) explains; for orientation, a filter built for rotations |
 | Readings with rare large errors, not bell-shaped | one bad reading drags the estimate | a gate, or a robust filter that limits the pull of one reading |
-| Motion too complex to write down (a cloth, a rolling object bouncing) | large innovations all the time | a learned motion model, such as a [learned dynamics model](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md) |
+| Motion too complex to write down (a cloth, a rolling object bouncing) | large innovations all the time | a learned motion model, such as a [learned dynamics model](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md) |
 
 ---
 
@@ -599,15 +599,15 @@ or a bug can affect many steps after it.
 ## 9. The learned alternative
 
 The learned trackers in Book 6's
-[tracking and motion](../../../06_neural-network-models/02_seeing-models/03_also-used/03_tracking-and-motion.md)
+[tracking and motion](../../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
 mostly keep the filter rather than replace it. Methods such as SORT and ByteTrack
 take boxes from a trained detector and use a Kalman filter to predict where each
 object should be, and some also compare how the objects look, so that two similar
 objects are not swapped. When the motion is too complex to write down, a
-[learned dynamics model](../../../06_neural-network-models/07_world-models/02_most-used/01_learned-dynamics-models.md)
+[learned dynamics model](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
 predicts the next state from recordings of the real arm instead of a formula, but
 it needs those recordings, and its errors add up over many steps. For touch,
-[force and slip models](../../../06_neural-network-models/08_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+[force and slip models](../../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
 recognise patterns such as the fast shaking of a slip, which a filter that smooths
 the reading cannot tell apart from noise. For a steady estimate of a position or a
 speed, the Kalman filter still wins, because it needs no training data, costs a few

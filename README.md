@@ -11,7 +11,7 @@ The repo has three folders:
 - `docs/` holds the docs, numbered in reading order.
 - `code/` holds the runnable examples and the pixi environment. Every `make` and
   `pixi` command, here and in the docs, is run from inside `code/`.
-- `website/` holds a Next.js site that presents the docs as four mini books. It
+- `website/` holds a Next.js site that presents the docs as five mini books. It
   reads `docs/` directly, so it never needs its own copy.
 
 ```
@@ -145,15 +145,26 @@ needs a second arm at all, the two ways the arms can be coupled, and what that d
 to every method. Two arms doing unrelated things in one cell are deliberately out of
 scope — that is the one-arm problem, twice.
 
+**[Neural network models](docs/05_neural-network-models/01_what-models-are/01_what-a-model-is.md)**
+is Book 5, and it assumes you have never met a model. Its first chapter explains
+what a model is, how one learns from examples, what is inside a neural network,
+where the training data comes from, and what changes when a model runs on a
+robot. [The map of models](docs/05_neural-network-models/01_what-models-are/06_the-map-of-models.md)
+then splits the field into seven families — models that see, that work in 3D,
+that choose a grasp, that move the arm, that understand words, that predict
+what happens next, and that make sense of touch and force — and each family has
+an overview page and one page per kind of model, with diagrams on every page.
+
 ## How the docs are ordered
 
-The docs are grouped into four mini books, the same ones the website shows:
+The docs are grouped into five mini books, the same ones the website shows:
 
 ```
 docs/01_robotics-intro/   robot arm basics: Python, NumPy, maths, frames, kinematics, arm types
 docs/02_perception/       cameras, and finding and measuring objects
 docs/03_frameworks/       tools and simulators, gripping, arm movement, training arms
 docs/04_ros-and-rviz/     ROS and the RViz 3D viewer
+docs/05_neural-network-models/  every kind of neural network model a robot arm uses
 ```
 
 Everything is numbered in the order it is meant to be read: the books, the chapter
@@ -181,7 +192,7 @@ code/src/             the code for each area:
   arm_types/            joints, and the six-joint arm, plain Python files
   rviz_basics/          a marker in a moving frame
   arm_transforms/       position, frames and transforms, in five steps
-website/              the Next.js site that shows docs/ as four mini books
+website/              the Next.js site that shows docs/ as five mini books
 ```
 
 ## Repo-wide commands

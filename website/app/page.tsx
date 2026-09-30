@@ -15,7 +15,7 @@ export default function Home() {
       <section className="hero">
         <p className="eyebrow">Robotics, from first principles</p>
         <h1>
-          Learn robotics in <span className="hero-accent">four short books</span>.
+          Learn robotics in <span className="hero-accent">five short books</span>.
         </h1>
         <p className="hero-lede">
           Start with the basics of a robot arm, learn how a robot sees, then move on to the frameworks, simulators and

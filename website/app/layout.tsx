@@ -10,7 +10,7 @@ const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', displ
 
 export const metadata: Metadata = {
   title: { default: 'Robotics Docs', template: '%s · Robotics Docs' },
-  description: 'Learn robotics from the robotics-basics docs, organised as four short books.',
+  description: 'Learn robotics from the robotics-basics docs, organised as five short books.',
 };
 
 export const viewport: Viewport = {

@@ -1,6 +1,6 @@
 # website
 
-A Next.js site that presents the docs in `../docs` as three mini books for
+A Next.js site that presents the docs in `../docs` as five mini books for
 learning robotics.
 
 ```

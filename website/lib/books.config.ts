@@ -47,6 +47,13 @@ export const BOOK_INFO: Record<string, BookInfo> = {
       'What ROS is and how its programs talk to each other, one small program per idea, then a camera, an arm and the two together. It ends with RViz, the 3D viewer that shows you what the robot thinks is happening.',
     accent: 'teal',
   },
+  'neural-network-models': {
+    title: 'Neural Network Models',
+    subtitle: 'Every kind of model a robot arm uses, in plain words',
+    description:
+      'What a model is, how it learns and how it runs on a robot, for a reader who has never met one. Then seven families of models, each with a page per kind: models that see, that work in 3D, that choose a grasp, that move the arm, that understand words, that predict what happens next, and that make sense of touch and force.',
+    accent: 'violet',
+  },
 };
 
 // Display names for chapters. A chapter not listed here uses the title of its
@@ -69,4 +76,12 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'two-arm-manipulation': 'Two-Arm Manipulation',
   'stone-stacking': 'Case Study: Stone Stacking',
   frontier: 'The Frontier',
+  'what-models-are': 'What Models Are',
+  'seeing-models': 'Seeing Models',
+  '3d-models': '3D Models',
+  'grasp-models': 'Grasp Models',
+  'movement-models': 'Movement Models',
+  'language-models': 'Language Models',
+  'world-models': 'World Models',
+  'touch-and-body-models': 'Touch and Body Models',
 };

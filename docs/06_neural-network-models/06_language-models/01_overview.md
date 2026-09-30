@@ -25,7 +25,7 @@ Every new word is explained where it first appears.
 
 ## 1. What language models are for
 
-The [map of models](../01_what-models-are/06_the-map-of-models.md) sorts the models
+The [map of models](../01_what-models-are/09_the-map-of-models.md) sorts the models
 in this book into seven families. This chapter covers the fifth one:
 
 > Language models — understand words, and connect words to pictures and actions.
@@ -117,19 +117,31 @@ The picture shows the three kinds side by side, with the same mug, bowl and
 instruction. The planner writes steps. The vision-language model answers a question
 about the picture. The vision-language-action model moves the gripper.
 
-1. [Language models as planners](02_language-models-as-planners.md). A language
+1. [Language models as planners](03_also-used/01_language-models-as-planners.md). A language
    model reads an instruction and writes a list of steps, chosen from skills the
    robot already has. It never sees a picture itself.
-2. [Vision-language models](03_vision-language-models.md). A **vision-language
+2. [Vision-language models](02_most-used/02_vision-language-models.md). A **vision-language
    model**, or **VLM**, takes a picture and a question in words, and answers in
    words. A robot uses it to find things, to describe a scene, and to check whether
    a step worked.
-3. [Vision-language-action models](04_vision-language-action-models.md). A
+3. [Vision-language-action models](02_most-used/01_vision-language-action-models.md). A
    **vision-language-action model**, or **VLA**, takes a picture and an
    instruction, and outputs the movement of the arm directly. It is one model that
    does the seeing, the understanding and the moving.
 
 ---
+
+### Most used, and also used
+
+The pages of this chapter are in two groups. The first group, most used, holds
+[vision-language-action models](02_most-used/01_vision-language-action-models.md)
+and [vision-language models](02_most-used/02_vision-language-models.md). In
+2026 these are where most of the work on language and robots happens. The
+second group, also used, holds
+[language models as planners](03_also-used/01_language-models-as-planners.md).
+Planning with a plain language model came first, and it is still used to split
+a long instruction into steps, but it is now often done by a vision-language
+model instead.
 
 ## 5. How they compare
 
@@ -163,15 +175,15 @@ other chapters.
   object, and a [movement model](../05_movement-models/01_overview.md) that moves
   the arm.
 - A vision-language model often does the same job as the
-  [open-vocabulary models](../02_seeing-models/07_open-vocabulary-models.md) in the
+  [open-vocabulary models](../02_seeing-models/02_most-used/03_open-vocabulary-models.md) in the
   seeing chapter. Both find objects from a name in words. The vision-language model
   can also answer questions and explain what it sees.
 - A vision-language-action model is a movement model. It works in the same way as
   the models in the [movement models](../05_movement-models/01_overview.md) chapter,
   and adds an understanding of words and pictures from the internet. It uses the
   same ideas of
-  [action chunks](../05_movement-models/03_action-chunking-transformers.md) and
-  [flow policies](../05_movement-models/04_diffusion-and-flow-policies.md).
+  [action chunks](../05_movement-models/02_most-used/02_action-chunking-transformers.md) and
+  [flow policies](../05_movement-models/02_most-used/03_diffusion-and-flow-policies.md).
 - Some of the newest robot models also predict what the camera will see next. Those
   are [world models](../07_world-models/01_overview.md), the next chapter.
 
@@ -179,7 +191,7 @@ other chapters.
 
 ## 7. Where to read next
 
-Start with [language models as planners](02_language-models-as-planners.md). It
+Start with [language models as planners](03_also-used/01_language-models-as-planners.md). It
 introduces the idea of a language model choosing steps, and the other two pages
 build on it.
 

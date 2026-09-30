@@ -119,7 +119,7 @@ Later, a movement model is trained on many episodes. It is shown the picture at 
 moment, and the right answer is the command the person gave at that moment. The model
 learns to give the same command when it sees a similar picture. Copying a person like
 this is called **behaviour cloning**. The
-[behaviour cloning page](../05_movement-models/02_behaviour-cloning.md) explains it
+[behaviour cloning page](../05_movement-models/02_most-used/01_behaviour-cloning.md) explains it
 in full.
 
 Demonstrations have one big strength. They are real. The pictures come from the
@@ -147,7 +147,7 @@ anything.
 A simulator can also let a robot practise. The robot tries something, the
 simulator says whether it worked, and the robot tries again, many thousands of times.
 Learning by trying like this is called **reinforcement learning**. The
-[reinforcement learning page](../05_movement-models/05_reinforcement-learning-policies.md)
+[reinforcement learning page](../05_movement-models/03_also-used/01_reinforcement-learning-policies.md)
 explains it.
 
 ### The gap between simulation and the real world
@@ -205,7 +205,7 @@ on 400 million pairs of pictures and captions collected from the internet. It le
 to match a picture with the words that describe it. It was never told "this is a
 mug" in the careful way ImageNet was. It worked it out from millions of loosely
 matched pictures and captions. The
-[open-vocabulary models page](../02_seeing-models/07_open-vocabulary-models.md)
+[open-vocabulary models page](../02_seeing-models/02_most-used/03_open-vocabulary-models.md)
 explains how robots use models like it.
 
 Text alone is also data. Large language models, which the
@@ -298,7 +298,7 @@ chat assistants are foundation models for text. In robotics, people now build
 typed instruction, and give out arm movements. They usually start from a foundation
 model for pictures and words, and are then trained further on large collections of
 robot demonstrations. The
-[vision-language-action models page](../06_language-models/04_vision-language-action-models.md)
+[vision-language-action models page](../06_language-models/02_most-used/01_vision-language-action-models.md)
 explains them. The [foundation models document](../../03_frameworks/08_frontier/02_foundation-models.md)
 lists the ones that exist in 2026.
 
@@ -326,7 +326,7 @@ trains.
 | Labelled pictures for a new seeing model, from scratch | hundreds of thousands to millions of pictures | [seeing models](../02_seeing-models/01_overview.md) |
 | Labelled pictures to fine-tune a pretrained seeing model on your objects | hundreds to a few thousand pictures | [seeing models](../02_seeing-models/01_overview.md) |
 | Demonstrations for one task on one robot | tens to hundreds of episodes | [movement models](../05_movement-models/01_overview.md) |
-| Demonstrations to pretrain a general robot model | hundreds of thousands to millions of episodes, from many robots | [vision-language-action models](../06_language-models/04_vision-language-action-models.md) |
+| Demonstrations to pretrain a general robot model | hundreds of thousands to millions of episodes, from many robots | [vision-language-action models](../06_language-models/02_most-used/01_vision-language-action-models.md) |
 | Simulated examples | millions or more, because they are cheap | [grasp models](../04_grasp-models/01_overview.md), [movement models](../05_movement-models/01_overview.md) |
 | Internet pictures, captions, text and video | hundreds of millions or more | foundation models for pictures and words |
 
@@ -364,7 +364,7 @@ you did not see most of the data it learned from.
 
 - [Running a model on a robot](05_running-a-model-on-a-robot.md) is the next
   document. It explains what happens after training, when the model is used.
-- [The map of models](06_the-map-of-models.md) shows every kind of model in this book
+- [The map of models](09_the-map-of-models.md) shows every kind of model in this book
   and what data each one uses.
 - [How a model learns](02_how-a-model-learns.md) explains what the model does with
   each example.

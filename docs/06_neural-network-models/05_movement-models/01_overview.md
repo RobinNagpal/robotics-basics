@@ -20,8 +20,8 @@ need anything else. Every new word is explained where it first appears.
 1. [What a movement model is for](#1-what-a-movement-model-is-for)
 2. [Why a movement model is called a policy](#2-why-a-movement-model-is-called-a-policy)
 3. [What a policy takes over, and what it leaves alone](#3-what-a-policy-takes-over-and-what-it-leaves-alone)
-4. [The five kinds of movement model](#4-the-five-kinds-of-movement-model)
-5. [The five kinds side by side](#5-the-five-kinds-side-by-side)
+4. [The pages in this chapter](#4-the-pages-in-this-chapter)
+5. [The kinds side by side](#5-the-kinds-side-by-side)
 6. [How movement models connect to the other kinds](#6-how-movement-models-connect-to-the-other-kinds)
 7. [Where to read next](#7-where-to-read-next)
 
@@ -79,7 +79,9 @@ Two more words go with it.
   angles the arm should move to next, or how far the gripper should move, plus
   whether the gripper should open or close.
 
-So a policy turns an observation into an action. The picture below shows the loop.
+So a policy turns an observation into an action. The page
+[actions and observations](02_most-used/04_actions-and-observations.md) looks at
+these numbers in detail. The picture below shows the loop.
 
 ![A policy takes a picture and the joint angles, chooses a small move, and the loop repeats](../../images/movement-models/overview/policy-loop.svg)
 
@@ -119,63 +121,93 @@ goes through this layer by layer.
 
 ---
 
-## 4. The five kinds of movement model
+## 4. The pages in this chapter
 
-There are five main kinds of movement model. They differ in how they learn, and in
-what they give back. Each one has its own page in this chapter.
+The chapter has eight pages, in two groups. Most of them describe one kind of
+movement model. The kinds differ in how they learn, and in what they give back.
 
-- [Behaviour cloning](02_behaviour-cloning.md). A person does the task many times,
+The first group, **most used**, holds the pages you need for almost any learned
+policy on a robot arm today. Three of them are the copying models that most real
+systems are built from. The fourth is about the numbers those models take in and
+give out, which every policy depends on.
+
+- [Behaviour cloning](02_most-used/01_behaviour-cloning.md). A person does the task many times,
   and the model learns to copy what the person did at each moment. This is the
-  simplest kind and the base for most of the others.
-- [Action chunking transformers](03_action-chunking-transformers.md). A copying
+  simplest kind and the base for most of the others. It also shows how to tell a
+  policy which of several tasks to do.
+- [Action chunking transformers](02_most-used/02_action-chunking-transformers.md). A copying
   model that chooses a whole burst of moves at once, instead of one move at a time.
   The best-known example is ACT, which is short for Action Chunking with
   Transformers.
-- [Diffusion and flow policies](04_diffusion-and-flow-policies.md). A copying model
+- [Diffusion and flow policies](02_most-used/03_diffusion-and-flow-policies.md). A copying model
   that starts from a random guess of the next moves and cleans it up, step by step,
   into a good path. This lets it keep two different good ways of doing a task
   apart, instead of mixing them.
-- [Reinforcement learning policies](05_reinforcement-learning-policies.md). A model
+- [Actions and observations](02_most-used/04_actions-and-observations.md). Not a kind of
+  model, but the numbers every kind uses: joint angles or gripper position, a place
+  or a change, how a turn is written, and how every number is rescaled. These
+  choices decide whether data from another robot can be used.
+
+The second group, **also used**, holds kinds that are used often, but less. Each
+one solves a problem that copying alone cannot: no person can show the task, the
+ordinary planner is too slow, nobody can write a score, or there are too few robot
+recordings.
+
+- [Reinforcement learning policies](03_also-used/01_reinforcement-learning-policies.md). A model
   that learns by trying the task many times, usually in a computer simulation, and
   getting a score for each try.
-- [Learned motion planners](06_learned-motion-planners.md). A model that learns to
+- [Learned motion planners](03_also-used/02_learned-motion-planners.md). A model that learns to
   do one job of the ordinary planning code, such as finding a route around
   obstacles or working out joint angles, much faster than the ordinary code can.
+- [Reward and progress models](03_also-used/03_reward-and-progress-models.md). A model that
+  looks at the camera pictures of an attempt and judges how well it is going. It
+  gives reinforcement learning a score when nobody can write one by hand, and it
+  can tell a copying policy's owner which attempts failed.
+- [Learning from human video](03_also-used/04_learning-from-human-video.md). Models that
+  take something useful for the robot out of videos of people using their hands,
+  so the robot needs fewer recordings of its own.
 
-The picture below shows the idea behind each kind in one small drawing.
+The picture below shows the idea behind the first five kinds in one small drawing.
 
 ![One small drawing of the idea behind each of the five kinds of movement model](../../images/movement-models/overview/five-kinds.svg)
 
 The first three kinds all learn from people doing the task. The fourth learns from
-its own tries. The fifth learns from the output of an ordinary planner.
+its own tries. The fifth learns from the output of an ordinary planner. The two
+newer kinds, judge models and learning from human video, help the others: one
+supplies a score, and the other supplies cheaper data.
 
 ---
 
-## 5. The five kinds side by side
+## 5. The kinds side by side
 
-The table below compares the five kinds. Read each row across to see what one kind
-learns from, what it gives back, what it is good at, and what it costs. Read down a
-column to compare the kinds on one point.
+The table below compares the kinds, with one row for each page. Read each row
+across to see what one kind learns from, what it gives back, what it is good at,
+and what it costs. Read down a column to compare the kinds on one point. The last
+row is the actions page, which is not a kind of model but applies to all of them.
 
-| Kind | What it learns from | What it gives back | What it is good at | What it costs |
-| --- | --- | --- | --- | --- |
-| Behaviour cloning | recordings of a person doing the task | the next single move | simple to build and to train | small mistakes add up; it mixes different ways of doing the task |
-| Action chunking transformers | recordings of a person doing the task | the next burst of moves, often about 100 | fine, smooth two-handed tasks from a few dozen recordings | slower to react inside a burst; a bigger network |
-| Diffusion and flow policies | recordings of a person doing the task | the next burst of moves, cleaned up from a random guess | keeps two good ways of doing a task apart | slower to run, because it cleans up in several steps |
-| Reinforcement learning policies | its own tries, each given a score | the next move | tasks that are hard to show by hand, such as pushing a peg into a tight hole | millions of tries, a simulator, and a score that is hard to write |
-| Learned motion planners | the answers of an ordinary planner or solver | a route, a collision distance, or joint angles | the same answer as the slow code, in a short fixed time | cannot promise the answer is safe, so it still has to be checked |
+| Page | Group | What it learns from | What it gives back | What it is good at | What it costs |
+| --- | --- | --- | --- | --- | --- |
+| Behaviour cloning | most used | recordings of a person doing the task | the next single move | simple to build and to train | small mistakes add up; it mixes different ways of doing the task |
+| Action chunking transformers | most used | recordings of a person doing the task | the next burst of moves, often about 100 | fine, smooth two-handed tasks from a few dozen recordings | slower to react inside a burst; a bigger network |
+| Diffusion and flow policies | most used | recordings of a person doing the task | the next burst of moves, cleaned up from a random guess | keeps two good ways of doing a task apart | slower to run, because it cleans up in several steps |
+| Actions and observations | most used | nothing; it is about the numbers the others learn from | a choice of how each number is written and rescaled | making a policy train well, and data from different robots agree | careful conversion, where a mistake gives no error message |
+| Reinforcement learning policies | also used | its own tries, each given a score | the next move | tasks that are hard to show by hand, such as pushing a peg into a tight hole | millions of tries, a simulator, and a score that is hard to write |
+| Learned motion planners | also used | the answers of an ordinary planner or solver | a route, a collision distance, or joint angles | the same answer as the slow code, in a short fixed time | cannot promise the answer is safe, so it still has to be checked |
+| Reward and progress models | also used | pictures of attempts, labelled as good or bad, or with how far along they are | a score for how well an attempt is going | a score for tasks nobody can write a rule for | it can be fooled, and a policy trained on it will find its mistakes |
+| Learning from human video | also used | videos of people using their hands, plus a little robot data | hand movements, or a head start, for a robot policy | using video that is cheap and plentiful | a hand is not a gripper, so some robot data is still needed |
 
 Two things stand out in the table. First, the three copying kinds need a person who
 can do the task. Reinforcement learning does not, but it needs a score and a lot of
-practice instead. Second, only the last kind is aimed at the free-space part of the
-move. The first four are mostly used close to the object.
+practice instead, and a judge model is one way to get that score. Second, only
+learned motion planners are aimed at the free-space part of the move. The others
+are mostly used close to the object.
 
 ---
 
 ## 6. How movement models connect to the other kinds
 
 A movement model rarely works alone. It uses, or sits next to, most of the other
-categories in [the map of models](../01_what-models-are/06_the-map-of-models.md).
+categories in [the map of models](../01_what-models-are/09_the-map-of-models.md).
 
 The first link is to seeing. Inside almost every policy that takes a camera picture,
 the first part is a seeing network. It turns the picture into a list of numbers
@@ -194,10 +226,13 @@ The third link is to language. A plain policy does one task. If you want to tell
 the arm which task to do in words, you need a model that understands language. The
 [language models chapter](../06_language-models/01_overview.md) covers this. Its
 page on
-[vision-language-action models](../06_language-models/04_vision-language-action-models.md)
+[vision-language-action models](../06_language-models/02_most-used/01_vision-language-action-models.md)
 describes very large policies that take a sentence as part of the observation. They
 are movement models too. They use the same ideas as this chapter, such as chunks of
-actions and flow matching.
+actions and flow matching. Large vision-language models are also used as judges,
+as the page on
+[reward and progress models](03_also-used/03_reward-and-progress-models.md)
+describes.
 
 The fourth link is to prediction. A
 [world model](../07_world-models/01_overview.md) predicts what will happen if the
@@ -213,9 +248,11 @@ readings into something a policy can use.
 
 ## 7. Where to read next
 
-Start with [behaviour cloning](02_behaviour-cloning.md). The idea of copying
+Start with [behaviour cloning](02_most-used/01_behaviour-cloning.md). The idea of copying
 recorded moves is the base for the next two pages, and its main problem, small
-mistakes that add up, explains why they exist.
+mistakes that add up, explains why they exist. Then read
+[actions and observations](02_most-used/04_actions-and-observations.md) before you
+record or train anything, because it decides how your data is written down.
 
 If you want to know where the recordings come from, read
 [where the data comes from](../01_what-models-are/04_where-the-data-comes-from.md).

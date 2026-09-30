@@ -149,21 +149,23 @@ scope — that is the one-arm problem, twice.
 is Book 5: the written, language-independent techniques that arm software is
 built from. After a short introduction and
 [a map of all of them](docs/05_programming-techniques/01_what-techniques-are/04_the-map-of-techniques.md),
-it covers 24 techniques in seven groups — geometry and cameras, searching and
+it covers 34 techniques in seven groups — geometry and cameras, searching and
 matching, fitting and estimation, image and point cloud processing, planning
-and search, control and motion, and decisions and task logic. Each page works
-a real example, says where the technique is used on an arm and where it
+and search, control and motion, and decisions and task logic. Each group puts
+the most used techniques first and the ones used less often second. Each page
+works a real example, says where the technique is used on an arm and where it
 fails, and lists the libraries that already provide it.
 
 **[Neural network models](docs/06_neural-network-models/01_what-models-are/01_what-a-model-is.md)**
 is Book 6, and it assumes you have never met a model. Its first chapter explains
 what a model is, how one learns from examples, what is inside a neural network,
 where the training data comes from, and what changes when a model runs on a
-robot. [The map of models](docs/06_neural-network-models/01_what-models-are/06_the-map-of-models.md)
+robot. [The map of models](docs/06_neural-network-models/01_what-models-are/09_the-map-of-models.md)
 then splits the field into seven families — models that see, that work in 3D,
 that choose a grasp, that move the arm, that understand words, that predict
 what happens next, and that make sense of touch and force — and each family has
-an overview page and one page per kind of model, with diagrams on every page.
+an overview page and one page per kind of model, with diagrams on every page The
+most used kinds come first in each family, then the ones used less often.
 
 ## How the docs are ordered
 

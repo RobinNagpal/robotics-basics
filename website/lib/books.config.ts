@@ -58,7 +58,7 @@ export const BOOK_INFO: Record<string, BookInfo> = {
     shortTitle: 'Techniques',
     subtitle: 'The algorithms robot arm software is built from',
     description:
-      'The written, language-independent techniques behind seeing, planning and moving: the pinhole camera model, transforms and calibration, nearest neighbours and matching, least squares, RANSAC and the Kalman filter, masks, contours and clustering, A*, RRT and inverse kinematics, PID and trajectories, and state machines, behaviour trees and set cover. Each says where it is used on an arm, where it fails, and which library already does it.',
+      'The written, language-independent techniques behind seeing, planning and moving: camera geometry, pose from points and calibration, matching and registration, least squares, RANSAC and filters, masks, clustering and 3D maps, sampling-based planning, inverse kinematics and MPC, PID, dynamics and safety monitoring, and state machines and behaviour trees. Each chapter puts the most used techniques first. Each page says where a technique is used on an arm, where it fails, and which library already does it.',
     accent: 'green',
   },
   'neural-network-models': {

@@ -108,17 +108,30 @@ answers, all about the same mug.
 
 Each panel shows one kind of model and the question it answers about the same mug.
 
-- [Point cloud models](02_point-cloud-models.md) take a point cloud and say what it
+- [Point cloud models](02_most-used/01_point-cloud-models.md) take a point cloud and say what it
   is, or which object each point belongs to. PointNet is the best-known one.
-- [Shape completion](03_shape-completion.md) takes the points of the side the camera
+- [Shape completion](03_also-used/01_shape-completion.md) takes the points of the side the camera
   saw and guesses the hidden back of the object.
-- [Scene reconstruction](04_scene-reconstruction.md) takes many photos from known
+- [Scene reconstruction](02_most-used/02_scene-reconstruction.md) takes many photos from known
   places and builds a whole 3D scene that can be viewed from any direction. NeRF and
   Gaussian splatting are the two best-known methods.
-- [3D feature maps](05_3d-feature-maps.md) build a 3D map in which every point also
+- [3D feature maps](03_also-used/02_3d-feature-maps.md) build a 3D map in which every point also
   carries meaning, so the arm can ask "where is the handle?" in words.
 
 ---
+
+### Most used, and also used
+
+The pages of this chapter are in two groups. The first group, most used, holds
+[point cloud models](02_most-used/01_point-cloud-models.md) and
+[scene reconstruction](02_most-used/02_scene-reconstruction.md). Point cloud
+models work on what a depth camera gives you directly, so they are the ones
+most arm projects meet first. Scene reconstruction is used widely to build a
+3D copy of a work cell or an object. The second group, also used, holds
+[shape completion](03_also-used/01_shape-completion.md) and
+[3D feature maps](03_also-used/02_3d-feature-maps.md). They solve real
+problems, but fewer projects need them, and many of the models are still
+research code.
 
 ## 5. Comparing the four kinds
 
@@ -145,7 +158,7 @@ this, use that".
 The last row of the first table matters. Point cloud models and shape completion are
 trained once and then used on new objects. Scene reconstruction is different. A NeRF
 or a Gaussian splat is fitted to one scene, and it has to be fitted again when the
-scene changes. The [scene reconstruction page](04_scene-reconstruction.md) explains
+scene changes. The [scene reconstruction page](02_most-used/02_scene-reconstruction.md) explains
 why.
 
 ---
@@ -166,15 +179,15 @@ The book lists seven families of model. Each one has a one-line job:
 the other.
 
 - They take from [seeing models](../02_seeing-models/01_overview.md). A depth model
-  from [depth from pictures](../02_seeing-models/06_depth-from-pictures.md) can turn a
+  from [depth from pictures](../02_seeing-models/03_also-used/02_depth-from-pictures.md) can turn a
   plain photo into a point cloud. An outline from
-  [segmentation](../02_seeing-models/04_segmentation.md) can pick out which points
+  [segmentation](../02_seeing-models/02_most-used/02_segmentation.md) can pick out which points
   belong to one object. 3D feature maps lift the numbers of an
-  [open-vocabulary model](../02_seeing-models/07_open-vocabulary-models.md) into 3D.
+  [open-vocabulary model](../02_seeing-models/02_most-used/03_open-vocabulary-models.md) into 3D.
 - They give to [grasp models](../04_grasp-models/01_overview.md). Most grasp models
   that choose a full 3D grasp take a point cloud as input, and many of them are built
   on a point cloud model inside. See
-  [six-DOF grasps](../04_grasp-models/03_six-dof-grasps.md).
+  [six-DOF grasps](../04_grasp-models/02_most-used/01_six-dof-grasps.md).
 - They give to [movement models](../05_movement-models/01_overview.md). Some policies
   take a point cloud of the scene as their input instead of a photo.
 - They give to [language models](../06_language-models/01_overview.md). A 3D feature
@@ -182,14 +195,14 @@ the other.
 - [World models](../07_world-models/01_overview.md) can predict how points will move
   when the arm pushes something. That is the same kind of input, used to look ahead.
 
-The [map of models](../01_what-models-are/06_the-map-of-models.md) shows all seven
+The [map of models](../01_what-models-are/09_the-map-of-models.md) shows all seven
 families on one page.
 
 ---
 
 ## 7. Where to read next
 
-Start with [point cloud models](02_point-cloud-models.md). The other three pages in
+Start with [point cloud models](02_most-used/01_point-cloud-models.md). The other three pages in
 this chapter build on its idea of a model that reads points directly.
 
 If you want the deeper, non-learned side of 3D first, Book 2 covers it:

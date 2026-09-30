@@ -87,7 +87,7 @@ runs at its own slower speed and gives a goal, such as a target position or a sh
 list of the next few movements. A simple, fast, programmed controller then follows
 that goal at hundreds of steps a second. Some
 [movement models](../05_movement-models/01_overview.md) are designed around this
-idea. The [action chunking page](../05_movement-models/03_action-chunking-transformers.md)
+idea. The [action chunking page](../05_movement-models/02_most-used/02_action-chunking-transformers.md)
 shows one that gives a whole chunk of movements at once, so that it needs to be asked
 less often.
 
@@ -238,7 +238,7 @@ programs written by people, using the geometry of the arm. Book 3 covers them in
 [planning a path](../../03_frameworks/03_arm-movement/03_planning-a-path.md) and
 [controlling the move](../../03_frameworks/03_arm-movement/04_controlling-the-move.md).
 Some models do more than one of these jobs at once. A
-[vision-language-action model](../06_language-models/04_vision-language-action-models.md)
+[vision-language-action model](../06_language-models/02_most-used/01_vision-language-action-models.md)
 takes the picture and gives arm movements directly, doing the job of the model and
 the planner together. Even then, a programmed controller and safety checks still sit
 between it and the motors.
@@ -306,13 +306,13 @@ describes those parts.
 
 ## 9. Where to read next
 
-- [The map of models](06_the-map-of-models.md) is the next document. It shows every
+- [The map of models](09_the-map-of-models.md) is the next document. It shows every
   kind of model in this book and where each one sits in the loop above.
 - [Where the data comes from](04_where-the-data-comes-from.md) explains the data
   that a model is trained on before it ever runs on a robot.
 - [Movement models](../05_movement-models/01_overview.md) are the models that work
   closest to the control loop, so speed matters most for them.
-- [Collision and failure detection](../08_touch-and-body-models/04_collision-and-failure-detection.md)
+- [Collision and failure detection](../08_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
   covers models that help check whether something has gone wrong.
 - [Models that find](../../02_perception/02_object-perception/04_models-that-find.md)
   in Book 2 compares real seeing models that you can download and use.

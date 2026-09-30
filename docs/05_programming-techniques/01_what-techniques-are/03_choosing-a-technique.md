@@ -76,9 +76,9 @@ already too slow there.
 
 The budgets differ by a factor of a thousand. That is why the same arm uses very
 different techniques in different places. The joint loop can only afford a few
-multiplications, such as [proportional-integral-derivative (PID) control](../07_control-and-motion/02_pid-control.md).
+multiplications, such as [proportional-integral-derivative (PID) control](../07_control-and-motion/02_most-used/01_pid-control.md).
 A planner that runs once before each move can afford to try thousands of poses,
-such as [sampling-based planning](../06_planning-and-search/03_sampling-based-planning.md).
+such as [sampling-based planning](../06_planning-and-search/02_most-used/01_sampling-based-planning.md).
 
 Speed also depends on how much data there is. It helps to ask how the time grows
 when the data grows. Take the brute-force way of finding, for every point in a
@@ -86,7 +86,7 @@ point cloud, which other point is closest to it. It compares each point with eve
 other point. With 1,000 points that is 499,500 pairs. With 2,000 points it is
 1,999,000 pairs. Twice the points means four times the work. A depth picture can
 have 300,000 points, so this simple method soon becomes far too slow. The
-[nearest-neighbour search](../03_searching-and-matching/02_nearest-neighbour-search.md)
+[nearest-neighbour search](../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
 page shows how a k-d tree, which sorts the points into boxes ahead of time,
 avoids most of those comparisons.
 
@@ -115,7 +115,7 @@ Accuracy also adds up along a chain. The mug's position passes through the
 camera model, the camera's calibration, the transform to the base, and the arm's
 own joints. Each one adds a little error. If each of four steps adds 2 mm, the
 total can reach 8 mm. That is more than the 5 mm of room. The
-[calibration](../02_geometry-and-cameras/04_calibration.md) page is about
+[calibration](../02_geometry-and-cameras/02_most-used/03_calibration.md) page is about
 removing the largest of these errors.
 
 When you judge accuracy, ask: how much error can the next step accept? Then
@@ -165,8 +165,8 @@ This does not make RANSAC always better. It is slower, because it tries many lin
 It is random, so two runs can give slightly different answers. And it needs two
 parameters that least squares does not, as the next section shows. If your
 readings have noise but no outliers, least squares is faster and just as good. The
-[least-squares fitting](../04_fitting-and-estimation/02_least-squares-fitting.md)
-and [RANSAC](../04_fitting-and-estimation/03_ransac.md) pages compare them in
+[least-squares fitting](../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+and [RANSAC](../04_fitting-and-estimation/02_most-used/02_ransac.md) pages compare them in
 detail.
 
 When you judge robustness, look at real readings from your own camera. Ask: are
@@ -187,9 +187,9 @@ The techniques on these pages have parameters like these:
   has one: the 580 mm limit.
 - The RANSAC line in section 4 has two: the 8 mm distance that counts as
   "agreeing", and how many lines to try, which was 200.
-- A [PID controller](../07_control-and-motion/02_pid-control.md) has three per
+- A [PID controller](../07_control-and-motion/02_most-used/01_pid-control.md) has three per
   joint, so eighteen on a six-joint arm.
-- A colour mask in [thresholding and colour masks](../05_image-and-point-cloud-processing/02_thresholding-and-colour-masks.md)
+- A colour mask in [thresholding and colour masks](../05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
   has six: a low and a high limit for each of three colour numbers.
 
 A parameter is easy to tune if it has a physical meaning you can measure. The
@@ -239,7 +239,7 @@ These are the signs that a written technique is still the right choice:
 - You have no examples to learn from, or cannot afford to collect them.
 
 Most arms mix the two. A learned model does the part that needs variety, such as
-[object detection](../../06_neural-network-models/02_seeing-models/03_object-detection.md)
+[object detection](../../06_neural-network-models/02_seeing-models/02_most-used/01_object-detection.md)
 to find the mugs in a colour picture. Written techniques do the parts that need
 exactness: turning pixels into positions, planning the path and driving the
 motors. When you switch, you usually replace one step in the chain, not the whole
@@ -259,11 +259,11 @@ There are four candidates:
 
 1. Measure the table once by hand, and write the height into the program.
 2. Fit a plane to all the depth points with
-   [least squares](../04_fitting-and-estimation/02_least-squares-fitting.md).
-3. Fit a plane with [RANSAC](../04_fitting-and-estimation/03_ransac.md), which
+   [least squares](../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md).
+3. Fit a plane with [RANSAC](../04_fitting-and-estimation/02_most-used/02_ransac.md), which
    ignores points that are not on the plane, such as mugs.
 4. Use a learned model that labels which pixels are table, such as a
-   [segmentation](../../06_neural-network-models/02_seeing-models/04_segmentation.md) model.
+   [segmentation](../../06_neural-network-models/02_seeing-models/02_most-used/02_segmentation.md) model.
 
 The table below runs the five questions on each candidate. Read each row across to
 see how one candidate does on all five.
@@ -310,8 +310,8 @@ names what people use instead.
 ## 9. Where to read next
 
 - [The map of techniques](04_the-map-of-techniques.md) is the next page. It lists
-  all 24 techniques in this book and places them on one arm task.
-- [RANSAC](../04_fitting-and-estimation/03_ransac.md) explains the robust fit from
+  all 34 techniques in this book and places them on one arm task.
+- [RANSAC](../04_fitting-and-estimation/02_most-used/02_ransac.md) explains the robust fit from
   section 4 in full.
 - [Running a model on a robot](../../06_neural-network-models/01_what-models-are/05_running-a-model-on-a-robot.md)
   in Book 6 shows the time budget from the learned side.

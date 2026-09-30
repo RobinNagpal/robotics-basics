@@ -77,7 +77,7 @@ So the mug is at (280, 150) in the base frame. You can check it against the
 picture. Real arms do the same in three dimensions, with three numbers instead of
 two. Programs usually pack the rotation and the translation into one 4 by 4 table
 of numbers, called a **homogeneous transform matrix**, so that one multiplication
-does both steps. The [rigid transforms](../02_geometry-and-cameras/03_rigid-transforms.md)
+does both steps. The [rigid transforms](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
 page explains that matrix.
 
 Transforms can be chained. If you know the camera from the wrist, and the wrist
@@ -124,7 +124,7 @@ one for each pixel that got a reading.
 
 Grids are also used for space itself. A planner can split the table top into small
 squares and mark each square as free or full. This is called an **occupancy
-grid**. The [graph search](../06_planning-and-search/02_graph-search.md) page
+grid**. The [graph search](../06_planning-and-search/03_also-used/01_graph-search.md) page
 finds paths across such a grid.
 
 Arrays matter for a practical reason too. Libraries such as NumPy in Python and
@@ -160,14 +160,14 @@ the lengths along each one:
 
 The third route is the shortest. With six nodes you can check every route by
 hand. A real planning graph can have millions of nodes. The techniques on the
-[graph search](../06_planning-and-search/02_graph-search.md) page find the
+[graph search](../06_planning-and-search/03_also-used/01_graph-search.md) page find the
 shortest route without trying every one.
 
 Graphs appear in many places on a robot arm. A grid of squares is a graph, where
 each square is joined to its neighbours. A **roadmap** is a graph of arm poses
 known to be free of collisions, used by
-[sampling-based planning](../06_planning-and-search/03_sampling-based-planning.md).
-A [behaviour tree](../08_decisions-and-task-logic/03_behaviour-trees.md) is a
+[sampling-based planning](../06_planning-and-search/02_most-used/01_sampling-based-planning.md).
+A [behaviour tree](../08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md) is a
 special kind of graph that holds the order of a task.
 
 ---
@@ -201,8 +201,8 @@ shows this with a picture.
 Three chapters of this book exist mostly because of noise and outliers.
 [Fitting and estimation](../04_fitting-and-estimation/01_overview.md) gets a clean
 shape or a steady number out of many noisy readings. The
-[Kalman filter](../04_fitting-and-estimation/04_kalman-filter.md) combines each
-new reading with what it already knew. [Random sample consensus (RANSAC)](../04_fitting-and-estimation/03_ransac.md)
+[Kalman filter](../04_fitting-and-estimation/02_most-used/03_kalman-filter.md) combines each
+new reading with what it already knew. [Random sample consensus (RANSAC)](../04_fitting-and-estimation/02_most-used/02_ransac.md)
 ignores outliers. And every technique page has a section on what goes wrong, which
 is very often about noise.
 
@@ -240,19 +240,19 @@ answer from 400 to 424 mm. The curve is shaped like a bowl. Its lowest point is 
 411.0 mm, the same as the average. That is not an accident. For the sum of squared
 differences, the lowest point is always at the average. This is the simplest case
 of **least squares**, which the
-[least-squares fitting](../04_fitting-and-estimation/02_least-squares-fitting.md)
+[least-squares fitting](../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 page uses to fit lines and planes.
 
 Cost functions appear all through this book:
 
-- In [graph search](../06_planning-and-search/02_graph-search.md), the cost of a
+- In [graph search](../06_planning-and-search/03_also-used/01_graph-search.md), the cost of a
   route is the sum of its edge lengths.
-- In [trajectory optimisation](../06_planning-and-search/04_trajectory-optimisation.md),
+- In [trajectory optimisation](../06_planning-and-search/02_most-used/03_trajectory-optimisation.md),
   the cost of a path adds up its length, its jerkiness and how close it comes to
   obstacles.
-- In [assignment and matching](../03_searching-and-matching/04_assignment-and-matching.md),
+- In [assignment and matching](../03_searching-and-matching/02_most-used/03_assignment-and-matching.md),
   the cost of matching two detections is how far apart they are.
-- In [numerical inverse kinematics](../06_planning-and-search/05_numerical-inverse-kinematics.md),
+- In [numerical inverse kinematics](../06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md),
   the cost is how far the gripper is from where you want it.
 
 When a technique gives a strange answer, the cost function is often the first
@@ -283,7 +283,7 @@ every 1 millisecond:
     send command to the joint's motor
 ```
 
-This is the shape of [proportional-integral-derivative (PID) control](../07_control-and-motion/02_pid-control.md),
+This is the shape of [proportional-integral-derivative (PID) control](../07_control-and-motion/02_most-used/01_pid-control.md),
 which explains how to work out the push.
 
 Each loop gives the technique inside it a **time budget**. At 1,000 Hz, all four
@@ -328,7 +328,7 @@ describes.
   these building blocks to compare techniques.
 - [Vectors and matrices for a robot arm](../../01_robotics-intro/02_maths/02_vectors-and-matrices.md)
   in Book 1 explains the maths behind rotations and translations.
-- [Rigid transforms](../02_geometry-and-cameras/03_rigid-transforms.md) takes
+- [Rigid transforms](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md) takes
   section 1 into three dimensions.
 - [How a model learns](../../06_neural-network-models/01_what-models-are/02_how-a-model-learns.md)
   in Book 6 shows a cost function being used to train a model.

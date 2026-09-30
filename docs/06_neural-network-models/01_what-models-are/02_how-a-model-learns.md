@@ -54,7 +54,7 @@ labels are collected.
 Learning from examples that have labels is called **supervised learning**. The
 labels supervise the model, in the sense that they tell it the right answer
 every time. Most models in this book are trained this way. The
-[reinforcement learning page](../05_movement-models/05_reinforcement-learning-policies.md)
+[reinforcement learning page](../05_movement-models/03_also-used/01_reinforcement-learning-policies.md)
 describes the main other way.
 
 ---

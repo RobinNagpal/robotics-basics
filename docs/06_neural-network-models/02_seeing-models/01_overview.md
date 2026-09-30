@@ -95,42 +95,64 @@ The other seven panels show what comes out.
 
 Here is each kind in one line, with a link to its page.
 
-1. [Image classification](02_image-classification.md) gives one name for the
+1. [Image classification](03_also-used/01_image-classification.md) gives one name for the
    whole picture, such as "mug".
-2. [Object detection](03_object-detection.md) draws a box around each object and
+2. [Object detection](02_most-used/01_object-detection.md) draws a box around each object and
    names it.
-3. [Segmentation](04_segmentation.md) marks the exact pixels that belong to each
+3. [Segmentation](02_most-used/02_segmentation.md) marks the exact pixels that belong to each
    object or each kind of thing.
-4. [Keypoints and object pose](05_keypoints-and-object-pose.md) finds named points
+4. [Keypoints and object pose](02_most-used/04_keypoints-and-object-pose.md) finds named points
    on an object, and works out which way the object faces.
-5. [Depth from pictures](06_depth-from-pictures.md) works out how far away each
+5. [Depth from pictures](03_also-used/02_depth-from-pictures.md) works out how far away each
    pixel is.
-6. [Open-vocabulary models](07_open-vocabulary-models.md) find objects that you
+6. [Open-vocabulary models](02_most-used/03_open-vocabulary-models.md) find objects that you
    describe in words, or that you point at with a click.
-7. [Tracking and motion](08_tracking-and-motion.md) follows objects and points
+7. [Tracking and motion](03_also-used/03_tracking-and-motion.md) follows objects and points
    from one picture to the next.
 
 The first three kinds build on each other. A detector contains most of a
-classifier. A segmentation model often contains a detector. So they are best read
-in order.
+classifier. A segmentation model often contains a detector.
+
+The chapter puts the seven pages into two groups. The **most used** group holds the
+four kinds that almost every robot arm with a camera relies on: object detection,
+segmentation, open-vocabulary models, and keypoints and object pose. Together they
+answer "which object, exactly where, and which way is it turned", which is what a
+pick needs. The pose page also covers following a pose through a video, called
+[6D pose tracking](02_most-used/04_keypoints-and-object-pose.md#7-following-a-pose-over-time-6d-pose-tracking).
+The **also used** group holds the three kinds that are common but needed less often:
+image classification, depth from pictures, and tracking and motion. A classifier
+gives too little detail for most picks. Depth from pictures is mainly for when a
+depth camera fails. Tracking matters only when things move.
+
+The list below shows the two groups. It is in the chapter's reading order.
+
+- Most used:
+  [object detection](02_most-used/01_object-detection.md),
+  [segmentation](02_most-used/02_segmentation.md),
+  [open-vocabulary models](02_most-used/03_open-vocabulary-models.md),
+  [keypoints and object pose](02_most-used/04_keypoints-and-object-pose.md).
+- Also used:
+  [image classification](03_also-used/01_image-classification.md),
+  [depth from pictures](03_also-used/02_depth-from-pictures.md),
+  [tracking and motion](03_also-used/03_tracking-and-motion.md).
 
 ---
 
 ## 4. How the seven kinds compare
 
 The table below compares the seven kinds. Each row is one kind. Read across a row
-to see what goes in, what comes out, and a typical use on a robot arm. The last
-column is a well-known example of that kind, which its own page explains.
+to see its group, what goes in, what comes out, and a typical use on a robot arm.
+The last column is a well-known example of that kind, which its own page explains.
 
-| Kind | What goes in | What comes out | A typical use on an arm | A well-known example |
-| --- | --- | --- | --- | --- |
-| Image classification | one picture | one name, with a score | check whether the gripper is holding something | ResNet |
-| Object detection | one picture | a box, a name and a score for each object | find each cup on a table | YOLO |
-| Segmentation | one picture | the exact pixels of each object | find the rim or the handle of a mug | Mask R-CNN |
-| Keypoints and object pose | one picture, sometimes with depth | named points, and the object's position and turn in 3D | line up a peg with a hole | FoundationPose |
-| Depth from pictures | one picture, or two side by side | a distance for every pixel | find the distance to a shiny object that a depth camera misses | Depth Anything |
-| Open-vocabulary models | one picture and some words, or a click | boxes or outlines of whatever the words describe | "pick up the red mug" | Grounding DINO, SAM |
-| Tracking and motion | a video, one picture after another | where each object or point moved | follow a part on a moving conveyor | CoTracker |
+| Kind | Group | What goes in | What comes out | A typical use on an arm | A well-known example |
+| --- | --- | --- | --- | --- | --- |
+| [Object detection](02_most-used/01_object-detection.md) | most used | one picture | a box, a name and a score for each object | find each cup on a table | YOLO |
+| [Segmentation](02_most-used/02_segmentation.md) | most used | one picture | the exact pixels of each object | find the rim or the handle of a mug | Mask R-CNN |
+| [Open-vocabulary models](02_most-used/03_open-vocabulary-models.md) | most used | one picture and some words, or a click | boxes or outlines of whatever the words describe | "pick up the red mug" | Grounding DINO, SAM |
+| [Keypoints and object pose](02_most-used/04_keypoints-and-object-pose.md) | most used | one picture, sometimes with depth; or a video, for pose tracking | named points, and the object's position and turn in 3D, once or on every frame | line up a peg with a hole | FoundationPose |
+| [Image classification](03_also-used/01_image-classification.md) | also used | one picture | one name, with a score | check whether the gripper is holding something | ResNet |
+| [Depth from pictures](03_also-used/02_depth-from-pictures.md) | also used | one picture, or two side by side | a distance for every pixel | find the distance to a shiny object that a depth camera misses | Depth Anything |
+| [Tracking and motion](03_also-used/03_tracking-and-motion.md) | also used | a video, one picture after another | where each object or point moved | follow a part on a moving conveyor | CoTracker |
 
 Two columns in the table matter most when you choose. The "what comes out" column
 tells you whether the answer is detailed enough for your job. The "what goes in"
@@ -161,7 +183,9 @@ Third, they only know what they were trained on. A model trained on kitchen phot
 may miss a metal part in a factory. It does not say "I do not know". It usually
 gives a wrong answer, or no answer. The usual fix is to collect a few hundred
 pictures of your own objects and train the model a little more on them. This is
-called **fine-tuning**. Each of the next pages says how it is done for that kind.
+called **fine-tuning**. The chapter-one page
+[fine-tuning](../01_what-models-are/07_fine-tuning.md) explains the ways to do it and
+what each costs. Each of the next pages says how it is done for that kind.
 
 ---
 
@@ -189,37 +213,45 @@ picture into facts about objects. The other kinds of model use those facts.
   of touch, force and the arm's own body. Some touch sensors produce pictures, and
   the same kinds of network read them.
 
-The page [the map of models](../01_what-models-are/06_the-map-of-models.md) shows
+The page [the map of models](../01_what-models-are/09_the-map-of-models.md) shows
 all seven kinds of model together.
 
 ---
 
 ## 7. Which page to read first
 
-If you are new to seeing models, read the pages in order. Image classification
-comes first because it is the simplest. It also explains the parts that every
-other seeing model reuses.
+If you are new to seeing models, read the most-used pages in order, starting with
+[object detection](02_most-used/01_object-detection.md). If a word such as backbone
+or score is new to you there, read
+[image classification](03_also-used/01_image-classification.md) first. It is the
+simplest seeing model, and it explains the parts that every other seeing model
+reuses.
 
 If you already know what you need, the list below points to the right page.
 
 - To find objects on a table and pick them up, read
-  [object detection](03_object-detection.md), then
-  [segmentation](04_segmentation.md).
+  [object detection](02_most-used/01_object-detection.md), then
+  [segmentation](02_most-used/02_segmentation.md).
 - To put a part into a fixture at an exact angle, read
-  [keypoints and object pose](05_keypoints-and-object-pose.md).
+  [keypoints and object pose](02_most-used/04_keypoints-and-object-pose.md).
+- To follow a part's full pose while it moves, read
+  [6D pose tracking](02_most-used/04_keypoints-and-object-pose.md#7-following-a-pose-over-time-6d-pose-tracking).
 - To measure distances with only an ordinary camera, read
-  [depth from pictures](06_depth-from-pictures.md).
+  [depth from pictures](03_also-used/02_depth-from-pictures.md).
 - To handle objects that no model was trained on, read
-  [open-vocabulary models](07_open-vocabulary-models.md).
+  [open-vocabulary models](02_most-used/03_open-vocabulary-models.md).
 - To follow objects that move, read
-  [tracking and motion](08_tracking-and-motion.md).
+  [tracking and motion](03_also-used/03_tracking-and-motion.md).
 
 ---
 
 ## 8. Where to read next
 
-The next page is [image classification](02_image-classification.md). It is the
-simplest seeing model, and it explains how a network turns pixels into a name.
+The next page is [object detection](02_most-used/01_object-detection.md), the first
+of the most-used group. It explains how a network draws a box round each object and
+names it. If you want the simplest seeing model first,
+[image classification](03_also-used/01_image-classification.md) opens the also-used
+group.
 
 For practical detail on the models you can download, their licences and their
 speed, Book 2 has two deeper documents:

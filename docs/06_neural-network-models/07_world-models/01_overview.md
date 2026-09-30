@@ -78,17 +78,25 @@ World models differ mainly in *what* they predict. Some predict a few numbers,
 some predict whole camera pictures, and some predict thousands of small pieces
 of cloth or water. This chapter has one page for each of the four main kinds.
 
-1. [Learned dynamics models](02_learned-dynamics-models.md) predict the next
+The pages are in two groups. The **most used** group has one page, learned
+dynamics models. They are the kind most often run on a real arm today, because
+they are small, fast and easy to check. The same page also shows the most common
+way to combine a physics formula with a network: keep the formula and learn only
+the part it gets wrong. The **also used** group has the other three kinds. They
+are used often in research and in new robot models, but less often on a working
+arm, because they are slower, need more data, or suit only some materials.
+
+1. [Learned dynamics models](02_most-used/01_learned-dynamics-models.md) predict the next
    state of the arm and the objects, written as a short list of numbers, from
-   the current state and an action.
-2. [Video prediction models](03_video-prediction-models.md) predict the next
-   camera pictures, pixel by pixel.
-3. [Learned simulators](04_learned-simulators.md) predict how cloth, liquids,
+   the current state and an action. Most used.
+2. [Video prediction models](03_also-used/01_video-prediction-models.md) predict the next
+   camera pictures, pixel by pixel. Also used.
+3. [Learned simulators](03_also-used/02_learned-simulators.md) predict how cloth, liquids,
    sand and other soft or loose materials move, by following many small pieces
-   of the material at once.
-4. [Latent world models](05_latent-world-models.md) squeeze each camera picture
+   of the material at once. Also used.
+4. [Latent world models](03_also-used/03_latent-world-models.md) squeeze each camera picture
    into a short code and predict how that code changes. The best-known family is
-   called Dreamer.
+   called Dreamer. Also used.
 
 The picture below shows what each kind predicts for the same kind of scene.
 
@@ -98,14 +106,15 @@ From left to right, the predictions get less like pictures and more like numbers
 except the learned simulator, which predicts the positions of many small pieces.
 
 The table below compares the four kinds. Each row is one kind. Read across a row
-to see what that kind takes in, what it gives back, and what it is best at.
+to see which group it is in, what that kind takes in, what it gives back, and what
+it is best at.
 
-| Kind | What goes in | What comes out | Best at | Main weakness |
-| --- | --- | --- | --- | --- |
-| [Learned dynamics model](02_learned-dynamics-models.md) | a few numbers about the arm and objects, and an action | the same numbers one step later | fast planning for pushing, reaching and holding | someone must first measure those numbers |
-| [Video prediction model](03_video-prediction-models.md) | recent camera pictures, and planned actions | future camera pictures | learning from ordinary video, showing a person what it expects | slow, and the pictures get blurry or wrong further ahead |
-| [Learned simulator](04_learned-simulators.md) | the positions of many small pieces of material | where each piece will be next | cloth, rope, dough, water and sand | needs the material to be turned into pieces first |
-| [Latent world model](05_latent-world-models.md) | a short code made from a camera picture, and an action | the next code, and a score for how well the task is going | practising many times inside the model | hard to check, because you cannot look at the code |
+| Kind | Group | What goes in | What comes out | Best at | Main weakness |
+| --- | --- | --- | --- | --- | --- |
+| [Learned dynamics model](02_most-used/01_learned-dynamics-models.md) | most used | a few numbers about the arm and objects, and an action | the same numbers one step later | fast planning for pushing, reaching and holding | someone must first measure those numbers |
+| [Video prediction model](03_also-used/01_video-prediction-models.md) | also used | recent camera pictures, and planned actions | future camera pictures | learning from ordinary video, showing a person what it expects | slow, and the pictures get blurry or wrong further ahead |
+| [Learned simulator](03_also-used/02_learned-simulators.md) | also used | the positions of many small pieces of material | where each piece will be next | cloth, rope, dough, water and sand | needs the material to be turned into pieces first |
+| [Latent world model](03_also-used/03_latent-world-models.md) | also used | a short code made from a camera picture, and an action | the next code, and a score for how well the task is going | practising many times inside the model | hard to check, because you cannot look at the code |
 
 ---
 
@@ -117,7 +126,7 @@ of three ways.
 The first way is **planning**. The robot imagines many possible actions, asks the
 world model what each one would do, and picks the best. It then does the first
 part of that plan, looks at the world again, and plans again. The
-[learned dynamics models](02_learned-dynamics-models.md#3-how-it-works-inside)
+[learned dynamics models](02_most-used/01_learned-dynamics-models.md#3-how-it-works-inside)
 page shows this step by step.
 
 The second way is **practising inside the model**. Another model, called a
@@ -126,7 +135,7 @@ The second way is **practising inside the model**. Another model, called a
 policies. A policy normally improves by trying things on the real arm. With a
 world model, the policy can try things inside the model's predictions instead.
 Those tries are fast and break nothing. The
-[latent world models](05_latent-world-models.md) page explains how.
+[latent world models](03_also-used/03_latent-world-models.md) page explains how.
 
 The third way is as a **training signal**. Here the world model is part of a
 policy while the policy is being trained, and it is thrown away afterwards.
@@ -154,7 +163,7 @@ of model does this for, or with, a world model".
 | [Touch and body models](../08_touch-and-body-models/01_overview.md) | A model of the arm's own body is a world model for one special object: the arm. |
 
 The last row is worth a sentence more. The
-[learned arm models](../08_touch-and-body-models/05_learned-arm-models.md) page
+[learned arm models](../08_touch-and-body-models/03_also-used/02_learned-arm-models.md) page
 predicts how the arm itself moves when its motors push. That is the same idea as
 a learned dynamics model, pointed at the arm instead of at the objects.
 
@@ -191,19 +200,22 @@ The costs are real, and they are the same for all four kinds.
   than the arm has to decide.
 
 In practice many robot teams use both. They train in a hand-written simulator,
-and they use a learned model for the parts the simulator gets wrong.
+and they use a learned model for the parts the simulator gets wrong. The
+learned dynamics page shows the simplest form of this, a
+[residual model](02_most-used/01_learned-dynamics-models.md#7-learning-only-the-part-physics-gets-wrong-residual-models),
+with a worked example of a pushed block.
 
 ---
 
 ## 7. Where to read next
 
-Start with [learned dynamics models](02_learned-dynamics-models.md). It is the
+Start with [learned dynamics models](02_most-used/01_learned-dynamics-models.md). It is the
 simplest kind, and the planning idea it explains is used by the other three.
 
-For the other chapters, the [map of models](../01_what-models-are/06_the-map-of-models.md)
+For the other chapters, the [map of models](../01_what-models-are/09_the-map-of-models.md)
 lists all seven. The two closest to this one are
 [movement models](../05_movement-models/01_overview.md), which decide what the arm
-does, and [reinforcement learning policies](../05_movement-models/05_reinforcement-learning-policies.md),
+does, and [reinforcement learning policies](../05_movement-models/03_also-used/01_reinforcement-learning-policies.md),
 which learn from trying.
 
 For a deeper and more critical view, three documents in Book 3 cover the same

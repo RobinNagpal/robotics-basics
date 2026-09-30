@@ -147,7 +147,7 @@ This technique has a name of its own. It is the simplest form of
 **nearest-neighbour search**: finding the item closest to a given point. It works
 the same for 4 mugs or for 40,000 points in a point cloud. With 40,000 points it
 becomes slow, and the
-[nearest-neighbour search](../03_searching-and-matching/02_nearest-neighbour-search.md)
+[nearest-neighbour search](../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
 page shows faster ways to do it.
 
 ---
@@ -314,18 +314,30 @@ This book sorts the techniques used on robot arms into seven categories. Each
 category answers a different question for the arm. Each category has its own
 chapter, and each chapter starts with an overview page.
 
-The table below lists the seven categories. Read each row as one category: its
-name, the question it answers, and the link to its overview.
+Inside each chapter, the technique pages are split into two groups. The
+**most used** group holds the techniques that nearly every arm program needs, or
+that matter most. The **also used** group holds techniques that are used often, but
+only for some tasks or some kinds of arm. If you are short of time, read the most
+used group of each chapter first.
 
-| Category | What it does | Start here |
-| --- | --- | --- |
-| Geometry and cameras | turns pixels, frames and joint angles into positions you can trust | [overview](../02_geometry-and-cameras/01_overview.md) |
-| Searching and matching | finds the closest thing, and decides which thing is which | [overview](../03_searching-and-matching/01_overview.md) |
-| Fitting and estimation | gets a clean shape or a steady number out of noisy measurements | [overview](../04_fitting-and-estimation/01_overview.md) |
-| Image and point cloud processing | cleans up and cuts up pictures and point clouds so objects stand out | [overview](../05_image-and-point-cloud-processing/01_overview.md) |
-| Planning and search | finds a way for the arm to get from here to there without hitting anything | [overview](../06_planning-and-search/01_overview.md) |
-| Control and motion | turns a planned path into smooth, safe motor commands | [overview](../07_control-and-motion/01_overview.md) |
-| Decisions and task logic | decides what the robot does next, and in what order | [overview](../08_decisions-and-task-logic/01_overview.md) |
+The table below lists the seven categories and all 34 technique pages. Read each
+row as one category: its name, the question it answers, the link to its overview,
+and its technique pages in the two groups.
+
+| Category | What it does | Start here | Most used | Also used |
+| --- | --- | --- | --- | --- |
+| Geometry and cameras | turns pixels, frames and joint angles into positions you can trust | [overview](../02_geometry-and-cameras/01_overview.md) | [pinhole camera model](../02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md), [rigid transforms](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md), [calibration](../02_geometry-and-cameras/02_most-used/03_calibration.md), [pose from points](../02_geometry-and-cameras/02_most-used/04_pose-from-points.md) | [multi-view geometry](../02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md) |
+| Searching and matching | finds the closest thing, and decides which thing is which | [overview](../03_searching-and-matching/01_overview.md) | [nearest-neighbour search](../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md), [iterative closest point](../03_searching-and-matching/02_most-used/02_iterative-closest-point.md), [assignment and matching](../03_searching-and-matching/02_most-used/03_assignment-and-matching.md) | [image features and matching](../03_searching-and-matching/03_also-used/01_image-features-and-matching.md) |
+| Fitting and estimation | gets a clean shape or a steady number out of noisy measurements | [overview](../04_fitting-and-estimation/01_overview.md) | [least-squares fitting](../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md), [RANSAC](../04_fitting-and-estimation/02_most-used/02_ransac.md), [Kalman filter](../04_fitting-and-estimation/02_most-used/03_kalman-filter.md), [sensor streams](../04_fitting-and-estimation/02_most-used/04_sensor-streams.md) | [system identification](../04_fitting-and-estimation/03_also-used/01_system-identification.md) |
+| Image and point cloud processing | cleans up and cuts up pictures and point clouds so objects stand out | [overview](../05_image-and-point-cloud-processing/01_overview.md) | [thresholding and colour masks](../05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md), [morphology and distance transform](../05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md), [clustering](../05_image-and-point-cloud-processing/02_most-used/03_clustering.md) | [edges and contours](../05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md), [volumetric maps](../05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md) |
+| Planning and search | finds a way for the arm to get from here to there without hitting anything | [overview](../06_planning-and-search/01_overview.md) | [sampling-based planning](../06_planning-and-search/02_most-used/01_sampling-based-planning.md), [numerical inverse kinematics](../06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md), [trajectory optimisation](../06_planning-and-search/02_most-used/03_trajectory-optimisation.md) | [graph search](../06_planning-and-search/03_also-used/01_graph-search.md), [sampling-based optimisation and MPC](../06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md), [visibility and next best view](../06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md) |
+| Control and motion | turns a planned path into smooth, safe motor commands | [overview](../07_control-and-motion/01_overview.md) | [PID control](../07_control-and-motion/02_most-used/01_pid-control.md), [trajectory generation](../07_control-and-motion/02_most-used/02_trajectory-generation.md), [arm dynamics](../07_control-and-motion/02_most-used/03_arm-dynamics.md), [safety monitoring](../07_control-and-motion/02_most-used/04_safety-monitoring.md) | [impedance and force control](../07_control-and-motion/03_also-used/01_impedance-and-force-control.md) |
+| Decisions and task logic | decides what the robot does next, and in what order | [overview](../08_decisions-and-task-logic/01_overview.md) | [finite state machines](../08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md), [behaviour trees](../08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md) | [greedy algorithms and set cover](../08_decisions-and-task-logic/03_also-used/01_greedy-algorithms-and-set-cover.md), [optimisation solvers](../08_decisions-and-task-logic/03_also-used/02_optimisation-solvers.md) |
+
+In the table, RANSAC stands for random sample consensus, a way to fit a shape while
+ignoring readings that are plainly wrong. PID stands for proportional-integral-derivative.
+MPC stands for model predictive control: planning a short way ahead, taking the first
+step, and planning again.
 
 Before those seven chapters comes this first chapter. It explains the ideas that
 every later page uses. It has four pages:
@@ -338,7 +350,7 @@ every later page uses. It has four pages:
    by its speed, its accuracy, how well it copes with bad readings and how much
    tuning it needs, and when to use a learned model instead.
 4. [The map of techniques](04_the-map-of-techniques.md). All seven categories
-   and all 24 technique pages on one page, placed on one arm task.
+   and all 34 technique pages on one page, placed on one arm task.
 
 ---
 
@@ -349,7 +361,8 @@ explained.
 
 After that, the seven category chapters can be read in any order. Each one starts
 with an overview page that says what the category is for and lists its
-techniques. Each later page in a chapter covers one technique. Those pages all
+techniques. Each later page in a chapter covers one technique. The pages sit in two
+groups, most used and also used, and the most used group comes first. Those pages all
 follow the same order:
 
 1. what question the technique answers, in one sentence, with an everyday example;

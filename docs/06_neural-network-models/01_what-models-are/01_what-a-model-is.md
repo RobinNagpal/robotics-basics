@@ -271,8 +271,14 @@ name, the question it answers for a robot arm, and the link to its overview.
 | World models | predict what will happen next if the arm does something | [overview](../07_world-models/01_overview.md) |
 | Touch and body models | make sense of touch, force and the arm's own body | [overview](../08_touch-and-body-models/01_overview.md) |
 
+Each family chapter splits its pages into two groups. The **most used** group
+holds the kinds of model that robot arm projects use most often, or that matter
+most. The **also used** group holds kinds that are used often, but less. The
+[map of models](09_the-map-of-models.md#4-every-page-in-this-book) lists every
+page of every chapter, in its group.
+
 Before those seven chapters comes this first chapter. It explains the ideas
-that every later page uses. It has six pages:
+that every later page uses. It has nine pages:
 
 1. What a model is. This page.
 2. [How a model learns](02_how-a-model-learns.md). Examples, guesses, measuring
@@ -283,8 +289,16 @@ that every later page uses. It has six pages:
    collect the examples a robot model learns from.
 5. [Running a model on a robot](05_running-a-model-on-a-robot.md). What
    happens when a trained model is used on a real arm.
-6. [The map of models](06_the-map-of-models.md). All seven families on one
-   page, and how they work together on one task.
+6. [Uncertainty and confidence](06_uncertainty-and-confidence.md). How to tell
+   when a model is unsure, and what the robot should do when it is.
+7. [Fine-tuning](07_fine-tuning.md). How to adapt a model that someone else
+   trained to your own robot and your own objects.
+8. [Classical machine learning](08_classical-machine-learning.md). Learning
+   methods that are not neural networks, and when a small dataset makes them
+   the better choice.
+9. [The map of models](09_the-map-of-models.md). All seven families on one
+   page, every page of the book in its group, and how the families work
+   together on one task.
 
 ---
 
@@ -295,13 +309,14 @@ explained. The first three pages are the base for everything else.
 
 After that, the seven family chapters can be read in any order. Each one starts
 with an overview page that says what the family is for and lists its kinds of
-model. Each later page in a chapter covers one kind of model. Those pages all
+model. Each later page in a chapter covers one kind of model. Read the pages in
+the most-used group first, then the also-used pages that fit your task. Those pages all
 follow the same order. They say what the model is, what goes in and what comes
 out, how it works inside, how it is trained, which well-known models are of
 this kind, where it is used on a robot arm, and what goes wrong.
 
 If you want a quick overview first, read the
-[map of models](06_the-map-of-models.md) next, and then come back to the
+[map of models](09_the-map-of-models.md) next, and then come back to the
 [next page](02_how-a-model-learns.md).
 
 This book explains ideas, not code. Books 2 and 3 show how to download, run and

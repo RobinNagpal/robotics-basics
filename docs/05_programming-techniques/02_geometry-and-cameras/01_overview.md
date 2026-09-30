@@ -8,14 +8,14 @@ chapter connect the two.
 The chapter is for a reader who knows what a camera, a pixel, a frame and a
 transform are, from Books 1 and 2, but who has not yet seen these ideas written
 as general methods that can be used on any arm and any camera. This page says what
-the three techniques are for, how they fit together, and how they connect to the
-rest of the book.
+the five techniques are for, how they fit together, which ones are used most, and
+how they connect to the rest of the book.
 
 ## Contents
 
 1. [What this family of techniques is for](#1-what-this-family-of-techniques-is-for)
 2. [The question it answers for an arm](#2-the-question-it-answers-for-an-arm)
-3. [The three techniques](#3-the-three-techniques)
+3. [The five techniques](#3-the-five-techniques)
 4. [How they compare](#4-how-they-compare)
 5. [Why small mistakes here matter so much](#5-why-small-mistakes-here-matter-so-much)
 6. [How this chapter connects to the others](#6-how-this-chapter-connects-to-the-others)
@@ -49,8 +49,8 @@ starting point to another.
 ## 2. The question it answers for an arm
 
 The question is: **which point in the arm's space does this pixel show?** It
-splits into three smaller questions, and each technique in this chapter answers
-one of them.
+splits into three smaller questions, and each of the first three techniques in this
+chapter answers one of them.
 
 1. Which direction does a pixel look along, and how far along that direction is
    the surface? The **pinhole camera model** answers this. It turns a pixel and a
@@ -73,6 +73,12 @@ reading says the surface is 0.340 m ahead, which gives the point in the camera's
 frame. A rigid transform then moves it into the arm base's frame, where it becomes
 (0.329, -0.258, 0.060) m. Calibration measured the numbers that both steps use.
 
+Two more techniques answer the questions that come next. When there is no depth
+reading, **pose from points** finds a whole object's position and rotation from
+the pixels of points whose places on the object are known. And **multi-view
+geometry** finds depth from two pictures taken from two known places, or from one
+picture and the fact that the point lies on the table.
+
 This is the same scene that Book 2 uses in
 [cameras: the basics](../../02_perception/01_camera/01_basics.md) and
 [finding one box](../../02_perception/01_camera/03_one-box-intro.md). The numbers
@@ -80,44 +86,68 @@ match those pages, so you can check each step against them.
 
 ---
 
-## 3. The three techniques
+## 3. The five techniques
 
-Each technique has its own page. The pages are in the order the steps happen in a
-running program, except that calibration comes last. Calibration happens first on
-a real robot, but it only makes sense once you know what it is measuring.
+Each technique has its own page. The pages sit in two groups.
 
-- [The pinhole camera model](02_pinhole-camera-model.md) is the rule for how a
+The **most used** group holds the four techniques that nearly every arm with a
+camera needs. The first three are in the order the steps happen in a running
+program, except that calibration comes third. Calibration happens first on a real
+robot, but it only makes sense once you know what it is measuring. Pose from points
+comes fourth, because it builds on all three, and calibration already uses it on
+every picture of the board.
+
+- [The pinhole camera model](02_most-used/01_pinhole-camera-model.md) is the rule for how a
   camera turns a point in the world into a pixel, and how to turn a pixel and a
   depth back into a point. It covers the four lens numbers, how many millimetres
   one pixel covers, and how to find a point with no depth reading when you know the
   table it stands on.
-- [Rigid transforms](03_rigid-transforms.md) are the rule for moving a point from
+- [Rigid transforms](02_most-used/02_rigid-transforms.md) are the rule for moving a point from
   one frame to another. They cover rotation matrices, the 4 × 4 matrix that holds a
   turn and a shift together, joining frames in a chain, undoing a transform, and
   quaternions, the four numbers most robot software uses for a rotation.
-- [Calibration](04_calibration.md) is the method for measuring the numbers the
+- [Calibration](02_most-used/03_calibration.md) is the method for measuring the numbers the
   other two need. It covers intrinsic calibration with a printed checkerboard, which
   finds the lens numbers, and hand-eye calibration, which finds where the camera
   sits relative to the arm.
+- [Pose from points](02_most-used/04_pose-from-points.md), also called
+  Perspective-n-Point (PnP), finds an object's full pose, its position and its
+  rotation, from the pixels of points whose places on the object are known. It
+  covers the reprojection error, PnP inside RANSAC for wrong matches, and why a
+  small printed marker seen face-on gives a poor rotation.
+
+The **also used** group holds one technique that many arms use, but not all. Most
+table-top arms get depth from a depth camera, so they do not need to work it out
+from two pictures themselves. Arms with a wrist camera, a stereo pair, or no depth
+sensor at all use it often.
+
+- [Multi-view geometry](03_also-used/01_multi-view-geometry.md) finds depth from two
+  pictures. It covers triangulation, epipolar lines and the essential matrix,
+  rectified stereo and disparity, height from how far a point shifts when the camera
+  slides, and depth from one camera when the point is known to lie on the table.
 
 ---
 
 ## 4. How they compare
 
-The three techniques do different jobs, so they are not alternatives to each
-other. A working arm with a camera uses all three. The table below shows, for each
-one, what goes in, what comes out, when it runs, and the most common way it goes
-wrong. Read each row as one technique.
+The first three techniques do different jobs, so they are not alternatives to each
+other. A working arm with a camera uses all three. The last two are two ways of
+getting 3D information when a depth reading is missing or not good enough. The
+table below shows, for each technique, what goes in, what comes out, when it runs,
+and the most common way it goes wrong. Read each row as one technique.
 
 | Technique | What goes in | What comes out | When it runs | The usual mistake |
 | --- | --- | --- | --- | --- |
-| [Pinhole camera model](02_pinhole-camera-model.md) | a pixel, a depth, and four lens numbers | a point in the camera's frame, in metres | for every pixel you use, on every picture | using `fx` from a different resolution than the picture |
-| [Rigid transforms](03_rigid-transforms.md) | a point, and a turn and shift for each frame on the way | the same point in another frame | every time a number crosses from one frame to another | joining two transforms in the wrong order |
-| [Calibration](04_calibration.md) | pictures of a known pattern, and the arm's joint readings | the lens numbers, and the camera's place on the arm | once at set-up, and again after anything is bumped | trusting a low error number from poor pictures |
+| [Pinhole camera model](02_most-used/01_pinhole-camera-model.md) | a pixel, a depth, and four lens numbers | a point in the camera's frame, in metres | for every pixel you use, on every picture | using `fx` from a different resolution than the picture |
+| [Rigid transforms](02_most-used/02_rigid-transforms.md) | a point, and a turn and shift for each frame on the way | the same point in another frame | every time a number crosses from one frame to another | joining two transforms in the wrong order |
+| [Calibration](02_most-used/03_calibration.md) | pictures of a known pattern, and the arm's joint readings | the lens numbers, and the camera's place on the arm | once at set-up, and again after anything is bumped | trusting a low error number from poor pictures |
+| [Pose from points](02_most-used/04_pose-from-points.md) | known points on an object, their pixels, and the lens numbers | the object's position and rotation in the camera's frame | on every picture where the object is found | trusting the rotation of a small marker seen face-on |
+| [Multi-view geometry](03_also-used/01_multi-view-geometry.md) | the same point's pixels in two pictures, and the two camera poses | the point in 3D, or a depth for every pixel | whenever two pictures of the scene are taken | a baseline too short for the distance |
 
-The first two are short formulas that run in microseconds. The third is a small
-optimisation that runs for seconds, once. But the third decides how accurate the
-first two can be, as the next section shows.
+The first two are short formulas that run in microseconds. Pose from points is a
+small search over six numbers that runs in well under a millisecond. Calibration is
+a larger optimisation that runs for seconds, once. But calibration decides how
+accurate all the others can be, as the next section shows.
 
 ---
 
@@ -155,10 +185,13 @@ chapter comes first after the introduction.
 - [Searching and matching](../03_searching-and-matching/01_overview.md) works on
   the 3D points the pinhole model makes. Nearest-neighbour search and iterative
   closest point (ICP) both need points in one shared frame. ICP's answer is itself
-  a rigid transform.
+  a rigid transform. Its page on image features finds the matched points that
+  pose from points and multi-view geometry need.
 - [Fitting and estimation](../04_fitting-and-estimation/01_overview.md) fits planes
-  and shapes to those points. Calibration is itself a fitting problem: it finds the
-  lens numbers that best explain the pictures, by least squares.
+  and shapes to those points. Its RANSAC page is how pose from points and the
+  essential matrix cope with wrong matches.
+  Calibration is itself a fitting problem: it finds the lens numbers that best
+  explain the pictures, by least squares.
 - [Image and point cloud processing](../05_image-and-point-cloud-processing/01_overview.md)
   decides which pixels belong to an object. The pinhole model then turns just those
   pixels into points.
@@ -173,19 +206,24 @@ chapter comes first after the introduction.
   candidate view.
 
 Book 6 has learned models that do parts of this job differently.
-[Depth from pictures](../../06_neural-network-models/02_seeing-models/06_depth-from-pictures.md)
-guesses a depth for every pixel from a colour picture alone, which replaces the
-depth sensor but not the pinhole model: the guessed depth still goes through the
-same formula. [Keypoints and object pose](../../06_neural-network-models/02_seeing-models/05_keypoints-and-object-pose.md)
+[Depth from pictures](../../06_neural-network-models/02_seeing-models/03_also-used/02_depth-from-pictures.md)
+guesses a depth for every pixel from a colour picture alone, or from a stereo pair,
+which replaces the depth sensor but not the pinhole model: the guessed depth still
+goes through the same formula. Multi-view geometry is the measured alternative to
+that guess. [Keypoints and object pose](../../06_neural-network-models/02_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 estimates an object's full pose, a rotation and a shift, which is a rigid transform
-in the camera's frame. Both still need the lens numbers and the camera's pose that
-calibration measures. No learned model removes the need for this chapter.
+in the camera's frame. Most of those models find keypoints and then hand them to
+[pose from points](02_most-used/04_pose-from-points.md) for the last step. Both
+kinds of model still need the lens numbers and the camera's pose that calibration
+measures. No learned model removes the need for this chapter.
 
 ---
 
 ## 7. Where to read next
 
-- Start with [the pinhole camera model](02_pinhole-camera-model.md).
+- Start with [the pinhole camera model](02_most-used/01_pinhole-camera-model.md).
+- After calibration, read [pose from points](02_most-used/04_pose-from-points.md),
+  then [multi-view geometry](03_also-used/01_multi-view-geometry.md).
 - [The map of techniques](../01_what-techniques-are/04_the-map-of-techniques.md)
   shows where this chapter sits among all seven.
 - [The building blocks](../01_what-techniques-are/02_the-building-blocks.md)

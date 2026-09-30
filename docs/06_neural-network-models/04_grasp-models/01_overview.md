@@ -103,7 +103,7 @@ The attempts can happen in two places. A real arm can try thousands of grasps on
 real objects. Or a computer can test grasps on 3D models of objects, using the rules
 of physics, with no robot at all. The second way is much faster, and most grasp
 models today learn from it. The
-[grasp quality models](05_grasp-quality-models.md#4-how-it-is-trained) page shows
+[grasp quality models](03_also-used/02_grasp-quality-models.md#4-how-it-is-trained) page shows
 both ways side by side.
 
 ---
@@ -112,22 +112,35 @@ both ways side by side.
 
 There are four kinds of grasp model. Each has its own page.
 
-1. [Top-down grasp detection](02_top-down-grasp-detection.md). The model looks at
+1. [Top-down grasp detection](03_also-used/01_top-down-grasp-detection.md). The model looks at
    one picture taken from above and draws rectangles on it. Each rectangle says
    where the two jaws should close. The gripper always comes straight down.
-2. [Six-degree-of-freedom grasps](03_six-dof-grasps.md). The model looks at a 3D
+2. [Six-degree-of-freedom grasps](02_most-used/01_six-dof-grasps.md). The model looks at a 3D
    picture of the scene and gives full grasps that can come from any direction.
    "Six degrees of freedom" means six numbers: three for the position and three
    for the direction.
-3. [Suction and affordance](04_suction-and-affordance.md). The model paints a
+3. [Suction and affordance](02_most-used/02_suction-and-affordance.md). The model paints a
    score on every part of the picture. For suction, the score says where a cup
    will seal. For affordance, it says what each part of an object is for, such as
    "hold here" or "this part cuts".
-4. [Grasp quality models](05_grasp-quality-models.md). The model is given one
+4. [Grasp quality models](03_also-used/02_grasp-quality-models.md). The model is given one
    possible grasp and says how likely it is to work. Something else proposes the
    grasps. The quality model picks the best.
 
 ---
+
+### Most used, and also used
+
+The pages of this chapter are in two groups. The first group, most used, holds
+[6-DoF grasps](02_most-used/01_six-dof-grasps.md) and
+[suction and affordance](02_most-used/02_suction-and-affordance.md). Grasp
+models that work in any direction are what most new arm projects reach for,
+and suction is the most common gripper in warehouse picking. The second group,
+also used, holds [top-down grasp detection](03_also-used/01_top-down-grasp-detection.md)
+and [grasp quality models](03_also-used/02_grasp-quality-models.md). Top-down
+detection still works well for flat bins seen from above. Quality models are
+most often met inside a larger system, scoring the grasps another method
+proposes.
 
 ## 5. The four kinds side by side
 
@@ -137,10 +150,10 @@ at.
 
 | Kind | What goes in | What comes out | Good at | Bad at |
 | --- | --- | --- | --- | --- |
-| [Top-down grasp detection](02_top-down-grasp-detection.md) | one depth picture from above | rectangles: where to close, at what angle, how wide | small and fast; runs without a graphics card | only straight-down grasps |
-| [Six-degree-of-freedom grasps](03_six-dof-grasps.md) | a point cloud of the scene | many full grasps, each with a score | cluttered bins; grasps from any side | needs a strong graphics card; strict licences |
-| [Suction and affordance](04_suction-and-affordance.md) | a colour or depth picture | a score for every pixel | flat-faced objects; knowing which part to hold | objects with no flat face; parts it has not seen labelled |
-| [Grasp quality models](05_grasp-quality-models.md) | a picture plus one proposed grasp | one number: the chance it holds | choosing the best of many grasps | slow when there are many grasps to check |
+| [Top-down grasp detection](03_also-used/01_top-down-grasp-detection.md) | one depth picture from above | rectangles: where to close, at what angle, how wide | small and fast; runs without a graphics card | only straight-down grasps |
+| [Six-degree-of-freedom grasps](02_most-used/01_six-dof-grasps.md) | a point cloud of the scene | many full grasps, each with a score | cluttered bins; grasps from any side | needs a strong graphics card; strict licences |
+| [Suction and affordance](02_most-used/02_suction-and-affordance.md) | a colour or depth picture | a score for every pixel | flat-faced objects; knowing which part to hold | objects with no flat face; parts it has not seen labelled |
+| [Grasp quality models](03_also-used/02_grasp-quality-models.md) | a picture plus one proposed grasp | one number: the chance it holds | choosing the best of many grasps | slow when there are many grasps to check |
 
 A **depth picture** is a picture where each pixel holds a distance from the camera
 instead of a colour. A **point cloud** is a list of 3D points on the surfaces the
@@ -168,7 +181,7 @@ knows nothing else. Three examples show what that leaves out.
 The usual answer is to treat the model's grasps as suggestions. Other checks throw
 away the ones that are unreachable, that would hit something, or that break a rule
 about the task. The
-[six-degree-of-freedom page](03_six-dof-grasps.md#7-what-goes-wrong) shows this
+[six-degree-of-freedom page](02_most-used/01_six-dof-grasps.md#7-what-goes-wrong) shows this
 in a picture. Book 3's
 [models that grasp](../../03_frameworks/02_gripping/04_models-that-grasp.md#9-using-a-model-as-a-candidate-generator)
 gives the checks in order.
@@ -195,7 +208,7 @@ chain and turn "pick up the red mug" into the choice of which mug. Some newer
 models join steps 3 and 4 into one. A vision-language-action model, for example,
 goes from a picture and a sentence straight to arm movements, and never gives a
 separate grasp. Those models are covered in the
-[vision-language-action models](../06_language-models/04_vision-language-action-models.md)
+[vision-language-action models](../06_language-models/02_most-used/01_vision-language-action-models.md)
 page.
 
 A separate grasp model is still the common choice in real work. It gives an answer
@@ -205,7 +218,7 @@ that a person can look at, check and filter before the arm moves.
 
 ## 8. Where to read next
 
-- Start with [top-down grasp detection](02_top-down-grasp-detection.md). It is the
+- Start with [top-down grasp detection](03_also-used/01_top-down-grasp-detection.md). It is the
   simplest kind and the easiest to picture.
 - For the full list of real grasp models, their licences, and which ones run
   without an NVIDIA graphics card, read Book 3's
@@ -215,4 +228,4 @@ that a person can look at, check and filter before the arm moves.
 - For what happens after the fingers close, read
   [holding on](../../03_frameworks/02_gripping/05_holding-on.md).
 - To see where grasp models sit among all the kinds in this book, go back to
-  [the map of models](../01_what-models-are/06_the-map-of-models.md).
+  [the map of models](../01_what-models-are/09_the-map-of-models.md).

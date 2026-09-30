@@ -83,14 +83,14 @@ every joint.
 
 This chapter has four kinds of model, one page each.
 
-- [Touch sensing models](02_touch-sensing-models.md) turn a tactile picture into
+- [Touch sensing models](03_also-used/01_touch-sensing-models.md) turn a tactile picture into
   facts about the contact: where it is, what shape it has, and how hard it
   presses.
-- [Force and slip models](03_force-and-slip-models.md) read force signals over time
+- [Force and slip models](02_most-used/01_force-and-slip-models.md) read force signals over time
   and say whether a held object is starting to slide.
-- [Collision and failure detection](04_collision-and-failure-detection.md) notices
+- [Collision and failure detection](02_most-used/02_collision-and-failure-detection.md) notices
   when something has gone wrong: the arm has hit something, or a pick has failed.
-- [Learned arm models](05_learned-arm-models.md) learn how the arm's own body
+- [Learned arm models](03_also-used/02_learned-arm-models.md) learn how the arm's own body
   behaves: how much torque each joint needs, and where the arm really is.
 
 ![A pick drawn as five moments, with the question each model answers](../../images/touch-and-body-models/overview/one-pick-five-questions.svg)
@@ -100,6 +100,18 @@ model answers the question at each moment.
 
 The first three kinds work mainly during contact. The fourth works all the time,
 because the arm always has a body, whether it touches anything or not.
+
+### Most used, and also used
+
+The pages of this chapter are in two groups. The first group, most used, holds
+[force and slip models](02_most-used/01_force-and-slip-models.md) and
+[collision and failure detection](02_most-used/02_collision-and-failure-detection.md).
+They work with the force and joint signals that most arms already have, so no
+extra hardware is needed. The second group, also used, holds
+[touch sensing models](03_also-used/01_touch-sensing-models.md) and
+[learned arm models](03_also-used/02_learned-arm-models.md). Touch sensors are
+still uncommon on arms, and a learned model of the arm itself is only worth
+building when the maker's own model is not good enough.
 
 ## 5. The four kinds side by side
 
@@ -157,7 +169,7 @@ arm it was trained on. The pages that follow return to these costs for each kind
 ## 7. How this chapter connects to the others
 
 The book has seven families of model. [The map of
-models](../01_what-models-are/06_the-map-of-models.md) lists them all. Here is how
+models](../01_what-models-are/09_the-map-of-models.md) lists them all. Here is how
 this one fits with the other six.
 
 - [Seeing models](../02_seeing-models/01_overview.md) turn a picture into names,
@@ -181,11 +193,11 @@ this one fits with the other six.
 
 ## 8. Where to read next
 
-Start with [touch sensing models](02_touch-sensing-models.md), because the slip
+Start with [touch sensing models](03_also-used/01_touch-sensing-models.md), because the slip
 page builds on the tactile pictures it explains. If your arm has no tactile sensor,
 you can go straight to [collision and failure
-detection](04_collision-and-failure-detection.md) or [learned arm
-models](05_learned-arm-models.md). Both use only the sensors an arm already has.
+detection](02_most-used/02_collision-and-failure-detection.md) or [learned arm
+models](03_also-used/02_learned-arm-models.md). Both use only the sensors an arm already has.
 
 For the hardware behind these models, read [the sensors that go on a
 gripper](../../03_frameworks/02_gripping/02_grippers-and-hardware.md#8-the-sensors-that-go-on-a-gripper)

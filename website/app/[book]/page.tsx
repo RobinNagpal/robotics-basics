@@ -54,7 +54,7 @@ export default async function BookPage({ params }: Params) {
           </div>
         </div>
         <div className="book-hero-art">
-          <BookGlyph accent={book.accent} />
+          <BookGlyph slug={book.slug} accent={book.accent} />
         </div>
       </section>
 

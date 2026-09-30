@@ -4,7 +4,7 @@ import ThemeToggle from './ThemeToggle';
 import HeaderNav from './HeaderNav';
 import type { Accent } from '@/lib/books.config';
 
-type Props = { books: { slug: string; title: string; number: number; accent: Accent }[] };
+type Props = { books: { slug: string; title: string; shortTitle: string; number: number; accent: Accent }[] };
 
 export default function Header({ books }: Props) {
   return (

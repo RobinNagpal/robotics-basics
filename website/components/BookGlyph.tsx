@@ -1,9 +1,12 @@
 import type { Accent } from '@/lib/books.config';
 
-// A small line drawing for each book's cover: frames, a camera view, an arm on a grid.
-export default function BookGlyph({ accent }: { accent: Accent }) {
+// A small line drawing for each book's cover, chosen by the book's folder name.
+// A book without its own drawing falls back to the arm on a grid.
+export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
   const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  if (accent === 'teal') {
+
+  // Book 1: two frames, and a transform from one to the other.
+  if (slug === 'robotics-intro') {
     return (
       <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
         <path d="M20 62 L20 22" />
@@ -22,7 +25,9 @@ export default function BookGlyph({ accent }: { accent: Accent }) {
       </svg>
     );
   }
-  if (accent === 'violet') {
+
+  // Book 2: a camera, its field of view, and a box found in the picture.
+  if (slug === 'perception') {
     return (
       <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
         <rect x="6" y="30" width="18" height="14" rx="3" />
@@ -35,6 +40,59 @@ export default function BookGlyph({ accent }: { accent: Accent }) {
       </svg>
     );
   }
+
+  // Book 4: programs as nodes, joined by the topics they talk over.
+  if (slug === 'ros-and-rviz') {
+    return (
+      <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
+        <rect x="8" y="12" width="26" height="16" rx="4" />
+        <rect x="8" y="52" width="26" height="16" rx="4" />
+        <rect x="86" y="32" width="26" height="16" rx="4" />
+        <path d="M34 20 Q 60 20 72 34" opacity="0.7" />
+        <path d="M34 60 Q 60 60 72 46" opacity="0.7" />
+        <path d="M72 40 L86 40" />
+        <path d="M82 37 L86 40 L82 43" />
+        <circle cx="72" cy="40" r="3" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  // Book 5: a grid with obstacles and the shortest path found around them.
+  if (slug === 'programming-techniques') {
+    return (
+      <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
+        <g opacity="0.3" strokeWidth="1">
+          <path d="M10 10 H110 M10 25 H110 M10 40 H110 M10 55 H110 M10 70 H110" />
+          <path d="M10 10 V70 M30 10 V70 M50 10 V70 M70 10 V70 M90 10 V70 M110 10 V70" />
+        </g>
+        <rect x="50" y="25" width="20" height="30" fill="currentColor" opacity="0.25" stroke="none" />
+        <rect x="30" y="55" width="20" height="15" fill="currentColor" opacity="0.25" stroke="none" />
+        <path d="M20 62 L20 47 L40 47 L40 17 L80 17 L80 32 L100 32" strokeWidth="2.2" />
+        <circle cx="20" cy="62" r="3" fill="currentColor" />
+        <circle cx="100" cy="32" r="4" />
+      </svg>
+    );
+  }
+
+  // Book 6: a small neural network, three layers of neurons joined by weights.
+  if (slug === 'neural-network-models') {
+    const left = [18, 40, 62];
+    const mid = [12, 30, 50, 68];
+    const right = [28, 52];
+    return (
+      <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
+        <g opacity="0.35" strokeWidth="1">
+          {left.flatMap((a) => mid.map((b) => <path key={`l${a}-${b}`} d={`M26 ${a} L56 ${b}`} />))}
+          {mid.flatMap((a) => right.map((b) => <path key={`r${a}-${b}`} d={`M64 ${a} L92 ${b}`} />))}
+        </g>
+        {left.map((y) => <circle key={`a${y}`} cx="22" cy={y} r="4" />)}
+        {mid.map((y) => <circle key={`b${y}`} cx="60" cy={y} r="4" />)}
+        {right.map((y) => <circle key={`c${y}`} cx="96" cy={y} r="4" fill="currentColor" />)}
+      </svg>
+    );
+  }
+
+  // Book 3, and the fallback: an arm on a grid, reaching for a part.
   return (
     <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
       <path d="M6 70 L114 70" opacity="0.5" />

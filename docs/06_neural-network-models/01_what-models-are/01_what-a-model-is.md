@@ -1,6 +1,6 @@
 # What a model is
 
-This is the first page of Book 5. The book explains the neural network models
+This is the first page of Book 6. The book explains the neural network models
 that robots, and robot arms in particular, use today. This page answers the
 first question a beginner has: what is a "model"?
 

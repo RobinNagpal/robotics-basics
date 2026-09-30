@@ -28,6 +28,12 @@
   --violet-soft: #efe9fc;
   --amber: #c2410c;
   --amber-soft: #fcebe0;
+  --blue: #1d5fc4;
+  --blue-soft: #e5eefb;
+  --green: #3f7d20;
+  --green-soft: #e9f3e1;
+  --rose: #be185d;
+  --rose-soft: #fce7f1;
 
   --accent: #1f5fbf;
   --accent-soft: #e6eefb;
@@ -58,6 +64,12 @@
   --violet-soft: rgb(169 139 255 / 0.13);
   --amber: #fb8a4c;
   --amber-soft: rgb(251 138 76 / 0.13);
+  --blue: #7aa7ff;
+  --blue-soft: rgb(122 167 255 / 0.13);
+  --green: #8fd16a;
+  --green-soft: rgb(143 209 106 / 0.12);
+  --rose: #f47eb4;
+  --rose-soft: rgb(244 126 180 / 0.13);
 
   --accent: #7aa7ff;
   --accent-soft: rgb(122 167 255 / 0.12);
@@ -66,6 +78,9 @@
 [data-accent='teal'] { --accent: var(--teal); --accent-soft: var(--teal-soft); }
 [data-accent='violet'] { --accent: var(--violet); --accent-soft: var(--violet-soft); }
 [data-accent='amber'] { --accent: var(--amber); --accent-soft: var(--amber-soft); }
+[data-accent='blue'] { --accent: var(--blue); --accent-soft: var(--blue-soft); }
+[data-accent='green'] { --accent: var(--green); --accent-soft: var(--green-soft); }
+[data-accent='rose'] { --accent: var(--rose); --accent-soft: var(--rose-soft); }
 
 /* -------------------------------------------------------------------- base */
 

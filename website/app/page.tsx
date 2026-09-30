@@ -15,11 +15,12 @@ export default function Home() {
       <section className="hero">
         <p className="eyebrow">Robotics, from first principles</p>
         <h1>
-          Learn robotics in <span className="hero-accent">five short books</span>.
+          Learn robotics in <span className="hero-accent">six short books</span>.
         </h1>
         <p className="hero-lede">
           Start with the basics of a robot arm, learn how a robot sees, then move on to the frameworks, simulators and
-          methods used to make real arms work. Every chapter comes from the robotics-basics docs and follows their
+          methods used to make real arms work, the programming techniques they are built from, and the neural network
+          models that learn what is hard to write. Every chapter comes from the robotics-basics docs and follows their
           reading order.
         </p>
         <div className="hero-stats">
@@ -41,7 +42,7 @@ export default function Home() {
           <article key={book.slug} className="book-card" data-accent={book.accent}>
             <Link href={book.url} className="book-card-link" aria-label={`Book ${book.number}: ${book.title}`} />
             <div className="book-card-cover">
-              <BookGlyph accent={book.accent} />
+              <BookGlyph slug={book.slug} accent={book.accent} />
               <span className="book-card-num">Book {book.number}</span>
             </div>
             <div className="book-card-body">
@@ -72,7 +73,7 @@ export default function Home() {
           <div>
             <span className="how-step">1</span>
             <h3>Books</h3>
-            <p>Three books, each covering one broad area. Read them in order, or go straight to the one you need.</p>
+            <p>Six books, each covering one broad area. Read them in order, or go straight to the one you need.</p>
           </div>
           <div>
             <span className="how-step">2</span>

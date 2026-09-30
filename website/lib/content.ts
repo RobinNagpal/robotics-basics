@@ -40,6 +40,7 @@ export type Book = {
   slug: string;
   number: number;
   title: string;
+  shortTitle: string;
   subtitle: string;
   description: string;
   accent: Accent;
@@ -213,6 +214,7 @@ function scan(): Library {
       slug: bookSlug,
       number: bookIndex + 1,
       title: info?.title ?? humanize(bookSlug),
+      shortTitle: info?.shortTitle ?? info?.title ?? humanize(bookSlug),
       subtitle: info?.subtitle ?? '',
       description: info?.description ?? '',
       accent: info?.accent ?? ACCENTS[bookIndex % ACCENTS.length],

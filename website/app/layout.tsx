@@ -10,7 +10,7 @@ const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', displ
 
 export const metadata: Metadata = {
   title: { default: 'Robotics Docs', template: '%s · Robotics Docs' },
-  description: 'Learn robotics from the robotics-basics docs, organised as five short books.',
+  description: 'Learn robotics from the robotics-basics docs, organised as six short books.',
 };
 
 export const viewport: Viewport = {
@@ -31,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <Header books={books.map((b) => ({ slug: b.slug, title: b.title, number: b.number, accent: b.accent }))} />
+        <Header books={books.map((b) => ({ slug: b.slug, title: b.title, shortTitle: b.shortTitle, number: b.number, accent: b.accent }))} />
         {children}
       </body>
     </html>

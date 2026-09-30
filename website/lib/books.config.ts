@@ -7,20 +7,23 @@
 // book not listed in BOOK_INFO still appears, titled from its folder name, and
 // a chapter not listed in CHAPTER_TITLES uses the title of its first document.
 
-export type Accent = 'teal' | 'violet' | 'amber';
+export type Accent = 'teal' | 'violet' | 'amber' | 'blue' | 'green' | 'rose';
 
 export type BookInfo = {
   title: string;
+  // A one- or two-word name for the header, where six full titles do not fit.
+  shortTitle: string;
   subtitle: string;
   description: string;
   accent: Accent;
 };
 
-export const ACCENTS: Accent[] = ['teal', 'violet', 'amber'];
+export const ACCENTS: Accent[] = ['teal', 'violet', 'amber', 'blue', 'green', 'rose'];
 
 export const BOOK_INFO: Record<string, BookInfo> = {
   'robotics-intro': {
     title: 'Robot Arm Basics',
+    shortTitle: 'Basics',
     subtitle: 'Python, maths, frames, kinematics and arm types',
     description:
       'Start here if you know nothing about robots. The Python and NumPy that robot code is written in, the angles, vectors and matrices an arm needs, frames and transforms, forward and inverse kinematics, and the common kinds of robot arm, with the six-joint arm in detail.',
@@ -28,6 +31,7 @@ export const BOOK_INFO: Record<string, BookInfo> = {
   },
   perception: {
     title: 'Perception',
+    shortTitle: 'Perception',
     subtitle: 'Cameras, depth and finding objects',
     description:
       'How a camera turns the world into pixels, how to turn pixels back into points, and how a robot finds an object and measures its size and pose, with the techniques, models and licences compared.',
@@ -35,6 +39,7 @@ export const BOOK_INFO: Record<string, BookInfo> = {
   },
   frameworks: {
     title: 'Frameworks & Manipulation',
+    shortTitle: 'Frameworks',
     subtitle: 'MuJoCo, Gazebo, MoveIt and training arms',
     description:
       'The tools and simulators the field is built on, MuJoCo and Gazebo among them, and what you do with them: gripping, moving an arm, programming and training one or two arms, worked case studies, and what changed at the frontier in 2026.',
@@ -42,17 +47,27 @@ export const BOOK_INFO: Record<string, BookInfo> = {
   },
   'ros-and-rviz': {
     title: 'ROS and RViz',
+    shortTitle: 'ROS',
     subtitle: 'The robot software stack and its 3D viewer',
     description:
       'What ROS is and how its programs talk to each other, one small program per idea, then a camera, an arm and the two together. It ends with RViz, the 3D viewer that shows you what the robot thinks is happening.',
-    accent: 'teal',
+    accent: 'blue',
+  },
+  'programming-techniques': {
+    title: 'Programming Techniques',
+    shortTitle: 'Techniques',
+    subtitle: 'The algorithms robot arm software is built from',
+    description:
+      'The written, language-independent techniques behind seeing, planning and moving: the pinhole camera model, transforms and calibration, nearest neighbours and matching, least squares, RANSAC and the Kalman filter, masks, contours and clustering, A*, RRT and inverse kinematics, PID and trajectories, and state machines, behaviour trees and set cover. Each says where it is used on an arm, where it fails, and which library already does it.',
+    accent: 'green',
   },
   'neural-network-models': {
     title: 'Neural Network Models',
+    shortTitle: 'Models',
     subtitle: 'Every kind of model a robot arm uses, in plain words',
     description:
       'What a model is, how it learns and how it runs on a robot, for a reader who has never met one. Then seven families of models, each with a page per kind: models that see, that work in 3D, that choose a grasp, that move the arm, that understand words, that predict what happens next, and that make sense of touch and force.',
-    accent: 'violet',
+    accent: 'rose',
   },
 };
 
@@ -84,4 +99,12 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'language-models': 'Language Models',
   'world-models': 'World Models',
   'touch-and-body-models': 'Touch and Body Models',
+  'what-techniques-are': 'What Techniques Are',
+  'geometry-and-cameras': 'Geometry and Cameras',
+  'searching-and-matching': 'Searching and Matching',
+  'fitting-and-estimation': 'Fitting and Estimation',
+  'image-and-point-cloud-processing': 'Image and Point Cloud Processing',
+  'planning-and-search': 'Planning and Search',
+  'control-and-motion': 'Control and Motion',
+  'decisions-and-task-logic': 'Decisions and Task Logic',
 };

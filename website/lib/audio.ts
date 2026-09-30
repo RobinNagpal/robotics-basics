@@ -1,49 +1,21 @@
-import fs from 'node:fs';
-import path from 'node:path';
-
 /**
- * Which pages have a recording, and how big it is.
+ * Where a page's recording would be, if it has one.
  *
- * The recordings themselves are not in this repository: they are made by
- * `narration/narrate.py` and uploaded to the same bucket the site is served
- * from, under `/audio/`. What is in the repository is the manifest that script
- * writes, which lists what exists.
+ * The site is a static export, but the recordings are not part of the build:
+ * they are made by `narration/narrate.py` and uploaded to the same bucket the
+ * site is served from, under `/audio/`. That means a page is built long before
+ * anyone knows whether its recording exists.
  *
- * The site is a static export, so it has to know at build time whether a page
- * has a recording. Asking the network at build time would tie the build to the
- * bucket, and letting the browser try and fail would show a player that then
- * vanishes. Reading a committed manifest does neither.
+ * So this returns an address rather than a fact. Every page carries a player,
+ * and the player asks the browser to load that address: if the file is there
+ * the player appears, and if it is not the player stays hidden. Uploading a
+ * recording is therefore enough to make it playable, with no rebuild and no
+ * deploy, and removing one is enough to take it away again.
+ *
+ * The address is relative, so it is fetched from whatever origin served the
+ * page and needs no cross-origin permission. It must match the key
+ * `narrate.py` writes, which is the section's own URL.
  */
-
-const MANIFEST = path.resolve(process.cwd(), '..', 'narration', 'manifest.json');
-
-type Entry = { bytes: number };
-
-let cached: Record<string, Entry> | null = null;
-
-function manifest(): Record<string, Entry> {
-  if (cached !== null) return cached;
-  try {
-    cached = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) as Record<string, Entry>;
-  } catch {
-    // No manifest yet, or an unreadable one. A book with no recordings is a
-    // normal state, so the site renders without players rather than failing.
-    cached = {};
-  }
-  return cached;
-}
-
-/**
- * The recording for a page, or null when there is none.
- *
- * `url` is the section's own address, such as `/programming-techniques/
- * fitting-and-estimation/ransac`, which is the key the narration script writes
- * the manifest under. The returned source is a relative path, so it is served
- * from whatever origin the page itself came from and needs no CORS permission.
- */
-export function audioFor(url: string): { src: string; bytes: number } | null {
-  const key = url.replace(/^\/+/, '');
-  const entry = manifest()[key];
-  if (entry === undefined) return null;
-  return { src: `/audio/${key}.mp3`, bytes: entry.bytes };
+export function audioFor(url: string): string {
+  return `/audio/${url.replace(/^\/+/, '')}.mp3`;
 }

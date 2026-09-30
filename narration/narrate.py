@@ -356,10 +356,13 @@ def narrate(page: pathlib.Path, key: str, model: str, stage: str, force: bool,
 
 
 def rebuild_manifest() -> dict:
-    """What audio exists, so the site knows which pages get a player.
+    """A record of which pages have been narrated, and how large each one is.
 
-    Built by looking at the files rather than by trusting this run, so a
-    manifest is right even after a page is narrated by hand or removed.
+    The site does not read this. Every page carries a player that asks the
+    browser for its own recording and shows itself only if one arrives, so a
+    recording becomes playable by being uploaded and needs no rebuild. This file
+    exists so that a person can see what has been made without listing a bucket,
+    and it is built by looking at the files rather than by trusting this run.
     """
     entries: dict[str, dict] = {}
     if AUDIO.exists():
@@ -377,6 +380,10 @@ def upload(bucket: str) -> None:
     and its recording come from one origin and the browser needs no permission
     to fetch across one. The deploy workflow excludes that prefix from its own
     sync, so shipping the site never deletes the recordings.
+
+    Uploading is all it takes for a page to gain a player: the page already asks
+    for this address on every visit, and a missing file is answered with a 404
+    that CloudFront is configured never to cache.
     """
     subprocess.run(
         ["aws", "s3", "sync", str(AUDIO), f"s3://{bucket}/audio/",

@@ -33,7 +33,9 @@ export default async function SectionPage({ params }: Params) {
   const { book, chapter, section, index, total, prev, next } = found;
   const { html, toc } = await renderSection(section);
   const sectionNumber = chapter.sections.indexOf(section) + 1;
-  // Null for a page that has not been narrated yet, which renders no player.
+  // Where this page's recording would be. Every page gets a player; the player
+  // shows itself only if that file actually loads, so uploading a recording is
+  // enough to make a page playable without rebuilding the site.
   const narration = audioFor(section.url);
 
   const sidebar: SidebarChapter[] = book.chapters.map((c) => ({
@@ -92,7 +94,7 @@ export default async function SectionPage({ params }: Params) {
           </div>
         </header>
 
-        {narration && <PageAudio src={narration.src} title={section.title} />}
+        <PageAudio src={narration} title={section.title} />
 
         {toc.length > 2 && (
           <details className="toc-inline">

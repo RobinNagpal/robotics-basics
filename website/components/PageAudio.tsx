@@ -11,6 +11,12 @@ import { useEffect, useRef, useState } from 'react';
  * cannot see the screen still learns what the page teaches. That is why the
  * length shown here does not match the page's reading time.
  *
+ * Every page carries this player, including pages that have no recording yet.
+ * It renders nothing until the browser has actually loaded the audio's
+ * metadata, and nothing ever again if that load fails. So a recording appearing
+ * in the bucket is enough to make a page playable, with no rebuild and no
+ * deploy, and the reader of a page without one sees no trace of it.
+ *
  * Everything is kept in one row at the top of the page, because a listener
  * reaches for it before reading rather than after.
  */
@@ -32,7 +38,9 @@ export default function PageAudio({ src, title }: { src: string; title: string }
   const [at, setAt] = useState(0);
   const [length, setLength] = useState(Number.NaN);
   const [speed, setSpeed] = useState(1);
-  const [failed, setFailed] = useState(false);
+  // Starts false and becomes true only when the browser reports a real
+  // duration, which is the one signal that says the file is there and playable.
+  const [present, setPresent] = useState(false);
 
   // Restore the chosen speed before the first play, so the opening words are
   // already at the speed the listener asked for on the previous page.
@@ -51,19 +59,20 @@ export default function PageAudio({ src, title }: { src: string; title: string }
   }, [speed]);
 
   // A new page is a new recording: stop the old one rather than letting it play
-  // on underneath a page it no longer describes.
+  // on underneath a page it no longer describes, and go back to assuming there
+  // is nothing there until this page's own file says otherwise.
   useEffect(() => {
     setPlaying(false);
     setAt(0);
     setLength(Number.NaN);
-    setFailed(false);
+    setPresent(false);
   }, [src]);
 
   function toggle() {
     const element = audio.current;
     if (element === null) return;
     if (element.paused) {
-      void element.play().catch(() => setFailed(true));
+      void element.play().catch(() => setPresent(false));
     } else {
       element.pause();
     }
@@ -84,20 +93,24 @@ export default function PageAudio({ src, title }: { src: string; title: string }
     }
   }
 
-  if (failed) return null;
-
   return (
-    <div className="page-audio" aria-label={`Listen to ${title}`}>
+    <div className="page-audio" aria-label={`Listen to ${title}`} hidden={!present}>
       <audio
         ref={audio}
         src={src}
         preload="metadata"
-        onLoadedMetadata={(e) => setLength(e.currentTarget.duration)}
+        onLoadedMetadata={(e) => {
+          const seconds = e.currentTarget.duration;
+          setLength(seconds);
+          // A duration of zero or NaN means the browser found something it
+          // could not play, which counts as no recording rather than a broken one.
+          setPresent(Number.isFinite(seconds) && seconds > 0);
+        }}
         onTimeUpdate={(e) => setAt(e.currentTarget.currentTime)}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
-        onError={() => setFailed(true)}
+        onError={() => setPresent(false)}
       />
 
       <button

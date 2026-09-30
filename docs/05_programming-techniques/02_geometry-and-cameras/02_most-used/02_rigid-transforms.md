@@ -32,6 +32,7 @@ shows where each piece is used on a real arm with a camera.
 6. [Why transforms, and what they cost](#6-why-transforms-and-what-they-cost)
 7. [The learned alternative](#7-the-learned-alternative)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -509,3 +510,87 @@ to the tool's position. So the transforms still do the main work.
   uses slerp to move the gripper smoothly between orientations.
 - Book 3's [frames, conventions, and the bug class that comes from mixing them](../../../03_frameworks/03_arm-movement/08_frames-and-conventions.md)
   goes much deeper into the conventions and how to check them.
+
+---
+
+## 9. Using it in Python
+
+Section 2 built a transform by hand, joined two of them, undid one, and blended
+two orientations, and section 5 listed the libraries that already do all of that.
+This section shows the two you are most likely to use in Python, because they
+answer two different questions. SciPy answers "what is this rotation in another
+form", while tf2 answers "where is this frame right now". After reading it you
+should know which of the two a given line of your program needs.
+
+SciPy's `Rotation` class converts between matrices, quaternions, axis-angle and
+Euler angles, and NumPy holds the 4 by 4 matrix and multiplies it.
+
+```python
+import numpy as np
+from scipy.spatial.transform import Rotation, Slerp
+
+def make_transform(quaternion_xyzw, translation):
+    T = np.eye(4)
+    T[:3, :3] = Rotation.from_quat(quaternion_xyzw).as_matrix()
+    T[:3, 3] = translation
+    return T
+
+T_base_flange = make_transform([0.0, 0.0, 0.0, 1.0], [0.40, 0.10, 0.30])
+T_flange_camera = make_transform([0.0, 0.7071, 0.0, 0.7071], [0.05, 0.0, 0.02])
+
+T_base_camera = T_base_flange @ T_flange_camera     # join: read right to left
+T_camera_base = np.linalg.inv(T_base_camera)        # undo
+
+point_camera = np.array([0.064, -0.041, 0.340, 1.0])   # the 1.0 applies the shift
+point_base = (T_base_camera @ point_camera)[:3]
+
+# Blending two orientations along the shortest turn, which is slerp.
+ends = Rotation.from_quat([[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.7071, 0.7071]])
+halfway = Slerp([0.0, 1.0], ends)(0.5)
+print(halfway.as_euler("xyz", degrees=True))        # [0. 0. 45.]
+```
+
+On a running robot you do not build those matrices yourself, because every part of
+the robot already publishes where it is. tf2 collects all of that into one tree and
+joins the chain for you.
+
+```python
+import rclpy, tf2_ros
+from geometry_msgs.msg import PointStamped
+from tf2_geometry_msgs import do_transform_point
+
+buffer = tf2_ros.Buffer()
+listener = tf2_ros.TransformListener(buffer, node)      # node is your rclpy node
+
+transform = buffer.lookup_transform("base_link", "camera_optical_frame",
+                                    rclpy.time.Time())  # the latest available
+point_base = do_transform_point(stamped_point, transform)
+```
+
+The libraries do three things that are easy to get wrong by hand. SciPy converts
+between the four ways of writing a turn without you writing a single sine, and its
+`Slerp` blends along the shortest turn rather than through the long way round. tf2
+joins every link in the chain from the camera to the base, including the joints that
+moved since the last picture, and it can give you the chain as it was at the moment
+the picture was taken rather than as it is now, which matters on a moving arm.
+
+What you still write yourself is the naming. Nothing in either library records that
+`T_base_camera` means "the camera's frame expressed in the base frame", so the
+direction of every transform lives only in your variable names and your head. The
+order in `T_base_flange @ T_flange_camera` is yours to get right, and writing it
+with the matching frame names touching, as above, is the cheapest way to check it.
+You also have to wrap `lookup_transform` in a `try` block for
+`tf2_ros.LookupException` and `tf2_ros.ExtrapolationException`, because the tree is
+incomplete for the first moments after start-up and a transform can be asked for
+too far in the past.
+
+What you have to decide or measure is the quaternion order and the frame names.
+SciPy's `from_quat` takes x, y, z, w in that order, while ROS messages, Eigen's
+`Quaterniond` constructor and many papers put w first, and a swapped quaternion
+gives a rotation that is wrong without being obviously wrong. The frame names must
+match what the robot description publishes exactly, letter for letter, and the
+numbers inside `T_flange_camera` come from
+[hand-eye calibration](03_calibration.md#3-hand-eye-calibration-where-the-camera-is-on-the-arm)
+rather than from a drawing. The one test worth writing is the one section 4
+describes: transform a point you have measured with a ruler, and check the answer
+in millimetres.

@@ -28,6 +28,7 @@ explains.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -349,3 +350,62 @@ no short description, or when one model must handle many kinds of object.
   prediction models.
 - For the current state of the field, read Book 3's
   [simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#4-learned-world-models).
+---
+
+## 11. Using it in Python
+
+This page has described models that draw the next camera pictures. Of the four kinds in
+this chapter, this is the only one you can download ready-made and run today, so this
+section shows how. After it you will know how to get a predicted video out of a model,
+and, just as importantly, what that video will not tell you.
+
+The model is NVIDIA's Cosmos, from [section 5](#5-well-known-models-of-this-kind), and
+the library is `diffusers`, from Hugging Face, which is the same library people use for
+picture-drawing models in general. You install it with `pip install diffusers
+transformers accelerate torch`. The code below is the Image2World example from the
+library's own documentation, with the prompt changed to a robot scene.
+
+```python
+import torch
+from diffusers import Cosmos2_5_PredictBasePipeline
+from diffusers.utils import export_to_video, load_image
+
+pipe = Cosmos2_5_PredictBasePipeline.from_pretrained(
+    "nvidia/Cosmos-Predict2.5-2B",
+    revision="diffusers/base/post-trained",
+    torch_dtype=torch.bfloat16,
+)
+pipe = pipe.to("cuda")
+
+frames = pipe(
+    image=load_image("table.jpg"),   # the one real picture the prediction starts from
+    video=None,
+    prompt="A robot arm pushes the red cube to the right across the table.",
+    num_frames=93,
+    generator=torch.Generator().manual_seed(1),
+).frames[0]
+
+export_to_video(frames, "prediction.mp4", fps=16)
+```
+
+Now read that code against [section 2](#2-what-goes-in-and-what-comes-out), because the
+difference matters. The action goes in as a sentence, not as numbers, so this model is
+not action-conditioned in the sense that section described. It shows you *a* future that
+matches your words, and it cannot show you the future that a particular 3 cm push would
+cause. Every openly downloadable video world model in 2026 works this way, and the
+action-conditioned models that Visual Foresight planned with are research code from
+individual papers, with no package to install. So you can generate video today, and you
+cannot plan pushes with it today.
+
+The pretrained model gives you an enormous amount: everything about how objects fall,
+slide, bend and cast shadows, learned from more video than you could ever record.
+
+What you write is the sentence, the loop that calls the model, and anything that reads
+the predicted frames. That last part is a whole model of its own, because turning
+predicted pictures into arm commands needs the inverse dynamics model from
+[section 3](#four-ways-a-robot-uses-the-pictures), and nothing above provides one.
+
+What you decide is whether the cost is worth it. The `"cuda"` in the code is not
+optional, because this model needs a large NVIDIA graphics card, and one call takes
+a long time compared with an arm's control loop. So people use these models to make
+training data overnight, not to decide the next push.

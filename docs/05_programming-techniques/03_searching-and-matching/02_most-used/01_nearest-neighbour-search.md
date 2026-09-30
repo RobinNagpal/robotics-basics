@@ -33,6 +33,7 @@ other two pages, [iterative closest point](02_iterative-closest-point.md) and
 6. [Why a k-d tree, and what it costs](#6-why-a-k-d-tree-and-what-it-costs)
 7. [The learned alternative](#7-the-learned-alternative)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -418,3 +419,75 @@ the most similar stored examples.
   fits the plane through each point's neighbours to get its normal.
 - Book 2's [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md#31-nearest-neighbour-with-a-gate)
   uses nearest neighbour with a gate to match objects over time.
+
+---
+
+## 9. Using it in Python
+
+Section 2 built and searched a k-d tree by hand and section 5 listed the libraries
+that already have one. This section shows the two you are most likely to use, and
+they differ in an important way: SciPy is the easier one to start with, while
+Open3D is the one you will meet inside point cloud code. After reading it you should
+be able to run all three kinds of search from section 2, and you should know the one
+difference between the two libraries that quietly breaks programs.
+
+SciPy first, on a set of 3D points held as an array with one row per point.
+
+```python
+import numpy as np
+from scipy.spatial import KDTree
+
+points = np.load("cloud.npy")          # shape (n, 3)
+tree = KDTree(points)                  # built once, then queried many times
+
+# The single nearest point to one query.
+distance, index = tree.query(np.array([0.25, 0.10, 0.06]), k=1)
+
+# The k nearest, for working out which way a surface faces.
+distances, indices = tree.query(points, k=8)          # every point at once
+
+# Every point within a radius, which returns a list because the count varies.
+neighbours = tree.query_ball_point(np.array([0.25, 0.10, 0.06]), r=0.02)
+
+# The k nearest, but nothing further than a limit: missing answers come back as
+# an infinite distance and an index of len(points).
+distances, indices = tree.query(points, k=8, distance_upper_bound=0.02)
+```
+
+Open3D holds the tree beside the point cloud, which is convenient when the points
+came from a depth camera in the first place.
+
+```python
+import open3d as o3d
+
+cloud = o3d.io.read_point_cloud("scan.ply")
+kdtree = o3d.geometry.KDTreeFlann(cloud)
+
+count, indices, squared_distances = kdtree.search_knn_vector_3d(cloud.points[0], 8)
+count, indices, squared_distances = kdtree.search_hybrid_vector_3d(
+    cloud.points[0], radius=0.02, max_nn=8)        # the k nearest within a radius
+```
+
+The libraries do the whole of section 2 for you. They choose the splitting planes,
+build the tree, and prune the boxes that cannot hold the answer, and SciPy will
+answer a whole array of queries in one call, which matters because one query per
+Python loop iteration is slower than the search itself. Open3D's
+`search_hybrid_vector_3d` is the "k nearest within a radius" combination that
+section 2 described, which is the one normal estimation actually wants.
+
+What you still write yourself is the decision about what to do with the answer. The
+tree always returns a nearest point, even when that point is on the other side of
+the table, so you write the comparison that rejects it. You also write the rebuild,
+because a k-d tree is built for a fixed set of points and a new camera picture means
+a new tree, which for a few hundred thousand points takes longer than the searches
+do.
+
+What you have to decide or measure is the radius, and one detail of the libraries
+will bite you if you do not notice it. The radius or the distance limit is a real
+distance in the units of your points, so 0.02 means two centimetres if the points
+are in metres, and it should come from the size of the thing you are looking for
+rather than from trial and error. The detail is that SciPy returns ordinary
+distances while Open3D returns squared distances, so a threshold of 0.02 in SciPy
+corresponds to 0.0004 in Open3D. Comparing an Open3D result against an unsquared
+threshold does not raise an error, and it silently accepts neighbours far further
+away than you meant.

@@ -54,6 +54,7 @@ book's two-joint arm, and sections 4 and 6 come from
 10. [Why sampling, and what it costs](#10-why-sampling-and-what-it-costs)
 11. [The learned alternative](#11-the-learned-alternative)
 12. [Where to read next](#12-where-to-read-next)
+13. [Using it in Python](#13-using-it-in-python)
 
 ---
 
@@ -876,3 +877,91 @@ route.
   is the step that every RRT try uses to find the closest node.
 - Book 3's [planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md)
   covers MoveIt's defaults, the planning scene, and when planning is the wrong tool.
+
+---
+
+## 13. Using it in Python
+
+Section 5 gave the sampler as pseudocode, section 4 explained how a collision
+checker answers, and section 9 said that OMPL's Python bindings are the most
+direct route to trying the ideas. This section is that route. After it you will
+know what a sampler asks you for, and you will see that the interesting code is
+not the planner but the function you hand it.
+
+The program below plans for a six-joint arm with OMPL. The shape of the calls is
+taken from OMPL's own Python demos, which ship in the library's `demos`
+directory, and the bindings have to be built with OMPL rather than installed
+with `pip`. The collision check uses Pinocchio, which reads your arm's URDF
+description file and answers the one question a sampler asks.
+
+```python
+import numpy as np
+import pinocchio as pin
+from ompl import base as ob
+from ompl import geometric as og
+
+# The arm, and the shapes that must not touch each other.
+model = pin.buildModelFromUrdf("arm.urdf")
+geometry = pin.buildGeomFromUrdf(model, "arm.urdf", pin.GeometryType.COLLISION)
+geometry.addAllCollisionPairs()
+data, geometry_data = model.createData(), geometry.createData()
+
+def is_clear(state):
+    """The only question the sampler asks: is this configuration free?"""
+    q = np.array([state[i] for i in range(model.nq)])
+    return not pin.computeCollisions(model, data, geometry, geometry_data, q, True)
+
+# One dimension per joint, bounded by that joint's limits.
+space = ob.RealVectorStateSpace(model.nq)
+bounds = ob.RealVectorBounds(model.nq)
+for i in range(model.nq):
+    bounds.setLow(i, float(model.lowerPositionLimit[i]))
+    bounds.setHigh(i, float(model.upperPositionLimit[i]))
+space.setBounds(bounds)
+
+setup = og.SimpleSetup(space)
+setup.setStateValidityChecker(is_clear)
+setup.setPlanner(og.RRTConnect(setup.getSpaceInformation()))
+
+start, goal = space.allocState(), space.allocState()
+for i in range(model.nq):                 # start_angles and goal_angles are yours
+    start[i] = start_angles[i]
+    goal[i] = goal_angles[i]
+setup.setStartAndGoalStates(start, goal)
+
+if setup.solve(5.0):                  # five seconds to find something
+    setup.simplifySolution()          # the shortcutting from section 5
+    path = setup.getSolutionPath()
+    path.interpolate()                # fill in points between the waypoints
+```
+
+OMPL does the sampling, the tree growing, the nearest-neighbour search inside
+the tree, and the shortcutting afterwards. `RRTConnect` is the two-tree version
+from section 5, and swapping it for `og.PRM` or `og.RRTstar` is a one-line
+change, which is the reason a library is worth using here. Pinocchio does the
+forward kinematics and the shape-against-shape tests from section 4, using the
+boxes and meshes named in your own URDF file.
+
+What you still have to write is the bridge between them, and section 3 explains
+why that bridge is the whole job. OMPL brings no collision checker of its own,
+so `is_clear` is yours, and everything about the difficulty of planning lives in
+that function: how fast it is, whether it includes the table and the objects on
+the table as well as the arm's own links, and whether it checks the gripper's
+payload. The function above checks only the arm against itself and against
+whatever is in the URDF, so a real workcell needs the obstacles added to the
+geometry model too. You also write the conversion between OMPL's state and your
+own array of joint angles, which is the `state[i]` loop, and it is worth writing
+carefully because it runs thousands of times per plan.
+
+What you have to decide or measure is the description of your robot and three
+numbers. The joint limits come from the URDF, so they are only as right as that
+file is. The five seconds in `solve` is your patience, and section 8 explains
+that a sampler that fails in five seconds may succeed in thirty, so the number
+is a policy rather than a fact. The state validity checking resolution, set with
+`setup.getSpaceInformation().setStateValidityCheckingResolution(0.01)`, decides
+how finely a motion between two samples is checked, and section 4 explains that
+too coarse a value lets the arm pass through a thin obstacle between two checked
+points. Finally you decide what clearance you want, because `computeCollisions`
+answers touching or not touching, and an arm that plans to within a millimetre
+of a real table will hit it, so you either inflate the shapes in the URDF or use
+`pin.computeDistances` and insist on a margin.

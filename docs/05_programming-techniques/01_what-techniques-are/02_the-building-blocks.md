@@ -30,6 +30,7 @@ The six ingredients are these, and each of them gets its own section below:
 6. [Loops that run at a rate](#6-loops-that-run-at-a-rate)
 7. [Where each building block appears in this book](#7-where-each-building-block-appears-in-this-book)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -358,3 +359,69 @@ describes.
   section 1 into three dimensions.
 - [How a model learns](../../06_learned-models/01_what-models-are/02_how-a-model-learns.md)
   in Book 6 shows a cost function being used to train a model.
+
+---
+
+## 9. Using it in Python
+
+The six sections above described the six ingredients with arithmetic and
+pictures, and section 7 said which chapters use each one. This section shows two
+of the six as real Python, so that you can see what they look like in a file. The
+two are frames and transforms from section 1 and cost functions from section 5,
+because those are the two you meet first in any arm program, and both are one
+library call rather than a page of code.
+
+The libraries are SciPy, whose `Rotation` class converts between the different
+ways of writing a turn, and NumPy, which does the matrix multiplication and the
+whole-array arithmetic. The numbers below are the camera-to-base example from
+section 1, so the answer should be the mug at (280, 150).
+
+```python
+import numpy as np
+from scipy.spatial.transform import Rotation
+
+# Ingredient 1: the camera's frame in the base frame, packed into one 4 x 4 matrix.
+T_base_camera = np.eye(4)
+T_base_camera[:3, :3] = Rotation.from_euler("z", 90, degrees=True).as_matrix()
+T_base_camera[:3, 3] = [400.0, 100.0, 0.0]        # millimetres
+
+mug_camera = np.array([50.0, 120.0, 0.0, 1.0])   # the trailing 1.0 applies the shift
+mug_base = T_base_camera @ mug_camera
+print(mug_base[:3])                               # [280. 150.   0.]
+
+# Ingredient 5: the cost of one possible answer, over the 20 noisy readings.
+readings = np.loadtxt("mug_distances_mm.txt")     # 20 numbers
+
+def cost(answer):
+    return np.sum((readings - answer) ** 2)       # sum of squared differences
+```
+
+The libraries do two things for you here. SciPy turns 90 degrees about the z axis
+into the nine numbers of a rotation matrix, and it will just as happily read that
+turn back out as a quaternion or as three angles, which saves you writing sines
+and cosines and getting a sign wrong. NumPy then applies the 4 by 4 matrix with a
+single `@`, and subtracts one number from all 20 readings without a loop.
+
+What you still write yourself is the bookkeeping, and it is the part that goes
+wrong. Nothing in NumPy knows that `T_base_camera` means "the camera's frame
+expressed in the base frame" rather than the other way round, so if you build it
+backwards the code runs and gives a plausible wrong answer. The same is true of
+the order when two transforms are joined, and of the cost function, because
+`cost` is your definition of what "best" means and the technique will faithfully
+find the smallest value of whatever you wrote.
+
+What you have to decide or measure is where the camera actually is. The 400, the
+100 and the 90 degrees in that code came from a measurement, and
+[calibration](../02_geometry-and-cameras/02_most-used/03_calibration.md) is the
+technique that makes them accurate, because an error of one degree in the angle
+costs about 6 mm at a third of a metre. For the cost function you have to decide
+whether squaring is right at all, since squaring makes one wild reading count a
+hundred times more than a reading 10 times closer, which is exactly the outlier
+problem section 4 described.
+
+The other four ingredients also come ready-made, and each one is named on the
+page that uses it: the graph search page for graphs, the
+[Kalman filter](../04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+page for noise and uncertainty, and the
+[PID control](../07_control-and-motion/02_most-used/01_pid-control.md) page for
+loops that run at a rate.

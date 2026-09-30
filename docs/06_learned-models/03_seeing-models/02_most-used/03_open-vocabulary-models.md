@@ -24,6 +24,7 @@ general-purpose picture features.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -336,3 +337,88 @@ object by its place, such as the nearest one, but never by its name.
   [models that find](../../../02_perception/02_object-perception/04_models-that-find.md).
 - For how these models fit with larger robot models, read
   [foundation models](../../../03_frameworks/08_frontier/02_foundation-models.md).
+
+---
+
+## 11. Using it in Python
+
+The page has explained that these models take a phrase instead of a fixed list of
+classes, and that Grounding DINO turns words into boxes while SAM turns a box into
+an outline. This section runs both of them. After reading it you will be able to
+find an object by typing its name, with no training and no class list at all.
+
+Grounding DINO is in Hugging Face `transformers`, which is the package that holds
+most published research models behind one set of class names.
+
+```python
+import torch
+from PIL import Image
+from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
+
+model_id = "IDEA-Research/grounding-dino-tiny"
+processor = AutoProcessor.from_pretrained(model_id)
+model = AutoModelForZeroShotObjectDetection.from_pretrained(model_id)
+
+image = Image.open("table.jpg")
+text_labels = [["a blue mug", "a bottle"]]   # one list of phrases per picture
+
+inputs = processor(images=image, text=text_labels, return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs)
+
+result = processor.post_process_grounded_object_detection(
+    outputs,
+    threshold=0.4,          # how sure the model must be about the box
+    text_threshold=0.3,     # how well the words must match
+    target_sizes=[(image.height, image.width)],
+)[0]
+
+for box, score, text_label in zip(result["boxes"], result["scores"],
+                                  result["text_labels"]):
+    print(text_label, round(score.item(), 3), [round(x, 1) for x in box.tolist()])
+```
+
+To turn one of those boxes into an exact outline, which is the Grounded-SAM pairing
+of [section 5](#5-well-known-models), you pass the box to SAM. Meta releases SAM as
+the `segment_anything` package, and you download the checkpoint file yourself.
+
+```python
+import numpy as np
+from segment_anything import SamPredictor, sam_model_registry
+
+build_sam = sam_model_registry["vit_b"]        # "vit_b" is the smallest of the three
+sam = build_sam(checkpoint="sam_vit_b_01ec64.pth")
+predictor = SamPredictor(sam)
+predictor.set_image(np.array(image))      # an RGB picture as a NumPy array
+
+masks, scores, _ = predictor.predict(
+    box=np.array(result["boxes"][0].tolist()),   # the box as left, top, right, bottom
+    multimask_output=False,
+)
+outline = masks[0]                        # one true-or-false value per pixel
+```
+
+What the pretrained models give you out of the box is the thing this page is about,
+because neither model was trained on your objects and neither needs to be. You type
+"a blue mug" and you get a box, and you pass that box on and get the mug's exact
+outline. There is no class list to edit and no labelling to do, and for a robot
+that must handle objects nobody planned for, that is a large amount of work you
+never do.
+
+What you still have to write yourself is the same step as always, from pixels to
+metres to the arm's frame, and one extra piece that is particular to this kind of
+model: the phrase. Something in your program has to decide that the instruction
+"pick up the blue mug" becomes the phrase "a blue mug", and something has to check
+the answer, because these models return a confident box for a phrase that matches
+nothing well. A rough check is to compare the best score with the second best, and
+to refuse when they are close.
+
+What you have to decide is the two thresholds above, and they do different jobs, so
+you tune them separately. `threshold` controls how sure the model must be that
+there is an object there, while `text_threshold` controls how well the words must
+match. You also decide whether you can afford the speed, because Grounding DINO is
+far slower than YOLO and does not keep up with a live camera on an ordinary
+processor, so a common pattern is to run it once to find the object and then track
+that object with something faster. Finally you decide on the licence, because as
+[section 5](#5-well-known-models) says these models do not all allow commercial
+use.

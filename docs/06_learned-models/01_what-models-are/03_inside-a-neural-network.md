@@ -30,6 +30,7 @@ pictures is worked out in full.
 9. [How big a model is: parameters](#9-how-big-a-model-is-parameters)
 10. [Why these layers, and what they cost](#10-why-these-layers-and-what-they-cost)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -600,3 +601,59 @@ NVIDIA graphics card.
 - [Foundation models](../../03_frameworks/08_frontier/02_foundation-models.md)
   in Book 3 describes today's very large models for robots, which are built
   from the layers on this page.
+
+---
+
+## 12. Using it in Python
+
+Section 1 worked one neuron out by hand, with the inputs 0.8, 0.2 and 0.5 and
+the weights +0.9, -0.4 and +0.3, and section 9 counted a model's parameters.
+This section builds the same kind of layer in PyTorch, so that you can see that
+the names in this chapter are the names of real classes. It shows the shape of
+the idea rather than a model worth training, because a network this small learns
+nothing useful.
+
+```python
+import torch
+from torch import nn
+
+network = nn.Sequential(
+    nn.Linear(3, 4),   # section 2's layer: 3 inputs into 4 neurons
+    nn.ReLU(),         # section 1's rule: below 0 becomes 0
+    nn.Linear(4, 2),
+)
+
+inputs = torch.tensor([[0.8, 0.2, 0.5]])              # one example, three numbers
+print(network(inputs).shape)                          # torch.Size([1, 2])
+print(sum(p.numel() for p in network.parameters()))   # 26
+
+picture = torch.zeros(1, 3, 64, 64)   # one colour picture, 64 rows of 64 columns
+conv = nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1)
+print(conv(picture).shape)            # torch.Size([1, 16, 64, 64])
+```
+
+The number 26 is section 9's parameter count for this network, and you can check
+it by hand. The first layer has 3 x 4 = 12 weights and 4 biases, and the second
+has 4 x 2 = 8 weights and 2 biases, which comes to 26. The convolutional layer
+turns 3 colour channels into 16 feature maps of the same height and width,
+because `padding=1` keeps the edges, and that is section 4's small pattern
+detector as a single line.
+
+The library gives you every layer type this page described, together with the
+arithmetic and the random starting weights. Section 5's transformer block is
+`nn.TransformerEncoderLayer`, its attention on its own is
+`nn.MultiheadAttention`, section 6's embedding table is `nn.Embedding`, and
+section 8's recurrent layer is `nn.LSTM`. You never write the multiplying and
+adding yourself.
+
+What you write is the arrangement: which layers, in what order, with what
+widths. In practice almost nobody invents an arrangement, because a published
+one that already works on a similar problem is a safer starting point, and
+`torchvision` and Hugging Face's `transformers` package ship many of them ready
+built.
+
+What you have to decide is how many layers and how wide each one is, which
+activation to use, and which layer type suits your input. Section 2 explained
+why depth helps, and section 9 explained what depth and width cost, because the
+parameter count follows directly from those two numbers and it sets how much
+memory the model needs and how much data it takes to train.

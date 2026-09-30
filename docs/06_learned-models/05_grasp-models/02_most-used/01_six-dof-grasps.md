@@ -29,6 +29,7 @@ first.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -351,3 +352,78 @@ the next object could be anything, lying at any angle in clutter.
     covers what moves the arm to the grasp once it is chosen.
 - Book 3's [models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md)
     has the full list of models, licences and hardware needs.
+
+---
+
+## 11. Using it in Python
+
+Sections 1 to 4 explained what a 6-DoF grasp model takes in and how it is trained,
+and section 5 named the real models. This section shows how one of them is actually
+run, so that after reading it you will know what the download contains, what it
+expects from you, and why the five lines of model code are the easy part.
+
+There is no `pip install graspnet` that gives you a working 6-DoF grasp model.
+Every model in section 5 is a research repository that you clone, and the code below
+is the shape of the demo program in
+[graspnet-baseline](https://github.com/graspnet/graspnet-baseline), the reference
+model for the GraspNet-1Billion dataset. The imports `graspnet` and
+`collision_detector` are files inside that repository, not installed packages, so
+this code only runs from inside the clone.
+
+```python
+import torch
+from graspnetAPI import GraspGroup
+from graspnet import GraspNet, pred_decode              # files in the cloned repository
+from collision_detector import ModelFreeCollisionDetector
+
+net = GraspNet(input_feature_dim=0, num_view=300, num_angle=12, num_depth=4,
+               cylinder_radius=0.05, hmin=-0.02, hmax_list=[0.01, 0.02, 0.03, 0.04],
+               is_training=False)
+net.load_state_dict(torch.load("checkpoint-rs.tar")["model_state_dict"])
+net.eval().to("cuda")
+
+with torch.no_grad():
+    # points has shape (1, 20000, 3): one batch of 20,000 sampled points, in metres
+    end_points = net({"point_clouds": points})
+    gg = GraspGroup(pred_decode(end_points)[0].detach().cpu().numpy())
+
+hits = ModelFreeCollisionDetector(cloud, voxel_size=0.01).detect(
+    gg, approach_dist=0.05, collision_thresh=0.01)
+gg = gg[~hits].nms().sort_by_score()
+```
+
+The repository gives you the network, the trained weights and the decoding step.
+`pred_decode` is what turns the network's raw numbers into grasps you can read, and
+without it the output means nothing. The collision detector is also included, and it
+is worth understanding what it checks: it puts a box the shape of the gripper at
+each grasp and counts how many points of the cloud fall inside it, so it catches a
+gripper that would push through a neighbouring object. Two sets of weights are
+published, `checkpoint-rs.tar` trained on RealSense pictures and
+`checkpoint-kn.tar` trained on Kinect pictures, and the authors recommend the
+RealSense one because it transfers better.
+
+What you have to supply is everything before and after those lines. You need the
+point cloud in `points`, which means a depth camera, its intrinsic parameters, and
+the few lines that turn each depth pixel into a 3D point. You need to sample or pad
+the cloud to exactly the number of points the network was built for, which is 20,000
+here, and to mask out the floor and the walls of the bin first, or the model will
+propose grasps on them. You need `cloud` for the collision check, as a plain array
+of every point rather than the sampled subset. After the model answers, you still
+have to move the grasps into the robot's base frame with your own calibration, check
+that the arm can reach them, and write the approach, close and lift motion.
+
+The environment is itself a cost you have to accept. The repository needs an NVIDIA
+graphics card, because it compiles two CUDA extensions, `pointnet2` and `knn`,
+before anything runs. AnyGrasp, the strongest model of this kind, is stricter again:
+it ships as a compiled library that you call as
+`detector.get_grasp(points, optional_params)` after
+`from gsnet import create_detector`, and it will not start without a licence key
+tied to the machine it runs on. Neither of these runs on an Apple Silicon Mac.
+
+The decision that matters most is whether the gripper the model learned is close
+enough to yours. These weights were trained on the two-finger gripper of the
+GraspNet-1Billion dataset, so the `width` on every grasp is that gripper's opening,
+in metres. If your gripper opens less far, you throw those grasps away and keep
+fewer candidates; if your fingers are longer or thicker than the ones the collision
+detector assumes, a grasp it passed may still collide. Nothing in the download knows
+your gripper, and correcting for it is your work, not the model's.

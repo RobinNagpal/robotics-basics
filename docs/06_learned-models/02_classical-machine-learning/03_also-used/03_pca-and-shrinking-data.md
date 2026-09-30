@@ -36,6 +36,7 @@ in it is known. But the method itself is real, and it is written in NumPy.
 9. [Why PCA, and what it costs](#9-why-pca-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -495,3 +496,52 @@ do not know which features matter, and you have recordings to learn from.
   uses its normals to line up two scans.
 - The [overview of classical machine learning](../01_overview.md) puts PCA next
   to the other methods of this chapter.
+
+---
+
+## 12. Using it in Python
+
+Section 2 wrote the whole method in six lines of NumPy, and section 8 said that
+scikit-learn has it packaged. This section shows the packaged version, because it
+is what you would actually use, and because two of its arguments do things the
+NumPy version does not.
+
+```python
+from sklearn.decomposition import PCA
+
+# postures has one row per grasp and 15 columns, the hand's 15 joint angles.
+pca = PCA(n_components=0.95).fit(postures)   # keep enough directions for 95%
+print(pca.n_components_)                     # how many that turned out to be
+print(pca.explained_variance_ratio_)         # the share held by each one
+
+scores = pca.transform(postures)             # section 2's step 5
+rebuilt = pca.inverse_transform(scores)      # section 2's step 6
+```
+
+Passing a fraction such as `0.95` to `n_components` is the argument worth
+knowing, because it lets you say how much of the spread to keep and have the
+library work out the number of directions. Section 3 asked exactly that question
+of the hand's 15 joint angles, and `pca.n_components_` is the answer. Passing a
+whole number instead fixes the count directly.
+
+The library gives you steps 1 to 6 of section 2 in three calls, and it does two
+of them better than the NumPy version. It subtracts the mean for you, so you do
+not centre the data yourself, and it works out the directions with a singular
+value decomposition rather than by finding the eigenvectors of the covariance
+matrix, which is more accurate when the columns are nearly proportional to each
+other. Section 8 also listed `IncrementalPCA` for data that arrives in batches
+and `KernelPCA` for some kinds of curved data.
+
+What you have to collect is the examples, and you need enough of them. Section 4
+explained why, because the directions are worked out from how the columns vary
+together, and with fewer rows than columns some of those directions are noise
+rather than structure.
+
+What you have to decide is how many directions to keep, and whether to
+standardise first. PCA centres the data but it does not scale it, so a column
+measured in millimetres dominates a column measured in metres purely because its
+numbers are larger. If your columns are in different units, put `StandardScaler`
+from `sklearn.preprocessing` in front of it in a `Pipeline`, and section 7
+explains what happens if you forget. If the structure you are looking for is not
+made of straight directions, section 6's `TSNE`, `umap.UMAP` and autoencoders are
+the alternatives, and section 9 says what each of them costs.

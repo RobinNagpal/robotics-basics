@@ -35,6 +35,7 @@ a real run of
 7. [Why sampling, and what it costs](#7-why-sampling-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -510,3 +511,92 @@ changes, or when the search fits in the time between steps.
   covers the exact solvers for problems that can be written as equations.
 - [PID control](../../07_control-and-motion/02_most-used/01_pid-control.md)
   explains the gains that CMA-ES is often used to tune.
+
+---
+
+## 10. Using it in Python
+
+Section 3 gave the cross-entropy method and the model predictive control loop as
+pseudocode, and section 6 advised writing the cross-entropy method yourself in
+NumPy before reaching for a library. This section does both, on the pushing task
+from section 2. After it you will have the shortest honest version of each, and
+you will see exactly where the line between your code and a library falls on
+this page.
+
+The first block is the cross-entropy method, written out. It is short on
+purpose, because section 6 is right that this is a method most people write
+rather than install. The second block replaces it with pycma, which is CMA-ES
+written by the person who invented it.
+
+```python
+import numpy as np
+import cma
+
+target, mug, keep_out = np.array([20.0, 4.0]), np.array([10.0, 2.0]), 5.0
+
+def score(plan):
+    """Simulate 8 pushes and return how far the block ends from the target."""
+    block, hit = np.zeros(2), False
+    for push in plan.reshape(-1, 2):
+        length = np.linalg.norm(push)
+        if length > 5.0:                      # the arm cannot push further than 5 cm
+            push, length = push / length * 5.0, 5.0
+        left = np.array([-push[1], push[0]]) / length
+        block = block + 0.8 * push + 0.15 * length * left   # slip, and drift left
+        if np.linalg.norm(block - mug) < keep_out:
+            hit = True
+    return float(np.linalg.norm(block - target) + (100.0 if hit else 0.0))
+
+# The cross-entropy method: 8 rounds of 50 plans, keeping the best 5 each time.
+rng = np.random.default_rng(0)
+mean, spread = np.zeros(16), np.full(16, 3.0)
+for _ in range(8):
+    plans = mean + spread * rng.standard_normal((50, 16))
+    costs = np.array([score(p) for p in plans])
+    elites = plans[np.argsort(costs)[:5]]
+    mean, spread = elites.mean(axis=0), elites.std(axis=0)
+```
+
+```python
+# The same search, with CMA-ES from pycma instead of the loop above.
+best_plan, best_score, found_at = cma.fmin(score, np.zeros(16), 3.0,
+                                           {'maxfevals': 400, 'seed': 1})[:3]
+```
+
+Running the first block prints a best plan 15.1 cm from the target after round 1
+and 2.2 cm after round 8, with the spread shrinking from 3.00 cm to 0.43 cm,
+which is the narrowing that section 3 describes. Running the second block on the
+same score with a budget of 400 simulations reaches 0.23 cm. That gap is the
+argument of section 3 for CMA-ES: on the same budget it learns the shape of the
+search as well as its position, so it keeps improving after the cross-entropy
+method's spread has collapsed.
+
+pycma does the sampling, the update of the mean, the update of the covariance
+matrix and the step size control, which together are several hundred lines that
+are easy to get wrong. `cma.fmin` returns a long tuple, and the first three
+entries are the best plan, its score, and the evaluation number at which that
+plan was found.
+
+What you still have to write is `score`, and on this page that is not a detail
+but the entire content. A sampling optimiser knows nothing except how to ask
+"what does this plan cost", so the model of how the block slides, the keep-out
+distance from the mug and the penalty for touching it are all yours. That is
+also why the method is worth knowing: `score` contains an `if` that jumps by
+100, and section 2 explains that such a jump has no useful gradient, so no
+gradient-based optimiser can use this function at all. For model predictive
+control you also write the outer loop from section 3, which measures the world,
+plans, does only the first push, shifts the mean along by one step and plans
+again.
+
+What you have to decide or measure is the model inside `score`, the budget, and
+the starting spread. The 0.8 slip and the 0.15 drift are measurements of your
+own pusher on your own surface, so you get them by pushing a real block and
+recording where it ends up, and section 3 warns that a wrong model gives a
+confident plan that fails on the robot. The budget is 50 plans times 8 rounds
+here, and on a real arm it is set by how long you can afford between control
+cycles rather than by what converges best. The starting spread of 3 cm has to
+cover the useful plans without wasting the first rounds on absurd ones, and
+section 3 shows that if it collapses before the mean has reached a good place,
+the search simply stops. Finally, the 100 for touching the mug is a choice: it
+has to be large enough that no plan buys distance by clipping the mug, which you
+check by looking at whether the best plan ever touches it.

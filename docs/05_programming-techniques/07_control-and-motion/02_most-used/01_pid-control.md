@@ -37,6 +37,7 @@ and it is often the last thing you need.
 7. [Why PID, and what it costs](#7-why-pid-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -509,3 +510,59 @@ next set to try, so it finds good gains in tens of trials instead of hand tuning
 - Book 3's [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
   shows the ROS 2 controllers that contain these loops, and the tolerances that decide
   whether a move "succeeded".
+
+---
+
+## 10. Using it in Python
+
+Section 3 built the loop term by term and ended with the two fixes that every real
+PID needs, which are the integral clamp and the filtered derivative. Section 6 then
+named the libraries that already contain those two fixes. This section shows the
+shortest honest Python that runs a PID, so that you can see how little of it the
+library covers and how much of it stays yours.
+
+The example uses `simple_pid`, because it is pure Python and installs with one
+command, which makes it the easiest way to try gains on a gripper or a camera head.
+
+```python
+from simple_pid import PID
+
+pid = PID(Kp=8.0, Ki=2.0, Kd=0.5,
+          setpoint=1.0,                 # the angle we want, in radians
+          output_limits=(-4.0, 4.0))    # the joint's torque limit, in newton metres
+pid.sample_time = None                  # this loop decides when to tick, not the library
+
+while running:
+    torque = pid(read_joint_angle(), dt=0.002)   # one tick of a 500 Hz loop
+    send_joint_torque(torque)
+    log(pid.components)                 # the P, I and D parts of this tick, for tuning
+```
+
+That is the whole call. What the library does for you is the bookkeeping that is easy
+to get wrong. It keeps the running sum for the integral term and clamps that sum to
+`output_limits`, so the integral cannot keep growing while the motor is already at
+full torque, which is the windup described in section 3. It clamps the output to the
+same limits. It also takes the derivative of the measurement rather than of the error,
+because `differential_on_measurement` is true by default, so moving the setpoint no
+longer produces the sudden kick that a plain derivative of the error would give.
+Finally `pid.components` hands you the three terms separately, which is what you look
+at while tuning.
+
+What you still write is everything that touches the arm. `read_joint_angle` and
+`send_joint_torque` are your functions, because they depend on your driver. The loop
+itself is yours, and it has to run at a steady rate, because the library does not
+provide a timer. Setting `setpoint` on every tick from a trajectory generator is
+yours, and so is deciding what to do when the loop cannot keep up. If several joints
+move together you create one `PID` object per joint, as the
+[chapter overview](../01_overview.md#9-using-it-in-python) does, because one object
+holds the history of one signal only.
+
+What you have to decide or measure is the short list that actually determines
+behaviour. The three gains `Kp`, `Ki` and `Kd` come from tuning on the real joint by
+the method in section 3, and copying them from another arm does not work because they
+depend on that joint's mass and friction. The output limits come from the motor's data
+sheet, in the same unit that your driver expects, and getting that unit wrong is a
+common and dangerous mistake. The `dt` you pass has to be the period you really
+achieve, not the one you hoped for. Finally the sign convention is yours to check: if
+a positive torque turns the joint the other way on your arm, a correctly tuned PID
+will drive it away from the target instead of towards it.

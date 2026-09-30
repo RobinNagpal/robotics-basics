@@ -29,6 +29,7 @@ from a table to a bin and tries again when a grasp fails.
 7. [Why a state machine, and what it costs](#7-why-a-state-machine-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -424,3 +425,78 @@ shows how a slip can be caught before the mug falls.
   usually runs.
 - Book 3 compares state machines with behaviour trees in
   [scripted logic](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#3-scripted-logic-state-machines-and-behaviour-trees).
+
+---
+
+## 10. Using it in Python
+
+Section 3 drew the pick-and-place machine as states and arrows, added a retry counter, and
+wrote the loop as pseudocode. Section 6 then listed the libraries that hold such a
+machine for you. This section turns that pseudocode into Python with one of them, so that
+after reading it you can write a state machine with a guarded retry and you know exactly
+which part the library supplies.
+
+The example uses `transitions`, because it is plain Python with no ROS installation
+behind it, which makes it the easiest one to run while reading. The ROS 2 libraries in
+section 6, such as YASMIN or SMACH, describe the same machine in the same shape.
+
+```python
+from transitions import Machine
+
+states = ["idle", "moving_above", "descending", "closing", "lifting", "failed"]
+transitions = [
+    {"trigger": "start",   "source": "idle",         "dest": "moving_above"},
+    {"trigger": "arrived", "source": "moving_above", "dest": "descending"},
+    {"trigger": "arrived", "source": "descending",   "dest": "closing"},
+    {"trigger": "gripped", "source": "closing",      "dest": "lifting"},
+    # The first matching rule wins, so the retry is tried before giving up.
+    {"trigger": "slipped", "source": "closing",      "dest": "moving_above",
+     "conditions": "has_tries_left", "before": "use_a_try"},
+    {"trigger": "slipped", "source": "closing",      "dest": "failed"},
+]
+
+class Task:
+    def __init__(self):
+        self.tries_left = 3
+
+    def has_tries_left(self):             # a guard: the retry needs this to be true
+        return self.tries_left > 0
+
+    def use_a_try(self):
+        self.tries_left -= 1
+
+    def on_enter_moving_above(self):      # named for the state, and called on entering it
+        send_goal_above_the_mug()
+
+task = Task()
+machine = Machine(model=task, states=states, transitions=transitions, initial="idle")
+
+task.start()                              # each trigger name becomes a method on Task
+print(task.state)                         # -> "moving_above"
+```
+
+What the library does for you is the bookkeeping around the table. It keeps `task.state`,
+it adds one method to your object per trigger, and it refuses a trigger that is not legal
+from the current state by raising `MachineError`, which turns a whole class of bug into an
+immediate complaint instead of a silent wrong move. It also runs the guards in
+`conditions` and the callbacks in `before`, and it calls a method named
+`on_enter_<state>` when a state begins, which is where the arm is actually told to do
+something.
+
+What you still write is everything the robot does. Each `on_enter_` method is yours, and
+so is the code that decides when an event has happened, because nothing in the library
+watches the arm. `transitions` also does not run a loop: something of yours has to call
+`task.arrived()` and `task.slipped()`, normally from a timer at a fixed rate that checks
+the arm's state and fires the matching trigger. The nesting and the live viewer mentioned
+in section 6 are the main reasons to move to SMACH or YASMIN later.
+
+What you have to decide or measure is the shape of the machine and the numbers in it. The
+list of states is a design decision, and section 5 gives a rough guide: up to about ten
+states a flat machine like this one stays clear, and beyond that you nest it or move to a
+behaviour tree. The retry count is a number you choose, and section 3 works it out with
+real percentages, ending at two or three tries because each extra try helps less than the
+one before it and because repeated failures on the same mug are usually not independent.
+Every event also needs a test behind it with a threshold you measured, such as how close
+counts as "arrived" and how small a gripper width counts as "slipped". Finally you need a
+timeout on every state that waits for the outside world, because section 5 lists waiting
+forever as the failure that a missing arrow produces.

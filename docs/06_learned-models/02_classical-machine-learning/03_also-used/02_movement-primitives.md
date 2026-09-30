@@ -42,6 +42,7 @@ methods themselves are real, and they are written in NumPy.
 9. [Why movement primitives, and what they cost](#9-why-movement-primitives-and-what-they-cost)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -445,3 +446,67 @@ demonstration.
   [impedance and force control](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
   explains the springs and dampers used in the controller that follows a
   primitive, and in hand-guiding itself.
+
+---
+
+## 12. Using it in Python
+
+Section 2 built a dynamic movement primitive out of a spring and a learned shape,
+section 3 turned several demonstrations into a mean path with a spread, and
+section 8 named the libraries. This section shows the calls in the most complete
+of them, so that after reading it you can learn a primitive from a recording and
+play it back to a new goal.
+
+The package is `movement_primitives`, the DFKI one from section 8. It is
+installed with `pip install movement-primitives`, and it also needs
+`pytransform3d`, because its DMP module imports that for the version that handles
+the hand's turn as well as its position.
+
+```python
+import numpy as np
+from movement_primitives.dmp import DMP
+from movement_primitives.promp import ProMP
+
+# T holds the time of each recorded sample, Y the recorded position,
+# one row per sample and one column per dimension.
+dmp = DMP(n_dims=2, execution_time=1.0, dt=0.01, n_weights_per_dim=10)
+dmp.imitate(T, Y)                   # section 2's learned shape
+dmp.configure(start_y=Y[0], goal_y=np.array([0.0, 1.5]))   # section 2's new goal
+T_out, Y_out = dmp.open_loop()      # play it back
+
+# Ts and Ys are lists with one entry per demonstration.
+promp = ProMP(n_dims=2, n_weights_per_dim=10)
+promp.imitate(Ts, Ys)
+mean = promp.mean_trajectory(T)     # section 3's mean path
+spread = promp.var_trajectory(T)    # and the variance around it
+conditioned = promp.condition_position(np.array([0.5, 0.5]), t=0.5, t_max=1.0)
+```
+
+The `configure` call is what section 2 called the useful property of a DMP,
+because you learn the shape once from one demonstration and then ask for a
+different goal without recording anything new. The `condition_position` call is
+section 3's via-point, and it returns a new ProMP whose paths all pass through
+the point you named, which is why the result is assigned to a new variable rather
+than changing `promp` in place.
+
+The library gives you the parts that are tedious to get right: the phase
+variable, the basis functions spread along it, the regression that turns a
+recording into weights, and the numerical integration that plays the result back.
+It also gives you the probabilistic algebra behind `condition_position`, which is
+the longest piece of arithmetic on this page.
+
+What you have to collect is the demonstration, and for a ProMP several
+demonstrations of the same motion. They must be resampled onto a common time
+vector, because `imitate` pairs each row of `Y` with the matching entry of `T`,
+and a ProMP needs the demonstrations to line up in time. Section 4 described that
+preparation, and section 7 added that you should smooth the recording first,
+because the shape is learned from the acceleration and a shaky recording gives a
+shaky replay.
+
+What you have to decide is `n_weights_per_dim` and `execution_time`. More weights
+follow the demonstration more closely, so they also copy more of whatever shake
+is left in it, while too few smooth away the part of the motion that mattered.
+`execution_time` sets how long the playback takes, and section 2 showed that
+changing it slows or speeds the whole motion without changing its shape. If you
+would rather see the arithmetic than use it, section 8 noted that each method is
+a few dozen lines of NumPy.

@@ -30,6 +30,7 @@ angle.
 8. [Why this rather than the obvious alternative, and what it costs](#8-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -342,3 +343,72 @@ In the other books:
   in the perception book covers calibrating the camera and the arm together.
 - [Controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
   explains what the controller does with a torque.
+
+## 11. Using it in Python
+
+Section 3.1 said that a learned arm model in practice keeps the textbook physics and
+learns only the part it gets wrong. This section shows that in code, because the split
+is visible in it: one library computes the physics, and a network of about six lines
+learns the leftover. After reading it you will be able to turn an hour of recordings
+into a correction that the controller can add.
+
+```python
+import numpy as np
+import pinocchio as pin
+import torch
+from torch import nn
+
+model = pin.buildModelFromUrdf('arm.urdf')
+data = model.createData()
+
+# One row per recorded moment, from the run described in section 4: the joint
+# angles, the joint speeds, how fast those speeds changed, and the torque used.
+q, v, a, tau = (np.load(f'{name}.npy') for name in ('q', 'v', 'a', 'tau'))
+physics = np.array([pin.rnea(model, data, qi, vi, ai) for qi, vi, ai in zip(q, v, a)])
+
+x = torch.tensor(np.hstack([q, v, a]), dtype=torch.float32)
+y = torch.tensor(tau - physics, dtype=torch.float32)   # only what the physics missed
+
+net = nn.Sequential(nn.Linear(x.shape[1], 64), nn.Tanh(), nn.Linear(64, y.shape[1]))
+loss_fn = nn.MSELoss()
+optimiser = torch.optim.Adam(net.parameters(), lr=1e-3)
+
+for _ in range(2000):
+    optimiser.zero_grad()
+    loss = loss_fn(net(x), y)
+    loss.backward()
+    optimiser.step()
+```
+
+At run time the controller then adds the two parts together, and it limits how much the
+network is allowed to change, for the reason the last point of section 7 gives. Here
+`q` and `v` are the arm's reading at this moment rather than the whole recording, and
+`a_wanted` is the change in speed the controller is asking for.
+
+```python
+with torch.inference_mode():
+    correction = net(torch.tensor(np.hstack([q, v, a_wanted]), dtype=torch.float32))
+send_to_motors(pin.rnea(model, data, q, v, a_wanted) + np.clip(correction.numpy(), -5, 5))
+```
+
+Pinocchio gives you the physics half, through the same `rnea` call that the
+[collision page](../02_most-used/02_collision-and-failure-detection.md#11-using-it-in-python)
+uses, and it reads the masses and lengths from the arm's own URDF description file. It
+is fast enough to run in a control loop, which matters here because this model is asked
+hundreds of times a second rather than once per picture. PyTorch gives you the network,
+and it can be small precisely because the physics has already done most of the work,
+which is the first advantage that section 3.1 lists.
+
+What you have to collect yourself is the recording, and section 4 says how: sweep every
+joint through its range at many speeds, with the gripper empty, and log the angles, the
+speeds and the motor torque or current at every reading. You also have to work out `a`
+from the speeds, because most arms do not report it, and you have to keep the same
+units on both sides of the subtraction, since a current in amps minus a torque in
+newton metres is not a residual but a mistake.
+
+What you have to decide is how varied the recording is, how large the network may be
+and still answer in time, and what the clipping limit should be. The first of those
+matters most, because a model trained only on slow movements is confidently wrong on
+fast ones, and the physics model underneath is the only thing that keeps the answer
+sensible there. Retrain after every change to the gripper, the payload or the arm's
+wear, as the worked example in section 6 does.

@@ -35,6 +35,7 @@ small mistakes adding up that is described there.
 9. [Why ACT, and what it costs](#9-why-act-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -409,3 +410,70 @@ explains why chunking fixed the jerky motion of earlier policies, and it lists A
 and LeRobot with their licences.
 [Data and demonstration](../../../03_frameworks/08_frontier/03_data-and-demonstration.md)
 covers ALOHA, the SO-101 arm and LeRobot's data format in more detail.
+
+---
+
+## 12. Using it in Python
+
+Section 3 said that ACT gives back a chunk of future actions rather than one, and
+section 5 said that LeRobot is where you get it. This section shows the two numbers
+that control the chunking as they appear in code, so that after reading it you will
+know which settings are yours to choose and what happens between two calls of the
+policy.
+
+The training is a command rather than a program, because LeRobot builds the network
+to fit whatever your dataset contains. Running `lerobot-train --policy.type=act
+--dataset.repo_id=<my-user>/my_dataset --policy.chunk_size=100
+--policy.n_action_steps=50 --policy.device=cuda` reads the number of joints and the
+number of cameras from the dataset and sizes the network accordingly. The code below
+then runs what that produced.
+
+```python
+from lerobot.datasets import LeRobotDatasetMetadata
+from lerobot.policies import make_pre_post_processors
+from lerobot.policies.act import ACTPolicy
+
+checkpoint = "outputs/train/my_act/checkpoints/last/pretrained_model"
+policy = ACTPolicy.from_pretrained(checkpoint)
+print(policy.config.chunk_size, policy.config.n_action_steps)   # 100 and 50
+
+meta = LeRobotDatasetMetadata("<my-user>/my_dataset")
+preprocess, postprocess = make_pre_post_processors(policy.config,
+                                                  dataset_stats=meta.stats)
+
+policy.reset()          # empties the queue of unused actions from the last attempt
+action = postprocess(policy.select_action(preprocess(frame)))
+```
+
+The two numbers that the code prints are the ones this page has been about.
+`chunk_size` is how many future actions the network produces in one forward pass, and
+it defaults to 100, which at 30 pictures a second is a little over three seconds of
+movement. `n_action_steps` is how many of those the robot actually carries out before
+the policy is asked again, and it must not be larger than `chunk_size`. `select_action`
+hides the difference: it keeps a queue, returns the next action from it, and only runs
+the network again when the queue is empty. So calling it once per control step gives
+you the chunking behaviour without writing the bookkeeping, and `policy.reset()` is
+what clears that queue between attempts.
+
+If you want the blending that section 3 described instead of plain chunks, it is one
+setting: `temporal_ensemble_coeff` turns on the exponential weighting of overlapping
+chunks. LeRobot requires `n_action_steps` to be 1 when you use it, because blending
+means the policy must run at every single step, which is much more computation for
+smoother motion.
+
+What LeRobot gives you is the network from the ALOHA paper, the training loop, the
+queue, the rescaling and the checkpoints. What you have to collect is again the
+demonstrations, and ACT is the model where this is least avoidable. ACT was designed
+for tasks that need care, such as threading a cable tie or opening a small lid, and
+those are exactly the tasks where a demonstration has to be good. Fifty careless
+demonstrations of a delicate task train a policy that fails delicately. There is no
+pretrained ACT policy that transfers, because the network's output layer has one
+number per joint of the arm it was trained on, so an ACT policy trained on a
+seven-joint Franka cannot even be loaded for a six-joint SO-101.
+
+What you have to decide is the pair of numbers above. A larger `n_action_steps` means
+smoother motion and fewer decisions, but the arm is then committed for longer to a
+plan made from an older picture, so it reacts late if the object moves. A smaller one
+reacts sooner and brings back some of the jerkiness that chunking was meant to cure.
+Half of `chunk_size` is a common starting point, and the right answer depends on how
+much the scene moves while the arm is working.

@@ -33,6 +33,7 @@ and the page says so again where it is used.
 12. [Libraries and tools](#12-libraries-and-tools)
 13. [Why this rather than the obvious alternative, and what it costs](#13-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
 14. [Where to read next](#14-where-to-read-next)
+15. [Using it in Python](#15-using-it-in-python)
 
 ---
 
@@ -469,3 +470,58 @@ how wide the range is.
 - Book 5's
   [safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
   covers the programmed checks that stop an arm whatever the model says.
+
+---
+
+## 15. Using it in Python
+
+Sections 3 and 6 are the two parts of evaluation that need a computer at all, since the
+trials themselves are run by hand. This section shows both, because together they are
+about ten lines, and after reading it you will be able to turn a list of trials into the
+confidence interval and the sorted failure counts that the rest of this page argues
+for.
+
+```python
+import collections
+
+from scipy.stats import binomtest
+
+# One entry per trial, written down as section 5 says, while the trials are running.
+trials = [{'setup': 1, 'success': True, 'failure_kind': None},
+          {'setup': 2, 'success': False, 'failure_kind': 'slip while lifting'},
+          # ... one more line like these for every trial you ran
+          ]
+
+successes = sum(t['success'] for t in trials)
+interval = binomtest(successes, len(trials)).proportion_ci(method='exact')
+print(f'{successes} of {len(trials)} = {successes / len(trials):.0%}, '
+      f'95% interval {interval.low:.1%} to {interval.high:.1%}')
+
+kinds = collections.Counter(t['failure_kind'] for t in trials if not t['success'])
+for kind, count in kinds.most_common():
+    print(f'{count:3d}  {kind}')
+```
+
+With 90 successes in 100 trials the first line prints `90 of 100 = 90%, 95% interval
+82.4% to 95.1%`, which is the row in section 3's table, so this really is the whole
+calculation.
+
+SciPy gives you the hard part in one call. `binomtest(k, n)` describes the count, and
+its `proportion_ci(method='exact')` returns the Clopper-Pearson interval of section 3,
+so you never see the formula. Python's own `collections.Counter` does the sorting of
+section 6, and `most_common()` returns the kinds in order, largest first, which is the
+order in which you should fix them. Neither needs anything installed beyond SciPy.
+
+What you have to collect yourself is `trials`, and that is the work. Every entry costs a
+real attempt on the real arm, with the scene reset in between, so a hundred trials of a
+thirty-second job is most of a day, as section 13 says. You also have to write the
+success rule down before the first trial and keep the list of failure kinds short
+enough that each failure clearly belongs to exactly one of them, because a kind that
+overlaps another gives counts nobody can act on.
+
+What you have to decide is the number of trials and the list of kinds. Section 3 gives
+the arithmetic for the first: about a hundred trials for a decision, and twenty only to
+spot a model that is obviously broken. If you already use statsmodels, then
+`statsmodels.stats.proportion.proportion_confint(k, n, method='beta')` gives exactly the
+same interval, and for trials in a simulator rather than on the arm, LeRobot's
+`lerobot-eval` runs them and reports the success rate for you.

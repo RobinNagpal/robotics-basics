@@ -28,6 +28,7 @@ words without explaining them again.
 8. [Why segmentation, and what it costs](#8-why-segmentation-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -383,3 +384,55 @@ one rule to cover.
   which covers mask models and the SAM family with their licences, and in
   [finding an object in a picture](../../../02_perception/01_camera/02_finding-objects.md),
   which builds a colour mask by hand.
+
+---
+
+## 11. Using it in Python
+
+The page has argued that an exact outline tells a robot more than a box, because
+the outline follows the object and the box does not. This section shows the Python
+that produces such an outline. After reading it you will be able to get one mask
+per object from a photo, and you will know which part of turning that mask into a
+grasp is still yours to write.
+
+The quickest way is a YOLO segmentation model, because Ultralytics ships one that
+gives a box and an outline together in a single pass.
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolo11n-seg.pt")           # the "-seg" file adds the mask head
+result = model("table.jpg", conf=0.25)[0]
+
+# masks.xy holds one outline per object, as an array of points in picture pixels.
+for box, outline in zip(result.boxes, result.masks.xy):
+    name = result.names[int(box.cls)]
+    centre_u, centre_v = outline.mean(axis=0)
+    print(f"{name}: {len(outline)} outline points, "
+          f"centre of the outline at ({centre_u:.0f}, {centre_v:.0f})")
+```
+
+The same result also holds `result.masks.data`, which is the mask as a grid of true
+and false values, one grid per object. That form is the one you want when you need
+to pick out the depth pixels that belong to a single object, because you can use it
+directly to select from the depth image.
+
+What the pretrained model gives you out of the box is an outline for each of the 80
+COCO classes, so a mug on a table is outlined without any training from you. That
+saves you the whole of [section 4](#4-how-it-is-trained), and it matters more here
+than for a detector, because tracing outlines by hand is the slowest kind of
+labelling there is.
+
+What you still have to write yourself is the step from a mask to a place in the
+room. You select the depth pixels inside the mask, throw away the ones with no
+reading, average the rest into a point in metres, and then work out a direction for
+the gripper, for example by fitting a line through the mask to find which way a
+long object points. The library gives you the shape in the picture, never the pose
+on the table.
+
+What you have to decide is first whether you need an outline at all, because a
+detector is faster and simpler when a box is enough. Then you decide the confidence
+threshold, as you would for a detector. Finally you decide whether to fine-tune. If
+your parts are not among the 80 classes you have to, and the cost of that is real,
+because every training picture needs an outline traced round every object rather
+than a box drawn round it.

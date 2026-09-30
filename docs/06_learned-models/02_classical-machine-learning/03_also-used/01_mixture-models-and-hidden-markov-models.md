@@ -42,6 +42,7 @@ NumPy.
 9. [Why these, and what they cost](#9-why-these-and-what-they-cost)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -461,3 +462,62 @@ wins when the motion is easier to show than to describe.
 - Book 5's
   [Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
   explains predict and update for a continuous number.
+
+---
+
+## 12. Using it in Python
+
+Section 2 fitted a mixture of bells with expectation and maximisation, section 4
+found the best path through hidden states with Viterbi, and section 8 named the
+libraries. This section shows the calls, so that after reading it you can fit
+both models to recorded readings without writing either algorithm.
+
+```python
+from sklearn.mixture import GaussianMixture
+from hmmlearn import hmm
+
+# X has one row per reading. covariance_type="full" lets each bell be tilted,
+# and n_init=10 runs the fit from ten different starts and keeps the best.
+mixture = GaussianMixture(
+    n_components=3, covariance_type="full", n_init=10, random_state=0).fit(X)
+print(mixture.bic(X))                  # lower is better; try several n_components
+print(mixture.predict_proba(X_new))    # section 2's share for each bell
+
+# forces holds three recorded traces stacked one after the other, and lengths
+# says how many rows each trace has.
+chain = hmm.GaussianHMM(n_components=3, covariance_type="diag", n_iter=100)
+chain.fit(forces, lengths=[200, 180, 210])
+print(chain.predict(new_trace))        # section 4's Viterbi path
+print(chain.predict_proba(new_trace))  # section 4's forward probabilities
+```
+
+The `lengths` argument is the detail that catches people, and it is worth
+understanding rather than copying. If you leave it out, hmmlearn treats the whole
+array as one single long trace, so it learns a transition from the last state of
+one recording to the first state of the next. Those transitions never happen on
+the robot, and the model then reports state changes that are not there.
+
+The libraries give you both of the algorithms this page worked through. The
+expectation and maximisation loop of section 2 is inside `GaussianMixture.fit`,
+and the Baum-Welch training of section 5 is inside `GaussianHMM.fit`. Viterbi is
+`predict` and the forward algorithm is `predict_proba`, so the two algorithms
+that section 4 spent most of its length on are one method call each. They also
+handle two of section 7's failures for you: `n_init` above is section 7's advice
+to run the fit from several starts, and `GaussianMixture` adds 0.000001 to every
+covariance by default, through its `reg_covar` argument, which stops a bell
+shrinking onto a single point. Section 8's `gmr` package adds the Gaussian
+mixture regression of section 3, which scikit-learn does not provide.
+
+What you have to collect is the recordings, and for the HMM you have to keep them
+separate so that you can pass `lengths`. Section 3's mixture regression needs
+several demonstrations of the same motion, resampled onto a common time axis,
+which is preparation you do before any of this code runs.
+
+What you have to decide is `n_components`, which is how many bells or how many
+hidden states, and `covariance_type`, which is how much shape each bell is
+allowed. `bic` above helps with the first, because you fit the model for several
+values and keep the one with the lowest score, and section 7 said that this
+number has to be chosen by you because too few bells blur different things
+together and too many fit the noise. For `covariance_type`, `"full"` fits a
+tilted bell and needs the most data, while `"diag"` assumes the columns vary
+independently and needs much less, which is why the HMM above uses it.

@@ -37,6 +37,7 @@ stops, and arms that jerk when driven from a slow stream of targets.
 7. [Why trajectory generation, and what it costs](#7-why-trajectory-generation-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -516,3 +517,84 @@ but still need the limits on this page checked on what they produce.
   smooths the path before it is timed, and can time it too.
 - Book 3's [planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md#8-turning-a-path-into-a-trajectory)
   shows where TOTG, Ruckig and TOPP-RA sit in MoveIt.
+
+---
+
+## 10. Using it in Python
+
+Section 3 explained the trapezoidal and S-curve profiles, why jerk matters, and how
+several joints are made to finish together. Section 6 then named the libraries that
+produce those profiles. This section shows the two calls you are most likely to write,
+so that after reading it you can generate a jerk-limited move and a spline through
+waypoints, and you will know which choices the library leaves to you.
+
+The first example uses Ruckig, because it is the one library here that is both
+jerk-limited and able to start from whatever state the arm is in, which is what you
+need when the target changes during a move.
+
+```python
+from ruckig import InputParameter, OutputParameter, Result, Ruckig
+
+otg = Ruckig(2, 0.004)                # 2 joints, one tick every 4 milliseconds
+inp = InputParameter(2)
+out = OutputParameter(2)
+
+inp.current_position = [0.0, 0.0]         # where the joints are now, radians
+inp.current_velocity = [0.0, 0.0]
+inp.current_acceleration = [0.0, 0.0]
+inp.target_position = [1.5, -0.8]
+inp.max_velocity = [2.0, 2.0]             # radians per second
+inp.max_acceleration = [4.0, 4.0]         # radians per second squared
+inp.max_jerk = [30.0, 30.0]               # radians per second cubed
+
+while otg.update(inp, out) == Result.Working:
+    send_joint_targets(out.new_position, out.new_velocity)
+    out.pass_to_input(inp)                # this tick's end state starts the next tick
+```
+
+Those numbers give a move that `out.trajectory.duration` reports as 1.383 seconds, so
+at four milliseconds a tick the loop above runs 345 times before `otg.update` stops
+returning `Result.Working`. Both joints finish together, because Ruckig slows the
+shorter joint down instead of letting it arrive early, which is the synchronisation
+described in section 3.
+
+The second example is different in kind rather than in detail. When you already have
+waypoints and you only want a smooth curve through them, SciPy is enough and you do
+not need another dependency.
+
+```python
+from scipy.interpolate import CubicSpline
+
+times = [0.0, 0.8, 1.6, 2.4]                      # seconds, chosen by you
+waypoints = [[0.0, 0.0], [0.4, -0.3], [1.1, -0.6], [1.5, -0.8]]
+spline = CubicSpline(times, waypoints, axis=0,
+                     bc_type="clamped")    # zero speed at both ends
+
+t = 1.0
+position, velocity, acceleration = spline(t), spline(t, 1), spline(t, 2)
+```
+
+The two libraries do very different amounts of work for you. Ruckig gives you the
+jerk limit, the synchronisation between joints, and the ability to re-plan from the
+current state on any tick, and those three together are what makes a correct online
+generator hard to write. SciPy gives you only the curve. It never looks at your
+limits, so it will happily hand back a spline whose speed is twice what the arm can
+do, and checking that is your job. That gap is exactly what the
+time-parameterisation tools in section 6, such as TOPP-RA, exist to close.
+
+What you write in both cases is the loop and the sending. Neither library runs a
+timer, so you call `otg.update` once per tick from your own fixed-rate loop, and you
+pass the result to whatever moves the arm. You also decide when a new target replaces
+the old one, and with Ruckig that is simply a matter of setting `inp.target_position`
+again before the next tick, because it starts from the current state anyway.
+
+What you have to decide or measure is a short list, but every item on it changes how
+the arm moves. The speed
+and acceleration limits come from the arm's manual, and they are per joint, so a
+single number for all joints will either be too slow for some or too fast for others.
+The jerk limit is almost never in a manual, so you find it by lowering it until the
+wobble after the stop, shown in section 3, disappears. In the SciPy example the
+`times` are your choice as well, and choosing them too close together is the usual way
+to produce a spline the arm cannot follow. Finally the units are yours to keep
+straight, because Ruckig does not know whether your numbers are radians or degrees and
+will not warn you.

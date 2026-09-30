@@ -24,6 +24,7 @@ is: a grid of small squares called pixels, each with a number for its brightness
 9. [Why this rather than the obvious alternative, and what it costs](#9-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -342,3 +343,64 @@ In the other books:
 - [Tactile sensing at the
   contact](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#82-tactile-sensing-at-the-contact)
   covers the sensors you can buy.
+
+## 12. Using it in Python
+
+Section 4.2 described a network that reads a tactile picture, and section 6 said the
+software around these sensors is thin. So this section shows the shortest honest
+version: read one frame from the sensor, subtract the blank pad, and pass the
+difference through a pretrained backbone with a head of your own. After reading it you
+will know which of those four steps somebody has already written for you.
+
+```python
+import numpy as np
+import torch
+from digit_interface import Digit
+from torchvision.models import ResNet18_Weights, resnet18
+
+sensor = Digit('D20001')                        # the serial number on the sensor
+sensor.connect()
+blank = sensor.get_frame().astype(np.float32)   # the pad with nothing touching it
+
+# A backbone pretrained on ordinary photos, with a new head of three numbers: where
+# on the pad the contact sits, across and down, and how hard it presses.
+net = resnet18(weights=ResNet18_Weights.DEFAULT)
+net.fc = torch.nn.Linear(net.fc.in_features, 3)
+net.eval()
+
+frame = sensor.get_frame().astype(np.float32)
+change = (frame - blank) / 255.0                # step 2 of section 4.2
+x = torch.from_numpy(change).permute(2, 0, 1).unsqueeze(0)   # colour first, then one batch
+with torch.inference_mode():
+    across, down, force = net(x)[0].tolist()
+```
+
+The `digit-interface` library gives you the frames. You name the sensor by the serial
+number printed on its back, and `get_frame` hands back a plain NumPy picture, so
+nothing about the camera, the lights or the video stream is your problem. Its licence
+is Creative Commons Attribution-NonCommercial 4.0, which forbids commercial use, and
+that is exactly the licence trouble the last point of section 8 warns about. For a
+GelSight or any other camera-behind-gel sensor there is no such library, however you do
+not need one, because the sensor appears to the computer as an ordinary camera and
+OpenCV's `cv2.VideoCapture` reads it.
+
+Torchvision gives you the backbone with its pretrained numbers already downloaded, and
+replacing `net.fc` is the whole of "freeze the backbone and train a new head" from the
+[fine-tuning](../../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md#2-three-ways-to-fine-tune)
+page. The numbers it produces were learned from photographs rather than from tactile
+pictures, so they are not ideal, but they are a much better starting point than random
+numbers when you have only a few thousand presses.
+
+What you have to collect yourself is the training data, because the code above only
+runs the network and the network has to be trained first, with the same loop as the
+[chapter overview](../01_overview.md#9-using-it-in-python). Section 5 describes how to
+get the right answers: you mount the tactile sensor on top of a force sensor and press
+many objects into it, and the force sensor's reading is the answer for each picture.
+You also have to take `blank` again before each grasp rather than once at startup,
+because the gel's stiffness drifts as it warms up, which is the third point of section
+8.
+
+What you have to decide is which answers the head gives, how often you retake the
+blank frame, and when a worn gel means the model must be checked again. Because every
+sensor differs a little, a model trained on one pad is not safe to move to another
+without at least a reference press, and that is what T3 in section 6 exists to avoid.

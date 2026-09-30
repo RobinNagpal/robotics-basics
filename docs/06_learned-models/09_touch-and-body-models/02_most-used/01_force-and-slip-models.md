@@ -29,6 +29,7 @@ to train a model on examples.
 9. [Why this rather than the obvious alternative, and what it costs](#9-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -334,3 +335,66 @@ In the other books:
   reading](../../../02_perception/02_object-perception/02_sensors.md#26-conditioning-a-force-or-contact-reading)
   in the perception book explains how to clean up a noisy force signal before
   anything reads it.
+
+## 12. Using it in Python
+
+Sections 5 and 6 said that you will almost certainly train this model yourself, and
+the [chapter overview](../01_overview.md#9-using-it-in-python) shows that training
+loop, because it is the same one for every kind in this chapter. So this section shows
+the other half, which is the part that runs while the arm carries the mug. After
+reading it you will be able to turn a stream of force readings into the flag that
+section 7 acts on.
+
+```python
+import collections
+
+import numpy as np
+import torch
+from torch import nn
+
+# The same network the overview trained, rebuilt so the saved numbers fit into it.
+net = nn.Sequential(nn.Linear(6 * 20, 32), nn.ReLU(), nn.Linear(32, 1))
+net.load_state_dict(torch.load('slip_model.pt'))
+net.eval()                               # switch off the parts that only train
+
+window = collections.deque(maxlen=20)    # keeps only the last 20 readings
+slipping = False
+
+while carrying:
+    window.append(read_wrist_force())    # your own driver, giving six numbers
+    if len(window) < window.maxlen:
+        continue
+    # Transposed, because training laid each window out one sensor at a time, and
+    # the same numbers in a different order are a different input to the network.
+    x = torch.tensor(np.array(window).T.reshape(1, -1), dtype=torch.float32)
+    with torch.inference_mode():         # nothing is learned here, so keep no gradients
+        chance = torch.sigmoid(net(x)).item()
+    # Two limits rather than one: the flag turns on above 0.8 and only turns off
+    # again below 0.4, so it does not flicker while the number sits near a limit.
+    slipping = chance > 0.4 if slipping else chance > 0.8
+    if slipping:
+        slow_down_and_squeeze_a_little_harder()
+```
+
+PyTorch gives you three things here that are easy to miss. `net.eval()` and
+`torch.inference_mode()` between them switch off everything that belongs to training,
+and the second one also makes each answer faster, because the network no longer keeps
+the extra numbers it would need in order to learn. `torch.sigmoid` turns the network's
+raw output into the number between 0 and 1 that section 2 described. Python's own
+`collections.deque` with a `maxlen` is the window: it throws the oldest reading away
+by itself, so you never have to trim a list.
+
+What you have to write yourself is `read_wrist_force` and
+`slow_down_and_squeeze_a_little_harder`, and both of them are specific to your
+hardware. The first talks to your force sensor or your tactile sensor, and the second
+is the response that Book 3's
+[holding on](../../../03_frameworks/02_gripping/05_holding-on.md#52-the-five-responses-in-order-of-cost)
+page puts in order of cost. You also have to produce `slip_model.pt`, because there is
+no slip model to download.
+
+What you have to decide is the two limits and the window length, and section 8 says
+why you cannot choose them from accuracy alone. Measure how long the whole loop takes
+on the computer that will sit next to the arm, from the reading arriving to the flag
+turning on, because a model that is right but answers after the mug has gone is no
+use. If the loop is too slow, shorten the window before you shrink the network, since
+a shorter window cuts the delay directly.

@@ -20,6 +20,7 @@ because every new word is explained where it first appears.
 5. [How they compare](#5-how-they-compare)
 6. [How this chapter connects to the others](#6-how-this-chapter-connects-to-the-others)
 7. [Where to read next](#7-where-to-read-next)
+8. [Using it in Python](#8-using-it-in-python)
 
 ---
 
@@ -201,3 +202,50 @@ policies](../../03_frameworks/08_frontier/02_foundation-models.md) in the framew
 book. It lists every important vision-language-action model as of September 2026, what
 each one can do, and whether you can download it, and it is written for a reader who
 has finished this chapter.
+---
+
+## 8. Using it in Python
+
+[Section 3](#3-how-words-become-numbers) described the two steps that turn a sentence
+into numbers, and the drawing there used made-up numbers. This section runs those same
+two steps for real. After it you can take any sentence of your own, see exactly which
+tokens a model cuts it into, and see how long the list of numbers for one token is.
+
+The library is `transformers`, from Hugging Face, and it is the usual way to run an
+open model in Python. You install it with `pip install transformers torch`. The model
+below is BERT, which is old and small. It is chosen because it downloads quickly, and
+because its tokenizer works in the same way as a large model's.
+
+```python
+import torch
+from transformers import AutoModel, AutoTokenizer
+
+name = "google-bert/bert-base-uncased"
+tokenizer = AutoTokenizer.from_pretrained(name)
+model = AutoModel.from_pretrained(name)
+
+sentence = "put the red mug in the sink"
+
+print(tokenizer.tokenize(sentence))      # step 1: the sentence cut into tokens
+ids = tokenizer(sentence)["input_ids"]   # each token's number, plus two markers BERT
+print(ids)                               # adds at the two ends of every sentence
+
+table = model.get_input_embeddings()     # step 2: the lookup table from the drawing
+print(table(torch.tensor(ids)).shape)    # one list of numbers for every token
+```
+
+Try it again with a sentence that contains a long or rare word, such as "unscrew the
+bolt with the screwdriver", and compare the list of tokens with the list of words. That
+is the clearest way to see what section 3 meant by a word being cut into pieces.
+
+Nearly everything in those lines was made by someone else. The pretrained model brings
+the list of tokens it knows, the rule for cutting a sentence into them, and the lookup
+table whose numbers were set during its training, so you never write any of those
+yourself. What you write is the sentence that goes in, and the code that uses what
+comes out, which on a robot means building the text you send and reading the answer you
+get back.
+
+What you decide is which model to use, because that one choice fixes everything else.
+A small model runs on the computer in front of you but understands less, while a large
+model understands more and needs either a graphics card or a paid online service. Each
+of the three pages after this one shows that decision being made in a different way.

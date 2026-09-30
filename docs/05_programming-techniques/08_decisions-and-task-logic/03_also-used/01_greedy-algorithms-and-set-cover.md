@@ -34,6 +34,7 @@ make when there are many possible choices and some are better than others.
 8. [Why greedy, and what it costs](#8-why-greedy-and-what-it-costs)
 9. [The learned alternative](#9-the-learned-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -460,3 +461,79 @@ request in words, not which set of views covers every object.
 - Book 3's
   [ordering and rearrangement](../../../03_frameworks/03_arm-movement/07_ordering-and-rearrangement.md)
   covers the order in which to move objects.
+
+---
+
+## 11. Using it in Python
+
+Section 3 wrote greedy set cover as pseudocode and ran it by hand on the eight glasses,
+and section 7 said that most projects write it themselves because there is nothing to
+install. This section keeps that promise and gives the real Python, so that after reading
+it you can run the example from section 3 and get the same three views back.
+
+```python
+views = {                                  # for each candidate view, the glasses it sees
+    "L": {"A", "B", "C", "D"},
+    "M": {"B", "C", "D", "E", "F", "G"},
+    "R": {"E", "F", "G", "H"},
+    "S": {"G", "H"},
+}
+objects = {"A", "B", "C", "D", "E", "F", "G", "H"}
+
+def greedy_set_cover(objects, views):
+    unseen = set(objects)
+    chosen = []
+    while unseen:
+        # how many still-unseen glasses each view that is not chosen yet would add
+        gain = {name: len(seen & unseen) for name, seen in views.items()
+                if name not in chosen}
+        best = max(gain, key=gain.get)     # a tie goes to the first view listed
+        if gain[best] == 0:
+            return chosen, unseen          # no view can see what is left
+        chosen.append(best)
+        unseen -= views[best]
+    return chosen, unseen
+
+print(greedy_set_cover(objects, views))    # -> (['M', 'L', 'R'], set())
+```
+
+That is the whole technique. It returns `['M', 'L', 'R']`, which is the same answer that
+section 3 worked out by hand, and it leaves nothing unseen. The exact check from section 3
+is nearly as short, because Python's `itertools.combinations` produces the groups for you.
+
+```python
+from itertools import combinations
+
+def smallest_set_cover(objects, views):
+    for k in range(1, len(views) + 1):                    # groups of 1, then 2, and so on
+        for group in combinations(views, k):
+            if set().union(*(views[v] for v in group)) >= objects:
+                return group                 # ">=" asks whether it covers them all
+    return None
+
+print(smallest_set_cover(objects, views))  # -> ('L', 'R')
+```
+
+That returns `('L', 'R')`, the two-view answer, so the two functions together reproduce
+section 3's result: greedy used three views where two were enough. Section 3 also explains
+why you cannot simply always use the exact version, because the number of groups it tries
+doubles with every extra view.
+
+No library does either job for you, and that is the honest answer for this page. The only
+library call above is `itertools.combinations`, which is in Python's own standard library
+and only lists the groups. The part that matters is that `views` dictionary, and nothing
+on this page computes it: working out which glasses a camera pose really sees is
+geometry, and that work is done in Book 2's
+[choosing where to look](../../../02_perception/02_object-perception/09_choosing-where-to-look.md).
+Building the sets is almost always harder than covering them.
+
+What you have to decide is small but real. The tie-break rule is yours, and the code above
+takes the first view in the dictionary, which means the order you insert the views changes
+the answer whenever two views add the same number of glasses. What counts as "seen" is
+yours as well: the sets above treat a glass inside the footprint as seen, but a glass at
+the very edge of the picture, or one hidden behind another, may not be, and that decision
+belongs in the geometry rather than in this loop. Finally you decide which of the two
+functions to call, and section 4 gives the numbers for that: with eight glasses and eight
+views greedy found a smallest answer in 95.6 per cent of a thousand random scenes, but
+with twenty glasses it missed in about one scene in five, and at those sizes the exact
+version is still fast enough to run.

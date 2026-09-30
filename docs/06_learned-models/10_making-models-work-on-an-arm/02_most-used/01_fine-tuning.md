@@ -33,6 +33,7 @@ it and explains how the work is actually done.
 9. [Libraries and scripts](#9-libraries-and-scripts)
 10. [How to choose, and what each way costs](#10-how-to-choose-and-what-each-way-costs)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -450,3 +451,58 @@ the part that decides whether the robot works.
 - [Working without a GPU](../../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md)
   in Book 3 says what training you can do on your own computer, and what it costs to
   rent a machine for the rest.
+
+---
+
+## 12. Using it in Python
+
+Section 3 explained LoRA as two thin grids, and section 9 named the library that
+inserts them. This section puts the two together, so that after reading it you will
+know that "use LoRA" means writing one configuration object and one wrapping call, and
+that you never touch the thin grids yourself.
+
+```python
+import torch
+from peft import LoraConfig, get_peft_model
+from transformers import AutoModelForVision2Seq
+
+vla = AutoModelForVision2Seq.from_pretrained(
+    'openvla/openvla-7b', torch_dtype=torch.bfloat16, trust_remote_code=True)
+
+config = LoraConfig(
+    r=32,                          # the rank of section 3
+    lora_alpha=16,                 # how strongly the side path is added on
+    lora_dropout=0.0,
+    target_modules='all-linear',   # a side path on every fully connected layer
+    init_lora_weights='gaussian',
+)
+vla = get_peft_model(vla, config)
+vla.print_trainable_parameters()   # how many numbers will really be trained
+```
+
+Those are the settings OpenVLA's own `vla-scripts/finetune.py` uses, so the numbers in
+the table in section 3 are the numbers this code produces. Training then runs as
+normal, and when it finishes `vla.save_pretrained('my-adapter')` writes only the side
+paths, which is why an adapter is a few megabytes rather than a few gigabytes.
+
+PEFT gives you the whole of way 2. `get_peft_model` walks through the model, replaces
+every layer that `target_modules` matches with a version that has the two thin grids
+beside it, and freezes everything else, so the "1 % to 2 % of the numbers" in section 6
+happens without your counting anything. `print_trainable_parameters` prints that count,
+and it is worth reading every time, because a `target_modules` setting that matches
+nothing fails silently and trains nothing at all.
+
+What you have to collect yourself is the data, and that is the part that takes weeks
+rather than minutes. You record the demonstrations, and you convert them into the
+format the project's scripts read, which is the LeRobot dataset format for openpi and
+RLDS for OpenVLA, as section 7 describes. You also have to write the training loop, or
+else use the project's script, because PEFT only prepares the model and does not train
+it.
+
+What you have to decide is the rank, which layers get a side path, and how long to
+train. Start with the rank and the settings above, because they are what the model's
+authors used, and change the rank only when the results in section 10 tell you to.
+Fine-tuning a detector needs none of this, because the whole job is a single call:
+`YOLO('yolo11n.pt').train(data='parts.yaml', epochs=100, imgsz=640, freeze=10)`, where
+`freeze=10` keeps the first ten layers fixed for the case where you have very few
+pictures.

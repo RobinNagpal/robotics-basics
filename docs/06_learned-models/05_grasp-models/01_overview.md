@@ -27,6 +27,7 @@ word is explained where it first appears.
 6. [What a grasp model does not know](#6-what-a-grasp-model-does-not-know)
 7. [How grasp models connect to the other kinds](#7-how-grasp-models-connect-to-the-other-kinds)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -245,3 +246,61 @@ gives an answer that a person can look at, check and filter before the arm moves
     [holding on](../../03_frameworks/02_gripping/05_holding-on.md).
 - To see where grasp models sit among all the kinds in this book, go back to
     [the map of models](../01_what-models-are/06_the-map-of-models.md).
+
+---
+
+## 9. Using it in Python
+
+Section 4 said that all four kinds of grasp model give back the same kind of
+answer, which is a list of grasps with a score on each one. This section shows what
+that list actually looks like in Python, so that after reading it you will know
+which part of the work a grasp model does for you, and which part is still yours.
+
+The nearest thing to a standard format for that list is the `GraspGroup` class from
+`graspnetAPI`, the package that comes with the GraspNet-1Billion dataset. Many
+6-DoF models save their output in exactly this form, so it is a fair picture of what
+you receive. You install it with `pip install graspnetAPI`.
+
+```python
+import numpy as np
+from graspnetAPI import GraspGroup
+
+gg = GraspGroup("grasps.npy")        # one row per grasp, as the model saved it
+gg = gg[gg.widths < 0.08]            # my gripper opens to 8 cm, so drop the wider ones
+gg = gg.sort_by_score()
+
+camera_to_base = np.load("hand_eye_calibration.npy")   # 4 by 4, measured by me
+gg.transform(camera_to_base)         # the grasps are now measured from the robot's base
+
+best = gg[0]
+print(best.score, best.width, best.translation, best.rotation_matrix)
+```
+
+The library gives you the format and the arithmetic. It knows how to read and write
+the file, how to sort by score, how to drop overlapping grasps with `gg.nms()`, and
+how to move every grasp into another frame when you hand it a transform. It also
+draws the grippers for you, through `gg.to_open3d_geometry_list()`, which is how
+most of the pictures of grasps in papers are made.
+
+What it does not give you is anything about your robot. You have to produce the
+point cloud or the depth picture in the first place, which means a working depth
+camera. You have to measure `camera_to_base` yourself, by the calibration procedure
+described in Book 5's
+[rigid transforms](../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+page, and a calibration that is 1 cm out will miss the object by 1 cm no matter how
+good the model is. You have to check that the arm can actually reach the pose and
+get there without hitting the table, because the grasp model never looked at the
+arm. And you have to write the motion that approaches the grasp, closes the fingers
+and lifts.
+
+The decisions that are yours are the score cut-off below which you refuse to try,
+the number of grasps you keep and in what order you attempt them, and what to do
+when the first attempt fails. The hardest decision is whether to use a downloaded
+model at all. Every trained grasp model in this chapter learned the geometry of one
+particular gripper, and section 6 explained why that matters: a model trained on a
+gripper that opens to 10 cm will happily propose grasps that your 6 cm gripper
+cannot make. Filtering by width, as the third line above does, removes the worst of
+those, but it does not fix a model that learned to place its fingers where your
+fingers are shaped differently. If your gripper is unusual, you will have to
+retrain, and retraining needs the simulator and the dataset that the original
+authors used.

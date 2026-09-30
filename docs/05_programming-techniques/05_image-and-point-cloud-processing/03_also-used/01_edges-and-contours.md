@@ -46,6 +46,7 @@ milliseconds and need no training data at all.
 7. [Why edges and contours, and what they cost](#7-why-edges-and-contours-and-what-they-cost)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -692,3 +693,85 @@ a size, programs often run contour steps on it even when a model is used.
   Every number in that section comes from the functions in that script; run it
   with `--numbers` to print them. The Hough transform pictures in section 3 are
   drawn by `docs/diagrams/image_processing_3.py`, which also takes `--numbers`.
+
+---
+
+## 10. Using it in Python
+
+Section 2 walked through the five steps from a gradient to a fitted shape,
+section 3 added the Hough transform for broken outlines, and section 6 named the
+OpenCV call for each step. This section runs those calls in order. After it you
+will be able to get a turned rectangle and a corner count out of a picture, and
+you will know which of the thresholds in the calls you have to set from your own
+pictures.
+
+The program below does two separate things that section 2 keeps apart. It runs
+the Canny detector on the grey picture to get an edge picture, and it traces
+contours on a mask to get closed outlines it can measure. Both come from OpenCV,
+whose Python names are the C++ names with `cv2.` in front, so `cv::Canny` is
+`cv2.Canny`.
+
+```python
+import cv2
+import numpy as np
+
+picture = cv2.imread("scene.png")
+grey = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
+
+# Edges: thin lines wherever the brightness changes sharply.
+edges = cv2.Canny(grey, 50, 150)                 # low limit, then high limit
+
+# Contours: closed outlines, traced on a mask rather than on the edge picture.
+mask = cv2.imread("mask.png", cv2.IMREAD_GRAYSCALE)
+contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+for outline in contours:
+    perimeter = cv2.arcLength(outline, True)     # True means the outline is closed
+    corners = cv2.approxPolyDP(outline, 0.02 * perimeter, True)
+    (x, y), (width, height), angle = cv2.minAreaRect(outline)
+    print(cv2.contourArea(outline), len(corners), width, height, angle)
+
+# When the outline is broken, vote for whole lines instead.
+lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi / 180,
+                        threshold=40, minLineLength=40, maxLineGap=5)
+```
+
+On a made-up picture of two green blocks on a grey table, Canny marks 287 edge
+pixels, and `findContours` on the colour mask returns two outlines. The larger
+has an area of 4894 pixels and a perimeter of 277.7, simplifies to 4 corners,
+and fits a 70 by 70 pixel rectangle. The smaller fits 60 by 50 pixels.
+`HoughLinesP` on the same edge picture finds 3 line segments, the first running
+from (150, 160) to (150, 90), which is one side of the larger block.
+
+OpenCV does every step. `Canny` runs the whole detector from section 2,
+including the thinning and the two-threshold following that a plain gradient
+does not give you. `findContours` does the border following, and with
+`RETR_EXTERNAL` it returns only the outermost outline of each shape, which is
+what you want when you do not care about holes. `approxPolyDP` does the
+Ramer-Douglas-Peucker simplification, and `minAreaRect` fits the turned
+rectangle, which is what tells a gripper which way to align its fingers.
+`HoughLinesP` runs the voting from section 3 and returns line segments with
+their two end points rather than infinite lines.
+
+What you still have to write is the interpretation. A contour with four corners
+might be a square block or a square hole or the shadow of both, and only your
+program knows which. You also have to write the step that picks the contour you
+care about, because `findContours` returns every outline in the picture
+including the frame of the table, and `max(contours, key=cv2.contourArea)` is
+the usual shortcut. And you have to read `minAreaRect`'s angle carefully,
+because the same rectangle can be reported as 70 by 70 at −90 degrees or at 0
+degrees, so a gripper angle computed from it needs wrapping into the range the
+gripper can actually reach.
+
+What you have to decide or measure are the two Canny limits, the simplification
+tolerance and the Hough thresholds. The `50` and `150` are gradient strengths in
+your own pictures, so you set them by trying values on real pictures from your
+own camera and lighting, and section 2 explains the rule of thumb that the high
+limit should be two or three times the low one. The `0.02 * perimeter` tolerance
+decides how much detail survives, and making it a fraction of the perimeter
+rather than a fixed number of pixels is deliberate, because it then behaves the
+same on a near object and a far one. For `HoughLinesP` you decide `threshold`,
+which is how many edge pixels must agree before a line is reported, and
+`maxLineGap`, which is how large a break in a line you are willing to bridge;
+section 3 explains that both depend on how broken you expect your outlines to
+be, which is a property of your scene and not of the library.

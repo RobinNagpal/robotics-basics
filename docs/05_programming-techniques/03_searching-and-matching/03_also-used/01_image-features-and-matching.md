@@ -39,6 +39,7 @@ that describes what the picture looks like around it.
 6. [Why feature matching, and what it costs](#6-why-feature-matching-and-what-it-costs)
 7. [The learned alternative](#7-the-learned-alternative)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -476,3 +477,72 @@ picture is enough.
   [getting a first guess](../02_most-used/02_iterative-closest-point.md#5-getting-a-first-guess-3d-features-and-global-registration)
   uses 3D features in the same way that this page uses picture features.
 - [The chapter overview](../01_overview.md) shows how this page fits with the others.
+
+---
+
+## 9. Using it in Python
+
+Section 2 took the five steps in order, from finding corners to keeping only the
+pairs that agree on one movement, and section 5 named the OpenCV calls for each
+step. This section puts them together, because the whole of section 2 is about
+fifteen lines of Python and seeing them in one place makes the division of labour
+clear. After reading it you should be able to find a known flat object, such as a
+printed label, in a camera picture.
+
+The example uses ORB, which is the detector and descriptor combination section 5
+recommends for a first try on an arm, because it runs fast on an ordinary processor
+and needs no graphics card.
+
+```python
+import cv2
+import numpy as np
+
+stored = cv2.imread("label.png", cv2.IMREAD_GRAYSCALE)   # the object, photographed once
+live = cv2.imread("shelf.png", cv2.IMREAD_GRAYSCALE)        # what the camera sees now
+
+orb = cv2.ORB_create(nfeatures=1000)
+keypoints1, descriptors1 = orb.detectAndCompute(stored, None)
+keypoints2, descriptors2 = orb.detectAndCompute(live, None)
+
+# Pair each spot with its two most similar spots. Hamming distance counts the bits
+# that differ, which is the right measure for ORB's descriptions.
+matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
+pairs = matcher.knnMatch(descriptors1, descriptors2, k=2)
+
+# The ratio test: keep a pair only when the best partner is clearly better than the
+# second best, because an ambiguous pair is usually a wrong one.
+good = [best for best, second in pairs if best.distance < 0.75 * second.distance]
+
+source = np.float32([keypoints1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+target = np.float32([keypoints2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+
+H, mask = cv2.findHomography(source, target, cv2.RANSAC, ransacReprojThreshold=3.0)
+print(int(mask.sum()), "of", len(good), "pairs agree on one movement")
+```
+
+What the library does for you is all five steps. `detectAndCompute` finds the
+corners and describes the patch round each one in a single call, `knnMatch` runs the
+nearest-neighbour search over the descriptions, and `findHomography` with
+`cv2.RANSAC` fits the one movement that most pairs agree on while ignoring the rest.
+Each of those would be a long piece of code to write, and none of them is worth
+writing.
+
+What you still write yourself is the ratio test and the verdict. The ratio test is
+that one list comprehension, and OpenCV does not do it for you, which is why every
+tutorial contains the same line. You also decide what counts as having found the
+object, because `findHomography` returns a matrix whenever it has four pairs to work
+with, and a matrix fitted to four wrong pairs looks exactly like a matrix fitted to
+four right ones. The usual test is to count the inliers in `mask` and require at
+least ten or fifteen, and then to check that the four corners of the stored picture,
+carried through `H` with `cv2.perspectiveTransform`, still make a sensible convex
+shape rather than a bow tie.
+
+What you have to decide or measure is three numbers. The `nfeatures` limit trades
+time against the chance of finding the object, and 500 to 2,000 is the usual range.
+The 0.75 in the ratio test is the standard value from the original paper, and
+lowering it towards 0.6 throws away more pairs but leaves cleaner ones, which is
+what you want on a repeated pattern. The `ransacReprojThreshold` is in pixels and
+says how far a pair may sit from the fitted movement and still count, so 3 pixels is
+a reasonable start and it should reflect how accurately your corners are located.
+Finally, remember what section 4 says: none of these numbers helps on an object with
+no texture, and no amount of tuning will find a plain white box this way.

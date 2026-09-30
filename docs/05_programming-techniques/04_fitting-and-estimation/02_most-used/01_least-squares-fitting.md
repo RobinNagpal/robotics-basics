@@ -35,6 +35,7 @@ chapter are built on top of it.
 7. [Why least squares, and what it costs](#7-why-least-squares-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -485,3 +486,67 @@ a long recording, and there are many examples.
   total error as small as possible, over millions of parameters instead of three.
 - Book 2's [methods you write yourself](../../../02_perception/02_object-perception/03_programmed-methods.md#22-the-plane-the-object-stands-on)
   shows how a fitted table plane is used to measure objects standing on it.
+
+---
+
+## 10. Using it in Python
+
+Sections 3 and 6 established two things: that a least-squares fit comes down to
+solving one linear system, and that NumPy already has the routine that solves
+it. This section closes the gap between those two facts by showing the call
+itself. After it you will be able to fit a line and a plane to your own points,
+and you will know which of the numbers in the result you are allowed to trust.
+
+The program below does both fits. The line fit uses `numpy.linalg.lstsq`, which
+takes the matrix of rows described in section 3 and the measured values, and
+returns the parameters that make the sum of the squared misses smallest. The
+plane fit uses `numpy.linalg.svd`, because as section 3 explained a plane is
+found by subtracting the mean from the points and taking the direction they vary
+in least.
+
+```python
+import numpy as np
+
+# --- a line through five measured heights, in millimetres
+x = np.array([0.0, 10.0, 20.0, 30.0, 40.0])
+y = np.array([2.1, 4.2, 5.8, 8.3, 9.9])
+A = np.column_stack([x, np.ones_like(x)])          # one row per point
+(slope, offset), residuals, rank, singular = np.linalg.lstsq(A, y, rcond=None)
+rms = np.sqrt(residuals[0] / x.size)               # the leftover error
+
+# --- a plane through a patch of table points, in metres
+points = np.loadtxt("table_patch.txt")             # N rows of x, y, z
+centre = points.mean(axis=0)
+u, s, vt = np.linalg.svd(points - centre)
+normal = vt[-1]                                    # the direction the plane faces
+thickness = np.sqrt(np.mean(((points - centre) @ normal) ** 2))
+```
+
+On the five heights above, that gives a slope of 0.197 and an offset of 2.12,
+with a leftover error of 0.18 mm. On 500 points scattered by 2 mm about a level
+table 0.72 m below the camera, the plane fit returns a normal of about (0.0003,
+0.0005, −1.0) and a thickness of 2.1 mm, which recovers the scatter the points
+were given.
+
+The libraries do the solve and nothing else. `lstsq` factorises the matrix and
+returns the parameters, and it also hands back the sum of the squared misses in
+`residuals`, the `rank` of the matrix and its `singular` values. Those three
+extra outputs are the ones worth reading, because a `rank` lower than the number
+of unknowns means the data does not pin all of them down, and a large spread
+between the first and last singular value means the answer is fragile.
+
+What you have to write is the matrix `A`, and that is the real work. Each column
+of `A` says how one unknown enters the model, so writing `A` is the same as
+writing down the model. The circle trick in section 3 is exactly this: it is a
+rearranged `A` that turns a curved fit into a call to the same routine. You also
+have to write the check afterwards, because `lstsq` always returns numbers and
+never refuses.
+
+What you have to decide or measure is what counts as a good fit. The `rms` above
+is 0.18 mm, but only you know whether 0.18 mm is fine for the job the arm is
+about to do, and only you know the sensor's own noise to compare it against. If
+the leftover error is far larger than the sensor's noise, then either the shape
+is wrong or some of the points do not belong to it, and the second of those is
+what the [RANSAC](02_ransac.md) page solves. You also have to decide the units,
+because the plane fit above is in metres while the line fit is in millimetres,
+and `lstsq` will not notice if you mix them.

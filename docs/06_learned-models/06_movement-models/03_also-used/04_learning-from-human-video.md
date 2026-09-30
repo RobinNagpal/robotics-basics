@@ -29,6 +29,7 @@ those commands. Every new word is explained where it first appears.
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -447,3 +448,75 @@ Deeper documents elsewhere in this repository:
   gives the 2026 research, its numbers and its maturity.
 - [Project 4: copy it from video](../../../03_frameworks/04_one-arm-training/04_learning-path.md#project-4-copy-it-from-video)
   is a hands-on project that builds hand tracking and retargeting in simulation.
+
+---
+
+## 12. Using it in Python
+
+Section 4 walked through one frame of a pinch by hand, starting from the 21 points that
+a hand pose estimator gives. This section shows the code that produces those 21 points,
+which is the first step of that worked example and the only step you get for free. After
+reading it you will know exactly where the free part stops.
+
+The estimator is MediaPipe Hand Landmarker, from Google, installed with
+`pip install mediapipe`. You also download the model file, `hand_landmarker.task`, from
+Google's own page for the task. It runs on an ordinary laptop with no graphics card.
+
+```python
+import mediapipe as mp
+
+options = mp.tasks.vision.HandLandmarkerOptions(
+    base_options=mp.tasks.BaseOptions(model_asset_path="hand_landmarker.task"),
+    running_mode=mp.tasks.vision.RunningMode.IMAGE,
+    num_hands=1,
+)
+with mp.tasks.vision.HandLandmarker.create_from_options(options) as landmarker:
+    image = mp.Image.create_from_file("frame_0001.jpg")
+    result = landmarker.detect(image)
+
+points = result.hand_world_landmarks[0]      # 21 points, in metres
+thumb_tip, index_tip = points[4], points[8]  # the two points section 4 used
+pinch = ((thumb_tip.x - index_tip.x) ** 2
+         + (thumb_tip.y - index_tip.y) ** 2
+         + (thumb_tip.z - index_tip.z) ** 2) ** 0.5
+```
+
+MediaPipe gives you the palm detector, the landmark model and the numbering of the 21
+points, and that numbering is what makes point 4 the thumb tip and point 8 the index
+fingertip in every frame. It gives you two versions of each point. `hand_landmarks`
+holds them in picture coordinates, scaled from 0 to 1 across the width and height, and
+`hand_world_landmarks` holds them in metres. It also tells you, in `handedness`, whether
+it saw a left or a right hand. For video you would pass `RunningMode.VIDEO` and call
+`detect_for_video` with a timestamp instead, which lets the model track the hand between
+frames rather than searching the whole picture again.
+
+Now the part that matters, because it is the usual misunderstanding about this method.
+The metres in `hand_world_landmarks` are measured from the middle of the hand, not from
+the camera. So the pinch distance computed above is real, in metres, and that is why
+step 5 of section 4 could turn a pinch into a gripper opening. But the position of the
+hand in the room is not there at all. MediaPipe does not know how far the hand is from
+the lens, so steps 2, 3 and 4 of section 4, which place the gripper somewhere in the
+robot's frame, cannot be done from this output alone. You need a depth camera, or two
+cameras, or a 3D hand model such as HaMeR, and then you need the calibration that says
+where the camera sits relative to the robot's base.
+
+What you have to write yourself is everything after these lines. The cleaning that
+section 4 showed, which is a median over nine frames and then a clip to the gripper's
+range, is a few lines of your own code, and it is not optional, because a tracker that
+loses the index finger for four frames will otherwise tell the gripper to close hard on
+nothing. The mapping from the hand to your gripper is yours, unless you use
+[dex-retargeting](https://github.com/dexsuite/dex-retargeting) from section 7. And the
+whole of section 8 is work that no library does: a human hand has a wrist that rotates
+differently from your arm's, fingers that bend, and grips that a two-finger gripper
+cannot make at all, so some fraction of any video simply cannot become a robot
+demonstration.
+
+What you have to decide is whether this route is worth it for you, and section 9 is
+direct about that. Human video is abundant and cheap to record, which is the attraction.
+But the output of this whole pipeline is a guess at what the robot should have done,
+made by a chain of estimates each of which adds error, and it is not a recorded
+demonstration. Section 9 puts the alternative plainly: robot demonstrations are exactly
+right, because they have the right body, the right cameras and the real commands, and
+their only problem is what they cost per hour. So human video earns its place when you
+need variety you cannot record on your own robot, and not when you are simply trying to
+avoid an afternoon with a leader arm.

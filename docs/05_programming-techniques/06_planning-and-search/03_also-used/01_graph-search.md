@@ -38,6 +38,7 @@ uses it every time it finds a route.
 8. [Doing things in the right order: topological sort](#8-doing-things-in-the-right-order-topological-sort)
 9. [The learned alternative](#9-the-learned-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -647,3 +648,75 @@ and fast, and it gives the same valid order every time.
   covers planning in practice with MoveIt.
 - Book 3's [ordering and rearrangement](../../../03_frameworks/03_arm-movement/07_ordering-and-rearrangement.md)
   builds the "what must move first" graph of section 8 from a real scene.
+
+---
+
+## 11. Using it in Python
+
+Section 3 gave breadth-first search, Dijkstra's algorithm and A* as pseudocode,
+section 6 listed the libraries, and section 8 added the topological sort. This
+section calls them. After it you will be able to find a cheapest path on a grid
+and an order for a set of steps, and you will know why the library call is never
+the part that takes the time.
+
+NetworkX is a pure Python library for graphs, and section 6 calls it the easiest
+to start with. The program below builds the grid of section 2, blocks some of
+it, and asks for a path across it. It then does the section 8 job of putting a
+set of steps in a workable order.
+
+```python
+import networkx as nx
+
+# A 10 by 10 grid with a wall down column 4, leaving a gap at the bottom.
+grid = nx.grid_2d_graph(10, 10)
+grid.remove_nodes_from((row, 4) for row in range(8))
+
+def manhattan(a, b):                     # the guess A* uses: never an overestimate
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+path = nx.astar_path(grid, (0, 0), (0, 9), heuristic=manhattan, weight="weight")
+
+# Putting steps in an order that respects what must come first.
+steps = nx.DiGraph([("open gripper", "move above"), ("move above", "lower"),
+                    ("lower", "close gripper"), ("close gripper", "lift")])
+order = list(nx.topological_sort(steps))
+```
+
+The path comes back with 25 steps, running down to row 8, through the gap, and
+back up the other side, which is the detour the wall forces. `nx.dijkstra_path`
+on the same grid returns a path of the same 25 steps, because with every edge
+costing the same the two methods must agree, and section 3 explains that A* only
+differs in how much of the grid it looks at on the way. The topological sort
+returns the five steps in the order open gripper, move above, lower, close
+gripper, lift.
+
+NetworkX does the search. `astar_path` keeps the frontier, the costs so far and
+the visited set from section 3, and `topological_sort` does the section 8
+ordering and raises an error if the steps contain a cycle, which is how you find
+out that two of your steps each require the other. Passing `weight="weight"`
+tells it to read an edge's `weight` attribute, and an edge without one counts as
+1, which is why the grid above needs no weights at all.
+
+What you still have to write is the graph, and that is the real work every time.
+Nothing above knows anything about a robot: `(0, 0)` is a pair of numbers, and
+the wall is a set of removed nodes. Turning your problem into a graph means
+deciding what a node is, which nodes are joined, and what an edge costs, and
+section 2 explains that for an arm the node is usually not a grid cell at all.
+You also have to write the conversion back, because a list of grid cells is not
+a trajectory, and the
+[trajectory optimisation](../02_most-used/03_trajectory-optimisation.md) page
+covers smoothing it into one.
+
+What you have to decide or measure is the cost on the edges and the guess in the
+heuristic. The cost is where your real requirements go: section 3 shows that
+making cells near an obstacle cost more gives you a path that keeps its distance
+without any change to the search. The heuristic has one hard rule, which is that
+it must never overestimate the remaining cost, because A* returns the cheapest
+path only when the guess is honest. Manhattan distance is safe on a grid where
+you can only move along the axes with cost 1, and it stops being safe the moment
+you allow diagonal moves, where the straight-line distance is the right guess
+instead. Section 5 is also worth remembering here, because it counts over two
+billion cells for a grid over six joints at 10 degree steps, which is why this
+page sits in the also-used group and the
+[sampling-based planning](../02_most-used/01_sampling-based-planning.md) page
+sits in the most-used one.

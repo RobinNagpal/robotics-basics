@@ -28,6 +28,7 @@ introduces its own from the start.
 5. [How they work together on one move](#5-how-they-work-together-on-one-move)
 6. [How this chapter connects to the others](#6-how-this-chapter-connects-to-the-others)
 7. [Where to read next](#7-where-to-read-next)
+8. [Using it in Python](#8-using-it-in-python)
 
 ---
 
@@ -301,3 +302,76 @@ list below gives a reading order that introduces each idea before it is used.
   the ways a planner can succeed and still leave you worse off.
 - Book 3's [programmed methods for one arm](../../03_frameworks/04_one-arm-training/02_programmed-methods.md#4-motion-planning)
   places motion planning among the other ways to program an arm.
+
+---
+
+## 8. Using it in Python
+
+Section 5 followed one move through all six techniques, from the goal pose to
+the timed trajectory. What it did not say is who calls whom in real code. After
+this section you will know where a Python program actually joins that chain on a
+ROS 2 arm, which is higher up than the six techniques themselves.
+
+The honest answer is that you do not call a planner from Python. You call
+MoveIt, and MoveIt calls the planner, the inverse kinematics solver, the
+collision checker and the time parameteriser in the order section 5 describes.
+The Python interface to MoveIt is `moveit_py`, and a whole move looks like this.
+
+```python
+import rclpy
+from moveit.planning import MoveItPy
+from geometry_msgs.msg import PoseStamped
+
+rclpy.init()
+robot = MoveItPy(node_name="moveit_py")
+arm = robot.get_planning_component("panda_arm")
+
+arm.set_start_state_to_current_state()
+
+goal = PoseStamped()
+goal.header.frame_id = "panda_link0"      # the frame the pose is measured in
+goal.pose.position.x = 0.28
+goal.pose.position.y = -0.2
+goal.pose.position.z = 0.5
+goal.pose.orientation.w = 1.0
+arm.set_goal_state(pose_stamped_msg=goal, pose_link="panda_link8")
+
+result = arm.plan()
+if result:
+    robot.execute(result.trajectory, controllers=[])
+```
+
+That short program reaches every technique in this chapter. `set_goal_state`
+with a pose makes MoveIt run
+[numerical inverse kinematics](02_most-used/02_numerical-inverse-kinematics.md)
+to turn the pose into joint angles. `plan` runs a
+[sampling-based planner](02_most-used/01_sampling-based-planning.md) from OMPL,
+asking the collision checker about every sample, and then smooths the result.
+The [trajectory optimisation](02_most-used/03_trajectory-optimisation.md) step
+runs too if your planning pipeline is configured for CHOMP or STOMP. Then
+`execute` sends the trajectory to the controller.
+
+MoveIt does the joining, and that is a larger contribution than it sounds. It
+loads your arm's description, keeps the planning scene of obstacles up to date
+from the camera, hands the sampler a collision checker built from your arm's own
+shapes, converts between frames, and turns a path into a trajectory with speeds
+that respect your joint limits. Writing that by hand is the reason the six
+technique pages each end by pointing at a library rather than at a listing.
+
+What you still have to write is everything outside the move. You write the
+sequence of moves, the gripper commands between them, the recovery when `plan`
+returns nothing, and the decision about which pose to aim for in the first
+place, which is the job of Book 3's task-level chapters. You also have to write
+the configuration, because `MoveItPy` reads a MoveIt configuration package that
+names your arm's joints, its kinematics solver, its planning pipelines and its
+controllers. There is no `pip install` that produces a working planner, because
+a planner without a robot description has nothing to plan for.
+
+What you have to decide or measure is the description of your own robot and its
+world. The planner needs the arm's link shapes, its joint limits, which pairs of
+links are allowed to touch, how much clearance you insist on, and how long it
+may search before giving up. Every one of those is a number about your workcell,
+and the six pages in this chapter are each about one part of that list. The
+pages that follow give the Python for the individual pieces, and they are worth
+reading even though MoveIt calls them for you, because when a plan fails the
+message you get back is about one of these pieces and not about MoveIt.

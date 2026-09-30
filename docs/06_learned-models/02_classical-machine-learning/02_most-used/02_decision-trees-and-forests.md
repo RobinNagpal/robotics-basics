@@ -41,6 +41,7 @@ written in NumPy.
 10. [Why trees, and what they cost](#10-why-trees-and-what-they-cost)
 11. [The written alternative](#11-the-written-alternative)
 12. [Where to read next](#12-where-to-read-next)
+13. [Using it in Python](#13-using-it-in-python)
 
 ---
 
@@ -595,3 +596,58 @@ it, and then check or adjust its questions by hand.
   covers slip detection with networks on raw signals.
 - [Evaluation and failure](../../10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md)
   explains how to test a model fairly before the robot relies on it.
+
+---
+
+## 13. Using it in Python
+
+Section 2 searched for the best question by hand, section 3 grew a forest of
+trees, and section 9 listed the libraries. This section shows what all of that
+looks like when a library does it, and the point of the section is how little
+code it is. A random forest, which section 3 described as hundreds of trees
+voting, is one line.
+
+```python
+from sklearn.tree import DecisionTreeClassifier, export_text
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+
+names = ["sideways_ratio", "shaking"]   # section 2's two features
+
+tree = DecisionTreeClassifier(max_depth=3, random_state=0).fit(X, y)
+print(export_text(tree, feature_names=names))   # prints section 2's questions
+
+forest = RandomForestClassifier(n_estimators=300, random_state=0).fit(X, y)
+print(forest.feature_importances_)              # section 5's importances
+print(forest.predict_proba(X_new)[:, 1])        # the share of trees voting slip
+
+boosted = HistGradientBoostingClassifier(
+    learning_rate=0.1, early_stopping=True).fit(X, y)
+```
+
+The `export_text` line is worth running once, because it prints the tree as the
+indented list of questions that section 2 showed, with your own column names in
+it. That is the property section 10 called readability, and it is real only for a
+shallow single tree, since 300 trees cannot be read.
+
+The library gives you all of the arithmetic on this page. The Gini search of
+section 2, the bootstrap sampling and the vote of section 3, and the residual
+fitting of section 4 are all inside `fit`. `early_stopping=True` does section 4's
+stopping for you, by holding some rows back and watching for the point where the
+score on them stops improving, which is the check section 10 said every boosted
+model needs. Every one of these classes also takes `sample_weight` in `fit`,
+which is section 4's first way to boost.
+
+What you have to collect is `X` and `y`, and what you have to build are the two
+columns named above. Section 2 computed the sideways ratio by dividing the
+sideways force by the squeezing force, and section 10 said that it was that
+ratio, and not the two raw forces, that made the slip tree work. A tree chooses
+among the columns you hand it and never combines two of them into a new one, so
+that combining is your job and no setting of the library replaces it.
+
+What you have to decide is `max_depth`, which section 2 tied directly to
+overfitting, `n_estimators`, which is how many trees to grow, and
+`learning_rate` for the boosted model, which section 4 explained. More trees in a
+forest do not make it overfit and only cost time, so the depth and the learning
+rate are the two settings actually worth searching over. You search them against
+rows the model has not trained on, and section 6 added that when the rows come
+from runs over time, those held-back rows should come from a later run.

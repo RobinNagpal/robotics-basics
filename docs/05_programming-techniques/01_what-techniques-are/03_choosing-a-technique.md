@@ -28,6 +28,7 @@ also a guide to reading those pages.
 7. [A worked choice: finding the table top](#7-a-worked-choice-finding-the-table-top)
 8. [A checklist](#8-a-checklist)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -345,3 +346,60 @@ technique. It also names what people use instead when the technique fails.
 - [Making it work](../../02_perception/02_object-perception/07_making-it-work.md)
   in Book 2 is about testing perception on real scenes, which is how you answer
   the robustness question in practice.
+
+---
+
+## 10. Using it in Python
+
+Section 8 turned the five questions into a checklist whose middle column says
+what to measure for each one. This section shows how to measure the first two of
+them in Python, because speed and accuracy are the two that give you a number,
+and a number is what settles an argument between two techniques. After this
+section you should be able to run a candidate technique on your own data and
+write down how many milliseconds it takes and how many millimetres it is out by.
+
+Only the Python standard library and NumPy are needed, since `time.perf_counter`
+gives a clock that counts steadily and NumPy summarises a list of errors.
+
+```python
+import time
+import numpy as np
+
+def milliseconds_per_run(technique, scene, repeats=200):
+    technique(scene)                       # once first, so start-up work is not counted
+    start = time.perf_counter()
+    for _ in range(repeats):
+        technique(scene)
+    return (time.perf_counter() - start) / repeats * 1000.0
+
+budget_ms = 1000.0 / 30.0             # a 30 Hz camera loop allows 33.3 ms per picture
+print(milliseconds_per_run(fit_plane_ransac, cloud), "ms against", budget_ms)
+
+# Accuracy: one answer and one measured truth per test scene, both in millimetres.
+errors = np.abs(np.array(answers) - np.array(truths))
+print(errors.mean(), np.percentile(errors, 95), errors.max())
+```
+
+The libraries do very little here, and that is the point. `time.perf_counter`
+returns a number of seconds from a clock that never jumps backwards, which an
+ordinary wall clock can do, and NumPy gives you the mean, a percentile and the
+worst case of a list of errors in one line each. Everything else is yours.
+
+What you still write yourself is all of the work. You write the technique, you
+collect the test scenes, and you write the loop that runs one against the other.
+You also have to obtain the truths, and there is no library for that, because a
+truth comes from a ruler, a printed marker at a known place, or a part held in a
+fixture. The third, fourth and fifth questions have no measuring code at all,
+since robustness means gathering shiny, dark and cluttered scenes on purpose, and
+counting parameters means reading the technique's own documentation.
+
+What you have to decide is more interesting. The `repeats` matters because one run
+tells you almost nothing: the first run pays for memory allocation, and a single
+timing on a laptop varies by tens of percent. The `budget_ms` comes from the rate
+of the loop the technique sits in, which section 2 sets out, and that rate is your
+design choice rather than a fact. The pass mark in millimetres comes from how much
+room the gripper has, which section 3 explains. Finally, you have to decide which
+of the three accuracy numbers to believe, and the honest answer is usually not the
+mean, because the mean hides the one scene where the technique failed completely.
+A high percentile or the maximum is what will decide whether the arm drops
+something.

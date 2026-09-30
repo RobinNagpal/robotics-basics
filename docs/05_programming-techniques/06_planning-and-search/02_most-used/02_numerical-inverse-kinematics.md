@@ -38,6 +38,7 @@ target is `(2.598, 3.5)`, which is where the gripper sits when `q1 = 30°` and `
 6. [Why numerical inverse kinematics, and what it costs](#6-why-numerical-inverse-kinematics-and-what-it-costs)
 7. [The learned alternative](#7-the-learned-alternative)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -525,3 +526,82 @@ tool miss the pose that forward kinematics predicts.
   [inverse kinematics](../../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md).
 - Book 3 covers singularities in [reaching and reachability](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#3-singularities-and-what-the-controller-does-at-one),
   and the libraries in [tools and libraries](../../../03_frameworks/01_tools-and-libraries.md#8-kinematics-and-maths-kdl-pinocchio-and-scipy).
+
+---
+
+## 9. Using it in Python
+
+Section 2 built the damped least-squares loop step by step, and section 5 said
+that Pinocchio gives you the pieces while you write the loop. This section is
+that loop, in code that runs. After it you will be able to solve inverse
+kinematics for your own arm from a Python script, and you will know which two
+numbers in the loop you have to choose.
+
+Pinocchio is a C++ library with Python bindings that reads a URDF robot
+description file and computes kinematics from it. The program below is the whole
+of section 2: it measures the miss as a six-number twist, asks Pinocchio for the
+Jacobian, solves the damped system, and takes one step.
+
+```python
+import numpy as np
+import pinocchio as pin
+
+model = pin.buildModelFromUrdf("arm.urdf")
+data = model.createData()
+tip = model.getFrameId("tool0")            # the frame you want to place
+
+target = pin.SE3(np.eye(3), np.array([0.2, 0.1, 0.3]))   # rotation, then position
+q = pin.neutral(model)                     # the starting guess
+damping = 1e-2
+
+for step in range(100):
+    pin.forwardKinematics(model, data, q)
+    pin.updateFramePlacements(model, data)
+
+    # The miss, as three distances and three rotations in one vector of six.
+    error = pin.log6(data.oMf[tip].actInv(target)).vector
+    if np.linalg.norm(error) < 1e-6:
+        break
+
+    J = pin.computeFrameJacobian(model, data, q, tip, pin.LOCAL)
+    # Damped least squares: J.T @ inv(J @ J.T + damping^2 * I) @ error
+    dq = J.T @ np.linalg.solve(J @ J.T + damping ** 2 * np.eye(6), error)
+    q = pin.integrate(model, q, dq)        # add dq to q, respecting joint types
+```
+
+On Pinocchio's own six-joint sample arm, aiming at a pose the arm can reach,
+that loop converges in 7 steps to a miss of 4 times ten to the power of minus 8,
+which is far below any real sensor's accuracy. Raising `damping` makes it take
+more steps but survive a target close to a straight arm, and section 7 shows the
+trade in detail.
+
+Pinocchio does the two hard pieces. `computeFrameJacobian` builds the Jacobian
+from section 2 for your arm's real geometry, which is a matrix of derivatives
+nobody wants to write by hand for six joints. `log6` turns the difference
+between two poses into the six-number twist that the Jacobian expects, which
+handles the rotation part correctly in a way that subtracting angles does not.
+`integrate` adds a step to a configuration while respecting what each joint is,
+so a revolute joint wraps and a free-floating base stays a valid rotation.
+
+What you still have to write is the loop itself, and section 5 said so plainly:
+with Pinocchio you get the pieces and you write the damped step. That is not a
+criticism, because writing the loop is what lets you change the miss. The
+camera-pointing example in section 3 replaces the six-number pose error with a
+two-number image error, and that change is three lines in this loop and
+impossible through a library's IK function. You also have to write the stopping
+test, the limit on how many steps you allow, and the clamp that keeps `q` inside
+the joint limits, because `integrate` will happily step past them.
+
+What you have to decide or measure is the damping and the stopping tolerance.
+The damping of 1e-2 is a compromise, and section 5 explains it: too little and
+the step explodes when the arm is near a pose where a small hand motion needs a
+huge joint motion, too much and the loop crawls. A common improvement is to
+start small and raise it only when a step makes the error worse. The tolerance
+of 1e-6 above is far tighter than any arm can achieve, so on a real robot you
+set it from the accuracy you actually need, in metres and radians, remembering
+that `error` mixes both in one vector so a single number weighs them together.
+If you need to weigh them apart, you scale the rotation rows of `J` and `error`,
+and that too is a line you write rather than a setting you pass. For a ROS 2
+arm, section 5 remains right that you should first try the solver MoveIt already
+uses, and write this loop only when you need it inside a control cycle or when
+the miss is not a pose.

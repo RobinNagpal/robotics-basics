@@ -29,6 +29,7 @@ explains the convolutional layers that this kind of model is built from.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -318,3 +319,67 @@ flat surface, and the model wins on objects nobody has listed.
     lists the code and the licences.
 - Book 3's [grippers and hardware](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md)
     explains parallel-jaw grippers and how far they open.
+
+---
+
+## 11. Using it in Python
+
+Section 3 said that GG-CNN paints three maps over the depth picture, a quality map,
+an angle map and a width map, and that the best rectangle is read off the peak of
+the quality map. This section shows that reading happening in Python, so that after
+reading it you will know how small this model really is and where the work goes
+instead.
+
+GG-CNN is not a package on the Python package index. You clone
+[the repository](https://github.com/dougsm/ggcnn) and download the released weights,
+which include the whole saved model, so no code is needed to rebuild the network.
+The imports `models.common` and `utils.dataset_processing.grasp` are folders inside
+the clone.
+
+```python
+import torch
+from models.common import post_process_output              # in the cloned repository
+from utils.dataset_processing.grasp import detect_grasps
+
+net = torch.load("ggcnn_weights_cornell/ggcnn_epoch_23_cornell")
+net.eval()
+
+with torch.no_grad():
+    # depth has shape (1, 1, 300, 300): one 300 by 300 depth picture, in metres
+    pos, cos, sin, width = net(depth)
+
+q_img, ang_img, width_img = post_process_output(pos, cos, sin, width)
+grasp = detect_grasps(q_img, ang_img, width_img=width_img, no_grasps=1)[0]
+print(grasp.center, grasp.angle, grasp.length)
+```
+
+The repository gives you a network small enough to run many times a second on a
+laptop, and it gives you the two steps around it that you would otherwise get wrong.
+`post_process_output` is one of them: the network does not output an angle, it
+outputs the cosine and the sine of twice the angle, and this function turns that pair
+back into an angle and then smooths all three maps, which stops the peak jumping
+between neighbouring pixels from frame to frame. `detect_grasps` is the other: it
+finds the peaks of the quality map and reads the angle and the width at each peak,
+and it returns a `Grasp` whose `center` is the pixel as a row and a column, whose
+`angle` is in radians, and whose `length` is the gripper opening in pixels.
+
+What you have to supply is the depth picture in the exact shape the network was
+trained on, which is 300 by 300 pixels of depth in metres, centred on the part of the
+table you care about. Cropping and resizing to that shape is your code. Turning the
+answer back into something the arm can use is also your code, and there is more of it
+than the model: the pixel has to become a point in the camera's frame using the
+camera's intrinsic parameters and the depth at that pixel, then a point in the
+robot's frame using your calibration, then a full gripper pose by combining that
+point with the angle and a straight-down approach. The opening in pixels has to
+become an opening in millimetres, which depends on how far away the object is.
+
+The decision that is yours is the cut-off on the quality map. `detect_grasps` asks
+for peaks above 0.2 by default, which is low, and a low cut-off means the model
+always answers even when there is nothing graspable in the picture. Raising it makes
+the arm refuse more often and succeed more often when it does try. The other
+decision is whether to retrain. These weights were trained on the Cornell grasping
+dataset, whose rectangles were drawn for a two-finger gripper of one size, so the
+width map is in that gripper's units, and the whole model assumes the gripper comes
+straight down. If your gripper is a different size, the width map is simply wrong for
+you, and the training script `train_ggcnn.py` in the same repository is how you fix
+it, on either the Cornell or the Jacquard dataset.

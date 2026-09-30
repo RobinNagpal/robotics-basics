@@ -28,6 +28,7 @@ an affordance model is a kind of segmentation model.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -343,3 +344,74 @@ tools nobody has listed.
     explains suction cups and how much they can lift.
 - Book 3's [holding on](../../../03_frameworks/02_gripping/05_holding-on.md) covers
     what to do once the cup or fingers are on the object.
+
+---
+
+## 11. Using it in Python
+
+Section 3 said that a suction model paints a score over every pixel and then picks
+the best one, and section 5 named Dex-Net 3.0 and Dex-Net 4.0 as the models that do
+this. This section shows how their code is actually called, so that after reading it
+you will know what the download gives you and how old it is.
+
+The code for Dex-Net's suction models lives in
+[gqcnn](https://github.com/BerkeleyAutomation/gqcnn), from the University of
+California, Berkeley. It is not on the Python package index, so you clone it and
+install it from the clone. The class below plans a suction grasp on one depth
+picture.
+
+```python
+import numpy as np
+from autolab_core import (BinaryImage, CameraIntrinsics, ColorImage, DepthImage,
+                          RgbdImage, YamlConfig)
+from gqcnn.grasping import FullyConvolutionalGraspingPolicySuction, RgbdImageState
+
+config = YamlConfig("cfg/examples/fc_gqcnn_suction.yaml")   # names the weights folder
+policy = FullyConvolutionalGraspingPolicySuction(config["policy"])
+
+camera_intr = CameraIntrinsics.load("primesense.intr")
+depth_im = DepthImage(np.load("depth_0.npy"), frame=camera_intr.frame).inpaint()
+color_im = ColorImage(np.zeros([depth_im.height, depth_im.width, 3], np.uint8),
+                      frame=camera_intr.frame)
+segmask = BinaryImage.open("segmask_0.png")   # which pixels are objects, from my own code
+
+state = RgbdImageState(RgbdImage.from_color_and_depth(color_im, depth_im),
+                       camera_intr, segmask=segmask)
+action = policy(state)
+print(action.q_value, action.grasp.center, action.grasp.axis, action.grasp.depth)
+```
+
+The library gives you the trained network, the sliding of it over the whole picture,
+and the choosing of the best pixel. It also gives you the answer in a form you can
+act on: `action.grasp` is a `SuctionPoint2D`, whose `center` is the pixel to put the
+cup on, whose `axis` is the direction the cup should point along, and whose `depth`
+is how far away that pixel is. The `q_value` beside it is the model's estimate of
+how likely the seal is to hold, between 0 and 1, and that number is the whole point
+of the model. The call to `inpaint` is also the library's, and you need it, because a
+depth camera returns holes where it saw nothing and the network cannot read a hole.
+
+What you have to supply is the segmentation mask, which says which pixels belong to
+objects rather than to the bin, and the fully convolutional policy will refuse to
+run without one. You also have to supply the camera's intrinsic parameters in
+Berkeley's own `.intr` file format, and to download the weights separately, because
+the repository ships code and not models. Then, as with every grasp model, you have
+to move the answer into the robot's frame with your own calibration and write the
+motion that goes there, switches the pump on and lifts.
+
+The cost you have to accept here is the age of the code. `gqcnn` pins TensorFlow to
+version 1.15 or below and had its last commit in January 2022, so it will not
+install alongside a current PyTorch or TensorFlow, and in practice people run it in
+a container with an old Python. Its licence allows education, research and
+not-for-profit use only. SuctionNet-1Billion, the newer dataset from section 5, has
+a baseline repository of the same kind rather than a package, and it was written
+against PyTorch 1.4. For affordance models such as Where2Act there is no packaged
+release at all, only the authors' training code and the simulator they used.
+
+The decision that is yours is whether your cup matches theirs. The Dex-Net suction
+weights were trained on one particular rubber cup, of one diameter and one
+stiffness, and the seal score means "would that cup seal here". A larger cup needs a
+flatter patch than the model was taught to look for, and a stiffer cup tolerates
+less curvature, so the scores drift away from the truth in a direction you cannot
+see from the number. Retraining on your own cup is possible, because the labels come
+from a physics model rather than from real attempts, but it means running Dex-Net's
+dataset generation, which is a much larger job than calling the policy.

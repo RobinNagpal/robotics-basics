@@ -31,6 +31,7 @@ two-joint arm.
 6. [Loops that run at different rates](#6-loops-that-run-at-different-rates)
 7. [How this chapter connects to the others](#7-how-this-chapter-connects-to-the-others)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -307,3 +308,82 @@ on top of those loops rather than in place of them.
   covers impedance and admittance from the gripper's point of view.
 - Book 6's [movement models overview](../../06_learned-models/06_movement-models/01_overview.md)
   shows what a learned policy takes over, and what it still leaves to these loops.
+
+---
+
+## 9. Using it in Python
+
+Section 5 followed one move through all five techniques, and section 6 showed that
+they run at different rates. This section puts the same stack into Python, so that
+you can see which library covers which layer and how the layers hand values to each
+other. After reading it you will know what a running control loop imports, and you
+will see that most of the lines in it are still yours.
+
+The loop below moves a two-joint arm to a new pair of angles. Ruckig makes the
+moving target, Pinocchio works out the torque that target needs, and one PID per
+joint corrects whatever is left over.
+
+```python
+import numpy as np, pinocchio as pin
+from ruckig import InputParameter, OutputParameter, Result, Ruckig
+from simple_pid import PID
+
+DT = 0.002                                     # one tick every 2 milliseconds
+model = pin.buildModelFromUrdf("arm.urdf")     # your arm's masses and lengths
+data = model.createData()
+
+otg = Ruckig(model.nq, DT)                     # layer 1: trajectory generation
+inp, out = InputParameter(model.nq), OutputParameter(model.nq)
+inp.current_position = [0.0, 0.0]
+inp.target_position = [0.6, -0.4]
+inp.max_velocity = [1.5, 1.5]
+inp.max_acceleration = [3.0, 3.0]
+inp.max_jerk = [20.0, 20.0]
+
+pids = [PID(Kp=40.0, Ki=5.0, Kd=2.0, output_limits=(-30.0, 30.0))
+        for _ in range(model.nq)]              # layer 3: one PID per joint
+for p in pids:
+    p.sample_time = None                       # the loop decides when to tick
+
+while otg.update(inp, out) == Result.Working:
+    q_d = np.array(out.new_position)           # where each joint should be on this tick
+    # layer 2: the torque this motion needs, worked out before any error appears
+    tau_ff = pin.rnea(model, data, q_d,
+                      np.array(out.new_velocity), np.array(out.new_acceleration))
+    q = read_joint_angles()
+    for j in range(model.nq):
+        pids[j].setpoint = q_d[j]
+    tau_fb = np.array([pids[j](q[j], dt=DT) for j in range(model.nq)])
+    send_joint_torques(clamp_to_limits(tau_ff + tau_fb))   # layer 4: safety monitoring
+    out.pass_to_input(inp)                     # this tick's end state starts the next one
+```
+
+Three libraries appear there, and each one covers exactly one layer. Ruckig turns a
+target angle into a jerk-limited position, speed and acceleration for every tick, and
+it does that from whatever state the arm is in, which is the part of trajectory
+generation that is hard to write correctly. Pinocchio reads the arm description and
+computes the torque that the wanted acceleration needs, so you never write the
+equations of motion yourself. `simple_pid` keeps the error history, clamps the
+integral term so it cannot grow while the output is saturated, and clamps the output
+to the limits you gave it.
+
+Everything else in that loop is yours. `read_joint_angles`, `send_joint_torques` and
+`clamp_to_limits` are your code, because they depend on which arm and which driver
+you use, and no library can guess them. You also have to run the loop at a steady
+rate, decide what happens when one tick arrives late, and put a state machine around
+the whole thing so that a move can be started, paused and abandoned.
+
+The numbers are yours too, and they are the part that decides whether the arm moves
+well. The speed and acceleration limits come from the arm's manual, but the jerk
+limit is usually in no manual, so you lower it until the wobble described in section
+5 disappears. The three PID gains come from tuning on the real joint. The masses,
+centres of mass and inertias in `arm.urdf` come from the arm maker if it publishes
+them, and from your own measurements if it does not, and a held object is not in that
+file until you add it. Finally `DT` has to match the rate your program really
+achieves, because a PID tuned at 500 ticks a second behaves differently at 100.
+
+One caution before you try this. On most industrial arms you cannot send torques at
+all, because the joint loop runs inside the maker's drive, as the
+[PID page](02_most-used/01_pid-control.md#6-libraries-that-provide-it) explains. In
+that case only layer 1 stays in your program, and you send positions instead of
+torques.

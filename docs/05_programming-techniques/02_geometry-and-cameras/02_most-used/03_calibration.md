@@ -37,6 +37,7 @@ while this page explains how it works inside.
 9. [Why calibrate, and what it costs](#9-why-calibrate-and-what-it-costs)
 10. [The learned alternative](#10-the-learned-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -570,3 +571,86 @@ calibrated numbers rather than replacing them.
 - Book 2 goes deeper into why calibration matters in
   [calibration, which decides all of it](../../../02_perception/02_object-perception/02_sensors.md#4-calibration-which-decides-all-of-it)
   and [the wrist camera, end to end](../../../02_perception/02_object-perception/08_the-wrist-camera.md).
+
+---
+
+## 12. Using it in Python
+
+Sections 2 and 3 described the two calibrations and section 5 gave both as
+pseudocode, while section 8 named OpenCV as the library that implements them. This
+section shows the OpenCV calls themselves, because the pseudocode hides how little
+code the two solvers need once the pictures and the poses have been collected.
+After reading it you should see that the solver is three lines and the collecting
+is everything else.
+
+Intrinsic calibration comes first, and it is two calls per picture followed by one
+call over all of them. The board below has 9 by 6 inner corners and 20 mm squares.
+
+```python
+import glob
+
+import cv2
+import numpy as np
+
+pattern = (9, 6)
+square_m = 0.020
+
+# The board's own corners, in the board's frame: z is 0 because the board is flat.
+board_points = np.zeros((pattern[0] * pattern[1], 3), np.float32)
+board_points[:, :2] = np.mgrid[0:pattern[0], 0:pattern[1]].T.reshape(-1, 2) * square_m
+
+object_points, image_points = [], []
+for path in sorted(glob.glob("board/*.png")):
+    grey = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    found, corners = cv2.findChessboardCorners(grey, pattern)
+    if not found:
+        continue                       # this picture is unusable, and that is normal
+    corners = cv2.cornerSubPix(
+        grey, corners, (11, 11), (-1, -1),
+        (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001))
+    object_points.append(board_points)
+    image_points.append(corners)
+
+rms, K, dist, rvecs, tvecs = cv2.calibrateCamera(
+    object_points, image_points, grey.shape[::-1], None, None)
+print(rms, "pixels RMS reprojection error")
+```
+
+Hand-eye calibration then reuses the `rvecs` and `tvecs` that came back, because
+each of them is already the board's pose in the camera for one picture. What you
+add is the arm's own pose for the same picture, read from tf2 at the moment the
+picture was taken.
+
+```python
+R_target2cam = [cv2.Rodrigues(r)[0] for r in rvecs]   # rotation vector to matrix
+t_target2cam = tvecs
+
+R_cam2gripper, t_cam2gripper = cv2.calibrateHandEye(
+    R_gripper2base, t_gripper2base,       # the arm's flange pose, one per picture
+    R_target2cam, t_target2cam,       # the board's pose in the camera, one per picture
+    method=cv2.CALIB_HAND_EYE_TSAI)
+```
+
+What the library does for you is the whole of both solvers. `findChessboardCorners`
+finds the corners and puts them in a known order, `cornerSubPix` refines each one to
+a fraction of a pixel, and `calibrateCamera` runs the first guess and the
+least-squares refinement of section 2 over every picture at once, returning the four
+lens numbers, the five distortion numbers and the board's pose in each picture.
+`calibrateHandEye` solves the equation of section 3, and it offers the Tsai, Park,
+Horaud, Andreff and Daniilidis methods behind that one `method` argument.
+
+What you still write yourself is the collecting, and it is the larger half. You
+write the loop over the pictures, you skip the pictures where the board was not
+found, and you have to pair each picture with the arm pose at the moment it was
+taken rather than the pose a moment later, which means either stopping the arm or
+recording both with timestamps. Nothing checks that the pairing is right, and a
+single mismatched pair moves the answer by centimetres.
+
+What you have to decide or measure is the board and the poses. You measure the
+square size with calipers, on the printed board rather than from the file you sent
+to the printer, because printers scale. You decide how many pictures to take and
+how varied they are, which section 2 covers, and for hand-eye you decide the
+rotations, because `calibrateHandEye` fails outright when the flange poses are not
+turned enough relative to each other. Finally, the RMS reprojection error that
+`calibrateCamera` returns is not a verdict: section 4 shows how a low number can
+come from poor pictures, so check the answer against a measured distance instead.

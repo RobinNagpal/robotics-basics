@@ -30,6 +30,7 @@ page uses only a few lines of Python in one example, and explains each line.
 8. [Why use a planner, and what it costs](#8-why-use-a-planner-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -348,3 +349,65 @@ planner and the robot.
   leaves to ordinary code.
 - For the models used today, read [foundation models and generalist
   policies](../../../03_frameworks/08_frontier/02_foundation-models.md).
+---
+
+## 11. Using it in Python
+
+[Section 3](#3-how-it-works-inside) showed the prompt that a planner builds and the
+numbered list that comes back, and [section 6](#6-a-worked-example-putting-the-cups-away)
+showed a checker reading that list before the robot moves. This section puts both of
+them into Python. After it you will be able to send a request and a list of skills to a
+language model and get a plan back that you have checked.
+
+A planner needs a capable model, and the models that plan well are usually too large to
+run on your own computer, so most people call a hosted service over the internet. The
+code below uses Anthropic's Python library, which you install with `pip install
+anthropic`, and which reads your key from the environment variable
+`ANTHROPIC_API_KEY`. The other hosted services work in the same shape, with different
+names.
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+SKILLS = ["find a sponge", "pick up the sponge", "go to the table",
+          "wipe the table", "put the sponge in the sink", "throw the can away"]
+
+response = client.messages.create(
+    model="claude-opus-5-5",
+    max_tokens=200,
+    system="You control a robot arm. Answer with a numbered list of steps. "
+           "Copy every step exactly from the list of skills you are given.",
+    messages=[{"role": "user",
+               "content": f"Skills: {SKILLS}\nRequest: I spilled my drink."}],
+)
+plan = [block.text for block in response.content if block.type == "text"][0]
+
+for line in plan.splitlines():                      # the checker from section 6
+    step = line.split(".", 1)[-1].strip()
+    if step and step not in SKILLS:
+        raise ValueError(f"the model invented a skill: {step}")
+```
+
+The last four lines are the important ones, and they are the ones nobody else can write
+for you. The model is free to write anything at all, so it can answer with a skill this
+robot does not have, and the loop above refuses the plan when it does. That is the
+checker that [section 8](#8-why-use-a-planner-and-what-it-costs) called the reason every
+serious design puts ordinary code between the planner and the robot.
+
+The pretrained model gives you the knowledge that a spill is wiped with a sponge, and
+the ability to put steps in a sensible order. It gives you nothing else, because it was
+never trained on your robot and has never seen your table.
+
+What you write is the prompt, the checker and the runner. The prompt is the list of
+skills and the instructions above it, the checker is the loop, and the runner is the
+code that calls the matching skill for each line of the plan. You also write the part
+that [feeds back what happened](#feeding-back-what-happened), by adding a line such as
+"Result: the sponge was dropped" to the messages and asking again.
+
+What you decide is the model and the price. A hosted model costs money for every plan
+and sends your camera's surroundings to somebody else's computer, while an open model
+run through `transformers` costs nothing per plan but needs a graphics card and plans
+less well. You also decide how tightly the checker refuses, because a strict checker
+rejects plans that would have worked, and a loose one lets a wrong plan reach the arm.

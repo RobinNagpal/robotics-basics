@@ -32,6 +32,7 @@ leave out, and shows where the method is used on an arm.
 6. [Why this model, and what it costs](#6-why-this-model-and-what-it-costs)
 7. [The learned alternative](#7-the-learned-alternative)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -379,7 +380,7 @@ read each row as where to find it, which languages it covers, and what to call.
 | --- | --- | --- | --- |
 | OpenCV | C++, Python | `projectPoints`, `undistortPoints`, `undistort` in the `calib3d` module | the reference for projection with distortion; back-projection is `undistortPoints` followed by multiplying by depth |
 | Open3D | Python, C++ | `PinholeCameraIntrinsic`; `PointCloud.create_from_depth_image` | turns a whole depth picture into a point cloud in one call |
-| ROS `image_geometry` | Python, C++ | `PinholeCameraModel`, with `project3dToPixel` and `projectPixelTo3dRay` | reads the lens numbers straight from a `CameraInfo` message |
+| ROS `image_geometry` | Python, C++ | `PinholeCameraModel`, with `project_3d_to_pixel` and `project_pixel_to_3d_ray` | reads the lens numbers straight from a `CameraInfo` message; the older `project3dToPixel` and `projectPixelTo3dRay` spellings still work in Jazzy but warn, and go away in the next release |
 | ROS `depth_image_proc` | C++ nodes | the point cloud nodes in the package | publishes a point cloud from a depth topic without any code |
 | Intel RealSense SDK (librealsense) | C, C++, Python | `rs2_project_point_to_pixel`, `rs2_deproject_pixel_to_point` | applies the camera's own distortion model |
 | NumPy | Python | plain array arithmetic | the whole depth picture in two lines, as Book 2's [one-box code](../../../02_perception/01_camera/04_one-box-code.md) does |
@@ -452,3 +453,85 @@ ruler.
 - Book 2 goes deeper in [cameras: the basics](../../../02_perception/01_camera/01_basics.md),
   [finding one box](../../../02_perception/01_camera/03_one-box-intro.md) and
   [the wrist camera, end to end](../../../02_perception/02_object-perception/08_the-wrist-camera.md).
+
+---
+
+## 9. Using it in Python
+
+Section 2 wrote the two formulas and section 5 named the libraries that contain
+them. This section joins the two, by showing the formulas as calls with Book 2's
+camera numbers in them, so that you can check the printed results against the
+arithmetic done by hand earlier on this page. After reading it you should know
+which of the two libraries to reach for when you have one pixel, and which when
+you have a whole depth picture.
+
+OpenCV is the right choice for a handful of pixels, because it applies the lens
+distortion as well as the pinhole formula. The lines below use `fx` = `fy` = 277.1,
+`cx` = 160 and `cy` = 120, with all five distortion numbers 0 because the
+simulated camera bends nothing.
+
+```python
+import cv2
+import numpy as np
+
+K = np.array([[277.1,   0.0, 160.0],
+              [  0.0, 277.1, 120.0],
+              [  0.0,   0.0,   1.0]])
+dist = np.zeros(5)                       # k1, k2, p1, p2, k3
+
+# Projection. The two zero vectors say the points are already in the camera's frame,
+# so no rotation and no shift are applied first.
+point = np.array([[0.06442, -0.04110, 0.340]])
+uv, _ = cv2.projectPoints(point, np.zeros(3), np.zeros(3), K, dist)
+print(uv.reshape(2))                     # about [212.50  86.50]
+
+# Back-projection. undistortPoints undoes the lens bending and divides by fx and fy,
+# so what it returns is x / z and y / z, and multiplying by the depth gives x and y.
+pixel = np.array([[[212.5, 86.5]]])
+x_over_z, y_over_z = cv2.undistortPoints(pixel, K, dist).reshape(2)
+depth = 0.340
+print(x_over_z * depth, y_over_z * depth, depth)   # about 0.06442 -0.04110 0.340
+```
+
+Open3D is the right choice for a whole depth picture, because it back-projects
+every pixel in one call and gives you a point cloud rather than a list.
+
+```python
+import open3d as o3d
+
+intrinsic = o3d.camera.PinholeCameraIntrinsic(width=320, height=240,
+                                              fx=277.1, fy=277.1, cx=160.0, cy=120.0)
+depth_image = o3d.io.read_image("depth.png")     # 16-bit, millimetres
+
+cloud = o3d.geometry.PointCloud.create_from_depth_image(
+    depth_image, intrinsic,
+    depth_scale=1000.0,      # divide the stored numbers by this to get metres
+    depth_trunc=1.0,         # drop anything further away than 1 m
+)
+print(len(cloud.points))
+```
+
+The libraries do three useful things for you. They apply the distortion model, so
+a real lens works without you writing the polynomial. They keep the four lens
+numbers in one object, `K` or `PinholeCameraIntrinsic`, which is harder to mix up
+than four loose variables. And `create_from_depth_image` does the whole-picture
+loop in compiled code, which is the practical form section 2 described, and it
+drops the pixels whose depth is 0 rather than placing points on the lens.
+
+What you still write yourself is everything around the call. OpenCV's
+`undistortPoints` wants its input in that awkward three-deep array shape, so you
+will write a small wrapper. You also have to choose which pixel to back-project in
+the first place, which is a detector's job, and you have to add the half pixel that
+section 2 mentioned if your detector reports whole pixel numbers. Neither library
+knows which frame the answer is in, so the transform into the base frame is a
+separate step on the [rigid transforms](02_rigid-transforms.md) page.
+
+What you have to decide or measure is small but unforgiving. The four lens numbers
+and the five distortion numbers come from
+[calibration](03_calibration.md), and they must belong to the same resolution as
+the picture you are using. For Open3D you also have to know the unit the depth
+picture is stored in, because `depth_scale` is 1000.0 for millimetres and 1.0 for
+metres, and getting it wrong moves every point by a factor of a thousand without
+any error message. Finally `depth_trunc` is a real decision: set it just beyond
+the far side of the table, because everything past it is wall and floor that the
+rest of the pipeline then has to throw away.

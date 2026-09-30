@@ -37,6 +37,7 @@ optimiser, so you can see every number move.
 7. [Why trajectory optimisation, and what it costs](#7-why-trajectory-optimisation-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -523,3 +524,76 @@ varies by design and does not check for collisions.
 - Book 3 goes deeper in
   [planning a path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md),
   including [what collision checking really checks](../../../03_frameworks/03_arm-movement/03_planning-a-path.md#7-the-planning-scene-and-what-collision-checking-really-checks).
+
+---
+
+## 10. Using it in Python
+
+Section 2 built the cost out of a smoothness term and an obstacle term, and
+section 6 said that SciPy is enough for a small experiment of exactly this kind.
+This section writes that experiment. After it you will be able to bend a
+straight guess around an obstacle in about a dozen lines, and you will
+understand why the version you would actually ship is a MoveIt setting rather
+than a Python function.
+
+The program below is the pot example from section 2, in two dimensions. The path
+is a list of waypoints, the two ends are fixed, and `scipy.optimize.minimize`
+moves all the middle waypoints at once to make the cost smaller. SciPy works out
+the downhill direction itself by trying small changes, so you do not have to
+write the gradient that section 2 derives.
+
+```python
+import numpy as np
+from scipy.optimize import minimize
+
+start, goal = np.array([0.0, 0.0]), np.array([1.0, 0.0])
+centre, radius, margin = np.array([0.5, 0.0]), 0.10, 0.05   # the pot, in metres
+guess = np.linspace(start, goal, 20)          # the straight line through the pot
+
+def cost(flat):
+    path = np.vstack([start, flat.reshape(-1, 2), goal])
+    smooth = np.sum(np.diff(path, axis=0) ** 2)             # short, even steps
+    clear = np.linalg.norm(path[1:-1] - centre, axis=1) - radius
+    too_close = np.clip(margin - clear, 0.0, None)          # 0 when far enough away
+    return smooth + 50.0 * np.sum(too_close ** 2)
+
+result = minimize(cost, guess[1:-1].ravel(), method="L-BFGS-B")
+path = np.vstack([start, result.x.reshape(-1, 2), goal])
+```
+
+Run it and the cost falls from 2.12 to 0.0575 in 117 iterations, taking a
+fraction of a second. The straight guess ran through the middle of the pot, with
+its nearest waypoint 7.4 cm inside the surface; the answer clears the pot by
+4.97 cm at its waypoints, and the path is 104.5 cm long instead of 100 cm. That
+last number is the trade section 2 describes: the extra 4.5 cm is what the
+clearance cost.
+
+SciPy does the downhill search. `minimize` with `L-BFGS-B` estimates the
+gradient by finite differences, remembers the curvature it has seen, and chooses
+a step length, all of which the hand-written loop in section 2 has to do by
+trial and error with a fixed step size. That is why this version converges in
+117 iterations where section 2's loop needed 300 steps of gradient descent.
+
+What you still have to write is the cost, and it is worth being clear that the
+cost is the entire method. The two terms above are a complete statement of what
+you want: steps that are short and even, and waypoints that stay `margin` away
+from the pot. Change the 50.0 and you change which of those two wins. Add a term
+and you add a requirement, such as keeping a cup upright or keeping a joint away
+from its limit. You also have to write the check at the end, because section 2's
+pseudocode ends with a warning that the cost only looks at waypoints, so a thin
+obstacle can sit between two of them and the final path must be tested segment
+by segment.
+
+What you have to decide or measure are the weight, the margin and the number of
+waypoints. The margin of 5 cm is a distance in your own workcell, and the result
+above shows why it is not a guarantee: the path ends at 4.97 cm and not 5,
+because the margin is part of a cost rather than a rule, so you set it a little
+larger than what you really need. The weight of 50.0 has no natural value,
+because it converts metres of clearance into units of smoothness, so you choose
+it by running the optimisation and looking at whether the path is too bent or
+too close. The 20 waypoints decide how finely the path can bend and how long the
+solve takes, and too few means a smooth curve cannot be represented at all.
+Finally, section 6 is right that for a real ROS 2 arm you do not write this: you
+select CHOMP or STOMP in MoveIt's planning pipeline configuration, which runs
+the same idea on the arm's real joint space with its real collision checker, and
+you configure the weights in a YAML file instead of in Python.

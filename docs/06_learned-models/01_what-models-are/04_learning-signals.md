@@ -33,6 +33,7 @@ this page is about what kind of answer each example carries.
 8. [All four in one table](#8-all-four-in-one-table)
 9. [Why not always use one kind, and what each costs](#9-why-not-always-use-one-kind-and-what-each-costs)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -356,3 +357,62 @@ learning costs tries, and a badly chosen reward teaches the wrong thing.
   arm](../../03_frameworks/04_one-arm-training/03_learned-methods.md) in Book 3 compares
   learning from demonstrations, from trial and error, and from large-scale pretraining
   for a real arm.
+
+---
+
+## 11. Using it in Python
+
+Sections 2 to 5 described four learning signals, and section 8 put them in one
+table. In Python, three of the four are the training loop of
+[how a model learns](02_how-a-model-learns.md) with a different `y`, while
+reinforcement learning needs a different shape of code altogether. This section
+shows that difference, because it is the clearest way to see what each signal
+really costs you.
+
+```python
+from torch import nn
+
+# Supervised, self-supervised and imitation learning share one loop.
+# Only where y comes from changes:
+#   supervised     - y is the answer a person typed for each example
+#   self-supervised - y is a part of X that you hid from the model
+#   imitation      - y is the joint speed the person's hand produced
+policy = nn.Sequential(nn.Linear(n_inputs, 64), nn.ReLU(), nn.Linear(64, 7))
+loss = nn.MSELoss()(policy(X), y)   # then the loop of the previous page
+
+# Reinforcement learning has no y at all. The environment returns a reward.
+import gymnasium as gym
+from stable_baselines3 import PPO
+
+env = gym.make("Pendulum-v1")
+model = PPO("MlpPolicy", env, verbose=0)
+model.learn(total_timesteps=100_000)   # it collects its own examples as it goes
+```
+
+The seven outputs of `policy` are the seven joint speeds of a typical arm, and
+`MSELoss` is the mean squared error, which measures how far the model's seven
+numbers are from the recorded ones. Notice that the imitation version and the
+supervised version are the same three lines, which is why section 4 said that
+imitation learning is supervised learning with the person's actions used as the
+labels.
+
+The libraries give you a lot for reinforcement learning. Stable-Baselines3
+provides PPO and the other algorithms of section 5, and Gymnasium provides the
+interface an environment must follow, which is a `reset` that starts an episode
+and a `step` that takes an action and returns the next observation and the
+reward. `Pendulum-v1` above is one of Gymnasium's built-in practice
+environments.
+
+What you write yourself is the environment, and that is the real cost of
+reinforcement learning. You write the reset, the step, and above all the reward
+function, and the reward function is where most of the work and most of the
+mistakes live, because a reward that can be collected in an unintended way will
+be. For the other three signals you write no environment at all, and the work
+moves to collecting the data instead.
+
+What you have to decide is which signal to use, and the number `100_000` above
+makes the answer clearer than any table can. One hundred thousand steps is a few
+minutes in simulation and weeks of wear on a real arm, which is why section 5
+said that reinforcement learning for arms is done in simulation first. The
+[next page](05_where-the-data-comes-from.md) is about where the examples for the
+other three signals come from.

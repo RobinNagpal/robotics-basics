@@ -42,6 +42,7 @@ means a stream of numbers saying how hard the tool is pushing on something.
 7. [Why these techniques, and what they cost](#7-why-these-techniques-and-what-they-cost)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -527,3 +528,96 @@ need next.
   goes deeper into settling time and window length for a force sensor.
 - Book 2's [wrist camera](../../../02_perception/02_object-perception/08_the-wrist-camera.md)
   page shows the pose-at-the-picture's-time rule in working code.
+
+---
+
+## 10. Using it in Python
+
+Section 3 said that two problems come up in every sensor stream: readings from
+different sensors do not arrive at the same moment, and single readings are
+noisy. Section 6 named the tools for both. This section shows each of them as
+code, because the two are called in completely different ways. After it you will
+be able to pair a camera picture with the arm's pose inside a ROS 2 node, and to
+smooth a recorded trace and take a slope from it.
+
+The first problem belongs to ROS 2, so it is solved inside a node with
+message_filters. That package is part of ROS 2 itself, and it sits between your
+subscriptions and your callback: instead of one callback per topic, you get one
+callback that is only called when messages from both topics have close time
+stamps.
+
+```python
+import rclpy
+from rclpy.node import Node
+from message_filters import Subscriber, ApproximateTimeSynchronizer
+from sensor_msgs.msg import Image, JointState
+
+
+class PairedNode(Node):
+    def __init__(self):
+        super().__init__("paired")
+        picture = Subscriber(self, Image, "/wrist_camera/image_raw")
+        joints = Subscriber(self, JointState, "/joint_states")
+        # queue_size: how many messages to hold while waiting for a partner.
+        # slop: how far apart two stamps may be, in seconds, and still pair.
+        self.pair = ApproximateTimeSynchronizer(
+            [picture, joints], queue_size=10, slop=0.02)
+        self.pair.registerCallback(self.on_pair)
+
+    def on_pair(self, picture, joints):
+        gap = abs((picture.header.stamp.sec + picture.header.stamp.nanosec * 1e-9)
+                  - (joints.header.stamp.sec + joints.header.stamp.nanosec * 1e-9))
+        self.get_logger().info(f"paired, {gap * 1000:.1f} ms apart")
+```
+
+The second problem is plain arithmetic on arrays, so it belongs to SciPy and
+NumPy and needs no ROS at all. The Savitzky-Golay filter below fits a short
+polynomial to a sliding window of readings, which is why the same call gives
+both a smoothed value and a slope.
+
+```python
+import numpy as np
+from scipy.signal import savgol_filter
+
+force = np.loadtxt("wrist_force.txt")        # 1000 readings a second, in newtons
+smooth = savgol_filter(force, window_length=51, polyorder=2)
+slope = savgol_filter(force, window_length=51, polyorder=2, deriv=1, delta=0.001)
+
+# The arm's joint angle at the moment each picture was taken.
+angle_at_picture = np.interp(picture_times, joint_times, joint_angles)
+```
+
+On a made-up trace of a force rising at 12 newtons per second with 0.4 N of
+noise, a 51-reading window cuts the noise to 0.084 N and recovers the slope as
+12.04 newtons per second. The window covers 51 milliseconds at 1000 readings a
+second, which is the delay the smoothing costs you.
+
+The libraries do the bookkeeping in both cases. message_filters keeps the short
+queues, compares the stamps and calls you only on a pair, which saves writing
+the buffering described in section 3 by hand. `savgol_filter` fits the
+polynomial in every window, and passing `deriv=1` differentiates that polynomial
+instead of the readings, which is why the slope comes out far less noisy than a
+plain difference between two readings. `np.interp` does the linear interpolation
+between the two joint messages that straddle the picture's time stamp.
+
+What you still have to write is the decision about what to do when the pairing
+fails. `ApproximateTimeSynchronizer` calls you when it has a pair and stays
+silent when it does not, so a missing camera message means your callback simply
+never runs, and only you can decide whether that should stop the arm. You also
+have to publish honest time stamps in the first place, because the whole
+mechanism reads `header.stamp` and a node that stamps messages with the current
+time rather than the time of the measurement makes every pairing wrong in a way
+nothing will report. For frames rather than raw messages, you write the `tf2`
+lookup instead, asking for the transform at the picture's stamp rather than now.
+
+What you have to decide or measure is `slop` and `window_length`. The `slop` of
+0.02 seconds above has to be larger than the real jitter between your two
+streams and smaller than the time in which the arm moves enough to matter, so
+you measure the jitter from a recording rather than guessing. The 20 ms above
+suits a camera running at 30 pictures a second on an arm moving slowly; a fast
+move needs a tighter `slop` and a faster joint state rate. For the filter you
+choose `window_length`, and section 3 explains the trade directly: a longer
+window is smoother but lags further behind, and the lag is about half the
+window. You also have to pass `delta` as the real time between readings, because
+`savgol_filter` has no way to know your sample rate and will silently return a
+slope in the wrong units if you leave it out.

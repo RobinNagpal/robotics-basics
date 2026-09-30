@@ -40,6 +40,7 @@ table.
 6. [Why two views, and what it costs](#6-why-two-views-and-what-it-costs)
 7. [The learned alternative](#7-the-learned-alternative)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -433,3 +434,89 @@ baseline by moving the wrist camera.
 - Book 2's [the wrist camera, end to end](../../../02_perception/02_object-perception/08_the-wrist-camera.md)
   uses the baseline arithmetic to plan where to take the second picture.
 - The [overview](../01_overview.md) shows where this page sits in the chapter.
+
+---
+
+## 9. Using it in Python
+
+Section 2 worked through triangulation, epipolar lines and rectified stereo with
+real numbers, and section 5 named the OpenCV functions that do each of them. This
+section shows the two calls you are most likely to write, because they cover the
+two different situations the page described. Triangulating a handful of matched
+points suits an arm that moves its own camera, while a dense disparity map suits a
+fixed stereo pair. After reading it you should know which of the two your robot
+needs.
+
+Triangulation comes first. Each camera is described by a 3 by 4 projection matrix,
+which is `K` multiplied by the rotation and shift that carry a point from the
+world into that camera.
+
+```python
+import cv2
+import numpy as np
+
+K = np.array([[277.1,   0.0, 160.0],
+              [  0.0, 277.1, 120.0],
+              [  0.0,   0.0,   1.0]])
+
+def projection_matrix(R_world_to_cam, t_world_to_cam):
+    return K @ np.hstack([R_world_to_cam, t_world_to_cam.reshape(3, 1)])
+
+P1 = projection_matrix(np.eye(3), np.zeros(3))     # the first view defines the frame
+P2 = projection_matrix(R2, t2)                     # the second, from the arm's joints
+
+# One column per point, two rows: the pixel in each view.
+pixels1 = np.array([[212.5], [86.5]])
+pixels2 = np.array([[211.9], [86.0]])
+
+homogeneous = cv2.triangulatePoints(P1, P2, pixels1, pixels2)
+points_3d = (homogeneous[:3] / homogeneous[3]).T   # divide by the fourth number
+print(points_3d)
+```
+
+A fixed stereo pair is the other case, and there the work is matching every pixel
+rather than a few. OpenCV's semi-global block matcher does that, and
+`reprojectImageTo3D` turns the result into points using the matrix `Q` that
+`stereoRectify` produced during calibration.
+
+```python
+matcher = cv2.StereoSGBM_create(
+    minDisparity=0,
+    numDisparities=64,        # must be a multiple of 16; sets the nearest distance seen
+    blockSize=5,
+    P1=8 * 3 * 5 ** 2,        # the two smoothness penalties, from the OpenCV example
+    P2=32 * 3 * 5 ** 2,
+    uniquenessRatio=10,
+    speckleWindowSize=100,
+    speckleRange=2)
+
+disparity = matcher.compute(left_rectified, right_rectified).astype(np.float32) / 16.0
+points = cv2.reprojectImageTo3D(disparity, Q)
+```
+
+What the libraries do for you is the arithmetic that section 2 set out.
+`triangulatePoints` solves the two straight-line equations per view and returns the
+point closest to both rays, in the frame that `P1` is written in, as four numbers
+that you divide through. `StereoSGBM` searches along the epipolar line for every
+pixel, which is possible only because rectification has already made those lines
+horizontal, and it returns the disparity in sixteenths of a pixel, which is why the
+code divides by 16.
+
+What you still write yourself is what goes in. `triangulatePoints` needs the two
+pixels to be the same physical point, and finding that pairing is the job of
+[image features and matching](../../03_searching-and-matching/03_also-used/01_image-features-and-matching.md).
+It also needs both camera poses, which on an arm you read from tf2 at the moment
+each picture was taken. For the stereo path you have to run `cv2.stereoCalibrate`
+and `cv2.stereoRectify` first, keep the `Q` matrix they produce, and then mask out
+the pixels where the disparity came back as the "no match" value rather than letting
+them become points at an absurd distance.
+
+What you have to decide or measure is the baseline and the search range. The
+baseline is the distance between the two viewpoints, and the table in section 2
+shows what it buys: at 0.34 m, going from 18 mm to 80 mm took the median error from
+11.3 mm to 2.5 mm, so this is the single most important choice on the page.
+`numDisparities` then sets how close an object can be and still be found, because a
+nearer object shifts further, and it costs time in proportion. `blockSize` trades
+noise against detail, since a larger block gives a smoother disparity map and loses
+the edges of small objects. All of these are measurements you make once on your own
+rig rather than numbers to copy.

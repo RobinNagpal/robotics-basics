@@ -22,6 +22,7 @@ point cloud.
 5. [Comparing the four kinds](#5-comparing-the-four-kinds)
 6. [How 3D models connect to the other chapters](#6-how-3d-models-connect-to-the-other-chapters)
 7. [Where to read next](#7-where-to-read-next)
+8. [Using it in Python](#8-using-it-in-python)
 
 ---
 
@@ -233,3 +234,64 @@ If you want the deeper, non-learned side of 3D first, Book 2 covers it:
 - [Models that measure](../../02_perception/02_object-perception/05_models-that-measure.md)
     compares 3D reconstruction methods by how accurate they are, and lists their
     licences.
+
+---
+
+## 8. Using it in Python
+
+[Section 1](#1-what-a-point-cloud-is) explained the point cloud, and every model in
+this chapter takes one or produces one. So before any of those models can run,
+something has to make a point cloud out of what the camera gives you. This section
+shows that step in Python, because it is the one piece of code that all four of the
+following pages assume you already have.
+
+Open3D is the library for it. It is a package for reading, building and handling 3D
+data, and it is used here rather than writing the geometry yourself because the
+projection below is fiddly to get right and Open3D's version is also much faster.
+
+```python
+import numpy as np
+import open3d as o3d
+
+# A depth picture: one distance per pixel, held as whole millimetres.
+depth_mm = np.load("depth.npy").astype(np.uint16)
+height, width = depth_mm.shape
+
+# The camera's lens numbers, from calibrating it once: two focal lengths and the
+# pixel the lens looks straight through.
+intrinsic = o3d.camera.PinholeCameraIntrinsic(width, height,
+                                              615.0, 615.0, 320.0, 240.0)
+
+cloud = o3d.geometry.PointCloud.create_from_depth_image(
+    o3d.geometry.Image(depth_mm),
+    intrinsic,
+    depth_scale=1000.0,   # how many of the stored units make one metre
+    depth_trunc=3.0,      # throw away anything further away than 3 metres
+)
+cloud = cloud.voxel_down_sample(voxel_size=0.005)
+
+points = np.asarray(cloud.points)   # (N, 3): x, y and z of every point, in metres
+print(points.shape, points.min(axis=0), points.max(axis=0))
+```
+
+What the library gives you out of the box is the whole of that conversion, plus the
+steps that usually follow it. Open3D reads and writes the common 3D file formats,
+thins a cloud out by voxel, finds the table as a flat plane, splits the rest into
+separate clumps, estimates the direction each surface faces, and lines two clouds
+up with each other. None of that is a neural network, which is the point worth
+taking from this section: Open3D is the plumbing that every learned model in this
+chapter sits on top of, and a great deal of real 3D robot code is nothing but this.
+
+What you still have to write yourself is the camera's numbers and the meaning. The
+six numbers in `PinholeCameraIntrinsic` come from calibrating your own camera, and
+the cloud that comes out is in the camera's frame, so moving it into the arm's frame
+is your code. Beyond that, a point cloud on its own says only where surfaces are,
+and turning "where surfaces are" into "that is the mug and here is where to hold
+it" is what the rest of this chapter is about.
+
+What you have to decide is how much detail to keep. The `voxel_size` above keeps one
+point per five-millimetre cube, which cuts a 300,000-point camera frame down to a
+size a model can read, and a larger value is faster but loses small features such as
+a thin handle. You also decide `depth_trunc`, because points from the far wall are
+usually noise for a table-top task. These two numbers change the answer of every
+model that follows, so they are worth setting deliberately rather than by default.

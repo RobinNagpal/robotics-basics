@@ -28,6 +28,7 @@ then say what the rest of the book covers and how to read it.
 6. [What this book covers](#6-what-this-book-covers)
 7. [How to read this book](#7-how-to-read-this-book)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -395,3 +396,63 @@ where they exist.
   in Book 2 lists real seeing models you can download and run today.
 - [Camera basics](../../02_perception/01_camera/01_basics.md) in Book 2 explains
   how a camera makes the grid of pixels that a model reads.
+
+---
+
+## 9. Using it in Python
+
+Section 1 said that a model is a function, and section 3 said that both its
+input and its output are lists of numbers. Those two sentences become much
+easier to believe once you have called a model yourself, so this section shows
+the shortest Python that does it. After reading it you will know what the three
+steps of using a trained model look like, and you will know that not one of the
+numbers inside it was written by you.
+
+The model below is ResNet-18, an image classifier that somebody else trained on
+ImageNet, a collection of about 1.2 million labelled photographs. It answers
+with one of a thousand object names. The library is `torchvision`, which is the
+image part of PyTorch, and it downloads the trained numbers the first time you
+ask for them.
+
+```python
+import torch
+from PIL import Image
+from torchvision.models import resnet18, ResNet18_Weights
+
+weights = ResNet18_Weights.DEFAULT   # the trained numbers, downloaded once
+model = resnet18(weights=weights)
+model.eval()                         # answering mode, not training mode
+prepare = weights.transforms()       # the exact resizing this model expects
+
+photo = prepare(Image.open("cup.jpg")).unsqueeze(0)   # one photo, as numbers
+with torch.no_grad():                # no training, so no gradients needed
+    scores = model(photo)
+
+print(weights.meta["categories"][scores.argmax()])
+```
+
+The variable `photo` is a block of numbers whose shape is (1, 3, 224, 224),
+which means one picture, three colour channels, and 224 rows of 224 columns.
+That is section 3's claim made concrete, because the photograph on disk has
+become nothing but numbers. The variable `scores` has the shape (1, 1000), which
+is one number per possible name, and `argmax` returns the position of the
+largest of them.
+
+The library gives you almost everything here. It gives you the arrangement of
+layers, the 11,689,512 trained numbers inside them, the resizing step that the
+model was trained with, and the list of the thousand category names. Because
+`weights.transforms()` comes from the same object as the weights, the photo is
+prepared in exactly the way the training photos were, and that matters, since a
+model fed differently prepared pictures answers badly.
+
+What you write yourself is short but not nothing. You open the photograph, you
+decide what the robot should do with the answer, and you decide what to do when
+the answer is wrong, because the model always returns its most likely name even
+when the object is not in its list at all.
+
+What you have to decide is which model to use and whether its categories match
+your job. The thousand ImageNet names include "coffee mug" and "soup bowl", so
+the mug-and-bowl job of section 1 happens to be covered. However, if your robot
+handles a part that ImageNet has never seen, no pretrained model helps and you
+have to collect your own labelled examples and train. The
+[next page](02_how-a-model-learns.md) is about that.

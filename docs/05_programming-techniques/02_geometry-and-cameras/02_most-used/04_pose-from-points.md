@@ -36,6 +36,7 @@ pixels, `fx` = `fy` = 277.1, `cx` = 160, `cy` = 120.
 8. [Why PnP, and what it costs](#8-why-pnp-and-what-it-costs)
 9. [The learned alternative](#9-the-learned-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -444,3 +445,76 @@ pose fits, while a pose model gives no warning when it is wrong.
 - [Image features and matching](../../03_searching-and-matching/03_also-used/01_image-features-and-matching.md)
   finds the pairings PnP needs, when there is no marker.
 - The [overview](../01_overview.md) shows where this page sits in the chapter.
+
+---
+
+## 11. Using it in Python
+
+Section 2 described the first guess and the refinement, section 3 wrapped both in
+RANSAC, and section 7 named `solvePnP` and `solvePnPRansac` as the OpenCV calls
+that contain them. This section shows those calls with their real arguments,
+because PnP is one of the shortest techniques in this book to use and one of the
+easiest to feed with the wrong numbers. After reading it you should be able to go
+from a list of paired points to a 4 by 4 transform.
+
+The example is the 6 cm cube from section 2, whose corners are known in the
+object's own frame in millimetres.
+
+```python
+import cv2
+import numpy as np
+
+K = np.array([[277.1,   0.0, 160.0],
+              [  0.0, 277.1, 120.0],
+              [  0.0,   0.0,   1.0]])
+dist = np.zeros(5)
+
+# The object's points, in the object's own frame, in millimetres.
+object_points = np.array([[-30.0, -30.0,  0.0], [30.0, -30.0,  0.0],
+                          [ 30.0,  30.0,  0.0], [-30.0, 30.0,  0.0],
+                          [-30.0, -30.0, 60.0], [30.0, -30.0, 60.0]])
+# The pixel each of those points was seen at, in the same order.
+image_points = np.array([[153.4,  97.5], [193.0, 109.8], [180.6, 149.6],
+                         [142.0, 136.5], [161.8,  97.9], [196.5, 108.6]])
+
+found, rvec, tvec, inliers = cv2.solvePnPRansac(
+    object_points, image_points, K, dist,
+    flags=cv2.SOLVEPNP_ITERATIVE,
+    reprojectionError=2.0,     # a point further than this from its prediction is wrong
+    confidence=0.999)
+
+R, _ = cv2.Rodrigues(rvec)     # the 3 x 1 rotation vector becomes a 3 x 3 matrix
+T_camera_object = np.eye(4)
+T_camera_object[:3, :3] = R
+T_camera_object[:3, 3] = tvec.ravel()
+print(len(inliers), "of", len(object_points), "points agreed")
+```
+
+What the library does for you is all of section 2 and all of section 3. It runs a
+first guess and then the least-squares refinement that makes the reprojection error
+small, it repeats that inside RANSAC on small random subsets, and it returns the
+indices of the points that agreed so that you can count them. The `flags` argument
+chooses the solver, which matters in the cases the page described: use
+`cv2.SOLVEPNP_SQPNP` for a general set of points because it is fast and does not
+need a starting pose, `cv2.SOLVEPNP_IPPE_SQUARE` for the four corners of a square
+marker, and `cv2.SOLVEPNP_P3P` when you have exactly three points.
+
+What you still write yourself is the pairing and the checking. PnP never looks at
+the picture, so something else has to produce `image_points` in the same order as
+`object_points`, and that something is a marker detector, a feature matcher or a
+learned keypoint model. You also write the checks, because `solvePnPRansac`
+returning `found` as true does not mean the answer is right: count the inliers, and
+reproject the points with `cv2.projectPoints` to see the error in pixels yourself.
+On a flat target you have to write the second check as well, since
+`cv2.solvePnPGeneric` returns both of the two possible poses and you have to decide
+which one to keep.
+
+What you have to decide or measure is three things. The object's points come from a
+drawing or a caliper, in one unit, and if they are in millimetres then `tvec` comes
+back in millimetres too, which is a common surprise on an arm that works in metres.
+`reprojectionError` is the threshold in pixels that separates a good match from a
+wrong one, and section 3 explains how to set it from your detector's accuracy:
+around 1 to 3 pixels for a corner detector, higher for a feature matcher. Finally
+you must decide whether to trust the rotation at all, because section 4 shows that a
+small flat marker seen nearly face-on gives a position you can rely on and a
+rotation you cannot.

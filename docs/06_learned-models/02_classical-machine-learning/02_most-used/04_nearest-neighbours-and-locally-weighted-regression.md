@@ -45,6 +45,7 @@ written in NumPy.
 10. [Why this, and what it costs](#10-why-this-and-what-it-costs)
 11. [The written alternative](#11-the-written-alternative)
 12. [Where to read next](#12-where-to-read-next)
+13. [Using it in Python](#13-using-it-in-python)
 
 ---
 
@@ -518,3 +519,57 @@ the formula first, and a local learner on what it gets wrong.
 - Book 5's
   [nearest-neighbour search](../../../05_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
   explains k-d trees and fast search in detail.
+
+---
+
+## 13. Using it in Python
+
+Section 2 looked up the nearest examples by hand, section 5 turned the distance
+to the nearest example into a check for unfamiliar input, and section 9 named the
+libraries. This section shows the calls, and there are only three of them,
+because the method has almost nothing to train.
+
+```python
+from sklearn.neighbors import KNeighborsRegressor, NearestNeighbors
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+# StandardScaler comes first, because section 2 showed that the units of each
+# column decide which examples count as near.
+model = make_pipeline(
+    StandardScaler(),
+    KNeighborsRegressor(n_neighbors=5, weights="distance"))
+model.fit(X, y)
+print(model.predict(X_new))
+
+# Section 5's check: how far is this input from anything we have seen?
+index = NearestNeighbors(n_neighbors=1).fit(X)
+distance, _ = index.kneighbors(X_new)
+```
+
+The argument `weights="distance"` is section 2's weighted vote, where a closer
+neighbour counts for more, and leaving it out gives every one of the five
+neighbours an equal say. The `make_pipeline` call matters more than it looks,
+because it means the scaling learned from the training rows is applied to
+`X_new` too. Scaling the two sets separately is a common mistake and it quietly
+ruins the distances.
+
+The library gives you the search, and it picks a data structure for you. With few
+columns it builds a k-d tree or a ball tree, which finds the nearest examples
+without comparing against every row, and with many columns it falls back to
+comparing against every row, because those trees stop helping. That is section
+4's curse of dimensionality showing up inside the library.
+
+What you have to keep is the data, and this is the one method where that is
+literal. `fit` stores the rows and learns nothing, so all the cost moves to
+`predict`, and the saved model is as large as your dataset. If you delete the
+training rows you have deleted the model.
+
+What you have to decide is `n_neighbors`, the scaling, and the distance above
+which you refuse to answer. Section 2 explained why the first of those is a real
+trade, because a small `k` follows the noise and a large `k` smooths over real
+detail. The refusal limit of section 5 has no default at all, and you set it the
+way section 5 did, by measuring how far each training example sits from its
+nearest neighbour and taking the value that 99% of them fall below. For the
+locally weighted regression of section 3 with a single input column,
+`statsmodels` has a `lowess` function, which scikit-learn does not provide.

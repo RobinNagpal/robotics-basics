@@ -22,6 +22,7 @@ overview](../../03_seeing-models/01_overview.md), because this page compares the
 8. [Why use a vision-language model, and what it costs](#8-why-use-a-vision-language-model-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -298,3 +299,62 @@ answers it. But the vision-language model wins when the question itself changes.
   large model is worth its cost.
 - For the robot models built on vision-language models today, read
   [foundation models and generalist policies](../../../03_frameworks/08_frontier/02_foundation-models.md).
+---
+
+## 11. Using it in Python
+
+The [worked example](#6-a-worked-example-fetching-the-right-mug) asked a
+vision-language model "Is the red mug in the bowl?" after every step. This section
+shows that same question being asked in Python. Of everything in this book, it is the
+easiest thing to try, because a pretrained vision-language model answers a question
+about a photograph with no training, no robot and no simulator. After this section you
+can point one at a picture on your own computer and read its answer.
+
+The library is `transformers`, from Hugging Face, and `pipeline` is its shortest route
+to a working model. A **pipeline** here is one object that holds the processor and the
+model together, so that you hand it a picture and a question and it hands you text.
+You install it with `pip install transformers torch accelerate`, and the model below is
+a small one that runs on an ordinary computer.
+
+```python
+from PIL import Image
+from transformers import pipeline
+
+pipe = pipeline("image-text-to-text", model="HuggingFaceTB/SmolVLM-256M-Instruct")
+
+image = Image.open("table.jpg")   # the latest frame from the robot's camera
+
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {"type": "image"},    # says where the picture belongs in the question
+            {"type": "text", "text": "Is the red mug in the bowl? Answer yes or no."},
+        ],
+    }
+]
+
+outputs = pipe(text=messages, images=[image], max_new_tokens=20,
+               return_full_text=False)
+print(outputs[0]["generated_text"])
+```
+
+The pretrained model gives you the whole of [section 3](#3-how-it-works-inside):
+the vision encoder that cuts the picture into patches, the projector that makes the
+patches look like words, and the language model that reads them together and writes the
+answer. None of that is trained by you, and none of it is written by you.
+
+What you write is everything around it. You capture the picture from the camera, you
+choose the wording of the question, you decide when to ask it, and you turn the text
+that comes back into something your program can act on. That last part matters more
+than it looks, because the model answers in words, so "Yes, the mug is in the bowl" and
+"yes" are both possible replies to the same question, and your code has to accept both.
+
+What you decide is which model to run and where. A small model such as the one above
+has 256 million parameters, so it runs on an ordinary computer with no graphics card,
+and it is often good enough for a yes-or-no check. A larger open model, or a paid online
+service, answers more accurately and points more precisely, but it needs a graphics card
+or money for every question. You also decide what to do about the failure in
+[section 7](#7-what-goes-wrong-and-what-people-do-about-it) where the model says "yes"
+too easily, because no choice of model removes that, and only a second question or a
+real measurement does.

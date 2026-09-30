@@ -27,6 +27,7 @@ three kinds of model: optical flow, point tracking and object tracking.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -325,3 +326,68 @@ hidden spells.
   choose what the arm does next.
 - For the matching problem in full detail, read
   [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md).
+
+---
+
+## 11. Using it in Python
+
+The page has separated two jobs: following an object, which needs one number that
+stays with it, and measuring motion pixel by pixel with optical flow. This section
+shows the Python for both. After reading it you will be able to give each object on
+a moving belt a number that stays the same from frame to frame, which is the thing
+a robot arm actually needs.
+
+Ultralytics does tracking by detection, which [section 3](#3-how-it-works-inside)
+described, by running a detector on each frame and matching the boxes.
+
+```python
+import cv2
+from ultralytics import YOLO
+
+model = YOLO("yolo11n.pt")
+camera = cv2.VideoCapture(0)
+
+while True:
+    ok, frame = camera.read()
+    if not ok:
+        break
+
+    # persist=True tells the tracker that this frame follows the last one.
+    result = model.track(frame, persist=True, tracker="bytetrack.yaml",
+                         verbose=False)[0]
+
+    # There are no ids on a frame where nothing was detected.
+    if result.boxes.id is None:
+        continue
+    for box in result.boxes:
+        middle_u, middle_v, width, height = box.xywh[0].tolist()
+        print(int(box.id), result.names[int(box.cls)], round(middle_u), round(middle_v))
+```
+
+For optical flow rather than boxes, torchvision has RAFT with pretrained weights:
+`from torchvision.models.optical_flow import raft_large, Raft_Large_Weights`, then
+`model = raft_large(weights=Raft_Large_Weights.DEFAULT)`. Calling it on two frames
+returns a list of flow fields, one per round of refinement, and the last one in the
+list is the best.
+
+What the pretrained parts give you out of the box is both halves of the pipeline
+without training anything. The detector is the COCO detector from the
+[object detection](../02_most-used/01_object-detection.md) page, and the matching
+step is ByteTrack, which is plain code with a motion predictor rather than a
+learned model, so it needs no training data at all. Swapping `bytetrack.yaml` for
+`botsort.yaml` changes the matching rules without changing a line of your program.
+
+What you still have to write yourself is everything that depends on your belt. The
+tracker gives you a number and a box per frame, so you keep a short history of each
+number, fit a speed to it in pixels per second, convert that to metres per second
+with the camera's calibration, and work out where the object will be when the arm
+arrives. You also write the rule for what to do when an id disappears, because a
+robot that reaches for a vanished id will hit the belt.
+
+What you have to decide is which tracker configuration to use and how long to keep
+an id alive after the object is no longer seen. Keeping it too long invents objects
+that have left the view, and dropping it too soon gives one box a new number every
+few frames, which breaks any speed you measured. You also have to accept that ids
+are not guaranteed, because two objects that pass each other can swap numbers, so
+anything that must not be confused needs a second check, such as comparing colour
+or size before the arm commits to a pick.

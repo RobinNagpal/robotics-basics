@@ -32,6 +32,7 @@ real robot arm uses both, so this page also says how they fit together.
 6. [What this book covers](#6-what-this-book-covers)
 7. [How to read this book](#7-how-to-read-this-book)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -428,3 +429,65 @@ pick up drinking glasses, and the technique pages mention it where it helps.
   in Book 2 shows many programmed perception techniques at work, with code.
 - [Programmed methods for one arm](../../03_frameworks/04_one-arm-training/02_programmed-methods.md)
   in Book 3 shows how written methods drive a whole arm task.
+
+---
+
+## 9. Using it in Python
+
+Section 3 wrote the closest-mug technique in Python and in C++, and section 4
+described a written rule that marks the object pixels in a depth picture. Both
+were plain loops and comparisons, because that is what a technique looks like
+when you spell out every step yourself. However, a real program does not loop
+over 76,800 pixels one at a time in Python, since that is far too slow for a
+camera sending 30 pictures a second. So this section shows the same depth rule
+written the way a real program writes it, with a library doing the repetition,
+and then says which part of it is still yours.
+
+The library is NumPy, which holds a whole grid of numbers in one object and
+applies an arithmetic step to every number in the grid at once.
+
+```python
+import numpy as np
+
+# One depth picture from Book 2's camera: 240 rows by 320 columns, each number a
+# distance in millimetres. The camera writes 0 where it got no reading at all.
+depth = np.load("depth_mm.npy")
+
+TABLE_MM = 600.0     # measured from the camera to the empty table
+MARGIN_MM = 20.0     # room for the camera's own error
+
+is_object = (depth > 0) & (depth < TABLE_MM - MARGIN_MM)
+
+print(is_object.sum(), "object pixels out of", depth.size)
+```
+
+NumPy does the repeating for you. That is because `depth > 0` compares all 76,800
+numbers and gives back a grid of true and false values of the same shape, and `&`
+combines two such grids into one. The three lines of arithmetic are therefore the
+whole loop, and they run inside compiled code rather than in Python, which is why
+they finish in well under a millisecond.
+
+What you still write yourself is the rule and everything after it. NumPy has no
+idea what an object is, so you decide that an object pixel is one nearer than the
+table, and you write the steps that turn the grid of true and false values into
+something the arm can use. Those steps are grouping the true pixels into separate
+objects, back-projecting each group into points, and throwing away groups too
+small to be real. Later chapters of this book cover each of them, starting with
+[clustering](../05_image-and-point-cloud-processing/02_most-used/03_clustering.md).
+
+What you have to decide or measure is the two capital-letter numbers, and neither
+of them can be guessed. `TABLE_MM` has to be measured with the camera in the
+place it will actually sit, because a number taken from a drawing is wrong as
+soon as the bracket bends. `MARGIN_MM` has to come from looking at the readings
+on an empty table, since a margin smaller than the camera's noise marks table
+pixels as objects, while a margin larger than your shortest object hides that
+object completely. The units matter just as much, because a camera that reports
+metres instead of millimetres makes both numbers wrong by a factor of a thousand,
+and nothing in the code will complain.
+
+So this is the shape of most techniques in this book: a library call or two,
+wrapped in your own code, with a small number of numbers that you must measure
+rather than invent. The closest-mug loop from section 3 is the same story, because
+it is also one library call,
+[`scipy.spatial.KDTree`](../03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md),
+once the list of mugs grows past a few dozen.

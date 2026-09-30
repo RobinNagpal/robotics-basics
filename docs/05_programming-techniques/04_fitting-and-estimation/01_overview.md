@@ -23,6 +23,7 @@ of this book and to the learned models in Book 6.
 4. [How they compare](#4-how-they-compare)
 5. [How this chapter connects to the others](#5-how-this-chapter-connects-to-the-others)
 6. [Where to read next](#6-where-to-read-next)
+7. [Using it in Python](#7-using-it-in-python)
 
 ---
 
@@ -270,3 +271,71 @@ pages in.
   [methods you write yourself](../../02_perception/02_object-perception/03_programmed-methods.md)
   and [tracking and
   association](../../02_perception/02_object-perception/10_tracking-and-association.md).
+
+---
+
+## 7. Using it in Python
+
+Section 1 said that fitting takes a batch of points measured at one moment,
+while estimation over time takes one reading after another as it arrives. That
+difference shows up directly in the code, because the two halves of this chapter
+are called in two different ways. After this section you will be able to run
+both kinds of call on the same readings, and you will know which lines a library
+writes for you and which lines you have to supply yourself.
+
+The program below uses the five weighings of flour from section 1. It first fits
+a straight line through them with NumPy, which is the array library that nearly
+all Python robotics code is built on. It then feeds the same five readings one
+at a time to a Kalman filter from filterpy, which is a small library of filters
+written alongside a free textbook on the subject.
+
+```python
+import numpy as np
+from filterpy.kalman import KalmanFilter
+
+grams = np.array([1003.0, 998.0, 1001.0, 997.0, 1002.0])
+
+# The batch fit: one line through all five readings at once.
+slope, offset = np.polyfit(np.arange(grams.size), grams, deg=1)
+
+# The same readings as a stream, one at a time.
+kf = KalmanFilter(dim_x=1, dim_z=1)
+kf.x = np.array([1000.0])   # first guess for the weight
+kf.F = np.array([[1.0]])    # the weight does not change between weighings
+kf.H = np.array([[1.0]])    # the scale reads the weight directly
+kf.P = np.array([[25.0]])   # how unsure that first guess is, as a variance
+kf.R = np.array([[9.0]])    # how noisy one weighing is, as a variance
+kf.Q = np.array([[0.0]])    # nothing disturbs the bag between weighings
+for g in grams:
+    kf.predict()
+    kf.update(g)
+```
+
+Run that and the fit gives a slope of −0.3 g per weighing and an offset of
+1000.8 g. That slope is small next to the 2.3 g spread of the five readings
+themselves, so there is no real trend here. The filter ends at 1000.19 g with a
+spread of 1.30 g, which is the same answer as the plain average of 1000.2 g.
+That agreement is not a coincidence, because for a quantity that does not change
+the Kalman filter is the least-squares fit worked out one reading at a time.
+
+What the libraries do for you is the arithmetic. `np.polyfit` builds and solves
+the linear system behind the fit, and `KalmanFilter` does the matrix multiplies
+of the predict and update steps. Neither is long, but both are easy to get
+subtly wrong by hand, and both are already tested.
+
+What you still have to write is everything around the call. You have to collect
+the readings, decide which shape or which model you are fitting, and check the
+result before acting on it. In the fit that means looking at how far the points
+sit from the line, and in the filter it means watching the spread and rejecting
+a reading that is much further off than the spread allows.
+
+What you have to decide or measure is the part no library can supply. The fit
+needs you to choose the shape, because `deg=1` asking for a line is your claim
+about the data and not a fact NumPy checked. The filter needs three numbers from
+you: the first guess `kf.x`, how unsure that guess is in `kf.P`, and the sensor
+noise in `kf.R`, which you get by holding the sensor still and recording the
+spread of its readings. It also needs `kf.Q`, the process noise, which says how
+much the quantity can change in ways the model does not describe, and that one
+you have to reason about rather than measure. Every page in this chapter ends at
+the same place, with a short library call wrapped around numbers that describe
+your own robot.

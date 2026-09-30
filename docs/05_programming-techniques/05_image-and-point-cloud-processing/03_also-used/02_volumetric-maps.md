@@ -41,6 +41,7 @@ by cube, and not only the surfaces.
 6. [Why a volumetric map, and what it costs](#6-why-a-volumetric-map-and-what-it-costs)
 7. [The learned alternative](#7-the-learned-alternative)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -492,3 +493,84 @@ the arm safe. In practice the map and the models are often used together.
 - The diagrams on this page are drawn by `docs/diagrams/image_processing_3.py`.
   Every number on the page comes from the functions in that script; run it with
   `--numbers` to print them.
+
+---
+
+## 9. Using it in Python
+
+Section 2 worked through the six steps from voxels to a distance field, and
+section 5 said that four libraries already do most of them. Those four are not
+equally reachable from Python, so this section shows the one that is. After it
+you will be able to fuse depth pictures into a mesh from a Python script, and
+you will know why the map a planner reads is not built this way.
+
+The program below is the truncated signed distance function, or TSDF, from step
+5, built with Open3D. It takes a colour picture and a depth picture together
+with the camera's pose, adds them into the volume, and pulls a mesh out of the
+zero crossing.
+
+```python
+import numpy as np
+import open3d as o3d
+
+width, height, focal = 640, 480, 600.0
+camera = o3d.camera.PinholeCameraIntrinsic(width, height, focal, focal,
+                                           width / 2 - 0.5, height / 2 - 0.5)
+
+volume = o3d.pipelines.integration.UniformTSDFVolume(
+    length=0.30,          # the side of the box the map covers, in metres
+    resolution=128,       # voxels along that side, so 0.30 / 128 is the voxel size
+    sdf_trunc=0.02,       # how far either side of the surface distances are kept
+    color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8,
+    origin=np.array([-0.15, -0.15, 0.35]))    # the box's corner, in world metres
+
+for colour_file, depth_file, pose in pictures:
+    rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+        o3d.io.read_image(colour_file), o3d.io.read_image(depth_file),
+        depth_scale=1000.0,     # the depth picture is in millimetres
+        depth_trunc=1.0,        # ignore anything further than 1 metre
+        convert_rgb_to_intensity=False)
+    volume.integrate(rgbd, camera, np.linalg.inv(pose))   # pose is camera to world
+
+mesh = volume.extract_triangle_mesh()
+mesh.compute_vertex_normals()
+```
+
+On a made-up depth picture of a 50 mm ball half a metre in front of the camera,
+one call to `integrate` fills 20724 voxels and `extract_triangle_mesh` returns
+3180 vertices and 5778 triangles. The voxel size is 0.30 divided by 128, which
+is 2.34 mm, and that is the finest detail the mesh can carry however many
+pictures you add.
+
+Open3D does steps 1, 2, 3 and 5 for you. It cuts the box into voxels, walks
+along the ray for every depth pixel, combines the new reading with what each
+voxel already held, and runs the marching cubes step that turns the stored
+distances into triangles. `UniformTSDFVolume` holds a fixed box, which suits one
+object on a turntable, and `ScalableTSDFVolume` takes the same `integrate` call
+but allocates blocks as they are needed, which suits a whole scene whose extent
+you do not know in advance.
+
+What you still have to write, and this is the honest answer the section 5 table
+implies, is the map that a planner reads. Open3D builds a TSDF and a mesh, and
+it does not build the occupancy octree or the Euclidean signed distance field
+that step 6 describes. In a ROS 2 arm project you do not build those in Python
+either: MoveIt's occupancy map monitor builds the OctoMap for you from a point
+cloud topic, and you configure it in `sensors_3d.yaml` rather than calling it.
+So the Python above is the right tool for scanning an object into a mesh, and
+the wrong tool for giving a planner something to avoid. You also have to supply
+the camera pose for every picture, and the pose has to be the pose at the moment
+the picture was taken, which is the problem the
+[sensor streams](../../04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
+page solves with `tf2`.
+
+What you have to decide or measure are the voxel size, the truncation distance
+and the depth range, and section 2 explains what each one costs. The voxel size
+sets both the detail and the memory, and 2 to 5 mm is the usual range for an
+object an arm will grip. The `sdf_trunc` of 0.02 has to be a few voxels wide,
+because too small a value makes a noisy depth reading fall outside the band
+entirely and too large a value rounds off the corners. The `depth_trunc` of 1
+metre is a claim about your own workcell, and it matters because a depth
+camera's error grows with distance, so letting in readings from 4 metres away
+adds noise rather than information. Finally you decide `origin` and `length`,
+which are the box the map covers, and those are positions in your own world
+frame: put them wrong and every call succeeds while the mesh comes back empty.

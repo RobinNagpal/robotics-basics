@@ -30,6 +30,7 @@ because a learned simulator often starts from a point cloud.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -324,3 +325,69 @@ explains.
 - For the hand-written simulators that learned simulators are compared with,
   read Book 3's
   [simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#2-the-simulators).
+---
+
+## 11. Using it in Python
+
+[Section 3](#3-how-it-works-inside) described joining particles into a graph and passing
+messages between neighbours. This section writes one such step in Python. After it you
+will know what a learned simulator actually is as code, which is smaller than the idea
+suggests.
+
+There is no pretrained cloth or water model to download, so this is a model you build
+and train yourself. The library that makes that reasonable is PyTorch Geometric, which
+adds graphs to PyTorch, and which you install with `pip install torch torch_geometric`.
+It gives you the two parts that are tedious to write by hand: finding which particles
+are close enough to be joined, and collecting every particle's messages.
+
+```python
+import torch
+from torch_geometric.nn import MessagePassing, radius_graph
+
+
+class ClothStep(MessagePassing):
+    def __init__(self):
+        super().__init__(aggr="add")            # each particle adds its messages up
+        self.message_net = torch.nn.Sequential(
+            torch.nn.Linear(12, 64), torch.nn.ReLU(), torch.nn.Linear(64, 32))
+        self.update_net = torch.nn.Sequential(
+            torch.nn.Linear(38, 64), torch.nn.ReLU(), torch.nn.Linear(64, 3))
+
+    def message(self, x_i, x_j):                # x_i receives, x_j sends
+        return self.message_net(torch.cat([x_i, x_j - x_i], dim=1))
+
+    def forward(self, particles, edge_index):
+        summed = self.propagate(edge_index, x=particles)
+        return self.update_net(torch.cat([particles, summed], dim=1))
+
+
+# 200 points spread over 20 cm of towel, each with 3 positions and 3 speeds
+particles = torch.rand(200, 6) * 0.2
+edge_index = radius_graph(particles[:, :3], r=0.03)   # joined if closer than 3 cm
+change_in_speed = ClothStep()(particles, edge_index)
+```
+
+The three parts of a step are all there. `radius_graph` builds the graph from the
+current positions, which is the rebuilding that section 3 said happens at every step.
+Then `message` is the small network that decides what one neighbour tells another, and
+it is given the difference between the two positions rather than the two positions
+themselves, so that the same rule works anywhere on the table. Finally `aggr="add"` is
+the summing, and `update_net` turns the sum into a change of speed.
+
+PyTorch Geometric gives you the graph building and the message collecting, and nothing
+about cloth. The two small networks start from random numbers and know nothing until
+they are trained, as [section 4](#4-how-it-is-trained) describes.
+
+What you write is the rest of the simulator. You turn the depth camera's point cloud
+into `particles`, you add gravity and the gripper, you repeat the message step several
+times before moving anything, and you run many steps in a row for a whole fold. You also
+write the training, which compares your predicted shape against a recorded one.
+
+What you decide is the connection radius and the number of particles, and these two
+numbers decide whether the model is useful. A radius that is too small lets a towel tear
+apart, while one that is too large makes every step slow. The published code for these
+models, such as DeepMind's
+[learning to simulate](https://github.com/google-deepmind/deepmind-research/tree/master/learning_to_simulate),
+is a folder inside a research repository that you clone and read, rather than a package
+you install, so those numbers are read off a paper rather than given to you by a
+library.

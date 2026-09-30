@@ -29,6 +29,7 @@ overfitting, underfitting and checkpoint.
 8. [What a trained model file is](#8-what-a-trained-model-file-is)
 9. [Why train this way, and what it costs](#9-why-train-this-way-and-what-it-costs)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -373,3 +374,62 @@ Gradient descent costs you three things in return for that speed.
 - [Data and
   demonstration](../../03_frameworks/08_frontier/03_data-and-demonstration.md)
   in Book 3 goes further into how much data robot models need today.
+
+---
+
+## 11. Using it in Python
+
+Sections 3 to 5 described training as a loop that repeats four steps: guess,
+measure the loss, work out the gradient, and move every weight one small step.
+This section shows that loop as the Python it really is, so that the words on
+this page have something concrete to point at. This is the shape of the idea
+rather than a finished program, because a real training script also loads data
+from disk and saves checkpoints.
+
+```python
+import torch
+from torch import nn
+from torch.utils.data import TensorDataset, DataLoader
+
+# X holds one example per row, y holds 1.0 for a mug and 0.0 for a bowl.
+loader = DataLoader(TensorDataset(X, y), batch_size=32, shuffle=True)
+
+model = nn.Sequential(nn.Linear(n_inputs, 16), nn.ReLU(), nn.Linear(16, 1))
+loss_fn = nn.BCEWithLogitsLoss()                          # section 3's loss
+optimiser = torch.optim.SGD(model.parameters(), lr=0.01)  # lr is section 4's step size
+
+for epoch in range(100):                # section 5's epochs
+    for inputs, labels in loader:       # section 5's batches
+        loss = loss_fn(model(inputs), labels)
+        optimiser.zero_grad()           # drop the previous batch's gradients
+        loss.backward()                 # work out every weight's gradient
+        optimiser.step()                # move every weight one small step
+
+torch.save(model.state_dict(), "checkpoint.pt")   # section 8's model file
+```
+
+The three lines in the middle of the loop are the whole of gradient descent.
+`loss.backward()` is section 4's gradient, and PyTorch works it out for every
+weight at once without you writing a single derivative. `optimiser.step()` is
+the step itself, and its size comes from the `lr` you chose. `zero_grad()` is
+there because PyTorch adds each new gradient to whatever is already stored, so
+you have to clear the store before each batch or the steps come out wrong.
+
+The library gives you the gradients, the update rule, a choice of ready-made
+losses, and the batching and shuffling of section 5. It also gives you
+`state_dict()`, which is the dictionary of weights that section 8 called the
+model file.
+
+What you collect yourself is `X` and `y`, which is the examples and their
+labels, and that is where nearly all the effort goes. You also decide how to
+split them, because nothing in the code above keeps any examples back, and
+without the test set of section 6 you cannot tell whether the model has learned
+or memorised.
+
+What you have to decide is the size of the network, the learning rate, the batch
+size, and how many epochs to run before stopping. Section 7 explained why those
+choices matter: too small a network underfits, too long a run overfits, and too
+large a learning rate makes the loss jump about instead of falling. The network
+above is a plain stack of `Linear` layers, which suits a short list of measured
+numbers. A photograph needs the convolutional layers of the
+[next page](03_inside-a-neural-network.md) instead.

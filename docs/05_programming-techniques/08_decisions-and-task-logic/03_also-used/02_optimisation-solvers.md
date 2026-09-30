@@ -35,6 +35,7 @@ is too heavy? These are the questions in the worked examples below.
 7. [Why a solver, and what it costs](#7-why-a-solver-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -514,3 +515,90 @@ the goal and the rules, and a solver finds the order.
   [ordering and rearrangement](../../../03_frameworks/03_arm-movement/07_ordering-and-rearrangement.md)
   explains where ordering rules come from, and why the plan should be recomputed
   after every move.
+
+---
+
+## 10. Using it in Python
+
+Section 3 wrote the kit-tray assignment as decisions, rules and a score, and section 6
+listed the libraries that solve such a model. This section writes that same model in
+Python twice, so that after reading it you can call a solver on the example from section 3
+and you know when the short call is enough and when you need the longer one.
+
+The first version is the short call. SciPy's `linear_sum_assignment` solves assignment
+exactly, and for a bare assignment problem it is all you need.
+
+```python
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+
+# distance[part][pocket], in millimetres, as in section 3
+distance = np.array([[193.1, 247.6, 324.5, 411.5],
+                     [130.0, 130.0, 192.1, 277.3],
+                     [180.3, 111.8, 111.8, 180.3],
+                     [277.3, 192.1, 130.0, 130.0]])
+
+parts, pockets = linear_sum_assignment(distance)
+print(list(zip(parts, pockets)), distance[parts, pockets].sum())
+```
+
+It pairs each part with the pocket of the same number, which in the names of section 3 is
+`P1→T1, P2→T2, P3→T3, P4→T4`, and the total comes to 564.9 mm. That is the best of the 24
+possibilities, and it is the same answer section 3 found by trying them all.
+
+The second version is longer, and section 3 says why you would ever write it: as soon as a
+rule appears that assignment alone cannot express, such as "P2 and P3 must not go into
+neighbouring pockets", the short call cannot help. OR-Tools CP-SAT can, because you write
+the rules yourself.
+
+```python
+from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+x = {(i, j): model.new_bool_var(f"x{i}_{j}") for i in range(4) for j in range(4)}
+
+for i in range(4):
+    model.add_exactly_one(x[i, j] for j in range(4))    # each part goes to one pocket
+for j in range(4):
+    model.add_exactly_one(x[i, j] for i in range(4))    # each pocket takes one part
+for j in range(3):                                     # the extra rule, on P2 and P3
+    model.add(x[1, j] + x[2, j + 1] <= 1)
+    model.add(x[2, j] + x[1, j + 1] <= 1)
+
+# CP-SAT works in whole numbers, so the distances are scaled to tenths of a millimetre.
+model.minimize(sum(round(distance[i][j] * 10) * x[i, j]
+                   for i in range(4) for j in range(4)))
+
+solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = 5.0      # stop searching after five seconds
+status = solver.solve(model)
+if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+    print([(i, j) for i in range(4) for j in range(4) if solver.value(x[i, j])])
+```
+
+With that extra rule the best total rises from 564.9 mm to 619.4 mm, and the solver swaps
+P1 and P2 so that P2 sits in T1 while P3 stays in T3. The cost of the rule is therefore
+54.5 mm, and knowing that number is often the reason to write the model at all.
+
+What the libraries do for you here is genuinely most of the job, which makes this page
+different from the rest of the chapter. CP-SAT runs the branch-and-bound search that
+section 3 describes, proves that no better answer exists, and reports `OPTIMAL` when it
+has done so or `FEASIBLE` when it ran out of time with an answer in hand. You never write
+a search.
+
+What you still write is the model, and every line of it is a claim about your cell. The
+variables, the two families of rules and the score above are yours. So is the `distance`
+matrix, and building it is usually the larger task, because those numbers have to come
+from real positions rather than from a guess. You also write what happens when the solver
+returns `INFEASIBLE`, which means your rules contradict each other and which the arm has
+to survive.
+
+What you have to decide or measure is the scale, the time limit and the score itself.
+CP-SAT accepts only whole numbers, so a distance in millimetres with one decimal has to be
+scaled, and scaling too coarsely quietly changes which answer is best. The time limit is
+`max_time_in_seconds`, and section 5 explains why it matters: on a large model a solver
+without one keeps searching for proof long after it has a good answer, so setting a budget
+and accepting the best answer found inside it is the normal choice.
+Finally the score is a decision and not a fact: minimising distance is not the same as
+minimising time, and if what you care about is the cycle time then the numbers in that
+matrix should be measured travel times.

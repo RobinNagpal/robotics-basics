@@ -26,6 +26,7 @@ on its own.
 6. [How seeing models connect to the other kinds](#6-how-seeing-models-connect-to-the-other-kinds)
 7. [Which page to read first](#7-which-page-to-read-first)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -276,3 +277,55 @@ speed, Book 2 has two deeper documents: [models that find
 objects](../../02_perception/02_object-perception/04_models-that-find.md) and
 [models that
 measure](../../02_perception/02_object-perception/05_models-that-measure.md).
+
+---
+
+## 9. Using it in Python
+
+The seven kinds above are described as ideas, and each one of them is also a file
+you can download and call. So this section runs the most used of the seven, an
+object detector, on a single picture. After reading it you will be able to get
+names and boxes out of a photo in about five lines, and you will know the shape
+that every later page in this chapter repeats: load a model, give it one input,
+and read a list of answers back.
+
+```python
+from ultralytics import YOLO
+
+# The trained numbers download themselves the first time, into a file of about 5 MB.
+model = YOLO("yolo11n.pt")
+
+# Calling the model gives one result per picture, and there is one picture here.
+result = model("table.jpg", conf=0.25)[0]
+
+for box in result.boxes:
+    name = result.names[int(box.cls)]
+    print(name, float(box.conf), box.xyxy[0].tolist())
+```
+
+Ultralytics is the Python package that holds the YOLO family of detectors, and it
+is used here because it needs fewer lines than any other way of running one. It
+does a lot inside those five lines, because it downloads the trained numbers,
+resizes the picture to the size the network expects, runs the network, removes the
+duplicate boxes, and gives the coordinates back on the original picture's scale.
+
+What the downloaded model gives you out of the box is the 80 everyday classes of
+COCO, so it finds cups, bottles, bowls, chairs and people in an ordinary photo
+without any training from you. For those objects that really is most of the job,
+and it is worth saying so plainly, because a working detector in five lines
+surprises people who expect months of work.
+
+What you still have to write yourself is everything that happens after the list of
+boxes. The four numbers in `box.xyxy` are pixels, and a pixel is a direction from
+the camera rather than a place on your table. So you read the distance at that
+pixel from a depth camera, turn the pixel and the distance into a point in metres,
+move that point from the camera's frame into the arm's frame, and only then can the
+arm reach for it. None of those steps is in the library.
+
+What you have to decide is the confidence threshold, which is `conf=0.25` above,
+and whether the 80 classes cover your own objects at all. A threshold that is too
+low invents objects, and one that is too high misses real ones. If your parts are
+not among the 80 classes then no threshold helps, because the model has never seen
+them, and you have to train it further on your own pictures instead. The page on
+[fine-tuning](../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md)
+explains how.

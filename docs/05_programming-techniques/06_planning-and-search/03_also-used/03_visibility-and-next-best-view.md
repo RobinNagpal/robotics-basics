@@ -38,6 +38,7 @@ test itself and the loop that uses it.
 7. [Why this, and what it costs](#7-why-this-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -510,3 +511,81 @@ is the signal to look again, and this page then chooses where.
   arm's move to the chosen view.
 - Book 2's [the wrist camera](../../../02_perception/02_object-perception/08_the-wrist-camera.md)
   covers what a view costs and how many views each task needs.
+
+---
+
+## 10. Using it in Python
+
+Section 3 wrote the sight line as `point(t) = camera + t × (target − camera)`
+and tested it against a cylinder by hand, and section 6 said that the cylinder
+test itself needs no library while ray casting against real shapes does. This
+section shows the library version. After it you will be able to ask, for many
+candidate camera positions at once, whether the target is hidden, and you will
+know which parts of choosing where to look next remain yours.
+
+The program below uses Open3D's ray casting, which tests many rays against
+triangle meshes at once. The useful detail is that a ray is six numbers, a
+starting point and a direction, and if you leave the direction as the full
+vector from the camera to the target rather than shortening it to length 1, then
+`t = 1` lands exactly on the target. That is the same `t` as in section 3.
+
+```python
+import numpy as np
+import open3d as o3d
+
+# The obstacle: a bottle 35 mm in radius and 200 mm tall, standing on the table.
+bottle = o3d.geometry.TriangleMesh.create_cylinder(radius=0.035, height=0.20)
+bottle.translate((0.10, 0.02, 0.10))
+
+scene = o3d.t.geometry.RaycastingScene()
+scene.add_triangles(o3d.t.geometry.TriangleMesh.from_legacy(bottle))
+
+target = np.array([0.20, 0.00, 0.03])          # the screw you need to see
+cameras = np.array([[0.00, 0.00, 0.30],        # candidate camera positions
+                    [0.00, -0.25, 0.30],
+                    [0.30, -0.25, 0.30]])
+
+# Direction left unnormalised, so t = 1 is the target and t < 1 is in front of it.
+rays = o3d.core.Tensor(np.hstack([cameras, target - cameras]).astype(np.float32))
+hidden = scene.test_occlusions(rays, tnear=1e-4, tfar=1.0).numpy()
+where = scene.cast_rays(rays)["t_hit"].numpy()
+```
+
+On that scene `hidden` comes back as `[True, False, False]`, so the first camera
+position cannot see the screw and the other two can. The matching `t_hit` for
+the first ray is 0.370, which says the bottle blocks the line 37 per cent of the
+way from that camera to the screw. The other two rays return infinity, which is
+how Open3D reports a ray that hits nothing.
+
+Open3D does the geometry. `add_triangles` builds the tree of boxes that makes a
+ray test fast, `test_occlusions` answers the yes-or-no question for every ray in
+one call, and `cast_rays` gives you where along each ray the first hit was.
+Doing this against real meshes rather than the cylinders of section 3 is the
+reason to use a library at all, because a mug with a handle or a bracket with a
+hole has no formula.
+
+What you still have to write is everything that makes this a next-best-view
+decision rather than a visibility test. Section 3's loop is yours: you generate
+the candidate views, you score each one by how much it would reveal, you
+subtract what it costs the arm to get there, and you pick the winner. You also
+have to write the bookkeeping of which parts of the scene are still unknown,
+because `test_occlusions` answers about a point you already know the position
+of, and the interesting question is usually about space you have not seen yet,
+which is what the
+[volumetric maps](../../05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
+page's unknown cells are for. And you have to check that a chosen view is
+reachable, because a view the arm cannot get to is worth nothing.
+
+What you have to decide or measure are the candidate views, the tolerances and
+the frames. The three camera positions above are a made-up list, and section 3
+explains that how you generate candidates decides what you can find: a ring of
+views around the object is the usual starting point, and the spacing of that
+ring is yours to choose. The `tnear=1e-4` keeps a ray from hitting a shape the
+camera is already inside, and the `tfar=1.0` stops it at the target, so both of
+those numbers only mean what they mean because the direction was left
+unnormalised. Everything here is also in one frame, and mixing the camera's
+frame with the table's frame is the most common way to get a confident wrong
+answer, so you decide the frame once and convert every position into it before
+building the rays. Finally, a real sensor is not a single line of sight, because
+it has a field of view and a minimum range, so section 3's scoring has to
+account for a target that is in front of the camera but outside the picture.

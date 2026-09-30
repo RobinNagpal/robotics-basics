@@ -31,6 +31,7 @@ page.
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -536,3 +537,80 @@ are not simple, and for many different objects of one kind.
   numbers for the gripper instead of the object.
 - For more depth, with licences and a list of methods, read
   [models that measure](../../../02_perception/02_object-perception/05_models-that-measure.md).
+
+---
+
+## 12. Using it in Python
+
+The page has separated two answers: a keypoint model gives named points in the
+photo, while a pose model gives six numbers in the room. Step 5 of
+[section 6](#6-a-worked-example-hanging-a-mug-on-a-rack) turned the first into the
+second. This section shows both halves in Python. After reading it you will know
+which part of a pose pipeline is a download and which part you build, and the
+honest answer here is less flattering than on the detection page.
+
+Ultralytics ships a keypoint model, and OpenCV does the step from points to a pose
+with the PnP solver that [section 3](#3-how-it-works-inside) described.
+
+```python
+import cv2
+import numpy as np
+from ultralytics import YOLO
+
+# The downloaded weights find 17 human joints. For your own object you fine-tune
+# this same model on your own photos with your own points marked.
+model = YOLO("yolo11n-pose.pt")
+result = model("photo.jpg")[0]
+
+# One row per point: its column and its row in the picture, in pixels.
+image_points = result.keypoints.xy[0].cpu().numpy().astype(np.float64)
+
+# Where those same points sit on the object itself, in metres. You measure these
+# once, from the part's drawing, and they never change.
+object_points = np.array([[0.00, 0.00, 0.00],
+                          [0.06, 0.00, 0.00],
+                          [0.06, 0.09, 0.00],
+                          [0.00, 0.09, 0.00]])
+
+# The camera's lens numbers, from calibrating it once.
+camera_matrix = np.array([[615.0,   0.0, 320.0],
+                          [  0.0, 615.0, 240.0],
+                          [  0.0,   0.0,   1.0]])
+
+# The first four found points stand in here; a model fine-tuned on your own
+# object would give exactly the points you marked, in the order you marked them.
+ok, rvec, tvec = cv2.solvePnP(object_points, image_points[:4], camera_matrix, None)
+rotation = cv2.Rodrigues(rvec)[0]   # the 3 by 3 rotation matrix
+print(ok, tvec.ravel())             # tvec is the object's position, in metres
+```
+
+What the pretrained model gives you out of the box is less than on the other pages
+of this chapter, and it is important not to pretend otherwise. The downloaded pose
+weights were trained on people, so they find shoulders, elbows and knees, not the
+top of a mug handle. For your own object those weights give you a sensible starting
+point for fine-tuning and nothing more, so the labelled pictures of
+[section 4](#4-how-it-is-trained) are work you will actually do. The part that is
+genuinely free is `cv2.solvePnP`, which is a solved piece of geometry that nobody
+should write again.
+
+What you still have to write yourself is the list of points and their meanings.
+Nothing in the library knows that your part has a handle top and a base centre, so
+you choose the points, mark them in your training pictures, and measure where they
+sit on the real object in metres. You also write the check that the answer is
+sensible, for example by projecting the object points back into the picture with
+`cv2.projectPoints` and refusing the pose when they land far from the points the
+model found.
+
+What you have to decide is how many keypoints to use and where to put them, because
+PnP needs at least four points that do not all lie on one line, and points on flat
+featureless surfaces are hard for a model to place. You also decide whether
+keypoints are the right route at all, since for one exact machined part a CAD-based
+pose model is more precise. The models named in
+[section 5](#5-well-known-models) are the ones to look at then, but they come as
+research repositories rather than packaged libraries, so there is no
+`pip install foundationpose`; you clone the repository and follow its own
+instructions. The nearest thing to a packaged option is HappyPose, which gathers
+CosyPose and MegaPose behind one `happypose` module, and you install even that from
+its Git repository rather than from the Python package index. Several of these
+models are licensed for research only, as [section 5](#5-well-known-models) says,
+so check before you ship.

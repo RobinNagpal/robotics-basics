@@ -37,6 +37,7 @@ those, because what helps is choosing what the arm does when it meets resistance
 7. [Why impedance and force control, and what it costs](#7-why-impedance-and-force-control-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -536,3 +537,74 @@ setting is found in a few tens of real insertions.
 - Book 3's [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
   and [holding on](../../../03_frameworks/02_gripping/05_holding-on.md) cover the same ideas
   with the ROS 2 packages, licences and hardware.
+
+---
+
+## 10. Using it in Python
+
+Section 3 wrote the impedance law as a spring and a damper, explained how to choose the
+damping, and separated impedance from admittance. Section 6 then showed that the
+ready-made controllers are C++ plugins configured from YAML, which means there is no
+Python function called `impedance_control` to call. This section shows what the law
+itself looks like in Python, so that after reading it you can see which parts a library
+provides and which parts are the two lines of algebra that stay yours.
+
+The example uses Pinocchio for the geometry, because the impedance law needs the tool's
+position and the Jacobian, which is the matrix that relates joint speeds to tool speeds.
+
+```python
+import numpy as np, pinocchio as pin
+
+model = pin.buildModelFromUrdf("arm.urdf")
+data = model.createData()
+tip = model.getFrameId("tool0")           # the frame the stiffness is measured at
+
+K = np.diag([800.0, 800.0, 300.0])        # stiffness, newtons per metre, per axis
+D = np.diag([40.0, 40.0, 25.0])           # damping, newton seconds per metre
+
+while running:
+    q, v = read_joint_angles(), read_joint_speeds()
+    pin.forwardKinematics(model, data, q, v)
+    pin.updateFramePlacements(model, data)
+    x = data.oMf[tip].translation                    # where the tool really is
+    J = pin.computeFrameJacobian(model, data, q, tip,
+                                 pin.LOCAL_WORLD_ALIGNED)[:3]   # the position rows only
+    f = K @ (x_wanted(t) - x) - D @ (J @ v)          # the spring and damper of section 3
+    tau = J.T @ f + pin.computeGeneralizedGravity(model, data, q)
+    send_joint_torques(tau)
+```
+
+What the library does for you is the geometry. `forwardKinematics` with
+`updateFramePlacements` works out where every frame of the arm is for the current joint
+angles, `computeFrameJacobian` gives the matrix that turns a force at the tool into
+joint torques when you transpose it, and `computeGeneralizedGravity` gives the torque
+that holds the arm up so that the spring does not have to. Writing any of those three
+by hand for a six-joint arm is a long job and an easy one to get wrong.
+
+What you write is the law in the middle, and it really is only the two lines that
+compute `f` and `tau`. You also write `x_wanted`, which is the position the spring
+pulls towards and which normally comes from the trajectory generator, and you write
+the reading and the sending. Guarded moves,
+as section 3 describes them, need no library at all: they are a loop over the force
+reading with a stop command and a travel limit.
+
+There is one hard requirement behind all of this. The arm has to accept joint torques,
+because impedance control works by commanding torque. On a position-controlled arm you
+cannot run this code, and you write admittance instead, which means reading a wrist
+force sensor and moving the position target. For that case `ros2_controllers` ships
+`admittance_controller`, but it is a C++ plugin whose stiffness and damping you set in
+a YAML file, so your Python only publishes the target and reads the state.
+
+What you have to decide or measure is the list of numbers in `K` and `D`, and the frame
+they are written in. Section 3 explains that each direction gets its own stiffness, so
+that the direction pressing into a surface can be soft while the others stay stiff, and
+that the damping then follows from the stiffness and the mass through
+`D = 2 × ζ × √(K × mass)`. It also warns that a damping which is right in free space is
+too small the moment the tool touches something hard, so you set it with the stiffest
+surface in mind. Both matrices are expressed in the frame that
+`pin.LOCAL_WORLD_ALIGNED` gives, which is the world's orientation at the tool, so if you
+want stiffness along the tool's own axis you must either rotate `K` or ask for a
+different frame convention. One more measurement is easy to forget: a wrist force
+sensor reads the weight of the tool bolted to it, so you measure that reading with the
+tool hanging in free air and subtract it, or every force you compute will be wrong by
+the tool's weight.

@@ -30,6 +30,7 @@ fast enough for a live camera.
 8. [Why detection, and what it costs](#8-why-detection-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -393,3 +394,79 @@ say what each object is, which a threshold cannot do.
   [finding an object in a picture](../../../02_perception/01_camera/02_finding-objects.md),
   which runs a real YOLO detector, and in
   [models that find objects](../../../02_perception/02_object-perception/04_models-that-find.md).
+
+---
+
+## 11. Using it in Python
+
+The page has said what a detector gives back, which models are worth knowing, and
+where its answers fall short. This section shows the Python that produces that
+list of boxes. It does so twice, once with YOLO and once with DETR, so that you can
+see that two very different networks hand you the same three things: a box, a class
+and a confidence. After reading it you will be able to run either one on a photo of
+your table.
+
+The shortest version uses Ultralytics, which is the Python package that holds the
+YOLO family of detectors.
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolo11n.pt")               # downloads about 5 MB the first time
+result = model("table.jpg", conf=0.25)[0]
+
+for box in result.boxes:
+    name = result.names[int(box.cls)]
+    # xywh is the box as its middle and its size; xyxy would be its two corners.
+    middle_u, middle_v, width, height = box.xywh[0].tolist()
+    print(f"{name} {float(box.conf):.2f} at pixel ({middle_u:.0f}, {middle_v:.0f})")
+```
+
+DETR needs a few more lines, because Hugging Face `transformers` keeps the three
+steps apart on purpose: a processor prepares the picture, the model runs, and a
+second processor call turns the network's raw output into boxes on the original
+picture's scale.
+
+```python
+import torch
+from PIL import Image
+from transformers import AutoImageProcessor, AutoModelForObjectDetection
+
+processor = AutoImageProcessor.from_pretrained("facebook/detr-resnet-50")
+model = AutoModelForObjectDetection.from_pretrained("facebook/detr-resnet-50")
+
+image = Image.open("table.jpg")
+inputs = processor(images=image, return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs)
+
+# target_sizes wants the height first, and image.size gives width first.
+results = processor.post_process_object_detection(
+    outputs, target_sizes=torch.tensor([image.size[::-1]]), threshold=0.3
+)
+for score, label, box in zip(results[0]["scores"], results[0]["labels"],
+                             results[0]["boxes"]):
+    print(model.config.id2label[label.item()], round(score.item(), 2), box.tolist())
+```
+
+What the pretrained models give you out of the box is the same in both cases,
+because both were trained on COCO and both know its 80 classes. The libraries also
+do the parts that are easy to get wrong: Ultralytics runs the non-maximum
+suppression of [section 3](#3-how-it-works-inside) for you, and DETR needs none, so
+in neither case do you write that cleanup yourself. For cups, bottles and bowls
+this is genuinely most of the work.
+
+What you still have to write yourself is the step from a box to something an arm
+can use, which is the whole of [section 6](#6-where-it-is-used-on-a-robot-arm). The
+model gives you pixels, so you read the depth at the box's middle pixel, turn that
+pixel and that distance into a point in metres, move the point into the arm's
+frame, and choose a way for the gripper to approach. You also write the choice of
+which box matters, such as the nearest cup rather than the most confident one.
+
+What you have to decide is the threshold, which is `conf=0.25` for YOLO and
+`threshold=0.3` for DETR above, and which of the two models suits you. YOLO is fast
+enough to run on every frame from a live camera on an ordinary processor, while DETR
+is heavier but avoids the cleanup step and its weakness with objects that stand
+close together. Above all you decide whether the 80 classes are your objects. If
+they are not, the model will find nothing rather than something slightly wrong, and
+the only fix is to fine-tune it on your own labelled pictures.

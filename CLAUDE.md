@@ -77,9 +77,12 @@ def slug(h):
     return re.sub(r'[^a-z0-9\s_-]','',h.lower().strip()).replace(' ','-')
 docs=sorted(pathlib.Path('docs').rglob('*.md'))+[pathlib.Path('README.md')]
 anchors={p:{slug(m) for m in re.findall(r'^#{1,6}\s+(.*)$',p.read_text(),re.M)} for p in docs}
+# Code is not prose: a Python line such as d["k"](x) looks exactly like a
+# markdown link, so fenced blocks are removed before anything is checked.
+body={p:re.sub(r'^```.*?^```','',p.read_text(),flags=re.S|re.M) for p in docs}
 bad=[]
 for p in docs:
-    for _l,tg in re.findall(r'\[([^\]]*)\]\(([^)\s]+)\)',p.read_text()):
+    for _l,tg in re.findall(r'\[([^\]]*)\]\(([^)\s]+)\)',body[p]):
         if tg.startswith(('http','mailto:')): continue
         pp,_,fr=tg.partition('#'); fr=urllib.parse.unquote(fr)
         t2=pathlib.Path((p.parent/pp).resolve()) if pp else p
@@ -87,7 +90,7 @@ for p in docs:
         if fr and t2.suffix=='.md':
             a=anchors.get(t2) or {slug(m) for m in re.findall(r'^#{1,6}\s+(.*)$',t2.read_text(),re.M)}
             if fr not in a: bad.append(f'{p}: missing anchor -> {tg}')
-    for im in re.findall(r'!\[[^\]]*\]\(([^)\s]+)\)',p.read_text()):
+    for im in re.findall(r'!\[[^\]]*\]\(([^)\s]+)\)',body[p]):
         if im.startswith('http'): continue
         if not (p.parent/im).exists(): bad.append(f'{p}: missing image -> {im}')
 print('\n'.join(bad) if bad else 'ALL internal links and images OK')

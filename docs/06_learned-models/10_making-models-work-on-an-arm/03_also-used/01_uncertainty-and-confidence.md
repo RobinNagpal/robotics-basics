@@ -34,6 +34,7 @@ are the real ones.
 11. [Libraries](#11-libraries)
 12. [Why do this, and what it costs](#12-why-do-this-and-what-it-costs)
 13. [Where to read next](#13-where-to-read-next)
+14. [Using it in Python](#14-using-it-in-python)
 
 ---
 
@@ -508,3 +509,87 @@ expensive.
   are the models whose scores most often decide whether an arm acts.
 - [Safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
   in Book 5 covers the programmed checks that stop an arm whatever a model says.
+
+---
+
+## 14. Using it in Python
+
+Sections 3, 4 and 6 described three methods, and section 11 listed libraries for them.
+However the reason to show the code here is that all three are shorter than their
+explanations: temperature scaling fits one number, a reliability curve is ten slices of
+a list, and conformal prediction is a sorted array and one quantile. After reading this
+section you will be able to write all three with nothing but NumPy and SciPy.
+
+```python
+import numpy as np
+from scipy.optimize import minimize_scalar
+
+def softmax(z):
+    e = np.exp(z - z.max(axis=1, keepdims=True))   # subtract the largest, or exp overflows
+    return e / e.sum(axis=1, keepdims=True)
+
+# The calibration set of section 4: raw model outputs and the right answers, for
+# pictures the model neither trained on nor will be tested on.
+logits = np.load('calibration_logits.npy')   # shape (pictures, classes)
+labels = np.load('calibration_labels.npy')   # shape (pictures,)
+rows = np.arange(len(labels))
+
+# Section 4. Temperature scaling is one number, chosen to make the log loss smallest.
+def log_loss(t):
+    return -np.mean(np.log(softmax(logits / t)[rows, labels] + 1e-12))
+
+T = minimize_scalar(log_loss, bounds=(0.5, 5.0), method='bounded').x
+
+# Section 3. The reliability curve is ten slices of the scores, and how often each
+# slice was right. If the two printed numbers agree, that slice is calibrated.
+p = softmax(logits / T)
+confidence, correct = p.max(axis=1), p.argmax(axis=1) == labels
+which_slice = np.clip((confidence * 10).astype(int), 0, 9)
+for s in range(10):
+    m = which_slice == s
+    if m.sum() > 20:                          # a slice of a handful is mostly chance
+        print(f'scored {confidence[m].mean():.2f}, right {correct[m].mean():.2f}')
+
+# Section 6. Conformal prediction is a sorted array and one position in it. It needs
+# pictures of its own, because the ones above have already been used to choose T.
+p2 = softmax(np.load('conformal_logits.npy') / T)
+labels2 = np.load('conformal_labels.npy')
+surprise = np.sort(1.0 - p2[np.arange(len(labels2)), labels2])   # smallest surprise first
+alpha = 0.1                                 # willing to miss the right answer a tenth of the time
+n = len(surprise)
+q = surprise[int(np.ceil((n + 1) * (1 - alpha))) - 1]    # with n = 1,000, the 901st smallest
+prediction_set = np.flatnonzero(new_scores >= 1.0 - q)   # every class that clears the line
+```
+
+On the simulated model of this page that code gives T = 2.48, which is the value section
+4 quotes. Its quantile comes out at 0.888 rather than section 6's 0.889, because the
+repository's own
+[`what_models_are_3.py`](../../../diagrams/what_models_are_3.py) tries a grid of
+temperatures in steps of 0.01 instead of calling `minimize_scalar`, so the two searches
+land a thousandth apart.
+
+NumPy and SciPy give you everything here, and that is the point. `minimize_scalar` with
+`method='bounded'` searches between the two bounds you give it, so you do not write a
+search of your own. The conformal step needs even less than that, because once the
+surprises are sorted, q is simply one of them read off by its position, and counting
+from the end of a sorted list is the whole of the method. Taking q from the array rather
+than working out an in-between value is deliberate, because the promise in section 6
+holds for a reading the calibration set really produced. If you prefer one line,
+`np.quantile(surprise, np.ceil((n + 1) * (1 - alpha)) / n, method='higher')` gives the
+same number. Nothing about any of these three methods is specific to neural networks, so
+they work on the scores from any model at all.
+
+What you have to collect yourself is the calibration set, and both halves of it matter:
+the raw outputs before softmax, which many libraries hide, and the right answers, taken
+in the place where the robot actually works. It must be separate from the test set, for
+the reason section 4 gives, and separate again from the pictures used to choose T if you
+then run conformal prediction on top. You also have to store T and q and apply them
+every time the model runs, because a temperature that lives only in the notebook that
+fitted it changes nothing on the arm.
+
+What you have to decide is alpha, how many slices the curve has, and the threshold
+itself, which section 8 works out from the cost of a mistake rather than from a round
+number. If you would rather not write these fifteen lines, then MAPIE gives you
+conformal prediction and netcal gives you temperature scaling and the reliability
+diagram, as section 11 says. They are worth using for their extra methods rather than
+for the lines they save.

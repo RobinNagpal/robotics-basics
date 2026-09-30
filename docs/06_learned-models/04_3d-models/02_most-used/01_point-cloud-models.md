@@ -29,6 +29,7 @@ numbers.
 8. [Why this rather than an image model, and what it costs](#8-why-this-rather-than-an-image-model-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -364,3 +365,60 @@ name the parts of an object, such as a handle.
     what a point cloud model has to beat.
 - [The one-box project](../../../02_perception/01_camera/03_one-box-intro.md) makes a
     real point cloud from a depth camera.
+
+---
+
+## 11. Using it in Python
+
+The page has explained that these models read points directly, and that the
+software usually cuts the cloud down to a fixed number of points spread evenly over
+it before the network sees it. This section shows that preparation in Python, and
+then it says plainly what you will find when you look for the network itself.
+After reading it you will know which half of this pipeline is a download and which
+half is a research repository you have to clone.
+
+Open3D loads and thins the cloud, and PyTorch3D does the even spreading, which is
+called farthest point sampling.
+
+```python
+import numpy as np
+import open3d as o3d
+import torch
+from pytorch3d.ops import sample_farthest_points
+
+cloud = o3d.io.read_point_cloud("table_scene.ply")
+cloud = cloud.voxel_down_sample(voxel_size=0.005)
+
+# A batch of one cloud, shaped (1, N, 3), which is what the model expects.
+batch = torch.from_numpy(np.asarray(cloud.points)).float().unsqueeze(0)
+
+# K points spread evenly over the cloud, rather than the first K in the file.
+sampled, indices = sample_farthest_points(batch, K=1024)
+print(sampled.shape)        # (1, 1024, 3)
+```
+
+What is packaged for you out of the box is exactly what you see above, and nothing
+past it. Open3D and PyTorch3D are proper installable libraries, so the reading,
+thinning and sampling are solved. The networks themselves are not packaged in the
+same way. PointNet++, DGCNN and Point Transformer are released as research
+repositories, so there is no `pip install pointnet2` and no import you can write,
+and there are no widely shared trained weights for the objects on your table
+either. If you want to build one of these networks rather than clone it, PyTorch
+Geometric supplies the layer as `torch_geometric.nn.PointNetConv`, and you assemble
+and train the network around it yourself.
+
+What you still have to write yourself, or rather what you usually avoid writing, is
+worth saying clearly. Most robot projects never call a point cloud network
+directly, because they use one inside something else: a grasp model such as
+Contact-GraspNet takes your point cloud and gives back grasps, with a PointNet++
+hidden inside it that you never touch. That is the realistic route, and the code
+above is still the code you write, because a grasp model expects the cloud prepared
+in just this way.
+
+What you have to decide is the number of points and the voxel size, and they trade
+against each other. A model trained on 1,024 points will not read 20,000, and the
+points you throw away are gone, so a thin mug handle can disappear before the
+network ever sees it. You also decide whether you need a point cloud model at all,
+which [section 8](#8-why-this-rather-than-an-image-model-and-what-it-costs)
+discusses, because a detector on the colour picture plus the depth at those pixels
+is easier to get working and often enough.

@@ -35,6 +35,7 @@ that the later steps tidy, trace and group.
 7. [Why thresholding, and what it costs](#7-why-thresholding-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -452,3 +453,74 @@ suggests.
   turns the middle of a mask into a 3D point.
 - Book 2 has real code for an HSV mask in [finding an object in a picture](../../../02_perception/01_camera/02_finding-objects.md#32-the-steps),
   and a summary of colour ranges in [methods you write yourself](../../../02_perception/02_object-perception/03_programmed-methods.md#11-a-colour-range).
+
+---
+
+## 10. Using it in Python
+
+Section 2 explained the one test per pixel, section 3 explained the colour and
+depth versions, and section 6 listed the OpenCV calls that do both. This section
+puts those calls in a program. After it you will be able to turn a picture into
+a mask in three lines, and you will know which of the numbers in those lines you
+have to measure in your own workcell.
+
+The program below makes two masks from the same picture. The first is the
+brightness threshold with Otsu's method, where the picture chooses the limit
+itself. The second is the colour mask from section 3, which converts to hue,
+saturation and value first and then keeps the pixels inside a range. Both come
+from OpenCV, which reads pictures as blue, green, red rather than red, green,
+blue.
+
+```python
+import cv2
+import numpy as np
+
+picture = cv2.imread("scene.png")
+grey = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
+
+# A brightness limit chosen by Otsu's method.  The limit it picked comes back
+# as `limit`; the 0 passed in is ignored when THRESH_OTSU is used.
+limit, bright = cv2.threshold(grey, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+# A colour mask: hue 40 to 80 is green in OpenCV, whose hue runs 0 to 179.
+hsv = cv2.cvtColor(picture, cv2.COLOR_BGR2HSV)
+mask = cv2.inRange(hsv, np.array([40, 80, 40]), np.array([80, 255, 255]))
+
+# A depth threshold is the same idea on a depth picture, in metres.
+depth = np.load("depth.npy")
+above_table = (depth > 0.30) & (depth < 0.70)
+```
+
+On a made-up 320 by 240 picture of two green blocks on a grey table, Otsu's
+method picks a limit of 138 and marks 68457 pixels as bright, which is the table
+and not the blocks, because the table is the brighter of the two. The colour
+mask keeps 8152 pixels, which is the two blocks. That difference is the whole
+argument of section 3: brightness alone cannot tell a green block from a grey
+table of similar brightness, and colour can.
+
+OpenCV does the per-pixel comparison and, for Otsu's method, the search for the
+limit as well. `cv2.threshold` returns two values, and the first is the limit it
+chose, which is worth printing because a limit that jumps between pictures tells
+you the lighting is changing. `cv2.inRange` tests all three channels at once and
+returns a mask of 0 and 255, and the `&` on the depth arrays is NumPy doing the
+same thing on true and false values. The last line shows why the depth version
+needs no library at all: a comparison on a NumPy array already is a threshold.
+
+What you still have to write is what happens to the mask. A mask is not an
+answer, because it is a picture of true and false values, and the arm needs a
+position. The [morphology](02_morphology-and-distance-transform.md) page cleans
+the mask and the [clustering](03_clustering.md) page turns it into separate
+objects with centres, and those two steps almost always follow this one.
+
+What you have to decide or measure is the limits, and this is the part that
+decides whether the mask works tomorrow as well as today. The hue range of 40 to
+80 above is a claim about your lighting and your camera, so you measure it by
+opening real pictures of your own workcell and reading the hue values off the
+pixels you want to keep. The saturation floor of 80 and the value floor of 40
+matter just as much, because a very pale or very dark pixel has an unreliable
+hue, and leaving those floors at 0 is the usual reason a colour mask picks up
+half the room. For the depth mask you decide 0.30 and 0.70 metres, which are
+distances in your own camera's frame, so moving the camera changes them. Otsu's
+method looks like it removes the decision, but it only moves it: it assumes the
+picture has two groups of brightnesses, and section 2 explains what it returns
+when that assumption is false.

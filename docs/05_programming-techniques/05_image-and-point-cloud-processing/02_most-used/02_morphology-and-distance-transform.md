@@ -37,6 +37,7 @@ real run of the diagram script.
 7. [Why these techniques, and what they cost](#7-why-these-techniques-and-what-they-cost)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -494,3 +495,76 @@ that runs on any mask, including a model's own, as section 4 showed.
   is how radius outlier removal finds each point's neighbours.
 - The [glass-picking project's notes on splitting a blob](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/docs/problem-2/solutions/01-split-the-blob-in-the-picture.md)
   show in detail why the distance transform fails on tall thin objects.
+
+---
+
+## 10. Using it in Python
+
+Section 2 explained erosion, dilation, opening and closing, section 3 explained
+the distance transform and what its brightest point means, and section 6 listed
+the OpenCV calls for all of them. This section is those calls in order on one
+mask. After it you will be able to clean a mask and find the most central point
+of each patch, and you will know which of the numbers you have to choose from
+your own camera's geometry.
+
+The program below starts from a mask of the kind the
+[thresholding](01_thresholding-and-colour-masks.md) page produces, cleans it,
+and then asks the distance transform where the safest place to put a suction cup
+is. It uses OpenCV throughout, because OpenCV has both techniques and they work
+on the same kind of array.
+
+```python
+import cv2
+import numpy as np
+
+mask = cv2.imread("mask.png", cv2.IMREAD_GRAYSCALE)      # 0 and 255
+
+# The brush.  A disc-like brush is the usual choice, because a square brush
+# leaves square corners on round objects.
+brush = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+
+clean = cv2.morphologyEx(mask, cv2.MORPH_OPEN, brush)    # remove specks
+clean = cv2.morphologyEx(clean, cv2.MORPH_CLOSE, brush)  # fill small holes
+
+# How far every kept pixel is from the nearest edge, in pixels.
+distance = cv2.distanceTransform(clean, cv2.DIST_L2, 5)
+smallest, largest, _, most_central = cv2.minMaxLoc(distance)
+```
+
+On a made-up mask of two green blocks, the threshold left 8152 pixels, the
+opening and closing together leave 8136, and the distance transform's brightest
+point is 36.0 pixels from the nearest edge, at pixel (115, 125). That 36 pixels
+is the radius of the largest circle that fits inside the patch, so a suction cup
+narrower than 36 pixels across will land entirely on the block.
+
+OpenCV does both techniques in one call each. `morphologyEx` with `MORPH_OPEN`
+does the erosion and then the dilation that section 2 describes, and with
+`MORPH_CLOSE` it does them the other way round, so you do not write the two
+steps yourself. `distanceTransform` does the two passes over the mask from
+section 3, and `minMaxLoc` finds the brightest pixel and where it is. The third
+argument of `distanceTransform` is the mask size used for the approximation, and
+passing 5 gives a more accurate result than 3 at almost no cost.
+
+What you still have to write is the decision about which operation to use, and
+in which order. Nothing in the call knows whether your problem is specks outside
+the object or holes inside it, and section 2 is clear that opening and closing
+are not interchangeable: opening first and then closing removes specks and then
+fills holes, while the other order fills the specks into the object before it
+can remove them. You also have to convert between conventions if you mix
+libraries, because OpenCV works on masks of 0 and 255 while SciPy and
+scikit-image work on true and false, and section 6 explains what a forgotten
+conversion looks like.
+
+What you have to decide or measure is the brush size and the meaning of a pixel.
+The `(5, 5)` brush says that a patch narrower than about five pixels is noise,
+and whether that is right depends entirely on how far your camera is from the
+table: the same real speck is two pixels wide from 1 metre and ten pixels wide
+from 200 millimetres. So you work the brush size out from the camera's
+resolution and its distance, and section 2 explains why too large a brush eats
+the thin parts of real objects. The same conversion applies to the distance
+transform, because its output is in pixels and a suction cup is specified in
+millimetres, so you need the millimetres per pixel at the table's distance
+before the 36 above means anything. Finally you decide whether to use `DIST_L2`
+or `DIST_L1`, and `DIST_L2` is the straight-line distance you almost always
+want, because `DIST_L1` counts diagonal steps as two and so underestimates
+clearance in a diagonal direction.

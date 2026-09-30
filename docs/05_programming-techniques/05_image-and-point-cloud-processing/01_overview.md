@@ -140,6 +140,7 @@ without them.
    clustering already gives, so outlines are needed mainly when the shape itself
    matters.
 5. [Volumetric maps](03_also-used/02_volumetric-maps.md) combine many depth
+8. [Using it in Python](#8-using-it-in-python)
    pictures into one 3D map: an occupancy map of free, occupied and unknown space,
    and distance maps that planners read. A robot with a fixed camera and a clear
    table often plans straight from the latest point cloud. So the map is needed
@@ -290,3 +291,71 @@ says which one to open first and where each of the others fits.
   [methods you write yourself](../../02_perception/02_object-perception/03_programmed-methods.md).
 - [Segmentation](../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
   in Book 6 is the learned model that does the same job as this whole chapter.
+
+---
+
+## 8. Using it in Python
+
+Section 3 introduced the technique pages one at a time, and section 4 compared
+them. What that order hides is that on a real job you almost never use one of
+them alone: you use three or four in a row, and each one hands its result to the
+next. After this section you will have seen that chain as one short program, so
+that the pages that follow read as steps of something you have already run.
+
+The program below finds the green blocks on a grey table and reports where each
+one is. It uses OpenCV, which is the computer vision library that all of this
+chapter's image techniques come from, and it is one library rather than several
+because OpenCV covers every step.
+
+```python
+import cv2
+import numpy as np
+
+picture = cv2.imread("scene.png")                        # OpenCV reads blue, green, red
+
+# 1. Threshold: keep only the green pixels.  (Thresholding page.)
+hsv = cv2.cvtColor(picture, cv2.COLOR_BGR2HSV)
+mask = cv2.inRange(hsv, np.array([40, 80, 40]), np.array([80, 255, 255]))
+
+# 2. Morphology: remove the specks the threshold let through.  (Morphology page.)
+brush = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, brush)
+
+# 3. Clustering: give each separate patch its own number.  (Clustering page.)
+count, labels, stats, centres = cv2.connectedComponentsWithStats(mask, connectivity=8)
+
+for i in range(1, count):                                # 0 is the background
+    print(stats[i, cv2.CC_STAT_AREA], centres[i])
+```
+
+On a made-up 320 by 240 picture with two green blocks on a grey table, the
+threshold keeps 8152 pixels, the opening leaves 8136 of them, and the labelling
+finds two patches of 5033 and 3103 pixels centred at (115, 125) and (225, 90)
+pixels. Those two centres are the whole output of the program, and they are what
+an arm would act on.
+
+OpenCV does all three steps, and each one is a single call. `cvtColor` converts
+between colour descriptions, `inRange` tests every pixel against a lower and an
+upper limit, `morphologyEx` does the erode-then-dilate pair that section 3 calls
+opening, and `connectedComponentsWithStats` walks the mask and gives each patch
+a number together with its area, its bounding box and its centre. None of this
+is slow, and all of it is written in C++ underneath.
+
+What you still have to write is the order of the steps and the decision at the
+end. Nothing in OpenCV knows that a threshold should come before an opening, or
+that two patches mean two blocks rather than one block seen through a shadow.
+You also have to write the step that turns a pixel position into something the
+arm can use, because `(115, 125)` is a place in a picture and not a place in the
+world, and Book 2's [camera basics](../../02_perception/01_camera/01_basics.md)
+page explains the calibration that connects them.
+
+What you have to decide or measure are the numbers in the calls, and every page
+in this chapter is largely about one of them. The `[40, 80, 40]` and `[80, 255,
+255]` limits are a claim about what green looks like under your lighting, and
+you measure them by sampling pixels from real pictures of your own workcell
+rather than copying them from a tutorial. The `(5, 5)` brush is a claim about
+how large a speck can be before it matters, so it depends on how far the camera
+is from the table. Even `connectivity=8` is a choice, because it decides whether
+two patches touching only at a corner count as one. The point that runs through
+the whole chapter is that these calls are short and the numbers in them are
+yours.

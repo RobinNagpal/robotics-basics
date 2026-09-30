@@ -24,6 +24,7 @@ about machine learning is assumed in this chapter.
 5. [When a small dataset makes them the better choice](#5-when-a-small-dataset-makes-them-the-better-choice)
 6. [How this chapter connects to the rest](#6-how-this-chapter-connects-to-the-rest)
 7. [Where to read next](#7-where-to-read-next)
+8. [Using it in Python](#8-using-it-in-python)
 
 ---
 
@@ -279,3 +280,52 @@ whether to act.
   model on top of it.
 - [Least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   in Book 5 explains the maths under linear regression.
+
+---
+
+## 8. Using it in Python
+
+Section 4 put the methods of this chapter side by side, and section 5 said that a
+small dataset is what makes them the right choice. This section adds the part
+those tables leave out, which is how much code any of them takes. The answer is
+four lines, and knowing that changes where you expect to spend your time.
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=0)
+model = RandomForestClassifier(n_estimators=300, random_state=0).fit(X_train, y_train)
+print(accuracy_score(y_test, model.predict(X_test)))
+```
+
+Here `X` is a table with one row per example and one column per measured number,
+and `y` is the answer for each row. Every method in this chapter follows the same
+three calls, which are `fit` to learn from the training rows, `predict` to answer
+for new rows, and a scoring function to say how well it did. So to try a support
+vector machine instead you change `RandomForestClassifier` to `SVC` and nothing
+else moves. That one property is why this chapter is worth reading before the
+neural network chapters, because you can try five methods in an afternoon.
+
+The library gives you the whole algorithm and a set of defaults that are usually
+reasonable. It also gives you the splitting, the scoring, and `Pipeline`, which
+chains a preparation step and a model together so that new data is prepared in
+exactly the same way as the training data.
+
+What you have to collect is `X` and `y`, and what you have to build is the
+columns of `X`. That building is the real work of classical machine learning, and
+this chapter calls those columns **features**. A feature is one number you
+compute from the raw readings because you believe it carries the signal, such as
+the ratio of sideways force to grip force rather than the two forces on their
+own. Neural networks find their own features from raw input, and classical
+methods do not, which is the trade section 1 described.
+
+What you have to decide is which method to try, the handful of settings it takes,
+and how the split is made. Section 4's table is the guide to the first of those.
+For the third, remember that frames recorded a few milliseconds apart are nearly
+identical, so for data logged from a moving arm you split by run rather than by
+row, as
+[where the data comes from](../01_what-models-are/05_where-the-data-comes-from.md)
+explains.

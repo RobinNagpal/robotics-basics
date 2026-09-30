@@ -31,6 +31,7 @@ rough idea of how much data each kind of model needs.
 9. [How much data each kind needs](#9-how-much-data-each-kind-needs)
 10. [Why not just collect robot data?](#10-why-not-just-collect-robot-data)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -392,3 +393,61 @@ from.
 - [Learned methods for one
   arm](../../03_frameworks/04_one-arm-training/03_learned-methods.md) shows how these
   kinds of data are used to teach one arm a task.
+
+---
+
+## 12. Using it in Python
+
+This page was about where examples come from, and section 9 said how many of
+them each kind of model needs. There is one line of Python that decides whether
+the test score you get from those examples means anything at all, and this
+section is about that line. It shows the shape of the idea rather than a
+technique, because splitting data is something you do before any model is
+chosen.
+
+Robot data arrives as demonstrations, and one demonstration is hundreds of
+frames recorded a few milliseconds apart. Neighbouring frames look almost
+identical, so if you split the frames at random, nearly every test frame has an
+almost identical twin in the training set. The model then scores well on the
+test set without having learned anything that transfers to a new demonstration.
+
+```python
+from sklearn.model_selection import train_test_split, GroupShuffleSplit
+
+# Wrong for robot data: frames of one demonstration land on both sides.
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=0)
+
+# Right: demo_id says which demonstration each row came from, and whole
+# demonstrations go to one side or the other.
+splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
+train_rows, test_rows = next(splitter.split(X, y, groups=demo_id))
+X_train, X_test = X[train_rows], X[test_rows]
+y_train, y_test = y[train_rows], y[test_rows]
+```
+
+Both functions come from scikit-learn, which is the standard Python library for
+the older machine learning methods and is described in
+[chapter 2](../02_classical-machine-learning/01_overview.md). Here it is used
+only for the split, which works the same whether the model that follows is a
+random forest or a neural network. The `random_state=0` fixes the shuffling, so
+the same split comes back every time you run the script, and that is what lets
+you compare two models fairly.
+
+The library gives you the shuffling, the proportions, and the guarantee that no
+value of `demo_id` appears on both sides. It also gives you `GroupKFold` and
+`StratifiedGroupKFold` for the same idea repeated several times over.
+
+What you have to collect is the data itself, and what you have to record is
+`demo_id`. That is the part people forget, because once the frames from many
+demonstrations have been stacked into one array without a column saying which
+recording each came from, nothing can recover it afterwards. The same applies to
+the simulated data of section 4, where the group is usually one randomised scene
+rather than one demonstration.
+
+What you have to decide is what a group means for your job. If the arm was
+taught by three different people, you may want to test on a person the model has
+never seen. If it worked in four bins of parts, testing on an unseen bin tells
+you more than testing on unseen frames. Section 10 said that robot data is
+expensive, and a split like this is how you get an honest answer out of the
+little you have.

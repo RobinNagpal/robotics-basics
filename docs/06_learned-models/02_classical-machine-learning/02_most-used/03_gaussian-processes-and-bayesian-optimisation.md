@@ -44,6 +44,7 @@ written in NumPy.
 8. [Why this, and what it costs](#8-why-this-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -573,3 +574,59 @@ optimisation wins when each trial is a run of the real arm.
 - Book 5's
   [system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
   is the physics-first way to learn the arm's numbers.
+
+---
+
+## 11. Using it in Python
+
+Section 2 built a guess with an error bar, and section 3 used that error bar to
+choose the next trial. Section 7 named the libraries that do both. This section
+puts them together, so that after reading it you can fit a Gaussian process to
+the trials you have run and work out where to run the next one.
+
+```python
+import numpy as np
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import Matern, WhiteKernel
+
+# gains has one row per trial so far, scores the tracking score that trial gave.
+kernel = Matern(length_scale=1.0, nu=2.5) + WhiteKernel(noise_level=0.01)
+gp = GaussianProcessRegressor(
+    kernel=kernel, normalize_y=True, n_restarts_optimizer=5).fit(gains, scores)
+print(gp.kernel_)   # the length scale and noise it settled on
+
+# candidates is a grid of settings you could try next.
+mean, std = gp.predict(candidates, return_std=True)   # section 2's guess and band
+next_gain = candidates[np.argmin(mean - 2.0 * std)]   # section 3's UCB, lower is better
+```
+
+The last line is section 3's upper confidence bound written out. Because the
+score on this page is one where lower is better, the optimistic value at each
+setting is the guess minus two error bars, and the next trial goes where that is
+smallest. The `2.0` is the number of error bars that section 3 said sets the
+balance between trying near the best result so far and trying where the model is
+unsure.
+
+The library gives you the matrix algebra of section 2, which is the part that
+slows down as the number of points grows. It also chooses the kernel's settings
+for you: `fit` maximises the marginal likelihood over the length scale and the
+noise level, and `gp.kernel_` afterwards prints what it chose, so the numbers you
+pass in are only starting points. `n_restarts_optimizer=5` restarts that search
+from five random points, because it can otherwise settle on a poor answer.
+`normalize_y=True` shifts and scales the scores internally, which saves you doing
+it.
+
+What you have to write is the loop around this code. You run the trial on the
+arm, you turn the run into one score, you append the setting and the score, and
+you fit again. That scoring function is the part that decides whether the whole
+method works, and section 3's score added three things together: the average
+distance from the target, the overshoot, and the jitter in the torque. Nothing in
+the library writes it.
+
+What you have to decide is the kernel, and it is the one real choice here.
+`Matern` with `nu=2.5` is the usual first pick for physical measurements because
+it allows a slightly rougher curve than `RBF` does, and real hardware rarely
+responds as smoothly as `RBF` assumes. You also decide the noise level, which
+section 2 tied to how much you trust each measurement, the number of error bars
+above, and how many trials you can afford. If you would rather not write the loop
+at all, BoTorch and Ax from section 7 run it for you.

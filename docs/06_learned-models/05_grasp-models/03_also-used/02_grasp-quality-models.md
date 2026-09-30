@@ -31,6 +31,7 @@ explains the training loop that this page relies on.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -345,3 +346,72 @@ only one noisy depth picture of an object it has never seen.
     explains the physics formulas behind calculated labels.
 - Book 3's [models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md)
     lists the code and licences for Dex-Net and GPD.
+
+---
+
+## 11. Using it in Python
+
+This page has treated the scorer as a thing on its own: you bring the candidates, and
+the model tells you how good each one is. That split is visible in the code of
+Dex-Net's GQ-CNN, and this section shows it, so that after reading it you will know
+exactly what a quality model is a function of, and what it never sees.
+
+The code is in [gqcnn](https://github.com/BerkeleyAutomation/gqcnn), which you clone
+rather than install from the Python package index. The class below is the scorer
+alone, without the sampling and searching that the full Dex-Net policy wraps around
+it.
+
+```python
+import numpy as np
+from autolab_core import CameraIntrinsics, DepthImage, Point, YamlConfig
+from gqcnn.grasping import GQCnnQualityFunction, Grasp2D
+
+config = YamlConfig("cfg/examples/gqcnn_pj.yaml")           # names the weights folder
+quality_fn = GQCnnQualityFunction(config["policy"]["metric"])
+
+candidates = [
+    Grasp2D(Point(np.array([u, v]), frame=camera_intr.frame),
+            angle=angle,        # radians, anticlockwise from the picture's x axis
+            depth=depth,        # metres from the camera to the grasp centre
+            width=0.05,         # how far my gripper opens, in metres
+            camera_intr=camera_intr)
+    for (u, v, angle, depth) in my_own_candidates
+]
+scores = quality_fn(state, candidates)   # one float per candidate, between 0 and 1
+```
+
+The library gives you the trained network and the cropping that feeds it. That
+cropping matters more than it looks: the GQ-CNN was trained on small square patches
+of depth, each one rotated so that the grasp is horizontal and centred on the grasp
+point, and `quality_fn` cuts and rotates those patches out of your picture for you.
+If you fed the network a whole picture instead, the numbers would be meaningless. The
+`state` it needs is the same `RgbdImageState` that the previous pages used, built from
+a depth picture, the camera's intrinsic parameters and a mask of the objects. The
+result is a plain list of floats in the same order as the candidates, which is what
+makes this model easy to drop into a system you already have.
+
+What you have to supply is the candidates themselves, and that is the honest reason
+this page exists separately from the others. A scorer with no candidates does
+nothing, so you either write a sampler, use `AntipodalDepthImageGraspSampler` from
+the same repository, or take the output of a generator such as a 6-DoF model. You
+also have to supply the `width` on every candidate, in metres, and that number is
+your gripper's, not the model's.
+
+The decisions are the cut-off and the search. Below what score do you refuse to try,
+and how many candidates do you score before choosing? Scoring is not free, so the
+full Dex-Net policy uses the cross-entropy method, which scores a batch, keeps the
+best few, samples more candidates near them and repeats. That policy is
+`CrossEntropyRobustGraspingPolicy` in the same module, and `policy(state)` returns a
+`GraspAction` whose `q_value` is the winning score, so you can start with it and pull
+the scorer out later if you want your own search.
+
+The cost is the same as on the suction page, because it is the same repository:
+TensorFlow 1.15 or below, no commits since January 2022, and a licence limited to
+education, research and not-for-profit use. There is one cost specific to quality
+models, which section 7 called inheriting the formula's blind spots. The score is
+calibrated against the way the labels were made, which for Dex-Net 2.0 was a physics
+simulation with assumed friction and an assumed gripper. So a score of 0.8 does not
+mean that this grasp succeeds eight times in ten on your arm. It means that the
+simulated gripper, with the simulated friction, succeeded that often. So you have to
+measure the real success rate against the score yourself, on your own objects, before
+the number is worth anything as a threshold.

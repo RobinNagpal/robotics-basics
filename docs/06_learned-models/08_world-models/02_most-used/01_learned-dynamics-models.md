@@ -43,6 +43,7 @@ here.
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -534,3 +535,63 @@ record the real arm pushing the real objects.
 - For more depth, Book 3's
   [learned methods for one arm](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#2-learning-from-trial-and-error)
   places model-based learning next to the other ways an arm learns from trying.
+---
+
+## 12. Using it in Python
+
+[Planning with it](#planning-with-it) described a planner that makes up many sequences
+of pushes, rolls each one through the model, and keeps the best. This section writes
+that loop in Python. After it you will be able to take a trained dynamics model and get
+one push out of it, which is the only thing the arm ever needs.
+
+The library is PyTorch, and nothing else is needed, because a dynamics model is a plain
+network. The
+[world models overview](../01_overview.md#8-using-it-in-python) shows the few lines
+that train it, so the model here is assumed to be trained already and saved to a file.
+
+```python
+import torch
+
+model = torch.nn.Sequential(
+    torch.nn.Linear(4, 64), torch.nn.Tanh(),
+    torch.nn.Linear(64, 64), torch.nn.Tanh(),
+    torch.nn.Linear(64, 3),
+)
+model.load_state_dict(torch.load("pusher.pt"))
+model.eval()
+
+state = torch.tensor([[0.30, 0.20, 0.0]])   # the cube: x, y in metres, and its angle
+goal = torch.tensor([[0.60, 0.20, 0.0]])
+
+plans = torch.rand(500, 5, 1) * 0.2 - 0.1   # 500 plans of 5 pushes, each -10 to +10 cm
+rolled = state.repeat(500, 1)               # all 500 plans start from the real cube
+with torch.no_grad():
+    for step in range(5):
+        rolled = rolled + model(torch.cat([rolled, plans[:, step]], dim=1))
+
+best = (rolled - goal).norm(dim=1).argmin()  # the plan ending nearest the goal
+first_push = plans[best, 0]                  # the arm does only this, then plans again
+```
+
+Two things in those lines are worth pausing on. The loop over `step` is the rollout from
+[many steps in a row](#many-steps-in-a-row), and every pass feeds the model its own
+previous answer, which is exactly why the errors add up. Then all 500 plans go through
+the model together, in one call, because a network works on many rows at once, and that
+is what makes it fast enough to plan between pushes.
+
+Nothing here is pretrained. This is the one kind of model in this chapter that you are
+expected to train yourself, on your own arm, from your own recordings, and that is a
+feature rather than a gap: the model is small enough that half an hour of pushing is
+enough for one task.
+
+What you write is the measurement and the score. Something must turn the camera picture
+into the three numbers in `state`, and that is a [seeing
+model](../../03_seeing-models/01_overview.md) and some geometry, not part of this code.
+The score above is simply the distance to the goal, and a real task usually needs more,
+such as a penalty for pushing the cube off the table.
+
+What you decide is the shape of the search. Five steps, 500 plans and one push per plan
+are all choices, and they trade accuracy against the time the arm waits. You also decide
+whether to use an ensemble, which means running the lines above with several trained
+copies and preferring the plans they agree on, for the reason
+[section 8](#8-what-goes-wrong-and-what-people-do-about-it) gives.

@@ -20,6 +20,7 @@ worked example, pseudocode and a list of libraries.
 3. [Why the obvious method is not enough](#3-why-the-obvious-method-is-not-enough)
 4. [How this chapter connects to the others](#4-how-this-chapter-connects-to-the-others)
 5. [Where to read next](#5-where-to-read-next)
+6. [Using it in Python](#6-using-it-in-python)
 
 ---
 
@@ -194,3 +195,63 @@ read them in.
   [tracking and association](../../02_perception/02_object-perception/10_tracking-and-association.md)
   goes much deeper into matching objects over time, including how wide to make
   the gate and what to do when a match fails.
+
+---
+
+## 6. Using it in Python
+
+Section 2 named the four techniques of this chapter and section 3 showed why the
+obvious method of trying every possibility runs out of time. This section shows the
+first three of them as the Python calls that already contain them, so that the
+chapter's shape is clear before you read the pages in detail. After it you should
+know that none of the three is code you write, and what is left for you is deciding
+the numbers they take.
+
+Two libraries cover all three. SciPy provides the nearest-neighbour tree and the
+exact pairing, while Open3D provides iterative closest point.
+
+```python
+import numpy as np
+from scipy.spatial import KDTree
+from scipy.optimize import linear_sum_assignment
+import open3d as o3d
+
+# Question 1: which object is nearest the gripper?
+objects = np.array([[0.47, 0.21], [0.18, 0.38], [0.33, 0.05], [0.33, 0.18]])
+tree = KDTree(objects)
+distance, index = tree.query(np.array([0.25, 0.10]), k=1)
+
+# Question 2: exactly where is this part? ICP refines a guess into a pose.
+result = o3d.pipelines.registration.registration_icp(
+    model_cloud, scan_cloud,
+    max_correspondence_distance=0.01,      # metres: pairs further apart are ignored
+    init=first_guess_4x4)
+T_scan_model = result.transformation
+
+# Question 3: which mug seen now is which mug seen before?
+cost = np.linalg.norm(old_positions[:, None, :] - new_positions[None, :, :], axis=2)
+old_index, new_index = linear_sum_assignment(cost)
+```
+
+The libraries do the parts that section 3 said were expensive. `KDTree` builds the
+tree of boxes once and then answers each query without touching most of the points,
+`registration_icp` runs the pair-and-move loop until it stops improving, and
+`linear_sum_assignment` finds the pairing with the smallest total cost in roughly
+the cube of the number of objects rather than trying every pairing.
+
+What you still write yourself is what surrounds them. You write the cost matrix for
+the assignment, and that one line of NumPy is where you decide whether "which is
+which" means position alone or position together with size and colour. You write the
+first guess that ICP starts from, because ICP only improves a pose and cannot find
+one. And you write what happens to the things left unpaired, since an object that
+appeared or disappeared has no partner and the pairing says nothing about it.
+
+What you have to decide or measure is a distance limit in each case, and it is
+always a real distance in metres rather than a tuning knob. For the nearest-neighbour
+search you decide how far is too far, because the nearest object is not the right
+answer when the nearest object is half a metre away. For ICP,
+`max_correspondence_distance` is the pair-rejection distance, which should be a few
+times your depth camera's noise. For the assignment you decide the gate, meaning the
+distance beyond which a pair is not even considered, and that comes from how far an
+object can really move between two pictures. Each of the following pages returns to
+its own number in detail.

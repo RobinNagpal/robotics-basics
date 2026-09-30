@@ -27,6 +27,7 @@ is explained where it first appears.
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -423,3 +424,72 @@ Deeper documents elsewhere in this repository:
   covers diffusion and flow matching in more detail, with evidence.
 - [Learned motion](../../../03_frameworks/03_arm-movement/05_learned-motion.md) explains
   which part of an arm's movement a policy should and should not replace.
+
+---
+
+## 12. Using it in Python
+
+Section 3 said that a diffusion policy starts from random numbers and cleans them up
+into a chunk of actions, and section 8 said that the number of cleaning steps is what
+decides whether it is fast enough for a real arm. This section shows where that number
+lives in code, so that after reading it you will know which settings to reach for when
+the policy is too slow or too rough.
+
+The packaged version is `DiffusionPolicy` in
+[LeRobot](https://github.com/huggingface/lerobot). It needs the `diffusers` library as
+well, because it borrows the noise schedule from there, so install it with
+`pip install "lerobot[diffusion]"`. Building the policy from scratch takes a little
+more code than ACT does, because you have to tell it the shape of your data first.
+
+```python
+from lerobot.configs import FeatureType
+from lerobot.datasets import LeRobotDatasetMetadata
+from lerobot.policies.diffusion import DiffusionConfig, DiffusionPolicy
+from lerobot.utils.feature_utils import dataset_to_policy_features
+
+meta = LeRobotDatasetMetadata("lerobot/pusht")
+features = dataset_to_policy_features(meta.features)
+outputs = {k: f for k, f in features.items() if f.type is FeatureType.ACTION}
+inputs = {k: f for k, f in features.items() if k not in outputs}
+
+config = DiffusionConfig(
+    input_features=inputs, output_features=outputs,
+    horizon=64,                  # actions produced in one pass
+    n_action_steps=32,           # of those, how many the robot carries out
+    num_train_timesteps=100,     # cleaning steps used while training
+    num_inference_steps=10,      # cleaning steps used while running: the speed dial
+    noise_scheduler_type="DDIM", # DDIM allows fewer steps than DDPM
+)
+policy = DiffusionPolicy(config)
+```
+
+The settings in that block are the whole subject of this page in a concrete form.
+`num_train_timesteps` is how finely the noise was added during training, and 100 is
+the default. `num_inference_steps` is how many cleaning steps you pay for at run time,
+and if you leave it out it becomes equal to `num_train_timesteps`, which is 100
+forward passes of the network for every chunk of actions. Setting it to 10 makes the
+policy ten times faster and slightly less precise, and this is the trade that section
+8 described. It only works well with `noise_scheduler_type="DDIM"`, because DDIM is
+the schedule designed to be skipped through, while DDPM expects every step. `horizon`
+and `n_action_steps` do the same job as ACT's `chunk_size` and `n_action_steps`.
+
+LeRobot gives you the network, the schedules, the training loop and the queue of
+actions, and `dataset_to_policy_features` saves you from writing out the shape of
+every camera and every joint by hand. Training is then the same command as for ACT
+with `--policy.type=diffusion` instead, and running it is the same `select_action`
+loop as the chapter overview shows.
+
+What you have to collect is the demonstrations, and here there is a specific reason
+why they cannot be borrowed. The whole advantage of a diffusion policy, as section 1
+explained, is that it keeps two different good ways of doing a task apart instead of
+averaging them. It can only do that if both ways are in your recordings. If you
+always reach round the box on the left, the policy learns one way and you have paid
+the extra computation for nothing. So recording for a diffusion policy means
+deliberately demonstrating the alternatives, which is a habit rather than a quantity,
+and it is the opposite of what people naturally do when they want consistent data.
+
+`lerobot/pusht` above is a simulated task with one camera and a two-number action, so
+it loads and trains in minutes and is a fair place to check that your installation
+works. It is not a robot arm. Moving to your arm means your own dataset, and the
+decision you cannot avoid is how many cleaning steps your control loop can afford,
+which depends on your graphics card and on how fast the arm has to react.

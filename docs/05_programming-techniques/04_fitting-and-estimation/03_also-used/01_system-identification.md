@@ -36,6 +36,7 @@ page comes from a real run of the diagram script,
 7. [Why system identification, and what it costs](#7-why-system-identification-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -546,3 +547,81 @@ results are used.
   in Book 6 covers error bars for learned models.
 - The [chapter overview](../01_overview.md) shows how this page fits with the
   others in the chapter.
+
+---
+
+## 10. Using it in Python
+
+Section 3 said that once the model is written as rows times unknowns, the fit is
+one call to a least-squares routine, and that the error bars come from the same
+call. Section 6 named the libraries. This section is that call, on a single
+joint, with the error bars worked out beside it. After it you will be able to
+measure a joint's inertia and friction from a recorded probe move, and to say
+how sure the answer is.
+
+The program below fits the three numbers of a single joint from a recorded
+trace. The model is the one from section 3: the torque the motor applied is the
+joint's inertia times its acceleration, plus a viscous friction that grows with
+speed, plus a Coulomb friction that only depends on which way the joint is
+turning. NumPy does the fit, and the three lines after it turn the leftover
+error into error bars.
+
+```python
+import numpy as np
+
+log = np.loadtxt("probe_move.txt")            # columns: time, speed, torque
+speed, torque = log[:, 1], log[:, 2]
+accel = np.gradient(speed, 0.002)             # the log is 500 readings a second
+
+# One row per reading: one column for each unknown.
+rows = np.column_stack([accel, speed, np.sign(speed)])
+theta, residuals, rank, singular = np.linalg.lstsq(rows, torque, rcond=None)
+inertia, viscous, coulomb = theta
+
+n, p = rows.shape
+variance = residuals[0] / (n - p)             # the leftover error per reading
+covariance = variance * np.linalg.inv(rows.T @ rows)
+error_bars = 2.0 * np.sqrt(np.diag(covariance))   # about 95 per cent confidence
+print(np.linalg.cond(rows))                   # how well the probe move separated them
+```
+
+On a made-up four-second probe move with a true inertia of 0.045, a viscous
+friction of 0.30 and a Coulomb friction of 0.12, with 0.02 N m of measurement
+noise, the fit returns 0.0451 ± 0.0001, 0.2994 ± 0.0014 and 0.1204 ± 0.0016. The
+condition number is 18.6, which is small, and that is what tells you the probe
+move really did separate the three effects rather than confusing them.
+
+NumPy does the solve, the matrix inverse and the condition number, and that is
+the whole of what a library contributes here. `lstsq` returns the parameters and
+the sum of the squared misses, and `cond` returns the ratio between the largest
+and smallest singular value of the rows. There is no system identification
+function being called: the fit is the same `lstsq` as the
+[least-squares fitting](../02_most-used/01_least-squares-fitting.md) page, and
+the identification is entirely in how you built `rows`.
+
+What you have to write is that matrix of rows, and writing it is the same act as
+choosing the model. The three columns above say that you believe the joint's
+torque is inertia plus viscous friction plus Coulomb friction, and nothing else.
+If the joint also has a gravity term because the link is not vertical, that is a
+fourth column, and if it has stiction that behaves differently below a threshold
+speed then no set of columns describes it and the fit will quietly absorb the
+error. For a whole arm rather than one joint, Pinocchio's
+`computeJointTorqueRegressor(model, data, q, v, a)` builds the rows for you from
+the arm's description file, and on a six-joint arm it returns a matrix with six
+rows and sixty columns, ten per body. You still have to choose which of those
+sixty columns your probe move actually excited, because the rest are not
+measurable and will make the solve fragile.
+
+What you have to decide or measure is the probe move and what you do with the
+error bars. The probe move is yours to design, and section 3 explains why it has
+to change speed and acceleration independently: if you only ever accelerate
+while speeding up, then inertia and viscous friction rise together and no fit
+can tell them apart. The condition number is how you check the design, and a
+value in the tens is comfortable while a value in the thousands means the move
+needs changing rather than the fit. You also decide the sample rate that goes
+into `np.gradient`, and you have to smooth the speed before differentiating it,
+because differentiating a noisy signal amplifies the noise, which is the problem
+the [sensor streams](../02_most-used/04_sensor-streams.md) page solves. Finally
+you decide which end of the error bar to act on, and section 3 is firm about
+this: for a payload or a torque limit, use the cautious end rather than the
+middle.

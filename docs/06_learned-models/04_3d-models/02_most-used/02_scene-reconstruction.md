@@ -29,6 +29,7 @@ means adjusting a model a little at a time until its answers match the examples.
 8. [Why this rather than a depth camera, and what it costs](#8-why-this-rather-than-a-depth-camera-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -340,3 +341,75 @@ outline.
     in Book 2 compares the accuracy and licences of many reconstruction methods.
 - [Simulation and evaluation, section 5.3](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#53-real-to-sim-rebuilding-the-room-instead-of-modelling-it)
     in Book 3 uses Gaussian splats to rebuild a real room inside a simulator.
+
+---
+
+## 11. Using it in Python
+
+The page has explained that a reconstruction is fitted to the photos of one scene
+rather than trained once and reused, and [section 4](#4-how-it-is-trained) said that
+this fitting is the run. That shapes how you use it, because what you run is not a
+Python call on one input but a fitting job over a folder of photos. This section
+shows the real shape of that, and after reading it you will know what you type, what
+comes out, and which part of the work is still yours.
+
+Nerfstudio is the toolkit [section 5](#5-well-known-models) recommends, and it is
+driven from the command line. There is no short documented Python call that fits a
+scene, so the honest version is three commands. The first works out where each photo
+was taken, the second fits the scene, and the third writes the result out as a point
+cloud.
+
+```bash
+ns-process-data images --data photos/ --output-dir processed/
+ns-train splatfacto --data processed/
+ns-export pointcloud --load-config outputs/processed/splatfacto/<run>/config.yml \
+    --output-dir exports/pcd/
+```
+
+Your Python then starts where that export lands, and it is ordinary Open3D work
+from there.
+
+```python
+import numpy as np
+import open3d as o3d
+
+cloud = o3d.io.read_point_cloud("exports/pcd/point_cloud.ply")
+
+# Find the table as a flat plane, then keep everything that is not the table.
+plane, on_table = cloud.segment_plane(distance_threshold=0.005, ransac_n=3,
+                                      num_iterations=1000)
+objects = cloud.select_by_index(on_table, invert=True)
+
+labels = np.array(objects.cluster_dbscan(eps=0.02, min_points=20))
+for k in range(labels.max() + 1):
+    clump = objects.select_by_index(np.flatnonzero(labels == k).tolist())
+    print(k, len(clump.points), clump.get_axis_aligned_bounding_box().get_center())
+```
+
+What the toolkit gives you out of the box is a great deal, because
+`ns-process-data` runs COLMAP to recover the camera poses of
+[step 1](#step-1-know-where-each-photo-was-taken), `ns-train` does the whole fitting
+described in [step 3](#step-3-fit-it-to-the-photos), and `ns-export` gives you a
+file in a format Open3D reads. You write none of the rendering and none of the
+optimisation, and switching between a NeRF and a splat is the difference between
+`ns-train nerfacto` and `ns-train splatfacto`.
+
+What you still have to write yourself is the photo capture and everything after the
+export. Something has to move the arm to tens of viewpoints and record a picture at
+each one, and that is your program. Then the exported cloud is a cloud like any
+other, so finding the object in it, as the Python above does, and turning that into
+a grasp is the same work as on the other pages of this chapter. One detail there
+matters more than it looks, because when COLMAP recovers the poses by itself it has
+no way of knowing the real size of anything, so the exported cloud is in the scene's
+own units rather than in metres. You fix that either by giving nerfstudio the poses
+from the arm's joint readings, which are already in metres, or by measuring one known
+distance in the cloud and scaling everything by what you find.
+
+What you have to decide first is whether the minutes of fitting fit into your task
+at all, because the same fitting has to run again for every new scene. So this is a
+sensible choice for a shelf that is scanned once, and a poor one for objects
+arriving on a belt. You also decide how many photos to take and how much they
+overlap, since COLMAP fails on blurry or barely overlapping pictures and then
+nothing downstream works. Finally you decide on the licence, because as
+[section 5](#5-well-known-models) says nerfstudio itself is Apache-2.0 while the
+original 3D Gaussian Splatting code is for research only.

@@ -26,6 +26,7 @@ every later page.
 8. [Why classification, and what it costs](#8-why-classification-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -338,3 +339,50 @@ the objects vary.
   model.
 - Book 2's [models that find objects](../../../02_perception/02_object-perception/04_models-that-find.md)
   lists backbones you can download, with their licences.
+
+---
+
+## 11. Using it in Python
+
+The page has explained the backbone, the scores and the fine-tuning that every
+other seeing model reuses. This section runs a real classifier, because it is the
+shortest piece of model code in the whole book. After reading it you will be able
+to get names and scores for a picture in three lines, and you will see why a
+classifier alone is rarely enough for a robot arm.
+
+Hugging Face `transformers` has a helper called a pipeline, which puts the
+preparation of the picture, the network and the reading of the scores behind one
+call.
+
+```python
+from transformers import pipeline
+
+classifier = pipeline("image-classification", model="microsoft/resnet-50")
+
+# The answers come back sorted, with the most likely first.
+for guess in classifier("part.jpg")[:3]:
+    print(guess["label"], round(guess["score"], 3))
+```
+
+What the pretrained model gives you out of the box is the 1,000 classes of
+ImageNet, which are mostly animals, plants and everyday things. The pipeline also
+does the small steps that are easy to get wrong, because it resizes the picture to
+224 by 224 pixels, subtracts the mean and divides by the standard deviation that
+this model was trained with, turns the scores into numbers that add up to 1, and
+sorts them. Those steps are why a wrong answer is so often a preparation mistake
+rather than a model mistake, and here you cannot make it.
+
+What you still have to write yourself begins with the fact that a classifier says
+nothing about where. It gives one name for the whole picture, so on a robot arm it
+is useful only when you have already cut out one object, for example from a box a
+detector gave you, or when the camera always sees exactly one part in a fixture.
+Cropping the picture to that one object is your code, and so is everything the name
+is then used for.
+
+What you have to decide is how many of the sorted guesses to trust and how low a
+score you will accept. A classifier always names something, because it must choose
+one of its classes, so a picture of a brake disc gets a confident wrong answer
+rather than no answer. So you set a score below which you treat the answer as
+"unknown". You also decide whether to fine-tune, and for a robot the answer is
+almost always yes, because your classes are your own parts and not the 1,000
+classes of ImageNet.

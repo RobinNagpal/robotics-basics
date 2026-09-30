@@ -26,6 +26,7 @@ explain them.
 3. [In what order to read them](#3-in-what-order-to-read-them)
 4. [How this chapter connects to Book 3](#4-how-this-chapter-connects-to-book-3)
 5. [Where to read next](#5-where-to-read-next)
+6. [Using it in Python](#6-using-it-in-python)
 
 ---
 
@@ -146,3 +147,56 @@ Each page here has a partner there:
   this chapter sits in the whole book.
 - [The frontier: what changed in 2026](../../03_frameworks/08_frontier/01_overview.md)
   in Book 3 is where to go for the models, data and results that are current today.
+
+---
+
+## 6. Using it in Python
+
+The four questions above are each answered by their own page, so this section shows the
+few lines they all sit around: loading a trained policy, asking it once, and timing how
+long the answer took. After reading it you will be able to see where each of the four
+pages joins in.
+
+```python
+import time
+
+import torch
+from lerobot.policies.act.modeling_act import ACTPolicy
+
+# A trained policy from the Hugging Face Hub, downloaded on first use.
+policy = ACTPolicy.from_pretrained('lerobot/act_aloha_sim_transfer_cube_human')
+policy.eval()
+
+# You build this dictionary yourself, from your own cameras and joint sensors. Each
+# value is a PyTorch tensor with a batch dimension in front, even for one picture.
+observation = {'observation.state': joint_angles,
+               'observation.images.top': camera_picture}
+
+start = time.perf_counter()
+with torch.inference_mode():
+    action = policy.select_action(observation)
+print(f'one answer took {(time.perf_counter() - start) * 1000:.0f} ms')
+```
+
+LeRobot gives you the policy class and the weights. `from_pretrained` downloads the
+trained numbers and the settings they were trained with, and `select_action` hands back
+one movement per call, even for a policy that predicts a whole chunk of movements at a
+time, because it keeps the rest of the chunk and gives them out one by one. LeRobot
+changes quickly, so check the import path in its own README against the version you
+install.
+
+What you have to write yourself is everything around those three lines. You build the
+observation dictionary from your own cameras and joints, in the shape the policy was
+trained on, and you write the safety checks, the trial log and what the arm does when
+the model is wrong. None of that comes with the model.
+
+What you have to decide is what each of this chapter's four pages is about.
+[Fine-tuning](02_most-used/01_fine-tuning.md) decides whether this downloaded policy
+needs teaching your objects first.
+[Running a model on a robot](02_most-used/02_running-a-model-on-a-robot.md) decides
+whether the milliseconds that this snippet prints are small enough for your loop, and
+on which computer.
+[Evaluation and failure](02_most-used/03_evaluation-and-failure.md) decides how many
+real trials it takes before you believe the policy works.
+[Uncertainty and confidence](03_also-used/01_uncertainty-and-confidence.md) decides
+when the arm should not act on `action` at all.

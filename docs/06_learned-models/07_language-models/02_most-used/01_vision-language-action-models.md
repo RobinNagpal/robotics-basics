@@ -32,6 +32,7 @@ what each laboratory has released or shown, as of September 2026.
 8. [Why use a vision-language-action model, and what it costs](#8-why-use-a-vision-language-action-model-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -366,3 +367,67 @@ objects and the instructions keep changing.
   movement.
 - [Learned methods](../../../03_frameworks/04_one-arm-training/03_learned-methods.md)
   in the frameworks book compares VLAs with the other ways of training one arm.
+---
+
+## 11. Using it in Python
+
+This page has described a model that turns a picture and a sentence into the movement
+of an arm. This section shows what that looks like in Python, and after it you will
+know how few lines stand between a camera picture and a movement, and how much sits
+behind those lines.
+
+The model is [OpenVLA](https://huggingface.co/openvla/openvla-7b), from
+[section 5](#5-well-known-models-of-this-kind). It is used here because it is published
+as an ordinary Hugging Face model, so `transformers` loads it in the same way as the
+vision-language model on the previous page. The code below is the example from
+OpenVLA's own documentation, with the instruction changed.
+
+```python
+import torch
+from PIL import Image
+from transformers import AutoModelForVision2Seq, AutoProcessor
+
+processor = AutoProcessor.from_pretrained("openvla/openvla-7b", trust_remote_code=True)
+vla = AutoModelForVision2Seq.from_pretrained(
+    "openvla/openvla-7b",
+    torch_dtype=torch.bfloat16,
+    low_cpu_mem_usage=True,
+    trust_remote_code=True,
+).to("cuda:0")
+
+image = Image.open("table.jpg")
+prompt = "In: What action should the robot take to put the mug in the bowl?\nOut:"
+
+inputs = processor(prompt, image).to("cuda:0", dtype=torch.bfloat16)
+action = vla.predict_action(**inputs, unnorm_key="bridge_orig", do_sample=False)
+```
+
+Three details in those lines are worth explaining. The prompt has a fixed shape, with
+"In:" before the instruction and "Out:" at the end, because that is the shape OpenVLA
+was trained on, and a different wording gives worse movements. Then `predict_action`
+does the work of [way 1](#way-1-write-the-movement-as-tokens): the model writes the
+movement as tokens, and this method turns those tokens back into numbers for you.
+Finally `unnorm_key` names the recorded dataset whose ranges are used to turn those
+numbers back into real distances, because the model itself only ever works in the range
+0 to 255.
+
+The pretrained model therefore gives you the seeing, the understanding of the words and
+the choice of movement, all in one. That is a great deal, and it is the whole argument
+of this page.
+
+What you still write is a loop and a driver. You take the picture from the camera, you
+run the two lines above, you send `action` to the arm's controller, and then you do it
+all again with a new picture. Nothing above talks to a robot, because `action` is only
+an array of numbers, and turning those numbers into joint commands is your program's
+job. You also write the success check, because, as
+[section 7](#7-what-goes-wrong-and-what-people-do-about-it) said, the model never stops
+by itself.
+
+What you decide is harder than any of that. You decide whether to fine-tune, and on how
+many demonstrations, because a model that works on its builders' robot often does not
+work on yours. You decide the hardware, since `"cuda:0"` in the code is not a detail:
+OpenVLA has 7 billion parameters and needs an NVIDIA graphics card, so it does not run
+on a Mac. For a small arm on ordinary hardware, the usual route is SmolVLA through
+[LeRobot](https://github.com/huggingface/lerobot), which is driven from the command
+line with `lerobot-train` and `lerobot-eval` rather than from Python, and which records
+the demonstrations for you as well.

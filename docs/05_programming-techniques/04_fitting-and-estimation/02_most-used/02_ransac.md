@@ -36,6 +36,7 @@ cloud.
 7. [Why RANSAC, and what it costs](#7-why-ransac-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -401,3 +402,78 @@ each of them is covered.
   finds the neighbours used to compute each point's normal before a cylinder fit.
 - Book 2 shows the full recipe in
   [remove the plane, then cluster](../../../02_perception/02_object-perception/03_programmed-methods.md#16-point-clouds-remove-the-plane-then-cluster).
+
+---
+
+## 10. Using it in Python
+
+Section 6 said that the Open3D call for a table plane is a single line, and
+section 3 said that choosing the distance limit is the part you cannot avoid.
+This section puts the two together in a program you can run. After it you will
+be able to remove a table from a point cloud and fit a robust line to a set of
+two-dimensional points, and you will know which number in each call you have to
+justify.
+
+The two libraries below are worth showing together because they are used in
+genuinely different ways. Open3D works on a point cloud object and knows what a
+plane is, so the plane fit is one method call. scikit-learn works on plain NumPy
+arrays and knows nothing about geometry, so you hand it the model you want made
+robust and it wraps RANSAC around it.
+
+```python
+import numpy as np
+import open3d as o3d
+from sklearn.linear_model import RANSACRegressor, LinearRegression
+
+# --- a table plane in a point cloud, in metres
+cloud = o3d.io.read_point_cloud("scene.ply")
+plane, inliers = cloud.segment_plane(distance_threshold=0.005,
+                                     ransac_n=3,
+                                     num_iterations=1000)
+a, b, c, d = plane                       # the plane is a*x + b*y + c*z + d = 0
+objects = cloud.select_by_index(inliers, invert=True)   # what stood on the table
+
+# --- a robust line through two-dimensional points, in millimetres
+x = np.loadtxt("edge_points.txt")[:, [0]]     # one column, as scikit-learn wants
+y = np.loadtxt("edge_points.txt")[:, 1]
+fit = RANSACRegressor(estimator=LinearRegression(),
+                      residual_threshold=2.0,
+                      max_trials=100).fit(x, y)
+slope = fit.estimator_.coef_[0]
+kept = fit.inlier_mask_                  # True for each point the line agreed with
+```
+
+On a made-up scene of 4000 table points scattered by 2 mm, 600 points belonging
+to a box and 200 stray points, `segment_plane` with a 5 mm limit finds a plane
+of about (0.0005, 0.0006, 1.0, −0.0001) and keeps 3966 of the 4800 points as
+inliers. That leaves 834 points standing above the table, which is the box and
+the strays together, and is the input the
+[clustering](../../05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+page starts from.
+
+The libraries give you the whole loop from section 3. They pick the random
+samples, fit the candidate shape, count the agreeing points, repeat, and return
+the best shape together with the list of points that agreed with it. Open3D also
+gives you `select_by_index` with `invert=True`, which is how you keep everything
+that was not part of the plane.
+
+What you still have to write is the step before and the step after. Before the
+call you have to load the cloud and cut it down, because RANSAC on a full-frame
+depth picture wastes time on the floor and the walls, and the
+[thresholding](../../05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+page shows the box crop that removes them. After the call you have to check that
+the shape is the one you wanted, because RANSAC always returns its best guess
+and a table-shaped guess can just as easily be a wall. Checking usually means
+testing that the plane faces roughly upwards and that the number of inliers is a
+reasonable share of the points.
+
+What you have to decide or measure is `distance_threshold`, and it is the one
+number on this page that nobody can choose for you. It has to be a little larger
+than your sensor's own depth noise, because otherwise the real table points
+count as outliers, and it has to be smaller than the thinnest object you want to
+keep, because otherwise the bottom of a sheet of paper is swallowed by the
+table. For the depth cameras used on arm workcells, 5 mm written as `0.005` is
+the usual starting point, and section 3 explains how to measure the noise that
+justifies it. You also choose `ransac_n`, which is 3 because three points define
+a plane, and `num_iterations`, which section 3 shows how to work out from the
+share of points you expect to be good.

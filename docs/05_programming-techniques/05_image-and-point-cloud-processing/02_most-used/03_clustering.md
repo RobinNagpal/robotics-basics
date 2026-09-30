@@ -43,6 +43,7 @@ one object at a time.
 7. [Why clustering, and what it costs](#7-why-clustering-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -765,3 +766,71 @@ every point gets a chance of belonging to each cluster instead of one hard answe
   `--numbers` to print them.
   The k-means and mean shift pictures in section 3 are drawn by
   `docs/diagrams/image_processing_3.py`, which also takes `--numbers`.
+
+---
+
+## 10. Using it in Python
+
+Section 2 explained Euclidean clustering and DBSCAN, and it ended on the
+distance you have to choose. Section 6 named the calls. This section is the
+call, on a point cloud, with the choice of distance shown rather than described.
+After it you will be able to split a cloud into separate objects, and you will
+be able to see for yourself what happens when the distance is wrong.
+
+The program below takes a cloud that has already had its table removed by the
+[RANSAC](../../04_fitting-and-estimation/02_most-used/02_ransac.md) page's
+`segment_plane`, thins it out, and groups the rest. It uses Open3D, which is the
+point cloud library for Python, and it needs only two calls.
+
+```python
+import numpy as np
+import open3d as o3d
+
+cloud = o3d.io.read_point_cloud("objects.ply")     # the table already removed
+
+# Thin the cloud out: one average point per 5 mm cube.
+small = cloud.voxel_down_sample(voxel_size=0.005)
+
+# Group points that are within 20 mm of each other, in groups of 10 or more.
+labels = np.array(small.cluster_dbscan(eps=0.02, min_points=10))
+
+for k in range(labels.max() + 1):                  # -1 means noise, so skip it
+    group = np.asarray(small.points)[labels == k]
+    print(len(group), group.mean(axis=0))          # size and centre of one object
+```
+
+On a made-up cloud of two 60 mm boxes standing 90 mm apart, the downsampling
+turns 3000 points into 2344, and `cluster_dbscan` with a 20 mm distance finds
+two groups of 1141 and 1203 points, whose centres are 150 mm apart, with no
+point left as noise. Change that one number to `eps=0.10` and the same call returns one group
+instead of two, because 100 mm is larger than the 90 mm gap and the two boxes
+become one object. Nothing in the output warns you: it is a successful call with
+a wrong answer.
+
+Open3D does the neighbour search and the grouping. `voxel_down_sample` replaces
+all the points in each small cube with their average, which both speeds up what
+follows and evens out the density, and section 2 explains why uneven density
+breaks the grouping. `cluster_dbscan` returns one label per point in the same
+order as the points, using −1 for a point that belongs to no group, so the
+labels line up with `small.points` and you index one with the other.
+
+What you still have to write is everything that turns a group of points into an
+object. The call gives you numbers of points, and you work out from them what
+you need: the centre, the size, the bounding box, and whether a group is
+plausibly one object at all. You also have to decide what to do with the noise
+points, because a handful of scattered points may be sensor noise or may be a
+thin object that failed `min_points`. And you have to write the step before the
+call, because clustering a cloud that still contains the table produces one
+enormous group, which is why the table removal comes first.
+
+What you have to decide or measure is `eps`, and this page is mostly about that
+one number. It has to be larger than the spacing between points on a single
+object, which after `voxel_down_sample(voxel_size=0.005)` is about 5 mm, and
+smaller than the smallest gap between two objects you need to keep apart. Those
+two facts give you a range, and the 20 mm above sits in it for boxes on a table
+at a typical arm working distance. So you measure the point spacing from your
+own cloud rather than copying a number, and you check the result by counting the
+groups against what you know is on the table. `min_points` is the second
+decision, and it trades noise against small objects: raising it silently drops
+the smallest real object, and section 2 explains that a distant object has fewer
+points than a near one even when both are the same size.

@@ -34,6 +34,7 @@ any time, when you want to see where one chapter fits among the others.
 7. [Find a method by job](#7-find-a-method-by-job)
 8. [A suggested reading order](#8-a-suggested-reading-order)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -389,3 +390,54 @@ whichever also-used pages fit your task.
   in Book 3 lists the large models that try to do many of these jobs at once.
 - [Learned methods for one arm](../../03_frameworks/04_one-arm-training/03_learned-methods.md)
   in Book 3 shows how these kinds of model are used to teach a single arm a task.
+
+---
+
+## 10. Using it in Python
+
+This page sorted the models of the book into seven categories, and section 4
+listed every page. Almost every one of those models is used from Python in one
+of two shapes, and this section shows both, because knowing which shape a method
+takes tells you in advance what work it will be. This is the shape of the idea
+rather than a program to run.
+
+```python
+# Shape 1: the classical methods of chapter 2. Fit on your own table, then predict.
+from sklearn.ensemble import RandomForestClassifier
+
+model = RandomForestClassifier().fit(X, y)
+answer = model.predict(X_new)
+
+# Shape 2: the neural networks of every other chapter. Build the layers, load
+# somebody else's trained numbers into them, then call the result.
+import torch
+from torch import nn
+
+network = nn.Sequential(nn.Linear(10, 64), nn.ReLU(), nn.Linear(64, 7))
+network.load_state_dict(torch.load("policy.pt", weights_only=True))
+network.eval()
+with torch.no_grad():
+    answer = network(observation)
+```
+
+The difference between the two shapes is where the numbers come from. In shape 1
+you train the model yourself, on a table you collected, and it takes seconds. In
+shape 2 you almost never train from scratch, because the trained numbers are a
+download of hundreds of megabytes that somebody spent a great deal of computing
+time producing. `weights_only=True` tells PyTorch to load numbers only and not
+to run any code stored in the file, which matters when the file came from the
+internet.
+
+The libraries follow the categories closely. Every method in
+[chapter 2](../02_classical-machine-learning/01_overview.md) is scikit-learn,
+and PyTorch sits under everything else. Beyond that, the seeing models usually
+come through Ultralytics or Hugging Face's `transformers` package, the language
+models through `transformers`, and the movement and world models through the
+research code released with each paper. Each chapter has its own "Libraries"
+section with the real names.
+
+What you have to write is the same in both shapes, and it is not the model. It
+is the code that turns the robot's sensor readings into the input the model
+expects, and the code that turns the model's output into commands the arm can
+follow. What you have to decide is which category your problem belongs to, and
+section 7 of this page is the table for that.

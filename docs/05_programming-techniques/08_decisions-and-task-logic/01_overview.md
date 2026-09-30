@@ -21,6 +21,7 @@ has not met these techniques before.
 5. [When each one runs](#5-when-each-one-runs)
 6. [How this chapter connects to the others](#6-how-this-chapter-connects-to-the-others)
 7. [Where to read next](#7-where-to-read-next)
+8. [Using it in Python](#8-using-it-in-python)
 
 ---
 
@@ -214,3 +215,75 @@ is on [the map of techniques](../01_what-techniques-are/04_the-map-of-techniques
   [behaviour trees: putting a task in order](../../03_frameworks/01_tools-and-libraries.md#11-behaviour-trees-putting-a-task-in-order),
   and compares state machines and behaviour trees in
   [scripted logic](../../03_frameworks/04_one-arm-training/02_programmed-methods.md#3-scripted-logic-state-machines-and-behaviour-trees).
+
+---
+
+## 8. Using it in Python
+
+Section 4 said that a real program uses both kinds of technique together, so that the
+task logic runs the job while one of its steps calls a chooser, and section 5 showed the
+difference in timing between the two. This section puts that sentence into Python. After
+reading it you will have seen a solver called once and a behaviour tree ticked many
+times, in the same file, and you will know which of those lines a library wrote for you.
+
+The example empties a table of three mugs into three tray slots. SciPy chooses which mug
+goes in which slot, and `py_trees` carries the answer out.
+
+```python
+import numpy as np, py_trees
+from scipy.optimize import linear_sum_assignment
+
+# The chooser runs once: pair mugs with slots so the total travel is smallest.
+cost = np.array([[0.32, 0.55, 0.41],      # cost[mug][slot], in metres of travel
+                 [0.60, 0.28, 0.37],
+                 [0.44, 0.39, 0.25]])
+mugs, slots = linear_sum_assignment(cost)
+plan = list(zip(mugs, slots))
+
+# The task logic runs many times a second and works through that plan.
+class PlaceMug(py_trees.behaviour.Behaviour):
+    def __init__(self, mug, slot):
+        super().__init__(name=f"mug {mug} to slot {slot}")
+        self.mug, self.slot = mug, slot
+
+    def update(self):                     # called on every tick while this step is active
+        if grasp_failed(self.mug):
+            return py_trees.common.Status.FAILURE
+        if placed(self.mug, self.slot):
+            return py_trees.common.Status.SUCCESS
+        return py_trees.common.Status.RUNNING
+
+root = py_trees.composites.Sequence(name="empty the table", memory=True)
+root.add_children([PlaceMug(m, s) for m, s in plan])
+tree = py_trees.trees.BehaviourTree(root)
+
+while root.status != py_trees.common.Status.SUCCESS:
+    tree.tick()                           # one pass over the tree
+    sleep_until_next_tick()
+```
+
+For the costs above the solver pairs mug 0 with slot 0, mug 1 with slot 1 and mug 2 with
+slot 2, for a total of 0.85 metres. The two halves of the file run at completely
+different rates, which is the point section 5 made: `linear_sum_assignment` is called
+once and returns in well under a millisecond here, while `tree.tick()` runs perhaps ten
+to a hundred times a second for as long as the task lasts.
+
+What the libraries do for you is narrow and worth naming. SciPy's
+`linear_sum_assignment` finds the best pairing exactly, not approximately, so you do not
+write a search. `py_trees` gives you the tick, the three answers, and the composite
+nodes that combine them, so you do not write the engine that decides which step is
+active.
+
+What you still write is the work itself. `grasp_failed`, `placed` and
+`sleep_until_next_tick` are your functions, and so is every leaf of the tree, because a
+behaviour tree library has no idea what a mug is. Building the cost matrix is yours too,
+and that is usually the harder half of using a solver, because the numbers have to come
+from somewhere real.
+
+What you have to decide or measure is the cost numbers and the tick rate. A cost of 0.32
+metres is a claim about your cell, and if you guess it the solver will confidently
+return the best answer to the wrong question. The tick rate has to be fast enough that
+the tree notices a failure before it matters and slow enough that the checks inside it
+finish, which section 5 puts at well under a millisecond of work per tick. Whether the
+plan is recomputed after every mug is your decision as well, because a mug that slipped
+may have changed the costs.

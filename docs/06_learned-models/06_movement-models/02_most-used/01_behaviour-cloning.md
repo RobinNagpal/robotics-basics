@@ -39,6 +39,7 @@ told the right answer, and adjusting.
 9. [Why behaviour cloning, and what it costs](#9-why-behaviour-cloning-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -580,3 +581,74 @@ For a more critical account of behaviour cloning, with published numbers, read
 Its section on
 [interactive imitation](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes)
 explains DAgger and its modern versions.
+
+---
+
+## 12. Using it in Python
+
+Section 4 said that training a behaviour cloning policy is the plainest kind of
+supervised learning: show the network an observation, compare its action with the
+person's, adjust. This section writes that out in Python, because behaviour cloning
+is short enough to see all of at once. After reading it you will know how little code
+the method is, and therefore where the real work of a behaviour cloning project
+goes.
+
+The data comes from [LeRobot](https://github.com/huggingface/lerobot), whose
+`LeRobotDataset` class reads a recorded dataset and behaves like an ordinary PyTorch
+dataset, so a standard training loop works on it. Everything below except the two
+import lines is code you would write yourself.
+
+```python
+import torch
+from torch import nn
+from lerobot.datasets import LeRobotDataset
+
+dataset = LeRobotDataset("lerobot/svla_so101_pickplace")
+loader = torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
+
+state_dim = dataset.features["observation.state"]["shape"][0]
+action_dim = dataset.features["action"]["shape"][0]
+net = nn.Sequential(nn.Linear(state_dim, 256), nn.ReLU(), nn.Linear(256, action_dim))
+optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
+
+for batch in loader:
+    loss = nn.functional.mse_loss(net(batch["observation.state"]), batch["action"])
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()
+```
+
+Those four lines in the loop are the whole of behaviour cloning. That is worth
+seeing, because it shows that the method is not where the difficulty lies.
+
+It is also worth being honest about what this particular network cannot do. It reads
+only `observation.state`, the arm's own joint positions, and it never looks at the
+camera pictures, so it will learn to repeat the average path of the demonstrations
+and it will not react to where the mug actually is. A policy that works needs the
+pictures too, which means a convolutional or transformer encoder in front of those
+linear layers, and it needs the rescaling of every input and output into the range
+the network expects. LeRobot does not ship a plain behaviour cloning policy for this
+reason: its packaged imitation policies are ACT, diffusion and VQ-BeT, which are the
+next two pages, and each of them is a fuller behaviour cloning model rather than a
+different method. If you want plain behaviour cloning already built, with the camera
+encoder and the recurrent version included,
+[robomimic](https://github.com/ARISE-Initiative/robomimic) is the library for it, and
+it is driven by a configuration file, as in
+`python robomimic/scripts/train.py --config robomimic/exps/templates/bc.json
+--dataset <my-file>.hdf5`.
+
+So what the library gives you is the data format, the loading, and the statistics of
+the dataset. What you have to write is the network, the encoder for the pictures, the
+rescaling and the evaluation. And what you have to collect is the demonstrations,
+which cannot be downloaded for your task. `lerobot/svla_so101_pickplace` above is a
+real dataset, but it is a real dataset of somebody else's arm, in somebody else's
+room, with their cameras in their positions. A policy trained on it will not work on
+your arm, and section 7 explained why: the pictures your cameras produce are unlike
+anything in those recordings, so the policy is guessing outside what it knows from
+the first frame onwards. Recording your own fifty or hundred demonstrations, with a
+leader arm, over an evening, is the job. The five lines above are not.
+
+The decision that costs the most later is what you vary while recording. The policy
+works where you showed it and nowhere else, so the range of object positions, the
+lighting and the camera placement in your recordings become the limits of the
+finished policy. Widening them afterwards means recording again.

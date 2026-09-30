@@ -26,6 +26,7 @@ that describes its shape.
 8. [Why this rather than looking again, and what it costs](#8-why-this-rather-than-looking-again-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -321,3 +322,69 @@ wins for new objects of familiar kinds when the camera cannot move.
     grasp models that take the completed points.
 - [Models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md) in
     Book 3 goes deeper into grasp models and the data they need.
+
+---
+
+## 11. Using it in Python
+
+The page has explained that a depth camera sees only a thin shell of an object, and
+that a completion model guesses the rest. This section is about running that in
+Python, and it has to start with an unwelcome fact, because the honest answer here
+is different from the one on the detection pages. After reading it you will know
+what you can install today, what you cannot, and what the alternative is.
+
+None of the models in [section 5](#5-well-known-models) is a packaged library. PCN,
+PoinTr, DeepSDF and Occupancy Networks were all released as research
+repositories that accompany a paper, so there is no `pip install pointr` and no
+import to write. You clone the repository, install what its own instructions ask
+for, and run its script on a checkpoint the authors published. Those checkpoints were
+usually trained on ShapeNet, which is a large collection of computer-made 3D models,
+so they know chairs, tables and mugs in general and not your parts.
+
+What you can install is the classical way to close a surface over the points you do
+have, plus the measure that every one of those papers reports. Open3D does the
+first with Poisson surface reconstruction, and PyTorch3D does the second with the
+chamfer distance.
+
+```python
+import numpy as np
+import open3d as o3d
+import torch
+from pytorch3d.loss import chamfer_distance
+
+seen = o3d.io.read_point_cloud("mug_one_view.ply")
+seen.estimate_normals()     # Poisson needs to know which way each surface faces
+
+mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+    seen, depth=9)
+filled = mesh.sample_points_uniformly(number_of_points=2048)
+
+# How far the guessed shape is from the real one, when you have the real one.
+truth = o3d.io.read_point_cloud("mug_all_round.ply")
+a = torch.from_numpy(np.asarray(filled.points)).float().unsqueeze(0)
+b = torch.from_numpy(np.asarray(truth.points)).float().unsqueeze(0)
+print(chamfer_distance(a, b)[0].item())   # mean squared distance, in square metres
+```
+
+What those two libraries give you out of the box is real but limited, and the limit
+is exactly the point of this page. Poisson reconstruction stretches a surface over
+the points it was given, so it closes small gaps and smooths noise, but it cannot
+invent the back of the mug because no points there ever suggested one. That is what
+a learned model adds, and it is why the learned models exist. The chamfer distance
+is genuinely free and is the number to report, because it is what the papers
+compare.
+
+What you still have to write yourself is almost all of it, which is the cost of
+choosing this kind of model. You clone and run the completion repository, you get
+its output into the frame your arm works in, and you decide how much of the guessed
+shape to trust when planning a grasp. A sensible rule is to place the fingers only
+where the model actually saw points, and to use the completed part of the shape only
+to judge whether the gripper will collide.
+
+What you have to decide first is whether to complete the shape at all, which
+[section 8](#8-why-this-rather-than-looking-again-and-what-it-costs) weighs against
+simply moving the camera and looking from another side. Looking again gives you real
+points instead of guessed ones, so completion earns its place only when a second
+view is slow or impossible. If you do use it, you also decide which output form
+suits you, because a point cloud is easy to handle while a signed distance function
+gives a watertight surface that collision checking prefers.

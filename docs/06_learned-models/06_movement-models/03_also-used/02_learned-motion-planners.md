@@ -38,6 +38,7 @@ page describes.
 10. [Why this kind, and what it costs](#10-why-this-kind-and-what-it-costs)
 11. [The written alternative](#11-the-written-alternative)
 12. [Where to read next](#12-where-to-read-next)
+13. [Using it in Python](#13-using-it-in-python)
 
 ---
 
@@ -410,3 +411,70 @@ Deeper documents elsewhere in this repository:
   explains the exact check that stays in the system.
 - [Redundancy, and the seventh joint](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#6-redundancy-and-the-seventh-joint)
   explains why one gripper target can have many joint answers.
+
+---
+
+## 13. Using it in Python
+
+Sections 3, 4 and 5 described three different learned helpers: a route planner, a
+collision checker and an inverse kinematics solver. This section shows the third of
+them running in Python, and explains why it is the only one of the three you can
+realistically try. After reading it you will know what is downloadable in this area
+and what is not.
+
+Learned inverse kinematics is the most packaged of the three, because the problem is
+small and self-contained. [IKFlow](https://github.com/jstmn/ikflow) publishes trained
+models for several arms, including the Franka Panda. There is an `ikflow` package on
+the Python package index, but the README installs it from a clone of the repository
+instead, with `uv sync` followed by `uv pip install -e .`, and the only operating
+system the authors say they support is Ubuntu.
+
+```python
+import torch
+from ikflow.model_loading import get_ik_solver
+
+# the model name must match an entry in ikflow/model_descriptions.yaml
+ik_solver, _ = get_ik_solver("panda__full__lp191_5.25m")
+
+# x, y, z in metres, then a rotation as a quaternion in the order w, x, y, z
+target_pose = torch.tensor([0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 0.0])
+# five different sets of joint angles, all reaching the same pose
+solutions = ik_solver.generate_ik_solutions(target_pose, n=5)
+```
+
+Those five answers are the point of the method, and section 5 explained why: the
+Franka has seven joints and only six are needed to reach a pose, so there are
+infinitely many correct answers, and an ordinary solver returns one of them. IKFlow
+returns a spread of different ones in a single pass, so you can then choose the one
+that is furthest from the joint limits, or nearest to where the arm already is. The
+library also has `generate_exact_ik_solutions`, which polishes the network's answers
+with a few ordinary numerical steps, because the network on its own is approximate and
+the polishing is what brings the error down to about a millimetre.
+
+What the library gives you is the trained models, the sampling and the checking, and it
+will also tell you which answers break the joint limits or collide with the arm itself
+if you pass `return_detailed=True`. What you have to supply is your arm. The published
+models are for the arms the authors trained, so if yours is not among them you train
+your own, which needs your arm's description file and the training script in the same
+repository. You also have to decide which of the answers to use, because the model has
+no opinion about that, and this is a genuine choice rather than a detail: picking the
+solution nearest the current joint angles avoids large sudden motions, while picking
+the one furthest from the limits leaves more room for the next move.
+
+The other two helpers are harder to try, and it is worth saying so plainly rather than
+pretending otherwise. Motion Policy Networks, the learned route planner from section 7,
+is published as a repository whose recommended installation is a Docker container of
+about 30 GB, built on top of NVIDIA Isaac Sim, for which you need an NVIDIA developer
+account and an API key. You then download a checkpoint and run
+`mpinets/run_inference.py` on planning problems in the repository's own
+`PlanningProblem` format, which holds a target pose, a starting configuration and the
+obstacles. There is no package to install and no simple call to make. SceneCollisionNet
+and Fastron are research code of the same kind. MPNet has no maintained release at all.
+
+So the honest summary of this page in practice is that the learned parts of motion
+planning are mostly still papers with code attached, and the one you can actually use
+tomorrow is learned inverse kinematics. Section 10 said that you choose a learned
+helper only when the ordinary tools are too slow in a way that matters, and the state
+of the software is a second reason to reach for the ordinary planner first. It is also
+why the one row of section 10's table that is easy to act on today is the redundant
+arm needing many inverse kinematics answers quickly.

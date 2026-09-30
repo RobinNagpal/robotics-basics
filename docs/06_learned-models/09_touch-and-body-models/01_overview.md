@@ -23,6 +23,7 @@ page explains each one the first time it appears.
 6. [When to use a model here, and when not to](#6-when-to-use-a-model-here-and-when-not-to)
 7. [How this chapter connects to the others](#7-how-this-chapter-connects-to-the-others)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -218,4 +219,61 @@ those use only the sensors an arm already has.
 For the hardware behind these models, read
 [the sensors that go on a gripper](../../03_frameworks/02_gripping/02_grippers-and-hardware.md#8-the-sensors-that-go-on-a-gripper)
 in the frameworks book. For what to do with the readings once you have them, read
-[holding on](../../03_frameworks/02_gripping/05_holding-on.md) .
+[holding on](../../03_frameworks/02_gripping/05_holding-on.md).
+
+## 9. Using it in Python
+
+The sections above said that this family has almost nothing to download, because a
+force reading from one gripper means nothing on another one. So for all four kinds
+the work looks much the same in code: you cut your own recordings into short windows
+and train a small network on them. This section shows that shared shape, so that
+afterwards you can tell which lines a library writes for you and which lines only you
+can write.
+
+```python
+import numpy as np
+import torch
+from torch import nn
+
+# Your own recording of one grip: six wrist force numbers per reading, and the
+# right answer for each reading, worked out as the slip page's section 5 describes.
+readings = np.load('grip_01_forces.npy')      # shape (number of readings, 6)
+answers = np.load('grip_01_answers.npy')      # shape (number of readings,), 0 or 1
+
+# Cut the recording into windows of 20 readings. Each window keeps the answer of
+# its own last reading, because that is the moment the model is asked about.
+windows = np.lib.stride_tricks.sliding_window_view(readings, 20, axis=0)
+x = torch.tensor(windows.reshape(len(windows), -1), dtype=torch.float32)
+y = torch.tensor(answers[19:], dtype=torch.float32).unsqueeze(1)
+
+net = nn.Sequential(nn.Linear(6 * 20, 32), nn.ReLU(), nn.Linear(32, 1))
+loss_fn = nn.BCEWithLogitsLoss()              # measures a yes-or-no answer
+optimiser = torch.optim.Adam(net.parameters(), lr=1e-3)
+
+for _ in range(500):
+    optimiser.zero_grad()
+    loss = loss_fn(net(x), y)
+    loss.backward()                           # works out how to change each number
+    optimiser.step()                          # changes them
+```
+
+PyTorch gives you the parts that are the same for every model of this kind, which is
+why the network itself is only one line. `nn.Linear` holds a layer's numbers,
+`nn.BCEWithLogitsLoss` measures how wrong a yes-or-no answer is, and `loss.backward()`
+followed by `optimiser.step()` works out how each number should change and then
+changes it. NumPy's `sliding_window_view` gives you the windows without copying the
+recording, so it stays cheap even for an hour of readings.
+
+What you have to collect yourself is everything above the network. Nobody publishes
+force recordings from your gripper, so you have to make the grips happen, record
+them, and work out the right answer for each window in one of the three ways that
+[force and slip models](02_most-used/01_force-and-slip-models.md#5-how-it-is-trained)
+lists. You also have to write the part that reads your own sensor, because that is
+different for every piece of hardware.
+
+What you have to decide is the window length, the sensor you read, how many
+recordings are enough, and how you split them into a training set and a test set.
+That last decision is the one people get wrong, because the split must be by grip and
+not by window. Two windows one reading apart are almost the same numbers, so a split
+by window puts nearly the same example into both sets, and the test score then tells
+you nothing about a grip the model has never seen.

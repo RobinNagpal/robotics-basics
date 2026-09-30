@@ -26,6 +26,7 @@ explained where it first appears.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -267,7 +268,7 @@ So this is a case of what people call **reward hacking**.
 The left picture shows what the person meant, while the right picture shows a
 movement that earns the same reward and is not what anyone wanted. So people fix
 this by adding terms to the reward, such as "the mug must be upright", and by
-watching the the trained policy carefully before trusting it.
+watching the trained policy carefully before trusting it.
 
 **The simulator is wrong about contact.** Soft, slippery, bendy or breakable things
 are hard to simulate, so a policy trained on a simulated sponge may fail on a real
@@ -379,3 +380,69 @@ Deeper documents elsewhere in this repository:
   gives the evidence, the branches of the method and where it stands in 2026.
 - [Sim-to-real: what actually closed the gap](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#5-sim-to-real-what-actually-closed-the-gap)
   goes deeper into moving from simulation to a real arm.
+
+---
+
+## 11. Using it in Python
+
+Section 4 said that a reinforcement learning policy is trained by trying the task
+thousands of times in a simulator, and section 5 named PPO and SAC as the two learning
+methods people reach for. This section shows one of them being started in Python, so
+that after reading it you will know how little of the work is the learning method and
+how much is the simulator and the reward.
+
+The library is [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3),
+installed with `pip install "stable-baselines3[extra]"`, and it contains PPO, SAC and
+several others behind the same three methods. The simulated arm below is
+[panda-gym](https://github.com/qgallouedec/panda-gym), installed with
+`pip install panda-gym`, which provides a Franka Panda in six tasks.
+
+```python
+import gymnasium as gym
+import panda_gym                       # registers the Panda environments with gymnasium
+from stable_baselines3 import SAC
+
+env = gym.make("PandaPickAndPlace-v3")
+# MultiInputPolicy because this environment's observation is a dictionary,
+# holding the arm's state, the object's position and the goal separately
+model = SAC("MultiInputPolicy", env, verbose=1)
+model.learn(total_timesteps=500_000)
+model.save("sac_panda_pick_and_place")
+
+observation, info = env.reset()
+action, _ = model.predict(observation, deterministic=True)
+observation, reward, terminated, truncated, info = env.step(action)
+```
+
+Stable-Baselines3 gives you the learning method itself, which is the part that is
+genuinely hard to write correctly. SAC involves two networks that score actions, a
+third that chooses them, a store of past attempts that are replayed, and a term that
+keeps the policy from becoming too certain too early, and every one of those has
+details that quietly ruin training if they are wrong. Getting a tested version for one
+line of code is the real value here. `deterministic=True` in `predict` is worth
+noticing: during training the policy deliberately adds randomness so that it explores,
+and this switches that off so it does its best instead.
+
+What panda-gym gives you is the simulator, the arm model and, most importantly, the
+reward. That last one is where almost all of the difficulty of reinforcement learning
+actually sits, and a packaged environment hides it. On your own task you would have to
+write that reward yourself: a number, computed every step, that says how well things
+are going. Section 7 called what happens next reward hacking, because the policy will
+find any way to collect reward, including the ways you did not intend.
+
+What you have to supply for a real arm is a simulator of that arm, and this is the
+honest cost of the method. Look at `total_timesteps=500_000`. If the arm decides
+twenty times a second, then half a million steps is about seven hours of continuous
+motion, and on a real arm it is much more than that, because somebody has to put the
+object back after every attempt. Section 7 lists this as needing a huge number of
+tries. So the policy is trained in simulation, and then it has to cross to the real
+robot, which needs a model of your arm accurate enough to train against,
+randomisation of the things you could not measure, and usually a short spell of real
+practice at the end. HIL-SERL, from section 5, is the packaged version of that last
+step, and it lives in LeRobot rather than in Stable-Baselines3.
+
+What you have to decide first is whether you need this method at all. It is the only
+method in this chapter that can improve past its demonstrations, and it is the only one
+that needs a reward and a simulator. If you can demonstrate the task, the earlier pages
+in this chapter are far less work for the same result, and section 8 makes that
+comparison directly.

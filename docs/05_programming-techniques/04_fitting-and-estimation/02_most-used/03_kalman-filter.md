@@ -43,6 +43,7 @@ and in smoothing sensor readings.
 8. [Why a Kalman filter, and what it costs](#8-why-a-kalman-filter-and-what-it-costs)
 9. [The learned alternative](#9-the-learned-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -650,3 +651,78 @@ The pages below cover what this filter builds on, and where its output is used.
   filtered reading.
 - Book 2 goes deeper into tracking on a real arm in
   [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md).
+
+---
+
+## 11. Using it in Python
+
+Section 3 worked through the belt example by hand, and section 7 named filterpy
+as the library that does the same arithmetic for more than one number at a time.
+This section shows that library on the same belt, so you can compare the code
+with the table in section 3. After it you will be able to run a filter that
+tracks a position and a speed together, and you will know exactly which of its
+settings describe your robot rather than the filter.
+
+The program below is the belt example from section 3, with the state holding
+both the block's position and its speed as in the last part of that section.
+filterpy is a small library whose classes hold the matrices as plain attributes,
+which makes it easy to see the correspondence with the steps on this page.
+
+```python
+import numpy as np
+from filterpy.kalman import KalmanFilter
+from filterpy.common import Q_discrete_white_noise
+
+dt = 0.1                                  # the camera gives 10 pictures a second
+kf = KalmanFilter(dim_x=2, dim_z=1)       # state: position and speed; one reading
+kf.x = np.array([100.0, 50.0])            # start: 100 mm, moving at 50 mm/s
+kf.F = np.array([[1.0, dt],               # predict: position += speed * dt
+                 [0.0, 1.0]])             #          speed stays the same
+kf.H = np.array([[1.0, 0.0]])             # the camera sees position, not speed
+kf.P = np.diag([25.0, 100.0])             # how unsure the start is, as variances
+kf.R = np.array([[16.0]])                 # camera noise: a 4 mm spread, squared
+kf.Q = Q_discrete_white_noise(dim=2, dt=dt, var=100.0)   # process noise
+
+for reading in (107.0, 109.0, 118.0, 121.0):
+    kf.predict()
+    kf.update(reading)
+    print(kf.x[0], kf.x[1], np.sqrt(kf.P[0, 0]), kf.mahalanobis)
+```
+
+Run it and the four steps print 106.24, 110.32, 116.26 and 121.25 mm, with the
+spread falling from 3.15 mm to 2.39 mm. The first of those matches the 106.24 mm
+in the table in section 3 exactly, because it is the same arithmetic. The speed
+estimate stays between 49.3 and 51.2 mm per second, which brackets the real belt
+speed even though no reading measures speed at all.
+
+The library does the predict and update matrix arithmetic, and it also gives you
+two things the hand-worked example did not. `kf.y` is the innovation, the
+difference between the reading and the prediction, and `kf.mahalanobis` is that
+difference measured in units of the spread. That second number is the gate
+described in section 6: a value above about 3 means the reading is further off
+than the filter's own uncertainty can explain, so you skip the `update` call and
+let the prediction carry on alone. `Q_discrete_white_noise` also builds the
+process noise matrix for you from one number, which saves writing out the
+correlation between position and speed by hand.
+
+What you still have to write is the model, and this is the sentence to remember
+from the whole page. `kf.F` says how the quantity moves when nothing measures
+it, `kf.H` says how your sensor relates to the quantity, and both of those are
+statements about your robot that no library can guess. A belt gets the `F`
+above, while a part sitting still gets an `F` of all ones with no speed, and a
+wrist camera reading a distance through a lens gets an `H` that is not a plain
+1. You also write the loop, the gate, and the handling of a missing reading,
+which is simply calling `predict` without `update`.
+
+What you have to decide or measure are the four matrices of numbers. `kf.R` you
+measure, by holding the sensor still and recording the spread of its readings,
+then squaring that spread. `kf.P` is your honesty about the first guess, and
+setting it too small makes the filter ignore the first few real readings. `kf.Q`
+is the hard one, because section 3 showed that it sets how quickly the filter
+follows a real change, and there is no measurement that gives it to you. You
+choose it from how fast the quantity can genuinely move, and you check the
+choice by running the filter on a recorded trace and looking at whether it lags.
+Finally you decide `dt`, and it must be the real time between readings rather
+than the rate you hoped for, which is why the
+[sensor streams](04_sensor-streams.md) page insists on reading the time stamp on
+every message.

@@ -25,6 +25,7 @@ need anything else, because every new word is explained where it first appears.
 5. [The kinds side by side](#5-the-kinds-side-by-side)
 6. [How movement models connect to the other kinds](#6-how-movement-models-connect-to-the-other-kinds)
 7. [Where to read next](#7-where-to-read-next)
+8. [Using it in Python](#8-using-it-in-python)
 
 ---
 
@@ -299,3 +300,73 @@ compares every way of learning to move an arm, and says which ones are worth you
 time. [Learned motion](../../03_frameworks/03_arm-movement/05_learned-motion.md)
 says which part of the arm's software a policy replaces, and it lists policies you
 can download.
+
+---
+
+## 8. Using it in Python
+
+Section 2 explained that a policy is a function from an observation to an action, and
+section 3 said which part of the robot's software it replaces. This section shows
+that function being called in Python on a real arm, because every kind of policy in
+this chapter is run the same way. After reading it you will know the shape of the
+loop, and you will know which parts of the job no library can do for you.
+
+The library that packages this is [LeRobot](https://github.com/huggingface/lerobot),
+from Hugging Face, installed with `pip install lerobot`. The example below runs a
+trained policy on an SO-101 arm. It uses `ACTPolicy` as the class, but the same five
+lines work for a diffusion policy or a vision-language-action model, because they all
+inherit the same `select_action` method.
+
+```python
+from lerobot.datasets import LeRobotDatasetMetadata
+from lerobot.policies import make_pre_post_processors
+from lerobot.policies.act import ACTPolicy
+from lerobot.policies.utils import build_inference_frame, make_robot_action
+from lerobot.robots.so_follower import SO101Follower, SO101FollowerConfig
+
+policy = ACTPolicy.from_pretrained("<my-user>/my_policy")
+meta = LeRobotDatasetMetadata("<my-user>/my_dataset")   # only the metadata is downloaded
+preprocess, postprocess = make_pre_post_processors(policy.config,
+                                                   dataset_stats=meta.stats)
+
+robot = SO101Follower(SO101FollowerConfig(port="/dev/tty.usbmodem58760431631",
+                                          id="my_follower_arm"))
+robot.connect()
+
+while True:
+    frame = build_inference_frame(observation=robot.get_observation(),
+                                  ds_features=meta.features, device="cpu")
+    action = postprocess(policy.select_action(preprocess(frame)))
+    robot.send_action(make_robot_action(action, meta.features))
+```
+
+LeRobot gives you four things here. It gives you the policy classes and the weights,
+downloaded by name from the Hugging Face hub. It gives you the drivers, so
+`robot.get_observation()` reads the joint positions and every camera in one call, and
+`robot.send_action()` writes the joint targets back. It gives you the conversion
+between the robot's dictionary of named numbers and the tensors the network wants,
+which is what `build_inference_frame` and `make_robot_action` do. And it gives you the
+rescaling of every number into the range the network was trained on, which is
+`preprocess` and `postprocess`, computed from the statistics of the dataset the policy
+was trained on. That last piece is why `meta.stats` appears: a policy run with the
+wrong statistics moves, and moves wrongly, which is a hard fault to find.
+
+What you have to supply is the dataset and the training run behind
+`from_pretrained`. This is the part that the shortness of the code hides. Nobody has
+published a policy that works on your arm, in your room, on your task, so
+`"<my-user>/my_policy"` is a model you trained yourself, from demonstrations you
+recorded yourself. LeRobot has three command line programs for that cycle:
+`lerobot-record` drives the arm from a leader arm and saves what happens,
+`lerobot-train` trains a policy on the result with, for example,
+`--policy.type=act --dataset.repo_id=<my-user>/my_dataset`, and `lerobot-rollout`
+runs the trained policy. The recording is the slow step. The LeRobot tutorial suggests
+at least fifty demonstrations for one object in a few places, and that is an evening
+of driving the arm by hand for a task as simple as putting a brick in a box.
+
+What you have to decide is everything the recording fixes in place. Where the cameras
+sit, because the policy learns the view and not the world, and moving a camera
+afterwards breaks it. How many places you put the object in, because the policy only
+works where you showed it. Whether to drive the arm by joint angles or by gripper
+poses, which the
+[actions and observations](02_most-used/04_actions-and-observations.md) page covers.
+And which policy to train, which is what the rest of this chapter is for.

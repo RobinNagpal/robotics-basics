@@ -26,6 +26,7 @@ camera leaves on shiny and clear objects.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -344,3 +345,55 @@ there is only one picture and no table to measure from.
   [the sensors, and the software for each](../../../02_perception/02_object-perception/02_sensors.md).
 - For measured accuracy and licences, read
   [models that measure](../../../02_perception/02_object-perception/05_models-that-measure.md).
+
+---
+
+## 11. Using it in Python
+
+The page has explained the difference between relative depth, which says only what
+is nearer, and metric depth, which is in metres. That difference decides what you
+can do with the output, so this section runs a real depth model and shows you which
+of the two you get. After reading it you will be able to turn one ordinary photo
+into a depth map, and you will know what still stands between that map and a
+position the arm can reach.
+
+Hugging Face `transformers` has a pipeline for this, and Depth Anything V2 is the
+model [section 5](#5-well-known-models) recommends for relative depth.
+
+```python
+from PIL import Image
+from transformers import pipeline
+
+pipe = pipeline("depth-estimation",
+                model="depth-anything/Depth-Anything-V2-base-hf")
+
+prediction = pipe(Image.open("table.jpg"))
+
+depth = prediction["predicted_depth"].numpy()   # one number per pixel
+picture = prediction["depth"]                   # the same thing as a grey image
+print(depth.shape, float(depth.min()), float(depth.max()))
+```
+
+What the pretrained model gives you out of the box is a number for every pixel of
+any ordinary photo, with no camera calibration, no second camera and no training
+from you. That is a striking amount for one call, and on shiny and see-through
+objects, where a depth camera returns holes, it often gives a usable surface where
+the camera gives nothing.
+
+What you still have to write yourself starts with the units, and this is the part
+people get wrong. The checkpoint above gives relative depth, so a value of 8 means
+"nearer than 4" and nothing more; it is not 8 metres and not 8 of anything. To get
+metres you either fit the model's output against a few real distances, for example
+from a depth camera or from the known height of the table, or you use a metric
+checkpoint such as Depth Pro instead. After that the usual work remains, because
+you still turn a pixel and a distance into a point in metres and move it into the
+arm's frame.
+
+What you have to decide first is whether you need this at all, because a depth
+camera measures distance directly and a learned model guesses it. So the sensible
+uses are the ones a camera cannot cover: a robot with only a plain colour camera,
+or objects that a depth camera fails on. Then you decide between a relative and a
+metric checkpoint, and between the model sizes, because the small ones run on an
+ordinary processor while the large ones want a graphics card. Finally you decide
+how much error you can accept, since the edges of objects are where these models
+are least accurate and that is exactly where a gripper closes.

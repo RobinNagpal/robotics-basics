@@ -37,6 +37,7 @@ from
 7. [Why ICP, and what it costs](#7-why-icp-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -584,7 +585,7 @@ describes networks that give an object's pose directly from a picture. Models
 such as MegaPose and FoundationPose need only the part's CAD model, or for
 FoundationPose a few photos of it. Because they cope with clutter and need no
 first guess, they can take the place of the 3D features and RANSAC in
-[section 5](#5-getting-a-first-guess-3d-features-and-global-registration) . Once
+[section 5](#5-getting-a-first-guess-3d-features-and-global-registration). Once
 the part has been found, FoundationPose can also follow its pose from frame to
 frame, which is the job ICP does from the last pose. Then there are networks
 that read point clouds, from Book 6's
@@ -618,3 +619,75 @@ in a fixed tray.
   printing or texture.
 - [Assignment and matching](03_assignment-and-matching.md) pairs whole objects
   rather than points, with a strict one-to-one rule that ICP does not have.
+
+---
+
+## 10. Using it in Python
+
+Section 2 ran the pair-and-move loop by hand, section 5 covered how to get the
+first guess, and section 6 named Open3D as the usual library in Python. This
+section shows the Open3D call, because ICP is a case where the whole algorithm is
+one function and the difficulty has moved entirely into its arguments. After
+reading it you should be able to align a model with a scan and, just as
+importantly, to tell whether the answer it gave is worth using.
+
+The code below loads a stored model of a part and a scan of the real part, thins
+both, and then runs ICP.
+
+```python
+import numpy as np
+import open3d as o3d
+
+model = o3d.io.read_point_cloud("bracket_model.ply")
+scan = o3d.io.read_point_cloud("bracket_scan.ply")
+
+# Thinning both to one point per 3 mm cube makes each round faster and the
+# distances more even, which is what ICP assumes.
+model = model.voxel_down_sample(voxel_size=0.003)
+scan = scan.voxel_down_sample(voxel_size=0.003)
+scan.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=0.01, max_nn=30))
+
+first_guess = np.eye(4)
+first_guess[:3, 3] = [0.30, -0.05, 0.02]   # from a detector, or from a fixture
+
+result = o3d.pipelines.registration.registration_icp(
+    model, scan,
+    max_correspondence_distance=0.01,      # metres: ignore pairs further apart
+    init=first_guess,
+    estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+    criteria=o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=50))
+
+print(result.fitness, result.inlier_rmse)   # how much overlapped, how well it fitted
+T_scan_model = result.transformation
+```
+
+The library does all of section 2 for you. Every round it runs the
+nearest-neighbour search of the previous page, throws away the pairs that are
+further apart than `max_correspondence_distance`, computes the best rigid move for
+the pairs that are left, applies it, and stops when the improvement falls below
+`relative_fitness` or `relative_rmse`, or when it has done `max_iteration` rounds.
+Choosing `TransformationEstimationPointToPlane` switches to the point-to-plane
+variant, which usually converges in fewer rounds on surfaces and is why the code
+estimates normals on the scan first.
+
+What you still write yourself is the first guess and the verdict. ICP has no way to
+find a pose, only to improve one, so the `first_guess` comes from somewhere else:
+the middle of a cluster, a detected marker, the known position of a fixture, or the
+global registration of section 5, which in Open3D is
+`compute_fpfh_feature` followed by
+`registration_ransac_based_on_feature_matching`. You also write the check, because
+`registration_icp` always returns a transform and never raises an error when the
+answer is nonsense. The two numbers to check are `fitness`, which is the fraction
+of model points that found a partner and which should be near 1 for a part you can
+see fully, and `inlier_rmse`, which should come out near your camera's noise rather
+than several times larger.
+
+What you have to decide or measure is three numbers, and all three are physical.
+`voxel_size` is how coarse to thin the clouds, and 2 to 5 mm is usual for a
+table-top part, because thinning speeds up every round and stops the dense parts of
+the scan from dominating. `max_correspondence_distance` is the pair-rejection
+distance and it is the argument that matters most: set it to a few times the depth
+camera's noise, and start it larger when the first guess is poor and shrink it once
+the model is close. `max_iteration` is a time budget rather than an accuracy
+setting, since a run that has not converged in 50 rounds is usually one whose first
+guess was wrong, and section 4 lists the other signs of that.

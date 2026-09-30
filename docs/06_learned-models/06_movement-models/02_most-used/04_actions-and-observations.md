@@ -39,6 +39,7 @@ someone else's recordings are any use to you.
 13. [Why these choices matter, and what they cost](#13-why-these-choices-matter-and-what-they-cost)
 14. [The written alternative](#14-the-written-alternative)
 15. [Where to read next](#15-where-to-read-next)
+16. [Using it in Python](#16-using-it-in-python)
 
 ---
 
@@ -560,3 +561,69 @@ choices at work or moves on to the methods that do not copy a person.
   explains why three angles need a stated convention.
 - To go back to the list of all the kinds of policy, read
   [the chapter overview](../01_overview.md).
+
+---
+
+## 16. Using it in Python
+
+This page has been about choices: joint angles or gripper poses, absolute targets or
+changes, how a turn is written down, and how every number is rescaled before
+training. Section 12 said that LeRobot records all of that in the dataset itself. This
+section shows how to read those choices out of a dataset in Python, because that is
+how you find out what somebody else's recordings actually contain before you train on
+them.
+
+```python
+from lerobot.datasets import LeRobotDataset, LeRobotDatasetMetadata
+
+meta = LeRobotDatasetMetadata("lerobot/svla_so101_pickplace")   # metadata only, a few MB
+print(meta.fps, meta.robot_type, meta.camera_keys)
+print(meta.features["action"]["names"])        # what each action number means
+print(meta.features["action"]["shape"])        # how many numbers per action
+print(meta.stats["action"]["min"], meta.stats["action"]["max"])
+
+dataset = LeRobotDataset(
+    "lerobot/svla_so101_pickplace",
+    # load the next 16 actions with each frame, spaced one frame apart
+    delta_timestamps={"action": [i / meta.fps for i in range(16)]},
+)
+sample = dataset[0]
+print(sample["observation.state"].shape, sample["action"].shape)
+```
+
+`LeRobotDatasetMetadata` downloads only the small description files, not the videos, so
+these four `print` lines cost a few seconds even for a dataset of hundreds of
+gigabytes. That makes them the right first thing to run on any dataset you are
+thinking of using. `meta.features["action"]["names"]` is the most useful of them,
+because it is where the dataset says whether its actions are joint angles or a gripper
+pose: a list such as `shoulder_pan.pos` through `gripper.pos` tells you it is joint
+angles, while names such as `x`, `y`, `z` and a rotation tell you it is a pose. The
+`shape` tells you how many numbers there are, which is how you catch the mismatch that
+section 10 warned about when mixing robots. And `meta.stats` holds the minimum,
+maximum, mean and standard deviation of every signal, which are exactly the numbers
+that section 7's rescaling needs.
+
+The `delta_timestamps` argument is how section 8's chunks are actually loaded. You
+give it a list of time offsets in seconds for each signal, and the dataset returns
+that many frames stacked together instead of one. Dividing by `meta.fps` turns a count
+of frames into seconds, which is why the frame rate has to be read first. You never
+write this by hand for a packaged policy, because each policy's configuration
+generates its own offsets, but writing it yourself is how you load a chunk for a
+network of your own.
+
+What LeRobot gives you, then, is a file format that carries its own meaning, so that a
+dataset is self-describing and the statistics travel with it. What you have to do
+yourself is the rescaling if you are not using a LeRobot policy, since these are only
+the numbers, not the transformation; `make_pre_post_processors` does it for you when
+you are.
+
+What you have to decide is what your own recordings will contain, and that decision is
+made once and then is very hard to change. If you record joint angles, your data is
+tied to your arm's geometry and cannot train a policy for a different arm. If you
+record gripper poses, you need a working inverse kinematics solver at run time, and
+you have chosen the turn convention that section 5 discussed. If you record changes
+rather than absolute targets, small errors add up over a chunk. None of these can be
+converted afterwards without the full calibration and kinematics of the robot that
+recorded them, which is usually not in the dataset. So the honest advice is to read
+these fields on any dataset you are offered, and to expect that a dataset recorded for
+another robot needs work you can measure in weeks rather than an afternoon.

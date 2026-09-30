@@ -25,6 +25,7 @@ assumed.
 7. [Safety checks around a model](#7-safety-checks-around-a-model)
 8. [Why use a model at all, and what it costs](#8-why-use-a-model-at-all-and-what-it-costs)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -338,3 +339,54 @@ describes those parts.
 - [Working without a GPU](../../../03_frameworks/03_arm-movement/10_working-without-a-gpu.md)
   in Book 3 says what robot arm work you can still do on a computer with no NVIDIA
   graphics card, such as an Apple Silicon Mac.
+
+---
+
+## 10. Using it in Python
+
+Section 2 gave the time budget of 33 milliseconds per camera picture, and section 7
+gave the first safety check, which is to act only on answers the model scored highly.
+This section measures the first and applies the second, because both of them are a few
+lines around a call you already have. After reading it you will be able to say whether
+a model is fast enough on the computer your robot actually has.
+
+```python
+import time
+
+from ultralytics import YOLO
+
+model = YOLO('yolo11n.pt')      # downloaded on first use
+times = []
+
+for frame in camera_frames():   # your own camera, one picture at a time
+    start = time.perf_counter()
+    result = model(frame, verbose=False)[0]
+    times.append((time.perf_counter() - start) * 1000)
+    # Section 7's first check: keep only the boxes the model itself was sure about.
+    sure = result.boxes[result.boxes.conf > 0.8]
+
+times.sort()
+print(f'middling {times[len(times) // 2]:.0f} ms, slowest {times[-1]:.0f} ms, '
+      f'budget 33 ms')
+```
+
+Ultralytics gives you the model, the download, the resizing of your picture and the
+answer, so the only line that is yours is the timing around it. Each `result` also
+carries its own `result.speed`, a dictionary whose `'inference'` entry is the
+milliseconds the network itself took. That number is smaller than the one this snippet
+prints, because `perf_counter` also counts the resizing before and the sorting of boxes
+afterwards, and it is the larger number that has to fit inside 33 milliseconds, because
+that is the time your program really spends.
+
+What you have to write yourself is `camera_frames`, and what happens to `sure`
+afterwards. Reporting the slowest time as well as the middling one is also yours to
+remember, and it matters more than it looks: a model that answers in 20 milliseconds
+almost always and in 90 milliseconds once a second still drops a picture every second,
+so a single average would have hidden the problem.
+
+What you have to decide is the score limit, the picture size, and the model size. All
+three trade accuracy against time, as section 4 explains, so measure them on the
+computer that will sit next to the arm and not on your laptop. Do not choose the score
+limit as a round number, because the
+[uncertainty and confidence](../03_also-used/01_uncertainty-and-confidence.md#8-setting-the-threshold-from-the-cost-of-being-wrong)
+page shows how to work it out from what a mistake would cost instead.

@@ -41,6 +41,7 @@ it bumps a person.
 7. [Why a dynamics model, and what it costs](#7-why-a-dynamics-model-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -596,3 +597,64 @@ the arm.
   explain the fitting used to find the arm's masses.
 - Book 3's [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#4-position-stiffness-and-force)
   shows where position, stiffness and torque control sit in ROS 2.
+
+---
+
+## 10. Using it in Python
+
+Section 3 split a joint torque into its three parts, worked one instant out by hand,
+and showed how the same numbers are used as feed-forward next to a PID loop. Section 6
+then explained that you give a library the arm's description instead of writing those
+equations. This section shows the four calls that do it, so that after reading it you
+can compute a holding torque, a full inverse-dynamics torque and a mass matrix from a
+Unified Robot Description Format (URDF) file.
+
+The example uses Pinocchio, because it is the fastest of the libraries in section 6
+that has a real Python interface, and because it also provides the regressor used for
+identification.
+
+```python
+import numpy as np, pinocchio as pin
+
+model = pin.buildModelFromUrdf("arm.urdf")   # masses, centres of mass and inertias
+data = model.createData()                    # scratch space the algorithms reuse
+
+q = np.array([0.4, -0.9])       # joint angles, radians
+v = np.zeros(model.nv)          # joint speeds, radians per second
+a = np.array([1.0, 0.0])        # the accelerations the trajectory asks for
+
+tau = pin.rnea(model, data, q, v, a)               # inverse dynamics: torque to apply
+g = pin.computeGeneralizedGravity(model, data, q)  # only the part that holds it up
+M = pin.crba(model, data, q)                       # the mass matrix
+a_result = pin.aba(model, data, q, v, tau)         # forward dynamics, for a simulator
+```
+
+Those four lines are the whole of section 3 in code. `pin.rnea` returns all three parts
+of the torque added together, which is what you send as feed-forward.
+`computeGeneralizedGravity` returns the gravity part alone, which is what gravity
+compensation needs. `crba` returns the mass matrix, which is what computed-torque
+control multiplies the PID output by. `aba` goes the other way, from torques to
+accelerations, which is what a simulator needs.
+
+What the library does for you is the algebra and the speed. The equations grow quickly
+with the number of joints, but the recursive algorithms behind `rnea` and `aba` walk the
+chain of links once, so their work grows only in proportion to the number of joints.
+That is why they are fast enough to run inside a loop at a thousand ticks a second,
+and you never see a term of the equation at all.
+
+What you still write is the arm description and everything around the call. If the
+maker publishes a URDF you use it, and if it does not you write it yourself, link by
+link. The loop is yours, reading `q` and `v` from the arm and sending `tau` to it. And
+the feed-forward torque on its own is not a controller: you still add the PID output
+from the [PID page](01_pid-control.md#10-using-it-in-python), because the model is
+never exact.
+
+What you have to decide or measure is the contents of that URDF, and it is the part
+that decides whether the feed-forward helps or hurts. Each link needs a mass, a centre
+of mass and an inertia, and section 3 shows how a least-squares fit finds them from
+real motion when the maker's numbers are missing. A held object is not in the file, so
+either you add it as a link at the tool frame or the model will under-shoot by exactly
+its weight, as section 3's payload example shows. Gravity itself is a choice as well:
+`model.gravity.linear` defaults to `[0, 0, -9.81]`, which assumes the arm's base frame
+is upright, so an arm bolted to a wall or a ceiling needs that vector changed or every
+gravity torque will be wrong.

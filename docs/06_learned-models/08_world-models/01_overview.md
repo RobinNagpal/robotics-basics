@@ -21,6 +21,7 @@ learning.
 5. [How this chapter connects to the others](#5-how-this-chapter-connects-to-the-others)
 6. [Why learn a world model, and what it costs](#6-why-learn-a-world-model-and-what-it-costs)
 7. [Where to read next](#7-where-to-read-next)
+8. [Using it in Python](#8-using-it-in-python)
 
 ---
 
@@ -254,3 +255,62 @@ ground:
 - [What is changing](../../03_frameworks/04_one-arm-training/05_what-is-changing.md#world-models)
   explains why people expect world models to matter: they can learn from video
   that has no robot actions attached to it.
+---
+
+## 8. Using it in Python
+
+This page has described four kinds of model that predict what happens next. Before you
+go on to the pages about them, you should know how you actually get hold of one, because
+the answer is different from every other chapter in this book, and expecting otherwise
+will cost you a week.
+
+There is no world model library. You cannot install a package and load a pretrained
+world model for your table, in the way that the previous chapter loads a
+vision-language model in three lines. Almost every model named in this chapter is
+research code, written for one paper and trained inside one particular simulator, and
+it is published as a repository you clone rather than a package you install. What people
+reuse from that work is the idea, and they train their own model on their own
+recordings. The three exceptions are noted on their own pages, and none of them is a
+world model of your table either.
+
+So the honest starting point is the smallest of the four kinds, a learned dynamics
+model, written from nothing in PyTorch. PyTorch is the library that nearly all of this
+research is built on, and you install it with `pip install torch`. The lines below train
+a network to predict how a cube moves when the gripper pushes it.
+
+```python
+import torch
+
+model = torch.nn.Sequential(          # 3 state numbers and 1 action number go in,
+    torch.nn.Linear(4, 64), torch.nn.Tanh(),        # the change in the state comes out
+    torch.nn.Linear(64, 64), torch.nn.Tanh(),
+    torch.nn.Linear(64, 3),
+)
+optimiser = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+# states, actions and next_states hold the recorded pushes, one row per push
+for _ in range(1000):
+    predicted_change = model(torch.cat([states, actions], dim=1))
+    loss = torch.nn.functional.mse_loss(predicted_change, next_states - states)
+    optimiser.zero_grad()
+    loss.backward()
+    optimiser.step()
+```
+
+That is a complete world model, and it is thirteen lines of code. It is small because
+the state is small, and the rest of this chapter is about what happens when the state is
+a picture, a towel or a whole scene.
+
+PyTorch gives you the network, the training and the arithmetic, and nothing else. There
+is no pretrained part here at all, so everything the model knows comes from the rows in
+`states`, `actions` and `next_states`.
+
+What you write is how those rows are filled, which means measuring the cube from the
+camera before and after every push, and the planning loop that asks the trained model
+what to do. The [learned dynamics models page](02_most-used/01_learned-dynamics-models.md#12-using-it-in-python)
+shows that loop.
+
+What you decide is which numbers go in the state, and that decision limits everything
+the model can ever predict. A state of three numbers cannot describe a folded towel, and
+choosing a state you cannot measure from your camera is the most common way this goes
+wrong.

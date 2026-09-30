@@ -37,6 +37,7 @@ underneath it.
 6. [Why the Hungarian algorithm, and what it costs](#6-why-the-hungarian-algorithm-and-what-it-costs)
 7. [The learned alternative](#7-the-learned-alternative)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -454,3 +455,69 @@ Each of the pages below carries one part of this page further.
 - Book 2's [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md)
   is the deep version of this page for a robot arm, including what to do when
   matching fails and how to keep an object's name through a grasp.
+
+---
+
+## 9. Using it in Python
+
+Section 2 worked through greedy matching and the Hungarian algorithm by hand, and
+section 5 named `scipy.optimize.linear_sum_assignment` as the function to call.
+This section shows that call in the setting the page uses, which is matching the
+objects seen in one camera picture to the objects seen in the last one. After
+reading it you should see that the solver is one line and the cost matrix is the
+part you have to think about.
+
+The two lists below are positions on the table in metres, three objects seen a
+moment ago and three seen now.
+
+```python
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+
+old = np.array([[0.33, 0.18], [0.47, 0.21], [0.18, 0.38]])
+new = np.array([[0.34, 0.17], [0.19, 0.39], [0.46, 0.23]])
+
+# The cost of every possible pair: the distance from each old object to each new one.
+cost = np.linalg.norm(old[:, None, :] - new[None, :, :], axis=2)
+
+GATE_M = 0.08                  # no object moves further than this between pictures
+cost[cost > GATE_M] = 1e6           # a cost so large the solver will avoid the pair
+
+old_index, new_index = linear_sum_assignment(cost)
+
+for i, j in zip(old_index, new_index):
+    if cost[i, j] < GATE_M:
+        print("object", i, "is now object", j, "at", new[j])
+    else:
+        print("object", i, "was not found in this picture")
+```
+
+What the library does for you is the algorithm of section 2, exactly and quickly. It
+finds the pairing whose costs add up to the smallest possible total, it accepts a
+matrix that is not square so that the two lists may be different lengths, and it
+returns two arrays of indices that line up with each other. It is the exact answer,
+not the greedy approximation, so it does not suffer from the failure section 2
+describes where the first pair chosen forces a bad second pair.
+
+What you still write yourself is the cost matrix and the handling of the leftovers.
+The one line of NumPy that fills `cost` is where all the real decisions live,
+because it decides that "which is which" means nearest in position. Adding a term
+for a difference in size or colour is a change to that line and nothing else. You
+also write the loop afterwards, because `linear_sum_assignment` always returns a
+full pairing and will happily pair an object with one on the other side of the
+table when nothing better is left. Turning that into "this object disappeared" and
+"this one is new" is your code, as section 2 sets out, and it is what a tracker is
+mostly made of.
+
+What you have to decide or measure is the gate. `GATE_M` is the furthest an object
+can really move between two pictures, so it comes from multiplying the fastest the
+objects move by the time between pictures, and then adding the camera's own error.
+At 30 pictures a second and an object moving at 0.5 m per second, that is about
+17 mm plus the error, so 80 mm is generous and 5 mm would throw away good matches.
+The large number standing in for "not allowed" matters too, because
+`linear_sum_assignment` has no concept of a forbidden pair. You can write `np.inf`
+in those places instead, but only while some complete pairing of finite cost still
+exists, because otherwise the call raises `ValueError: cost matrix is infeasible`
+rather than returning the pairs it could make. A large finite number never raises,
+which is why it is the safer choice, and the test after the solve is then what
+actually rejects the pair.

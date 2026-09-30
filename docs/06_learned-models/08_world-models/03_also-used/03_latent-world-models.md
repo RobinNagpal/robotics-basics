@@ -28,6 +28,7 @@ joins ideas from both of those last two pages.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -365,3 +366,66 @@ measure them from the picture.
   trying, and
   [simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies),
   which describes the latent world model VLA-JEPA and what it cannot yet do.
+---
+
+## 11. Using it in Python
+
+This page has described squeezing a picture into a code and predicting how that code
+changes. This section shows both halves in Python. After it you will know which part of
+a latent world model you can download today, and which part you have to build.
+
+The part you can download is the encoder and the predictor, because V-JEPA 2 from
+[section 5](#5-well-known-models-of-this-kind) is published as an ordinary Hugging Face
+model. You install it with `pip install transformers torch`, and it gives you codes for
+a video and the codes it expects to come next.
+
+```python
+import numpy as np
+import torch
+from transformers import AutoModel, AutoVideoProcessor
+
+name = "facebook/vjepa2-vitl-fpc64-256"
+processor = AutoVideoProcessor.from_pretrained(name)
+model = AutoModel.from_pretrained(name)
+
+video = np.ones((64, 256, 256, 3))   # put 64 real camera frames here, 256 by 256, colour
+inputs = processor(video, return_tensors="pt").to(model.device)
+
+with torch.no_grad():
+    outputs = model(**inputs)
+
+codes = outputs.last_hidden_state                         # the encoder's output
+predicted = outputs.predictor_output.last_hidden_state    # what it expects next
+```
+
+`codes` is the squeezing from [section 3](#squeezing-a-picture-into-a-code), and
+`predicted` is the predicting. Notice that no picture is drawn anywhere, which is the
+whole point of this kind of model, and notice that no action was given either. Turning
+this into a world model for an arm means adding the action, and Meta trained a separate
+version called V-JEPA 2-AC to do that, from robot recordings.
+
+The parts you cannot download are the rest of the design. There is no package that gives
+you the dynamics part with actions, the score part, the policy and the critic wired
+together, so the practising described in
+[section 3](#practising-inside-the-model) is not three lines of anything. DreamerV3 is
+the reference implementation, and it is a research repository rather than a library, so
+you clone it and run its own training script:
+
+```sh
+git clone https://github.com/danijar/dreamerv3.git
+cd dreamerv3
+pip install -U -r requirements.txt     # after installing JAX, as its README says
+python dreamerv3/main.py --logdir ~/logdir/dreamer/{timestamp} --configs crafter
+```
+
+That command trains on a computer game, because that is what the repository ships
+configurations for. Pointing it at a robot arm means writing your own environment and
+your own configuration, which is the work that
+[DayDreamer](#5-well-known-models-of-this-kind) did and published.
+
+So what the pretrained part gives you is the hard half of the seeing: codes that keep
+what matters about a video, learned from far more video than you will ever record. What
+you write is the action-conditioned dynamics part, the reward, and the connection to
+your arm. What you decide is whether to start from Dreamer's repository, which is
+complete but written around its own simulator, or from a pretrained encoder such as the
+one above, which is easy to load but is only one of the four parts you need.

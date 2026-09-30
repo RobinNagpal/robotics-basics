@@ -32,6 +32,7 @@ electric current.
 8. [Why this rather than the obvious alternative, and what it costs](#8-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -339,3 +340,58 @@ In the other books:
   detection without a model.
 - [Controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
   explains what the controller does between a planned path and the motors.
+
+## 11. Using it in Python
+
+Section 3.1 said that the whole method is a subtraction: the torque the physics says
+each joint should need, taken away from the torque the motors really used. This
+section shows that subtraction as code, because the expected torque is the one part
+you do not have to write, and after reading it you will know which library computes it
+and what you still have to supply.
+
+```python
+import numpy as np
+import pinocchio as pin
+
+# Reads the arm's own description: the links, their masses and where their weight
+# sits. Most robot arms ship this file, and ROS uses the same one.
+model = pin.buildModelFromUrdf('arm.urdf')
+data = model.createData()
+
+# q, v and a are the joint angles, the joint speeds and how fast those speeds are
+# changing, all read from the arm. measured is the torque the motors really used.
+expected = pin.rnea(model, data, q, v, a)
+residual = measured - expected
+
+hit = np.abs(residual) > limit            # limit: one number per joint
+if hit.any():
+    stop_the_arm()
+    # Section 3.2: the last joint that shows a gap is the one nearest the contact.
+    print('contact at or just past joint', int(np.flatnonzero(hit)[-1]))
+```
+
+Pinocchio gives you the expected torque, and that is the hard half. Its `rnea` is the
+recursive Newton-Euler algorithm, which is the standard way of computing the torques a
+chain of links needs, and it is fast enough to run inside a control loop, which a
+version you wrote in NumPy would not be. It reads the arm's masses and lengths from a
+URDF file, where "URDF" stands for unified robot description format and is the same
+file that
+[ROS](../../../04_ros-and-rviz/01_ros/02_ros-basics.md) and most simulators read, so
+you normally already have it.
+
+What you have to supply is everything the arm side of the subtraction needs. You read
+`q`, `v` and `a` from the joints, and on most arms you have to work `a` out from the
+speeds yourself, which is noisy, and that is exactly why the momentum observer in
+section 5 avoids it. You also have to turn the motor current into `measured`, because
+an arm without joint torque sensors reports current rather than torque, and the two
+are only roughly proportional. Finally you have to run the arm through normal work to
+see how big the residual gets when nothing has been hit, since that is the only honest
+way to choose `limit`.
+
+What you have to decide is `limit`, one number per joint, and section 7 says what each
+choice costs: too low and the arm stops for nothing, too high and it misses a gentle
+bump. For the failure detector of section 3.4, where you have only good runs and no
+failures, scikit-learn's `sklearn.ensemble.IsolationForest` is the short version: you
+fit it on features from your normal runs and its `predict` method then returns `-1` for
+a run that does not look like them. Neither of these replaces the arm's certified
+safety function, for the reason section 7 gives.

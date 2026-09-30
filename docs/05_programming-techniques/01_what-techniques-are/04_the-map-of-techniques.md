@@ -33,6 +33,7 @@ others. Book 6 has a page with the same shape for learned models,
 6. [Find a method by job](#6-find-a-method-by-job)
 7. [A suggested reading order](#7-a-suggested-reading-order)
 8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -457,3 +458,53 @@ search, and then control and motion.
 - [Tools and libraries](../../03_frameworks/01_tools-and-libraries.md) in Book 3
   shows the software, such as MoveIt 2, OpenCV and Open3D, that provides many of
   these techniques ready to call.
+
+---
+
+## 9. Using it in Python
+
+Section 3 listed all 34 techniques in one table and section 6 lets you find one
+by the job you have. This section adds the practical layer under both of them,
+which is the library you would actually import for each of the seven categories.
+After reading it you should be able to look at a job on your arm and know which
+package to install first.
+
+Each line below is the usual starting point for one category in Python, and the
+whole block is a real set of imports rather than a picture of one.
+
+```python
+import cv2                                       # geometry and cameras: cv2.solvePnP
+from scipy.spatial import KDTree                 # searching and matching: tree.query
+from scipy.optimize import least_squares         # fitting and estimation: a robust fit
+import open3d as o3d                             # image and point cloud processing
+from moveit.planning import MoveItPy             # planning and search, through ROS 2
+from ruckig import Ruckig, InputParameter, OutputParameter   # control and motion
+import py_trees                                  # decisions and task logic
+```
+
+Those seven cover the mug task from section 1 almost completely. OpenCV and
+Open3D turn the wrist camera's pictures into mug positions, SciPy's `KDTree` and
+`least_squares` tidy those positions and match each mug to the mug seen in the
+last picture, `MoveItPy` plans a reach that hits nothing, Ruckig turns the plan
+into joint commands that respect the arm's speed and acceleration limits, and
+`py_trees` holds the order of the whole job. Book 3's
+[tools and libraries](../../03_frameworks/01_tools-and-libraries.md) shows working
+code for `MoveItPy` and `py_trees` on a six-joint arm.
+
+What the libraries do for you is the hard arithmetic inside each technique, which
+is why this book explains the steps rather than asking you to write them. What
+you write yourself is everything between the seven lines: the code that carries
+numbers from one library to the next in the right frame and the right unit, and
+the code that decides what to do when a step returns nothing. That glue is
+usually larger than all seven calls together, and it is where the bugs live,
+because no library checks that the pose you hand to `MoveItPy` is measured from
+the base rather than from the camera.
+
+What you have to decide first is which of the seven you need at all. As section 1
+said, a simple pick-and-place arm uses only six or seven of the 34 techniques, so
+importing all seven libraries into one program before you need them buys you
+trouble. It is real trouble, too, because these packages do not arrive together:
+`MoveItPy` and Ruckig come with a ROS 2 installation, while OpenCV and Open3D come
+from pip or conda, and two of them in one Python process can insist on different
+versions of NumPy. Adding one library at a time, and checking the arm still runs
+after each one, is slower to start and much faster to finish.

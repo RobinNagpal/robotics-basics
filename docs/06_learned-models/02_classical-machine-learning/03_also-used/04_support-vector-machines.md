@@ -39,6 +39,7 @@ NumPy.
 7. [Why an SVM, and what it costs](#7-why-an-svm-and-what-it-costs)
 8. [The written alternative](#8-the-written-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -411,3 +412,56 @@ hand-checked line close to it.
   with a small network as the data grows.
 - [Collision and failure detection](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
   covers contact detection with learned models today.
+
+---
+
+## 10. Using it in Python
+
+Section 2 explained the widest gap, the soft margin and the kernel trick, and
+section 6 named the libraries. This section shows the calls, and the whole of
+section 2 turns out to be three arguments. After reading it you will be able to
+train a support vector machine and choose its two settings properly.
+
+```python
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import GridSearchCV
+
+# StandardScaler first, for the reason section 5 gave.
+model = make_pipeline(StandardScaler(), SVC(kernel="rbf", C=1.0, gamma="scale"))
+
+# Try every combination and keep the best by 5-fold cross-validation.
+grid = {"svc__C": [0.1, 1, 10, 100], "svc__gamma": [0.001, 0.01, 0.1, 1]}
+search = GridSearchCV(model, grid, cv=5).fit(X, y)
+print(search.best_params_)
+print(search.best_score_)
+```
+
+The double underscore in `"svc__C"` is how scikit-learn addresses a setting
+inside one step of a pipeline, and the name `svc` before it is the step name that
+`make_pipeline` builds from the lowercased class name. So `"svc__C"` means the
+`C` of the `SVC` step, and writing it that way lets `GridSearchCV` vary the
+model's settings while the scaling still happens separately inside each fold.
+
+The library gives you the whole optimisation. `kernel="rbf"` is section 2's
+kernel trick as a single string, `C` is its soft margin, and `gamma` is how
+quickly the bell-shaped kernel falls off with distance. Underneath, scikit-learn
+calls LIBSVM, which section 6 named, so none of the solving is yours.
+`gamma="scale"` is a starting value worked out from the spread of your own data
+rather than a fixed number, which is why it is the default.
+
+What you have to collect is `X` and `y`, and what you must not forget is the
+scaling, because section 5 listed unscaled columns as the first thing that
+spoils the gap. If you need a chance rather than a side of the boundary, pass
+`probability=True` to `SVC`, which runs the Platt scaling that section 5
+described, but expect `fit` to take several times longer, because that extra
+fitting is itself done by cross-validation inside the call.
+
+What you have to decide is `C` and `gamma`, and the code above is the honest way
+to do it. Section 5 said that these settings matter a lot and that the fix is to
+try a grid of values and test each on held-out examples, so a search like this is
+the method rather than a refinement of it. The cost is that the search fits the
+model 16 x 5 = 80 times, which is quick on the few hundred to few thousand rows
+that section 7 says an SVM suits, and slow enough on more to be one reason the
+method was left behind.

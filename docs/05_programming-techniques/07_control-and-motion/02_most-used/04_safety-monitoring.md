@@ -42,6 +42,7 @@ section 7 draws that line in full.
 8. [Why a software safety layer, and what it costs](#8-why-a-software-safety-layer-and-what-it-costs)
 9. [The learned alternative](#9-the-learned-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -523,3 +524,64 @@ of it.
   hold the "running", "paused" and "stopped" states the monitor switches between.
 - Book 3's [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md)
   covers the ROS 2 controller layer, its tolerances, and speed scaling.
+
+---
+
+## 11. Using it in Python
+
+Section 3 listed the checks a safety layer makes, from joint limits and workspace boxes
+to a watchdog for commands that stop arriving, and section 7 was clear that none of
+this is a certified safety function. Section 6 named the tools that already contain
+these checks, but every one of them is C++ configured from YAML. This section therefore
+shows the Python you would actually write, so that after reading it you know both the
+shape of the monitor and why there is no package to install for it.
+
+```python
+import numpy as np, time
+
+Q_MIN = np.array([-2.90, -1.76])           # radians, from the arm's manual
+Q_MAX = np.array([ 2.90,  1.76])
+V_MAX = np.array([ 2.18,  2.18])           # radians per second, from the manual
+BOX_MIN = np.array([0.20, -0.35, 0.02])    # allowed workspace, metres, in the base frame
+BOX_MAX = np.array([0.70,  0.35, 0.60])
+COMMAND_TIMEOUT = 0.1                      # seconds
+
+class SafetyMonitor:
+    def __init__(self):
+        self.last_command_time = time.monotonic()
+
+    def check(self, q_cmd, q_now, dt, tip_xyz):
+        now = time.monotonic()
+        if now - self.last_command_time > COMMAND_TIMEOUT:
+            return None, "no command for longer than the timeout"
+        self.last_command_time = now
+        if np.any(tip_xyz < BOX_MIN) or np.any(tip_xyz > BOX_MAX):
+            return None, "tool outside the allowed box"
+        step = np.clip(q_cmd - q_now, -V_MAX * dt, V_MAX * dt)    # speed limit
+        return np.clip(q_now + step, Q_MIN, Q_MAX), None          # position limit
+```
+
+Returning `None` means "do not move", and the caller then holds the arm where it is or
+starts the stop described in section 3. Everything in those twenty lines is yours, and
+that is the honest answer for this technique. The only library call is `numpy.clip`,
+which clamps an array between two bounds, and you could write it as a loop.
+
+The tools in section 6 do contain the same checks, but you reach them by configuration
+rather than by a Python call. `ros2_control`'s `joint_limits` package reads the limits
+out of the robot description and enforces them inside the C++ controller manager, and
+`moveit_servo` does the collision and singularity checks in C++ as well, with a
+`cmd_timeout` in its YAML file playing the part of `COMMAND_TIMEOUT` above. So when you
+work in ROS 2 the sensible division is to let those tools hold the limits that come
+from the arm's description, and to write in Python only the checks that your own
+program knows about, such as a keep-out box that exists because of where you put the
+conveyor.
+
+What you have to decide or measure is every number in that file, and this is where the
+work really is. The joint and speed limits come from the arm's manual. The workspace
+box comes from measuring your cell, and it must be measured in the arm's base frame,
+because a tool position that your camera reported in the camera frame has to be
+transformed first or the box will be in the wrong place. The timeout has to be a small
+multiple of your command period, so that a single late message does not stop the arm
+while a crashed sender does. And the speed limit needs a reason behind it: section 7
+explains that a limit meant to protect a person has to come from a risk assessment and
+from the numbers in ISO 10218 and ISO/TS 15066, not from what looked smooth on the day.

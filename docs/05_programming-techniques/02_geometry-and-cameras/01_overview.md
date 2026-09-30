@@ -20,6 +20,7 @@ most, and how they connect to the rest of the book.
 5. [Why small mistakes here matter so much](#5-why-small-mistakes-here-matter-so-much)
 6. [How this chapter connects to the others](#6-how-this-chapter-connects-to-the-others)
 7. [Where to read next](#7-where-to-read-next)
+8. [Using it in Python](#8-using-it-in-python)
 
 ---
 
@@ -244,3 +245,74 @@ chapter.
   builds transforms by hand on a flat two-joint arm, and is the gentlest start.
 - Book 3's [frames, conventions, and the bug class that comes from mixing them](../../03_frameworks/03_arm-movement/08_frames-and-conventions.md)
   lists the conventions that differ between libraries, and the bugs they cause.
+
+---
+
+## 8. Using it in Python
+
+Section 2 walked the three steps that turn pixel (212.5, 86.5) into a point in
+the arm's base frame, and section 5 showed how much a small error in any of them
+costs. This section writes those steps as the Python a ROS 2 node really
+contains, so that you can see how short the chain is once the libraries are doing
+the arithmetic. After reading it you should be able to place the boundary between
+what ROS gives you and what you have to get right yourself.
+
+Two libraries do the work, and they are different in kind. `image_geometry` holds
+the camera's own numbers and does the pinhole arithmetic, while `tf2_ros` keeps
+the tree of frames that the whole robot publishes and hands you the transform
+between any two of them at any moment.
+
+```python
+import numpy as np
+import rclpy
+from geometry_msgs.msg import PointStamped
+from image_geometry import PinholeCameraModel
+from tf2_geometry_msgs import do_transform_point
+
+camera = PinholeCameraModel()
+camera.from_camera_info(camera_info_msg)   # the lens numbers, from the camera itself
+
+# Step 1, the pinhole model: the pixel gives a direction, the depth gives the length.
+ray = np.array(camera.project_pixel_to_3d_ray((212.5, 86.5)))   # unit length, z ahead
+depth = 0.340                                                   # metres, straight ahead
+point_camera = ray * (depth / ray[2])        # -> [0.06442 -0.04110  0.340]
+
+# Step 2, a rigid transform: carry that point into the arm's base frame.
+stamped = PointStamped()
+stamped.header.frame_id = "camera_optical_frame"
+stamped.point.x, stamped.point.y, stamped.point.z = point_camera
+
+transform = buffer.lookup_transform("base_link", stamped.header.frame_id,
+                                    rclpy.time.Time())   # buffer is a tf2_ros.Buffer
+point_base = do_transform_point(stamped, transform)
+```
+
+The libraries give you three things. `from_camera_info` reads the four lens numbers
+and the distortion straight out of the message the camera driver publishes, so the
+numbers can never drift apart from the pictures. `project_pixel_to_3d_ray` undoes
+the lens bending and returns a direction of length one, which is why the code
+divides by `ray[2]` before multiplying by the depth: the depth is the distance
+straight ahead, not the distance along the slanted ray. Then `lookup_transform`
+finds the whole chain from the camera to the base, joins every link in it, and
+does that for the moment you asked about rather than for now.
+
+What you still write yourself is the part between them. You have to fetch the
+depth for that pixel out of the depth picture, which means knowing whether the
+depth stream is lined up with the colour stream, and you have to skip the pixels
+where the depth is 0 because the camera got no reading. You also have to wrap
+`lookup_transform` in a `try` block, since it raises an exception when the frame
+you asked for is not in the tree yet, which happens for the first second after
+every start-up.
+
+What you have to decide or measure is which frame the camera's own numbers belong
+to, and this is the mistake section 5 is about. `image_geometry` works in the
+optical frame, with z straight out of the lens and y downwards, while the robot
+model's `camera_link` frame has x forwards and z upwards. Passing the wrong one of
+the two frame names to `lookup_transform` gives an answer that looks sensible and
+is rotated by 90 degrees, so it is worth testing once with a point you have
+measured with a ruler. Book 3's
+[frames, conventions, and the bug class that comes from mixing them](../../03_frameworks/03_arm-movement/08_frames-and-conventions.md)
+lists the rest of these conventions. One more practical note: ROS 2 Jazzy renamed
+these methods to the underscore spellings used above and left the older
+`fromCameraInfo` and `projectPixelTo3dRay` in place as deprecated aliases, so
+older code you read will use those instead.

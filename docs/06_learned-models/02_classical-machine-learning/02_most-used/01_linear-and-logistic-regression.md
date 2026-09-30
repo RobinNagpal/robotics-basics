@@ -41,6 +41,7 @@ written in NumPy.
 8. [Why these, and what they cost](#8-why-these-and-what-they-cost)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -462,3 +463,59 @@ numbers matter together and you want the threshold learned from logged results.
   decide whether to act.
 - [Least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   in Book 5 goes through the maths of the fit in more detail.
+
+---
+
+## 11. Using it in Python
+
+Section 2 worked the weights of a line out from the readings, and section 7
+listed the libraries that do it for you. This section joins the two, by showing
+the calls that produce everything this page described. After reading it you will
+be able to calibrate a sensor and predict a chance from a table of readings,
+without writing any of section 2's arithmetic.
+
+```python
+from sklearn.linear_model import LinearRegression, Ridge, LogisticRegression
+
+# counts has one row per reading and one column per raw sensor count.
+# newtons holds the true force, measured with weights of a known mass.
+line = LinearRegression().fit(counts, newtons)
+print(line.coef_, line.intercept_)   # section 2's weights and its offset
+
+# alpha is section 2's penalty. A larger alpha pulls the weights harder to zero.
+ridge = Ridge(alpha=1.0).fit(counts, newtons)
+
+# trust holds one weight per reading, which is section 2's weighted least squares.
+weighted = LinearRegression().fit(counts, newtons, sample_weight=trust)
+
+# slipped holds 1 if that grasp slipped and 0 if it held.
+grip = LogisticRegression(C=1.0).fit(X, slipped)
+print(grip.predict_proba(X_new)[:, 1])   # section 3's chance of a slip
+```
+
+The column index `[:, 1]` on the last line is there because `predict_proba`
+returns one column per class, and column 1 is the chance of the class labelled 1,
+which here is a slip. Section 7 already warned about the other detail worth
+remembering, which is that `LogisticRegression` applies a ridge penalty by
+default and its strength is set by `C`, where a smaller `C` means a stronger
+penalty. That is the opposite direction from `Ridge`, where a larger `alpha`
+means a stronger penalty.
+
+The library gives you the solving. `LinearRegression` finds the exact
+least-squares answer, and `LogisticRegression` runs the iterative fit of section
+4, so you never write the normal equations or a gradient. It also gives you
+`RidgeCV`, which tries a list of penalties and keeps the best by
+cross-validation.
+
+What you have to collect is the pairs. For the force sensor of section 2 that
+means physically hanging known weights on the gripper and recording the counts,
+and no library can do that part. For the slip model of section 3 it means
+recording grasps and writing down which ones slipped.
+
+What you have to decide is the columns. If the sensor response bends, you add the
+bent columns yourself with `PolynomialFeatures` from `sklearn.preprocessing`, as
+section 2 described, because `LinearRegression` fits a straight relationship in
+whatever columns you hand it. You also decide the penalty, and whether to scale
+the columns first, which matters for any penalty because the penalty treats all
+weights alike and a column measured in millimetres gets a very different weight
+from the same column measured in metres.

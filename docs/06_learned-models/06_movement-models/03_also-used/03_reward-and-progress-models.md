@@ -30,6 +30,7 @@ explained where it first appears.
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
+12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -453,3 +454,75 @@ Deeper documents elsewhere in this repository:
   explains why reward models arriving as downloads matters.
 - [Interactive imitation](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes)
   gives the evidence for HIL-SERL.
+
+---
+
+## 12. Using it in Python
+
+Section 3 named four kinds of judge, and section 7 said that the first of them, a
+success classifier, ships inside LeRobot as part of HIL-SERL. This section trains one,
+because it is the kind of reward model you are most likely to need and the only one in
+this chapter that you can sensibly train in an afternoon. After reading it you will
+know what the library does and what the afternoon is actually spent on.
+
+The reward model is a small network that looks at the camera pictures and says whether
+the task has succeeded. LeRobot builds it on top of a pretrained picture encoder, which
+you name in the configuration, so you are not training a vision model from nothing.
+
+```python
+import torch
+from lerobot.datasets import LeRobotDataset
+from lerobot.rewards import (RewardClassifierConfig, make_reward_model,
+                             make_reward_pre_post_processors)
+
+dataset = LeRobotDataset("lerobot/example_hil_serl_dataset")
+
+config = RewardClassifierConfig(
+    num_cameras=len(dataset.meta.camera_keys),
+    model_name="microsoft/resnet-18",   # the pretrained encoder it starts from
+    device="cpu",
+)
+reward_model = make_reward_model(config, dataset_stats=dataset.meta.stats)
+preprocessor, _ = make_reward_pre_post_processors(config,
+                                                 dataset_stats=dataset.meta.stats)
+optimizer = config.get_optimizer_preset().build(reward_model.parameters())
+
+for batch in torch.utils.data.DataLoader(dataset, batch_size=16, shuffle=True):
+    loss, output = reward_model.forward(preprocessor(batch))
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    print(loss.item(), output["accuracy"])
+```
+
+LeRobot gives you four useful things here. It gives you the network, which is a small
+classifier on top of a picture encoder downloaded from the Hugging Face hub, so
+`model_name="microsoft/resnet-18"` means the encoder has already learned what edges and
+textures look like. It gives you the rescaling of the pictures through the
+preprocessor. It gives you a set of optimiser settings that are known to work, through
+`config.get_optimizer_preset()`, which saves you from guessing a learning rate. And it
+reports the accuracy alongside the loss, which is the number you actually watch, because
+a loss going down tells you less than the fraction of frames it gets right.
+
+What you have to collect is the labelled successes and failures, and this is where the
+afternoon goes. `lerobot/example_hil_serl_dataset` above is a real dataset that lets
+you check the code runs, but the judge you need is a judge of your task, and nobody
+else has recorded it. So you record attempts on your own arm, both the ones that worked
+and the ones that did not, and you mark them. The failures are the part people forget.
+A classifier trained only on successes learns nothing, because it has nothing to
+contrast them with, and a classifier trained on failures that all fail in the same way
+learns only that one way. So you have to make the arm fail in several different ways on
+purpose, which is slower and less pleasant than recording successes.
+
+What you have to decide is the cut-off, and section 5 was a whole worked example about
+it. The classifier gives a number between 0 and 1, and you choose the point above which
+you call the attempt a success. Putting it high means you rarely claim a success that
+was not one, and you miss real ones. Putting it low means the opposite. Which mistake
+costs you more depends on what the number is for, and section 6 lists the four uses.
+
+The progress estimators and the vision-language judges from section 7 are a different
+matter. VIP and LIV are research repositories rather than packages, and Robometer is
+downloadable through LeRobot but, as section 7 says, nobody has yet shown how often it
+agrees with a careful person on a task it was not trained for. So a small classifier
+you trained on your own pictures is, today, the reward model you can actually trust
+most, precisely because you know what is in its training data.

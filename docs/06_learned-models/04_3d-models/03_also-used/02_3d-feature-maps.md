@@ -29,6 +29,7 @@ needs from them.
 8. [Why this rather than asking about each photo, and what it costs](#8-why-this-rather-than-asking-about-each-photo-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
+11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -332,3 +333,65 @@ things are, and not what they are called.
     network.
 - Go back to the [chapter overview](../01_overview.md) to see how this page fits with
     the other three.
+
+---
+
+## 11. Using it in Python
+
+The page has explained that a 3D feature map is built once and then asked many
+times, and that asking means comparing a phrase against the list of numbers held at
+every point. This section shows the asking half in Python, because that is the half
+you can run today with installed libraries. After reading it you will know where the
+line falls between what is packaged and what is research code.
+
+CLIP is in Hugging Face `transformers`, and it turns a phrase into the same 512
+numbers that the map's points are described with.
+
+```python
+import numpy as np
+import open3d as o3d
+import torch
+from transformers import AutoTokenizer, CLIPModel
+
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+tokenizer = AutoTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+
+inputs = tokenizer(["the handle of a mug"], padding=True, return_tensors="pt")
+with torch.inference_mode():
+    text_feature = model.get_text_features(**inputs)      # (1, 512)
+text_feature = torch.nn.functional.normalize(text_feature, dim=-1)
+
+# The map: a cloud, and one list of 512 numbers for each of its points.
+cloud = o3d.io.read_point_cloud("scene.ply")
+point_features = torch.from_numpy(np.load("point_features.npy")).float()
+
+scores = torch.nn.functional.normalize(point_features, dim=-1) @ text_feature.T
+best = np.asarray(cloud.points)[int(scores.argmax())]
+print(float(scores.max()), best)    # the best-matching point, in metres
+```
+
+What is packaged for you out of the box is CLIP itself, and that is the part that
+carries the meaning. You get a text side and an image side that were trained to land
+in the same 512 numbers, so comparing a phrase with a picture is a dot product and
+nothing more. Open3D handles the cloud. Together those cover the last two lines of
+the code above, which is the whole of the asking.
+
+What you still have to write yourself is the building, and that is where the work
+is. The `point_features.npy` above has to come from somewhere, and getting it
+involves a step CLIP does not do: CLIP gives one list of numbers for a whole
+picture, not one per pixel, so the systems in
+[section 5](#5-well-known-models) use a changed version of CLIP, or the per-patch
+outputs of DINOv2, to get a list for each part of each picture. Then they lift those
+lists into 3D with the camera poses and the depth, as
+[step 2](#step-2-lift-the-lists-into-3d) describes. F3RM, ConceptFusion, OpenScene
+and LERF are the code that does this, and all four are research repositories rather
+than installable packages, so you clone one and adapt it rather than importing it.
+
+What you have to decide is which image model to borrow the meaning from, because the
+map can only be as good at telling parts apart as that model is, and CLIP is
+noticeably weaker on parts of objects than on whole objects. You also decide how
+much memory to spend, since 512 numbers for each of 200,000 points is about 400 MB
+in single precision, so real systems either reduce the length of each list or keep
+one list per object rather than per point, as ConceptGraphs does. Finally you decide
+what score counts as a match, because the dot product always returns a best point
+even when nothing in the scene matches your words at all.

@@ -30,6 +30,7 @@ task as a tree, so that the two can be compared directly.
 7. [Why a behaviour tree, and what it costs](#7-why-a-behaviour-tree-and-what-it-costs)
 8. [The learned alternative](#8-the-learned-alternative)
 9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -450,3 +451,78 @@ can serve as a condition such as "grasp failed?".
   [scripted logic](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#3-scripted-logic-state-machines-and-behaviour-trees),
   and a project that uses a tree in
   [sequencing the job: behaviour trees](../../../03_frameworks/04_one-arm-training/04_learning-path.md#sequencing-the-job-behaviour-trees).
+
+---
+
+## 10. Using it in Python
+
+Section 3 explained ticks, the three answers, the kinds of node and the blackboard, and
+section 6 listed the libraries that provide all of that. What no section has shown yet is
+a leaf node in a file. This section shows one, together with the few lines that build a
+tree around it, so that after reading it you know what the library hands you and what
+every leaf costs you.
+
+The example uses `py_trees`, because it is the Python library named in section 6 and the
+one you can run while reading. `BehaviorTree.CPP` is the more common choice in ROS 2, but
+its leaves are C++ classes and its trees are XML files, so it cannot be shown as a short
+Python snippet.
+
+```python
+import py_trees
+
+class CloseGripper(py_trees.behaviour.Behaviour):
+    """One leaf. Every line inside it is yours; py_trees only calls it."""
+
+    def initialise(self):                     # runs once, when this leaf becomes active
+        send_gripper_command(width=0.0, force=20.0)
+
+    def update(self):                         # runs on every tick while this leaf runs
+        if gripper_width() < 0.002:           # closed on nothing, so no mug is held
+            return py_trees.common.Status.FAILURE
+        if gripper_is_still():
+            return py_trees.common.Status.SUCCESS
+        return py_trees.common.Status.RUNNING
+
+    def terminate(self, new_status):          # runs when the leaf stops, for any reason
+        stop_gripper()
+
+grasp = py_trees.decorators.Retry(name="up to 3 grasps",
+                                  child=CloseGripper("close"), num_failures=3)
+root = py_trees.composites.Sequence(name="pick", memory=True)
+root.add_children([MoveAbove("move above"), Descend("descend"), grasp, Lift("lift")])
+
+tree = py_trees.trees.BehaviourTree(root)
+while root.status != py_trees.common.Status.SUCCESS:
+    tree.tick()
+    print(py_trees.display.unicode_tree(root, show_status=True))
+    sleep_until_next_tick()
+```
+
+What the library does for you is the engine and the vocabulary. `tree.tick()` walks the
+tree, works out which leaf is active, and combines the children's answers the way section
+3 describes, so a `Sequence` stops at its first failure and a `Selector` stops at its
+first success. The `Retry` decorator holds the retry counter that section 3's recovery
+needed, which means you do not add a counter to your own code. `py_trees` also calls
+`initialise` once when a leaf starts and `terminate` when it stops for any reason,
+including when a higher branch takes over, which is what stops a half-finished grasp from
+being left running. Finally `py_trees.display.unicode_tree` prints the whole tree with
+each node's answer, which is how you debug a tree at all.
+
+What you still write is every leaf, and that is most of the work. `send_gripper_command`,
+`gripper_width`, `gripper_is_still` and `stop_gripper` are your functions, and so are
+`MoveAbove`, `Descend` and `Lift`, which follow the same three-method shape as
+`CloseGripper`. A leaf must also never block: `update` has to return within one tick, so
+a move is started in `initialise` and only checked in `update`, and writing a leaf that
+waits for the arm to arrive will freeze the whole tree. The loop and its timing are yours
+too, because `py_trees` does not provide a clock; `py_trees_ros` from section 6 does,
+along with the ROS 2 topics and actions.
+
+What you have to decide or measure sits in three places. The first is `memory`, and it
+changes the behaviour of the tree more than its name suggests. With `memory=True` a
+`Sequence` remembers which child was running and resumes there, while with `memory=False`
+it starts again from the first child on every tick, so the earlier checks are re-run and
+the tree becomes reactive in the way section 3 describes. The second is the tick rate,
+which has to be fast enough that a failure is noticed in time and slow enough that every
+check finishes inside one tick. The third is the thresholds inside your leaves, such as
+the 2 mm gripper width above and the 20 N closing force, which are measurements from your
+gripper and your mugs rather than numbers to copy.

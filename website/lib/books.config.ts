@@ -7,7 +7,7 @@
 // book not listed in BOOK_INFO still appears, titled from its folder name, and
 // a chapter not listed in CHAPTER_TITLES uses the title of its first document.
 
-export type Accent = 'teal' | 'violet' | 'amber' | 'blue' | 'green' | 'rose';
+export type Accent = 'teal' | 'violet' | 'amber' | 'blue' | 'green' | 'rose' | 'gold';
 
 export type BookInfo = {
   title: string;
@@ -18,7 +18,48 @@ export type BookInfo = {
   accent: Accent;
 };
 
-export const ACCENTS: Accent[] = ['teal', 'violet', 'amber', 'blue', 'green', 'rose'];
+export const ACCENTS: Accent[] = ['teal', 'violet', 'amber', 'blue', 'green', 'rose', 'gold'];
+
+// The books are grouped into parts. A part is a shelf: several books that
+// belong together. The word "section" is already taken here, because a section
+// is one document inside a chapter, so these groups are called parts instead.
+//
+// Each part lists its books by folder name without the number prefix, and the
+// order below is the order they are shown in. A book that no part lists still
+// appears, in a part of its own at the end, so adding a book never makes it
+// disappear from the site.
+
+export type Part = {
+  slug: string;
+  title: string;
+  /** One sentence saying who the part is for and what it covers. */
+  blurb: string;
+  books: string[];
+};
+
+export const PARTS: Part[] = [
+  {
+    slug: 'foundation',
+    title: 'Robotics Foundation',
+    blurb:
+      'Start here. These four books build the ground every robot arm stands on: the Python and the maths, how a camera turns the world into numbers, the simulators and frameworks the field is built on, and ROS, the software the parts talk through.',
+    books: ['robotics-intro', 'perception', 'frameworks', 'ros-and-rviz'],
+  },
+  {
+    slug: 'techniques-and-models',
+    title: 'Techniques and Models',
+    blurb:
+      'The methods themselves, each one explained on its own. The first book holds the techniques somebody wrote down, and the second holds the models that were fitted to examples instead. Both say where a method is the right tool and where it is not.',
+    books: ['programming-techniques', 'learned-models'],
+  },
+  {
+    slug: 'by-example',
+    title: 'Robotics by Example',
+    blurb:
+      'One problem, followed the whole way down. Instead of explaining a method and then showing a use for it, this part starts with a table, a camera and a job to do, and works through every way the job can be done.',
+    books: ['robotics-by-example'],
+  },
+];
 
 export const BOOK_INFO: Record<string, BookInfo> = {
   'robotics-intro': {
@@ -60,6 +101,14 @@ export const BOOK_INFO: Record<string, BookInfo> = {
     description:
       'The written, language-independent techniques behind seeing, planning and moving: camera geometry, pose from points and calibration, matching and registration, least squares, RANSAC and filters, masks, clustering and 3D maps, sampling-based planning, inverse kinematics and MPC, PID, dynamics and safety monitoring, and state machines and behaviour trees. Each chapter puts the most used techniques first. Each page says where a technique is used on an arm, where it fails, and which library already does it.',
     accent: 'green',
+  },
+  'robotics-by-example': {
+    title: 'Robotics by Example',
+    shortTitle: 'By Example',
+    subtitle: 'One problem on a real table, solved ten ways',
+    description:
+      'Several glasses of one kind stand on a table, and the arm has to work out which pixels belong to which glass. That one question is followed the whole way down: what makes it hard, what the camera can and cannot see, and ten ways to answer it. Three of the ten are written by hand and seven have something trained inside them, and each says what it costs, where it is the right tool, and where it breaks. The programs behind them are in the repository, and each solution names the folder it was built in.',
+    accent: 'gold',
   },
   'learned-models': {
     title: 'Learned Models',
@@ -109,4 +158,6 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'planning-and-search': 'Planning and Search',
   'control-and-motion': 'Control and Motion',
   'decisions-and-task-logic': 'Decisions and Task Logic',
+  'the-cell': 'The Cell Everything Happens In',
+  'many-glasses-of-one-kind': 'Many Glasses of One Kind',
 };

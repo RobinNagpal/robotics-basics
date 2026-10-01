@@ -10,7 +10,8 @@ pages into spoken recordings: `narrate.py` asks a model for a transcript and the
 reads it aloud, the transcripts are committed because they are the part worth
 checking, and the recordings themselves go to S3 rather than into the repository. The folders in `docs/`
 are its structure, so moving a doc moves it on the site too;
-`website/lib/books.config.ts` only holds display text such as book titles.
+`website/lib/books.config.ts` only holds display text such as book titles, and the
+list of parts.
 
 ## IMPORTANT: naming inside `docs/`
 
@@ -31,7 +32,7 @@ docs/03_frameworks/07_stone-stacking.md
 
 - A top-level folder is a **book**: `01_robotics-intro`, `02_perception`,
   `03_frameworks`, `04_ros-and-rviz`, `05_programming-techniques`,
-  `06_learned-models`.
+  `06_learned-models`, `07_robotics-by-example`.
 - A folder inside a book is a **chapter**, and each `.md` file in it is a
   **section**. A `.md` file directly inside a book is a chapter with one section.
 - A folder inside a chapter, such as `07_case-study/`, shows as a labelled group of
@@ -64,6 +65,85 @@ world if the insert is cosmetic.
   `docs/images/one-arm-training/overview/` holds the pictures for
   `docs/03_frameworks/04_one-arm-training/01_overview.md`. This keeps image paths
   stable when a document is renumbered or moved to another book.
+
+## Parts: the books are grouped
+
+The books are grouped into **parts**, and a part is a shelf of the library rather
+than a folder. Nothing in `docs/` says which part a book is in. The list is in
+`website/lib/books.config.ts`, under `PARTS`, and it names each part's books by
+folder name with the number prefix left off.
+
+The groups are called parts and not sections, because a section already means one
+document inside a chapter. Keep those two words apart everywhere, in the site and
+in the docs.
+
+A book that no part lists still appears on the site, in a part of its own at the
+end. So adding a book never makes it disappear, but it does need a line in `PARTS`
+to sit where you meant it to.
+
+## Numbers are reading order, never addresses
+
+The number prefix on a folder or a file says what to read first. It is not part of
+the address of anything.
+
+The site strips it: `docs/05_programming-techniques/02_geometry-and-cameras/` is
+served at `/programming-techniques/geometry-and-cameras/`. So **never write a book
+number into a URL**, and never say "book 5" where a link would do, because books
+get renumbered when one is inserted and the sentence then points at the wrong book.
+Inside the docs, link to the file and let the site work out the address.
+
+## Code lives in a folder named after its book
+
+`code/src/` is split by book. Each folder under it is named after a book folder in
+`docs/`, character for character, prefix and all:
+
+```
+docs/02_perception/              code/src/02_perception/
+docs/05_programming-techniques/  code/src/05_programming-techniques/
+docs/07_robotics-by-example/     code/src/07_robotics-by-example/
+```
+
+Inside that folder the code keeps its own areas, such as
+`code/src/02_perception/camera/camera_basics/`. A book with no code has no folder.
+
+The names match so that a reader with a document open can see which folder holds
+its programs. The cost is that renumbering a book renames its code folder too, and
+then three things have to follow it: the `make` targets in `code/Makefile`, every
+path written in a document, and any path a program prints that a document quotes
+back. Search for the old folder name before you call the rename done, and run one
+of the moved programs to prove the paths still work.
+
+A book whose code is not part of the ROS workspace needs an empty `COLCON_IGNORE`
+file at the top of its folder, because `make build` hands the whole of `src/` to
+colcon and colcon builds every package it finds.
+
+## Adding a book
+
+1. Make `docs/NN_name/` with the next free number, and fill it with chapters and
+   sections under the usual naming rule.
+2. Add the book to `BOOK_INFO` in `website/lib/books.config.ts`, with a title, a
+   short title for the header, a subtitle, a description and an accent colour. A
+   new accent needs its two colours in `app/globals.css`, in both the light and
+   the dark block, and a `[data-accent='name']` line.
+3. Add it to a part in `PARTS`, or make a new part.
+4. Give it a drawing in `components/BookGlyph.tsx`, or it falls back to the arm.
+5. Put its code in `code/src/NN_name/`, named the same.
+6. Run the link check below, then build the site.
+
+Recordings are not made for a new book on its own. `narration/narrate.py` refuses
+to run without `--book`, so a book stays silent until somebody asks for it by
+number, and the player hides itself on a page that has no recording.
+
+## Bringing in work written elsewhere
+
+Documents written for another project keep their words. What changes is the shape:
+the reading-order numbers, the folder layout, one folder of pictures per document,
+and the list of sections at the top.
+
+Every link has to be resolved against the file's old home and written again from
+its new one, including the links in the code that came with it. A link whose target
+did not come across keeps its words and loses its link, rather than pointing at
+nothing.
 
 ## Checking links after any rename
 

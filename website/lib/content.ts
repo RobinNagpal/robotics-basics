@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { ACCENTS, BOOK_INFO, CHAPTER_TITLES, type Accent } from './books.config';
+import { ACCENTS, BOOK_INFO, CHAPTER_TITLES, PARTS, type Accent, type Part } from './books.config';
 
 // The docs are read straight from ../docs in this repo, so the site always
 // shows the current content. Override with ROBOTICS_DOCS_DIR if it lives elsewhere.
@@ -39,6 +39,9 @@ export type Chapter = {
 export type Book = {
   slug: string;
   number: number;
+  /** Which shelf of the library this book sits on. */
+  partSlug: string;
+  partTitle: string;
   title: string;
   shortTitle: string;
   subtitle: string;
@@ -50,8 +53,13 @@ export type Book = {
   url: string;
 };
 
+/** A part of the library, with the books it holds, in the order they are read. */
+export type ShelvedPart = Part & { bookList: Book[] };
+
 export type Library = {
   books: Book[];
+  /** The same books, grouped. Every book appears in exactly one part. */
+  parts: ShelvedPart[];
   /** docs-relative path of a .md file or folder -> site URL */
   urlByRel: Map<string, string>;
 };
@@ -171,9 +179,15 @@ function scan(): Library {
 
   const urlByRel = new Map<string, string>();
 
+  // A book is placed by name, so renumbering or moving a book folder never
+  // moves it to another part.
+  const partOf = new Map<string, Part>();
+  for (const part of PARTS) for (const slug of part.books) partOf.set(slug, part);
+
   const books: Book[] = bookDirs.map((dir, bookIndex) => {
     const bookSlug = stripNumber(dir.name);
     const info = BOOK_INFO[bookSlug];
+    const part = partOf.get(bookSlug);
 
     // Each folder or .md file inside a book is a chapter.
     const chapters: Chapter[] = readDir(dir.name).map((e, i) => {
@@ -213,6 +227,10 @@ function scan(): Library {
     return {
       slug: bookSlug,
       number: bookIndex + 1,
+      // A book no part lists is still shown, under its own title, rather than
+      // being dropped from the site for the sake of a missing line of config.
+      partSlug: part?.slug ?? bookSlug,
+      partTitle: part?.title ?? info?.title ?? humanize(bookSlug),
       title: info?.title ?? humanize(bookSlug),
       shortTitle: info?.shortTitle ?? info?.title ?? humanize(bookSlug),
       subtitle: info?.subtitle ?? '',
@@ -225,7 +243,19 @@ function scan(): Library {
     };
   }).filter((b) => b.chapters.length > 0);
 
-  return { books, urlByRel };
+  // Parts in the order books.config gives, then anything no part claimed, so a
+  // new book shows up even before it is listed.
+  const parts: ShelvedPart[] = [];
+  for (const part of PARTS) {
+    const bookList = books.filter((b) => b.partSlug === part.slug);
+    if (bookList.length > 0) parts.push({ ...part, bookList });
+  }
+  for (const book of books) {
+    if (parts.some((p) => p.bookList.includes(book))) continue;
+    parts.push({ slug: book.partSlug, title: book.partTitle, blurb: book.subtitle, books: [book.slug], bookList: [book] });
+  }
+
+  return { books, parts, urlByRel };
 }
 
 let cached: Library | null = null;

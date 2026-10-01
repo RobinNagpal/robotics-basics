@@ -92,6 +92,27 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
     );
   }
 
+  // Book 7: three tapered glasses on a table, with the camera looking down at
+  // them from above, which is the problem the whole book works through.
+  if (slug === 'robotics-by-example') {
+    const glasses = [
+      { x: 26, w: 7, h: 20 },
+      { x: 52, w: 9, h: 28 },
+      { x: 80, w: 6, h: 16 },
+    ];
+    return (
+      <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
+        <path d="M10 66 L110 66" opacity="0.5" />
+        {glasses.map((g) => (
+          <path key={g.x} d={`M${g.x - g.w - 2} ${66 - g.h} L${g.x - g.w + 1.5} 66 L${g.x + g.w - 1.5} 66 L${g.x + g.w + 2} ${66 - g.h}`} />
+        ))}
+        <path d="M44 10 L68 10 L68 22 L44 22 Z" />
+        <circle cx="56" cy="16" r="3" fill="currentColor" />
+        <path d="M52 22 L26 44 M56 22 L52 36 M60 22 L80 48" strokeDasharray="3 4" opacity="0.55" />
+      </svg>
+    );
+  }
+
   // Book 3, and the fallback: an arm on a grid, reaching for a part.
   return (
     <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>

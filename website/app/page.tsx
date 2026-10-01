@@ -6,7 +6,7 @@ import BookGlyph from '@/components/BookGlyph';
 import { formatMinutes } from '@/lib/format';
 
 export default function Home() {
-  const { books } = getLibrary();
+  const { books, parts } = getLibrary();
   const sections = books.reduce((n, b) => n + b.sectionCount, 0);
   const minutes = books.reduce((n, b) => n + b.minutes, 0);
 
@@ -15,15 +15,17 @@ export default function Home() {
       <section className="hero">
         <p className="eyebrow">Robotics, from first principles</p>
         <h1>
-          Learn robotics in <span className="hero-accent">six short books</span>.
+          Learn robotics in <span className="hero-accent">{books.length} short books</span>.
         </h1>
         <p className="hero-lede">
-          Start with the basics of a robot arm, learn how a robot sees, then move on to the frameworks, simulators and
-          methods used to make real arms work, the programming techniques they are built from, and the neural network
-          models that learn what is hard to write. Every chapter comes from the robotics-basics docs and follows their
-          reading order.
+          The books come in {parts.length} parts. The foundation builds the ground a robot arm stands on, from the maths
+          and the camera to the frameworks and ROS. The techniques and models then explain the methods themselves, both
+          the ones somebody wrote down and the ones fitted to examples. The last part takes one problem on a real table
+          and follows it the whole way down. Every chapter comes from the robotics-basics docs and keeps their reading
+          order.
         </p>
         <div className="hero-stats">
+          <span><strong>{parts.length}</strong> parts</span>
           <span><strong>{books.length}</strong> books</span>
           <span><strong>{books.reduce((n, b) => n + b.chapters.length, 0)}</strong> chapters</span>
           <span><strong>{sections}</strong> sections</span>
@@ -37,8 +39,14 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="book-grid" aria-label="Books">
-        {books.map((book) => (
+      {parts.map((part) => (
+        <section key={part.slug} className="part" aria-labelledby={`part-${part.slug}`}>
+          <div className="part-head">
+            <h2 id={`part-${part.slug}`}>{part.title}</h2>
+            <p>{part.blurb}</p>
+          </div>
+          <div className="book-grid">
+            {part.bookList.map((book) => (
           <article key={book.slug} className="book-card" data-accent={book.accent}>
             <Link href={book.url} className="book-card-link" aria-label={`Book ${book.number}: ${book.title}`} />
             <div className="book-card-cover">
@@ -63,17 +71,22 @@ export default function Home() {
                 <BookProgress urls={book.chapters.flatMap((c) => c.sections.map((s) => s.url))} compact />
               </div>
             </div>
-          </article>
-        ))}
-      </section>
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
 
       <section className="how">
         <h2>How the books are organised</h2>
         <div className="how-grid">
           <div>
             <span className="how-step">1</span>
-            <h3>Books</h3>
-            <p>Six books, each covering one broad area. Read them in order, or go straight to the one you need.</p>
+            <h3>Parts and books</h3>
+            <p>
+              Each book covers one broad area, and the books are grouped into parts. Read them in order, or go straight
+              to the one you need.
+            </p>
           </div>
           <div>
             <span className="how-step">2</span>

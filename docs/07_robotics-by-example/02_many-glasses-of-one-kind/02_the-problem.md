@@ -1,4 +1,4 @@
-# Problem 2 — many glasses of one kind, seen from few viewpoints
+# The problem: many glasses, seen from few viewpoints
 
 ## Introduction
 

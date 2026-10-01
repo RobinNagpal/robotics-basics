@@ -1,4 +1,4 @@
-# Problem 2 — learned approaches that need more than a simulator
+# Learned approaches that need more than a simulator
 
 ## Introduction
 

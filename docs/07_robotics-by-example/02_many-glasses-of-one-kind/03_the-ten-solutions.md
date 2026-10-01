@@ -1,4 +1,4 @@
-# Problem 2 — how it would be solved
+# How it would be solved: the ten solutions
 
 ## Introduction
 

@@ -1,4 +1,4 @@
-# Problem 2 — many glasses of one kind
+# Many glasses of one kind: an overview
 
 Several glasses of the same kind stand on the table. The arm has to work out
 which pixels belong to which glass, where each one stands, and roughly how wide

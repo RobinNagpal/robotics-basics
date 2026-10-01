@@ -34,6 +34,8 @@
   --green-soft: #e9f3e1;
   --rose: #be185d;
   --rose-soft: #fce7f1;
+  --gold: #8a6508;
+  --gold-soft: #f7efdc;
 
   --accent: #1f5fbf;
   --accent-soft: #e6eefb;
@@ -70,6 +72,8 @@
   --green-soft: rgb(143 209 106 / 0.12);
   --rose: #f47eb4;
   --rose-soft: rgb(244 126 180 / 0.13);
+  --gold: #d9ac4a;
+  --gold-soft: rgb(217 172 74 / 0.13);
 
   --accent: #7aa7ff;
   --accent-soft: rgb(122 167 255 / 0.12);
@@ -81,6 +85,7 @@
 [data-accent='blue'] { --accent: var(--blue); --accent-soft: var(--blue-soft); }
 [data-accent='green'] { --accent: var(--green); --accent-soft: var(--green-soft); }
 [data-accent='rose'] { --accent: var(--rose); --accent-soft: var(--rose-soft); }
+[data-accent='gold'] { --accent: var(--gold); --accent-soft: var(--gold-soft); }
 
 /* -------------------------------------------------------------------- base */
 
@@ -1062,6 +1067,45 @@ kbd {
 
 .next-book-sub {
   color: var(--muted);
+}
+
+/* ------------------------------------------------------------------- parts */
+
+/* The front page is a shelf per part: a heading and a sentence saying what the
+   part is for, then that part's book cards. */
+.part {
+  margin-top: 64px;
+}
+
+.part-head {
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+
+.part-head h2 {
+  margin: 0 0 8px;
+  font-size: clamp(22px, 2.6vw, 28px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.part-head p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* In the header the parts are separated by a thin rule rather than a label,
+   because there is no room up there for three more words. */
+.header-nav-part {
+  display: flex;
+  gap: 4px;
+}
+
+.header-nav-part + .header-nav-part {
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
 }
 
 /* ------------------------------------------------------------------ reader */

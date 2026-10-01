@@ -946,6 +946,29 @@ def narrate(page: pathlib.Path, key: str, model: str, stage: str, force: bool,
 # The record of what exists, and putting it where the site can read it
 # --------------------------------------------------------------------------- #
 
+def page_addresses() -> set[str]:
+    """Every address a page of the site could have a recording at.
+
+    This comes from `docs/`, which is the only source that is true whatever the
+    generator happens to be in the middle of. Asking the state files instead
+    answers wrongly while a page is being made: its sections are on disk and its
+    state file is not written until the end, so every piece of a page in flight
+    looks like a page of its own.
+    """
+    return {url_path(doc) for doc in DOCS.rglob("*.md")}
+
+
+def page_files() -> list[pathlib.Path]:
+    """The joined recordings, one per page, in a stable order."""
+    if not AUDIO.exists():
+        return []
+    addresses = page_addresses()
+    return sorted(
+        mp3 for mp3 in AUDIO.rglob("*.mp3")
+        if mp3.relative_to(AUDIO).with_suffix("").as_posix() in addresses
+    )
+
+
 def section_files() -> set[pathlib.Path]:
     """Every MP3 that is one section of a page rather than a whole page.
 
@@ -980,13 +1003,9 @@ def rebuild_manifest() -> dict:
     was made.
     """
     entries: dict[str, dict] = {}
-    pieces = section_files()
-    if AUDIO.exists():
-        for mp3 in sorted(AUDIO.rglob("*.mp3")):
-            if mp3 in pieces:
-                continue
-            address = str(mp3.relative_to(AUDIO).with_suffix(""))
-            entries[address] = {"bytes": mp3.stat().st_size}
+    for mp3 in page_files():
+        address = str(mp3.relative_to(AUDIO).with_suffix(""))
+        entries[address] = {"bytes": mp3.stat().st_size}
     MANIFEST.write_text(json.dumps(entries, indent=2, sort_keys=True) + "\n")
     return entries
 
@@ -1055,15 +1074,15 @@ def upload(bucket: str, values: dict[str, str]) -> None:
     """
     cache = "public, max-age=31536000, immutable"
     where = aws_credentials(values)
-    # The joined pages are named one by one rather than matched by a pattern.
-    # The pattern this replaced excluded anything under a folder whose name began
-    # with two digits and a hyphen, which is how a piece is named, but it is also
-    # how a page would be named if its own title began with a number. Such a page
-    # would have been left out of the sync and would never have gained a player,
-    # and nothing would have said so. Naming the files cannot do that, and the
-    # names come from the same record the manifest is built from.
-    pieces = section_files()
-    pages = [mp3 for mp3 in sorted(AUDIO.rglob("*.mp3")) if mp3 not in pieces]
+    # The joined pages are named one by one rather than matched by a pattern, and
+    # the names come from `docs/` rather than from anything the generator wrote.
+    # Two earlier ways of choosing them were both wrong. A pattern that excluded
+    # names beginning with two digits and a hyphen also excluded a page whose own
+    # title began with a number. Taking everything that the state files did not
+    # call a piece uploaded every section of a page that was still being made,
+    # because its state file is not written until it finishes. A page's address
+    # is a fact about `docs/`, so that is what is asked.
+    pages = page_files()
     if not pages:
         print("   nothing to upload: no recordings on disk", flush=True)
         return

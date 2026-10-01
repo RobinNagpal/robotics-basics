@@ -1,0 +1,65 @@
+{
+  "version": "v1",
+  "url": "robotics-by-example/many-glasses-of-one-kind/learned--needs-more-than-a-simulator",
+  "page": "docs/07_robotics-by-example/02_many-glasses-of-one-kind/05_learned/11_needs-more-than-a-simulator.md",
+  "title": "Learned approaches that need more than a simulator",
+  "audio": "robotics-by-example/many-glasses-of-one-kind/learned--needs-more-than-a-simulator.mp3",
+  "duration": 1127.07,
+  "generated": "2026-10-01T20:10:59Z",
+  "voice": "Erinome",
+  "speech_model": "gemini-2.5-pro-preview-tts",
+  "sections": [
+    {
+      "index": 0,
+      "id": "introduction",
+      "title": "Introduction",
+      "anchor": "introduction",
+      "start": 0.0,
+      "duration": 86.65,
+      "words": 194,
+      "source_sha": "732d935f2dc2a890bdbc60b2123e271e0ca5d57e37637880f08b198a3ce9a42b",
+      "text_updated": "2026-10-01T20:03:30Z",
+      "audio_updated": "2026-10-01T20:05:53Z",
+      "file": "robotics-by-example/many-glasses-of-one-kind/learned--needs-more-than-a-simulator/00-introduction.mp3"
+    },
+    {
+      "index": 1,
+      "id": "the-test-it-had-to-pass",
+      "title": "The test it had to pass",
+      "anchor": "the-test-it-had-to-pass",
+      "start": 86.65,
+      "duration": 194.58,
+      "words": 542,
+      "source_sha": "b8df765344311a69821876bc185b5ca70a7f97eccfa8a2fffa72794c33d934a0",
+      "text_updated": "2026-10-01T20:03:53Z",
+      "audio_updated": "2026-10-01T20:07:26Z",
+      "file": "robotics-by-example/many-glasses-of-one-kind/learned--needs-more-than-a-simulator/01-the-test-it-had-to-pass.mp3"
+    },
+    {
+      "index": 2,
+      "id": "an-active-vision-policy",
+      "title": "An active-vision policy",
+      "anchor": "an-active-vision-policy",
+      "start": 281.23,
+      "duration": 770.97,
+      "words": 1983,
+      "source_sha": "845883f99b65484cd62a7493591941778e0de7690f9ed060f176c2185f04495a",
+      "text_updated": "2026-10-01T20:04:42Z",
+      "audio_updated": "2026-10-01T20:10:14Z",
+      "file": "robotics-by-example/many-glasses-of-one-kind/learned--needs-more-than-a-simulator/02-an-active-vision-policy.mp3"
+    },
+    {
+      "index": 3,
+      "id": "what-to-take-from-it",
+      "title": "What to take from it",
+      "anchor": "what-to-take-from-it",
+      "start": 1052.2,
+      "duration": 74.69,
+      "words": 191,
+      "source_sha": "57ec5502083025090c5af66afc302195e508a88012317c433738cfa921005f35",
+      "text_updated": "2026-10-01T20:04:59Z",
+      "audio_updated": "2026-10-01T20:10:59Z",
+      "file": "robotics-by-example/many-glasses-of-one-kind/learned--needs-more-than-a-simulator/03-what-to-take-from-it.mp3"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+Seeing models: an overview. This page opens the chapter on seeing models, which are the models that turn a picture into names, boxes, outlines, poses, or depth. They are the first of the seven kinds of model in this book, and a robot arm with a camera almost always uses at least one of them.
+
+The page answers four questions: what seeing models are for, what question they answer for a robot arm, what kinds there are and how they differ, and how they connect to the other kinds of model in this book.
+
+It is written for a reader who has already read the first chapter on what models are, so you should already know that a model is a function learned from examples, and that a picture is only a grid of numbers to a computer. However, you do not need to know how any seeing model works inside, because each of the next seven pages explains one kind on its own.
+
+The first section explains what seeing models are for. A camera gives the robot a picture, and that picture is a grid of small coloured dots called pixels. A normal camera picture has hundreds of thousands of pixels, and each pixel is stored as three numbers: how much red, how much green, and how much blue it has.
+
+But the robot cannot use those numbers directly, because it does not need to know that pixel number fifty-one-thousand-two-hundred is dark blue. It needs to know instead that there is a mug on the table, where the mug is, and which way its handle points.
+
+This is what a seeing model does. It takes a picture in and gives back something the robot can use, such as the name of the mug and the place where it stands. People also call these computer vision models, because computer vision is the name of the field that teaches computers to make sense of pictures.
+
+Almost every seeing model in use today is a neural network, which is a model built from many layers of simple sums, as the page inside a neural network explains. The network learns those sums from many example pictures, and each example picture comes with the correct answer already written down by a person.
+
+Before neural networks, people wrote the steps by hand, so a program could find every orange pixel and then call that area the orange ball. Book two shows this method on the page about finding an object in a picture. Hand-written steps of that kind still work well for simple cases. However, they stop working when the object has many colours, when the light changes, or when there are many kinds of object. A seeing model handles those cases, because it has seen thousands of examples of each.
+
+The next part of the page covers the question they answer for a robot arm. The previous section said that a seeing model turns pixels into something the robot can use. Whatever that something turns out to be, every seeing model answers some form of one question: what is in front of the camera, and where is it?
+
+The different kinds of seeing model answer that question at different levels of detail. The simplest answer is just a name, a more useful answer adds a box around each object, and the most detailed answer gives the exact outline of the object.
+
+A diagram on the page shows the same mug answered at those three levels of detail. The first just says the word mug. The second draws a rectangular box around the mug. The third traces the exact shape of the mug.
+
+With only a name, the arm knows that a mug is there but not where to reach, and with a box it knows roughly where to reach. With an outline it knows exactly which pixels are mug, so it can then find the handle or the middle of the side.
+
+More detail usually costs more, because a model that gives outlines is often slower than one that gives boxes. Its training pictures also take longer for a person to label, since somebody has to trace every outline by hand.
+
+The next section introduces the seven kinds of seeing models. Because those levels of detail differ so much, this chapter splits seeing models into seven kinds. A diagram shows a single photo of two mugs and a bottle on a table, and then shows the answer each kind of model gives for that same photo.
+
+First, image classification gives one name for the whole picture, such as mug. Second, object detection draws a box around each object and names it. Third, segmentation marks the exact pixels that belong to each object or each kind of thing. Fourth, keypoints and object pose finds named points on an object, and works out which way the object faces. Fifth, depth from pictures works out how far away each pixel is. Sixth, open-vocabulary models find objects that you describe in words, or that you point at with a click. Finally, tracking and motion follows objects and points from one picture to the next.
+
+This progression is easiest to see in the first three kinds, which build on each other. A detector contains most of a classifier, and a segmentation model in turn often contains a detector.
+
+Because some of the seven kinds come up far more often than others, the chapter puts the seven pages into two groups. The most-used group holds the four kinds that almost every robot arm with a camera relies on. These are object detection, segmentation, open-vocabulary models, and keypoints and object pose. Together they answer which object, exactly where, and which way is it turned, which is exactly what a pick needs. The pose page also covers following a pose through a video, called six-D pose tracking.
+
+The also-used group holds the three kinds that are common but needed less often. These are image classification, depth from pictures, and tracking and motion. Those three are needed less often because a classifier gives too little detail for most picks, depth from pictures is mainly for when a depth camera fails, and tracking matters only when things move.
+
+The next section explains how the seven kinds compare. A table sets them side by side, showing what goes into each model, what comes out, a typical use on a robot arm, and a well-known example. For instance, object detection takes in one picture and outputs a box, a name, and a score for each object. A typical use is finding each cup on a table, and a well-known example is YOLO. Segmentation also takes one picture but outputs the exact pixels of each object, which is useful for finding the rim or the handle of a mug. Open-vocabulary models take a picture along with some words or a click, and output boxes or outlines of whatever the words describe. The table continues like this for all seven kinds, showing how models like keypoints or depth from pictures require different inputs and provide different outputs.
+
+Two of those columns matter most when you choose. The column showing what comes out tells you whether the answer is detailed enough for your job, while the column showing what goes in tells you what camera you need. A depth model, for example, can work from an ordinary camera, while a pose model often wants a depth camera as well.
+
+The next part explains what they have in common. Underneath the differences just described, all seven kinds also share three things.
+
+First, they all start the same way, because the first layers of the network turn the pixels into a smaller grid of numbers that describe edges, corners, and shapes. This part of the network is called the backbone, and different kinds of seeing model often use the same backbone and change only the last layers. So the last layers, called the head, are what differ. A classification head gives a name, a detection head gives boxes, and a segmentation head gives outlines.
+
+Second, they all learn from labelled pictures, where a label is the correct answer that a person wrote down for one picture. For a classifier the label is a name, for a detector it is a box and a name for each object, and for a segmentation model it is an outline for each object. The page on where the data comes from explains how people collect these.
+
+Third, they only know what they were trained on, so a model trained on kitchen photos may well miss a metal part in a factory. Instead of saying "I do not know", it usually gives a wrong answer, or no answer at all. The usual fix is to collect a few hundred pictures of your own objects and train the model a little more on them, which is called fine-tuning. The chapter-one page on fine-tuning explains the ways to do it and what each costs, and each of the next pages says how it is done for that kind.
+
+The next section covers how seeing models connect to the other kinds of model. Seeing models rarely work alone, because they usually come first in a robot's program, where they turn the camera picture into facts about objects. The other kinds of model then work on those facts rather than on the pixels themselves.
+
+First, 3D models work on 3D points and whole scenes instead of flat pictures, so a seeing model often picks out the pixels of one object first and the 3D model then works only on that object's points. Second, grasp models decide where and how to hold an object. Many of them take a mask from a segmentation model, so that they only look for grasps on the object the robot should pick. Third, movement models decide how the arm should move, moment by moment. Many of them contain a seeing model's backbone inside them, which turns each camera picture into numbers. Fourth, language models understand words, and connect words to pictures and actions, which is why the open-vocabulary models in this chapter sit on the border between seeing and language. Fifth, world models predict what will happen next if the arm does something. Some of them predict future pictures, which is close to the tracking and motion models here. Finally, touch and body models make sense of touch, force, and the arm's own body, and because some touch sensors produce pictures, the same kinds of network read those pictures too. The page called the map of models shows all seven kinds of model together.
+
+The next section is about which page to read first. Since the seven kinds connect to each other in the ways just described, the order you read them in depends on what you already know. If you are new to seeing models, read the most-used pages in order, starting with object detection. If a word such as backbone or score is new to you there, read image classification first, because it is the simplest seeing model and it explains the parts that every other seeing model reuses.
+
+If you already know what you need, here is where to look. To find objects on a table and pick them up, read object detection, then segmentation. To put a part into a fixture at an exact angle, read keypoints and object pose. To follow a part's full pose while it moves, read six-D pose tracking. To measure distances with only an ordinary camera, read depth from pictures. To handle objects that no model was trained on, read open-vocabulary models. And to follow objects that move, read tracking and motion.
+
+The section on where to read next explains that the next page is object detection, the first of the most-used group, and it explains how a network draws a box round each object and then names it. If you want the simplest seeing model first, image classification opens the also-used group instead. For practical detail on the models you can download, their licences and their speed, Book two has two deeper documents on models that find objects and models that measure.
+
+The final section is about using it in Python. The seven kinds above are described as ideas, and each one of them is also a file you can download and call. So this section explains how to run the most used of the seven, an object detector, on a single picture. The page shows a short Python script of about five lines that gets names and boxes out of a photo. It uses a package called Ultralytics, which holds the YOLO family of detectors.
+
+First, the code loads the model. The trained numbers download themselves the first time into a small file. Next, it calls the model on a picture of a table, setting a confidence threshold of zero point two five. Calling the model gives one result per picture. Finally, it loops through the boxes in the result, looking up the name of each object and printing the name, the confidence score, and the box coordinates.
+
+Ultralytics is used here because it needs fewer lines than any other way of running a detector. It does a lot inside those five lines, because it downloads the trained numbers, resizes the picture to the size the network expects, runs the network, removes the duplicate boxes, and gives the coordinates back on the original picture's scale.
+
+What the downloaded model gives you out of the box is the eighty everyday classes of the COCO dataset, so it finds cups, bottles, bowls, chairs, and people in an ordinary photo without any training from you. For those objects that really is most of the job, and it is worth saying so plainly, because a working detector in five lines surprises people who expect months of work.
+
+What you still have to write yourself is everything that happens after the list of boxes. The four numbers for the box coordinates are pixels, and a pixel is a direction from the camera rather than a place on your table. So you read the distance at that pixel from a depth camera, turn the pixel and the distance into a point in metres, move that point from the camera's frame into the arm's frame, and only then can the arm reach for it. None of those steps is in the library.
+
+What you have to decide is the confidence threshold, which was zero point two five in the code, and whether the eighty classes cover your own objects at all. A threshold that is too low invents objects, and one that is too high misses real ones. If your parts are not among the eighty classes then no threshold helps, because the model has never seen them, and you have to train it further on your own pictures instead. The page on fine-tuning explains how.

@@ -2134,6 +2134,44 @@ kbd {
   cursor: pointer;
 }
 
+/* After the first play the row follows the screen, so the pause button and the
+   position bar stay in reach while the reader scrolls through the page they are
+   listening to. Sticky rather than fixed, because the row then keeps the width
+   of the text column and keeps its place in the page when the reader scrolls
+   back up. It stops under the site header, which is itself sticky and 60px
+   tall, and the small gap keeps the two from touching. */
+.page-audio-following {
+  position: sticky;
+  top: calc(var(--header-h) + 8px);
+  z-index: 30;
+  /* The text now passes underneath, so the background has to be solid and the
+     edge has to be visible against it. */
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+/* The gap above the row would otherwise be a window onto the text sliding past
+   underneath, so it is filled with the page's own background colour. The strip
+   is the same colour as what is behind it while the row is still sitting in its
+   own place, so it only becomes visible once the row starts following. */
+.page-audio-following::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 8px;
+  background: var(--bg);
+}
+
+/* A heading reached from the table of contents normally stops just below the
+   site header. While the row is following the screen it would stop behind the
+   row, so the row's measured height is added to that distance. The fallback
+   covers the moment before the first measurement arrives. */
+html[data-audio-following] {
+  scroll-padding-top: calc(var(--header-h) + var(--page-audio-h, 72px) + 24px);
+}
+
 /* Under about 560px the row runs out of width, so the controls drop below the
    seek bar rather than squeezing the time out of sight. */
 @media (max-width: 560px) {

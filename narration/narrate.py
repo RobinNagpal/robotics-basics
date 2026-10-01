@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Turn the pages of a book into spoken narration.
+"""Turn the pages of a book into spoken narration, one section at a time.
 
-The site presents the Markdown in `docs/` as books, chapters and sections. This
-script gives each of those sections an audio recording, so that the same
-material can be followed by someone who is not looking at a screen.
+The site presents the Markdown in `docs/` as books, chapters and pages. This
+script gives each page an audio recording, so that the same material can be
+followed by someone who is not looking at a screen.
 
 It runs in two stages, and the stages are separate on purpose.
 
@@ -11,8 +11,8 @@ First a text model reads the page and writes a **transcript**: the words to be
 spoken. This is not the page read out. A page holds diagrams, code, tables and
 links, none of which mean anything aloud, so the model is asked to say what the
 diagram shows, to explain what the code does rather than recite it, and to skip
-the table of contents entirely. The instruction it is given is in `prompt.md`,
-beside this file, so it can be read and changed without touching the code.
+the table of contents entirely. The instruction it is given lives beside this
+file, so it can be read and changed without touching the code.
 
 Then a speech model reads that transcript aloud. Transcripts are kept in the
 repository because they are the part worth checking: if a recording says
@@ -20,9 +20,23 @@ something wrong, the transcript is where the mistake is, and fixing it costs one
 speech call rather than two model calls. Audio is not kept in the repository,
 because it is large and can be made again from the transcript.
 
+Work happens per section rather than per page. A section here is one `##`
+heading block inside a page, plus the text before the first heading, which is
+called the lead. Each section gets its own transcript and its own MP3, the MP3s
+are joined into the single file the player asks for, and a state file records
+what was made, how long each section is and where each one starts. The reason is
+cost: when one paragraph of a page changes, only the section holding it has to be
+written and spoken again.
+
+Two shapes therefore exist side by side. A page narrated before this change has
+one whole-page transcript, one MP3 and no state file, and this script leaves such
+a page exactly as it is. `--v1` converts one to the sectioned shape, which costs
+a full set of model calls, so it is asked for rather than assumed.
+
     python narration/narrate.py --book 05                 # a whole book
     python narration/narrate.py --book 05 --chapter 04    # one chapter
     python narration/narrate.py --doc docs/05_.../02_ransac.md
+    python narration/narrate.py --doc docs/07_.../01_the-cell.md --v1
     python narration/narrate.py --book 05 --stage transcript   # stop after the words
     python narration/narrate.py --book 06 --upload            # and push to S3
 
@@ -34,6 +48,8 @@ from __future__ import annotations
 import argparse
 import base64
 import concurrent.futures
+import dataclasses
+import hashlib
 import json
 import os
 import pathlib
@@ -50,7 +66,14 @@ DOCS = ROOT / "docs"
 HERE = ROOT / "narration"
 TRANSCRIPTS = HERE / "transcripts"
 AUDIO = HERE / "audio"
+STATE = HERE / "state"
 MANIFEST = HERE / "manifest.json"
+
+# The instruction for narrating one section, and the older one for narrating a
+# whole page. The whole-page instruction is still used by pages that have not
+# been converted.
+SECTION_PROMPT = HERE / "prompt-section.md"
+PAGE_PROMPT = HERE / "prompt.md"
 
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models"
 
@@ -71,7 +94,24 @@ MP3_BITRATE = "48k"
 # ceiling, and a request that crosses it comes back truncated rather than
 # refused, so chunks are kept well inside it and the audio is joined afterwards.
 # Splitting happens at paragraph boundaries, so no sentence is ever cut in two.
+# A section longer than this is still split into blocks, and those blocks join
+# into that one section's file.
 CHUNK_CHARS = 2600
+
+# The line written in front of each section's words in the transcript file. It
+# is a Markdown comment, so the file still reads as prose, and it is what lets
+# the words of one section be found again when only that section has changed.
+MARKER = re.compile(r"^<!--\s*section:\s*([^|]+?)\s*\|\s*(.*?)\s*-->\s*$", re.M)
+
+# The heading whose section is never narrated. It is a list of links to the rest
+# of the page, and a listener cannot click a link.
+CONTENTS_ID = "contents"
+
+# The page-level `version` in the state file. A page counts as sectioned only
+# when it says exactly this, so a page whose audio is not complete yet says
+# something else and the player falls back to its old behaviour.
+VERSION = "v1"
+DRAFT_VERSION = "v1-draft"
 
 
 # --------------------------------------------------------------------------- #
@@ -102,9 +142,9 @@ def slug(name: str) -> str:
 
 
 def pages(book: str | None, chapter: str | None, doc: str | None) -> list[pathlib.Path]:
-    """Every section to narrate, in reading order.
+    """Every page to narrate, in reading order.
 
-    A section is one Markdown file. Overviews are included, because a listener
+    A page is one Markdown file. Overviews are included, because a listener
     working through a chapter needs the page that says what the chapter is for
     just as much as a reader does.
     """
@@ -132,10 +172,10 @@ def pages(book: str | None, chapter: str | None, doc: str | None) -> list[pathli
 def url_path(page: pathlib.Path) -> str:
     """The site's own URL for a page, which is how audio is matched to it.
 
-    A book is a folder, a chapter is a folder inside it, and a section is a
+    A book is a folder, a chapter is a folder inside it, and a page is a
     Markdown file. A folder inside a chapter, such as `02_most-used`, is a
     labelled group rather than a level of its own, so the site does not give it
-    a path segment: it folds the group into the section's own slug with two
+    a path segment: it folds the group into the page's own slug with two
     dashes, which is why the address ends `most-used--ransac` and not
     `most-used/ransac`.
 
@@ -153,9 +193,167 @@ def url_path(page: pathlib.Path) -> str:
         # and that section takes the chapter's own slug.
         return f"{parts[0]}/{parts[1]}/{parts[1]}"
     if len(parts) == 4:
-        # book / chapter / group / section
+        # book / chapter / group / page
         return f"{parts[0]}/{parts[1]}/{parts[2]}--{parts[3]}"
     return "/".join(parts)
+
+
+def stamp() -> str:
+    """The time now, in UTC, written the one way the state file uses."""
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+# --------------------------------------------------------------------------- #
+# Splitting a page into sections
+# --------------------------------------------------------------------------- #
+
+def fenced(lines: list[str]) -> list[bool]:
+    """Which of these lines sit inside a fenced code block.
+
+    A fence opens with three or more backticks or tildes and closes with at
+    least as many of the same character. This matters because a Python comment
+    and a Markdown example both put a hash at the start of a line, and a hash
+    inside a code block is not a heading. The fence lines themselves are counted
+    as inside, since they are not headings either.
+    """
+    inside = [False] * len(lines)
+    opener: str | None = None
+    for index, line in enumerate(lines):
+        match = re.match(r"^(`{3,}|~{3,})", line.strip())
+        if opener is None:
+            if match:
+                opener = match.group(1)
+                inside[index] = True
+            continue
+        inside[index] = True
+        if match and match.group(1)[0] == opener[0] and len(match.group(1)) >= len(opener):
+            opener = None
+    return inside
+
+
+def heading_slug(heading: str) -> str:
+    """The anchor a heading gets, by the rule the repository's link check uses.
+
+    Backticks go, a link becomes its own words, bold and italic markers go, then
+    anything that is not a letter, a digit, a space, an underscore or a hyphen is
+    removed and the spaces become hyphens. The rule is copied rather than
+    improved on, because a different answer here would send a reader to an
+    anchor that does not exist.
+    """
+    text = re.sub(r"`", "", heading)
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"\*\*?", "", text)
+    return re.sub(r"[^a-z0-9\s_-]", "", text.lower().strip()).replace(" ", "-")
+
+
+def heading_text(heading: str) -> str:
+    """A heading with its Markdown removed, for showing and for saying aloud."""
+    text = re.sub(r"`", "", heading)
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"\*\*?", "", text)
+    # A pipe would be read as the end of the title in a marker line, and an
+    # arrow would end the comment, so neither is allowed to survive.
+    return text.replace("|", "/").replace("-->", "--").strip()
+
+
+@dataclasses.dataclass
+class Section:
+    """One narrated part of a page.
+
+    `markdown` is the part of the page this section covers, exactly as the page
+    writes it, including the heading line. `source_sha` is taken over that text
+    and is what decides whether the section has to be made again.
+    """
+
+    index: int
+    id: str
+    title: str
+    anchor: str | None
+    markdown: str
+
+    @property
+    def source_sha(self) -> str:
+        return hashlib.sha256(self.markdown.encode()).hexdigest()
+
+
+def page_title(text: str) -> str:
+    """The page's own heading, which is the title of the lead section."""
+    lines = text.splitlines()
+    for line, within in zip(lines, fenced(lines)):
+        if not within and line.startswith("# "):
+            return heading_text(line[2:])
+    return ""
+
+
+def split_sections(text: str, title: str = "") -> list[Section]:
+    """Cut a page into the parts that are narrated separately.
+
+    The cut is made at every top-level `##` heading that is not inside a code
+    block. Everything before the first such heading is the lead, which carries
+    the page's own title and has no anchor of its own. The table of contents is
+    dropped, because it is a list of links and means nothing aloud. A lead that
+    holds nothing but the title line is dropped as well, since there would be
+    nothing to say.
+
+    The returned indexes count the sections that are kept, so they run from zero
+    with no gaps even where a contents section was removed.
+    """
+    lines = text.splitlines()
+    inside = fenced(lines)
+    starts = [
+        index
+        for index, line in enumerate(lines)
+        if not inside[index] and (line.startswith("## ") or line.rstrip() == "##")
+    ]
+    if not title:
+        title = page_title(text)
+
+    blocks: list[tuple[str, str, str | None, str]] = []  # id, title, anchor, markdown
+    first = starts[0] if starts else len(lines)
+    lead = "\n".join(lines[:first]).strip()
+    prose = "\n".join(line for line in lead.splitlines() if not line.startswith("# ")).strip()
+    if prose:
+        blocks.append(("lead", title, None, lead))
+
+    for position, start in enumerate(starts):
+        end = starts[position + 1] if position + 1 < len(starts) else len(lines)
+        heading = lines[start].lstrip("#").strip()
+        identifier = heading_slug(heading)
+        if identifier == CONTENTS_ID:
+            continue
+        blocks.append((identifier, heading_text(heading), identifier,
+                       "\n".join(lines[start:end]).strip()))
+
+    return [
+        Section(index=index, id=identifier, title=name, anchor=anchor, markdown=markdown)
+        for index, (identifier, name, anchor, markdown) in enumerate(blocks)
+    ]
+
+
+def transcript_text(sections: list[tuple[str, str, str]]) -> str:
+    """The whole transcript file: a marker line and then the words, in order."""
+    out = []
+    for identifier, name, words in sections:
+        out.append(f"<!-- section: {identifier} | {name} -->\n\n{words.strip()}")
+    return "\n\n".join(out) + "\n"
+
+
+def read_transcript(path: pathlib.Path) -> list[tuple[str, str, str]]:
+    """The sections a transcript file holds, as id, title and words.
+
+    A transcript written before this change has no marker lines, so nothing is
+    found in it and an empty list comes back. That is how a page of the older
+    shape is recognised from its transcript alone.
+    """
+    if not path.exists():
+        return []
+    text = path.read_text()
+    found = list(MARKER.finditer(text))
+    out: list[tuple[str, str, str]] = []
+    for position, match in enumerate(found):
+        end = found[position + 1].start() if position + 1 < len(found) else len(text)
+        out.append((match.group(1), match.group(2), text[match.end():end].strip()))
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -199,12 +397,11 @@ def call(model: str, body: dict, key: str, attempts: int = 4) -> dict:
     raise ModelError("gave up")
 
 
-def write_transcript(page: pathlib.Path, key: str, model: str) -> str:
-    """Ask the text model for the words to be spoken."""
-    instruction = (HERE / "prompt.md").read_text()
+def ask(instruction: str, content: str, key: str, model: str) -> str:
+    """One text request, with the words of the reply joined into a string."""
     body = {
         "systemInstruction": {"parts": [{"text": instruction}]},
-        "contents": [{"role": "user", "parts": [{"text": page.read_text()}]}],
+        "contents": [{"role": "user", "parts": [{"text": content}]}],
         # Deliberately low: this is a faithful retelling of a page that already
         # exists, and invention is the failure to avoid.
         "generationConfig": {"temperature": 0.3, "maxOutputTokens": 32000},
@@ -216,6 +413,35 @@ def write_transcript(page: pathlib.Path, key: str, model: str) -> str:
     if not text:
         raise ModelError(f"no transcript returned (finish: {candidate.get('finishReason')})")
     return text
+
+
+def write_transcript(page: pathlib.Path, key: str, model: str) -> str:
+    """Ask the text model for the words for a whole page, as v0 pages are made."""
+    return ask(PAGE_PROMPT.read_text(), page.read_text(), key, model)
+
+
+def write_section_transcript(section: Section, title: str, previous: str | None,
+                             key: str, model: str) -> str:
+    """Ask the text model for the words for one section.
+
+    The model is told the page's title, the heading it is narrating and the
+    title of the section before it, so that it can carry on from where the last
+    section stopped instead of introducing the page again.
+    """
+    lines = [f"Page title: {title}"]
+    if section.anchor is None:
+        lines.append("Section: the opening of the page, before the first heading.")
+    else:
+        lines.append(f"Section heading: {section.title}")
+    if previous is None:
+        lines.append("The section before this one: none, this is where the page starts.")
+    else:
+        lines.append(f"The section before this one: {previous}")
+    lines.append("")
+    lines.append("The Markdown of the section to narrate follows.")
+    lines.append("")
+    content = "\n".join(lines) + section.markdown
+    return ask(SECTION_PROMPT.read_text(), content, key, model)
 
 
 def chunks(text: str, limit: int = CHUNK_CHARS) -> list[str]:
@@ -280,11 +506,11 @@ def wav(pcm: bytes, rate: int) -> bytes:
 
 
 # --------------------------------------------------------------------------- #
-# Doing the work
+# Audio files
 # --------------------------------------------------------------------------- #
 
 def speak_all(blocks: list[str], key: str, workers: int) -> tuple[bytes, int]:
-    """Every block of a page, spoken at once rather than one after another.
+    """Every block of a transcript, spoken at once rather than one after another.
 
     The speech model runs at roughly one and a half times real time, so a page
     that becomes twenty-five minutes of audio takes about seventeen minutes to
@@ -311,9 +537,83 @@ def speak_all(blocks: list[str], key: str, workers: int) -> tuple[bytes, int]:
     return b"".join(part for part in done if part is not None), rate
 
 
-def narrate(page: pathlib.Path, key: str, model: str, stage: str, force: bool,
-            workers: int = 4) -> dict | None:
-    """One page, from Markdown to an MP3 beside a transcript."""
+def to_mp3(pcm: bytes, rate: int, target: pathlib.Path) -> None:
+    """Write samples out as the MP3 the player downloads."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    raw = target.with_suffix(".wav")
+    raw.write_bytes(wav(pcm, rate))
+    subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-y", "-i", str(raw),
+         "-codec:a", "libmp3lame", "-b:a", MP3_BITRATE, "-ac", "1", str(target)],
+        check=True,
+    )
+    raw.unlink()
+
+
+def duration(path: pathlib.Path) -> float:
+    """How long an audio file really is, in seconds, asked of the file itself.
+
+    The length is measured rather than worked out from the number of words,
+    because a guess would put every section marker in the wrong place and the
+    error would grow along the page.
+    """
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
+        capture_output=True, text=True, check=True,
+    )
+    return round(float(result.stdout.strip()), 2)
+
+
+def join(parts: list[pathlib.Path], target: pathlib.Path) -> None:
+    """Put the section files end to end into the one file the player asks for.
+
+    The concat demuxer copies the compressed frames across without decoding and
+    encoding them again, so joining a whole page costs a fraction of a second
+    and the sound is the same sound.
+    """
+    target.parent.mkdir(parents=True, exist_ok=True)
+    listing = target.parent / f".{target.stem}.concat"
+    # A single quote inside a quoted path has to be closed, escaped and opened
+    # again, which is the one piece of quoting this file format asks for.
+    lines = [f"file '{str(p.resolve()).replace(chr(39), chr(39) + chr(92) + chr(39) + chr(39))}'" for p in parts]
+    listing.write_text("\n".join(lines) + "\n")
+    # The log level is lower here than anywhere else on purpose. Every MP3
+    # carries a little silence at each end that the encoder put there, so at each
+    # join ffmpeg sees one frame starting a shade before the last one ended and
+    # says so. The file it writes is correct, and a real failure, such as a piece
+    # that is missing, still prints and still fails.
+    try:
+        subprocess.run(
+            ["ffmpeg", "-loglevel", "fatal", "-y", "-f", "concat", "-safe", "0",
+             "-i", str(listing), "-c", "copy", str(target)],
+            check=True,
+        )
+    finally:
+        listing.unlink(missing_ok=True)
+
+
+def offsets(durations: list[float]) -> list[float]:
+    """Where each section starts, which is the sum of the ones before it."""
+    out: list[float] = []
+    running = 0.0
+    for length in durations:
+        out.append(round(running, 2))
+        running += length
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# One page, the older whole-page way
+# --------------------------------------------------------------------------- #
+
+def narrate_page(page: pathlib.Path, key: str, model: str, stage: str, force: bool,
+                 workers: int = 4) -> dict | None:
+    """One page as a single transcript and a single MP3.
+
+    This is how every page recorded before sections existed was made, and it is
+    kept so that those recordings are not thrown away and remade for nothing.
+    """
     address = url_path(page)
     transcript_file = TRANSCRIPTS / f"{address}.md"
     audio_file = AUDIO / f"{address}.mp3"
@@ -342,21 +642,278 @@ def narrate(page: pathlib.Path, key: str, model: str, stage: str, force: bool,
     blocks = chunks(transcript)
     print(f"   speaking {len(blocks)} block(s) on {workers} workers", flush=True)
     pcm, rate = speak_all(blocks, key, workers)
-
-    audio_file.parent.mkdir(parents=True, exist_ok=True)
-    raw = audio_file.with_suffix(".wav")
-    raw.write_bytes(wav(pcm, rate))
-    subprocess.run(
-        ["ffmpeg", "-loglevel", "error", "-y", "-i", str(raw),
-         "-codec:a", "libmp3lame", "-b:a", MP3_BITRATE, "-ac", "1", str(audio_file)],
-        check=True,
-    )
-    raw.unlink()
+    to_mp3(pcm, rate, audio_file)
 
     seconds = len(pcm) // (rate * 2)
     size = audio_file.stat().st_size
     print(f"   audio: {seconds // 60}m {seconds % 60}s, {size // 1024} KB", flush=True)
     return {"seconds": seconds, "bytes": size}
+
+
+# --------------------------------------------------------------------------- #
+# One page, section by section
+# --------------------------------------------------------------------------- #
+
+def existing_section_file(folder: pathlib.Path, identifier: str) -> pathlib.Path | None:
+    """The MP3 already made for this section, whatever number it carries.
+
+    A section's file name starts with its position on the page, so inserting a
+    new section renames the files of everything after it. The audio itself has
+    not changed, so the file is found by its id and renamed rather than spoken
+    again.
+    """
+    if not folder.exists():
+        return None
+    wanted = re.compile(rf"\d\d+-{re.escape(identifier)}$")
+    found = sorted(p for p in folder.glob("*.mp3") if wanted.fullmatch(p.stem))
+    return found[0] if found else None
+
+
+def state_is_current(before: dict, sections: list[Section], address: str) -> bool:
+    """Whether the state file already describes exactly these sections.
+
+    This is what lets a run over a book that has not changed cost nothing. If
+    the record names the same sections in the same order, with the same source
+    text, a measured length for each one and the file name each one should have,
+    there is nothing to join and nothing to write.
+    """
+    if before.get("version") != VERSION or before.get("duration") is None:
+        return False
+    rows = before.get("sections", [])
+    if len(rows) != len(sections):
+        return False
+    for row, section in zip(rows, sections):
+        if row.get("id") != section.id or row.get("index") != section.index:
+            return False
+        if row.get("source_sha") != section.source_sha:
+            return False
+        if row.get("start") is None or row.get("duration") is None:
+            return False
+        if row.get("file") != f"{address}/{section.index:02d}-{section.id}.mp3":
+            return False
+    return True
+
+
+def narrate_sections(page: pathlib.Path, key: str, model: str, stage: str, force: bool,
+                     workers: int = 4) -> dict | None:
+    """One page, written and spoken one section at a time.
+
+    A section whose Markdown has not changed since it was last made keeps its
+    words and its audio and is sent to no model. A section that is new or
+    changed is written and spoken again, and a section that has gone takes its
+    files with it. The page is then joined again and the state file written,
+    because a changed section moves the start of every section after it.
+    """
+    address = url_path(page)
+    source = page.read_text()
+    title = page_title(source) or slug(page.name)
+    sections = split_sections(source, title)
+    if not sections:
+        raise ModelError("nothing to narrate: the page has no prose outside its contents")
+
+    transcript_file = TRANSCRIPTS / f"{address}.md"
+    state_file = STATE / f"{address}.json"
+    folder = AUDIO / address
+    page_audio = AUDIO / f"{address}.mp3"
+
+    before = json.loads(state_file.read_text()) if state_file.exists() else {}
+    records = {record["id"]: dict(record) for record in before.get("sections", [])}
+    held = {identifier: words for identifier, _name, words in read_transcript(transcript_file)}
+
+    # --- the words ---------------------------------------------------------- #
+    # A transcript is often corrected by hand after it has been read against the
+    # page, so the words are rewritten only for a section whose Markdown has
+    # changed, or when the transcript stage is forced.
+    written: list[tuple[str, str, str]] = []
+    rewritten: set[str] = set()
+    previous: str | None = None
+    for section in sections:
+        record = records.get(section.id, {})
+        keep_words = (
+            record.get("source_sha") == section.source_sha
+            and section.id in held
+            and not (force and stage == "transcript")
+        )
+        if keep_words:
+            words = held[section.id]
+            when = record.get("text_updated") or stamp()
+        else:
+            print(f"   writing {section.index:02d} {section.id}", flush=True)
+            words = write_section_transcript(section, title, previous, key, model)
+            when = stamp()
+            rewritten.add(section.id)
+        written.append((section.id, section.title, words))
+        record["source_sha"] = section.source_sha
+        record["text_updated"] = when
+        records[section.id] = record
+        previous = section.title
+
+    spoken = {identifier: words for identifier, _name, words in written}
+    transcript_file.parent.mkdir(parents=True, exist_ok=True)
+    before_text = transcript_file.read_text() if transcript_file.exists() else ""
+    transcript_file.write_text(transcript_text(written))
+    total_words = sum(len(words.split()) for words in spoken.values())
+    verb = "written" if rewritten else "kept"
+    print(f"   transcript: {verb}, {len(sections)} section(s), {total_words} words", flush=True)
+
+    # Words that changed make the audio for them wrong, so that audio goes now
+    # rather than being joined into the page as if it still matched.
+    for identifier in rewritten:
+        stale = existing_section_file(folder, identifier)
+        if stale is not None:
+            stale.unlink()
+
+    # A section that has gone from the page takes its file with it.
+    ids = {section.id for section in sections}
+    dropped = False
+    if folder.exists():
+        for mp3 in sorted(folder.glob("*.mp3")):
+            named = re.fullmatch(r"\d\d+-(.+)", mp3.stem)
+            if named and named.group(1) in ids:
+                continue
+            print(f"   dropping {mp3.name}", flush=True)
+            mp3.unlink()
+            dropped = True
+
+    if stage == "transcript":
+        # The state file is written even now, because it is the only record of
+        # which source text each section's words were written from. It says it is
+        # a draft until the audio is there, so a player that finds it plays the
+        # page as one piece instead of trusting lengths that do not exist yet.
+        write_state(page, address, title, sections, records, spoken, measured={}, total=None)
+        return None
+
+    # --- the speech --------------------------------------------------------- #
+    moved = False
+    spoke = False
+    for section in sections:
+        target = folder / f"{section.index:02d}-{section.id}.mp3"
+        already = existing_section_file(folder, section.id)
+        if already is not None and already != target:
+            # Only the section's place on the page moved, so the file it already
+            # has is renamed rather than spoken again.
+            already.rename(target)
+            moved = True
+        if force or not target.exists():
+            blocks = chunks(spoken[section.id])
+            print(f"   speaking {section.index:02d} {section.id}: "
+                  f"{len(blocks)} block(s) on {workers} workers", flush=True)
+            pcm, rate = speak_all(blocks, key, workers)
+            to_mp3(pcm, rate, target)
+            records[section.id]["audio_updated"] = stamp()
+            spoke = True
+        elif not records[section.id].get("audio_updated"):
+            # This file was made before the state file kept a time for it, as
+            # happens on the run that converts a page, so the time it was last
+            # written on disk is used instead.
+            records[section.id]["audio_updated"] = time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ", time.gmtime(target.stat().st_mtime))
+
+    unchanged = (
+        not rewritten and not spoke and not moved and not dropped
+        and before_text == transcript_file.read_text()
+        and page_audio.exists() and state_is_current(before, sections, address)
+    )
+    if unchanged:
+        print(f"   audio: kept, {len(sections)} section(s)", flush=True)
+        return None
+
+    parts = [folder / f"{section.index:02d}-{section.id}.mp3" for section in sections]
+    join(parts, page_audio)
+    measured = {section.id: duration(part) for section, part in zip(sections, parts)}
+    total = duration(page_audio)
+    state = write_state(page, address, title, sections, records, spoken, measured, total)
+
+    size = page_audio.stat().st_size
+    print(f"   audio: {int(total) // 60}m {int(total) % 60}s over {len(sections)} section(s), "
+          f"{size // 1024} KB", flush=True)
+    return {"seconds": total, "bytes": size, "sections": len(state["sections"])}
+
+
+def write_state(page: pathlib.Path, address: str, title: str, sections: list[Section],
+                records: dict[str, dict], spoken: dict[str, str],
+                measured: dict[str, float], total: float | None) -> dict:
+    """Write the record the player reads, and this script reads back next time.
+
+    The page counts as sectioned only when every section has a measured length.
+    A page whose words exist but whose audio does not yet is marked as a draft,
+    so a player that finds it falls back to playing the page as one piece rather
+    than trusting lengths that are not there.
+    """
+    complete = total is not None and all(section.id in measured for section in sections)
+    starts = offsets([measured.get(section.id, 0.0) for section in sections])
+    rows = []
+    for section, start in zip(sections, starts):
+        record = records.get(section.id, {})
+        made = section.id in measured
+        rows.append({
+            "index": section.index,
+            "id": section.id,
+            "title": section.title,
+            "anchor": section.anchor,
+            "start": start if complete else None,
+            "duration": measured.get(section.id) if made else None,
+            "words": len(spoken.get(section.id, "").split()),
+            "source_sha": record.get("source_sha", section.source_sha),
+            "text_updated": record.get("text_updated"),
+            "audio_updated": record.get("audio_updated"),
+            "file": f"{address}/{section.index:02d}-{section.id}.mp3" if made else None,
+        })
+    state = {
+        "version": VERSION if complete else DRAFT_VERSION,
+        "url": address,
+        "page": page.relative_to(ROOT).as_posix(),
+        "title": title,
+        "audio": f"{address}.mp3",
+        "duration": total,
+        "generated": stamp(),
+        "voice": VOICE,
+        "speech_model": SPEECH_MODEL,
+        "sections": rows,
+    }
+    state_file = STATE / f"{address}.json"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    state_file.write_text(json.dumps(state, indent=2) + "\n")
+    return state
+
+
+def narrate(page: pathlib.Path, key: str, model: str, stage: str, force: bool,
+            workers: int = 4, upgrade: bool = False) -> dict | None:
+    """One page, in whichever shape it already has.
+
+    A page with a state file is already sectioned, so it is kept that way. A page
+    without one was recorded as a single piece, and it stays that way until
+    `--v1` asks for the conversion, because converting costs a full set of model
+    calls for a page that already has a recording that works.
+    """
+    address = url_path(page)
+    if (STATE / f"{address}.json").exists() or upgrade:
+        return narrate_sections(page, key, model, stage, force, workers)
+    return narrate_page(page, key, model, stage, force, workers)
+
+
+# --------------------------------------------------------------------------- #
+# The record of what exists, and putting it where the site can read it
+# --------------------------------------------------------------------------- #
+
+def section_files() -> set[pathlib.Path]:
+    """Every MP3 that is one section of a page rather than a whole page.
+
+    The state files say which those are, so the answer comes from the record
+    rather than from guessing at file names.
+    """
+    out: set[pathlib.Path] = set()
+    if not STATE.exists():
+        return out
+    for state in STATE.rglob("*.json"):
+        try:
+            data = json.loads(state.read_text())
+        except json.JSONDecodeError:
+            continue
+        for section in data.get("sections", []):
+            if section.get("file"):
+                out.add(AUDIO / section["file"])
+    return out
 
 
 def rebuild_manifest() -> dict:
@@ -367,10 +924,17 @@ def rebuild_manifest() -> dict:
     recording becomes playable by being uploaded and needs no rebuild. This file
     exists so that a person can see what has been made without listing a bucket,
     and it is built by looking at the files rather than by trusting this run.
+
+    Only the file the player asks for is listed. The pieces a sectioned page is
+    joined from are left out, because they are a working detail of how the page
+    was made.
     """
     entries: dict[str, dict] = {}
+    pieces = section_files()
     if AUDIO.exists():
         for mp3 in sorted(AUDIO.rglob("*.mp3")):
+            if mp3 in pieces:
+                continue
             address = str(mp3.relative_to(AUDIO).with_suffix(""))
             entries[address] = {"bytes": mp3.stat().st_size}
     MANIFEST.write_text(json.dumps(entries, indent=2, sort_keys=True) + "\n")
@@ -378,23 +942,39 @@ def rebuild_manifest() -> dict:
 
 
 def upload(bucket: str) -> None:
-    """Put the recordings where the site can read them.
+    """Put the recordings and their records where the site can read them.
 
     They go under `audio/` in the same bucket the site is served from, so a page
     and its recording come from one origin and the browser needs no permission
     to fetch across one. The deploy workflow excludes that prefix from its own
     sync, so shipping the site never deletes the recordings.
 
-    Uploading is all it takes for a page to gain a player: the page already asks
-    for this address on every visit, and a missing file is answered with a 404
-    that CloudFront is configured never to cache.
+    Two syncs rather than one, because the content type is set for a whole sync
+    and the two kinds of file need different ones. A browser handed the state
+    file as `audio/mpeg` refuses to parse it as JSON, and then a sectioned page
+    looks to the player exactly like a page with no sections at all.
+
+    The pieces a page is joined from stay on this machine. The player asks for
+    the joined file and the state file, so those are the only two per page worth
+    the transfer.
+
+    Both are stored with a long cache life, so whoever runs this has to flush
+    the edge cache for a page whose recording has been replaced.
     """
+    cache = "public, max-age=31536000, immutable"
     subprocess.run(
-        ["aws", "s3", "sync", str(AUDIO), f"s3://{bucket}/audio/",
-         "--no-progress", "--content-type", "audio/mpeg",
-         "--cache-control", "public, max-age=31536000, immutable"],
+        ["aws", "s3", "sync", str(AUDIO), f"s3://{bucket}/audio/", "--no-progress",
+         "--exclude", "*", "--include", "*.mp3", "--exclude", "*/[0-9][0-9]-*.mp3",
+         "--content-type", "audio/mpeg", "--cache-control", cache],
         check=True,
     )
+    if STATE.exists():
+        subprocess.run(
+            ["aws", "s3", "sync", str(STATE), f"s3://{bucket}/audio/", "--no-progress",
+             "--exclude", "*", "--include", "*.json",
+             "--content-type", "application/json", "--cache-control", cache],
+            check=True,
+        )
 
 
 def main() -> None:
@@ -407,10 +987,17 @@ def main() -> None:
     parser.add_argument("--force", action="store_true",
                         help="redo the work of the stage asked for: with --stage audio it "
                              "speaks the transcript again and leaves the transcript alone")
+    parser.add_argument("--v1", "--upgrade", dest="v1", action="store_true",
+                        help="convert a page recorded as one piece into the section by "
+                             "section shape: split it at its headings, write and speak each "
+                             "section, join them and write a state file. Without this, such a "
+                             "page is left exactly as it is, because converting it costs a "
+                             "full set of model calls. A page that already has a state file "
+                             "is worked on section by section whether this is given or not")
     parser.add_argument("--upload", action="store_true", help="sync the audio to S3 afterwards")
     parser.add_argument("--bucket", default="robotics-basics-web-729763663166")
     parser.add_argument("--workers", type=int, default=4,
-                        help="speech calls to keep in flight at once for one page")
+                        help="speech calls to keep in flight at once for one section")
     args = parser.parse_args()
 
     values = env()
@@ -426,7 +1013,7 @@ def main() -> None:
     for number, page in enumerate(todo, 1):
         print(f"[{number}/{len(todo)}] {page.relative_to(ROOT)}", flush=True)
         try:
-            narrate(page, key, model, args.stage, args.force, args.workers)
+            narrate(page, key, model, args.stage, args.force, args.workers, args.v1)
         except (ModelError, subprocess.CalledProcessError) as error:
             print(f"   FAILED: {error}", flush=True)
             failed.append((page, str(error)))

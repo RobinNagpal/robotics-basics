@@ -108,7 +108,7 @@ The training code first loads the robot's physical description using the Pinocch
 
 The code then sets up a small neural network using PyTorch. The input to the network is the angles, speeds, and speed changes. The target output to learn is the actual torque minus the physics torque, so it learns only what the physics missed. The network trains for two thousand steps to minimize the error.
 
-At run time, the controller then adds the two parts together, and it limits how much the network is allowed to change, to provide a safety guarantee. It asks the network for a correction based on the current angles, speeds, and the change in speed the controller wants. It then sends the motors the physics torque plus the learned correction, clipped to a safe range between minus five and five.
+At run time, the controller then adds the two parts together, and it limits how much the network is allowed to change, because a learned correction carries no guarantee, and a limit is what keeps a bad correction small. It asks the network for a correction based on the current angles, speeds, and the change in speed the controller wants. It then sends the motors the physics torque plus the learned correction, clipped to a safe range between minus five and five.
 
 Pinocchio gives you the physics half, and it reads the masses and lengths from the arm's own description file. It is fast enough to run in a control loop, which matters here because this model is asked hundreds of times a second rather than once per picture. PyTorch gives you the network, and it can be small precisely because the physics has already done most of the work.
 

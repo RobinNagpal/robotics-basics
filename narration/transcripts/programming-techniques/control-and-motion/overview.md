@@ -34,7 +34,7 @@ To show how these layers work together on one move, the page describes a simulat
 
 Three things in this process are worth noticing. First, the planner's waypoints have no times of their own, so the trajectory layer is what chose them. In this run, it gave each stretch of the path a share of the two point four seconds in proportion to its length, so both joints start and end at zero speed. 
 
-Second, the controller never follows the trajectory exactly, because it lags behind while the joint is moving. The largest error is three point four degrees on joint one and four point three degrees on joint two. This lag is called the following error, and it is perfectly normal. This is why a controller with its tolerances set to zero will always fail a move. 
+Second, the controller never follows the trajectory exactly, because it lags behind while the joint is moving. The largest error is three point four degrees on joint one and four point three degrees on joint two. This lag is called the following error, and it is perfectly normal. This is why the books warn that a controller with its tolerances set to zero never checks this error at all, so a move that went wrong is still reported as a success. 
 
 Third, the error is still not zero when the trajectory ends. At two point four seconds, joint one is still one point eight five degrees off, and half a second later it is still zero point nine six degrees off. This happens because the controller keeps working after the trajectory has stopped changing, and it closes the remaining gap slowly. This is called settling time, and it means a move that is done by the clock is not always done at the joint. 
 

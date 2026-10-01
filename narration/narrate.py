@@ -318,8 +318,12 @@ def narrate(page: pathlib.Path, key: str, model: str, stage: str, force: bool,
     transcript_file = TRANSCRIPTS / f"{address}.md"
     audio_file = AUDIO / f"{address}.mp3"
 
-    # The transcript, which is the expensive and checkable half.
-    if transcript_file.exists() and not force:
+    # The transcript, which is the expensive and checkable half. It is rewritten
+    # only when the transcript itself is what was asked for, because a
+    # transcript is often corrected by hand after it has been read against the
+    # page, and asking for the speech again must not throw those corrections
+    # away. To replace the words, ask for the transcript stage.
+    if transcript_file.exists() and not (force and stage == "transcript"):
         transcript = transcript_file.read_text()
         print(f"   transcript: kept ({len(transcript.split())} words)", flush=True)
     else:
@@ -400,7 +404,9 @@ def main() -> None:
     parser.add_argument("--doc", help="one Markdown file, instead of --book")
     parser.add_argument("--stage", choices=("transcript", "audio"), default="audio",
                         help="stop after the transcript, or go on to the speech")
-    parser.add_argument("--force", action="store_true", help="redo work that is already done")
+    parser.add_argument("--force", action="store_true",
+                        help="redo the work of the stage asked for: with --stage audio it "
+                             "speaks the transcript again and leaves the transcript alone")
     parser.add_argument("--upload", action="store_true", help="sync the audio to S3 afterwards")
     parser.add_argument("--bucket", default="robotics-basics-web-729763663166")
     parser.add_argument("--workers", type=int, default=4,

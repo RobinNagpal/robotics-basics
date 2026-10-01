@@ -945,6 +945,48 @@ def rebuild_manifest() -> dict:
     return entries
 
 
+def aws_credentials(values: dict[str, str]) -> dict[str, str]:
+    """Work out which credentials the `aws` command should run with.
+
+    The command finds its own credentials in several ways, and the best of them
+    is `aws login`, which holds a short-lived token it refreshes by itself and
+    keeps no secret on disk. So that is tried first, exactly as the command
+    would do it, and if it answers then nothing is added to its environment.
+
+    Only when it has none of its own are the keys in `.env` used. They are the
+    older arrangement, and the one that fails quietly: a key written there stays
+    there after it is rotated, and because an explicit key beats every other
+    source the command finds, putting a stale one into the environment would
+    break a login that was working. Hence this order, rather than the reverse.
+
+    Either way the answer is checked before a file is sent, so a dead key is
+    reported here rather than part way through a sync.
+    """
+    def works(where: dict[str, str]) -> bool:
+        done = subprocess.run(["aws", "sts", "get-caller-identity"],
+                              env=where, capture_output=True, text=True)
+        return done.returncode == 0
+
+    inherited = dict(os.environ)
+    if works(inherited):
+        return inherited
+
+    from_file = dict(inherited)
+    for key in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION",
+                "AWS_SESSION_TOKEN"):
+        if values.get(key):
+            from_file[key] = values[key]
+    if from_file != inherited and works(from_file):
+        return from_file
+
+    raise SystemExit(
+        "no working AWS credentials, so there is nowhere to upload to.\n"
+        "   Run `aws login` to get a short-lived set, which is the better way\n"
+        "   and keeps no secret on disk. Keys in .env still work, but a rotated\n"
+        "   key left in that file is rejected like any other."
+    )
+
+
 def upload(bucket: str, values: dict[str, str]) -> None:
     """Put the recordings and their records where the site can read them.
 
@@ -966,19 +1008,7 @@ def upload(bucket: str, values: dict[str, str]) -> None:
     the edge cache for a page whose recording has been replaced.
     """
     cache = "public, max-age=31536000, immutable"
-    # The `aws` command reads its credentials from its own environment, and this
-    # script keeps them in `.env` beside the model key, so they are put back into
-    # the environment here rather than being left for the caller to export. A key
-    # already in the real environment wins, which is what `env()` arranges, so a
-    # CI run that has no `.env` file works unchanged.
-    where = dict(os.environ)
-    for key in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION",
-                "AWS_SESSION_TOKEN"):
-        if values.get(key):
-            where[key] = values[key]
-    if not where.get("AWS_ACCESS_KEY_ID"):
-        raise SystemExit("no AWS_ACCESS_KEY_ID in .env or the environment, so "
-                         "there is nowhere to upload to")
+    where = aws_credentials(values)
     subprocess.run(
         ["aws", "s3", "sync", str(AUDIO), f"s3://{bucket}/audio/", "--no-progress",
          "--exclude", "*", "--include", "*.mp3", "--exclude", "*/[0-9][0-9]-*.mp3",

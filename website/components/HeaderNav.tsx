@@ -33,15 +33,29 @@ type Book = {
 
 type Part = { slug: string; title: string; shortTitle: string; books: Book[] };
 
-/** The books in the order given, split where the part changes. */
+/**
+ * The books in the order given, gathered under the part each one belongs to.
+ *
+ * A part is looked up by name rather than by being next to its neighbour,
+ * because the books arrive in reading order and a part's books need not be next
+ * to each other in it. Splitting wherever the part changed would then make the
+ * same part twice, so the bar would show its name twice and React would see two
+ * children with one key. Each part keeps the place of its first book.
+ */
 function byPart(books: Book[]): Part[] {
-  const parts: Part[] = [];
+  const parts = new Map<string, Part>();
   for (const book of books) {
-    const last = parts[parts.length - 1];
-    if (last && last.slug === book.partSlug) last.books.push(book);
-    else parts.push({ slug: book.partSlug, title: book.partTitle, shortTitle: book.partShortTitle, books: [book] });
+    const part = parts.get(book.partSlug);
+    if (part) part.books.push(book);
+    else
+      parts.set(book.partSlug, {
+        slug: book.partSlug,
+        title: book.partTitle,
+        shortTitle: book.partShortTitle,
+        books: [book],
+      });
   }
-  return parts;
+  return [...parts.values()];
 }
 
 export default function HeaderNav({ books }: { books: Book[] }) {
@@ -68,6 +82,12 @@ export default function HeaderNav({ books }: { books: Book[] }) {
   // Opening a page is the end of the menu's job, so it closes itself rather
   // than staying open over the page the reader just chose.
   useEffect(() => setOpen(null), [pathname]);
+
+  // The close is on a timer, so it has to be called off if the bar goes away
+  // before it fires.
+  useEffect(() => () => {
+    if (closing.current !== null) clearTimeout(closing.current);
+  }, []);
 
   // A click anywhere else, or Escape, closes it. Without this a panel opened by
   // a click on a touch screen would have no way of being dismissed.

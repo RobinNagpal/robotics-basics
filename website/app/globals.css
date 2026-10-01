@@ -2509,8 +2509,6 @@ html[data-audio-following] {
 }
 
 /* Under about 560px the row runs out of width, so the controls drop below the
-   seek bar rather than squeezing the time out of sight. */
-/* Under about 560px the row runs out of width, so the controls drop below the
    seek bar rather than squeezing the time out of sight.
 
    The two section buttons went into that same group of controls, next to the

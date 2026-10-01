@@ -301,6 +301,14 @@ def split_sections(text: str, title: str = "") -> list[Section]:
 
     The returned indexes count the sections that are kept, so they run from zero
     with no gaps even where a contents section was removed.
+
+    Two headings on one page can read the same, and then they make the same name.
+    The second one is given a number, the way a Markdown renderer numbers the
+    second anchor of a repeated heading. Without that they would be one section
+    to everything that follows, because the words, the hashes, the lengths and
+    the files are all held by name: the later heading would quietly take the
+    earlier one's place, and the earlier one's recording would be renamed out
+    from under the joined page and lost.
     """
     lines = text.splitlines()
     inside = fenced(lines)
@@ -319,12 +327,16 @@ def split_sections(text: str, title: str = "") -> list[Section]:
     if prose:
         blocks.append(("lead", title, None, lead))
 
+    seen: dict[str, int] = {}
     for position, start in enumerate(starts):
         end = starts[position + 1] if position + 1 < len(starts) else len(lines)
         heading = lines[start].lstrip("#").strip()
         identifier = heading_slug(heading)
         if identifier == CONTENTS_ID:
             continue
+        seen[identifier] = seen.get(identifier, 0) + 1
+        if seen[identifier] > 1:
+            identifier = f"{identifier}-{seen[identifier] - 1}"
         blocks.append((identifier, heading_text(heading), identifier,
                        "\n".join(lines[start:end]).strip()))
 
@@ -784,7 +796,34 @@ def narrate_sections(page: pathlib.Path, key: str, model: str, stage: str, force
         # which source text each section's words were written from. It says it is
         # a draft until the audio is there, so a player that finds it plays the
         # page as one piece instead of trusting lengths that do not exist yet.
-        write_state(page, address, title, sections, records, spoken, measured={}, total=None)
+        #
+        # A page that was already spoken is the exception, and it has to be, because
+        # this stage exists so that the words can be read before anything is spoken.
+        # Writing a draft there would throw away the timings of a recording that
+        # had not changed by one second, and the page would lose its marks for no
+        # reason. So a section that kept its words and still has its own audio
+        # keeps its measurements too.
+        #
+        # The page as a whole only stays measured when it is the same page: nothing
+        # rewritten, nothing dropped, and the sections in the order the recording
+        # was joined in. A section that merely moved leaves the joined file in the
+        # old order, and its lengths would then describe a recording that no longer
+        # matches, which is the one thing the state file must never claim.
+        kept = {}
+        for section in sections:
+            length = records.get(section.id, {}).get("duration")
+            if (section.id not in rewritten and length is not None
+                    and existing_section_file(folder, section.id) is not None):
+                kept[section.id] = length
+        same_page = (
+            not rewritten and not dropped and page_audio.exists()
+            and [record["id"] for record in before.get("sections", [])] ==
+                [section.id for section in sections]
+        )
+        whole = before.get("duration") if same_page and len(kept) == len(sections) else None
+        write_state(page, address, title, sections, records, spoken,
+                    measured=kept, total=whole,
+                    generated=before.get("generated") if same_page else None)
         return None
 
     # --- the speech --------------------------------------------------------- #
@@ -836,13 +875,20 @@ def narrate_sections(page: pathlib.Path, key: str, model: str, stage: str, force
 
 def write_state(page: pathlib.Path, address: str, title: str, sections: list[Section],
                 records: dict[str, dict], spoken: dict[str, str],
-                measured: dict[str, float], total: float | None) -> dict:
+                measured: dict[str, float], total: float | None,
+                generated: str | None = None) -> dict:
     """Write the record the player reads, and this script reads back next time.
 
     The page counts as sectioned only when every section has a measured length.
     A page whose words exist but whose audio does not yet is marked as a draft,
     so a player that finds it falls back to playing the page as one piece rather
     than trusting lengths that are not there.
+
+    `generated` says when the recording was made, so a caller that made no
+    recording passes the one already there. Stamping it with the time of a run
+    that spoke nothing would put a change in the file for every run, and this
+    file is committed, so that change would be read as the page having been
+    made again.
     """
     complete = total is not None and all(section.id in measured for section in sections)
     starts = offsets([measured.get(section.id, 0.0) for section in sections])
@@ -870,7 +916,7 @@ def write_state(page: pathlib.Path, address: str, title: str, sections: list[Sec
         "title": title,
         "audio": f"{address}.mp3",
         "duration": total,
-        "generated": stamp(),
+        "generated": generated or stamp(),
         "voice": VOICE,
         "speech_model": SPEECH_MODEL,
         "sections": rows,
@@ -1009,10 +1055,24 @@ def upload(bucket: str, values: dict[str, str]) -> None:
     """
     cache = "public, max-age=31536000, immutable"
     where = aws_credentials(values)
+    # The joined pages are named one by one rather than matched by a pattern.
+    # The pattern this replaced excluded anything under a folder whose name began
+    # with two digits and a hyphen, which is how a piece is named, but it is also
+    # how a page would be named if its own title began with a number. Such a page
+    # would have been left out of the sync and would never have gained a player,
+    # and nothing would have said so. Naming the files cannot do that, and the
+    # names come from the same record the manifest is built from.
+    pieces = section_files()
+    pages = [mp3 for mp3 in sorted(AUDIO.rglob("*.mp3")) if mp3 not in pieces]
+    if not pages:
+        print("   nothing to upload: no recordings on disk", flush=True)
+        return
+    named: list[str] = ["--exclude", "*"]
+    for mp3 in pages:
+        named += ["--include", mp3.relative_to(AUDIO).as_posix()]
     subprocess.run(
         ["aws", "s3", "sync", str(AUDIO), f"s3://{bucket}/audio/", "--no-progress",
-         "--exclude", "*", "--include", "*.mp3", "--exclude", "*/[0-9][0-9]-*.mp3",
-         "--content-type", "audio/mpeg", "--cache-control", cache],
+         *named, "--content-type", "audio/mpeg", "--cache-control", cache],
         check=True, env=where,
     )
     if STATE.exists():

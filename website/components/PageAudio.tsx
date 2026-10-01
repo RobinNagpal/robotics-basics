@@ -103,9 +103,17 @@ export default function PageAudio({ src, title }: { src: string; title: string }
     }
   }, []);
 
+  // Loading a source resets the rate to the element's default, so the chosen
+  // speed is applied again whenever the source changes and not only when the
+  // reader changes it. Without the source here, moving to the next page leaves
+  // the menu reading 1.5x while the words play at normal speed. The default is
+  // set as well, so the reset the browser does lands on the chosen speed.
   useEffect(() => {
-    if (audio.current !== null) audio.current.playbackRate = speed;
-  }, [speed]);
+    const element = audio.current;
+    if (element === null) return;
+    element.defaultPlaybackRate = speed;
+    element.playbackRate = speed;
+  }, [speed, src]);
 
   // The browser can learn the recording's length before React has finished
   // mounting, above all when the file is already in the browser's cache, and in

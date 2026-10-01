@@ -129,10 +129,141 @@ colcon and colcon builds every package it finds.
 4. Give it a drawing in `components/BookGlyph.tsx`, or it falls back to the arm.
 5. Put its code in `code/src/NN_name/`, named the same.
 6. Run the link check below, then build the site.
+7. Narrate it when you want it narrated, under the rules below. A new book stays
+   silent until somebody asks for it by number.
 
-Recordings are not made for a new book on its own. `narration/narrate.py` refuses
-to run without `--book`, so a book stays silent until somebody asks for it by
-number, and the player hides itself on a page that has no recording.
+## Narration: what an edited page owes its recording
+
+`narration/narrate.py` gives a page a spoken recording. It works in two stages. A
+text model reads the Markdown and writes a transcript, which is the words to be
+spoken rather than the page read out. Then a speech model reads that transcript
+aloud. The transcripts are committed and the audio is not, because a wrong
+recording is always a wrong transcript and the audio can be made again from it.
+`narration/README.md` describes the folder and how to run the script. The rules
+below are what an editor of `docs/` owes the recordings.
+
+### v0 and v1
+
+There are two generations of recording, and every narrated page is in one of them.
+
+v0 makes one transcript and one recording for a whole page. Nothing inside the
+recording is marked, so a listener can only play it from the beginning.
+
+v1 splits the page at its `##` headings. Each of those parts gets its own
+transcript and its own recording, and the recordings are joined into one file, so
+the player still loads a single file. Where each part begins is written down, so
+the player can name the part being played and jump between parts.
+
+A page is v1 when `narration/state/<url>.json` exists and says `"version": "v1"`.
+A page with no state file is v0. Nothing else decides it. A run that stopped after
+the words writes `"version": "v1-draft"` instead, and the player treats that page
+as v0 until the audio is made.
+
+In those paths, `<url>` is the page's address on the site with the reading-order
+numbers stripped, such as `robotics-by-example/the-cell/the-cell`. The transcript,
+the state file and the audio all use that one name.
+
+A v0 page does not become a v1 page on its own. The flag `--v1` asks for the
+conversion, and without it the generator leaves such a page exactly as it is.
+
+### The word "section" is narrower in narration
+
+This file tells you above that a section is one Markdown document inside a
+chapter. That stays true everywhere on the site and in `docs/`. Narration uses
+the word for something smaller.
+
+In narration, a page is one Markdown document, and a section is one `##` heading
+block inside it: the heading line and the words under it, up to the next `##`. So
+a chapter holds several documents, and one of those documents holds several
+narration sections. Read "section" in the narrower sense in anything under
+`narration/`, and in the narrower sense only there.
+
+The words before the first `##` are narrated as well, under the name `lead`. The
+page's own `## Contents` list is never narrated, because a table of contents means
+nothing aloud.
+
+### Changing a page that has been narrated
+
+When you change a page that has a recording, the recording no longer matches the
+page, and the state file for that page is out of date. The sections you touched
+have to be made again. This is the most important rule here, because nothing on the
+site tells a listener that the words they are hearing are the old ones.
+
+You do not have to work out which sections those are. `narration/state/<url>.json`
+holds a `sha256` hash of each section's Markdown as it stood when that section was
+last made. The generator hashes the page's sections again and compares. A section
+whose hash still matches keeps its words and its audio and is sent to no model. A
+section whose hash differs gets a new transcript and new speech, and the page is
+joined again, because a changed section moves the start of every section after it.
+So your job is to run the generator on the page you edited and to commit the state
+file it writes.
+
+Do not edit that JSON by hand. A hash in it is a statement that one recording was
+made from one set of words, and the generator believes the statement without
+listening. Change a hash by hand and the file claims a section was spoken from
+words nobody read aloud; the generator then skips that section for good, and the
+page keeps a recording that says the old thing. Fix the page, run the generator,
+and let it write the file.
+
+A v0 page is the one case where running the generator again is not enough. It has
+no hashes, so the generator keeps the transcript and the recording it already has,
+and your edit reaches nobody listening. Convert the page with `--v1` instead. That
+writes and speaks every section, which costs a full set of model calls, and the
+page is sectioned from then on.
+
+### Publishing a recording
+
+A narrated page has two files in the bucket the site is served from:
+
+- `audio/<url>.mp3`, the joined recording, with content type `audio/mpeg`.
+- `audio/<url>.json`, a copy of the state file, with content type
+  `application/json`.
+
+Uploading those two files is all it takes for a page to gain a player. The site is
+a static export, and the player asks the browser for both addresses while the page
+is open, so no recording is part of the build. There is no rebuild and no deploy,
+and nothing about narration may ever become a build-time dependency.
+
+`--upload` does the upload in two syncs rather than one, because a sync sets one
+content type for everything it carries. A browser handed the state file as
+`audio/mpeg` will not parse it as JSON, and the page then looks to the player like
+a page with no sections at all. The per-section MP3s stay on the machine that made
+them, since the player never asks for them.
+
+Both files go up with a cache life of a year, so after replacing a recording you
+have to flush the edge cache for that page or readers keep the old one.
+
+A page with no recording shows no player at all, because the player hides itself
+when the browser answers that request with a 404. A page that has an MP3 but no v1
+JSON gets the plain player it had before.
+
+### The commands
+
+Run these from the repository root. The key comes from `.env` there. The script
+refuses to run without `--book` or `--doc`, which is why a new book stays silent
+until somebody asks for it by number.
+
+```bash
+# one page
+python narration/narrate.py --doc docs/07_robotics-by-example/01_the-cell.md
+
+# one chapter
+python narration/narrate.py --book 07 --chapter 02
+
+# after editing a page: the same command, which remakes only the changed sections
+python narration/narrate.py --doc docs/07_robotics-by-example/01_the-cell.md
+
+# convert a page that is still v0 into the sectioned shape
+python narration/narrate.py --doc docs/07_robotics-by-example/01_the-cell.md --v1
+
+# make the recordings and put them in the bucket
+python narration/narrate.py --book 07 --upload
+```
+
+Two more flags matter when something has gone wrong. `--stage transcript` stops
+after the words, so that they can be read before anything is spoken. `--force`
+redoes the work of the stage you asked for, which means it speaks an unchanged
+transcript again rather than trusting the hashes.
 
 ## Bringing in work written elsewhere
 

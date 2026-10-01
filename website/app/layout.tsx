@@ -31,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <Header books={books.map((b) => ({ slug: b.slug, title: b.title, shortTitle: b.shortTitle, number: b.number, accent: b.accent, partSlug: b.partSlug, partTitle: b.partTitle }))} />
+        <Header books={books.map((b) => ({ slug: b.slug, title: b.title, shortTitle: b.shortTitle, number: b.number, accent: b.accent, subtitle: b.subtitle, partSlug: b.partSlug, partTitle: b.partTitle, partShortTitle: b.partShortTitle }))} />
         {children}
       </body>
     </html>

@@ -32,6 +32,8 @@ export const ACCENTS: Accent[] = ['teal', 'violet', 'amber', 'blue', 'green', 'r
 export type Part = {
   slug: string;
   title: string;
+  /** Two or three words for the header, where the full title does not fit. */
+  shortTitle: string;
   /** One sentence saying who the part is for and what it covers. */
   blurb: string;
   books: string[];
@@ -41,6 +43,7 @@ export const PARTS: Part[] = [
   {
     slug: 'foundation',
     title: 'Robotics Foundation',
+    shortTitle: 'Foundation',
     blurb:
       'Start here. These four books build the ground every robot arm stands on: the Python and the maths, how a camera turns the world into numbers, the simulators and frameworks the field is built on, and ROS, the software the parts talk through.',
     books: ['robotics-intro', 'perception', 'frameworks', 'ros-and-rviz'],
@@ -48,6 +51,7 @@ export const PARTS: Part[] = [
   {
     slug: 'techniques-and-models',
     title: 'Techniques and Models',
+    shortTitle: 'Techniques & Models',
     blurb:
       'The methods themselves, each one explained on its own. The first book holds the techniques somebody wrote down, and the second holds the models that were fitted to examples instead. Both say where a method is the right tool and where it is not.',
     books: ['programming-techniques', 'learned-models'],
@@ -55,6 +59,7 @@ export const PARTS: Part[] = [
   {
     slug: 'by-example',
     title: 'Robotics by Example',
+    shortTitle: 'By Example',
     blurb:
       'One problem, followed the whole way down. Instead of explaining a method and then showing a use for it, this part starts with a table, a camera and a job to do, and works through every way the job can be done.',
     books: ['robotics-by-example'],

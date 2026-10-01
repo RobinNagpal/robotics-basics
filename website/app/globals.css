@@ -209,8 +209,11 @@ kbd {
 .header-nav {
   display: flex;
   gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
+  /* Nothing here may clip: the panel of books hangs below the bar out of this
+     element's own box, and an overflow of anything but visible would cut it
+     off. The bar held seven pills once and had to scroll sideways; it now
+     holds three names and fits. */
+  overflow: visible;
 }
 
 .header-nav-link {
@@ -306,6 +309,122 @@ kbd {
 
 [data-theme='dark'] .icon-sun {
   display: none;
+}
+
+/* The bar shows the parts, and a part's books appear in a panel under its name.
+   The panel is positioned against the part, so it opens under the name it
+   belongs to rather than at the edge of the bar. */
+.header-part {
+  position: relative;
+}
+
+.header-part-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.header-part-name:hover,
+.header-part-name[aria-expanded='true'] {
+  color: var(--text);
+  background: var(--bg-soft);
+}
+
+/* The part the reader is inside stays marked while they read it. */
+.header-part-name[aria-current='true'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.header-part-name svg {
+  transition: transform 0.15s;
+  opacity: 0.6;
+}
+
+.header-part-name[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.header-part-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+/* The browser's own rule for a hidden element is weaker than any rule written
+   here, so a panel given a display of its own needs this line or it would be
+   shown whatever the attribute says. */
+.header-part-panel[hidden] {
+  display: none;
+}
+
+.header-part-title {
+  margin: 2px 8px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.header-part-book {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.header-part-book:hover {
+  background: var(--bg-soft);
+}
+
+.header-part-book[aria-current='page'] {
+  background: var(--accent-soft);
+}
+
+.header-part-book .header-nav-num {
+  margin-top: 1px;
+}
+
+.header-part-book-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.header-part-book-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.header-part-book-sub {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
 }
 
 /* ------------------------------------------------------------------ search */
@@ -1093,19 +1212,6 @@ kbd {
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
-}
-
-/* In the header the parts are separated by a thin rule rather than a label,
-   because there is no room up there for three more words. */
-.header-nav-part {
-  display: flex;
-  gap: 4px;
-}
-
-.header-nav-part + .header-nav-part {
-  margin-left: 10px;
-  padding-left: 10px;
-  border-left: 1px solid var(--border);
 }
 
 /* ------------------------------------------------------------------ reader */
@@ -2136,12 +2242,186 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 
-.page-audio-seek {
-  width: 100%;
-  height: 4px;
-  cursor: pointer;
-  accent-color: var(--accent);
+/* The element that loads the recording never shows itself. The player's own
+   controls stand in for it, and a browser that decided to lay out an audio
+   element with no controls attribute would leave a gap under the page title. */
+.page-audio-source { display: none; }
+
+/* The position bar.
+
+   The bar is drawn here rather than left to the browser, because a section mark
+   has to sit behind the slider and line up with the time it stands for, and a
+   browser paints its own slider track as a solid block that would hide the
+   marks. So the input keeps nothing but its thumb, the rail behind it is a div
+   whose filled part comes from the --page-audio-played property the component
+   sets, and the marks go between the two.
+
+   The rail and the marks are both inset by half a thumb on each side. That is
+   exactly how far a thumb's centre stays from each end of the slider, so a mark
+   at forty per cent and the thumb at forty per cent land on the same pixel. */
+.page-audio-track {
+  position: relative;
+  /* A strip above the bar, which is where the clickable head of each mark sits.
+     The slider's own box starts below this strip, so a click aimed at a mark
+     reaches the mark and a click aimed at the bar still seeks. Nothing that can
+     be clicked overlaps the slider. */
+  padding-top: 10px;
 }
+
+.page-audio-rail {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  /* 10px of strip, then 5px to centre a 4px rail inside the 14px slider. */
+  top: 15px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--page-audio-played, 0%),
+    var(--border) var(--page-audio-played, 0%) 100%
+  );
+  pointer-events: none;
+}
+
+/* The layer the marks live in takes no clicks at all, so that the part of it
+   lying over the slider cannot swallow a seek. Each mark turns clicks back on
+   for itself. */
+.page-audio-marks {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 7px;
+  right: 7px;
+  pointer-events: none;
+}
+
+.page-audio-mark {
+  position: absolute;
+  top: 0;
+  width: 14px;
+  height: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translateX(-50%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* The tick: a line from the top of the strip down across the rail, so that the
+   mark is visibly a point on the bar rather than a dot floating above it. The
+   slider is painted on top, so the thumb passes over the tick it has reached. */
+.page-audio-mark::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 2px;
+  height: 17px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--muted);
+  opacity: 0.45;
+}
+
+.page-audio-mark:hover::before,
+.page-audio-mark:focus-visible::before {
+  background: var(--text);
+  opacity: 1;
+}
+
+.page-audio-mark-now::before {
+  background: var(--accent);
+  opacity: 0.9;
+}
+
+.page-audio-seek {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.page-audio-seek::-webkit-slider-runnable-track {
+  height: 14px;
+  border: 0;
+  background: transparent;
+}
+
+.page-audio-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.page-audio-seek::-moz-range-track {
+  height: 14px;
+  border: 0;
+  background: transparent;
+}
+
+.page-audio-seek::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.page-audio-seek:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+/* The name of the section being played, under the bar. Clicking it plays that
+   section again from its start. */
+.page-audio-now {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  max-width: 100%;
+  margin: 3px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+
+.page-audio-now-count {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.page-audio-now-title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-audio-now:hover .page-audio-now-title { text-decoration: underline; }
 
 .page-audio-controls {
   flex: none;
@@ -2165,6 +2445,18 @@ kbd {
 .page-audio-controls button:hover {
   background: var(--surface-2);
   color: var(--text);
+}
+
+/* The previous-section button at the very start of the recording, and the
+   next-section button in the last section, have nowhere to go. */
+.page-audio-controls button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.page-audio-controls button:disabled:hover {
+  background: transparent;
+  color: var(--muted);
 }
 
 .page-audio-speed select {
@@ -2218,11 +2510,22 @@ html[data-audio-following] {
 
 /* Under about 560px the row runs out of width, so the controls drop below the
    seek bar rather than squeezing the time out of sight. */
+/* Under about 560px the row runs out of width, so the controls drop below the
+   seek bar rather than squeezing the time out of sight.
+
+   The two section buttons went into that same group of controls, next to the
+   fifteen-second buttons, rather than onto a line of their own: they are
+   transport buttons like the others, and a second line would have made the row
+   taller on exactly the screens that have the least height to spare. At 420px
+   the first line is the play button and five controls, and the bar with its
+   section name is the second line. The name costs the row about sixteen more
+   pixels than it used to be, which keeps it near 140px tall, so the page is
+   still what most of the screen shows while the row follows it. */
 @media (max-width: 560px) {
   .page-audio {
     flex-wrap: wrap;
-    row-gap: 10px;
+    gap: 10px;
   }
   .page-audio-body { order: 3; flex-basis: 100%; }
-  .page-audio-controls { margin-left: auto; }
+  .page-audio-controls { margin-left: auto; gap: 2px; }
 }

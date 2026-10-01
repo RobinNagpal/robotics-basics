@@ -42,6 +42,7 @@ export type Book = {
   /** Which shelf of the library this book sits on. */
   partSlug: string;
   partTitle: string;
+  partShortTitle: string;
   title: string;
   shortTitle: string;
   subtitle: string;
@@ -231,6 +232,7 @@ function scan(): Library {
       // being dropped from the site for the sake of a missing line of config.
       partSlug: part?.slug ?? bookSlug,
       partTitle: part?.title ?? info?.title ?? humanize(bookSlug),
+      partShortTitle: part?.shortTitle ?? info?.shortTitle ?? humanize(bookSlug),
       title: info?.title ?? humanize(bookSlug),
       shortTitle: info?.shortTitle ?? info?.title ?? humanize(bookSlug),
       subtitle: info?.subtitle ?? '',
@@ -252,7 +254,7 @@ function scan(): Library {
   }
   for (const book of books) {
     if (parts.some((p) => p.bookList.includes(book))) continue;
-    parts.push({ slug: book.partSlug, title: book.partTitle, blurb: book.subtitle, books: [book.slug], bookList: [book] });
+    parts.push({ slug: book.partSlug, title: book.partTitle, shortTitle: book.shortTitle, blurb: book.subtitle, books: [book.slug], bookList: [book] });
   }
 
   return { books, parts, urlByRel };

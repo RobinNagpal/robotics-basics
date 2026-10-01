@@ -14,9 +14,9 @@ measured off those rasters rather than typed in: the visible fractions, the
 areas, the fitted circles, the overlaps and the errors are all computed when
 this script runs.
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_10_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_10_images.py
 """
 
 from __future__ import annotations
@@ -43,6 +43,7 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_circles,
     splay_covers,
     splay_width,

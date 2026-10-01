@@ -12,9 +12,9 @@ Seven pictures, each carrying one point:
 8. what the verifier is given when a glass is hidden in an overhead picture;
 9. what it is given when a glass is hidden in a level one.
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_05_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_05_images.py
 
 The cluster in pictures 3 and 6 is not drawn by hand. It is generated from the
 cell's own geometry — two glasses of one kind, a camera in line with both, and
@@ -46,6 +46,7 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_covers,
     splay_patch,
     splay_width,
@@ -55,7 +56,9 @@ from matplotlib.colors import to_rgba
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("is-anything-hiding-there")
 
 from work_cell.glasses.shapes import family  # noqa: E402
 

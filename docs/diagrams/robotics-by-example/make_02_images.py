@@ -12,9 +12,9 @@ glass outlines, taken from ``work_cell.glasses.shapes``, through the cell's own
 camera. A standing glass is a circle only in its footprint, which no camera in
 this cell ever sees straight on, so nothing here is drawn as one.
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_02_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_02_images.py
 """
 
 from __future__ import annotations
@@ -42,6 +42,7 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_circles,
     splay_covers,
     splay_patch,
@@ -50,7 +51,9 @@ from diagram_style import (
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, FancyArrowPatch, Polygon, Rectangle
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("cluster-on-the-table")
 
 from work_cell.glasses.shapes import family  # noqa: E402
 

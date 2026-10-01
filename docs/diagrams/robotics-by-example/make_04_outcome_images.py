@@ -1,8 +1,8 @@
 """Diagrams for solution 6 — learn which viewpoints pay off.
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_06_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_04_outcome_images.py
 
 Every picture here is drawn from the numbers in
 ``docs/problem-2/06-learn-which-viewpoints-pay-off.md``. Nothing is measured
@@ -39,10 +39,13 @@ from diagram_style import (
     WARN,
     bare,
     save,
+    set_document,
 )
 from matplotlib.patches import Circle, FancyArrowPatch, Rectangle, Wedge
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("choosing-the-next-look")
 
 from work_cell.glasses.shapes import family  # noqa: E402
 

@@ -17,9 +17,9 @@ Seven pictures, each carrying one point of the document:
     08-where-it-stops.png            a glass covered completely: no pixels, so
                                      no prompt point, so no proposal
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_08_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_08_images.py
 
 Every number that appears as a label is computed from the constants at the top
 of this file, so none of it can drift. The scenes are built from the shared cast
@@ -62,6 +62,7 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_circles,
     splay_covers,
     splay_patch,

@@ -20,9 +20,9 @@ standing glass is a circle only in its footprint, which neither of the cell's
 two camera poses ever sees straight on, and drawing it as one is what the first
 version of these two pictures got wrong.
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_04_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_04_doubt_images.py
 """
 
 from __future__ import annotations
@@ -46,6 +46,7 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_covers,
     splay_patch,
     splay_width,
@@ -53,7 +54,9 @@ from diagram_style import (
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle, Wedge
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("choosing-the-next-look")
 
 from work_cell.glasses.shapes import KIND_RANGES, family  # noqa: E402
 

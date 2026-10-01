@@ -13,9 +13,9 @@ Eight figures, each carrying one point of the document:
     07-hidden-from-above.png          a glass with no pixels, from 450 mm up
     07-hidden-from-the-side.png       a glass with no pixels, from the level view
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_07_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_06_network_images.py
 
 Every number here is arithmetic on channel widths, on image sizes, or on the
 discs in these drawings. None of it is a measurement of a trained network, and
@@ -50,11 +50,14 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
 )
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap, to_rgba
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("a-network-trained-from-scratch")
 
 from work_cell.glasses.shapes import family  # noqa: E402
 

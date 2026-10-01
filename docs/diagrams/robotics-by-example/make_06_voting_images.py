@@ -1,8 +1,8 @@
 """Diagrams for solution 8 — per-pixel votes for the centre.
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_08_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_06_voting_images.py
 
 Every number drawn here comes from the cell: fx = fy = 277.1 pixels, survey
 height 450 mm, footprints 45 to 105 mm across, and the worked example's pair of
@@ -37,6 +37,7 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_circles,
     splay_covers,
     splay_width,
@@ -44,7 +45,9 @@ from diagram_style import (
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, Polygon, Rectangle
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("a-network-trained-from-scratch")
 
 from work_cell.glasses.shapes import family  # noqa: E402
 

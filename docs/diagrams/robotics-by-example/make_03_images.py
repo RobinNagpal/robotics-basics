@@ -16,9 +16,9 @@ The last two project real glass outlines, taken from ``work_cell.glasses.shapes`
 through the cell's own camera. A standing glass is a circle only in its
 footprint, which neither of the two views ever sees straight on.
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_03_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_03_images.py
 """
 
 from __future__ import annotations
@@ -44,13 +44,16 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_circles,
     splay_covers,
 )
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Arc, Circle, Polygon, Rectangle, Wedge
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("move-the-camera")
 
 from work_cell.glasses.shapes import build  # noqa: E402
 

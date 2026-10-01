@@ -7,7 +7,9 @@ circle only in its footprint, which no camera in this cell ever sees straight
 on, and drawing it as one is what the first version of these pictures got
 wrong.
 
-    pixi run python images/generators/problem-2/make_01_images.py
+Run from inside code/:
+
+    pixi run python ../docs/diagrams/robotics-by-example/make_01_images.py
 """
 
 from __future__ import annotations
@@ -32,6 +34,7 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_circles,
     splay_covers,
     splay_width,
@@ -39,7 +42,9 @@ from diagram_style import (
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, Rectangle
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("split-the-blob-in-the-picture")
 
 from work_cell.glasses.shapes import build, family  # noqa: E402
 

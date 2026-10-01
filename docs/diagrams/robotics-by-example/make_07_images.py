@@ -13,9 +13,9 @@ a circle only in its footprint, which neither of this cell's camera poses ever
 sees straight on, and drawing it as one is what the first version of these two
 pictures got wrong.
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_09_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_07_images.py
 """
 
 from __future__ import annotations
@@ -38,13 +38,16 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_covers,
     splay_width,
 )
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Polygon, Rectangle
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+
+set_document("self-supervised-from-the-arms-own-movement")
 
 from work_cell.glasses.shapes import build, family  # noqa: E402
 

@@ -10,9 +10,9 @@ Seven figures, each carrying one point of the document:
     09-overlapping-proposals.png        many boxes for one glass, collapsed by overlap
     09-where-it-stops.png               a glass with no pixels is in no output
 
-Run from the project root:
+Run from inside code/:
 
-    pixi run python images/generators/problem-2/make_09_images.py
+    pixi run python ../docs/diagrams/robotics-by-example/make_09_images.py
 
 Every scene here is a legal arrangement of the shared cast of glasses: a couple
 of large ones and a couple of the smallest this kind allows, with every pair of
@@ -54,6 +54,7 @@ from diagram_style import (
     bare,
     new,
     save,
+    set_document,
     splay_circles,
     splay_covers,
     splay_width,

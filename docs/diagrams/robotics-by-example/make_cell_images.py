@@ -1,11 +1,13 @@
-"""Diagrams for docs/the-cell.md — the layout, the reach and the sensors.
+"""Diagrams for 07_robotics-by-example/01_the-cell.md, the layout, the reach and the sensors.
 
 Every dimension is read from the project's own constants rather than typed in,
 so a picture cannot drift from the code. If a number moves in
 ``arm/dimensions.py``, ``table/layout.py`` or ``rack/layout.py``, re-run this
 and the drawings move with it.
 
-    pixi run python images/generators/make_cell_images.py
+Run from inside code/:
+
+    pixi run python ../docs/diagrams/robotics-by-example/make_cell_images.py
 """
 
 from __future__ import annotations
@@ -23,8 +25,8 @@ import numpy as np  # noqa: E402
 from matplotlib.colors import to_rgba  # noqa: E402
 from matplotlib.patches import Circle, FancyArrowPatch, Rectangle, Wedge  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src" / "work_cell"))
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "code" / "src" / "07_robotics-by-example" / "work_cell"))
 
 from work_cell.arm.dimensions import (  # noqa: E402
     CAMERA_OFFSET,
@@ -50,9 +52,8 @@ from work_cell.rack.layout import (  # noqa: E402
     RACK_TOP_Z,
 )
 from work_cell.table.layout import ROBOT_BASE, TABLE_CENTRE_XY, TABLE_SIZE, TABLE_TOP_Z  # noqa: E402
-from work_cell.task import TALLEST_GLASS  # noqa: E402
 
-IMAGES = ROOT / "images"
+IMAGES = ROOT / "docs" / "images" / "robotics-by-example" / "the-cell"
 INK = "#22272e"
 MUTED = "#8b949e"
 GLASS = "#4c8fd6"
@@ -66,8 +67,13 @@ NOTE = 8.2
 MM = 1000.0  # the drawings are in millimetres; the constants are in metres
 
 # The lens, read out of the model the simulator loads rather than typed here.
-_XACRO = (ROOT / "src" / "work_cell" / "work_cell" / "arm" / "camera"
-          / "wrist_camera.urdf.xacro").read_text()
+_WORK_CELL = ROOT / "code" / "src" / "07_robotics-by-example" / "work_cell" / "work_cell"
+_XACRO = (_WORK_CELL / "arm" / "camera" / "wrist_camera.urdf.xacro").read_text()
+
+
+TALLEST_GLASS = float(
+    re.search(r"^TALLEST_GLASS = ([0-9.]+)", (_WORK_CELL / "task.py").read_text(), re.M).group(1)
+)
 
 
 def _from_xacro(tag: str) -> float:
@@ -110,9 +116,10 @@ FINGER_ASIDE = CAMERA_OFFSET[0]
 
 def save(figure, name: str) -> None:
     IMAGES.mkdir(parents=True, exist_ok=True)
-    figure.savefig(IMAGES / name, dpi=150, bbox_inches="tight", facecolor=PAPER)
+    path = IMAGES / name
+    figure.savefig(path, dpi=150, bbox_inches="tight", facecolor=PAPER)
     plt.close(figure)
-    print(f"wrote images/{name}")
+    print(f"wrote {path.relative_to(ROOT)}")
 
 
 def _tint(colour: str, alpha: float) -> tuple[float, float, float, float]:

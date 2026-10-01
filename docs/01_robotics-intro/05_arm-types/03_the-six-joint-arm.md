@@ -14,7 +14,7 @@ and the words forward kinematics and inverse kinematics from the
 [kinematics chapter](../04_kinematics/01_forward-kinematics.md). This document puts
 all of them to work on a real arm.
 
-All the numbers below are printed by one program, `src/arm_types/ur5e.py`. The
+All the numbers below are printed by one program, `src/01_robotics-intro/arm_types/ur5e.py`. The
 [running it](#8-running-it) section says how to run it.
 
 ## Contents
@@ -394,7 +394,7 @@ make arms.learn
 That runs both programs of this chapter. To run only the one used in this document:
 
 ```
-pixi run python src/arm_types/ur5e.py
+pixi run python src/01_robotics-intro/arm_types/ur5e.py
 ```
 
 It prints the five numbered sections quoted above, in the same order. The search in

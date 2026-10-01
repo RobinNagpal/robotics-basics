@@ -1,0 +1,37 @@
+<!--
+  The table. Its top sits at z = 0.75, which is the plane the arm, the
+  glasses and table/layout.py all measure from.
+
+  Its size is not written here. table/build.py fills these lines in from
+  table/layout.py, so the box the simulator loads and the box MoveIt is told
+  about cannot disagree — they are the same numbers twice over rather than two
+  numbers that have to be kept in step by hand.
+
+  Grey and plain on purpose. The table is the reference everything is
+  measured against: its height decides which points are a glass, and its
+  surface is where a silhouette is laid down. A patterned table gives a real
+  depth camera edges to trip over inside every silhouette, and a ragged
+  outline is a ragged profile.
+
+  world/build.py splices this into the world file at its table marker.
+-->
+    <model name="table">
+      <static>true</static>
+      <pose>{x:.4f} {y:.4f} 0 0 0 0</pose>
+      <link name="link">
+        <collision name="top_collision">
+          <pose>0 0 {top_z:.4f} 0 0 0</pose>
+          <geometry><box><size>{size_x:.4f} {size_y:.4f} {size_z:.4f}</size></box></geometry>
+          <surface><friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction></surface>
+        </collision>
+        <visual name="top_visual">
+          <pose>0 0 {top_z:.4f} 0 0 0</pose>
+          <geometry><box><size>{size_x:.4f} {size_y:.4f} {size_z:.4f}</size></box></geometry>
+          <material>
+            <ambient>0.55 0.55 0.56 1</ambient>
+            <diffuse>0.68 0.68 0.70 1</diffuse>
+          </material>
+        </visual>
+{legs}
+      </link>
+    </model>

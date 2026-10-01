@@ -11,7 +11,7 @@ This document uses the same arm with the 1 m third link that the frames chapter
 added in its section 8, [making the arm bigger](../03_arm/01_overview.md#8-making-the-arm-bigger). It uses that arm to explain words that every later chapter
 uses: joint, link, chain, joint limit and degree of freedom.
 
-All the numbers below come from one small program, `src/arm_types/joints.py`. The
+All the numbers below come from one small program, `src/01_robotics-intro/arm_types/joints.py`. The
 [last section](#8-running-it) says how to run it.
 
 ## Contents
@@ -325,7 +325,7 @@ make arms.learn
 That runs both programs of this chapter. To run only the one used in this document:
 
 ```
-pixi run python src/arm_types/joints.py
+pixi run python src/01_robotics-intro/arm_types/joints.py
 ```
 
 It prints the four numbered sections quoted above, in the same order, and then exits.

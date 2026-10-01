@@ -9,7 +9,7 @@ It is for a beginner who has read the
 [angles and trigonometry doc](01_angles-and-trigonometry.md) and knows a little
 Python. It does not teach linear algebra as a subject. It teaches only the parts
 an arm uses, and it shows each one on the same two-link arm as the rest of this
-book. Every number is printed by `code/src/maths/vectors_and_matrices.py`.
+book. Every number is printed by `code/src/01_robotics-intro/maths/vectors_and_matrices.py`.
 
 By the end you will be able to read a 3 × 3 or 4 × 4 transform matrix and say
 where it puts a frame and which way the frame points. The
@@ -436,7 +436,7 @@ chain an arm:      base_to_gripper = T1 @ T2 @ ... @ Tn
 From the `code/` folder:
 
 ```
-pixi run python src/maths/vectors_and_matrices.py
+pixi run python src/01_robotics-intro/maths/vectors_and_matrices.py
 ```
 
 The file prints seven sections, one per section of this doc, in the same order.

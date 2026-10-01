@@ -12,7 +12,7 @@ and then asks where the gripper can go at all.
 
 The example arm is the same one as before. Link 1 is 3 m long and link 2 is 2 m
 long. The main pose is `q1 = 30°` and `q2 = 60°`, which puts the gripper at
-`(2.598, 3.5)`. Every number in this doc is printed by `src/kinematics/forward.py`.
+`(2.598, 3.5)`. Every number in this doc is printed by `src/01_robotics-intro/kinematics/forward.py`.
 
 ## Contents
 
@@ -143,7 +143,7 @@ for angle, length in zip(joints, links):
 
 `np.eye(3)` is the matrix that does nothing, which is where the base starts.
 `turn(angle)` is the matrix for a joint. `shift(length)` is the matrix for a
-link. Both are in `src/kinematics/planar_arm.py`, and each is four lines long.
+link. Both are in `src/01_robotics-intro/kinematics/planar_arm.py`, and each is four lines long.
 
 The program prints the running answer after each link. At `q1 = 30°` and
 `q2 = 60°` it prints this:
@@ -319,7 +319,7 @@ moves badly there.
 Run this from the `code/` folder:
 
 ```
-pixi run python src/kinematics/forward.py
+pixi run python src/01_robotics-intro/kinematics/forward.py
 ```
 
 It prints five sections, in the same order as this doc:
@@ -330,7 +330,7 @@ It prints five sections, in the same order as this doc:
 4. the workspace with no limits, from section 7
 5. the workspace with joint limits, from section 8
 
-The shared code is in `src/kinematics/planar_arm.py`. `forward()` is the loop
+The shared code is in `src/01_robotics-intro/kinematics/planar_arm.py`. `forward()` is the loop
 from section 4. `chain()` is the same loop, but it keeps the answer after every
 link, which is what the diagrams use to draw the arm.
 

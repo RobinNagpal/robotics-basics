@@ -1,8 +1,10 @@
 # robotics-basics — one entry point for everything.
 #
-# The repo is split into areas. Each area has its code under src/ (a ROS
-# package, or for numpy, plain Python files) and one folder under ../docs/. Area commands are named <area>.<action>, and each area
-# keeps to two or three of them so this list stays readable as areas are added.
+# The code is split by book. Each folder under src/ is named after a book folder
+# in ../docs/, character for character, and inside it each area has its own
+# folder: a ROS package, or for numpy, plain Python files. Area commands are
+# named <area>.<action>, and each area keeps to two or three of them so this
+# list stays readable as areas are added.
 #
 # Run `make` on its own to see what is available.
 
@@ -27,7 +29,8 @@ help: ## Show this help
 		/^##@/ { printf "\n  \033[1m%s\033[0m\n", substr($$0, 5) } \
 		/^[a-zA-Z_.-]+:.*?##/ { printf "    \033[36m%-19s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo ""
-	@echo "  Area commands are <area>.<action>. Docs for an area are in ../docs/<area>/."
+	@echo "  Area commands are <area>.<action>. The code for a book is in src/<book>/,"
+	@echo "  named after that book's folder in ../docs/."
 	@echo ""
 
 ##@ Project
@@ -57,7 +60,7 @@ doctor: ## Print versions of everything that matters
 	@pixi run bash -c 'source install/setup.bash 2>/dev/null; \
 		printf "%-14s %s\n" "python"     "$$(python --version 2>&1)"; \
 		printf "%-14s %s\n" "ROS distro" "$$ROS_DISTRO"; \
-		printf "%-14s %s\n" "areas"      "$$(ls src | tr "\n" " ")"'
+		printf "%-14s %s\n" "books"      "$$(ls src | tr "\n" " ")"'
 
 ##@ ros basics — one small program for each thing ROS is used for
 
@@ -119,14 +122,14 @@ arm.watch: build ## Step 5: ask TF where the gripper is (run arm.demo first)
 ##@ camera basics — finding an object in a picture: colour, depth, a model
 
 camera.colour: ## Find the object by its colour, then measure it with the depth picture
-	@pixi run python src/camera/camera_basics/find_by_colour.py
-	@echo; pixi run python src/camera/camera_basics/depth_of_object.py
+	@pixi run python src/02_perception/camera/camera_basics/find_by_colour.py
+	@echo; pixi run python src/02_perception/camera/camera_basics/depth_of_object.py
 
 camera.model: ## Find objects with YOLO, a trained model (the first run downloads 5 MB)
-	@pixi run -e vision python src/camera/camera_basics/find_with_model.py
+	@pixi run -e vision python src/02_perception/camera/camera_basics/find_with_model.py
 
 camera.train: ## Teach YOLO this robot's box, from 80 drawn pictures (about 3 minutes)
-	@pixi run -e vision python src/camera/camera_basics/train_a_model.py
+	@pixi run -e vision python src/02_perception/camera/camera_basics/train_a_model.py
 
 ##@ camera applied — a depth camera in Gazebo finds a box and measures it
 
@@ -155,39 +158,39 @@ camera.check: ## Show what the simulation is publishing (run camera.one_box firs
 
 python.learn: ## Run the Python basics files in order
 	@for file in values_and_lists functions_and_loops classes; do \
-		echo; echo "===== src/python_basics/$$file.py ====="; \
-		pixi run python src/python_basics/$$file.py || exit 1; \
+		echo; echo "===== src/01_robotics-intro/python_basics/$$file.py ====="; \
+		pixi run python src/01_robotics-intro/python_basics/$$file.py || exit 1; \
 	done
 
 maths.learn: ## Angles, trigonometry, vectors and matrices on an arm
 	@for file in angles vectors_and_matrices; do \
-		echo; echo "===== src/maths/$$file.py ====="; \
-		pixi run python src/maths/$$file.py || exit 1; \
+		echo; echo "===== src/01_robotics-intro/maths/$$file.py ====="; \
+		pixi run python src/01_robotics-intro/maths/$$file.py || exit 1; \
 	done
 
 kinematics.learn: ## Forward and inverse kinematics of a flat arm
 	@for file in forward inverse; do \
-		echo; echo "===== src/kinematics/$$file.py ====="; \
-		pixi run python src/kinematics/$$file.py || exit 1; \
+		echo; echo "===== src/01_robotics-intro/kinematics/$$file.py ====="; \
+		pixi run python src/01_robotics-intro/kinematics/$$file.py || exit 1; \
 	done
 
 arms.learn: ## Joints and degrees of freedom, then the six-joint UR5e arm
 	@for file in joints ur5e; do \
-		echo; echo "===== src/arm_types/$$file.py ====="; \
-		pixi run python src/arm_types/$$file.py || exit 1; \
+		echo; echo "===== src/01_robotics-intro/arm_types/$$file.py ====="; \
+		pixi run python src/01_robotics-intro/arm_types/$$file.py || exit 1; \
 	done
 
 ##@ numpy — the parts of NumPy robotics uses most
 
 numpy.learn: ## Run the five NumPy files in order, printing every example
 	@for file in arrays indexing maths linear_algebra sampling; do \
-		echo; echo "===== src/numpy/$$file.py ====="; \
-		pixi run python src/numpy/$$file.py || exit 1; \
+		echo; echo "===== src/01_robotics-intro/numpy/$$file.py ====="; \
+		pixi run python src/01_robotics-intro/numpy/$$file.py || exit 1; \
 	done
 
 numpy.run: ## Run one NumPy file, for example: make numpy.run FILE=linear_algebra
 	@test -n "$(FILE)" || { echo "Say which file, for example: make numpy.run FILE=linear_algebra"; exit 1; }
-	@pixi run python src/numpy/$(FILE).py
+	@pixi run python src/01_robotics-intro/numpy/$(FILE).py
 
 numpy.check: ## Check every type written in the NumPy files, with mypy
-	pixi exec mypy --python-executable .pixi/envs/default/bin/python --check-untyped-defs src/numpy
+	pixi exec mypy --python-executable .pixi/envs/default/bin/python --check-untyped-defs src/01_robotics-intro/numpy

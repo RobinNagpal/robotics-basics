@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="work_cell">
+
+  <!--
+    The whole robot: a UR5e standing on the table, a two-finger gripper on its
+    flange, and an RGB-D camera beside the gripper.
+
+    Universal Robots publish the arm itself, so ur_description supplies the
+    links, the joint limits and the calibrated link lengths for the UR5e. What
+    is added here is the tooling and the wiring to ros2_control.
+  -->
+
+  <xacro:arg name="ur_type" default="ur5e"/>
+  <xacro:arg name="controllers_file" default=""/>
+  <!-- Height of the table top the arm is bolted to. Must match TABLE_TOP_Z
+       in work_cell/table/layout.py and the table in work_cell/table/table.sdf. -->
+  <xacro:arg name="base_height" default="0.75"/>
+
+  <xacro:property name="ur_type" value="$(arg ur_type)"/>
+  <xacro:property name="ur_config" value="$(find ur_description)/config/${ur_type}"/>
+
+  <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+  <xacro:include filename="$(find work_cell)/arm/gripper.urdf.xacro"/>
+  <xacro:include filename="$(find work_cell)/arm/camera/wrist_camera.urdf.xacro"/>
+
+  <!-- A link called "world" is how the simulator is told the base is bolted
+       down rather than free to fall over. -->
+  <link name="world"/>
+
+  <xacro:ur_robot
+    name="${ur_type}"
+    tf_prefix=""
+    parent="world"
+    joint_limits_parameters_file="${ur_config}/joint_limits.yaml"
+    kinematics_parameters_file="${ur_config}/default_kinematics.yaml"
+    physical_parameters_file="${ur_config}/physical_parameters.yaml"
+    visual_parameters_file="${ur_config}/visual_parameters.yaml">
+    <origin xyz="0 0 $(arg base_height)" rpy="0 0 0"/>
+  </xacro:ur_robot>
+
+  <xacro:parallel_gripper prefix="" parent="tool0"/>
+  <xacro:wrist_camera prefix="" parent="gripper_body"/>
+
+  <!--
+    ros2_control describes the joints a controller is allowed to touch and who
+    actually moves them. Here that is Gazebo. On real hardware only the
+    <plugin> line would change.
+  -->
+  <xacro:macro name="position_joint" params="name initial:=0.0">
+    <joint name="${name}">
+      <command_interface name="position"/>
+      <state_interface name="position">
+        <param name="initial_value">${initial}</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </xacro:macro>
+
+  <!--
+    The fingers offer two ways of being commanded, and the task uses both.
+
+    Position is for opening the gripper and for closing it to a width the
+    measurement has worked out. Effort is for holding: once the pads are on the
+    glass, what matters is how hard they press, and a position controller
+    cannot express that. It would keep driving towards a number the glass is in
+    the way of.
+
+    Only one controller may hold a joint at a time, so the two are swapped
+    between during the run. arm/motion.py does the swapping.
+  -->
+  <xacro:macro name="finger_joint" params="name initial:=0.0">
+    <joint name="${name}">
+      <command_interface name="position"/>
+      <command_interface name="effort">
+        <param name="min">-25.0</param>
+        <param name="max">25.0</param>
+      </command_interface>
+      <state_interface name="position">
+        <param name="initial_value">${initial}</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </xacro:macro>
+
+  <ros2_control name="work_cell_system" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+
+    <!-- Elbow up, tool pointing down at the table in front of the arm. -->
+    <xacro:position_joint name="shoulder_pan_joint" initial="0.0"/>
+    <xacro:position_joint name="shoulder_lift_joint" initial="-1.5708"/>
+    <xacro:position_joint name="elbow_joint" initial="1.5708"/>
+    <xacro:position_joint name="wrist_1_joint" initial="-1.5708"/>
+    <xacro:position_joint name="wrist_2_joint" initial="-1.5708"/>
+    <xacro:position_joint name="wrist_3_joint" initial="0.0"/>
+
+    <xacro:finger_joint name="left_finger_joint" initial="0.0475"/>
+    <xacro:finger_joint name="right_finger_joint" initial="0.0475"/>
+
+    <!-- The wrist force sensor, as ros2_control sees it. The broadcaster reads
+         these and publishes a WrenchStamped; the sensor itself is declared on
+         the gripper mount in arm/gripper.urdf.xacro. -->
+    <sensor name="wrist_force">
+      <state_interface name="force.x"/>
+      <state_interface name="force.y"/>
+      <state_interface name="force.z"/>
+      <state_interface name="torque.x"/>
+      <state_interface name="torque.y"/>
+      <state_interface name="torque.z"/>
+      <param name="frame_id">gripper_body</param>
+    </sensor>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(arg controllers_file)</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>

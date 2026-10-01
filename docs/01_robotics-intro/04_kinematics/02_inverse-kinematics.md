@@ -14,7 +14,7 @@ guessing.
 The arm is the same one as before. Link 1 is 3 m and link 2 is 2 m. The main
 target is `(2.598, 3.5)`, which is where the gripper sits at `q1 = 30°` and
 `q2 = 60°`. So we already know one answer, and can check that the method finds it.
-Every number in this doc is printed by `src/kinematics/inverse.py`.
+Every number in this doc is printed by `src/01_robotics-intro/kinematics/inverse.py`.
 
 ## Contents
 
@@ -121,7 +121,7 @@ pose we started from. The method found the answer we already knew.
 It also found a second one, `q1 = 76.83°` with `q2 = -60°`.
 
 The whole solution is about ten lines of Python. It is `two_joint_ik()` in
-`src/kinematics/planar_arm.py`.
+`src/01_robotics-intro/kinematics/planar_arm.py`.
 
 ---
 
@@ -377,7 +377,7 @@ covers those solvers and the singularities that trouble them.
 Run this from the `code/` folder:
 
 ```
-pixi run python src/kinematics/inverse.py
+pixi run python src/01_robotics-intro/kinematics/inverse.py
 ```
 
 It prints six sections, in the same order as this doc:
@@ -389,7 +389,7 @@ It prints six sections, in the same order as this doc:
 5. numerical IK from two different guesses, from section 6
 6. the timing comparison, from section 7
 
-The solvers are in `src/kinematics/planar_arm.py`. `two_joint_ik()` is the
+The solvers are in `src/01_robotics-intro/kinematics/planar_arm.py`. `two_joint_ik()` is the
 triangle formula. `three_joint_ik()` is the wrist split. `numerical_ik()` is the
 guess-and-correct loop, and `jacobian()` is the small table it uses.
 

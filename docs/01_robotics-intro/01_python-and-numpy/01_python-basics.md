@@ -75,7 +75,7 @@ matters yet.
 
 ## 2. The three files, and how to run them
 
-The examples are in `code/src/python_basics/`. Each file is a plain Python
+The examples are in `code/src/01_robotics-intro/python_basics/`. Each file is a plain Python
 program. Each section of a file is one function, and running the file runs the
 sections in order and prints what each one does.
 
@@ -92,7 +92,7 @@ yet, run `make setup` first. It installs Python and every library this repo uses
 
 ```
 make python.learn                                  # all three, in order
-pixi run python src/python_basics/classes.py       # one file on its own
+pixi run python src/01_robotics-intro/python_basics/classes.py       # one file on its own
 ```
 
 Every output shown in this doc was copied from running these files.

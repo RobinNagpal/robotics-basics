@@ -191,10 +191,10 @@ same for `JointState` and `Range`.
 ROS code is organised into **packages**. A package is a folder with the code for
 one piece of a robot, and a file called `package.xml`, which says what the
 package is and which other packages it needs. This area has four packages, in
-`src/ros/`, split into the basics and the worked examples:
+`src/04_ros-and-rviz/ros/`, split into the basics and the worked examples:
 
 ```
-src/ros/
+src/04_ros-and-rviz/ros/
   ros_basics/                    one small program per thing ROS does
     package.xml                  what the package is, and what it needs
     setup.py                     how it is installed, and the names of its programs
@@ -379,7 +379,7 @@ robot's software is doing what you think it is.
 ## 9. The programs in this area
 
 The area is in two halves. **[ROS basics](02_ros-basics.md)** is one small program
-for each thing ROS is used for, in `src/ros/ros_basics/`: a node, a topic, a
+for each thing ROS is used for, in `src/04_ros-and-rviz/ros/ros_basics/`: a node, a topic, a
 parameter, a service, an action, a frame, and a launch file. Read it beside this
 doc, running each program as you reach it.
 
@@ -389,7 +389,7 @@ doc, running each program as you reach it.
 | [services](02_ros-basics.md#5-services-one-question-one-answer) | one node asks another a question and waits for the answer | `make ros.service` |
 | [actions](02_ros-basics.md#6-actions-long-jobs-with-progress) | a long job, reporting progress until it finishes | `make ros.action` |
 
-The three **worked examples**, in `src/ros/ros_applied/`, then put those
+The three **worked examples**, in `src/04_ros-and-rviz/ros/ros_applied/`, then put those
 together into something a robot actually does:
 
 | Example | What it shows | Run it with | The ROS ideas it uses |

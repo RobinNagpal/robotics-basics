@@ -1,0 +1,6 @@
+# Fetched again with `make setup`, and refitted in minutes with `make train`.
+weights/
+
+# Built from pixi.toml and pixi.lock by `make setup`.
+.pixi/
+__pycache__/

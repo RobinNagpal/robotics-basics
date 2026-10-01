@@ -6,7 +6,7 @@ picture, a cloud of 3D points, the angles of an arm's joints and the 4 × 4
 transform that says where the gripper is are all arrays, and cv_bridge, OpenCV,
 SciPy and the rest of the libraries a robot uses hand them to you as NumPy
 arrays. This doc explains the parts of NumPy that robotics code uses most, with
-five small Python files in `src/numpy/` that run every example and print the
+five small Python files in `src/01_robotics-intro/numpy/` that run every example and print the
 results quoted here.
 
 ## Contents
@@ -101,7 +101,7 @@ array of a given type.
 
 ## 2. The five files
 
-The examples live in `src/numpy/`, one file per group of related tools. Each file
+The examples live in `src/01_robotics-intro/numpy/`, one file per group of related tools. Each file
 is a plain Python program: every section is one function, and running the file
 runs the sections in order and prints what each one does. The files are not a
 ROS package, so they need no build.
@@ -119,7 +119,7 @@ Run them all, one after another, or one at a time:
 ```
 make numpy.learn                        # all five, in order
 make numpy.run FILE=linear_algebra      # just one
-pixi run python src/numpy/maths.py      # the same, without make
+pixi run python src/01_robotics-intro/numpy/maths.py      # the same, without make
 ```
 
 Two of the files have names chosen to stay out of trouble. A file called
@@ -1175,18 +1175,18 @@ not match its type.
 The other areas use the tools from this doc, and it is worth reading them with
 this doc beside you:
 
-- **`src/ros/ros_applied/ros_camera/ros_camera/camera_publisher.py`** draws the test picture
+- **`src/04_ros-and-rviz/ros/ros_applied/ros_camera/ros_camera/camera_publisher.py`** draws the test picture
   with `np.full` for the grey background, `np.mgrid` for every pixel's position,
   and a boolean mask for the pixels inside the ball, then sends it with
   `tobytes()`.
-- **`src/ros/ros_applied/ros_camera/ros_camera/camera_subscriber.py`** finds the ball with the
+- **`src/04_ros-and-rviz/ros/ros_applied/ros_camera/ros_camera/camera_subscriber.py`** finds the ball with the
   colour channels `picture[:, :, 0]`, a mask built with `&`, and `np.nonzero`,
   whose rows and columns it averages into the ball's pixel.
-- **`src/camera/camera_applied/camera_one_box/camera_one_box/measure.py`** uses most of this doc in
+- **`src/02_perception/camera/camera_applied/camera_one_box/camera_one_box/measure.py`** uses most of this doc in
   under 150 lines: `np.mgrid` and broadcasting in `depth_to_points()`, a 4 × 4 transform
   from `np.eye(4)` in `transform_matrix()`, `@` and `.T` in `to_world()`, and
   NaN, masks, `max`, `mean` and `np.ptp` in `measure_box()`.
-- **`src/camera/camera_applied/camera_one_box/camera_one_box/show_pixels.py`** uses `np.nanmin`,
+- **`src/02_perception/camera/camera_applied/camera_one_box/camera_one_box/show_pixels.py`** uses `np.nanmin`,
   `np.nanmax` and `np.where` to turn a depth picture with missing readings into
   grey levels.
 - **`docs/diagrams/`** draws every picture in the docs with NumPy and matplotlib.

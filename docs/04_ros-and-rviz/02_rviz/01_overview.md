@@ -207,7 +207,7 @@ second.
 ## 3. How the code works
 
 All of it lives in one file:
-[`marker_publisher.py`](../../../code/src/rviz_basics/rviz_basics/marker_publisher.py).
+[`marker_publisher.py`](../../../code/src/04_ros-and-rviz/rviz_basics/rviz_basics/marker_publisher.py).
 
 The snippets below are trimmed so they stay readable. Type hints and docstrings
 are left out, a few repeated lines are joined into one, and some comments are
@@ -500,7 +500,7 @@ docs/
   rviz/overview.md                     this file
   diagrams/rviz.py                     redraws the pictures in it
   images/rviz/                         scene.svg, motion.svg
-src/rviz_basics/
+src/04_ros-and-rviz/rviz_basics/
   rviz_basics/marker_publisher.py      the node
   launch/marker_demo.launch.py         starts the node and RViz together
   rviz/marker_demo.rviz                the saved RViz layout

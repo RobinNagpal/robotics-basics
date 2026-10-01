@@ -8,7 +8,7 @@ rest of this book?**
 It is for someone who has never studied robotics and has forgotten most of the
 trigonometry they learned at school. You do not need anything beyond it. Every
 idea is shown on a robot arm, not on a textbook triangle. Every number is
-printed by `code/src/maths/angles.py`, so you can run it and check.
+printed by `code/src/01_robotics-intro/maths/angles.py`, so you can run it and check.
 
 The doc covers five tools. Each one answers a question an arm asks all the time:
 
@@ -394,7 +394,7 @@ joint limits:         check the whole path, not only the end angle
 From the `code/` folder:
 
 ```
-pixi run python src/maths/angles.py
+pixi run python src/01_robotics-intro/maths/angles.py
 ```
 
 The file prints five sections, one per section of this doc, in the same order.

@@ -130,7 +130,11 @@ def env() -> dict[str, str]:
             key, _, value = line.partition("=")
             values[key.strip()] = value.strip().strip('"').strip("'")
     # A real environment variable wins, so a CI run needs no file on disk.
-    for key in ("GOOGLE_API_KEY", "GEMINI_MODEL", "GEMINI_API_KEY"):
+    # The AWS keys are here because `--upload` runs the `aws` command, which
+    # reads them from its own environment and not from this file.
+    for key in ("GOOGLE_API_KEY", "GEMINI_MODEL", "GEMINI_API_KEY",
+                "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION",
+                "AWS_SESSION_TOKEN"):
         if os.environ.get(key):
             values[key] = os.environ[key]
     return values
@@ -941,7 +945,7 @@ def rebuild_manifest() -> dict:
     return entries
 
 
-def upload(bucket: str) -> None:
+def upload(bucket: str, values: dict[str, str]) -> None:
     """Put the recordings and their records where the site can read them.
 
     They go under `audio/` in the same bucket the site is served from, so a page
@@ -962,18 +966,31 @@ def upload(bucket: str) -> None:
     the edge cache for a page whose recording has been replaced.
     """
     cache = "public, max-age=31536000, immutable"
+    # The `aws` command reads its credentials from its own environment, and this
+    # script keeps them in `.env` beside the model key, so they are put back into
+    # the environment here rather than being left for the caller to export. A key
+    # already in the real environment wins, which is what `env()` arranges, so a
+    # CI run that has no `.env` file works unchanged.
+    where = dict(os.environ)
+    for key in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION",
+                "AWS_SESSION_TOKEN"):
+        if values.get(key):
+            where[key] = values[key]
+    if not where.get("AWS_ACCESS_KEY_ID"):
+        raise SystemExit("no AWS_ACCESS_KEY_ID in .env or the environment, so "
+                         "there is nowhere to upload to")
     subprocess.run(
         ["aws", "s3", "sync", str(AUDIO), f"s3://{bucket}/audio/", "--no-progress",
          "--exclude", "*", "--include", "*.mp3", "--exclude", "*/[0-9][0-9]-*.mp3",
          "--content-type", "audio/mpeg", "--cache-control", cache],
-        check=True,
+        check=True, env=where,
     )
     if STATE.exists():
         subprocess.run(
             ["aws", "s3", "sync", str(STATE), f"s3://{bucket}/audio/", "--no-progress",
              "--exclude", "*", "--include", "*.json",
              "--content-type", "application/json", "--cache-control", cache],
-            check=True,
+            check=True, env=where,
         )
 
 
@@ -1022,7 +1039,7 @@ def main() -> None:
     print(f"\nmanifest: {len(entries)} recording(s)")
 
     if args.upload:
-        upload(args.bucket)
+        upload(args.bucket, values)
         print(f"uploaded to s3://{args.bucket}/audio/")
 
     if failed:

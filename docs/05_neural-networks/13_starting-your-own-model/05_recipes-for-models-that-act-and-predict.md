@@ -23,7 +23,7 @@ and the three pages after it, so that a policy, an action chunk and a world mode
 are familiar, and that you have worked through
 [before you train anything](01_before-you-train-anything.md) and
 [what to reuse and what to train](03_what-to-reuse-and-what-to-train.md). Three
-warnings run through it, because each costs weeks: the action space has to be
+warnings run through it, each of which costs weeks: the action space must be
 written down before any data is collected, two people's demonstrations are not
 interchangeable, and a simulator is a project in itself.
 
@@ -64,9 +64,9 @@ it costs 5.54 megabytes, of which the two camera videos are 99.87 per cent.
 
 One training example is one row of the state table, the two camera frames beside
 it, and the commands recorded after it, so one episode gives 120 examples. The
-raw frames would be 221.18 megabytes, and writing them as video at forty to one
-is the only reason a thousand episodes fits on a laptop. What governs the recipe,
-though, is not bytes but minutes.
+raw frames would be 221.18 megabytes, and writing them as video is the only
+reason a thousand episodes fits on a laptop. What governs the recipe is not bytes
+but minutes.
 
 ![A stacked bar splitting one episode into moving, resetting, checking and the spoiled take, beside a log-log line of person-hours against episodes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/hours-of-a-person.svg)
 
@@ -78,7 +78,7 @@ How many you need is set by how much the job varies, which is best seen by
 measuring the same task twice with one more thing moving about. In the simulated
 reach below a gripper must reach a goal somewhere on a patch of table without
 touching a box in the way, and a run works only if it ends within 1.5 centimetres
-of the goal and never touches the box.
+and never touches the box.
 
 ![Two success curves against the number of demonstrations on a log scale, with a shaded spread, beside two bars of person-minutes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/success-against-demonstrations.svg)
 
@@ -90,9 +90,8 @@ Both curves climb steeply and then flatten, from 0.604 to 0.938 in the first cas
 and from 0.454 to 0.887 in the second, so once a policy is stuck at four runs in
 five, recording another two hundred episodes of the same thing is the wrong move.
 Count instead what has to be covered before you start, which is every way the
-object can lie times every lighting condition times every starting pose, and for
-six orientations and four lighting conditions that is a few hundred episodes
-rather than a few dozen.
+object can lie times every lighting condition, and for six orientations and four
+lightings that is a few hundred episodes rather than a few dozen.
 
 The starting point is a library rather than a model, since there is no pretrained
 plain cloning policy worth downloading.
@@ -118,11 +117,10 @@ other ends 41.12 centimetres from the goal instead of 0.38.
 
 Those three bars are one trained policy on one arm: played as trained it misses
 by 0.38 centimetres, read as places rather than changes it misses by 41.12, and
-with its two axes swapped, which happens when the order of the joints in the
-recording is not the order the runner sends, it misses by 60.70. No amount of
-extra data fixes any of that, because the recordings and the runner disagree
-about what a number means, so write the joint order, the units, place or change,
-the rate and the scaling numbers into a file beside the weights.
+with its two axes swapped it misses by 60.70. No amount of extra data fixes any
+of that, because the recordings and the runner disagree about what a number
+means, so write the joint order, the units, place or change, the rate and the
+scaling numbers into a file beside the weights.
 
 ![Two people's paths round the same box, a histogram of how far each moves next, and four bars of success for four ways of gathering eighty recordings](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/two-demonstrators.svg)
 
@@ -132,14 +130,13 @@ from one person train a better policy than forty from each.
 
 The training asks for one answer close to every label, so where two people
 answered differently it gives the average, and on the mixed set the best possible
-single answer is wrong by 6.47 times as much, squared. Here the cost is small,
-because both people pass the box on the same side and the average of two safe
-paths is still safe, so success falls only from 0.788 to 0.704, while when they
-pass on opposite sides it falls to 0.614. One person on two days counts as two
-people, since a handle set up differently shows up in the labels the same way.
-The mistake almost everybody makes first is to judge the policy by its loss,
-which falls on moments a person visited while the arm visits moments nobody
-did.
+single answer is wrong by 6.47 times as much, squared. The cost is small while
+both people pass the box on the same side, since success falls only from 0.788 to
+0.704, and it grows to 0.614 when they pass on opposite sides. One person on two
+days counts as two people, because a handle set up differently shows up in the
+labels the same way. The mistake almost everybody makes first is to judge the
+policy by its loss, which falls on moments a person visited while the arm visits
+moments nobody did.
 
 ---
 
@@ -277,10 +274,10 @@ training a rank-16 adapter on it needs 0.94, while the same two numbers for a
 
 A trained weight costs memory for itself, its gradient and the optimiser's two
 running averages, which is twelve bytes if the weights are kept in two, while a
-frozen weight costs only its two. An adapter, explained on
+frozen weight costs only two. An adapter, explained on
 [fine-tuning and adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md),
 replaces each big square matrix with two thin ones, so a rank-16 adapter on a
-1,024-wide matrix trains 32,768 weights instead of 1,048,576, which across 24
+1,024-wide matrix trains 32,768 weights instead of 1,048,576, which over 24
 blocks of four such matrices is 0.70 per cent of the small model. One training
 example is a section 2 example with a sentence attached, and the sentence is
 where first attempts are wasted.
@@ -312,11 +309,11 @@ different project from one that does not, and the one number to watch while
 fine-tuning is the success rate per job rather than the average, since an average
 hides a job that has collapsed.
 
-So is it a sensible first project? Only if you really need one model to do
-several jobs chosen by a sentence, because for one job a chunk policy from
-section 2 is smaller, faster and far easier to debug. The mistake almost
-everybody makes first is to reach for the biggest model because it generalises,
-and then to find that it generalises in the ways measured in
+So is it a sensible first project? Only if you really need one model for several
+jobs chosen by a sentence, because for one job a chunk policy from section 2 is
+smaller, faster and far easier to debug. The mistake almost everybody makes first
+is to reach for the biggest model because it generalises, and then to find it
+generalises in the ways measured in
 [what generalisation really looks like](../12_models-that-act/03_vision-language-action-models.md#7-what-generalisation-really-looks-like-and-what-it-costs-to-run)
 rather than the way they needed.
 
@@ -376,15 +373,15 @@ Between two commands at 30 a second there is room for 3,333 futures of twenty
 steps if one model step costs half a microsecond, and room for 3 if it costs five
 hundred.
 
-Every step of every candidate future is one call of the model, so one decision
-with 64 futures of 20 steps is 1,280 calls, which is why the models planned
-against on arms predict a few dozen numbers rather than pictures. The starting
-points are designs rather than downloads, since a model of your arm can only be
-fitted to your arm, and TD-MPC2 and the Dreamer family are the two to copy. The
-first milestone is the one-step error on held-out transitions, the one number to
-watch after that is the horizon at which the rollout error crosses your
-tolerance, and the mistake almost everybody makes first is to judge the model by
-its one-step error alone, which looks superb and says nothing about the rollout.
+Every step of every candidate is one call of the model, so one decision with 64
+futures of 20 steps is 1,280 calls, which is why the models planned against on
+arms predict a few dozen numbers rather than pictures. The starting points are
+designs rather than downloads, since a model of your arm fits only your arm, and
+TD-MPC2 and the Dreamer family are the two to copy. The first milestone is the
+one-step error on held-out transitions, the one number to watch after that is the
+horizon at which the rollout error crosses your tolerance, and the mistake almost
+everybody makes first is to judge the model by its one-step error alone, which
+looks superb and says nothing about the rollout.
 
 ---
 
@@ -409,9 +406,8 @@ building a simulator first, and a simulator is a project in itself: a model of
 the arm and the objects, contact that behaves, a camera view if the policy uses
 pictures, a reset that puts everything back, and a reward that cannot be earned
 the wrong way. MuJoCo, PyBullet and Isaac give you the physics and
-Stable-Baselines3 gives you PPO and SAC already written, so what is left is the
-part specific to your cell, which is also the part that decides whether any of it
-transfers.
+Stable-Baselines3 gives you PPO and SAC, so what is left is the part specific to
+your cell, which is also the part that decides whether any of it transfers.
 
 ![Five bars of success for one policy on five arms that differ from the simulator, beside two curves of success against how late commands arrive](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/the-simulator-must-be-right.svg)
 
@@ -428,7 +424,7 @@ randomisation, described in
 and its cost shows in the learning curve above, where the randomised search needs
 many more rounds to reach a worse score in its own simulator.
 
-This is nonetheless the right call when the job cannot be demonstrated because it
+It is nonetheless the right call when the job cannot be demonstrated because it
 needs force or speed a person cannot produce through a handle, when the outcome
 can be scored by a program as
 [rewards, preferences and verifiers](../11_learning-from-outcomes/02_rewards-preferences-and-verifiers.md)
@@ -442,18 +438,18 @@ The searched policy works on 0.99 of runs in its own simulator and 0.65 on a
 different arm, randomising brings that back to 0.98, and the policy cloned from
 forty demonstrations works on 0.80 of runs on the arm its recordings came from.
 
-Reading that chart beside the hours gives the answer for a person with one arm
-and a few weeks. Attempt the chunk policy of section 2 first, because it is the
+That chart, beside the hours, answers the question for a person with one arm and
+a few weeks. Attempt the chunk policy of section 2 first, because it is the
 smallest thing that works and the others are variations on it; attempt the
-generating policy of section 3 only if the test in that section says your task
-has more than one right answer; and attempt the world model of section 5 if you
-want a planner rather than a policy. Do not attempt a vision-language-action
-model as a first project unless you truly need several jobs chosen by a sentence,
-and do not attempt a reinforcement-learned policy at all unless you already have
-a simulator you trust, because the weeks will go into the simulator and the
-policy will never arrive. The cloned policy has no reality gap at all, because
-its data came from the arm itself, and at the start that is worth more than
-everything the other families offer.
+generating policy of section 3 only if the test there says your task has more
+than one right answer; and attempt the world model of section 5 if you want a
+planner rather than a policy. Do not attempt a vision-language-action model as a
+first project unless you truly need several jobs chosen by a sentence, and do not
+attempt a reinforcement-learned policy at all unless you already have a simulator
+you trust, because the weeks will go into the simulator and the policy will never
+arrive. The cloned policy has no reality gap, because its data came from the arm
+itself, and at the start that is worth more than everything the other families
+offer.
 
 ---
 

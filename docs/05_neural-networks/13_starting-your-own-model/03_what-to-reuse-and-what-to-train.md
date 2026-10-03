@@ -111,38 +111,36 @@ three bills are not alike: one rung costs you examples, another costs memory, an
 last costs a person's week. The accuracy figures come from a simulated job, built so
 that the whole ladder can be run ten times over and measured rather than asserted.
 
-The simulation works like this. One example is 200 numbers standing in for one look at
-one object, mixed from 16 hidden ones by a fixed random rule put through a cosine. Six
-of the hidden numbers say how strongly each part of the object is present and ten are
-nuisance, standing for the lighting, the background and the pose. The published model
-was pretrained on 12,000 examples of a six-way job, which is to say which part is
-strongest, and it reaches 0.701 on that job. The new job is a different question about
-the same parts, which is whether the first two parts are both present, exactly one of
-them, or neither, and the best any method could ever do on it is 0.826 while guessing
-scores 0.333.
+One example in that simulation is 200 numbers standing in for one look at one object,
+mixed from 16 hidden ones by a fixed random rule put through a cosine. Six of the hidden
+numbers say how strongly each part of the object is present and ten are nuisance,
+standing for the lighting, the background and the pose. The published model was
+pretrained on 12,000 examples of a six-way job, which is to say which part is strongest,
+and it reaches 0.701 on that. The new job asks a different question about the same
+parts, which is whether the first two are both present, exactly one of them, or neither,
+and the best anything could do on it is 0.826 while guessing scores 0.333.
 
 ![Six curves of held-out accuracy against the number of your own examples, from 4 to 1,024, with a ceiling line at 0.826](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/rung-learning-curves.svg)
 
 Every line is one rung, averaged over ten separate worlds, and the number of your own
 examples runs along the bottom.
 
-Using the model as it is scores 0.387 whatever you do, because nothing about it
-changes. The prompt rung, which here is choosing the best fixed reading of the model's
-existing answers without training anything, climbs to about 0.41 and stops, and it stops
-because a prompt can only reach behaviour the weights already hold. A head on frozen
-features reaches 0.505 at 512 examples and then goes no further. An adapter reaches
-0.656 and a full fine-tune 0.683 at the same 512. So the gain from each climb, measured
-at 512 examples, is 0.015 for the prompt, 0.103 for the head, 0.150 for the adapter and
-0.027 for the full fine-tune, which says plainly that the two climbs worth making here
-are onto the head and onto the adapter.
+Using the model as it is scores 0.387 whatever you do, because nothing about it changes.
+The prompt rung, which here is choosing the best fixed reading of the model's existing
+answers without training anything, climbs to about 0.41 and stops, because a prompt can
+only reach behaviour the weights already hold. A head on frozen features reaches 0.505
+at 512 examples and goes no further, an adapter reaches 0.656 and a full fine-tune 0.683.
+So the gain from each climb at 512 examples is 0.015 for the prompt, 0.103 for the head,
+0.150 for the adapter and 0.027 for the full fine-tune, which says that the two climbs
+worth making here are onto the head and onto the adapter.
 
 The last line is the honest one. Training the same shape from random numbers reaches
-0.675 at 512 examples, which is as good as fine-tuning the pretrained model, and this
-is the one place where the simulation is kinder to training from nothing than real work
-is. Its input is 200 numbers, while a real picture is 150,528, and its pretraining was
-12,000 examples rather than a million. A small model on a small input is exactly the
-case where training from nothing works, which section 3 returns to as the one real
-exception, and it is not the case you are in when the input is a camera frame.
+0.675 at 512 examples, which is as good as fine-tuning the pretrained model, and this is
+the one place where the simulation is kinder to training from nothing than real work is.
+Its input is 200 numbers while a real picture is 150,528, and its pretraining was 12,000
+examples rather than a million. A small model on a small input is exactly the case where
+training from nothing works, which section 3 returns to, and it is not the case you are
+in when the input is a camera frame.
 
 ![Stacked memory bars for each rung on the picture model, beside two bars for a 6.74 thousand million number model against a 24 GiB line](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/rung-memory.svg)
 
@@ -153,12 +151,12 @@ pass.
 A frozen weight costs 2 bytes and a trained one costs 12, because training keeps the
 weight, its gradient and two running averages, and that recipe comes from the
 fine-tuning page. On the stated picture model a frozen backbone with a head needs
-0.16 GiB, an adapter run needs 1.25 GiB and a full fine-tune needs 2.04 GiB at batches
-of 32, so every rung fits on an ordinary small card with room to spare. This is worth
-saying out loud, because people reach for adapters out of habit: at 85.8 million
-numbers there is no memory reason to, and the fine-tuning page's 6.74 thousand million
-number model is where the reason appears, since a full fine-tune of that needs
-75.31 GiB and a rank-8 adapter 12.60 GiB.
+0.16 GiB, an adapter run 1.25 GiB and a full fine-tune 2.04 GiB at batches of 32, so
+every rung fits on an ordinary small card with room to spare. That is worth saying out
+loud, because people reach for adapters out of habit: at 85.8 million numbers there is
+no memory reason to, and the reason only appears at the fine-tuning page's 6.74 thousand
+million number model, where a full fine-tune needs 75.31 GiB and a rank-8 adapter
+12.60 GiB.
 
 ![Horizontal bars on a logarithmic scale of the floating-point operations each rung costs for 500 pictures and 30 passes](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/rung-arithmetic.svg)
 
@@ -166,11 +164,11 @@ The arithmetic for one stated run of 500 pictures and 30 passes over them, with 
 seconds it takes on a card that sustains 40 million million operations a second.
 
 A head on frozen features costs one forward pass for each picture, done once, because
-the output can be saved and the head trained on the saved numbers a hundred times
+the output can be saved and the head then trained on the saved numbers a hundred times
 over, so the whole thing is 1.76e+13 operations and 0.44 seconds. An adapter costs
-1.01e+15 and 25.4 seconds, because the gradient still has to travel back through every
-block even though the blocks do not change. A full fine-tune costs 1.52e+15 and
-38.0 seconds. These are seconds, not days, and that is the real finding of the section.
+1.01e+15 and 25.4 seconds, because the gradient still travels back through every block
+even though the blocks do not change, and a full fine-tune costs 1.52e+15 and
+38.0 seconds. These are seconds, not days, which is the real finding of the section.
 
 ![Stacked bars of the hours a person spends at each rung, with a flat line for the machine time](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/rung-human-hours.svg)
 
@@ -178,18 +176,18 @@ The same six rungs, priced in a person's hours at stated rates, with the machine
 time drawn along the bottom.
 
 Collecting and labelling 500 pictures at a stated 200 an hour is 2.5 hours, writing the
-code is hours more, and judging the result is hours again, so the rungs cost between
-2.0 and 24.0 hours of somebody's attention while the machine never works for longer
-than 0.6 minutes. Choosing a rung is therefore mostly a choice about how much of a
-person's week to spend, and that is the right way to think about it.
+code is hours more and judging the result is hours again, so the rungs cost between 2.0
+and 24.0 hours of somebody's attention while the machine never works for longer than
+0.6 minutes. Choosing a rung is therefore mostly a choice about how much of a person's
+week to spend.
 
 ---
 
 ## 3. Why training a large model from nothing is out of reach
 
 Section 2 ended with the machine barely working at all, which makes the top rung look
-tempting, so this section prices it properly. The argument against training a large
-model from nothing is arithmetic and not attitude, and it has two halves, one about the
+tempting, so this section prices it properly. The argument against training a large model
+from nothing is arithmetic rather than attitude, and it has two halves, one about the
 operations and one about the examples.
 
 ![Grouped bars on a logarithmic scale of training days for three model sizes on one desktop card, one rented accelerator, 64 and 512](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/from-nothing-days.svg)
@@ -200,27 +198,27 @@ one year.
 Training costs about six operations for every parameter and every token, which the
 [scale page](../07_pretraining-and-adapting/02_scale-data-and-compute.md) works out in
 full. Pretraining the stated picture backbone on 1,200,000 pictures for 300 passes is
-3.65e+19 operations, which is 10.6 days on one desktop card sustaining 40 million
-million a second, so the arithmetic for a model that size is not the obstacle.
-Pretraining the 6.74 thousand million number language model over 1.4 million million
-tokens is 5.66e+22 operations, which is 16,378 days on that same card, or 44.8 years,
-and 8.00 days on 512 rented accelerators, which at a stated two dollars an
-accelerator-hour comes to 196,537 dollars. A 70 thousand million number model over ten
-million million tokens is 4.2e+24 operations and still 593 days on 512 machines.
+3.65e+19 operations, which is 10.6 days on one desktop card sustaining 40 million million
+a second, so for a model that size the arithmetic is not the obstacle. Pretraining the
+6.74 thousand million number language model over 1.4 million million tokens is 5.66e+22
+operations, which is 16,378 days on that same card, or 44.8 years, and 8.00 days on 512
+rented accelerators, which at a stated two dollars an accelerator-hour is 196,537
+dollars. A 70 thousand million number model over ten million million tokens is 4.2e+24
+operations and still 593 days on 512 machines.
 
 ![Two panels: the number of pictures behind your run, one working year and a pretraining set, and the same three as hours of a person](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/from-nothing-data.svg)
 
 The left panel counts pictures and the right counts the hours of a person behind them,
 at a stated 200 pictures an hour including the labelling.
 
-The second half of the argument is harder to buy your way out of. The 500 pictures of
-the stated run are 0.042 per cent of a 1,200,000 picture pretraining set, which is
-2,400 times smaller, and collecting that set yourself takes 6,000 hours, or 3.3 working
-years. One person working a full year of 1,800 hours collects 360,000 pictures, which
-is 30 per cent of it, or 72,000 demonstrations at 40 an hour, which is 36,000,000
-frames of the same few scenes. Frames of one scene are nearly the same picture again,
-so they cannot stand in for a million different ones, and that is why nobody teaches a
-robot model to see from their own demonstrations alone.
+The second half of the argument is harder to buy your way out of. The 500 pictures of the
+stated run are 0.042 per cent of a 1,200,000 picture pretraining set, which is 2,400
+times smaller, and collecting that set yourself takes 6,000 hours, or 3.3 working years.
+One person working a full year of 1,800 hours collects 360,000 pictures, which is 30 per
+cent of it, or 72,000 demonstrations at 40 an hour, which is 36,000,000 frames of the
+same few scenes. Frames of one scene are nearly the same picture again, so they cannot
+stand in for a million different ones, which is why nobody teaches a robot model to see
+from their own demonstrations alone.
 
 ![Two panels: a stated budget of 200 accelerator-hours against one pretraining run, and the number of fine-tunes, adapter runs and probes the same budget buys](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/budget-buys.svg)
 
@@ -228,11 +226,10 @@ The same money, spent two ways: on the top rung on the left, and on the rungs be
 on the right.
 
 A budget of 200 accelerator-hours is 1.15e+20 operations. Spent on pretraining the big
-model it pays for 0.2035 per cent of one run, which is nothing you can use. Spent on
-the rungs below it, the same budget buys 75,725 full fine-tunes of the picture model,
-or 113,594 adapter runs, or 6,537,865 frozen-feature probes. There is no sense in which
-the top rung is a cheaper way to the same place; it is a different and much larger
-project.
+model it pays for 0.2035 per cent of one run, which is nothing you can use, while spent
+on the rungs below it the same budget buys 75,725 full fine-tunes of the picture model,
+or 113,594 adapter runs, or 6,537,865 frozen-feature probes. The top rung is not a
+cheaper way to the same place; it is a different and much larger project.
 
 ![Horizontal bars on a logarithmic scale comparing a one million number model on 5,000 examples with a fine-tune, a backbone pretrain and a large pretrain](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/small-model-exception.svg)
 

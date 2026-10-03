@@ -279,8 +279,8 @@ One thing more is worth checking while you look, which is the quality of the ans
 ![A bar chart of how often two labellers give the same answer, grouped by how clearly one grip is best, beside a histogram of how many parts sit near the boundary](../../images/starting-your-own-model/before-you-train-anything/labellers-disagree.svg)
 
 Two people labelling the same 240 parts agree on 90.0 per cent of them, but on the 27 parts
-where the best grip is barely ahead of the second best they agree only 48.1 per cent of the
-time, rising to 93.9 per cent in the middle and 100 per cent where one grip is clearly right.
+where the best grip is barely ahead of the next they agree only 48.1 per cent of the time, and
+on the clearest parts 100 per cent.
 
 That 90.0 per cent is a ceiling, because a model trained on one person's answers and judged
 against another's cannot beat what the two people manage against each other. Knowing it
@@ -303,10 +303,9 @@ records continuously and so produces many examples of the same thing.
 
 ![A bar chart of held-out accuracy under three kinds of split, with whiskers, beside a histogram showing how much closer the nearest frame of the same part is than the nearest frame of any other part](../../images/starting-your-own-model/before-you-train-anything/three-splits-three-scores.svg)
 
-Over five different draws of each kind of split, the same model scores 100.0 per cent when
-the frames are divided at random, 81.6 per cent when whole parts are held out and 80.6 per
-cent when whole trays are, and the nearest frame of the same part sits 13.7 times closer than
-the nearest frame of any other part.
+Over five draws of each kind of split the same model scores 100.0 per cent when frames are
+divided at random, 81.6 per cent when whole parts are held out and 80.6 per cent when whole
+trays are, because the nearest frame of the same part sits 13.7 times closer than any other.
 
 The first of those three is the trap. The camera takes twelve frames of each part as the arm
 comes down, those twelve are nearly the same picture, and dividing frames at random puts
@@ -324,9 +323,8 @@ answers "how will it do on a tray it has never seen", which is usually the one y
 
 ![Two rows of bars, one for each tray, showing how much that tray's average measured width and average measured shine differ from the overall average, with the held-out trays in red](../../images/starting-your-own-model/before-you-train-anything/trays-differ.svg)
 
-Tray by tray, the width reading sits between 12.1 millimetres under and 9.7 millimetres over
-the part's real width, and the shine reading between 0.369 under and 0.285 over, while the
-twelve frames of one part differ from each other by only 0.33 millimetres.
+Tray by tray, the width reading sits between 12.1 millimetres under and 9.7 over the part's
+real width, while the twelve frames of one part differ from each other by only 0.33.
 
 A tray is therefore a real thing and not a label, because its camera alignment and its
 lighting shift every reading taken on it by far more than the camera's own noise, so a model

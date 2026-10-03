@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-03T03:10:39.018856</dc:date>
+    <dc:date>2026-10-03T03:34:15.394053</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -32,17 +32,17 @@ z
    <g id="line2d_1">
     <path d="M 38.34 84.2472 
 L 657.72 84.2472 
-" clip-path="url(#p175ca8df7d)" style="fill: none; stroke: #3b82c4; stroke-width: 1.2; stroke-linecap: square"/>
+" clip-path="url(#pd2a699641c)" style="fill: none; stroke: #3b82c4; stroke-width: 1.2; stroke-linecap: square"/>
    </g>
    <g id="patch_2">
     <path d="M 664.416 294.03093 
 Q 664.416 197.623758 664.416 103.676261 
-" clip-path="url(#p175ca8df7d)" style="fill: none; stroke: #e05555; stroke-width: 2.2; stroke-linecap: round"/>
+" clip-path="url(#pd2a699641c)" style="fill: none; stroke: #e05555; stroke-width: 2.2; stroke-linecap: round"/>
     <path d="M 661.816 108.876261 
 L 664.416 103.676261 
 L 667.016 108.876261 
 z
-" clip-path="url(#p175ca8df7d)" style="fill: #e05555; stroke: #e05555; stroke-width: 2.2; stroke-linecap: round"/>
+" clip-path="url(#pd2a699641c)" style="fill: #e05555; stroke: #e05555; stroke-width: 2.2; stroke-linecap: round"/>
    </g>
    <g id="text_1">
     <!-- The tape the framework keeps while going forward, and reads while going back -->
@@ -700,7 +700,7 @@ Q 37.224 84.8016 37.224 90.3456
 L 37.224 112.5216 
 Q 37.224 118.0656 42.804 118.0656 
 z
-" clip-path="url(#p175ca8df7d)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
+" clip-path="url(#pd2a699641c)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_7">
     <!-- 1 -->
@@ -1420,7 +1420,7 @@ Q 37.224 120.2832 37.224 125.8272
 L 37.224 148.0032 
 Q 37.224 153.5472 42.804 153.5472 
 z
-" clip-path="url(#p175ca8df7d)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
+" clip-path="url(#pd2a699641c)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_12">
     <!-- 2 -->
@@ -1572,7 +1572,7 @@ Q 37.224 155.7648 37.224 161.3088
 L 37.224 183.4848 
 Q 37.224 189.0288 42.804 189.0288 
 z
-" clip-path="url(#p175ca8df7d)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
+" clip-path="url(#pd2a699641c)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_17">
     <!-- 3 -->
@@ -1969,7 +1969,7 @@ Q 37.224 191.2464 37.224 196.7904
 L 37.224 218.9664 
 Q 37.224 224.5104 42.804 224.5104 
 z
-" clip-path="url(#p175ca8df7d)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
+" clip-path="url(#pd2a699641c)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_22">
     <!-- 4 -->
@@ -2128,7 +2128,7 @@ Q 37.224 226.728 37.224 232.272
 L 37.224 254.448 
 Q 37.224 259.992 42.804 259.992 
 z
-" clip-path="url(#p175ca8df7d)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
+" clip-path="url(#pd2a699641c)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_27">
     <!-- 5 -->
@@ -2311,7 +2311,7 @@ Q 37.224 262.2096 37.224 267.7536
 L 37.224 289.9296 
 Q 37.224 295.4736 42.804 295.4736 
 z
-" clip-path="url(#p175ca8df7d)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
+" clip-path="url(#pd2a699641c)" style="fill: #fafafa; stroke: #eeeeee; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_32">
     <!-- 6 -->
@@ -3014,7 +3014,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p175ca8df7d">
+  <clipPath id="pd2a699641c">
    <rect x="21.6" y="21.6" width="647.28" height="299.376"/>
   </clipPath>
  </defs>

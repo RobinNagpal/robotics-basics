@@ -645,10 +645,11 @@ def vocabulary_size_curve() -> None:
             label='on the five instructions, which it has not seen')
     last = -1e9
     for x, yc, yh in zip(sizes, corpus_rate, held_rate):
-        if x - last < 55:
+        if x - last < 55 or x == sizes[0]:
             continue
         last = x
-        ax.text(x, yc - 0.17, f'{yc:.2f}', fontsize=8.5, color=LINK, ha='center')
+        dy = 0.12 if yc < 1.35 else -0.17
+        ax.text(x, yc + dy, f'{yc:.2f}', fontsize=8.5, color=LINK, ha='center')
         ax.text(x, yh + 0.08, f'{yh:.2f}', fontsize=8.5, color=WRIST, ha='center')
     ax.axhline(1.0, color=MUTED, ls='--', lw=1.1)
     ax.text(sizes[2], 1.06, 'one token per word', fontsize=9, color=MUTED, ha='left')
@@ -755,10 +756,10 @@ def _draw_table(ax: Axes, rows: list[tuple[str, int, Arr]], x0: float = 0.0,
     n = len(rows)
     ax.text(x0 - 0.1, y0 + n * rh + 0.30, 'token', fontsize=9.5, color=MUTED,
             weight='bold', ha='left')
-    ax.text(x0 + 1.55, y0 + n * rh + 0.30, 'id', fontsize=9.5, color=MUTED,
+    ax.text(x0 + 1.95, y0 + n * rh + 0.30, 'id', fontsize=9.5, color=MUTED,
             weight='bold', ha='center')
     for j in range(6):
-        ax.text(x0 + 2.2 + (j + 0.5) * cw, y0 + n * rh + 0.30, f'{j + 1}', fontsize=9.5,
+        ax.text(x0 + 2.6 + (j + 0.5) * cw, y0 + n * rh + 0.30, f'{j + 1}', fontsize=9.5,
                 color=MUTED, weight='bold', ha='center')
     for i, (name, tid, vec) in enumerate(rows):
         y = y0 + (n - 1 - i) * rh
@@ -766,13 +767,13 @@ def _draw_table(ax: Axes, rows: list[tuple[str, int, Arr]], x0: float = 0.0,
         ax.text(x0 - 0.1, y + rh / 2, name.replace(END, '␣'), fontsize=9.8,
                 color=LINK if on else INK, va='center', family='DejaVu Sans Mono',
                 weight='bold' if on else 'normal')
-        ax.text(x0 + 1.55, y + rh / 2, str(tid), fontsize=9.3, color=MUTED, va='center',
+        ax.text(x0 + 1.95, y + rh / 2, str(tid), fontsize=9.3, color=MUTED, va='center',
                 ha='center')
         for j, v in enumerate(vec):
-            ax.add_patch(Rectangle((x0 + 2.2 + j * cw, y), cw, rh,
+            ax.add_patch(Rectangle((x0 + 2.6 + j * cw, y), cw, rh,
                                    facecolor=LINK_PALE if on else 'white',
                                    edgecolor=GRID, lw=0.8))
-            ax.text(x0 + 2.2 + (j + 0.5) * cw, y + rh / 2, f'{v:+.2f}', fontsize=size,
+            ax.text(x0 + 2.6 + (j + 0.5) * cw, y + rh / 2, f'{v:+.2f}', fontsize=size,
                     ha='center', va='center', color=INK)
 
 
@@ -787,16 +788,16 @@ def embedding_table() -> None:
 
     fig, ax = plt.subplots(figsize=(11.6, 5.6), facecolor='white')
     _blank(ax)
-    _draw_table(ax, rows, x0=3.6, y0=0.1, highlight=0)
-    ax.text(0.0, 3.15, 'the sentence said ␣mug,', fontsize=11, color=INK)
-    ax.text(0.0, 2.80, f'which is token number {rows[0][1]},', fontsize=11, color=INK)
-    ax.text(0.0, 2.45, f'so the table hands back row {rows[0][1]}', fontsize=11,
+    _draw_table(ax, rows, x0=4.4, y0=0.1, highlight=0)
+    ax.text(0.0, 6.95, 'the sentence said ␣mug,', fontsize=11, color=INK)
+    ax.text(0.0, 6.55, f'which is token number {rows[0][1]},', fontsize=11, color=INK)
+    ax.text(0.0, 6.15, f'so the table hands back row {rows[0][1]}', fontsize=11,
             color=LINK, weight='bold')
-    _arrow(ax, 2.95, 2.55, 3.45, 6.0, colour=LINK, lw=1.6)
+    _arrow(ax, 3.20, 6.10, 3.45, 5.99, colour=LINK, lw=1.6)
     ax.text(3.6 + 2.2 + 3 * 1.05, -0.55, 'the six learned numbers for that token',
             fontsize=10, color=MUTED, ha='center')
-    ax.set_xlim(-0.2, 13.2)
-    ax.set_ylim(-0.9, 7.2)
+    ax.set_xlim(-0.2, 14.4)
+    ax.set_ylim(-0.9, 8.1)
     ax.set_title('The embedding table is a lookup: one token number picks one row '
                  'of learned numbers',
                  fontsize=12.5, weight='bold', color=INK, loc='left')
@@ -804,7 +805,7 @@ def embedding_table() -> None:
 
 
 def lookup_as_matrix() -> None:
-    rows = _table_rows()
+    rows = _table_rows()[:6]
     mat = np.array([r[2] for r in rows])
     pick = 2                                    # the row for the token for bowl
     one_hot = np.zeros(len(rows))
@@ -816,32 +817,35 @@ def lookup_as_matrix() -> None:
           + ' + '.join(f'{o:.0f}x{m:+.2f}' for o, m in zip(one_hot, mat[:, 0]))
           + f' = {out[0]:+.2f}')
 
-    fig, ax = plt.subplots(figsize=(12.0, 5.0), facecolor='white')
+    rh, n = 0.62, len(rows)
+    mid = 0.1 + n * rh / 2 - 0.31
+    fig, ax = plt.subplots(figsize=(12.6, 4.4), facecolor='white')
     _blank(ax)
     for i, v in enumerate(one_hot):
-        ax.add_patch(Rectangle((i * 0.62, 3.0), 0.62, 0.62,
+        ax.add_patch(Rectangle((i * 0.62, mid), 0.62, 0.62,
                                facecolor=GRIP if v else 'white', edgecolor=GRID, lw=0.8))
-        ax.text((i + 0.5) * 0.62, 3.31, f'{v:.0f}', fontsize=9.5, ha='center',
+        ax.text((i + 0.5) * 0.62, mid + 0.31, f'{v:.0f}', fontsize=9.5, ha='center',
                 va='center', color='white' if v else INK)
-    ax.text(0.0, 3.92, 'one row of 0s with a single 1, at the place of the token '
-                       f'{rows[pick][0].replace(END, "␣")}',
-            fontsize=10, color=MUTED)
-    ax.text(len(rows) * 0.62 + 0.25, 3.31, 'x', fontsize=15, color=INK, va='center')
-    _draw_table(ax, rows, x0=7.6, y0=0.1, highlight=pick, size=8.6)
-    ax.text(7.6, -0.6, f'the whole table, {len(rows)} rows of 6 numbers', fontsize=10,
+    ax.text(0.0, mid + 0.92, 'a row of 0s with one 1,\n'
+                             f'at the place of {rows[pick][0].replace(END, "␣")}',
+            fontsize=10, color=MUTED, va='bottom')
+    ax.text(n * 0.62 + 0.3, mid + 0.31, '×', fontsize=15, color=INK, va='center')
+    _draw_table(ax, rows, x0=6.0, y0=0.1, highlight=pick, size=8.6)
+    ax.text(6.0, -0.55, f'the table, {len(rows)} rows of 6 numbers', fontsize=10,
             color=MUTED)
-    ax.text(14.4, 3.31, '=', fontsize=15, color=INK, va='center')
+    ax.text(14.9, mid + 0.31, '=', fontsize=15, color=INK, va='center')
     for j, v in enumerate(out):
-        ax.add_patch(Rectangle((15.1 + j * 0.86, 3.0), 0.86, 0.62, facecolor=LINK_PALE,
+        ax.add_patch(Rectangle((15.6 + j * 0.86, mid), 0.86, 0.62, facecolor=LINK_PALE,
                                edgecolor=LINK, lw=0.9))
-        ax.text(15.1 + (j + 0.5) * 0.86, 3.31, f'{v:+.2f}', fontsize=9, ha='center',
-                va='center', color=INK)
-    ax.text(15.1, 3.92, 'exactly the highlighted row', fontsize=10, color=LINK)
-    ax.text(15.1, 2.25, 'column 1 works out as\n'
-            + ' + '.join(f'{o:.0f}×{m:+.2f}' for o, m in zip(one_hot[:4], mat[:4, 0]))
-            + f'\n+ ... = {out[0]:+.2f}', fontsize=9.5, color=MUTED, va='top')
-    ax.set_xlim(-0.2, 21.0)
-    ax.set_ylim(-0.9, 4.4)
+        ax.text(15.6 + (j + 0.5) * 0.86, mid + 0.31, f'{v:+.2f}', fontsize=9,
+                ha='center', va='center', color=INK)
+    ax.text(15.6, mid + 0.80, 'exactly the highlighted row', fontsize=10, color=LINK)
+    terms = [f'{o:.0f}×{m:+.2f}' for o, m in zip(one_hot, mat[:, 0])]
+    ax.text(15.6, mid - 0.28, 'number 1 of the answer is\n'
+            + ' + '.join(terms[:3]) + '\n+ ' + ' + '.join(terms[3:])
+            + f'\n= {out[0]:+.2f}', fontsize=9.2, color=MUTED, va='top')
+    ax.set_xlim(-0.2, 21.6)
+    ax.set_ylim(-1.4, 4.9)
     ax.set_title('The lookup is a matrix multiply in disguise, which is why libraries '
                  'call it a layer',
                  fontsize=12.5, weight='bold', color=INK, loc='left')
@@ -870,8 +874,9 @@ def table_size() -> None:
         ax.text(i, c * 1.5, f'{c:,}\nweights\n({mb})', ha='center', fontsize=9.5,
                 color=INK)
     ax.set_xticks(x)
-    ax.set_xticklabels([f'{n}\n{v:,} tokens × {d} numbers' for (n, v, d) in cases],
-                       fontsize=9.5)
+    ax.set_xticklabels([f'{n}\n{v:,} × {d}' for (n, v, d) in cases], fontsize=9.5)
+    ax.text(0.02, 0.94, 'each label is the number of tokens times the numbers per token',
+            transform=ax.transAxes, ha='left', fontsize=9, color=MUTED)
     ax.set_ylabel('weights in the embedding table (log scale)', fontsize=10)
     ax.set_ylim(1e3, max(counts) * 60)
     ax.set_title('The table is often one of the largest single blocks of weights '
@@ -967,12 +972,12 @@ def cosine_not_length() -> None:
 
     fig, ax = plt.subplots(figsize=(8.6, 6.2), facecolor='white')
     _plain(ax)
-    for v, colour, lab in ((a, INK, 'a = (3, 1)'), (b, LINK, 'b = (6, 2)'),
-                           (c, WRIST, 'c = (1, 3)')):
+    for v, colour, lab, dy in ((a, INK, 'a = (3, 1)', -0.38), (b, LINK, 'b = (6, 2)', 0.14),
+                               (c, WRIST, 'c = (1, 3)', 0.18)):
         ax.add_patch(FancyArrow(0, 0, v[0], v[1], width=0.035, head_width=0.22,
                                 head_length=0.3, length_includes_head=True,
                                 color=colour, zorder=3))
-        ax.text(v[0] + 0.18, v[1] + 0.12, lab, fontsize=11, color=colour, weight='bold')
+        ax.text(v[0] + 0.18, v[1] + dy, lab, fontsize=11, color=colour, weight='bold')
     ax.plot([a[0], b[0]], [a[1], b[1]], ls=':', color=MUTED, lw=1.3)
     ax.plot([a[0], c[0]], [a[1], c[1]], ls=':', color=MUTED, lw=1.3)
     ax.text(4.6, 1.35, f'distance {np.linalg.norm(a - b):.2f}', fontsize=9.5,
@@ -1021,6 +1026,1446 @@ def nearest_neighbours() -> None:
     _save(fig, TOK_DOC, 'nearest-neighbours.svg')
 
 
+# --------------------------------------------------------------------------
+# section 5: order, learned position vectors and rotary position embedding
+# --------------------------------------------------------------------------
+
+PAIR_A: str = 'the mug is in the bowl'
+PAIR_B: str = 'the bowl is in the mug'
+
+
+def same_tokens_different_order() -> None:
+    t, e = _tok(), _emb()
+    rows_a = [(p, t.ids[p], e.small[e.index[p[1:]]]) for p in t.split(PAIR_A)]
+    rows_b = [(p, t.ids[p], e.small[e.index[p[1:]]]) for p in t.split(PAIR_B)]
+    sum_a = np.sum([r[2] for r in rows_a], axis=0)
+    sum_b = np.sum([r[2] for r in rows_b], axis=0)
+    print(f'[s5] "{PAIR_A}" -> {[r[0] for r in rows_a]}')
+    print(f'[s5] "{PAIR_B}" -> {[r[0] for r in rows_b]}')
+    print('[s5] sum of the six rows, first sentence:  '
+          + ' '.join(f'{v:+.2f}' for v in sum_a))
+    print('[s5] sum of the six rows, second sentence: '
+          + ' '.join(f'{v:+.2f}' for v in sum_b))
+    print(f'[s5] the two sums differ by {np.abs(sum_a - sum_b).max():.4f} at most')
+
+    fig, ax = plt.subplots(figsize=(13.0, 5.4), facecolor='white')
+    _blank(ax)
+    right = 0.0
+    for k, (sent, rows, s) in enumerate(((PAIR_A, rows_a, sum_a),
+                                         (PAIR_B, rows_b, sum_b))):
+        y = 2.9 - k * 1.65
+        ax.text(0.0, y + 0.95, f'"{sent}"', fontsize=11.5, color=INK,
+                family='DejaVu Sans Mono')
+        x = _piece_row(ax, [r[0] for r in rows], [r[1] for r in rows], y, x0=0.0,
+                       size=9.5)
+        ax.text(x + 0.2, y + 0.31, 'add the six rows:', fontsize=10, color=MUTED,
+                va='center')
+        for j, v in enumerate(s):
+            ax.add_patch(Rectangle((x + 2.6 + j * 0.78, y), 0.78, 0.62,
+                                   facecolor='#ddeedd' if k == 0 else '#ddeedd',
+                                   edgecolor=SLIDE, lw=0.9))
+            ax.text(x + 2.6 + (j + 0.5) * 0.78, y + 0.31, f'{v:+.2f}', fontsize=8.6,
+                    ha='center', va='center', color=INK)
+        right = max(right, x + 2.6 + 6 * 0.78 + 0.3)
+    ax.text(0.0, 0.25, 'The two sums are the same to every decimal place, so a layer '
+                       'that only adds its inputs up cannot tell the two sentences '
+                       'apart.', fontsize=11, color=GRIP)
+    ax.set_xlim(-0.2, right)
+    ax.set_ylim(0.0, 4.4)
+    ax.set_title('The same tokens in a different order: without position, nothing in '
+                 'the numbers says which is which',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'same-tokens-different-order.svg')
+
+
+def position_vectors_added() -> None:
+    e = _emb()
+    rng = np.random.default_rng(23)
+    pos = np.round(rng.normal(0.0, 0.25, size=(6, 6)), 2)
+    tok_vec = e.small[e.index['mug']]
+    at1 = tok_vec + pos[1]
+    at4 = tok_vec + pos[4]
+    print('[s5] learned position rows (simulated, seed 23):')
+    for i in range(6):
+        print(f'[s5]   position {i}: ' + ' '.join(f'{v:+.2f}' for v in pos[i]))
+    print('[s5] ␣mug at position 1 -> ' + ' '.join(f'{v:+.2f}' for v in at1))
+    print('[s5] ␣mug at position 4 -> ' + ' '.join(f'{v:+.2f}' for v in at4))
+    print(f'[s5] cosine between the two: {_cos(at1, at4):.3f}')
+
+    fig, ax = plt.subplots(figsize=(12.2, 5.6), facecolor='white')
+    _blank(ax)
+    for i in range(6):
+        y = 5.0 - i * 0.68
+        ax.text(0.0, y + 0.31, f'position {i}', fontsize=9.6, color=MUTED, va='center')
+        for j, v in enumerate(pos[i]):
+            on = i in (1, 4)
+            ax.add_patch(Rectangle((1.9 + j * 0.82, y), 0.82, 0.62,
+                                   facecolor='#f6ddc8' if on else 'white',
+                                   edgecolor=GRID, lw=0.8))
+            ax.text(1.9 + (j + 0.5) * 0.82, y + 0.31, f'{v:+.2f}', fontsize=8.6,
+                    ha='center', va='center', color=INK)
+    ax.text(1.9, 5.78, 'the learned position table, one row per place in the sentence',
+            fontsize=10, color=MUTED)
+    for k, (lab, vec, colour, y) in enumerate(
+            (('␣mug', tok_vec, LINK, 3.1), ('+ position 1', pos[1], WRIST, 2.42),
+             ('= input at 1', at1, SLIDE, 1.74),
+             ('␣mug', tok_vec, LINK, 0.86), ('+ position 4', pos[4], WRIST, 0.18),
+             ('= input at 4', at4, SLIDE, -0.50))):
+        ax.text(7.3, y + 0.31, lab, fontsize=10, color=colour, va='center',
+                weight='bold' if lab.startswith('=') else 'normal')
+        for j, v in enumerate(vec):
+            ax.add_patch(Rectangle((9.3 + j * 0.82, y), 0.82, 0.62,
+                                   facecolor='#ddeedd' if lab.startswith('=') else 'white',
+                                   edgecolor=colour, lw=0.9))
+            ax.text(9.3 + (j + 0.5) * 0.82, y + 0.31, f'{v:+.2f}', fontsize=8.6,
+                    ha='center', va='center', color=INK)
+    ax.set_xlim(-0.2, 14.6)
+    ax.set_ylim(-0.9, 6.3)
+    ax.set_title('Learned position vectors: the row for the place is added to the row '
+                 'for the token',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'position-vectors-added.svg')
+
+
+def _rope(vec: Arr, pos: int, base: float = 100.0) -> Arr:
+    """Rotate each neighbouring pair of numbers by an angle that grows with position."""
+    out = vec.copy()
+    for k in range(len(vec) // 2):
+        theta = base ** (-2.0 * k / len(vec))
+        ang = pos * theta
+        x, y = vec[2 * k], vec[2 * k + 1]
+        out[2 * k] = x * np.cos(ang) - y * np.sin(ang)
+        out[2 * k + 1] = x * np.sin(ang) + y * np.cos(ang)
+    return out
+
+
+def rope_rotation() -> None:
+    e = _emb()
+    v = e.small[e.index['mug']]
+    base = 100.0
+    thetas = [base ** (-2.0 * k / 6) for k in range(3)]
+    print('[s5] rotary angles per step: '
+          + ', '.join(f'pair {k + 1}: {t:.4f} radians' for k, t in enumerate(thetas)))
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.6), facecolor='white')
+    for k, ax in enumerate(axes):
+        _plain(ax)
+        x0, y0 = v[2 * k], v[2 * k + 1]
+        r = float(np.hypot(x0, y0))
+        ang0 = np.linspace(0, 2 * np.pi, 200)
+        ax.plot(r * np.cos(ang0), r * np.sin(ang0), color=GRID, lw=1.0)
+        for p in range(6):
+            rot = _rope(v, p, base)
+            px, py = rot[2 * k], rot[2 * k + 1]
+            col = plt.get_cmap('viridis')(p / 5.0)
+            ax.add_patch(FancyArrow(0, 0, px, py, width=0.008 * r, head_width=0.06 * r,
+                                    head_length=0.08 * r, length_includes_head=True,
+                                    color=col, zorder=3))
+            ax.text(px * 1.26, py * 1.26, str(p), fontsize=10, color=col, ha='center',
+                    va='center', weight='bold')
+            if k == 0:
+                print(f'[s5] pair 1 at position {p}: ({px:+.3f}, {py:+.3f})')
+        lim = r * 1.5
+        ax.set_xlim(-lim, lim)
+        ax.set_ylim(-lim, lim)
+        ax.set_aspect('equal')
+        ax.axhline(0, color=GRID, lw=0.8)
+        ax.axvline(0, color=GRID, lw=0.8)
+        ax.set_xlabel(f'number {2 * k + 1}', fontsize=9.5)
+        ax.set_ylabel(f'number {2 * k + 2}', fontsize=9.5)
+        ax.set_title(f'pair {k + 1}: turns {thetas[k]:.4f} radians per step',
+                     fontsize=11, weight='bold', color=INK)
+    fig.suptitle('Rotary position embedding turns each pair of numbers by an angle '
+                 'that grows with the place in the sentence (token ␣mug, '
+                 'positions 0 to 5)', fontsize=12.2, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TOK_DOC, 'rope-rotation.svg')
+
+
+def rope_relative() -> None:
+    e = _emb()
+    q = e.full[e.index['mug']]
+    k = e.full[e.index['bowl']]
+    base = 10_000.0
+    cases = [(0, 3), (2, 5), (7, 10), (20, 23)]
+    print('[s5] dot product of the rotated rows, for places the same gap apart:')
+    for m, n in cases:
+        d = float(_rope(q, m, base) @ _rope(k, n, base))
+        print(f'[s5]   query at {m:3d}, key at {n:3d} (gap {n - m}): {d:+.6f}')
+    gaps = np.arange(0, 61)
+    dots = [float(_rope(q, 5, base) @ _rope(k, 5 + int(g), base)) for g in gaps]
+    plain = float(q @ k)
+    print(f'[s5] without any rotation the dot product is {plain:+.6f} whatever the gap')
+    print(f'[s5] with rotation it runs from {min(dots):+.4f} to {max(dots):+.4f} '
+          'as the gap grows')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.8), facecolor='white',
+                            gridspec_kw={'width_ratios': [1.0, 1.25]})
+    ax = axes[0]
+    _blank(ax)
+    ax.text(0.0, 4.6, 'query at', fontsize=10, color=MUTED, weight='bold')
+    ax.text(2.0, 4.6, 'key at', fontsize=10, color=MUTED, weight='bold')
+    ax.text(3.9, 4.6, 'gap', fontsize=10, color=MUTED, weight='bold')
+    ax.text(5.4, 4.6, 'dot product', fontsize=10, color=MUTED, weight='bold')
+    for i, (m, n) in enumerate(cases):
+        y = 3.9 - i * 0.72
+        d = float(_rope(q, m, base) @ _rope(k, n, base))
+        ax.text(0.5, y, str(m), fontsize=10.5, color=INK, ha='center')
+        ax.text(2.4, y, str(n), fontsize=10.5, color=INK, ha='center')
+        ax.text(4.1, y, str(n - m), fontsize=10.5, color=INK, ha='center')
+        ax.text(6.3, y, f'{d:+.6f}', fontsize=10.5, color=LINK, ha='center',
+                weight='bold')
+    ax.text(0.0, 0.5, 'Four different places, one gap of 3, one answer.', fontsize=10.5,
+            color=SLIDE)
+    ax.set_xlim(-0.2, 7.6)
+    ax.set_ylim(0.0, 5.2)
+    ax.set_title('What the rotated numbers carry is the gap',
+                 fontsize=11.5, weight='bold', color=INK, loc='left')
+
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(gaps, dots, marker='o', ms=3, color=LINK, lw=1.6,
+            label='after rotating both rows by their place')
+    ax.axhline(plain, color=MUTED, ls='--', lw=1.3,
+               label=f'no rotation at all: always {plain:+.3f}')
+    ax.set_xlabel('gap between the two places', fontsize=10)
+    ax.set_ylabel('dot product of the two rows', fontsize=10)
+    ax.set_ylim(min(dots) - 0.6, plain + 0.9)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower left')
+    ax.set_title('Rotating pulls the score away from its no-gap value as the gap grows',
+                 fontsize=11.5, weight='bold', color=INK, loc='left')
+    fig.tight_layout(w_pad=2.5)
+    _save(fig, TOK_DOC, 'rope-relative.svg')
+
+
+# --------------------------------------------------------------------------
+# section 6: what the geometry is really like
+# --------------------------------------------------------------------------
+
+SHADOW_WORDS: list[str] = ['mug', 'bowl', 'box', 'table', 'shelf', 'gripper', 'wrist',
+                           'red', 'green', 'pick', 'place', 'slowly']
+
+
+def two_shadows() -> None:
+    e = _emb()
+    rng = np.random.default_rng(5)
+    v = np.array([e.full[e.index[w]] for w in SHADOW_WORDS])
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.4), facecolor='white')
+    for k, ax in enumerate(axes):
+        plane = rng.normal(size=(e.full.shape[1], 2))
+        plane /= np.linalg.norm(plane, axis=0, keepdims=True)
+        xy = v @ plane
+        _plain(ax)
+        ax.scatter(xy[:, 0], xy[:, 1], s=36, color=LINK, zorder=3)
+        centre = xy.mean(axis=0)
+        span = float(np.abs(xy - centre).max())
+        for (x, y), w in zip(xy, SHADOW_WORDS):
+            d = np.array([x, y]) - centre
+            d = d / (np.linalg.norm(d) + 1e-9)
+            ax.text(x + d[0] * span * 0.24, y + d[1] * span * 0.24, w, fontsize=8.8,
+                    color=INK, ha='center', va='center')
+        d_mug_bowl = float(np.linalg.norm(xy[0] - xy[1]))
+        d_mug_grip = float(np.linalg.norm(xy[0] - xy[5]))
+        print(f'[s6] shadow {k + 1}: ␣mug to ␣bowl {d_mug_bowl:.3f}, '
+              f'␣mug to ␣gripper {d_mug_grip:.3f}')
+        ax.margins(0.22)
+        ax.set_xlabel('first made-up direction', fontsize=9.5)
+        ax.set_ylabel('second made-up direction', fontsize=9.5)
+        ax.set_title(f'shadow {k + 1}', fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('Two flat pictures of the same 64 numbers per token: the picture '
+                 'moves, the table does not',
+                 fontsize=12.4, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TOK_DOC, 'two-shadows.svg')
+
+
+def shadow_distorts() -> None:
+    e = _emb()
+    rng = np.random.default_rng(5)
+    words = e.words
+    full = e.full
+    small = e.small
+    plane = rng.normal(size=(full.shape[1], 2))
+    plane /= np.linalg.norm(plane, axis=0, keepdims=True)
+    flat = full @ plane
+    true_c, flat_c, six_c = [], [], []
+    for i in range(len(words)):
+        for j in range(i + 1, len(words)):
+            true_c.append(_cos(full[i], full[j]))
+            flat_c.append(_cos(flat[i], flat[j]))
+            six_c.append(_cos(small[i], small[j]))
+    true_c, flat_c, six_c = np.array(true_c), np.array(flat_c), np.array(six_c)
+    r_flat = float(np.corrcoef(true_c, flat_c)[0, 1])
+    r_six = float(np.corrcoef(true_c, six_c)[0, 1])
+    print(f'[s6] {len(true_c)} pairs of tokens')
+    print(f'[s6] cosine in the flat picture against the real cosine: '
+          f'correlation {r_flat:.3f}, biggest error {np.abs(flat_c - true_c).max():.3f}')
+    print(f'[s6] cosine with only the first 6 numbers: correlation {r_six:.3f}, '
+          f'biggest error {np.abs(six_c - true_c).max():.3f}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.2), facecolor='white')
+    for ax, vals, name, colour, r in ((axes[0], flat_c, 'two directions only', GRIP,
+                                       r_flat),
+                                      (axes[1], six_c, 'the first six numbers', WRIST,
+                                       r_six)):
+        _plain(ax)
+        ax.scatter(true_c, vals, s=9, color=colour, alpha=0.45)
+        ax.plot([-1, 1], [-1, 1], ls='--', color=MUTED, lw=1.2)
+        ax.set_xlim(-1.05, 1.05)
+        ax.set_ylim(-1.05, 1.05)
+        ax.set_aspect('equal')
+        ax.set_xlabel('cosine using all 64 numbers', fontsize=10)
+        ax.set_ylabel(f'cosine using {name}', fontsize=10)
+        ax.set_title(f'{name}: correlation {r:.2f}', fontsize=11.5, weight='bold',
+                     color=INK)
+    fig.suptitle('Every pair of tokens in the table: squashing the rows down moves '
+                 'the answer, sometimes a long way',
+                 fontsize=12.4, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TOK_DOC, 'shadow-distorts.svg')
+
+
+def one_row_many_meanings() -> None:
+    t, e = _tok(), _emb()
+    sents = ['pick up the mug and put it on the shelf',
+             'pick up the bolt and put it on the shelf']
+    row = e.small[e.index['it']]
+    print('[s6] the row for ␣it is ' + ' '.join(f'{v:+.2f}' for v in row)
+          + f', token number {t.ids[END + "it"]}')
+    for s in sents:
+        print(f'[s6] "{s}" -> {t.split(s)}')
+
+    fig, ax = plt.subplots(figsize=(12.6, 4.8), facecolor='white')
+    _blank(ax)
+    right = 0.0
+    for k, s in enumerate(sents):
+        y = 3.3 - k * 0.95
+        pieces = t.split(s)
+        x = 0.0
+        for p in pieces:
+            w = max(0.52, 0.27 * len(p) + 0.16)
+            on = p == END + 'it'
+            _box(ax, x, y, w, 0.58, p.replace(END, '␣'),
+                 face='#f6ddc8' if on else 'white', edge=WRIST if on else GRID,
+                 size=9.2, family='DejaVu Sans Mono')
+            if on:
+                _arrow(ax, x + w / 2, y, 6.2, 1.55, colour=WRIST, lw=1.4)
+            x += w + 0.07
+        ax.text(x + 0.25, y + 0.29, '␣it means the '
+                + ('mug' if k == 0 else 'bolt'), fontsize=10.5, color=INK, va='center')
+        right = max(right, x + 3.6)
+    for j, v in enumerate(row):
+        ax.add_patch(Rectangle((4.6 + j * 0.86, 0.9), 0.86, 0.62, facecolor='#f6ddc8',
+                               edgecolor=WRIST, lw=0.9))
+        ax.text(4.6 + (j + 0.5) * 0.86, 1.21, f'{v:+.2f}', fontsize=9, ha='center',
+                va='center', color=INK)
+    ax.text(4.6, 0.52, f'one row, token number {t.ids[END + "it"]}, the same in both '
+                       'sentences', fontsize=10.5, color=WRIST)
+    ax.text(0.0, 0.0, 'The table cannot hold what ␣it refers to, because the '
+                      'table is looked up before anything has read the sentence.',
+            fontsize=10.5, color=MUTED)
+    ax.set_xlim(-0.2, right)
+    ax.set_ylim(-0.3, 4.3)
+    ax.set_title('One token, one row, two meanings: the embedding is a starting point '
+                 'and not an answer',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'one-row-many-meanings.svg')
+
+
+# ==========================================================================
+# 02_pictures-sound-and-robot-states
+# ==========================================================================
+
+def _scene(size: int = 224) -> Arr:
+    """A simulated photo of a blue mug on a pale table, as three grids of 0 to 255."""
+    rng = np.random.default_rng(31)
+    yy, xx = np.mgrid[0:size, 0:size].astype(float)
+    r = 196 - 26 * (yy / size)
+    g = 190 - 24 * (yy / size)
+    b = 176 - 22 * (yy / size)
+    cx, cy, rad = size * 0.46, size * 0.56, size * 0.22
+    body = ((xx - cx) ** 2 + (yy - cy) ** 2) < rad ** 2
+    ring = (np.abs(np.hypot(xx - (cx + rad * 1.15), yy - cy) - rad * 0.42)
+            < rad * 0.13) & (xx > cx + rad * 0.6)
+    shade = 1.0 - 0.35 * (yy - (cy - rad)) / (2 * rad)
+    for ch, base in ((r, 58.0), (g, 92.0), (b, 184.0)):
+        ch[body] = base * shade[body]
+        ch[ring] = base * 0.78
+    gloss = (((xx - (cx - rad * 0.35)) ** 2 + (yy - (cy - rad * 0.45)) ** 2)
+             < (rad * 0.22) ** 2)
+    for ch in (r, g, b):
+        ch[gloss] = np.minimum(255.0, ch[gloss] + 120.0)
+    pic = np.stack([r, g, b])
+    pic = pic + rng.normal(0.0, 3.5, size=pic.shape)
+    return np.clip(np.round(pic), 0, 255)
+
+
+SCENE: Arr | None = None
+
+
+def _pic() -> Arr:
+    global SCENE
+    if SCENE is None:
+        SCENE = _scene()
+    return SCENE
+
+
+def _show_rgb(ax: Axes, pic: Arr) -> None:
+    ax.imshow(np.transpose(pic, (1, 2, 0)).astype(np.uint8), interpolation='nearest')
+    _blank(ax)
+
+
+# --------------------------------------------------------------------------
+# section 1: a colour photo is three grids
+# --------------------------------------------------------------------------
+
+CROP: tuple[int, int, int] = (96, 96, 8)        # top row, left column, size
+
+
+def three_colour_grids() -> None:
+    pic = _pic()
+    r0, c0, n = CROP
+    crop = pic[:, r0:r0 + n, c0:c0 + n]
+    names = ['red', 'green', 'blue']
+    for k, nm in enumerate(names):
+        print(f'[p1] {nm} grid of the 8 by 8 crop, first row: '
+              + ' '.join(f'{v:.0f}' for v in crop[k, 0]))
+        print(f'[p1] {nm}: lowest {crop[k].min():.0f}, highest {crop[k].max():.0f}, '
+              f'average {crop[k].mean():.1f}')
+    print(f'[p1] the whole photo is 3 x {pic.shape[1]} x {pic.shape[2]} = '
+          f'{3 * pic.shape[1] * pic.shape[2]:,} numbers')
+
+    fig = plt.figure(figsize=(13.2, 4.6), facecolor='white')
+    gs = fig.add_gridspec(1, 5, width_ratios=[1.25, 0.08, 1, 1, 1], wspace=0.22)
+    ax = fig.add_subplot(gs[0, 0])
+    _show_rgb(ax, pic)
+    ax.add_patch(Rectangle((c0 - 0.5, r0 - 0.5), n, n, fill=False, edgecolor=GRIP,
+                           lw=2.0))
+    ax.set_title(f'the photo, {pic.shape[1]} by {pic.shape[2]} pixels',
+                 fontsize=10.5, weight='bold', color=INK)
+    ax.text(0.5, -0.07, f'the red square is the 8 by 8 crop below',
+            transform=ax.transAxes, ha='center', fontsize=9.5, color=GRIP)
+    for k, (nm, cmap) in enumerate(zip(names, ('Reds', 'Greens', 'Blues'))):
+        ax = fig.add_subplot(gs[0, 2 + k])
+        _grid_of_numbers(ax, crop[k], fmt='{:.0f}', cmap=cmap, vmin=0, vmax=255,
+                         size=7.4)
+        ax.set_title(f'{nm}: 0 to 255', fontsize=10.5, weight='bold', color=INK)
+    fig.suptitle('A colour photo is three grids of brightness numbers, one for red, '
+                 'one for green and one for blue',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, STA_DOC, 'three-colour-grids.svg')
+
+
+def scaling_the_values() -> None:
+    pic = _pic()
+    r0, c0, n = CROP
+    crop = pic[:, r0:r0 + 4, c0:c0 + 4]
+    zero_one = crop / 255.0
+    mean = pic.mean(axis=(1, 2))
+    std = pic.std(axis=(1, 2))
+    standard = (crop - mean[:, None, None]) / std[:, None, None]
+    print('[p1] whole-photo average per channel: '
+          + ' '.join(f'{v:.1f}' for v in mean))
+    print('[p1] whole-photo spread per channel: ' + ' '.join(f'{v:.1f}' for v in std))
+    print('[p1] red crop raw first row: ' + ' '.join(f'{v:.0f}' for v in crop[0, 0]))
+    print('[p1] red crop divided by 255: '
+          + ' '.join(f'{v:.3f}' for v in zero_one[0, 0]))
+    print('[p1] red crop standardised: ' + ' '.join(f'{v:+.2f}' for v in standard[0, 0]))
+    print(f'[p1] standardised crop: average {standard.mean():+.2f}, '
+          f'spread {standard.std():.2f}')
+
+    fig, axes = plt.subplots(1, 3, figsize=(12.4, 4.4), facecolor='white')
+    for ax, grid, title, fmt, cmap in (
+            (axes[0], crop[0], 'as the camera gives it: 0 to 255', '{:.0f}', 'Reds'),
+            (axes[1], zero_one[0], 'divided by 255: 0 to 1', '{:.3f}', 'Reds'),
+            (axes[2], standard[0],
+             f'minus {mean[0]:.1f}, divided by {std[0]:.1f}', '{:+.2f}', 'coolwarm')):
+        _grid_of_numbers(ax, grid, fmt=fmt, cmap=cmap, size=9.0)
+        ax.set_title(title, fontsize=10.8, weight='bold', color=INK)
+    fig.suptitle('The same four by four corner of the red grid, written three ways',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'scaling-the-values.svg')
+
+
+def why_scale() -> None:
+    """Fit the same straight line twice, once on raw pixel values and once on scaled."""
+    rng = np.random.default_rng(7)
+    n = 400
+    raw = np.column_stack([rng.uniform(0, 255, n), rng.uniform(0, 1, n)])
+    truth = np.array([0.004, 2.0])
+    y = raw @ truth + rng.normal(0, 0.05, n)
+    scaled = (raw - raw.mean(0)) / raw.std(0)
+    y_s = y - y.mean()
+
+    def run(x: Arr, target: Arr, steps: int) -> tuple[list[float], float]:
+        h = 2.0 * (x.T @ x) / len(target)
+        ev = np.linalg.eigvalsh(h)
+        lr = 1.8 / float(ev.max())
+        w = np.zeros(2)
+        hist = []
+        for _ in range(steps):
+            err = x @ w - target
+            hist.append(float(np.mean(err ** 2)))
+            w = w - lr * (2.0 / len(target)) * (x.T @ err)
+        return hist, lr
+
+    steps = 4000
+    raw_hist, lr_raw = run(raw, y, steps)
+    sc_hist, lr_sc = run(scaled, y_s, steps)
+    floor = float(np.mean((y - raw @ np.linalg.lstsq(raw, y, rcond=None)[0]) ** 2))
+    print(f'[p1] best possible average squared error {floor:.5f}')
+    print(f'[p1] raw 0 to 255: biggest learning rate that does not blow up '
+          f'{lr_raw:.2e}; loss {raw_hist[0]:.3f} -> {raw_hist[299]:.4f} at step 300 '
+          f'-> {raw_hist[-1]:.4f} at step {steps}')
+    print(f'[p1] scaled: biggest learning rate {lr_sc:.2e}; loss {sc_hist[0]:.3f} '
+          f'-> {sc_hist[299]:.5f} at step 300 -> {sc_hist[-1]:.5f} at step {steps}')
+    reach = next((i for i, v in enumerate(raw_hist) if v <= sc_hist[299]), None)
+    print(f'[p1] the raw run reaches the scaled run’s 300-step loss at step '
+          f'{reach if reach is not None else f"beyond {steps}"}')
+    curv = []
+    for name, x in (('raw 0 to 255', raw), ('scaled', scaled)):
+        h = 2.0 * (x.T @ x) / len(y)
+        ev = np.linalg.eigvalsh(h)
+        curv.append((name, float(ev.max() / ev.min())))
+        print(f'[p1] {name}: steepest direction {ev.max():.2f}, flattest {ev.min():.4f}, '
+              f'ratio {ev.max() / ev.min():,.0f}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(raw_hist, color=GRIP, lw=2,
+            label=f'raw 0 to 255, learning rate {lr_raw:.1e}')
+    ax.plot(sc_hist, color=SLIDE, lw=2, label=f'scaled, learning rate {lr_sc:.1e}')
+    ax.axhline(floor, color=MUTED, ls='--', lw=1.2, label='the best a line can do')
+    ax.set_yscale('log')
+    ax.set_xlabel('training step', fontsize=10)
+    ax.set_ylabel('average squared error (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False)
+    ax.set_title(f'Each run at the fastest learning rate it can take, {steps:,} steps',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    names = [c[0] for c in curv]
+    ratios = [c[1] for c in curv]
+    ax.bar(names, ratios, color=[GRIP, SLIDE], width=0.5)
+    for i, v in enumerate(ratios):
+        ax.text(i, v * 1.6, f'{v:,.0f}', ha='center', fontsize=12, color=INK,
+                weight='bold')
+    ax.set_yscale('log')
+    ax.set_ylim(0.5, max(ratios) * 30)
+    ax.set_ylabel('steepest direction divided by flattest', fontsize=10)
+    ax.set_title('Why: one input runs over a range 255 times wider',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('Scaling the inputs is not tidiness: it sets how fast training is '
+                 'allowed to go', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'why-scale.svg')
+
+
+# --------------------------------------------------------------------------
+# section 2: patches
+# --------------------------------------------------------------------------
+
+def patch_grid() -> None:
+    pic = _pic()
+    size = pic.shape[1]
+    p = 16
+    across = size // p
+    total = across * across
+    print(f'[p2] {size} by {size} pixels cut into {p} by {p} patches gives '
+          f'{across} by {across} = {total} patches')
+    print(f'[p2] one patch holds {p} x {p} x 3 = {p * p * 3} numbers')
+
+    fig, ax = plt.subplots(figsize=(7.4, 7.4), facecolor='white')
+    _show_rgb(ax, pic)
+    for i in range(across + 1):
+        ax.axhline(i * p - 0.5, color='white', lw=0.7, alpha=0.85)
+        ax.axvline(i * p - 0.5, color='white', lw=0.7, alpha=0.85)
+    pr, pc = 6, 5
+    ax.add_patch(Rectangle((pc * p - 0.5, pr * p - 0.5), p, p, fill=False,
+                           edgecolor=GRIP, lw=2.4))
+    ax.annotate(f'patch {pr * across + pc + 1}',
+                xy=(pc * p + p, pr * p + p / 2), xytext=(size - 30, pr * p + p * 2.4),
+                color=GRIP, fontsize=11, ha='right', weight='bold',
+                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.4))
+    ax.set_title(f'{size} by {size} pixels, cut into {p} by {p} squares: '
+                 f'{across} × {across} = {total} patches',
+                 fontsize=12.2, weight='bold', color=INK)
+    _save(fig, STA_DOC, 'patch-grid.svg')
+
+
+def patch_to_vector() -> None:
+    pic = _pic()
+    p = 16
+    pr, pc = 6, 5
+    patch = pic[:, pr * p:(pr + 1) * p, pc * p:(pc + 1) * p]
+    flat = patch.reshape(-1) / 255.0
+    rng = np.random.default_rng(13)
+    width = 32
+    proj = rng.normal(0, 1.0 / np.sqrt(len(flat)), size=(len(flat), width))
+    vec = flat @ proj
+    print(f'[p2] the chosen patch flattens to {len(flat)} numbers; first eight after '
+          'dividing by 255: ' + ' '.join(f'{v:.3f}' for v in flat[:8]))
+    print(f'[p2] after the learned matrix of {len(flat)} by {width} it is {width} '
+          'numbers; first six: ' + ' '.join(f'{v:+.3f}' for v in vec[:6]))
+    print(f'[p2] that matrix holds {len(flat) * width:,} weights')
+
+    fig = plt.figure(figsize=(13.0, 4.4), facecolor='white')
+    gs = fig.add_gridspec(1, 3, width_ratios=[0.8, 1.5, 1.5], wspace=0.3)
+    ax = fig.add_subplot(gs[0, 0])
+    _show_rgb(ax, patch)
+    ax.set_title(f'one patch,\n{p} by {p} pixels', fontsize=10.5, weight='bold',
+                 color=INK)
+    ax = fig.add_subplot(gs[0, 1])
+    _blank(ax)
+    for i in range(7):
+        ax.add_patch(Rectangle((i * 1.5, 1.0), 1.5, 0.6, facecolor=LINK_PALE,
+                               edgecolor=LINK, lw=0.7))
+        ax.text((i + 0.5) * 1.5, 1.3, f'{flat[i]:.2f}', fontsize=9.0, ha='center',
+                va='center', color=INK)
+    ax.text(7 * 1.5 + 0.25, 1.3, f'... {len(flat)} in all', fontsize=10, color=MUTED,
+            va='center')
+    ax.text(0.0, 2.0, 'laid out in one line: red grid, then green, then blue',
+            fontsize=10, color=MUTED)
+    ax.text(0.0, 0.45, f'{p} × {p} × 3 = {len(flat)} numbers, each divided '
+                       'by 255', fontsize=10.5, color=INK)
+    ax.set_xlim(-0.2, 13.6)
+    ax.set_ylim(0.0, 2.6)
+    ax.set_title('flattened', fontsize=10.5, weight='bold', color=INK)
+    ax = fig.add_subplot(gs[0, 2])
+    _blank(ax)
+    for i in range(6):
+        ax.add_patch(Rectangle((i * 1.85, 1.0), 1.85, 0.6, facecolor='#ddeedd',
+                               edgecolor=SLIDE, lw=0.7))
+        ax.text((i + 0.5) * 1.85, 1.3, f'{vec[i]:+.2f}', fontsize=9.0, ha='center',
+                va='center', color=INK)
+    ax.text(6 * 1.85 + 0.25, 1.3, f'... {width} in all', fontsize=10, color=MUTED,
+            va='center')
+    ax.text(0.0, 2.0, f'times a learned {len(flat)} by {width} matrix',
+            fontsize=10, color=MUTED)
+    ax.text(0.0, 0.45, f'that matrix alone holds {len(flat) * width:,} weights',
+            fontsize=10.5, color=INK)
+    ax.set_xlim(-0.2, 13.6)
+    ax.set_ylim(0.0, 2.6)
+    ax.set_title('one token for the transformer', fontsize=10.5, weight='bold',
+                 color=INK)
+    fig.suptitle('A patch becomes one token: flatten it, then multiply it by one '
+                 'learned matrix', fontsize=12.5, weight='bold', color=INK, y=1.06)
+    _save(fig, STA_DOC, 'patch-to-vector.svg')
+
+
+def patch_count_cost() -> None:
+    cases = [(224, 16), (224, 14), (336, 14), (448, 16), (896, 16)]
+    rows = []
+    for size, p in cases:
+        across = size // p
+        tok = across * across
+        rows.append((size, p, across, tok, tok * tok))
+        print(f'[p2] {size} by {size} with {p} by {p} patches: {across} × {across} '
+              f'= {tok:,} tokens, {tok * tok:,} token pairs for attention')
+    base = rows[0][4]
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    labels = [f'{s}\n{p} px patches' for s, p, _, _, _ in rows]
+    toks = [r[3] for r in rows]
+    ax.bar(labels, toks, color=LINK, width=0.55)
+    for i, v in enumerate(toks):
+        ax.text(i, v * 1.04, f'{v:,}', ha='center', fontsize=10, color=INK)
+    ax.set_ylabel('tokens the model must read', fontsize=10)
+    ax.set_ylim(0, max(toks) * 1.2)
+    ax.set_title('How many tokens one photo turns into', fontsize=11.5, weight='bold',
+                 color=INK)
+    ax = axes[1]
+    _plain(ax)
+    pairs = [r[4] / base for r in rows]
+    ax.bar(labels, pairs, color=GRIP, width=0.55)
+    for i, v in enumerate(pairs):
+        ax.text(i, v * 1.3, f'×{v:,.0f}', ha='center', fontsize=10, color=INK)
+    ax.set_yscale('log')
+    ax.set_ylim(0.5, max(pairs) * 8)
+    ax.set_ylabel('attention work, as a multiple of the first case', fontsize=10)
+    ax.set_title('What that costs: work grows with the square of the token count',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('Patch size is the knob: smaller patches see more detail and cost '
+                 'far more', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'patch-count-cost.svg')
+
+
+# --------------------------------------------------------------------------
+# section 3: depth pictures and point clouds
+# --------------------------------------------------------------------------
+
+def _depth(rows: int = 12, cols: int = 12) -> Arr:
+    """A simulated depth frame in metres, with missing readings written as NaN."""
+    rng = np.random.default_rng(17)
+    yy, xx = np.mgrid[0:rows, 0:cols].astype(float)
+    d = 1.02 - 0.32 * (yy / (rows - 1))           # the table runs away from the camera
+    cy, cx, rad = rows * 0.52, cols * 0.46, min(rows, cols) * 0.26
+    mug = ((xx - cx) ** 2 + (yy - cy) ** 2) < rad ** 2
+    d[mug] = 0.62
+    d = d + rng.normal(0.0, 0.004, size=d.shape)
+    gloss = ((xx - (cx - rad * 0.4)) ** 2 + (yy - (cy - rad * 0.4)) ** 2) < (rad * 0.4) ** 2
+    d[gloss] = np.nan                                    # shiny: no reading comes back
+    d[0, :] = np.nan                                     # beyond the sensor's near edge
+    d[rows - 1, cols - 2:] = np.nan
+    return np.round(d, 3)
+
+
+DEPTH: Arr | None = None
+
+
+def _dep() -> Arr:
+    global DEPTH
+    if DEPTH is None:
+        DEPTH = _depth()
+    return DEPTH
+
+
+def depth_grid() -> None:
+    d = _dep()
+    miss = int(np.isnan(d).sum())
+    print(f'[p3] depth frame {d.shape[0]} by {d.shape[1]}, '
+          f'{d.size} readings, {miss} missing ({100 * miss / d.size:.1f} per cent)')
+    print(f'[p3] nearest {np.nanmin(d):.3f} m, furthest {np.nanmax(d):.3f} m, '
+          f'average of what is there {np.nanmean(d):.3f} m')
+    print('[p3] first row that has readings: '
+          + ' '.join('--' if np.isnan(v) else f'{v:.3f}' for v in d[1]))
+
+    fig, ax = plt.subplots(figsize=(9.2, 7.6), facecolor='white')
+    _grid_of_numbers(ax, d, fmt='{:.2f}', cmap='viridis_r', size=8.2)
+    ax.text(0.0, -0.75, 'Each number is how far that pixel is, in metres. A red cell '
+                        'marked -- is a pixel the camera could not measure.',
+            fontsize=10.5, color=INK)
+    ax.set_ylim(-1.1, d.shape[0] + 0.05)
+    ax.set_title('A depth picture: one distance per pixel, and holes where the '
+                 'camera got nothing back',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'depth-grid.svg')
+
+
+def depth_holes() -> None:
+    d = _dep()
+    zeros = np.nan_to_num(d, nan=0.0)
+    honest = float(np.nanmean(d))
+    wrong = float(zeros.mean())
+    miss = int(np.isnan(d).sum())
+    print(f'[p3] average distance counting the holes as 0 m: {wrong:.3f} m')
+    print(f'[p3] average distance leaving the holes out: {honest:.3f} m')
+    print(f'[p3] the hole pixels drag the answer down by '
+          f'{100 * (honest - wrong) / honest:.1f} per cent')
+    near = float(np.nanmin(d))
+    print(f'[p3] a 0 also looks nearer than the nearest real reading, {near:.3f} m, '
+          'so a safety check reads it as something touching the camera')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    vals = zeros.reshape(-1)
+    ax.hist(vals[vals > 0], bins=18, color=LINK, label='real readings')
+    ax.hist(vals[vals == 0], bins=[-0.02, 0.02], color=GRIP,
+            label=f'the {miss} holes, written as 0')
+    ax.set_xlabel('distance in metres', fontsize=10)
+    ax.set_ylabel('how many pixels', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False)
+    ax.set_title('A hole written as 0 lands in the middle of nothing',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    names = ['holes counted as 0 m', 'holes left out']
+    ax.bar(names, [wrong, honest], color=[GRIP, SLIDE], width=0.45)
+    for i, v in enumerate([wrong, honest]):
+        ax.text(i, v + 0.02, f'{v:.3f} m', ha='center', fontsize=12, color=INK,
+                weight='bold')
+    ax.axhline(near, color=MUTED, ls='--', lw=1.2)
+    ax.text(-0.46, near + 0.015, f'nearest real reading, {near:.2f} m', fontsize=9.5,
+            color=MUTED, ha='left')
+    ax.set_ylabel('average distance over the frame (m)', fontsize=10)
+    ax.set_ylim(0, max(wrong, honest) * 1.3)
+    ax.set_title('What that does to a number taken from the frame',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('A missing reading is not a distance of zero, and treating it as one '
+                 'changes every answer', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'depth-holes.svg')
+
+
+def _cloud() -> tuple[Arr, int, int, float]:
+    """Turn a larger simulated depth frame into a list of three-number positions."""
+    rows, cols = 48, 64
+    d = _depth(rows, cols)
+    f = 60.0                                      # focal length in pixels
+    cx, cy = (cols - 1) / 2.0, (rows - 1) / 2.0
+    yy, xx = np.mgrid[0:rows, 0:cols].astype(float)
+    z = d
+    x = (xx - cx) * z / f
+    y = (yy - cy) * z / f
+    ok = ~np.isnan(z)
+    pts = np.column_stack([x[ok], y[ok], z[ok]])
+    return pts, rows * cols, int(ok.sum()), f
+
+
+def depth_to_points() -> None:
+    pts, total, kept, f = _cloud()
+    print(f'[p3] a {total:,}-pixel depth frame gives {kept:,} points, because '
+          f'{total - kept:,} pixels had no reading')
+    print(f'[p3] focal length {f:.0f} pixels; first five points (x, y, z in metres):')
+    for i in range(5):
+        print(f'[p3]   {pts[i, 0]:+.3f} {pts[i, 1]:+.3f} {pts[i, 2]:+.3f}')
+    print(f'[p3] the list is {kept:,} x 3 = {kept * 3:,} numbers, against '
+          f'{total:,} for the depth frame')
+
+    fig = plt.figure(figsize=(12.6, 4.8), facecolor='white')
+    gs = fig.add_gridspec(1, 2, width_ratios=[1.1, 1.3], wspace=0.25)
+    ax = fig.add_subplot(gs[0, 0])
+    _blank(ax)
+    ax.text(0.0, 6.5, 'pixel (column, row) and its distance', fontsize=10.5,
+            color=MUTED)
+    ax.text(0.0, 5.9, 'x = (column − centre) × distance ÷ '
+                      f'{f:.0f}', fontsize=11, color=INK, family='DejaVu Sans Mono')
+    ax.text(0.0, 5.3, 'y = (row − centre) × distance ÷ '
+                      f'{f:.0f}', fontsize=11, color=INK, family='DejaVu Sans Mono')
+    ax.text(0.0, 4.7, 'z = distance', fontsize=11, color=INK,
+            family='DejaVu Sans Mono')
+    head = ['x (m)', 'y (m)', 'z (m)']
+    for j, h in enumerate(head):
+        ax.text(1.4 + j * 1.9, 3.7, h, fontsize=10, color=MUTED, weight='bold',
+                ha='center')
+    for i in range(6):
+        y = 3.1 - i * 0.48
+        for j in range(3):
+            ax.text(1.4 + j * 1.9, y, f'{pts[i, j]:+.3f}', fontsize=10, color=INK,
+                    ha='center')
+    ax.text(1.4, 0.0, f'... and so on, {kept:,} rows in all', fontsize=10, color=MUTED)
+    ax.set_xlim(-0.2, 8.0)
+    ax.set_ylim(-0.4, 7.0)
+    ax.set_title('three numbers per pixel that had a reading',
+                 fontsize=11.5, weight='bold', color=INK, loc='left')
+    ax = fig.add_subplot(gs[0, 1])
+    _plain(ax)
+    sc = ax.scatter(pts[:, 0], pts[:, 2], c=pts[:, 1], cmap='viridis', s=5)
+    fig.colorbar(sc, ax=ax, label='y, metres up or down from the centre', shrink=0.85)
+    ax.set_xlabel('x, metres left or right (m)', fontsize=10)
+    ax.set_ylabel('z, metres away from the camera (m)', fontsize=10)
+    ax.set_title(f'the same {kept:,} points, seen from above',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('A depth picture becomes a point cloud: a long list of three-number '
+                 'positions', fontsize=12.5, weight='bold', color=INK, y=1.03)
+    _save(fig, STA_DOC, 'depth-to-points.svg')
+
+
+def order_free() -> None:
+    pts, _, kept, _ = _cloud()
+    rng = np.random.default_rng(29)
+    order = rng.permutation(len(pts))
+    shuffled = pts[order]
+    centre_a = pts.mean(axis=0)
+    centre_b = shuffled.mean(axis=0)
+    max_a = pts.max(axis=0)
+    max_b = shuffled.max(axis=0)
+    w = rng.normal(0, 1, size=12)
+    line_a = float(pts[:4].reshape(-1) @ w)
+    line_b = float(shuffled[:4].reshape(-1) @ w)
+    print('[p3] average position before shuffling: '
+          + ' '.join(f'{v:+.4f}' for v in centre_a))
+    print('[p3] average position after shuffling:  '
+          + ' '.join(f'{v:+.4f}' for v in centre_b))
+    print('[p3] largest value in each column, before and after: '
+          + ' '.join(f'{a:+.3f}/{b:+.3f}' for a, b in zip(max_a, max_b)))
+    print(f'[p3] a layer that reads the first four rows in order gives {line_a:+.3f} '
+          f'before and {line_b:+.3f} after')
+
+    fig, ax = plt.subplots(figsize=(12.6, 5.4), facecolor='white')
+    _blank(ax)
+    for k, (title, arr, x0) in enumerate((('the list as the camera made it', pts, 0.0),
+                                          ('the same points, shuffled', shuffled, 5.4))):
+        ax.text(x0, 5.5, title, fontsize=10.5, color=INK, weight='bold')
+        for j, h in enumerate(['x', 'y', 'z']):
+            ax.text(x0 + 0.5 + j * 1.3, 5.0, h, fontsize=10, color=MUTED,
+                    weight='bold', ha='center')
+        for i in range(7):
+            y = 4.4 - i * 0.52
+            for j in range(3):
+                ax.text(x0 + 0.5 + j * 1.3, y, f'{arr[i, j]:+.3f}', fontsize=9.6,
+                        color=INK, ha='center')
+        ax.text(x0, 0.45, f'... {kept:,} rows', fontsize=10, color=MUTED)
+    ax.text(10.6, 5.0, 'what a network may read from the list', fontsize=10.5,
+            color=INK, weight='bold')
+    ax.text(10.6, 4.4, 'average of every row  (same both times)', fontsize=10,
+            color=SLIDE)
+    ax.text(10.6, 3.95, '  ' + '  '.join(f'{v:+.4f}' for v in centre_a), fontsize=9.6,
+            color=SLIDE, family='DejaVu Sans Mono')
+    ax.text(10.6, 3.5, '  ' + '  '.join(f'{v:+.4f}' for v in centre_b), fontsize=9.6,
+            color=SLIDE, family='DejaVu Sans Mono')
+    ax.text(10.6, 2.7, 'largest in each column  (same both times)', fontsize=10,
+            color=SLIDE)
+    ax.text(10.6, 2.25, '  ' + '  '.join(f'{v:+.3f}' for v in max_a), fontsize=9.6,
+            color=SLIDE, family='DejaVu Sans Mono')
+    ax.text(10.6, 1.8, '  ' + '  '.join(f'{v:+.3f}' for v in max_b), fontsize=9.6,
+            color=SLIDE, family='DejaVu Sans Mono')
+    ax.text(10.6, 1.0, 'the first four rows laid end to end,\nread by a fully '
+                       'connected layer  (different)', fontsize=10, color=GRIP)
+    ax.text(10.6, 0.2, f'  {line_a:+.3f}        {line_b:+.3f}', fontsize=9.6,
+            color=GRIP, family='DejaVu Sans Mono')
+    ax.set_xlim(-0.2, 19.0)
+    ax.set_ylim(0.0, 6.0)
+    ax.set_title('The order of a point cloud means nothing, so only order-blind '
+                 'reading of it is safe',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'order-free.svg')
+
+
+# --------------------------------------------------------------------------
+# section 4: sound
+# --------------------------------------------------------------------------
+
+RATE: int = 16_000
+
+
+def _sound() -> Arr:
+    """A simulated half second of a gripper closing and then touching something."""
+    rng = np.random.default_rng(41)
+    n = RATE // 2
+    t = np.arange(n) / RATE
+    motor = np.zeros(n)
+    moving = t < 0.30
+    for h, amp in ((1, 0.30), (2, 0.16), (3, 0.08), (5, 0.04)):
+        motor[moving] += amp * np.sin(2 * np.pi * 120 * h * t[moving])
+    click = np.zeros(n)
+    k0 = int(0.30 * RATE)
+    k = np.arange(n - k0)
+    click[k0:] = 0.9 * np.exp(-k / (0.004 * RATE)) * rng.normal(0, 1, len(k))
+    return motor + click + rng.normal(0, 0.01, n)
+
+
+def waveform() -> None:
+    s = _sound()
+    t = np.arange(len(s)) / RATE
+    print(f'[p4] {len(s):,} numbers for {len(s) / RATE:.2f} seconds at {RATE:,} '
+          'readings a second')
+    print(f'[p4] the readings run from {s.min():+.3f} to {s.max():+.3f}')
+    print(f'[p4] average loudness while the motor runs {np.abs(s[:int(0.3 * RATE)]).mean():.4f}, '
+          f'after the touch {np.abs(s[int(0.3 * RATE):]).mean():.4f}')
+
+    fig, axes = plt.subplots(2, 1, figsize=(11.6, 5.6), facecolor='white',
+                            gridspec_kw={'height_ratios': [1.3, 1.0]})
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(t, s, color=LINK, lw=0.5)
+    ax.axvline(0.30, color=GRIP, ls='--', lw=1.3)
+    ax.text(0.305, s.max() * 0.85, 'the gripper touches the mug', fontsize=10,
+            color=GRIP)
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('air pressure, scaled to −1 ... +1', fontsize=10)
+    ax.set_title(f'The whole half second: {len(s):,} numbers', fontsize=11.5,
+                 weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    k0, k1 = int(0.100 * RATE), int(0.1125 * RATE)
+    ax.plot(t[k0:k1], s[k0:k1], color=LINK, lw=1.3, marker='o', ms=2.6)
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('one reading per dot', fontsize=10)
+    ax.set_title(f'{k1 - k0} of those numbers, close up: the sound is only a list of '
+                 'numbers', fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('A sound arrives as a long list of readings of air pressure',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'waveform.svg')
+
+
+def _stft(s: Arr, win: int = 256, hop: int = 128) -> tuple[Arr, int, int]:
+    frames = 1 + (len(s) - win) // hop
+    window = np.hanning(win)
+    out = np.zeros((frames, win // 2 + 1))
+    for i in range(frames):
+        chunk = s[i * hop:i * hop + win] * window
+        out[i] = np.abs(np.fft.rfft(chunk))
+    return out, frames, win // 2 + 1
+
+
+def spectrogram() -> None:
+    s = _sound()
+    mag, frames, bins = _stft(s)
+    db = 20 * np.log10(mag + 1e-6)
+    freqs = np.fft.rfftfreq(256, 1.0 / RATE)
+    print(f'[p4] short-time Fourier transform: window 256 readings, hop 128, '
+          f'{frames} frames of {bins} numbers = {frames * bins:,} numbers')
+    print(f'[p4] each frame covers {256 / RATE * 1000:.1f} milliseconds and the '
+          f'frames start {128 / RATE * 1000:.1f} milliseconds apart')
+    print(f'[p4] the numbers run from {freqs[0]:.0f} Hz to {freqs[-1]:,.0f} Hz '
+          f'in steps of {freqs[1]:.1f} Hz')
+
+    fig, ax = plt.subplots(figsize=(11.4, 5.2), facecolor='white')
+    _plain(ax)
+    im = ax.imshow(db.T, origin='lower', aspect='auto', cmap='magma',
+                   extent=(0, len(s) / RATE, 0, freqs[-1]))
+    fig.colorbar(im, ax=ax, label='loudness of that pitch, in decibels')
+    ax.axvline(0.30, color='white', ls='--', lw=1.2)
+    ax.text(0.305, freqs[-1] * 0.9, 'the touch', color='white', fontsize=10)
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('pitch, in cycles a second (Hz)', fontsize=10)
+    ax.set_title(f'The same sound as a grid: {frames} frames by {bins} pitches, '
+                 'which a network reads like a picture',
+                 fontsize=12.2, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'spectrogram.svg')
+
+
+def one_frame() -> None:
+    s = _sound()
+    mag, frames, bins = _stft(s)
+    freqs = np.fft.rfftfreq(256, 1.0 / RATE)
+    idx = int(0.15 * RATE) // 128
+    frame = mag[idx]
+    peak = int(np.argmax(frame))
+    db = 20 * np.log10(frame + 1e-6)
+    print(f'[p4] frame {idx} starts at {idx * 128 / RATE:.3f} seconds')
+    print(f'[p4] its loudest pitch is number {peak}, which is {freqs[peak]:.0f} Hz, '
+          f'at a size of {frame[peak]:.2f}')
+    print(f'[p4] the raw sizes run from {frame.min():.5f} to {frame.max():.2f}, '
+          f'a ratio of {frame.max() / max(frame.min(), 1e-9):,.0f} to 1')
+    print(f'[p4] in decibels they run from {db.min():.1f} to {db.max():.1f}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.6), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(freqs, frame, color=LINK, lw=1.2)
+    ax.plot([freqs[peak]], [frame[peak]], 'o', color=GRIP, ms=7)
+    ax.text(freqs[peak] + 300, frame[peak], f'{freqs[peak]:.0f} Hz, the motor',
+            fontsize=10, color=GRIP, va='center')
+    ax.set_xlabel('pitch (Hz)', fontsize=10)
+    ax.set_ylabel('size of that pitch', fontsize=10)
+    ax.set_title('One frame, as the arithmetic gives it', fontsize=11.5, weight='bold',
+                 color=INK)
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(freqs, db, color=PURPLE, lw=1.2)
+    ax.set_xlabel('pitch (Hz)', fontsize=10)
+    ax.set_ylabel('size in decibels', fontsize=10)
+    ax.set_title('The same frame after taking logarithms', fontsize=11.5,
+                 weight='bold', color=INK)
+    fig.suptitle(f'Frame {idx} of the sound, {bins} numbers: the quiet pitches only '
+                 'become visible after the logarithm',
+                 fontsize=12.4, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'one-frame.svg')
+
+
+# --------------------------------------------------------------------------
+# section 5: the robot's own readings
+# --------------------------------------------------------------------------
+
+JOINT_NAMES: list[str] = ['base', 'shoulder', 'elbow', 'wrist 1', 'wrist 2', 'wrist 3']
+
+
+class Arm:
+    """A simulated two second reach, recorded 100 times a second."""
+
+    def __init__(self) -> None:
+        rng = np.random.default_rng(53)
+        self.hz = 100
+        n = 200
+        t = np.linspace(0.0, 1.0, n)
+        shape = 10 * t ** 3 - 15 * t ** 4 + 6 * t ** 5        # smooth start and stop
+        start = np.array([0.00, -0.90, 1.20, -1.90, -1.57, 0.00])
+        end = np.array([0.62, -0.42, 1.65, -2.40, -1.55, 0.31])
+        self.angles = start + np.outer(shape, end - start)
+        self.angles += rng.normal(0, 0.0002, self.angles.shape)
+        self.vel = np.gradient(self.angles, 1.0 / self.hz, axis=0)
+        grip = np.clip(0.085 - 0.085 * np.clip((t - 0.70) / 0.22, 0, 1), 0.0, 0.085)
+        self.grip = grip + rng.normal(0, 0.0002, n)
+        contact = np.clip((t - 0.80) / 0.10, 0, 1)
+        self.force = np.column_stack([
+            0.4 * np.sin(2 * np.pi * t) + rng.normal(0, 0.15, n),
+            0.3 * np.cos(2 * np.pi * t) + rng.normal(0, 0.15, n),
+            -1.0 - 11.0 * contact + rng.normal(0, 0.25, n)])
+        self.t = np.linspace(0.0, 2.0, n)
+
+
+ARM: Arm | None = None
+
+
+def _arm() -> Arm:
+    global ARM
+    if ARM is None:
+        ARM = Arm()
+    return ARM
+
+
+def joint_traces() -> None:
+    a = _arm()
+    print(f'[p5] {len(a.t)} readings over {a.t[-1]:.1f} seconds at {a.hz} a second')
+    for i, nm in enumerate(JOINT_NAMES):
+        print(f'[p5] {nm:9s} from {a.angles[0, i]:+.3f} to {a.angles[-1, i]:+.3f} '
+              f'radians, fastest {np.abs(a.vel[:, i]).max():.3f} radians a second')
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.0, 4.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    for i, nm in enumerate(JOINT_NAMES):
+        ax.plot(a.t, a.angles[:, i], lw=1.8, label=nm)
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('joint angle (radians)', fontsize=10)
+    ax.legend(fontsize=8.2, frameon=False, ncol=2)
+    ax.set_title('six joint angles', fontsize=11.5, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    for i in range(6):
+        ax.plot(a.t, a.vel[:, i], lw=1.6)
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('joint speed (radians a second)', fontsize=10)
+    ax.set_title('the same six, as speeds', fontsize=11.5, weight='bold', color=INK)
+    ax = axes[2]
+    _plain(ax)
+    ax.plot(a.t, a.grip * 1000, color=SLIDE, lw=1.8, label='gripper opening (mm)')
+    ax.plot(a.t, a.force[:, 2], color=GRIP, lw=1.5, label='force down the wrist (N)')
+    ax.axhline(0, color=GRID, lw=0.8)
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.legend(fontsize=9, frameon=False, loc='center left')
+    ax.set_title('gripper and wrist force', fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('Two seconds of one reach: everything the arm knows about itself, '
+                 'read 100 times a second',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'joint-traces.svg')
+
+
+def _state_rows(k: int) -> list[tuple[str, str, float]]:
+    a = _arm()
+    rows: list[tuple[str, str, float]] = []
+    for i, nm in enumerate(JOINT_NAMES):
+        rows.append((f'{nm} angle', 'radians', float(a.angles[k, i])))
+    for i, nm in enumerate(JOINT_NAMES):
+        rows.append((f'{nm} speed', 'rad/s', float(a.vel[k, i])))
+    rows.append(('gripper opening', 'metres', float(a.grip[k])))
+    for i, nm in enumerate(['sideways', 'forwards', 'down']):
+        rows.append((f'wrist force {nm}', 'newtons', float(a.force[k, i])))
+    return rows
+
+
+def state_vector() -> None:
+    k = 150
+    rows = _state_rows(k)
+    a = _arm()
+    print(f'[p5] the state at {a.t[k]:.2f} seconds, {len(rows)} numbers:')
+    for nm, unit, v in rows:
+        print(f'[p5]   {nm:22s} {v:+9.4f} {unit}')
+
+    fig, ax = plt.subplots(figsize=(12.6, 5.0), facecolor='white')
+    _blank(ax)
+    for i, (nm, unit, v) in enumerate(rows):
+        col, row = divmod(i, 8)
+        x = col * 4.4
+        y = 7.2 - row * 0.80
+        colour = (JOINT if 'angle' in nm else SLIDE if 'speed' in nm
+                  else TEAL if 'gripper' in nm else GRIP)
+        ax.add_patch(Rectangle((x, y), 1.55, 0.62, facecolor='white', edgecolor=colour,
+                               lw=1.1))
+        ax.text(x + 0.775, y + 0.31, f'{v:+.4f}', fontsize=9.6, ha='center',
+                va='center', color=INK)
+        ax.text(x + 1.68, y + 0.31, f'{nm}  ({unit})', fontsize=9.2, va='center',
+                color=MUTED)
+    ax.text(0.0, 8.15, f'the {len(rows)} numbers the arm hands the model at '
+                       f'{a.t[k]:.2f} seconds, in the order the model always '
+                       'expects them', fontsize=10.5, color=INK)
+    ax.set_xlim(-0.2, 13.4)
+    ax.set_ylim(0.3, 8.7)
+    ax.set_title('Proprioception: what the arm knows about its own body, as one list '
+                 'of numbers',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'state-vector.svg')
+
+
+def channel_ranges() -> None:
+    a = _arm()
+    chans: list[tuple[str, Arr, str]] = []
+    for i, nm in enumerate(JOINT_NAMES):
+        chans.append((f'{nm} angle', a.angles[:, i], JOINT))
+    for i, nm in enumerate(JOINT_NAMES):
+        chans.append((f'{nm} speed', a.vel[:, i], SLIDE))
+    chans.append(('gripper opening', a.grip, TEAL))
+    for i, nm in enumerate(['sideways', 'forwards', 'down']):
+        chans.append((f'force {nm}', a.force[:, i], GRIP))
+    spreads = [float(c[1].std()) for c in chans]
+    print('[p5] spread of each channel over the two seconds:')
+    for (nm, _, _), sd in zip(chans, spreads):
+        print(f'[p5]   {nm:22s} {sd:.5f}')
+    print(f'[p5] widest channel divided by narrowest: '
+          f'{max(spreads) / min(spreads):,.0f}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 5.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    y = np.arange(len(chans))
+    ax.barh(y, spreads, color=[c[2] for c in chans], height=0.68)
+    for i, sd in enumerate(spreads):
+        ax.text(sd * 1.15, i, f'{sd:.4f}', va='center', fontsize=8.6, color=INK)
+    ax.set_yticks(y)
+    ax.set_yticklabels([c[0] for c in chans], fontsize=8.8)
+    ax.invert_yaxis()
+    ax.set_xscale('log')
+    ax.set_xlim(min(spreads) * 0.4, max(spreads) * 9)
+    ax.set_xlabel('spread of the channel, in its own units (log scale)', fontsize=10)
+    ax.set_title(f'The widest channel moves {max(spreads) / min(spreads):,.0f} times '
+                 'as far as the narrowest', fontsize=11.2, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    std = np.array(spreads)
+    mean = np.array([float(c[1].mean()) for c in chans])
+    norm = [(c[1] - m) / s for c, m, s in zip(chans, mean, std)]
+    ax.boxplot(norm, vert=False, widths=0.6, showfliers=False)
+    ax.set_yticks(range(1, len(chans) + 1))
+    ax.set_yticklabels([c[0] for c in chans], fontsize=8.8)
+    ax.invert_yaxis()
+    ax.axvline(0, color=GRID, lw=1.0)
+    ax.set_xlabel('after taking the average off and dividing by the spread',
+                  fontsize=10)
+    ax.set_title('After scaling, every channel asks for the same attention',
+                 fontsize=11.2, weight='bold', color=INK)
+    fig.suptitle('Raw robot readings are in units that have nothing to do with each '
+                 'other', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'channel-ranges.svg')
+
+
+# --------------------------------------------------------------------------
+# section 6: the action space
+# --------------------------------------------------------------------------
+
+L1, L2 = 0.40, 0.30
+
+
+def _fk(a1: float, a2: float) -> tuple[Arr, Arr]:
+    x = np.array([0.0, L1 * np.cos(a1), L1 * np.cos(a1) + L2 * np.cos(a1 + a2)])
+    y = np.array([0.0, L1 * np.sin(a1), L1 * np.sin(a1) + L2 * np.sin(a1 + a2)])
+    return x, y
+
+
+def action_meanings() -> None:
+    now = np.array([0.50, 0.70])                 # where the arm is, in radians
+    out = np.array([0.10, 0.05])                 # the two numbers the model gave
+    hz = 10.0
+    cases = []
+    cases.append(('as joint angles', *_fk(out[0], out[1])))
+    cases.append(('as a change in joint angles', *_fk(now[0] + out[0], now[1] + out[1])))
+    cases.append((f'as joint speeds, held for {1 / hz:.1f} s',
+                  *_fk(now[0] + out[0] / hz, now[1] + out[1] / hz)))
+    tip_now = _fk(*now)
+    goal = np.array([tip_now[0][2] + out[0], tip_now[1][2] + out[1]])
+    d = float(np.hypot(goal[0], goal[1]))
+    c2 = np.clip((d ** 2 - L1 ** 2 - L2 ** 2) / (2 * L1 * L2), -1, 1)
+    a2 = float(np.arccos(c2))
+    a1 = float(np.arctan2(goal[1], goal[0])
+               - np.arctan2(L2 * np.sin(a2), L1 + L2 * np.cos(a2)))
+    cases.append(('as a change in where the hand is', *_fk(a1, a2)))
+    print(f'[p6] the arm is at {now[0]:.2f} and {now[1]:.2f} radians, hand at '
+          f'({tip_now[0][2]:.3f}, {tip_now[1][2]:.3f}) m')
+    print(f'[p6] the model gives the two numbers {out[0]:.2f} and {out[1]:.2f}')
+    for name, xs, ys in cases:
+        move = float(np.hypot(xs[2] - tip_now[0][2], ys[2] - tip_now[1][2]))
+        print(f'[p6] {name:34s} -> hand at ({xs[2]:+.3f}, {ys[2]:+.3f}) m, '
+              f'{move * 100:.1f} cm from where it was')
+
+    fig, axes = plt.subplots(1, 4, figsize=(13.4, 4.2), facecolor='white')
+    for ax, (name, xs, ys) in zip(axes, cases):
+        _plain(ax)
+        ax.plot(tip_now[0], tip_now[1], color=GRID, lw=5, solid_capstyle='round',
+                zorder=1)
+        ax.plot(xs, ys, color=LINK, lw=4, solid_capstyle='round', zorder=2)
+        ax.plot(xs, ys, 'o', color=INK, ms=5, zorder=3)
+        move = float(np.hypot(xs[2] - tip_now[0][2], ys[2] - tip_now[1][2]))
+        ax.plot([tip_now[0][2]], [tip_now[1][2]], 'o', color=MUTED, ms=5, zorder=3)
+        ax.set_xlim(-0.25, 0.75)
+        ax.set_ylim(-0.25, 0.75)
+        ax.set_aspect('equal')
+        ax.set_xlabel('metres', fontsize=9.5)
+        ax.set_title(f'{name}\nhand moves {move * 100:.1f} cm', fontsize=10.2,
+                     weight='bold', color=INK)
+    fig.suptitle(f'The same two numbers, {out[0]:.2f} and {out[1]:.2f}, read four '
+                 'ways: grey is where the arm was, blue is where it ends up',
+                 fontsize=12.4, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'action-meanings.svg')
+
+
+def absolute_vs_delta() -> None:
+    a = _arm()
+    absolute = a.angles
+    delta = np.diff(a.angles, axis=0)
+    print('[p6] joint angles as they are: average '
+          + ' '.join(f'{v:+.3f}' for v in absolute.mean(0)))
+    print('[p6] joint angles as they are: spread '
+          + ' '.join(f'{v:.3f}' for v in absolute.std(0)))
+    print('[p6] step-to-step changes: average '
+          + ' '.join(f'{v:+.5f}' for v in delta.mean(0)))
+    print('[p6] step-to-step changes: spread '
+          + ' '.join(f'{v:.5f}' for v in delta.std(0)))
+    print(f'[p6] the biggest change in one step of {1 / a.hz:.2f} s is '
+          f'{np.abs(delta).max():.4f} radians')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.6), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    for i, nm in enumerate(JOINT_NAMES):
+        ax.hist(absolute[:, i], bins=30, alpha=0.65, label=nm)
+    ax.set_xlabel('joint angle (radians)', fontsize=10)
+    ax.set_ylabel('how many readings', fontsize=10)
+    ax.legend(fontsize=8.2, frameon=False, ncol=2)
+    ax.set_title('What the model must learn to output, as absolute angles',
+                 fontsize=11.2, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    for i in range(6):
+        ax.hist(delta[:, i], bins=30, alpha=0.65)
+    ax.set_xlabel('change in one step of 0.01 s (radians)', fontsize=10)
+    ax.set_ylabel('how many readings', fontsize=10)
+    ax.set_title('The same movement, as a change from where it already is',
+                 fontsize=11.2, weight='bold', color=INK)
+    fig.suptitle('Absolute angles are spread over radians; changes are all within a '
+                 f'band of {np.abs(delta).max():.3f} radians',
+                 fontsize=12.4, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'absolute-vs-delta.svg')
+
+
+def _action_set() -> tuple[Arr, list[str]]:
+    """Seven action channels: six joint changes in radians and a gripper in mm."""
+    a = _arm()
+    delta = np.diff(a.angles, axis=0)
+    grip_mm = a.grip[1:] * 1000.0
+    acts = np.column_stack([delta, grip_mm])
+    names = [f'{nm} change (rad)' for nm in JOINT_NAMES] + ['gripper (mm)']
+    return acts, names
+
+
+def loss_dominated() -> None:
+    acts, names = _action_set()
+    rng = np.random.default_rng(67)
+    guess = acts + rng.normal(0, 0.05 * acts.std(0), acts.shape)
+    per = ((guess - acts) ** 2).mean(axis=0)
+    share = 100 * per / per.sum()
+    scaled_acts = (acts - acts.mean(0)) / acts.std(0)
+    scaled_guess = (guess - acts.mean(0)) / acts.std(0)
+    per_s = ((scaled_guess - scaled_acts) ** 2).mean(axis=0)
+    share_s = 100 * per_s / per_s.sum()
+    spread = acts.std(0)
+    print(f'[p6] the gripper channel is {spread[-1] / spread[:6].min():,.0f} times '
+          f'wider than the narrowest joint channel ({spread[-1]:.3f} mm against '
+          f'{spread[:6].min():.5f} radians)')
+    print('[p6] every channel is predicted equally badly, to within 5 per cent of '
+          'its own spread')
+    for nm, p, sh, shs in zip(names, per, share, share_s):
+        print(f'[p6]   {nm:24s} squared error {p:.3e}, {sh:.2e} per cent of the '
+              f'total loss; after scaling {shs:5.2f} per cent')
+    print(f'[p6] the gripper channel alone is {share[-1]:.6f} per cent of the loss '
+          f'before scaling and {share_s[-1]:.2f} per cent after')
+    print(f'[p6] the six joint channels together are {share[:6].sum():.2e} per cent '
+          'of it')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 5.0), facecolor='white')
+    for ax, vals, title, logx in ((axes[0], share, 'in the units the robot uses', True),
+                                  (axes[1], share_s, 'after scaling every channel',
+                                   False)):
+        _plain(ax)
+        y = np.arange(len(names))
+        ax.barh(y, vals, color=[JOINT] * 6 + [TEAL], height=0.6)
+        ax.set_yticks(y)
+        ax.set_yticklabels(names, fontsize=9.2)
+        ax.invert_yaxis()
+        if logx:
+            ax.set_xscale('log')
+            ax.set_xlim(min(vals) * 0.3, 1e5)
+            for i, v in enumerate(vals):
+                ax.text(v * 1.6, i, f'{v:.1e}%', va='center', fontsize=9.2, color=INK)
+            ax.set_xlabel('share of the total squared error (log scale)', fontsize=10)
+        else:
+            ax.set_xlim(0, 24)
+            for i, v in enumerate(vals):
+                ax.text(v + 0.5, i, f'{v:.1f}%', va='center', fontsize=9.5, color=INK)
+            ax.set_xlabel('share of the total squared error', fontsize=10)
+        ax.set_title(title, fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('One channel measured in millimetres swallows the loss, and the six '
+                 'that steer the arm are left with almost none',
+                 fontsize=12.4, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, STA_DOC, 'loss-dominated.svg')
+
+
+def scaled_training() -> None:
+    """Train the same small network twice: on raw action units and on scaled ones."""
+    a = _arm()
+    acts, names = _action_set()
+    state = np.column_stack([a.angles[:-1], a.vel[:-1], a.grip[:-1]])
+    x = (state - state.mean(0)) / state.std(0)
+    mean, std = acts.mean(0), acts.std(0)
+    hidden, steps = 24, 6000
+
+    def train(y: Arr, lr: float) -> tuple[Arr, Arr, float]:
+        rng = np.random.default_rng(71)
+        w1 = rng.normal(0, np.sqrt(2.0 / x.shape[1]), (x.shape[1], hidden))
+        b1 = np.zeros(hidden)
+        w2 = rng.normal(0, np.sqrt(2.0 / hidden), (hidden, y.shape[1]))
+        b2 = np.zeros(y.shape[1])
+        n = len(y)
+        for _ in range(steps):
+            h = np.maximum(x @ w1 + b1, 0.0)
+            out = h @ w2 + b2
+            d = (2.0 / n) * (out - y)
+            if not np.isfinite(d).all():
+                return out, np.full_like(y, np.nan), float('inf')
+            gw2, gb2 = h.T @ d, d.sum(0)
+            dh = (d @ w2.T) * (h > 0)
+            gw1, gb1 = x.T @ dh, dh.sum(0)
+            w1, b1, w2, b2 = w1 - lr * gw1, b1 - lr * gb1, w2 - lr * gw2, b2 - lr * gb2
+        h = np.maximum(x @ w1 + b1, 0.0)
+        out = h @ w2 + b2
+        return out, out, float(np.mean((out - y) ** 2))
+
+    grid = [10.0 ** p for p in range(-8, 1)]
+    best_raw = min(((train(acts, lr)[2], lr) for lr in grid))
+    best_sc = min(((train((acts - mean) / std, lr)[2], lr) for lr in grid))
+    pred_raw = train(acts, best_raw[1])[0]
+    pred_sc = train((acts - mean) / std, best_sc[1])[0] * std + mean
+    err_raw = np.abs(pred_raw - acts).mean(0) / std
+    err_sc = np.abs(pred_sc - acts).mean(0) / std
+    print(f'[p6] best learning rate on raw targets {best_raw[1]:.0e} '
+          f'(its own loss {best_raw[0]:.4f}); on scaled targets {best_sc[1]:.0e} '
+          f'(its own loss {best_sc[0]:.4f})')
+    print(f'[p6] after {steps:,} steps, average error of each channel as a share of '
+          'that channel’s own spread:')
+    for nm, a1, a2 in zip(names, err_raw, err_sc):
+        print(f'[p6]   {nm:24s} raw targets {a1:.3f}   scaled targets {a2:.3f}')
+    print(f'[p6] averaged over the six joint channels: raw {err_raw[:6].mean():.3f}, '
+          f'scaled {err_sc[:6].mean():.3f}')
+    print(f'[p6] the gripper channel: raw {err_raw[-1]:.3f}, scaled {err_sc[-1]:.3f}')
+
+    fig, ax = plt.subplots(figsize=(11.6, 5.0), facecolor='white')
+    _plain(ax)
+    y = np.arange(len(names))
+    ax.barh(y - 0.19, err_raw, height=0.36, color=GRIP, label='targets in robot units')
+    ax.barh(y + 0.19, err_sc, height=0.36, color=SLIDE, label='targets scaled first')
+    for i in range(len(names)):
+        ax.text(err_raw[i] * 1.3, i - 0.19, f'{err_raw[i]:.2f}', va='center',
+                fontsize=9, color=GRIP)
+        ax.text(err_sc[i] * 1.3, i + 0.19, f'{err_sc[i]:.2f}', va='center',
+                fontsize=9, color=SLIDE)
+    ax.set_yticks(y)
+    ax.set_yticklabels(names, fontsize=9.5)
+    ax.invert_yaxis()
+    ax.set_xscale('log')
+    ax.set_xlim(0.01, max(err_raw.max(), err_sc.max()) * 6)
+    ax.axvline(1.0, color=MUTED, ls='--', lw=1.1)
+    ax.text(1.05, len(names) - 0.4, 'an error as big as the channel itself',
+            fontsize=9, color=MUTED)
+    ax.set_xlabel('average error, as a share of that channel’s own spread '
+                  '(log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.set_title('The same model, the same 4,000 steps: scaling the targets is what '
+                 'lets the small channels be learned',
+                 fontsize=12.2, weight='bold', color=INK, loc='left')
+    _save(fig, STA_DOC, 'scaled-training.svg')
+
+
 def main() -> None:
     """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
     global PNG_DIR
@@ -1041,6 +2486,33 @@ def main() -> None:
     similarity_heatmap()
     cosine_not_length()
     nearest_neighbours()
+    same_tokens_different_order()
+    position_vectors_added()
+    rope_rotation()
+    rope_relative()
+    two_shadows()
+    shadow_distorts()
+    one_row_many_meanings()
+    three_colour_grids()
+    scaling_the_values()
+    why_scale()
+    patch_grid()
+    patch_to_vector()
+    patch_count_cost()
+    depth_grid()
+    depth_holes()
+    depth_to_points()
+    order_free()
+    waveform()
+    spectrogram()
+    one_frame()
+    joint_traces()
+    state_vector()
+    channel_ranges()
+    action_meanings()
+    absolute_vs_delta()
+    loss_dominated()
+    scaled_training()
     print(f'wrote the diagrams under {IMAGES}')
 
 

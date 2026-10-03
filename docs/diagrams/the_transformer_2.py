@@ -210,7 +210,7 @@ class Sim:
     """The simulated raw outputs for the sentence, and everything real taken from them."""
 
     def __init__(self) -> None:
-        rng = np.random.default_rng(7)
+        rng = np.random.default_rng(45)
         self.inputs: list[str] = ['<start>'] + SENTENCE[:-1]
         self.targets: list[str] = list(SENTENCE)
         n = len(self.targets)
@@ -313,7 +313,7 @@ def per_position_loss() -> None:
     for y, v, t in zip(ypos, s.loss, s.targets):
         ax.text(v + 0.06, y, f'{v:.2f}  ("{t}")', va='center', fontsize=9.5, color=INK)
     ax.axvline(s.mean_loss, color=INK, ls='--', lw=1.2)
-    ax.text(s.mean_loss + 0.05, len(s.targets) - 0.45, f'average {s.mean_loss:.2f}',
+    ax.text(s.mean_loss + 0.07, len(s.targets) - 0.75, f'average {s.mean_loss:.2f}',
             fontsize=9.5, color=INK)
     ax.set_yticks(ypos)
     ax.set_yticklabels([f'position {i + 1}' for i in range(len(s.targets))], fontsize=9.5)
@@ -337,8 +337,8 @@ def one_position_distribution() -> None:
         ax.bar(np.arange(len(WORDS)), p, color=colours, edgecolor=LINK, lw=0.6)
         ax.set_xticks(np.arange(len(WORDS)))
         ax.set_xticklabels(WORDS, rotation=45, ha='right', fontsize=9.5)
-        ax.set_ylim(0, 0.95)
-        ax.text(tgt, p[tgt] + 0.03, f'{p[tgt]:.3f}', ha='center', fontsize=10, color=SLIDE,
+        ax.set_ylim(0, 1.16)
+        ax.text(tgt, p[tgt] + 0.04, f'{p[tgt]:.3f}', ha='center', fontsize=10, color=SLIDE,
                 weight='bold')
         ax.set_title(f'Position {i + 1}: "{s.inputs[i]}" goes in, "{s.targets[i]}" must come out\n'
                      f'loss = -log({s.p_target[i]:.3f}) = {s.loss[i]:.2f}',
@@ -477,9 +477,9 @@ def scores_before_after_mask() -> None:
                         for j, v in enumerate(a.weights[i])))
 
     fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.6), facecolor='white')
+    span = 1.7 * float(np.abs(a.scores).max())
     _matrix(axes[0], a.scores, labels, labels, fmt='{:+.2f}', cmap='PuOr',
-            vmin=-float(np.abs(a.scores).max()), vmax=float(np.abs(a.scores).max()),
-            text_cut=2.0)
+            vmin=-span, vmax=span, text_cut=2.0)
     axes[0].set_title('Step 1: the raw scores, every position against every position',
                       fontsize=11.5, weight='bold', color=INK)
     _matrix(axes[1], a.shown, labels, labels, fmt='{:.2f}', cmap='Greens', vmin=0.0, vmax=1.0)
@@ -555,8 +555,6 @@ def teacher_forcing() -> None:
              weight='bold')
         _arrow(ax, x + w / 2, 3.05, x + w / 2, 2.45, colour=MUTED, head=0.1)
         _arrow(ax, x + w / 2, 1.70, x + w / 2, 1.08, colour=MUTED, head=0.1)
-        ax.text(x + w / 2, 1.40, 'scored against', ha='center', va='center', fontsize=7.5,
-                color=MUTED)
         if i < len(s.targets) - 1:
             _arrow(ax, x + w + 0.03, 3.4, x + 1.72, 3.4, colour=LINK, head=0.1)
     ax.text(0.1, 3.4, 'fed in: the true token,\nalways', ha='right', va='center',
@@ -565,6 +563,7 @@ def teacher_forcing() -> None:
             color=INK, weight='bold')
     ax.text(0.1, 0.7, 'the true next token', ha='right', va='center', fontsize=10,
             color=INK, weight='bold')
+    ax.text(0.1, 1.39, 'scored against', ha='right', va='center', fontsize=9, color=MUTED)
     ax.text(5.6, -0.35, f'the model was right at {n_right} of {len(s.targets)} positions, and a '
                         'wrong guess still never changes what the next position is fed',
             ha='center', va='center', fontsize=10.5, color=INK)
@@ -853,9 +852,10 @@ def logits_to_probabilities() -> None:
     names = [WORDS[k] for k in order]
     ax.bar(names, z[order], color=[LINK if v >= 0 else WRIST for v in z[order]], width=0.6)
     for j, v in enumerate(z[order]):
-        ax.text(j, v + (0.12 if v >= 0 else -0.3), f'{v:+.2f}', ha='center', fontsize=9,
+        ax.text(j, (v + 0.12) if v >= 0 else 0.12, f'{v:+.2f}', ha='center', fontsize=9,
                 color=INK)
     ax.axhline(0, color=INK, lw=1.0)
+    ax.set_xticks(np.arange(len(names)))
     ax.set_xticklabels(names, rotation=45, ha='right', fontsize=9.5)
     ax.set_ylabel('raw output for that word', fontsize=10)
     ax.set_title('What comes out of the last layer: one plain number for each word',
@@ -866,6 +866,7 @@ def logits_to_probabilities() -> None:
     ax.bar(names, p[order], color=SLIDE, width=0.6)
     for j, v in enumerate(p[order]):
         ax.text(j, v + 0.006, f'{v:.3f}', ha='center', fontsize=9, color=INK)
+    ax.set_xticks(np.arange(len(names)))
     ax.set_xticklabels(names, rotation=45, ha='right', fontsize=9.5)
     ax.set_ylim(0, max(p) * 1.25)
     ax.set_ylabel('chance of that word', fontsize=10)
@@ -942,6 +943,7 @@ def top_p_cut() -> None:
     ax2.set_ylabel('running total of the chances', fontsize=10, color=GRIP)
     ax2.tick_params(axis='y', colors=GRIP, labelsize=9.5)
     ax.axvline(keep - 0.5, color=INK, ls=':', lw=1.4)
+    ax.set_xticks(np.arange(len(names)))
     ax.set_xticklabels(names, rotation=45, ha='right', fontsize=9.5)
     ax.set_ylabel('chance of that word', fontsize=10)
     ax.set_title(f'The running total passes {cutoff} after {keep} words', fontsize=11.5,
@@ -952,6 +954,7 @@ def top_p_cut() -> None:
     ax.bar(names[:keep], renorm, color=TEAL, width=0.5)
     for j, v in enumerate(renorm):
         ax.text(j, v + 0.008, f'{v:.3f}', ha='center', fontsize=10, color=INK)
+    ax.set_xticks(np.arange(keep))
     ax.set_xticklabels(names[:keep], rotation=45, ha='right', fontsize=10)
     ax.set_ylim(0, max(renorm) * 1.25)
     ax.set_ylabel('chance after sharing out again', fontsize=10)
@@ -975,7 +978,9 @@ def greedy_loses() -> None:
         greedy_first = int(order[0])
         greedy_second = int(np.argmax(cand[greedy_first]))
         best = max(joints, key=lambda key: joints[key])
-        if best[0] != greedy_first and joints[best] > joints[(greedy_first, greedy_second)] * 1.3:
+        if (best[0] != greedy_first and best[1] != best[0]
+                and int(np.argmax(cand[greedy_first])) != greedy_first
+                and joints[best] > joints[(greedy_first, greedy_second)] * 1.3):
             branch = cand
             seed_used = seed
             break
@@ -995,16 +1000,16 @@ def greedy_loses() -> None:
 
     fig, ax = plt.subplots(figsize=(12.0, 6.0), facecolor='white')
     _bare(ax)
-    _box(ax, 0.0, 3.3, 2.0, 0.7, f'"{s.inputs[SAMPLE_POS]}"', face='#eef3f9', edge=LINK,
+    _box(ax, 0.0, 2.95, 2.0, 0.7, f'"{s.inputs[SAMPLE_POS]}"', face='#eef3f9', edge=LINK,
          fontsize=11)
-    ys = [5.1, 1.6]
+    ys = [4.8, 1.5]
     for bi, k in enumerate(order):
         k = int(k)
         ax.add_patch(Rectangle((3.4, ys[bi] - 0.35), 2.1, 0.7, facecolor='white',
                                edgecolor=SLIDE if k == best[0] else INK, lw=1.4, zorder=2))
         ax.text(4.45, ys[bi], f'"{WORDS[k]}"  {first[k]:.3f}', ha='center', va='center',
                 fontsize=11, color=INK, zorder=3)
-        _arrow(ax, 2.05, 3.65, 3.35, ys[bi], colour=MUTED, head=0.11)
+        _arrow(ax, 2.05, 3.30, 3.35, ys[bi], colour=MUTED, head=0.11)
         tops = np.argsort(-branch[k])[:3]
         for ci, c in enumerate(tops):
             c = int(c)
@@ -1022,14 +1027,1026 @@ def greedy_loses() -> None:
                     color=SLIDE if winner else (GRIP if greedy else MUTED), zorder=3,
                     weight='bold' if winner or greedy else 'normal')
             _arrow(ax, 5.55, ys[bi], 6.85, yy, colour='#cccccc', head=0.09)
-    ax.text(4.45, 6.5, 'first token', ha='center', fontsize=10.5, weight='bold', color=INK)
-    ax.text(9.2, 6.5, 'second token, and the chance of the pair', ha='center', fontsize=10.5,
+    ax.text(4.45, 6.65, 'first token', ha='center', fontsize=10.5, weight='bold', color=INK)
+    ax.text(9.2, 6.65, 'second token, and the chance of the pair', ha='center', fontsize=10.5,
             weight='bold', color=INK)
     ax.text(5.9, -0.55, f'taking the best first token gives a pair worth {greedy_joint:.4f}, '
                         f'while the best pair is worth {pairs[best]:.4f}',
             ha='center', fontsize=11, color=INK)
     ax.set_xlim(-0.3, 11.9)
-    ax.set_ylim(-1.0, 6.9)
+    ax.set_ylim(-1.0, 7.1)
     ax.set_title('Why always taking the most likely token is not the same as finding the '
                  'most likely answer', fontsize=12.5, weight='bold', color=INK)
     _save(fig, TRAIN_DOC, 'greedy-loses.svg')
+
+
+# ==========================================================================
+# section 6: the context window, and what makes generation slow
+# ==========================================================================
+
+def context_cost() -> None:
+    lengths = np.array([1024, 4096, 8192, 32768, 131072])
+    pairs = lengths.astype(float) * (lengths + 1) / 2.0
+    cache = lengths.astype(float) * CACHE_PER_TOKEN
+    for n, pr, cb in zip(lengths, pairs, cache):
+        print(f'[context] {n:,} tokens: {pr:,.0f} allowed pairs in every head of every layer, '
+              f'cache {cb / GIB:.2f} GiB for one sequence')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    nn = np.arange(256, 131073, 256, dtype=float)
+    ax.plot(nn, nn * (nn + 1) / 2, color=GRIP, lw=2, label='pairs of positions to score')
+    ax.plot(nn, nn, color=SLIDE, lw=2, label='positions, for comparison')
+    for n, pr in zip(lengths, pairs):
+        ax.scatter([n], [pr], color=GRIP, s=28, zorder=5)
+        ax.text(n * 0.9, pr * 2.0, f'{pr / 1e6:,.1f} million', fontsize=9, color=GRIP,
+                ha='right')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('tokens in the context', fontsize=10)
+    ax.set_ylabel('things to work out, per head per layer (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Doubling the context quadruples the pairs', fontsize=12, weight='bold',
+                 color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ax.bar([f'{n:,}' for n in lengths], cache / GIB, color=TEAL, width=0.55)
+    for i, v in enumerate(cache / GIB):
+        ax.text(i, v * 1.06, f'{v:.2f} GiB', ha='center', fontsize=10, color=INK)
+    ax.axhline(WEIGHT_BYTES / GIB, color=GRIP, ls='--', lw=1.3)
+    ax.text(-0.45, WEIGHT_BYTES / GIB * 1.15, f'the weights: {WEIGHT_BYTES / GIB:.2f} GiB',
+            fontsize=9.5, color=GRIP)
+    ax.set_yscale('log')
+    ax.set_ylim(0.03, max(cache / GIB) * 4)
+    ax.set_xlabel('tokens in the context', fontsize=10)
+    ax.set_ylabel('cache for one sequence (GiB, log scale)', fontsize=10)
+    ax.set_title('And it doubles the memory one conversation holds', fontsize=12,
+                 weight='bold', color=INK)
+    fig.suptitle(f'The example model, trained on {TRAINED_LEN:,} tokens of context',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TRAIN_DOC, 'context-cost.svg')
+
+
+def past_the_window() -> None:
+    window = 2048
+    talk = 3000
+    dropped = talk - window
+    print(f'[window] a conversation of {talk:,} tokens in a window of {window:,}: '
+          f'the oldest {dropped:,} tokens fall out, which is '
+          f'{dropped / talk * 100:.1f} per cent of what was said')
+
+    fig, ax = plt.subplots(figsize=(11.8, 4.6), facecolor='white')
+    _bare(ax)
+    scale = 10.0 / talk
+    ax.add_patch(Rectangle((0, 2.0), dropped * scale, 0.8, facecolor='#ececec',
+                           edgecolor='#aaaaaa', lw=1.2))
+    ax.add_patch(Rectangle((dropped * scale, 2.0), window * scale, 0.8, facecolor='#e3f1e6',
+                           edgecolor=SLIDE, lw=1.4))
+    ax.text(dropped * scale / 2, 2.4, f'{dropped:,} tokens\nfallen out', ha='center',
+            va='center', fontsize=10, color='#777777')
+    ax.text(dropped * scale + window * scale / 2, 2.4,
+            f'the {window:,} tokens the model can still see', ha='center', va='center',
+            fontsize=11, color=SLIDE, weight='bold')
+    ax.text(0, 3.15, 'the start of the conversation', fontsize=10, color=INK)
+    ax.text(10.0, 3.15, 'the newest token', fontsize=10, color=INK, ha='right')
+    ax.add_patch(Rectangle((0, 0.7), 10.0, 0.75, facecolor='#eef3f9', edgecolor=LINK, lw=1.2))
+    ax.text(5.0, 1.07, f'everything that was said: {talk:,} tokens', ha='center', va='center',
+            fontsize=11, color=LINK)
+    _arrow(ax, 1.2, 1.5, 1.2, 1.95, colour=MUTED, head=0.1)
+    _arrow(ax, 7.0, 1.5, 7.0, 1.95, colour=MUTED, head=0.1)
+    ax.text(5.0, 0.15, f'{dropped / talk * 100:.0f} per cent of the conversation is gone, and '
+                       'nothing in the answer says so',
+            ha='center', fontsize=10.5, color=INK)
+    ax.set_xlim(-0.4, 10.4)
+    ax.set_ylim(-0.2, 3.6)
+    ax.set_title(f'Past the window: a {talk:,}-token conversation inside a '
+                 f'{window:,}-token window', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'past-the-window.svg')
+
+
+def memory_bound() -> None:
+    length, batch = 2048, 1
+    bytes_read = _bytes_per_step(length, batch)
+    flops = batch * _flops_per_token(length)
+    t_mem = bytes_read / BANDWIDTH
+    t_ar = flops / PEAK_FLOPS
+    print(f'[bound] at {length:,} tokens and one sequence: {bytes_read:,.0f} bytes read '
+          f'({WEIGHT_BYTES:,} of weights plus {batch * CACHE_PER_TOKEN * length:,} of cache) '
+          f'and {flops:,.0f} arithmetic operations')
+    print(f'[bound] reading takes {t_mem * 1e6:,.0f} microseconds, the arithmetic takes '
+          f'{t_ar * 1e6:,.1f} microseconds, so reading takes {t_mem / t_ar:.0f} times longer')
+    print(f'[bound] that is {1 / t_mem:,.0f} tokens a second at best')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white',
+                             gridspec_kw={'width_ratios': [1.0, 1.1]})
+    ax = axes[0]
+    _plain(ax)
+    ax.bar(['waiting for memory', 'doing the arithmetic'], [t_mem * 1e6, t_ar * 1e6],
+           color=[GRIP, SLIDE], width=0.5)
+    ax.text(0, t_mem * 1e6 * 1.03, f'{t_mem * 1e6:,.0f} microseconds', ha='center',
+            fontsize=10.5, color=INK)
+    ax.text(1, t_ar * 1e6 * 1.3, f'{t_ar * 1e6:,.1f} microseconds', ha='center', fontsize=10.5,
+            color=INK)
+    ax.set_yscale('log')
+    ax.set_ylim(1, t_mem * 1e6 * 4)
+    ax.set_ylabel('time for one token (microseconds, log scale)', fontsize=10)
+    ax.set_title(f'One token, one sequence: reading takes {t_mem / t_ar:.0f} times as long '
+                 'as the sums', fontsize=11.5, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ax.bar(['bytes that must be read for one token'], [WEIGHT_BYTES / MIB], color=LINK,
+           width=0.4, label=f'every weight, once: {WEIGHT_BYTES / MIB:.0f} MiB')
+    ax.bar(['bytes that must be read for one token'], [CACHE_PER_TOKEN * length / MIB],
+           bottom=[WEIGHT_BYTES / MIB], color=TEAL, width=0.4,
+           label=f'the whole cache, once: {CACHE_PER_TOKEN * length / MIB:.0f} MiB')
+    ax.text(0, bytes_read / MIB + 25, f'{bytes_read / MIB:.0f} MiB for a single token',
+            ha='center', fontsize=11, weight='bold', color=INK)
+    ax.set_ylim(0, bytes_read / MIB * 1.3)
+    ax.set_xlim(-1.1, 1.1)
+    ax.set_ylabel('memory read (MiB)', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title('Where the reading goes', fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('Generation is held up by memory reading, not by arithmetic',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TRAIN_DOC, 'memory-bound.svg')
+
+
+def batch_helps() -> None:
+    length = 2048
+    batches = np.arange(1, 65)
+    times = np.array([max(_bytes_per_step(length, int(b)) / BANDWIDTH,
+                          b * _flops_per_token(length) / PEAK_FLOPS) for b in batches])
+    per_token = times / batches
+    throughput = batches / times
+    for b in (1, 2, 8, 32, 64):
+        i = b - 1
+        print(f'[batch] {b:2d} sequences: {times[i] * 1e3:.2f} ms a step, '
+              f'{per_token[i] * 1e6:,.0f} microseconds a token, '
+              f'{throughput[i]:,.0f} tokens a second in all')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(batches, throughput, color=LINK, lw=2)
+    for b in (1, 8, 32, 64):
+        ax.scatter([b], [throughput[b - 1]], color=LINK, s=30, zorder=5)
+        ax.text(b, throughput[b - 1] * 1.04, f'{throughput[b - 1]:,.0f}', fontsize=9.5,
+                color=INK, ha='center')
+    ax.set_xlabel('sequences answered at the same time', fontsize=10)
+    ax.set_ylabel('tokens a second, all sequences together', fontsize=10)
+    ax.set_ylim(0, throughput.max() * 1.2)
+    ax.set_title('Answering several at once gets more out of the same reading',
+                 fontsize=11.5, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(batches, per_token * 1e6, color=GRIP, lw=2)
+    ax.axhline(per_token[0] * 1e6, color=MUTED, ls=':', lw=1.0)
+    ax.text(32, per_token[0] * 1e6 * 0.93, f'one sequence: {per_token[0] * 1e6:,.0f} '
+                                           'microseconds a token', fontsize=9.5, color=MUTED)
+    ax.set_xlabel('sequences answered at the same time', fontsize=10)
+    ax.set_ylabel('microseconds for each token', fontsize=10)
+    ax.set_ylim(0, per_token[0] * 1e6 * 1.2)
+    ax.set_title('But each conversation does not get faster than a floor',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle(f'The example model at {length:,} tokens of context, on the example '
+                 'accelerator', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TRAIN_DOC, 'batch-helps.svg')
+
+
+# ==========================================================================
+# 04_why-the-transformer-won.md
+# section 1: what a convolution cannot do that attention can
+# ==========================================================================
+
+def layers_to_reach() -> None:
+    dist = np.arange(2, 1025)
+    kernels = [3, 5, 7]
+    colours = [GRIP, WRIST, PURPLE]
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    for k, colour in zip(kernels, colours):
+        need = np.ceil(dist / (k - 1))
+        ax.plot(dist, need, color=colour, lw=2, label=f'convolution over {k} positions')
+        at512 = int(np.ceil(512 / (k - 1)))
+        print(f'[reach] a convolution over {k} positions needs {at512} layers to join two '
+              f'positions 512 apart, and {int(np.ceil(64 / (k - 1)))} to join two 64 apart')
+    ax.plot(dist, np.ones_like(dist), color=SLIDE, lw=2.5, label='attention, any distance')
+    ax.annotate('attention: 1 layer, whatever the distance', xy=(300, 1), xytext=(60, 4),
+                fontsize=10.5, color=SLIDE,
+                arrowprops={'arrowstyle': '->', 'color': SLIDE, 'lw': 1.2})
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('distance between the two positions, in tokens', fontsize=10)
+    ax.set_ylabel('layers needed before they can affect each other (log scale)', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title('How many layers it takes for one position to reach another',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'layers-to-reach.svg')
+
+
+def receptive_cone() -> None:
+    n, layers, k = 17, 5, 3
+    centre = 8
+    half = (k - 1) // 2
+    counts = [1 + 2 * half * lay for lay in range(layers + 1)]
+    print(f'[cone] a stack of {k}-wide convolutions: after '
+          + ', '.join(f'{lay} layers it sees {c} positions' for lay, c in enumerate(counts)))
+    print(f'[cone] to see all {n} positions from the middle it needs '
+          f'{int(np.ceil((n - 1) / 2 / half))} layers')
+
+    fig, ax = plt.subplots(figsize=(11.6, 5.4), facecolor='white')
+    _bare(ax)
+    for lay in range(layers + 1):
+        seen = range(max(0, centre - half * lay), min(n, centre + half * lay + 1))
+        for j in range(n):
+            inside = j in seen
+            ax.add_patch(Rectangle((j, lay), 0.92, 0.82,
+                                   facecolor='#d9ead9' if inside else '#f2f2f2',
+                                   edgecolor=SLIDE if inside else '#dddddd', lw=1.0))
+        word = 'layer' if lay == 1 else 'layers'
+        cnt = len(list(seen))
+        ax.text(-0.3, lay + 0.41, f'after {lay} {word}', ha='right', va='center', fontsize=10,
+                color=INK)
+        ax.text(n + 0.2, lay + 0.41, f'{cnt} position' + ('' if cnt == 1 else 's'),
+                ha='left', va='center', fontsize=10, color=SLIDE)
+    ax.add_patch(Rectangle((centre, 0), 0.92, 0.82, facecolor=JOINT, edgecolor=INK, lw=1.2))
+    ax.text(centre + 0.46, 0.41, 'here', ha='center', va='center', fontsize=9, color=INK)
+    for j in range(n):
+        ax.text(j + 0.46, -0.45, str(j), ha='center', fontsize=9, color=MUTED)
+    ax.text(n / 2, -1.1, 'position along the sentence', ha='center', fontsize=10.5, color=INK)
+    ax.set_xlim(-4.2, n + 3.4)
+    ax.set_ylim(-1.5, layers + 1.2)
+    ax.set_title('A convolution three wide: the view grows by one position each side per layer',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'receptive-cone.svg')
+
+
+def dilation_helps() -> None:
+    layers = np.arange(1, 13)
+    plain = 2 * layers + 1
+    dilated = 2 ** (layers + 1) - 1
+    context = 8192
+    print(f'[dilation] after 12 layers: plain sees {plain[-1]} positions, '
+          f'doubled gaps see {dilated[-1]:,} positions')
+    need = int(np.ceil(np.log2(context + 1) - 1))
+    print(f'[dilation] to cover {context:,} positions, doubling the gaps needs {need} layers '
+          f'and plain layers need {int(np.ceil((context - 1) / 2)):,}')
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(layers, plain, marker='o', color=GRIP, lw=2, label='plain convolution, 3 wide')
+    ax.plot(layers, dilated, marker='s', color=WRIST, lw=2,
+            label='same convolution with the gaps doubled each layer')
+    ax.axhline(context, color=SLIDE, ls='--', lw=1.6)
+    ax.text(1.1, context * 1.25, f'attention sees all {context:,} positions in its first layer',
+            fontsize=10, color=SLIDE)
+    ax.set_yscale('log')
+    ax.set_ylim(1, context * 6)
+    ax.set_xlabel('layers stacked', fontsize=10)
+    ax.set_ylabel('positions one position can see (log scale)', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='lower right')
+    ax.set_title('Spreading the filter out helps, but the view is still a shape chosen '
+                 'in advance', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'dilation-helps.svg')
+
+
+# ==========================================================================
+# section 2: what a recurrent network cannot do
+# ==========================================================================
+
+def sequential_steps() -> None:
+    lengths = [128, 512, 2048, 8192]
+    step_us = 20.0              # a stated example: 20 microseconds for one small step
+    rec = [n for n in lengths]
+    tra = [LAYERS for _ in lengths]
+    for n in lengths:
+        print(f'[sequence] {n:,} positions: one after another {n:,} steps '
+              f'= {n * step_us / 1000:.1f} ms at {step_us:.0f} microseconds a step; '
+              f'all at once {LAYERS} layer steps = {LAYERS * step_us / 1000:.2f} ms')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    x = np.arange(len(lengths))
+    ax.bar(x - 0.19, rec, width=0.36, color=GRIP, label='one position after another')
+    ax.bar(x + 0.19, tra, width=0.36, color=SLIDE,
+           label=f'all positions together, {LAYERS} layers deep')
+    for i, (r, t) in enumerate(zip(rec, tra)):
+        ax.text(i - 0.19, r * 1.1, f'{r:,}', ha='center', fontsize=9.5, color=INK)
+        ax.text(i + 0.19, t * 1.1, f'{t}', ha='center', fontsize=9.5, color=INK)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{n:,}' for n in lengths])
+    ax.set_yscale('log')
+    ax.set_ylim(1, max(rec) * 4)
+    ax.set_xlabel('positions in the sentence', fontsize=10)
+    ax.set_ylabel('steps that must wait for the one before (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Steps that cannot be done at the same time', fontsize=12, weight='bold',
+                 color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ax.bar(x - 0.19, [n * step_us / 1000 for n in lengths], width=0.36, color=GRIP)
+    ax.bar(x + 0.19, [LAYERS * step_us / 1000 for _ in lengths], width=0.36, color=SLIDE)
+    for i, n in enumerate(lengths):
+        ax.text(i - 0.19, n * step_us / 1000 * 1.1, f'{n * step_us / 1000:.1f} ms', ha='center',
+                fontsize=9.5, color=INK)
+        ax.text(i + 0.19, LAYERS * step_us / 1000 * 1.1, f'{LAYERS * step_us / 1000:.2f} ms',
+                ha='center', fontsize=9.5, color=INK)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{n:,}' for n in lengths])
+    ax.set_yscale('log')
+    ax.set_ylim(0.1, max(lengths) * step_us / 1000 * 5)
+    ax.set_xlabel('positions in the sentence', fontsize=10)
+    ax.set_ylabel('time for one pass (milliseconds, log scale)', fontsize=10)
+    ax.set_title(f'At a stated {step_us:.0f} microseconds a step', fontsize=12,
+                 weight='bold', color=INK)
+    fig.suptitle('Why order-bound layers waste parallel hardware', fontsize=12.5,
+                 weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'sequential-steps.svg')
+
+
+def hardware_busy() -> None:
+    n = 12
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
+    for ax, kind in zip(axes, ('one after another', 'all at once')):
+        _bare(ax)
+        busy = 0
+        for t in range(n):
+            for j in range(n):
+                if kind == 'one after another':
+                    on = (j == t)
+                else:
+                    on = (t == 0)
+                busy += int(on)
+                ax.add_patch(Rectangle((j, n - 1 - t), 0.9, 0.9,
+                                       facecolor=SLIDE if on else '#f0f0f0',
+                                       edgecolor='#dddddd', lw=0.8))
+        for j in range(n):
+            ax.text(j + 0.45, -0.45, str(j + 1), ha='center', fontsize=8, color=MUTED)
+            ax.text(-0.25, n - 1 - j + 0.45, str(j + 1), ha='right', va='center', fontsize=8,
+                    color=MUTED)
+        ax.text(n / 2, -1.1, 'position', ha='center', fontsize=10, color=INK)
+        ax.text(-1.15, n / 2, 'time slot', ha='center', va='center', fontsize=10, color=INK,
+                rotation=90)
+        slots = n if kind == 'one after another' else 1
+        title = ('A layer that must run in order' if kind == 'one after another'
+                 else 'Attention over the same positions')
+        ax.set_title(f'{title}\n{slots} time slot' + ('' if slots == 1 else 's')
+                     + f' used, {busy // slots} position'
+                     + ('' if busy // slots == 1 else 's') + ' worked on in each',
+                     fontsize=11.5, weight='bold', color=INK)
+        ax.set_xlim(-1.6, n + 0.3)
+        ax.set_ylim(-1.5, n + 0.3)
+        print(f'[busy] {kind}: {slots} time slots used, {busy // slots} positions in each, '
+              f'{busy} positions in all')
+    fig.suptitle('The same twelve positions, worked on by hardware that can do twelve things '
+                 'at once', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'hardware-busy.svg')
+
+
+def signal_decay() -> None:
+    dist = np.arange(1, 513)
+    factors = [0.90, 0.95, 0.98]
+    colours = [GRIP, WRIST, PURPLE]
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    for f, colour in zip(factors, colours):
+        ax.plot(dist, f ** dist, color=colour, lw=2,
+                label=f'each step keeps {f * 100:.0f} per cent of what came in')
+        print(f'[decay] keeping {f * 100:.0f} per cent a step: after 100 steps '
+              f'{f ** 100:.2e} is left, after 511 steps {f ** 511:.2e}')
+    ax.axhline(1.0, color=SLIDE, lw=2.5)
+    ax.text(5, 1.4, 'attention: one layer, so nothing is passed along and nothing shrinks',
+            fontsize=10.5, color=SLIDE)
+    ax.set_yscale('log')
+    ax.set_ylim(1e-12, 12)
+    ax.set_xlabel('how many positions back the information started', fontsize=10)
+    ax.set_ylabel('how much of it survives (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower left')
+    ax.set_title('Passing a summary along one step at a time shrinks it every step',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'signal-decay.svg')
+
+
+# ==========================================================================
+# section 3: what the transformer costs
+# ==========================================================================
+
+def _weight_work(n: float) -> float:
+    """Arithmetic in one layer that uses the weights, for a sequence of n tokens."""
+    return 8.0 * n * WIDTH * WIDTH + 2.0 * 2.0 * n * WIDTH * FFN
+
+
+def _pair_work(n: float) -> float:
+    """Arithmetic in one layer spent on pairs of positions, counting the allowed half only."""
+    return 2.0 * n * n * WIDTH
+
+
+def attention_overtakes() -> None:
+    n = np.logspace(np.log10(256), np.log10(262144), 400)
+    cross = 12.0 * WIDTH          # where 2 n^2 d equals 24 n d^2
+    print(f'[crossover] the pair work passes the weight work at {cross:,.0f} tokens, '
+          f'which is 12 times the width of {WIDTH}')
+    for k in (1024, 8192, 32768, 131072):
+        w, p = _weight_work(k), _pair_work(k)
+        print(f'[crossover] {k:,} tokens: weight work {w / 1e12:.2f} teraoperations a layer, '
+              f'pair work {p / 1e12:.2f}, pair share {p / (w + p) * 100:.0f} per cent')
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(n, _weight_work(n) / 1e12, color=LINK, lw=2,
+            label='work with the weights (grows with the length)')
+    ax.plot(n, _pair_work(n) / 1e12, color=GRIP, lw=2,
+            label='work on pairs of positions (grows with the length squared)')
+    ax.axvline(cross, color=INK, ls=':', lw=1.4)
+    ax.text(cross * 1.1, 0.02, f'they are equal at\n{cross:,.0f} tokens', fontsize=10,
+            color=INK)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('tokens in the sequence', fontsize=10)
+    ax.set_ylabel('arithmetic in one layer (trillions of operations, log scale)', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title(f'For the example model, pairs overtake weights at about '
+                 f'{cross:,.0f} tokens', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'attention-overtakes.svg')
+
+
+def fraction_in_attention() -> None:
+    n = np.logspace(np.log10(256), np.log10(262144), 400)
+    share = _pair_work(n) / (_pair_work(n) + _weight_work(n)) * 100
+    marks = [1024, 8192, 32768, 131072]
+    fig, ax = plt.subplots(figsize=(11.0, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(n, share, color=GRIP, lw=2.2)
+    for k in marks:
+        v = _pair_work(k) / (_pair_work(k) + _weight_work(k)) * 100
+        ax.scatter([k], [v], color=GRIP, s=32, zorder=5)
+        ax.text(k, v + 4, f'{v:.0f}%', ha='center', fontsize=10, color=INK)
+        print(f'[share] {k:,} tokens: {v:.1f} per cent of a layer\'s arithmetic is on pairs')
+    ax.set_xscale('log')
+    ax.set_ylim(0, 105)
+    ax.set_xlabel('tokens in the sequence (log scale)', fontsize=10)
+    ax.set_ylabel('share of a layer\'s arithmetic spent on pairs (per cent)', fontsize=10)
+    ax.set_title('Short sequences hardly notice attention; long ones are almost nothing else',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'fraction-in-attention.svg')
+
+
+BUDGET_GIB: float = 24.0        # a stated example: 24 GiB of memory on the accelerator
+
+
+def cache_fills_memory() -> None:
+    free = BUDGET_GIB * GIB - WEIGHT_BYTES
+    max_tokens = free / CACHE_PER_TOKEN
+    lengths = np.array([1024, 8192, 32768, 131072, 262144], dtype=float)
+    held = (WEIGHT_BYTES + lengths * CACHE_PER_TOKEN) / GIB
+    print(f'[budget] a stated {BUDGET_GIB:.0f} GiB of memory, weights take '
+          f'{WEIGHT_BYTES / GIB:.2f} GiB, so {free / GIB:.2f} GiB is left and one sequence '
+          f'can hold at most {max_tokens:,.0f} tokens')
+    for n, h in zip(lengths, held):
+        print(f'[budget] {n:,.0f} tokens: {h:.2f} GiB held in all')
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    labels = [f'{int(n):,}' for n in lengths]
+    ax.bar(labels, [WEIGHT_BYTES / GIB] * len(lengths), color=LINK, width=0.5,
+           label='the weights')
+    ax.bar(labels, lengths * CACHE_PER_TOKEN / GIB, bottom=[WEIGHT_BYTES / GIB] * len(lengths),
+           color=TEAL, width=0.5, label='the cache for one sequence')
+    ax.axhline(BUDGET_GIB, color=GRIP, ls='--', lw=1.6)
+    ax.text(-0.45, BUDGET_GIB + 0.8, f'all the memory there is: {BUDGET_GIB:.0f} GiB',
+            fontsize=10, color=GRIP)
+    for i, h in enumerate(held):
+        ax.text(i, h + 0.6, f'{h:.1f}', ha='center', fontsize=9.5, color=INK)
+    ax.set_ylim(0, BUDGET_GIB * 1.35)
+    ax.set_xlabel('tokens in the one conversation', fontsize=10)
+    ax.set_ylabel('memory held (GiB)', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title(f'One conversation can hold at most {max_tokens / 1000:,.0f} thousand tokens '
+                 'before the memory is gone', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'cache-fills-memory.svg')
+
+
+def slower_with_length() -> None:
+    lengths = np.arange(0, 131073, 512, dtype=float)
+    times = (WEIGHT_BYTES + lengths * CACHE_PER_TOKEN) / BANDWIDTH * 1e3
+    fig, ax = plt.subplots(figsize=(11.0, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(lengths, times, color=GRIP, lw=2.2)
+    for k in (0, 8192, 32768, 131072):
+        t = (WEIGHT_BYTES + k * CACHE_PER_TOKEN) / BANDWIDTH * 1e3
+        ax.scatter([k], [t], color=GRIP, s=32, zorder=5)
+        ax.text(k + 2500, t, f'{t:.2f} ms', fontsize=10, color=INK, va='center')
+        print(f'[slower] at {k:,} tokens already said, one more token takes {t:.2f} ms '
+              f'({1000 / t:,.0f} tokens a second)')
+    ax.set_xticks([0, 32768, 65536, 98304, 131072])
+    ax.set_xticklabels(['0', '32,768', '65,536', '98,304', '131,072'])
+    ax.set_xlabel('tokens already in the conversation', fontsize=10)
+    ax.set_ylabel('time to produce one more token (milliseconds)', fontsize=10)
+    ax.set_ylim(0, times.max() * 1.15)
+    ax.set_title('Every token the model writes costs more than the one before it',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'slower-with-length.svg')
+
+
+# ==========================================================================
+# section 4: cutting the cost of attention
+# ==========================================================================
+
+def _draw_mask(ax: Axes, allowed: NDArray[np.bool_], title: str, colour: str) -> int:
+    n = allowed.shape[0]
+    for i in range(n):
+        for j in range(n):
+            on = bool(allowed[i, j])
+            ax.add_patch(Rectangle((j, n - 1 - i), 0.92, 0.92,
+                                   facecolor=colour if on else '#f1f1f1',
+                                   edgecolor='#dddddd', lw=0.7))
+    _bare(ax)
+    ax.text(-0.9, n / 2, 'position doing the looking', ha='center', va='center',
+            fontsize=9.5, color=MUTED, rotation=90)
+    ax.set_xlim(-1.6, n + 0.4)
+    ax.set_ylim(-1.6, n + 0.4)
+    count = int(allowed.sum())
+    ax.text(n / 2, -0.75, f'{count} pairs allowed of {n * n}', ha='center', fontsize=10.5,
+            color=INK)
+    ax.text(n / 2, -1.35, 'position being looked at', ha='center', fontsize=9.5, color=MUTED)
+    ax.set_title(title, fontsize=11.5, weight='bold', color=INK)
+    return count
+
+
+def window_mask() -> None:
+    n, w = 16, 4
+    rows = np.arange(n)[:, None]
+    cols = np.arange(n)[None, :]
+    full = cols <= rows
+    window = full & (rows - cols < w)
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 5.6), facecolor='white')
+    a = _draw_mask(axes[0], full, 'Every earlier position', SLIDE)
+    b = _draw_mask(axes[1], window, f'Only the last {w} positions', TEAL)
+    print(f'[window] {n} positions: full causal {a} pairs, window of {w} {b} pairs, '
+          f'which is {b / a * 100:.0f} per cent of them')
+    big = 8192
+    full_big = big * (big + 1) / 2
+    win_big = sum(min(i + 1, 1024) for i in range(big))
+    print(f'[window] {big:,} positions with a window of 1,024: {win_big:,} pairs against '
+          f'{full_big:,.0f}, which is {win_big / full_big * 100:.1f} per cent')
+    fig.suptitle(f'A sliding window keeps {b / a * 100:.0f} per cent of the pairs here, and '
+                 f'{win_big / full_big * 100:.0f} per cent at {big:,} tokens',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'window-mask.svg')
+
+
+def window_reach() -> None:
+    layers = np.arange(1, LAYERS + 1)
+    windows = [4, 128, 1024]
+    colours = [GRIP, WRIST, TEAL]
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    for w, colour in zip(windows, colours):
+        reach = 1 + layers * (w - 1)
+        ax.plot(layers, reach, marker='o', ms=3.5, color=colour, lw=2,
+                label=f'window of {w:,} positions')
+        print(f'[window-reach] a window of {w:,} over {LAYERS} layers reaches '
+              f'{int(reach[-1]):,} positions back')
+    ax.axhline(TRAINED_LEN, color=SLIDE, ls='--', lw=1.6)
+    ax.text(1.2, TRAINED_LEN * 1.3, f'the whole {TRAINED_LEN:,}-token context', fontsize=10,
+            color=SLIDE)
+    ax.set_yscale('log')
+    ax.set_ylim(1, 100000)
+    ax.set_xlabel('layers stacked', fontsize=10)
+    ax.set_ylabel('positions the top layer can be touched by (log scale)', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='lower right')
+    ax.set_title('Stacking windowed layers gets the reach back, one window at a time',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'window-reach.svg')
+
+
+def sparse_mask() -> None:
+    n, w, keep = 16, 3, 2
+    rows = np.arange(n)[:, None]
+    cols = np.arange(n)[None, :]
+    full = cols <= rows
+    window = full & (rows - cols < w)
+    sparse = window | (full & (cols < keep))
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 5.6), facecolor='white')
+    b = _draw_mask(axes[0], window, f'A window of {w}, and nothing else', TEAL)
+    c = _draw_mask(axes[1], sparse, f'The same window, plus the first {keep} positions '
+                                    'kept for everyone', PURPLE)
+    a = int(full.sum())
+    print(f'[sparse] {n} positions: full {a}, window of {w} {b}, '
+          f'window plus {keep} shared positions {c}')
+    fig.suptitle('A sparse pattern: a window for what is near, plus a few positions everyone '
+                 'may look at', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'sparse-mask.svg')
+
+
+def fewer_kv_heads() -> None:
+    groups = [16, 4, 1]
+    names = ['one key and value\nfor each of the 16 heads', 'four shared groups',
+             'one shared pair for\nall 16 heads']
+    per_token = [2 * LAYERS * g * HEAD_DIM * NBYTES for g in groups]
+    length = 8192
+    totals = [p * length / MIB for p in per_token]
+    for g, p, t in zip(groups, per_token, totals):
+        print(f'[kv-heads] {g} key-value heads: {p:,} bytes a token ({p / 1024:.0f} KiB), '
+              f'{t:,.0f} MiB for {length:,} tokens, '
+              f'{per_token[0] / p:.0f} times smaller than the full cache')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.bar(names, [p / 1024 for p in per_token], color=[GRIP, WRIST, SLIDE], width=0.55)
+    for i, p in enumerate(per_token):
+        ax.text(i, p / 1024 + 2.5, f'{p / 1024:.0f} KiB', ha='center', fontsize=10.5, color=INK)
+    ax.tick_params(axis='x', labelsize=9)
+    ax.set_ylabel('cache for one token (KiB)', fontsize=10)
+    ax.set_ylim(0, per_token[0] / 1024 * 1.2)
+    ax.set_title('What one token costs in the cache', fontsize=12, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ax.bar(names, totals, color=[GRIP, WRIST, SLIDE], width=0.55)
+    for i, t in enumerate(totals):
+        ax.text(i, t * 1.08, f'{t:,.0f} MiB', ha='center', fontsize=10.5, color=INK)
+    ax.tick_params(axis='x', labelsize=9)
+    ax.set_yscale('log')
+    ax.set_ylim(10, totals[0] * 4)
+    ax.set_ylabel(f'cache for one {length:,}-token conversation (MiB, log scale)', fontsize=10)
+    ax.set_title('And what a whole conversation costs', fontsize=12, weight='bold', color=INK)
+    fig.suptitle('Sharing keys and values between heads cuts the cache without changing the '
+                 'number of heads that ask', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'fewer-kv-heads.svg')
+
+
+# ==========================================================================
+# section 5: carrying a running summary instead
+# ==========================================================================
+
+STATE_SIZE: int = 16        # a stated example: 16 running numbers for each of the 1024 channels
+
+
+def running_summary() -> None:
+    keep = 0.9
+    x = np.zeros(18)
+    x[2] = 1.0
+    x[3] = 0.6
+    x[9] = 1.0
+    x[14] = 0.4
+    h = np.zeros_like(x)
+    for t in range(1, len(x)):
+        h[t] = keep * h[t - 1] + x[t]
+    print(f'[summary] keeping {keep} of the running total and adding the new token: ' +
+          ', '.join(f't{t}:{v:.3f}' for t, v in enumerate(h)))
+    print(f'[summary] the token at step 2 still counts {keep ** 7:.3f} at step 9 and '
+          f'{keep ** 15:.3f} at step 17')
+
+    fig, ax = plt.subplots(figsize=(11.4, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar(np.arange(len(x)), x, color=LINK_PALE, edgecolor=LINK, width=0.5,
+           label='what arrives at this position')
+    ax.plot(np.arange(len(x)), h, color=PURPLE, marker='o', lw=2,
+            label='the running summary carried forward')
+    for t in (2, 9, 14):
+        ax.annotate('', xy=(t, h[t]), xytext=(t, x[t] + 0.12),
+                    arrowprops={'arrowstyle': '->', 'color': MUTED, 'lw': 1.0})
+    ax.text(9.6, 0.42, f'the summary keeps {keep * 100:.0f} per cent of itself each step,\n'
+                       'then adds whatever the new token brings', fontsize=10, color=PURPLE)
+    ax.set_xticks(np.arange(len(x)))
+    ax.set_xlabel('position in the sentence', fontsize=10)
+    ax.set_ylabel('value', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper right')
+    ax.set_title('A state-space layer: one running summary, updated once per token',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'running-summary.svg')
+
+
+def cost_per_token_flat() -> None:
+    pos = np.arange(1, 32769)
+    attn = 4.0 * LAYERS * WIDTH * pos                 # reading every earlier key and value
+    ssm = np.full_like(pos, 4.0 * LAYERS * WIDTH * STATE_SIZE, dtype=float)
+    cache = pos * CACHE_PER_TOKEN / MIB
+    state = np.full_like(pos, LAYERS * WIDTH * STATE_SIZE * NBYTES / MIB, dtype=float)
+    print(f'[flat] state-space work for one token: {ssm[0]:,.0f} operations at every position')
+    for k in (1024, 8192, 32768):
+        print(f'[flat] at position {k:,}: attention does {attn[k - 1]:,.0f} operations and '
+              f'holds {cache[k - 1]:,.1f} MiB; the state-space layer does {ssm[0]:,.0f} and '
+              f'holds {state[0]:.2f} MiB')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(pos, attn / 1e6, color=GRIP, lw=2, label='attention: reads every earlier position')
+    ax.plot(pos, ssm / 1e6, color=PURPLE, lw=2, label='state-space: reads one running summary')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('how many tokens have gone before (log scale)', fontsize=10)
+    ax.set_ylabel('millions of operations for the next token (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Work for one more token', fontsize=12, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(pos, cache, color=GRIP, lw=2, label='the key-value cache')
+    ax.plot(pos, state, color=PURPLE, lw=2,
+            label=f'the running summary ({STATE_SIZE} numbers a channel)')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('tokens in the conversation (log scale)', fontsize=10)
+    ax.set_ylabel('memory for one conversation (MiB, log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Memory for the conversation so far', fontsize=12, weight='bold', color=INK)
+    fig.suptitle('The whole trade: the state-space layer pays the same for its ten thousandth '
+                 'token as for its first', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'what-the-summary-buys.svg')
+
+
+def what_it_gives_up() -> None:
+    k = np.arange(1, 1001)
+    factors = [0.90, 0.98, 0.999]
+    colours = [GRIP, WRIST, PURPLE]
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    for f, colour in zip(factors, colours):
+        ax.plot(k, f ** k, color=colour, lw=2, label=f'keeps {f} of the summary each step')
+        print(f'[gives-up] keeping {f} a step: the token 200 back counts {f ** 200:.2e}, '
+              f'the token 1,000 back counts {f ** 1000:.2e}')
+    ax.axhline(1.0, color=SLIDE, lw=2.5)
+    ax.text(30, 1.5, 'attention can give any one earlier token any weight it likes',
+            fontsize=10, color=SLIDE)
+    ax.set_yscale('log')
+    ax.set_ylim(1e-12, 30)
+    ax.set_xlabel('how many tokens back', fontsize=10)
+    ax.set_ylabel('weight that token still has (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.set_title('How much of an old token is left', fontsize=12, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    far = [f ** 1000 for f in factors]
+    sep = [1.0 - f for f in factors]
+    floor = 1e-10
+    x = np.arange(len(factors))
+    ax.bar(x - 0.19, [max(v, floor) for v in far], width=0.36, color=TEAL,
+           label='weight left on the token 1,000 back')
+    ax.bar(x + 0.19, sep, width=0.36, color=WRIST,
+           label='difference in weight between two next-door tokens')
+    for i, (a, b) in enumerate(zip(far, sep)):
+        shown = f'{a:.1e}' if a >= floor else 'below 1e-10'
+        ax.text(i - 0.19, max(a, floor) * 2.2, shown, ha='center', fontsize=9, color=INK)
+        ax.text(i + 0.19, b * 2.2, f'{b:.3f}', ha='center', fontsize=9, color=INK)
+        print(f'[gives-up] keeping {factors[i]} a step: weight on the token 1,000 back '
+              f'{a:.2e}, and two next-door tokens differ by only {b:.3f}')
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'keeps {f}' for f in factors])
+    ax.set_yscale('log')
+    ax.set_ylim(floor, 200)
+    ax.set_ylabel('log scale', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Forget slowly and two tokens look alike; forget fast and the old ones go',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.suptitle('What the running summary gives up: it cannot reach back and pick out one '
+                 'token', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'what-it-gives-up.svg')
+
+
+def hybrid_memory() -> None:
+    attn_layers = 3
+    lengths = np.array([1024, 8192, 32768, 131072], dtype=float)
+    full = lengths * CACHE_PER_TOKEN / MIB
+    hybrid_cache = lengths * (2 * attn_layers * HEADS * HEAD_DIM * NBYTES) / MIB
+    state_bytes = (LAYERS - attn_layers) * WIDTH * STATE_SIZE * NBYTES / MIB
+    hybrid = hybrid_cache + state_bytes
+    print(f'[hybrid] {attn_layers} attention layers of {LAYERS}: cache '
+          f'{2 * attn_layers * HEADS * HEAD_DIM * NBYTES:,} bytes a token, plus a fixed '
+          f'{state_bytes:.2f} MiB of running summaries')
+    for n, f, h in zip(lengths, full, hybrid):
+        print(f'[hybrid] {n:,.0f} tokens: every layer attention {f:,.0f} MiB, '
+              f'hybrid {h:,.1f} MiB, which is {f / h:.1f} times smaller')
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(lengths))
+    ax.bar(x - 0.19, full, width=0.36, color=GRIP, label=f'attention in all {LAYERS} layers')
+    ax.bar(x + 0.19, hybrid, width=0.36, color=PURPLE,
+           label=f'attention in {attn_layers} layers, running summaries in the other '
+                 f'{LAYERS - attn_layers}')
+    for i, (f, h) in enumerate(zip(full, hybrid)):
+        ax.text(i - 0.19, f * 1.12, f'{f:,.0f}', ha='center', fontsize=9.5, color=INK)
+        ax.text(i + 0.19, h * 1.12, f'{h:,.0f}', ha='center', fontsize=9.5, color=INK)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{int(n):,}' for n in lengths])
+    ax.set_yscale('log')
+    ax.set_ylim(10, full[-1] * 4)
+    ax.set_xlabel('tokens in the conversation', fontsize=10)
+    ax.set_ylabel('memory for one conversation (MiB, log scale)', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_title(f'A hybrid stack holds {full[-1] / hybrid[-1]:.0f} times less at '
+                 f'{int(lengths[-1]):,} tokens, and can still reach back exactly '
+                 f'{attn_layers} times', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'hybrid-memory.svg')
+
+
+# ==========================================================================
+# section 6: what is still open
+# ==========================================================================
+
+def where_the_time_goes() -> None:
+    prompt, answer = 8192, 256
+    prefill_flops = 2.0 * P_MATMUL * prompt + LAYERS * _pair_work(float(prompt))
+    prefill_bytes = WEIGHT_BYTES + prompt * CACHE_PER_TOKEN
+    t_prefill = max(prefill_flops / PEAK_FLOPS, prefill_bytes / BANDWIDTH)
+    gen_times = [(WEIGHT_BYTES + (prompt + t) * CACHE_PER_TOKEN) / BANDWIDTH
+                 for t in range(answer)]
+    t_gen = float(np.sum(gen_times))
+    print(f'[time] reading a {prompt:,}-token prompt: {prefill_flops:,.0f} operations and '
+          f'{prefill_bytes:,.0f} bytes, so {t_prefill * 1e3:.0f} ms, which is '
+          f'{t_prefill / prompt * 1e6:.1f} microseconds a token')
+    print(f'[time] writing {answer} tokens of answer: {t_gen * 1e3:.0f} ms, which is '
+          f'{t_gen / answer * 1e6:,.0f} microseconds a token')
+    print(f'[time] a token of answer costs {(t_gen / answer) / (t_prefill / prompt):.0f} times '
+          'as much as a token of prompt')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.bar([f'reading the\n{prompt:,}-token prompt', f'writing the\n{answer}-token answer'],
+           [t_prefill * 1e3, t_gen * 1e3], color=[LINK, GRIP], width=0.5)
+    ax.text(0, t_prefill * 1e3 + 10, f'{t_prefill * 1e3:.0f} ms', ha='center', fontsize=11,
+            color=INK)
+    ax.text(1, t_gen * 1e3 + 10, f'{t_gen * 1e3:.0f} ms', ha='center', fontsize=11, color=INK)
+    ax.set_ylim(0, t_gen * 1e3 * 1.25)
+    ax.set_ylabel('time (milliseconds)', fontsize=10)
+    ax.set_title('Where the waiting happens', fontsize=12, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    per = [t_prefill / prompt * 1e6, t_gen / answer * 1e6]
+    ax.bar(['a token of prompt', 'a token of answer'], per, color=[LINK, GRIP], width=0.5)
+    for i, v in enumerate(per):
+        ax.text(i, v * 1.3, f'{v:,.1f} microseconds', ha='center', fontsize=11, color=INK)
+    ax.set_yscale('log')
+    ax.set_ylim(1, per[1] * 6)
+    ax.set_ylabel('time for one token (microseconds, log scale)', fontsize=10)
+    ax.set_title(f'A token of answer costs {per[1] / per[0]:.0f} times as much as a token '
+                 'of prompt', fontsize=12, weight='bold', color=INK)
+    fig.suptitle('The prompt is read in one wide pass; the answer is written one narrow token '
+                 'at a time', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'where-the-time-goes.svg')
+
+
+def how_many_conversations_fit() -> None:
+    free = BUDGET_GIB * GIB - WEIGHT_BYTES
+    lengths = [2048, 8192, 32768, 131072]
+    full = [max(int(free // (CACHE_PER_TOKEN * n)), 0) for n in lengths]
+    grouped = [max(int(free // (CACHE_PER_TOKEN // 4 * n)), 0) for n in lengths]
+    for n, a, b in zip(lengths, full, grouped):
+        print(f'[fit] {n:,} tokens each: {a} conversations fit in {BUDGET_GIB:.0f} GiB with a '
+              f'full cache, and {b} with four shared key-value groups')
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(lengths))
+    ax.bar(x - 0.19, full, width=0.36, color=GRIP, label='one key and value for each head')
+    ax.bar(x + 0.19, grouped, width=0.36, color=SLIDE, label='four shared key-value groups')
+    for i, (a, b) in enumerate(zip(full, grouped)):
+        ax.text(i - 0.19, a * 1.15 + 0.3, str(a), ha='center', fontsize=10, color=INK)
+        ax.text(i + 0.19, b * 1.15 + 0.3, str(b), ha='center', fontsize=10, color=INK)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{n:,}' for n in lengths])
+    ax.set_yscale('log')
+    ax.set_ylim(0.7, max(grouped) * 4)
+    ax.set_xlabel('tokens in each conversation', fontsize=10)
+    ax.set_ylabel('conversations that fit at once (log scale)', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper right')
+    ax.set_title(f'How many conversations fit beside the weights in {BUDGET_GIB:.0f} GiB',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, WHY_DOC, 'how-many-conversations-fit.svg')
+
+
+def three_designs() -> None:
+    length, window, keep = 32768, 1024, 0.98
+    full_mem = length * CACHE_PER_TOKEN / MIB
+    win_mem = window * CACHE_PER_TOKEN / MIB
+    ssm_mem = LAYERS * WIDTH * STATE_SIZE * NBYTES / MIB
+    names = ['attention over\neverything', f'attention over the\nlast {window:,}',
+             'a running summary']
+    mems = [full_mem, win_mem, ssm_mem]
+    for nm, m in zip(names, mems):
+        print(f'[designs] {nm.replace(chr(10), " ")}: {m:,.2f} MiB for a '
+              f'{length:,}-token conversation')
+    far = keep ** 4000
+    print(f'[designs] weight one layer can put on the token 4,000 back: attention up to 1, '
+          f'a window of {window:,} exactly 0, a summary keeping {keep} a step {far:.1e}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.bar(names, mems, color=[GRIP, WRIST, PURPLE], width=0.55)
+    for i, m in enumerate(mems):
+        ax.text(i, m * 1.4, f'{m:,.2f} MiB', ha='center', fontsize=10.5, color=INK)
+    ax.set_yscale('log')
+    ax.set_ylim(0.2, full_mem * 8)
+    ax.tick_params(axis='x', labelsize=9.5)
+    ax.set_ylabel(f'memory for a {length:,}-token conversation (MiB, log scale)', fontsize=10)
+    ax.set_title('What each design holds', fontsize=12, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    k = np.arange(1, 4001)
+    ax.plot(k, np.ones_like(k, dtype=float), color=GRIP, lw=2.5,
+            label='attention over everything')
+    win_curve = np.where(k <= window, 1.0, np.nan)
+    ax.plot(k, win_curve, color=WRIST, lw=2.5, ls='--',
+            label=f'attention over the last {window:,}')
+    ax.plot(k, keep ** k, color=PURPLE, lw=2, label=f'a running summary keeping {keep}')
+    ax.axvline(window, color=WRIST, ls=':', lw=1.2)
+    ax.text(window * 1.1, 1e-6, f'past {window:,} tokens this layer\nsees nothing at all',
+            fontsize=9.5, color=WRIST)
+    ax.set_yscale('log')
+    ax.set_ylim(1e-12, 30)
+    ax.set_xlabel('how many tokens back', fontsize=10)
+    ax.set_ylabel('weight one layer can put on that token (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.set_title('What each design can still reach', fontsize=12, weight='bold', color=INK)
+    fig.suptitle('Nobody has a design that is cheap in memory and can still pick out one '
+                 'token from far back', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, WHY_DOC, 'three-designs.svg')
+
+
+# --------------------------------------------------------------------------
+
+def main() -> None:
+    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    global PNG_DIR
+    if len(sys.argv) == 3 and sys.argv[1] == '--png':
+        PNG_DIR = pathlib.Path(sys.argv[2])
+        PNG_DIR.mkdir(parents=True, exist_ok=True)
+    print_config()
+    # 03_training-and-running-a-transformer.md
+    signals_per_sentence()
+    per_position_loss()
+    one_position_distribution()
+    signals_per_thousand_tokens()
+    causal_mask_grid()
+    scores_before_after_mask()
+    what_the_mask_stops()
+    teacher_forcing()
+    errors_compound()
+    training_memory()
+    generation_steps()
+    cache_saves_work()
+    cache_size_arithmetic()
+    cache_versus_weights()
+    logits_to_probabilities()
+    three_temperatures()
+    top_p_cut()
+    greedy_loses()
+    context_cost()
+    past_the_window()
+    memory_bound()
+    batch_helps()
+    # 04_why-the-transformer-won.md
+    layers_to_reach()
+    receptive_cone()
+    dilation_helps()
+    sequential_steps()
+    hardware_busy()
+    signal_decay()
+    attention_overtakes()
+    fraction_in_attention()
+    cache_fills_memory()
+    slower_with_length()
+    window_mask()
+    window_reach()
+    sparse_mask()
+    fewer_kv_heads()
+    running_summary()
+    cost_per_token_flat()
+    what_it_gives_up()
+    hybrid_memory()
+    where_the_time_goes()
+    how_many_conversations_fit()
+    three_designs()
+    print(f'wrote the diagrams under {IMAGES}')
+
+
+if __name__ == '__main__':
+    main()

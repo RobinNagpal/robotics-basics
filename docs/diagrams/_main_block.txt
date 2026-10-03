@@ -1,0 +1,21 @@
+
+def main() -> None:
+    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    global PNG_DIR
+    if len(sys.argv) == 3 and sys.argv[1] == '--png':
+        PNG_DIR = pathlib.Path(sys.argv[2])
+        PNG_DIR.mkdir(parents=True, exist_ok=True)
+    backbone_and_heads()
+    parameter_split()
+    shared_vs_separate()
+    work_per_second()
+    patch_grid()
+    patch_to_vector()
+    position_and_shuffle()
+    class_token()
+    shapes_ladder()
+    print(f'wrote the diagrams under {IMAGES}')
+
+
+if __name__ == '__main__':
+    main()

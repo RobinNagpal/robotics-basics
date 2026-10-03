@@ -187,6 +187,19 @@ def _title(fig: Figure, text: str) -> None:
     fig.suptitle(text, fontsize=12, weight='bold', color=INK, y=0.99)
 
 
+def _fit(fig: Figure, ax: Axes, room: float = 0.42) -> None:
+    """Shrink a drawing figure to the shape of what was drawn, leaving room above.
+
+    The drawings use an equal aspect ratio, so a figure whose height does not
+    match the data leaves a band of white between the title and the picture.
+    """
+    (x0, x1), (y0, y1) = ax.get_xlim(), ax.get_ylim()
+    w = fig.get_size_inches()[0]
+    h = max(w * (y1 - y0) / (x1 - x0) + room, 1.4)
+    fig.set_size_inches(w, h)
+    fig.subplots_adjust(left=0.0, right=1.0, bottom=0.0, top=1.0 - room / h)
+
+
 # --------------------------------------------------------------------------
 # the small four-token example, worked out once
 # --------------------------------------------------------------------------
@@ -287,11 +300,12 @@ def _thick_arrow(ax: Axes, p0: tuple[float, float], p1: tuple[float, float],
 
 def token_vectors() -> None:
     cols = ['number 1', 'number 2', 'number 3', 'number 4']
-    fig, ax = plt.subplots(figsize=(7.4, 2.9), facecolor='white')
+    fig, ax = plt.subplots(figsize=(8.2, 2.9), facecolor='white')
     _blank(ax)
-    w, h = _grid(ax, TOY.X, cw=1.25, ch=0.7, rows=[f'"{t}"' for t in TOKENS], cols=cols)
+    w, h = _grid(ax, TOY.X, cw=1.55, ch=0.72, rows=[f'"{t}"' for t in TOKENS], cols=cols)
     ax.set_xlim(-1.6, w + 0.3)
-    ax.set_ylim(-h - 0.35, 0.95)
+    ax.set_ylim(-h - 0.35, 0.55)
+    _fit(fig, ax)
     _title(fig, 'Four tokens, each one a list of four numbers')
     _save(fig, ATT_DOC, 'token-vectors.svg')
 
@@ -305,7 +319,8 @@ def one_token_draws_from_four() -> None:
         _box(ax, 0.0, y - 0.22, 1.5, 0.52, f'"{tok}"', face=_mix(LINK, 0.14), size=10.5)
         _thick_arrow(ax, (1.55, y + 0.04), (5.45, 1.26), lw=0.6 + 9.0 * wts[i],
                      colour=TEAL, alpha=0.85)
-        ax.text(3.3, y + 0.04 + 0.52 * (1.26 - y - 0.04) / 1.0 + 0.02,
+        f = 0.38
+        ax.text(1.55 + f * 3.9, y + 0.04 + f * (1.26 - y - 0.04) + 0.07,
                 f'{wts[i]:.3f}', ha='center', va='bottom', fontsize=10.5, color=INK)
     _box(ax, 5.5, 1.0, 2.9, 0.56, 'new vector for "cube"', face=_mix(JOINT, 0.18), size=10.5)
     ax.text(2.2, -0.65, 'the four numbers add up to '
@@ -313,6 +328,7 @@ def one_token_draws_from_four() -> None:
             ha='center', va='center', fontsize=10, color=MUTED)
     ax.set_xlim(-0.3, 8.7)
     ax.set_ylim(-1.0, 3.1)
+    _fit(fig, ax)
     _title(fig, 'One token mixes the other three in fixed proportions')
     _save(fig, ATT_DOC, 'one-token-draws-from-four.svg')
 
@@ -337,6 +353,7 @@ def before_and_after() -> None:
             va='top', fontsize=9.5, color=MUTED)
     ax.set_xlim(-1.5, w1 + 1.3 + w2 + 0.7 + 1.5)
     ax.set_ylim(-h1 - 1.5, 0.85)
+    _fit(fig, ax)
     _title(fig, 'What attention changes: every token is replaced by a mix')
     _save(fig, ATT_DOC, 'before-and-after.svg')
 
@@ -358,6 +375,7 @@ def projection_matrices() -> None:
         x += w + 1.0
     ax.set_xlim(-0.4, x - 0.6)
     ax.set_ylim(-h - 0.9, 0.85)
+    _fit(fig, ax)
     _title(fig, 'Three learned matrices, 16 numbers each, shared by every token')
     _save(fig, ATT_DOC, 'projection-matrices.svg')
 
@@ -380,6 +398,7 @@ def one_query_worked_out() -> None:
           fmt='{:+.2f}', rows=['query for "cube"'], rowsize=10.0)
     ax.set_xlim(-2.6, 11.5)
     ax.set_ylim(-4.9, 0.9)
+    _fit(fig, ax)
     _title(fig, 'One token times one matrix: four multiply-and-add sums')
     _save(fig, ATT_DOC, 'one-query-worked-out.svg')
 
@@ -396,6 +415,7 @@ def qkv_grids() -> None:
         x += w + 1.1
     ax.set_xlim(-1.5, x - 0.8)
     ax.set_ylim(-h - 0.4, 0.85)
+    _fit(fig, ax)
     _title(fig, 'Every token gets three vectors of its own')
     _save(fig, ATT_DOC, 'qkv-grids.svg')
 
@@ -419,7 +439,8 @@ def dot_product_worked_out() -> None:
                ['-' * 24, f'      raw score = {total:+.4f}'], size=8.8)
         x += 3.3
     ax.set_xlim(-2.9, 13.2)
-    ax.set_ylim(-3.6, 0.6)
+    ax.set_ylim(-3.5, 0.25)
+    _fit(fig, ax)
     _title(fig, 'One query against four keys: four dot products')
     _save(fig, ATT_DOC, 'dot-product-worked-out.svg')
 
@@ -434,6 +455,7 @@ def raw_score_grid() -> None:
             ha='center', va='top', fontsize=9.5, color=MUTED)
     ax.set_xlim(-1.9, w + 0.3)
     ax.set_ylim(-h - 0.9, 1.0)
+    _fit(fig, ax)
     _title(fig, 'Sixteen raw scores: every query against every key')
     _save(fig, ATT_DOC, 'raw-score-grid.svg')
 
@@ -445,17 +467,17 @@ def scaled_score_grid() -> None:
     w1, h = _grid(ax, TOY.raw, cw=1.2, ch=0.72, rows=rows, title='raw scores')
     w2, _ = _grid(ax, TOY.scaled, x0=w1 + 1.9, cw=1.2, ch=0.72,
                   title='after dividing by 2')
-    ax.text(w1 + 0.95, -h / 2 + 0.1, 'divide', ha='center', va='bottom',
+    ax.text(w1 + 0.95, -h / 2 + 0.06, 'divide by 2,', ha='center', va='bottom',
             fontsize=10, color=MUTED)
-    ax.text(w1 + 0.95, -h / 2 - 0.1, 'by  4 = 2', ha='center', va='top',
+    ax.text(w1 + 0.95, -h / 2 - 0.06, 'the square root of 4', ha='center', va='top',
             fontsize=10, color=MUTED)
-    ax.plot([w1 + 0.55, w1 + 0.74], [-h / 2 - 0.30, -h / 2 - 0.30], color=MUTED, lw=1.0)
     ax.text(w1 + 1.85, -h - 0.3,
             'the biggest score drops from '
             f'{TOY.raw.max():.2f} to {TOY.scaled.max():.2f}, and every gap halves',
             ha='center', va='top', fontsize=9.5, color=MUTED)
     ax.set_xlim(-2.0, w1 + 1.9 + w2 + 0.3)
     ax.set_ylim(-h - 1.1, 0.95)
+    _fit(fig, ax)
     _title(fig, 'Dividing by the square root of the head size')
     _save(fig, ATT_DOC, 'why-divide-by-two.svg')
 
@@ -483,7 +505,7 @@ def why_divide() -> None:
     ax = axes[0]
     _plain(ax)
     ax.plot(sizes, spread_raw, marker='o', color=GRIP, lw=2, label='raw dot product')
-    ax.plot(sizes, spread_scaled, marker='o', color=TEAL, lw=2, label='after dividing by  d')
+    ax.plot(sizes, spread_scaled, marker='o', color=TEAL, lw=2, label='after dividing by the square root')
     ax.plot(sizes, [math.sqrt(d) for d in sizes], ls='--', color=MUTED, lw=1.2,
             label='the square root of the head size')
     ax.set_xscale('log')
@@ -497,7 +519,7 @@ def why_divide() -> None:
     ax = axes[1]
     _plain(ax)
     ax.plot(sizes, top_raw, marker='o', color=GRIP, lw=2, label='raw dot product')
-    ax.plot(sizes, top_scaled, marker='o', color=TEAL, lw=2, label='after dividing by  d')
+    ax.plot(sizes, top_scaled, marker='o', color=TEAL, lw=2, label='after dividing by the square root')
     ax.axhline(1.0, color=MUTED, ls=':', lw=1.0)
     ax.set_xscale('log')
     ax.set_xticks(sizes)
@@ -526,7 +548,7 @@ def softmax_steps() -> None:
     table = np.vstack([row, ex, wts])
     w, h = _grid(ax, table, cw=1.45, ch=0.66,
                  rows=['scaled score', 'raised to a power', 'weight'],
-                 cols=[f'key "{t}"' for t in TOKENS], rowsize=9.5, fmt='{:+.3f}')
+                 cols=[f'key "{t}"' for t in TOKENS], rowsize=9.5, fmt='{:.3f}')
     ax.text(w / 2, -h - 0.25,
             f'the four raised values add up to {ex.sum():.3f}, and each weight is one of\n'
             f'them divided by that total, so the weights add up to {wts.sum():.3f}',
@@ -560,6 +582,7 @@ def weight_grid() -> None:
           fmt='{:.3f}', cols=['row total'], colour=MUTED, vmax=1.0)
     ax.set_xlim(-2.0, w + 2.1)
     ax.set_ylim(-h - 0.35, 1.0)
+    _fit(fig, ax)
     _title(fig, 'The weight grid: each row is a recipe that adds up to 1')
     _save(fig, ATT_DOC, 'weight-grid.svg')
 
@@ -586,33 +609,37 @@ def output_mix_worked_out() -> None:
           'exact', np.round(TOY.O[3], 4))
     ax.set_xlim(-3.0, 13.1)
     ax.set_ylim(-4.9, 0.6)
+    _fit(fig, ax)
     _title(fig, 'The output is the value vectors added up in those proportions')
     _save(fig, ATT_DOC, 'output-mix-worked-out.svg')
 
 
 def attention_as_matrices() -> None:
-    fig, ax = plt.subplots(figsize=(12.0, 3.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(13.4, 3.4), facecolor='white')
     _blank(ax)
     x = 0.0
     pieces = [('X\n4 x 4', TOY.X, '{:+.1f}'), ('Q\n4 x 4', TOY.Q, '{:+.2f}'),
               ('scores\n4 x 4', TOY.scaled, '{:+.2f}'), ('weights\n4 x 4', TOY.A, '{:.2f}'),
               ('output\n4 x 4', TOY.O, '{:+.2f}')]
-    steps = ['times W_query,\nW_key, W_value', 'Q times K\nturned on its side,\ndivided by 2',
-             'softmax\nalong each row', 'times V']
+    steps = ['times W_query,\nW_key and W_value', 'Q times K sideways,\nthen divided by 2',
+             'softmax along\neach row', 'times V']
+    gap = 2.9
+    h = 2.0
     for n, (name, M, fmt) in enumerate(pieces):
         colour = TEAL if 'weights' in name else None
-        w, h = _grid(ax, M, x0=x, cw=0.78, ch=0.5, fmt=fmt, fontsize=7.5,
+        w, h = _grid(ax, M, x0=x, cw=0.82, ch=0.52, fmt=fmt, fontsize=7.8,
                      colour=colour, vmax=1.0 if colour else None)
         ax.text(x + w / 2, -h - 0.18, name, ha='center', va='top', fontsize=10,
                 color=INK, weight='bold')
         if n < 4:
-            _arrow(ax, x + w + 0.18, -h / 2, x + w + 1.55, -h / 2, colour=MUTED, lw=1.2)
-            ax.text(x + w + 0.87, -h / 2 + 0.22, steps[n], ha='center', va='bottom',
-                    fontsize=8.5, color=MUTED)
-        x += w + 1.75
-    ax.set_xlim(-0.3, x - 0.9)
-    ax.set_ylim(-h - 1.6, 1.2)
-    _title(fig, 'The whole of attention for all four tokens: four matrix multiplies and one softmax')
+            _arrow(ax, x + w + 0.35, -h / 2, x + w + gap - 0.35, -h / 2, colour=MUTED, lw=1.2)
+            ax.text(x + w + gap / 2, 0.18, steps[n], ha='center', va='bottom',
+                    fontsize=9, color=MUTED)
+        x += w + gap
+    ax.set_xlim(-0.3, x - gap + 0.3)
+    ax.set_ylim(-h - 1.3, 1.1)
+    _fit(fig, ax)
+    _title(fig, 'The whole of attention for four tokens: four matrix multiplies and one softmax')
     _save(fig, ATT_DOC, 'attention-as-matrices.svg')
 
 
@@ -629,7 +656,7 @@ def shape_chain() -> None:
     _blank(ax)
     x = 0.0
     for name, a, b in counts:
-        wd = 1.0 if b == d else 1.6
+        wd = 1.6 * b / d
         ht = 1.6
         ax.add_patch(Rectangle((x, -ht), wd, ht, facecolor=_mix(LINK, 0.18),
                                edgecolor=LINK, lw=1.3))
@@ -644,7 +671,8 @@ def shape_chain() -> None:
             f'{h * n * n:,} numbers in one layer',
             ha='right', va='top', fontsize=10, color=MUTED)
     ax.set_xlim(-0.3, x - 0.7)
-    ax.set_ylim(-3.6, 0.9)
+    ax.set_ylim(-3.5, 0.55)
+    _fit(fig, ax)
     _title(fig, f'The real shapes for {n} tokens and a width of {d}')
     _save(fig, ATT_DOC, 'shape-chain.svg')
 
@@ -674,6 +702,7 @@ def split_into_heads() -> None:
             ha='center', va='top', fontsize=9.5, color=MUTED)
     ax.set_xlim(-1.6, x - 0.9)
     ax.set_ylim(-h1 - 1.5, 0.9)
+    _fit(fig, ax)
     _title(fig, 'Two heads are two halves of the same matrices')
     _save(fig, ATT_DOC, 'split-into-heads.svg')
 
@@ -695,6 +724,7 @@ def two_heads_two_patterns() -> None:
         x += w + 1.9
     ax.set_xlim(-2.4, x - 1.6)
     ax.set_ylim(-h - 0.95, 1.0)
+    _fit(fig, ax)
     _title(fig, 'The same four tokens, two different mixing patterns')
     _save(fig, ATT_DOC, 'two-heads-two-patterns.svg')
 
@@ -719,6 +749,7 @@ def join_the_heads() -> None:
     ax.text(x - 0.65, -h / 2, '=', ha='center', va='center', fontsize=13, color=MUTED)
     ax.set_xlim(-1.5, x + w3 + 0.3)
     ax.set_ylim(-h - 0.9, 1.0)
+    _fit(fig, ax)
     _title(fig, 'The heads are joined back together and passed through one more matrix')
     _save(fig, ATT_DOC, 'join-the-heads.svg')
 
@@ -752,6 +783,7 @@ def head_count_shapes() -> None:
             ha='center', va='top', fontsize=10, color=INK)
     ax.set_xlim(-2.6, 11.4)
     ax.set_ylim(y - 1.1, 0.3)
+    _fit(fig, ax)
     _title(fig, 'Cutting a width of 768 into heads costs nothing extra')
     _save(fig, ATT_DOC, 'head-count-shapes.svg')
 
@@ -819,6 +851,7 @@ def mask_grid() -> None:
             'still add up to 1 in every row', ha='center', va='top', fontsize=9.5, color=MUTED)
     ax.set_xlim(-2.1, w1 + 1.6 + w2 + 0.3)
     ax.set_ylim(-h - 1.4, 0.9)
+    _fit(fig, ax)
     _title(fig, 'A mask forbids pairs by setting their score to minus infinity')
     _save(fig, ATT_DOC, 'mask-grid.svg')
 
@@ -848,13 +881,14 @@ def mask_arithmetic() -> None:
     _lines(ax, 0.0, 0.0, lines, size=10.0, dy=0.34)
     ax.set_xlim(-0.2, 7.4)
     ax.set_ylim(-3.3, 0.4)
+    _fit(fig, ax)
     _title(fig, 'Minus infinity becomes a weight of exactly zero')
     _save(fig, ATT_DOC, 'mask-arithmetic.svg')
 
 
 def robot_model_attention() -> None:
-    groups = [('picture tokens', 256, LINK), ('words of the order', 12, TEAL),
-              ('joint readings', 1, JOINT), ('action tokens', 8, GRIP)]
+    groups = [('picture\ntokens', 256, LINK), ('words of\nthe order', 12, TEAL),
+              ('joint\nreadings', 1, JOINT), ('action\ntokens', 8, GRIP)]
     total = sum(g[1] for g in groups)
     allowed = np.array([[1, 1, 0, 0],
                         [1, 1, 0, 0],
@@ -862,34 +896,40 @@ def robot_model_attention() -> None:
                         [1, 1, 1, 1]], dtype=float)
     sizes = np.array([g[1] for g in groups], dtype=float)
     pairs = float((allowed * np.outer(sizes, sizes)).sum())
-    print(f'[robot] token groups: ' + ', '.join(f'{n} {nm}' for nm, n, _ in groups))
+    print('[robot] token groups: ' + ', '.join(f'{n} {nm}'.replace(chr(10), ' ')
+                                               for nm, n, _ in groups))
     print(f'[robot] tokens in all: {total}, pairs in the full grid: {total * total:,}, '
           f'pairs the mask allows: {int(pairs):,} '
           f'({100 * pairs / (total * total):.1f} per cent)')
-    fig, ax = plt.subplots(figsize=(8.6, 4.4), facecolor='white')
+    fig, ax = plt.subplots(figsize=(9.2, 4.6), facecolor='white')
     _blank(ax)
-    span = np.cumsum(np.concatenate([[0.0], sizes / total * 6.0]))
+    cw, ch = 1.6, 0.9
     for i in range(4):
         for j in range(4):
-            face = _mix(TEAL, 0.35) if allowed[i, j] else _mix(MUTED, 0.22)
-            ax.add_patch(Rectangle((span[j], -span[i + 1]), span[j + 1] - span[j],
-                                   span[i + 1] - span[i], facecolor=face,
-                                   edgecolor='white', lw=1.0))
+            yes = allowed[i, j] > 0
+            ax.add_patch(Rectangle((j * cw, -(i + 1) * ch), cw, ch,
+                                   facecolor=_mix(TEAL, 0.32) if yes else _mix(MUTED, 0.18),
+                                   edgecolor='white', lw=1.4))
+            ax.text((j + 0.5) * cw, -(i + 0.5) * ch, 'allowed' if yes else 'forbidden',
+                    ha='center', va='center', fontsize=9.5,
+                    color=INK if yes else MUTED)
     for i, (nm, n, colour) in enumerate(groups):
-        ax.text(-0.15, -(span[i] + span[i + 1]) / 2, f'{nm} ({n})', ha='right',
-                va='center', fontsize=9.5, color=colour)
-        ax.text((span[i] + span[i + 1]) / 2, 0.12, f'{n}', ha='center', va='bottom',
-                fontsize=9, color=colour)
-    ax.text(3.0, 0.55, 'keys, grouped by what they are', ha='center', va='bottom',
-            fontsize=10, color=MUTED)
-    ax.text(3.0, -6.35, f'{total} tokens in all, so the full grid holds {total * total:,} pairs;\n'
+        ax.text(-0.18, -(i + 0.5) * ch, f'{nm} ({n})', ha='right', va='center',
+                fontsize=9.5, color=colour)
+        ax.text((i + 0.5) * cw, 0.12, f'{nm} ({n})', ha='center', va='bottom',
+                fontsize=9.5, color=colour)
+    ax.text(2 * cw, 1.25, 'keys and values: what may be looked at', ha='center',
+            va='bottom', fontsize=10, color=MUTED)
+    ax.text(-1.95, -2 * ch, 'queries: who is looking', ha='center', va='center',
+            fontsize=10, color=MUTED, rotation=90)
+    ax.text(2 * cw, -4 * ch - 0.3,
+            f'{total} tokens in all, so the full grid holds {total * total:,} pairs; '
             f'this mask allows {int(pairs):,} of them, which is '
             f'{100 * pairs / (total * total):.1f} per cent',
             ha='center', va='top', fontsize=9.5, color=INK)
-    ax.text(-1.85, -3.0, 'queries', ha='center', va='center', fontsize=10,
-            color=MUTED, rotation=90)
-    ax.set_xlim(-2.1, 6.4)
-    ax.set_ylim(-7.6, 1.0)
+    ax.set_xlim(-2.6, 4 * cw + 0.3)
+    ax.set_ylim(-4 * ch - 1.0, 1.65)
+    _fit(fig, ax)
     _title(fig, 'One arrangement for a robot model: who is allowed to look at whom')
     _save(fig, ATT_DOC, 'robot-model-attention.svg')
 
@@ -914,10 +954,12 @@ def score_grid_grows() -> None:
         ax.text(x + 1.2, -2.95, f'{n} x {n} = {n * n} scores', ha='center', va='top',
                 fontsize=10, color=MUTED)
         x += 3.4
-    ax.text(x - 1.2, -3.8, 'twice the tokens, four times the scores',
+    ax.text((x - 1.0) / 2, -3.8, 'twice the tokens, four times the scores',
             ha='center', va='top', fontsize=10.5, color=INK)
     ax.set_xlim(-0.3, x - 0.7)
-    ax.set_ylim(-4.4, 0.3)
+    ax.set_ylim(-4.2, 0.1)
+    _fit(fig, ax)
+    _fit(fig, ax)
     _title(fig, 'The score grid is every token against every token')
     _save(fig, ATT_DOC, 'score-grid-grows.svg')
 
@@ -1033,7 +1075,7 @@ def report_block() -> None:
 
 
 def six_steps() -> None:
-    fig, ax = plt.subplots(figsize=(8.8, 5.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
     _blank(ax)
     steps = [('1. normalise', 'put every token on the same scale', TEAL),
              ('2. attention', 'every token mixes the others', LINK),
@@ -1042,19 +1084,22 @@ def six_steps() -> None:
              ('5. feed-forward part', 'each token on its own, widened then narrowed', PURPLE),
              ('6. add it back on', 'the stream keeps what it had', JOINT)]
     y = 0.0
+    ax.text(3.9, 0.35, 'in: 4 tokens, 4 numbers each', ha='center', va='bottom',
+            fontsize=10, color=INK)
     for name, what, colour in steps:
-        _box(ax, 1.2, y - 0.52, 4.6, 0.56, name, face=_mix(colour, 0.18), edge=colour,
+        _box(ax, 2.1, y - 0.52, 3.6, 0.56, name, face=_mix(colour, 0.18), edge=colour,
              size=10.5, weight='bold')
-        ax.text(6.0, y - 0.24, what, ha='left', va='center', fontsize=9.5, color=MUTED)
+        ax.text(5.95, y - 0.24, what, ha='left', va='center', fontsize=9.5, color=MUTED)
         y -= 0.95
-    ax.annotate('', xy=(0.6, y + 0.3), xytext=(0.6, 0.1),
+    ax.text(3.9, y + 0.1, 'out: 4 tokens, 4 numbers each', ha='center', va='top',
+            fontsize=10, color=INK)
+    ax.annotate('', xy=(1.55, y + 0.33), xytext=(1.55, 0.05),
                 arrowprops=dict(arrowstyle='-|>', lw=2.4, color=JOINT))
-    ax.text(0.35, y / 2, 'the stream of 4 numbers per token, untouched all the way down',
-            ha='center', va='center', fontsize=9.5, color=JOINT, rotation=90)
-    ax.text(3.5, y + 0.05, 'in: 4 tokens x 4 numbers        out: 4 tokens x 4 numbers',
-            ha='center', va='top', fontsize=10, color=INK)
-    ax.set_xlim(-0.3, 12.2)
-    ax.set_ylim(y - 0.6, 0.45)
+    ax.text(1.3, y / 2, 'the stream runs down here', ha='center', va='center',
+            fontsize=10, color=JOINT, rotation=90)
+    ax.set_xlim(0.3, 12.4)
+    ax.set_ylim(y - 0.55, 0.85)
+    _fit(fig, ax)
     _title(fig, 'One transformer block, in the order the steps happen')
     _save(fig, BLK_DOC, 'six-steps.svg')
 
@@ -1081,6 +1126,7 @@ def numbers_through_a_block() -> None:
         x += w + 0.55
     ax.set_xlim(-1.3, x - 0.3)
     ax.set_ylim(-h - 0.8, 0.8)
+    _fit(fig, ax)
     _title(fig, 'The four tokens at every stage of one block, with their typical size')
     _save(fig, BLK_DOC, 'numbers-through-a-block.svg')
 
@@ -1138,6 +1184,7 @@ def rms_norm_worked_out() -> None:
     _lines(ax, 0.0, 0.0, lines, size=9.8, dy=0.33)
     ax.set_xlim(-0.2, 9.6)
     ax.set_ylim(-3.8, 0.4)
+    _fit(fig, ax)
     _title(fig, 'Root-mean-square normalisation on one token, in full')
     _save(fig, BLK_DOC, 'rms-norm-worked-out.svg')
 
@@ -1246,3 +1293,586 @@ def gradient_through_depth() -> None:
     ax.legend(fontsize=9.5, frameon=False, loc='best')
     fig.tight_layout()
     _save(fig, BLK_DOC, 'gradient-through-depth.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 3: the residual add
+# --------------------------------------------------------------------------
+
+def residual_add_arithmetic() -> None:
+    b = BLOCK
+    fig, ax = plt.subplots(figsize=(10.6, 3.3), facecolor='white')
+    _blank(ax)
+    rows = [f'"{t}"' for t in TOKENS]
+    w1, h = _grid(ax, b.x, cw=1.05, ch=0.64, fmt='{:+.1f}', rows=rows,
+                  title='the stream going in', box=JOINT)
+    w2, _ = _grid(ax, b.attn, x0=w1 + 1.0, cw=1.05, ch=0.64, title='what attention gives')
+    w3, _ = _grid(ax, b.s1, x0=w1 + w2 + 2.0, cw=1.05, ch=0.64,
+                  title='the stream coming out', box=JOINT)
+    ax.text(w1 + 0.5, -h / 2, '+', ha='center', va='center', fontsize=15, color=JOINT)
+    ax.text(w1 + w2 + 1.5, -h / 2, '=', ha='center', va='center', fontsize=15, color=JOINT)
+    ax.text((w1 + w2 + w3 + 3.0) / 2, -h - 0.3,
+            f'the first row reads {b.x[0, 0]:+.1f} {b.attn[0, 0]:+.2f} = {b.s1[0, 0]:+.2f}, '
+            'and so on for all sixteen numbers',
+            ha='center', va='top', fontsize=9.5, color=MUTED)
+    ax.set_xlim(-1.3, w1 + w2 + w3 + 2.3)
+    ax.set_ylim(-h - 1.0, 0.9)
+    _fit(fig, ax)
+    _title(fig, 'The residual add: the block is added to the stream, not put in its place')
+    _save(fig, BLK_DOC, 'residual-add-arithmetic.svg')
+
+
+def stream_experiment() -> tuple[list[float], list[float]]:
+    depth, width = 12, 64
+    rng = np.random.default_rng(11)
+    Ws = [rng.normal(0.0, 1.0, (width, width)) / math.sqrt(width) for _ in range(depth)]
+    x = rng.normal(0.0, 1.0, width)
+    adds: list[float] = []
+    sizes: list[float] = [float(np.sqrt((x ** 2).mean()))]
+    for W in Ws:
+        add = W @ (x / math.sqrt((x ** 2).mean()))
+        adds.append(float(np.sqrt((add ** 2).mean())))
+        x = x + add
+        sizes.append(float(np.sqrt((x ** 2).mean())))
+    print(f'[stream] simulated {depth} pre-norm blocks, width {width}')
+    print('[stream] what each block adds ', [round(v, 3) for v in adds])
+    print('[stream] stream size after each', [round(v, 3) for v in sizes])
+    print('[stream] share of the stream each block adds',
+          [round(a / s, 3) for a, s in zip(adds, sizes[1:])])
+    return adds, sizes
+
+
+def stream_is_a_sum() -> None:
+    adds, sizes = stream_experiment()
+    depth = len(adds)
+    fig, ax = plt.subplots(figsize=(9.8, 4.2), facecolor='white')
+    _plain(ax)
+    ax.bar(range(1, depth + 1), adds, color=_mix(PURPLE, 0.45), edgecolor=PURPLE,
+           width=0.6, label='what that block adds')
+    ax.plot(range(depth + 1), sizes, color=JOINT, lw=2.4, marker='o',
+            label='size of the stream')
+    for i, s in enumerate(sizes):
+        if i % 3 == 0:
+            ax.text(i, s + 0.06, f'{s:.2f}', ha='center', va='bottom', fontsize=9, color=INK)
+    ax.set_xticks(range(depth + 1))
+    ax.set_xlabel('block number', fontsize=10)
+    ax.set_ylabel('typical size of the numbers', fontsize=10)
+    ax.set_ylim(0, max(sizes) * 1.25)
+    ax.set_title('Twelve simulated blocks: the stream is the start plus every addition',
+                 fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'stream-is-a-sum.svg')
+
+
+def how_much_each_block_changes() -> None:
+    adds, sizes = stream_experiment()
+    share = [a / s for a, s in zip(adds, sizes[1:])]
+    fig, ax = plt.subplots(figsize=(9.8, 4.0), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(range(1, len(share) + 1), [100 * v for v in share],
+                  color=_mix(LINK, 0.45), edgecolor=LINK, width=0.6)
+    for b, v in zip(bars, share):
+        ax.text(b.get_x() + b.get_width() / 2, 100 * v + 0.6, f'{100 * v:.0f}%',
+                ha='center', va='bottom', fontsize=9.5, color=INK)
+    ax.set_xticks(range(1, len(share) + 1))
+    ax.set_xlabel('block number', fontsize=10)
+    ax.set_ylabel('its addition as a share of the stream', fontsize=10)
+    ax.set_ylim(0, max(100 * v for v in share) * 1.25)
+    ax.set_title('Each block nudges the stream; none of them replaces it',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'how-much-each-block-changes.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 4: the feed-forward part
+# --------------------------------------------------------------------------
+
+def feed_forward_numbers() -> None:
+    b = BLOCK
+    row = 0
+    hid, out = b.hidden[row], b.hidden_gelu[row]
+    print(f'[ff] token "{TOKENS[row]}" in ', np.round(b.n2[row], 2))
+    print('[ff] 16 hidden numbers       ', np.round(hid, 2))
+    print('[ff] after the smooth rule   ', np.round(out, 2))
+    print(f'[ff] how many of the 16 went to almost nothing: '
+          f'{int((out < 0.01).sum())} of 16')
+    print('[ff] back down to four       ', np.round(b.ff[row], 2))
+    fig, axes = plt.subplots(2, 1, figsize=(10.4, 5.0), facecolor='white',
+                             gridspec_kw={'height_ratios': [1.0, 1.0]})
+    ax = axes[0]
+    _plain(ax)
+    ax.bar(np.arange(16) - 0.19, hid, width=0.38, color=_mix(MUTED, 0.5),
+           edgecolor=MUTED, label='the 16 widened numbers')
+    ax.bar(np.arange(16) + 0.19, out, width=0.38, color=_mix(PURPLE, 0.5),
+           edgecolor=PURPLE, label='after the smooth rule')
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_xticks(range(16))
+    ax.set_xticklabels([str(i + 1) for i in range(16)], fontsize=9)
+    ax.set_xlabel('which of the 16 middle numbers', fontsize=10)
+    ax.set_ylabel('value', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.set_title(f'The widened middle of the feed-forward part, for "{TOKENS[row]}"',
+                 fontsize=11.5, weight='bold')
+    ax = axes[1]
+    _blank(ax)
+    w1, h = _grid(ax, b.n2[row].reshape(1, 4), cw=1.0, ch=0.6, rows=['4 numbers in'],
+                  rowsize=9.5)
+    w2, _ = _grid(ax, out.reshape(1, 16), x0=w1 + 2.0, cw=0.62, ch=0.6, fmt='{:+.1f}',
+                  fontsize=7.5, colour=PURPLE)
+    ax.text(w1 + 2.0 + w2 / 2, 0.1, '16 numbers in the middle', ha='center', va='bottom',
+            fontsize=9.5, color=PURPLE)
+    _grid(ax, b.ff[row].reshape(1, 4), x0=w1 + 2.0 + w2 + 1.6, cw=1.0, ch=0.6,
+          cols=['4 numbers out'], rowsize=9.5)
+    ax.set_xlim(-2.2, w1 + 2.0 + w2 + 1.6 + 4.4)
+    ax.set_ylim(-1.1, 0.75)
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'feed-forward-numbers.svg')
+
+
+def model_counts(d: int = 768, L: int = 12, h: int = 12, dff: int = 3072,
+                 vocab: int = 32000, quiet: bool = False) -> dict[str, int]:
+    attn = 4 * d * d
+    ff = 2 * d * dff
+    norms = 2 * d
+    block = attn + ff + norms
+    emb = vocab * d
+    total = L * block + emb + d
+    c = {'attn': attn, 'ff': ff, 'norms': norms, 'block': block, 'blocks': L * block,
+         'emb': emb, 'final': d, 'total': total}
+    if not quiet:
+        print(f'[count] width {d}, {L} blocks, {h} heads of {d // h}, '
+              f'feed-forward width {dff}, vocabulary {vocab:,}')
+        print(f'[count] attention in one block   4 x {d} x {d} = {attn:,}')
+        print(f'[count] feed-forward in one block 2 x {d} x {dff} = {ff:,}')
+        print(f'[count] two normalisations        2 x {d} = {norms:,}')
+        print(f'[count] one block                 {block:,} '
+              f'(feed-forward is {100 * ff / block:.1f} per cent)')
+        print(f'[count] {L} blocks                {L * block:,}')
+        print(f'[count] embedding table           {vocab:,} x {d} = {emb:,}')
+        print(f'[count] final normalisation       {d:,}')
+        print(f'[count] whole model               {total:,} = {total / 1e6:.2f} million')
+        print(f'[count] at two bytes each         {2 * total:,} bytes = '
+              f'{2 * total / 2**20:.1f} MiB')
+    return c
+
+
+def widen_then_narrow() -> None:
+    d, dff = 768, 3072
+    c = model_counts(quiet=True)
+    fig, ax = plt.subplots(figsize=(11.4, 4.2), facecolor='white')
+    _blank(ax)
+    ax.add_patch(Rectangle((0.0, -0.5), 0.8, 1.0, facecolor=_mix(JOINT, 0.3),
+                           edgecolor=JOINT, lw=1.3))
+    ax.text(0.4, -0.75, f'{d} numbers', ha='center', va='top', fontsize=10, color=INK)
+    ax.add_patch(Rectangle((4.6, -2.0), 0.8, 4.0, facecolor=_mix(PURPLE, 0.3),
+                           edgecolor=PURPLE, lw=1.3))
+    ax.text(5.0, -2.25, f'{dff} numbers', ha='center', va='top', fontsize=10, color=INK)
+    ax.add_patch(Rectangle((10.0, -0.5), 0.8, 1.0, facecolor=_mix(JOINT, 0.3),
+                           edgecolor=JOINT, lw=1.3))
+    ax.text(10.4, -0.75, f'{d} numbers', ha='center', va='top', fontsize=10, color=INK)
+    _arrow(ax, 1.0, 0.0, 4.4, 0.0, colour=MUTED, lw=1.6)
+    ax.text(2.7, 0.25, f'first matrix, {d} x {dff}\n{d * dff:,} numbers', ha='center',
+            va='bottom', fontsize=10, color=INK)
+    _arrow(ax, 5.6, 0.0, 9.8, 0.0, colour=MUTED, lw=1.6)
+    ax.text(7.7, 0.25, f'second matrix, {dff} x {d}\n{dff * d:,} numbers', ha='center',
+            va='bottom', fontsize=10, color=INK)
+    ax.text(5.4, -3.1, f'the two matrices together hold {c["ff"]:,} numbers, which is '
+            f'{100 * c["ff"] / c["block"]:.1f} per cent of the {c["block"]:,} in one block',
+            ha='center', va='top', fontsize=10, color=INK)
+    ax.text(5.0, 2.25, 'the smooth rule is applied here, to each of the 3,072 on its own',
+            ha='center', va='bottom', fontsize=9.5, color=PURPLE)
+    ax.set_xlim(-0.4, 11.4)
+    ax.set_ylim(-3.9, 2.9)
+    _fit(fig, ax)
+    _title(fig, 'The feed-forward part widens by four, then narrows back')
+    _save(fig, BLK_DOC, 'widen-then-narrow.svg')
+
+
+def where_the_parameters_sit() -> None:
+    c = model_counts(quiet=True)
+    names = ['attention\n(4 matrices)', 'feed-forward\n(2 matrices)', 'the two\nnormalisations']
+    vals = [c['attn'], c['ff'], c['norms']]
+    fig, ax = plt.subplots(figsize=(9.2, 4.2), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(range(3), vals, color=[_mix(LINK, 0.45), _mix(PURPLE, 0.45),
+                                         _mix(TEAL, 0.45)],
+                  edgecolor=[LINK, PURPLE, TEAL], width=0.6)
+    for b, v in zip(bars, vals):
+        share = 100 * v / c['block']
+        ax.text(b.get_x() + b.get_width() / 2, v * 1.02, f'{v:,}\n'
+                f'{share:.1f}%' if share >= 1 else f'{v:,}\n{share:.2f}%',
+                ha='center', va='bottom', fontsize=10, color=INK)
+    ax.set_xticks(range(3))
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_yscale('log')
+    ax.set_ylim(300, c['ff'] * 6)
+    ax.set_ylabel('numbers held (log scale)', fontsize=10)
+    ax.set_title(f'Where the {c["block"]:,} numbers of one block sit, at width 768',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'where-the-parameters-sit.svg')
+
+
+def gated_feed_forward() -> None:
+    d = 768
+    plain_dff, gated_dff = 3072, 2048
+    plain = 2 * d * plain_dff
+    gated = 3 * d * gated_dff
+    print(f'[gated] plain: 2 x {d} x {plain_dff} = {plain:,}')
+    print(f'[gated] gated: 3 x {d} x {gated_dff} = {gated:,}')
+    print(f'[gated] difference: {gated - plain:,}')
+    fig, ax = plt.subplots(figsize=(11.6, 3.9), facecolor='white')
+    _blank(ax)
+    for x0, title, mats, dff, total in (
+            (0.0, 'the plain kind', ['widen', 'narrow'], plain_dff, plain),
+            (7.0, 'the gated kind', ['widen', 'gate', 'narrow'], gated_dff, gated)):
+        step = 2.1
+        for k, m in enumerate(mats):
+            ax.add_patch(Rectangle((x0 + k * step, -1.1), 1.2, 2.2,
+                                   facecolor=_mix(PURPLE, 0.3), edgecolor=PURPLE, lw=1.2))
+            ax.text(x0 + k * step + 0.6, 0.0, m, ha='center', va='center', fontsize=9.5,
+                    color=INK, rotation=90)
+            ax.text(x0 + k * step + 0.6, -1.3, f'{d} x {dff}\n{d * dff:,}', ha='center',
+                    va='top', fontsize=9, color=MUTED)
+        mid = x0 + (len(mats) - 1) * step / 2 + 0.6
+        ax.text(mid, 1.35, title, ha='center', va='bottom', fontsize=11, color=INK,
+                weight='bold')
+        ax.text(mid, -2.4, f'{len(mats)} x {d} x {dff}\n= {total:,} numbers',
+                ha='center', va='top', fontsize=10, color=INK)
+    ax.text(6.3, -3.6, 'the middle width drops from 3,072 to 2,048 so that three matrices '
+            'hold what two held', ha='center', va='top', fontsize=10, color=MUTED)
+    ax.set_xlim(-0.4, 13.0)
+    ax.set_ylim(-4.4, 2.0)
+    _fit(fig, ax)
+    _title(fig, 'A third matrix, and a narrower middle, for the same number of parameters')
+    _save(fig, BLK_DOC, 'gated-feed-forward.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 5: a stack of blocks, and the whole count
+# --------------------------------------------------------------------------
+
+def stack_of_blocks() -> None:
+    c = model_counts(quiet=True)
+    L = 12
+    fig, ax = plt.subplots(figsize=(9.6, 7.0), facecolor='white')
+    _blank(ax)
+    y = 0.0
+    _box(ax, 2.0, y, 4.2, 0.52, 'the embedding table', face=_mix(TEAL, 0.18), edge=TEAL,
+         size=10)
+    ax.text(6.45, y + 0.26, f'{c["emb"]:,} numbers', ha='left', va='center', fontsize=9.5,
+            color=MUTED)
+    y += 0.78
+    for i in range(L):
+        _box(ax, 2.0, y, 4.2, 0.40, f'block {i + 1}', face=_mix(LINK, 0.14), edge=LINK,
+             size=9.5)
+        if i == 0:
+            ax.text(6.45, y + 0.20, f'{c["block"]:,} numbers in each block', ha='left',
+                    va='center', fontsize=9.5, color=MUTED)
+        y += 0.56
+    _box(ax, 2.0, y, 4.2, 0.46, 'one last normalisation', face=_mix(TEAL, 0.18), edge=TEAL,
+         size=10)
+    ax.text(6.45, y + 0.23, f'{c["final"]:,} numbers', ha='left', va='center', fontsize=9.5,
+            color=MUTED)
+    y += 0.74
+    _box(ax, 2.0, y, 4.2, 0.46, 'the embedding table, used backwards',
+         face=_mix(TEAL, 0.10), edge=TEAL, size=9.5)
+    ax.text(6.45, y + 0.23, 'no new numbers', ha='left', va='center', fontsize=9.5,
+            color=MUTED)
+    ax.annotate('', xy=(1.6, y + 0.34), xytext=(1.6, 0.1),
+                arrowprops=dict(arrowstyle='-|>', lw=2.4, color=JOINT))
+    ax.text(1.35, y / 2, 'one stream, 768 numbers wide, all the way up', rotation=90,
+            ha='center', va='center', fontsize=9.5, color=JOINT)
+    ax.set_xlim(0.6, 11.6)
+    ax.set_ylim(-0.35, y + 0.9)
+    _fit(fig, ax)
+    _title(fig, f'Twelve blocks on one stream: {c["total"]:,} numbers in all')
+    _save(fig, BLK_DOC, 'stack-of-blocks.svg')
+
+
+def whole_model_count() -> None:
+    c = model_counts()
+    L = 12
+    parts = [('the embedding table', c['emb'], TEAL),
+             ('attention, all 12 blocks', L * c['attn'], LINK),
+             ('feed-forward, all 12 blocks', L * c['ff'], PURPLE),
+             ('every normalisation', L * c['norms'] + c['final'], JOINT)]
+    total = sum(p[1] for p in parts)
+    print(f'[count] check: the four parts add to {total:,}')
+    fig, ax = plt.subplots(figsize=(10.4, 3.0), facecolor='white')
+    _plain(ax)
+    left = 0.0
+    for name, v, colour in parts:
+        ax.barh([0], [v], left=[left], color=_mix(colour, 0.5), edgecolor=colour,
+                height=0.55)
+        if v / total > 0.05:
+            ax.text(left + v / 2, 0, f'{v / 1e6:.1f}M\n{100 * v / total:.1f}%',
+                    ha='center', va='center', fontsize=10, color=INK)
+        left += v
+    left = 0.0
+    for name, v, colour in parts:
+        if v / total > 0.05:
+            ax.text(left + v / 2, 0.38, name, ha='center', va='bottom', fontsize=9.5,
+                    color=colour)
+        else:
+            ax.text(total, -0.42, f'{name}: {v:,}', ha='right', va='top', fontsize=9.5,
+                    color=colour)
+        left += v
+    ax.set_yticks([])
+    ax.set_ylim(-0.75, 0.75)
+    ax.set_xlim(0, total * 1.02)
+    ax.set_xticks([0, 2.5e7, 5e7, 7.5e7, 1e8])
+    ax.set_xticklabels(['0', '25M', '50M', '75M', '100M'])
+    ax.set_xlabel('numbers held', fontsize=10)
+    ax.spines['left'].set_visible(False)
+    ax.set_title(f'The whole {total / 1e6:.1f} million, split four ways',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'whole-model-count.svg')
+
+
+def width_and_depth() -> None:
+    widths = [256, 512, 768, 1024, 1536, 2048, 4096]
+    depths = [6, 12, 24, 48]
+    fig, ax = plt.subplots(figsize=(9.8, 4.6), facecolor='white')
+    _plain(ax)
+    for L, colour in zip(depths, (TEAL, LINK, PURPLE, GRIP)):
+        tot = [model_counts(d=w, L=L, h=max(w // 64, 1), dff=4 * w, quiet=True)['total']
+               for w in widths]
+        ax.plot(widths, [v / 1e6 for v in tot], marker='o', color=colour, lw=2,
+                label=f'{L} blocks')
+        print(f'[grow] {L:2d} blocks: ' +
+              '  '.join(f'width {w}: {v / 1e6:.0f}M' for w, v in zip(widths, tot)))
+    c = model_counts(quiet=True)
+    ax.plot([768], [c['total'] / 1e6], marker='*', ms=18, color=INK)
+    ax.annotate(f'the model counted above:\n768 wide, 12 blocks, {c["total"] / 1e6:.1f}M',
+                xy=(790, c['total'] / 1e6), xytext=(1100, 28), fontsize=9.5, color=INK,
+                ha='left', arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.0))
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks(widths)
+    ax.set_xticklabels([str(w) for w in widths])
+    ax.set_xticks([], minor=True)
+    ax.set_ylim(8, 2e4)
+    ax.set_xlabel('width of the stream', fontsize=10)
+    ax.set_ylabel('millions of numbers in the whole model', fontsize=10)
+    ax.set_title('Doubling the depth doubles the count; doubling the width nearly '
+                 'quadruples it', fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'width-and-depth.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 6: mixture of experts
+# --------------------------------------------------------------------------
+
+def moe_counts(d: int = 768, L: int = 12, dff: int = 3072, experts: int = 8,
+               k: int = 2, vocab: int = 32000, quiet: bool = False) -> dict[str, int]:
+    dense = model_counts(d=d, L=L, dff=dff, vocab=vocab, quiet=True)
+    one_ff = 2 * d * dff
+    router = d * experts
+    held_block = 4 * d * d + experts * one_ff + router + 2 * d
+    used_block = 4 * d * d + k * one_ff + router + 2 * d
+    held = L * held_block + vocab * d + d
+    used = L * used_block + vocab * d + d
+    c = {'dense_total': dense['total'], 'one_ff': one_ff, 'router': router,
+         'held_block': held_block, 'used_block': used_block, 'held': held, 'used': used}
+    if not quiet:
+        print(f'[moe] {experts} experts per block, {k} of them used per token')
+        print(f'[moe] one expert: {one_ff:,}; the router: {d} x {experts} = {router:,}')
+        print(f'[moe] one block holds {held_block:,} and uses {used_block:,} per token')
+        print(f'[moe] whole model holds {held:,} = {held / 1e6:.1f} million')
+        print(f'[moe] whole model uses  {used:,} = {used / 1e6:.1f} million per token')
+        print(f'[moe] the dense model of the same shape: {dense["total"]:,} = '
+              f'{dense["total"] / 1e6:.1f} million')
+        print(f'[moe] held / dense = {held / dense["total"]:.2f}, '
+              f'used / dense = {used / dense["total"]:.2f}')
+        print(f'[moe] memory at two bytes: dense {2 * dense["total"] / 2**20:.0f} MiB, '
+              f'mixture {2 * held / 2**20:.0f} MiB')
+    return c
+
+
+def router_picks_two() -> None:
+    rng = np.random.default_rng(3)
+    scores = np.round(rng.normal(0.0, 1.2, 8), 2)
+    order = np.argsort(scores)[::-1]
+    top = order[:2]
+    pair = scores[top]
+    e = np.exp(pair - pair.max())
+    wts = e / e.sum()
+    print('[router] the eight router scores for one token', scores)
+    print(f'[router] the two biggest are expert {top[0] + 1} ({pair[0]:+.2f}) and '
+          f'expert {top[1] + 1} ({pair[1]:+.2f})')
+    print(f'[router] their shares are {wts[0]:.3f} and {wts[1]:.3f}')
+    fig, ax = plt.subplots(figsize=(9.8, 4.4), facecolor='white')
+    _plain(ax)
+    colours = [GRIP if i in top else _mix(MUTED, 0.6) for i in range(8)]
+    bars = ax.bar(range(8), scores, color=[_mix(c, 0.55) for c in colours],
+                  edgecolor=colours, width=0.62)
+    for i, (b, v) in enumerate(zip(bars, scores)):
+        ax.text(b.get_x() + b.get_width() / 2, v + (0.06 if v >= 0 else -0.06),
+                f'{v:+.2f}', ha='center', va='bottom' if v >= 0 else 'top',
+                fontsize=10, color=INK)
+    for rank, i in enumerate(top):
+        ax.text(i, scores[i] + 0.55, f'picked\nshare {wts[rank]:.3f}', ha='center',
+                va='bottom', fontsize=9.5, color=GRIP)
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_xticks(range(8))
+    ax.set_xticklabels([f'expert {i + 1}' for i in range(8)], fontsize=9.5)
+    ax.set_ylim(min(scores) - 0.7, max(scores) + 1.5)
+    ax.set_ylabel('router score for this one token', fontsize=10)
+    ax.set_title('The router scores eight experts and keeps the best two',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'router-picks-two.svg')
+
+
+def held_versus_used() -> None:
+    c = moe_counts()
+    names = ['the plain model', 'the mixture model:\nnumbers held',
+             'the mixture model:\nnumbers used per token']
+    vals = [c['dense_total'], c['held'], c['used']]
+    colours = [LINK, GRIP, PURPLE]
+    fig, ax = plt.subplots(figsize=(9.4, 4.4), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(range(3), [v / 1e6 for v in vals],
+                  color=[_mix(col, 0.5) for col in colours], edgecolor=colours, width=0.6)
+    for b, v in zip(bars, vals):
+        ax.text(b.get_x() + b.get_width() / 2, v / 1e6 + 8, f'{v / 1e6:.0f} million',
+                ha='center', va='bottom', fontsize=10.5, color=INK)
+    ax.set_xticks(range(3))
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylim(0, c['held'] / 1e6 * 1.18)
+    ax.set_ylabel('millions of numbers', fontsize=10)
+    ax.set_title(f'Eight experts per block: {c["held"] / c["dense_total"]:.1f} times the '
+                 f'parameters, {c["used"] / c["dense_total"]:.1f} times the work per token',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'held-versus-used.svg')
+
+
+def memory_cost() -> None:
+    c = moe_counts(quiet=True)
+    opts = [('plain model,\n2 bytes each', 2 * c['dense_total'], LINK),
+            ('mixture model,\n2 bytes each', 2 * c['held'], GRIP),
+            ('mixture model,\n1 byte each', 1 * c['held'], WRIST)]
+    for name, v, _ in opts:
+        print(f'[memory] {name.replace(chr(10), " ")}: {v:,} bytes = {v / 2**20:.0f} MiB')
+    fig, ax = plt.subplots(figsize=(9.0, 4.2), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(range(3), [v / 2**20 for v in opts and [o[1] for o in opts]],
+                  color=[_mix(o[2], 0.5) for o in opts],
+                  edgecolor=[o[2] for o in opts], width=0.6)
+    for b, (name, v, _) in zip(bars, opts):
+        ax.text(b.get_x() + b.get_width() / 2, v / 2**20 + 20, f'{v / 2**20:.0f} MiB',
+                ha='center', va='bottom', fontsize=10.5, color=INK)
+    ax.set_xticks(range(3))
+    ax.set_xticklabels([o[0] for o in opts], fontsize=10)
+    ax.set_ylim(0, max(o[1] for o in opts) / 2**20 * 1.2)
+    ax.set_ylabel('memory the weights take up (MiB)', fontsize=10)
+    ax.set_title('Every expert has to be in memory, whether a token uses it or not',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'memory-cost.svg')
+
+
+def expert_load() -> None:
+    rng = np.random.default_rng(19)
+    n_tok, experts, k = 4096, 8, 2
+    bias = rng.normal(0.0, 0.55, experts)
+    scores = rng.normal(0.0, 1.0, (n_tok, experts)) + bias
+    picks = np.argsort(-scores, axis=1)[:, :k]
+    counts = np.bincount(picks.reshape(-1), minlength=experts)
+    fair = n_tok * k / experts
+    print(f'[load] {n_tok} tokens, {k} experts each, so a fair share is {fair:.0f} tokens')
+    print('[load] tokens per expert', counts.tolist())
+    print(f'[load] busiest expert {counts.max()} = {counts.max() / fair:.2f} times a fair '
+          f'share, quietest {counts.min()} = {counts.min() / fair:.2f} times')
+    fig, ax = plt.subplots(figsize=(9.6, 4.2), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(range(experts), counts, color=_mix(TEAL, 0.5), edgecolor=TEAL, width=0.62)
+    for b, v in zip(bars, counts):
+        ax.text(b.get_x() + b.get_width() / 2, v + 30, f'{v}', ha='center', va='bottom',
+                fontsize=10, color=INK)
+    ax.axhline(fair, color=GRIP, ls='--', lw=1.4)
+    ax.text(experts - 0.4, fair + 40, f'a fair share: {fair:.0f}', ha='right', va='bottom',
+            fontsize=9.5, color=GRIP)
+    ax.set_xticks(range(experts))
+    ax.set_xticklabels([f'{i + 1}' for i in range(experts)], fontsize=10)
+    ax.set_xlabel('expert', fontsize=10)
+    ax.set_ylabel(f'tokens sent to it, out of {n_tok}', fontsize=10)
+    ax.set_ylim(0, counts.max() * 1.25)
+    ax.set_title('A simulated router left to itself: some experts get far more work',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'expert-load.svg')
+
+
+# --------------------------------------------------------------------------
+
+def main() -> None:
+    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    global PNG_DIR
+    if len(sys.argv) == 3 and sys.argv[1] == '--png':
+        PNG_DIR = pathlib.Path(sys.argv[2])
+        PNG_DIR.mkdir(parents=True, exist_ok=True)
+
+    report_toy()
+    token_vectors()
+    one_token_draws_from_four()
+    before_and_after()
+    projection_matrices()
+    one_query_worked_out()
+    qkv_grids()
+    dot_product_worked_out()
+    raw_score_grid()
+    scaled_score_grid()
+    why_divide()
+    softmax_steps()
+    weight_grid()
+    output_mix_worked_out()
+    attention_as_matrices()
+    shape_chain()
+    split_into_heads()
+    two_heads_two_patterns()
+    join_the_heads()
+    head_count_shapes()
+    self_and_cross()
+    mask_grid()
+    mask_arithmetic()
+    robot_model_attention()
+    score_grid_grows()
+    cost_vs_length()
+    score_memory()
+
+    report_block()
+    six_steps()
+    numbers_through_a_block()
+    size_of_each_change()
+    rms_norm_worked_out()
+    pre_vs_post_norm()
+    gradient_through_depth()
+    residual_add_arithmetic()
+    stream_is_a_sum()
+    how_much_each_block_changes()
+    feed_forward_numbers()
+    model_counts()
+    widen_then_narrow()
+    where_the_parameters_sit()
+    gated_feed_forward()
+    stack_of_blocks()
+    whole_model_count()
+    width_and_depth()
+    moe_counts()
+    router_picks_two()
+    held_versus_used()
+    memory_cost()
+    expert_load()
+    print(f'wrote the diagrams under {IMAGES}')
+
+
+if __name__ == '__main__':
+    main()

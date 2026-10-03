@@ -352,7 +352,7 @@ anything, so train the same thing three or four times to learn the spread.
 
 ![Two bar charts, one showing a four-point gain from making both changes at once, the other showing the same four conditions measured separately](../../images/starting-your-own-model/when-it-does-not-work/two-changes-at-once.svg)
 
-Making two changes together takes the success rate from 51.5% to 55.7%, while measuring them separately shows more attempts was worth 24.9 points on its own and the weight decay cost 8.2.
+Making two changes together takes the success rate from 51.5% to 55.7%, while measuring them separately shows more attempts was worth 24.9 points on its own and the weight decay cost 8.2 points.
 
 That leads to the discipline the whole page depends on, which is to change one thing
 at a time, and which everybody drops because a failed run leaves four promising

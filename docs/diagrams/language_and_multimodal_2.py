@@ -300,3 +300,324 @@ def vlm_parameter_shares() -> None:
     print(f'[1c] backbone {_thousands(V_PARAMS)}, language model {_thousands(L_PARAMS)}, '
           f'projector {_thousands(PROJ_1)}, whole {_thousands(total)}, '
           f'projector share {100 * PROJ_1 / total:.4f}%')
+
+
+# -- section 2: the projector ----------------------------------------------
+
+def _toy_projection() -> tuple[Arr, Arr, Arr, Arr]:
+    """A 6-number patch vector through a 6 -> 4 matrix, worked out in full."""
+    v = np.array([0.40, -0.90, 1.30, 0.20, -0.50, 0.70])
+    w = np.array([
+        [0.5, -0.2, 0.9, 0.1, -0.4, 0.3],
+        [-0.7, 0.6, 0.2, -0.3, 0.8, 0.1],
+        [0.2, 0.4, -0.6, 0.7, 0.1, -0.5],
+        [0.9, -0.1, 0.3, -0.8, 0.2, 0.6],
+    ])
+    b = np.array([0.10, -0.20, 0.05, 0.00])
+    out = w @ v + b
+    return v, w, b, out
+
+
+def vlm_projector_arithmetic() -> None:
+    """One patch vector multiplied by the projector matrix, every number shown."""
+    v, w, b, out = _toy_projection()
+    fig: Figure = plt.figure(figsize=(11.2, 4.4))
+    ax: Axes = fig.add_axes((0, 0, 1, 1))
+    _blank(ax)
+    ax.set_xlim(0, 11.2)
+    ax.set_ylim(0, 4.4)
+    ax.text(5.6, 4.12, 'The projector is one matrix multiply and one add',
+            ha='center', fontsize=12.5, weight='bold')
+
+    cw, ch = 0.52, 0.42
+    x0, y0 = 0.45, 2.25
+    for j, val in enumerate(v):
+        ax.add_patch(Rectangle((x0 + j * cw, y0), cw, ch, facecolor='#d9ecec',
+                               edgecolor='white', lw=1.0))
+        ax.text(x0 + (j + 0.5) * cw, y0 + ch / 2, f'{val:+.2f}', ha='center',
+                va='center', fontsize=9, color=INK)
+    ax.text(x0 + 3 * cw, y0 + ch + 0.22, f'one patch vector, {len(v)} numbers',
+            ha='center', fontsize=10, color=TEAL, weight='bold')
+
+    mx, my = 0.45, 0.25
+    for i in range(w.shape[0]):
+        for j in range(w.shape[1]):
+            ax.add_patch(Rectangle((mx + j * cw, my + (3 - i) * ch), cw, ch,
+                                   facecolor='#fdf0d5', edgecolor='white', lw=1.0))
+            ax.text(mx + (j + 0.5) * cw, my + (3 - i + 0.5) * ch, f'{w[i, j]:+.1f}',
+                    ha='center', va='center', fontsize=8.5, color=INK)
+    ax.text(mx + 3 * cw, my - 0.22, f'the projector matrix, {w.shape[0]} rows '
+            f'of {w.shape[1]}', ha='center', fontsize=10, color=JOINT, weight='bold')
+
+    lines = []
+    for i in range(w.shape[0]):
+        parts = ' + '.join(f'({w[i, j]:+.1f} x {v[j]:+.2f})' for j in range(len(v)))
+        lines.append(f'row {i + 1}:  {parts}  = {float(w[i] @ v):+.3f}'
+                     f'   then {b[i]:+.2f}  = {out[i]:+.3f}')
+    ax.text(4.25, 2.05, '\n'.join(lines), ha='left', va='center', fontsize=8.6,
+            family='DejaVu Sans Mono', color=INK)
+    ax.text(4.25, 3.08, 'each row of the matrix gives one output number',
+            ha='left', fontsize=10, color=MUTED)
+
+    ox = 4.25
+    for i, val in enumerate(out):
+        ax.add_patch(Rectangle((ox + i * 0.78, 0.45), 0.78, ch, facecolor='#e6dcf7',
+                               edgecolor='white', lw=1.0))
+        ax.text(ox + (i + 0.5) * 0.78, 0.45 + ch / 2, f'{val:+.3f}', ha='center',
+                va='center', fontsize=9.5, color=INK)
+    ax.text(ox + 2 * 0.78, 0.18, f'out: {len(out)} numbers, which the language model '
+            'now treats as a token', ha='center', fontsize=10, color=PURPLE,
+            weight='bold')
+    _save(fig, VLM_DOC, 'projector-arithmetic.svg')
+    print('[2a] toy projector output: '
+          + ', '.join(f'{x:+.3f}' for x in out))
+
+
+def vlm_projector_shapes() -> None:
+    """The real shapes the projector works on, and what it weighs."""
+    fig: Figure = plt.figure(figsize=(10.6, 3.5))
+    ax: Axes = fig.add_axes((0, 0, 1, 1))
+    _blank(ax)
+    ax.set_xlim(0, 10.6)
+    ax.set_ylim(0, 3.5)
+    ax.text(5.3, 3.18, 'The same multiply, at the real sizes', ha='center',
+            fontsize=12.5, weight='bold')
+    _box(ax, 0.35, 1.25, 2.6, 1.3,
+         f'{PIC_TOKENS} patch vectors\nof {V_WIDTH} numbers\n\n'
+         f'{_thousands(PIC_TOKENS * V_WIDTH)} numbers',
+         face='#d9ecec', edge=TEAL)
+    _box(ax, 3.9, 1.25, 2.8, 1.3,
+         f'projector matrix\n{V_WIDTH} in, {L_WIDTH} out\n\n'
+         f'{_thousands(V_WIDTH * L_WIDTH)} weights\n+ {_thousands(L_WIDTH)} biases',
+         face='#fdf0d5', edge=JOINT)
+    _box(ax, 7.65, 1.25, 2.6, 1.3,
+         f'{PIC_TOKENS} picture tokens\nof {L_WIDTH} numbers\n\n'
+         f'{_thousands(PIC_TOKENS * L_WIDTH)} numbers',
+         face='#e6dcf7', edge=PURPLE)
+    _arrow(ax, 3.0, 1.9, 3.82, 1.9)
+    _arrow(ax, 6.76, 1.9, 7.57, 1.9)
+    ax.text(5.3, 0.78, f'{_thousands(PROJ_1)} parameters in all, and every one of the '
+            f'{PIC_TOKENS} patches goes through the same matrix',
+            ha='center', fontsize=10.5, color=INK)
+    ax.text(5.3, 0.38, f'the multiply costs {PIC_TOKENS} x {V_WIDTH} x {L_WIDTH} = '
+            f'{_thousands(PIC_TOKENS * V_WIDTH * L_WIDTH)} multiply-and-adds per picture',
+            ha='center', fontsize=10, color=MUTED)
+    _save(fig, VLM_DOC, 'projector-shapes.svg')
+    print(f'[2b] projector {V_WIDTH}->{L_WIDTH}: {_thousands(PROJ_1)} parameters, '
+          f'{_thousands(PIC_TOKENS * V_WIDTH * L_WIDTH)} multiply-and-adds per picture')
+
+
+def vlm_projector_kinds() -> None:
+    """Three projector shapes: what each costs and how many tokens each gives."""
+    names = ['one linear\nlayer', 'two layers\nwith GELU',
+             f'resampler to\n{RESAMPLE_OUT} tokens']
+    params = [PROJ_1, PROJ_2, PROJ_R]
+    toks = [PIC_TOKENS, PIC_TOKENS, RESAMPLE_OUT]
+    fig: Figure = plt.figure(figsize=(10.2, 3.9))
+    ax1: Axes = fig.add_axes((0.07, 0.19, 0.38, 0.62))
+    ax2: Axes = fig.add_axes((0.58, 0.19, 0.38, 0.62))
+    _plain(ax1)
+    _plain(ax2)
+    b1 = ax1.bar(names, params, color=[JOINT, WRIST, TEAL], width=0.55)
+    ax1.set_ylabel('parameters', fontsize=10)
+    ax1.set_title('What the joining part weighs', fontsize=11.5, weight='bold')
+    for b, v in zip(b1, params):
+        ax1.text(b.get_x() + b.get_width() / 2, v + max(params) * 0.03,
+                 _thousands(v), ha='center', fontsize=9)
+    ax1.set_ylim(0, max(params) * 1.25)
+    b2 = ax2.bar(names, toks, color=[JOINT, WRIST, TEAL], width=0.55)
+    ax2.set_ylabel('picture tokens per crop', fontsize=10)
+    ax2.set_title('What it costs in context', fontsize=11.5, weight='bold')
+    for b, v in zip(b2, toks):
+        ax2.text(b.get_x() + b.get_width() / 2, v + max(toks) * 0.03, str(v),
+                 ha='center', fontsize=9.5)
+    ax2.set_ylim(0, max(toks) * 1.25)
+    ax1.tick_params(axis='x', labelsize=9)
+    ax2.tick_params(axis='x', labelsize=9)
+    _save(fig, VLM_DOC, 'projector-kinds.svg')
+    print(f'[2c] projector kinds: linear {_thousands(PROJ_1)} params / {PIC_TOKENS} '
+          f'tokens; two layers {_thousands(PROJ_2)} / {PIC_TOKENS}; '
+          f'resampler {_thousands(PROJ_R)} / {RESAMPLE_OUT}')
+
+
+def vlm_projector_pulls_in() -> None:
+    """Simulated: before training the picture vectors sit apart, after they do not."""
+    rng = np.random.default_rng(3)
+    tok = rng.normal(0.0, 1.0, size=(300, 2)) @ np.array([[1.0, 0.25], [0.25, 0.9]])
+    raw = rng.normal(0.0, 1.0, size=(PIC_TOKENS, 2)) * 2.6 + np.array([5.4, 4.1])
+    centre = tok.mean(axis=0)
+    scale = tok.std() / raw.std()
+    fitted = (raw - raw.mean(axis=0)) * scale + centre
+    fitted += rng.normal(0.0, 0.22, size=fitted.shape)
+
+    def far(a: Arr) -> float:
+        return float(np.mean(np.linalg.norm(a - centre, axis=1)))
+
+    fig: Figure = plt.figure(figsize=(10.2, 4.3))
+    ax1: Axes = fig.add_axes((0.07, 0.15, 0.39, 0.68))
+    ax2: Axes = fig.add_axes((0.57, 0.15, 0.39, 0.68))
+    for ax, pts, title in ((ax1, raw, 'Before the projector is trained'),
+                           (ax2, fitted, 'After the projector is trained')):
+        _plain(ax)
+        ax.scatter(tok[:, 0], tok[:, 1], s=11, color=PURPLE, alpha=0.6,
+                   label='word token embeddings')
+        ax.scatter(pts[:, 0], pts[:, 1], s=13, color=TEAL, alpha=0.75,
+                   label='projected picture tokens')
+        ax.set_xlim(-5.5, 10.5)
+        ax.set_ylim(-5.0, 9.0)
+        ax.set_xlabel('first of two drawn directions', fontsize=9.5)
+        ax.set_ylabel('second drawn direction', fontsize=9.5)
+        ax.set_title(f'{title}\nmean distance from the word cloud '
+                     f'{far(pts):.2f}', fontsize=11, weight='bold')
+        ax.legend(fontsize=8.5, frameon=False, loc='upper left')
+    fig.text(0.5, 0.005, 'simulated vectors, seed 3, drawn in two directions',
+             ha='center', fontsize=9, color=MUTED, style='italic')
+    _save(fig, VLM_DOC, 'projector-pulls-in.svg')
+    print(f'[2d] simulated mean distance from the word cloud: before {far(raw):.2f}, '
+          f'after {far(fitted):.2f}')
+
+
+# -- section 3: a picture inside the token stream ---------------------------
+
+SYS_TOKENS: int = 38
+Q_TOKENS: int = 17
+A_TOKENS: int = 24
+
+
+def vlm_token_stream() -> None:
+    """The real stream of tokens with a picture block sitting inside it."""
+    blocks = [('system prompt', SYS_TOKENS, '#e8e8e8', INK),
+              ('picture tokens', PIC_TOKENS, '#d9ecec', TEAL),
+              ('the question in words', Q_TOKENS, '#f2eefa', PURPLE),
+              ('the answer, written one token at a time', A_TOKENS, '#fdf0d5', JOINT)]
+    total = sum(n for _, n, _, _ in blocks)
+    fig: Figure = plt.figure(figsize=(11.4, 3.6))
+    ax: Axes = fig.add_axes((0, 0, 1, 1))
+    _blank(ax)
+    ax.set_xlim(0, 11.4)
+    ax.set_ylim(0, 3.6)
+    ax.text(5.7, 3.3, f'One question about one picture is {total} tokens long',
+            ha='center', fontsize=12.5, weight='bold')
+    x = 0.4
+    span = 10.6
+    for name, n, face, edge in blocks:
+        w = span * n / total
+        ax.add_patch(Rectangle((x, 1.55), w, 0.72, facecolor=face, edgecolor=edge,
+                               lw=1.2))
+        ax.text(x + w / 2, 1.91, str(n), ha='center', va='center', fontsize=10.5,
+                weight='bold', color=edge)
+        x += w
+    x = 0.4
+    offs = [(0.0, 1.22), (0.0, 0.88), (0.0, 1.22), (0.0, 0.88)]
+    for (name, n, face, edge), (_, yy) in zip(blocks, offs):
+        w = span * n / total
+        ax.plot([x + w / 2, x + w / 2], [1.52, yy + 0.16], color=edge, lw=0.9)
+        ax.text(x + w / 2, yy, f'{name}\n{n} tokens', ha='center', va='top',
+                fontsize=9.5, color=edge)
+        x += w
+    ax.text(0.4, 2.58, 'the model sees one flat row of tokens and cannot tell '
+            'from the row alone which ones came from a picture',
+            ha='left', fontsize=10, color=MUTED)
+    ax.annotate('', xy=(11.0, 2.42), xytext=(0.4, 2.42),
+                arrowprops=dict(arrowstyle='-|>', color=MUTED, lw=1.0))
+    _save(fig, VLM_DOC, 'token-stream.svg')
+    print(f'[3a] stream: {SYS_TOKENS} system + {PIC_TOKENS} picture + {Q_TOKENS} '
+          f'question + {A_TOKENS} answer = {total} tokens; the picture is '
+          f'{100 * PIC_TOKENS / total:.0f}% of it')
+
+
+def vlm_context_share() -> None:
+    """How much of the context each way of sending a picture eats."""
+    schemes = [f'one squeezed crop\n{PIC_TOKENS} tokens',
+               f'{HI} x {HI} in {TILES_HI} crops\nplus a thumbnail\n'
+               f'{_thousands(TOK_HI)} tokens',
+               f'{CAM_W} x {CAM_H} frame in {TILES_CAM} crops\nplus a thumbnail\n'
+               f'{_thousands(TOK_CAM)} tokens']
+    toks = [PIC_TOKENS, TOK_HI, TOK_CAM]
+    fig: Figure = plt.figure(figsize=(10.4, 4.0))
+    ax: Axes = fig.add_axes((0.08, 0.26, 0.88, 0.56))
+    _plain(ax)
+    y = np.arange(3)
+    ax.barh(y, [CONTEXT] * 3, color='#eeeeee', height=0.52)
+    bars = ax.barh(y, toks, color=[TEAL, WRIST, GRIP], height=0.52)
+    ax.set_yticks(y)
+    ax.set_yticklabels(schemes, fontsize=9.3)
+    ax.set_xlim(0, CONTEXT * 1.04)
+    ax.set_xlabel(f'tokens, against a context window of {_thousands(CONTEXT)}',
+                  fontsize=10)
+    ax.invert_yaxis()
+    for b, v in zip(bars, toks):
+        ax.text(v + CONTEXT * 0.012, b.get_y() + b.get_height() / 2,
+                f'{100 * v / CONTEXT:.1f}% of the window', va='center', fontsize=9.5,
+                color=INK)
+    ax.set_title('One high resolution camera frame can fill most of the window',
+                 fontsize=12, weight='bold')
+    _save(fig, VLM_DOC, 'context-share.svg')
+    print(f'[3b] context share of {_thousands(CONTEXT)}: one crop '
+          f'{100 * PIC_TOKENS / CONTEXT:.2f}%, tiled {HI} '
+          f'{100 * TOK_HI / CONTEXT:.2f}%, tiled camera frame '
+          f'{100 * TOK_CAM / CONTEXT:.2f}%')
+
+
+def vlm_pictures_that_fit() -> None:
+    """How many pictures fit in a small and a large context window."""
+    labels = ['one squeezed crop', f'{HI} x {HI} tiled',
+              f'{CAM_W} x {CAM_H} tiled']
+    toks = [PIC_TOKENS, TOK_HI, TOK_CAM]
+    small = [CONTEXT // t for t in toks]
+    big = [BIG_CONTEXT // t for t in toks]
+    fig: Figure = plt.figure(figsize=(9.6, 4.0))
+    ax: Axes = fig.add_axes((0.08, 0.17, 0.88, 0.64))
+    _plain(ax)
+    x = np.arange(3)
+    b1 = ax.bar(x - 0.19, small, width=0.36, color=TEAL,
+                label=f'{_thousands(CONTEXT)} token window')
+    b2 = ax.bar(x + 0.19, big, width=0.36, color=PURPLE,
+                label=f'{_thousands(BIG_CONTEXT)} token window')
+    ax.set_yscale('log')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=9.5)
+    ax.set_ylabel('pictures that fit (log scale)', fontsize=10)
+    ax.set_ylim(0.6, 1500)
+    for bars, vals in ((b1, small), (b2, big)):
+        for b, v in zip(bars, vals):
+            ax.text(b.get_x() + b.get_width() / 2, v * 1.2, str(v), ha='center',
+                    fontsize=9.5)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    ax.set_title('A tiled camera frame leaves almost no room for a second picture',
+                 fontsize=12, weight='bold')
+    _save(fig, VLM_DOC, 'pictures-that-fit.svg')
+    print(f'[3c] pictures that fit in {_thousands(CONTEXT)}: {small}; '
+          f'in {_thousands(BIG_CONTEXT)}: {big}')
+
+
+def vlm_attention_cost() -> None:
+    """Attention work grows with the square of the stream, so pictures hurt twice."""
+    n_pics = np.arange(0, 9)
+    base = SYS_TOKENS + Q_TOKENS
+    one = base + n_pics * PIC_TOKENS
+    tiled = base + n_pics * TOK_HI
+    fig: Figure = plt.figure(figsize=(9.8, 4.0))
+    ax: Axes = fig.add_axes((0.10, 0.17, 0.86, 0.64))
+    _plain(ax)
+    ax.plot(n_pics, one.astype(float) ** 2 / 1e6, 'o-', color=TEAL, lw=1.8,
+            label=f'squeezed crops, {PIC_TOKENS} tokens each')
+    ax.plot(n_pics, tiled.astype(float) ** 2 / 1e6, 's-', color=GRIP, lw=1.8,
+            label=f'tiled {HI} pictures, {_thousands(TOK_HI)} tokens each')
+    ax.set_xlabel('pictures in the conversation', fontsize=10)
+    ax.set_ylabel('attention pairs, in millions', fontsize=10)
+    ax.set_title('Attention compares every token with every other, '
+                 'so the cost is the square of the length',
+                 fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False)
+    for k in (2, 5, 8):
+        ax.annotate(f'{tiled[k] ** 2 / 1e6:.1f}M', xy=(k, tiled[k] ** 2 / 1e6),
+                    xytext=(k - 0.45, tiled[k] ** 2 / 1e6 + 18), fontsize=9,
+                    color=GRIP)
+    ax.annotate(f'{one[8] ** 2 / 1e6:.2f}M', xy=(8, one[8] ** 2 / 1e6),
+                xytext=(6.6, 40), fontsize=9, color=TEAL,
+                arrowprops=dict(arrowstyle='-', color=TEAL, lw=0.8))
+    _save(fig, VLM_DOC, 'attention-cost.svg')
+    print(f'[3d] attention pairs with 8 pictures: squeezed {one[8] ** 2:,}, '
+          f'tiled {tiled[8] ** 2:,}, which is '
+          f'{(tiled[8] ** 2) / (one[8] ** 2):.0f} times as much work')

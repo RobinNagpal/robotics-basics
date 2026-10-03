@@ -733,6 +733,294 @@ def merge_table() -> None:
     _save(fig, TOK_DOC, 'merge-table.svg')
 
 
+# --------------------------------------------------------------------------
+# section 3: the embedding table as a lookup
+# --------------------------------------------------------------------------
+
+TABLE_WORDS: list[str] = ['mug', 'cup', 'bowl', 'table', 'shelf', 'gripper',
+                          'wrist', 'red', 'blue', 'pick']
+
+
+def _table_rows() -> list[tuple[str, int, Arr]]:
+    t, e = _tok(), _emb()
+    rows = []
+    for w in TABLE_WORDS:
+        rows.append((END + w, t.ids[END + w], e.small[e.index[w]]))
+    return rows
+
+
+def _draw_table(ax: Axes, rows: list[tuple[str, int, Arr]], x0: float = 0.0,
+                y0: float = 0.0, cw: float = 1.05, rh: float = 0.62,
+                highlight: int | None = None, size: float = 9.0) -> None:
+    n = len(rows)
+    ax.text(x0 - 0.1, y0 + n * rh + 0.30, 'token', fontsize=9.5, color=MUTED,
+            weight='bold', ha='left')
+    ax.text(x0 + 1.55, y0 + n * rh + 0.30, 'id', fontsize=9.5, color=MUTED,
+            weight='bold', ha='center')
+    for j in range(6):
+        ax.text(x0 + 2.2 + (j + 0.5) * cw, y0 + n * rh + 0.30, f'{j + 1}', fontsize=9.5,
+                color=MUTED, weight='bold', ha='center')
+    for i, (name, tid, vec) in enumerate(rows):
+        y = y0 + (n - 1 - i) * rh
+        on = highlight == i
+        ax.text(x0 - 0.1, y + rh / 2, name.replace(END, '␣'), fontsize=9.8,
+                color=LINK if on else INK, va='center', family='DejaVu Sans Mono',
+                weight='bold' if on else 'normal')
+        ax.text(x0 + 1.55, y + rh / 2, str(tid), fontsize=9.3, color=MUTED, va='center',
+                ha='center')
+        for j, v in enumerate(vec):
+            ax.add_patch(Rectangle((x0 + 2.2 + j * cw, y), cw, rh,
+                                   facecolor=LINK_PALE if on else 'white',
+                                   edgecolor=GRID, lw=0.8))
+            ax.text(x0 + 2.2 + (j + 0.5) * cw, y + rh / 2, f'{v:+.2f}', fontsize=size,
+                    ha='center', va='center', color=INK)
+
+
+def embedding_table() -> None:
+    rows = _table_rows()
+    t = _tok()
+    e = _emb()
+    print(f'[s3] table drawn: {len(rows)} of {len(t.vocab)} rows, 6 of '
+          f'{e.full.shape[1]} numbers each')
+    for name, tid, vec in rows:
+        print(f'[s3] {name:9s} id {tid:4d} -> ' + ' '.join(f'{v:+.2f}' for v in vec))
+
+    fig, ax = plt.subplots(figsize=(11.6, 5.6), facecolor='white')
+    _blank(ax)
+    _draw_table(ax, rows, x0=3.6, y0=0.1, highlight=0)
+    ax.text(0.0, 3.15, 'the sentence said ␣mug,', fontsize=11, color=INK)
+    ax.text(0.0, 2.80, f'which is token number {rows[0][1]},', fontsize=11, color=INK)
+    ax.text(0.0, 2.45, f'so the table hands back row {rows[0][1]}', fontsize=11,
+            color=LINK, weight='bold')
+    _arrow(ax, 2.95, 2.55, 3.45, 6.0, colour=LINK, lw=1.6)
+    ax.text(3.6 + 2.2 + 3 * 1.05, -0.55, 'the six learned numbers for that token',
+            fontsize=10, color=MUTED, ha='center')
+    ax.set_xlim(-0.2, 13.2)
+    ax.set_ylim(-0.9, 7.2)
+    ax.set_title('The embedding table is a lookup: one token number picks one row '
+                 'of learned numbers',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'embedding-table.svg')
+
+
+def lookup_as_matrix() -> None:
+    rows = _table_rows()
+    mat = np.array([r[2] for r in rows])
+    pick = 2                                    # the row for the token for bowl
+    one_hot = np.zeros(len(rows))
+    one_hot[pick] = 1.0
+    out = one_hot @ mat
+    print(f'[s3] one-hot row for {rows[pick][0]} times the table gives '
+          + ' '.join(f'{v:+.2f}' for v in out))
+    print(f'[s3] column 1 of that product: '
+          + ' + '.join(f'{o:.0f}x{m:+.2f}' for o, m in zip(one_hot, mat[:, 0]))
+          + f' = {out[0]:+.2f}')
+
+    fig, ax = plt.subplots(figsize=(12.0, 5.0), facecolor='white')
+    _blank(ax)
+    for i, v in enumerate(one_hot):
+        ax.add_patch(Rectangle((i * 0.62, 3.0), 0.62, 0.62,
+                               facecolor=GRIP if v else 'white', edgecolor=GRID, lw=0.8))
+        ax.text((i + 0.5) * 0.62, 3.31, f'{v:.0f}', fontsize=9.5, ha='center',
+                va='center', color='white' if v else INK)
+    ax.text(0.0, 3.92, 'one row of 0s with a single 1, at the place of the token '
+                       f'{rows[pick][0].replace(END, "␣")}',
+            fontsize=10, color=MUTED)
+    ax.text(len(rows) * 0.62 + 0.25, 3.31, 'x', fontsize=15, color=INK, va='center')
+    _draw_table(ax, rows, x0=7.6, y0=0.1, highlight=pick, size=8.6)
+    ax.text(7.6, -0.6, f'the whole table, {len(rows)} rows of 6 numbers', fontsize=10,
+            color=MUTED)
+    ax.text(14.4, 3.31, '=', fontsize=15, color=INK, va='center')
+    for j, v in enumerate(out):
+        ax.add_patch(Rectangle((15.1 + j * 0.86, 3.0), 0.86, 0.62, facecolor=LINK_PALE,
+                               edgecolor=LINK, lw=0.9))
+        ax.text(15.1 + (j + 0.5) * 0.86, 3.31, f'{v:+.2f}', fontsize=9, ha='center',
+                va='center', color=INK)
+    ax.text(15.1, 3.92, 'exactly the highlighted row', fontsize=10, color=LINK)
+    ax.text(15.1, 2.25, 'column 1 works out as\n'
+            + ' + '.join(f'{o:.0f}×{m:+.2f}' for o, m in zip(one_hot[:4], mat[:4, 0]))
+            + f'\n+ ... = {out[0]:+.2f}', fontsize=9.5, color=MUTED, va='top')
+    ax.set_xlim(-0.2, 21.0)
+    ax.set_ylim(-0.9, 4.4)
+    ax.set_title('The lookup is a matrix multiply in disguise, which is why libraries '
+                 'call it a layer',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'lookup-as-matrix.svg')
+
+
+def table_size() -> None:
+    t = _tok()
+    cases = [('this page’s tiny table', len(t.vocab), 6),
+             ('a small model', 8_000, 256),
+             ('a medium model', 32_000, 1_024),
+             ('a large model', 128_000, 4_096)]
+    counts = [v * d for _, v, d in cases]
+    bytes_ = [c * 2 for c in counts]
+    for (name, v, d), c, b in zip(cases, counts, bytes_):
+        print(f'[s3] {name}: {v:,} tokens x {d} numbers = {c:,} weights, '
+              f'{b / 1e6:,.1f} MB at two bytes each')
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.2), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(cases))
+    ax.bar(x, counts, color=[MUTED, LINK, PURPLE, WRIST], width=0.55)
+    ax.set_yscale('log')
+    for i, (c, b) in enumerate(zip(counts, bytes_)):
+        mb = f'{b / 1e6:,.1f} MB' if b >= 1e6 else f'{b / 1e3:,.1f} kB'
+        ax.text(i, c * 1.5, f'{c:,}\nweights\n({mb})', ha='center', fontsize=9.5,
+                color=INK)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{n}\n{v:,} tokens × {d} numbers' for (n, v, d) in cases],
+                       fontsize=9.5)
+    ax.set_ylabel('weights in the embedding table (log scale)', fontsize=10)
+    ax.set_ylim(1e3, max(counts) * 60)
+    ax.set_title('The table is often one of the largest single blocks of weights '
+                 'in a model',
+                 fontsize=12.5, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'table-size.svg')
+
+
+# --------------------------------------------------------------------------
+# section 4: cosine similarity
+# --------------------------------------------------------------------------
+
+def cosine_worked() -> None:
+    e = _emb()
+    a = e.small[e.index['mug']]
+    pairs = [('bowl', e.small[e.index['bowl']]), ('table', e.small[e.index['table']])]
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.0), facecolor='white')
+    for ax, (name, b) in zip(axes, pairs):
+        _blank(ax)
+        prods = a * b
+        dot = float(prods.sum())
+        la, lb = float(np.linalg.norm(a)), float(np.linalg.norm(b))
+        cos = dot / (la * lb)
+        print(f'[s4] mug vs {name}: dot {dot:+.4f}, lengths {la:.4f} and {lb:.4f}, '
+              f'cosine {cos:.3f}')
+        print(f'[s4]   products ' + ' '.join(f'{p:+.4f}' for p in prods))
+        head = ['number', '␣mug', f'␣{name}', 'product']
+        for j, h in enumerate(head):
+            ax.text(j * 1.5, 7.3, h, fontsize=9.8, color=MUTED, weight='bold',
+                    ha='center')
+        for i in range(6):
+            y = 6.5 - i * 0.72
+            ax.text(0.0, y, f'{i + 1}', fontsize=9.6, ha='center', color=MUTED)
+            ax.text(1.5, y, f'{a[i]:+.2f}', fontsize=9.6, ha='center', color=INK)
+            ax.text(3.0, y, f'{b[i]:+.2f}', fontsize=9.6, ha='center', color=INK)
+            ax.text(4.5, y, f'{prods[i]:+.4f}', fontsize=9.6, ha='center', color=LINK)
+        ax.plot([3.9, 5.1], [1.92, 1.92], color=INK, lw=1.0)
+        ax.text(4.5, 1.5, f'{dot:+.4f}', fontsize=10.5, ha='center', color=LINK,
+                weight='bold')
+        ax.text(0.0, 0.85, f'length of ␣mug = {la:.4f}', fontsize=10, color=INK)
+        ax.text(0.0, 0.40, f'length of ␣{name} = {lb:.4f}', fontsize=10, color=INK)
+        ax.text(0.0, -0.20, f'cosine = {dot:+.4f} / ({la:.4f} × {lb:.4f}) '
+                            f'= {cos:.3f}', fontsize=11.5, color=GRIP, weight='bold')
+        ax.set_xlim(-0.8, 5.6)
+        ax.set_ylim(-0.7, 7.9)
+        ax.set_title(f'␣mug against ␣{name}', fontsize=11.5, weight='bold',
+                     color=INK, loc='left')
+    fig.suptitle('Cosine similarity worked out in full: multiply number by number, '
+                 'add, divide by the two lengths',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout(w_pad=3.0)
+    _save(fig, TOK_DOC, 'cosine-worked.svg')
+
+
+def similarity_heatmap() -> None:
+    e = _emb()
+    words = ['mug', 'cup', 'bowl', 'block', 'table', 'shelf', 'gripper', 'wrist',
+             'red', 'blue']
+    m = np.array([[_cos(e.small[e.index[a]], e.small[e.index[b]]) for b in words]
+                  for a in words])
+    print('[s4] cosine table (6 numbers each):')
+    for i, a in enumerate(words):
+        print(f'[s4]   {a:8s} ' + ' '.join(f'{v:5.2f}' for v in m[i]))
+
+    fig, ax = plt.subplots(figsize=(8.6, 7.4), facecolor='white')
+    im = ax.imshow(m, cmap='BrBG', vmin=-1, vmax=1)
+    for i in range(len(words)):
+        for j in range(len(words)):
+            ax.text(j, i, f'{m[i, j]:.2f}', ha='center', va='center', fontsize=8.6,
+                    color='white' if abs(m[i, j]) > 0.62 else INK)
+    ax.set_xticks(range(len(words)))
+    ax.set_xticklabels([f'␣{w}' for w in words], rotation=45, ha='right',
+                       fontsize=9.5)
+    ax.set_yticks(range(len(words)))
+    ax.set_yticklabels([f'␣{w}' for w in words], fontsize=9.5)
+    ax.tick_params(length=0)
+    fig.colorbar(im, ax=ax, shrink=0.72, label='cosine similarity')
+    ax.set_title('Things used in the same way end up pointing the same way',
+                 fontsize=12.5, weight='bold', color=INK, loc='left', pad=12)
+    _save(fig, TOK_DOC, 'similarity-heatmap.svg')
+
+
+def cosine_not_length() -> None:
+    a = np.array([3.0, 1.0])
+    b = np.array([6.0, 2.0])
+    c = np.array([1.0, 3.0])
+    rows = [('b', b), ('c', c)]
+    print('[s4] a = (3, 1)')
+    for name, v in rows:
+        d = float(np.linalg.norm(a - v))
+        print(f'[s4] a vs {name} = ({v[0]:.0f}, {v[1]:.0f}): cosine {_cos(a, v):.3f}, '
+              f'straight-line distance {d:.3f}')
+
+    fig, ax = plt.subplots(figsize=(8.6, 6.2), facecolor='white')
+    _plain(ax)
+    for v, colour, lab in ((a, INK, 'a = (3, 1)'), (b, LINK, 'b = (6, 2)'),
+                           (c, WRIST, 'c = (1, 3)')):
+        ax.add_patch(FancyArrow(0, 0, v[0], v[1], width=0.035, head_width=0.22,
+                                head_length=0.3, length_includes_head=True,
+                                color=colour, zorder=3))
+        ax.text(v[0] + 0.18, v[1] + 0.12, lab, fontsize=11, color=colour, weight='bold')
+    ax.plot([a[0], b[0]], [a[1], b[1]], ls=':', color=MUTED, lw=1.3)
+    ax.plot([a[0], c[0]], [a[1], c[1]], ls=':', color=MUTED, lw=1.3)
+    ax.text(4.6, 1.35, f'distance {np.linalg.norm(a - b):.2f}', fontsize=9.5,
+            color=MUTED)
+    ax.text(1.5, 2.3, f'distance {np.linalg.norm(a - c):.2f}', fontsize=9.5, color=MUTED)
+    ax.text(0.25, 5.25, f'cosine(a, b) = {_cos(a, b):.2f}: same direction, '
+                        'twice as long', fontsize=11, color=LINK, weight='bold')
+    ax.text(0.25, 4.85, f'cosine(a, c) = {_cos(a, c):.2f}: nearer, but pointing '
+                        'elsewhere', fontsize=11, color=WRIST, weight='bold')
+    ax.set_xlim(-0.3, 7.2)
+    ax.set_ylim(-0.3, 5.7)
+    ax.set_xlabel('first number', fontsize=10)
+    ax.set_ylabel('second number', fontsize=10)
+    ax.set_aspect('equal')
+    ax.set_title('Cosine asks about direction only, which is why it is used instead '
+                 'of straight-line distance',
+                 fontsize=12.2, weight='bold', color=INK, loc='left')
+    _save(fig, TOK_DOC, 'cosine-not-length.svg')
+
+
+def nearest_neighbours() -> None:
+    e = _emb()
+    queries = ['mug', 'gripper', 'table', 'red']
+    fig, axes = plt.subplots(1, len(queries), figsize=(13.0, 4.2), facecolor='white')
+    for ax, q in zip(axes, queries):
+        v = e.full[e.index[q]]
+        sims = sorted(((_cos(v, e.full[i]), w) for i, w in enumerate(e.words) if w != q),
+                      reverse=True)[:5]
+        print(f'[s4] nearest to ␣{q} (all 64 numbers): '
+              + ', '.join(f'{w} {s:.3f}' for s, w in sims))
+        _plain(ax)
+        names = [w for _, w in sims][::-1]
+        vals = [s for s, _ in sims][::-1]
+        ax.barh(range(len(vals)), vals, color=LINK, height=0.62)
+        for i, (val, nm) in enumerate(zip(vals, names)):
+            ax.text(0.02, i, f'␣{nm}', va='center', fontsize=10, color='white')
+            ax.text(val + 0.02, i, f'{val:.2f}', va='center', fontsize=9.5, color=INK)
+        ax.set_yticks([])
+        ax.set_xlim(0, 1.18)
+        ax.set_xticks([0, 0.5, 1.0])
+        ax.set_xlabel('cosine', fontsize=9.5)
+        ax.set_title(f'␣{q}', fontsize=12, weight='bold', color=INK)
+    fig.suptitle('The five nearest tokens to four given tokens, using all 64 numbers '
+                 'of each row', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TOK_DOC, 'nearest-neighbours.svg')
+
+
 def main() -> None:
     """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
     global PNG_DIR
@@ -746,6 +1034,13 @@ def main() -> None:
     three_ways_to_split()
     vocabulary_size_curve()
     merge_table()
+    embedding_table()
+    lookup_as_matrix()
+    table_size()
+    cosine_worked()
+    similarity_heatmap()
+    cosine_not_length()
+    nearest_neighbours()
     print(f'wrote the diagrams under {IMAGES}')
 
 

@@ -656,3 +656,380 @@ def training_memory() -> None:
                  'number sets every bar here', fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, TRAIN_DOC, 'training-memory.svg')
+
+
+# ==========================================================================
+# section 4: running the model one token at a time, and the key-value cache
+# ==========================================================================
+
+def generation_steps() -> None:
+    prompt = ['the', 'arm', 'lifts']
+    made = ['the', 'red', 'block']
+    reads = [len(prompt) + i for i in range(len(made))]
+    print(f'[steps] prompt of {len(prompt)} tokens, then steps that read '
+          f'{reads} positions and write one token each: {made}')
+
+    fig, ax = plt.subplots(figsize=(12.2, 5.8), facecolor='white')
+    _bare(ax)
+    w, h = 1.25, 0.58
+    rows = [('the prompt goes in', prompt, -1)]
+    for i, token in enumerate(made):
+        rows.append((f'step {i + 1}', prompt + made[:i] + [token], len(prompt) + i))
+    for r, (name, tokens, new_at) in enumerate(rows):
+        y = (len(rows) - 1 - r) * 1.02
+        for j, token in enumerate(tokens):
+            x = 2.0 + j * 1.4
+            fresh = (j == new_at)
+            _box(ax, x, y, w, h, token,
+                 face='#fdf0d8' if fresh else '#eef3f9',
+                 edge=JOINT if fresh else LINK,
+                 fontsize=10, colour=INK, weight='bold' if fresh else 'normal')
+        ax.text(1.85, y + h / 2, name, ha='right', va='center', fontsize=10.5, color=INK,
+                weight='bold')
+        if new_at >= 0:
+            ax.text(2.0 + len(tokens) * 1.4 + 0.1, y + h / 2,
+                    f'reads {new_at} earlier positions, writes 1 token', ha='left',
+                    va='center', fontsize=9.5, color=MUTED)
+        else:
+            ax.text(2.0 + len(tokens) * 1.4 + 0.1, y + h / 2,
+                    f'all {len(tokens)} positions at once', ha='left', va='center',
+                    fontsize=9.5, color=MUTED)
+    ax.text(6.0, -0.75, 'training read the whole sentence in one pass; generation adds one '
+                        'token at a time and each step reads everything before it',
+            ha='center', va='center', fontsize=10.5, color=INK)
+    ax.set_xlim(-2.6, 16.0)
+    ax.set_ylim(-1.15, len(rows) * 1.02 + 0.2)
+    ax.set_title('Generation is a loop: one token out, then that token goes back in',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'generation-steps.svg')
+
+
+def cache_saves_work() -> None:
+    n = np.arange(1, 1025)
+    without = n * (n + 1) / 2.0
+    with_cache = n.astype(float)
+    for k in (8, 128, 512, 1024):
+        print(f'[cache-work] {k} tokens: without a cache {int(k * (k + 1) / 2):,} '
+              f'position passes, with a cache {k:,}, which is '
+              f'{(k + 1) / 2:.1f} times less work')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(n, without, color=GRIP, lw=2, label='no cache: every step redoes every position')
+    ax.plot(n, with_cache, color=SLIDE, lw=2, label='with a cache: every step does one position')
+    for k in (128, 512, 1024):
+        ax.scatter([k], [k * (k + 1) / 2], color=GRIP, s=30, zorder=5)
+        ax.text(k * 0.95, k * (k + 1) / 2 * 1.5, f'{int(k * (k + 1) / 2):,}', fontsize=9,
+                color=GRIP, ha='right')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('tokens generated', fontsize=10)
+    ax.set_ylabel('position passes through the stack (log scale)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('The work the cache removes', fontsize=12, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ks = [8, 64, 512, 4096]
+    ratios = [(k + 1) / 2 for k in ks]
+    ax.bar([str(k) for k in ks], ratios, color=PURPLE, width=0.55)
+    for i, (k, r) in enumerate(zip(ks, ratios)):
+        ax.text(i, r * 1.05, f'{r:.0f}x', ha='center', fontsize=10.5, weight='bold', color=INK)
+        print(f'[cache-work] saving factor at {k} tokens: {r:.1f} times')
+    ax.set_yscale('log')
+    ax.set_ylim(1, max(ratios) * 3)
+    ax.set_xlabel('tokens generated', fontsize=10)
+    ax.set_ylabel('times less work than redoing everything (log scale)', fontsize=10)
+    ax.set_title('The longer the answer, the more the cache saves', fontsize=12,
+                 weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TRAIN_DOC, 'cache-saves-work.svg')
+
+
+def cache_size_arithmetic() -> None:
+    lengths = [512, 2048, 8192, 32768]
+    sizes = [CACHE_PER_TOKEN * n for n in lengths]
+    for n, b in zip(lengths, sizes):
+        print(f'[cache-size] {n:,} tokens: {b:,} bytes = {b / MIB:.0f} MiB '
+              f'({b / WEIGHT_BYTES:.2f} times the weights)')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.0), facecolor='white',
+                             gridspec_kw={'width_ratios': [1.15, 1.0]})
+    ax = axes[0]
+    _bare(ax)
+    lines = [
+        ('keys and values, so two of them', '2'),
+        (f'one pair for each of {LAYERS} layers', f'x {LAYERS}'),
+        (f'{HEADS} heads in each layer', f'x {HEADS}'),
+        (f'{HEAD_DIM} numbers in each head', f'x {HEAD_DIM}'),
+        (f'{NBYTES} bytes for each number', f'x {NBYTES}'),
+    ]
+    for i, (text, factor) in enumerate(lines):
+        y = 5.2 - i * 0.78
+        ax.text(0.0, y, text, fontsize=11, color=INK)
+        ax.text(6.3, y, factor, fontsize=11, color=LINK, weight='bold', ha='right')
+    ax.plot([-0.1, 6.4], [1.05, 1.05], color=INK, lw=1.0)
+    ax.text(0.0, 0.5, 'bytes of cache for one token', fontsize=11.5, weight='bold', color=INK)
+    ax.text(6.3, 0.5, f'{CACHE_PER_TOKEN:,}', fontsize=11.5, weight='bold', color=SLIDE,
+            ha='right')
+    ax.text(0.0, -0.15, f'which is {CACHE_PER_TOKEN / 1024:.0f} KiB a token, so a sequence of '
+                        f'{TRAINED_LEN:,} tokens holds\n'
+                        f'{CACHE_PER_TOKEN * TRAINED_LEN / MIB:.0f} MiB and the weights '
+                        f'hold {WEIGHT_BYTES / MIB:.0f} MiB',
+            fontsize=10.5, color=INK, va='top')
+    ax.set_xlim(-0.4, 6.8)
+    ax.set_ylim(-1.6, 5.9)
+    ax.set_title('The cache for one token, worked out factor by factor', fontsize=12,
+                 weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    vals = [b / MIB for b in sizes]
+    ax.bar([f'{n:,}' for n in lengths], vals, color=TEAL, width=0.55)
+    for i, v in enumerate(vals):
+        ax.text(i, v * 1.05, f'{v:,.0f} MiB', ha='center', fontsize=10, color=INK)
+    ax.axhline(WEIGHT_BYTES / MIB, color=GRIP, ls='--', lw=1.4)
+    ax.text(-0.42, WEIGHT_BYTES / MIB * 1.12, f'all the weights: {WEIGHT_BYTES / MIB:.0f} MiB',
+            fontsize=9.5, color=GRIP)
+    ax.set_yscale('log')
+    ax.set_ylim(20, max(vals) * 3)
+    ax.set_xlabel('tokens held in the cache', fontsize=10)
+    ax.set_ylabel('cache for one sequence (MiB, log scale)', fontsize=10)
+    ax.set_title('Past a few thousand tokens the cache is the bigger thing in memory',
+                 fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TRAIN_DOC, 'cache-size-arithmetic.svg')
+
+
+def cache_versus_weights() -> None:
+    batches = [1, 4, 16, 64]
+    length = 2048
+    per_seq = CACHE_PER_TOKEN * length
+    totals = [(WEIGHT_BYTES + b * per_seq) / GIB for b in batches]
+    for b, t in zip(batches, totals):
+        print(f'[cache-vs-weights] {length:,} tokens, {b} sequences at once: '
+              f'weights {WEIGHT_BYTES / GIB:.2f} GiB + cache {b * per_seq / GIB:.2f} GiB '
+              f'= {t:.2f} GiB')
+
+    fig, ax = plt.subplots(figsize=(10.6, 5.2), facecolor='white')
+    _plain(ax)
+    labels = [str(b) for b in batches]
+    ax.bar(labels, [WEIGHT_BYTES / GIB] * len(batches), color=LINK, width=0.5,
+           label='the weights, shared by every sequence')
+    ax.bar(labels, [b * per_seq / GIB for b in batches], bottom=[WEIGHT_BYTES / GIB] * len(batches),
+           color=TEAL, width=0.5, label=f'the caches, one for each sequence of {length:,} tokens')
+    for i, t in enumerate(totals):
+        ax.text(i, t + 0.15, f'{t:.2f} GiB', ha='center', fontsize=10.5, color=INK)
+    ax.set_xlabel('sequences being answered at the same time', fontsize=10)
+    ax.set_ylabel('memory held (GiB)', fontsize=10)
+    ax.set_ylim(0, max(totals) * 1.18)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('The weights are paid for once; the cache is paid for again for every '
+                 'conversation', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'cache-versus-weights.svg')
+
+
+# ==========================================================================
+# section 5: choosing the next token
+# ==========================================================================
+
+SAMPLE_POS: int = 3        # the position where the model is least sure
+
+
+def logits_to_probabilities() -> None:
+    s = sim()
+    i = SAMPLE_POS
+    z, p = s.logits[i], s.probs[i]
+    order = np.argsort(-p)
+    print(f'[sampling] position {i + 1} ("{s.inputs[i]}" goes in, "{s.targets[i]}" is right)')
+    print('[sampling] raw outputs: ' + ', '.join(f'{WORDS[k]} {z[k]:+.2f}' for k in order))
+    print('[sampling] after softening: ' + ', '.join(f'{WORDS[k]} {p[k]:.3f}' for k in order))
+    print(f'[sampling] they add up to {p.sum():.3f}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.2, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    names = [WORDS[k] for k in order]
+    ax.bar(names, z[order], color=[LINK if v >= 0 else WRIST for v in z[order]], width=0.6)
+    for j, v in enumerate(z[order]):
+        ax.text(j, v + (0.12 if v >= 0 else -0.3), f'{v:+.2f}', ha='center', fontsize=9,
+                color=INK)
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.set_xticklabels(names, rotation=45, ha='right', fontsize=9.5)
+    ax.set_ylabel('raw output for that word', fontsize=10)
+    ax.set_title('What comes out of the last layer: one plain number for each word',
+                 fontsize=11.5, weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ax.bar(names, p[order], color=SLIDE, width=0.6)
+    for j, v in enumerate(p[order]):
+        ax.text(j, v + 0.006, f'{v:.3f}', ha='center', fontsize=9, color=INK)
+    ax.set_xticklabels(names, rotation=45, ha='right', fontsize=9.5)
+    ax.set_ylim(0, max(p) * 1.25)
+    ax.set_ylabel('chance of that word', fontsize=10)
+    ax.set_title(f'After softening: {len(WORDS)} chances that add up to {p.sum():.2f}',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TRAIN_DOC, 'logits-to-probabilities.svg')
+
+
+def three_temperatures() -> None:
+    s = sim()
+    z = s.logits[SAMPLE_POS]
+    temps = [0.5, 1.0, 1.5]
+    colours = [PURPLE, SLIDE, WRIST]
+    order = np.argsort(-_softmax(z))
+    names = [WORDS[k] for k in order]
+    dists = []
+    for t in temps:
+        p = _softmax(z / t)
+        dists.append(p)
+        ent = float(-np.sum(p * np.log(p)))
+        print(f'[temperature] T = {t}: top word "{WORDS[int(p.argmax())]}" at {p.max():.3f}, '
+              f'spread (entropy) {ent:.2f} nats, two least likely words '
+              f'{p[order[-1]]:.4f} and {p[order[-2]]:.4f}')
+        print(f'[temperature] T = {t}: ' + ', '.join(f'{WORDS[k]} {p[k]:.3f}' for k in order))
+
+    fig, ax = plt.subplots(figsize=(12.4, 5.4), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(WORDS))
+    for j, (t, p, colour) in enumerate(zip(temps, dists, colours)):
+        ent = float(-np.sum(p * np.log(p)))
+        ax.bar(x + (j - 1) * 0.27, p[order], width=0.25, color=colour,
+               label=f'temperature {t}  (spread {ent:.2f} nats)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, rotation=45, ha='right', fontsize=10)
+    ax.set_ylabel('chance of that word', fontsize=10)
+    ax.set_xlabel('the twelve words, most likely first', fontsize=10)
+    ax.legend(fontsize=10, frameon=False, loc='upper right')
+    ax.set_title('One set of raw outputs divided by three temperatures: below 1 sharpens, '
+                 'above 1 flattens', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'three-temperatures.svg')
+
+
+def top_p_cut() -> None:
+    s = sim()
+    p = s.probs[SAMPLE_POS]
+    order = np.argsort(-p)
+    sp = p[order]
+    cum = np.cumsum(sp)
+    cutoff = 0.9
+    keep = int(np.searchsorted(cum, cutoff) + 1)
+    kept = sp[:keep]
+    renorm = kept / kept.sum()
+    print(f'[top-p] cutting at {cutoff}: the running total reaches '
+          f'{cum[keep - 1]:.3f} after {keep} words, so {keep} of {len(WORDS)} words are kept '
+          f'and {len(WORDS) - keep} are thrown away')
+    print('[top-p] running total: ' +
+          ', '.join(f'{WORDS[k]} {c:.3f}' for k, c in zip(order, cum)))
+    print('[top-p] kept and shared out again: ' +
+          ', '.join(f'{WORDS[k]} {v:.3f}' for k, v in zip(order[:keep], renorm)))
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.0), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    names = [WORDS[k] for k in order]
+    ax.bar(names, sp, color=[SLIDE if j < keep else '#dddddd' for j in range(len(sp))],
+           width=0.6)
+    ax2 = ax.twinx()
+    ax2.plot(names, cum, color=GRIP, marker='o', lw=1.6, label='running total')
+    ax2.axhline(cutoff, color=GRIP, ls='--', lw=1.2)
+    ax2.text(len(names) - 0.4, cutoff + 0.02, f'cut at {cutoff}', ha='right', fontsize=9.5,
+             color=GRIP)
+    ax2.set_ylim(0, 1.05)
+    ax2.set_ylabel('running total of the chances', fontsize=10, color=GRIP)
+    ax2.tick_params(axis='y', colors=GRIP, labelsize=9.5)
+    ax.axvline(keep - 0.5, color=INK, ls=':', lw=1.4)
+    ax.set_xticklabels(names, rotation=45, ha='right', fontsize=9.5)
+    ax.set_ylabel('chance of that word', fontsize=10)
+    ax.set_title(f'The running total passes {cutoff} after {keep} words', fontsize=11.5,
+                 weight='bold', color=INK)
+
+    ax = axes[1]
+    _plain(ax)
+    ax.bar(names[:keep], renorm, color=TEAL, width=0.5)
+    for j, v in enumerate(renorm):
+        ax.text(j, v + 0.008, f'{v:.3f}', ha='center', fontsize=10, color=INK)
+    ax.set_xticklabels(names[:keep], rotation=45, ha='right', fontsize=10)
+    ax.set_ylim(0, max(renorm) * 1.25)
+    ax.set_ylabel('chance after sharing out again', fontsize=10)
+    ax.set_title(f'The {keep} survivors, shared out so they add up to {renorm.sum():.2f}',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, TRAIN_DOC, 'top-p-cut.svg')
+
+
+def greedy_loses() -> None:
+    s = sim()
+    first = s.probs[SAMPLE_POS]
+    order = np.argsort(-first)[:2]
+    branch: dict[int, Arr] = {}
+    seed_used = -1
+    for seed in range(20, 400):
+        rng = np.random.default_rng(seed)
+        cand = {int(k): _softmax(rng.normal(0.0, 1.6, size=len(WORDS))) for k in order}
+        joints = {(int(k), int(c)): float(first[k] * cand[int(k)][c])
+                  for k in order for c in np.argsort(-cand[int(k)])[:3]}
+        greedy_first = int(order[0])
+        greedy_second = int(np.argmax(cand[greedy_first]))
+        best = max(joints, key=lambda key: joints[key])
+        if best[0] != greedy_first and joints[best] > joints[(greedy_first, greedy_second)] * 1.3:
+            branch = cand
+            seed_used = seed
+            break
+    greedy_first = int(order[0])
+    greedy_second = int(np.argmax(branch[greedy_first]))
+    greedy_joint = float(first[greedy_first] * branch[greedy_first][greedy_second])
+    pairs = {(int(k), int(c)): float(first[k] * branch[int(k)][c])
+             for k in order for c in np.argsort(-branch[int(k)])[:3]}
+    best = max(pairs, key=lambda key: pairs[key])
+    print(f'[greedy] second-step numbers from seed {seed_used}')
+    print(f'[greedy] greedy takes "{WORDS[greedy_first]}" ({first[greedy_first]:.3f}) then '
+          f'"{WORDS[greedy_second]}" ({branch[greedy_first][greedy_second]:.3f}), '
+          f'so the pair has chance {greedy_joint:.4f}')
+    print(f'[greedy] the best pair is "{WORDS[best[0]]}" ({first[best[0]]:.3f}) then '
+          f'"{WORDS[best[1]]}" ({branch[best[0]][best[1]]:.3f}), '
+          f'chance {pairs[best]:.4f}, which is {pairs[best] / greedy_joint:.2f} times better')
+
+    fig, ax = plt.subplots(figsize=(12.0, 6.0), facecolor='white')
+    _bare(ax)
+    _box(ax, 0.0, 3.3, 2.0, 0.7, f'"{s.inputs[SAMPLE_POS]}"', face='#eef3f9', edge=LINK,
+         fontsize=11)
+    ys = [5.1, 1.6]
+    for bi, k in enumerate(order):
+        k = int(k)
+        ax.add_patch(Rectangle((3.4, ys[bi] - 0.35), 2.1, 0.7, facecolor='white',
+                               edgecolor=SLIDE if k == best[0] else INK, lw=1.4, zorder=2))
+        ax.text(4.45, ys[bi], f'"{WORDS[k]}"  {first[k]:.3f}', ha='center', va='center',
+                fontsize=11, color=INK, zorder=3)
+        _arrow(ax, 2.05, 3.65, 3.35, ys[bi], colour=MUTED, head=0.11)
+        tops = np.argsort(-branch[k])[:3]
+        for ci, c in enumerate(tops):
+            c = int(c)
+            yy = ys[bi] + 1.1 - ci * 1.1
+            joint = float(first[k] * branch[k][c])
+            winner = (k, c) == best
+            greedy = (k == greedy_first and c == greedy_second)
+            face = '#eaf4ec' if winner else ('#fdecec' if greedy else 'white')
+            edge = SLIDE if winner else (GRIP if greedy else '#bbbbbb')
+            ax.add_patch(Rectangle((6.9, yy - 0.34), 4.6, 0.68, facecolor=face,
+                                   edgecolor=edge, lw=1.4, zorder=2))
+            ax.text(7.1, yy, f'"{WORDS[c]}"  {branch[k][c]:.3f}', ha='left', va='center',
+                    fontsize=10.5, color=INK, zorder=3)
+            ax.text(11.3, yy, f'pair: {joint:.4f}', ha='right', va='center', fontsize=10.5,
+                    color=SLIDE if winner else (GRIP if greedy else MUTED), zorder=3,
+                    weight='bold' if winner or greedy else 'normal')
+            _arrow(ax, 5.55, ys[bi], 6.85, yy, colour='#cccccc', head=0.09)
+    ax.text(4.45, 6.5, 'first token', ha='center', fontsize=10.5, weight='bold', color=INK)
+    ax.text(9.2, 6.5, 'second token, and the chance of the pair', ha='center', fontsize=10.5,
+            weight='bold', color=INK)
+    ax.text(5.9, -0.55, f'taking the best first token gives a pair worth {greedy_joint:.4f}, '
+                        f'while the best pair is worth {pairs[best]:.4f}',
+            ha='center', fontsize=11, color=INK)
+    ax.set_xlim(-0.3, 11.9)
+    ax.set_ylim(-1.0, 6.9)
+    ax.set_title('Why always taking the most likely token is not the same as finding the '
+                 'most likely answer', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, TRAIN_DOC, 'greedy-loses.svg')

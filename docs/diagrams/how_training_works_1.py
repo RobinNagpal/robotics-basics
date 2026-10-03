@@ -938,8 +938,7 @@ def huber_curve() -> None:
 
 def fitted_under_three_losses() -> None:
     grid = np.linspace(0.5, 4.0, 7001)
-    sq = mse_w(grid, Y1_BAD * 0 + X1 * 0 + X1, Y1_BAD) if False else \
-        np.array([float(np.mean((w * X1 - Y1_BAD) ** 2)) for w in grid])
+    sq = np.array([float(np.mean((w * X1 - Y1_BAD) ** 2)) for w in grid])
     ab = np.array([float(np.mean(np.abs(w * X1 - Y1_BAD))) for w in grid])
     hub = np.array([float(huber_w(w, 1.0, X1, Y1_BAD)[0]) for w in grid])
     b_sq = float(grid[int(np.argmin(sq))])
@@ -1062,3 +1061,263 @@ def why_not_squared_for_a_choice() -> None:
                  fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, SCORE_DOC, 'why-not-squared-for-a-choice.svg')
+
+
+# ==========================================================================
+# 02_gradient-descent.md
+# ==========================================================================
+
+def descent1(w0: float, eta: float, steps: int) -> tuple[Arr, Arr, Arr]:
+    """Plain gradient descent on the one-weight squared-error loss."""
+    w = float(w0)
+    ws, losses, slopes = [w], [float(mse_w(w)[0])], []
+    for _ in range(steps):
+        g = slope_mse(w)
+        slopes.append(g)
+        w = w - eta * g
+        ws.append(w)
+        losses.append(float(mse_w(w)[0]))
+    slopes.append(slope_mse(w))
+    return np.array(ws), np.array(losses), np.array(slopes)
+
+
+# ---------------- section 1: the slope of the loss curve ----------------
+
+def tiny_nudge() -> None:
+    w = 1.0
+    h = 0.01
+    l0 = float(mse_w(w)[0])
+    l1 = float(mse_w(w + h)[0])
+    ratio = (l1 - l0) / h
+    print(f'[g1] at w = {w:.2f} the loss is {l0:.4f}')
+    print(f'[g1] at w = {w + h:.2f} the loss is {l1:.4f}, a change of {l1 - l0:+.4f}')
+    print(f'[g1] change in loss divided by change in w = {ratio:+.4f}; '
+          f'the exact slope is {slope_mse(w):+.4f}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white')
+    ws = np.linspace(0.0, 5.0, 801)
+    _plain(axes[0])
+    axes[0].plot(ws, mse_w(ws), color=SLIDE, lw=2.6)
+    axes[0].scatter([w], [l0], s=100, color=GRIP, zorder=5)
+    axes[0].add_patch(Rectangle((0.6, l0 - 8), 0.8, 16, facecolor='none',
+                                edgecolor=INK, lw=1.2, ls='--'))
+    axes[0].text(1.55, l0 + 14, 'the small box on the right', fontsize=10, color=INK)
+    axes[0].set_xlabel('the one weight, w', fontsize=10)
+    axes[0].set_ylabel('mean squared error (mm$^2$)', fontsize=10)
+    axes[0].set_ylim(0, 100)
+    axes[0].set_title('The whole loss curve', fontsize=11.5, weight='bold', color=INK)
+    _plain(axes[1])
+    zw = np.linspace(0.96, 1.05, 400)
+    axes[1].plot(zw, mse_w(zw), color=SLIDE, lw=2.8)
+    axes[1].scatter([w, w + h], [l0, l1], s=100, color=[GRIP, LINK], zorder=5)
+    axes[1].plot([w, w + h], [l0, l0], color=INK, lw=1.4)
+    axes[1].plot([w + h, w + h], [l0, l1], color=INK, lw=1.4)
+    axes[1].text(w + h / 2, l0 - 0.07, f'move w by {h:.2f}', ha='center', fontsize=10,
+                 color=INK)
+    axes[1].text(w + h + 0.002, (l0 + l1) / 2, f'loss changes by {l1 - l0:+.4f}',
+                 fontsize=10, color=INK, va='center')
+    axes[1].text(0.962, l1 - 0.12, f'{l1 - l0:+.4f} / {h:.2f} = {ratio:+.3f}\n'
+                 'so the loss falls by about 44 mm$^2$\nfor every 1 that w rises',
+                 fontsize=10, color=GRIP, weight='bold')
+    axes[1].set_xlabel('the one weight, w', fontsize=10)
+    axes[1].set_ylabel('mean squared error (mm$^2$)', fontsize=10)
+    axes[1].set_title(f'A nudge of {h:.2f} at w = {w:.2f}', fontsize=11.5,
+                      weight='bold', color=INK)
+    fig.suptitle('The slope is the change in the loss divided by the change in the '
+                 'weight that caused it',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, DESC_DOC, 'tiny-nudge.svg')
+
+
+def slope_at_three_places() -> None:
+    picks = [0.5, 1.5, W_STAR, 4.5]
+    cols = [LINK, TEAL, INK, GRIP]
+    for w in picks:
+        print(f'[g1] at w = {w:.3f}: loss {mse_w(w)[0]:.4f}, slope {slope_mse(w):+.4f}, '
+              f'downhill means moving w '
+              f'{"up" if slope_mse(w) < 0 else ("down" if slope_mse(w) > 0 else "nowhere")}')
+
+    fig, ax = plt.subplots(figsize=(10.4, 5.6), facecolor='white')
+    _plain(ax)
+    ws = np.linspace(0.0, 5.2, 801)
+    ax.plot(ws, mse_w(ws), color=SLIDE, lw=2.8, zorder=2)
+    for w, colour in zip(picks, cols):
+        lo = float(mse_w(w)[0])
+        g = slope_mse(w)
+        seg = np.linspace(w - 0.6, w + 0.6, 10)
+        ax.plot(seg, lo + g * (seg - w), color=colour, lw=2.0, zorder=3)
+        ax.scatter([w], [lo], s=100, color=colour, edgecolor=INK, lw=0.7, zorder=5)
+        ax.text(w, lo + 7.0, f'w = {w:.2f}\nslope {g:+.2f}', ha='center', fontsize=10,
+                color=colour, weight='bold')
+    ax.annotate('slope negative: the loss falls as w rises,\nso step w upwards',
+                xy=(0.9, 60), xytext=(1.0, 78), fontsize=10, color=LINK,
+                arrowprops=dict(arrowstyle='->', color=LINK, lw=1.1))
+    ax.annotate('slope positive: the loss rises as w rises,\nso step w downwards',
+                xy=(4.3, 25), xytext=(2.55, 62), fontsize=10, color=GRIP,
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
+    ax.text(W_STAR, 2.0, 'slope 0 at the bottom', ha='center', fontsize=10, color=INK)
+    ax.set_xlim(0, 5.2)
+    ax.set_ylim(0, 102)
+    ax.set_xlabel('the one weight, w', fontsize=10)
+    ax.set_ylabel('mean squared error (mm$^2$)', fontsize=10)
+    ax.set_title('The slope at four settings of w, with the straight line it describes',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, DESC_DOC, 'slope-at-three-places.svg')
+
+
+def nudge_gets_smaller() -> None:
+    w = 1.0
+    hs = np.array([1.0, 0.5, 0.1, 0.01, 0.001, 0.0001])
+    exact = slope_mse(w)
+    rows = []
+    for h in hs:
+        l0 = float(mse_w(w)[0])
+        l1 = float(mse_w(w + h)[0])
+        r = (l1 - l0) / h
+        rows.append([f'{h:g}', f'{l1:.6f}', f'{l1 - l0:+.6f}', f'{r:+.4f}',
+                     f'{abs(r - exact):.4f}'])
+        print(f'[g1] nudge {h:g}: ratio {r:+.6f}, which is {abs(r - exact):.6f} '
+              f'away from the exact slope {exact:+.4f}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white',
+                             gridspec_kw={'width_ratios': [1.25, 1.0]})
+    _table(axes[0], ['nudge in w', 'loss after it', 'change in loss',
+                     'change divided by nudge', 'gap to the exact slope'],
+           rows, [1.1, 1.3, 1.3, 1.6, 1.5],
+           colours=[LINK, INK, GRIP, SLIDE, MUTED], fontsize=10.0, row_h=1.0)
+    axes[0].set_title(f'Smaller nudges at w = 1.00, closing in on {exact:+.2f}',
+                      fontsize=11.5, weight='bold', color=INK, pad=12)
+    _plain(axes[1])
+    ratios = [(float(mse_w(w + h)[0]) - float(mse_w(w)[0])) / h for h in hs]
+    axes[1].plot(hs, ratios, marker='o', color=SLIDE, lw=2.2)
+    axes[1].axhline(exact, color=GRIP, ls='--', lw=1.6)
+    axes[1].text(0.0003, exact + 0.6, f'the exact slope, {exact:+.2f}', fontsize=10,
+                 color=GRIP)
+    axes[1].set_xscale('log')
+    axes[1].set_xlabel('size of the nudge in w (log scale)', fontsize=10)
+    axes[1].set_ylabel('change in loss divided by nudge', fontsize=10)
+    axes[1].set_title('The ratio settles down as the nudge shrinks', fontsize=11.5,
+                      weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, DESC_DOC, 'nudge-gets-smaller.svg')
+
+
+# ---------------- section 2: one step downhill ----------------
+
+ETA_GOOD: float = 0.03
+
+
+def first_steps_table() -> None:
+    ws, losses, slopes = descent1(0.0, ETA_GOOD, 8)
+    rows = []
+    for k in range(8):
+        step = -ETA_GOOD * slopes[k]
+        rows.append([f'{k}', f'{ws[k]:.4f}', f'{losses[k]:.4f}', f'{slopes[k]:+.4f}',
+                     f'{step:+.4f}', f'{ws[k + 1]:.4f}'])
+        print(f'[g2] step {k}: w {ws[k]:.4f}, loss {losses[k]:.4f}, '
+              f'slope {slopes[k]:+.4f}, move {step:+.4f}, new w {ws[k + 1]:.4f}')
+    print(f'[g2] after 8 steps at a learning rate of {ETA_GOOD}: w = {ws[8]:.4f}, '
+          f'loss = {losses[8]:.4f}, against the bottom at w = {W_STAR:.4f}, '
+          f'loss = {L_STAR:.4f}')
+
+    fig, ax = plt.subplots(figsize=(10.8, 5.8), facecolor='white')
+    _table(ax, ['step', 'w now', 'loss now', 'slope now',
+                f'move = -{ETA_GOOD} x slope', 'w next'],
+           rows, [0.8, 1.2, 1.2, 1.3, 1.9, 1.2],
+           colours=[INK, LINK, SLIDE, GRIP, PURPLE, LINK], fontsize=10.5, row_h=1.0)
+    ax.set_title(f'Eight steps downhill from w = 0, at a learning rate of {ETA_GOOD}',
+                 fontsize=12.5, weight='bold', color=INK, pad=14)
+    ax.text(0.5, -9.9, f'the bottom of this curve is at w = {W_STAR:.4f} with a loss of '
+            f'{L_STAR:.4f} mm$^2$', ha='center', fontsize=11, color=INK)
+    _save(fig, DESC_DOC, 'first-steps-table.svg')
+
+
+def steps_on_the_curve() -> None:
+    ws, losses, _ = descent1(0.0, ETA_GOOD, 12)
+    fig, ax = plt.subplots(figsize=(10.4, 5.6), facecolor='white')
+    _plain(ax)
+    grid = np.linspace(-0.3, 5.0, 801)
+    ax.plot(grid, mse_w(grid), color=SLIDE, lw=2.6, zorder=2)
+    ax.plot(ws, losses, color=GRIP, lw=1.4, ls='--', zorder=3)
+    ax.scatter(ws, losses, s=70, color=GRIP, edgecolor=INK, lw=0.6, zorder=4)
+    for k in (0, 1, 2, 3, 4, 6, 9, 12):
+        ax.annotate(f'{k}', xy=(ws[k], losses[k]), xytext=(ws[k] - 0.16, losses[k] + 4.0),
+                    fontsize=10.5, color=INK, weight='bold')
+    ax.scatter([W_STAR], [L_STAR], s=130, marker='v', color=INK, zorder=6)
+    ax.text(W_STAR + 0.1, L_STAR + 3.0, f'the bottom: w = {W_STAR:.3f}', fontsize=10,
+            color=INK)
+    ax.set_xlim(-0.3, 5.0)
+    ax.set_ylim(0, 108)
+    ax.set_xlabel('the one weight, w', fontsize=10)
+    ax.set_ylabel('mean squared error (mm$^2$)', fontsize=10)
+    ax.set_title(f'Twelve steps at a learning rate of {ETA_GOOD}: the dots crowd '
+                 'together as the slope flattens',
+                 fontsize=12.5, weight='bold', color=INK)
+    _save(fig, DESC_DOC, 'steps-on-the-curve.svg')
+
+
+def loss_against_step() -> None:
+    ws, losses, _ = descent1(0.0, ETA_GOOD, 40)
+    gap = losses - L_STAR
+    print(f'[g2] loss at steps 0, 1, 2, 5, 10, 20, 40: '
+          + ', '.join(f'{losses[k]:.4f}' for k in (0, 1, 2, 5, 10, 20, 40)))
+    print(f'[g2] distance above the bottom at those steps: '
+          + ', '.join(f'{gap[k]:.2e}' for k in (0, 1, 2, 5, 10, 20, 40)))
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
+    _plain(axes[0])
+    axes[0].plot(np.arange(41), losses, marker='o', ms=4, color=SLIDE, lw=2.0)
+    axes[0].axhline(L_STAR, color=INK, ls='--', lw=1.3)
+    axes[0].text(18, L_STAR + 4, f'the lowest the loss can go: {L_STAR:.4f}',
+                 fontsize=10, color=INK)
+    axes[0].set_xlabel('step number', fontsize=10)
+    axes[0].set_ylabel('mean squared error (mm$^2$)', fontsize=10)
+    axes[0].set_title('The loss against the step number', fontsize=11.5, weight='bold',
+                      color=INK)
+    _plain(axes[1])
+    axes[1].semilogy(np.arange(41), np.maximum(gap, 1e-16), marker='o', ms=4,
+                     color=PURPLE, lw=2.0)
+    axes[1].set_xlabel('step number', fontsize=10)
+    axes[1].set_ylabel('how far the loss still is above the bottom', fontsize=10)
+    axes[1].set_title('The same run, with the vertical axis in powers of ten',
+                      fontsize=11.5, weight='bold', color=INK)
+    axes[1].grid(True, which='both', color=GRID, lw=0.5)
+    fig.suptitle('Forty steps at a learning rate of 0.03: the gap to the bottom is cut '
+                 'by about a third every step',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, DESC_DOC, 'loss-against-step.svg')
+
+
+def step_shrinks_as_it_arrives() -> None:
+    ws, losses, slopes = descent1(0.0, ETA_GOOD, 14)
+    moves = -ETA_GOOD * slopes[:14]
+    print('[g2] the move made at steps 0 to 7: '
+          + ', '.join(f'{v:+.4f}' for v in moves[:8]))
+    print(f'[g2] the move at step 0 is {abs(moves[0] / moves[7]):.1f} times the move '
+          f'at step 7, with the same learning rate throughout')
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
+    idx = np.arange(14)
+    _plain(axes[0])
+    axes[0].bar(idx, np.abs(slopes[:14]), color=GRIP, edgecolor=INK, lw=0.6, width=0.6)
+    axes[0].set_xticks(idx)
+    axes[0].set_xlabel('step number', fontsize=10)
+    axes[0].set_ylabel('size of the slope', fontsize=10)
+    axes[0].set_title('The slope shrinks as the bottom comes nearer', fontsize=11.5,
+                      weight='bold', color=GRIP)
+    _plain(axes[1])
+    axes[1].bar(idx, np.abs(moves), color=PURPLE, edgecolor=INK, lw=0.6, width=0.6)
+    for k in (0, 3, 7, 13):
+        axes[1].text(k, abs(moves[k]) + 0.04, f'{abs(moves[k]):.3f}', ha='center',
+                     fontsize=9.5, color=INK)
+    axes[1].set_xticks(idx)
+    axes[1].set_xlabel('step number', fontsize=10)
+    axes[1].set_ylabel('how far w actually moved', fontsize=10)
+    axes[1].set_ylim(0, 2.4)
+    axes[1].set_title('So the step shrinks too, with no change to the learning rate',
+                      fontsize=11.5, weight='bold', color=PURPLE)
+    fig.suptitle('Gradient descent slows down on its own as it arrives, '
+                 'because the move is the learning rate times the slope',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, DESC_DOC, 'step-shrinks-as-it-arrives.svg')

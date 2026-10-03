@@ -979,3 +979,270 @@ def score_memory() -> None:
                  fontsize=11.5, weight='bold')
     fig.tight_layout()
     _save(fig, ATT_DOC, 'score-memory.svg')
+
+
+# --------------------------------------------------------------------------
+# 02_a-transformer-block.md: the same four tokens through one whole block
+# --------------------------------------------------------------------------
+
+def _rms_norm(X: Arr) -> Arr:
+    """Divide every row by the square root of the mean of its squares."""
+    return X / np.sqrt((X ** 2).mean(axis=1, keepdims=True))
+
+
+class Block:
+    """One pre-norm transformer block run on the four-token example."""
+
+    def __init__(self) -> None:
+        t = TOY
+        self.x: Arr = t.X
+        self.n1: Arr = _rms_norm(self.x)
+        q, k, v = self.n1 @ t.WQ, self.n1 @ t.WK, self.n1 @ t.WV
+        self.a: Arr = _softmax(q @ k.T / 2.0)
+        self.attn: Arr = (self.a @ v) @ t.WO
+        self.s1: Arr = self.x + self.attn
+        self.n2: Arr = _rms_norm(self.s1)
+        self.hidden: Arr = self.n2 @ t.W1
+        self.hidden_gelu: Arr = _gelu(self.hidden)
+        self.ff: Arr = self.hidden_gelu @ t.W2
+        self.s2: Arr = self.s1 + self.ff
+
+    @staticmethod
+    def rms(M: Arr) -> float:
+        return float(np.sqrt((np.asarray(M) ** 2).mean()))
+
+
+BLOCK = Block()
+
+
+def report_block() -> None:
+    b = BLOCK
+    print('[block] x\n', np.round(b.x, 2))
+    print('[block] after the first normalisation\n', np.round(b.n1, 2))
+    print('[block] what attention gives\n', np.round(b.attn, 2))
+    print('[block] stream after the first add\n', np.round(b.s1, 2))
+    print('[block] after the second normalisation\n', np.round(b.n2, 2))
+    print('[block] what the feed-forward part gives\n', np.round(b.ff, 2))
+    print('[block] stream after the second add\n', np.round(b.s2, 2))
+    print(f'[block] typical size: x {b.rms(b.x):.3f}, attention output {b.rms(b.attn):.3f}, '
+          f'stream after one add {b.rms(b.s1):.3f}, feed-forward output {b.rms(b.ff):.3f}, '
+          f'stream at the end {b.rms(b.s2):.3f}')
+    sq = BLOCK.x[0] ** 2
+    print(f'[block] token 1 squares {np.round(sq, 2)}, mean {sq.mean():.4f}, '
+          f'root {math.sqrt(sq.mean()):.4f}, normalised {np.round(BLOCK.n1[0], 3)}')
+
+
+def six_steps() -> None:
+    fig, ax = plt.subplots(figsize=(8.8, 5.6), facecolor='white')
+    _blank(ax)
+    steps = [('1. normalise', 'put every token on the same scale', TEAL),
+             ('2. attention', 'every token mixes the others', LINK),
+             ('3. add it back on', 'the stream keeps what it had', JOINT),
+             ('4. normalise again', 'the same rule, a second scale', TEAL),
+             ('5. feed-forward part', 'each token on its own, widened then narrowed', PURPLE),
+             ('6. add it back on', 'the stream keeps what it had', JOINT)]
+    y = 0.0
+    for name, what, colour in steps:
+        _box(ax, 1.2, y - 0.52, 4.6, 0.56, name, face=_mix(colour, 0.18), edge=colour,
+             size=10.5, weight='bold')
+        ax.text(6.0, y - 0.24, what, ha='left', va='center', fontsize=9.5, color=MUTED)
+        y -= 0.95
+    ax.annotate('', xy=(0.6, y + 0.3), xytext=(0.6, 0.1),
+                arrowprops=dict(arrowstyle='-|>', lw=2.4, color=JOINT))
+    ax.text(0.35, y / 2, 'the stream of 4 numbers per token, untouched all the way down',
+            ha='center', va='center', fontsize=9.5, color=JOINT, rotation=90)
+    ax.text(3.5, y + 0.05, 'in: 4 tokens x 4 numbers        out: 4 tokens x 4 numbers',
+            ha='center', va='top', fontsize=10, color=INK)
+    ax.set_xlim(-0.3, 12.2)
+    ax.set_ylim(y - 0.6, 0.45)
+    _title(fig, 'One transformer block, in the order the steps happen')
+    _save(fig, BLK_DOC, 'six-steps.svg')
+
+
+def numbers_through_a_block() -> None:
+    b = BLOCK
+    stages = [('in', b.x, '{:+.1f}'), ('normalised', b.n1, '{:+.2f}'),
+              ('attention gives', b.attn, '{:+.2f}'), ('add: stream', b.s1, '{:+.2f}'),
+              ('normalised again', b.n2, '{:+.2f}'), ('feed-forward gives', b.ff, '{:+.2f}'),
+              ('add: stream out', b.s2, '{:+.2f}')]
+    fig, ax = plt.subplots(figsize=(13.2, 3.4), facecolor='white')
+    _blank(ax)
+    x = 0.0
+    for n, (name, M, fmt) in enumerate(stages):
+        colour = JOINT if 'stream' in name else None
+        w, h = _grid(ax, M, x0=x, cw=0.76, ch=0.5, fmt=fmt, fontsize=7.5,
+                     rows=[f'"{t}"' for t in TOKENS] if n == 0 else None,
+                     rowsize=9.0, box=colour)
+        ax.text(x + w / 2, 0.12, name, ha='center', va='bottom', fontsize=9.5,
+                color=JOINT if colour else INK,
+                weight='bold' if colour else 'normal')
+        ax.text(x + w / 2, -h - 0.18, f'size {BLOCK.rms(M):.2f}', ha='center', va='top',
+                fontsize=9, color=MUTED)
+        x += w + 0.55
+    ax.set_xlim(-1.3, x - 0.3)
+    ax.set_ylim(-h - 0.8, 0.8)
+    _title(fig, 'The four tokens at every stage of one block, with their typical size')
+    _save(fig, BLK_DOC, 'numbers-through-a-block.svg')
+
+
+def size_of_each_change() -> None:
+    b = BLOCK
+    names = ['the stream\ncoming in', 'what attention\nadds', 'the stream\nafter one add',
+             'what feed-forward\nadds', 'the stream\ngoing out']
+    vals = [b.rms(b.x), b.rms(b.attn), b.rms(b.s1), b.rms(b.ff), b.rms(b.s2)]
+    colours = [JOINT, LINK, JOINT, PURPLE, JOINT]
+    fig, ax = plt.subplots(figsize=(9.4, 4.0), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(range(5), vals, color=[_mix(c, 0.45) for c in colours],
+                  edgecolor=colours, width=0.62)
+    for bb, v in zip(bars, vals):
+        ax.text(bb.get_x() + bb.get_width() / 2, v + 0.015, f'{v:.2f}', ha='center',
+                va='bottom', fontsize=10.5, color=INK)
+    ax.set_xticks(range(5))
+    ax.set_xticklabels(names, fontsize=9.5)
+    ax.set_ylim(0, max(vals) * 1.2)
+    ax.set_ylabel('typical size of the numbers', fontsize=10)
+    ax.set_title('Each part adds something of its own size to the stream it was given',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'size-of-each-change.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 2: normalisation, and why it goes first
+# --------------------------------------------------------------------------
+
+def rms_norm_worked_out() -> None:
+    x = BLOCK.x[0]
+    sq = x ** 2
+    mean = float(sq.mean())
+    root = math.sqrt(mean)
+    out = x / root
+    fig, ax = plt.subplots(figsize=(10.0, 3.8), facecolor='white')
+    _blank(ax)
+    lines = [f'the vector of "{TOKENS[0]}":   ' +
+             '  '.join(f'{v:+.1f}' for v in x),
+             '',
+             '  squares:            ' + '  '.join(f'{v:.2f}' for v in sq),
+             f'  their mean:         ({" + ".join(f"{v:.2f}" for v in sq)}) / 4 = {mean:.4f}',
+             f'  square root:        {mean:.4f} -> {root:.4f}',
+             '',
+             '  divide each number by ' + f'{root:.4f}:',
+             '     ' + '  '.join(f'{v:+.1f} / {root:.4f} = {o:+.3f}' for v, o in
+                                 zip(x[:2], out[:2])),
+             '     ' + '  '.join(f'{v:+.1f} / {root:.4f} = {o:+.3f}' for v, o in
+                                 zip(x[2:], out[2:])),
+             '',
+             '  the result:         ' + '  '.join(f'{v:+.3f}' for v in out) +
+             f'   (its own typical size is {math.sqrt((out ** 2).mean()):.3f})']
+    _lines(ax, 0.0, 0.0, lines, size=9.8, dy=0.33)
+    ax.set_xlim(-0.2, 9.6)
+    ax.set_ylim(-3.8, 0.4)
+    _title(fig, 'Root-mean-square normalisation on one token, in full')
+    _save(fig, BLK_DOC, 'rms-norm-worked-out.svg')
+
+
+def pre_vs_post_norm() -> None:
+    fig, axes = plt.subplots(1, 2, figsize=(10.8, 4.6), facecolor='white')
+    for ax, mode in zip(axes, ('pre', 'post')):
+        _blank(ax)
+        ax.set_xlim(-0.4, 5.6)
+        ax.set_ylim(-0.4, 5.4)
+        if mode == 'pre':
+            _box(ax, 1.4, 1.0, 2.4, 0.6, 'normalise', face=_mix(TEAL, 0.18), edge=TEAL)
+            _box(ax, 1.4, 2.1, 2.4, 0.6, 'attention', face=_mix(LINK, 0.18), edge=LINK)
+            ax.add_patch(plt.Circle((2.6, 3.6), 0.22, facecolor='white', edgecolor=JOINT, lw=1.8))
+            ax.text(2.6, 3.6, '+', ha='center', va='center', fontsize=13, color=JOINT)
+            _arrow(ax, 2.6, 0.3, 2.6, 0.95, colour=INK)
+            _arrow(ax, 2.6, 1.62, 2.6, 2.05, colour=INK)
+            _arrow(ax, 2.6, 2.72, 2.6, 3.35, colour=INK)
+            _arrow(ax, 2.6, 3.84, 2.6, 4.6, colour=INK)
+            ax.plot([0.6, 0.6], [0.5, 3.6], color=JOINT, lw=2.6)
+            _arrow(ax, 0.6, 3.6, 2.35, 3.6, colour=JOINT, lw=2.0)
+            ax.plot([2.6, 0.6], [0.5, 0.5], color=JOINT, lw=2.6)
+            ax.text(0.45, 2.0, 'untouched path', rotation=90, ha='right', va='center',
+                    fontsize=10, color=JOINT)
+            ax.set_title('Pre-norm: normalise, then add on', fontsize=11.5, weight='bold')
+        else:
+            _box(ax, 1.4, 1.6, 2.4, 0.6, 'attention', face=_mix(LINK, 0.18), edge=LINK)
+            ax.add_patch(plt.Circle((2.6, 3.0), 0.22, facecolor='white', edgecolor=JOINT, lw=1.8))
+            ax.text(2.6, 3.0, '+', ha='center', va='center', fontsize=13, color=JOINT)
+            _box(ax, 1.4, 3.8, 2.4, 0.6, 'normalise', face=_mix(TEAL, 0.18), edge=TEAL)
+            _arrow(ax, 2.6, 0.3, 2.6, 1.55, colour=INK)
+            _arrow(ax, 2.6, 2.22, 2.6, 2.75, colour=INK)
+            _arrow(ax, 2.6, 3.24, 2.6, 3.75, colour=INK)
+            _arrow(ax, 2.6, 4.42, 2.6, 4.9, colour=INK)
+            ax.plot([0.6, 0.6], [0.5, 3.0], color=JOINT, lw=2.6)
+            _arrow(ax, 0.6, 3.0, 2.35, 3.0, colour=JOINT, lw=2.0)
+            ax.plot([2.6, 0.6], [0.5, 0.5], color=JOINT, lw=2.6)
+            ax.text(0.45, 1.8, 'the path passes\nthrough every normalisation',
+                    rotation=90, ha='right', va='center', fontsize=10, color=GRIP)
+            ax.set_title('Post-norm: add on, then normalise', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'pre-vs-post-norm.svg')
+
+
+def depth_experiment() -> tuple[list[float], list[float], list[float], list[float]]:
+    """Run a chain of random blocks both ways and watch the sizes change."""
+    depth, width = 48, 64
+    rng = np.random.default_rng(7)
+    Ws = [rng.normal(0.0, 1.0, (width, width)) / math.sqrt(width) for _ in range(depth)]
+    x0 = rng.normal(0.0, 1.0, width)
+    eps = 1e-6
+    dirn = rng.normal(0.0, 1.0, width)
+    dirn /= np.linalg.norm(dirn)
+
+    def run(mode: str, start: Arr) -> list[Arr]:
+        x = start.copy()
+        out = [x.copy()]
+        for W in Ws:
+            if mode == 'pre':
+                x = x + W @ (x / math.sqrt((x ** 2).mean()))
+            else:
+                y = x + W @ x
+                x = y / math.sqrt((y ** 2).mean())
+            out.append(x.copy())
+        return out
+
+    pre = run('pre', x0)
+    post = run('post', x0)
+    pre_p = run('pre', x0 + eps * dirn)
+    post_p = run('post', x0 + eps * dirn)
+    pre_size = [float(np.sqrt((v ** 2).mean())) for v in pre]
+    post_size = [float(np.sqrt((v ** 2).mean())) for v in post]
+    pre_sens = [float(np.linalg.norm(a - b) / eps) for a, b in zip(pre_p, pre)]
+    post_sens = [float(np.linalg.norm(a - b) / eps) for a, b in zip(post_p, post)]
+    print(f'[depth] simulated chain of {depth} random blocks, width {width}')
+    for lab, arr in (('pre-norm stream size', pre_size), ('post-norm stream size', post_size),
+                     ('pre-norm sensitivity', pre_sens), ('post-norm sensitivity', post_sens)):
+        picks = [0, 1, 4, 12, 24, 48]
+        print(f'[depth] {lab:22s} ' + '  '.join(f'block {p}: {arr[p]:.3g}' for p in picks))
+    return pre_size, post_size, pre_sens, post_sens
+
+
+def gradient_through_depth() -> None:
+    pre_size, post_size, pre_sens, post_sens = depth_experiment()
+    depth = len(pre_size) - 1
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.2), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(range(depth + 1), pre_size, color=TEAL, lw=2, label='pre-norm')
+    ax.plot(range(depth + 1), post_size, color=GRIP, lw=2, label='post-norm')
+    ax.plot(range(depth + 1), [math.sqrt(1 + l) for l in range(depth + 1)], ls='--',
+            color=MUTED, lw=1.2, label='the square root of the depth')
+    ax.set_xlabel('blocks passed', fontsize=10)
+    ax.set_ylabel('typical size of the numbers in the stream', fontsize=10)
+    ax.set_title('Pre-norm lets the stream grow; post-norm pins it', fontsize=11, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(range(depth + 1), pre_sens, color=TEAL, lw=2, label='pre-norm')
+    ax.plot(range(depth + 1), post_sens, color=GRIP, lw=2, label='post-norm')
+    ax.axhline(1.0, color=MUTED, ls=':', lw=1.0)
+    ax.set_yscale('log')
+    ax.set_xlabel('blocks passed', fontsize=10)
+    ax.set_ylabel('how much a small nudge at the bottom moves the top', fontsize=10)
+    ax.set_title('The same nudge, carried through 48 blocks', fontsize=11, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='best')
+    fig.tight_layout()
+    _save(fig, BLK_DOC, 'gradient-through-depth.svg')

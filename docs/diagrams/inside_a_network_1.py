@@ -690,3 +690,300 @@ def a_bend_is_needed() -> None:
                       fontsize=12.5, weight='bold')
     axes[1].legend(fontsize=9.4, frameon=False, loc='lower center')
     _save(fig, ONE, 'a-bend-is-needed.svg')
+
+
+# ==========================================================================
+# 01_one-neuron.md  --  section 5: the rectified linear unit
+# ==========================================================================
+
+CHECK: list[float] = [-2.0, -1.0, -0.5, 0.0, 0.5, 0.725, 1.0, 2.0]
+
+
+def relu_curve() -> None:
+    """The rule drawn on real axes, with the numbers it gives beside it."""
+    z = np.linspace(-3.0, 3.0, 601)
+    print('--- the rectified linear unit -----------------------------------')
+    for c in CHECK:
+        print(f'  in {c:+.3f} -> out {float(relu(c)):.3f}')
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white',
+                             gridspec_kw={'width_ratios': [1.35, 1.0]})
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(z, relu(z), color=LINK, lw=2.8)
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.axvline(0, color=INK, lw=1.0)
+    for c in (-1.0, 0.725, 2.0):
+        ax.plot([c], [float(relu(c))], 'o', color=JOINT, ms=10, mec=INK, zorder=6)
+        ax.annotate(f'{c:+.3f} -> {float(relu(c)):.3f}', xy=(c, float(relu(c))),
+                    xytext=(c - 0.1, float(relu(c)) + 0.55), fontsize=10, ha='center',
+                    arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.1))
+    ax.set_xlabel('the weighted sum going in', fontsize=10)
+    ax.set_ylabel('the output coming out', fontsize=10)
+    ax.set_title('The rectified linear unit: flat at 0, then a straight 45 degree climb',
+                 fontsize=12, weight='bold')
+    ax.set_ylim(-0.4, 3.3)
+    _label(ax, -1.7, 0.45, 'this half is\nswitched off', size=10, color=MUTED)
+    ax2 = axes[1]
+    _axes(ax2, (0, 12), (0, 11), equal=False)
+    rows = [['sum going in', 'output']]
+    for c in CHECK:
+        rows.append([f'{c:+.3f}', f'{float(relu(c)):.3f}'])
+    _table(ax2, 1.4, 10.2, [5.0, 4.0], rows, row_h=1.08, size=11, mono_from=0)
+    _label(ax2, 6.0, 0.5, 'our neuron\'s sum was +0.725', size=10.5, color=MUTED)
+    _save(fig, ONE, 'relu-curve.svg')
+
+
+def relu_pieces() -> None:
+    """Six rule-neurons with elbows in different places follow a smooth curve."""
+    b = np.linspace(0.0, 1.0, 1001)
+    target = np.exp(-((b - 0.45) / 0.18) ** 2)
+    knots = np.array([0.10, 0.25, 0.40, 0.55, 0.70, 0.85])
+    feats = [np.ones_like(b), b] + [relu(b - k) for k in knots]
+    A = np.stack(feats, axis=1)
+    coef, *_ = np.linalg.lstsq(A, target, rcond=None)
+    fit = A @ coef
+    gap = float(np.max(np.abs(fit - target)))
+    print('--- six elbows follow a curve -----------------------------------')
+    print('  elbows at ' + ', '.join(f'{k:.2f}' for k in knots))
+    print(f'  biggest gap between the six-elbow line and the smooth curve: {gap:.4f}')
+    fig, ax = plt.subplots(figsize=(10.5, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(b, target, color=INK, lw=2.6, label='the smooth curve we want')
+    ax.plot(b, fit, color=GRIP, lw=2.4, label=f'six elbows added up (biggest gap {gap:.3f})')
+    for k in knots:
+        ax.axvline(k, color=MUTED, lw=0.9, ls=':')
+    ax.set_xlabel('patch brightness / 255', fontsize=10)
+    ax.set_ylabel('how good this brightness is', fontsize=10)
+    ax.set_title('Straight pieces with elbows can follow any curve you like',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper right')
+    _label(ax, 0.5, -0.17, 'the dotted lines are the six elbows, one per neuron',
+           size=9.8, color=MUTED)
+    ax.set_ylim(-0.1, 1.2)
+    _save(fig, ONE, 'relu-pieces.svg')
+
+
+def relu_dead_units() -> None:
+    """How often each of 64 simulated neurons fires, and how many never fire at all."""
+    rng = np.random.default_rng(7)
+    n_neu, n_read = 64, 200
+    w = rng.normal(0.0, 1.0, size=(n_neu, 3))
+    bias = rng.normal(-1.0, 0.6, size=n_neu)
+    reads = np.stack([rng.uniform(0.10, 0.90, n_read),
+                      rng.uniform(0.00, 1.00, n_read),
+                      rng.uniform(0.10, 0.90, n_read)], axis=1)
+    sums = reads @ w.T + bias
+    fires = (sums > 0).mean(axis=0)
+    dead = int((fires == 0).sum())
+    print('--- dead neurons ------------------------------------------------')
+    print(f'of {n_neu} simulated neurons reading {n_read} simulated moments, {dead} never '
+          f'fire at all, and the average neuron fires on {fires.mean() * 100:.1f}% of them')
+    fig, ax = plt.subplots(figsize=(9.6, 5.6), facecolor='white')
+    _axes(ax, (0, 8.6), (0, 10.4))
+    _label(ax, 4.3, 9.9, 'Each square is one neuron: how often it gives something above 0',
+           size=12.5, weight='bold')
+    for i in range(n_neu):
+        r, c = divmod(i, 8)
+        x, y = 0.3 + c, 8.3 - r
+        v = fires[i]
+        ax.add_patch(Rectangle((x, y), 0.92, 0.92, facecolor=plt.get_cmap('YlGnBu')(0.15 + 0.8 * v),
+                               edgecolor=GRID, lw=0.8, zorder=3))
+        if v == 0:
+            ax.add_patch(Rectangle((x, y), 0.92, 0.92, facecolor='none', edgecolor=GRIP, lw=2.2,
+                                   zorder=5))
+            _label(ax, x + 0.46, y + 0.46, '0', size=10.5, color=GRIP, family=MONO)
+        else:
+            _label(ax, x + 0.46, y + 0.46, f'{v * 100:.0f}', size=9.2, family=MONO)
+    _label(ax, 4.3, 0.55, f'the number in each square is the percentage of the 200 moments '
+           f'that neuron fired on', size=10, color=MUTED)
+    _label(ax, 4.3, -0.1, f'{dead} of the 64 never fired, so the rule had switched them off '
+           f'for every reading', size=10.5, color=GRIP)
+    _save(fig, ONE, 'relu-dead-units.svg')
+
+
+def relu_slope() -> None:
+    """The slope of the rule: 0 on the left, 1 on the right, and a jump at 0."""
+    z = np.linspace(-3.0, 3.0, 1201)
+    h = 1e-5
+    slope = (relu(z + h) - relu(z - h)) / (2 * h)
+    print('--- the slope of the rule ---------------------------------------')
+    for c in (-1.0, -0.001, 0.001, 1.0):
+        print(f'  slope at {c:+.4f}: {float((relu(c + h) - relu(c - h)) / (2 * h)):.3f}')
+    fig, ax = plt.subplots(figsize=(10.0, 4.8), facecolor='white')
+    _plain(ax)
+    ax.plot(z[z < -0.002], slope[z < -0.002], color=LINK, lw=2.8)
+    ax.plot(z[z > 0.002], slope[z > 0.002], color=LINK, lw=2.8)
+    ax.plot([0], [0], 'o', mfc='white', mec=LINK, ms=9, mew=2)
+    ax.plot([0], [1], 'o', mfc='white', mec=LINK, ms=9, mew=2)
+    ax.axvline(0, color=INK, lw=1.0)
+    ax.set_xlabel('the weighted sum going in', fontsize=10)
+    ax.set_ylabel('how much the output moves\nwhen the sum moves a little', fontsize=10)
+    ax.set_title('The slope of the rule jumps from 0 to 1 at a single point',
+                 fontsize=12.5, weight='bold')
+    ax.set_ylim(-0.15, 1.3)
+    _label(ax, -1.6, 0.18, 'nothing comes out, so\nnothing changes', size=10, color=MUTED)
+    _label(ax, 1.6, 0.82, 'the output follows\nthe sum exactly', size=10, color=MUTED)
+    _save(fig, ONE, 'relu-slope.svg')
+
+
+# ==========================================================================
+# 01_one-neuron.md  --  section 6: GELU and SiLU
+# ==========================================================================
+
+def three_rules() -> None:
+    """ReLU, GELU and SiLU on the same axes, with the numbers they give."""
+    z = np.linspace(-4.0, 4.0, 801)
+    print('--- the three rules ---------------------------------------------')
+    hdr = '  in        ' + '  '.join(f'{nm:>8s}' for nm in ACTS)
+    print(hdr)
+    for c in CHECK:
+        line = f'  {c:+7.3f}   ' + '  '.join(f'{float(f(c)):8.4f}' for f in ACTS.values())
+        print(line)
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.2), facecolor='white',
+                             gridspec_kw={'width_ratios': [1.3, 1.0]})
+    ax = axes[0]
+    _plain(ax)
+    for nm, f in ACTS.items():
+        ax.plot(z, f(z), color=ACT_COLOUR[nm], lw=2.6, label=nm,
+                ls='-' if nm != 'SiLU' else '--')
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.axvline(0, color=INK, lw=1.0)
+    ax.set_xlabel('the weighted sum going in', fontsize=10)
+    ax.set_ylabel('the output coming out', fontsize=10)
+    ax.set_title('All three climb on the right; only two dip below 0 on the left',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_ylim(-0.6, 4.3)
+    axin = ax.inset_axes((0.56, 0.12, 0.42, 0.42))
+    zz = np.linspace(-3.0, 0.5, 401)
+    for nm, f in ACTS.items():
+        axin.plot(zz, f(zz), color=ACT_COLOUR[nm], lw=2.0, ls='-' if nm != 'SiLU' else '--')
+    axin.axhline(0, color=INK, lw=0.8)
+    axin.set_title('the left half, close up', fontsize=9)
+    axin.tick_params(labelsize=8)
+    axin.grid(True, color=GRID, lw=0.6)
+    ax2 = axes[1]
+    _axes(ax2, (0, 13), (0, 11), equal=False)
+    rows = [['sum in'] + list(ACTS)]
+    for c in CHECK:
+        rows.append([f'{c:+.3f}'] + [f'{float(f(c)):+.4f}' for f in ACTS.values()])
+    _table(ax2, 0.6, 10.4, [3.2, 2.9, 2.9, 2.9], rows, row_h=1.1, size=10.5, mono_from=0)
+    _label(ax2, 6.4, 0.5, 'the smallest GELU ever gives is about -0.17', size=10, color=MUTED)
+    _save(fig, ONE, 'three-rules.svg')
+
+
+def three_slopes() -> None:
+    """The slope of each rule, worked out by moving the input a tiny amount."""
+    z = np.linspace(-4.0, 4.0, 1601)
+    h = 1e-5
+    print('--- the slopes of the three rules -------------------------------')
+    mins = {}
+    for nm, f in ACTS.items():
+        sl = (f(z + h) - f(z - h)) / (2 * h)
+        mins[nm] = (float(sl.min()), float(z[int(np.argmin(sl))]))
+        print(f'  {nm:5s} slope at -2: {float((f(-2 + h) - f(-2 - h)) / (2 * h)):+.4f}, '
+              f'at 0: {float((f(h) - f(-h)) / (2 * h)):+.4f}, '
+              f'at +2: {float((f(2 + h) - f(2 - h)) / (2 * h)):+.4f}; '
+              f'smallest slope {mins[nm][0]:+.4f} near {mins[nm][1]:+.2f}')
+    fig, ax = plt.subplots(figsize=(10.5, 5.2), facecolor='white')
+    _plain(ax)
+    for nm, f in ACTS.items():
+        sl = (f(z + h) - f(z - h)) / (2 * h)
+        ax.plot(z, sl, color=ACT_COLOUR[nm], lw=2.6, label=nm,
+                ls='-' if nm != 'SiLU' else '--')
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.axvline(0, color=INK, lw=1.0)
+    ax.set_xlabel('the weighted sum going in', fontsize=10)
+    ax.set_ylabel('how much the output moves\nwhen the sum moves a little', fontsize=10)
+    ax.set_title('GELU and SiLU change their slope smoothly, and ReLU jumps',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=10, frameon=False, loc='upper left')
+    ax.set_ylim(-0.25, 1.35)
+    _label(ax, 1.9, 0.25, f"SiLU's slope dips to {mins['SiLU'][0]:+.3f} "
+           f"near {mins['SiLU'][1]:+.2f}", size=9.8, color=MUTED)
+    _save(fig, ONE, 'three-slopes.svg')
+
+
+def neuron_three_rules() -> None:
+    """Our neuron under all three rules, as the distance changes."""
+    d = np.linspace(0.0, 1.0, 801)
+    s = neuron_sum(d)
+    print('--- our neuron under the three rules ----------------------------')
+    for dd in (0.42, ZERO_D, 0.85, 0.95):
+        sv = float(neuron_sum(dd))
+        print(f'  at {dd:.4f} m the sum is {sv:+.4f} -> ' +
+              ', '.join(f'{nm} {float(f(sv)):+.4f}' for nm, f in ACTS.items()))
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
+    for ax in axes:
+        _plain(ax)
+        ax.set_xlabel('distance to the object (m)', fontsize=10)
+    for nm, f in ACTS.items():
+        axes[0].plot(d, f(s), color=ACT_COLOUR[nm], lw=2.4, label=nm,
+                     ls='-' if nm != 'SiLU' else '--')
+        axes[1].plot(d, f(s), color=ACT_COLOUR[nm], lw=2.4, label=nm,
+                     ls='-' if nm != 'SiLU' else '--')
+    axes[0].axhline(0, color=INK, lw=1.0)
+    axes[0].set_ylabel("the neuron's output", fontsize=10)
+    axes[0].set_title('The same neuron, the same readings, three rules',
+                      fontsize=12, weight='bold')
+    axes[0].legend(fontsize=10, frameon=False, loc='upper right')
+    axes[1].set_xlim(0.62, 1.0)
+    axes[1].set_ylim(-0.12, 0.30)
+    axes[1].axhline(0, color=INK, lw=1.0)
+    axes[1].axvline(ZERO_D, color=MUTED, lw=1.0, ls=':')
+    axes[1].set_title(f'close up on the elbow at {ZERO_D:.4f} m', fontsize=12, weight='bold')
+    axes[1].set_ylabel('the output, close up', fontsize=10)
+    _label(axes[1], 0.90, -0.075, 'GELU and SiLU go a little\nbelow 0 here', size=9.8,
+           color=MUTED)
+    _save(fig, ONE, 'neuron-three-rules.svg')
+
+
+def activation_cost() -> None:
+    """What the rule costs next to the multiplying and adding in the same layer."""
+    n_in, n_out = 1024, 1024
+    mult_adds = n_in * n_out
+    acts = n_out
+    rng = np.random.default_rng(3)
+    big = rng.normal(0.0, 1.0, size=2_000_000)
+    times: dict[str, float] = {}
+    for nm, f in ACTS.items():
+        best = min(_time_once(f, big) for _ in range(3))
+        times[nm] = best
+    print('--- what the rule costs -----------------------------------------')
+    print(f'a layer of {n_in} inputs and {n_out} neurons does {mult_adds:,} multiply-adds '
+          f'and applies the rule {acts:,} times, which is one rule for every '
+          f'{mult_adds // acts:,} multiply-adds')
+    for nm, t in times.items():
+        print(f'  {nm:5s} on 2,000,000 numbers took {t * 1000:.1f} ms '
+              f'({t / times["ReLU"]:.1f} times ReLU) on the computer that drew this')
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.bar(['multiply-adds', 'uses of the rule'], [mult_adds, acts],
+           color=[LINK, PURPLE], edgecolor=INK, lw=0.8, width=0.5)
+    ax.set_yscale('log')
+    ax.set_ylabel('how many times, for one layer', fontsize=10)
+    for i, v in enumerate([mult_adds, acts]):
+        ax.text(i, v * 1.3, f'{v:,}', ha='center', fontsize=11.5, family=MONO)
+    ax.set_ylim(100, 1e7)
+    ax.set_title(f'A 1024 into 1024 layer: one rule per {mult_adds // acts:,} multiply-adds',
+                 fontsize=11.5, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    names = list(times)
+    ax.bar(names, [times[n] * 1000 for n in names],
+           color=[ACT_COLOUR[n] for n in names], edgecolor=INK, lw=0.8, width=0.5)
+    for i, n in enumerate(names):
+        ax.text(i, times[n] * 1000 * 1.02, f'{times[n] * 1000:.1f} ms', ha='center',
+                va='bottom', fontsize=11, family=MONO)
+    ax.set_ylabel('time for 2,000,000 numbers (ms)', fontsize=10)
+    ax.set_ylim(0, max(times.values()) * 1000 * 1.25)
+    ax.set_title('One measurement, on the computer that drew this picture',
+                 fontsize=11.5, weight='bold')
+    _save(fig, ONE, 'activation-cost.svg')
+
+
+def _time_once(f: object, arr: Arr) -> float:
+    t0 = time.perf_counter()
+    f(arr)                                        # type: ignore[operator]
+    return time.perf_counter() - t0

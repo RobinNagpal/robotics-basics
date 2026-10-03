@@ -369,8 +369,8 @@ def memory_line() -> None:
               f'{r} x 6 + {c} = {r * 6 + c} in the line, holding '
               f'{g[r, c]:.0f}')
 
-    fig, ax = plt.subplots(figsize=(13.2, 5.4), facecolor='white')
-    _blank(ax, (-0.6, 25.6), (-4.6, 4.6))
+    fig, ax = plt.subplots(figsize=(13.2, 5.6), facecolor='white')
+    _blank(ax, (-1.4, 24.6), (-5.6, 5.0))
     faces = _faces(g, vmin=0, vmax=23)
     _grid_at(ax, g, 0.0, 4.2, cell=1.05, faces=faces, size=8.5)
     for r in range(4):
@@ -379,32 +379,33 @@ def memory_line() -> None:
     for c in range(6):
         ax.text((c + 0.5) * 1.05, 4.45, f'col {c}', fontsize=8.5, ha='center',
                 va='bottom', color=MUTED)
-    ax.text(3.15, -0.5, 'the grid, shape (4, 6)', fontsize=10, ha='center', va='top',
+    ax.text(3.15, -0.3, 'the grid, shape (4, 6)', fontsize=10, ha='center', va='top',
             color=INK, weight='bold')
 
     # the one line of memory
-    cell = 0.84
-    x0 = 8.6
-    _grid_at(ax, v.reshape(1, 24), x0, -1.9, cell=cell, faces=_faces(v.reshape(1, 24),
+    cell = 0.76
+    x0 = 0.6
+    _grid_at(ax, v.reshape(1, 24), x0, -2.4, cell=cell, faces=_faces(v.reshape(1, 24),
                                                                     vmin=0, vmax=23),
              size=7.0)
     for i in range(0, 24, 6):
-        ax.text(x0 + (i + 0.5) * cell, -2.95, str(i), fontsize=7.5, ha='center',
+        ax.text(x0 + (i + 0.5) * cell, -3.3, f'place {i}', fontsize=7.5, ha='center',
                 va='top', color=MUTED)
-    ax.text(x0 + 10.1, -3.7, 'memory: one line of 24 places, counted from 0',
+    ax.text(x0 + 9.1, -4.2, 'memory: one line of 24 places, counted from 0',
             fontsize=10, ha='center', va='top', color=INK, weight='bold')
+    _arrow(ax, (9.0, -0.4), (9.0, -2.3), colour=MUTED, lw=1.4)
+    ax.text(9.3, -1.4, 'the rows are laid down one after another,\nrow 0 first',
+            fontsize=9.5, ha='left', va='center', color=MUTED)
 
     colours = (GRIP, SLIDE, PURPLE)
     for (r, c), colour in zip(picks, colours):
         _frame(ax, c * 1.05, 4.2 - r * 1.05, 1.05, 1.05, colour=colour, lw=2.4)
         place = r * 6 + c
-        _frame(ax, x0 + place * cell, -1.9, cell, cell, colour=colour, lw=2.4)
-        _arrow(ax, ((c + 0.5) * 1.05, 4.2 - (r + 1) * 1.05 - 0.05),
-               (x0 + (place + 0.5) * cell, -1.85), colour=colour, lw=1.3)
-        ax.text(16.0, 3.4 - colours.index(colour) * 1.0,
-                f'(row {r}, col {c})  ->  {r} x 6 + {c} = {place}', fontsize=10.5,
+        _frame(ax, x0 + place * cell, -2.4, cell, cell, colour=colour, lw=2.4)
+        ax.text(9.6, 3.0 - colours.index(colour) * 1.1,
+                f'(row {r}, col {c})  ->  {r} x 6 + {c} = place {place}', fontsize=10.5,
                 ha='left', va='center', color=colour)
-    ax.text(16.0, 4.3, 'where a position lands in the line', fontsize=10.5, ha='left',
+    ax.text(9.6, 4.2, 'where a position lands in the line', fontsize=10.5, ha='left',
             va='center', color=INK, weight='bold')
     _title(fig, 'A grid is a line of numbers plus a rule: step 6 to change row, '
                 'step 1 to change column')
@@ -563,7 +564,7 @@ def batch_matmul() -> None:
         ax.text(-0.25, 3.4 - (r + 0.5) * cell, f'example {r}', fontsize=9, ha='right',
                 va='center', color=MUTED)
 
-    x0 = 6.4
+    x0 = 7.6
     _grid_at(ax, W_SMALL.T, x0, 3.4, cell=cell, fmt='{:+.1f}',
              faces=_faces(W_SMALL.T, cmap='RdBu', vmin=-1.0, vmax=1.0), size=9.5)
     ax.text(x0 + 1.8, 3.8, 'the same weights, shape (4, 3)', fontsize=10, ha='center',
@@ -580,12 +581,12 @@ def batch_matmul() -> None:
              faces=_faces(out, vmin=0, vmax=3), size=9)
     ax.text(x0 + 1.8, 3.8, 'after ReLU', fontsize=10, ha='center', va='bottom',
             color=INK, weight='bold')
-    ax.text(4.0, 1.3, 'x', fontsize=13, ha='center', va='center', color=MUTED)
-    ax.text(11.5, 1.3, '+ bias', fontsize=11, ha='center', va='center', color=WRIST)
-    _arrow(ax, (16.9, 1.3), (18.0, 1.3))
+    ax.text(5.9, 2.2, 'x', fontsize=13, ha='center', va='center', color=MUTED)
+    ax.text(12.1, 2.2, '+ bias', fontsize=11, ha='center', va='center', color=WRIST)
+    _arrow(ax, (16.9, 2.2), (18.0, 2.2))
 
     _frame(ax, 0.0, 3.4 - cell, 4 * cell, cell, colour=GRIP)
-    _frame(ax, 6.4 + 2 * cell, 3.4, cell, 4 * cell, colour=GRIP)
+    _frame(ax, 7.6 + 2 * cell, 3.4, cell, 4 * cell, colour=GRIP)
     _frame(ax, 13.0 + 2 * cell, 3.4 - cell, cell, cell, colour=GRIP)
     ax.text(10.6, -1.9, f'the marked cell: {" + ".join(terms)} = {cell_val:.2f}, '
             f'then + {B_SMALL[2]:.2f} = {pre[1, 2]:.2f}', fontsize=11, ha='center',

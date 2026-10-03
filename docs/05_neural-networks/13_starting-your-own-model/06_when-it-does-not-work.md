@@ -49,7 +49,7 @@ It never means too few examples, because a network with enough weights can memor
 anything, so a model that cannot drive the error down on its own training examples is
 wrongly arranged rather than short of data.
 
-![Four loss curves against training step on a log scale, three of them flat near 0.02 and one falling to 0.001](../../images/starting-your-own-model/when-it-does-not-work/loss-does-not-fall.svg)
+![Four loss curves against training step on a log scale: one falls steadily, two wobble just above the dotted answering-with-zero line, and one stays far above it](../../images/starting-your-own-model/when-it-does-not-work/loss-does-not-fall.svg)
 
 One network and 8,000 recorded commands: the loss falls at a learning rate of 0.003 and stays flat at 1.0, at 0.000001, and when the labels are shuffled.
 
@@ -105,10 +105,9 @@ first.
 Both curves flatten at 0.000978, against a dashed line at 0.000608, which is the variance of the noise in the recorded commands themselves.
 
 The demonstrator here is sloppy far from the object and careful close to it, so every
-recorded command carries noise that no model can predict, and the run ends at 1.61
-times that noise. On real data you find the same floor by recording one situation
-twice, since half the variance of the difference between the two recordings is a
-lower limit on the loss.
+recorded command carries noise no model can predict, and the run ends at 1.61 times
+that noise. On real data you find the same floor by recording one situation twice,
+since half the variance of the difference between the recordings is a lower limit.
 
 ![Training and held-out loss against hidden width from 1 to 128 on a log scale, dropping steeply to width 4 and then flat](../../images/starting-your-own-model/when-it-does-not-work/floor-and-model-size.svg)
 
@@ -220,8 +219,8 @@ On the situations the demonstrator reached, these eighteen policies have errors 
 The second reason is deeper and is the one to carry away, since the held-out loss
 asks whether the model would have sent the demonstrator's command from a moment the
 demonstrator was in, while the task asks whether the arm arrives with the model
-driving. They differ because the model's own errors move the arm away from anywhere
-the demonstrator went, and
+driving. They differ because the model's own errors move the arm away from where the
+demonstrator went, and
 [behaviour cloning and action chunks](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md)
 explains why copying a demonstrator has that built in.
 

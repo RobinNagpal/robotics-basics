@@ -93,18 +93,17 @@ Both curves climb steeply and then flatten, from 0.604 to 0.938 in the first cas
 and from 0.454 to 0.887 in the second, so once a policy is stuck at four runs in
 five, recording another two hundred episodes of the same thing is the wrong move.
 Count instead what has to be covered before you start, which is every way the
-object can lie times every lighting condition times every starting pose with a
-few examples of each, and for six orientations and four lighting conditions that
-is a few hundred episodes rather than a few dozen.
+object can lie times every lighting condition times every starting pose, and for
+six orientations and four lighting conditions that is a few hundred episodes
+rather than a few dozen.
 
-The starting point is a library rather than a model, since there is no useful
-pretrained plain cloning policy to download.
-[LeRobot](https://github.com/huggingface/lerobot) records demonstrations in a
-fixed format, trains policies on them and runs them, while
+The starting point is a library rather than a model, since there is no pretrained
+plain cloning policy worth downloading.
+[LeRobot](https://github.com/huggingface/lerobot) records demonstrations, trains
+policies on them and runs them, while
 [robomimic](https://github.com/ARISE-Initiative/robomimic) has plain behaviour
-cloning already built, camera encoder included. The first milestone is the one
-from [the order of the work](02_the-order-of-the-work.md), which is to drive the
-training loss on a single batch to nearly zero, and the one number to watch
+cloning already built. The first milestone is the single-batch test from
+[the order of the work](02_the-order-of-the-work.md), and the one number to watch
 afterwards is the share of whole runs on the arm that finish the job, because the
 loss falls while the drift measured in
 [why copying one step at a time drifts](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md#3-why-copying-one-step-at-a-time-drifts)
@@ -195,12 +194,11 @@ describes.
 
 The starting point is the action-chunking transformer packaged in LeRobot, which
 reads the recordings LeRobot already made. The first milestone is the single
-batch again, followed by one whole run of the job on the arm however ugly, and
-the one number to watch is the share of runs that work at the chunk length you
-intend to ship, since success at one length says nothing about another. The
-mistake almost everybody makes first is to take a chunk length from a paper and
-run it at a different command rate, because the floor is set by your clock and
-your model and nobody else's.
+batch again, then one whole run of the job on the arm however ugly, and the one
+number to watch is the share of runs that work at the chunk length you intend to
+ship, since success at one length says nothing about another. The mistake almost
+everybody makes first is to take a chunk length from a paper and run it at a
+different command rate, because the floor is set by your clock and your model.
 
 ---
 
@@ -232,11 +230,9 @@ through the box on 0.24 of its runs and finishes the job on 0.72, while the
 policy that generates one drives through on 0.03 and finishes on 0.89.
 
 One training example is exactly what it was in section 2, so a generating policy
-can be fitted to recordings you already hold. How many you need hardly changes
-either, because the policy is still copying, except that both answers must appear
-often enough to be learned, so a job with two ways of doing it wants roughly
-twice the demonstrations of a job with one. What it costs is passes through the
-network.
+can be fitted to recordings you already hold, and how many you need hardly
+changes either, except that both answers must appear often enough to be learned.
+What it costs is passes through the network.
 
 ![A curve of success against the number of denoising passes with the plain policy as a line, beside bars of the milliseconds those passes cost](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/what-generating-costs.svg)
 
@@ -274,7 +270,7 @@ takes a sentence as well as a picture so that one model can do several.
 [Vision-language-action models](../12_models-that-act/03_vision-language-action-models.md)
 explains what is inside one, and the question here is what fine-tuning one
 involves and whether it is a sensible first project. Start with what must fit in
-the graphics card, since that decides more first projects than anything else.
+the graphics card.
 
 ![Bars of memory for training every weight against training an adapter, at two model sizes, beside bars of trainable weights for five adapter ranks](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/what-fine-tuning-costs.svg)
 
@@ -373,12 +369,11 @@ model hits the box on 0.01 and finishes the job on 0.72, with no demonstrations
 recorded for either.
 
 The model there was fitted to random pushing with no goal, no box and no person,
-and the box was introduced afterwards as a penalty in the cost the planner scores
+and the box arrived afterwards as a penalty in the cost the planner scores
 futures against, so the job changed without the data changing. The right-hand
 curve carries the other half of the method, which is that the plan is remade
 constantly, since remaking it every five steps leaves the arm 1.05 centimetres
-from the goal while remaking it every twenty leaves 6.51. What limits all of this
-is arithmetic worth doing before you start.
+from the goal while remaking it every twenty leaves 6.51.
 
 ![A log-scale bar chart of how many futures fit in one command period at four model speeds, beside lines of model steps against futures tried](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/planning-arithmetic.svg)
 
@@ -403,10 +398,9 @@ its one-step error alone, which looks superb and says nothing about the rollout.
 The five recipes so far learn from something somebody provided, and this one
 learns from its own attempts scored by a reward, which is
 [reinforcement learning](../11_learning-from-outcomes/01_reinforcement-learning.md).
-One training example is not a thing you collect but an episode the policy itself
-produced together with the reward it earned, so the data does not exist until the
-policy does and is thrown away as the policy changes. The question is therefore
-not how many examples you need but how many attempts.
+One training example is not collected but produced: an episode the policy itself
+drove, with the reward it earned, thrown away as the policy changes. So the
+question is not how many examples you need but how many attempts.
 
 ![A learning curve of success against rounds of the search for two searches, beside a log-scale bar chart of hours on a real arm for demonstrations against tries](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/what-the-search-costs.svg)
 
@@ -443,9 +437,9 @@ This is nonetheless the right call when the job cannot be demonstrated because i
 needs force or speed a person cannot produce through a handle, when the outcome
 can be scored by a program as
 [rewards, preferences and verifiers](../11_learning-from-outcomes/02_rewards-preferences-and-verifiers.md)
-sets out, and when what is being learned is contact a simulator can represent.
-The mistake almost everybody makes first is to start the simulator and the policy
-in the same week.
+sets out, and when what is learned is contact a simulator can represent. The
+mistake almost everybody makes first is to start the simulator and the policy in
+the same week.
 
 ![Four bars of success for a searched policy in its simulator, on a different arm, randomised on a different arm, and a cloned policy, beside a table of what each approach asks for](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/cloning-against-searching.svg)
 
@@ -473,22 +467,19 @@ families offer.
 
 - [When it does not work](06_when-it-does-not-work.md) is the next page, and it
   takes each failure named above, from a loss that will not fall to a policy that
-  works for one person and not another, and gives the cheapest test that says
-  which one you have.
+  works for one person and not another, and gives the cheapest test for each.
 - [Recipes for the models that see and understand](04_recipes-for-models-that-see-and-understand.md)
   is the other half of this reference, and its perception models are usually what
   a policy here stands on.
 - [The order of the work](02_the-order-of-the-work.md) gives the milestone ladder
   every recipe here refers to, including the single-batch test.
 - [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
-  takes over once a policy works, and sets out the timing budget section 2 only
-  touches.
+  takes over once a policy works, and sets out the timing budget in full.
 - [Behaviour cloning](../../07_learned-models/06_movement-models/02_most-used/01_behaviour-cloning.md)
   in the catalogue of movement models lists the published policies of this kind
   and what each costs to run.
 - [Vision-language-action models](../../07_learned-models/07_language-models/02_most-used/01_vision-language-action-models.md)
-  in the same catalogue gives the current models, their licences and what they
-  need to run.
+  in the same catalogue gives the current models and their licences.
 
 ---
 
@@ -540,12 +531,11 @@ since PyTorch has no idea whether your seven numbers are places or changes, whic
 order the joints are in, or what the scaling constants were, and it will train
 happily on a mixture of two conventions while the loss falls.
 
-The two constants `lo` and `hi` deserve a last word, because they are computed
+The two constants `lo` and `hi` deserve a last word, because they are worked out
 from the dataset and so change when you add data to it, which makes a policy
 trained with one pair and run with another the failure measured in section 1.
-Save them in the file that holds the weights, load them with the weights, and
-never work them out again at run time. In a real project `LeRobotDataset` from
-LeRobot does the recording, the storage and the loading, and its packaged
-policies already contain the chunk head above with a camera encoder in front of
-it, so the lines written out here are the parts you still decide even when you
-use it.
+Save them in the file that holds the weights and never work them out again at run
+time. In a real project `LeRobotDataset` from LeRobot does the recording and the
+loading, and its packaged policies already contain the chunk head above with a
+camera encoder in front of it, so the lines here are the parts you still decide
+even when you use it.

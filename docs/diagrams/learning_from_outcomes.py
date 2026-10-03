@@ -1257,63 +1257,49 @@ def learning_from_old_attempts() -> None:
 
 
 def on_policy_goes_stale() -> None:
-    """On-policy: the same batch used again and again stops telling the truth."""
+    """On-policy: the very same stored attempts teach a policy-gradient method
+    almost nothing, because they were not made by the policy being improved."""
     gamma = 0.95
-    blocks = list(range(0, 31))
-    curves: list[list[float]] = []
-    for seed in (11, 12, 13, 14):
-        rng = np.random.default_rng(seed)
-        theta = np.zeros((NS, NA))
-        base0 = np.zeros(NS)
-        cnt0 = np.zeros(NS)
-        for _ in range(55):            # warm up, so there is something to spoil
-            S, A, G, rets, outs = collect(theta, rng, 20, gamma)
-            for s, g in zip(S, G):
-                cnt0[s] += 1
-                base0[s] += (g - base0[s]) / cnt0[s]
-            ad = G - base0[S]
-            ad = ad / max(float(ad.std()), 1e-8)
-            theta = policy_update(theta, S, A, ad, softmax_rows(theta)[S, A], 20, 3.0,
-                                  0.2, True)
-        S, A, G, rets, outs = collect(theta, rng, 60, gamma)
-        base = np.zeros(NS)
-        cnt = np.zeros(NS)
-        for s, g in zip(S, G):
-            cnt[s] += 1
-            base[s] += (g - base[s]) / cnt[s]
-        adv = G - base[S]
-        adv = adv / max(float(adv.std()), 1e-8)
-        p_old = softmax_rows(theta)[S, A]
-        row: list[float] = []
-        for block in blocks:
-            if block > 0:
-                theta = policy_update(theta, S, A, adv, p_old, 4, 3.0, 0.2, True)
-            chk = np.random.default_rng(900 + block)
-            _, _, _, r2, _ = collect(theta, chk, 30, gamma)
-            row.append(float(np.mean(r2)))
-        curves.append(row)
-    C = np.array(curves)
-    mean = C.mean(0)
-    passes = [b * 4 for b in blocks]
-    bestat = int(np.argmax(mean))
-    print(f'[on-policy] one batch of 60 attempts, reused, averaged over '
-          f'{C.shape[0]} runs: the true reward starts at {mean[0]:.2f}, peaks at '
-          f'{mean[bestat]:.2f} after {passes[bestat]} passes and falls to '
-          f'{mean[-1]:.2f} after {passes[-1]}')
-    fig, ax = plt.subplots(figsize=(9.0, 5.0), facecolor='white')
+    rng = np.random.default_rng(5)
+    theta0 = np.zeros((NS, NA))                 # the uniform random policy
+    S, A, G, rets, outs = collect(theta0, rng, 1500, gamma)
+    base = np.zeros(NS)
+    cnt = np.zeros(NS)
+    for s, g in zip(S, G):
+        cnt[s] += 1
+        base[s] += (g - base[s]) / cnt[s]
+    adv = G - base[S]
+    adv = adv / max(float(adv.std()), 1e-8)
+    p_old = softmax_rows(theta0)[S, A]
+    theta = theta0.copy()
+    passes: list[int] = []
+    truth: list[float] = []
+    for block in range(21):
+        if block > 0:
+            theta = policy_update(theta, S, A, adv, p_old, 4, 3.0, 0.2, True)
+        chk = np.random.default_rng(1234)
+        _, _, _, r2, _ = collect(theta, chk, 40, gamma)
+        passes.append(block * 4)
+        truth.append(float(np.mean(r2)))
+    V, Qstar = value_iteration(gamma)
+    best = float(greedy_path(Qstar)[2].sum())
+    print(f'[on-policy] the same {len(S)} stored steps from 1,500 random attempts: '
+          f'the policy-gradient method moves the policy from {truth[0]:.2f} to '
+          f'{truth[-1]:.2f} after {passes[-1]} passes')
+    print(f'[on-policy] the off-policy method reached 8.90 on the same data, and the '
+          f'best possible is {best:.2f}')
+    fig, ax = plt.subplots(figsize=(9.2, 5.0), facecolor='white')
     _plain(ax)
-    for row in C:
-        ax.plot(passes, row, color=WRIST, lw=0.9, alpha=0.35)
-    ax.plot(passes, mean, marker='o', ms=4, color=WRIST, lw=2.3,
-            label=f'average of {C.shape[0]} runs')
-    ax.axvline(passes[bestat], color=MUTED, ls='--', lw=1.2)
-    ax.text(passes[bestat] + 2, float(mean.min()), f'best after {passes[bestat]} passes',
-            fontsize=9.5, color=MUTED)
-    ax.set_xlabel('number of gradient passes made over the same 60 attempts', fontsize=10)
-    ax.set_ylabel('reward the policy really collects now', fontsize=10)
-    ax.set_title('Reusing one batch helps for a while and then hurts',
+    ax.plot(passes, truth, marker='o', ms=4, color=WRIST, lw=2.2,
+            label='a policy-gradient method, on the stored attempts')
+    ax.axhline(8.90, color=TEAL, ls='--', lw=1.6,
+               label='Q-learning on exactly the same attempts')
+    ax.set_ylim(-11.5, 10.5)
+    ax.set_xlabel('gradient passes made over the stored attempts', fontsize=10)
+    ax.set_ylabel('reward the policy really collects', fontsize=10)
+    ax.set_title('The same data, given to the two kinds of method',
                  fontsize=12, weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    ax.legend(fontsize=9.5, frameon=False, loc='center right')
     fig.tight_layout()
     _save(fig, RL_DOC, 'on-policy-goes-stale.svg')
 

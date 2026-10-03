@@ -264,11 +264,12 @@ it is improving. Policy-gradient methods, which change the policy's numbers
 directly to make good actions more likely, are on-policy, because the size of the
 change they ask for depends on how likely the policy was to take that action at
 the time, so once the policy has moved the stored attempts describe a policy that
-no longer exists.
+no longer exists. Handing those same stored attempts to one shows the difference
+plainly.
 
-![A line chart of the reward a policy really collects against the number of gradient passes over one fixed batch](../../images/learning-from-outcomes/reinforcement-learning/on-policy-goes-stale.svg)
+![A line chart of the reward a policy really collects against gradient passes over the stored attempts, flat near minus nine, against a dashed line at 8.90](../../images/learning-from-outcomes/reinforcement-learning/on-policy-goes-stale.svg)
 
-Reusing one batch helps for a few passes and then makes the policy worse.
+Given exactly the same stored attempts, a policy-gradient method moves from minus 9.49 to minus 9.01 after 80 passes, while Q-learning reached 8.90.
 
 Why use an on-policy method at all? Because it works directly on the thing you
 want, so it handles actions that are real numbers rather than a short list, which

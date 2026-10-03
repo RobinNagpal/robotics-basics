@@ -1000,9 +1000,10 @@ def one_sample_path() -> None:
                      fontsize=11, weight='bold', color=INK)
     axes[0].text(-3.1, 2.85, 'circle: where the point started, in pure noise\n'
                  'star: where it finished, on the data', fontsize=9.5, color=INK)
-    fig.suptitle('Three single points walked back from the same noise to the arcs',
-                 fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
+    fig.subplots_adjust(top=0.84)
+    fig.suptitle('Three single points walked back from the same noise to the arcs',
+                 fontsize=12.5, weight='bold', color=INK, y=0.99)
     _save(fig, DIFF_DOC, 'one-sample-path.svg')
 
 
@@ -1230,8 +1231,9 @@ def condition_accuracy() -> None:
                 color='white', weight='bold')
     ax.set_xticks(idx)
     ax.set_xticklabels(names)
+    ax.set_ylim(0, 118)
     ax.set_ylabel('share of 1,200 generated waypoints (%)', fontsize=9.5)
-    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper center', ncol=2)
     ax.set_title('What the condition buys: the side is chosen\n'
                  'by the asker rather than by chance',
                  fontsize=11.5, weight='bold', color=INK)
@@ -1242,7 +1244,8 @@ def condition_accuracy() -> None:
     bars = ax.bar(labels, vals, color=[PURPLE, MUTED, LINK, SLIDE], width=0.55,
                   edgecolor=INK, lw=0.6)
     for b, v in zip(bars, vals):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.6, f'{v:.2f}%', ha='center',
+        ax.text(b.get_x() + b.get_width() / 2, v + 0.6,
+                f'{v:.1f}%' if v >= 1 else f'{v:.2f}%', ha='center',
                 fontsize=10.5, weight='bold', color=INK)
     ax.set_ylim(0, max(vals) * 1.2)
     ax.set_ylabel('share that lands inside the obstacle (%)', fontsize=9.5)

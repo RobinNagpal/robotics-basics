@@ -827,25 +827,29 @@ class MLP:
 
 
 class FlowHead:
-    """A flow-matching action head: it learns to walk from noise to a chunk of actions."""
+    """A flow-matching action head: it learns to walk from noise to a chunk of actions.
+
+    What it is told about the situation, standing in for the pictures and the
+    instruction a real model would have, is the ten actions just before the chunk.
+    """
 
     def __init__(self) -> None:
         a = EP.a_train
         n_ep, horizon, _ = a.shape
-        starts = np.arange(1, horizon - CHUNK, 4)
-        ctx = np.concatenate([a[:, s - 1, :][:, None, :] for s in starts], axis=1)
+        starts = np.arange(CHUNK, horizon - CHUNK, 4)
+        ctx = np.stack([a[:, s - CHUNK:s, :].reshape(n_ep, -1) for s in starts], axis=1)
         tgt = np.stack([a[:, s:s + CHUNK, :] for s in starts], axis=1)
-        self.ctx = ctx.reshape(-1, ACTION_DIM)
+        self.ctx = ctx.reshape(-1, CHUNK * ACTION_DIM)
         self.tgt = tgt.reshape(-1, CHUNK * ACTION_DIM)
         self.scale = self.tgt.std(axis=0) + 1e-9
         self.mean = self.tgt.mean(axis=0)
         self.x1 = (self.tgt - self.mean) / self.scale
-        self.cs = self.ctx / (self.ctx.std(axis=0) + 1e-9)
-        self.net = MLP([CHUNK * ACTION_DIM + 1 + ACTION_DIM, 128, 128,
+        self.cs = (self.ctx - self.ctx.mean(axis=0)) / (self.ctx.std(axis=0) + 1e-9)
+        self.net = MLP([CHUNK * ACTION_DIM + 1 + CHUNK * ACTION_DIM, 160, 160,
                         CHUNK * ACTION_DIM], seed=5)
         self.losses: list[float] = []
 
-    def train(self, steps: int = 1500, batch: int = 128, lr: float = 3e-3) -> None:
+    def train(self, steps: int = 4000, batch: int = 128, lr: float = 3e-3) -> None:
         rng = np.random.default_rng(7)
         n = self.x1.shape[0]
         for i in range(steps):
@@ -1040,35 +1044,44 @@ def continuous_vs_binned() -> None:
     """One real chunk, written four ways."""
     f = _flow()
     rng = np.random.default_rng(41)
-    i = 900
+    look = f.tgt[:3000].reshape(-1, CHUNK, ACTION_DIM)[:, :, 1]
+    i = int(np.argmax(look.max(axis=1) - look.min(axis=1)))
     c = f.cs[i:i + 1]
     true_chunk = f.tgt[i].reshape(CHUNK, ACTION_DIM)
     x0 = rng.normal(0.0, 1.0, (1, CHUNK * ACTION_DIM))
     got4 = f.to_actions(f.sample(c, x0, 4))[0]
     got16 = f.to_actions(f.sample(c, x0, 16))[0]
     binned = EP.denormalise(bin_uniform(EP.normalise(true_chunk), BINS))
-    e_bin = float(np.degrees(np.sqrt(np.mean((binned - true_chunk)[:, :N_JOINTS] ** 2))))
-    e4 = float(np.degrees(np.sqrt(np.mean((got4 - got16)[:, :N_JOINTS] ** 2))))
-    print(f'[compare] writing this chunk through {BINS} bins changes it by {e_bin:.4f} deg; '
-          f'the head at 4 steps differs from the head at 16 steps by {e4:.4f} deg')
+    e_bin = float(np.degrees(_rmse(binned[:, :N_JOINTS], true_chunk[:, :N_JOINTS])))
+    e_head = float(np.degrees(_rmse(got16[:, :N_JOINTS], true_chunk[:, :N_JOINTS])))
+    idx = rng.integers(0, f.cs.shape[0], 200)
+    many = f.to_actions(f.sample(f.cs[idx], rng.normal(0.0, 1.0, (200, CHUNK * ACTION_DIM)),
+                                 16))[:, :, :N_JOINTS]
+    real = f.tgt[idx].reshape(-1, CHUNK, ACTION_DIM)[:, :, :N_JOINTS]
+    e_many = float(np.degrees(_rmse(many, real)))
+    print(f'[compare] writing this chunk through {BINS} bins moves it by {e_bin:.4f} degrees; '
+          f'the head\'s own chunk sits {e_head:.3f} degrees from the demonstrated one')
+    print(f'[compare] over 200 situations the head lands {e_many:.3f} degrees a joint a step '
+          'from the demonstrated continuation')
 
     d = 1
     steps = np.arange(CHUNK)
-    fig, ax = plt.subplots(figsize=(8.4, 4.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
     _plain(ax)
-    ax.plot(steps, np.degrees(true_chunk[:, d]), color=INK, lw=2.4, marker='o', ms=5,
+    ax.plot(steps, np.degrees(true_chunk[:, d]), color=INK, lw=2.6, marker='o', ms=5,
             label='the demonstrated chunk')
     ax.plot(steps, np.degrees(binned[:, d]), color=GRIP, lw=1.6, ls='--', marker='s', ms=4,
             label=f'written through {BINS} bins')
-    ax.plot(steps, np.degrees(got16[:, d]), color=SLIDE, lw=1.6, marker='^', ms=5,
+    ax.plot(steps, np.degrees(got16[:, d]), color=SLIDE, lw=1.8, marker='^', ms=5,
             label='the head, 16 walking steps')
     ax.plot(steps, np.degrees(got4[:, d]), color=TEAL, lw=1.6, ls=':', marker='v', ms=5,
             label='the head, 4 walking steps')
     ax.set_xlabel('step inside the chunk', fontsize=10)
     ax.set_ylabel('movement of joint 2 (degrees)', fontsize=10)
     ax.legend(fontsize=9, frameon=False)
-    ax.set_title('Binning follows the demonstration closely; the head writes its own chunk',
-                 fontsize=11, weight='bold')
+    ax.set_title('Binning reproduces the demonstration almost exactly;\n'
+                 'the head draws its own version of the same movement',
+                 fontsize=11.5, weight='bold')
     fig.tight_layout()
     _save(fig, VLA_DOC, 'continuous-vs-binned.svg')
 

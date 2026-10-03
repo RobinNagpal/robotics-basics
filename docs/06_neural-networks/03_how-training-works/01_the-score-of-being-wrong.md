@@ -3,24 +3,22 @@
 The page before this one, [what a network can
 learn](../02_inside-a-network/04_what-a-network-can-learn.md), showed that a
 network with enough layers and enough weights can be shaped to fit almost any
-pattern, but it did not say how anybody finds the right values for those weights,
-and a network with the wrong weights fits nothing at all. This page begins that
-answer with the one thing training needs before it can take a single step, which
-is a way of saying how wrong the model is right now.
+pattern, but it did not say how anybody finds the right values for those weights.
+This page begins that answer with the one thing training needs before it can take
+a step, which is a way of saying how wrong the model is right now.
 
 That measurement is called the **loss**, and it is a single number that is large
-when the model is wrong and small when the model is right. Training is the
-business of making that number smaller, so every choice you make about the loss
-changes what the model ends up doing. This page explains the two usual losses for
-an answer that is a number, then how a model answers a question whose answer is a
-choice between named things and what the loss for that looks like, and it ends by
-drawing the shape a loss makes when you plot it against a weight, because that
-shape is the ground the next page walks down.
+when the model is wrong and small when it is right. Training is the business of
+making that number smaller, so every choice you make about the loss changes what
+the model ends up doing. This page explains the two usual losses for an answer
+that is a number, then how a model answers a question whose answer is a choice
+between named things, and it ends by drawing the shape a loss makes when you plot
+it against a weight, because that shape is the ground the next page walks down.
 
 It assumes you know what a weight, a layer and a parameter are, and no statistics
 at all. Every number in the pictures was worked out by
-`docs/diagrams/how_training_works_1.py`, and the small tables of parts, readings
-and grips were chosen by hand so that you can redo the sums yourself.
+`docs/diagrams/how_training_works_1.py`, and the small tables were chosen
+by hand so that you can redo the sums yourself.
 
 ## Contents
 
@@ -38,15 +36,15 @@ and grips were chosen by hand so that you can redo the sums yourself.
 ## 1. Why training needs one number
 
 Since the weights have to be changed until the model is right, the first thing to
-build is a way of telling whether one setting of the weights is better than
-another, and that is harder than it sounds as soon as there is more than one
-example. Suppose a robot arm picks eight parts off a tray, and before each pick a
-model predicts how far the gripper must travel downwards, in millimetres, to
-touch the part. Afterwards you know the travel each part really needed.
+build is a way of telling whether one setting of them is better than another, and
+that is harder than it sounds once there is more than one example. Suppose a
+robot arm picks eight parts off a tray, and before each pick a model predicts how
+far the gripper must travel downwards, in millimetres, to touch the part.
+Afterwards you know the travel each part really needed.
 
 ![Eight parts along the bottom, with a dark dot for the travel the arm really needed and a blue cross for the travel the model predicted, and the error in millimetres written above each pair](../../images/how-training-works/the-score-of-being-wrong/error-per-example.svg)
 
-The model's eight errors are +2, -1, +3, 0, -2, +1, -4 and +1 millimetres.
+The model's eight errors, in millimetres, are +2, -1, +3, 0, -2, +1, -4 and +1.
 
 That list is an honest account of the model, but it is useless for training,
 because training has to compare one setting of the weights with another and a
@@ -79,11 +77,11 @@ measuring how far out each was gives a slope at every setting of the weight.
 Both charts score the same five parts, introduced in
 [section 5](#5-the-loss-landscape-of-one-weight), as a single weight runs from
 2.0 to 4.0. Across 99.4 per cent of the 1,600 small moves in the weight that the
-script tried, the count did not change at all, so it tells you nothing about
-which way to move, while the measured score changed at every one of those moves
-and has a clear lowest value of 0.0214 at a weight of about 3.008. The loss must
-answer both "how wrong am I" and "which way is better", and the next section
-builds the two measured losses that do.
+script tried, the count did not change at all, so it says nothing about which way
+to move, while the measured score changed at every one of those moves and has a
+clear lowest value of 0.0214 at about 3.008. The loss must answer both "how wrong
+am I" and "which way is better", and the next section builds the two measured
+losses that do.
 
 ---
 
@@ -98,8 +96,8 @@ than you would expect.
 The signed errors add to zero, the squared errors to 36 and the error sizes
 to 14.
 
-Read that table one row at a time: the part, the travel it really needed, what
-the model predicted, and the third column minus the second. The last two columns
+Read the table one row at a time: the part, the travel it really needed, what
+the model predicted, and the difference. The last two columns
 throw the sign away, and the signed total shows why that matters, because it
 comes to exactly zero, so a model 2 mm too high on one part and 2 mm too low on
 another would look perfect if you added the errors up.
@@ -116,9 +114,9 @@ Squaring an error of 4 mm charges 16, four times what its size alone charges.
 The left chart is the heart of the difference. At an error of 1 mm both penalties
 charge 1, at 2 mm the squared penalty is 4 against 2, at 4 mm it is 16 against 4,
 and at 12 mm it is 144 against 12, so squared error charges a big mistake far
-more than twice what it charges a mistake half the size. On the right, part 7,
-the single 4 mm miss, supplies 16 of the squared total of 36 but only 4 of the
-absolute total of 14, and that difference is enough to change which model wins.
+more than twice what it charges one half the size. On the right, part 7, the one
+4 mm miss, supplies 16 of the squared total of 36 but only 4 of the absolute
+total of 14, which is enough to change which model wins.
 
 ![Three bar charts of eight errors each for models A, B and C, and below them the two totals for each model with the two orderings they produce](../../images/how-training-works/the-score-of-being-wrong/three-models-two-rankings.svg)
 
@@ -140,7 +138,7 @@ chase them and absolute error will not.
 ![Two charts of a loss against the single grip force a model gives, first for seven good readings and then with one glitched reading of 19 N added](../../images/how-training-works/the-score-of-being-wrong/one-wild-reading.svg)
 
 One bad reading of 19 N moves the best squared-error answer from 5.00 N to 6.75 N
-while leaving the best absolute-error answer at 5.00 N.
+and leaves the absolute-error answer at 5.00 N.
 
 The readings are the force in newtons that the gripper needed to hold one part,
 chosen by hand as 4.8, 5.1, 4.9, 5.3, 5.0, 5.2 and 4.7, and then a sensor glitch
@@ -169,8 +167,7 @@ A **logit** is one of those raw scores, whatever comes out of the last layer for
 that one answer, so it can be any size and can be negative, and on its own it
 means nothing except that a larger logit means the model prefers that answer
 more. A **probability** is a number between 0 and 1 saying how likely something
-is, and the probabilities over a set of answers that covers everything must add
-up to 1. Turning logits into probabilities is the job of **softmax**.
+is, and the probabilities over answers that cover everything must add up to 1. Turning logits into probabilities is the job of **softmax**.
 
 ![A table turning four logits into four probabilities by raising e to each logit, adding the four results to 59.965 and dividing, beside a bar chart of the logits and the probabilities](../../images/how-training-works/the-score-of-being-wrong/softmax-arithmetic.svg)
 
@@ -180,9 +177,9 @@ by that total, giving 0.9105, 0.0453, 0.0275 and 0.0167.
 Softmax takes three steps. First it raises the number e, about 2.71828, to the
 power of each logit, which makes every score positive and makes larger scores
 grow much faster, so the logits 4.0, 1.0, 0.5 and 0.0 become 54.598, 2.718, 1.649
-and 1.000. Second it adds those together, giving 59.965. Third it divides each
-one by that total, so 54.598 divided by 59.965 is 0.9105, and the four results
-add up to 1.0000 because each is a share of the same total.
+and 1.000. Second it adds those, giving 59.965. Third it divides each by that
+total, so 54.598 divided by 59.965 is 0.9105, and the four results add up to
+1.0000 because each is a share of the same total.
 
 ![On the left, the same probabilities before and after adding 10 to every logit, and on the right, the probabilities when the logits are quartered, left alone and doubled](../../images/how-training-works/the-score-of-being-wrong/softmax-shift-and-spread.svg)
 
@@ -242,23 +239,22 @@ The sure right answer costs 0.0938, the unsure right answer costs 1.0938 and the
 sure wrong answer costs 4.0938.
 
 Those three numbers show the loss doing its job. The unsure right answer costs
-about 12 times what the sure right answer costs, even though anybody scoring
-accuracy would count both as correct, so cross-entropy pushes the model not
-merely to be right but to be right confidently, and the sure wrong answer costs
-about 44 times the sure right answer and three times more than guessing. In real
-training the loss is averaged over a batch, which is a group of examples handled
-together.
+about 12 times the sure right answer, even though anybody scoring accuracy would
+count both as correct, so cross-entropy pushes the model not merely to be right
+but to be right confidently, and the sure wrong answer costs about 44 times the
+sure right answer and three times more than guessing. In real training the loss
+is averaged over a batch, which is a group of examples handled together.
 
 ![Two bar charts over six pictures, the probability each one gave to mug and the cross-entropy loss it was charged, with the batch average marked](../../images/how-training-works/the-score-of-being-wrong/batch-average.svg)
 
-Five of the six pictures were named right, and the one failure supplies 56 per
-cent of the average loss.
+Five of six pictures were named right, and the one failure supplies 56 per cent
+of the average loss.
 
-The six logit rows here were chosen by hand and the right answer is mug every
-time. The model names five of the six correctly, so its accuracy is 83.3 per
-cent, which sounds respectable, but its average loss is 0.9440 and picture 5
-alone, which gave mug a probability of 0.041 and was charged 3.194, supplies 56.4
-per cent of that average, while the other five together average only 0.4940. That
+The six logit rows were chosen by hand and the right answer is mug every time.
+The model names five of the six correctly, so its accuracy is 83.3 per cent,
+which sounds respectable, but its average loss is 0.9440 and picture 5 alone,
+which gave mug a probability of 0.041 and was charged 3.194, supplies 56.4 per
+cent of that average, while the other five together average only 0.4940. That
 lopsidedness is deliberate, because the examples the model gets badly wrong are
 the ones it has most to learn from.
 
@@ -286,8 +282,8 @@ at 3.5 and 10.8620 at 4.0, so it falls and then rises as w passes through 3.
 
 ![The mean squared error drawn against the single weight w from 1.0 to 5.0, a smooth bowl with five settings marked on it and the bottom marked with a triangle](../../images/how-training-works/the-score-of-being-wrong/loss-against-weight.svg)
 
-The loss worked out at 801 settings of w makes one smooth bowl whose lowest point
-is at w = 3.007, where the loss is 0.0214 square millimetres.
+The loss at 801 settings of w makes one smooth bowl, lowest at w = 3.007 where it
+is 0.0214 square millimetres.
 
 This picture is called the **loss landscape**, and it is the most useful way to
 think about training, because the horizontal axis is the weight, the vertical
@@ -338,9 +334,9 @@ the choice follows from what a mistake costs rather than from the mathematics.
 For an answer that is a number the default is squared error, because it gives a
 smooth landscape and charges one big mistake far more than several small ones,
 which is what you want on a machine that can damage itself. Its cost is that it
-believes every label, so a handful of wrong labels drag the model towards them.
-The obvious alternative, absolute error, has the opposite habits, and a third
-loss tries to have both.
+believes every label, so a few wrong labels drag the model towards them. The
+obvious alternative, absolute error, has the opposite habits, and a third loss
+tries to have both.
 
 ![Three penalty curves on the left, half the squared error, the error size and the Huber penalty that switches at 1 mm, and on the right a log-scale bar chart of what each charges at five error sizes](../../images/how-training-works/the-score-of-being-wrong/huber-curve.svg)
 
@@ -359,7 +355,7 @@ the three disagree by replacing one of the five measured travels with a glitch.
 ![On the left the five parts with the last travel changed from 15.1 mm to 4.0 mm and three fitted lines through them, and on the right the three losses drawn against w with their three bottoms marked](../../images/how-training-works/the-score-of-being-wrong/fitted-under-three-losses.svg)
 
 With one glitched label out of five, squared error gives up 1.01 of the weight,
-Huber gives up 0.18 and absolute error gives up only 0.03.
+Huber 0.18 and absolute error only 0.03.
 
 The honest best weight was 3.0073. After the fifth travel is changed from 15.1 mm
 to 4.0 mm, which is what a depth camera does when it reads through a hole, the
@@ -374,7 +370,7 @@ squared error.
 ![On the left, the cross-entropy and squared-error penalties drawn against the probability given to the right class, and on the right, how hard each loss pushes the logit at five probabilities](../../images/how-training-works/the-score-of-being-wrong/why-not-squared-for-a-choice.svg)
 
 At a probability of 0.010 cross-entropy pushes the logit about 51 times harder
-than squared error does.
+than squared error.
 
 The left chart shows the charge, because cross-entropy climbs without limit as
 the probability of the right answer falls while squared error on the probability
@@ -467,8 +463,8 @@ flatter loss. It is written that way because the two steps together are faster
 and safer against very large logits.
 
 What you still have to decide is everything this page has been about. You choose
-which loss matches the cost of being wrong in your cell, you choose the Huber
-switch point if you use one, and you choose whether some examples count more than
-others, which `nn.CrossEntropyLoss` supports through its `weight` argument. None
-of those choices is checked by anything, and a run with the wrong loss will train
-perfectly happily towards the wrong model.
+which loss matches the cost of being wrong in your cell, the Huber switch point
+if you use one, and whether some examples count more than others, which
+`nn.CrossEntropyLoss` supports through its `weight` argument. None of those
+choices is checked, and a run with the wrong loss will train perfectly happily
+towards the wrong model.

@@ -3,9 +3,9 @@
 The page before this one, [detection and
 segmentation](02_detection-and-segmentation.md), built a model that draws a box
 round every object it can see and then draws the exact outline inside that box.
-That model has one hard limit, and the limit is not in its eyes but in its
-mouth, because the last layer of a detector has one output for each name it was
-trained on, so it can only ever report one of those names. A robot arm working
+That model has one hard limit, and the limit is not in what it can see but in
+what it can say, because the last layer of a detector has one output for each
+name it was trained on, so it can only ever report one of those names. A robot arm working
 in a real room meets hex keys, cable ties, calibration boards and tubes of
 thermal paste, and a model trained on a fixed list of household names has no
 output for any of them.
@@ -54,7 +54,7 @@ the calculation rather than from the particular numbers chosen.
 
 The detector on the page before this one was trained on a list of names, and
 every picture in its training set was labelled with boxes drawn round things
-whose names were on that list, so the list is baked into the last layer of the
+whose names were on that list, so the list is fixed in the last layer of the
 network and cannot be changed without training the network again. To see how
 much that costs, take one tray from a robot workshop and check each thing on it
 against a list of twenty common names.
@@ -223,8 +223,8 @@ In this simulated set a threshold of 0.90 keeps all forty right boxes and 42 of 
 No threshold in that sweep separates the two cases, and that is a property of the
 method rather than of the numbers chosen, because the scores all live in a narrow
 band for the reason section 2 gave. A robot program therefore cannot ask "is this
-a mug" and get a yes or a no, and the useful question is always a comparison:
-given these six names, which fits this region best.
+a mug" and get a yes or a no, and the useful question is always a comparison,
+which is to ask which of a given list of names fits this region best.
 
 Once a box has a name, the last step for a gripper is to turn the box into a
 shape, and that is the promptable segmentation described on [detection and
@@ -296,7 +296,7 @@ directions you can see, and nothing at all on the four directions that carry the
 relation, the count and the denial, because those are things words do and
 pictures do not. Multiplying a picture value of zero by a word value of 0.267
 gives zero, so whatever the phrase says with those four directions is thrown
-away at the moment of comparison, and that single fact is behind the four
+away at the moment of comparison, and that single fact is behind the first two
 failures in the next section.
 
 ---
@@ -353,9 +353,9 @@ section 4.
 The returned box sits 125 millimetres from the mug the words meant, and a gripper that opens to 85 millimetres round a 72 millimetre mug has only 6.5 millimetres of margin on each side, so the miss is 19 times the margin.
 
 That is the real asymmetry between a benchmark and a robot. A benchmark score is
-an average over thousands of pictures, so a confident wrong answer is diluted by
-all the right ones, whereas an arm acts on one answer at a time and cannot tell a
-confident wrong answer from a right one until the fingers close. The
+an average over thousands of pictures, so a confident wrong answer is averaged
+away among all the right ones, whereas an arm acts on one answer at a time and
+cannot tell a confident wrong answer from a right one until the fingers close. The
 practical answers are to ask for several names at once and require the winner to
 beat the runner-up by a margin you have measured, to check the returned region
 against the depth measurement before moving, and to let the program answer "I

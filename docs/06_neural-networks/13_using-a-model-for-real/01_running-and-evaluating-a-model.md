@@ -8,16 +8,13 @@ answers two questions: what has to happen between that file and an arm that move
 and how do you then find out honestly whether it works?
 
 It is for a reader who has followed the book this far, so it assumes you know what
-weights are, what a loss is, what a forward pass does and what a policy gives back.
-It does not assume you have ever shipped anything, because the things that go wrong
-here are not the things that go wrong in training, and almost none of them show up as
-an error message.
-
-The page explains these words as it goes: **inference**, which is running a trained
-model rather than training it, **runtime**, which is the program that carries out the
-arithmetic, **throughput** and **latency**, which are two different ways of being
-fast, **latency budget**, which is the list of everything that must fit inside one
-control cycle, **success rate**, **ablation** and **out-of-distribution**.
+weights are, what a loss is and what a policy gives back. It does not assume you have
+ever shipped anything, because the things that go wrong here are not the things that go
+wrong in training, and almost none of them show up as an error message. The page
+explains these words as it goes: **inference**, which is running a trained model rather
+than training it, **runtime**, which is the program that carries out the arithmetic,
+**throughput** and **latency**, which are two different ways of being fast, **latency
+budget**, **success rate**, **ablation** and **out-of-distribution**.
 
 Every number in the pictures is worked out and printed by
 `docs/diagrams/using_a_model_for_real.py`. One example policy runs through the page and
@@ -42,12 +39,12 @@ data from a seeded random number generator.
 
 ## 1. What a trained model is when it is a set of files
 
-Training ends by writing files to a disk, and those files are the whole of what you
-have. The example policy used through this page takes two camera pictures of 224 rows
-by 224 columns, a reading of the arm's seven joints and a short instruction in words,
-and gives back the next sixteen commands for those joints. Its picture encoder is
-twelve transformer blocks at width 384, its trunk is six blocks at width 512, and a
-table of 32,000 word pieces turns the instruction into numbers.
+Training ends by writing files to a disk, and those files are the whole of what you have.
+The example policy used through this page takes two camera pictures of 224 by 224, a
+reading of the arm's seven joints and a short instruction, and gives back the next
+sixteen commands. Its picture encoder is twelve transformer blocks at width 384, its
+trunk is six blocks at width 512, and a table of 32,000 word pieces turns the instruction
+into numbers.
 
 ![Five file boxes: model.safetensors with 57,387,911 learned numbers, config.json with 14 settings, preprocessor.json with 9, action_stats.json with 16 and tokenizer.json with 32,000 entries](../../images/using-a-model-for-real/running-and-evaluating-a-model/checkpoint-files.svg)
 
@@ -79,20 +76,19 @@ settings give the network two different pictures of one scene.
 
 Squashing the whole simulated picture to a square and cutting a square out of the middle leave numbers that differ by 12.1 out of 255 on average, and 16% of the pixels differ by more than 10.
 
-Neither setting is wrong, and both are used by real models. What is wrong is using one
-at training time and the other when the robot runs, because then the network is shown
-a picture it never trained on and nothing in the system knows it.
+Neither setting is wrong, and both are used by real models. What is wrong is using one at
+training time and the other when the robot runs, because the network is then shown a
+picture it never trained on and nothing in the system knows it.
 
 ---
 
 ## 2. When the preprocessing does not match the training
 
 Section 1 said the small files decide what the weights mean, so this section measures
-what a wrong one costs. The measurements come from a simulated experiment that the
-script runs in full: four kinds of object, each with its own colour, photographed
-under lighting that varies at random, with a small classifier trained on 4,000 of them
-in NumPy and tested on 2,000 more. With the settings it trained with, it gets 95.5% of
-the test objects right.
+what a wrong one costs. The measurements come from a simulated experiment the script runs
+in full: four kinds of object, each with its own colour, photographed under lighting that
+varies at random, with a small classifier trained on 4,000 of them in NumPy and tested on
+2,000 more. With the settings it trained with it gets 95.5% right.
 
 ![Two curves: accuracy against the spread used at run time, peaking at 95.5% when the spread is right, and accuracy against an error in the mean that is subtracted, also peaking in the middle](../../images/using-a-model-for-real/running-and-evaluating-a-model/wrong-normalisation.svg)
 
@@ -125,11 +121,10 @@ training data covered.
 Two command-scaling files whose ranges differ by a few degrees send the arm an average of 12.5 degrees away from where the model meant, and up to 25.0 degrees on a single command.
 
 The two files on the left look almost the same, which is the problem, and joint 3 is
-worst at 17.3 degrees because its two ranges differ most. An arm that is 12 degrees out
-does not look like a software fault, it looks like a badly trained policy, and people
-spend weeks collecting more data to fix a one-line mistake. The habit that prevents all
-of this is to save the preprocessing settings inside the checkpoint, load them from
-there, and never retype them.
+worst at 17.3 degrees because its ranges differ most. An arm that is 12 degrees out does
+not look like a software fault, it looks like a badly trained policy, and people spend
+weeks collecting more data to fix a one-line mistake. The habit that prevents all of this
+is to save the preprocessing settings inside the checkpoint and never retype them.
 
 ---
 
@@ -157,11 +152,10 @@ hands the graphics processor one small piece of work at a time and waits.
 
 Joining operations up turns 396 hand-offs into 96, which at five microseconds each gives 1.50 milliseconds back, 24% of the layer-by-layer time.
 
-**Exporting** a model means writing it out as a fixed graph of operations with no
-Python left in the loop, and a **runtime** is the program that then carries that graph
-out. The runtime can see the whole graph at once, so it can join a normalisation, a
-matrix multiply and an activation into one piece of work, which is where 396 drops to
-96, and it can choose the arrangement of numbers in memory that suits the machine.
+**Exporting** a model means writing it out as a fixed graph of operations with no Python
+left in the loop, and a **runtime** is the program that then carries that graph out. The
+runtime sees the whole graph at once, so it can join a normalisation, a matrix multiply
+and an activation into one piece of work, which is where 396 drops to 96.
 
 ![Five rows: the training framework at 14.8 ms, a frozen graph at 14.8 ms, joined-up operations at 13.3 ms, two-byte weights at 4.8 ms and one-byte weights at 2.6 ms](../../images/using-a-model-for-real/running-and-evaluating-a-model/runtime-steps.svg)
 
@@ -214,10 +208,8 @@ first. The timeline below follows the unhappy case in full.
 
 Two arms sharing a batch of eight means the first arm waits 175 milliseconds for the batch to fill, and its command arrives 213 milliseconds late, four deadlines after it was needed.
 
-So batching is the right tool when you have many arms, or when you are scoring a
-recorded dataset offline and nobody is waiting, and it is the wrong tool for one arm
-in a control loop. The way to tell the two apart is to ask who is waiting for the
-answer.
+So batching is right when many arms share one machine, or when you are scoring a
+recorded dataset and nobody is waiting, and wrong for one arm in a control loop.
 
 ---
 
@@ -225,11 +217,10 @@ answer.
 
 Section 4 measured the model's own time, and this section puts it next to everything
 else, because the model is never the only thing in the loop. A **latency budget** is a
-written list of every stage between the light reaching the camera sensor and the
-command reaching the arm, with a time against each one, added up and compared with the
-period of the control loop. The example here runs at 20 hertz, so the period is 50
-milliseconds, and the stage times are stated examples apart from the forward pass,
-which is the 4.76 milliseconds section 3 worked out.
+written list of every stage between the light reaching the camera sensor and the command
+reaching the arm, added up and compared with the period of the control loop. The example
+here runs at 20 hertz, so the period is 50 milliseconds, and the stage times are stated
+examples apart from the forward pass, which is section 3's 4.76 milliseconds.
 
 ![A stacked horizontal bar of six stages adding to 30.1 ms, with dashed lines at the 20 ms, 33.3 ms and 50 ms periods of 50 Hz, 30 Hz and 20 Hz](../../images/using-a-model-for-real/running-and-evaluating-a-model/latency-budget.svg)
 
@@ -245,10 +236,9 @@ does not fit at 50 hertz is a fact about the camera rather than the network.
 
 Getting the picture out of the camera takes 19.0 milliseconds, which is 63.2% of the loop, while the network takes 15.8%.
 
-This is the most useful number on the page for anybody trying to make a robot faster,
-because the model is only the fourth largest cost. Shaving a millisecond off the
-network is work, and buying a camera that reads out faster, or starting the next
-exposure while the current picture is still being processed, is usually worth more.
+The model is only the fourth largest cost, so shaving a millisecond off the network is
+work, while buying a faster camera, or starting the next exposure while the current
+picture is still being processed, is usually worth more.
 
 There is one more trick, and it comes from the policies of
 [diffusion and flow policies](../12_models-that-act/02_diffusion-and-flow-policies.md),
@@ -272,10 +262,10 @@ arm can be commanded.
 Sections 1 to 5 got the model running, and this section asks whether it works. The
 number training gives you is a loss on a held-out set, and it is tempting to treat a
 lower loss as a better robot, but those two things are only loosely tied together. The
-script shows this with 180 simulated policies. Each one makes a small position mistake
-at every step of a 40-step reach, the arm corrects part of the error it already has and
-carries the rest, and the grasp succeeds only if the error never leaves an 11
-millimetre tolerance. Some of those policies also make a rare large mistake.
+script shows this with 180 simulated policies, each making a small position mistake at
+every step of a 40-step reach, where the arm corrects part of the error it has and
+carries the rest, and the grasp succeeds only if the error never leaves an 11 millimetre
+tolerance. Some of those policies also make a rare large mistake.
 
 ![A scatter of 180 policies, training loss on the x axis against success rate on the y axis, coloured by how often each one makes a big mistake, with two circled policies at the same loss scoring 69% and 99%](../../images/using-a-model-for-real/running-and-evaluating-a-model/loss-not-success.svg)
 
@@ -283,42 +273,37 @@ Loss and success rate agree only loosely, and two of the simulated policies with
 
 The reason is in the colour. A policy whose mistakes are small and steady keeps the arm
 inside the tolerance even though its average squared error is large, while a policy that
-is usually better but throws one big mistake every seventy steps fails whenever that
-mistake lands during a grasp. The loss averages over steps and the task does not, so the
-only honest measure of a robot policy is a **success rate**, which is the fraction of
-whole attempts that worked.
+throws one big mistake every seventy steps fails whenever that mistake lands during a
+grasp. The loss averages over steps and the task does not, so the only honest measure of
+a robot policy is a **success rate**, which is the fraction of whole attempts that
+worked.
 
 That rate is only honest if the attempts were chosen before you saw the results. An
-evaluation protocol is a list, written in advance, of how many trials you will run,
-where the object starts in each one, what counts as a success, and what you will do
-about a trial ruined by something unrelated. The biggest thing it decides is where the
-object goes.
+evaluation protocol is a list, written in advance, of how many trials you will run, where
+the object starts in each one, and what counts as a success.
 
 ![A heat map of 48 workspace cells with 12 trials each, the 140 training positions scattered over the middle, and a bar chart comparing 90% inside the training box with 48% outside it](../../images/using-a-model-for-real/running-and-evaluating-a-model/trial-positions.svg)
 
 In this simulation the same policy scores 90% in the 192 trials inside the box the demonstrations covered and 48% in the 384 trials outside it.
 
 Inputs the model was not trained on are called **out-of-distribution**, which means they
-come from a different mix of situations than the training data did. The heat map shows
-the usual shape of it, with a green middle where the demonstrations were and a ring of
-red where nobody ever put the object, and a trial list that stays in the green reports
-90% and is not a lie about anything except what the robot will do tomorrow.
-
-The second thing the list decides is how many trials to run, and this is where most
-reported numbers fall apart.
+come from a different mix of situations than the training data did. The heat map has a
+green middle where the demonstrations were and a ring of red where nobody ever put the
+object, so a trial list that stays in the green reports 90% and is not a lie about
+anything except what the robot will do tomorrow. The second thing the list decides is
+how many trials to run, and this is where most reported numbers fall apart.
 
 ![Left: exact 95% intervals for scores of 70% and 90% at 10, 20, 50, 100, 200 and 500 trials. Right: the chance those two intervals do not overlap, rising from 4% at 20 trials to 85% at 120](../../images/using-a-model-for-real/running-and-evaluating-a-model/trials-and-intervals.svg)
 
 Eighteen successes in twenty trials is consistent with a true rate anywhere from 68.3% to 98.8%, and twenty trials tell a truly 70% policy from a truly 90% one only 4 times in 100.
 
-The bars are exact 95% confidence intervals, and a 95% confidence interval is a range
-built so that, if you repeated the whole experiment many times, the range would hold the
-true rate 95 times in 100. At twenty trials the interval for a score of 90% is 30.5
-percentage points wide and the one for 70% is 42.4 points wide, so they overlap heavily.
-The right-hand panel puts a number on the consequence: two policies that really are 70%
-and 90% produce separated intervals only 4% of the time at twenty trials each, and you
-need about 120 trials each before that happens 85% of the time. A table of twenty-trial
-numbers is a table of noise.
+A 95% confidence interval is a range built so that, if you repeated the whole experiment
+many times, the range would hold the true rate 95 times in 100. At twenty trials the
+interval for a score of 90% is 30.5 percentage points wide and the one for 70% is 42.4
+points wide, so they overlap heavily. The right-hand panel puts a number on the
+consequence: two policies that really are 70% and 90% produce separated intervals only
+4% of the time at twenty trials each, and you need about 120 trials each before that
+happens 85% of the time. A table of twenty-trial numbers is a table of noise.
 
 The same arithmetic governs **ablations**, which means taking one part of the system
 away and measuring what happens, in order to find out which parts matter.
@@ -327,15 +312,15 @@ away and measuring what happens, in order to find out which parts matter.
 
 With 80 simulated trials each, the last three versions score 71%, 82% and 65%, their intervals all overlap, and their training losses of 11.8, 10.2 and 7.3 put them in a different order again.
 
-Each bar is a separate simulation in which one thing genuinely changes: removing the
-wrist camera makes every step noisier, removing the joint readings adds a steady lean,
-and giving one command at a time makes consecutive mistakes repeat. The full system at
-92% is clearly better than all three, the three cannot be ordered against each other at
-80 trials, and the loss ranks them differently again.
+Each bar is a separate simulation in which one thing changes: removing the wrist camera
+makes every step noisier, removing the joint readings adds a steady lean, and giving one
+command at a time makes consecutive mistakes repeat. The full system at 92% beats all
+three, the three cannot be ordered against each other at 80 trials, and the loss ranks
+them differently again.
 
-A number on a public benchmark tells you how a model did on somebody else's objects,
-lighting and arm, which helps you choose what to try and says nothing about your cell.
-The script measures the shape of that gap on the colour classifier from section 2.
+A benchmark number tells you how a model did on somebody else's objects, lighting and
+arm, which helps you choose what to try and says nothing about your cell. The script
+measures the shape of that gap on the colour classifier from section 2.
 
 ![Left: accuracy of 95.5% as trained, 87.8% under brighter light, 76.6% on a warmer tablecloth and 71.5% with a noisier camera. Right: a curve of accuracy against brightness falling away on both sides of the trained value](../../images/using-a-model-for-real/running-and-evaluating-a-model/out-of-distribution.svg)
 
@@ -353,10 +338,10 @@ them.
 ## 7. Reading a failure, and the safety layer that is not learned
 
 Section 6 counted failures, and this section is about understanding one. When an arm
-knocks a mug over, three different things can have happened, and from outside the robot
+knocks a mug over, three different things can have happened and from outside the robot
 they look the same: the perception lost the object, the policy chose badly while seeing
-perfectly well, or the hardware refused to do what it was told. Telling them apart is a
-matter of reading three recorded streams against each other.
+perfectly well, or the hardware refused to do what it was told. Telling them apart means
+reading three recorded streams against each other.
 
 ![Three simulated episodes: a detector score falling from 0.91 to 0.18 with the target then jumping about, a commanded joint shaking at 4 Hz while nothing else changes, and a measured joint flatlining while its command keeps rising](../../images/using-a-model-for-real/running-and-evaluating-a-model/failure-triage.svg)
 
@@ -375,31 +360,29 @@ is not free.
 
 A twelve-second trial costs 43.8 megabytes with the two compressed camera streams, the joint readings at 500 hertz and the model's own output, so 100 trials come to 4.4 gigabytes.
 
-The joint readings at 500 hertz cost half a megabyte a trial and the two compressed
-camera streams cost 21.6 megabytes each, while the exact block of numbers fed into the
-network costs 144.5 megabytes a trial on its own, which is 3.3 times everything else, so
-the sensible rule is to keep that one only for trials that failed. The page on
+The joint readings cost half a megabyte a trial and the two compressed camera streams
+cost 21.6 megabytes each, while the exact block of numbers fed into the network costs
+144.5 megabytes on its own, so keep that one only for trials that failed. The page on
 [sensor streams](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
 describes how such streams are recorded with their timestamps lined up, which matters
-here because an unaligned log cannot answer the question "which happened first".
+because an unaligned log cannot say which thing happened first.
 
 The last thing to say about failure is that the model must not be the only thing
-protecting the arm, because a trained network comes with no guarantee of any kind.
-Nothing in the training says its output will stay inside the joint limits, nothing says
-it will not ask for an impossible speed, and nothing says it will answer at all.
+protecting the arm, because a trained network comes with no guarantee. Nothing in the
+training says its output will stay inside the joint limits, nothing says it will not ask
+for an impossible speed, and nothing says it will answer at all.
 
 ![Left: a commanded trajectory spiking to 206 degrees past a 170 degree joint limit, and the clamped version held at the limit. Right: a timeline where commands stop for 300 ms and a watchdog fires 120 ms into the gap](../../images/using-a-model-for-real/running-and-evaluating-a-model/safety-layer.svg)
 
 The clamp caught 4 of the 59 command changes, holding the peak speed at the 90 degrees a second limit instead of the 1,132 the policy asked for, and the watchdog brakes 120 milliseconds into a 300 millisecond silence.
 
-So a layer of ordinary written code sits between the model and the motors, and it is
-not learned. It clamps every command to the joint limits, it limits how far a command
-may move in one period, which at 20 hertz and 90 degrees a second is 4.5 degrees, it
-stops the arm when the measured force passes a threshold, and it holds a watchdog timer
-that brakes the arm if no command arrives within 120 milliseconds. The reason to write
-this rather than train it is that written code can be read, argued about and tested
-exhaustively, and a network cannot, and the cost is that the clamp sometimes spoils a
-legitimate fast motion. The
+So a layer of ordinary written code sits between the model and the motors, and it is not
+learned. It clamps every command to the joint limits, it limits how far a command may
+move in one period, which at 20 hertz and 90 degrees a second is 4.5 degrees, it stops
+the arm when the measured force passes a threshold, and it brakes the arm if no command
+arrives within 120 milliseconds. The reason to write this rather than train it is that
+written code can be read, argued about and tested exhaustively while a network cannot,
+and the cost is that the clamp sometimes spoils a legitimate fast motion. The
 [safety monitoring](../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
 page describes how such a layer is built, and
 [PID control](../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md)
@@ -410,17 +393,15 @@ describes the controller underneath it.
 ## 8. Where to read next
 
 - [The map of models](02_the-map-of-models.md) is the next page and the last of this
-  book, and it gathers every family the book explained into one map, with a table of
-  what to reach for given a job.
+  book, and it maps every family the book explained, with a table of what to reach for.
 - [Diffusion and flow policies](../12_models-that-act/02_diffusion-and-flow-policies.md)
-  explains the action chunks and control frequencies that section 5's budget depends on.
+  explains the action chunks and control frequencies section 5's budget depends on.
 - [Making a model smaller and faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md)
   explains quantisation and distillation, the two largest levers in section 3's table.
 - [Overfitting and generalisation](../04_making-training-work/01_overfitting-and-generalisation.md)
-  explains the train, validation and test split that section 6's loss number comes from.
+  explains the split that section 6's loss number comes from.
 - [Running a model on a robot](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
-  is the catalogue page for this subject, covering the choice of computer and the shape
-  of the control loop for real named models.
+  is the catalogue page for this subject, covering the choice of computer for real models.
 - [Evaluation and failure](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md)
   is the catalogue page for section 6, with a worked mug-picking evaluation.
 
@@ -477,12 +458,11 @@ print(f"{100 * successes / trials:.0f}%  from {100 * lo:.1f}% to {100 * hi:.1f}%
 # 90%  from 68.3% to 98.8%
 ```
 
-The parameter count of 1,415 is the two layers added up, which is 14 times 64 plus 64
-biases, then 64 times 7 plus 7 biases. The interval of 68.3% to 98.8% is the same exact
-interval that section 6's picture draws for eighteen successes in twenty trials, and
-`scipy` gets it from the beta distribution in two lines rather than from the search the
-diagram script does by hand. The timing line prints whatever your own machine gives,
-which is the one number on this page nobody can work out for you.
+The parameter count of 1,415 is 14 times 64 plus 64 biases, then 64 times 7 plus 7
+biases. The interval of 68.3% to 98.8% is the same exact interval section 6's picture
+draws for eighteen successes in twenty trials, and `scipy` gets it from the beta
+distribution in two lines. The timing line prints whatever your own machine gives, which
+is the one number on this page nobody can work out for you.
 
 The libraries do a lot here, because `torch.jit.trace` and the newer `torch.compile`
 freeze the graph of section 3, ONNX Runtime and TensorRT are runtimes that then join the
@@ -490,8 +470,8 @@ operations up, and the `transformers` and `timm` packages ship preprocessing set
 beside their weights so that section 2's fault is harder to make.
 
 What you still have to decide is everything the libraries have no view on. You choose the
-control rate, and therefore the budget every stage in section 5 must fit inside, and you
-choose what to log and what to throw away. You write the trial list of section 6 before
-you run it, knowing now that twenty trials distinguish almost nothing. And you write the
-safety layer of section 7 yourself, in ordinary code, because it is the one part of the
-system that must still work when the model is wrong.
+control rate, and therefore the budget every stage in section 5 must fit inside, and what
+to log and what to throw away. You write the trial list of section 6 before you run it,
+knowing now that twenty trials distinguish almost nothing. And you write the safety layer
+of section 7 yourself, because it is the one part of the system that must still work when
+the model is wrong.

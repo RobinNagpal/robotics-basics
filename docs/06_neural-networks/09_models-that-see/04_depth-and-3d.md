@@ -14,11 +14,11 @@ since the fingers have to close around an object rather than in front of it or
 behind it.
 
 The page covers three ways of measuring distance and three ways of holding the
-result: what a depth picture is, how a network guesses distance from a single
-photograph and why that guess has no true scale, what stereo cameras measure and
-how accurate they are, why a depth camera that throws a pattern of dots fails on
-glass, how a depth picture becomes a cloud of points, and what a learned
-description of a whole scene buys a robot.
+result. It explains what a depth picture is, how a network guesses distance from
+a single photograph and why that guess has no true scale, what stereo cameras
+measure and how accurate they are, why a depth camera that throws a pattern of
+dots fails on glass, how a depth picture becomes a cloud of points, and what a
+learned description of a whole scene buys a robot.
 
 It is for a reader who has read [open-vocabulary
 vision](03_open-vocabulary-vision.md) and [vision
@@ -49,9 +49,9 @@ says so.
 
 The last page treated a picture as a grid of brightness values, which is what it
 is, and the first thing to see is what that grid leaves out. A camera lens
-lands each direction it gathers light from on one pixel, so a pixel records which
-direction the light came from and says nothing about how far along that direction
-the surface was.
+turns each direction it gathers light from into one pixel, so a pixel records
+which direction the light came from and says nothing about how far along that
+direction the surface was.
 
 ![A side view of a camera with a red line leaving it, carrying three blue points at 0.30, 0.60 and 0.90 metres, each labelled with its own sideways position](../../images/models-that-see/depth-and-3d/flat-picture-is-a-ray.svg)
 
@@ -95,7 +95,7 @@ it has one limit that no amount of training removes.
 
 ![A side view of a camera with two red lines forming a cone, a small blue object at 0.40 metres and a large purple object at 1.20 metres, both exactly filling the cone](../../images/models-that-see/depth-and-3d/same-picture-two-sizes.svg)
 
-A mug 95 millimetres tall at 0.40 metres and a bin 285 millimetres tall at 1.20 metres both come out 142.5 pixels tall, because three times the size at three times the distance fills the same cone.
+Through a lens of focal length 600 pixels, a mug 95 millimetres tall at 0.40 metres and a bin 285 millimetres tall at 1.20 metres both come out 142.5 pixels tall, because three times the size at three times the distance fills the same cone.
 
 The arithmetic is one line, because the height of a thing in the picture is the
 focal length times its real height divided by its distance, so 600 times 0.095

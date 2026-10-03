@@ -1312,10 +1312,11 @@ def cost_vs_resolution() -> None:
             label='50-layer convolutional network')
     for s, a, b in zip(sizes, vit, res):
         if s in (224, 1024):
+            dx, ha = (10, 'left') if s == 224 else (-8, 'right')
             ax.annotate(f'{a / 1e9:.0f} G', (s, a / 1e9), textcoords='offset points',
-                        xytext=(-6, 9), fontsize=9, color=GRIP, ha='right')
+                        xytext=(dx, 9), fontsize=9.5, color=GRIP, ha=ha)
             ax.annotate(f'{b / 1e9:.0f} G', (s, b / 1e9), textcoords='offset points',
-                        xytext=(-6, -14), fontsize=9, color=SLIDE, ha='right')
+                        xytext=(dx, -15), fontsize=9.5, color=SLIDE, ha=ha)
     ax.set_yscale('log')
     ax.set_xlabel('picture side, in pixels', fontsize=10)
     ax.set_ylabel('thousand million multiply-adds (log scale)', fontsize=10)
@@ -1996,8 +1997,9 @@ def class_versus_instance() -> None:
         gy, gx = np.nonzero(g['mask'])
         ax.plot([gx.mean()], [gy.mean()], marker='X', color=INK, markersize=11,
                 markeredgecolor='white')
-        ax.text(gx.mean(), gy.mean() - 16, f'{g["area"]:,} px', fontsize=9,
-                ha='center', color=INK, weight='bold')
+        ax.text(gx.mean(), g['box'][1] - 8 - 16 * (i % 2), f'{g["area"]:,} px',
+                fontsize=9, ha='center', va='bottom', color=INK, weight='bold',
+                bbox=dict(facecolor='white', edgecolor='none', alpha=0.8, pad=0.8))
     ax.set_xlabel('three regions with three middles, one of which the arm can reach',
                   fontsize=9.5)
     fig.suptitle('Why picking one glass out of several needs the fourth job, not '
@@ -2372,8 +2374,12 @@ def nms_steps() -> None:
     ax = flat[5]
     _show(ax, rgb, f'what is left: {len(keep)} boxes')
     for n, i in enumerate(keep):
-        _draw_box(ax, dets[i]['box'], SLIDE, f'{dets[i]["score"]:.2f}', lw=1.8,
-                  fs=8, above=n % 2 == 0)
+        b = dets[i]['box']
+        _draw_box(ax, b, SLIDE, None, lw=1.8)
+        ty = b[1] - 4 - 13 * (n % 3)
+        ax.text(b[0], ty, f'{dets[i]["score"]:.2f}', fontsize=8.5, color=SLIDE,
+                weight='bold', va='bottom',
+                bbox=dict(facecolor='white', edgecolor='none', alpha=0.8, pad=0.6))
     ax.set_xlabel('one box an object, except where the guesses were poor',
                   fontsize=8.5)
     fig.suptitle(f'Non-maximum suppression, step by step, at an overlap of {thresh}',

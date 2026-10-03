@@ -1948,7 +1948,7 @@ def rounding_at_each_precision() -> None:
     cols = [GRIP, LINK, SLIDE, PURPLE]
     for off, (name, errs), col in zip([-1.5 * width, -0.5 * width, 0.5 * width,
                                        1.5 * width], rows.items(), cols):
-        ax.bar(np.arange(len(values)) + off, [max(e, 1e-9) for e in errs], width=width,
+        ax.bar(np.arange(len(values)) + off, [max(e, 3e-9) for e in errs], width=width,
                color=col, label=name)
     ax.set_yscale('log')
     ax.set_ylim(1e-9, 1e-1)
@@ -1958,6 +1958,8 @@ def rounding_at_each_precision() -> None:
                   fontsize=10)
     ax.set_title('Fewer bits, bigger rounding: the same five numbers stored four ways',
                  fontsize=12, weight='bold')
+    ax.text(0.0, 6e-9, 'a bar this short means the number is kept exactly', fontsize=8.5,
+            color=MUTED)
     ax.legend(fontsize=9, frameon=False, loc='lower left', ncol=2)
     _save(fig, SDC_DOC, 'rounding-at-each-precision.svg')
 
@@ -2056,15 +2058,15 @@ def training_memory_budget() -> None:
     cols = [LINK, WRIST, PURPLE, TEAL, SLIDE]
     for (k, v), col in zip(budget.items(), cols):
         ax1.bar([0], [v / 1e9], bottom=[bottom / 1e9], color=col, width=0.5)
-        ax1.text(0.3, (bottom + v / 2) / 1e9, f'{k.split(" (")[0]}: {v / 1e9:.0f} GB',
-                 fontsize=9.0, va='center')
+        ax1.text(0.0, (bottom + v / 2) / 1e9, f'{v / 1e9:.0f} GB', fontsize=9.5,
+                 va='center', ha='center', color='white', weight='bold')
         bottom += v
     ax1.bar([1], [run_only / 1e9], color=MUTED, width=0.5)
     ax1.text(1, run_only / 1e9 + total / 1e9 * 0.02, f'{run_only / 1e9:.0f} GB',
              ha='center', fontsize=10.5, weight='bold')
     ax1.set_xticks([0, 1])
     ax1.set_xticklabels(['training it', 'just running it'], fontsize=10)
-    ax1.set_xlim(-0.45, 2.1)
+    ax1.set_xlim(-0.5, 1.6)
     ax1.set_ylim(0, total / 1e9 * 1.1)
     ax1.set_ylabel('gigabytes', fontsize=10)
     ax1.set_title(f'{total / 1e9:.0f} GB against {run_only / 1e9:.0f} GB: '

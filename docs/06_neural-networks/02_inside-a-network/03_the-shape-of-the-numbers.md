@@ -45,10 +45,10 @@ numbers are made up and the page says so.
 
 A layer takes numbers in and gives numbers out, and those numbers always arrive
 arranged in some way, so the first thing to settle is the word for the arrangement.
-The word is **tensor**, which means a block of numbers that are all of the same kind
-arranged in a regular way. One number is a tensor, a list is a tensor, a grid is a
-tensor and a stack of grids is a tensor, which is why one word is useful: the
-library can treat all four the same way.
+The word is **tensor**, which means a block of numbers of the same kind arranged in
+a regular way. One number is a tensor, a list is a tensor, a grid is a tensor and a
+stack of grids is a tensor, which is why one word is useful: the library can treat
+all four the same way.
 
 ![Four panels: a single number 0.63, a row of seven joint angles, an 8 by 8 grid of brightness numbers, and three such grids stacked for red, green and blue](../../images/inside-a-network/the-shape-of-the-numbers/four-shapes.svg)
 
@@ -233,8 +233,8 @@ moves 77,568 for each example and gets 30.4 out of each number; at a batch of 25
 moves 13,056 for each example and gets 180.7. Put the other way round, 1,024
 examples one at a time move 2,419,851,264 numbers while the same examples together
 move 6,291,456, which is 385 times less traffic for the same arithmetic. The floor
-in that picture is the part that cannot be removed, the 768 + 3,072 = 3,840 numbers
-that carry one example in and its answer out.
+in that picture is the 768 + 3,072 = 3,840 numbers that carry one example in and its
+answer out, which no batch can remove.
 
 ![Two panels: the number of numbers held at each of five stages for one photo, and a line showing memory rising from 4 MB at batch 1 to 925 MB at batch 256 against a flat 1.55 MB of weights](../../images/inside-a-network/the-shape-of-the-numbers/batch-memory.svg)
 
@@ -250,10 +250,10 @@ has not grown at all.
 
 This is why a robot and a training run want different batches. A training run can
 choose a large batch, because the examples sit on a disk and nothing is waiting,
-while an arm that must decide thirty times a second has exactly one camera picture
-in hand when it must decide, so its batch is 1 and its card spends most of its time
-fetching weights. That is the main reason the same model is far less efficient on a
-robot than in a laboratory, and the usual fix is to make each weight smaller.
+while an arm that must decide thirty times a second holds exactly one camera picture
+when it must decide, so its batch is 1 and its card spends most of its time fetching
+weights. That is the main reason the same model is far less efficient on a robot
+than in a laboratory, and the usual fix is to make each weight smaller.
 
 ---
 
@@ -274,11 +274,10 @@ for the sign, 8 for how big the number is and 23 for its digits, so it reaches a
 3.4 x 10^38 and tells apart numbers one part in 8,388,608 different. **bfloat16**
 spends 2 bytes and keeps the same 8 bits for size while cutting the digits to 7, so
 it reaches just as high, to about 3.39 x 10^38, but tells apart numbers only one
-part in 128 different. **float16** also spends 2 bytes and splits them the other
-way, 5 bits for size and 10 for digits, so it keeps more digits and stops at 65,504.
-**int8** spends 1 byte and is not floating point at all, holding whole numbers from
--127 to 127 that are turned back into real values by one scale the whole tensor
-shares.
+part in 128 different. **float16** also spends 2 bytes but splits them 5 and 10, so
+it keeps more digits and stops at 65,504. **int8** spends 1 byte and is not floating
+point at all, holding whole numbers from -127 to 127 that one shared scale turns
+back into real values.
 
 ![A log-log plot of the gap to the next representable number against the size of the number, with float32 lowest, float16 in the middle and bfloat16 highest, and a line marking where float16 stops](../../images/inside-a-network/the-shape-of-the-numbers/spacing-of-numbers.svg)
 
@@ -328,10 +327,10 @@ covers under the name mixed precision.
 
 ## 6. The memory bill, in gigabytes
 
-Section 5 gave the size of one number and section 2 gave a way of counting the
-numbers in a layer, so the two together settle how much memory a model needs, which
-is the number that decides whether it will run on a particular robot at all. The sum
-is as simple as it looks, the parameter count multiplied by the bytes each parameter
+Section 5 gave the size of one number and section 2 a way of counting the numbers in
+a layer, so the two together settle how much memory a model needs, which is the
+number that decides whether it will run on a particular robot at all. The sum is as
+simple as it looks, the parameter count multiplied by the bytes each parameter
 takes.
 
 ![A bar chart of the weights of a 7 billion parameter model at float32, bfloat16, float16 and int8, at 28, 14, 14 and 7 gigabytes](../../images/inside-a-network/the-shape-of-the-numbers/memory-bill.svg)

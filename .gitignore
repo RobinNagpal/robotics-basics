@@ -6,6 +6,9 @@ build/
 install/
 log/
 
+# model files a doc's example code writes where it is run
+*.pt
+
 # python
 __pycache__/
 *.py[cod]

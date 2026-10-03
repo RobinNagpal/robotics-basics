@@ -9,10 +9,10 @@ arm keeps moving. So this page is about the step after fine-tuning, which is mak
 trained model small enough and fast enough to live on the machine that uses it.
 
 There are three methods, and they are not alternatives, because they work on
-different things and they stack. **Quantisation** stores each weight in fewer bits.
-**Distillation** trains a smaller model to copy a larger one. **Pruning** throws
+different things and they stack. **Quantisation** stores each weight in fewer bits,
+**distillation** trains a smaller model to copy a larger one, and **pruning** throws
 weights away. Running a model on the robot's own computer rather than on a server is
-called **edge inference**, and everything here is in service of that.
+called **edge inference**, and everything here serves that.
 
 It assumes you have read the chapter so far, so you know what a parameter is, what a
 floating-point operation (FLOP) is, and what the softmax turns a model's raw outputs
@@ -43,10 +43,9 @@ on simulated readings of six objects.
 ## 1. What has to fit on the robot's own computer
 
 Before choosing a method it is worth being exact about what is too big, because the
-answer is not one thing but three: the model has to fit in memory, it has to be read
-from memory fast enough, and it has to be worked through inside the time the arm
-leaves it. The stated model from the last page, with 6,738,415,616 parameters, fails
-all three.
+answer is three things: the model has to fit in memory, it has to be read fast enough,
+and it has to be worked through inside the time the arm leaves it. The stated model
+from the last page, with 6,738,415,616 parameters, fails all three.
 
 ![Bars of memory for the same model at float32, bfloat16, int8 and int4, with lines at 8 GiB and 24 GiB](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/memory-by-precision.svg)
 
@@ -95,9 +94,9 @@ act](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md).
 
 ## 2. Quantisation from first principles
 
-The first picture in section 1 assumed that a weight could be stored in 8 bits or 4,
-so this section says exactly what that means and what it costs, using 48 real weights
-taken from one output channel of a network that was actually trained.
+Section 1 assumed a weight could be stored in 8 bits or 4, so this section says what
+that means and what it costs, using 48 real weights from one output channel of a
+network that was actually trained.
 
 A weight is normally stored as a float32, which is 32 bits holding a very wide range
 of values to about seven decimal places. That precision is wasted, because the
@@ -215,22 +214,22 @@ right asks where the range should be cut off.
 
 Measured as accuracy, the choice of scale makes no difference down to 4 bits, where a
 shared scale gives 0.928 against 0.933 for a scale per channel, and an enormous
-difference at 2 bits, where a shared scale gives 0.675 against 0.828. The right panel
-tests the other obvious idea, which is to ignore the few largest weights and set the
-scale from, say, the 99th largest out of a hundred, so the ordinary weights get finer
-steps. On this network it does not help, because the largest weight gives 0.933 and
-the 95th percentile gives 0.929. Cutting off the range only pays when a few extreme
-values are stretching it, and per-channel scales already deal with that.
+difference at 2 bits, where it gives 0.675 against 0.828. The right panel tests the
+other obvious idea, which is to ignore the few largest weights and set the scale from
+the 99th largest out of a hundred, so ordinary weights get finer steps. It does not
+help here, because the largest weight gives 0.933 and the 95th percentile 0.929, since
+cutting off the range only pays when a few extreme values are stretching it and
+per-channel scales already deal with that.
 
 ---
 
 ## 4. Distillation: learning from the teacher's whole answer
 
-Quantisation keeps the model and shrinks its numbers, which has a floor, because
-below about 3 bits a weight the accuracy goes. The other direction is to keep the
-numbers and shrink the model, and the way to do that without simply training a small
-model badly is **distillation**, which means training a small model to copy a large
-one. The large model is the **teacher** and the small one the **student**.
+Quantisation keeps the model and shrinks its numbers, which has a floor, because below
+about 3 bits a weight the accuracy goes. The other direction is to shrink the model,
+and the way to do that without simply training a small model badly is
+**distillation**, which trains a small model to copy a large one. The large model is
+the **teacher** and the small one the **student**.
 
 The obvious way to train a small model is on the same labelled examples the teacher
 saw, and distillation does something better, for a reason worth seeing on one real
@@ -387,16 +386,14 @@ times less arithmetic for 0.003 of accuracy, which neither reached alone, and th
 the order people use: distil first, because it changes the shape of the model, and
 quantise afterwards, because it works on whatever shape it is given.
 
-Two cautions belong with that number. The first is that this is a small network on a
-simulated job, so the shape of the result is trustworthy and the exact figures are
-not, and a real model has to be measured on its real job after every one of these
-steps, which is what [running and evaluating a
-model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md) is about.
-The second is that memory saved is not automatically time saved, because a 4-bit
-weight has to be turned back into an ordinary number before it can be multiplied, and
-whether that is free depends on whether the chip and the library support it. A model
-four times smaller and no faster is a common and disappointing result, and the only
-way to know is to time it.
+Two cautions belong with that number. This is a small network on a simulated job, so
+the shape of the result is trustworthy and the exact figures are not, and a real model
+has to be measured on its real job after every step, which is what [running and
+evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+is about. And memory saved is not automatically time saved, because a 4-bit weight has
+to be turned back into an ordinary number before it can be multiplied, so a model four
+times smaller and no faster is a common and disappointing result, and the only way to
+know is to time it.
 
 ---
 
@@ -471,9 +468,9 @@ library, because the training loop is an ordinary one with a different target, a
 actual shrinking of the matrices is something you do yourself.
 
 What you still decide is the part no library can. You choose how many bits, and
-section 3 showed that 8 is free, 4 is nearly free and 2 needs a training run. You
-choose how finely the scales are shared. You choose whether to distil, which costs a
-training run and a teacher but reaches savings quantisation cannot. And you decide
-what accuracy you will give up, which is a question about your robot rather than your
-model, because the difference between 0.933 and 0.922 means nothing until somebody
-says what a failed grasp costs.
+section 3 showed that 8 is free, 4 is nearly free and 2 needs a training run; how
+finely the scales are shared; and whether to distil, which costs a training run and a
+teacher but reaches savings quantisation cannot. And you decide what accuracy you will
+give up, which is a question about your robot rather than your model, because the
+difference between 0.933 and 0.922 means nothing until somebody says what a failed
+grasp costs.

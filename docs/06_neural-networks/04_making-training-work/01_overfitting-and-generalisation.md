@@ -47,14 +47,14 @@ The training loop gave us a falling loss, so the first thing to do is to build
 a case where we know the right answer and can watch that falling loss lie to us.
 An arm slides a sensor along a curved part, and at each position the sensor gives
 a reading. The true relation between the two is a smooth curve, and the sensor
-adds noise with a spread of 0.35, so no model can ever do better than 0.35 on
-new readings. We train on 12 noisy measurements and keep 50 more back.
+adds noise with a spread of 0.35, so no model can do better than 0.35 on new
+readings. We train on 12 noisy measurements and keep 50 back.
 
 A **polynomial** is a sum of powers of the input, so degree 1 is a straight
-line, degree 2 bends once, and degree 11 has twelve freely chosen numbers in
-it, exactly as many as we have training points. Raising the degree is the
-simplest way to make a model more flexible, which makes it a good stand-in for
-making a network wider or deeper.
+line, degree 2 bends once, and degree 11 has twelve freely chosen numbers in it,
+exactly as many as we have training points. Raising the degree is the simplest
+way to make a model more flexible, which stands in for making a network wider or
+deeper.
 
 ![Three panels showing 12 red training points and 50 teal held-out points with a fitted blue curve, for polynomial degrees 1, 5 and 11; the degree 11 curve swings wildly between points](../../images/making-training-work/overfitting-and-generalisation/poly-fits.svg)
 
@@ -143,8 +143,8 @@ Picking the best of 50 equally good candidates on a 20-trial test set makes the 
 With one candidate the measured score averages 70.0%, with 12 it averages
 85.7%, and with 50 it averages 90.9%, while the winner's true rate never moves
 off 70%. Nothing improved, and the test set simply handed its own good luck to
-whichever candidate caught it, which is why it is read once. Reading it once is still not
-enough, though, because a split can be wrong before anybody reads anything.
+whichever candidate caught it, which is why it is read once. Reading it once is still not enough,
+though, because a split can be wrong before anybody reads it.
 
 ---
 
@@ -159,8 +159,8 @@ worst form comes from how robot data is recorded.
 
 A robot records continuously, so a teleoperated arm picking up a mug produces
 video at perhaps 30 frames a second, and frames 40 and 41 of one pick are almost
-the same picture. Pool all your frames, split them at random, and frame 40 goes
-into training while frame 41 may go into testing.
+the same picture. Pool the frames, split them at random, and frame 40 goes into
+training while frame 41 goes into testing.
 
 ![Two strips of numbered frames from one recording, the upper strip coloured at random so neighbouring frames land on opposite sides, the lower strip split so that the last eight frames all go to the held-out side](../../images/making-training-work/overfitting-and-generalisation/frame-split-strip.svg)
 
@@ -260,7 +260,7 @@ gradient keeps pushing it out.
 
 ![A log-scale histogram of weight values at the end of training, with the no-decay run in red reaching out to 7.18 and the decay-0.3 run in blue concentrated near zero](../../images/making-training-work/overfitting-and-generalisation/weight-sizes.svg)
 
-Without decay the 9,601 weights have a root-mean-square of 0.3869 and the largest reaches 7.18, while with a decay of 0.3 the root-mean-square is 0.1908 and the largest reaches 2.14.
+Without decay the 9,601 weights have a root-mean-square of 0.3869 and the largest reaches 7.18, while with a decay of 0.3 the root-mean-square is 0.1908 and the largest reaches 2.13.
 
 Smaller weights make the network's output a gentler function of its input, and
 a gentler function cannot swing between the training points the way section 1's
@@ -269,7 +269,7 @@ forced near zero cannot represent anything.
 
 ![A log-log plot of training and held-out loss against weight decay strength, with the held-out loss falling from 3.63 at zero decay to 0.2170 at decay 0.3 and rising again to 0.6205 at decay 10](../../images/making-training-work/overfitting-and-generalisation/weight-decay-sweep.svg)
 
-Held-out loss falls by a factor of seventeen as the decay rises to 0.3 and then climbs again, so the decay strength is one more setting to choose on the validation set.
+Held-out loss falls from 3.6261 to 0.2170 as the decay rises to 0.3 and then climbs back to 0.6205, so the decay strength is one more setting to choose on the validation set.
 
 Why these three rather than the obvious alternative of using a smaller model?
 A smaller model does cut overfitting, and section 1's degree 5 fit is exactly
@@ -307,13 +307,12 @@ that fails, and on a robot it fails often.
 
 The flip changes the spanner's lean from -1.60 to +1.60 in exactly the way it changes the mug's, but for the spanner that change turns one real part into a different real part.
 
-A left-handed spanner and a right-handed one are different items with
-different part numbers, so a flipped picture of one labelled as the other is not
-an extra example but a wrong one, and the model will learn from it that
-handedness does not matter. The same trap catches any job where left and right
-mean something, such as a screw thread or printed text, and above all anything
-about the arm's own movements, because a flipped picture paired with unflipped
-joint angles is a lie about which way the arm went.
+A left-handed spanner and a right-handed one are different items with different
+part numbers, so a flipped picture of one labelled as the other is a wrong
+example, and the model will learn from it that handedness does not matter. The same trap catches any job where left and right
+mean something, such as a screw thread or printed text, and above all the arm's
+own movements, because a flipped picture paired with unflipped joint angles is a
+lie about which way the arm went.
 
 The honest way to decide is to ask, for each change, what real thing in the
 world would have produced it and whether the answer would still be the same if it
@@ -326,10 +325,10 @@ uses it.
 Adding a random shift of 0.2 metres to the slide position at every training step cuts the held-out loss from 3.6261 to 0.1397, which is better than any weight decay strength managed.
 
 That result is worth dwelling on, because the crudest augmentation imaginable
-beat every setting of weight decay. The reason is that augmentation tells the
-model something true about the world, namely that the reading at 1.40 metres and
-the reading at 1.45 metres should be about the same, and no amount of weight
-shrinking can tell it that. The cost is the same as everywhere else, because a
+beat every setting of weight decay. Augmentation tells the model something true
+about the world, namely that the reading at 1.40 metres and the reading at 1.45
+metres should be about the same, and no amount of weight shrinking can tell it
+that. The cost is the same as everywhere else, because a
 shift of 0.8 metres is a lie, readings half a metre apart really being different,
 and the held-out loss rises to 0.8337 when you tell it. All of this follows one
 picture of how model size and error are related, and that picture is not the
@@ -339,9 +338,9 @@ whole story.
 
 ## 6. Where the classical picture runs out
 
-That shape was the settled teaching of the subject for about forty years, and
-it is still right for a small model on a small dataset, which is most robot
-work.
+The shape that section 1 drew, where held-out error falls and then rises for
+good, was the settled teaching of the subject for about forty years, and it is
+still right for a small model on a small dataset, which is most robot work.
 
 ![A plot of training and held-out error against model flexibility, with training error falling steadily, held-out error dipping at degree 5, and the regions marked too simple and too flexible](../../images/making-training-work/overfitting-and-generalisation/the-classical-picture.svg)
 
@@ -389,7 +388,7 @@ too big" is a claim to check with a measurement rather than a rule.
   page, and it deals with the other half of making training work, which is
   keeping the numbers inside the network in a range the arithmetic can handle.
 - [Running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
-  takes section 2's honest number to real trials on an arm.
+  takes section 2's honest number to real trials.
 - [Scale, data and compute](../07_pretraining-and-adapting/02_scale-data-and-compute.md)
   says how much data a model of a given size needs, the other side of section
   6's peak.

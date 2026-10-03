@@ -265,13 +265,14 @@ The left panel measures how big a change the adapter adds as the rank grows, and
 right panel counts the arithmetic the adapter costs when the model is used.
 
 If nothing scales the adapter, then raising the rank raises the size of the change
-it makes, because the product of the two thin matrices adds up more terms, and a
-learning rate that suited rank 4 will then be too large at rank 64. Dividing by the
+it makes, because the product of the two thin matrices adds up more terms, and in
+this measurement the change grows 55.83 times between rank 1 and rank 128, so a
+learning rate that suited rank 4 would be far too large at rank 64. Dividing by the
 rank pulls the other way and makes the change smaller as the rank grows, and
-dividing by the square root of the rank leaves it almost unchanged, which is why
-some libraries now offer that third choice. What matters in practice is that alpha
-is one knob you set for the overall strength of the adapter, and once it is set you
-can change the rank without re-tuning everything else.
+dividing by the square root of the rank leaves it almost unchanged from rank 2
+upwards, which is why some libraries now offer that third choice. What matters in
+practice is that alpha is one knob you set for the overall strength of the adapter,
+and once it is set you can change the rank without re-tuning everything else.
 
 The folding is the part that makes LoRA cheap to deploy. Because the adapter's
 product has the same shape as the original matrix, you can add it into the original
@@ -527,21 +528,26 @@ block = 4 * d * d + 3 * d * d_ff + 2 * d          # attention + feed-forward + n
 total = vocab * d + layers * block + d + vocab * d
 print(f'{total:,}')                                # 6,738,415,616
 
-# Section 2's memory recipe: 2 bytes frozen, 2 + 2 + 4 + 4 bytes trainable.
+# Section 2's memory recipe: 2 bytes for a frozen weight, 2 + 2 + 4 + 4 for a trained one.
 def gib(frozen, trainable):
     return (frozen * 2 + trainable * 12) / 2 ** 30
 print(f'{gib(total, 0):.2f} GiB')                  # 12.55 GiB, weights only
-print(f'{gib(total, total):.2f} GiB')              # 75.31 GiB, full fine-tune
+print(f'{gib(0, total):.2f} GiB')                  # 75.31 GiB, full fine-tune
 
 # Section 3, on one attention matrix: the adapter is two thin matrices.
 rank = 8
 print(f'{2 * rank * d:,} of {d * d:,}')            # 65,536 of 16,777,216
 
 # The same thing on a real model, with peft doing the surgery.
-base = nn.ModuleDict({'q_proj': nn.Linear(d, d, bias=False)})     # stand-in for a block
+class Block(nn.Module):                            # a stand-in for one real block
+    def __init__(self):
+        super().__init__()
+        self.q_proj = nn.Linear(d, d, bias=False)
+
 config = LoraConfig(r=rank, lora_alpha=16, target_modules=['q_proj'])
-model = get_peft_model(base, config)
-model.print_trainable_parameters()   # trainable params: 65,536 || all params: 16,842,752
+model = get_peft_model(Block(), config)
+model.print_trainable_parameters()
+# trainable params: 65,536 || all params: 16,842,752 || trainable%: 0.3891
 
 merged = model.merge_and_unload()    # section 3's folding: back to the original shape
 print(sum(p.numel() for p in merged.parameters()))                # 16,777,216

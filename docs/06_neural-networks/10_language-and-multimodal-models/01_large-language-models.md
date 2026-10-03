@@ -28,11 +28,10 @@ first appears.
 Every picture here comes from a small model built inside the diagram script rather
 than from a real large language model, and it matters to say so plainly. That
 small model counts: it was given a made-up corpus of 29,137 short robot sentences
-holding 313,504 words and only 144 different words in all, and it works out what
-comes next by counting how often each word followed the last few words, falling
-back on shorter stretches of context when it has never seen the longer one. What
-it shares with a real model is the thing this page is about, which is that it puts
-a probability on every word it knows and answers by picking one word at a time.
+holding 313,504 words and only 144 different words, and it works out what comes
+next by counting how often each word followed the last few words. What it shares
+with a real model is the thing this page is about, which is that it puts a
+probability on every word it knows and answers one word at a time.
 
 ## Contents
 
@@ -92,12 +91,11 @@ the tray .", and the nine choices that built it had probabilities of 0.375, 0.48
 This is the whole of what the model does, and it is worth sitting with how little
 it is. The model worked out a set of numbers, something picked one word, that word
 was glued to the end of the text, and the model worked out a new set of numbers
-for the longer text. Nothing was planned, and the sentence was not chosen as a
-sentence, because the model has no way to represent a sentence it has not written
-yet. The probability of all nine words together is 0.0497, which is the eight
-numbers multiplied, and the row of 0.96 values shows that inside a phrase it has
-seen often the model is almost certain, while at the two real choice points, the
-object and the place, it is not.
+for the longer text. Nothing was planned, because the model has no way to
+represent a sentence it has not written yet. The probability of all nine words
+together is 0.0497, which is the eight numbers multiplied, and the row of 0.96
+values shows that inside a phrase it has seen often the model is almost certain,
+while at the two real choice points it is not.
 
 ---
 
@@ -143,14 +141,14 @@ correctly 90.6 per cent of the time, object names 39.2 per cent of the time, and
 tool names only 2.9 per cent of the time.
 
 So one model is confident about the shape of the language and nearly helpless
-about which particular thing is named, and that gap follows from the training job,
-because joining words are forced by their neighbours while the tool a sentence
-mentions is close to arbitrary. Compare that with the obvious alternative, which
-is to write the rules by hand or to hand-label a dataset of facts. Hand rules
-break on the first sentence their author did not imagine, and hand labels cost
-human time for every example, whereas next-token prediction turns any text into
-training data at no labelling cost. What it costs is control, because you cannot
-tell the model which parts of the corpus to believe.
+about which particular thing is named, because joining words are forced by their
+neighbours while the tool a sentence mentions is close to arbitrary. Compare that
+with the obvious alternative, which is to write the rules by hand or to hand-label
+a dataset of facts. Hand rules break on the first sentence their author did not
+imagine, and hand labels cost human time for every example, whereas next-token
+prediction turns any text into training data at no labelling cost. What it costs
+is control, because you cannot tell the model which parts of the corpus to
+believe.
 
 ---
 
@@ -198,10 +196,9 @@ The window is the context window the transformer chapter introduced, which is th
 longest stream the model can be given at once. Real windows are far larger and
 still finite, so every long conversation reaches this picture eventually, and
 something must decide what to throw away, usually by dropping the oldest turns,
-replacing them with a summary the model writes itself, or storing them elsewhere
-and fetching the relevant parts back, which is section 5. The model does not know
-anything was dropped, and it answers as confidently about the part it can no
-longer see as about the part it can.
+summarising them, or storing them elsewhere and fetching the relevant parts back.
+The model does not know anything was dropped, and it answers as confidently about
+the part it can no longer see as about the part it can.
 
 ---
 
@@ -264,12 +261,11 @@ Four things reduce hallucination and none removes it. Putting the relevant text 
 the prompt works best and is the next section. Giving the model a tool that can
 check something, such as a database or a calculator, moves the answer out of the
 weights. Asking for the source of a claim helps a little, because a model that
-cannot produce one has often invented the claim, though it can invent a source
-too. Training that rewards abstaining, one subject of [the next
-page](02_post-training-a-language-model.md), is the only one of the four that
-changes the model itself. Be careful about the clean split in that last picture,
-because a real model's confidence does not separate the two groups so neatly, so a
-refusal threshold always throws away some right answers.
+cannot produce one has often invented it. Training that rewards abstaining, one
+subject of [the next page](02_post-training-a-language-model.md), is the only one
+of the four that changes the model itself. Be careful about the clean split in
+that last picture, because a real model's confidence does not separate the two
+groups so neatly.
 
 ---
 
@@ -319,12 +315,11 @@ milliseconds to 25.3.
 
 The honest comparison with the obvious alternative, which is to train the facts
 into the model, runs like this. Training them in keeps the prompt short and the
-answer fast, and costs a training run every time a fact changes, with no way to
-tell afterwards which fact the model used. Retrieval costs tokens and time on
-every question, and in exchange the facts can be edited in a file, the model can
-name the document it used, and a missing fact is visibly missing rather than
-quietly invented. For anything that changes, retrieval is the right side of that
-trade, and the cost it adds is the next section.
+answer fast, and costs a training run every time a fact changes. Retrieval costs
+tokens and time on every question, and in exchange the facts can be edited in a
+file, the model can name the document it used, and a missing fact is visibly
+missing rather than quietly invented. For anything that changes, retrieval is the
+right side of that trade.
 
 ---
 
@@ -348,10 +343,8 @@ takes 7,273 milliseconds, so the bill is set almost entirely by how long the
 answer is.
 
 The practical lesson is not the one people expect. A prompt five times longer
-barely moves the total while an answer five times longer multiplies it, so if you
-want a faster system you should shorten the answer before you shorten the prompt,
-and asking for one sentence rather than a paragraph is worth more than trimming
-the instructions.
+barely moves the total while an answer five times longer multiplies it, so to make
+a system faster you should shorten the answer before the prompt.
 
 ![Two panels: a bar chart where the first answer token takes 138 milliseconds and every later one 18.2, and a line showing the time to the first token rising with prompt length to 4,285 milliseconds](../../images/language-and-multimodal-models/large-language-models/first-token-is-slower.svg)
 
@@ -429,12 +422,11 @@ The small tokeniser built in the same script turns "screwdriver" into 8 pieces,
 ever sees the pieces.
 
 Anything needing a count runs into this. Asking how many times a letter appears in
-a word asks about something the model cannot see, since the word reached it as a
-handful of pieces, and the same holds for counting words in a passage, items in a
-list or steps already taken, because none of those is a quantity the machinery
-works out. Models answer such questions anyway, and the answers are often close
-and sometimes right, which makes this worse than a refusal, so if a count matters
-you should count it in your own code.
+a word asks about something the model cannot see, and the same holds for counting
+words in a passage, items in a list or steps already taken, because none of those
+is a quantity the machinery works out. Models answer anyway, and the answers are
+often close and sometimes right, which makes this worse than a refusal, so if a
+count matters you should count it in your own code.
 
 ---
 
@@ -524,10 +516,9 @@ role tokens in the exact form that model was trained on, and it runs the stored
 keys and values behind `model.generate` so each new token costs one pass rather
 than a pass over the whole conversation.
 
-What you still decide is everything this page measured. You choose the system
-prompt, which is read again on every call, so a long one taxes every question. You
-choose how long an answer to ask for, which section 6 showed sets how long you
-wait. You choose whether to retrieve text into the prompt and how much, which
-section 5 showed buys accuracy with tokens. You choose what happens when the
+What you still decide is everything this page measured: the system prompt, which
+is read again on every call; how long an answer to ask for, which section 6 showed
+sets how long you wait; whether to retrieve text into the prompt and how much,
+which section 5 showed buys accuracy with tokens; and what happens when the
 conversation outgrows the window. Above all you decide what to do with the answer,
 since nothing in the library tells you whether the fact in it is true.

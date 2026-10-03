@@ -1961,8 +1961,8 @@ def rounding_at_each_precision() -> None:
                   fontsize=10)
     ax.set_title('Fewer bits, bigger rounding: the same five numbers stored four ways',
                  fontsize=12, weight='bold')
-    ax.text(0.0, 6e-9, 'a bar this short means the number is kept exactly', fontsize=8.5,
-            color=MUTED)
+    ax.text(2.0, 1.2e-6, 'a bar at the very bottom means the number is kept exactly',
+            fontsize=8.5, color=MUTED, ha='center')
     ax.legend(fontsize=9, frameon=False, loc='lower left', ncol=2)
     _save(fig, SDC_DOC, 'rounding-at-each-precision.svg')
 

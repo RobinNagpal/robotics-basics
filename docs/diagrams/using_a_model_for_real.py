@@ -2448,9 +2448,9 @@ def library_shelf() -> None:
     ax.text(0.5, 0.985, f'The library: {len(BOOKS)} books and {sum(counts)} chapters, '
                         f'and where this book sits among them',
             ha='center', va='top', fontsize=13, weight='bold', color=INK)
-    w = 0.112
+    w = 0.108
     for i, ((f, t), c) in enumerate(zip(BOOKS, counts)):
-        x = 0.025 + i * (w + 0.013)
+        x = 0.018 + i * (w + 0.0125)
         here = f.endswith('neural-networks')
         col = '#f3dede' if here else '#eef3f9'
         h = 0.17 + 0.028 * c
@@ -2460,8 +2460,6 @@ def library_shelf() -> None:
                 linespacing=1.35)
         ax.text(x + w / 2, 0.345, f'{c} chapters', ha='center', va='center', fontsize=8.6,
                 color=MUTED)
-        ax.text(x + w / 2, 0.265, f'book {i + 1} on the shelf', ha='center', va='top',
-                fontsize=7.6, color=MUTED)
     ax.text(0.5, 0.15, 'This book explains the machinery. The one on its right lists the '
                        'models built out of it, and the one on its left holds the methods '
                        'that were written rather than learned.',

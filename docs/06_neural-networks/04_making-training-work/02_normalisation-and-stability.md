@@ -50,7 +50,7 @@ reaches, written down in millimetres, and how high it lifts, written down in
 metres. Both are sensible measurements, and nobody thought about units when they
 were recorded.
 
-![Two panels of scattered points, the left one showing reach from 222 to 638 and height from 0.08 to 0.61 on a stretched axis, the right one showing both features after standardising, from about -1.7 to 1.7](../../images/making-training-work/normalisation-and-stability/feature-ranges.svg)
+![Two panels of scattered points, the left one showing reach from 222 to 637.7 and height from 0.08009 to 0.6128 on a stretched axis, the right one showing both features after standardising, from about -1.7 to 1.7](../../images/making-training-work/normalisation-and-stability/feature-ranges.svg)
 
 The reach runs from 222 to 637.7 with a spread of 123.5, and the height runs from 0.08009 to 0.6128 with a spread of 0.15554, so one feature is about 1,304 times bigger than the other.
 
@@ -72,7 +72,7 @@ after 2,000 steps.
 
 ![Two panels of weight value as a fraction of its best value against step, the raw panel showing the height weight flat at zero until a million steps, the standardised panel showing both weights reaching their best value within five steps](../../images/making-training-work/normalisation-and-stability/weight-paths.svg)
 
-In raw units the weight on height has not moved off zero after a million steps and both weights only settle near ten million, while after standardising both arrive within five steps.
+In raw units the weight on height has not moved off zero after a million steps and neither weight is right until tens of millions of steps have passed, while after standardising both arrive within five steps.
 
 So the slowness is one weight moving at the wrong speed rather than everything
 being sluggish. **Normalisation** is the general name for any step that rescales
@@ -166,9 +166,9 @@ Section 2 showed two ways of averaging a grid of activations, and the one that
 goes down a column rather than along a row is **batch normalisation**, which was
 the standard for years and is still common in convolutional networks for
 pictures. It takes one feature, averages it over all the examples in the batch,
-subtracts that average and divides by the spread of the same column. It trains
-well and it is cheap, and it was the method that first made very deep
-convolutional networks trainable at all.
+subtracts that average and divides by the spread of the same column. It is cheap,
+and it was the method that first made very deep convolutional networks
+trainable.
 
 Its problem follows from the picture: the answer it gives for one example
 depends on which other examples happened to share its batch.
@@ -202,13 +202,12 @@ The stored average of 0.2422 and spread of 1.1776 were learned on quiet pictures
 
 So why layer and RMS normalisation rather than batch normalisation, given that
 batch normalisation came first and trains slightly faster on pictures? Because
-both of the newer rules work on one example by itself, which removes all three
-problems at once: the batch size stops mattering, padding stops mattering, and
-training and prediction compute exactly the same thing. What that costs is the
-small regularising effect that batch normalisation's noise provided for free,
-and a little speed on the convolutional networks where batch normalisation
-still holds its ground. For transformers the choice is not close, and that is
-the next section's subject.
+both newer rules work on one example by itself, which removes all three problems
+at once: the batch size stops mattering, padding stops mattering, and training
+and prediction compute the same thing. What that costs is the small regularising
+effect batch normalisation's noise provided for free, and a little speed on the
+convolutional networks where it still holds its ground. For transformers the
+choice is not close, and that is the next section's subject.
 
 ---
 
@@ -275,7 +274,7 @@ enough to mean what they say, which is the next question.
 
 Sections 1 to 4 kept the numbers in a sensible range, and this section is about
 how many bits each one is stored in, because every large run today stores most of
-them in half the usual number. The reason is money and time, since half as many
+them in half the usual number of bits. The reason is money and time, since half as many
 bits is half the memory and roughly twice the speed on matrix multiply hardware.
 **Mixed precision** means doing most of the arithmetic in a 16-bit format while
 keeping a few specific things in 32 bits.
@@ -284,14 +283,13 @@ keeping a few specific things in 32 bits.
 
 float32 has 8 exponent bits and 23 mantissa bits and reaches 3.403e+38, bfloat16 keeps the 8 exponent bits but has only 7 mantissa bits and still reaches 3.39e+38, while float16 has 5 exponent bits and 10 mantissa bits and stops at 65,504.
 
-The exponent bits set how far the format reaches, from the smallest number above
-zero to the largest, and the mantissa bits set how fine its steps are. That
-split is the whole story of why bfloat16 won. It keeps exactly the reach of
-float32, so any number that fits in a float32 fits in a bfloat16, and it pays
-for that with coarse steps, since the smallest change it can represent near 1 is
-0.0078125 against float32's 0.000000119. float16 made the opposite choice, with
-finer steps but a reach that stops at 65,504 at the top and runs out of room at
-about 0.00000006 at the bottom.
+The exponent bits set how far the format reaches and the mantissa bits set how
+fine its steps are, and that split is the whole story of why bfloat16 won. It
+keeps exactly the reach of float32, so any number that fits in a float32 fits in
+a bfloat16, and it pays for that with coarse steps, since the smallest change it
+can represent near 1 is 0.0078125 against float32's 0.000000119. float16 made the
+opposite choice, with finer steps but a reach that stops at 65,504 at the top and
+runs out of room at about 0.00000006 at the bottom.
 
 ![A horizontal bar chart of five pieces of memory held for every weight, comparing an all-float32 run with a mixed-precision run, with the bytes printed beside each bar](../../images/making-training-work/normalisation-and-stability/what-stays-float32.svg)
 
@@ -314,17 +312,16 @@ Of these 400,000 gradient values, 18.21% round to exactly zero in float16, none 
 That picture explains the one piece of machinery float16 training needs and
 bfloat16 training does not. Gradients are small numbers, with a median of about
 0.0000002 here, and float16 cannot hold anything below about 0.00000006, so
-nearly a fifth of them become exactly zero and those weights get no update at
-all. The repair is a **loss scale**: multiply the loss by a large number, say
-1,024, before working out the gradients, which multiplies every gradient by the
-same 1,024 and lifts them into the range float16 can hold, then divide the
-gradients by 1,024 again before the optimiser uses them. It works, and it is
-what everybody did for years, but it needs watching, because a scale too large
-makes the gradients overflow.
+nearly a fifth of them become exactly zero and those weights get no update. The
+repair is a **loss scale**: multiply the loss by a large number, say 1,024,
+before working out the gradients, which lifts every gradient into the range
+float16 can hold, then divide the gradients by 1,024 again before the optimiser
+uses them. It works, and it is what everybody did for years, but a scale set too
+large makes the gradients overflow.
 
 ![A log plot of the value actually held against the value being stored, with float16 jumping to infinity above 65,504 while bfloat16 tracks the value all the way to 1e+38](../../images/making-training-work/normalisation-and-stability/overflow.svg)
 
-Storing 100,000 gives 65,504 at best in float16 and in fact gives infinity, while bfloat16 holds it as 99,840 and holds 1e+38 as 9.969e+37.
+float16 cannot hold 100,000 at all and gives infinity instead, while bfloat16 holds it as 99,840 and holds 1e+38 as 9.969e+37.
 
 Overflow is what makes float16 dangerous rather than merely awkward. Once a
 value passes 65,504 the format stores infinity instead, and infinity minus
@@ -351,17 +348,17 @@ a much worse one, usually within a handful of steps.
 
 The loss was 1.6021 just before step 1,400, it reaches 1.9550 at step 1,437, and it is still at 1.6276 at step 2,600, which is a level the run had already passed long before the spike.
 
-The spike in that run was caused on purpose, by one batch whose gradient was
-far larger than usual, and the mechanism is worth following. Adam divides each
-step by a running average of the recent squared gradients, and that average takes
-hundreds of steps to respond, so when one huge gradient arrives the divisor is
-still set for the ordinary ones. The step taken is therefore enormous, the
-weights land far from where they were, and the optimiser has to walk all the way
-back with the small steps it was using before.
+The spike was caused on purpose, by one batch whose gradient was far larger
+than usual, and the mechanism is worth following. Adam divides each step by a
+running average of the recent squared gradients, and that average takes hundreds
+of steps to respond, so when one huge gradient arrives the divisor is still set
+for the ordinary ones. The step taken is therefore enormous, the weights land far
+from where they were, and the optimiser has to walk all the way back with the
+small steps it was using before.
 
 ![A log plot of the size of the whole gradient against step, flat at about 0.146 with one isolated point at 994, and a dashed line at a clipping threshold of 2.0](../../images/making-training-work/normalisation-and-stability/gradient-norm-spike.svg)
 
-The gradient size is 0.1462 on an ordinary step and 994.1 on the bad one, which is about 6,800 times larger, and it shows the trouble on the step it happens rather than several steps later like the loss.
+The gradient size is 0.1462 on an ordinary step and 994.1 on the bad one, which is 6,801 times larger, and it shows the trouble on the step it happens rather than several steps later like the loss.
 
 That is the single most useful thing to log during a training run, because the
 gradient size names the step that went wrong while the loss only shows the damage

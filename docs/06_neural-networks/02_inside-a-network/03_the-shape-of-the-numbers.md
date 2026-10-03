@@ -24,8 +24,7 @@ the next chapter, which opens with
 [the score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md).
 Every number in the pictures was worked out by the script
 [`inside_a_network_2.py`](../../diagrams/inside_a_network_2.py), which prints them
-all, and where a worked example needs small numbers a reader can follow, those
-numbers are made up and the page says so.
+all, and the small numbers in the worked examples are made up.
 
 ## Contents
 
@@ -69,9 +68,8 @@ Read that table a row at a time. One reading of a seven-joint arm is 7 numbers a
 and holds 150,528 numbers, which is 602,112 bytes, while eight of those photos
 together have the shape `(8, 3, 224, 224)` and hold 1,204,224 numbers, or 4.82
 megabytes. The order inside a shape is a decision somebody made rather than a law,
-because a photo could equally be stored as `(224, 224, 3)`, and what matters is only
-that the program and the layer agree, since a layer handed the colours in the wrong
-place will either refuse the tensor or quietly give nonsense.
+because a photo could equally be stored as `(224, 224, 3)`, and all that matters is
+that the program and the layer agree.
 
 ![The numbers 0 to 23 drawn three times: as one row of 24, as a grid of 4 rows by 6 columns, and as two grids of 3 rows by 4 columns](../../images/inside-a-network/the-shape-of-the-numbers/reshape-24.svg)
 
@@ -120,11 +118,11 @@ matrix multiply computes.
 The rule for a matrix multiply: the inner numbers of the two shapes have to agree, and the two outer numbers become the shape of the answer.
 
 That rule is worth saying slowly, because nearly every error message a beginner
-meets in this part of the work is this rule being broken. A tensor of shape `(2, 4)`
-can be multiplied by one of shape `(4, 3)` and gives shape `(2, 3)`, because each of
-the 4 numbers in a row finds a partner in a column. The same `(2, 4)` cannot be
-multiplied by a `(3, 3)`, because each row offers 4 numbers and each column offers
-only 3, so the library refuses rather than guessing.
+meets here is this rule being broken. A tensor of shape `(2, 4)` times one of shape
+`(4, 3)` gives shape `(2, 3)`, because each of the 4 numbers in a row finds a partner
+in a column, while the same `(2, 4)` cannot be multiplied by a `(3, 3)`, because each
+row offers 4 numbers and each column offers only 3, so the library refuses rather
+than guessing.
 
 ![Two examples of shape (2, 4) multiplied by weights of shape (4, 3), giving totals of shape (2, 3), with one output cell and the row and column that make it marked in red](../../images/inside-a-network/the-shape-of-the-numbers/batch-matmul.svg)
 
@@ -142,8 +140,10 @@ without them affecting one another.
 A fully connected layer costs one weight and one multiply-add for every pairing of an input with a neuron, so both counts are the two sizes multiplied together.
 
 The size of the operation follows from two numbers only, how many inputs the layer
-has and how many neurons. A layer taking 7 joint angles into 64 neurons has 448
-weights and 64 biases, so 512 parameters. A layer of 768 inputs into 3,072 neurons,
+has and how many neurons, and a multiply-add means one multiplication whose result is
+added into a running total, which is the single step the hardware counts. A layer
+taking 7 joint angles into 64 neurons has 448 weights and 64 biases, so 512
+[parameters](../01_what-learning-means/02_the-words-everyone-uses.md). A layer of 768 inputs into 3,072 neurons,
 a common size inside a large model, has 2,362,368 parameters and does 2,359,296
 multiply-adds for one example. A layer taking a flattened colour photo of 150,528
 numbers into 1,000 neurons has 150,528,000 weights, which is the subject of the next
@@ -261,15 +261,14 @@ position holding either 0 or 1, so the question is how the bits are split up.
 
 The four ways of spending the bits: one group of bits decides how big the number may be and another how many digits it keeps.
 
-Read the four bars from the top. **float32** spends 32 bits, which is 4 bytes, as 1
-for the sign, 8 for how big the number is and 23 for its digits, so it reaches about
-3.4 x 10^38 and tells apart numbers one part in 8,388,608 different. **bfloat16**
-spends 2 bytes and keeps the same 8 bits for size while cutting the digits to 7, so
-it reaches just as high, to about 3.39 x 10^38, but tells apart numbers only one
-part in 128 different. **float16** also spends 2 bytes but splits them 5 and 10, so
-it keeps more digits and stops at 65,504. **int8** spends 1 byte and is not floating
-point at all, holding whole numbers from -127 to 127 that one shared scale turns
-back into real values.
+Read the four bars from the top. **float32** spends 4 bytes as 1 bit for the sign, 8
+for how big the number is and 23 for its digits, so it reaches about 3.4 x 10^38 and
+tells apart numbers one part in 8,388,608 different. **bfloat16** spends 2 bytes and
+keeps the same 8 bits for size while cutting the digits to 7, so it reaches just as
+high, to about 3.39 x 10^38, but tells apart numbers only one part in 128 different.
+**float16** also spends 2 bytes but splits them 5 and 10, so it keeps more digits and
+stops at 65,504. **int8** spends 1 byte and is not floating point at all, holding
+whole numbers from -127 to 127 that one shared scale turns back into real values.
 
 ![A log-log plot of the gap to the next representable number against the size of the number, with float32 lowest, float16 in the middle and bfloat16 highest, and a line marking where float16 stops](../../images/inside-a-network/the-shape-of-the-numbers/spacing-of-numbers.svg)
 
@@ -290,12 +289,12 @@ thousands and that the errors partly cancel.
 Two hundred thousand simulated weights rounded to each format, and one real multiply of a 256 by 512 grid with a 512 by 256 grid done in each, measured against the exact answer.
 
 How much they cancel has a measurable answer. Rounding 200,000 simulated weights to
-bfloat16 moves each one by 0.14 per cent on average and moves the answer of the
-multiply by 0.24 per cent, while float16 moves them by 0.018 and 0.029 per cent
-because it keeps three more bits of digits. Quantising the same numbers to int8 with
-one shared scale moves each weight by 1.10 per cent and the answer by 1.47 per cent,
-which is ten times worse than bfloat16 and still small enough that many models
-survive it.
+bfloat16 moves each one by 0.14 per cent on average and the answer of the multiply by
+0.24 per cent, while float16 moves them by 0.018 and 0.029 per cent because it keeps
+three more bits of digits. Turning the same numbers into int8, which is called
+quantising, moves each weight by 1.10 per cent and the answer by 1.47 per cent, which
+is ten times worse than bfloat16 and still small enough that many models survive
+it.
 
 ![Three curves of a running total of 4,096 simulated squares: the exact total and bfloat16 climbing, and float16 stopping dead at 65,504 after 31 numbers](../../images/inside-a-network/the-shape-of-the-numbers/running-total.svg)
 
@@ -303,17 +302,17 @@ Adding up 4,096 simulated squares, float16 passes its largest number after 31 of
 
 So if float16 keeps more digits in the same two bytes, why does most training now
 use bfloat16? Because digits are not what runs out first, range is. The 4,096
-simulated numbers being added there were drawn at random and squared, and their exact
-total is 10,041,758. float16 reaches its largest number, 65,504, after only 31 of
-them, and every addition after that leaves it holding infinity, which no later
-arithmetic can recover from, while bfloat16 never overflows but finishes at
-4,620,288, which is 54 per cent short because once the total is large each new
-addition is too small for seven digits to notice. The lesson hardware designers drew
-is to keep the stored numbers small and the running totals large, so a card today
-holds weights at two bytes and adds the products up in float32 inside the
+simulated numbers added there were drawn at random and squared, and their exact total
+is 10,041,758. float16 reaches its largest number, 65,504, after only 31 of them, and
+every addition after that leaves it holding infinity, while bfloat16 never overflows
+but finishes at 4,620,288, which is 54 per cent short because once the total is large
+each new addition is too small for seven digits to notice. The lesson hardware
+designers drew is to keep the stored numbers small and the running totals large, so a
+card today holds weights at two bytes and adds the products up in float32 inside the
 multiplier, which
 [normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
-covers under the name mixed precision.
+covers under the name mixed precision. What choosing two bytes a number buys is the
+subject of the last section, because it halves every figure in the bill.
 
 ---
 

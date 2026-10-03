@@ -382,7 +382,7 @@ written code can be read, argued about and tested exhaustively while a network c
 and the cost is that the clamp sometimes spoils a legitimate fast motion. The
 [safety monitoring](../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
 page describes how such a layer is built, and
-[PID control](../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md)
+[proportional-integral-derivative (PID) control](../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md)
 describes the controller underneath it.
 
 ---
@@ -463,7 +463,8 @@ is the one number on this page nobody can work out for you.
 
 The libraries do a lot here, because `torch.jit.trace` and the newer `torch.compile`
 freeze the graph of section 3, ONNX Runtime and TensorRT are runtimes that then join the
-operations up, and the `transformers` and `timm` packages ship preprocessing settings
+operations up, where ONNX is the Open Neural Network Exchange format that holds the
+frozen graph, and the `transformers` and `timm` packages ship preprocessing settings
 beside their weights so that section 2's fault is harder to make.
 
 What you still have to decide is everything the libraries have no view on. You choose the

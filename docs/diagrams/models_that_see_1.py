@@ -1923,7 +1923,7 @@ def four_jobs() -> None:
     _show(ax, rgb, 'putting a box round each object')
     for i, ob in enumerate(objects):
         _draw_box(ax, ob['box'], CLASS_COLOUR[ob['cls']], None, lw=2.0)
-        ax.text(ob['box'][0], ob['box'][1] - 5 - 15 * (i % 2), ob['cls'],
+        ax.text(ob['box'][0], ob['box'][1] - 5 - 28 * (i % 2), ob['cls'],
                 fontsize=8.5, color=CLASS_COLOUR[ob['cls']], weight='bold',
                 va='bottom',
                 bbox=dict(facecolor='white', edgecolor='none', alpha=0.8, pad=0.6))
@@ -2079,17 +2079,17 @@ def grasp_point_from_each_job() -> None:
     _show(ax, _overlay(rgb, target['mask'], TEAL, 0.45),
           'one job: pick up the glass nearest the camera')
     _draw_box(ax, target['box'], TEAL, None, lw=2.0)
-    marks = [('naming the picture gives no point at all', None, MUTED),
-             ('middle of the box', box_pt, JOINT),
-             ('middle of the glass class region', class_pt, GRIP),
-             ('middle of this object alone', inst_pt, SLIDE)]
-    for size, (name, pt, colour) in zip((0, 22, 16, 11), marks):
+    marks = [('naming the picture gives no point at all', None, MUTED, 's', 9),
+             ('middle of the box', box_pt, JOINT, 'o', 20),
+             ('middle of the glass class region', class_pt, GRIP, 'X', 15),
+             ('middle of this object alone', inst_pt, SLIDE, 'P', 11)]
+    for name, pt, colour, mk, size in marks:
         if pt is None:
             continue
-        ax.plot([pt[0]], [pt[1]], marker='X', color=colour, markersize=size,
+        ax.plot([pt[0]], [pt[1]], marker=mk, color=colour, markersize=size,
                 markeredgecolor='white', markeredgewidth=1.2)
-    ax.legend(handles=[plt.Line2D([], [], marker='X', ls='', color=c, markersize=11,
-                                  label=n) for n, p, c in marks],
+    ax.legend(handles=[plt.Line2D([], [], marker=mk, ls='', color=c, markersize=10,
+                                  label=n) for n, pt, c, mk, _ in marks],
               fontsize=9.5, loc='lower left', framealpha=0.92)
     ax.set_xlabel(f'the class middle sits {gap:.0f} pixels away from the object '
                   f'middle, on a different glass', fontsize=10, color=INK)
@@ -2679,7 +2679,7 @@ def query_slots() -> None:
     _show(ax, rgb, 'what the slots that answered are pointing at')
     for i, s in enumerate(live):
         _draw_box(ax, s['box'], SLIDE, None, lw=1.8)
-        ax.text(s['box'][0], s['box'][1] - 5 - 13 * (i % 2), f'slot {s["slot"]}',
+        ax.text(s['box'][0], s['box'][1] - 5 - 26 * (i % 2), f'slot {s["slot"]}',
                 fontsize=8.5, color=SLIDE, weight='bold', va='bottom',
                 bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, pad=0.8))
     ax = fig.add_axes((0.58, 0.1, 0.40, 0.8))

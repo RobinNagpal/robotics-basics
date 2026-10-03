@@ -1736,17 +1736,17 @@ def four_cases() -> None:
     lo_w, hi_w = min(same), max(same)
     rows = [
         ('the same task, object moved\ninside the area seen before',
-         'works', f'the error stays near {COVERAGE["inside"]:.1f} degrees everywhere inside '
-         'the area the training objects covered', SLIDE),
+         'works', f'the error stays near {COVERAGE["inside"]:.1f} degrees everywhere\n'
+         'inside the area the training objects covered', SLIDE),
         ('the same task, said in\ndifferent words',
          'usually works', f'{lo_w:.0f} to {hi_w:.0f} per cent of the words in the reworded '
-         'sentences already appear in the training instructions', SLIDE),
+         'sentences\nalready appear in the training instructions', SLIDE),
         ('the same task, object moved\noutside the area seen before',
          'does not work', f'the error grows to about {COVERAGE["edge"]:.0f} degrees at the '
          'edge of the camera view', GRIP),
         ('a new object of a kind\nthe model never saw',
-         'does not work', f'the error on the unseen kind is {e_new / e_same:.0f} times the '
-         'error on a new object of a seen kind', GRIP),
+         'does not work', f'the error on the unseen kind is {e_new / e_same:.0f} times\n'
+         'the error on a new object of a seen kind', GRIP),
         ('a task the model was\nnever shown',
          'does not work', 'nothing in the training data says what the new words mean '
          'for the arm', GRIP),
@@ -2272,7 +2272,8 @@ def reading_the_gripper() -> None:
     bars = ax.bar([str(k) for k in K_LIST], accs, color=TEAL, width=0.55)
     ax.bar_label(bars, labels=[f'{a:.0f}%' for a in accs], fontsize=10, padding=3)
     ax.axhline(50, color=GRIP, lw=1.6, ls='--')
-    ax.text(0.02, 52, 'guessing', color=GRIP, fontsize=9.5)
+    ax.text(0.985, 0.47, 'guessing', color=GRIP, fontsize=9.5, ha='right',
+            va='bottom', transform=ax.transAxes)
     ax.set_ylim(0, 112)
     ax.set_xlabel('numbers kept for each picture', fontsize=10)
     ax.set_ylabel('how often the fingers are read right (per cent)', fontsize=10)
@@ -2388,16 +2389,17 @@ def phase_path() -> None:
     ax.plot(np.degrees(tru[:, 0]), tru[:, 1], color=INK, lw=2.2, label='the real system')
     ax.plot(np.degrees(pre[:, 0]), pre[:, 1], color=PURPLE, lw=2, ls='--',
             label='the learned model')
-    for k in (0, 10, 20, 40, 60):
-        ax.plot(np.degrees(tru[k, 0]), tru[k, 1], 'o', color=INK, ms=6)
-        ax.plot(np.degrees(pre[k, 0]), pre[k, 1], 'o', color=PURPLE, ms=6)
+    for k, off in ((0, (8, -10)), (10, (6, 8)), (20, (8, 4)), (40, (-6, 10)), (60, (8, -8))):
+        ax.plot(np.degrees(tru[k, 0]), tru[k, 1], 'o', color=INK, ms=7)
+        ax.plot(np.degrees(pre[k, 0]), pre[k, 1], 'o', color=PURPLE, ms=4)
         ax.annotate(f'step {k}', (np.degrees(tru[k, 0]), tru[k, 1]),
-                    textcoords='offset points', xytext=(6, 6), fontsize=8.6, color=MUTED)
+                    textcoords='offset points', xytext=off, fontsize=8.6, color=MUTED)
     ax.set_xlabel('joint angle (degrees)', fontsize=10)
     ax.set_ylabel('joint speed (radians a second)', fontsize=10)
     ax.legend(fontsize=9.5, frameon=False, loc='lower left')
-    ax.set_title('The two paths start together and peel apart',
-                 fontsize=11.5, weight='bold')
+    gap_end = float(np.degrees(abs(pre[-1, 0] - tru[-1, 0])))
+    ax.set_title('Two turns round the same loop, and by step 60 the two\n'
+                 f'paths are {gap_end:.2f} degrees apart', fontsize=11.5, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'phase-path.svg')
 
@@ -2544,7 +2546,7 @@ def arithmetic_of_planning() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.5), facecolor='white')
     ax = axes[0]
     _plain(ax)
-    bars = ax.bar([n.replace('\n', ' ') for n in names], [a / 20 for a in allowed],
+    bars = ax.bar(names, [a / 20 for a in allowed],
                   color=[SLIDE, TEAL, JOINT, GRIP], width=0.55)
     ax.bar_label(bars, labels=[f'{a / 20:,.0f}' for a in allowed], fontsize=9.5, padding=3)
     ax.set_yscale('log')
@@ -2654,9 +2656,9 @@ def replanning_rate() -> None:
     ax.set_xlabel('seconds between one plan and the next', fontsize=10)
     ax.set_ylabel('how far from the asked-for angle the arm settles\n(degrees)', fontsize=10)
     ax.set_ylim(0, max(offs) * 1.2)
-    ax.set_title(f'With a steady pull of {abs(EXTRA_PULL):.2f} newton metres that the model\n'
-                 'knows nothing about, remaking the plan often is what saves it',
-                 fontsize=11.2, weight='bold')
+    ax.set_title(f'With a steady pull of {abs(EXTRA_PULL):.2f} newton metres the model knows '
+                 f'nothing about,\nremaking the plan every step takes {offs[-1] - offs[0]:.1f} '
+                 'degrees off the error', fontsize=11.2, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'replanning-rate.svg')
 
@@ -2826,11 +2828,11 @@ def through_the_stop() -> None:
     ax.plot(t, np.degrees(tru[:, 0]), color=INK, lw=2.4, label='the real arm')
     ax.plot(t, np.degrees(pre[:, 0]), color=PURPLE, lw=2, ls='--', label='the learned model')
     ax.axhline(np.degrees(STOP), color=GRIP, lw=1.8)
-    ax.text(t[-1], np.degrees(STOP) + 0.7, 'the hard stop', color=GRIP, fontsize=9.5,
+    ax.text(t[-1], np.degrees(STOP) + 2.2, 'the hard stop', color=GRIP, fontsize=9.5,
             ha='right')
     ax.set_xlabel('seconds', fontsize=10)
     ax.set_ylabel('joint angle (degrees)', fontsize=10)
-    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
+    ax.legend(fontsize=9.2, frameon=False, loc='lower left')
     ax.set_title(f'The model takes the arm {over:.0f} degrees through solid metal',
                  fontsize=11, weight='bold')
     ax = axes[1]
@@ -2851,7 +2853,7 @@ def through_the_stop() -> None:
 def energy_drift() -> None:
     """A model that is almost right still makes or destroys energy as it runs."""
     w = _w()
-    s0 = np.array([-0.95, 0.0])
+    s0 = np.array([-0.40, 0.0])
     us = np.zeros(ROLL)
     tru = rollout(true_step, s0, us)
     pre = rollout(w.model.step, s0, us)
@@ -2861,8 +2863,11 @@ def energy_drift() -> None:
                 + MASS * G * LINK_L * (1.0 - np.cos(path[:, 0])))
 
     et, ep = energy(tru), energy(pre)
+    reached = float(np.degrees(np.max(tru[:, 0])))
+    print(f'[energy] the real arm swings up to {reached:.1f} degrees, which stays clear of '
+          f'the stop at {np.degrees(STOP):.1f} degrees, so nothing but friction is at work')
     print(f'[energy] with no torque at all, the real arm goes from {et[0]:.4f} to {et[-1]:.4f} '
-          f'joules as damping takes the energy away')
+          f'joules as friction takes the energy away')
     print(f'[energy] the learned model goes from {ep[0]:.4f} to {ep[-1]:.4f} joules, which is '
           f'{(ep[-1] - et[-1]) / et[0] * 100:+.1f}% of the starting energy out of nowhere')
     t = np.arange(ROLL + 1) * DT
@@ -2882,7 +2887,7 @@ def energy_drift() -> None:
     ax.set_xlabel('seconds', fontsize=10)
     ax.set_ylabel('energy held by the arm (joules)', fontsize=10)
     ax.legend(fontsize=9.2, frameon=False)
-    ax.set_title('Energy the real arm loses to friction, the model keeps',
+    ax.set_title('The model lets the energy go a little more slowly\nthan the arm does',
                  fontsize=11, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'energy-drift.svg')

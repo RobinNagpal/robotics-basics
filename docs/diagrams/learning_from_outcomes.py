@@ -1631,7 +1631,8 @@ for _s in range(NS):
 
 
 def _grip(a: int) -> float:
-    return GRIP_COST if a >= 4 else 0.0
+    """Closing and opening the fingers costs a little more than moving."""
+    return GRIP_COST if a in (4, 5) else 0.0
 
 
 def r_true(r: int, c: int, h: bool, a: int, out: str) -> float:

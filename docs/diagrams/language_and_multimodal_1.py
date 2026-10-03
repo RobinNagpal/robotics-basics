@@ -1154,6 +1154,8 @@ def retrieval_accuracy_and_cost() -> None:
 # ==========================================================================
 
 def reading_and_writing_time() -> None:
+    print(f'[s6] illustrative rates: {PREFILL_RATE:,.0f} prompt tokens read a second, '
+          f'{DECODE_RATE:.0f} answer tokens written a second')
     cases = [('short question\n40 tokens in, 30 out', 40, 30),
              ('one page of notes\n900 tokens in, 60 out', 900, 60),
              ('long answer\n900 tokens in, 400 out', 900, 400),
@@ -1197,6 +1199,9 @@ def first_token_is_slower() -> None:
     print(f'[s6] with a {prompt_tokens}-token prompt the first token takes '
           f'{ttft * 1000:.0f} ms and each one after it {per * 1000:.1f} ms, '
           f'which is {ttft / per:.1f} times as long')
+    for L in (50, 200, 500, 1000, 2000, 4000, 8000, 16000, 32000):
+        print(f'[s6]   prompt of {L:6,d} tokens -> first token after '
+              f'{L / PREFILL_RATE * 1000 + 1 / DECODE_RATE * 1000:7.0f} ms')
 
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.0, 4.6), facecolor='white')
     _plain(ax)
@@ -1268,6 +1273,7 @@ def memory_grows_with_the_talk() -> None:
 
 def inside_a_control_cycle() -> None:
     budget = 0.05
+    print(f'[s6] a control loop at 20 Hz leaves {budget * 1000:.0f} ms for one decision')
     cases = [('one control cycle\nat 20 Hz', budget, SLIDE),
              ('short reply\n40 in, 30 out', sum(answer_time(40, 30)), LINK),
              ('page of notes\n900 in, 60 out', sum(answer_time(900, 60)), LINK),
@@ -1801,8 +1807,9 @@ def where_the_pairs_disagree() -> None:
         labels.append(f'{lo:.1f} to {hi:.1f}')
         fr.append(float(wrong[m].mean()))
         counts.append(int(m.sum()))
-    print(f'[p2s3] careful pairs: {100 * wrong.mean():.1f}% picked the answer with the '
-          f'lower true value, {100 * longer_c.mean():.1f}% picked the longer answer')
+    print(f'[p2s3] of the {len(TRAIN_PAIRS)} careful training pairs, '
+          f'{100 * wrong.mean():.1f}% picked the answer with the lower true value and '
+          f'{100 * longer_c.mean():.1f}% picked the longer answer')
     print(f'[p2s3] hurried pairs: {100 * wrong_h.mean():.1f}% picked the answer with the '
           f'lower true value, {100 * longer_h.mean():.1f}% picked the longer answer')
     for la, f, c in zip(labels, fr, counts):
@@ -1948,6 +1955,7 @@ def what_the_judge_can_see(w_careful: Arr, w_hurried: Arr) -> None:
 def run_rl(reward: Arr, beta: float, theta0: Arr | None = None,
            pi_ref: Arr | None = None, steps: int = 250, lr: float = 0.12
            ) -> tuple[Arr, list[Arr], list[float], list[float], list[float], list[float]]:
+    print(f'[p2s4] reinforcement learning run: {steps} steps with a brake of {beta}')
     theta = THETA_REF.copy() if theta0 is None else theta0.copy()
     ref = PI_REF if pi_ref is None else pi_ref
     r = FEAT_R @ reward
@@ -2036,6 +2044,8 @@ DPO_BETA = 0.6
 
 def run_dpo(beta: float = DPO_BETA, steps: int = 600, lr: float = 2.0
             ) -> tuple[list[Arr], list[float], Arr]:
+    print(f'[p2s5] direct preference optimisation: {steps} steps on '
+          f'{len(TRAIN_PAIRS)} pairs with a brake of {beta}')
     theta = THETA_REF.copy()
     pis, loss_hist = [], []
     log_ref = np.log(PI_REF)
@@ -2222,8 +2232,8 @@ def the_verifier_trains_it() -> None:
         hist.append(pass_rate / n_prob)
         theta += 1.6 * grad
     print(f'[p2s6] training against the checker lifted the pass rate from '
-          f'{100 * hist[0]:.1f}% to {100 * hist[-1]:.1f}% on {n_prob} problems, '
-          f'with no human and no reward model')
+          f'{100 * hist[0]:.1f}% to {100 * hist[-1]:.1f}% in {len(hist)} steps on '
+          f'{n_prob} problems, with no human and no reward model')
 
     fig, ax = plt.subplots(figsize=(10.2, 4.8), facecolor='white')
     _plain(ax)

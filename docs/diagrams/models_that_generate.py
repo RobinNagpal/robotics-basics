@@ -1275,13 +1275,13 @@ def guidance_arrows() -> None:
     for v, col, label, lw in specs:
         ax.annotate('', xy=(v[0], v[1]), xytext=(0, 0),
                     arrowprops=dict(arrowstyle='->', color=col, lw=lw))
-        ax.text(v[0] * 1.06, v[1] * 1.06, label, fontsize=9.5, color=col,
-                ha='left' if v[0] >= 0 else 'right')
+        ax.text(0.14, v[1], label, fontsize=9.5, color=col, ha='left',
+                va='center')
     ax.annotate('', xy=(e_c[0], e_c[1]), xytext=(e_u[0], e_u[1]),
                 arrowprops=dict(arrowstyle='->', color=SLIDE, lw=2.2, ls='--'))
-    ax.text((e_u[0] + e_c[0]) / 2 - 0.1, (e_u[1] + e_c[1]) / 2 + 0.12,
+    ax.text(-0.14, (e_u[1] + e_c[1]) / 2,
             f'what the condition adds:\n({diff[0]:+.2f}, {diff[1]:+.2f})',
-            fontsize=9.5, color=SLIDE, ha='right')
+            fontsize=9.5, color=SLIDE, ha='right', va='center')
     ax.set_xlabel('x part of the named noise', fontsize=9.5)
     ax.set_ylabel('y part of the named noise', fontsize=9.5)
     ax.set_title(f'Guidance at the single point ({x[0, 0]:.2f}, {x[0, 1]:.2f}), '
@@ -1697,7 +1697,7 @@ def flow_pairing() -> None:
                         xt[0, 1] + target[0, 1] * 0.45),
                 xytext=(xt[0, 0], xt[0, 1]),
                 arrowprops=dict(arrowstyle='->', color=SLIDE, lw=2.6))
-    ax.text(xt[0, 0] + 0.25, xt[0, 1] - 0.45,
+    ax.text(0.62, -0.55,
             f'the direction it must name:\n({target[0, 0]:+.2f}, {target[0, 1]:+.2f})',
             fontsize=9.5, color=SLIDE)
     ax.set_title('One training example for flow matching: join a noise point to a\n'
@@ -1709,7 +1709,7 @@ def flow_pairing() -> None:
 def vector_field_arrows() -> None:
     d = _data()
     f = _flow()
-    grid = np.linspace(-2.4, 2.4, 13)
+    grid = np.linspace(-2.4, 2.4, 11)
     gx, gy = np.meshgrid(grid, grid)
     pts = np.stack([gx.ravel(), gy.ravel()], axis=1)
     fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.4), facecolor='white')
@@ -1719,7 +1719,7 @@ def vector_field_arrows() -> None:
         sh = _show(d.train, 500, 15)
         ax.scatter(sh[:, 0], sh[:, 1], s=4, color=GRID, alpha=0.9)
         ax.quiver(pts[:, 0], pts[:, 1], v[:, 0], v[:, 1], color=LINK,
-                  angles='xy', scale_units='xy', scale=3.0, width=0.005)
+                  angles='xy', scale_units='xy', scale=4.2, width=0.005)
         print(f'[p2s1] at t = {t:.2f} the arrows are on average '
               f'{np.hypot(v[:, 0], v[:, 1]).mean():.3f} long, '
               f'longest {np.hypot(v[:, 0], v[:, 1]).max():.3f}')
@@ -1789,13 +1789,13 @@ def straightness_compare() -> None:
     bars = ax.bar(names, vals, color=[PURPLE, LINK, SLIDE], width=0.55,
                   edgecolor=INK, lw=0.6)
     ax.axhline(1.0, color=MUTED, ls='--', lw=1.4)
-    ax.text(-0.45, 1.03, 'a perfectly straight path', fontsize=9, color=MUTED)
     for b_, v in zip(bars, vals):
         ax.text(b_.get_x() + b_.get_width() / 2, v + 0.05, f'{v:.2f}', ha='center',
                 fontsize=11.5, weight='bold', color=INK)
     ax.set_ylim(0.9, max(vals) * 1.15)
     ax.set_ylabel('distance travelled, divided by the straight line', fontsize=9)
-    ax.set_title('How bent each path is', fontsize=10, weight='bold', color=INK)
+    ax.set_title('How bent each path is\n(1.00 is perfectly straight)',
+                 fontsize=10, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, FLOW_DOC, 'straightness-compare.svg')
 
@@ -1863,7 +1863,8 @@ def steps_vs_error_both() -> None:
     ax.plot(FEW, [s.str[n] for n in FEW], color=SLIDE, lw=2.6, marker='s', ms=6,
             label='flow matching, straightened')
     ax.axhline(d.floor, color=MUTED, ls='--', lw=1.3)
-    ax.text(1.05, d.floor * 1.35, f'real against real: {d.floor:.4f}', fontsize=9.5,
+    ax.set_ylim(bottom=6e-4)
+    ax.text(1.05, 7.2e-4, f'real against real: {d.floor:.4f}', fontsize=9.5,
             color=MUTED)
     ax.axhline(target, color=GRIP, ls=':', lw=1.6)
     ax.text(1.05, target * 1.12, f'the line used below: {target}', fontsize=9.5,
@@ -1947,7 +1948,8 @@ def time_to_quality() -> None:
         ax.plot(times, [got[n] for n in FEW], color=col, lw=2.4, marker=mk, ms=6,
                 label=name)
     for n, tm in zip(FEW, times):
-        ax.text(tm, s.str[n] * 0.5, f'{n}', ha='center', fontsize=9, color=SLIDE)
+        ax.text(tm, s.str[n] * 0.42, f'{n}', ha='center', fontsize=9, color=SLIDE)
+    ax.set_ylim(bottom=5e-4)
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xlabel('measured time to generate one waypoint (ms)', fontsize=9.5)
@@ -2044,8 +2046,8 @@ def autoregressive_samples() -> None:
     gen = a.draw(1500, seed=1616)
     mis = _mismatch(gen, d.ref)
     s = _sweep()
-    print(f'[p2s3] the two-stage model scores {mis:.4f}, against {s.flow[8]:.4f} '
-          f'for flow matching with 8 steps and a floor of {d.floor:.4f}')
+    print(f'[p2s3] the two-stage model scores {mis:.4f}, against {s.str[2]:.4f} '
+          f'for the straightened flow with 2 steps and a floor of {d.floor:.4f}')
     print(f'[p2s3] it puts {_in_obstacle(gen) * 100:.2f}% of its waypoints inside '
           'the obstacle')
     fig, axes = plt.subplots(1, 3, figsize=(14.4, 5.2), facecolor='white')
@@ -2059,8 +2061,9 @@ def autoregressive_samples() -> None:
         ax.set_title(name, fontsize=10.5, weight='bold', color=INK)
     ax = axes[2]
     _plain(ax)
-    names = ['real against\nreal', 'one piece\nat a time', 'flow matching,\n8 steps']
-    vals = [d.floor, mis, s.flow[8]]
+    names = ['real against\nreal', 'one piece\nat a time',
+             'straightened flow,\n2 steps']
+    vals = [d.floor, mis, s.str[2]]
     bars = ax.bar(names, vals, color=[MUTED, WRIST, SLIDE], width=0.55,
                   edgecolor=INK, lw=0.6)
     for b, v in zip(bars, vals):
@@ -2082,9 +2085,10 @@ def autoregressive_cost() -> None:
     _plain(ax)
     ax.plot(pieces, pieces * one * 1e3, color=WRIST, lw=2.6,
             label='one piece at a time: one pass per piece')
-    for n, col, ls in ((4, SLIDE, '-'), (50, PURPLE, '--')):
+    for n, col, ls, what in ((2, SLIDE, '-', 'a straightened flow model'),
+                             (50, PURPLE, '--', 'a diffusion model')):
         ax.axhline(n * one * 1e3, color=col, lw=2.0, ls=ls,
-                   label=f'{n} steps of a flow or diffusion model')
+                   label=f'{n} steps of {what}')
     ax.set_xlabel('how many pieces the answer has', fontsize=9.5)
     ax.set_ylabel('measured time to generate one answer (ms)', fontsize=9.5)
     ax.legend(fontsize=9, frameon=False, loc='upper left')
@@ -2093,8 +2097,8 @@ def autoregressive_cost() -> None:
                  fontsize=11.5, weight='bold', color=INK)
     print(f'[p2s3] a 2-piece answer costs {2 * one * 1e3:.3f} ms one piece at a '
           f'time, a 16-piece answer {16 * one * 1e3:.3f} ms and a 64-piece answer '
-          f'{64 * one * 1e3:.3f} ms, while 4 flow steps cost '
-          f'{4 * one * 1e3:.3f} ms whatever the size')
+          f'{64 * one * 1e3:.3f} ms, while 2 straightened flow steps cost '
+          f'{2 * one * 1e3:.3f} ms whatever the size')
     ax = axes[1]
     _plain(ax)
     ax.axis('off')
@@ -2188,7 +2192,7 @@ def trajectory_dataset() -> None:
     _plain(ax)
     one = s.train[0]
     ax.bar(np.arange(NT), one, color=LINK, edgecolor=INK, lw=0.5)
-    for i in (0, 7, 8, 15):
+    for i in (0, 7, 15):
         ax.text(i, one[i] + 0.06 * np.sign(one[i] + 1e-9), f'{one[i]:+.2f}',
                 ha='center', fontsize=8.5, color=INK)
     ax.set_xticks(np.arange(NT))
@@ -2243,7 +2247,7 @@ def code_size_vs_error() -> None:
     _plain(ax)
     ax.plot(ks, np.sqrt(errs), color=PURPLE, lw=2.6, marker='o', ms=7)
     for k, e in zip(ks, errs):
-        ax.text(k, np.sqrt(e) * 1.1, f'{np.sqrt(e):.3f} m', ha='center',
+        ax.text(k, np.sqrt(e) * 1.14, f'{np.sqrt(e):.3f} m', ha='center',
                 fontsize=9.5, color=PURPLE)
     ax.axvline(3, color=MUTED, ls='--', lw=1.4)
     ax.text(3.1, max(np.sqrt(errs)) * 0.6,
@@ -2534,7 +2538,8 @@ def error_vs_time_frontier() -> None:
     ax.plot([2 * one * 1e3], [ar_mis], marker='D', ms=10, color=WRIST,
             label='one piece at a time, 2 pieces')
     ax.axhline(d.floor, color=MUTED, ls='--', lw=1.3)
-    ax.text(times[0], d.floor * 1.3, f'real against real: {d.floor:.4f}',
+    ax.set_ylim(bottom=6e-4)
+    ax.text(times[0], 7.2e-4, f'real against real: {d.floor:.4f}',
             fontsize=9.5, color=MUTED)
     ax.set_xscale('log')
     ax.set_yscale('log')

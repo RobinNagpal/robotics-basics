@@ -2076,7 +2076,7 @@ def fig_loss_scale_underflow() -> None:
             label=f'the same values multiplied by {PR.scale:.0f}')
     ax.axvline(PR.f16_floor, color=GRIP, lw=2.0)
     ax.annotate(f'below {PR.f16_floor:.0g} a float16\nholds nothing but zero',
-                xy=(PR.f16_floor, 2.0e3), xytext=(1.6e-11, 2.0e4),
+                xy=(PR.f16_floor, 2.4e2), xytext=(1.6e-11, 1.1e3),
                 fontsize=9.3, color=GRIP, ha='left',
                 arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
     ax.set_xscale('log')
@@ -2371,6 +2371,8 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
         print('    ' + p('largest safe learning rate',
                          f'{float(info["lr_max"]):.5g}'))
         print('    ' + p('best possible loss', f'{float(info["loss_opt"]):.6f}'))
+    print(p('largest safe learning rate, standardised over raw',
+            f'{float(SC.std["lr_max"]) / float(SC.raw["lr_max"]):,.0f}'))
     print(p('steps to get within 0.001, as measured', f'{SC.raw_steps:,}'))
     print(p('steps to get within 0.001, standardised', f'{SC.std_steps:,}'))
     print(p('check: loop at 2,000 steps gives',

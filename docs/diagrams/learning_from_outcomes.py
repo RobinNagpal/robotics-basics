@@ -2552,3 +2552,246 @@ def learning_from_the_verifier_alone() -> None:
                  fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RW_DOC, 'learning-from-the-verifier-alone.svg')
+
+
+# ---------------- section 6: reward hacking ----------------
+
+def the_tray_loop() -> None:
+    V, Q = value_iteration(0.95, t=T_FARM)
+    ss, aa, rr, out = greedy_path(Q, t=T_FARM)
+    trays = int(sum(1 for i, a in enumerate(aa) if T_FARM[3][int(ss[i]), int(a)] == 'tray'))
+    true_r = float(T_TRUE[1][ss, aa].sum())
+    print(f'[hack] with the tray paying +3 and the attempt carrying on, the best policy '
+          f'puts the block on the tray {trays} times in one attempt')
+    print(f'[hack] it collects {rr.sum():.2f} of the written reward against the '
+          f'{8.90:.2f} a proper attempt collects, and the block never reaches the bin '
+          f'(the attempt ends as "{out}")')
+    print(f'[hack] judged on the real reward it scores {true_r:.2f}')
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 5.2), facecolor='white')
+    ax = axes[0]
+    _table(ax, f'The loop: block to tray, {trays} times over', small=True)
+    _draw_path(ax, ss[:14], aa[:14], GRIP)
+    ax.text(2.5, -0.32, f'first 14 of {len(aa)} actions; the whole attempt collects '
+                        f'{rr.sum():.2f}', ha='center', fontsize=9.5, color=INK)
+    ax = axes[1]
+    _plain(ax)
+    run = np.cumsum(rr)
+    V2, Qt = value_iteration(0.95, t=T_TRUE)
+    g2 = greedy_path(Qt, t=T_TRUE)
+    honest = np.cumsum(T_FARM[1][g2[0], g2[1]])
+    ax.plot(np.arange(len(run)), run, color=GRIP, lw=2.1,
+            label='the policy that farms the tray')
+    ax.plot(np.arange(len(honest)), honest, color=SLIDE, lw=2.1,
+            label='the policy that does the job')
+    ax.set_xlabel('step of the attempt', fontsize=10)
+    ax.set_ylabel('written reward collected so far', fontsize=10)
+    ax.set_title(f'{rr.sum():.1f} against {honest[-1]:.1f}', fontsize=11.5,
+                 weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.suptitle('Reward hacking: the highest score in this world is a loop that never '
+                 'finishes the job', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'the-tray-loop.svg')
+
+
+def high_score_failed_task() -> None:
+    cases = [('be near the block', T_DIST), ('a bonus for holding it', T_HOLD),
+             ('pay for any tidy place', T_FARM)]
+    V0, Qhonest = value_iteration(0.95, t=T_TRUE)
+    hack_score, honest_score, hack_bin = [], [], []
+    for name, tab in cases:
+        V, Qh = value_iteration(0.95, t=tab)
+        hp = greedy_path(Qh, t=tab)
+        op = greedy_path(Qhonest, t=T_TRUE)
+        hack_score.append(float(tab[1][hp[0], hp[1]].sum()))
+        honest_score.append(float(tab[1][op[0], op[1]].sum()))
+        hack_bin.append(1.0 if hp[3] == 'bin' else 0.0)
+        print(f'[hack] "{name}": the best policy under it scores '
+              f'{hack_score[-1]:.2f}, a policy that really does the job scores '
+              f'{honest_score[-1]:.2f} on the same reward, and the hacking policy puts '
+              f'the block in the bin {int(hack_bin[-1])} times')
+    fig, ax = plt.subplots(figsize=(10.4, 5.3), facecolor='white')
+    _plain(ax)
+    xs = np.arange(len(cases))
+    ax.bar(xs - 0.2, hack_score, width=0.4, color=GRIP, edgecolor=INK, lw=0.6,
+           label='the policy that squeezes the written reward')
+    ax.bar(xs + 0.2, honest_score, width=0.4, color=SLIDE, edgecolor=INK, lw=0.6,
+           label='the policy that does the job')
+    for x, v in zip(xs - 0.2, hack_score):
+        ax.text(x, v + 1.5, f'{v:.1f}', ha='center', fontsize=10, weight='bold')
+    for x, v in zip(xs + 0.2, honest_score):
+        ax.text(x, v + 1.5, f'{v:.1f}', ha='center', fontsize=10, weight='bold')
+    for x in xs:
+        ax.text(x, -9.5, 'block in the bin: never', ha='center', fontsize=9, color=GRIP)
+    ax.axhline(0, color=INK, lw=0.9)
+    ax.set_xticks(xs)
+    ax.set_xticklabels([n for n, _ in cases], fontsize=10.5)
+    ax.set_ylabel('score on the written reward', fontsize=10)
+    ax.set_ylim(-13, max(hack_score) * 1.25)
+    ax.set_title('Three written rewards, and what wins under each',
+                 fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.suptitle('Every one of these pays more for failing than for finishing',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'high-score-failed-task.svg')
+
+
+def the_two_scores_come_apart() -> None:
+    tab = model_reward_tables()
+    w, _, _ = reward_model()
+    score = _sigmoid(FEAT @ w)
+    xs: list[float] = []
+    ys: list[float] = []
+    for seed in range(6):
+        for n in (200, 400, 800, 1500, 3000, 6000):
+            Q, _, _, _ = q_learn(n, 1.0, seed=320 + seed, eps1=0.05, t=tab)
+            rng = np.random.default_rng(6000 + seed)
+            sc, hit = [], []
+            for _ in range(30):
+                ss, aa, rr, out = rollout(Q, rng, 0.0, W2)
+                sc.append(float(np.mean(score[ss])))
+                hit.append(1.0 if out == 'bin' else 0.0)
+            xs.append(float(np.mean(sc)))
+            ys.append(float(np.mean(hit)))
+    xa, ya = np.array(xs), np.array(ys)
+    top = xa >= np.quantile(xa, 0.75)
+    print(f'[come apart] {len(xa)} policies measured; among the quarter with the '
+          f'highest model score, the share of attempts that really reach the bin is '
+          f'{ya[top].mean():.2f}, against {ya[~top].mean():.2f} for the rest')
+    print(f'[come apart] best model score {xa.max():.3f} belongs to a policy that '
+          f'reaches the bin on {ya[int(np.argmax(xa))]:.2f} of attempts')
+    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
+    _plain(ax)
+    ax.scatter(xa, ya, s=42, color=PURPLE, alpha=0.8, zorder=5)
+    ax.axvline(float(np.quantile(xa, 0.75)), color=MUTED, ls='--', lw=1.2)
+    ax.text(float(np.quantile(xa, 0.75)) + 0.004, 0.06,
+            'the quarter with the\nhighest model score', fontsize=9, color=MUTED)
+    ax.set_xlabel('average score the learned reward model gives the policy', fontsize=10)
+    ax.set_ylabel('share of attempts that really reach the bin', fontsize=10)
+    ax.set_ylim(-0.05, 1.08)
+    ax.set_title(f'{len(xa)} policies, each stopped at a different point in training',
+                 fontsize=12, weight='bold', color=INK)
+    fig.suptitle('A higher score on the learned reward stops meaning a better robot',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'the-two-scores-come-apart.svg')
+
+
+def two_rewards_together() -> None:
+    P, R, D, OUT, STAY = W2
+    w, _, _ = reward_model()
+    score = _sigmoid(FEAT @ w)
+    model_only = model_reward_tables()
+    both: Tables = (P, model_only[1] + np.where(OUT == 'bin', 5.0, 0.0), D, OUT, STAY)
+    res = {}
+    for name, tab in (('learned reward alone', model_only),
+                      ('learned reward and the verifier', both)):
+        rates = []
+        for seed in range(4):
+            Q, _, _, _ = q_learn(6000, 1.0, seed=340 + seed, eps1=0.05, t=tab)
+            rates.append(evaluate(Q, 30, seed=99, t=W2)[0]['bin'])
+        res[name] = float(np.mean(rates))
+        print(f'[fix] trained on "{name}": reaches the bin on {res[name]:.2f} of '
+              f'attempts')
+    fig, ax = plt.subplots(figsize=(8.6, 5.0), facecolor='white')
+    _plain(ax)
+    names = list(res)
+    vals = [res[n] for n in names]
+    ax.bar(np.arange(2), vals, width=0.5, color=[GRIP, SLIDE], edgecolor=INK, lw=0.7)
+    for x, v in zip(np.arange(2), vals):
+        ax.text(x, v + 0.03, f'{v:.2f}', ha='center', fontsize=13, weight='bold')
+    ax.set_xticks(np.arange(2))
+    ax.set_xticklabels(names, fontsize=10.5)
+    ax.set_ylim(0, 1.18)
+    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
+    ax.set_title('Four runs of 6,000 attempts each', fontsize=12, weight='bold')
+    fig.suptitle('Adding a reward nobody can argue with closes the hole in the learned '
+                 'one', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'two-rewards-together.svg')
+
+
+def staying_near_a_trusted_policy() -> None:
+    P, R, D, OUT, STAY = W2
+    trusted_Q, _, _, _ = q_learn(6000, 1.0, seed=77, eps1=0.05, t=T_DENSE)
+    trusted = trusted_Q.argmax(1)
+    base = model_reward_tables()[1]
+    penalty = np.ones((NS, NA))
+    penalty[np.arange(NS), trusted] = 0.0
+    betas = [0.0, 0.05, 0.1, 0.2, 0.4, 0.8]
+    rates, scores = [], []
+    w, _, _ = reward_model()
+    score = _sigmoid(FEAT @ w)
+    for b in betas:
+        tab: Tables = (P, base - b * penalty, D, OUT, STAY)
+        rr_, ss_ = [], []
+        for seed in range(3):
+            Q, _, _, _ = q_learn(6000, 1.0, seed=360 + seed, eps1=0.05, t=tab)
+            rr_.append(evaluate(Q, 30, seed=99, t=W2)[0]['bin'])
+            rng = np.random.default_rng(7000 + seed)
+            ss_.append(float(np.mean([np.mean(score[rollout(Q, rng, 0.0, W2)[0]])
+                                      for _ in range(20)])))
+        rates.append(float(np.mean(rr_)))
+        scores.append(float(np.mean(ss_)))
+        print(f'[trust] penalty {b:.2f} for differing from the trusted policy: '
+              f'reaches the bin on {rates[-1]:.2f} of attempts, learned-reward score '
+              f'{scores[-1]:.3f}')
+    base_rate = evaluate(trusted_Q, 30, seed=99, t=W2)[0]['bin']
+    print(f'[trust] the trusted policy itself reaches the bin on {base_rate:.2f} of '
+          f'attempts')
+    fig, ax = plt.subplots(figsize=(9.2, 5.3), facecolor='white')
+    _plain(ax)
+    ax.plot(betas, rates, marker='o', color=SLIDE, lw=2.1,
+            label='share of attempts that really reach the bin')
+    ax.plot(betas, scores, marker='s', color=PURPLE, lw=2.1,
+            label='score from the learned reward model')
+    for x, v in zip(betas, rates):
+        ax.text(x, v + 0.04, f'{v:.2f}', ha='center', fontsize=9, color=SLIDE)
+    for x, v in zip(betas, scores):
+        ax.text(x, v - 0.07, f'{v:.2f}', ha='center', fontsize=9, color=PURPLE)
+    ax.axhline(base_rate, color=MUTED, ls='--', lw=1.2)
+    ax.text(betas[-1], base_rate + 0.02, 'the trusted policy itself', ha='right',
+            fontsize=9, color=MUTED)
+    ax.set_ylim(-0.05, 1.15)
+    ax.set_xlabel('how much the policy is charged for each action that differs from '
+                  'the trusted one', fontsize=10)
+    ax.set_ylabel('share of attempts, and model score', fontsize=10)
+    ax.set_title('Three runs at each setting', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='center right')
+    fig.suptitle('Holding the policy near one that is trusted keeps the hole from being '
+                 'found', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'staying-near-a-trusted-policy.svg')
+
+
+def main() -> None:
+    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    global PNG_DIR
+    if len(sys.argv) == 3 and sys.argv[1] == '--png':
+        PNG_DIR = pathlib.Path(sys.argv[2])
+        PNG_DIR.mkdir(parents=True, exist_ok=True)
+    for fn in (the_little_world, state_and_action, reward_sequence, discounted_return,
+               episodes_and_returns, policy_as_a_table, value_on_the_grid,
+               policy_and_value_together, value_vs_return, learning_curve,
+               policy_before_after, value_before_after, q_values_one_state,
+               explore_or_not, where_each_one_ends_up, first_time_at_the_bin,
+               the_price_of_exploring, learning_from_old_attempts, on_policy_goes_stale,
+               the_clip, with_and_without_the_limit, how_many_attempts,
+               the_reality_gap, domain_randomisation, what_randomising_costs,
+               the_written_reward, the_hovering_policy, reward_up_task_flat,
+               three_behaviours_scored, sparse_against_dense, how_fast_each_one_learns,
+               shaping_that_changes_the_answer, shaping_that_keeps_the_answer,
+               the_examples_it_learns_from, what_the_reward_model_scores,
+               how_well_it_tells_them_apart, training_against_the_model,
+               a_pair_to_judge, what_the_preferences_taught, how_many_pairs,
+               people_make_mistakes, the_verifier_along_an_attempt, where_they_disagree,
+               what_a_program_can_check, learning_from_the_verifier_alone,
+               the_tray_loop, high_score_failed_task, the_two_scores_come_apart,
+               two_rewards_together, staying_near_a_trusted_policy):
+        fn()
+    print(f'wrote the diagrams under {IMAGES}')
+
+
+if __name__ == '__main__':
+    main()

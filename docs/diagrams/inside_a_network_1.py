@@ -204,3 +204,489 @@ def report_core() -> None:
     print(f'ReLU output {OUT:.3f}; GELU {float(gelu(SUM)):.4f}; SiLU {float(silu(SUM)):.4f}')
     print(f'the two fixed products add to {OTHER_TWO:.3f}, '
           f'so the sum is 0 at a distance of {ZERO_D:.4f} m')
+
+
+# ==========================================================================
+# 01_one-neuron.md  --  section 1: what one neuron holds
+# ==========================================================================
+
+def neuron_parts() -> None:
+    """The whole neuron: three named readings, three weights, a bias, a rule, one output."""
+    fig, ax = plt.subplots(figsize=(15.0, 5.8), facecolor='white')
+    _axes(ax, (0, 32), (0, 12.4))
+    _label(ax, 16, 11.8, 'One neuron: multiply, add, add the bias, then apply the rule',
+           size=13, weight='bold')
+    ys = [9.0, 6.0, 3.0]
+    names = ['distance to object (m)', 'gripper opening /100', 'patch brightness /255']
+    cx, bx, sx = 6.9, 9.4, 19.2
+    sy = 6.0
+    _label(ax, 2.0, 10.1, 'reading', size=10.5, weight='bold', color=MUTED)
+    _label(ax, 10.5, 10.1, 'weight', size=10.5, weight='bold', color=MUTED)
+    _label(ax, 14.6, 10.1, 'product', size=10.5, weight='bold', color=MUTED)
+    for y, nm, a, w, p in zip(ys, names, X, W, PROD):
+        _label(ax, 0.1, y + 0.95, nm, size=9.5, ha='left', color=MUTED)
+        ax.add_patch(plt.Circle((cx, y), 0.8, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                                zorder=4))
+        _label(ax, cx, y, f'{a:.2f}', size=11.5, family=MONO)
+        ax.plot([cx + 0.8, bx], [y, y], color=MUTED, lw=1.3, zorder=2)
+        _box(ax, bx, y - 0.5, 2.2, 1.0, face='white', edge=JOINT)
+        _label(ax, bx + 1.1, y, f'{w:+.2f}', size=11.5, family=MONO)
+        _label(ax, bx + 2.5, y, f'= {p:+.3f}', size=11, family=MONO, ha='left')
+        ax.plot([15.9, sx - 1.55], [y, sy + (y - sy) * 0.22], color=MUTED, lw=1.3, zorder=2)
+    ax.add_patch(plt.Circle((sx, sy), 1.55, facecolor=JOINT, edgecolor=INK, lw=1.2, zorder=4))
+    _label(ax, sx, sy + 0.45, 'add up', size=10.5, weight='bold')
+    _label(ax, sx, sy - 0.35, f'{SUM:.3f}', size=12, family=MONO)
+    _box(ax, sx - 1.3, 0.6, 2.6, 1.1, face='white', edge=SLIDE)
+    _label(ax, sx, 1.15, f'{BIAS:+.2f}', size=11.5, family=MONO)
+    _label(ax, sx, 2.05, 'bias', size=10.5, weight='bold', color=SLIDE)
+    _arrow(ax, (sx, 1.75), (sx, sy - 1.6), color=SLIDE, lw=1.6)
+    _arrow(ax, (sx + 1.6, sy), (22.3, sy))
+    _box(ax, 22.5, 4.4, 5.3, 3.2, face='white', edge=PURPLE)
+    _label(ax, 25.15, 7.0, 'the rule', size=11, weight='bold', color=PURPLE)
+    _label(ax, 25.15, 5.8, 'below 0: give 0\notherwise: keep it', size=9.8)
+    _label(ax, 25.15, 4.0, '(the activation function)', size=9.3, color=MUTED)
+    _arrow(ax, (27.9, sy), (29.3, sy))
+    ax.add_patch(plt.Circle((30.4, sy), 0.95, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, 30.4, sy, f'{OUT:.3f}', size=11.5, family=MONO)
+    _label(ax, 30.4, 4.5, 'output', size=10.5, weight='bold')
+    _label(ax, 16, 0.1, f'{PROD[0]:+.3f} {PROD[1]:+.3f} {PROD[2]:+.3f} {BIAS:+.2f} '
+           f'= {SUM:.3f}, which is above 0, so the output is {OUT:.3f}',
+           size=10.5, color=MUTED, family=MONO)
+    _save(fig, ONE, 'neuron-parts.svg')
+
+
+def scaling_the_readings() -> None:
+    """Where the three input numbers come from, including the 4 by 4 patch of pixels."""
+    print('--- the three readings ------------------------------------------')
+    print(f'distance {DIST_M} m goes in unchanged; opening {OPEN_MM:.0f} mm / 100 = '
+          f'{OPEN_MM / 100:.2f}; patch sum {PATCH.sum()} over 16 pixels = {PATCH_MEAN:.1f}, '
+          f'/255 = {PATCH_MEAN / 255:.4f} -> {BRIGHT:.3f}')
+    fig, ax = plt.subplots(figsize=(13.5, 7.4), facecolor='white')
+    _axes(ax, (0, 27), (0, 15))
+    _label(ax, 13.5, 14.4, 'The three readings, and how each one becomes a number near 1',
+           size=13, weight='bold')
+    rows = [(12.6, 'depth camera', f'{DIST_M} m', 'already between 0 and 1,\nso it goes in as it is',
+             f'{X[0]:.2f}', LINK),
+            (9.6, 'gripper', f'{OPEN_MM:.0f} mm', 'the jaws open to 100 mm,\nso divide by 100',
+             f'{X[1]:.2f}', JOINT)]
+    for y, src, raw, how, val, col in rows:
+        _label(ax, 0.1, y, src, size=10.5, ha='left', weight='bold', color=MUTED)
+        _box(ax, 5.0, y - 0.6, 3.0, 1.2, face='white', edge=col)
+        _label(ax, 6.5, y, raw, size=11.5, family=MONO)
+        _arrow(ax, (8.2, y), (10.0, y), color=MUTED, lw=1.4)
+        _label(ax, 10.3, y, how, size=9.8, ha='left')
+        _arrow(ax, (18.4, y), (20.2, y), color=MUTED, lw=1.4)
+        _box(ax, 20.4, y - 0.6, 2.6, 1.2, face=LINK_PALE, edge=LINK)
+        _label(ax, 21.7, y, val, size=11.5, family=MONO)
+    _label(ax, 0.1, 6.4, 'camera patch', size=10.5, ha='left', weight='bold', color=MUTED)
+    x0, y0 = 4.0, 2.0
+    for r in range(4):
+        for c in range(4):
+            v = int(PATCH[r, c])
+            shade = v / 255.0
+            ax.add_patch(Rectangle((x0 + c, y0 + (3 - r)), 1, 1,
+                                   facecolor=(shade, shade, shade), edgecolor=GRID, lw=0.8,
+                                   zorder=3))
+            _label(ax, x0 + c + 0.5, y0 + (3 - r) + 0.5, str(v), size=10, color='white',
+                   family=MONO)
+    _label(ax, x0 + 2, y0 - 0.7, '16 pixels, 0 is black and 255 is white', size=9.5, color=MUTED)
+    _arrow(ax, (x0 + 4.2, y0 + 2), (10.0, y0 + 2), color=MUTED, lw=1.4)
+    _label(ax, 10.3, y0 + 2.3, f'add the 16 values: {PATCH.sum()}', size=9.8, ha='left')
+    _label(ax, 10.3, y0 + 1.3, f'divide by 16: {PATCH_MEAN:.1f}, then by 255',
+           size=9.8, ha='left')
+    _arrow(ax, (18.4, y0 + 2), (20.2, y0 + 2), color=MUTED, lw=1.4)
+    _box(ax, 20.4, y0 + 1.4, 2.6, 1.2, face=LINK_PALE, edge=LINK)
+    _label(ax, 21.7, y0 + 2, f'{BRIGHT:.2f}', size=11.5, family=MONO)
+    _label(ax, 24.6, 11.1, 'the three\ninputs', size=10.5, weight='bold', color=LINK)
+    _save(fig, ONE, 'scaling-the-readings.svg')
+
+
+def the_four_parameters() -> None:
+    """The four numbers this neuron owns: three weights and one bias."""
+    fig, ax = plt.subplots(figsize=(11.0, 5.0), facecolor='white')
+    _plain(ax)
+    names = ['weight on\ndistance', 'weight on\nopening', 'weight on\nbrightness', 'bias']
+    vals = [W[0], W[1], W[2], BIAS]
+    cols = [GRIP, SLIDE, SLIDE, PURPLE]
+    bars = ax.bar(range(4), vals, color=cols, edgecolor=INK, lw=0.8, width=0.56)
+    for i, (b, v) in enumerate(zip(bars, vals)):
+        off = 0.12 if v > 0 else -0.12
+        ax.text(i, v + off, f'{v:+.2f}', ha='center',
+                va='bottom' if v > 0 else 'top', fontsize=12, family=MONO)
+    ax.axhline(0, color=INK, lw=1.2)
+    ax.set_xticks(range(4))
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylim(-2.6, 2.0)
+    ax.set_ylabel('value of the number', fontsize=10)
+    ax.set_title('This one neuron owns four numbers: 3 weights + 1 bias = 4 parameters',
+                 fontsize=12.5, weight='bold')
+    ax.text(2.65, -2.2, 'a minus weight pushes the output down\nas that reading grows',
+            fontsize=9.5, color=MUTED, ha='center')
+    _save(fig, ONE, 'the-four-parameters.svg')
+
+
+# ==========================================================================
+# 01_one-neuron.md  --  section 2: the weighted sum
+# ==========================================================================
+
+def weighted_sum_lines() -> None:
+    """The weighted sum as four lines of arithmetic with a running total."""
+    run = np.cumsum(np.append(PROD, BIAS))
+    print('--- the weighted sum, line by line ------------------------------')
+    for nm, a, w, p, r in zip(SHORT + ['bias'], list(X) + [1.0], list(W) + [BIAS],
+                              list(PROD) + [BIAS], run):
+        print(f'  {nm:11s} {a:5.2f} x {w:+.2f} = {p:+.3f}   running total {r:+.3f}')
+    fig, ax = plt.subplots(figsize=(12.0, 5.6), facecolor='white')
+    _axes(ax, (0, 24), (0, 11), equal=False)
+    _label(ax, 12, 10.4, 'The weighted sum written out, one line at a time',
+           size=13, weight='bold')
+    rows = [['what it is', 'reading', 'weight', 'product', 'running total']]
+    for nm, a, w, p, r in zip(SHORT, X, W, PROD, run):
+        rows.append([nm, f'{a:.2f}', f'{w:+.2f}', f'{p:+.3f}', f'{r:+.3f}'])
+    rows.append(['bias', '-', f'{BIAS:+.2f}', f'{BIAS:+.3f}', f'{run[-1]:+.3f}'])
+    widths = [5.0, 3.0, 3.0, 3.4, 4.6]
+    bottom = _table(ax, 2.0, 9.4, widths, rows, row_h = 1.15, size=11)
+    _label(ax, 2.0 + sum(widths) / 2, bottom - 0.9,
+           f'the weighted sum is {SUM:.3f}, and the rule keeps it, so the output is {OUT:.3f}',
+           size=11, color=INK)
+    _label(ax, 2.0 + sum(widths) / 2, bottom - 1.8,
+           'the running total is what the neuron would have if it stopped at that line',
+           size=9.5, color=MUTED)
+    _save(fig, ONE, 'weighted-sum-lines.svg')
+
+
+def contribution_bars() -> None:
+    """Which reading pushed the answer up and which pushed it down."""
+    fig, ax = plt.subplots(figsize=(11.0, 5.2), facecolor='white')
+    _plain(ax)
+    labels = ['distance\n0.42 x -2.00', 'opening\n0.55 x +1.50',
+              'brightness\n0.30 x +0.80', 'bias\n+0.50']
+    vals = list(PROD) + [BIAS]
+    cols = [GRIP if v < 0 else SLIDE for v in vals[:3]] + [PURPLE]
+    ax.bar(range(4), vals, color=cols, edgecolor=INK, lw=0.8, width=0.55)
+    for i, v in enumerate(vals):
+        ax.text(i, v + (0.05 if v > 0 else -0.05), f'{v:+.3f}', ha='center',
+                va='bottom' if v > 0 else 'top', fontsize=11.5, family=MONO)
+    ax.bar([4], [SUM], color=JOINT, edgecolor=INK, lw=1.0, width=0.55)
+    ax.text(4, SUM + 0.05, f'{SUM:+.3f}', ha='center', va='bottom', fontsize=12,
+            family=MONO, weight='bold')
+    ax.axhline(0, color=INK, lw=1.2)
+    ax.set_xticks(range(5))
+    ax.set_xticklabels(labels + ['the sum'], fontsize=9.8)
+    ax.set_ylim(-1.1, 1.15)
+    ax.set_ylabel('how much this line adds to the sum', fontsize=10)
+    ax.set_title('Only the distance pulls this sum down; the other three push it up',
+                 fontsize=12.5, weight='bold')
+    _save(fig, ONE, 'contribution-bars.svg')
+
+
+def sum_against_distance() -> None:
+    """Hold two readings still, move the distance: the sum is a straight line."""
+    d = np.linspace(0.0, 1.0, 201)
+    s = neuron_sum(d)
+    print('--- the sum as the distance changes -----------------------------')
+    for dd in (0.0, 0.2, 0.42, 0.6, ZERO_D, 0.9):
+        print(f'  distance {dd:6.4f} m -> sum {float(neuron_sum(dd)):+.4f} '
+              f'-> output {float(relu(neuron_sum(dd))):.4f}')
+    fig, ax = plt.subplots(figsize=(10.5, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(d, s, color=LINK, lw=2.4, label='weighted sum (before the rule)')
+    ax.plot(d, relu(s), color=GRIP, lw=2.4, ls='--', label='output (after the rule)')
+    ax.axhline(0, color=INK, lw=1.1)
+    ax.plot([DIST_M], [SUM], 'o', color=JOINT, ms=11, mec=INK, zorder=6)
+    ax.annotate(f'our reading: {DIST_M} m -> {SUM:.3f}', xy=(DIST_M, SUM),
+                xytext=(DIST_M + 0.07, SUM + 0.45), fontsize=10.5,
+                arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.3))
+    ax.plot([ZERO_D], [0.0], 'o', color=PURPLE, ms=10, mec=INK, zorder=6)
+    ax.annotate(f'the sum reaches 0 at {ZERO_D:.4f} m', xy=(ZERO_D, 0.0),
+                xytext=(0.40, -0.52), fontsize=10.5,
+                arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.3))
+    ax.set_xlabel('distance to the object (m), with the opening at 0.55 and the brightness at 0.30',
+                  fontsize=10)
+    ax.set_ylabel('the neuron', fontsize=10)
+    ax.set_title('With only the distance moving, the sum falls by 2.00 for every extra metre',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper right')
+    ax.set_ylim(-0.7, 1.9)
+    _save(fig, ONE, 'sum-against-distance.svg')
+
+
+def sum_over_two_readings() -> None:
+    """The sum over distance and opening together: the dividing line is straight."""
+    d = np.linspace(0.0, 1.0, 241)
+    g = np.linspace(0.0, 1.0, 241)
+    dd, gg = np.meshgrid(d, g)
+    s = W[0] * dd + W[1] * gg + W[2] * BRIGHT + BIAS
+    g_at = lambda dv: (-W[0] * dv - W[2] * BRIGHT - BIAS) / W[1]
+    print('--- the sum over two readings -----------------------------------')
+    print(f'the dividing line runs from opening {g_at(0.0):+.4f} at 0 m to '
+          f'{g_at(1.0):+.4f} at 1 m; sum range {s.min():+.3f} to {s.max():+.3f}')
+    fig, ax = plt.subplots(figsize=(8.6, 6.4), facecolor='white')
+    im = ax.pcolormesh(dd, gg, s, cmap='RdYlBu', shading='auto', vmin=-2.0, vmax=2.0)
+    cs = ax.contour(dd, gg, s, levels=[0.0], colors=[INK], linewidths=2.6)
+    ax.clabel(cs, fmt={0.0: 'sum = 0'}, fontsize=10)
+    ax.plot([DIST_M], [X[1]], 'o', color='white', ms=12, mec=INK, mew=1.6, zorder=6)
+    ax.annotate(f'our reading -> {SUM:.3f}', xy=(DIST_M, X[1]), xytext=(0.52, 0.30),
+                fontsize=10.5, arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.3))
+    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_ylabel('gripper opening / 100', fontsize=10)
+    ax.set_title('One neuron splits the readings with a straight line, never a curve',
+                 fontsize=12.5, weight='bold')
+    ax.tick_params(labelsize=9.5)
+    fig.colorbar(im, ax=ax, label='the weighted sum', shrink=0.88)
+    _save(fig, ONE, 'sum-over-two-readings.svg')
+
+
+# ==========================================================================
+# 01_one-neuron.md  --  section 3: changing a weight, changing the bias
+# ==========================================================================
+
+def flipping_one_weight() -> None:
+    """The same readings with the distance weight flipped from -2.00 to +2.00."""
+    w2 = W.copy()
+    w2[0] = -W[0]
+    prod2 = X * w2
+    sum2 = float(prod2.sum() + BIAS)
+    print('--- flipping the distance weight --------------------------------')
+    print(f'with {W[0]:+.2f} the sum is {SUM:+.3f} and the output {OUT:.3f}')
+    print(f'with {w2[0]:+.2f} the sum is {sum2:+.3f} and the output {float(relu(sum2)):.3f}')
+    fig, ax = plt.subplots(figsize=(13.5, 5.8), facecolor='white')
+    _axes(ax, (0, 27), (0, 11.4), equal=False)
+    _label(ax, 13.5, 10.8, 'Flipping one weight from minus to plus: the same readings, '
+           'a different answer', size=13, weight='bold')
+    for x0, ws, ps, tot, col, head in ((0.8, W, PROD, SUM, GRIP, 'weight on distance -2.00'),
+                                       (14.2, w2, prod2, sum2, SLIDE,
+                                        'weight on distance +2.00')):
+        _label(ax, x0 + 5.8, 9.8, head, size=11.5, weight='bold', color=col)
+        rows = [['reading', 'value', 'weight', 'product']]
+        for nm, a, w, p in zip(SHORT, X, ws, ps):
+            rows.append([nm, f'{a:.2f}', f'{w:+.2f}', f'{p:+.3f}'])
+        rows.append(['bias', '-', f'{BIAS:+.2f}', f'{BIAS:+.3f}'])
+        rows.append(['sum', '', '', f'{tot:+.3f}'])
+        bottom = _table(ax, x0, 9.0, [3.6, 2.6, 2.6, 2.8], rows, row_h=1.1, size=10.8,
+                        head_face=LINK_PALE)
+        _label(ax, x0 + 5.8, bottom - 0.75, f'the rule gives {float(relu(tot)):.3f}',
+               size=11.5, color=col, weight='bold')
+    _label(ax, 13.5, 0.35, 'the first neuron answers "near, open and bright"; the second one '
+           'answers "far, open and bright"', size=10, color=MUTED)
+    _save(fig, ONE, 'flipping-one-weight.svg')
+
+
+def weight_size_lines() -> None:
+    """How the size of one weight tilts the line where the neuron switches on."""
+    d = np.linspace(0.0, 1.0, 201)
+    print('--- the size of the distance weight -----------------------------')
+    fig, ax = plt.subplots(figsize=(8.8, 6.2), facecolor='white')
+    _plain(ax)
+    for wd, col in ((-1.0, SLIDE), (-2.0, LINK), (-4.0, GRIP)):
+        g = (-wd * d - W[2] * BRIGHT - BIAS) / W[1]
+        ax.plot(d, g, color=col, lw=2.4, label=f'weight on distance {wd:+.2f}')
+        inside = (g >= 0) & (g <= 1)
+        print(f'  weight {wd:+.2f}: the line crosses the square from opening '
+              f'{g[inside][0]:.3f} to {g[inside][-1]:.3f}')
+    s_plus = 2.0 * d[:, None] + W[1] * d[None, :] + W[2] * BRIGHT + BIAS
+    print(f'  weight +2.00: the smallest sum anywhere in the square is '
+          f'{float(s_plus.min()):+.3f}, so the neuron is never off')
+    ax.plot([DIST_M], [X[1]], 'o', color=JOINT, ms=12, mec=INK, zorder=6)
+    _label(ax, DIST_M + 0.04, X[1] + 0.05, 'our reading', size=10, ha='left')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_ylabel('gripper opening / 100', fontsize=10)
+    ax.set_title('A bigger weight on the distance tilts the switch-on line towards upright',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper left')
+    _label(ax, 0.62, 0.12, 'below each line the neuron gives 0', size=10, color=MUTED)
+    _save(fig, ONE, 'weight-size-lines.svg')
+
+
+def moving_the_bias() -> None:
+    """The bias slides the whole line up and down, so the elbow moves."""
+    d = np.linspace(0.0, 1.0, 401)
+    fig, ax = plt.subplots(figsize=(10.5, 5.6), facecolor='white')
+    _plain(ax)
+    print('--- moving the bias ---------------------------------------------')
+    for b, col in ((0.5, LINK), (0.0, JOINT), (-1.0, GRIP)):
+        out = relu(neuron_sum(d, b=b))
+        cross = (OTHER_TWO + b) / 2.0
+        ax.plot(d, out, color=col, lw=2.4, label=f'bias {b:+.2f}')
+        ax.plot([cross], [0.0], 'o', color=col, ms=9, mec=INK, zorder=6)
+        print(f'  bias {b:+.2f}: output at 0.42 m is {float(relu(neuron_sum(0.42, b=b))):.3f}, '
+              f'and the output reaches 0 at {cross:.4f} m')
+    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_ylabel("the neuron's output after the rule", fontsize=10)
+    ax.set_title('The bias moves the elbow: where the neuron falls silent, in metres',
+                 fontsize=12.5, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper right')
+    ax.set_ylim(-0.12, 1.75)
+    _label(ax, 0.55, 1.45, 'the dots mark the elbow, where the output first reaches 0',
+           size=9.8, color=MUTED, ha='center')
+    _save(fig, ONE, 'moving-the-bias.svg')
+
+
+# ==========================================================================
+# 01_one-neuron.md  --  section 4: why a weighted sum is not enough
+# ==========================================================================
+
+CH_W: list[float] = [-2.0, 3.0, 0.5]
+CH_B: list[float] = [0.5, -0.4, 1.2]
+
+
+def _chain(d: Arr | float, depth: int, with_rule: bool = False) -> Arr:
+    v = np.asarray(d, dtype=float)
+    for i in range(depth):
+        v = v * CH_W[i] + CH_B[i]
+        if with_rule and i < depth - 1:
+            v = relu(v)
+    return v
+
+
+def two_plain_layers() -> None:
+    """Two neurons in a row with no rule between them are one neuron."""
+    mid = DIST_M * CH_W[0] + CH_B[0]
+    out = mid * CH_W[1] + CH_B[1]
+    cw = CH_W[0] * CH_W[1]
+    cb = CH_B[0] * CH_W[1] + CH_B[1]
+    print('--- two plain layers collapse -----------------------------------')
+    print(f'first neuron: {DIST_M} x {CH_W[0]:+.2f} {CH_B[0]:+.2f} = {mid:+.3f}')
+    print(f'second neuron: {mid:+.3f} x {CH_W[1]:+.2f} {CH_B[1]:+.2f} = {out:+.3f}')
+    print(f'the pair equals one neuron with weight {cw:+.2f} and bias {cb:+.2f}: '
+          f'{DIST_M} x {cw:+.2f} {cb:+.2f} = {DIST_M * cw + cb:+.3f}')
+    fig, ax = plt.subplots(figsize=(14.0, 5.6), facecolor='white')
+    _axes(ax, (0, 30), (0, 12))
+    _label(ax, 15, 11.4, 'Two neurons in a row, with nothing between them, are one neuron',
+           size=13, weight='bold')
+    y = 8.0
+    ax.add_patch(plt.Circle((2.0, y), 0.85, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, 2.0, y, f'{DIST_M}', size=11.5, family=MONO)
+    _label(ax, 2.0, y + 1.5, 'distance', size=10, color=MUTED)
+    _arrow(ax, (2.9, y), (4.6, y))
+    _box(ax, 4.8, y - 1.0, 4.4, 2.0, face='white', edge=JOINT)
+    _label(ax, 7.0, y + 0.45, f'x {CH_W[0]:+.2f}, then {CH_B[0]:+.2f}', size=10.5, family=MONO)
+    _label(ax, 7.0, y - 0.5, f'= {mid:+.3f}', size=11.5, family=MONO, weight='bold')
+    _arrow(ax, (9.4, y), (11.1, y))
+    _box(ax, 11.3, y - 1.0, 4.4, 2.0, face='white', edge=JOINT)
+    _label(ax, 13.5, y + 0.45, f'x {CH_W[1]:+.2f}, then {CH_B[1]:+.2f}', size=10.5, family=MONO)
+    _label(ax, 13.5, y - 0.5, f'= {out:+.3f}', size=11.5, family=MONO, weight='bold')
+    _arrow(ax, (15.9, y), (17.6, y))
+    ax.add_patch(plt.Circle((18.6, y), 0.95, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, 18.6, y, f'{out:+.2f}', size=11, family=MONO)
+    _label(ax, 24.5, y + 1.1, 'the two weights multiply\nand the first bias is scaled',
+           size=10, color=MUTED)
+    _label(ax, 24.5, y - 0.9, f'{CH_W[1]:+.2f} x ({CH_W[0]:+.2f} d {CH_B[0]:+.2f}) '
+           f'{CH_B[1]:+.2f}', size=10.5, family=MONO)
+    y2 = 3.2
+    ax.add_patch(plt.Circle((2.0, y2), 0.85, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, 2.0, y2, f'{DIST_M}', size=11.5, family=MONO)
+    _arrow(ax, (2.9, y2), (4.6, y2))
+    _box(ax, 4.8, y2 - 1.0, 10.9, 2.0, face='white', edge=SLIDE)
+    _label(ax, 10.25, y2 + 0.45, f'one neuron: x {cw:+.2f}, then {cb:+.2f}',
+           size=10.5, family=MONO)
+    _label(ax, 10.25, y2 - 0.5, f'= {DIST_M * cw + cb:+.3f}', size=11.5, family=MONO,
+           weight='bold')
+    _arrow(ax, (15.9, y2), (17.6, y2))
+    ax.add_patch(plt.Circle((18.6, y2), 0.95, facecolor=LINK_PALE, edgecolor=LINK, lw=1.4,
+                            zorder=4))
+    _label(ax, 18.6, y2, f'{DIST_M * cw + cb:+.2f}', size=11, family=MONO)
+    _label(ax, 24.5, y2, 'the same answer, from\nhalf the arithmetic', size=10, color=MUTED)
+    _save(fig, ONE, 'two-plain-layers.svg')
+
+
+def collapse_curves() -> None:
+    """The collapse drawn: two plain layers and the one equivalent neuron are the same line."""
+    d = np.linspace(0.0, 1.0, 401)
+    pair = _chain(d, 2)
+    cw = CH_W[0] * CH_W[1]
+    cb = CH_B[0] * CH_W[1] + CH_B[1]
+    single = d * cw + cb
+    bent = _chain(d, 2, with_rule=True)
+    gap = float(np.max(np.abs(pair - single)))
+    print('--- the collapse drawn ------------------------------------------')
+    print(f'biggest gap between the two plain layers and the single neuron: {gap:.2e}')
+    print(f'with the rule in the middle the output is {float(_chain(0.0, 2, True)):+.3f} '
+          f'at 0 m and {float(_chain(0.42, 2, True)):+.3f} at 0.42 m, and it bends at '
+          f'{CH_B[0] / -CH_W[0]:.3f} m')
+    fig, ax = plt.subplots(figsize=(10.5, 5.6), facecolor='white')
+    _plain(ax)
+    ax.plot(d, pair, color=LINK, lw=5.0, alpha=0.4, label='two plain layers, one after the other')
+    ax.plot(d, single, color=GRIP, lw=2.0, ls='--',
+            label=f'one neuron, weight {cw:+.2f}, bias {cb:+.2f}')
+    ax.plot(d, bent, color=SLIDE, lw=2.4,
+            label='the same two layers with the rule between them')
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.axvline(CH_B[0] / -CH_W[0], color=MUTED, lw=1.0, ls=':')
+    ax.set_xlabel('distance to the object (m)', fontsize=10)
+    ax.set_ylabel('what comes out of the second layer', fontsize=10)
+    ax.set_title(f'Without the rule the two layers lie exactly on one straight line '
+                 f'(biggest gap {gap:.0e})', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='lower left')
+    _label(ax, CH_B[0] / -CH_W[0] + 0.02, 1.0, 'the bend the rule makes,\nat 0.25 m',
+           size=9.8, color=MUTED, ha='left')
+    _save(fig, ONE, 'collapse-curves.svg')
+
+
+def three_plain_layers() -> None:
+    """Three plain layers collapse in the same way, to one weight and one bias."""
+    vals = [DIST_M]
+    for i in range(3):
+        vals.append(vals[-1] * CH_W[i] + CH_B[i])
+    cw = CH_W[0] * CH_W[1] * CH_W[2]
+    cb = (CH_B[0] * CH_W[1] + CH_B[1]) * CH_W[2] + CH_B[2]
+    print('--- three plain layers collapse ---------------------------------')
+    print('  values along the chain: ' + ' -> '.join(f'{v:+.3f}' for v in vals))
+    print(f'  one neuron with weight {cw:+.2f} and bias {cb:+.2f} gives '
+          f'{DIST_M * cw + cb:+.3f}')
+    fig, ax = plt.subplots(figsize=(12.5, 5.2), facecolor='white')
+    _axes(ax, (0, 26), (0, 10.4), equal=False)
+    _label(ax, 13, 9.8, 'Three plain layers: still one weight and one bias in the end',
+           size=13, weight='bold')
+    rows = [['layer', 'weight', 'bias', 'what comes out']]
+    for i in range(3):
+        rows.append([f'layer {i + 1}', f'{CH_W[i]:+.2f}', f'{CH_B[i]:+.2f}', f'{vals[i + 1]:+.3f}'])
+    rows.append(['all three at once', f'{cw:+.2f}', f'{cb:+.2f}', f'{DIST_M * cw + cb:+.3f}'])
+    bottom = _table(ax, 3.0, 8.6, [6.4, 3.4, 3.4, 5.2], rows, row_h=1.2, size=11)
+    _label(ax, 12.2, bottom - 0.8, f'the reading going in is {DIST_M} m, and both roads '
+           f'end at {DIST_M * cw + cb:+.3f}', size=11)
+    _label(ax, 12.2, bottom - 1.7, f'the three weights multiply: {CH_W[0]:+.2f} x '
+           f'{CH_W[1]:+.2f} x {CH_W[2]:+.2f} = {cw:+.2f}', size=10, color=MUTED)
+    _save(fig, ONE, 'three-plain-layers.svg')
+
+
+def a_bend_is_needed() -> None:
+    """A job no straight line can do: brightness that is best in the middle."""
+    b = np.linspace(0.0, 1.0, 501)
+    target = 1.0 - 2.0 * np.abs(b - 0.5)
+    A = np.stack([b, np.ones_like(b)], axis=1)
+    coef, *_ = np.linalg.lstsq(A, target, rcond=None)
+    line = A @ coef
+    built = 1.0 - 2.0 * relu(b - 0.5) - 2.0 * relu(0.5 - b)
+    err_line = float(np.mean(np.abs(line - target)))
+    err_built = float(np.max(np.abs(built - target)))
+    print('--- a bend is needed --------------------------------------------')
+    print(f'the best straight line is {coef[0]:+.4f} x brightness {coef[1]:+.4f}, '
+          f'and its average error is {err_line:.4f}')
+    print(f'two rule-neurons rebuild the target exactly: biggest gap {err_built:.2e}')
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
+    for ax in axes:
+        _plain(ax)
+        ax.set_xlabel('patch brightness / 255', fontsize=10)
+        ax.set_ylim(-0.1, 1.15)
+    axes[0].plot(b, target, color=INK, lw=2.6, label='what we want')
+    axes[0].plot(b, line, color=GRIP, lw=2.4, ls='--',
+                 label=f'best straight line (average error {err_line:.3f})')
+    axes[0].fill_between(b, target, line, color=GRIP, alpha=0.15)
+    axes[0].set_ylabel('how good this brightness is for finding the object', fontsize=10)
+    axes[0].set_title('One plain neuron cannot bend', fontsize=12.5, weight='bold')
+    axes[0].legend(fontsize=9.6, frameon=False, loc='lower center')
+    axes[1].plot(b, relu(b - 0.5), color=LINK, lw=2.0, label='neuron A: rule(brightness - 0.50)')
+    axes[1].plot(b, relu(0.5 - b), color=SLIDE, lw=2.0, label='neuron B: rule(0.50 - brightness)')
+    axes[1].plot(b, built, color=JOINT, lw=3.0, label='1.00 - 2 x A - 2 x B')
+    axes[1].plot(b, target, color=INK, lw=1.2, ls=':', label='what we want')
+    axes[1].set_title(f'Two neurons with the rule hit it exactly (gap {err_built:.0e})',
+                      fontsize=12.5, weight='bold')
+    axes[1].legend(fontsize=9.4, frameon=False, loc='lower center')
+    _save(fig, ONE, 'a-bend-is-needed.svg')

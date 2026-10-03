@@ -2317,6 +2317,8 @@ def why_many_guesses() -> None:
             _draw_box(ax, (cxy[0] - 340 - w / 2, cxy[1] - 220 - h / 2,
                            cxy[0] - 340 + w / 2, cxy[1] - 220 + h / 2), LINK, None,
                       lw=0.8)
+    ax.set_xlim(-0.5, view.shape[1] - 0.5)
+    ax.set_ylim(view.shape[0] - 0.5, -0.5)
     ax.set_xlabel(f'{len(inside)} cells x {ANCHORS} box shapes = '
                   f'{len(inside) * ANCHORS} guesses about one mug', fontsize=9.5)
     fig.suptitle('Why a detector guesses many times: every cell answers for itself',

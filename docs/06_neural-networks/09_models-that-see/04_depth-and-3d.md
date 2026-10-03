@@ -227,10 +227,10 @@ the dots must come back, and three common kinds of surface do not return them.
 In this simulation, matte paper returns 194 of 200 dots, black rubber returns 96, brushed steel returns 80 and clear glass returns only 16.
 
 The three failures have three different causes, because a dark surface absorbs
-the infrared light instead of scattering it, a shiny surface reflects it like a
-mirror and sends it off in one direction that is usually not back towards the
-camera, and a clear surface lets it through almost unchanged. The fractions above
-are made up, but the ordering is what happens in a workshop.
+the infrared light instead of scattering it, a shiny surface sends it off in one
+direction that is usually not back towards the camera, and a clear surface lets
+it through almost unchanged. The fractions above are made up, but the ordering is
+what happens in a workshop.
 
 ![A simulated depth map with four marked patches showing black holes, beside a horizontal bar chart of the percentage of pixels with a distance for each material](../../images/models-that-see/depth-and-3d/holes-in-the-depth-map.svg)
 

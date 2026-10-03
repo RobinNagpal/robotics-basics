@@ -52,8 +52,8 @@ list of eight numbers cannot be put in order.
 
 ![Two bar charts side by side, model A with small errors on seven of the eight parts and model C exactly right on seven parts and 12 mm out on the eighth](../../images/how-training-works/the-score-of-being-wrong/two-models-no-winner.svg)
 
-Model A is wrong by a little on seven parts, while model C is exactly right on
-seven and 12 mm out on the one it missed.
+Model A is wrong by a little on seven parts, while model C is right on seven and
+12 mm out on the one it missed.
 
 There is no answer to which of those is better until somebody decides what being
 wrong costs. If a 12 mm miss means the gripper slams into the part and the arm
@@ -201,7 +201,7 @@ describes how that is measured and fixed.
 ![Three bar charts of four probabilities each, with the mug bar dark in all three, showing a sure right answer, an unsure right answer and a sure wrong answer](../../images/how-training-works/the-score-of-being-wrong/three-cases-probabilities.svg)
 
 The right answer is mug in all three, and only the probability it gets changes,
-from 0.9105 to 0.3349 to 0.0167.
+0.9105, then 0.3349, then 0.0167.
 
 These three cases run through the rest of the page. In the first the model gives
 mug 0.9105 and is right, in the second it gives mug 0.3349 and is still right

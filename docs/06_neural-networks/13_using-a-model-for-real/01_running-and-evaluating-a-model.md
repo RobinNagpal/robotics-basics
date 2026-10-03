@@ -1,11 +1,11 @@
 # Running and evaluating a model
 
 The page before this one, [world models](../12_models-that-act/04_world-models.md),
-finished the book's tour of the families of model, and like every page before it, it
-ended with a model that had been trained. This page is about what happens after that,
-because a trained model is a file on a disk and a working robot is something else. It
-answers two questions: what has to happen between that file and an arm that moves,
-and how do you then find out honestly whether it works?
+finished the book's tour of the families, and like every page before it, it ended with a
+model that had been trained. This page is about what happens after that, because a
+trained model is a file on a disk and a working robot is something else. It answers two
+questions: what has to happen between that file and an arm that moves, and how do you
+then find out honestly whether it works?
 
 It is for a reader who has followed the book this far, so it assumes you know what
 weights are, what a loss is and what a policy gives back. It does not assume you have
@@ -130,11 +130,11 @@ is to save the preprocessing settings inside the checkpoint and never retype the
 
 ## 3. Export and runtimes: making the file run fast
 
-Section 2 was about getting the right numbers into the model, and this section is
-about getting the answer out quickly. Running a trained model is called **inference**,
-to separate it from training, and the obvious way to do it is to call the same
-training framework that made the model. That works, and it is slow for reasons that
-have nothing to do with the arithmetic.
+Section 2 was about getting the right numbers into the model, and this section is about
+getting the answer out quickly. Running a trained model is called **inference**, to
+separate it from training, and the obvious way to do it is to call the training framework
+that made the model, which works and is slow for reasons that have nothing to do with the
+arithmetic.
 
 ![A bar chart of multiply-adds by part on a log scale, 12,195 million for the two camera encoders and 3,198 million for the trunk, beside a bar chart of arithmetic time against weight-reading time at three precisions](../../images/using-a-model-for-real/running-and-evaluating-a-model/macs-by-stage.svg)
 
@@ -174,13 +174,12 @@ again whenever the model changes.
 
 ## 4. Batching: more answers a second, each one later
 
-Section 3 made one forward pass fast, and the obvious next idea is to do several at
-once. Working out several answers in one call is called **batching**, and it is the
-first thing anybody suggests when a model is too slow. Each call pays a fixed cost
-once, which here is 0.48 milliseconds of hand-offs, 1.15 milliseconds of reading the
-weights out of memory and a stated 1.2 milliseconds of waking the machine, giving
-2.83 milliseconds. Each item then pays 4.36 milliseconds of its own arithmetic and
-copying.
+Section 3 made one forward pass fast, and the obvious next idea is to do several at once.
+Working out several answers in one call is called **batching**, and it is the first thing
+anybody suggests when a model is too slow. Each call pays a fixed cost once, which here
+is 0.48 milliseconds of hand-offs, 1.15 of reading the weights out of memory and a stated
+1.2 of waking the machine, giving 2.83 milliseconds, and each item then pays 4.36
+milliseconds of its own arithmetic and copying.
 
 ![Left: throughput rising from 139 to 225 decisions a second as the batch grows to 32, with a ceiling at 229. Right: the whole call growing in a straight line while the share of one decision barely falls](../../images/using-a-model-for-real/running-and-evaluating-a-model/throughput-vs-batch.svg)
 
@@ -327,11 +326,10 @@ measures the shape of that gap on the colour classifier from section 2.
 The same weights score 95.5% on the conditions they trained on, 87.8% under light 45% brighter, 76.6% against a warmer tablecloth and 71.5% through a noisier camera.
 
 None of those changes is dramatic and none is anything a person would mention, which is
-the point. On a real arm the same list includes a sunnier afternoon, a new tablecloth,
-and a replacement gripper whose fingers are three millimetres narrower, so that every
-grasp the policy learned now closes slightly too early. Changing any of them means
-running the evaluation again, because nothing in the training promised anything about
-them.
+the point. On a real arm the same list includes a sunnier afternoon, a new tablecloth, and
+a replacement gripper whose fingers are three millimetres narrower, so that every grasp
+closes slightly too early. Changing any of them means running the evaluation again,
+because nothing in the training promised anything about them.
 
 ---
 
@@ -409,9 +407,9 @@ describes the controller underneath it.
 
 ## 9. Using it in Python
 
-Section 1 said a checkpoint is weights plus settings, section 3 timed a forward pass,
-and section 6 turned a count of successes into a range. This code does all three with
-the libraries people actually use, and the model is tiny so that it runs anywhere.
+Section 1 said a checkpoint is weights plus settings, section 3 timed a forward pass, and
+section 6 turned a count of successes into a range. This code does all three, with a
+model small enough to run anywhere.
 
 ```python
 import time

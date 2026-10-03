@@ -19,13 +19,12 @@ weight, a bias, an activation function, a rectified linear unit (ReLU), a layer,
 depth and width are. It assumes nothing about how computers store numbers, and the
 only arithmetic here is multiplying, adding and counting.
 
-Nothing on this page is about learning. How a network is told it is wrong, and how
-its weights change because of it, belongs to the next chapter, which opens with
+Nothing here is about learning, because how a network is told it is wrong belongs to
+the next chapter, which opens with
 [the score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md).
-Here every weight is simply a number that is already there. Every number in the
-pictures was worked out by the script
+Every number in the pictures was worked out by the script
 [`inside_a_network_2.py`](../../diagrams/inside_a_network_2.py), which prints them
-all, and where a worked example needs small numbers that a reader can follow, those
+all, and where a worked example needs small numbers a reader can follow, those
 numbers are made up and the page says so.
 
 ## Contents
@@ -91,9 +90,8 @@ The grid position at row 1 and column 2 lands at place 1 x 6 + 2 = 8 in the line
 Reshaping is free because memory is one long line of places counted from 0, and a
 shape is only a rule for working out which place to look in. For a grid of shape
 `(4, 6)`, stepping along a row moves one place and stepping down a column skips six,
-so row 0 column 0 sits at place 0, row 1 column 2 sits at place 8, and row 3 column
-5 sits at place 23. Now that the numbers have a name and an arrangement, the next
-section can say what a layer does to them.
+so row 3 column 5 sits at place 23. Now that the numbers have a name and an
+arrangement, the next section can say what a layer does to them.
 
 ---
 
@@ -145,12 +143,11 @@ A fully connected layer costs one weight and one multiply-add for every pairing 
 
 The size of the operation follows from two numbers only, how many inputs the layer
 has and how many neurons. A layer taking 7 joint angles into 64 neurons has 448
-weights and 64 biases, so 512 parameters, and does 448 multiply-adds for one
-example. A layer of 768 inputs into 3,072 neurons, a common size inside a large
-model, has 2,362,368 parameters and does 2,359,296 multiply-adds. A layer taking a
-flattened colour photo of 150,528 numbers into 1,000 neurons has 150,528,000
-weights, which is the subject of the next page and is also why this arithmetic has
-to be fast.
+weights and 64 biases, so 512 parameters. A layer of 768 inputs into 3,072 neurons,
+a common size inside a large model, has 2,362,368 parameters and does 2,359,296
+multiply-adds for one example. A layer taking a flattened colour photo of 150,528
+numbers into 1,000 neurons has 150,528,000 weights, which is the subject of the next
+page and is also why this arithmetic has to be fast.
 
 ---
 
@@ -183,10 +180,9 @@ depend on one another, so a card with thousands of multiply-add units can work o
 all of them at the same moment, and neighbouring squares share the numbers they
 need. Read the table as a trade. With an inner length of 512, one square alone loads
 1,024 numbers for 512 multiply-adds, which is 0.5 pieces of arithmetic per number
-loaded, while a 4 by 4 block loads 4,096 numbers for 8,192 multiply-adds, which is
-2.0 each, and a 16 by 16 block loads 16,384 for 131,072, which is 8.0 each. That is
-why libraries work in blocks, and why cards advertise units that handle a small
-block in one instruction.
+loaded, while a 16 by 16 block loads 16,384 numbers for 131,072 multiply-adds, which
+is 8.0 each. That is why libraries work in blocks, and why cards advertise units
+that handle a small block in one instruction.
 
 ![A bar chart of the arithmetic in a 768 to 3072 to 768 block, with the two matrix multiplies at over two million each and the bias adds and ReLUs at a few thousand, beside a plot of the matrix multiply share rising with width](../../images/inside-a-network/the-shape-of-the-numbers/almost-all-matmul.svg)
 
@@ -242,11 +238,10 @@ The weights of a small picture network take 1.55 megabytes whatever the batch, w
 
 A bigger batch also costs something, and the cost is memory. One colour photo of 224
 by 224 through four stages of a small picture network produces 903,168 numbers in
-all, counting the photo and the four sets of feature grids it becomes, which is 3.61
-megabytes at four bytes a number, while the filters hold only 388,416 numbers, or
-1.55 megabytes, whatever the batch. So a batch of 32 needs 116 megabytes for the
-numbers passing through and a batch of 256 needs 925 megabytes, although the model
-has not grown at all.
+all, which is 3.61 megabytes at four bytes a number, while the filters hold only
+388,416 numbers, or 1.55 megabytes, whatever the batch. So a batch of 32 needs 116
+megabytes for the numbers passing through and a batch of 256 needs 925 megabytes,
+although the model has not grown at all.
 
 This is why a robot and a training run want different batches. A training run can
 choose a large batch, because the examples sit on a disk and nothing is waiting,
@@ -338,12 +333,11 @@ takes.
 Seven billion parameters multiplied by the bytes of each format: 28 gigabytes at float32, 14 at either two-byte format and 7 at int8.
 
 Take a model with 7,000,000,000 parameters, a round number chosen to stand for a
-large model of the kind used for language and for vision and language together. At
-float32 its parameters take 7,000,000,000 x 4 = 28,000,000,000 bytes, which is 28
-gigabytes counting a gigabyte as a thousand million bytes, or 26.08 of the larger
-gigabytes an operating system often shows. At either two-byte format it is 14
-gigabytes, at int8 it is 7, and at four bits each it would be 3.5, which is the
-subject of
+large model. At float32 its parameters take 7,000,000,000 x 4 = 28,000,000,000
+bytes, which is 28 gigabytes counting a gigabyte as a thousand million bytes, or
+26.08 of the larger gigabytes an operating system often shows. At either two-byte
+format it is 14 gigabytes, at int8 it is 7, and at four bits each it would be 3.5,
+which is the subject of
 [making a model smaller and faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md).
 Nothing about the model changed between those bars; only the size of each number
 did.

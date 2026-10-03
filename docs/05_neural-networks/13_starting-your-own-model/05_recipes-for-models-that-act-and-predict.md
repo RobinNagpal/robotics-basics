@@ -9,8 +9,8 @@ and it keeps the same shape so that the two pages read as one reference.
 One thing changes, and it changes nearly every number here. A picture of a mug
 can be downloaded and labelled by somebody who has never seen a robot, while a
 recording of an arm doing a job can only be made by a person driving that arm in
-real time, so every example below is expensive in a way that nothing on the
-previous page was.
+real time, so every example below is expensive in a way nothing on the previous
+page was.
 
 Each recipe answers the same six questions. What is one training example, as a
 thing on disk? Roughly how many do you need, and what reasoning sets that number?
@@ -64,11 +64,10 @@ One four-second episode recorded 30 times a second holds 120 moments, and storin
 it costs 5.54 megabytes, of which the two camera videos are 99.87 per cent.
 
 One training example is one row of the state table, the two camera frames beside
-it, and the block of commands recorded after it, so one episode gives 120
-examples. The raw frames would be 221.18 megabytes, and writing them as video at
-forty to one is the only reason a thousand episodes fits on a laptop, while the
-joint and action numbers come to 7,200 bytes. What governs the recipe, though, is
-not bytes but minutes.
+it, and the commands recorded after it, so one episode gives 120 examples. The
+raw frames would be 221.18 megabytes, and writing them as video at forty to one
+is the only reason a thousand episodes fits on a laptop. What governs the recipe,
+though, is not bytes but minutes.
 
 ![A stacked bar splitting one episode into moving, resetting, checking and the spoiled take, beside a log-log line of person-hours against episodes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/hours-of-a-person.svg)
 
@@ -137,12 +136,12 @@ The training asks for one answer close to every label, so where two people
 answered differently it gives the average, and on the mixed set the best possible
 single answer is wrong by 6.47 times as much, squared. Here the cost is small,
 because both people pass the box on the same side and the average of two safe
-paths is still safe, so success only falls from 0.788 to 0.704, while when they
-pass on opposite sides it falls to 0.614 because the average then goes through
-the box. One person on two days counts as two people, since a handle set up
-differently shows up in the labels the same way. The mistake almost everybody
-makes first is to judge the policy by its loss, which is driven down on moments a
-person visited while the arm visits moments nobody did.
+paths is still safe, so success falls only from 0.788 to 0.704, while when they
+pass on opposite sides it falls to 0.614. One person on two days counts as two
+people, since a handle set up differently shows up in the labels the same way.
+The mistake almost everybody makes first is to judge the policy by its loss,
+which falls on moments a person visited while the arm visits moments nobody
+did.
 
 ---
 
@@ -173,10 +172,10 @@ At 30 commands a second the arm wants one every 33.33 milliseconds, so a model
 taking 240 milliseconds to answer needs at least 8 steps a chunk, which buys
 266.7 milliseconds of movement and leaves 26.7 to spare.
 
-Read that table from the right and it sets a floor: time one pass of your model,
-divide by the command period, and that is the shortest chunk you are allowed,
-because a shorter one leaves the arm without commands and it stops mid-movement.
-The second answer comes from the task, and it is a trade.
+That table sets a floor: time one pass of your model, divide by the command
+period, and that is the shortest chunk you are allowed, because a shorter one
+leaves the arm without commands and it stops mid-movement. The second answer
+comes from the task, and it is a trade.
 
 ![Three curves of final miss against the steps played per decision, one with the goal fixed and one with the goal moved, beside bars of success for six chunk lengths](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/chunk-length-trade.svg)
 
@@ -218,10 +217,10 @@ Where the demonstrator went both ways round the box, the average of the labels
 lies 41.0 millimetres from the nearest label anybody recorded, and where only one
 way was ever recorded it lies 0.0 millimetres from one.
 
-That distance is the whole test, because when it is near zero the average is
-itself a reasonable answer and a plain policy is fine, while when it is several
-times the spread within one group the average is a movement nobody would make and
-a plain policy makes it anyway.
+That distance is the whole test: near zero, the average is itself a reasonable
+answer and a plain policy is fine, while several times the spread within one
+group, the average is a movement nobody would make and a plain policy makes it
+anyway.
 
 ![Two sets of simulated runs round a box, one from a policy giving one answer and one from a policy generating its answer, beside bars comparing them](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/averaging-and-generating.svg)
 
@@ -244,10 +243,10 @@ buys.
 The starting point is the diffusion policy packaged in LeRobot, which trains on
 the same dataset as the action-chunking transformer, so swapping between them is
 a configuration change. The first milestone is a picture rather than a run:
-generate twenty chunks at one observation, draw them, and check that they fall
-into the groups the demonstrations fall into instead of one blurred lump. The one
-number to watch is the share of runs that fail the way the averaging failed,
-which here is the share that hit the box.
+generate twenty chunks at one observation and check that they fall into the
+groups the demonstrations fall into instead of one blurred lump. The one number
+to watch is the share of runs that fail the way the averaging failed, which here
+is the share that hit the box.
 
 ![Simulated runs where some change which side of the box they pass, beside three curves against the steps played per decision](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/changing-its-mind.svg)
 
@@ -296,25 +295,24 @@ which job misses by 0.5 centimetres and the model not told misses by 11.9.
 
 Those two bars are the same network on the same recordings, differing only in
 whether the job was part of the input, and the untold one fails because it is
-averaging four jobs. The reasoning that sets how many demonstrations you need
-follows: the model must learn every job, so the recordings must cover every job.
+averaging four jobs. How many demonstrations you need follows: the model must
+learn every job, so the recordings must cover every job.
 
 ![Two success curves against the total number of demonstrations, one for a single job and one for four jobs in one model, beside bars of the gap between them](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/jobs-and-data.svg)
 
 At the same total number of recordings the four-job model trails the one-job
 model, and the gap closes as the pile of recordings grows.
 
-The starting points are real and downloadable and differ mostly in what they
-demand of your hardware. [SmolVLA](https://huggingface.co/blog/smolvla) has 450
-million parameters and runs on an ordinary computer, which makes it the usual
-first choice with a small arm;
-[OpenVLA](https://huggingface.co/openvla/openvla-7b) has 7 billion parameters and
-an MIT licence; the π0 models and NVIDIA's GR00T need an NVIDIA graphics card.
-The first milestone is unusual and worth insisting on, which is to run the
-downloaded model on your own arm before any training, because a starting point
-that already half works is a different project from one that does not. The one
-number to watch while fine-tuning is the success rate per job rather than the
-average, since an average hides a job that has collapsed.
+The starting points differ mostly in what they demand of your hardware.
+[SmolVLA](https://huggingface.co/blog/smolvla) has 450 million parameters and
+runs on an ordinary computer, which makes it the usual first choice with a small
+arm; [OpenVLA](https://huggingface.co/openvla/openvla-7b) has 7 billion
+parameters and an MIT licence; the π0 models and NVIDIA's GR00T need an NVIDIA
+graphics card. The first milestone is to run the downloaded model on your own arm
+before any training, because a starting point that already half works is a
+different project from one that does not, and the one number to watch while
+fine-tuning is the success rate per job rather than the average, since an average
+hides a job that has collapsed.
 
 So is it a sensible first project? Only if you really need one model to do
 several jobs chosen by a sentence, because for one job a chunk policy from
@@ -342,9 +340,9 @@ A script pushing the arm about for twenty seconds and resetting for ten gathers
 demonstrating produces, and the one-step error falls from 0.242 to 0.089
 millimetres as the transitions go from 600 to 12,000.
 
-That right-hand curve answers how many you need, and it is the friendliest answer
-on this page, because 12,000 transitions is about ten minutes of pushing and more
-buys nothing. The data is cheap because predicting what happens next needs no
+That curve answers how many you need, and it is the friendliest answer on this
+page, because 12,000 transitions is about ten minutes of pushing and more buys
+nothing. The data is cheap because predicting what happens next needs no
 judgement about what should happen, so nobody has to supply any. What you must
 measure before trusting the model is how far ahead it may be believed.
 
@@ -452,14 +450,13 @@ and a few weeks. Attempt the chunk policy of section 2 first, because it is the
 smallest thing that works and the others are variations on it; attempt the
 generating policy of section 3 only if the test in that section says your task
 has more than one right answer; and attempt the world model of section 5 if you
-want a planner rather than a policy, since its data is the only cheap data here.
-Do not attempt a vision-language-action model as a first project unless you truly
-need several jobs chosen by a sentence, and do not attempt a reinforcement-learned
-policy at all unless you already have a simulator you trust, because the few
-weeks will go into the simulator and the policy will never arrive. The cloned
-policy has no reality gap at all, for the plain reason that its data came from
-the arm itself, and at the start that is worth more than everything the other
-families offer.
+want a planner rather than a policy. Do not attempt a vision-language-action
+model as a first project unless you truly need several jobs chosen by a sentence,
+and do not attempt a reinforcement-learned policy at all unless you already have
+a simulator you trust, because the weeks will go into the simulator and the
+policy will never arrive. The cloned policy has no reality gap at all, because
+its data came from the arm itself, and at the start that is worth more than
+everything the other families offer.
 
 ---
 

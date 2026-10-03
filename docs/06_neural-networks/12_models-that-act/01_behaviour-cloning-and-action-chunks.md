@@ -135,9 +135,8 @@ Fifty episodes give 18,000 examples, which is 33.18 gigabytes of raw camera fram
 or 0.83 gigabytes once the frames are stored as video at a ratio of 40 to 1, while
 all the joint and action numbers together come to 1.01 megabytes.
 
-Now the fact that explains most of the design choices in the rest of this chapter:
-every one of those 18,000 examples is a person moving an arm in real time, and
-real time is the only speed a person moves at.
+Now the fact that explains most of the design choices in this chapter: every one
+of those 18,000 examples is a person moving an arm in real time.
 
 ![One person's 50 minutes split into moving, resetting, checking and setting up, beside hours against examples](../../images/models-that-act/behaviour-cloning-and-action-chunks/hours-of-a-day.svg)
 
@@ -171,9 +170,9 @@ every single step, and it writes its answer as a change rather than a place.
 Over 40 runs the policy ends on average 7.65 centimetres from where it should be,
 with the best run 0.26 centimetres out and the worst 20.22 centimetres out.
 
-Each single prediction is good, because the error of one predicted step, measured
-against demonstrations the policy was not fitted to, is 0.623 millimetres. The
-trouble is what those small errors do to each other over 120 steps.
+Each single prediction is good, because the error of one predicted step on
+demonstrations the policy was not fitted to is 0.623 millimetres. The trouble is
+what those small errors do to each other over 120 steps.
 
 ![The error rising to 7.65 cm over four seconds above a dotted wobble curve, beside bars for three servo noise levels](../../images/models-that-act/behaviour-cloning-and-action-chunks/error-over-time.svg)
 
@@ -232,10 +231,9 @@ The same four-second reach takes 120 decisions when one step is played per
 decision, 30 when four are, 8 when sixteen are and 3 when forty-eight are.
 
 Each of those marks is a place where the model can be wrong about a situation it
-has drifted into, so cutting 120 of them down to 8 cuts the number of chances for
-the error to feed itself. In the four runs below the policy and the data are
-identical, and the only change is how many steps are played before it looks
-again.
+has drifted into, so cutting 120 of them to 8 cuts the chances for the error to
+feed itself. In the four runs below the policy and the data are identical, and the
+only change is how many steps are played before it looks again.
 
 ![Four error curves for chunks of 1, 4, 16 and 48 steps, falling in that order](../../images/models-that-act/behaviour-cloning-and-action-chunks/chunk-drift.svg)
 
@@ -256,9 +254,8 @@ is played per decision and by 0.111 millimetres when forty-eight are, and the
 spikes in the blue line are where one chunk ends and the next begins.
 
 Those spikes are the cost of the idea in its simplest form, because the arm has
-been following one plan and is handed another. The deeper cost is that a chunk is
-a promise about the future made before the future happened, and section 6
-measures both.
+been following one plan and is handed another, and the deeper cost is that a chunk
+is a promise made before the future happened. Section 6 measures both.
 
 ---
 
@@ -307,8 +304,8 @@ reason action chunking caught on.
 
 ![A 100 by 14 heatmap of a chunk with the gripper rows shutting at step 60, beside two of its rows against time](../../images/models-that-act/behaviour-cloning-and-action-chunks/act-output-block.svg)
 
-Read as movement, the block is a plan: this simulated chunk has the elbow turning
-steadily through the next two seconds and the gripper shutting 1.2 seconds ahead.
+Read as movement the block is a plan, and this simulated chunk turns the elbow
+steadily and shuts the gripper 1.2 seconds ahead.
 
 The real version adds one more part during training only, because a second small
 network reads the block the person actually made and sums up how they did it that

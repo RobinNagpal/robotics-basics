@@ -2,24 +2,23 @@
 
 The page before this one, [why the transformer
 won](../06_the-transformer/04_why-the-transformer-won.md), ended with a machine
-that can read a very long piece of text or a very large picture and let every
-part of it look at every other part. That machine is hungry, because it has
-hundreds of millions or billions of **parameters**, which are the numbers inside
-it that training adjusts, and a model with that many numbers to set needs an
-enormous number of training examples before it settles on good ones. So a
-question has been waiting since the start of this book, and this page answers
-it: if a person has to write down the right answer for every training example,
-and writing one answer takes a person twenty seconds, where could enough answers
-possibly come from?
+that can read a very long piece of text and let every part of it look at every
+other part. That machine is hungry, because it has hundreds of millions or
+billions of **parameters**, which are the numbers inside it that training
+adjusts, and a model with that many numbers to set needs an enormous number of
+training examples before it settles on good ones. So a question has been waiting
+since the start of this book: if a person has to write down the right answer for
+every training example, and writing one takes twenty seconds, where could enough
+answers possibly come from?
 
-The answer is that for almost all of the training, nobody writes them. The data
-is made to ask itself the question and to hold the answer at the same time, and
-this is called **self-supervision**: the training signal is taken out of the
-data, rather than put there by a person. Training a model this way, on a huge
-pile of unlabelled data, before it is pointed at any particular job, is called
-**pretraining**, and the made-up job it is trained on is called a **pretext
-task**, which means a task nobody wants the answer to, chosen because learning to
-do it forces the model to learn something worth having.
+The answer is that for almost all of the training nobody writes them, because the
+data is made to ask the question and to hold the answer at the same time. This is
+called **self-supervision**, since the training signal is taken out of the data
+rather than put there by a person. Training a model this way, on a huge pile of
+unlabelled data, before it is pointed at any particular job, is **pretraining**,
+and the made-up job it is trained on is a **pretext task**, which means a task
+nobody wants the answer to, chosen because learning to do it forces the model to
+learn something worth having.
 
 This page is for a reader who has met a neuron, a layer, a loss, gradient
 descent and the transformer, and who has seen next-word prediction once already,
@@ -50,11 +49,10 @@ and every loss and accuracy quoted is measured on data they were not fitted to.
 ## 1. Where the training signal comes from when nobody writes labels
 
 The problem is one of arithmetic, so the first thing to do is to count. Suppose
-you have four thousand short sentences, which in the simulated corpus used here
-come to 33,320 words drawn from a vocabulary of 28 different words. If a person
-labels each sentence with one answer, such as which object it is about, and if
-one label takes twenty seconds of somebody's attention, then you have bought
-4,000 training signals for 22.2 person-hours of work.
+you have four thousand short sentences, which in the simulated corpus here come
+to 33,320 words drawn from a vocabulary of 28. If a person labels each sentence
+with one answer, and one label takes twenty seconds, you have bought 4,000
+training signals for 22.2 person-hours of work.
 
 ![Two bar charts: 4,000 hand labels against 29,320 next-word targets, and 22.2 person-hours against none](../../images/pretraining-and-adapting/self-supervised-pretraining/labels-versus-free-signal.svg)
 

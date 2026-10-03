@@ -385,14 +385,11 @@ robot quickly rather than making a well-served robot better.
 
 ## 7. What generalisation really looks like, and what it costs to run
 
-Everything so far has been about building and training the model, and this last section
-is about what you actually get, which is the part most often described too generously.
-The claim people hear is that these models generalise. The useful question is not whether
-they generalise but which specific change they survive, and the four changes below behave
-very differently.
-
-The first change is moving the object, and that one works, inside limits that are easy to
-measure.
+Everything so far has been about building and training the model, and this last section is
+about what you actually get, which is the part most often described too generously. The
+useful question is not whether these models generalise but which specific change they
+survive, and the four changes below behave very differently. The first is moving the
+object, and that one works, inside limits that are easy to measure.
 
 ![A scatter of training object positions filling the middle 36 per cent of a camera view, beside a bar chart of error by distance from the middle rising from 0.36 to 13.07 degrees](../../images/models-that-act/vision-language-action-models/position-coverage.svg)
 
@@ -401,12 +398,10 @@ between 0.36 and 0.47 degrees anywhere inside that area and rises to 2.62 and th
 degrees in the two bands outside it.
 
 So "the same task with the object moved" is two different claims. Moved within the patch
-of table that the demonstrations covered, the model is fine, and this is the thing people
-see in a demonstration video. Moved to a corner nobody ever put an object in, the model
-is thirty times worse, and no amount of instruction wording fixes it.
-
-The second change is a new object of a kind the model has seen, and it separates cleanly
-from a new kind altogether.
+of table the demonstrations covered, the model is fine, and that is what people see in a
+demonstration video. Moved to a corner nobody ever put an object in, it is thirty times
+worse, and no wording of the instruction fixes that. The second change is a new object of
+a kind the model has seen, which separates cleanly from a new kind altogether.
 
 ![A scatter of object widths and heights showing two separated clusters, beside a bar chart of grasp error at 0.08 cm for a new object of the trained kind, 1.30 cm for the untrained kind and 0.12 cm once 150 of them are added](../../images/models-that-act/vision-language-action-models/new-object-kind.svg)
 
@@ -415,13 +410,12 @@ to within 0.08 centimetres, and on a wide flat object it is 1.30 centimetres out
 sixteen times worse, until 150 wide flat objects are added and the error drops to 0.12
 centimetres.
 
-The reason is not that the rule changed between the two kinds, because in this simulation
-it is literally the same rule. The reason is that the new kind sits in a part of the
-object's description that the training set never visited, so the model is guessing rather
-than recalling. That is worth stating plainly, because it means a model can fail on a new
-object even when the right answer follows from something it already knows.
-
-The third change is rewording the instruction, and this is the one that genuinely works.
+The rule did not change between the two kinds, because in this simulation it is literally
+the same rule. The new kind simply sits in a part of the object's description that the
+training set never visited, so the model is guessing rather than recalling, which means a
+model can fail on a new object even when the right answer follows from something it
+already knows. The third change is rewording the instruction, and this is the one that
+genuinely works.
 
 ![A horizontal bar chart showing three rewordings of a trained task reusing 75 to 86 per cent of the training vocabulary while two new tasks reuse only 40 and 50 per cent](../../images/models-that-act/vision-language-action-models/instruction-overlap.svg)
 
@@ -429,25 +423,23 @@ Three different ways of saying the same trained task reuse between 75 and 86 per
 the words that appear in the training instructions, while two genuinely new tasks reuse
 only 40 and 50 per cent.
 
-The word count here is a crude stand-in rather than a measurement of what the model does,
-and the real reason rewording works is that the language half of the model was trained on
-far more text than the robot data contains, so it already treats "place the red block
-into the bowl" and "put the red block in the bowl" as near neighbours. This is the one
-place where the web pretraining pays off directly.
-
-The fourth change is a genuinely new task, and today it does not work. A model shown
-twelve tasks does not do a thirteenth because it was asked nicely, and the honest
-description of what people call zero-shot success in this field is almost always one of
-the first three cases rather than the fourth.
+The word count is a crude stand-in rather than a measurement of what the model does, and
+the real reason rewording works is that the language half was trained on far more text
+than the robot data holds, so it already treats "place the red block into the bowl" and
+"put the red block in the bowl" as near neighbours. This is the one place where the web
+pretraining pays off directly. The fourth change is a genuinely new task, and today it
+does not work, because a model shown twelve tasks does not do a thirteenth for being asked
+nicely, and what people call zero-shot success here is almost always one of the first
+three cases rather than the fourth.
 
 ![A five-row table of changes, verdicts and reasons, with three rows marked as not working and two as working](../../images/models-that-act/vision-language-action-models/four-cases.svg)
 
 The five rows gather the measurements above, with the error figures taken from the same
 experiments shown earlier on this page.
 
-That leaves the cost of actually running one of these models, which is the last practical
-obstacle. A large model that takes 310 milliseconds to produce a chunk cannot be asked for
-a new command every 20 milliseconds, and there are three things people do about it.
+That leaves the cost of running one of these models. A model that takes 310 milliseconds
+to produce a chunk cannot be asked for a new command every 20 milliseconds, and there are
+three things people do about it.
 
 ![A log-log chart of the shortest workable chunk length against the arm's command rate for three model speeds, beside a timeline of one big model firing three times while thirty steps of a small policy run underneath](../../images/models-that-act/vision-language-action-models/cost-of-running.svg)
 
@@ -455,16 +447,16 @@ At 100 commands a second the chunk must cover at least 31 steps if the actions c
 tokens, 3.3 steps if they come from the head, and 0.3 steps from a distilled model ten
 times faster.
 
-The first fix is a longer chunk, which costs you reaction time, because the arm is running
-on a picture that is by then old. The second is a smaller model trained to copy the big
-one, which is the distillation described on [making a model smaller and
-faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md), and
-which costs you some of the big model's knowledge. The third, shown on the right of the
-picture, is to run the big model slowly to decide what to aim for and a small fast policy
-underneath it to actually move the joints, so the big model fires about once for every 31
-steps of the fast one. That split is now the usual arrangement, and it is also the
-arrangement that makes the next page's subject useful, because a model that decides what
-to aim for is close to a model that predicts what will happen.
+The first fix is a longer chunk, which costs reaction time because the arm is running on a
+picture that is by then old. The second is a smaller model trained to copy the big one,
+which is the distillation described on [making a model smaller and
+faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md), and which
+costs some of the big model's knowledge. The third, on the right of the picture, runs the
+big model slowly to decide what to aim for and a small fast policy underneath it to move
+the joints, so the big model fires about once for every 31 steps of the fast one. That
+split is now the usual arrangement, and it is what makes the next page's subject useful,
+because a model that decides what to aim for is close to a model that predicts what will
+happen.
 
 ---
 
@@ -492,11 +484,11 @@ to aim for is close to a model that predicts what will happen.
 ## 9. Using it in Python
 
 Section 3 measured what binning does to an action and section 4 measured what a flow head
-does instead, and both of those are a handful of lines of real code. The lines below use
-NumPy and PyTorch to do the two things on a batch of chunks, so that you can see that the
-binning is arithmetic rather than a library and that the head is an ordinary small
-network. No library gives you a whole vision-language-action model as a single call, so
-this shows the output end, which is the part that differs between designs.
+does instead, and both are a handful of lines of real code. The lines below use NumPy and
+PyTorch to do the two things on a batch of chunks, so you can see that the binning is
+arithmetic rather than a library and that the head is an ordinary small network. No
+library gives you a whole vision-language-action model as one call, so this shows the
+output end, which is the part that differs between designs.
 
 ```python
 import numpy as np
@@ -537,24 +529,22 @@ print('chunk shape from the head:', tuple(sample(torch.zeros(4, 1024)).shape))
 
 PyTorch gives you the layers, the gradients and the optimiser, and a library such as
 Hugging Face `transformers` gives you the vision-language model that would supply the
-1,024-number context in the last line. What no library decides for you is everything this
-page has been about. You choose the range the bins cover, and section 3 showed that this
-choice costs millimetres while the number of bins costs almost nothing. You choose
-between the two output styles, and section 4 showed that choice is worth about ten times
-in speed. You choose the mixture of robot and web data, and section 5 showed that five
-per cent of the old data is the difference between keeping and losing what the model
-knew.
+1,024-number context in the last line. What no library decides is everything this page has
+been about. You choose the range the bins cover, and section 3 showed that this costs
+millimetres while the number of bins costs almost nothing. You choose between the two
+output styles, and section 4 showed that is worth about ten times in speed. You choose the
+mixture of robot and web data, and section 5 showed that five per cent of the old data is
+the difference between keeping and losing what the model knew.
 
-The one line above that is doing something subtle is the walk inside `sample`. It starts
-from random numbers and takes equal steps in a direction the head predicts, and the
-number of steps is the knob measured in section 4: one step leaves the chunk 0.615 degrees
-out and eight steps leaves it 0.035 degrees out. Training that head is not shown here,
-because it needs the flow-matching loss described on [flow matching and other
-generators](../08_models-that-generate/02_flow-matching-and-other-generators.md), but it
-is a handful of lines more: draw a random list, mix it with a real chunk in some
-proportion, and train the head to predict the difference between them.
+The subtle line above is the walk inside `sample`, which starts from random numbers and
+takes equal steps in a direction the head predicts. The number of steps is the knob
+measured in section 4: one step leaves the chunk 0.615 degrees out and eight steps leaves
+it 0.035 degrees out. Training that head needs the flow-matching loss described on [flow
+matching and other
+generators](../08_models-that-generate/02_flow-matching-and-other-generators.md), which is
+a handful of lines more: draw a random list, mix it with a real chunk in some proportion,
+and train the head to predict the difference between them.
 
-The honest thing to say about running this for real is that none of the code above is the
-hard part. The hard part is collecting the demonstrations, and the measurements in
-section 7 say why, because what the model can do is set almost entirely by where the
-objects were when somebody recorded them.
+None of the code above is the hard part. The hard part is collecting the demonstrations,
+and the measurements in section 7 say why, because what the model can do is set almost
+entirely by where the objects were when somebody recorded them.

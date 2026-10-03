@@ -321,12 +321,12 @@ training it does not do it.
 The grid detector hands over 15 guesses above 0.40 and 9 after suppression, while the set-prediction model hands over 20 slots of which 6 answer, against the 6 objects really there.
 
 What this buys you is that the output is the answer, so there is no threshold to
-tune when you move the robot to a new table, and nothing that deletes a real
-object for standing too close to another. What it costs you is that the number of
-slots is a hard limit, so a model with 20 slots can never report 21 objects, and
-that these models take considerably longer to train, because early in training the
-matching keeps changing its mind about which slot owns which object. Named models
-of both kinds are listed in [object
+tune when the robot moves to a new table and nothing that deletes a real object
+for standing too close to another. What it costs you is that the number of slots
+is a hard limit, so a model with 20 slots can never report 21 objects, and that
+these models take considerably longer to train, because early on the matching
+keeps changing its mind about which slot owns which object. Named models of both
+kinds are listed in [object
 detection](../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md).
 
 ---
@@ -336,74 +336,72 @@ detection](../../07_learned-models/03_seeing-models/02_most-used/01_object-detec
 Boxes have carried the last four sections, and section 1 showed that a box
 contains a good deal that is not the object. This last section is about the
 answer that does not: a **mask**, which is one number for every pixel saying
-whether that pixel belongs to the thing.
+whether it belongs to the thing.
 
-![The mug's mask shaded, beside an 8 by 8 window of the numbers the head gives back and the same window after cutting at 0.5](../../images/models-that-see/detection-and-segmentation/mask-as-numbers.svg)
+![The mug's mask shaded, beside an 8 by 8 window of the numbers the head gives and the same window after cutting at 0.5](../../images/models-that-see/detection-and-segmentation/mask-as-numbers.svg)
 
 A mask head gives a number between 0 and 1 for every pixel, and cutting at 0.5 turns the window of numbers into zeros and ones, which for this mug gives 8,174 pixels against the true 8,177, an overlap of 0.978.
 
 A mask is not a shape or an outline inside the computer. It is a grid of numbers
-the same size as the region it describes, each one between 0 and 1, saying how
-sure the model is that this pixel is part of the object. Cutting at 0.5 turns
-them into zeros and ones, and the window in the middle of the picture above shows
-exactly that happening at the mug's left edge, where the numbers climb from 0.04
-to 0.81 across eight pixels. For this mug the cut gives 8,174 pixels against the
-8,177 that are really mug, and the two agree on 8,086 of the 8,265 pixels either
-of them claims, which is an overlap of 0.978.
+the same size as the region it describes, each between 0 and 1, saying how sure
+the model is that this pixel is part of the object. Cutting at 0.5 turns them
+into zeros and ones, and the window above shows that happening at the mug's left
+edge, where the numbers climb from 0.04 to 0.81 across eight pixels. The two
+agree on 8,086 of the 8,265 pixels either of them claims, which is an overlap of
+0.978.
 
-![A row of boxes showing the mask head: the detector's box, a 14 by 14 crop of features, four convolutions, a layer that doubles the grid, a 1 by 1 convolution and the stretch back to the box](../../images/models-that-see/detection-and-segmentation/mask-head.svg)
+![A row of boxes showing the mask head, from the detector's box through four convolutions to the stretch back to the box](../../images/models-that-see/detection-and-segmentation/mask-head.svg)
 
 The mask head is four 3 by 3 convolutions of 256 channels costing 2,360,320 parameters, one layer that doubles the grid costing 262,400, and a 1 by 1 convolution to a single number costing 257, which is 2,622,977 in all, run once for every box.
 
 The usual way to get a mask is to put a small head on top of the detector. The
 features inside each box are cut out and squashed to a fixed grid of 14 by 14, so
 that the head always sees the same shape whatever size the object was. Four 3 by
-3 convolutions of 256 channels run over that grid, costing 2,360,320 parameters,
-a layer that doubles the grid costs 262,400, and a 1 by 1 convolution down to a
-single number costs 257, which is 2,622,977 parameters in all. The head gives 28
-by 28, which is 784 numbers, and those are stretched to the size of the box,
-which for the mug is 102 by 98, or 9,996 pixels. The head runs once for every box
-the detector found, and that is why masks cost more than boxes on a robot.
+3 convolutions of 256 channels run over that grid, a layer doubles the grid, and
+a 1 by 1 convolution brings it down to a single number for each of the 28 by 28
+places, which is 2,622,977 parameters in all. Those 784 numbers are then
+stretched to the size of the box, which for the mug is 9,996 pixels. The head
+runs once for every box the detector found, and that is why masks cost more than
+boxes on a robot.
 
-![Three views of the mug's mask drawn on grids of 7, 14 and 28 squares and stretched back, beside a curve of overlap against grid size](../../images/models-that-see/detection-and-segmentation/mask-resolution.svg)
+![The mug's mask drawn on grids of 7, 14 and 28 squares and stretched back, beside a curve of overlap against grid size](../../images/models-that-see/detection-and-segmentation/mask-resolution.svg)
 
 Drawing the mask on a 7 by 7 grid and stretching it back overlaps the true outline by 0.915, a 14 by 14 grid by 0.937 and a 28 by 28 grid by 0.977, and at 14 by 14, 419 of the 540 pixels it gets wrong are in the thin handle.
 
 That stretching is where the accuracy goes, and the numbers say how much. A mask
-drawn on a 7 by 7 grid overlaps the true outline by 0.915, a 14 by 14 grid by
-0.937, a 28 by 28 grid by 0.977 and a 56 by 56 grid by 0.989. Those look like
-small losses, until you ask where the wrong pixels are: at 14 by 14, 419 of the
-540 wrong pixels lie in the thin handle of the mug. So a coarse mask is fine for
-the body of a thing and poor at anything thin, which matters a great deal if the
-thin part is the part the arm has to take hold of.
+drawn on a 7 by 7 grid overlaps the true outline by 0.915 and a 56 by 56 grid by
+0.989, which look like small losses until you ask where the wrong pixels are: at
+14 by 14, 419 of the 540 wrong pixels lie in the thin handle of the mug. So a
+coarse mask is fine for the body of a thing and poor at anything thin, which
+matters a great deal when the thin part is the part the arm has to take hold
+of.
 
-![Three views of the scene: a point prompt on one glass returning that glass, the same point returning all three glasses, and a box prompt returning the mug](../../images/models-that-see/detection-and-segmentation/prompt-to-mask.svg)
+![A point prompt on one glass returning that glass, the same point returning all three, and a box prompt returning the mug](../../images/models-that-see/detection-and-segmentation/prompt-to-mask.svg)
 
 A point at (175, 266) can honestly mean the one glass, which is 5,753 pixels, or the group of glasses, which is 14,515, so a promptable model returns several masks with a confidence for each, and none of them carries a name.
 
 The newest kind of segmentation model changes the question. Instead of being
 trained on a list of classes and asked which pixels are mugs, a **promptable
 segmentation** model is given a point or a box and asked which pixels belong to
-the thing there. The Segment Anything family works this way. A point at (175,
+the thing there, and the Segment Anything family works this way. A point at (175,
 266) is genuinely ambiguous, because it could mean the one glass of 5,753 pixels
-or the group of glasses of 14,515, so the model returns more than one mask with a
-confidence for each, and a box prompt round the mug returns the mug's 8,177
-pixels. None of these answers carries a class name, because the model was never
+or the group of 14,515, so the model returns more than one mask with a confidence
+for each. None of these answers carries a class name, because the model was never
 told what any of these things are called.
 
-![The near glass's mask with the grasp line drawn across its narrow way, beside the mug's box with the parts that are not mug shaded](../../images/models-that-see/detection-and-segmentation/mask-to-grasp.svg)
+![The near glass's mask with the grasp line across its narrow way, beside the mug's box with the parts that are not mug shaded](../../images/models-that-see/detection-and-segmentation/mask-to-grasp.svg)
 
 The mask of the near glass is 50 pixels across its narrow way, which is 72 millimetres at 0.80 metres from a camera 640 pixels wide, while the mug's box holds 1,819 pixels of table, or 18 in every hundred.
 
 That is exactly why these models are used inside robot pipelines as a tool rather
 than as a recogniser. Something else decides what to pick, usually a detector or
-a vision-language model, and the promptable model is then handed that box or that
-point and asked only for the pixels, which it does very well on objects nobody
-trained it on. Those pixels are what the grasp is worked out from. The mask of
-the near glass is 50 pixels across its narrow way, which at 0.80 metres from a
-camera 640 pixels wide with a 60 degree view is 72 millimetres, so the fingers
-know how far to open; the mug's box, by contrast, holds 1,819 pixels of table, 18
-in every hundred, and a point chosen inside it can easily be none of the mug.
+a vision-language model, and the promptable model is then handed that box or
+point and asked only for the pixels, which it does well on objects nobody trained
+it on. Those pixels are what the grasp is worked out from: the mask of the near
+glass is 50 pixels across its narrow way, which at 0.80 metres from a camera 640
+pixels wide with a 60 degree view is 72 millimetres, so the fingers know how far
+to open. The mug's box, by contrast, holds 1,819 pixels of table, and a point
+chosen inside it can easily be none of the mug.
 
 ---
 
@@ -420,8 +418,7 @@ in every hundred, and a point chosen inside it can easily be none of the mug.
   at, by reading an instruction and a picture together.
 - [Behaviour cloning and action
   chunks](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md) shows
-  what happens after the seeing is done, when a model has to turn what it saw
-  into movement.
+  what happens after the seeing, when a model turns what it saw into movement.
 - [Object
   detection](../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md)
   is the catalogue page for real detectors, with what each one costs and where
@@ -461,10 +458,9 @@ print(out['boxes'].shape, out['masks'].shape)       # (N, 4) and (N, 1, 480, 640
 
 The library gives you the overlap arithmetic, the suppression rule and a whole
 trained detector with a mask head on it, and the shapes it hands back are the
-ones this page described: four numbers for every box, one score for every box,
-and one number for every pixel of every mask. Note that `masks` comes back at the
-full picture size even though the head drew on 28 by 28 and the stretching has
-already happened, which is the loss measured in section 6.
+ones this page described. Note that `masks` comes back at the full picture size
+even though the head drew on 28 by 28, so the stretching has already happened and
+with it the loss measured in section 6.
 
 What the library will not do is decide the two numbers that matter. The
 suppression threshold in `nms` is the one from section 3, and setting it too low
@@ -474,8 +470,7 @@ score threshold you apply to `out['scores']` is the operating point from section
 which way to go except what a mistake costs your robot.
 
 What the library also will not tell you is whether you needed a mask at all.
-Boxes are smaller, faster and enough for counting and for pointing a camera. A
-mask costs a head that runs once per box and gives back a number for every pixel,
-and it earns that cost only when something downstream uses the pixels, such as
-working out how wide to open the fingers, or which of three glasses standing
-together the arm is about to take hold of.
+Boxes are smaller, faster and enough for counting and for pointing a camera,
+while a mask costs a head that runs once per box, and it earns that cost only
+when something downstream uses the pixels, such as how wide to open the fingers,
+or which of three glasses standing together the arm is about to take hold of.

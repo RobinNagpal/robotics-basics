@@ -363,15 +363,15 @@ Read each row as one thing done to the same 3,270-parameter network, whose own
 accuracy is 0.933, with the last column saying whether the saving was measured here
 or is an illustration of what real hardware would give.
 
-The rows that cost nothing are the quantisation ones: 8-bit and 4-bit weights with a
-scale per channel both score 0.933, for two times and four times less memory. Two-bit
-weights with quantisation-aware training score 0.914 for eight times less. Half the
-weights zeroed freely scores 0.928 and saves nothing you can use. Keeping two weights
-of every four scores 0.873 and would save up to two times on hardware that knows the
-pattern, which is the one row whose saving is an illustration rather than a
-measurement. Keeping 32 of 48 hidden neurons scores 0.904 for two times less of both.
-Distilling into a smaller student scores 0.922 for 20.7 times less memory and 22.0
-times less arithmetic.
+The rows that cost nothing are the quantisation ones, because 8-bit and 4-bit weights
+with a scale per channel both score 0.933, for two times and four times less memory,
+and 2-bit weights with quantisation-aware training score 0.914 for eight times less.
+Half the weights zeroed freely scores 0.928 and saves nothing you can use. Keeping
+two weights of every four scores 0.873 and would save up to two times on hardware
+that knows the pattern, which is the one row whose saving is an illustration rather
+than a measurement. Keeping 32 of 48 hidden neurons scores 0.904 for two times less
+of both, and distilling into a smaller student scores 0.922 for 20.7 times less
+memory.
 
 ![A scatter of accuracy given up against how many times smaller the model became, with eight methods marked](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/accuracy-lost-against-size-saved.svg)
 
@@ -397,16 +397,16 @@ method reached alone, and that is the order people use in practice: distil first
 because it changes the shape of the model, and quantise afterwards, because it works
 on whatever shape it is given.
 
-Two cautions belong with that happy number. The first is that this is a small network
-on a simulated job, so the shape of the result is trustworthy and the exact figures
-are not; a real model has to be measured on its real job after every one of these
+Two cautions belong with that number. The first is that this is a small network on a
+simulated job, so the shape of the result is trustworthy and the exact figures are
+not, and a real model has to be measured on its real job after every one of these
 steps, which is what [running and evaluating a
 model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md) is about.
 The second is that memory saved is not automatically time saved, because a 4-bit
 weight has to be turned back into an ordinary number before it can be multiplied, and
-whether that is free depends entirely on whether the chip and the library support it.
-A model that is four times smaller and no faster is a common and disappointing
-result, and the only way to know is to time it.
+whether that is free depends on whether the chip and the library support it. A model
+four times smaller and no faster is a common and disappointing result, and the only
+way to know is to time it.
 
 ---
 

@@ -1424,7 +1424,7 @@ def fig_randomise_what_you_do_not_know() -> None:
         obj = r.uniform(-0.25, 0.25, (25, 2))
         grip = r.uniform(-0.05, 0.05, (25, 2))
         noise = float(rng.uniform(0.5, 4.0))
-        cal = float(rng.uniform(-0.016, 0.016))
+        cal = 0.0                      # a fixed offset is measured, not randomised
         delay = int(rng.integers(0, 4))
         drive = float(rng.uniform(0.80, 1.10))
         settings.append((noise, cal, delay, drive))

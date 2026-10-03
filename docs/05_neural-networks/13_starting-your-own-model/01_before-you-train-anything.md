@@ -91,17 +91,15 @@ The holding job is finished by one condition at 98.7 per cent, while the grip jo
 adding seven more conditions changes nothing at all.
 
 The conditions in that second curve were not written by a person. A search went through a
-recording of 144 parts and picked each threshold to cut the most mistakes, which is how it
-arrived at a width of 48.8 millimetres and a mass of 19.5 grams, and nobody could have
-written those numbers down beforehand. That is the real test hiding inside the first one,
-because the moment you need a recording to set the numbers in your rule you are already
-fitting a model from examples, and a list of five thresholds is a poor one. The robot jobs on
-this side include choosing a grip for a part the robot has not met, finding parts in a
-cluttered tray picture, telling a chipped part from a sound one and deciding where on an
-unfamiliar shape to put the fingers.
+recording of 144 parts and picked each threshold to cut the most mistakes, arriving at a width
+of 48.8 millimetres and a mass of 19.5 grams, and nobody could have written those numbers down
+beforehand. That is the real test hiding inside the first one, because the moment you need a
+recording to set the numbers in your rule you are already fitting a model, and a list of five
+thresholds is a poor one. The jobs on this side include choosing a grip for an unfamiliar
+part, finding parts in a cluttered tray picture, telling a chipped part from a sound one and
+deciding where on an unfamiliar shape to put the fingers.
 
-The other half of the test is whether the rule stays written, and that deserves its own
-measurement.
+The other half of the test is whether the rule stays written.
 
 ![Two charts: accuracy of the holding rule falling as the current sensor drifts while the re-measured threshold stays flat, and the threshold the training readings pick falling in a straight line with the drift](../../images/starting-your-own-model/before-you-train-anything/the-rule-that-changed.svg)
 
@@ -109,12 +107,11 @@ When the motor's brushes wear and the current sensor reads 0.18 amperes low, the
 its threshold left at 0.45 falls from 99.7 per cent to 93.9 per cent, and measuring the
 threshold again on fresh readings brings it back to 99.2 per cent.
 
-That is the honest cost of choosing a rule, and it is worth stating plainly rather than
-hiding: a written rule does not usually fail by being wrong, it fails by drifting, and
-somebody has to notice and re-measure it. The repair is one number and it takes minutes,
-which is a far smaller bill than retraining a model, so the drift is not a reason to reach
-for a model. A model is the answer only when nobody can write the rule at all, and once you
-have decided that, the next thing to do is write down exactly what the model is for.
+That is the honest cost of choosing a rule, and it is worth saying plainly: a written rule
+usually fails by drifting rather than by being wrong, and somebody has to notice and measure
+it again. The repair is one number and takes minutes, which is a far smaller bill than
+retraining a model, so drift is not a reason to reach for one. A model is the answer only when
+nobody can write the rule at all, and the next step is to write down exactly what it is for.
 
 ---
 

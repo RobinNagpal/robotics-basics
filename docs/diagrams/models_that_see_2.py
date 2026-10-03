@@ -1347,6 +1347,76 @@ def align_then_measure() -> None:
     _save(fig, D3_DOC, 'align-then-measure.svg')
 
 
+def relative_versus_metric() -> None:
+    """What each kind of depth lets an arm do, with the mug's distance each way."""
+    col, true, pred = _relative_row()
+    rel = (pred - pred.min()) / (pred.max() - pred.min())
+    truth = float(true[70:100].mean())
+    reads = [(0.30, 0.55), (0.42, 0.78), (0.58, 1.05)]
+    guesses = [float((near + rel * (far - near))[70:100].mean()) for near, far in reads]
+    i1, i2 = 85, 110
+    a = (true[i2] - true[i1]) / (pred[i2] - pred[i1])
+    b = true[i1] - a * pred[i1]
+    aligned = float((a * pred + b)[70:100].mean())
+    margin = (85.0 - 72.0) / 2
+    print(f'[kinds] the mug really is at {truth:.3f} m')
+    for (near, far), g in zip(reads, guesses):
+        print(f'[kinds]   relative map read as {near:.2f} to {far:.2f} m -> '
+              f'{g:.3f} m, which is {abs(g - truth) * 1000:.0f} mm out')
+    print(f'[kinds]   after two measured anchors -> {aligned:.3f} m, '
+          f'{abs(aligned - truth) * 1000:.1f} mm out')
+    print(f'[kinds] the three relative readings spread over '
+          f'{(max(guesses) - min(guesses)) * 1000:.0f} mm, against a gripper margin '
+          f'of {margin:.1f} mm')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white',
+                             gridspec_kw={'wspace': 0.28, 'width_ratios': [1, 1.1]})
+    ax = axes[0]
+    _blank(ax)
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 6.6)
+    rows = [('Which object is nearest?', 'yes', 'yes'),
+            ('Is the mug in front?', 'yes', 'yes'),
+            ('How far must the arm reach?', 'no', 'yes'),
+            ('Will the fingers clear the rim?', 'no', 'yes')]
+    ax.text(0.2, 5.9, 'question', fontsize=10.5, weight='bold')
+    ax.text(7.4, 5.9, 'relative', fontsize=10.5, weight='bold', ha='center')
+    ax.text(9.3, 5.9, 'metric', fontsize=10.5, weight='bold', ha='center')
+    ax.plot([0.15, 10.0], [5.6, 5.6], color=INK, lw=1.1)
+    for k, (q, r, m) in enumerate(rows):
+        y = 4.9 - k * 0.95
+        ax.text(0.2, y, q, fontsize=9.6, va='center')
+        for x, v in ((7.4, r), (9.3, m)):
+            ax.text(x, y, v, fontsize=10.5, ha='center', va='center', weight='bold',
+                    color=SLIDE if v == 'yes' else GRIP)
+    ax.text(0.2, 0.55, 'Relative depth answers questions about order.\n'
+                       'Only metric depth answers questions in millimetres.',
+            fontsize=10, color=INK, va='center')
+    ax.set_title('What each kind of depth can be asked', fontsize=11.5, weight='bold')
+
+    ax = axes[1]
+    _plain(ax)
+    labels = ['truth'] + [f'relative,\nread as\n{n:.2f}-{f:.2f} m' for n, f in reads] \
+        + ['after two\nmeasured\nanchors']
+    vals = [truth] + guesses + [aligned]
+    colours = [TEAL, LINK, PURPLE, WRIST, SLIDE]
+    ax.bar(labels, vals, color=colours, ec=INK, lw=0.8)
+    ax.axhspan(truth - margin / 1000, truth + margin / 1000, color='#d8f0dc', zorder=0)
+    ax.text(0.5, truth + 0.10, f'the {margin:.1f} mm the gripper allows',
+            fontsize=9, ha='center', color=SLIDE)
+    ax.annotate('', xy=(0.5, truth + 0.012), xytext=(0.5, truth + 0.092),
+                arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.2))
+    for i, v in enumerate(vals):
+        ax.text(i, v + 0.012, f'{v:.3f} m', ha='center', fontsize=9.4)
+    ax.set_ylim(0, 0.75)
+    ax.set_ylabel('distance the arm would reach to (m)', fontsize=10)
+    ax.tick_params(axis='x', labelsize=8.4)
+    ax.set_title(f'The same relative map puts the mug anywhere over '
+                 f'{(max(guesses) - min(guesses)) * 1000:.0f} mm',
+                 fontsize=11.5, weight='bold')
+    _save(fig, D3_DOC, 'relative-versus-metric.svg')
+
+
 def stereo_geometry() -> None:
     """The disparity arithmetic for one baseline and one focal length."""
     f, base = 700.0, 0.060
@@ -2101,6 +2171,7 @@ def main() -> None:
     monocular_shape_right_scale_wrong()
     affine_freedom()
     align_then_measure()
+    relative_versus_metric()
     stereo_geometry()
     stereo_error()
     texture_is_needed()

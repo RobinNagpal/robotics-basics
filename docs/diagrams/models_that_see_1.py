@@ -1807,8 +1807,8 @@ def simulated_detections() -> list[dict]:
             s = 4.0 + 9.0 * k
             box = (x1 + rng.normal(0, s), y1 + rng.normal(0, s),
                    x2 + rng.normal(0, s), y2 + rng.normal(0, s))
-            box = (min(box[0], box[2]), min(box[1], box[3]),
-                   max(box[0], box[2]), max(box[1], box[3]))
+            box = (float(round(min(box[0], box[2]))), float(round(min(box[1], box[3]))),
+                   float(round(max(box[0], box[2]))), float(round(max(box[1], box[3]))))
             ov = _iou(box, ob['box'])
             score = float(np.clip(0.97 - 0.85 * (1 - ov) + rng.normal(0, 0.05),
                                   0.05, 0.99))
@@ -1817,7 +1817,8 @@ def simulated_detections() -> list[dict]:
         w, h = rng.uniform(40, 110), rng.uniform(40, 110)
         x = rng.uniform(20, W - w - 20)
         y = rng.uniform(180, H - h - 20)
-        dets.append({'box': (x, y, x + w, y + h),
+        dets.append({'box': (float(round(x)), float(round(y)), float(round(x + w)),
+                             float(round(y + h))),
                      'score': float(rng.uniform(0.15, 0.55)), 'from': 'nothing'})
     dets.sort(key=lambda d: -d['score'])
     return dets
@@ -2144,8 +2145,10 @@ def box_as_numbers() -> None:
 def iou_arithmetic() -> None:
     rgb, objects = _scene()
     truth = next(o for o in objects if o['name'] == 'glass_front')['box']
-    pick = [d for d in _dets() if d['from'] == 'glass_front']
-    guess = min(pick, key=lambda d: abs(_iou(d['box'], truth) - 0.6))['box']
+    pick = [d for d in _dets() if d['from'] == 'glass_front'
+            and not (d['box'][0] >= truth[0] and d['box'][1] >= truth[1]
+                     and d['box'][2] <= truth[2] and d['box'][3] <= truth[3])]
+    guess = min(pick, key=lambda d: abs(_iou(d['box'], truth) - 0.5))['box']
     ix1, iy1 = max(truth[0], guess[0]), max(truth[1], guess[1])
     ix2, iy2 = min(truth[2], guess[2]), min(truth[3], guess[3])
     iw, ih = ix2 - ix1, iy2 - iy1
@@ -2342,7 +2345,7 @@ def nms_steps() -> None:
     print('[nms] the boxes left standing, by score: '
           + ', '.join(f'{dets[i]["score"]:.2f}' for i in keep))
 
-    fig, axes = plt.subplots(2, 3, figsize=(13.2, 7.4), facecolor='white')
+    fig, axes = plt.subplots(2, 3, figsize=(13.2, 8.2), facecolor='white')
     flat = axes.ravel()
     _show(flat[0], rgb, f'all {len(dets)} guesses scoring 0.40 or more')
     for d in dets:
@@ -2356,7 +2359,7 @@ def nms_steps() -> None:
                        f'drop {len(dropped)}')
         for j in dropped:
             _draw_box(ax, dets[j]['box'], GRIP, f'{dets[j]["score"]:.2f}', lw=1.2,
-                      fs=7.5)
+                      fs=8, above=False)
         for k in shown:
             _draw_box(ax, dets[k]['box'], MUTED, None, lw=1.0)
         _draw_box(ax, dets[i]['box'], SLIDE, f'{dets[i]["score"]:.2f}', lw=2.2,
@@ -2366,14 +2369,14 @@ def nms_steps() -> None:
                       fontsize=8.5)
     ax = flat[5]
     _show(ax, rgb, f'what is left: {len(keep)} boxes')
-    for i in keep:
+    for n, i in enumerate(keep):
         _draw_box(ax, dets[i]['box'], SLIDE, f'{dets[i]["score"]:.2f}', lw=1.8,
-                  fs=8)
+                  fs=8, above=n % 2 == 0)
     ax.set_xlabel('one box an object, except where the guesses were poor',
                   fontsize=8.5)
     fig.suptitle(f'Non-maximum suppression, step by step, at an overlap of {thresh}',
                  fontsize=13, weight='bold', color=INK)
-    fig.tight_layout()
+    fig.tight_layout(h_pad=2.6)
     _save(fig, SEG_DOC, 'nms-steps.svg')
 
 
@@ -2593,3 +2596,532 @@ def ap_at_thresholds() -> None:
     ax.set_title('One detector, five scores, depending on how strict you are',
                  fontsize=12, weight='bold', color=INK)
     _save(fig, SEG_DOC, 'ap-at-thresholds.svg')
+
+
+# --------------------------------------------------------------------------
+# 02_detection-and-segmentation, section 5: set prediction
+# --------------------------------------------------------------------------
+
+N_SLOTS: int = 20
+
+
+def _slots() -> list[dict]:
+    """What a set-prediction detector gives back: one answer from each query slot."""
+    _, objects = _scene()
+    rng = np.random.default_rng(202)
+    slots: list[dict] = []
+    order = rng.permutation(N_SLOTS)
+    taken = {int(k): ob for k, ob in zip(order[:len(objects)], objects)}
+    for k in range(N_SLOTS):
+        if k in taken:
+            ob = taken[k]
+            x1, y1, x2, y2 = ob['box']
+            jit = rng.normal(0, 4.0, 4)
+            slots.append({'slot': k, 'box': (x1 + jit[0], y1 + jit[1], x2 + jit[2],
+                                             y2 + jit[3]),
+                          'object': float(np.clip(rng.uniform(0.86, 0.98), 0, 1)),
+                          'name': ob['cls']})
+        else:
+            w, h = rng.uniform(50, 160), rng.uniform(50, 160)
+            x = rng.uniform(10, W - w - 10)
+            y = rng.uniform(150, H - h - 10)
+            slots.append({'slot': k, 'box': (x, y, x + w, y + h),
+                          'object': float(rng.uniform(0.01, 0.12)), 'name': 'nothing'})
+    return slots
+
+
+SLOTS: list[dict] | None = None
+
+
+def _slot_list() -> list[dict]:
+    global SLOTS
+    if SLOTS is None:
+        SLOTS = _slots()
+    return SLOTS
+
+
+def query_slots() -> None:
+    rgb, objects = _scene()
+    slots = _slot_list()
+    live = [s for s in slots if s['object'] >= 0.5]
+    print(f'[slots] the model has {N_SLOTS} query slots, each giving one box and one '
+          f'score for "there is an object here"')
+    print(f'[slots] {len(live)} slots say there is an object and '
+          f'{N_SLOTS - len(live)} say nothing, against {len(objects)} real objects')
+    print('[slots] the slots that answer: ' + ', '.join(
+        f'{s["slot"]} ({s["name"]}, {s["object"]:.2f})' for s in live))
+
+    fig = plt.figure(figsize=(12.4, 5.4), facecolor='white')
+    ax = fig.add_axes((0.02, 0.1, 0.52, 0.8))
+    _show(ax, rgb, 'what the slots that answered are pointing at')
+    for i, s in enumerate(live):
+        _draw_box(ax, s['box'], SLIDE, None, lw=1.8)
+        ax.text(s['box'][0], s['box'][1] - 5 - 13 * (i % 2), f'slot {s["slot"]}',
+                fontsize=8.5, color=SLIDE, weight='bold', va='bottom',
+                bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, pad=0.8))
+    ax = fig.add_axes((0.58, 0.1, 0.40, 0.8))
+    _blank(ax, (0, 10), (0, 10))
+    ax.text(0.0, 9.6, f'All {N_SLOTS} slots', fontsize=12, weight='bold', color=INK)
+    for k, s in enumerate(slots):
+        r, c = divmod(k, 4)
+        x, y = 0.2 + c * 2.4, 8.7 - r * 1.5
+        says = s['object'] >= 0.5
+        _box(ax, x, y - 1.0, 2.1, 1.05, SLIDE if says else MUTED,
+             f'{s["slot"]}\n{s["name"] if says else "nothing"}', fs=8.5,
+             alpha=0.28 if says else 0.12)
+    ax.text(0.0, 0.9, f'{len(live)} slots name an object and '
+                      f'{N_SLOTS - len(live)} say nothing,', fontsize=10, color=INK)
+    ax.text(0.0, 0.35, 'so there is nothing left to suppress.', fontsize=10,
+            color=INK)
+    fig.suptitle('Set prediction: a fixed number of slots, each allowed at most one '
+                 'object', fontsize=12.5, weight='bold', color=INK)
+    _save(fig, SEG_DOC, 'query-slots.svg')
+
+
+def matching_cost() -> None:
+    """Match six candidate slots to the three glasses, one to one, at the lowest cost."""
+    rgb, objects = _scene()
+    glasses = [o for o in objects if o['cls'] == 'glass']
+    rng = np.random.default_rng(303)
+    cands = []
+    for i, g in enumerate(glasses):
+        x1, y1, x2, y2 = g['box']
+        for k in range(2):
+            jit = rng.normal(0, 7.0 + 9.0 * k, 4)
+            cands.append({'name': f'slot {i * 2 + k}',
+                          'box': tuple(float(round(v)) for v in
+                                       (x1 + jit[0], y1 + jit[1], x2 + jit[2],
+                                        y2 + jit[3]))})
+    diag = float(np.hypot(W, H))
+    cost = np.zeros((len(cands), len(glasses)))
+    for i, c in enumerate(cands):
+        for j, g in enumerate(glasses):
+            cx = ((c['box'][0] + c['box'][2]) / 2, (c['box'][1] + c['box'][3]) / 2)
+            gx = ((g['box'][0] + g['box'][2]) / 2, (g['box'][1] + g['box'][3]) / 2)
+            cost[i, j] = (1 - _iou(c['box'], g['box'])) + \
+                2.0 * np.hypot(cx[0] - gx[0], cx[1] - gx[1]) / diag
+    from itertools import permutations
+    totals = sorted(((sum(cost[r, j] for j, r in enumerate(rows)), rows)
+                     for rows in permutations(range(len(cands)), len(glasses))),
+                    key=lambda t: t[0])
+    best_sum, best = totals[0]
+    second_sum, second = totals[1]
+    greedy, used = [], set()
+    for j in range(len(glasses)):
+        pick = min((i for i in range(len(cands)) if i not in used),
+                   key=lambda i: cost[i, j])
+        greedy.append(pick)
+        used.add(pick)
+    greedy_sum = sum(cost[r, j] for j, r in enumerate(greedy))
+    print(f'[match] the cost of a pairing is (1 - overlap) plus twice the distance '
+          f'between the middles, divided by the picture diagonal of {diag:.0f} pixels')
+    print(f'[match] the best one-to-one matching is ' + ', '.join(
+        f'{cands[r]["name"]} -> {glasses[j]["name"]}' for j, r in enumerate(best)) +
+        f', costing {best_sum:.3f}')
+    print(f'[match] taking the cheapest for each object in turn costs '
+          f'{greedy_sum:.3f}, and the other {len(cands) - len(glasses)} slots are '
+          f'trained to say nothing')
+    print(f'[match] the next cheapest set of pairings costs {second_sum:.3f}, '
+          f'which is {100 * (second_sum - best_sum) / best_sum:.0f}% more')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 5.0), facecolor='white',
+                             width_ratios=[1.0, 1.15])
+    ax = axes[0]
+    view = (120, 170, 320, 370)
+    _show(ax, rgb[view[1]:view[3], view[0]:view[2]],
+          'six slots pointing at three glasses')
+    for i, c in enumerate(cands):
+        b = c['box']
+        _draw_box(ax, (b[0] - view[0], b[1] - view[1], b[2] - view[0], b[3] - view[1]),
+                  LINK if i not in best else SLIDE, c['name'], lw=1.6, fs=8,
+                  above=i % 2 == 0)
+    ax.set_xlabel(f'green are the {len(glasses)} slots the matching keeps, one for '
+                  f'each glass', fontsize=9.5)
+    ax = axes[1]
+    _plain(ax)
+    im = ax.imshow(cost, cmap='viridis_r', interpolation='nearest')
+    for i in range(cost.shape[0]):
+        for j in range(cost.shape[1]):
+            ax.text(j, i, f'{cost[i, j]:.2f}', ha='center', va='center', fontsize=10,
+                    color='white' if cost[i, j] > cost.mean() else INK)
+    for j, r in enumerate(best):
+        ax.add_patch(Rectangle((j - 0.5, r - 0.5), 1, 1, fill=False, edgecolor=GRIP,
+                               lw=3))
+    ax.set_xticks(range(len(glasses)))
+    ax.set_xticklabels([g['name'].split('_')[1] for g in glasses], fontsize=9.5)
+    ax.set_xlabel('the three glasses', fontsize=9.5)
+    ax.set_yticks(range(len(cands)))
+    ax.set_yticklabels([c['name'] for c in cands], fontsize=9)
+    ax.set_title(f'the cost of every pairing; the ringed set costs {best_sum:.2f} '
+                 f'and the next best {second_sum:.2f}', fontsize=10.5,
+                 weight='bold', color=INK)
+    fig.colorbar(im, ax=ax, fraction=0.046)
+    fig.suptitle('Training matches slots to objects one to one, so no object is '
+                 'claimed twice', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'matching-cost.svg')
+
+
+def before_and_after() -> None:
+    _, objects = _scene()
+    dets = [d for d in _dets() if d['score'] >= 0.4]
+    keep, _ = nms(dets, 0.5)
+    slots = _slot_list()
+    live = [s for s in slots if s['object'] >= 0.5]
+    rows = [('grid detector,\nguesses over 0.40', len(dets), GRIP),
+            ('grid detector,\nafter suppression', len(keep), WRIST),
+            ('set prediction,\nevery slot', N_SLOTS, LINK),
+            ('set prediction,\nslots that answer', len(live), SLIDE)]
+    for name, v, _ in rows:
+        print(f'[sets] {name.replace(chr(10), " "):36s} {v:3d} boxes')
+    print(f'[sets] the picture holds {len(objects)} objects')
+
+    fig, ax = plt.subplots(figsize=(9.8, 4.8), facecolor='white')
+    _plain(ax)
+    ax.bar([r[0] for r in rows], [r[1] for r in rows],
+           color=[r[2] for r in rows], alpha=0.88, width=0.55)
+    ax.axhline(len(objects), color=INK, ls='--', lw=1.6)
+    ax.text(3.45, len(objects) + 0.6, f'{len(objects)} objects are really there',
+            fontsize=9.5, ha='right', color=INK)
+    for i, r in enumerate(rows):
+        ax.text(i, r[1] + 0.6, str(r[1]), ha='center', fontsize=11, weight='bold',
+                color=INK)
+    ax.set_ylim(0, max(r[1] for r in rows) * 1.2)
+    ax.set_ylabel('boxes the detector hands over', fontsize=10)
+    ax.tick_params(axis='x', labelsize=9.5)
+    ax.set_title('One design needs a clean-up step and the other does not',
+                 fontsize=12, weight='bold', color=INK)
+    _save(fig, SEG_DOC, 'before-and-after.svg')
+
+
+def duplicate_pressure() -> None:
+    rgb, objects = _scene()
+    target = next(o for o in objects if o['name'] == 'mug')
+    rng = np.random.default_rng(404)
+    a = {'name': 'slot 4', 'box': tuple(np.array(target['box']) +
+                                        rng.normal(0, 3.0, 4))}
+    b = {'name': 'slot 11', 'box': tuple(np.array(target['box']) +
+                                         rng.normal(0, 9.0, 4))}
+    diag = float(np.hypot(W, H))
+    costs = {}
+    for c in (a, b):
+        cx = ((c['box'][0] + c['box'][2]) / 2, (c['box'][1] + c['box'][3]) / 2)
+        gx = ((target['box'][0] + target['box'][2]) / 2,
+              (target['box'][1] + target['box'][3]) / 2)
+        costs[c['name']] = (1 - _iou(c['box'], target['box'])) + \
+            2.0 * np.hypot(cx[0] - gx[0], cx[1] - gx[1]) / diag
+    winner = min(costs, key=lambda k: costs[k])
+    print(f'[dup] two slots both cover the mug, at a cost of '
+          + ', '.join(f'{k} {v:.3f}' for k, v in costs.items()))
+    print(f'[dup] {winner} is matched to the mug, and the other is trained to say '
+          f'nothing, which is what stops the model answering twice')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.6), facecolor='white')
+    view = (330, 200, 530, 380)
+    sub = rgb[view[1]:view[3], view[0]:view[2]]
+    ax = axes[0]
+    _show(ax, sub, 'two slots both cover the mug')
+    for c, colour in ((a, LINK), (b, PURPLE)):
+        _draw_box(ax, (c['box'][0] - view[0], c['box'][1] - view[1],
+                       c['box'][2] - view[0], c['box'][3] - view[1]), colour,
+                  f'{c["name"]}, cost {costs[c["name"]]:.3f}', lw=1.8, fs=9,
+                  above=c is a)
+    ax.set_xlabel('before matching, both are plausible answers', fontsize=9.5)
+    ax = axes[1]
+    _blank(ax, (0, 10), (0, 10))
+    ax.text(0.0, 9.3, 'What the training asks of each slot', fontsize=12,
+            weight='bold', color=INK)
+    y = 7.4
+    for c, colour in ((a, LINK), (b, PURPLE)):
+        won = c['name'] == winner
+        _box(ax, 0.0, y - 1.2, 9.6, 1.6, SLIDE if won else GRIP,
+             f'{c["name"]}: cost {costs[c["name"]]:.3f}  ->  '
+             + ('matched to the mug, so learn the mug\'s box and the name "mug"'
+                if won else 'not matched, so learn to answer "nothing"'),
+             fs=10, alpha=0.18)
+        y -= 2.4
+    ax.text(0.0, 2.4, 'Because the match is one to one, exactly one slot is ever '
+                      'asked to\nname a given object, and every other slot is '
+                      'pushed towards\n"nothing", so the model learns not to answer '
+                      'twice.', fontsize=10.5, color=INK, va='top')
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'duplicate-pressure.svg')
+
+
+# --------------------------------------------------------------------------
+# 02_detection-and-segmentation, section 6: masks and prompts
+# --------------------------------------------------------------------------
+
+CAM_FOV: float = 60.0
+CAM_DIST: float = 0.80          # metres from the camera to the table
+
+
+def _blur(x: Arr, k: int = 5) -> Arr:
+    pad = k // 2
+    xp = np.pad(x, pad, mode='edge')
+    out = np.zeros_like(x)
+    for i in range(k):
+        for j in range(k):
+            out += xp[i:i + x.shape[0], j:j + x.shape[1]]
+    return out / (k * k)
+
+
+def _mask_probabilities(mask: Arr, seed: int = 61) -> Arr:
+    """What a mask head really gives back: a number from 0 to 1 for every pixel."""
+    rng = np.random.default_rng(seed)
+    soft = _blur(mask.astype(float), 7)
+    return np.clip(soft + rng.normal(0.0, 0.07, mask.shape), 0.0, 1.0)
+
+
+def mask_as_numbers() -> None:
+    rgb, objects = _scene()
+    mug = next(o for o in objects if o['name'] == 'mug')
+    prob = _mask_probabilities(mug['mask'])
+    cut = prob >= 0.5
+    inter = int((cut & mug['mask']).sum())
+    union = int((cut | mug['mask']).sum())
+    y0, x0 = 300, 364
+    win_p = prob[y0:y0 + 8, x0:x0 + 8]
+    win_m = cut[y0:y0 + 8, x0:x0 + 8]
+    print(f'[mask] the mug covers {int(mug["mask"].sum()):,} pixels; the mask found '
+          f'by cutting the numbers at 0.5 covers {int(cut.sum()):,}, and the two '
+          f'agree on {inter:,} of {union:,}, an overlap of {inter / union:.3f}')
+    print(f'[mask] the window shown starts at row {y0}, column {x0}')
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.6, 4.8), facecolor='white',
+                             width_ratios=[1.0, 1.15, 1.15])
+    ax = axes[0]
+    _show(ax, _overlay(rgb[240:380, 330:500], cut[240:380, 330:500], TEAL, 0.5),
+          'the mask the head gives back')
+    ax.add_patch(Rectangle((x0 - 330 - 0.5, y0 - 240 - 0.5), 8, 8, fill=False,
+                           edgecolor=GRIP, lw=2))
+    ax.set_xlabel(f'the red square is the 8 by 8 window shown next', fontsize=9.5)
+    for ax, grid, title, fmt in ((axes[1], win_p, 'the numbers the head gives, '
+                                                  'before any cut', '{:.2f}'),
+                                 (axes[2], win_m.astype(int),
+                                  'the same window after cutting at 0.5', '{:d}')):
+        ax.imshow(grid, cmap='Blues', vmin=0, vmax=1, interpolation='nearest')
+        for i in range(8):
+            for j in range(8):
+                v = grid[i, j]
+                ax.text(j, i, fmt.format(v), ha='center', va='center', fontsize=8.5,
+                        color='white' if v > 0.55 else INK)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(title, fontsize=10.5, weight='bold', color=INK)
+    fig.suptitle('A mask is one number for every pixel, and the cut at 0.5 turns it '
+                 'into a yes or a no', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    _save(fig, SEG_DOC, 'mask-as-numbers.svg')
+
+
+def mask_head() -> None:
+    conv = 4 * (9 * 256 * 256 + 256)
+    up = 256 * 256 * 4 + 256
+    last = 256 + 1
+    total = conv + up + last
+    mug_box = next(o for o in _scene()[1] if o['name'] == 'mug')['box']
+    bw, bh = mug_box[2] - mug_box[0], mug_box[3] - mug_box[1]
+    print(f'[head] the mask head: four 3 x 3 convolutions of 256 channels '
+          f'({conv:,} parameters), one layer that doubles the grid ({up:,}), and a '
+          f'1 x 1 convolution to a single number ({last:,}), which is {total:,} in '
+          f'all')
+    print(f'[head] it works on a 14 by 14 crop, gives 28 x 28 = {28 * 28} numbers, '
+          f'and those are stretched to the box, which is {bw:.0f} by {bh:.0f} '
+          f'pixels, or {int(bw * bh):,}')
+
+    fig, ax = plt.subplots(figsize=(12.4, 4.6), facecolor='white')
+    _blank(ax, (0, 10), (0.5, 9.5))
+    steps = [('the box from\nthe detector', f'{bw:.0f} x {bh:.0f} pixels', LINK, 0),
+             ('the features inside it,\ncut to a fixed grid', '14 x 14 x 256', TEAL,
+              1),
+             ('four 3 x 3\nconvolutions', f'14 x 14 x 256\n{conv:,} parameters',
+              PURPLE, 2),
+             ('one layer that\ndoubles the grid', f'28 x 28 x 256\n{up:,} parameters',
+              PURPLE, 3),
+             ('a 1 x 1 convolution\nto one number', f'28 x 28 x 1\n{last:,} parameters',
+              SLIDE, 4),
+             ('stretched back\nto the box', f'{bw:.0f} x {bh:.0f} numbers from 0 to 1',
+              GRIP, 5)]
+    for name, shape, colour, i in steps:
+        x = 0.1 + i * 1.65
+        _box(ax, x, 5.0, 1.5, 2.2, colour, name, fs=9, alpha=0.2)
+        ax.text(x + 0.75, 4.5, shape, fontsize=8.8, ha='center', va='top', color=INK)
+        if i < 5:
+            _arrow(ax, (x + 1.55, 6.1), (x + 1.65, 6.1), MUTED)
+    ax.text(0.1, 8.8, 'A mask head: the same few layers, run once for each box',
+            fontsize=12.5, weight='bold', color=INK)
+    ax.text(0.1, 8.1, f'{total:,} parameters in all, and they are run again for '
+                      f'every box the detector found, which is what makes masks '
+                      f'cost more than boxes.', fontsize=10, color=INK)
+    ax.text(0.1, 1.6, 'The head answers only inside the box, so it never has to say '
+                      'anything about the rest of the picture,\nand the 28 by 28 '
+                      'grid is stretched to whatever size that box happens to be.',
+            fontsize=10, color=MUTED, va='top')
+    _save(fig, SEG_DOC, 'mask-head.svg')
+
+
+def mask_resolution() -> None:
+    rgb, objects = _scene()
+    mug = next(o for o in objects if o['name'] == 'mug')
+    x1, y1, x2, y2 = (int(v) for v in mug['box'])
+    crop = mug['mask'][y1:y2, x1:x2]
+    sizes = [7, 14, 28, 56, 112]
+    ious, coarse_versions = [], {}
+    for s in sizes:
+        ry = (np.arange(crop.shape[0]) * s // crop.shape[0])
+        rx = (np.arange(crop.shape[1]) * s // crop.shape[1])
+        small = np.zeros((s, s))
+        count = np.zeros((s, s))
+        np.add.at(small, (ry[:, None], rx[None, :]), crop)
+        np.add.at(count, (ry[:, None], rx[None, :]), 1)
+        small = small / np.maximum(count, 1)
+        back = small[ry[:, None], rx[None, :]] >= 0.5
+        inter = int((back & crop).sum())
+        union = int((back | crop).sum())
+        ious.append(inter / union)
+        coarse_versions[s] = back
+        wrong = back ^ crop
+        handle = np.zeros_like(crop)
+        handle[:, int(0.72 * crop.shape[1]):] = True
+        in_handle = int((wrong & handle).sum())
+        print(f'[mres] a mask drawn on a {s} by {s} grid and stretched back to the '
+              f'{crop.shape[1]} by {crop.shape[0]} box overlaps the true outline by '
+              f'{inter / union:.3f}; of the {int(wrong.sum())} pixels it gets wrong, '
+              f'{in_handle} are in the thin handle')
+
+    fig, axes = plt.subplots(1, 4, figsize=(13.4, 4.2), facecolor='white')
+    for ax, s in zip(axes[:3], (7, 14, 28)):
+        _show(ax, _overlay(rgb[y1:y2, x1:x2], coarse_versions[s], TEAL, 0.55),
+              f'drawn on a {s} by {s} grid')
+        ax.set_xlabel(f'overlap with the true outline {ious[sizes.index(s)]:.3f}',
+                      fontsize=9.5)
+    ax = axes[3]
+    _plain(ax)
+    ax.plot(sizes, ious, marker='o', color=LINK, lw=2)
+    for s, v in zip(sizes, ious):
+        ax.annotate(f'{v:.2f}', (s, v), textcoords='offset points', xytext=(0, -16),
+                    fontsize=9, ha='center', color=INK)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(sizes)
+    ax.set_xticklabels([str(s) for s in sizes])
+    ax.set_ylim(0.5, 1.02)
+    ax.set_xlabel('the grid the head draws on', fontsize=10)
+    ax.set_ylabel('overlap with the true outline', fontsize=10)
+    ax.set_title('What a coarse mask costs', fontsize=11, weight='bold', color=INK)
+    fig.suptitle('The mask head draws on a small grid, and the stretching back is '
+                 'where the detail is lost', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'mask-resolution.svg')
+
+
+def prompt_to_mask() -> None:
+    rgb, objects = _scene()
+    glasses = [o for o in objects if o['cls'] == 'glass']
+    front = glasses[1]
+    mug = next(o for o in objects if o['name'] == 'mug')
+    fy, fx = np.nonzero(front['mask'])
+    point = (float(fx.mean()), float(fy.mean()))
+    all_glass = np.zeros((H, W), dtype=bool)
+    for g in glasses:
+        all_glass |= g['mask']
+    rng = np.random.default_rng(71)
+    scores = np.round(rng.uniform(0.78, 0.96, 2), 2)
+    print(f'[prompt] a point at ({point[0]:.0f}, {point[1]:.0f}) can mean the one '
+          f'glass, which is {int(front["mask"].sum()):,} pixels, or the group of '
+          f'glasses, which is {int(all_glass.sum()):,}')
+    print(f'[prompt] the simulated confidence of the two answers is {scores[0]:.2f} '
+          f'and {scores[1]:.2f}; neither answer carries a name')
+    print(f'[prompt] a box prompt round the mug returns {int(mug["mask"].sum()):,} '
+          f'pixels, again with no name')
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.6), facecolor='white')
+    ax = axes[0]
+    _show(ax, _overlay(rgb, front['mask'], TEAL, 0.55),
+          'a point prompt: the one glass')
+    ax.plot([point[0]], [point[1]], marker='*', color=GRIP, markersize=18,
+            markeredgecolor='white')
+    ax.set_xlabel(f'{int(front["mask"].sum()):,} pixels, confidence {scores[0]:.2f}, '
+                  f'no name', fontsize=9.5)
+    ax = axes[1]
+    _show(ax, _overlay(rgb, all_glass, PURPLE, 0.55),
+          'the same point: the group of glasses')
+    ax.plot([point[0]], [point[1]], marker='*', color=GRIP, markersize=18,
+            markeredgecolor='white')
+    ax.set_xlabel(f'{int(all_glass.sum()):,} pixels, confidence {scores[1]:.2f}, '
+                  f'no name', fontsize=9.5)
+    ax = axes[2]
+    _show(ax, _overlay(rgb, mug['mask'], SLIDE, 0.55), 'a box prompt: the mug')
+    _draw_box(ax, mug['box'], GRIP, None, lw=2.0)
+    ax.set_xlabel(f'{int(mug["mask"].sum()):,} pixels, and again no name',
+                  fontsize=9.5)
+    fig.suptitle('A promptable model answers "which pixels", not "what is it", and a '
+                 'point can mean more than one thing', fontsize=12.5, weight='bold',
+                 color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'prompt-to-mask.svg')
+
+
+def mask_to_grasp() -> None:
+    rgb, objects = _scene()
+    mug = next(o for o in objects if o['name'] == 'mug')
+    front = next(o for o in objects if o['name'] == 'glass_front')
+    ys, xs = np.nonzero(front['mask'])
+    cx, cy = xs.mean(), ys.mean()
+    pts = np.stack([xs - cx, ys - cy])
+    cov = pts @ pts.T / pts.shape[1]
+    vals, vecs = np.linalg.eigh(cov)
+    minor = vecs[:, 0]
+    major = vecs[:, 1]
+    across = pts.T @ minor
+    along = pts.T @ major
+    width_px = float(across.max() - across.min())
+    length_px = float(along.max() - along.min())
+    f = (W / 2) / np.tan(np.radians(CAM_FOV / 2))
+    mm_per_px = 1000.0 * CAM_DIST / f
+    box_w = front['box'][2] - front['box'][0]
+    mb = mug['box']
+    mug_box_area = (mb[2] - mb[0]) * (mb[3] - mb[1])
+    spare = mug_box_area - mug['area']
+    print(f'[grasp2] the camera is {W} pixels wide with a {CAM_FOV:.0f} degree view, '
+          f'so its focal length is {f:.0f} pixels, and at {CAM_DIST:.2f} m one pixel '
+          f'is {mm_per_px:.2f} mm')
+    print(f'[grasp2] the mask of the near glass is {width_px:.0f} pixels across its '
+          f'narrow way and {length_px:.0f} pixels along its long way, which is '
+          f'{width_px * mm_per_px:.0f} mm by {length_px * mm_per_px:.0f} mm')
+    print(f'[grasp2] the grasp point is the middle of the mask, at ({cx:.0f}, '
+          f'{cy:.0f})')
+    print(f'[grasp2] the mug box holds {int(mug_box_area):,} pixels and the mug '
+          f'{mug["area"]:,}, so {int(spare):,} of them, or '
+          f'{100 * spare / mug_box_area:.0f} in every hundred, are table')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white')
+    view = (120, 180, 260, 360)
+    sub = rgb[view[1]:view[3], view[0]:view[2]]
+    ax = axes[0]
+    _show(ax, _overlay(sub, front['mask'][view[1]:view[3], view[0]:view[2]], TEAL,
+                       0.5), 'the mask, with the grasp line across it')
+    ax.plot([cx - view[0]], [cy - view[1]], marker='X', color=GRIP, markersize=13,
+            markeredgecolor='white')
+    p1 = (cx - view[0] + minor[0] * width_px / 2, cy - view[1] + minor[1] * width_px / 2)
+    p2 = (cx - view[0] - minor[0] * width_px / 2, cy - view[1] - minor[1] * width_px / 2)
+    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color=GRIP, lw=2.4)
+    ax.set_xlabel(f'the fingers close across {width_px:.0f} pixels, which is '
+                  f'{width_px * mm_per_px:.0f} mm at {CAM_DIST:.2f} m',
+                  fontsize=9.5)
+    ax = axes[1]
+    mview = (350, 230, 500, 370)
+    msub = rgb[mview[1]:mview[3], mview[0]:mview[2]]
+    out = _overlay(msub, (~mug['mask'])[mview[1]:mview[3], mview[0]:mview[2]] &
+                   _rect(*_grid_yx(), *mb)[mview[1]:mview[3], mview[0]:mview[2]],
+                   JOINT, 0.45)
+    _show(ax, out, 'the box round the mug, with the parts that are not mug shaded')
+    _draw_box(ax, (mb[0] - mview[0], mb[1] - mview[1], mb[2] - mview[0],
+                   mb[3] - mview[1]), JOINT, None, lw=2.2)
+    ax.set_xlabel(f'{int(spare):,} of the box\'s {int(mug_box_area):,} pixels, or '
+                  f'{100 * spare / mug_box_area:.0f} in every hundred, are table',
+                  fontsize=9.5)
+    fig.suptitle('From a mask to a grasp: the middle of the mask and the narrow way '
+                 'across it', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'mask-to-grasp.svg')

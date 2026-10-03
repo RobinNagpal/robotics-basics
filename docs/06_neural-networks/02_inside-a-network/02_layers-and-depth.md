@@ -183,8 +183,9 @@ Nothing in that first stage knows anything about cups, because each answer comes
 from nine numbers at one place. The second stage reads the first stage's two
 answers rather than the picture, and asks whether there is an up-and-down edge
 and a side-to-side edge in the same place, which is what a corner is. The third
-stage asks whether there is a bright edge with a dark edge three columns to its
-right, which is what a narrow bright bar is.
+stage asks whether there is a dark-to-bright edge with a bright-to-dark edge two
+columns further to the right, which is what a bright bar three columns wide
+looks like.
 
 ![The picture beside maps of the corner answers and the narrow-bar answers, with the firing places marked](../../images/inside-a-network/layers-and-depth/shapes-then-parts.svg)
 
@@ -272,10 +273,10 @@ multiplied by the depth.
 
 ![A grid of parameter counts and memory sizes for depths 2 to 16 and widths 256 to 2,048](../../images/inside-a-network/layers-and-depth/parameters-and-memory.svg)
 
-Two layers of 256 come to 131,584 parameters, which is 1 megabyte at 4 bytes for
-each number, while 16 layers of 2,048 come to 67,141,632 parameters, which is
-269 megabytes, so the same table covers a model that fits anywhere and one that
-has to be thought about.
+Two layers of 256 come to 131,584 parameters, which is 0.5 megabytes at 4 bytes
+for each number, while 16 layers of 2,048 come to 67,141,632 parameters, which
+is 269 megabytes, so the same table covers a model that fits anywhere and one
+that has to be thought about.
 
 The other cost is the arithmetic done every time a reading goes through, which
 is counted in multiply-adds, where one multiply-add is one weight multiplied by
@@ -299,8 +300,8 @@ Doubling the width from 1,024 to 2,048 takes the stack from 8,396,800 to
 8 to 16 layers takes it to 16,793,600, which is 2.0 times as many.
 
 Time is the last cost, and it cannot be given in seconds here, because those
-depend on the computer and on how many readings are handled at once. What can be said exactly is the work,
-which also grows with how many readings go through.
+depend on the computer and on how many readings are handled at once. What can be
+said exactly is the work, which also grows with how many readings go through.
 
 ![Multiply-adds for one reading, 32 readings and 10,000 readings through 8 layers of 1,024](../../images/inside-a-network/layers-and-depth/work-for-many-examples.svg)
 
@@ -421,13 +422,16 @@ with torch.no_grad():                       # the same weights this page used
     layer.bias.copy_(torch.tensor([0.5, 0.2, -0.4, 0.3]))
 
 readings = torch.tensor([[0.42, 0.55, 0.30]])
-print([f"{v:.3f}" for v in layer(readings)[0]])              # ['0.725', '0.490', '0.250', '-0.370']
-print([f"{v:.3f}" for v in torch.relu(layer(readings))[0]])  # ['0.725', '0.490', '0.250', '0.000']
-print(sum(p.numel() for p in layer.parameters()))            # 16
+sums = layer(readings)[0]                   # section 1: the four weighted sums
+print([f"{v:.3f}" for v in sums])           # ['0.725', '0.490', '0.250', '-0.370']
+print([f"{v:.3f}" for v in torch.relu(sums)])   # ['0.725', '0.490', '0.250', '0.000']
+print(sum(p.numel() for p in layer.parameters()))   # 16
 
-stack = nn.Sequential(*[m for _ in range(8)                  # section 5: 8 layers of 1024
-                        for m in (nn.Linear(1024, 1024), nn.ReLU())])
-print(sum(p.numel() for p in stack.parameters()))            # 8396800
+layers = []                                 # section 5: a stack of 8 layers of 1024
+for _ in range(8):
+    layers += [nn.Linear(1024, 1024), nn.ReLU()]
+stack = nn.Sequential(*layers)
+print(sum(p.numel() for p in stack.parameters()))   # 8396800
 
 class Block(nn.Module):                     # section 6: one residual block
     def __init__(self, width):

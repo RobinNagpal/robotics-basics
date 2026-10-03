@@ -234,7 +234,9 @@ def rollout(Q: Arr, rng: np.random.Generator, eps: float, t: Tables,
 
 def q_learn(episodes: int, eps0: float, seed: int, eps1: float | None = None,
             gamma: float = 0.95, alpha: float = 0.3, slip: float = 0.0,
-            t: Tables = WORLD, maxsteps: int = MAXSTEPS
+            t: Tables = WORLD, maxsteps: int = MAXSTEPS,
+            count: list[int] | None = None,
+            slip_range: tuple[float, float] | None = None
             ) -> tuple[Arr, Arr, Arr, list[Arr]]:
     """Tabular Q-learning. Returns Q, the return of every attempt, whether every
     attempt put the block in the bin, and snapshots of Q at a few points."""
@@ -247,13 +249,16 @@ def q_learn(episodes: int, eps0: float, seed: int, eps1: float | None = None,
     snaps: list[Arr] = []
     for ep in range(episodes):
         e = eps0 if eps1 is None else eps0 + (eps1 - eps0) * ep / max(1, episodes - 1)
-        ss, aa, rr, out = rollout(Q, rng, e, t, slip, maxsteps)
+        sl = slip if slip_range is None else float(rng.uniform(*slip_range))
+        ss, aa, rr, out = rollout(Q, rng, e, t, sl, maxsteps)
         for i in range(len(ss) - 1, -1, -1):
             s, a = int(ss[i]), int(aa[i])
             tgt = rr[i] if D[s, a] else rr[i] + gamma * Q[P[s, a]].max()
             Q[s, a] += alpha * (tgt - Q[s, a])
         rets[ep] = rr.sum()
         succ[ep] = 1.0 if out == 'bin' else 0.0
+        if count is not None:
+            count.append(len(ss))
         if ep in marks:
             snaps.append(Q.copy())
     return Q, rets, succ, snaps
@@ -1062,6 +1067,1269 @@ def the_price_of_exploring() -> None:
     ax.set_ylim(min(during) - 2.0, 11.5)
     ax.set_title('4,000 attempts at each exploring rate, averaged over '
                  f'{seeds} runs', fontsize=12, weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='center left')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     fig.tight_layout()
     _save(fig, RL_DOC, 'the-price-of-exploring.svg')
+
+
+# ==========================================================================
+# PAGE 1, section 5: on-policy, off-policy and the size of the step
+# ==========================================================================
+
+def softmax_rows(T: Arr) -> Arr:
+    T = T - T.max(1, keepdims=True)
+    E = np.exp(T)
+    return E / E.sum(1, keepdims=True)
+
+
+def collect(theta: Arr, rng: np.random.Generator, n_ep: int, gamma: float,
+            t: Tables = WORLD) -> tuple[NDArray[np.int64], NDArray[np.int64], Arr, Arr,
+                                        list[str]]:
+    """Run n_ep attempts with the softmax policy and work out the return from
+    every step onwards."""
+    P, R, D, OUT, STAY = t
+    pi = softmax_rows(theta)
+    S: list[int] = []
+    A: list[int] = []
+    G: list[float] = []
+    rets: list[float] = []
+    outs: list[str] = []
+    for _ in range(n_ep):
+        s = S0
+        ss: list[int] = []
+        aa: list[int] = []
+        rr: list[float] = []
+        out = 'timeout'
+        for _ in range(MAXSTEPS):
+            a = int(rng.choice(NA, p=pi[s]))
+            ss.append(s)
+            aa.append(a)
+            rr.append(R[s, a])
+            if D[s, a]:
+                out = OUT[s, a]
+                break
+            s = int(P[s, a])
+        g = 0.0
+        gl = np.zeros(len(rr))
+        for i in range(len(rr) - 1, -1, -1):
+            g = rr[i] + gamma * g
+            gl[i] = g
+        S += ss
+        A += aa
+        G += list(gl)
+        rets.append(float(np.sum(rr)))
+        outs.append(out)
+    return np.array(S), np.array(A), np.array(G), np.array(rets), outs
+
+
+def policy_update(theta: Arr, S: NDArray[np.int64], A: NDArray[np.int64], adv: Arr,
+                  p_old: Arr, epochs: int, lr: float, clip: float, use_clip: bool,
+                  ent: float = 0.01) -> Arr:
+    """Several passes of gradient ascent over one batch, with or without the limit."""
+    for _ in range(epochs):
+        pi = softmax_rows(theta)
+        ratio = pi[S, A] / p_old
+        if use_clip:
+            ok = ~(((adv > 0) & (ratio > 1 + clip)) | ((adv < 0) & (ratio < 1 - clip)))
+        else:
+            ok = np.ones(len(S), dtype=bool)
+        coef = np.where(ok, ratio * adv, 0.0)
+        grad = np.zeros((NS, NA))
+        np.add.at(grad, (S, A), coef)
+        np.add.at(grad, S, -(coef[:, None] * pi[S]))
+        if ent > 0:
+            logp = np.log(pi + 1e-12)
+            H = -(pi * logp).sum(1)
+            np.add.at(grad, S, ent * (-pi * (logp + H[:, None]))[S])
+        theta = theta + lr * grad / len(S)
+    return theta
+
+
+def ppo_train(iters: int = 80, n_ep: int = 20, epochs: int = 20, lr: float = 3.0,
+              clip: float = 0.2, gamma: float = 0.95, seed: int = 0,
+              use_clip: bool = True) -> tuple[Arr, Arr, Arr]:
+    rng = np.random.default_rng(seed)
+    theta = np.zeros((NS, NA))
+    base = np.zeros(NS)
+    cnt = np.zeros(NS)
+    hist: list[float] = []
+    steps: list[float] = []
+    for _ in range(iters):
+        S, A, G, rets, outs = collect(theta, rng, n_ep, gamma)
+        for s, g in zip(S, G):
+            cnt[s] += 1
+            base[s] += (g - base[s]) / cnt[s]
+        adv = G - base[S]
+        sd = float(adv.std())
+        if sd > 1e-8:
+            adv = adv / sd
+        p_old = softmax_rows(theta)[S, A]
+        before = softmax_rows(theta)
+        theta = policy_update(theta, S, A, adv, p_old, epochs, lr, clip, use_clip)
+        steps.append(float(np.abs(softmax_rows(theta) - before).max()))
+        hist.append(float(np.mean(rets)))
+    return theta, np.array(hist), np.array(steps)
+
+
+def learning_from_old_attempts() -> None:
+    """Off-policy: build the table from attempts made by somebody else."""
+    P, R, D, OUT, STAY = WORLD
+    rng = np.random.default_rng(5)
+    S: list[int] = []
+    A: list[int] = []
+    n_bin = 0
+    n_ep = 1500
+    for _ in range(n_ep):
+        s = S0
+        for _ in range(MAXSTEPS):
+            a = int(rng.integers(NA))
+            S.append(s)
+            A.append(a)
+            if D[s, a]:
+                n_bin += 1 if OUT[s, a] == 'bin' else 0
+                break
+            s = int(P[s, a])
+    Sa, Aa = np.array(S), np.array(A)
+    Rw = R[Sa, Aa]
+    S2 = P[Sa, Aa]
+    Dn = D[Sa, Aa]
+    idx = Sa * NA + Aa
+    counts = np.bincount(idx, minlength=NS * NA).astype(float)
+    print(f'[off-policy] {n_ep} attempts by a policy that acts at random: '
+          f'{len(Sa)} stored steps, {n_bin} of the attempts reached the bin')
+    Q = np.zeros((NS, NA))
+    gamma = 0.95
+    curve: list[float] = []
+    for sweep in range(40):
+        tgt = Rw + gamma * np.where(Dn, 0.0, Q[S2].max(1))
+        tot = np.bincount(idx, weights=tgt, minlength=NS * NA)
+        Qn = np.where(counts > 0, tot / np.maximum(counts, 1), Q.reshape(-1))
+        Q = Qn.reshape(NS, NA)
+        curve.append(evaluate(Q, 20, seed=2000)[1])
+    V, Qstar = value_iteration(gamma)
+    print(f'[off-policy] after one pass the policy is worth {curve[0]:.2f}, '
+          f'after five {curve[4]:.2f}, after forty {curve[-1]:.2f}; '
+          f'the best possible is {float(greedy_path(Qstar)[2].sum()):.2f}')
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(np.arange(1, 41), curve, marker='o', ms=3.5, color=TEAL, lw=1.9)
+    ax.axhline(float(greedy_path(Qstar)[2].sum()), color=SLIDE, ls='--', lw=1.3,
+               label='the best possible')
+    ax.set_xlabel('passes over the stored attempts', fontsize=10)
+    ax.set_ylabel('reward of the policy read off the table', fontsize=10)
+    ax.set_title(f'Learning from {n_ep} attempts that the learner never made',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax = axes[1]
+    _table(ax, 'The route it ends up with', small=True)
+    ss, aa, rr, out = greedy_path(Q)
+    _draw_path(ax, ss, aa, TEAL)
+    ax.text(2.5, -0.32, f'{len(aa)} actions, reward {rr.sum():.2f}, ends at the {out}',
+            ha='center', fontsize=10, color=INK)
+    fig.suptitle('Off-policy learning: the attempts can come from anywhere',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'learning-from-old-attempts.svg')
+
+
+def on_policy_goes_stale() -> None:
+    """On-policy: the same batch used again and again stops telling the truth."""
+    rng = np.random.default_rng(11)
+    theta = np.zeros((NS, NA))
+    gamma = 0.95
+    S, A, G, rets, outs = collect(theta, rng, 60, gamma)
+    base = np.zeros(NS)
+    cnt = np.zeros(NS)
+    for s, g in zip(S, G):
+        cnt[s] += 1
+        base[s] += (g - base[s]) / cnt[s]
+    adv = G - base[S]
+    adv = adv / max(float(adv.std()), 1e-8)
+    p_old = softmax_rows(theta)[S, A]
+    passes: list[int] = []
+    truth: list[float] = []
+    for block in range(31):
+        if block > 0:
+            theta = policy_update(theta, S, A, adv, p_old, 4, 3.0, 0.2, True)
+        chk = np.random.default_rng(900 + block)
+        _, _, _, r2, _ = collect(theta, chk, 40, gamma)
+        passes.append(block * 4)
+        truth.append(float(np.mean(r2)))
+    bestat = int(np.argmax(truth))
+    print(f'[on-policy] one batch of 60 attempts, reused: the true reward peaks at '
+          f'{truth[bestat]:.2f} after {passes[bestat]} passes and falls to '
+          f'{truth[-1]:.2f} after {passes[-1]}')
+    fig, ax = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(passes, truth, marker='o', ms=4, color=WRIST, lw=2.0)
+    ax.axvline(passes[bestat], color=MUTED, ls='--', lw=1.2)
+    ax.text(passes[bestat] + 1, min(truth) + 0.4,
+            f'best after {passes[bestat]} passes', fontsize=9.5, color=MUTED)
+    ax.set_xlabel('number of gradient passes made over the same 60 attempts', fontsize=10)
+    ax.set_ylabel('reward the policy really collects now', fontsize=10)
+    ax.set_title('Reusing one batch helps for a while and then hurts',
+                 fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'on-policy-goes-stale.svg')
+
+
+def the_clip() -> None:
+    clip = 0.2
+    r = np.linspace(0.0, 2.0, 401)
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.7), facecolor='white', sharey=True)
+    for ax, adv, name in ((axes[0], 1.0, 'an action that turned out better than expected'),
+                          (axes[1], -1.0, 'an action that turned out worse than expected')):
+        _plain(ax)
+        plain = r * adv
+        limited = np.minimum(r * adv, np.clip(r, 1 - clip, 1 + clip) * adv)
+        ax.plot(r, plain, color=MUTED, lw=1.8, ls='--', label='no limit')
+        ax.plot(r, limited, color=LINK, lw=2.4, label='with the limit')
+        ax.axvspan(1 - clip, 1 + clip, color=LINK_PALE, alpha=0.45, zorder=0)
+        ax.axvline(1.0, color=INK, lw=0.8)
+        ax.set_xlabel('new chance of the action divided by the old chance', fontsize=10)
+        ax.set_title(name, fontsize=10.5, weight='bold', color=INK)
+        ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+        ax.text(1.0, -2.3, f'allowed band\n{1 - clip:.1f} to {1 + clip:.1f}',
+                ha='center', fontsize=9, color=LINK)
+    axes[0].set_ylabel('what the update is paid for the change', fontsize=10)
+    axes[0].set_ylim(-2.6, 2.3)
+    print(f'[clip] with a band of {1 - clip:.1f} to {1 + clip:.1f}, raising the chance '
+          f'of a good action beyond {1 + clip:.1f} times is paid nothing extra: '
+          f'the value stays at {1 + clip:.2f}')
+    print(f'[clip] for a bad action the update is paid down to {-(1 + clip):.2f} and no '
+          f'further')
+    fig.suptitle('Proximal policy optimisation pays nothing for a change bigger than '
+                 'the band', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'the-clip.svg')
+
+
+def with_and_without_the_limit() -> None:
+    seeds = [0, 1, 2]
+    res: dict[bool, tuple[Arr, Arr]] = {}
+    for use_clip in (True, False):
+        hs, sts = [], []
+        for seed in seeds:
+            _, h, st = ppo_train(seed=seed, use_clip=use_clip)
+            hs.append(h)
+            sts.append(st)
+        res[use_clip] = (np.array(hs), np.array(sts))
+        h = np.array(hs)
+        print(f'[limit] clip={use_clip}: best reward on the way {h.max(1).mean():.2f}, '
+              f'reward over the last ten rounds {h[:, -10:].mean():.2f}, '
+              f'biggest change in one action chance {np.array(sts).max():.3f}')
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.9), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    for use_clip, colour, name in ((True, LINK, 'with the limit'),
+                                   (False, GRIP, 'without the limit')):
+        h = res[use_clip][0]
+        ax.plot(np.arange(h.shape[1]), h.mean(0), color=colour, lw=2.0, label=name)
+        ax.fill_between(np.arange(h.shape[1]), h.min(0), h.max(0), color=colour,
+                        alpha=0.15)
+    ax.axhline(1.30, color=JOINT, ls=':', lw=1.3, label='the tray route, 1.30')
+    ax.set_xlabel('round of collect-and-improve', fontsize=10)
+    ax.set_ylabel('average reward of the 20 attempts in the round', fontsize=10)
+    ax.set_title('Three runs each, band shows best and worst', fontsize=11.5,
+                 weight='bold', color=INK)
+    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    ax = axes[1]
+    _plain(ax)
+    for use_clip, colour, name in ((True, LINK, 'with the limit'),
+                                   (False, GRIP, 'without the limit')):
+        st = res[use_clip][1]
+        ax.plot(np.arange(st.shape[1]), st.mean(0), color=colour, lw=2.0, label=name)
+    ax.set_xlabel('round of collect-and-improve', fontsize=10)
+    ax.set_ylabel('biggest change in one action chance, in one round', fontsize=10)
+    ax.set_ylim(0, 1.05)
+    ax.set_title('How far the policy moved in a single round', fontsize=11.5,
+                 weight='bold', color=INK)
+    ax.legend(fontsize=9, frameon=False, loc='center right')
+    fig.suptitle('Take the limit away and the policy jumps, then collapses',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'with-and-without-the-limit.svg')
+
+
+# ==========================================================================
+# PAGE 1, section 6: why this happens in a simulator, and crossing over
+# ==========================================================================
+
+SECONDS_SIM: float = 0.002     # seconds per action inside this script
+SECONDS_ARM: float = 3.0       # seconds per action on a real arm, with resets
+
+
+def how_many_attempts() -> None:
+    lens: list[int] = []
+    q_learn(MAIN_EPISODES, 1.0, seed=7, eps1=0.05, count=lens)
+    total = int(sum(lens))
+    grip = total  # every action is one command sent to the arm
+    sim_h = total * SECONDS_SIM / 3600.0
+    arm_h = total * SECONDS_ARM / 3600.0
+    print(f'[cost] the worked example used {MAIN_EPISODES} attempts and {total} actions')
+    print(f'[cost] at {SECONDS_SIM} s an action that is {sim_h * 3600:.0f} s of '
+          f'simulated time; at {SECONDS_ARM} s an action on a real arm it is '
+          f'{arm_h:.0f} hours, or {arm_h / 24:.1f} days of running')
+    print(f'[cost] the first attempt that reached the bin was number 658, so 657 '
+          f'attempts paid for nothing')
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    k = 200
+    ax.plot(np.arange(len(lens)), _smooth(np.array(lens, dtype=float), k), color=TEAL,
+            lw=1.9)
+    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_ylabel('actions used in the attempt', fontsize=10)
+    ax.set_title(f'{total:,} actions in all, over {MAIN_EPISODES:,} attempts',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax.text(len(lens) * 0.35, max(_smooth(np.array(lens, dtype=float), k)) * 0.8,
+            'early attempts run to the\ntime limit of 80 actions', fontsize=9.5,
+            color=MUTED)
+    ax = axes[1]
+    _plain(ax)
+    hours = [sim_h, arm_h]
+    ax.bar([0, 1], hours, width=0.5, color=[LINK, GRIP], edgecolor=INK, lw=0.7)
+    ax.set_yscale('log')
+    for x, v in zip([0, 1], hours):
+        ax.text(x, v * 1.35, f'{v:.3g} hours', ha='center', fontsize=11, weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels([f'in this script\n({SECONDS_SIM} s an action)',
+                        f'on a real arm\n({SECONDS_ARM:.0f} s an action, with resets)'],
+                       fontsize=10)
+    ax.set_ylabel('hours of running (log scale)', fontsize=10)
+    ax.set_ylim(1e-3, arm_h * 12)
+    ax.set_title('The same learning, done in the two places', fontsize=11.5,
+                 weight='bold', color=INK)
+    fig.suptitle('The number of attempts is why this is done in a simulator',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'how-many-attempts.svg')
+
+
+SIM2REAL: tuple[list[Arr], list[Arr]] | None = None
+
+
+def sim2real_runs() -> tuple[list[Arr], list[Arr]]:
+    """One set of policies trained in a perfect simulator, one set trained with the
+    slipping chance drawn fresh for every attempt."""
+    global SIM2REAL
+    if SIM2REAL is None:
+        clean, rand = [], []
+        for seed in range(6):
+            Q, _, _, _ = q_learn(6000, 1.0, seed=400 + seed, eps1=0.05, slip=0.0)
+            clean.append(Q)
+            Q2, _, _, _ = q_learn(6000, 1.0, seed=800 + seed, eps1=0.05,
+                                  slip_range=(0.0, 0.35))
+            rand.append(Q2)
+        SIM2REAL = (clean, rand)
+    return SIM2REAL
+
+
+def the_reality_gap() -> None:
+    clean, rand = sim2real_runs()
+    slips = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35]
+    got = []
+    for sl in slips:
+        v = float(np.mean([evaluate(Q, 60, seed=3000 + i, slip=sl)[0]['bin']
+                           for i, Q in enumerate(clean)]))
+        got.append(v)
+        print(f'[gap] policy trained in the perfect simulator, tested with a '
+              f'{sl:.2f} chance that a move does not happen: reaches the bin on '
+              f'{v:.2f} of attempts')
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.9), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(slips, got, marker='o', color=GRIP, lw=2.1)
+    for x, v in zip(slips, got):
+        ax.text(x, v + 0.035, f'{v:.2f}', ha='center', fontsize=9, color=GRIP)
+    ax.set_ylim(-0.03, 1.12)
+    ax.set_xlabel('chance that a commanded move does not happen', fontsize=10)
+    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
+    ax.set_title('Trained where every move works, tested where some do not',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax = axes[1]
+    _table(ax, 'One failed attempt at a 0.25 slipping chance', small=True)
+    rng = np.random.default_rng(12)
+    for _ in range(40):
+        ss, aa, rr, out = rollout(clean[0], rng, 0.0, WORLD, slip=0.25)
+        if out != 'bin':
+            break
+    _draw_path(ax, ss, aa, GRIP)
+    ax.text(2.5, -0.32, f'{len(aa)} actions, reward {rr.sum():.2f}, ended as "{out}"',
+            ha='center', fontsize=10, color=INK)
+    print(f'[gap] one failed attempt at 0.25: {len(aa)} actions, reward {rr.sum():.2f}, '
+          f'ended as {out}')
+    fig.suptitle('The reality gap: the world the policy meets is not the world it '
+                 'learned in', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'the-reality-gap.svg')
+
+
+def domain_randomisation() -> None:
+    clean, rand = sim2real_runs()
+    slips = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.45]
+    a = [float(np.mean([evaluate(Q, 60, seed=3000 + i, slip=sl)[0]['bin']
+                        for i, Q in enumerate(clean)])) for sl in slips]
+    b = [float(np.mean([evaluate(Q, 60, seed=3000 + i, slip=sl)[0]['bin']
+                        for i, Q in enumerate(rand)])) for sl in slips]
+    for sl, x, y in zip(slips, a, b):
+        print(f'[randomise] slipping chance {sl:.2f}: one fixed simulator {x:.2f}, '
+              f'randomised simulator {y:.2f}')
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.9), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(slips, a, marker='o', color=GRIP, lw=2.1, label='trained in one perfect simulator')
+    ax.plot(slips, b, marker='s', color=SLIDE, lw=2.1,
+            label='trained with the slipping chance drawn fresh each attempt')
+    ax.axvspan(0.0, 0.35, color=SLIDE, alpha=0.08, zorder=0)
+    ax.text(0.175, 0.08, 'range the randomised\nlearner saw', ha='center', fontsize=9,
+            color=SLIDE)
+    ax.set_ylim(-0.03, 1.12)
+    ax.set_xlabel('chance that a commanded move does not happen, at test time',
+                  fontsize=10)
+    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
+    ax.set_title('Six runs each', fontsize=11.5, weight='bold', color=INK)
+    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    ax = axes[1]
+    _plain(ax)
+    xs = np.arange(3)
+    pick = [0.0, 0.2, 0.45]
+    va = [a[slips.index(p)] for p in pick]
+    vb = [b[slips.index(p)] for p in pick]
+    ax.bar(xs - 0.2, va, width=0.4, color=GRIP, edgecolor=INK, lw=0.6,
+           label='one perfect simulator')
+    ax.bar(xs + 0.2, vb, width=0.4, color=SLIDE, edgecolor=INK, lw=0.6,
+           label='randomised simulator')
+    for x, v in zip(xs - 0.2, va):
+        ax.text(x, v + 0.025, f'{v:.2f}', ha='center', fontsize=9.5)
+    for x, v in zip(xs + 0.2, vb):
+        ax.text(x, v + 0.025, f'{v:.2f}', ha='center', fontsize=9.5)
+    ax.set_xticks(xs)
+    ax.set_xticklabels([f'test slip {p:.2f}' for p in pick], fontsize=10)
+    ax.set_ylim(0, 1.15)
+    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
+    ax.set_title('Including the last one, which is outside the range it trained on',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    fig.suptitle('Domain randomisation: train on many worlds so the real one is one '
+                 'of them', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'domain-randomisation.svg')
+
+
+def what_randomising_costs() -> None:
+    curves_a, curves_b = [], []
+    for seed in range(4):
+        _, r1, s1, _ = q_learn(6000, 1.0, seed=400 + seed, eps1=0.05, slip=0.0)
+        _, r2, s2, _ = q_learn(6000, 1.0, seed=800 + seed, eps1=0.05,
+                               slip_range=(0.0, 0.35))
+        curves_a.append(s1)
+        curves_b.append(s2)
+    A = np.array(curves_a)
+    B = np.array(curves_b)
+    print(f'[cost of randomising] share of training attempts that reached the bin: '
+          f'perfect simulator {A.mean():.2f}, randomised {B.mean():.2f}')
+    clean, rand = sim2real_runs()
+    at0_a = float(np.mean([evaluate(Q, 60, seed=4000 + i, slip=0.0)[0]['bin']
+                           for i, Q in enumerate(clean)]))
+    at0_b = float(np.mean([evaluate(Q, 60, seed=4000 + i, slip=0.0)[0]['bin']
+                           for i, Q in enumerate(rand)]))
+    ret_a = float(np.mean([evaluate(Q, 60, seed=4000 + i, slip=0.0)[1]
+                           for i, Q in enumerate(clean)]))
+    ret_b = float(np.mean([evaluate(Q, 60, seed=4000 + i, slip=0.0)[1]
+                           for i, Q in enumerate(rand)]))
+    print(f'[cost of randomising] in the perfect world the two policies reach the bin '
+          f'on {at0_a:.2f} and {at0_b:.2f} of attempts, with reward {ret_a:.2f} and '
+          f'{ret_b:.2f}')
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.9), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(np.arange(A.shape[1]), _smooth(A.mean(0), 200), color=GRIP, lw=2.0,
+            label='one perfect simulator')
+    ax.plot(np.arange(B.shape[1]), _smooth(B.mean(0), 200), color=SLIDE, lw=2.0,
+            label='randomised simulator')
+    ax.set_ylim(-0.03, 1.05)
+    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_ylabel('share of attempts reaching the bin while training', fontsize=10)
+    ax.set_title('Randomising makes the learning slower', fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='lower right')
+    ax = axes[1]
+    _plain(ax)
+    xs = np.arange(2)
+    ax.bar(xs - 0.2, [at0_a, at0_b], width=0.4, color=PURPLE, edgecolor=INK, lw=0.6,
+           label='reaches the bin, perfect world')
+    ax.bar(xs + 0.2, [ret_a / 9.0, ret_b / 9.0], width=0.4, color=TEAL, edgecolor=INK,
+           lw=0.6, label='reward, as a share of the best possible 8.90')
+    for x, v in zip(xs - 0.2, [at0_a, at0_b]):
+        ax.text(x, v + 0.025, f'{v:.2f}', ha='center', fontsize=9.5)
+    for x, v in zip(xs + 0.2, [ret_a, ret_b]):
+        ax.text(x, v / 9.0 + 0.025, f'{v:.2f}', ha='center', fontsize=9.5)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(['one perfect simulator', 'randomised simulator'], fontsize=10)
+    ax.set_ylim(0, 1.18)
+    ax.set_title('What it costs back in the easy world', fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    fig.suptitle('Randomising buys a policy that survives the gap, and it is not free',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'what-randomising-costs.svg')
+
+
+# ==========================================================================
+# PAGE 2: where the reward comes from
+# ==========================================================================
+
+W2: Tables = relabel_tray(build(tray_bonus=-1.0, tray_ends=False))
+FARM: Tables = relabel_tray(build(tray_bonus=2.0, tray_ends=False))
+for _s in range(NS):
+    if (unsid(_s)[0], unsid(_s)[1]) == TRAY:
+        FARM[3][_s, 5] = 'tray'
+
+
+def _grip(a: int) -> float:
+    return GRIP_COST if a >= 4 else 0.0
+
+
+def r_true(r: int, c: int, h: bool, a: int, out: str) -> float:
+    v = STEP_COST - _grip(a)
+    if out == 'bin':
+        v += 10.0
+    elif out == 'drop':
+        v -= 1.0
+    return v
+
+
+def r_dist(r: int, c: int, h: bool, a: int, out: str) -> float:
+    """What an engineer writes first: be near the block."""
+    v = 1.0 - 0.3 * manhattan((r, c), BLOCK) - _grip(a)
+    if out == 'bin':
+        v += 10.0
+    return v
+
+
+def r_hold(r: int, c: int, h: bool, a: int, out: str) -> float:
+    """The true reward with a bonus for having the block in the gripper."""
+    return r_true(r, c, h, a, out) + (0.5 if h else 0.0)
+
+
+def _target(r: int, c: int, h: bool) -> int:
+    return manhattan((r, c), BIN if h else BLOCK)
+
+
+def r_dense(r: int, c: int, h: bool, a: int, out: str) -> float:
+    """The true reward plus a push towards whatever is wanted next."""
+    return r_true(r, c, h, a, out) - 0.3 * _target(r, c, h)
+
+
+def potential(s: int) -> float:
+    r, c, h = unsid(s)
+    return -0.3 * _target(r, c, h) + 2.0 * float(h)
+
+
+def shaped_by_potential(t: Tables, gamma: float = 0.95) -> Tables:
+    """Add gamma * potential(next state) - potential(state) to every reward."""
+    P, R, D, OUT, STAY = t
+    phi = np.array([potential(s) for s in range(NS)])
+    R2 = R + gamma * np.where(D, 0.0, phi[P]) - phi[:, None]
+    return P, R2, D, OUT, STAY
+
+
+T_TRUE: Tables = rewrite_reward(W2, r_true)
+T_DIST: Tables = rewrite_reward(W2, r_dist)
+T_HOLD: Tables = rewrite_reward(W2, r_hold)
+T_DENSE: Tables = rewrite_reward(W2, r_dense)
+T_POT: Tables = shaped_by_potential(T_TRUE)
+T_FARM: Tables = rewrite_reward(FARM, lambda r, c, h, a, out:
+                                r_true(r, c, h, a, out) + (3.0 if out == 'tray' else 0.0))
+
+
+def _bin_rate(Q: Arr, t: Tables, n: int = 60, seed: int = 50) -> float:
+    return evaluate(Q, n, seed=seed, t=t)[0]['bin']
+
+
+# ---------------- section 1: a reward written by hand ----------------
+
+def the_written_reward() -> None:
+    vals = np.array([r_dist(*unsid(s), 0, '') for s in range(NS)])
+    print('[written] the reward for a move action, square by square (empty gripper):')
+    for r in range(ROWS):
+        print('[written]   ' + ' '.join(f'{vals[sid(r, c, False)]:+5.2f}'
+                                        for c in range(COLS)))
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.2), facecolor='white')
+    _table(axes[0], 'Reward for one move, square by square', small=True, label_top=True)
+    _draw_numbers(axes[0], vals, False, '{:+.2f}', 10.0, dy=-0.2)
+    ax = axes[1]
+    _plain(ax)
+    ds = np.arange(0, 7)
+    ax.plot(ds, 1.0 - 0.3 * ds, marker='o', color=WRIST, lw=2.2)
+    for d in ds:
+        ax.text(d, 1.0 - 0.3 * d + 0.08, f'{1.0 - 0.3 * d:+.2f}', ha='center',
+                fontsize=9.5)
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_xlabel('squares between the gripper and the block', fontsize=10)
+    ax.set_ylabel('reward for that step', fontsize=10)
+    ax.set_title('reward = 1.00 minus 0.30 for every square away', fontsize=11.5,
+                 weight='bold', color=INK)
+    ax.set_ylim(-1.0, 1.35)
+    fig.suptitle('The first reward anybody writes: pay the arm for being near the block',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'the-written-reward.svg')
+
+
+def the_hovering_policy() -> None:
+    V, Q = value_iteration(0.95, t=T_DIST)
+    ss, aa, rr, out = greedy_path(Q, t=T_DIST)
+    true_reward = float(T_TRUE[1][ss, aa].sum())
+    print(f'[hover] the best policy under the written reward takes '
+          f'{[ACTIONS[a] for a in aa[:6]]} and then {ACTIONS[int(aa[-1])]} until the '
+          f'time runs out')
+    print(f'[hover] it collects {rr.sum():.2f} of the written reward, ends as "{out}", '
+          f'and scores {true_reward:.2f} on the real job')
+    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.0), facecolor='white')
+    _table(axes[0], 'The route it takes', small=True)
+    _draw_path(axes[0], ss, aa, GRIP)
+    axes[0].text(2.5, -0.32, f'{len(aa)} actions, then the time limit', ha='center',
+                 fontsize=10, color=INK)
+    _table(axes[1], 'Best action, empty gripper', small=True, label_top=True)
+    _draw_policy(axes[1], Q, False, PURPLE, 12.0)
+    _table(axes[2], 'Best action, holding the block', small=True, label_top=True)
+    _draw_policy(axes[2], Q, True, PURPLE, 12.0)
+    fig.suptitle(f'The policy walks to the block and waits: written reward '
+                 f'{rr.sum():.2f}, block in the bin 0 times',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'the-hovering-policy.svg')
+
+
+def reward_up_task_flat() -> None:
+    curves, succ = [], []
+    for seed in range(4):
+        Q, rets, sc, _ = q_learn(4000, 1.0, seed=70 + seed, eps1=0.05, t=T_DIST)
+        curves.append(rets)
+        succ.append(sc)
+    A, S = np.array(curves), np.array(succ)
+    print(f'[hover] over {A.shape[0]} runs of 4,000 attempts each, the written reward '
+          f'rises from {A[:, :100].mean():.2f} to {A[:, -100:].mean():.2f}')
+    print(f'[hover] the share of attempts that put the block in the bin stays at '
+          f'{S.mean():.3f}')
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(np.arange(A.shape[1]), _smooth(A.mean(0), 200), color=WRIST, lw=2.1,
+            label='the written reward it collects')
+    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_ylabel('written reward collected in the attempt', fontsize=10)
+    ax2 = ax.twinx()
+    ax2.plot(np.arange(S.shape[1]), _smooth(S.mean(0), 200), color=PURPLE, lw=2.1,
+             label='share of attempts that put the block in the bin')
+    ax2.set_ylim(-0.03, 1.05)
+    ax2.set_ylabel('share of attempts that reach the bin', fontsize=10, color=PURPLE)
+    ax2.tick_params(labelcolor=PURPLE)
+    ax.set_title('The number the learner is paid goes up and the job is never done',
+                 fontsize=12, weight='bold', color=INK)
+    lines = ax.get_lines() + ax2.get_lines()
+    ax.legend(lines, [ln.get_label() for ln in lines], fontsize=9.5, frameon=False,
+              loc='center right')
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'reward-up-task-flat.svg')
+
+
+def three_behaviours_scored() -> None:
+    V, Qd = value_iteration(0.95, t=T_DIST)
+    hover = greedy_path(Qd, t=T_DIST)
+    V2, Qt = value_iteration(0.95, t=T_TRUE)
+    proper = greedy_path(Qt, t=T_TRUE)
+    rng = np.random.default_rng(21)
+    wander = rollout(np.zeros((NS, NA)), rng, 1.0, W2)
+    names = ['wait by the block', 'put it in the bin', 'move at random']
+    cases = [hover, proper, wander]
+    written = [float(T_DIST[1][ss, aa].sum()) for ss, aa, _, _ in cases]
+    real = [float(T_TRUE[1][ss, aa].sum()) for ss, aa, _, _ in cases]
+    done = [1.0 if o == 'bin' else 0.0 for _, _, _, o in cases]
+    for n, w, t, d in zip(names, written, real, done):
+        print(f'[score] "{n}": written reward {w:+7.2f}, true reward {t:+6.2f}, '
+              f'block in the bin {int(d)}')
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
+    xs = np.arange(3)
+    ax = axes[0]
+    _plain(ax)
+    ax.bar(xs, written, width=0.5, color=[GRIP, SLIDE, MUTED], edgecolor=INK, lw=0.6)
+    for x, v in zip(xs, written):
+        ax.text(x, v + 1.5, f'{v:.1f}', ha='center', fontsize=10.5, weight='bold')
+    ax.set_xticks(xs)
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylabel('total written reward', fontsize=10)
+    ax.set_ylim(min(written) - 6, max(written) + 12)
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_title('Scored by the reward that was written', fontsize=11.5, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    ax.bar(xs, done, width=0.5, color=[GRIP, SLIDE, MUTED], edgecolor=INK, lw=0.6)
+    for x, v, t in zip(xs, done, real):
+        ax.text(x, v + 0.04, f'{int(v)}', ha='center', fontsize=10.5, weight='bold')
+        ax.text(x, 0.5, f'true reward\n{t:.2f}', ha='center', fontsize=9.5, color=INK)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylim(0, 1.25)
+    ax.set_ylabel('block ended up in the bin', fontsize=10)
+    ax.set_title('Scored by the job that was wanted', fontsize=11.5, weight='bold')
+    fig.suptitle('The behaviour that wins under the written reward is the one that '
+                 'never does the job', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'three-behaviours-scored.svg')
+
+
+# ---------------- section 2: sparse, dense and shaping ----------------
+
+def sparse_against_dense() -> None:
+    V, Q = value_iteration(0.95, t=T_TRUE)
+    ss, aa, rr, out = greedy_path(Q, t=T_TRUE)
+    dense = T_DENSE[1][ss, aa]
+    print(f'[sparse] the same ten actions pay {[round(float(x), 2) for x in rr]} '
+          f'under the sparse reward')
+    print(f'[sparse] and {[round(float(x), 2) for x in dense]} under the dense one')
+    print(f'[sparse] totals: sparse {rr.sum():.2f}, dense {dense.sum():.2f}')
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), facecolor='white')
+    steps = np.arange(len(rr))
+    for ax, vals, name, colour in ((axes[0], rr, 'sparse: nothing until the end', LINK),
+                                   (axes[1], dense,
+                                    'dense: a little every step', TEAL)):
+        _plain(ax)
+        ax.bar(steps, vals, color=colour, edgecolor=INK, lw=0.6)
+        for i, v in enumerate(vals):
+            ax.text(i, v + (0.3 if v >= 0 else -0.5), f'{v:.2f}', ha='center',
+                    fontsize=8.5)
+        ax.axhline(0, color=INK, lw=0.9)
+        ax.set_xticks(steps)
+        ax.set_xticklabels([ACTIONS[a][:1].upper() for a in aa], fontsize=9)
+        ax.set_xlabel('the ten actions of the same attempt', fontsize=10)
+        ax.set_ylabel('reward for that action', fontsize=10)
+        ax.set_ylim(-2.6, 11.5)
+        ax.set_title(f'{name}, total {vals.sum():.2f}', fontsize=11.5, weight='bold')
+    fig.suptitle('One attempt, two rewards: the sparse one says nothing until the '
+                 'block lands', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'sparse-against-dense.svg')
+
+
+SHAPING: dict[str, Arr] | None = None
+
+
+def shaping_runs() -> dict[str, Arr]:
+    global SHAPING
+    if SHAPING is None:
+        out: dict[str, Arr] = {}
+        for name, tab in (('sparse', T_TRUE), ('dense', T_DENSE), ('potential', T_POT)):
+            runs = []
+            for seed in range(4):
+                _, _, sc, _ = q_learn(6000, 1.0, seed=150 + seed, eps1=0.05, t=tab)
+                runs.append(sc)
+            out[name] = np.array(runs)
+        SHAPING = out
+    return SHAPING
+
+
+def how_fast_each_one_learns() -> None:
+    runs = shaping_runs()
+    fig, ax = plt.subplots(figsize=(9.8, 5.3), facecolor='white')
+    _plain(ax)
+    for name, colour, label in (
+            ('sparse', LINK, 'sparse: +10 only when the block lands in the bin'),
+            ('dense', WRIST, 'dense: also pays for getting closer each step'),
+            ('potential', SLIDE, 'potential-based: the same push, written as a difference')):
+        arr = runs[name]
+        ax.plot(np.arange(arr.shape[1]), _smooth(arr.mean(0), 200), color=colour, lw=2.1,
+                label=label)
+        half = int(np.argmax(_smooth(arr.mean(0), 200) > 0.5)) if (
+            _smooth(arr.mean(0), 200) > 0.5).any() else -1
+        print(f'[shaping] {name}: reaches the bin on {arr[:, -200:].mean():.2f} of the '
+              f'last 200 attempts; first passed half of attempts at attempt {half}')
+    ax.set_ylim(-0.03, 1.07)
+    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
+    ax.set_title('Four runs of each, averaged', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    fig.suptitle('A dense reward reaches the goal sooner than a sparse one',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'how-fast-each-one-learns.svg')
+
+
+def shaping_that_changes_the_answer() -> None:
+    V, Q = value_iteration(0.95, t=T_HOLD)
+    ss, aa, rr, out = greedy_path(Q, t=T_HOLD)
+    true_r = float(T_TRUE[1][ss, aa].sum())
+    Ql, _, sc, _ = q_learn(4000, 1.0, seed=61, eps1=0.05, t=T_HOLD)
+    rate = _bin_rate(Ql, T_HOLD)
+    print(f'[hold bonus] the best policy under the holding bonus does '
+          f'{[ACTIONS[a] for a in aa[:6]]} and then {ACTIONS[int(aa[-1])]}; it collects '
+          f'{rr.sum():.2f} of the shaped reward, {true_r:.2f} of the real one, and ends '
+          f'as "{out}"')
+    print(f'[hold bonus] a learner trained on it reaches the bin on {rate:.2f} of '
+          f'attempts')
+    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.0), facecolor='white')
+    _table(axes[0], 'The route under the holding bonus', small=True)
+    _draw_path(axes[0], ss, aa, GRIP)
+    axes[0].text(2.5, -0.32, f'{len(aa)} actions, shaped reward {rr.sum():.2f}, '
+                             f'real reward {true_r:.2f}', ha='center', fontsize=9.5,
+                 color=INK)
+    _table(axes[1], 'Best action while holding', small=True, label_top=True)
+    _draw_policy(axes[1], Q, True, PURPLE, 12.0)
+    ax = axes[2]
+    _plain(ax)
+    held = np.array([0.5 * t for t in range(MAXSTEPS + 1)])
+    ax.plot(np.arange(MAXSTEPS + 1), held, color=GRIP, lw=2.2,
+            label='keep holding: 0.50 a step, for ever')
+    ax.axhline(10.0, color=SLIDE, ls='--', lw=1.8, label='put it in the bin: +10, once')
+    ax.set_xlabel('steps spent holding the block', fontsize=10)
+    ax.set_ylabel('reward collected', fontsize=10)
+    ax.set_title('Why carrying it beats placing it', fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.suptitle('A bonus for holding the block changes which behaviour is best, not '
+                 'just how fast it is found', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'shaping-that-changes-the-answer.svg')
+
+
+def shaping_that_keeps_the_answer() -> None:
+    phi = np.array([potential(s) for s in range(NS)])
+    V1, Q1 = value_iteration(0.95, t=T_TRUE)
+    V2, Q2 = value_iteration(0.95, t=T_POT)
+    V3, Q3 = value_iteration(0.95, t=T_DENSE)
+    same_pot = int(sum(int(np.argmax(Q1[s])) == int(np.argmax(Q2[s]))
+                       for s in range(NS)))
+    same_dense = int(sum(int(np.argmax(Q1[s])) == int(np.argmax(Q3[s]))
+                         for s in range(NS)))
+    print(f'[potential] the potential-based reward agrees with the plain one on '
+          f'{same_pot} of {NS} states')
+    print(f'[potential] the plain dense reward agrees on {same_dense} of {NS} states')
+    fig, axes = plt.subplots(1, 3, figsize=(15.2, 5.0), facecolor='white')
+    _table(axes[0], 'The number attached to each square, empty gripper', small=True,
+           label_top=True)
+    _draw_numbers(axes[0], phi, False, '{:+.1f}', 10.0, dy=-0.2)
+    _table(axes[1], 'The same, holding the block', small=True, label_top=True)
+    _draw_numbers(axes[1], phi, True, '{:+.1f}', 10.0, dy=-0.2)
+    ax = axes[2]
+    _plain(ax)
+    xs = np.arange(2)
+    ax.bar(xs, [same_dense, same_pot], width=0.5, color=[WRIST, SLIDE], edgecolor=INK,
+           lw=0.6)
+    for x, v in zip(xs, [same_dense, same_pot]):
+        ax.text(x, v + 0.8, f'{v} of {NS}', ha='center', fontsize=11, weight='bold')
+    ax.set_xticks(xs)
+    ax.set_xticklabels(['plain dense reward', 'potential-based reward'], fontsize=10)
+    ax.set_ylim(0, NS + 6)
+    ax.set_ylabel('states where the best action is unchanged', fontsize=10)
+    ax.set_title('Does the shaping change the answer?', fontsize=11.5, weight='bold')
+    fig.suptitle('Shaping written as the difference of a number attached to each state '
+                 'leaves the best behaviour alone', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'shaping-that-keeps-the-answer.svg')
+
+
+# ---------------- section 3: a reward model learned from examples ----------------
+
+FEATURES: list[str] = ['always 1', 'row / 4', 'column / 4', 'holding',
+                       'steps to the bin / 8', 'steps to the block / 8']
+
+
+def feats(s: int) -> Arr:
+    r, c, h = unsid(s)
+    return np.array([1.0, r / 4.0, c / 4.0, float(h),
+                     manhattan((r, c), BIN) / 8.0, manhattan((r, c), BLOCK) / 8.0])
+
+
+FEAT: Arr = np.stack([feats(s) for s in range(NS)])
+
+
+def _sigmoid(z: Arr) -> Arr:
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def collect_labelled(n: int, seed: int) -> tuple[NDArray[np.int64], Arr]:
+    """Rollouts from a half-trained policy, each state labelled with whether that
+    attempt ended with the block in the bin."""
+    Qhalf, _, _, snaps = q_learn(2500, 1.0, seed=seed, eps1=0.3, t=T_DENSE)
+    rng = np.random.default_rng(seed + 1)
+    states: list[int] = []
+    labels: list[float] = []
+    wins = 0
+    for _ in range(n):
+        ss, aa, rr, out = rollout(Qhalf, rng, 0.25, W2)
+        y = 1.0 if out == 'bin' else 0.0
+        wins += int(y)
+        for s in ss:
+            states.append(int(s))
+            labels.append(y)
+    print(f'[reward model] {n} example attempts, {wins} of them ended with the block in '
+          f'the bin, giving {len(states)} labelled states')
+    return np.array(states), np.array(labels)
+
+
+def fit_reward_model(states: NDArray[np.int64], labels: Arr, steps: int = 4000,
+                     lr: float = 0.5) -> Arr:
+    X = FEAT[states]
+    w = np.zeros(X.shape[1])
+    for _ in range(steps):
+        p = _sigmoid(X @ w)
+        w -= lr * (X.T @ (p - labels)) / len(labels)
+    return w
+
+
+RM: tuple[Arr, NDArray[np.int64], Arr] | None = None
+
+
+def reward_model() -> tuple[Arr, NDArray[np.int64], Arr]:
+    global RM
+    if RM is None:
+        st, lb = collect_labelled(400, 55)
+        w = fit_reward_model(st, lb)
+        acc = float((( _sigmoid(FEAT[st] @ w) > 0.5) == (lb > 0.5)).mean())
+        print('[reward model] fitted weights: ' + ', '.join(
+            f'{n} {v:+.2f}' for n, v in zip(FEATURES, w)))
+        print(f'[reward model] it labels {acc:.2f} of the training states right')
+        RM = (w, st, lb)
+    return RM
+
+
+def the_examples_it_learns_from() -> None:
+    w, st, lb = reward_model()
+    win = np.bincount(st[lb > 0.5], minlength=NS).astype(float)
+    lose = np.bincount(st[lb < 0.5], minlength=NS).astype(float)
+    win2 = win.reshape(-1, 2).sum(1).repeat(2)
+    lose2 = lose.reshape(-1, 2).sum(1).repeat(2)
+    print(f'[reward model] states visited by attempts that worked: {int(win.sum())}; '
+          f'by attempts that failed: {int(lose.sum())}')
+    print(f'[reward model] the bin square was visited {int(win2[sid(*BIN, False)])} times '
+          f'in attempts that worked and {int(lose2[sid(*BIN, False)])} times in attempts '
+          f'that failed')
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.3), facecolor='white')
+    for ax, vals, name in ((axes[0], win2, 'visits during attempts that worked'),
+                           (axes[1], lose2, 'visits during attempts that failed')):
+        _table(ax, name, small=True, label_top=True)
+        _draw_numbers(ax, vals, False, '{:.0f}', 9.5, dy=-0.2)
+    fig.suptitle('The examples a reward model is fitted to: squares the arm stood on, '
+                 'labelled by how the attempt ended', fontsize=12.5, weight='bold',
+                 color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'the-examples-it-learns-from.svg')
+
+
+def what_the_reward_model_scores() -> None:
+    w, st, lb = reward_model()
+    score = _sigmoid(FEAT @ w)
+    print(f'[reward model] score at the bin holding the block {score[sid(*BIN, True)]:.2f}; '
+          f'at the bin with an empty gripper {score[sid(*BIN, False)]:.2f}; '
+          f'at the start {score[S0]:.2f}')
+    fig, axes = plt.subplots(1, 3, figsize=(15.4, 5.0), facecolor='white')
+    for ax, holding, name in ((axes[0], False, 'empty gripper'),
+                              (axes[1], True, 'holding the block')):
+        _table(ax, f'Score of every square, {name}', small=True, label_top=True)
+        _draw_numbers(ax, score, holding, '{:.2f}', 9.5, dy=-0.2)
+    ax = axes[2]
+    _plain(ax)
+    ax.barh(np.arange(len(w)), w, color=[LINK if v >= 0 else GRIP for v in w],
+            edgecolor=INK, lw=0.6)
+    ax.set_yticks(np.arange(len(w)))
+    ax.set_yticklabels(FEATURES, fontsize=9.5)
+    for i, v in enumerate(w):
+        ax.text(v + (0.12 if v >= 0 else -0.12), i, f'{v:+.2f}',
+                ha='left' if v >= 0 else 'right', va='center', fontsize=9.5)
+    ax.axvline(0, color=INK, lw=0.9)
+    ax.set_xlim(min(w) - 1.2, max(w) + 1.2)
+    ax.set_xlabel('weight the model gives the measurement', fontsize=10)
+    ax.set_title('What it decided mattered', fontsize=11.5, weight='bold')
+    fig.suptitle('The learned reward model: a score between 0 and 1 for every state',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'what-the-reward-model-scores.svg')
+
+
+def how_well_it_tells_them_apart() -> None:
+    w, st, lb = reward_model()
+    p = _sigmoid(FEAT[st] @ w)
+    acc = float(((p > 0.5) == (lb > 0.5)).mean())
+    good, bad = p[lb > 0.5], p[lb < 0.5]
+    print(f'[reward model] average score {good.mean():.2f} on states from attempts that '
+          f'worked and {bad.mean():.2f} on states from attempts that failed; it labels '
+          f'{acc:.2f} of them right')
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    bins = np.linspace(0, 1, 26)
+    ax.hist(bad, bins=bins, color=GRIP, alpha=0.7, label='states from attempts that failed')
+    ax.hist(good, bins=bins, color=SLIDE, alpha=0.7, label='states from attempts that worked')
+    ax.axvline(0.5, color=INK, ls='--', lw=1.2)
+    ax.set_xlabel('score the model gives the state', fontsize=10)
+    ax.set_ylabel('how many states', fontsize=10)
+    ax.set_title(f'It gets {acc:.0%} of them on the right side of 0.5', fontsize=11.5,
+                 weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='upper center')
+    ax = axes[1]
+    _plain(ax)
+    V, Qt = value_iteration(0.95, t=T_TRUE)
+    ss, aa, rr, out = greedy_path(Qt, t=T_TRUE)
+    along = _sigmoid(FEAT[ss] @ w)
+    ax.plot(np.arange(len(ss)), along, marker='o', color=PURPLE, lw=2.0)
+    for i, v in enumerate(along):
+        ax.text(i, v + 0.025, f'{v:.2f}', ha='center', fontsize=8.5)
+    ax.set_ylim(0, 1.08)
+    ax.set_xticks(np.arange(len(ss)))
+    ax.set_xticklabels([ACTIONS[a][:1].upper() for a in aa], fontsize=9)
+    ax.set_xlabel('the ten actions of a good attempt', fontsize=10)
+    ax.set_ylabel('score the model gives the state reached', fontsize=10)
+    ax.set_title('Along a good attempt the score climbs', fontsize=11.5, weight='bold')
+    print(f'[reward model] along a good attempt the score goes '
+          f'{[round(float(v), 2) for v in along]}')
+    fig.suptitle('A learned reward model turns "did it work" into a number for every '
+                 'step', fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'how-well-it-tells-them-apart.svg')
+
+
+def model_reward_tables() -> Tables:
+    w, st, lb = reward_model()
+    score = _sigmoid(FEAT @ w)
+    P, R, D, OUT, STAY = W2
+    R2 = score[P] - 0.1
+    return P, R2, D, OUT, STAY
+
+
+def training_against_the_model() -> None:
+    tab = model_reward_tables()
+    w, _, _ = reward_model()
+    score = _sigmoid(FEAT @ w)
+    checkpoints = [250, 500, 1000, 2000, 4000, 6000]
+    model_score: list[float] = []
+    real: list[float] = []
+    for n in checkpoints:
+        ms, rs = [], []
+        for seed in range(3):
+            Q, _, _, _ = q_learn(n, 1.0, seed=180 + seed, eps1=0.05, t=tab)
+            rng = np.random.default_rng(5000 + seed)
+            sc, hit = [], []
+            for _ in range(40):
+                ss, aa, rr, out = rollout(Q, rng, 0.0, W2)
+                sc.append(float(np.mean(score[ss])))
+                hit.append(1.0 if out == 'bin' else 0.0)
+            ms.append(float(np.mean(sc)))
+            rs.append(float(np.mean(hit)))
+        model_score.append(float(np.mean(ms)))
+        real.append(float(np.mean(rs)))
+        print(f'[against model] after {n} attempts: average score the model gives the '
+              f'states visited {model_score[-1]:.3f}, share of attempts that really '
+              f'reach the bin {real[-1]:.2f}')
+    fig, ax = plt.subplots(figsize=(9.4, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(checkpoints, model_score, marker='o', color=PURPLE, lw=2.1,
+            label='average score the reward model gives')
+    ax.plot(checkpoints, real, marker='s', color=SLIDE, lw=2.1,
+            label='share of attempts that really reach the bin')
+    for x, v in zip(checkpoints, model_score):
+        ax.text(x, v + 0.03, f'{v:.2f}', ha='center', fontsize=9, color=PURPLE)
+    for x, v in zip(checkpoints, real):
+        ax.text(x, v - 0.06, f'{v:.2f}', ha='center', fontsize=9, color=SLIDE)
+    ax.set_ylim(0, 1.1)
+    ax.set_xlabel('attempts of training against the learned reward model', fontsize=10)
+    ax.set_ylabel('score, and share of attempts', fontsize=10)
+    ax.set_title('Training on the model\'s score alone', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='center right')
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'training-against-the-model.svg')
+
+
+# ---------------- section 4: learning a reward from preferences ----------------
+
+def sample_attempts(n: int, seed: int) -> list[tuple[NDArray[np.int64], float, str]]:
+    """Attempts from policies of several standards, so the pairs are worth judging."""
+    rng = np.random.default_rng(seed)
+    pols: list[tuple[Arr, float]] = [(np.zeros((NS, NA)), 1.0)]
+    for ep, e in ((400, 0.4), (1500, 0.25), (4000, 0.1)):
+        Q, _, _, _ = q_learn(ep, 1.0, seed=seed + ep, eps1=0.2, t=T_DENSE)
+        pols.append((Q, e))
+    out: list[tuple[NDArray[np.int64], float, str]] = []
+    for i in range(n):
+        Q, e = pols[i % len(pols)]
+        ss, aa, rr, res = rollout(Q, rng, e, W2)
+        out.append((ss, float(T_TRUE[1][ss, aa].sum()), res))
+    return out
+
+
+def fit_from_preferences(pairs: list[tuple[int, int, int]],
+                         eps_list: list[tuple[NDArray[np.int64], float, str]],
+                         steps: int = 3000, lr: float = 0.2) -> Arr:
+    """Bradley-Terry: make the better-liked attempt score higher."""
+    sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
+    w = np.zeros(FEAT.shape[1])
+    A = np.array([p[0] for p in pairs])
+    B = np.array([p[1] for p in pairs])
+    y = np.array([float(p[2]) for p in pairs])
+    dif = sums[A] - sums[B]
+    for _ in range(steps):
+        p = _sigmoid(dif @ w)
+        w -= lr * (dif.T @ (p - y)) / max(len(pairs), 1)
+    return w
+
+
+def make_pairs(eps_list: list[tuple[NDArray[np.int64], float, str]], n: int,
+               tau: float, seed: int) -> list[tuple[int, int, int]]:
+    rng = np.random.default_rng(seed)
+    out: list[tuple[int, int, int]] = []
+    for _ in range(n):
+        i, j = int(rng.integers(len(eps_list))), int(rng.integers(len(eps_list)))
+        if i == j:
+            continue
+        gi, gj = eps_list[i][1], eps_list[j][1]
+        p = 1.0 / (1.0 + np.exp(-(gi - gj) / tau))
+        out.append((i, j, int(rng.random() < p)))
+    return out
+
+
+PREF: tuple[list[tuple[NDArray[np.int64], float, str]], Arr] | None = None
+
+
+def preference_fit() -> tuple[list[tuple[NDArray[np.int64], float, str]], Arr]:
+    global PREF
+    if PREF is None:
+        eps_list = sample_attempts(600, 33)
+        pairs = make_pairs(eps_list, 2000, 2.0, 34)
+        w = fit_from_preferences(pairs, eps_list)
+        print(f'[preferences] {len(eps_list)} attempts, {len(pairs)} judged pairs')
+        print('[preferences] fitted weights: ' + ', '.join(
+            f'{n} {v:+.2f}' for n, v in zip(FEATURES, w)))
+        PREF = (eps_list, w)
+    return PREF
+
+
+def a_pair_to_judge() -> None:
+    eps_list, w = preference_fit()
+    good = max(eps_list, key=lambda e: e[1])
+    poor = min(eps_list, key=lambda e: e[1])
+    scores = [float(FEAT[e[0]].sum(0) @ w) for e in (good, poor)]
+    print(f'[preferences] the pair shown: one attempt with true reward {good[1]:.2f} '
+          f'ending as "{good[2]}", one with {poor[1]:.2f} ending as "{poor[2]}"')
+    print(f'[preferences] the fitted model scores them {scores[0]:.2f} and '
+          f'{scores[1]:.2f}, so it agrees with the person')
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.3), facecolor='white')
+    for ax, (ss, g, res), colour, name, sc in (
+            (axes[0], good, SLIDE, 'attempt A', scores[0]),
+            (axes[1], poor, GRIP, 'attempt B', scores[1])):
+        _table(ax, f'{name}: {len(ss)} actions, ended as "{res}"', small=True)
+        pts = np.array([_cell_xy(*unsid(int(s))[:2]) for s in ss])
+        jit = np.linspace(-0.07, 0.07, len(pts))
+        ax.plot(pts[:, 0] + jit, pts[:, 1] + jit, color=colour, lw=1.6, alpha=0.85)
+        ax.scatter(pts[0, 0], pts[0, 1], s=55, color=colour, zorder=6)
+        ax.text(2.5, -0.32, f'true reward {g:.2f}, fitted score {sc:.2f}', ha='center',
+                fontsize=10, color=INK)
+    fig.suptitle('A person is shown two attempts and says which they prefer; nobody '
+                 'has to write a number', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'a-pair-to-judge.svg')
+
+
+def what_the_preferences_taught() -> None:
+    eps_list, w = preference_fit()
+    fitted = FEAT @ w
+    print(f'[preferences] the fitted per-state reward: at the start {fitted[S0]:.2f}, '
+          f'on the block empty {fitted[sid(*BLOCK, False)]:.2f}, on the block holding '
+          f'{fitted[sid(*BLOCK, True)]:.2f}, at the bin holding '
+          f'{fitted[sid(*BIN, True)]:.2f}')
+    fig, axes = plt.subplots(1, 3, figsize=(15.4, 5.0), facecolor='white')
+    for ax, holding, name in ((axes[0], False, 'empty gripper'),
+                              (axes[1], True, 'holding the block')):
+        _table(ax, f'Fitted reward per square, {name}', small=True, label_top=True)
+        _draw_numbers(ax, fitted, holding, '{:+.2f}', 9.0, dy=-0.2)
+    ax = axes[2]
+    _plain(ax)
+    ax.barh(np.arange(len(w)), w, color=[LINK if v >= 0 else GRIP for v in w],
+            edgecolor=INK, lw=0.6)
+    ax.set_yticks(np.arange(len(w)))
+    ax.set_yticklabels(FEATURES, fontsize=9.5)
+    for i, v in enumerate(w):
+        ax.text(v + (0.03 if v >= 0 else -0.03), i, f'{v:+.2f}',
+                ha='left' if v >= 0 else 'right', va='center', fontsize=9.5)
+    ax.axvline(0, color=INK, lw=0.9)
+    ax.set_xlim(min(w) - 0.5, max(w) + 0.5)
+    ax.set_xlabel('weight fitted from the choices', fontsize=10)
+    ax.set_title('What the choices taught it', fontsize=11.5, weight='bold')
+    fig.suptitle('From choices alone, a reward for every state',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'what-the-preferences-taught.svg')
+
+
+def how_many_pairs() -> None:
+    eps_list, _ = preference_fit()
+    test = make_pairs(eps_list, 2000, 0.01, 99)
+    counts = [10, 25, 50, 100, 250, 500, 1000, 2000]
+    agree: list[float] = []
+    for n in counts:
+        got = []
+        for seed in range(4):
+            pairs = make_pairs(eps_list, n, 2.0, 200 + seed)
+            w = fit_from_preferences(pairs, eps_list)
+            sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
+            sc = sums @ w
+            ok = [int((sc[i] > sc[j]) == bool(y)) for i, j, y in test]
+            got.append(float(np.mean(ok)))
+        agree.append(float(np.mean(got)))
+        print(f'[preferences] trained on {n:4d} judged pairs: agrees with the true '
+              f'ordering on {agree[-1]:.3f} of held-out pairs')
+    fig, ax = plt.subplots(figsize=(8.8, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(counts, agree, marker='o', color=TEAL, lw=2.1)
+    for x, v in zip(counts, agree):
+        ax.text(x, v + 0.012, f'{v:.2f}', ha='center', fontsize=9)
+    ax.set_xscale('log')
+    ax.set_xticks(counts)
+    ax.set_xticklabels([str(c) for c in counts])
+    ax.axhline(0.5, color=MUTED, ls='--', lw=1.2)
+    ax.text(12, 0.515, 'guessing', fontsize=9, color=MUTED)
+    ax.set_ylim(0.45, 1.03)
+    ax.set_xlabel('number of judged pairs used to fit the reward (log scale)',
+                  fontsize=10)
+    ax.set_ylabel('share of held-out pairs it orders the same way', fontsize=10)
+    ax.set_title('How many choices it takes', fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'how-many-pairs.svg')
+
+
+def people_make_mistakes() -> None:
+    eps_list, _ = preference_fit()
+    test = make_pairs(eps_list, 2000, 0.01, 99)
+    counts = [25, 100, 500, 2000]
+    fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
+    _plain(ax)
+    for tau, colour, name in ((0.5, SLIDE, 'careful judge'), (2.0, LINK, 'ordinary judge'),
+                              (8.0, GRIP, 'careless judge')):
+        agree = []
+        for n in counts:
+            got = []
+            for seed in range(4):
+                pairs = make_pairs(eps_list, n, tau, 300 + seed)
+                w = fit_from_preferences(pairs, eps_list)
+                sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
+                sc = sums @ w
+                got.append(float(np.mean([int((sc[i] > sc[j]) == bool(y))
+                                          for i, j, y in test])))
+            agree.append(float(np.mean(got)))
+        flip = float(np.mean([1.0 / (1.0 + np.exp(-abs(eps_list[i][1] - eps_list[j][1])
+                                                  / tau)) for i, j, _ in test[:500]]))
+        print(f'[preferences] a judge who picks the better attempt {flip:.2f} of the '
+              f'time: agreement by pair count ' +
+              ', '.join(f'{n}:{a:.2f}' for n, a in zip(counts, agree)))
+        ax.plot(counts, agree, marker='o', color=colour, lw=2.1,
+                label=f'{name}, right {flip:.0%} of the time')
+    ax.set_xscale('log')
+    ax.set_xticks(counts)
+    ax.set_xticklabels([str(c) for c in counts])
+    ax.axhline(0.5, color=MUTED, ls='--', lw=1.2)
+    ax.set_ylim(0.45, 1.03)
+    ax.set_xlabel('number of judged pairs (log scale)', fontsize=10)
+    ax.set_ylabel('share of held-out pairs it orders the same way', fontsize=10)
+    ax.set_title('A careless judge costs pairs, not correctness', fontsize=12,
+                 weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'people-make-mistakes.svg')

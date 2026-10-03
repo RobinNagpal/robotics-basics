@@ -1214,13 +1214,15 @@ def running_total() -> None:
     total_bf = 0.0
     run16, runbf = [], []
     first_inf = None
-    for i, v in enumerate(vals):
-        total16 = np.float16(total16 + np.float16(v))
-        total_bf = float(_to_bf16(np.array([total_bf + float(_to_bf16(np.array([v]))[0])]))[0])
-        run16.append(float(total16))
-        runbf.append(total_bf)
-        if first_inf is None and not np.isfinite(float(total16)):
-            first_inf = i + 1
+    with np.errstate(over='ignore', invalid='ignore'):
+        for i, v in enumerate(vals):
+            total16 = np.float16(total16 + np.float16(v))
+            total_bf = float(_to_bf16(np.array(
+                [total_bf + float(_to_bf16(np.array([v]))[0])]))[0])
+            run16.append(float(total16))
+            runbf.append(total_bf)
+            if first_inf is None and not np.isfinite(float(total16)):
+                first_inf = i + 1
     run16 = np.array(run16)
     runbf = np.array(runbf)
     print(f'[total] the exact total of the 4,096 squares is {exact[-1]:,.0f}')
@@ -1449,8 +1451,8 @@ def one_hinge() -> None:
         ax.axhline(0, color=GRID, lw=1.0)
     axes[0].plot(x, plain, color=LINK, lw=2.6)
     axes[0].axvline(1.5, color=MUTED, ls=':', lw=1.2)
-    axes[0].text(1.62, 1.75, 'the bend sits at x = 1.5,\nwhere the total inside\n'
-                 'the neuron passes 0', fontsize=9, color=MUTED, va='center')
+    axes[0].text(0.08, 2.9, 'the bend sits at x = 1.5,\nwhere the total inside\n'
+                 'the neuron passes 0', fontsize=9, color=MUTED, va='top', ha='left')
     axes[0].set_title('one neuron: max(0, x - 1.5)', fontsize=11, weight='bold')
     axes[0].set_ylim(-0.4, 3.0)
 
@@ -1549,7 +1551,7 @@ def bends_and_gap() -> None:
         ax.set_xlabel('the number going in', fontsize=9.5)
         ax.set_title(f'{head}: average gap {gap:.3f}', fontsize=11, weight='bold')
     axes[0].set_ylabel('the number wanted out', fontsize=9.5)
-    axes[0].legend(fontsize=9, frameon=False, loc='lower left')
+    axes[0].legend(fontsize=9, frameon=False, loc='upper right')
     _title(fig, 'The same three neurons, moved: finding where the bends go is what '
                 'training is for')
     fig.tight_layout(rect=(0, 0, 1, 0.9))
@@ -2109,10 +2111,10 @@ def receptive_field() -> None:
     for layers in range(1, 6):
         print(f'[field]   after {layers} layer(s): {2 * layers + 1} by '
               f'{2 * layers + 1} pixels')
-    need = (224 - 1) // 2
+    need = -(-(224 - 1) // 2)
     print(f'[field] to cover 224 pixels that way would take {need} layers')
     rf, jump, rows = 1, 1, []
-    for i in range(8):
+    for i in range(12):
         stride = 1 if i % 2 == 0 else 2
         rf += (3 - 1) * jump
         jump *= stride
@@ -2150,15 +2152,19 @@ def receptive_field() -> None:
     ax2.plot(layers, step_rf, marker='s', color=GRIP, lw=2.2,
              label='every second layer steps 2')
     for n, v in zip(layers, step_rf):
-        ax2.annotate(f'{v}', (n, v), textcoords='offset points', xytext=(-4, 8),
-                     fontsize=9, color=GRIP, ha='right')
+        if n % 2 == 0 or n == 1:
+            ax2.annotate(f'{v}', (n, v), textcoords='offset points', xytext=(-4, 8),
+                         fontsize=9, color=GRIP, ha='right')
     ax2.axhline(224, color=MUTED, ls='--', lw=1.3)
     ax2.text(1.1, 240, 'the whole 224 pixel picture', fontsize=9.5, color=MUTED)
     ax2.set_yscale('log')
     ax2.set_xticks(layers)
     ax2.set_xlabel('how many convolutional layers deep', fontsize=10)
     ax2.set_ylabel('pixels of the picture one number sees (log scale)', fontsize=10)
-    ax2.set_title('Stepping two every other layer gets there in eight',
+    reach = next(r[0] for r in rows if r[2] >= 224)
+    print(f'[field] stepping two every other layer covers the whole 224 pixel '
+          f'picture after {reach} layers')
+    ax2.set_title(f'Stepping two every other layer gets there in {reach}',
                   fontsize=11.5, weight='bold')
     ax2.legend(fontsize=9.5, frameon=False, loc='lower right')
     _title(fig, 'How far one number late in a convolutional network can see back into '

@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-03T03:34:37.622061</dc:date>
+    <dc:date>2026-10-03T03:50:42.753962</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -32,12 +32,12 @@ z
    <g id="patch_2">
     <path d="M 579.6 332.283676 
 Q 579.6 205.660831 579.6 81.050447 
-" clip-path="url(#pb3936a2694)" style="fill: none; stroke: #3b82c4; stroke-width: 1.8; stroke-linecap: round"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: none; stroke: #3b82c4; stroke-width: 1.8; stroke-linecap: round"/>
     <path d="M 577 86.250447 
 L 579.6 81.050447 
 L 582.2 86.250447 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #3b82c4; stroke: #3b82c4; stroke-width: 1.8; stroke-linecap: round"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #3b82c4; stroke: #3b82c4; stroke-width: 1.8; stroke-linecap: round"/>
    </g>
    <g id="text_1">
     <!-- One step of training is seven lines, always in this order -->
@@ -507,7 +507,7 @@ Q 48.384 61.5168 48.384 67.0608
 L 48.384 90.3456 
 Q 48.384 95.8896 53.964 95.8896 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_2">
     <!-- 1 -->
@@ -1103,7 +1103,7 @@ Q 48.384 101.4336 48.384 106.9776
 L 48.384 130.2624 
 Q 48.384 135.8064 53.964 135.8064 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_5">
     <!-- 2 -->
@@ -1289,7 +1289,7 @@ Q 48.384 141.3504 48.384 146.8944
 L 48.384 170.1792 
 Q 48.384 175.7232 53.964 175.7232 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_8">
     <!-- 3 -->
@@ -1443,7 +1443,7 @@ Q 48.384 181.2672 48.384 186.8112
 L 48.384 210.096 
 Q 48.384 215.64 53.964 215.64 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_11">
     <!-- 4 -->
@@ -1547,7 +1547,7 @@ Q 48.384 221.184 48.384 226.728
 L 48.384 250.0128 
 Q 48.384 255.5568 53.964 255.5568 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_14">
     <!-- 5 -->
@@ -1648,7 +1648,7 @@ Q 48.384 261.1008 48.384 266.6448
 L 48.384 289.9296 
 Q 48.384 295.4736 53.964 295.4736 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #fde3e3; stroke: #e05555; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #fde3e3; stroke: #e05555; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_17">
     <!-- 6 -->
@@ -1785,7 +1785,7 @@ Q 48.384 301.0176 48.384 306.5616
 L 48.384 329.8464 
 Q 48.384 335.3904 53.964 335.3904 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #c9dcef; stroke: #3b82c4; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_20">
     <!-- 7 -->
@@ -1896,7 +1896,7 @@ Q 48.384 350.9136 48.384 356.4576
 L 48.384 379.7424 
 Q 48.384 385.2864 53.964 385.2864 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #d9efdc; stroke: #2a9d3f; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #d9efdc; stroke: #2a9d3f; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_24">
     <!-- after each pass through the data -->
@@ -2003,7 +2003,7 @@ Q 48.384 390.8304 48.384 396.3744
 L 48.384 419.6592 
 Q 48.384 425.2032 53.964 425.2032 
 z
-" clip-path="url(#pb3936a2694)" style="fill: #d9efdc; stroke: #2a9d3f; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pa4a54bbc13)" style="fill: #d9efdc; stroke: #2a9d3f; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_26">
     <!-- after each pass through the data -->
@@ -2134,7 +2134,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="pb3936a2694">
+  <clipPath id="pa4a54bbc13">
    <rect x="21.6" y="21.6" width="602.64" height="421.344"/>
   </clipPath>
  </defs>

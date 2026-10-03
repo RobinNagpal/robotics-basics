@@ -23,12 +23,11 @@ backbones](01_vision-backbones.md) and [detection and
 segmentation](02_detection-and-segmentation.md), so you should already know what
 a backbone is, what a bounding box and a mask are, and what a region proposal
 is. You should also have read [self-supervised
-pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md),
-because that page explains contrastive learning and the shared picture-and-text
-space this page uses, and [tokens and
-embeddings](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md),
-because that page explains what a vector is and how cosine similarity measures
-how close two of them are.
+pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md)
+for contrastive learning and the shared picture-and-text space, and [tokens and
+embeddings](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md)
+for what a vector is and how cosine similarity measures how close two of them
+are.
 
 Every number on this page is worked out by
 `docs/diagrams/models_that_see_2.py` and printed when the script runs. The
@@ -82,10 +81,9 @@ Growing the list from 80 names to 200 adds 90 hours of labelling, and that is be
 
 Those 90 hours buy 120 extra names, which is nothing like the number of
 different things that turn up on a workbench, and the labelling is only the
-start, because the model then has to be trained again and tested again, and
-every robot running the old model has to be updated. So the cost grows with the
-number of names while the benefit does not, and a list long enough for a real
-room is not reachable this way.
+start, because the model then has to be trained again and every robot running
+the old model has to be updated. A list long enough for a real room is not
+reachable this way.
 
 That is why it is worth looking at what a model can do with no examples at all.
 Working with no labelled examples of a thing is called **zero-shot**, and working
@@ -97,13 +95,12 @@ called **few-shot**. The simulated curve below compares the two.
 In this simulated comparison a zero-shot model scores 0.61 with no examples at all, one example scores 0.456, five examples score 0.584, and the curve only passes the zero-shot line at ten examples a class.
 
 The data behind that curve is made up, so the exact heights mean nothing, but the
-shape is the point and it is the shape that is reported again and again in
-practice. Training on one or two examples of a new thing is worse than not
-training at all, because so few examples teach the model the background and the
-lighting of those two photographs rather than the object. Zero-shot costs
-nothing and is available immediately, which is exactly what a robot needs when
-somebody puts a new object on the table, and the next section explains how a
-model can name a thing with no examples of it.
+shape is the point. Training on one or two examples of a new thing is worse than
+not training at all, because so few examples teach the model the background and
+the lighting of those two photographs rather than the object. Zero-shot costs
+nothing and is available immediately, which is what a robot needs when somebody
+puts a new object on the table, and the next section explains how a model can
+name a thing with no examples of it.
 
 ---
 
@@ -113,12 +110,12 @@ The zero-shot line in the last picture has to come from somewhere, and it comes
 from training a model so that pictures and words end up in the same space. A
 picture goes through a vision backbone of the kind described on [vision
 backbones](01_vision-backbones.md) and comes out as one list of numbers, a piece
-of text goes through a text network and comes out as another list of numbers of
-the same length, and training pushes the two lists together when the words
-describe the picture and pulls them apart when they do not. That training is
-contrastive learning, and
+of text goes through a text network and comes out as another list of the same
+length, and training pushes the two lists together when the words describe the
+picture and pulls them apart when they do not, which is the contrastive learning
+that
 [self-supervised pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md)
-explains how it works and what it is trained on.
+explains.
 
 To follow the arithmetic you need a space small enough to read, so the rest of
 this page uses a made-up one with thirteen directions, each of which has a name
@@ -146,11 +143,11 @@ The products add up to 2.788 for "mug" and 2.852 for "cup", and after dividing b
 So the model picks the wrong name, and it picks it for an instructive reason.
 The handle is the one direction that separates the two words, since "mug" has
 0.90 there and "cup" has 0.35, and in this photograph the handle is behind the
-body, so the picture has only 0.22 on that direction. Every other direction
-agrees with both words, which means the handle decides the answer, and the
-handle is not visible. The model is not being stupid, because a cup is a fair
-description of what is in front of the lens, but a robot that was told to fetch
-a mug now has a region labelled "cup" and will reject it.
+body, so the picture has only 0.22 on it. Every other direction agrees with both
+words, which means the handle decides the answer and the handle is not visible.
+The model is not being stupid, because a cup is a fair description of what is in
+front of the lens, but a robot told to fetch a mug now has a region labelled
+"cup" and will reject it.
 
 ![A horizontal bar chart ranking six names against the hidden-handle mug region, with cup at 0.9904, mug at 0.9228, jug at 0.9012, bowl at 0.8103, glass at 0.7772 and tin can at 0.4642](../../images/models-that-see/open-vocabulary-vision/nearest-name.svg)
 
@@ -179,11 +176,10 @@ small gaps enormously.
 A gap of 0.0676 in cosine similarity becomes 99.9 per cent against 0.1 per cent once the scores are multiplied by 100, so a confident-looking answer can rest on almost nothing.
 
 That stretching is not a mistake, because the model was trained with the same
-multiplication and the percentages are useful for ranking, but it means you must
-never read 99 per cent as 99 per cent. The honest reading is that "cup" beat
-"mug" by seven hundredths of a cosine, which a change of viewpoint would have
-reversed. Keeping that in mind matters most when these scores are used to decide
-what a gripper does, and the next section puts them to work on a whole picture.
+multiplication, but it means you must never read 99 per cent as 99 per cent. The
+honest reading is that "cup" beat "mug" by seven hundredths of a cosine, which a
+change of viewpoint would have reversed, and the next section puts these scores
+to work on a whole picture.
 
 ---
 
@@ -212,12 +208,12 @@ than just the winners.
 
 The red ring marks each region's best name, and the smallest number anywhere in the table is 0.368, which is the score of the word "tin can" against a mug.
 
-Two things stand out. The first is that the right name wins in every row, which
-is what the method is for. The second is that no score is small, because even
-"tin can" against a mug reaches 0.368, and that matters because a program has to
-choose a number above which it believes an answer. Picking that number is harder
-than it looks, and the picture below shows why, using a simulated set of forty
-pictures that contain the named thing and one hundred and twenty that do not.
+Two things stand out. The right name wins in every row, which is what the method
+is for, and no score is small, because even "tin can" against a mug reaches
+0.368. The second of those matters because a program has to choose a number
+above which it believes an answer, and the picture below shows why that is hard,
+using a simulated set of forty pictures that contain the named thing and one
+hundred and twenty that do not.
 
 ![A histogram of best scores for present and absent cases that overlap heavily, beside a line chart of the percentage of right and wrong boxes kept as the threshold rises from 0.86 to 0.98](../../images/models-that-see/open-vocabulary-vision/threshold-sweep.svg)
 
@@ -241,10 +237,9 @@ The tight box round this mug is 93 by 85 pixels, which is 7,905 pixels, while th
 
 At a distance of 0.42 metres, with a camera whose focal length is 615 pixels, one
 pixel covers 0.683 millimetres, so that 9.1 pixel difference is 6.2 millimetres
-on the table. A gripper aimed at the middle of the box is therefore aimed 6.2
-millimetres away from the middle of the mug, which is enough to matter, and it
-is the handle sticking out to one side that causes it. So the box says where to
-look and the mask says where to close the fingers, and a robot needs both.
+on the table, and it is the handle sticking out to one side that causes it. So
+the box says where to look and the mask says where to close the fingers, and a
+robot needs both.
 
 ---
 
@@ -270,12 +265,11 @@ and those are then compared with each region in the usual way.
 
 All four combinations score exactly 0.8819, so matching the phrase against the picture cannot choose between the two mugs and cannot tell the two phrases apart either.
 
-That is not a flaw in the averaging, and using a bigger text network would not
-repair it, because the picture of a mug carries no information about what is
-behind what. The relation lives between objects rather than inside one of them,
-so it has to be worked out from where the objects are, and the honest way to
-ground such a phrase is to find the candidate regions by matching, measure where
-each one is, and then test the relation on those measurements.
+That is not a flaw in the averaging, and a bigger text network would not repair
+it, because the picture of a mug carries no information about what is behind
+what. The relation lives between objects rather than inside one of them, so the
+honest way to ground such a phrase is to find the candidate regions by matching,
+measure where each one is, and then test the relation on those measurements.
 
 ![A table giving the bowl at 0.590 metres, mug A at 0.760 metres and 170 millimetres further, mug B at 0.455 metres and 135 millimetres nearer, and the combined scores 0.929 and 0.529, beside a bar chart of those two scores](../../images/models-that-see/open-vocabulary-vision/relation-from-geometry.svg)
 
@@ -296,13 +290,13 @@ depth order goes.
 
 The two phrases that mean opposite things have a cosine similarity of 0.8953, because 17.9 per cent of each phrase vector sits on four directions that no picture region has any value on at all.
 
-A picture region has a value for handle, for roundness, for being see-through and
-for the other directions you can see, and it has nothing at all on the four
-directions that carry the relation, the count and the denial, because those are
-things words do and pictures do not. Multiplying a picture value of zero by a
-word value of 0.267 gives zero, so those four directions cannot change a score,
-which means that whatever the phrase says with them is thrown away at the moment
-of comparison. That single fact is behind the four failures in the next section.
+A picture region has a value for handle, for roundness and for the other
+directions you can see, and nothing at all on the four directions that carry the
+relation, the count and the denial, because those are things words do and
+pictures do not. Multiplying a picture value of zero by a word value of 0.267
+gives zero, so whatever the phrase says with those four directions is thrown
+away at the moment of comparison, and that single fact is behind the four
+failures in the next section.
 
 ---
 
@@ -321,10 +315,10 @@ direction and "three" sits at 0.95, and since the picture has nothing on that
 direction, neither value reaches the sum at the top of the cosine. All they
 change is the length of the phrase vector, which is the number underneath the
 division, so the whole difference between asking for two mugs and asking for
-three is a rounding-level change in a divisor. The denial is worse than useless
-rather than merely useless, because "not red" contains the word "red", the word
-"red" does have a direction that pictures use, and so the phrase is pulled
-towards exactly the object it was meant to exclude.
+three is a rounding-level change in a divisor. The denial is worse than useless,
+because "not red" contains the word "red", that word does have a direction
+pictures use, and so the phrase is pulled towards the very object it was meant
+to exclude.
 
 The third failure is about names that are close together, and it needs no
 special word to explain it, only the table from section 2.

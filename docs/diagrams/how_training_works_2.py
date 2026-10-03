@@ -21,9 +21,10 @@ rectified linear unit in the middle, trained by hand-written stochastic
 gradient descent, momentum, Adam and AdamW on simulated data. The data itself
 is simulated, because the point of the pictures is the shape of the loss curve
 rather than any particular task: the inputs are drawn from a seeded generator
-and the targets come from a fixed smooth formula plus noise. The step timings
-in the last section are measured on the machine that runs the script, so they
-differ from machine to machine, and the page says so.
+and the targets come from a fixed smooth formula plus noise. Nothing on either
+page is timed, because the machine this runs on is shared; the last section
+counts the multiplications in one step exactly instead, and turns steps into
+hours for a few stated speeds.
 """
 
 import pathlib

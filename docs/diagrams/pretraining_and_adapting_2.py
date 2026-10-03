@@ -2015,7 +2015,8 @@ def fig_forgetting_frontier() -> None:
     ax.set_ylim(0.0, 1.03)
     ax.set_title('Every run is a trade between the two jobs, and each line follows one '
                  'learning rate from 25 steps to 400', fontsize=11.3, weight='bold')
-    ax.legend(fontsize=9.3, frameon=False, loc='lower left')
+    ax.legend(fontsize=9.3, frameon=False, loc='center left',
+              bbox_to_anchor=(0.01, 0.42))
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
     ax.set_axisbelow(True)
     _save(fig, FT_DOC, 'forgetting-frontier.svg')
@@ -2067,7 +2068,7 @@ def fig_data_distance() -> None:
                 label=name.replace('\n', ' '))
         ax.axhline(ceil, color=col, lw=1.0, ls='--', alpha=0.6)
         ax.plot([ns[0] * 0.78], [before], '*', color=col, ms=13)
-    ax.text(3.0, 0.60, 'the stars are the accuracy\nbefore any fine-tuning',
+    ax.text(10.0, 0.875, 'the stars on the left are the accuracy before any fine-tuning',
             fontsize=9.0, color=MUTED, ha='left')
     ax.set_xscale('log', base=2)
     ax.set_xticks(ns)
@@ -2082,20 +2083,19 @@ def fig_data_distance() -> None:
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
     ax.set_axisbelow(True)
     _plain(ax2)
-    needed = [n if n is not None else 1024 for n in d['needed']]   # type: ignore[union-attr]
     xx = np.arange(3)
-    ax2.bar(xx, needed, color=cols, width=0.56)
-    for x, (v, raw) in enumerate(zip(needed, d['needed'])):        # type: ignore[arg-type]
-        txt = f'{v}' if raw is not None else 'more than 512'
-        ax2.text(x, v * 1.08, txt, ha='center', fontsize=10, color=INK, weight='bold')
+    ax2.bar(xx, list(d['befores']), color=cols, width=0.56)   # type: ignore[arg-type]
+    for x, (bf, raw) in enumerate(zip(d['befores'], d['needed'])):   # type: ignore[arg-type]
+        ax2.text(x, bf + 0.015, f'{bf:.3f}', ha='center', fontsize=10.5, color=INK,
+                 weight='bold')
+        txt = f'{raw} examples\nto fix it' if raw is not None else 'more than 512\nexamples'
+        ax2.text(x, 0.06, txt, ha='center', fontsize=9.6, color='white', weight='bold')
     ax2.set_xticks(xx)
     ax2.set_xticklabels(list(d['jobs']), fontsize=8.6)   # type: ignore[arg-type]
-    ax2.set_yscale('log', base=2)
-    ax2.set_yticks([8, 16, 32, 64, 128, 256, 512, 1024])
-    ax2.set_yticklabels(['8', '16', '32', '64', '128', '256', '512', ''])
-    ax2.set_ylim(8, 2200)
-    ax2.set_ylabel('examples needed to come within 0.03 of the ceiling', fontsize=9.6)
-    ax2.set_title('What each one costs in examples', fontsize=11.4, weight='bold')
+    ax2.set_ylim(0, 1.0)
+    ax2.set_ylabel('accuracy before any fine-tuning', fontsize=10)
+    ax2.set_title('Distance costs accuracy before you start;\na new distinction costs '
+                  'examples', fontsize=11.0, weight='bold')
     ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
     ax2.set_axisbelow(True)
     _save(fig, FT_DOC, 'data-vs-distance.svg')
@@ -2145,3 +2145,829 @@ def fig_data_variation() -> None:
     ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
     ax2.set_axisbelow(True)
     _save(fig, FT_DOC, 'data-vs-variation.svg')
+
+
+# ==========================================================================
+# PART 5.  The pictures for 04_making-a-model-smaller-and-faster.md
+# ==========================================================================
+
+def fig_memory_by_precision() -> None:
+    """Section 1: the same model at four precisions, against two memory sizes."""
+    fig, ax = plt.subplots(figsize=(10.6, 5.2), facecolor='white')
+    _plain(ax)
+    names = [f'{n}\n{b:.2f} bits a weight' for n, b in PRECISIONS]
+    vals = [_gib(TOTAL * b / 8) for _n, b in PRECISIONS]
+    cols = [GRIP, WRIST, LINK, SLIDE]
+    xx = np.arange(len(names))
+    ax.bar(xx, vals, color=cols, width=0.56)
+    for x, v in zip(xx, vals):
+        ax.text(x, v + 0.5, f'{v:.2f} GiB', ha='center', fontsize=10.5, color=INK,
+                weight='bold')
+    ax.axhline(ROBOT_GIB, color=PURPLE, lw=2.0, ls='--')
+    ax.text(3.45, ROBOT_GIB + 0.5, f'{ROBOT_GIB:.0f} GiB on a small robot computer',
+            ha='right', fontsize=9.5, color=PURPLE)
+    ax.axhline(CARD_GIB, color=TEAL, lw=2.0, ls=':')
+    ax.text(3.45, CARD_GIB + 0.5, f'{CARD_GIB:.0f} GiB on a desktop graphics card',
+            ha='right', fontsize=9.5, color=TEAL)
+    ax.set_xticks(xx)
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylabel('memory the weights alone need (GiB)', fontsize=10)
+    ax.set_ylim(0, 29)
+    ax.set_title(f'The same {_big(TOTAL)}-parameter model, stored four ways: only the '
+                 f'4-bit version fits in {ROBOT_GIB:.0f} GiB with room to work',
+                 fontsize=11.6, weight='bold')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'memory-by-precision.svg')
+
+
+def fig_bandwidth_tokens() -> None:
+    """Section 1: generation speed is set by how many bytes have to be read."""
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.0), facecolor='white')
+    _plain(ax)
+    names = [n for n, _b in PRECISIONS]
+    secs = [TOTAL * b / 8 / (BANDWIDTH_GBS * 1e9) for _n, b in PRECISIONS]
+    cols = [GRIP, WRIST, LINK, SLIDE]
+    xx = np.arange(len(names))
+    ax.bar(xx, [1e3 * s for s in secs], color=cols, width=0.56)
+    for x, s_ in zip(xx, secs):
+        ax.text(x, 1e3 * s_ + 6, f'{1e3 * s_:.1f} ms', ha='center', fontsize=10.5,
+                color=INK, weight='bold')
+    ax.set_xticks(xx)
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylabel('time to read every weight once (ms)', fontsize=10)
+    ax.set_ylim(0, 310)
+    ax.set_title(f'At {BANDWIDTH_GBS:.0f} GB a second', fontsize=11.2, weight='bold')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    toks = [1.0 / s_ for s_ in secs]
+    ax2.bar(xx, toks, color=cols, width=0.56)
+    for x, t in zip(xx, toks):
+        ax2.text(x, t + 0.6, f'{t:.1f}', ha='center', fontsize=10.5, color=INK,
+                 weight='bold')
+    ax2.set_xticks(xx)
+    ax2.set_xticklabels(names, fontsize=10)
+    ax2.set_ylabel('words a second this allows, at best', fontsize=10)
+    ax2.set_ylim(0, 33)
+    ax2.set_title('Four bits is 7.5 times faster than float32, for the same arithmetic',
+                  fontsize=11.2, weight='bold')
+    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax2.set_axisbelow(True)
+    fig.suptitle('Writing one word reads every weight once, so the size of the weights '
+                 'sets the speed', fontsize=12.0, weight='bold', y=1.02)
+    _save(fig, SM_DOC, 'bandwidth-tokens-per-second.svg')
+
+
+def fig_latency_budget() -> None:
+    """Section 1: what a control loop leaves for the model to think in."""
+    rates = [5, 10, 30, 50]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.0), facecolor='white')
+    _plain(ax)
+    budgets = [1e3 / r for r in rates]
+    xx = np.arange(len(rates))
+    ax.bar(xx, budgets, color=[SLIDE, LINK, WRIST, GRIP], width=0.56)
+    for x, b in zip(xx, budgets):
+        ax.text(x, b + 4, f'{b:.0f} ms', ha='center', fontsize=10.5, color=INK,
+                weight='bold')
+    ax.set_xticks(xx)
+    ax.set_xticklabels([f'{r} times\na second' for r in rates], fontsize=10)
+    ax.set_ylabel('time for one decision (ms)', fontsize=10)
+    ax.set_ylim(0, 230)
+    ax.set_title('How often the arm asks for a new command', fontsize=11.2, weight='bold')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    toks = [(1.0 / r) * ACCEL_TFLOPS * 1e12 / FLOP_PER_TOKEN_FWD for r in rates]
+    ax2.bar(xx, toks, color=[SLIDE, LINK, WRIST, GRIP], width=0.56)
+    for x, t in zip(xx, toks):
+        ax2.text(x, t + 6, f'{t:.0f} words', ha='center', fontsize=10.5, color=INK,
+                 weight='bold')
+    ax2.set_xticks(xx)
+    ax2.set_xticklabels([f'{r} times\na second' for r in rates], fontsize=10)
+    ax2.set_ylabel('words this model could write in that time', fontsize=10)
+    ax2.set_ylim(0, 350)
+    ax2.set_title(f'At a stated {ACCEL_TFLOPS:.0f} TFLOP a second and '
+                  f'{FLOP_PER_TOKEN_FWD / 1e9:.1f} GFLOP a word', fontsize=11.2,
+                  weight='bold')
+    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax2.set_axisbelow(True)
+    fig.suptitle('A 30 Hz arm leaves 33 ms, which is about 49 words of this model and '
+                 'nothing else', fontsize=12.0, weight='bold', y=1.02)
+    _save(fig, SM_DOC, 'latency-budget.svg')
+
+
+def fig_weights_and_levels() -> None:
+    """Section 2: 48 real weights snapping onto 15 four-bit levels."""
+    d = exp_weight_row()
+    w = d['w']                               # type: ignore[index]
+    scale4 = d['scale4']                     # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(12.2, 5.6), facecolor='white')
+    _plain(ax)
+    for k in range(-7, 8):
+        ax.axhline(k * scale4, color=GRID, lw=0.8)        # type: ignore[operator]
+        ax.text(-1.6, k * scale4, f'{k:+d}', va='center', ha='right', fontsize=8,
+                color=MUTED)                              # type: ignore[operator]
+    xs = np.arange(len(w))                                # type: ignore[arg-type]
+    ax.vlines(xs, 0, w, color=LINK_PALE, lw=1.4)
+    ax.plot(xs, w, 'o', color=LINK, ms=5, label='the weight as trained')
+    ax.plot(xs, d['deq4'], 's', color=GRIP, ms=5,         # type: ignore[index]
+            label='the weight read back from its 4-bit integer')
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_xlim(-3.5, len(w))                             # type: ignore[arg-type]
+    ax.set_xlabel('one output channel of a trained weight matrix, weight by weight',
+                  fontsize=10)
+    ax.set_ylabel('weight', fontsize=10)
+    ax.set_ylim(-0.76, 0.63)
+    ax.text(22.0, -0.70, 'the small numbers down the left are the fifteen whole numbers a '
+                         '4-bit integer can hold, from -7 to +7',
+            fontsize=9.0, color=MUTED, ha='center')
+    ax.set_title(f'The step between levels is {scale4:.5f}, so every weight has to move to '
+                 f'the nearest line',                     # type: ignore[str-format]
+                 fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    _save(fig, SM_DOC, 'weights-and-levels.svg')
+
+
+def fig_step_size() -> None:
+    """Section 2: the number line, the step and the integers, 8 bits against 4."""
+    d = exp_weight_row()
+    w = d['w']                               # type: ignore[index]
+    amax = float(np.abs(w).max())            # type: ignore[arg-type]
+    fig, ax = plt.subplots(figsize=(12.4, 5.2), facecolor='white')
+    _blank(ax)
+    for row, (bits, col, y) in enumerate(((4, GRIP, 2.2), (8, LINK, 0.9))):
+        qmax = 2 ** (bits - 1) - 1
+        step = amax / qmax
+        ax.plot([-amax, amax], [y, y], color=INK, lw=1.2)
+        for k in range(-qmax, qmax + 1):
+            ax.plot([k * step, k * step], [y - 0.09, y + 0.09], color=col,
+                    lw=1.4 if bits == 4 else 0.35)
+        ax.text(-amax - 0.03, y, f'{bits} bits', ha='right', va='center', fontsize=11,
+                color=col, weight='bold')
+        ax.text(0, y + 0.3, f'{2 * qmax + 1} levels, one every {step:.6f}',
+                ha='center', fontsize=9.6, color=col)
+        ax.text(-amax, y - 0.28, f'{-qmax}', ha='center', fontsize=9, color=MUTED)
+        ax.text(amax, y - 0.28, f'+{qmax}', ha='center', fontsize=9, color=MUTED)
+        ax.text(0, y - 0.28, '0', ha='center', fontsize=9, color=MUTED)
+    sample = w[:1]                                        # type: ignore[index]
+    for v in w[:6]:                                       # type: ignore[index]
+        ax.plot([v], [2.2], 'v', color=PURPLE, ms=8)
+        ax.plot([v], [0.9], 'v', color=PURPLE, ms=8)
+    ax.text(0.0, 3.0, 'The purple arrows are the first six real weights from the same '
+                      'column. At 8 bits each lands almost on a line; at 4 bits it has '
+                      'to move.', ha='center', fontsize=9.6, color=PURPLE)
+    ax.set_xlim(-amax * 1.22, amax * 1.12)
+    ax.set_ylim(0.2, 3.4)
+    ax.set_title(f'The same range, {-amax:.4f} to {amax:.4f}, cut into 255 steps or into 15',
+                 fontsize=11.8, weight='bold')
+    _save(fig, SM_DOC, 'step-size-number-line.svg')
+
+
+def fig_error_per_weight() -> None:
+    """Section 2: the error left on each weight at 8 bits and at 4."""
+    d = exp_weight_row()
+    w = d['w']                               # type: ignore[index]
+    xs = np.arange(len(w))                   # type: ignore[arg-type]
+    e8 = np.asarray(d['deq8']) - w           # type: ignore[index]
+    e4 = np.asarray(d['deq4']) - w           # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(12.2, 5.2), facecolor='white')
+    _plain(ax)
+    ax.bar(xs - 0.2, e4, width=0.4, color=GRIP, label='4 bits')
+    ax.bar(xs + 0.2, e8, width=0.4, color=LINK, label='8 bits')
+    ax.axhline(d['rms4'], color=GRIP, lw=1.2, ls='--')    # type: ignore[index]
+    ax.axhline(-d['rms4'], color=GRIP, lw=1.2, ls='--')   # type: ignore[index]
+    ax.set_ylim(-0.055, 0.060)
+    ax.text(len(w) - 0.5, 0.050,                          # type: ignore[index]
+            f'root-mean-square error at 4 bits: {d["rms4"]:.6f}', ha='right', fontsize=9.3,
+            color=GRIP,
+            bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='none'))
+    ax.axhline(d['rms8'], color=LINK, lw=1.2, ls=':')     # type: ignore[index]
+    ax.text(0, -0.049,                                    # type: ignore[index]
+            f'at 8 bits it is {d["rms8"]:.6f}, which is '
+            f'{d["rms4"] / d["rms8"]:.0f} times smaller', fontsize=9.3, color=LINK,
+            bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='none'))
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_xlabel('weight number', fontsize=10)
+    ax.set_ylabel('read-back value minus the trained value', fontsize=10)
+    ax.set_xlim(-1, len(w))                               # type: ignore[arg-type]
+    ax.set_title('Four bits leaves an error on every weight; eight bits leaves almost none',
+                 fontsize=11.8, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper right')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'error-per-weight.svg')
+
+
+def fig_error_vs_bits() -> None:
+    """Section 2: every extra bit halves the error."""
+    d = exp_weight_row()
+    bits = d['bit_list']                     # type: ignore[index]
+    errs = d['rms_list']                     # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(bits, errs, marker='o', color=LINK, lw=2.4, ms=7)
+    for b, e in zip(bits, errs):             # type: ignore[arg-type]
+        ax.annotate(f'{e:.6f}', xy=(b, e), xytext=(b + 0.12, e * 1.35), fontsize=9.2,
+                    color=INK)
+    ax.set_yscale('log')
+    ax.set_xticks(bits)
+    ax.set_xlabel('bits kept for each weight', fontsize=10)
+    ax.set_ylabel('root-mean-square error left in the weights (log scale)', fontsize=10)
+    ax.set_xlim(1.5, 11.2)
+    ax.set_title('Each extra bit halves the step and so halves the error, which is why '
+                 '8 bits is nearly free and 4 is not',
+                 fontsize=11.6, weight='bold')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'error-vs-bits.svg')
+
+
+def fig_per_channel_scales() -> None:
+    """Section 3: one scale for a whole matrix wastes most of the levels."""
+    d = exp_per_channel()
+    w = d['w']                               # type: ignore[index]
+    loud = d['loud']                         # type: ignore[index]
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(12.0, 6.4), facecolor='white',
+                                  sharex=True)
+    for a, mat, label, col in ((ax, w, 'the matrix as trained', LINK),
+                               (ax2, loud, 'the same matrix with one loud channel', WRIST)):
+        _plain(a)
+        amax_col = np.abs(mat).max(axis=0)
+        a.bar(np.arange(len(amax_col)), amax_col, color=col, width=0.72)
+        a.axhline(float(np.abs(mat).max()), color=GRIP, lw=1.8, ls='--')
+        a.text(47.4, float(np.abs(mat).max()) * 0.97,
+               f'one scale for the whole matrix is set by {np.abs(mat).max():.3f}',
+               ha='right', va='top', fontsize=9.3, color=GRIP)
+        a.set_ylabel('largest weight\nin that channel', fontsize=9.6)
+        a.set_title(label, fontsize=11.0, weight='bold')
+        a.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+        a.set_axisbelow(True)
+    ax2.set_xlabel('output channel of a real 48 x 48 trained weight matrix', fontsize=10)
+    ax2.set_xlim(-0.8, 48)
+    fig.suptitle('A scale per channel follows each bar; a scale for the whole matrix '
+                 'follows only the tallest',
+                 fontsize=12.0, weight='bold', y=1.0)
+    _save(fig, SM_DOC, 'per-channel-scales.svg')
+
+
+def fig_scale_choice_error() -> None:
+    """Section 3: what each choice of scale leaves behind, measured."""
+    d = exp_per_channel()
+    fig, ax = plt.subplots(figsize=(11.2, 5.4), facecolor='white')
+    _plain(ax)
+    modes = ['per-tensor', 'per-channel', 'grouped']
+    nice = ['one scale for\nthe whole matrix', 'one scale for\neach channel',
+            'one scale for\nevery 16 weights']
+    xx = np.arange(3)
+    for k, (label, col, off) in enumerate((('as trained', LINK, -0.2),
+                                           ('with one loud channel', GRIP, 0.2))):
+        vals = [100.0 * d[label][f'{m}4'] for m in modes]       # type: ignore[index]
+        ax.bar(xx + off, vals, width=0.36, color=col, label=f'4 bits, {label}')
+        for x, v in zip(xx, vals):
+            ax.text(x + off, v + 1.0, f'{v:.1f}%', ha='center', fontsize=9.6, color=INK)
+    ax.set_xticks(xx)
+    ax.set_xticklabels(nice, fontsize=10)
+    ax.set_ylabel('error left in the weights, as a share of their own size (%)',
+                  fontsize=10)
+    ax.set_ylim(0, 60)
+    ax.set_title('One loud channel ruins a single scale, and a scale per channel does not '
+                 'notice it', fontsize=11.8, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper right')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'scale-choice-error.svg')
+
+
+def fig_ptq_vs_qat() -> None:
+    """Section 3: quantising after training against training with it in mind."""
+    d = exp_ptq_qat()
+    bits = d['bits']                         # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(10.8, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(bits, d['ptq'], marker='o', color=LINK, lw=2.4, ms=7,   # type: ignore[arg-type]
+            label='trained first, then squeezed')
+    ax.plot(bits, d['qat'], marker='s', color=SLIDE, lw=2.4, ms=7,  # type: ignore[arg-type]
+            label='trained with the squeezing switched on')
+    ax.axhline(d['float'], color=GRIP, lw=1.8, ls='--')             # type: ignore[arg-type]
+    ax.text(8.1, d['float'] + 0.006, f'the full-precision network: {d["float"]:.3f}',
+            ha='right', fontsize=9.5, color=GRIP)
+    for b, p, q in zip(bits, d['ptq'], d['qat']):                   # type: ignore[arg-type]
+        if b <= 3:
+            ax.annotate(f'{p:.3f}', xy=(b, p), xytext=(b - 0.08, p - 0.028),
+                        fontsize=9.2, color=LINK, ha='center')
+            ax.annotate(f'{q:.3f}', xy=(b, q), xytext=(b - 0.08, q + 0.014),
+                        fontsize=9.2, color=SLIDE, ha='center')
+    ax.set_xticks(bits)
+    ax.set_xlabel('bits kept for each weight', fontsize=10)
+    ax.set_ylabel('accuracy on the six-way test set', fontsize=10)
+    ax.set_ylim(0.80, 0.958)
+    ax.set_title('Down to three bits it makes no difference; at two bits, training with '
+                 'the squeezing on wins back 0.086',
+                 fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='lower right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'ptq-vs-qat.svg')
+
+
+def fig_mode_accuracy() -> None:
+    """Section 3: the choice of scale, measured as accuracy rather than error."""
+    d = exp_ptq_qat()
+    bits = d['bits']                         # type: ignore[index]
+    modes = d['modes']                       # type: ignore[index]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.0), facecolor='white')
+    _plain(ax)
+    for (name, vals), col, mk in zip(modes.items(), (GRIP, LINK, SLIDE), ('o', 's', '^')):
+        nice = {'per-tensor': 'one scale for the whole matrix',
+                'per-channel': 'one scale for each channel',
+                'grouped': 'one scale for every 16 weights'}[name]
+        ax.plot(bits, vals, marker=mk, color=col, lw=2.2, ms=6.5, label=nice)
+    ax.axhline(d['float'], color=MUTED, lw=1.4, ls='--')            # type: ignore[arg-type]
+    ax.set_xticks(bits)
+    ax.set_xlabel('bits kept for each weight', fontsize=10)
+    ax.set_ylabel('accuracy on the six-way test set', fontsize=10)
+    ax.set_ylim(0.6, 0.97)
+    ax.set_title('Where the scale starts to matter', fontsize=11.2, weight='bold')
+    ax.legend(fontsize=9.3, frameon=False, loc='lower right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    clips = d['clips']                       # type: ignore[index]
+    names = [c[0] for c in clips]
+    vals = [c[1] for c in clips]
+    xx = np.arange(len(names))
+    ax2.bar(xx, vals, color=[LINK, TEAL, WRIST, GRIP], width=0.58)
+    for x, v in zip(xx, vals):
+        ax2.text(x, v + 0.0015, f'{v:.3f}', ha='center', fontsize=10.2, color=INK,
+                 weight='bold')
+    ax2.set_xticks(xx)
+    ax2.set_xticklabels([n.replace(' ', '\n') for n in names], fontsize=9.3)
+    ax2.set_ylabel('accuracy at 4 bits, one scale per channel', fontsize=10)
+    ax2.set_ylim(0.90, 0.945)
+    ax2.set_title('Where the range is cut off, at 4 bits', fontsize=11.2, weight='bold')
+    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax2.set_axisbelow(True)
+    _save(fig, SM_DOC, 'scale-and-clipping-accuracy.svg')
+
+
+def fig_soft_target() -> None:
+    """Section 4: one example, the hard label and the teacher's whole answer."""
+    d = exp_distil()
+    rows = d['rows']                         # type: ignore[index]
+    p1 = rows[1.0]
+    true = d['true']                         # type: ignore[index]
+    ent = d['ent']                           # type: ignore[index]
+    labels = [f'class {i}' for i in range(N_CLASS)]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.6, 5.0), facecolor='white')
+    _plain(ax)
+    hard = np.zeros(N_CLASS)
+    hard[true] = 1.0
+    xx = np.arange(N_CLASS)
+    ax.bar(xx, hard, color=MUTED, width=0.6)
+    for x, v in zip(xx, hard):
+        ax.text(x, v + 0.02, f'{v:.0f}', ha='center', fontsize=10.5, color=INK)
+    ax.set_xticks(xx)
+    ax.set_xticklabels(labels, fontsize=9.5)
+    ax.set_ylim(0, 1.12)
+    ax.set_ylabel('what the student is told to aim at', fontsize=10)
+    ax.set_title('The hard label: one right answer and five zeros\n'
+                 '(it carries 0.000 bits beyond the name of the class)',
+                 fontsize=11.0, weight='bold')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    ax2.bar(xx, p1, color=LINK, width=0.6)
+    for x, v in zip(xx, p1):
+        ax2.text(x, v + 0.02, f'{v:.3f}', ha='center', fontsize=10.0, color=INK)
+    ax2.set_xticks(xx)
+    ax2.set_xticklabels(labels, fontsize=9.5)
+    ax2.set_ylim(0, 1.12)
+    ax2.set_ylabel('what the student is told to aim at', fontsize=10)
+    ax2.set_title(f'The teacher\'s whole answer on the same example\n'
+                  f'(it carries {ent[1.0]:.3f} bits, and it says class 0 is the near miss)',
+                  fontsize=11.0, weight='bold')
+    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax2.set_axisbelow(True)
+    fig.suptitle(f'One example whose true class is {true}: the teacher is sure, but not '
+                 f'blind to the alternative', fontsize=12.0, weight='bold', y=1.02)
+    _save(fig, SM_DOC, 'soft-target-one-example.svg')
+
+
+def fig_temperature() -> None:
+    """Section 4: temperature flattens the answer and lets the small numbers speak."""
+    d = exp_distil()
+    rows = d['rows']                         # type: ignore[index]
+    ent = d['ent']                           # type: ignore[index]
+    temps = sorted(rows)
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(13.0, 5.0), facecolor='white',
+                                  gridspec_kw={'width_ratios': [1.45, 1.0]})
+    _plain(ax)
+    width = 0.15
+    cols = [TEAL, SLIDE, LINK, WRIST, GRIP]
+    xx = np.arange(N_CLASS)
+    for k, (t, col) in enumerate(zip(temps, cols)):
+        ax.bar(xx + (k - 2) * width, rows[t], width=width, color=col,
+               label=f'temperature {t:.0f}')
+    ax.set_xticks(xx)
+    ax.set_xticklabels([f'class {i}' for i in range(N_CLASS)], fontsize=9.5)
+    ax.set_ylabel('the number the student aims at', fontsize=10)
+    ax.set_ylim(0, 1.0)
+    ax.set_title('The same example at five temperatures', fontsize=11.2, weight='bold')
+    ax.legend(fontsize=9.3, frameon=False, loc='upper center', ncol=3)
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    ax2.plot(temps, [ent[t] for t in temps], marker='o', color=PURPLE, lw=2.4, ms=7)
+    for t in temps:
+        ax2.annotate(f'{ent[t]:.3f}', xy=(t, ent[t]), xytext=(t + 0.12, ent[t] - 0.09),
+                     fontsize=9.3, color=INK)
+    ax2.set_xlabel('temperature', fontsize=10)
+    ax2.set_ylabel('information in the answer (bits)', fontsize=10)
+    ax2.set_ylim(0, 1.6)
+    ax2.set_xlim(0, 9)
+    ax2.set_title('A warmer answer carries more', fontsize=11.2, weight='bold')
+    ax2.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax2.set_axisbelow(True)
+    _save(fig, SM_DOC, 'temperature-sweep.svg')
+
+
+def fig_student_curves() -> None:
+    """Section 4: the same student, taught two ways."""
+    d = exp_distil()
+    ns = d['ns']                             # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(10.8, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(ns, d['hard'], marker='o', color=MUTED, lw=2.4, ms=7,   # type: ignore[arg-type]
+            label='the student taught with hard labels only')
+    ax.plot(ns, d['soft'], marker='s', color=LINK, lw=2.4, ms=7,    # type: ignore[arg-type]
+            label="the student taught with the teacher's whole answer, temperature 3")
+    ax.axhline(d['teacher_acc'], color=GRIP, lw=1.8, ls='--')       # type: ignore[arg-type]
+    ax.text(640, d['teacher_acc'] + 0.006, f'the teacher: {d["teacher_acc"]:.3f}',
+            ha='right', fontsize=9.5, color=GRIP)
+    for n, h, s_ in zip(ns, d['hard'], d['soft']):                  # type: ignore[arg-type]
+        if n in (20, 40):
+            ax.annotate(f'{s_ - h:+.3f}', xy=(n, (h + s_) / 2), xytext=(n * 1.1,
+                        (h + s_) / 2 - 0.018), fontsize=9.4, color=SLIDE, weight='bold')
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(ns)
+    ax.set_xticklabels([str(n) for n in ns])
+    ax.set_xlabel('examples the student is shown', fontsize=10)
+    ax.set_ylabel(f'accuracy of the student (mean of 5 runs)', fontsize=10)
+    ax.set_ylim(0.52, 0.97)
+    ax.set_title('The teacher\'s whole answer is worth most when examples are few, and '
+                 'nothing at all when they are many',
+                 fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.6, frameon=False, loc='lower right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'student-against-hard-labels.svg')
+
+
+def fig_teacher_student_size() -> None:
+    """Section 4: what the student actually saves."""
+    d = exp_distil()
+    t = big()
+    sizes = d['student_sizes']               # type: ignore[index]
+    fig, axes = plt.subplots(1, 3, figsize=(13.0, 4.6), facecolor='white')
+    pairs = [('parameters', [t.n_param, d['n_student']]),
+             ('multiply-adds for\none decision', [t.macs, macs(sizes)]),
+             ('accuracy on the\nsix-way test set', [t.acc, d['soft'][-1]])]   # type: ignore
+    for ax, (label, vals) in zip(axes, pairs):
+        _plain(ax)
+        ax.bar([0, 1], vals, color=[GRIP, LINK], width=0.5)
+        for x, v in zip([0, 1], vals):
+            txt = f'{v:.3f}' if v < 2 else f'{v:,.0f}'
+            ax.text(x, v * 1.03 if v > 2 else v + 0.012, txt, ha='center', fontsize=11,
+                    color=INK, weight='bold')
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels([f'teacher\n{t.sizes}', f'student\n{sizes}'], fontsize=9.5)
+        ax.set_ylabel(label, fontsize=10)
+        if v > 2:
+            ax.set_ylim(0, max(vals) * 1.22)
+        else:
+            ax.set_ylim(0.8, 1.0)
+        ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+        ax.set_axisbelow(True)
+    fig.suptitle(f'The student holds {t.n_param / d["n_student"]:.0f} times fewer numbers '
+                 f'and does {t.macs / macs(sizes):.0f} times less arithmetic, and it has '
+                 f'given up {t.acc - d["soft"][-1]:.3f} of accuracy',
+                 fontsize=12.0, weight='bold', y=1.03)
+    _save(fig, SM_DOC, 'teacher-and-student-size.svg')
+
+
+def fig_prune_masks() -> None:
+    """Section 5: scattered zeros leave the shape alone; whole neurons shrink it."""
+    b = big()
+    w = b.w[1][:24, :24]
+    flat = np.abs(w).ravel()
+    thresh = np.quantile(flat, 0.5)
+    scattered = np.abs(w) >= thresh
+    keep_cols = np.argsort(-np.linalg.norm(b.w[1], axis=1))[:12]
+    keep_cols.sort()
+    structured = np.zeros_like(scattered)
+    for c in keep_cols:
+        if c < 24:
+            structured[:, c] = True
+    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.9), facecolor='white')
+    titles = ['every weight kept', 'half the weights set to zero,\nwherever they happen to be',
+              'half the output channels\nremoved completely']
+    masks = [np.ones_like(scattered), scattered, structured]
+    costs = [f'{24 * 24:,} multiply-adds', f'{24 * 24:,} multiply-adds on ordinary hardware',
+             f'{24 * 12:,} multiply-adds, truly']
+    for ax, title, mask, cost in zip(axes, titles, masks, costs):
+        _blank(ax)
+        ax.imshow(np.where(mask, np.abs(w), np.nan), cmap='Blues', vmin=0,
+                  vmax=float(np.abs(w).max()), interpolation='nearest')
+        ax.set_facecolor('#f3f3f3')
+        ax.set_title(title, fontsize=10.6, weight='bold')
+        ax.text(11.5, 25.6, cost, ha='center', fontsize=9.6, color=INK)
+        ax.text(11.5, 27.3, f'shape still 24 x 24' if mask is not structured
+                else 'shape now 24 x 12', ha='center', fontsize=9.2, color=MUTED)
+    fig.suptitle('A hole in a matrix is still a matrix: only taking whole channels out '
+                 'makes the multiplication smaller',
+                 fontsize=12.0, weight='bold', y=1.02)
+    _save(fig, SM_DOC, 'scattered-zeros-against-whole-channels.svg')
+
+
+def fig_prune_accuracy() -> None:
+    """Section 5: accuracy as weights are removed, two ways."""
+    d = exp_prune()
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white')
+    _plain(ax)
+    sp = [100 * v for v in d['sparsities']]            # type: ignore[union-attr]
+    ax.plot(sp, d['uns'], marker='o', color=LINK, lw=2.4, ms=6,   # type: ignore[arg-type]
+            label='smallest weights set to zero, wherever they are')
+    ax.plot([50], [d['two_four']], '*', color=WRIST, ms=18)       # type: ignore[index]
+    ax.annotate(f'2 of every 4 kept: {d["two_four"]:.3f}', xy=(50, d['two_four']),
+                xytext=(14, 0.80), fontsize=9.6, color=WRIST,
+                arrowprops=dict(arrowstyle='-|>', color=WRIST, lw=1.2))
+    ax.axhline(d['base_acc'], color=GRIP, lw=1.6, ls='--')        # type: ignore[arg-type]
+    ax.text(0, d['base_acc'] + 0.015, f'the full network: {d["base_acc"]:.3f}',
+            fontsize=9.5, color=GRIP)
+    for x, v in zip(sp, d['uns']):                                # type: ignore[arg-type]
+        if x in (70.0, 80.0, 90.0):
+            ax.annotate(f'{v:.3f}', xy=(x, v), xytext=(x - 2.0, v - 0.07), fontsize=9.2,
+                        color=LINK)
+    ax.set_xlabel('share of the weights set to zero (%)', fontsize=10)
+    ax.set_ylabel('accuracy on the six-way test set', fontsize=10)
+    ax.set_ylim(0.1, 1.02)
+    ax.set_title('Half the weights can go without being noticed', fontsize=11.2,
+                 weight='bold')
+    ax.legend(fontsize=9.4, frameon=False, loc='lower left')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    saved = [100 * v for v in d['stru_sparsity']]     # type: ignore[union-attr]
+    ax2.plot(saved, d['stru'], marker='s', color=SLIDE, lw=2.4, ms=6,  # type: ignore
+             label='whole hidden neurons removed')
+    ax2.plot([0], [d['base_acc']], 'o', color=GRIP, ms=8)              # type: ignore[index]
+    for x, v, k, mc in zip(saved, d['stru'], d['keeps'], d['stru_macs']):   # type: ignore
+        if k in (40, 32, 24, 16, 8):
+            ax2.annotate(f'{k} kept\n{mc:,} multiply-adds', xy=(x, v),
+                         xytext=(x - 3.0, v - 0.13), fontsize=8.8, color=INK, ha='center')
+    ax2.axhline(d['base_acc'], color=GRIP, lw=1.6, ls='--')            # type: ignore[arg-type]
+    ax2.set_xlabel('arithmetic actually saved (%)', fontsize=10)
+    ax2.set_ylabel('accuracy on the six-way test set', fontsize=10)
+    ax2.set_ylim(0.1, 1.02)
+    ax2.set_xlim(-4, 100)
+    ax2.set_title('Arithmetic you can really save costs more accuracy', fontsize=11.2,
+                  weight='bold')
+    ax2.legend(fontsize=9.4, frameon=False, loc='lower left')
+    ax2.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax2.set_axisbelow(True)
+    _save(fig, SM_DOC, 'accuracy-against-pruning.svg')
+
+
+def fig_two_of_four() -> None:
+    """Section 5: the 2:4 pattern on four real weights."""
+    b = big()
+    d = exp_prune()
+    w = b.w[1][:12, 0]
+    fig, ax = plt.subplots(figsize=(12.2, 4.8), facecolor='white')
+    _blank(ax)
+    for g in range(3):
+        vals = w[g * 4:(g + 1) * 4]
+        order = np.argsort(-np.abs(vals))
+        keep = set(order[:2].tolist())
+        for i, v in enumerate(vals):
+            x = g * 4.6 + i * 1.05
+            kept = i in keep
+            ax.add_patch(Rectangle((x, 0.6), 0.92, 0.9,
+                                   facecolor=LINK if kept else '#eeeeee',
+                                   edgecolor=INK if kept else '#bbbbbb', lw=1.0))
+            ax.text(x + 0.46, 1.05, f'{v:+.3f}', ha='center', va='center', fontsize=10,
+                    color='white' if kept else MUTED)
+            ax.text(x + 0.46, 0.4, 'kept' if kept else 'set to 0', ha='center', fontsize=8.6,
+                    color=LINK if kept else MUTED)
+        ax.text(g * 4.6 + 2.0, 1.78, f'group {g + 1} of four weights', ha='center',
+                fontsize=9.6, color=INK)
+    ax.text(6.9, -0.35,
+            f'Half of every group of four is dropped, which is a pattern the hardware can '
+            f'skip, and it leaves {d["two_four"]:.3f} accuracy against '
+            f'{d["uns"][3]:.3f} when the same share of weights is dropped freely.',
+            ha='center', fontsize=9.8, color=INK)
+    ax.set_xlim(-0.4, 14.0)
+    ax.set_ylim(-0.8, 2.2)
+    ax.set_title('2:4 sparsity: in every run of four weights, the two smallest go',
+                 fontsize=11.8, weight='bold')
+    _save(fig, SM_DOC, 'two-of-four-pattern.svg')
+
+
+def fig_accuracy_against_saving() -> None:
+    """Section 6: every method as one point, measured on the same network."""
+    s = sim()
+    b = big()
+    d = exp_prune()
+    pq = exp_ptq_qat()
+    dist = exp_distil()
+    st = exp_stack()
+    base_bytes = b.n_param * 2.0
+    pts: list[tuple[str, float, float, str]] = []
+    pts.append(('8-bit weights', pq['ptq'][0], base_bytes / (b.n_param * 1.0), LINK))
+    pts.append(('4-bit weights', pq['ptq'][3], base_bytes / (b.n_param * 0.5), TEAL))
+    pts.append(('2-bit weights,\nquantisation-aware', pq['qat'][5],
+                base_bytes / (b.n_param * 0.25), SLIDE))
+    pts.append(('half the weights\nzeroed freely', d['uns'][3], 1.0, MUTED))
+    pts.append(('2 of every 4 kept', d['two_four'], 2.0, WRIST))
+    pts.append(('32 of 48 neurons kept', d['stru'][2],
+                base_bytes / (sum(a * c + c for a, c in zip([FEAT, 32, 32],
+                                                            [32, 32, N_CLASS])) * 2.0),
+                PURPLE))
+    pts.append(('distilled student', dist['soft'][-1],
+                base_bytes / (dist['n_student'] * 2.0), GRIP))
+    pts.append(('distilled student,\n4-bit weights', st['rows'][4][1],
+                base_bytes / st['rows'][4][2], INK))
+    fig, ax = plt.subplots(figsize=(11.4, 5.8), facecolor='white')
+    _plain(ax)
+    for name, acc, save, col in pts:
+        ax.plot([save], [b.acc - acc], 'o', color=col, ms=11)
+        ax.annotate(name, xy=(save, b.acc - acc), xytext=(save * 1.07, b.acc - acc + 0.004),
+                    fontsize=9.3, color=col)
+    ax.axhline(0.0, color=INK, lw=1.0)
+    ax.text(1.02, -0.004, 'no accuracy lost at all', fontsize=9.3, color=INK)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks([1, 2, 4, 8, 16, 32, 64, 128])
+    ax.set_xticklabels(['1', '2', '4', '8', '16', '32', '64', '128'])
+    ax.set_xlim(0.85, 190)
+    ax.set_xlabel('times smaller than the trained network (log scale)', fontsize=10)
+    ax.set_ylabel('accuracy given up', fontsize=10)
+    ax.set_title('Measured on the same small network: a distilled student squeezed to 4 '
+                 'bits is 83 times smaller for 0.003 of accuracy',
+                 fontsize=11.6, weight='bold')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, SM_DOC, 'accuracy-lost-against-size-saved.svg')
+
+
+def fig_summary_table() -> None:
+    """Section 6: the whole page as one table of measured numbers."""
+    b = big()
+    d = exp_prune()
+    pq = exp_ptq_qat()
+    dist = exp_distil()
+    st = exp_stack()
+    rows = [
+        ('8-bit weights, one scale per channel', f'{pq["ptq"][0]:.3f}',
+         f'{b.acc - pq["ptq"][0]:+.3f}', '2 times', '2 times', 'measured'),
+        ('4-bit weights, one scale per channel', f'{pq["ptq"][3]:.3f}',
+         f'{b.acc - pq["ptq"][3]:+.3f}', '4 times', '4 times', 'measured'),
+        ('2-bit weights, quantisation-aware', f'{pq["qat"][5]:.3f}',
+         f'{b.acc - pq["qat"][5]:+.3f}', '8 times', '8 times', 'measured'),
+        ('half the weights zeroed freely', f'{d["uns"][3]:.3f}',
+         f'{b.acc - d["uns"][3]:+.3f}', 'none on ordinary\nhardware', 'none', 'measured'),
+        ('2 of every 4 weights kept', f'{d["two_four"]:.3f}',
+         f'{b.acc - d["two_four"]:+.3f}', '2 times, if the\nhardware knows',
+         'up to 2 times', 'measured, speed illustrative'),
+        ('32 of 48 hidden neurons kept', f'{d["stru"][2]:.3f}',
+         f'{b.acc - d["stru"][2]:+.3f}', '2.0 times', '2.0 times', 'measured'),
+        ('distilled into a smaller student', f'{dist["soft"][-1]:.3f}',
+         f'{b.acc - dist["soft"][-1]:+.3f}', '20.7 times', '22.0 times', 'measured'),
+        ('distilled, then squeezed to 4 bits', f'{st["rows"][4][1]:.3f}',
+         f'{b.acc - st["rows"][4][1]:+.3f}', '82.8 times', '22.0 times', 'measured'),
+    ]
+    fig, ax = plt.subplots(figsize=(13.6, 5.6), facecolor='white')
+    _blank(ax)
+    heads = ['what was done', 'accuracy', 'accuracy\ngiven up', 'memory\nsaved',
+             'arithmetic\nsaved', 'where the number\ncomes from']
+    xs = [0.02, 0.40, 0.50, 0.615, 0.745, 0.875]
+    for x, h in zip(xs, heads):
+        ax.text(x, 0.93, h, fontsize=9.8, color=MUTED, weight='bold', va='top')
+    ax.plot([0.0, 1.0], [0.875, 0.875], color=INK, lw=1.0)
+    for i, row in enumerate(rows):
+        y = 0.825 - i * 0.098
+        if i % 2 == 0:
+            ax.add_patch(Rectangle((0.0, y - 0.052), 1.0, 0.094, facecolor='#f6f6f6',
+                                   edgecolor='none'))
+        for x, cell in zip(xs, row):
+            ax.text(x, y, cell, fontsize=9.4, color=INK, va='center')
+    ax.set_xlim(0, 1.0)
+    ax.set_ylim(-0.02, 1.0)
+    ax.set_title(f'Every row measured on the same {b.n_param:,}-parameter network, whose '
+                 f'own accuracy is {b.acc:.3f}',
+                 fontsize=11.8, weight='bold')
+    _save(fig, SM_DOC, 'method-summary-table.svg')
+
+
+def fig_stack_methods() -> None:
+    """Section 6: the methods are not alternatives, they stack."""
+    st = exp_stack()
+    rows = st['rows']                        # type: ignore[index]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.2), facecolor='white')
+    names = [r[0].replace(', ', ',\n') for r in rows]
+    accs = [r[1] for r in rows]
+    bytes_ = [r[2] for r in rows]
+    cols = [GRIP, WRIST, LINK, TEAL, SLIDE]
+    xx = np.arange(len(rows))
+    _plain(ax)
+    ax.bar(xx, bytes_, color=cols, width=0.58)
+    ax.set_yscale('log')
+    for x, v in zip(xx, bytes_):
+        ax.text(x, v * 1.25, f'{v:,.0f} bytes', ha='center', fontsize=9.6, color=INK)
+    ax.set_xticks(xx)
+    ax.set_xticklabels(names, fontsize=8.8)
+    ax.set_ylabel('bytes of weights (log scale)', fontsize=10)
+    ax.set_ylim(30, 4e4)
+    ax.set_title('What the weights take up', fontsize=11.2, weight='bold')
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    ax2.bar(xx, accs, color=cols, width=0.58)
+    for x, v in zip(xx, accs):
+        ax2.text(x, v + 0.0015, f'{v:.3f}', ha='center', fontsize=10, color=INK,
+                 weight='bold')
+    ax2.set_xticks(xx)
+    ax2.set_xticklabels(names, fontsize=8.8)
+    ax2.set_ylabel('accuracy on the six-way test set', fontsize=10)
+    ax2.set_ylim(0.90, 0.945)
+    ax2.set_title('What it costs in accuracy', fontsize=11.2, weight='bold')
+    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax2.set_axisbelow(True)
+    fig.suptitle(f'Distilling and then quantising gives '
+                 f'{rows[0][2] / rows[4][2]:.0f} times smaller weights for '
+                 f'{rows[0][1] - rows[4][1]:.3f} of accuracy',
+                 fontsize=12.0, weight='bold', y=1.02)
+    _save(fig, SM_DOC, 'distil-then-quantise.svg')
+
+
+def main() -> None:
+    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    global PNG_DIR
+    if len(sys.argv) == 3 and sys.argv[1] == '--png':
+        PNG_DIR = pathlib.Path(sys.argv[2])
+        PNG_DIR.mkdir(parents=True, exist_ok=True)
+    report_shape()
+    report_prompt_cost()
+    report_lora()
+    report_qlora()
+    report_fit()
+    sim()
+    big()
+    fig_rungs_what_moves()
+    fig_rung_trainable_bars()
+    fig_prompt_cost_crossover()
+    fig_bytes_you_ship()
+    fig_model_shape()
+    fig_bytes_per_parameter()
+    fig_memory_per_rung()
+    fig_unfreeze_blocks()
+    fig_lora_two_thin_matrices()
+    fig_lora_rank_counts()
+    fig_lora_where()
+    fig_lora_scaling_folding()
+    fig_qlora_memory()
+    fig_qlora_groups()
+    fig_qlora_recovers()
+    fig_forgetting_curves()
+    fig_forgetting_what_helps()
+    fig_forgetting_mix()
+    fig_forgetting_frontier()
+    fig_data_curves()
+    fig_data_distance()
+    fig_data_variation()
+    fig_memory_by_precision()
+    fig_bandwidth_tokens()
+    fig_latency_budget()
+    fig_weights_and_levels()
+    fig_step_size()
+    fig_error_per_weight()
+    fig_error_vs_bits()
+    fig_per_channel_scales()
+    fig_scale_choice_error()
+    fig_ptq_vs_qat()
+    fig_mode_accuracy()
+    fig_soft_target()
+    fig_temperature()
+    fig_student_curves()
+    fig_teacher_student_size()
+    fig_prune_masks()
+    fig_prune_accuracy()
+    fig_two_of_four()
+    fig_accuracy_against_saving()
+    fig_summary_table()
+    fig_stack_methods()
+    print(f'wrote the diagrams under {IMAGES}')
+
+
+if __name__ == '__main__':
+    main()

@@ -11,9 +11,8 @@ weight near the start is to blame for the answer at the end.
 
 This page answers that. The method is called **backpropagation**, which is
 short for the backward propagation of errors, and it works out the slope for
-every weight in the network in one sweep from the output back to the input.
-The sweep costs about as much arithmetic as working the network out forwards
-once, which is the reason training large networks is possible at all.
+every weight in one sweep from the output back to the input, for about as much
+arithmetic as working the network out forwards once.
 
 It is for a reader who has read the two pages before it, so it assumes you
 already know what a loss is from [the score of being
@@ -50,12 +49,12 @@ One turn of the handle turns the drum 3 times, each drum turn lifts the hook 2.5
 
 The question this picture answers is how much the hook rises for one turn of
 the handle, when nobody has measured the handle against the hook directly. You
-do not need to measure it, because you already know the two stages. The first
-stage gives 3 drum turns for every handle turn, and the second gives 2.5
-centimetres for every drum turn, so one handle turn gives 3 times 2.5, which is
-7.5 centimetres. Multiplying the two stages together is the whole idea, and it
-has a name, the **chain rule**: when one thing feeds a second thing, the slope
-from the first to the last is the slope of each stage multiplied together.
+do not need to measure it, because the first stage gives 3 drum turns for every
+handle turn and the second gives 2.5 centimetres for every drum turn, so one
+handle turn gives 3 times 2.5, which is 7.5 centimetres. Multiplying the two
+stages together is the whole idea, and it is called the **chain rule**: when
+one thing feeds a second thing, the slope from the first to the last is the
+slope of each stage multiplied together.
 
 The word **slope** means here what it meant on the page before, which is how
 much one number changes when another changes by one. The rule works on small
@@ -72,18 +71,15 @@ as it fills, so a late turn lifts the hook further than an early one.
 
 Stage one still has the single slope 3, but stage two has a different slope at every point, 4.8 centimetres per drum turn when the drum has already turned 6 times and 2.4 when it has turned 3.
 
-The rule survives the bend, with one change: you have to take each stage's
-slope at the place you are actually standing. At 2 handle turns the drum stands
-at 6 turns, where stage two lifts 4.8 centimetres per drum turn, so the whole
-winch lifts 3 times 4.8, which is 14.4 centimetres per handle turn. At 1 handle
-turn the drum stands at 3 turns, stage two lifts only 2.4 centimetres per drum
-turn, and the whole winch lifts 7.2. The same machine has two different answers
-because the answer depends on where the machine happens to be, and this is
-exactly why a network's gradients have to be worked out afresh for every batch
-of examples.
-
-You can check the rule without trusting it, by nudging the handle and measuring
-the hook, which is what the next picture does.
+The rule survives the bend, with one change, which is that you have to take
+each stage's slope at the place you are actually standing. At 2 handle turns
+the drum stands at 6 turns, where stage two lifts 4.8 centimetres per drum
+turn, so the whole winch lifts 3 times 4.8, which is 14.4 centimetres per
+handle turn. At 1 handle turn the drum stands at 3 turns and the whole winch
+lifts only 7.2. The same machine has two answers because the answer depends on
+where the machine happens to be, which is why a network's gradients have to be
+worked out afresh for every batch of examples. You can check all this by
+nudging the handle and measuring the hook, which is what the next picture does.
 
 ![A bar chart of measured centimetres per handle turn for nudges of 1, 0.5, 0.2, 0.05, 0.01 and 0.001, falling towards a red dashed line at 14.4](../../images/how-training-works/backpropagation/chain-finite-difference.svg)
 
@@ -156,19 +152,18 @@ The forward pass ended with one number, the slope of the loss against the
 output, and the **backward pass** is the trip the other way, which hands that
 number back along every line and multiplies it by the slope of each stage as it
 goes. The number travelling back is usually called the blame, because each
-weight ends up holding the share of the loss that it caused.
+weight ends up with the share of the loss it caused.
 
 ![The same network drawn with red arrows pointing backwards, each labelled with the gradient of the loss for the weight on that line](../../images/how-training-works/backpropagation/tiny-network-backward.svg)
 
 The -1.72 leaving the loss becomes -1.204 for the weight v1, -2.064 for the weight w11, and exactly 0.000 for the three weights that feed the hidden neuron whose gate was shut.
 
 Take it one stage at a time, and notice that each step is one multiplication.
-
 The output neuron adds up h1 times v1, h2 times v2, and its bias, so raising v1
-by 1 would raise the output by h1, which is 0.70. The blame for v1 is therefore
-the blame on the output multiplied by 0.70, which is -1.72 times 0.70, or
--1.204. The blame for v2 is -1.72 times h2, and since h2 is 0.00 that comes to
-0.000. The bias has no multiplier at all, so its blame is the full -1.72.
+by 1 would raise the output by h1, which is 0.70, and the blame for v1 is
+therefore -1.72 times 0.70, or -1.204. The blame for v2 is -1.72 times h2,
+which is 0.000 because h2 is 0.00, and the bias has no multiplier at all, so
+its blame is the full -1.72.
 
 The same sum also sends blame backwards to the hidden outputs themselves,
 because raising h1 by 1 would raise the output by v1. The blame reaching h1 is
@@ -266,8 +261,8 @@ The weights, their gradients and the optimiser state together stay at 0.20 gigab
 
 It is also why there is a trick called gradient checkpointing, which throws
 some activations away during the forward pass and works them out again during
-the backward pass. It saves memory and costs time, and the trade is often worth
-taking, because memory is usually the wall you hit first.
+the backward pass, saving memory and costing time. Memory is usually the wall
+you hit first, so the trade is often worth taking.
 
 ---
 
@@ -299,8 +294,9 @@ That is the mechanical reason deep networks did not work for years, and the
 reason the ReLU rule took over, because its slope is exactly 1 wherever the
 gate is open and so it does not shrink the blame at all. The activation
 function is only half of it, though, because the blame is also multiplied by
-the weights themselves on the way back, and the picture below runs real stacks
-of layers to measure what that does.
+the weights themselves on the way back. The picture below runs real stacks of
+layers, forwards and backwards, to measure what that does, on simulated data
+and starting weights drawn from a fixed seed.
 
 ![Three panels for stacks of 10, 30 and 60 layers, each showing the blame size against layer for three starting weight scales on a log scale](../../images/how-training-works/backpropagation/gradient-by-layer.svg)
 
@@ -320,26 +316,21 @@ step.
 
 Those two failures were understood long before they were solved, and what
 finally fixed them was not one idea but four, each attacking a different part
-of the multiplication. This section takes them in the order they matter, and
-every picture in it is the same stack of 50 layers with one thing changed.
-
-The first and biggest is the **residual connection**, which was explained in
-[layers and depth](../02_inside-a-network/02_layers-and-depth.md): instead of
-replacing what came in, a layer adds its result to it, so the numbers flow
-along a path that goes round every layer as well as through it.
+of the multiplication. The first and biggest is the residual connection, which
+was explained in [layers and
+depth](../02_inside-a-network/02_layers-and-depth.md), where instead of
+replacing what came in a layer adds its result to it, so the numbers flow along
+a path that goes round every layer as well as through it.
 
 ![Two panels for a 50-layer stack, the left showing blame by layer and the right activation size by layer, for a plain stack, a residual stack and a residual stack with rescaling](../../images/how-training-works/backpropagation/residual-gradient.svg)
 
 In the plain stack the blame falls from 9.766e-04 to 7.157e-19 by the time it reaches layer 1, and with residual connections it arrives at 9.067e+02 instead.
 
 The reason is that the add has a slope of 1, so a copy of the blame goes
-straight past each layer untouched, and the shrinking only applies to the copy
+straight past each layer untouched and the shrinking applies only to the copy
 that went through. The cost is in the right panel, where the forward numbers
-grow instead, because each layer adds to what came before and the sum gets
-larger with every one.
-
-That growth is what the second fix is for. **Normalisation**, which the next
-page of the book after this chapter covers properly in [normalisation and
+grow instead, because each layer adds to what came before. That growth is what
+the second fix is for: normalisation, covered properly in [normalisation and
 stability](../04_making-training-work/02_normalisation-and-stability.md),
 rescales each layer's output so that its numbers have a fixed size whatever
 came in.
@@ -350,42 +341,36 @@ Without rescaling, a stack of 40 layers ends with numbers of size 5.125e+05 when
 
 What rescaling buys is that the starting scale of the weights stops mattering,
 because whatever a layer produces is divided by its own size before it goes on.
-Put the two fixes together and the 50-layer residual stack hands its first
-layer a blame of 1.568e-03 against the 9.766e-04 that left the loss, which is
-level enough to train. That pairing, a residual add with normalisation, is in
-essentially every deep network built today.
-
-The third fix is the activation function itself, and the choice is now between
-rules that hand back a slope near 1 rather than a slope near 0.
+Put the two together and the 50-layer residual stack hands its first layer a
+blame of 1.568e-03 against the 9.766e-04 that left the loss, which is level
+enough to train, and that pairing is in essentially every deep network built
+today. The third fix is the activation function itself, where the choice is now
+between rules that hand back a slope near 1 rather than near 0.
 
 ![Two panels, one with the slope curves of four activation rules and one with a bar chart of the steepest slope each can hand back](../../images/how-training-works/backpropagation/activation-slopes.svg)
 
 The S-shaped rule can hand back at most 0.25, so thirty layers of it multiply the blame by 8.7e-19, while the rectified linear unit and tanh can hand back 1.00 and GELU can hand back 1.13.
 
-The rectified linear unit hands back either 1 or 0, so the units that are on do
-not shrink anything, and the smoother rules GELU and SiLU hand back something
-close to 1 over most of their range while still bending. What they cost is that
-a ReLU unit which is always off for every example gets a gradient of 0 for
-ever and never comes back, which is why the smooth rules are usually preferred
-in large models.
-
-The fourth fix does not prevent a large gradient, it catches one. **Gradient
-clipping** measures the overall size of the gradient before the step is taken,
-and if that size is above a threshold it scales every gradient down by the same
-factor, so the direction is kept and only the length is cut.
+The rectified linear unit hands back either 1 or 0, so the units that are on
+shrink nothing, and the smoother rules GELU and SiLU hand back something close
+to 1 over most of their range while still bending. What ReLU costs is that a
+unit which is off for every example gets a gradient of 0 for ever and never
+comes back, which is why the smooth rules are usually preferred in large
+models. The fourth fix does not prevent a large gradient but catches one:
+**gradient clipping** measures the size of the whole gradient before the step
+is taken, and if it is above a threshold it scales every gradient down by the
+same factor, so the direction is kept and only the length is cut.
 
 ![Two panels, one showing gradient size over 240 steps with a threshold line at 10, and one showing the loss with and without clipping](../../images/how-training-works/backpropagation/clipping-run.svg)
 
-In this run six of the 512 targets were spoilt on purpose, so most steps have a gradient of about 2.63 and a few reach 40.8, and clipping at 10 keeps the worst loss along the way to 8.6 instead of 30.5.
+In this simulated run six of the 512 targets were spoilt on purpose, so most steps have a gradient of about 2.63 and a few reach 40.8, and clipping at 10 keeps the worst loss along the way to 8.6 instead of 30.5.
 
-This is a run with one odd example in a few of the batches, which is what real
-data looks like. Without clipping, each bad batch throws the weights far enough
-that the next several steps are spent coming back, and the run ends at a loss
-of 0.144 on the clean examples. With clipping it ends at 0.018, because a bad
-batch costs one slow step instead of twenty wasted ones. The obvious
-alternative is to lower the learning rate until no batch can do damage, and
-that works, but it also slows down every one of the quiet steps, which is most
-of them, so clipping is the better trade.
+Without clipping, each bad batch throws the weights far enough that the next
+several steps are spent coming back, and the run ends at a loss of 0.144 on the
+clean examples, where with clipping it ends at 0.018. The obvious alternative
+is to lower the learning rate until no batch can do damage, and that works, but
+it slows down every one of the quiet steps as well, which is most of them, so
+clipping is the better trade.
 
 ---
 
@@ -393,28 +378,26 @@ of them, so clipping is the better trade.
 
 - [The training loop](04_the-training-loop.md) is the next page, and it puts
   the forward pass, the backward pass and the step into the loop that actually
-  runs, with the optimiser, the schedule and the checkpoint around them.
+  runs, with the optimiser and the schedule around them.
 - [Layers and depth](../02_inside-a-network/02_layers-and-depth.md) is where
-  the residual connection of section 6 was introduced, and it is worth
-  rereading now that you know what the backward pass does with it.
+  the residual connection of section 6 was introduced.
 - [Normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
-  takes section 6's rescaling seriously, and explains layer normalisation, root
-  mean square normalisation and what a loss spike is.
+  takes section 6's rescaling seriously, and explains layer normalisation and
+  what a loss spike is.
 - [The shape of the numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md)
-  explains the tensors and the matrix multiplies whose memory section 4
-  counted, including what fewer bytes per number buys you.
+  explains the tensors whose memory section 4 counted, and what fewer bytes per
+  number buys you.
 - [How a model learns](../../07_learned-models/01_what-models-are/02_how-a-model-learns.md)
-  in the catalogue book gives the same training story at the level of a whole
-  robot model, if you want the short version before carrying on.
+  in the catalogue book gives the same story at the level of a whole robot
+  model.
 
 ---
 
 ## 8. Using it in Python
 
 Sections 2 and 3 worked the tiny network out by hand and section 4 said that
-nobody does that any more. This is what it looks like when the framework does
-it, and the numbers it prints are the numbers this page has been quoting all
-along.
+nobody does that any more. This is the same network when the framework does it,
+and the numbers it prints are the ones this page has been quoting.
 
 ```python
 import torch
@@ -433,23 +416,23 @@ u = h1 * v1 + c                         # the output, with h2 left out because i
 loss = (u - target) ** 2                # section 2's squared error
 
 loss.backward()                         # section 3: the whole backward pass
-print(float(z1), float(h1), float(u), float(loss))   # 0.7 0.7 1.1399999 0.7395999
-print(float(w11.grad), float(w21.grad), float(b1.grad))   # -2.064 -1.032 -2.064
-print(float(v1.grad), float(c.grad))                      # -1.204 -1.72
+r = lambda t, n=4: round(float(t), n)   # rounded: stored numbers carry tiny errors
+print(r(z1), r(h1), r(u), r(loss))      # 0.7 0.7 1.14 0.7396
+print(r(w11.grad, 3), r(w21.grad, 3), r(b1.grad, 3))   # -2.064 -1.032 -2.064
+print(r(v1.grad, 3), r(c.grad, 3))                     # -1.204 -1.72
 ```
 
 The call to `backward` is the whole of section 3. The framework kept the tape
-of section 4 while the five lines above it ran, and reading that tape backwards
-filled in a `.grad` for every tensor that asked for one. The printed values
-are the same -2.064, -1.032, -2.064, -1.204 and -1.72 that section 3 worked out
-by hand, because the chain rule has only one answer.
+of section 4 while the lines above it ran, and reading that tape backwards
+filled in a `.grad` for every tensor that asked for one, giving the same
+-2.064, -1.032, -2.064, -1.204 and -1.72 that section 3 worked out by hand.
 
-What the library does for you is everything mechanical: it knows the slope of
-every operation it offers, it keeps the values the backward pass will need, it
-runs the sweep in the right order, and it adds up the blame correctly when one
-value feeds several later ones. It also offers `torch.autograd.gradcheck`,
-which does section 4's nudge-and-measure comparison for you, and that is the
-right tool when you write an operation of your own.
+What the library does for you is everything mechanical, because it knows the
+slope of every operation it offers, it keeps the values the backward pass will
+need, it runs the sweep in the right order, and it adds the blame up correctly
+when one value feeds several later ones. It also offers
+`torch.autograd.gradcheck`, which does section 4's nudge-and-measure comparison
+for you when you write an operation of your own.
 
 What you still have to decide is everything the framework cannot know. You
 decide when to clear the gradients, because `backward` adds to `.grad` rather
@@ -457,6 +440,6 @@ than replacing it, and the next page explains why that matters. You decide
 whether to clip, with `torch.nn.utils.clip_grad_norm_`, and at what threshold.
 You decide whether to trade memory for time with
 `torch.utils.checkpoint.checkpoint`, which is section 4's gradient
-checkpointing. And you decide the arrangement of layers, which is what section
-6 was about, because residual connections and normalisation are things you put
-in the network, not things the backward pass can add for you.
+checkpointing. And you decide the arrangement of layers from section 6, because
+residual connections and normalisation are things you put in the network, not
+things the backward pass can add for you.

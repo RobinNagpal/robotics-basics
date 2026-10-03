@@ -11,10 +11,10 @@ holds for an example it has not seen.
 
 So this page answers one question. How do you tell a model that has learned
 the pattern from a model that has only memorised the answers? The short answer
-is that you keep some examples back, never train on them, and watch the error
-on those instead, and the rest of the page is needed because keeping examples
-back is easy to do wrongly and because each cheap way of pushing a model
-towards learning rather than memorising costs you something.
+is to keep some examples back, never train on them, and watch the error on
+those instead, and the rest of the page is needed because keeping examples back
+is easy to do wrongly and because each way of pushing a model towards learning
+costs you something.
 
 The page assumes you know what a [loss](../03_how-training-works/01_the-score-of-being-wrong.md)
 is, what a [gradient descent step](../03_how-training-works/02_gradient-descent.md)
@@ -82,7 +82,7 @@ for each of the 12 training points.
 
 ![A log-log plot of training loss and held-out loss against training step, with both falling together until step 481, after which the held-out loss turns and climbs to 3.63 while the training loss keeps falling to 0.0096](../../images/making-training-work/overfitting-and-generalisation/network-train-and-held-out.svg)
 
-Both losses fall together for the first few hundred steps and then part company: the training loss reaches 0.0096 by step 8,000 while the held-out loss climbs from its best value of 0.2204 to 3.6261.
+The two losses part company after a few hundred steps: training reaches 0.0096 by step 8,000 while held-out climbs from its best value of 0.2204 to 3.6261.
 
 For the first 481 steps the network is learning the shape of the curve, so
 both losses fall. After that the training loss keeps falling because the network
@@ -114,7 +114,7 @@ always better than the truth.
 
 ![120 small squares in rows, coloured pale blue, orange and red, with a key saying 84 training, 18 validation and 18 test, and what each set is used for](../../images/making-training-work/overfitting-and-generalisation/three-way-split.svg)
 
-Of 120 measurements, 84 go into the training set, 18 into the validation set and 18 into the test set, and each square in the picture is one measurement.
+Each square is one of 120 measurements, and 84 go into the training set, 18 into the validation set and 18 into the test set.
 
 The **training set** is the only set whose examples ever change a weight, and
 it is the largest because the model learns from it. The **validation set** is
@@ -128,11 +128,10 @@ every choice is final, and its number is the one you report.
 
 The validation set picks degree 3, whose validation error is 0.388, and the test set is then read once and gives 0.342 for that same model.
 
-The test error of 0.342 came out a little better than the validation error of
-0.388, which is luck rather than a rule, and the validation set preferred degree
-3 over degree 10 by only 0.0007, so a different 18 examples would have chosen
-differently. Small validation sets make noisy choices, which is the honest cost
-of keeping most of your data for training.
+The validation set preferred degree 3 over degree 10 by only 0.0007, so a
+different 18 examples would have chosen differently, and small validation sets
+making noisy choices is the honest cost of keeping most of your data for
+training.
 
 Now for why reusing the test set ruins it. Suppose you have several finished
 candidates, perhaps saved copies from one run, and they are all equally good,
@@ -182,8 +181,8 @@ The same model on the same data scores 100.0%, 79.2% and 45.0% depending only on
 Those three numbers come from one model and one set of 1,080 frames. With a
 random frame split it is perfect, which is a lie. Split by whole episode it gets
 79.2%, which honestly answers "how will it do on a new attempt in a room it has
-seen". With a whole scene held back it gets 45.0%, which answers "how will it do
-in a room it has never seen", and that is usually the question you care about.
+seen", and with a whole scene held back it gets 45.0%, which answers "how will it
+do in a room it has never seen", usually the question you care about.
 
 ![A grid of 27 episodes in three rows of nine, one row per scene, with three episodes in each row marked as held out and each box labelled with the object it contains](../../images/making-training-work/overfitting-and-generalisation/episodes-by-scene.svg)
 
@@ -196,12 +195,11 @@ shown. In practice that means keeping a label on every example saying which
 episode, scene and object it came from, and splitting on that label rather than
 on the example.
 
-Leakage has quieter forms, all from letting information cross the split. Working
-out the average and spread of your features over the whole dataset lets the test
-examples contribute to numbers the model uses, and recording all your successes
-on Monday and all your failures on Tuesday lets the camera's white balance give
-the answer away. The question to ask of any split is always what the model could
-read off the test examples that it already saw in training.
+Leakage has quieter forms, all from letting information cross the split, as
+when you work out the average and spread of your features over the whole dataset
+so that the test examples contribute to numbers the model uses. The question to
+ask of any split is always what the model could read off the test examples that
+it already saw in training.
 
 ---
 
@@ -214,19 +212,18 @@ is **regularisation**, and the three cheapest kinds all work by making it harder
 for the model to fit the training examples exactly, which sounds like a strange
 goal until you remember that fitting them exactly is what went wrong.
 
-The first costs nothing, because you already have the picture you need. **Early
-stopping** means watching the validation loss while training, keeping a copy of
-the weights whenever it reaches a new low, and using that copy rather than the
-weights you end with.
+The first costs nothing. **Early stopping** means watching the validation loss
+while training, keeping a copy of the weights whenever it reaches a new low, and
+using that copy rather than the weights you end with.
 
 ![A log-scale plot of training and validation loss over the first 2,500 steps, with a circle and a vertical line marking the lowest validation loss of 0.2204 at step 481](../../images/making-training-work/overfitting-and-generalisation/early-stopping-point.svg)
 
 Early stopping keeps the weights from step 481, where the validation loss was 0.2204, instead of the weights from step 8,000, where it was 3.6261.
 
 You do not stop the moment the validation loss ticks upwards, because it
-wobbles from step to step, so you wait a fixed number of scores for a new low
-before giving up, and that number is called the patience. The cost is a
-validation set and the time spent pausing training to score it.
+wobbles, so you wait a fixed number of scores for a new low before giving up,
+and that number is called the patience. The cost is a validation set and the
+time spent pausing training to score it.
 
 The second method changes the network during training. **Dropout** means
 choosing, at every training step and at random, some fraction of the units in a
@@ -246,7 +243,7 @@ activation is then divided by 1 minus p to bring the sum back to 5.7400.
 
 ![A bar chart with three bars: the layer sum of 7.8033 with no dropout, the average masked sum of 5.8573 with no scaling, and the average scaled sum of 7.8097](../../images/making-training-work/overfitting-and-generalisation/dropout-keeps-the-average.svg)
 
-Averaged over 40,000 random masks the masked sum is 5.8573, which is 75% of the true 7.8033, and multiplying by 1.3333 brings the average to 7.8097.
+Over 40,000 random masks the masked sum averages 5.8573, which is 75% of the true 7.8033, and the 1.3333 scaling brings that average to 7.8097.
 
 The scaling matters because the next layer has to see numbers of the usual
 size, and although it cannot get that right for every mask it does on average,
@@ -260,7 +257,7 @@ ones it was invented for.
 The third method pulls on the weights directly. **Weight decay** subtracts a
 small multiple of each weight from itself at every step, on top of the gradient
 step, so every weight is dragged towards zero and stays large only if the
-gradient keeps pushing it back out.
+gradient keeps pushing it out.
 
 ![A log-scale histogram of weight values at the end of training, with the no-decay run in red reaching out to 7.18 and the decay-0.3 run in blue concentrated near zero](../../images/making-training-work/overfitting-and-generalisation/weight-sizes.svg)
 
@@ -296,7 +293,7 @@ two hundred pictures cannot memorise them one by one.
 
 ![Four 16 by 16 grey pictures of a mug: the original, shifted two columns right, at 0.6 brightness, and flipped left to right, each labelled with its mean brightness and centre column](../../images/making-training-work/overfitting-and-generalisation/safe-augmentations.svg)
 
-Shifting the mug moves its centre column from 7.22 to 9.22, dimming it drops the mean brightness from 0.1984 to 0.1191, and flipping it leaves both the brightness and the answer "mug" alone.
+Shifting the mug moves its centre column from 7.22 to 9.22, dimming drops the mean brightness from 0.1984 to 0.1191, and flipping leaves both the brightness and the answer "mug" alone.
 
 Each of those three is safe for a reason you can state. Shifting is safe
 because the camera could have been mounted two centimetres to the left, dimming
@@ -372,20 +369,17 @@ At a width of 60 there is exactly one way to pass through all 60 points, and
 that one way is forced to be a wild shape, like section 1's red curve. Past 60
 there are many ways, and fitting by least squares picks the gentlest of them, so
 the fit improves the more choice it has. This is the honest reason the biggest
-models of today keep improving as they are made larger, in a region where the
-classical picture predicts they should be useless, and it is why large-model
-practice looks odd from the textbook, since training continues long past the
-point where the training loss is tiny, dropout is often left out altogether, and
-the run is sized by the data and arithmetic available rather than by a validation
-curve turning upwards.
+models of today keep improving as they are made larger, where the classical
+picture predicts they should be useless, and it is why large-model practice looks
+odd from the textbook: training continues long past the point where the training
+loss is tiny, dropout is often left out, and the run is sized by the data and
+arithmetic available rather than by a validation curve turning upwards.
 
-None of this lets you off sections 2 to 5, because double descent needs far more
-model than data together with a method that quietly prefers gentle solutions,
-and a few hundred demonstrations against a model of a few hundred million
-weights lands you near the peak rather than past it. The practical reading is
-that the classical picture tells you what to expect at the scale you work at,
-and that "the model is too big" is a claim to check with a measurement rather
-than a rule.
+None of this lets you off sections 2 to 5, because double descent needs far
+more model than data together with a method that quietly prefers gentle
+solutions, and a few hundred demonstrations against a model of a few hundred
+million weights lands you near the peak rather than past it. So "the model is
+too big" is a claim to check with a measurement rather than a rule.
 
 ---
 
@@ -397,16 +391,16 @@ than a rule.
 - [Running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   takes section 2's honest number to real trials on an arm.
 - [Scale, data and compute](../07_pretraining-and-adapting/02_scale-data-and-compute.md)
-  says how much data a model of a given size needs, which is the other side of
-  section 6's peak.
+  says how much data a model of a given size needs, the other side of section
+  6's peak.
 - [Fine-tuning and adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md)
   is where overfitting bites hardest, because a fine-tune often has only a few
   dozen demonstrations.
 - [Evaluation and failure](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md)
   is the catalogue page for testing a model on a real arm.
 - [Where the data comes from](../../07_learned-models/01_what-models-are/05_where-the-data-comes-from.md)
-  describes how robot datasets are collected, which decides where section 3's
-  seams are.
+  describes how robot datasets are collected, which decides where the seams
+  are.
 
 ---
 
@@ -460,11 +454,11 @@ model.load_state_dict(best_weights)
 The library does three things for you. It applies the dropout mask and the
 1.3333 scaling and turns both off when you call `model.eval()`, which is the
 thing people most often forget and the reason a model can look worse in testing
-than in training for no good reason. It applies weight decay inside the
-optimiser rather than by adding a term to the loss, which is what the W in AdamW
-means and what makes the decay strength mean the same thing at every learning
-rate. And it gives you `state_dict` and `load_state_dict`, so keeping and
-restoring the best weights is two lines rather than a bookkeeping exercise.
+than in training. It applies weight decay inside the optimiser rather than by
+adding a term to the loss, which is what the W in AdamW means and what makes the
+decay strength mean the same thing at every learning rate. And `state_dict` and
+`load_state_dict` make keeping and restoring the best weights two lines rather
+than a bookkeeping exercise.
 
 What you still have to decide is everything that matters. The library has no
 idea that your frames came from episodes, so the split is yours to get right, and

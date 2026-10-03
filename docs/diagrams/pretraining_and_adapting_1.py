@@ -1712,3 +1712,1040 @@ def labels_needed() -> None:
                  fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     _save(fig, SSP_DOC, 'labels-needed.svg')
+
+
+# ==========================================================================
+# page 2: 02_scale-data-and-compute.md
+#
+# Everything below is arithmetic on example configurations that are stated in
+# full. The example model, the example accelerator and the scaling formula are
+# written for this page; none of them is a measurement of a real product.
+# ==========================================================================
+
+# the example model: a transformer of 32 blocks, width 4096, vocabulary 128,000
+EX_LAYERS: int = 32
+EX_WIDTH: int = 4096
+EX_VOCAB: int = 128_000
+EX_SEQ: int = 4096
+
+# the example accelerator
+EX_FLOPS: float = 4.0e14          # floating-point operations a second, at full stretch
+EX_BAND: float = 2.0e12           # bytes a second between its memory and its arithmetic
+EX_MEM: float = 80e9              # bytes of memory on the card
+EX_USE: float = 0.40              # share of the arithmetic a real run keeps busy
+
+BYTES: dict[str, float] = {'float32': 4.0, 'bfloat16': 2.0, 'float16': 2.0,
+                           'int8': 1.0, 'int4': 0.5}
+
+
+def transformer_params(layers: int = EX_LAYERS, width: int = EX_WIDTH,
+                       vocab: int = EX_VOCAB) -> dict[str, float]:
+    """Parameters of the example transformer, split into the three places they sit."""
+    attention = 4.0 * width * width * layers
+    feed_forward = 8.0 * width * width * layers
+    embedding = float(vocab) * width
+    return {'attention': attention, 'feed-forward': feed_forward,
+            'embedding table': embedding,
+            'total': attention + feed_forward + embedding}
+
+
+# --------------------------------------------------------------------------
+# page 2, section 1: what a graphics processing unit does
+# --------------------------------------------------------------------------
+
+def one_matrix_multiply() -> None:
+    rng = np.random.default_rng(21)
+    a = rng.integers(-3, 4, size=(4, 3)).astype(float)
+    b = rng.integers(-3, 4, size=(3, 5)).astype(float)
+    c = a @ b
+    row, col = 1, 2
+    terms = [f'({a[row, k]:.0f} x {b[k, col]:.0f})' for k in range(3)]
+    print(f'[gpu] a {a.shape[0]} by {a.shape[1]} grid times a {b.shape[0]} by '
+          f'{b.shape[1]} grid gives a {c.shape[0]} by {c.shape[1]} grid')
+    print(f'[gpu] cell (row {row + 1}, column {col + 1}) = '
+          + ' + '.join(terms) + f' = {c[row, col]:.0f}')
+    print(f'[gpu] the whole thing is {c.shape[0]} x {c.shape[1]} x {a.shape[1]} = '
+          f'{c.size * a.shape[1]} multiply-and-add pairs, and no cell needs any other cell')
+
+    fig, axes = plt.subplots(1, 3, figsize=(11.6, 4.0), facecolor='white',
+                             gridspec_kw={'width_ratios': [0.9, 1.1, 1.1]})
+    for ax, grid, name, mark in [(axes[0], a, 'the first grid', ('row', row)),
+                                 (axes[1], b, 'the second grid', ('col', col)),
+                                 (axes[2], c, 'the answer', ('cell', (row, col)))]:
+        _blank(ax)
+        n_r, n_c = grid.shape
+        ax.set_xlim(-0.6, n_c - 0.4)
+        ax.set_ylim(n_r - 0.4, -0.6)
+        for i in range(n_r):
+            for j in range(n_c):
+                hot = ((mark[0] == 'row' and i == mark[1])
+                       or (mark[0] == 'col' and j == mark[1])
+                       or (mark[0] == 'cell' and (i, j) == mark[1]))
+                ax.add_patch(Rectangle((j - 0.5, i - 0.5), 1, 1,
+                                       facecolor=LINK_PALE if hot else 'white',
+                                       edgecolor=GRID, lw=1.0))
+                ax.text(j, i, f'{grid[i, j]:.0f}', ha='center', va='center',
+                        fontsize=10.5 if n_c < 6 else 9.5,
+                        weight='bold' if hot else 'normal')
+        ax.set_title(f'{name}, {n_r} by {n_c}', fontsize=11, weight='bold')
+    fig.suptitle(f'One cell of the answer is {" + ".join(terms)} = {c[row, col]:.0f}, '
+                 f'and all {c.size} cells can be worked out at the same time',
+                 fontsize=12, weight='bold', y=1.02)
+    fig.subplots_adjust(wspace=0.3)
+    _save(fig, SDC_DOC, 'one-matrix-multiply.svg')
+
+
+def work_and_independence() -> None:
+    sizes = [64, 256, 1024, 4096, 16384]
+    work = [2.0 * n ** 3 for n in sizes]
+    cells = [float(n * n) for n in sizes]
+    for n, w, c in zip(sizes, work, cells):
+        print(f'[gpu] {n} by {n}: {w:.3e} operations, spread over {c:.3e} cells, '
+              f'{w / c:.0f} operations each')
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(sizes, work, marker='o', color=GRIP, lw=2.0,
+            label='operations in the multiply (2 x n x n x n)')
+    ax.plot(sizes, cells, marker='s', color=SLIDE, lw=2.0,
+            label='cells that can be worked out at the same time (n x n)')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks(sizes)
+    ax.set_xticklabels([str(s) for s in sizes])
+    ax.set_xlabel('side of the square grid, n', fontsize=10)
+    ax.set_ylabel('count (log scale)', fontsize=10)
+    ax.set_title('A matrix multiply is a huge amount of work cut into independent pieces',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, SDC_DOC, 'work-and-independence.svg')
+
+
+def arithmetic_per_byte() -> None:
+    sizes = [64, 256, 1024, 4096, 16384]
+    mm = [(2.0 * n ** 3) / (3.0 * n * n * 2.0) for n in sizes]
+    add = [(float(n * n)) / (3.0 * n * n * 2.0) for n in sizes]
+    for n, m, a in zip(sizes, mm, add):
+        print(f'[gpu] {n} by {n}: matrix multiply does {m:.1f} operations per byte moved, '
+              f'adding two grids does {a:.2f}')
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(sizes, mm, marker='o', color=LINK, lw=2.0, label='a matrix multiply')
+    ax.plot(sizes, add, marker='s', color=WRIST, lw=2.0, label='adding two grids together')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks(sizes)
+    ax.set_xticklabels([str(s) for s in sizes])
+    for n, m in zip(sizes, mm):
+        ax.text(n, m * 1.25, f'{m:.0f}', ha='center', fontsize=9, color=LINK)
+    ax.set_xlabel('side of the square grid, n', fontsize=10)
+    ax.set_ylabel('operations done for each byte fetched (log scale)', fontsize=10)
+    ax.set_title('The bigger the multiply, the more work each fetched number pays for',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, SDC_DOC, 'arithmetic-per-byte.svg')
+
+
+def batch_fills_the_chip() -> None:
+    d = EX_WIDTH
+    batches = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    weights_bytes = d * d * 2.0
+    times, arith, memory = [], [], []
+    for b in batches:
+        flops = 2.0 * b * d * d
+        bytes_moved = weights_bytes + 2.0 * b * d * 2.0
+        t_a = flops / EX_FLOPS
+        t_m = bytes_moved / EX_BAND
+        arith.append(t_a * 1e6)
+        memory.append(t_m * 1e6)
+        times.append(max(t_a, t_m) * 1e6)
+    knee = next(b for b, a, m in zip(batches, arith, memory) if a >= m)
+    print(f'[gpu] example layer: {d} by {d} weights, {weights_bytes / 1e6:.1f} megabytes '
+          f'at two bytes each')
+    for b, a, m in zip(batches, arith, memory):
+        print(f'[gpu] batch {b:5d}: arithmetic {a:8.1f} microseconds, '
+              f'fetching the weights {m:8.1f} microseconds')
+    print(f'[gpu] the arithmetic only catches up with the fetching at a batch of {knee}')
+    fig, ax = plt.subplots(figsize=(9.8, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(batches, arith, marker='o', color=LINK, lw=2.0, label='time to do the arithmetic')
+    ax.plot(batches, memory, marker='s', color=GRIP, lw=2.0,
+            label='time to fetch the weights from memory')
+    ax.plot(batches, times, color=INK, lw=1.2, ls=':', label='what you actually wait for')
+    ax.axvline(knee, color=SLIDE, ls='--', lw=1.4)
+    ax.text(knee * 1.1, max(times) * 0.25, f'batch {knee}: the chip is finally busy',
+            fontsize=9.5, color=SLIDE)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks(batches)
+    ax.set_xticklabels([str(b) for b in batches], fontsize=8.5)
+    ax.set_xlabel('rows of input put through the layer at once', fontsize=10)
+    ax.set_ylabel('microseconds (log scale)', fontsize=10)
+    ax.set_title('With one row at a time the chip spends its life waiting for memory',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, SDC_DOC, 'batch-fills-the-chip.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 2: what one parameter costs
+# --------------------------------------------------------------------------
+
+def bytes_per_parameter() -> None:
+    par = transformer_params()
+    n = par['total']
+    names = ['float32', 'bfloat16', 'int8', 'int4']
+    gb = [n * BYTES[k] / 1e9 for k in names]
+    print(f'[mem] the example model: {EX_LAYERS} blocks, width {EX_WIDTH}, vocabulary '
+          f'{_si(EX_VOCAB)}')
+    print(f'[mem] attention {par["attention"] / 1e9:.2f} billion, feed-forward '
+          f'{par["feed-forward"] / 1e9:.2f} billion, embedding table '
+          f'{par["embedding table"] / 1e9:.2f} billion')
+    print(f'[mem] total {n / 1e9:.2f} billion parameters')
+    for k, v in zip(names, gb):
+        print(f'[mem] at {k:9s} ({BYTES[k]} bytes each): {v:.1f} gigabytes just to hold them')
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
+    _plain(ax)
+    cols = [GRIP, LINK, SLIDE, PURPLE]
+    ax.bar(range(len(names)), gb, color=cols, width=0.55)
+    for i, (k, v) in enumerate(zip(names, gb)):
+        ax.text(i, v + max(gb) * 0.02, f'{v:.1f} GB', ha='center', fontsize=11,
+                weight='bold')
+        ax.text(i, max(gb) * 0.04, f'{BYTES[k]} bytes\nper parameter', ha='center',
+                fontsize=9, color='white')
+    ax.set_xticks(range(len(names)))
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylim(0, max(gb) * 1.15)
+    ax.set_ylabel('memory to hold the parameters (gigabytes)', fontsize=10)
+    ax.set_title(f'The same {n / 1e9:.2f} billion parameters, stored four ways',
+                 fontsize=12, weight='bold')
+    _save(fig, SDC_DOC, 'bytes-per-parameter.svg')
+
+
+def rounding_at_each_precision() -> None:
+    values = np.array([0.1, 0.015625, 3.14159265, 1234.5678, 6.02e-5])
+    rows: dict[str, list[float]] = {}
+    f32 = values.astype(np.float32).astype(np.float64)
+    f16 = values.astype(np.float16).astype(np.float64)
+    bf = (values.astype(np.float32).view(np.uint32) >> 16 << 16).astype(np.uint32)
+    bf16 = bf.view(np.float32).astype(np.float64)
+    scale = float(np.max(np.abs(values))) / 127.0
+    i8 = np.round(values / scale) * scale
+    for name, got in [('float32', f32), ('bfloat16', bf16), ('float16', f16),
+                      ('int8 with one shared scale', i8)]:
+        err = np.abs(got - values) / np.abs(values)
+        rows[name] = list(err)
+        print(f'[mem] {name:28s} ' + '  '.join(f'{v:.2e}' for v in err))
+    print(f'[mem] stored value of 0.1: float32 {f32[0]:.10f}, bfloat16 {bf16[0]:.10f}, '
+          f'float16 {f16[0]:.10f}')
+    print(f'[mem] 0.015625 is a half to the sixth power, so every one of them keeps it '
+          f'exactly: error {rows["float16"][1]:.1e}')
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
+    _plain(ax)
+    labels = ['0.1', '0.015625', '3.14159265', '1234.5678', '0.0000602']
+    width = 0.2
+    cols = [GRIP, LINK, SLIDE, PURPLE]
+    for off, (name, errs), col in zip([-1.5 * width, -0.5 * width, 0.5 * width,
+                                       1.5 * width], rows.items(), cols):
+        ax.bar(np.arange(len(values)) + off, [max(e, 1e-9) for e in errs], width=width,
+               color=col, label=name)
+    ax.set_yscale('log')
+    ax.set_ylim(1e-9, 1e-1)
+    ax.set_xticks(range(len(values)))
+    ax.set_xticklabels(labels, fontsize=9.5)
+    ax.set_ylabel('how far the stored number is out, as a share of it (log scale)',
+                  fontsize=10)
+    ax.set_title('Fewer bits, bigger rounding: the same five numbers stored four ways',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='lower left', ncol=2)
+    _save(fig, SDC_DOC, 'rounding-at-each-precision.svg')
+
+
+def where_the_parameters_are() -> None:
+    configs = [('small: 12 blocks, width 768', 12, 768),
+               ('medium: 24 blocks, width 2048', 24, 2048),
+               ('the example model: 32 blocks, width 4096', EX_LAYERS, EX_WIDTH)]
+    parts = ['attention', 'feed-forward', 'embedding table']
+    cols = {'attention': LINK, 'feed-forward': SLIDE, 'embedding table': WRIST}
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
+    _plain(ax)
+    bottoms = np.zeros(len(configs))
+    for part in parts:
+        vals = np.array([transformer_params(l, w)[part] / 1e9 for _, l, w in configs])
+        ax.bar(range(len(configs)), vals, bottom=bottoms, color=cols[part], width=0.5,
+               label=part)
+        bottoms += vals
+    for i, (name, l, w) in enumerate(configs):
+        par = transformer_params(l, w)
+        print(f'[mem] {name}: attention {par["attention"] / 1e9:.3f} billion, '
+              f'feed-forward {par["feed-forward"] / 1e9:.3f}, embedding '
+              f'{par["embedding table"] / 1e9:.3f}, total {par["total"] / 1e9:.3f}')
+        ax.text(i, bottoms[i] + 0.15, f'{par["total"] / 1e9:.2f} billion', ha='center',
+                fontsize=10.5, weight='bold')
+    ax.set_xticks(range(len(configs)))
+    ax.set_xticklabels([c[0].replace(': ', ':\n') for c in configs], fontsize=9.5)
+    ax.set_ylim(0, bottoms.max() * 1.15)
+    ax.set_ylabel('parameters (billions)', fontsize=10)
+    ax.set_title('Where the parameters sit: the feed-forward part is twice the attention',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, SDC_DOC, 'where-the-parameters-are.svg')
+
+
+def model_size_versus_card() -> None:
+    counts = np.array([1e9, 3e9, 7e9, 13e9, 34e9, 70e9, 180e9])
+    cards = [16, 24, 80]
+    fig, ax = plt.subplots(figsize=(10.2, 5.2), facecolor='white')
+    _plain(ax)
+    for name, col in [('float32', GRIP), ('bfloat16', LINK), ('int8', SLIDE),
+                      ('int4', PURPLE)]:
+        gb = counts * BYTES[name] / 1e9
+        ax.plot(counts / 1e9, gb, marker='o', color=col, lw=2.0, label=name)
+        print(f'[mem] {name:9s}: ' + ', '.join(f'{c / 1e9:.0f}B->{g:.0f}GB'
+                                               for c, g in zip(counts, gb)))
+    for c in cards:
+        ax.axhline(c, color=MUTED, ls=':', lw=1.2)
+        ax.text(1.0, c * 1.06, f'an example card with {c} GB', fontsize=8.5, color=MUTED)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xticks([1, 3, 7, 13, 34, 70, 180])
+    ax.set_xticklabels(['1', '3', '7', '13', '34', '70', '180'])
+    ax.set_xlabel('parameters (billions, log scale)', fontsize=10)
+    ax.set_ylabel('memory to hold them (gigabytes, log scale)', fontsize=10)
+    ax.set_title('What fits on one card, before anything else is counted',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, SDC_DOC, 'model-size-versus-card.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 3: what training needs on top of the parameters
+# --------------------------------------------------------------------------
+
+ACT_PER_BLOCK: int = 16     # tensors the size of one block's input kept for the backward pass
+
+
+def training_budget(batch: int = 4, seq: int = EX_SEQ, checkpointing: bool = False
+                    ) -> dict[str, float]:
+    n = transformer_params()['total']
+    per_block = EX_LAYERS * batch * seq * EX_WIDTH * 2.0
+    acts = per_block * (1 if checkpointing else ACT_PER_BLOCK)
+    return {'parameters (bfloat16)': n * 2.0,
+            'gradients (bfloat16)': n * 2.0,
+            'master copy (float32)': n * 4.0,
+            'two optimiser averages (float32)': n * 8.0,
+            'activations kept for the backward pass': acts}
+
+
+def training_memory_budget() -> None:
+    budget = training_budget()
+    total = sum(budget.values())
+    n = transformer_params()['total']
+    run_only = n * 2.0 + 2.0 * EX_LAYERS * EX_SEQ * EX_WIDTH * 2.0
+    for k, v in budget.items():
+        print(f'[train] {k:42s} {v / 1e9:7.1f} GB')
+    print(f'[train] {"total to train":42s} {total / 1e9:7.1f} GB')
+    print(f'[train] {"to run it on one sequence":42s} {run_only / 1e9:7.1f} GB')
+    print(f'[train] training needs {total / run_only:.1f} times as much memory as running')
+    print(f'[train] that is {total / EX_MEM:.1f} cards of {EX_MEM / 1e9:.0f} GB')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.4, 5.2), facecolor='white',
+                                   gridspec_kw={'width_ratios': [1.35, 1.0]})
+    _plain(ax1)
+    bottom = 0.0
+    cols = [LINK, WRIST, PURPLE, TEAL, SLIDE]
+    for (k, v), col in zip(budget.items(), cols):
+        ax1.bar([0], [v / 1e9], bottom=[bottom / 1e9], color=col, width=0.5, label=k)
+        ax1.text(0.33, (bottom + v / 2) / 1e9, f'{v / 1e9:.0f} GB', fontsize=9.5,
+                 va='center')
+        bottom += v
+    ax1.bar([1], [run_only / 1e9], color=MUTED, width=0.5)
+    ax1.text(1, run_only / 1e9 + total / 1e9 * 0.02, f'{run_only / 1e9:.0f} GB',
+             ha='center', fontsize=10.5, weight='bold')
+    ax1.set_xticks([0, 1])
+    ax1.set_xticklabels(['training it', 'just running it'], fontsize=10)
+    ax1.set_ylim(0, total / 1e9 * 1.1)
+    ax1.set_ylabel('gigabytes', fontsize=10)
+    ax1.set_title(f'{total / 1e9:.0f} GB against {run_only / 1e9:.0f} GB: '
+                  f'{total / run_only:.0f} times as much', fontsize=11.5, weight='bold')
+    ax1.legend(fontsize=8.5, frameon=False, loc='upper right')
+    _plain(ax2)
+    share = [v / total * 100 for v in budget.values()]
+    ax2.barh(range(len(share))[::-1], share, color=cols, height=0.6)
+    for i, v in enumerate(share):
+        ax2.text(v + 1, len(share) - 1 - i, f'{v:.0f}%', va='center', fontsize=9.5)
+    ax2.set_yticks(range(len(share))[::-1])
+    ax2.set_yticklabels([k.split(' (')[0] for k in budget], fontsize=9)
+    ax2.set_xlim(0, max(share) * 1.25)
+    ax2.set_xlabel('share of the training memory (per cent)', fontsize=10)
+    ax2.set_title('the parameters are the small part', fontsize=11.5, weight='bold')
+    fig.suptitle(f'Training the example model: batch of 4 sequences of {_si(EX_SEQ)} '
+                 f'words', fontsize=12.5, weight='bold', y=1.0)
+    fig.subplots_adjust(wspace=0.5)
+    _save(fig, SDC_DOC, 'training-memory-budget.svg')
+
+
+def activations_grow_with_batch() -> None:
+    batches = [1, 2, 4, 8, 16, 32]
+    fixed = sum(v for k, v in training_budget().items() if 'activations' not in k)
+    acts = [EX_LAYERS * b * EX_SEQ * EX_WIDTH * 2.0 * ACT_PER_BLOCK for b in batches]
+    acts_cp = [EX_LAYERS * b * EX_SEQ * EX_WIDTH * 2.0 for b in batches]
+    for b, a, c in zip(batches, acts, acts_cp):
+        print(f'[train] batch {b:3d}: activations {a / 1e9:7.1f} GB, with recomputing '
+              f'{c / 1e9:6.1f} GB, plus {fixed / 1e9:.0f} GB that never changes')
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(batches, [(fixed + a) / 1e9 for a in acts], marker='o', color=GRIP, lw=2.0,
+            label='keeping every activation')
+    ax.plot(batches, [(fixed + a) / 1e9 for a in acts_cp], marker='s', color=SLIDE, lw=2.0,
+            label='keeping one per block and recomputing the rest')
+    ax.axhline(fixed / 1e9, color=MUTED, ls='--', lw=1.3)
+    ax.text(batches[0], fixed / 1e9 * 1.04,
+            f'parameters, gradients and optimiser state: {fixed / 1e9:.0f} GB',
+            fontsize=9, color=MUTED)
+    ax.set_xscale('log')
+    ax.set_xticks(batches)
+    ax.set_xticklabels([str(b) for b in batches])
+    ax.set_xlabel(f'sequences of {_si(EX_SEQ)} words put through at once', fontsize=10)
+    ax.set_ylabel('memory for the whole training step (gigabytes)', fontsize=10)
+    ax.set_title('The fixed cost is flat; what grows with the batch is the activations',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, SDC_DOC, 'activations-grow-with-batch.svg')
+
+
+def recompute_tradeoff() -> None:
+    keep = sum(training_budget(checkpointing=False).values())
+    cheap = sum(training_budget(checkpointing=True).values())
+    n = transformer_params()['total']
+    d_tokens = 4 * EX_SEQ
+    flops_normal = 6.0 * n * d_tokens
+    flops_recompute = 8.0 * n * d_tokens
+    print(f'[train] memory with every activation kept {keep / 1e9:.0f} GB, '
+          f'with recomputing {cheap / 1e9:.0f} GB, a saving of '
+          f'{100 * (1 - cheap / keep):.0f} per cent')
+    print(f'[train] arithmetic per step rises from 6 x N x D to 8 x N x D, which is '
+          f'{100 * (flops_recompute / flops_normal - 1):.0f} per cent more')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.6, 4.8), facecolor='white')
+    _plain(ax1)
+    ax1.bar([0, 1], [keep / 1e9, cheap / 1e9], color=[GRIP, SLIDE], width=0.5)
+    for i, v in enumerate([keep / 1e9, cheap / 1e9]):
+        ax1.text(i, v + keep / 1e9 * 0.02, f'{v:.0f} GB', ha='center', fontsize=11,
+                 weight='bold')
+    ax1.set_xticks([0, 1])
+    ax1.set_xticklabels(['keep every activation', 'recompute them'], fontsize=9.5)
+    ax1.set_ylim(0, keep / 1e9 * 1.15)
+    ax1.set_ylabel('memory for one training step (gigabytes)', fontsize=10)
+    ax1.set_title(f'memory falls by {100 * (1 - cheap / keep):.0f} per cent',
+                  fontsize=11.5, weight='bold')
+    _plain(ax2)
+    ax2.bar([0, 1], [flops_normal / 1e12, flops_recompute / 1e12], color=[GRIP, SLIDE],
+            width=0.5)
+    for i, v in enumerate([flops_normal / 1e12, flops_recompute / 1e12]):
+        ax2.text(i, v + flops_recompute / 1e12 * 0.02, f'{v:.0f}', ha='center',
+                 fontsize=11, weight='bold')
+    ax2.set_xticks([0, 1])
+    ax2.set_xticklabels(['6 x N x D', '8 x N x D'], fontsize=10)
+    ax2.set_ylim(0, flops_recompute / 1e12 * 1.15)
+    ax2.set_ylabel('million million operations for one step', fontsize=10)
+    ax2.set_title(f'and the arithmetic rises by '
+                  f'{100 * (flops_recompute / flops_normal - 1):.0f} per cent',
+                  fontsize=11.5, weight='bold')
+    fig.suptitle('Trading arithmetic for memory: throw the activations away and work '
+                 'them out again', fontsize=12.5, weight='bold', y=1.0)
+    fig.subplots_adjust(wspace=0.35)
+    _save(fig, SDC_DOC, 'recompute-tradeoff.svg')
+
+
+def how_many_cards() -> None:
+    counts = np.array([1e9, 3e9, 7e9, 13e9, 34e9, 70e9, 180e9])
+    run = counts * 2.0
+    train = counts * 16.0
+    cards_run = np.ceil(run / EX_MEM)
+    cards_train = np.ceil(train / EX_MEM)
+    for c, r, t in zip(counts, cards_run, cards_train):
+        print(f'[train] {c / 1e9:5.0f} billion parameters: {r:3.0f} card(s) to run, '
+              f'{t:3.0f} to train, on {EX_MEM / 1e9:.0f} GB cards')
+    fig, ax = plt.subplots(figsize=(10.0, 5.0), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(counts))
+    ax.bar(x - 0.2, cards_run, width=0.4, color=LINK, label='to run it (two bytes each)')
+    ax.bar(x + 0.2, cards_train, width=0.4, color=GRIP,
+           label='to train it (sixteen bytes each, before activations)')
+    for i, (r, t) in enumerate(zip(cards_run, cards_train)):
+        ax.text(i - 0.2, r * 1.1, f'{r:.0f}', ha='center', fontsize=9.5)
+        ax.text(i + 0.2, t * 1.1, f'{t:.0f}', ha='center', fontsize=9.5, weight='bold')
+    ax.set_yscale('log')
+    ax.set_ylim(0.6, max(cards_train) * 3)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f'{c / 1e9:.0f}B' for c in counts], fontsize=9.5)
+    ax.set_xlabel('parameters', fontsize=10)
+    ax.set_ylabel(f'cards of {EX_MEM / 1e9:.0f} GB needed (log scale)', fontsize=10)
+    ax.set_title('Sixteen bytes a parameter is why training needs a room full of cards',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _save(fig, SDC_DOC, 'how-many-cards.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 4: measuring a run in floating-point operations
+# --------------------------------------------------------------------------
+
+EX_TOKENS: float = 1.4e12       # the example training run reads this many tokens
+
+
+def six_n_d() -> None:
+    n = transformer_params()['total']
+    d = EX_TOKENS
+    forward = 2.0 * n * d
+    backward = 4.0 * n * d
+    total = forward + backward
+    print(f'[flop] N = {n / 1e9:.2f} billion parameters, D = {d / 1e12:.1f} million '
+          f'million tokens')
+    print(f'[flop] forward pass 2 x N x D = {forward:.3e} operations')
+    print(f'[flop] backward pass 4 x N x D = {backward:.3e} operations')
+    print(f'[flop] whole run 6 x N x D = {total:.3e} operations')
+    days = total / (EX_FLOPS * EX_USE)
+    print(f'[flop] on one example accelerator at {EX_USE:.0%} of '
+          f'{EX_FLOPS / 1e12:.0f} million million operations a second: '
+          f'{days / 86400 / 365:.0f} years')
+    fig, ax = plt.subplots(figsize=(9.8, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar([0], [forward / 1e21], color=LINK, width=0.5, label='forward pass, 2 x N x D')
+    ax.bar([0], [backward / 1e21], bottom=[forward / 1e21], color=GRIP, width=0.5,
+           label='backward pass, 4 x N x D')
+    ax.text(0.33, forward / 2e21, f'{forward:.2e}', fontsize=10, va='center')
+    ax.text(0.33, (forward + backward / 2) / 1e21, f'{backward:.2e}', fontsize=10,
+            va='center')
+    ax.text(0, total / 1e21 * 1.03, f'{total:.2e} operations in all', ha='center',
+            fontsize=11.5, weight='bold')
+    ax.set_xlim(-0.6, 1.4)
+    ax.set_xticks([0])
+    ax.set_xticklabels([f'the example run:\nN = {n / 1e9:.2f} billion, '
+                        f'D = {d / 1e12:.1f} million million'], fontsize=10)
+    ax.set_ylim(0, total / 1e21 * 1.18)
+    ax.set_ylabel('thousand million million million operations', fontsize=10)
+    ax.set_title('The rule of thumb: one token through one parameter costs about '
+                 'six operations', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    _save(fig, SDC_DOC, 'six-n-d.svg')
+
+
+def flops_and_days() -> None:
+    configs = [('1 billion, 20 billion tokens', 1e9, 2e10),
+               ('7 billion, 1.4 million million', 7e9, 1.4e12),
+               ('70 billion, 10 million million', 7e10, 1e13)]
+    counts = [8, 64, 512, 4096]
+    print(f'[flop] sustained rate per accelerator: {EX_FLOPS * EX_USE / 1e12:.0f} million '
+          f'million operations a second')
+    fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
+    _plain(ax)
+    width = 0.2
+    cols = [LINK, SLIDE, WRIST, PURPLE]
+    for off, k, col in zip([-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width],
+                           counts, cols):
+        days = []
+        for name, n, d in configs:
+            total = 6.0 * n * d
+            days.append(total / (EX_FLOPS * EX_USE * k) / 86400)
+        ax.bar(np.arange(len(configs)) + off, days, width=width, color=col,
+               label=f'{k} accelerators')
+        for i, v in enumerate(days):
+            ax.text(i + off, v * 1.15, f'{v:.1f}' if v >= 0.1 else f'{v:.2f}',
+                    ha='center', fontsize=8, rotation=90)
+    for name, n, d in configs:
+        print(f'[flop] {name}: 6 x N x D = {6.0 * n * d:.2e} operations; '
+              + ', '.join(f'{k} cards: {6.0 * n * d / (EX_FLOPS * EX_USE * k) / 86400:.2f} '
+                          f'days' for k in counts))
+    ax.set_yscale('log')
+    ax.set_ylim(0.005, 3e4)
+    ax.set_xticks(range(len(configs)))
+    ax.set_xticklabels([c[0].replace(', ', ',\n') for c in configs], fontsize=9.5)
+    ax.set_ylabel('days of training (log scale)', fontsize=10)
+    ax.set_title('Three example runs, and how long each takes on a given pile of cards',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='upper left', ncol=2)
+    _save(fig, SDC_DOC, 'flops-and-days.svg')
+
+
+def iso_compute_grid() -> None:
+    ns = np.logspace(8, 11.5, 60)
+    ds = np.logspace(10, 13.5, 60)
+    nn, dd = np.meshgrid(ns, ds, indexing='ij')
+    cost = 6.0 * nn * dd
+    fig, ax = plt.subplots(figsize=(9.8, 5.4), facecolor='white')
+    _plain(ax)
+    im = ax.pcolormesh(ns / 1e9, ds / 1e12, np.log10(cost).T, cmap='YlGnBu', shading='auto')
+    levels = [1e20, 1e21, 1e22, 1e23, 1e24]
+    cs = ax.contour(ns / 1e9, ds / 1e12, cost.T, levels=levels, colors=INK,
+                    linewidths=1.2)
+    ax.clabel(cs, fmt={lv: f'{lv:.0e}' for lv in levels}, fontsize=8.5)
+    ax.plot([7.0], [1.4], marker='*', color=GRIP, markersize=16)
+    ax.text(7.6, 1.5, 'the example run', fontsize=9.5, color=GRIP, weight='bold')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('parameters (billions, log scale)', fontsize=10)
+    ax.set_ylabel('training tokens (million millions, log scale)', fontsize=10)
+    ax.set_title('Every line is one budget of arithmetic: 6 x N x D held fixed',
+                 fontsize=12, weight='bold')
+    fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02,
+                 label='log of the operations in the run')
+    print('[flop] iso-compute lines drawn at ' + ', '.join(f'{lv:.0e}' for lv in levels))
+    print('[flop] the example run sits at N = 7 billion, D = 1.4 million million, '
+          f'6ND = {6 * 7e9 * 1.4e12:.2e}')
+    _save(fig, SDC_DOC, 'iso-compute-grid.svg')
+
+
+def training_versus_serving() -> None:
+    n = transformer_params()['total']
+    d = EX_TOKENS
+    train = 6.0 * n * d
+    per_token = 2.0 * n
+    tokens_equal = train / per_token
+    print(f'[flop] serving costs about 2 x N = {per_token:.2e} operations a token')
+    print(f'[flop] the training run costs the same as serving '
+          f'{tokens_equal:.3e} tokens, which is 3 x D = {3 * d:.2e}')
+    words_per_person = 1000.0
+    people = tokens_equal / words_per_person
+    print(f'[flop] at {words_per_person:.0f} tokens a person a day that is '
+          f'{people / 1e6:.1f} million person-days of answers')
+    fig, ax = plt.subplots(figsize=(10.0, 5.0), facecolor='white')
+    _plain(ax)
+    ax.bar([0, 1], [train / 1e21, tokens_equal * per_token / 1e21], color=[GRIP, LINK],
+           width=0.5)
+    ax.text(0, train / 1e21 * 1.03, f'{train:.2e}', ha='center', fontsize=11,
+            weight='bold')
+    ax.text(1, train / 1e21 * 1.03, f'{tokens_equal:.1e} tokens answered', ha='center',
+            fontsize=11, weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['training the model once\n(6 x N x D)',
+                        'answering with it\n(2 x N a token)'], fontsize=10)
+    ax.set_ylim(0, train / 1e21 * 1.2)
+    ax.set_ylabel('thousand million million million operations', fontsize=10)
+    ax.set_title('One training run buys you three times its tokens in answers, '
+                 'and no more', fontsize=12, weight='bold')
+    _save(fig, SDC_DOC, 'training-versus-serving.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 5: scaling laws
+#
+# The formula below is written for this page. It has the shape that measured
+# ones have, and the numbers in it are chosen so the curves look like the real
+# ones, but it is arithmetic and not a measurement.
+# --------------------------------------------------------------------------
+
+LAW_FLOOR: float = 1.60
+LAW_A: float = 500.0
+LAW_B: float = 500.0
+LAW_AN: float = 0.35
+LAW_BD: float = 0.30
+
+
+def law(n: Arr | float, d: Arr | float) -> Arr | float:
+    return LAW_FLOOR + LAW_A / np.power(n, LAW_AN) + LAW_B / np.power(d, LAW_BD)
+
+
+def best_split(c: float, grid: int = 4000) -> tuple[float, float, float]:
+    """The model size and token count that give the lowest loss for a budget of arithmetic."""
+    ns = np.logspace(6, 13, grid)
+    ds = c / (6.0 * ns)
+    losses = law(ns, ds)
+    i = int(np.argmin(losses))
+    return float(ns[i]), float(ds[i]), float(losses[i])
+
+
+def power_law_curve() -> None:
+    budgets = np.logspace(17, 26, 40)
+    best = [best_split(c) for c in budgets]
+    losses = np.array([b[2] for b in best])
+    for c, (n, d, l) in list(zip(budgets, best))[::8]:
+        print(f'[law] budget {c:.1e} operations: best size {n / 1e9:.3f} billion, '
+              f'{d / 1e9:.1f} billion tokens, loss {l:.3f}')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.2, 4.8), facecolor='white')
+    _plain(ax1)
+    ax1.plot(budgets, losses, color=LINK, lw=2.4)
+    ax1.axhline(LAW_FLOOR, color=MUTED, ls='--', lw=1.3)
+    ax1.text(budgets[0], LAW_FLOOR + 0.05, f'the floor this formula has: {LAW_FLOOR}',
+             fontsize=9, color=MUTED)
+    ax1.set_xscale('log')
+    ax1.set_xlabel('operations in the training run (log scale)', fontsize=10)
+    ax1.set_ylabel('loss', fontsize=10)
+    ax1.set_title('loss against arithmetic', fontsize=11.5, weight='bold')
+    _plain(ax2)
+    ax2.plot(budgets, losses - LAW_FLOOR, color=SLIDE, lw=2.4)
+    ax2.set_xscale('log')
+    ax2.set_yscale('log')
+    ax2.set_xlabel('operations in the training run (log scale)', fontsize=10)
+    ax2.set_ylabel('loss above the floor (log scale)', fontsize=10)
+    ax2.set_title('the same curve, both axes squashed: a straight line',
+                  fontsize=11.5, weight='bold')
+    fig.suptitle('An illustrative scaling curve, worked out from one formula written '
+                 'for this page', fontsize=12.5, weight='bold', y=1.0)
+    fig.subplots_adjust(wspace=0.3)
+    _save(fig, SDC_DOC, 'power-law-curve.svg')
+
+
+def bigger_model_alone() -> None:
+    ns = np.logspace(7.5, 12, 80)
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    for d, col in zip([1e10, 1e11, 1e12, 1e13], [GRIP, WRIST, LINK, SLIDE]):
+        losses = law(ns, d)
+        ax.plot(ns / 1e9, losses, color=col, lw=2.0,
+                label=f'{d / 1e9:.0f} billion tokens')
+        floor = LAW_FLOOR + LAW_B / d ** LAW_BD
+        ax.axhline(floor, color=col, ls=':', lw=1.0)
+        print(f'[law] with {d / 1e9:.0f} billion tokens the loss cannot go below '
+              f'{floor:.3f} however big the model is; at 1 billion parameters it is '
+              f'{law(1e9, d):.3f} and at 100 billion {law(1e11, d):.3f}')
+    ax.set_xscale('log')
+    ax.set_xlabel('parameters (billions, log scale)', fontsize=10)
+    ax.set_ylabel('loss', fontsize=10)
+    ax.set_title('Growing the model with the data held still runs into a floor',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    _save(fig, SDC_DOC, 'bigger-model-alone.svg')
+
+
+def grow_together() -> None:
+    budgets = np.logspace(18, 26, 30)
+    best = [best_split(c) for c in budgets]
+    ns = np.array([b[0] for b in best])
+    ds = np.array([b[1] for b in best])
+    slope_n = float(np.polyfit(np.log(budgets), np.log(ns), 1)[0])
+    slope_d = float(np.polyfit(np.log(budgets), np.log(ds), 1)[0])
+    print(f'[law] when the budget is multiplied by ten, the best model size is multiplied '
+          f'by {10 ** slope_n:.2f} and the best token count by {10 ** slope_d:.2f}')
+    print(f'[law] tokens per parameter at the small end '
+          f'{ds[0] / ns[0]:.0f}, at the large end {ds[-1] / ns[-1]:.0f}')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.2, 4.8), facecolor='white')
+    _plain(ax1)
+    ax1.plot(budgets, ns, color=LINK, lw=2.4, label='best number of parameters')
+    ax1.plot(budgets, ds, color=SLIDE, lw=2.4, label='best number of training tokens')
+    ax1.set_xscale('log')
+    ax1.set_yscale('log')
+    ax1.set_xlabel('operations in the run (log scale)', fontsize=10)
+    ax1.set_ylabel('count (log scale)', fontsize=10)
+    ax1.set_title('both grow, and at almost the same rate', fontsize=11.5, weight='bold')
+    ax1.legend(fontsize=9.5, frameon=False, loc='upper left')
+    _plain(ax2)
+    ax2.plot(budgets, ds / ns, color=PURPLE, lw=2.4)
+    ax2.set_xscale('log')
+    ax2.set_xlabel('operations in the run (log scale)', fontsize=10)
+    ax2.set_ylabel('training tokens for each parameter', fontsize=10)
+    ax2.set_ylim(0, float(np.max(ds / ns)) * 1.2)
+    ax2.set_title('so the tokens for each parameter barely move',
+                  fontsize=11.5, weight='bold')
+    fig.suptitle('Spend a budget of arithmetic well: make the model and the data grow '
+                 'together', fontsize=12.5, weight='bold', y=1.0)
+    fig.subplots_adjust(wspace=0.32)
+    _save(fig, SDC_DOC, 'grow-together.svg')
+
+
+def predict_the_big_run() -> None:
+    rng = np.random.default_rng(31)
+    small = np.logspace(18, 21, 7)
+    truth_small = np.array([best_split(c)[2] for c in small])
+    measured = truth_small * (1.0 + 0.01 * rng.normal(size=len(small)))
+    coef = np.polyfit(np.log(small), np.log(measured - LAW_FLOOR), 1)
+    big = 1e24
+    predicted = LAW_FLOOR + float(np.exp(np.polyval(coef, np.log(big))))
+    actual = best_split(big)[2]
+    print(f'[law] fitted on runs from {small[0]:.0e} to {small[-1]:.0e} operations')
+    print(f'[law] predicted loss at {big:.0e}: {predicted:.4f}; the formula gives '
+          f'{actual:.4f}; out by {100 * abs(predicted - actual) / actual:.2f} per cent')
+    curve = np.logspace(18, 24.3, 60)
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(curve, [best_split(c)[2] for c in curve], color=MUTED, lw=1.6, ls='--',
+            label='what the formula says')
+    ax.plot(curve, LAW_FLOOR + np.exp(np.polyval(coef, np.log(curve))), color=LINK,
+            lw=2.0, label='the straight line fitted to the small runs only')
+    ax.scatter(small, measured, color=SLIDE, zorder=5, s=42,
+               label='the small runs, with a little noise added')
+    ax.scatter([big], [actual], color=GRIP, zorder=5, s=90, marker='*',
+               label='the big run nobody has done yet')
+    ax.annotate(f'predicted {predicted:.3f}\nformula says {actual:.3f}',
+                xy=(big, actual), xytext=(big / 300, actual + 0.35), fontsize=9.5,
+                arrowprops={'arrowstyle': '->', 'color': INK})
+    ax.set_xscale('log')
+    ax.set_xlabel('operations in the run (log scale)', fontsize=10)
+    ax.set_ylabel('loss', fontsize=10)
+    ax.set_title('Why anyone plans with these curves: the small runs tell you where the '
+                 'big one lands', fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='upper right')
+    _save(fig, SDC_DOC, 'predict-the-big-run.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 6: the data
+# --------------------------------------------------------------------------
+
+def quality_beats_volume() -> None:
+    bb = _bb()
+    sizes = [100, 200, 400, 800, 1600, 3200]
+    wrong = [0.0, 0.2, 0.4]
+    test_f = bb.features(bb.test.a)
+    curves: dict[float, list[float]] = {w: [] for w in wrong}
+    for n in sizes:
+        for w in wrong:
+            acc = []
+            for rep in range(2):
+                tr = Pics(n, seed=5000 + n + 11 * rep)
+                y = tr.cls.copy()
+                rng = np.random.default_rng(77 + rep)
+                spoil = rng.random(n) < w
+                y[spoil] = rng.integers(0, 4, size=int(spoil.sum()))
+                acc.append(mlp_acc(test_f, bb.test.cls,
+                                   mlp_fit(bb.features(tr.a), y, 4, hidden=16,
+                                           steps=3000, lr=0.15, seed=rep)))
+            curves[w].append(float(np.mean(acc)))
+    for w in wrong:
+        print(f'[data] {w:.0%} of the labels wrong: '
+              + '  '.join(f'n={n}:{v:.3f}' for n, v in zip(sizes, curves[w])))
+    clean_200 = curves[0.0][sizes.index(200)]
+    dirty_3200 = curves[0.4][sizes.index(3200)]
+    print(f'[data] 200 clean examples give {clean_200:.3f}, and 3,200 examples with '
+          f'40 per cent of the labels wrong give {dirty_3200:.3f}')
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
+    _plain(ax)
+    for w, col in zip(wrong, [SLIDE, WRIST, GRIP]):
+        ax.plot(sizes, [100 * v for v in curves[w]], marker='o', color=col, lw=2.0,
+                label=f'{w:.0%} of the labels wrong')
+    ax.set_xscale('log')
+    ax.set_xticks(sizes)
+    ax.set_xticklabels([str(s) for s in sizes])
+    ax.set_xlabel('examples in the training set (log scale)', fontsize=10)
+    ax.set_ylabel('accuracy on held-out pictures (per cent)', fontsize=10)
+    ax.set_ylim(20, 103)
+    ax.set_title(f'200 clean examples beat 3,200 dirty ones: {100 * clean_200:.0f} '
+                 f'per cent against {100 * dirty_3200:.0f}', fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    _save(fig, SDC_DOC, 'quality-beats-volume.svg')
+
+
+def duplicates_waste_the_budget() -> None:
+    bb = _bb()
+    budget = 1600
+    fractions = [0.0, 0.25, 0.5, 0.75, 0.9]
+    test_f = bb.features(bb.test.a)
+    accs, uniques = [], []
+    for f in fractions:
+        u = max(int(round(budget * (1.0 - f))), 4)
+        acc = []
+        for rep in range(3):
+            tr = Pics(u, seed=6000 + u + 13 * rep)
+            reps = int(np.ceil(budget / u))
+            x = np.tile(bb.features(tr.a), (reps, 1))[:budget]
+            y = np.tile(tr.cls, reps)[:budget]
+            acc.append(mlp_acc(test_f, bb.test.cls,
+                               mlp_fit(x, y, 4, hidden=16, steps=3000, lr=0.15, seed=rep)))
+        accs.append(float(np.mean(acc)))
+        uniques.append(u)
+        print(f'[data] {f:.0%} of the {budget} examples are copies: {u} different '
+              f'examples, accuracy {accs[-1]:.3f}')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.8), facecolor='white')
+    _plain(ax1)
+    ax1.bar([f * 100 for f in fractions], uniques, width=7, color=LINK)
+    for f, u in zip(fractions, uniques):
+        ax1.text(f * 100, u + budget * 0.02, str(u), ha='center', fontsize=9.5)
+    ax1.set_xlabel('percentage of the set that is copies', fontsize=10)
+    ax1.set_ylabel('different examples in it', fontsize=10)
+    ax1.set_ylim(0, budget * 1.15)
+    ax1.set_title(f'the set is always {_si(budget)} examples', fontsize=11.5,
+                  weight='bold')
+    _plain(ax2)
+    ax2.plot([f * 100 for f in fractions], [100 * a for a in accs], marker='o',
+             color=GRIP, lw=2.2)
+    for f, a in zip(fractions, accs):
+        ax2.text(f * 100, 100 * a + 1.2, f'{100 * a:.1f}', ha='center', fontsize=9.5)
+    ax2.set_xlabel('percentage of the set that is copies', fontsize=10)
+    ax2.set_ylabel('accuracy on held-out pictures (per cent)', fontsize=10)
+    ax2.set_ylim(20, 103)
+    ax2.set_title('and the accuracy falls with every copy', fontsize=11.5, weight='bold')
+    fig.suptitle('Copies cost the same to train on and teach nothing, which is why '
+                 'duplicates are taken out first', fontsize=12.5, weight='bold', y=1.0)
+    fig.subplots_adjust(wspace=0.3)
+    _save(fig, SDC_DOC, 'duplicates-waste-the-budget.svg')
+
+
+MIXTURE: list[tuple[str, float, float]] = [
+    # name, tokens available (in millions of millions), share of the run
+    ('general web pages', 9.0, 0.50),
+    ('books and articles', 0.6, 0.12),
+    ('program code', 1.2, 0.20),
+    ('maths and reasoning', 0.1, 0.10),
+    ('robot logs and manuals', 0.02, 0.08),
+]
+
+
+def a_data_mixture() -> None:
+    total = EX_TOKENS
+    names = [m[0] for m in MIXTURE]
+    have = np.array([m[1] for m in MIXTURE]) * 1e12
+    share = np.array([m[2] for m in MIXTURE])
+    drawn = share * total
+    times = drawn / have
+    for nm, h, s, dr, t in zip(names, have, share, drawn, times):
+        print(f'[data] {nm:24s} have {h / 1e12:5.2f} million million, take {s:.0%} of the '
+              f'run = {dr / 1e12:5.3f}, so each token is read {t:.2f} times')
+    print(f'[data] the shares add to {share.sum():.2f} and the run is '
+          f'{total / 1e12:.1f} million million tokens')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.4, 4.8), facecolor='white')
+    _plain(ax1)
+    y = np.arange(len(names))[::-1]
+    ax1.barh(y + 0.18, have / 1e12, height=0.34, color=MUTED, label='tokens there are')
+    ax1.barh(y - 0.18, drawn / 1e12, height=0.34, color=LINK, label='tokens the run reads')
+    ax1.set_yticks(y)
+    ax1.set_yticklabels(names, fontsize=9)
+    ax1.set_xscale('log')
+    ax1.set_xlabel('million million tokens (log scale)', fontsize=10)
+    ax1.set_title('what there is, and what is read', fontsize=11.5, weight='bold')
+    ax1.legend(fontsize=9, frameon=False, loc='lower right')
+    _plain(ax2)
+    cols = [SLIDE if t <= 1.0 else GRIP for t in times]
+    ax2.barh(y, times, height=0.5, color=cols)
+    for yy, t in zip(y, times):
+        ax2.text(t * 1.1, yy, f'{t:.1f} times', va='center', fontsize=9.5)
+    ax2.axvline(1.0, color=INK, lw=1.2, ls='--')
+    ax2.set_yticks(y)
+    ax2.set_yticklabels(names, fontsize=9)
+    ax2.set_xscale('log')
+    ax2.set_xlim(0.05, max(times) * 3)
+    ax2.set_xlabel('times each token of that source is read (log scale)', fontsize=10)
+    ax2.set_title('a small source read many times over', fontsize=11.5, weight='bold')
+    fig.suptitle(f'An example mixture for a run of {total / 1e12:.1f} million million '
+                 f'tokens', fontsize=12.5, weight='bold', y=1.0)
+    fig.subplots_adjust(wspace=0.6)
+    _save(fig, SDC_DOC, 'a-data-mixture.svg')
+
+
+DEMO_SECONDS: float = 25.0
+RESET_SECONDS: float = 12.0
+
+
+def robot_data_costs_time() -> None:
+    per_demo = DEMO_SECONDS + RESET_SECONDS
+    per_hour = 3600.0 / per_demo
+    targets = [10_000, 100_000, 1_000_000]
+    hours = [t / per_hour for t in targets]
+    years = [h / (8 * 220) for h in hours]
+    print(f'[robot] {DEMO_SECONDS:.0f} seconds a demonstration plus '
+          f'{RESET_SECONDS:.0f} seconds to put the scene back is {per_demo:.0f} seconds, '
+          f'so one person-hour gives {per_hour:.1f} demonstrations')
+    for t, h, y in zip(targets, hours, years):
+        print(f'[robot] {_si(t)} demonstrations: {_si(h)} person-hours, '
+              f'{y:.1f} person-years of 8-hour days')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.8), facecolor='white')
+    _plain(ax1)
+    ax1.bar([0], [per_hour], color=SLIDE, width=0.4)
+    ax1.text(0, per_hour * 1.03, f'{per_hour:.0f} demonstrations', ha='center',
+             fontsize=11.5, weight='bold')
+    ax1.set_xlim(-0.6, 0.6)
+    ax1.set_xticks([0])
+    ax1.set_xticklabels([f'{DEMO_SECONDS:.0f} s of moving\n+ {RESET_SECONDS:.0f} s of '
+                         f'resetting'], fontsize=10)
+    ax1.set_ylim(0, per_hour * 1.2)
+    ax1.set_ylabel('demonstrations in one person-hour', fontsize=10)
+    ax1.set_title('one person, one hour, one arm', fontsize=11.5, weight='bold')
+    _plain(ax2)
+    ax2.bar(range(len(targets)), hours, color=[LINK, WRIST, GRIP], width=0.5)
+    for i, (h, y) in enumerate(zip(hours, years)):
+        ax2.text(i, h * 1.3, f'{_si(h)} hours\n{y:.1f} person-years', ha='center',
+                 fontsize=9.5, weight='bold')
+    ax2.set_yscale('log')
+    ax2.set_ylim(50, max(hours) * 12)
+    ax2.set_xticks(range(len(targets)))
+    ax2.set_xticklabels([f'{_si(t)}\ndemonstrations' for t in targets], fontsize=9.5)
+    ax2.set_ylabel('person-hours (log scale)', fontsize=10)
+    ax2.set_title('what a dataset of that size costs in people', fontsize=11.5,
+                  weight='bold')
+    fig.suptitle('Robot data is scarce because every example is somebody sitting at an arm',
+                 fontsize=12.5, weight='bold', y=1.0)
+    fig.subplots_adjust(wspace=0.35)
+    _save(fig, SDC_DOC, 'robot-data-costs-time.svg')
+
+
+# example costings written for this page: person-hours of work, and examples got for it
+WAYS: list[tuple[str, float, float]] = [
+    ('teleoperating a real arm', 1.0, 3600.0 / (DEMO_SECONDS + RESET_SECONDS)),
+    ('taking in somebody else\'s robot data', 40.0, 50_000.0),
+    ('simulation with randomised scenes', 60.0, 300_000.0),
+    ('examples generated by a model', 20.0, 10_000.0),
+    ('learning from video of people', 10.0, 20_000.0),
+]
+
+
+def four_ways_to_get_more_data() -> None:
+    names = [w[0] for w in WAYS]
+    rate = [w[2] / w[1] for w in WAYS]
+    need = [100_000.0 / r for r in rate]
+    for nm, (_, h, got), r, n in zip(names, WAYS, rate, need):
+        print(f'[robot] {nm:38s} {h:5.0f} person-hours gives {_si(got):>9s} examples '
+              f'= {r:9.1f} an hour; {_si(n):>7s} hours for 100,000')
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white')
+    cols = [GRIP, LINK, SLIDE, PURPLE, WRIST]
+    _plain(ax1)
+    y = np.arange(len(names))[::-1]
+    ax1.barh(y, rate, color=cols, height=0.55)
+    for yy, r in zip(y, rate):
+        ax1.text(r * 1.15, yy, f'{r:,.0f}', va='center', fontsize=9.5)
+    ax1.set_xscale('log')
+    ax1.set_xlim(50, max(rate) * 6)
+    ax1.set_yticks(y)
+    ax1.set_yticklabels(names, fontsize=9)
+    ax1.set_xlabel('examples for each person-hour (log scale)', fontsize=10)
+    ax1.set_title('what an hour of a person buys', fontsize=11.5, weight='bold')
+    _plain(ax2)
+    ax2.barh(y, need, color=cols, height=0.55)
+    for yy, n in zip(y, need):
+        ax2.text(n * 1.15, yy, f'{n:,.0f} h', va='center', fontsize=9.5)
+    ax2.set_xscale('log')
+    ax2.set_xlim(5, max(need) * 8)
+    ax2.set_yticks(y)
+    ax2.set_yticklabels([])
+    ax2.set_xlabel('person-hours for 100,000 examples (log scale)', fontsize=10)
+    ax2.set_title('and what 100,000 examples cost', fontsize=11.5, weight='bold')
+    fig.suptitle('Example costings for five ways of getting robot data, written for this '
+                 'page', fontsize=12.5, weight='bold', y=1.0)
+    fig.subplots_adjust(wspace=0.12)
+    _save(fig, SDC_DOC, 'four-ways-to-get-more-data.svg')
+
+
+# --------------------------------------------------------------------------
+
+PAGE_ONE = [labels_versus_free_signal, make_the_label_from_the_data,
+            one_picture_many_targets, four_recipes,
+            next_token_pairs, context_helps, one_position_probabilities,
+            next_token_training_curve,
+            masked_patches, fill_the_gaps, mask_rate_curve, masked_word_fill,
+            similarity_grid, softmax_of_one_row, contrastive_training,
+            batch_size_and_temperature,
+            two_crops, teacher_and_student, agreement_rises, same_item_closer,
+            backbone_and_head, what_the_features_track, few_labels_beat_many,
+            labels_needed]
+
+PAGE_TWO = [one_matrix_multiply, work_and_independence, arithmetic_per_byte,
+            batch_fills_the_chip,
+            bytes_per_parameter, rounding_at_each_precision, where_the_parameters_are,
+            model_size_versus_card,
+            training_memory_budget, activations_grow_with_batch, recompute_tradeoff,
+            how_many_cards,
+            six_n_d, flops_and_days, iso_compute_grid, training_versus_serving,
+            power_law_curve, bigger_model_alone, grow_together, predict_the_big_run,
+            quality_beats_volume, duplicates_waste_the_budget, a_data_mixture,
+            robot_data_costs_time, four_ways_to_get_more_data]
+
+
+def main() -> None:
+    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    global PNG_DIR
+    if len(sys.argv) == 3 and sys.argv[1] == '--png':
+        PNG_DIR = pathlib.Path(sys.argv[2])
+        PNG_DIR.mkdir(parents=True, exist_ok=True)
+    for fn in PAGE_ONE + PAGE_TWO:
+        fn()
+    print(f'wrote {len(PAGE_ONE) + len(PAGE_TWO)} diagrams under {IMAGES}')
+
+
+if __name__ == '__main__':
+    main()

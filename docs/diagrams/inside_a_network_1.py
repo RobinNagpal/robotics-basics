@@ -19,8 +19,8 @@ that the arithmetic is small enough to follow; they were not trained. Where a
 picture needs many weights at once (the counts of straight pieces, the dead
 units, the thirty-layer stacks) the weights are drawn from
 numpy.random.default_rng with a fixed seed, so the numbers are simulated but
-repeatable. The timing picture is one measurement of NumPy on the computer that
-drew it, so the shape of the curve is the point rather than the exact seconds.
+repeatable. No picture here reports a measured time, because the parameter
+counts, the multiply-add counts and the memory sizes are all counted exactly.
 """
 
 import math
@@ -1591,7 +1591,9 @@ def parameters_and_memory() -> None:
             ax.text(j, i + 0.12, f'{grid[i, j] / 1e6:.1f}M', ha='center', va='center',
                     fontsize=12.5, family=MONO,
                     color='white' if np.log10(grid[i, j]) > 6.6 else INK)
-            ax.text(j, i - 0.22, f'{grid[i, j] * 4 / 1e6:.0f} MB', ha='center', va='center',
+            mb = grid[i, j] * 4 / 1e6
+            ax.text(j, i - 0.22, f'{mb:.1f} MB' if mb < 10 else f'{mb:.0f} MB',
+                    ha='center', va='center',
                     fontsize=9.5, color='white' if np.log10(grid[i, j]) > 6.6 else MUTED)
     ax.set_xticks(range(len(widths)))
     ax.set_xticklabels([str(w) for w in widths], fontsize=10)

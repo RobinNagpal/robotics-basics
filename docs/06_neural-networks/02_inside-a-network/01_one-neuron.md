@@ -2,25 +2,25 @@
 
 The page before this one, [the words everyone uses](../01_what-learning-means/02_the-words-everyone-uses.md),
 gave you the vocabulary of machine learning, and it said that a model is a
-function with parameters in it, that a weight is one of those parameters, and
-that training is the search for good values for them. This page opens one of
-those models up and shows you the smallest piece it is built from, which is
-called a **neuron**, and it works that piece out in full with real numbers so
-that nothing is left as a word you have to take on trust.
+function with parameters in it and that training is the search for good values
+for them. This page opens one of those models up and shows you the smallest
+piece it is built from, which is called a **neuron**, and it works that piece
+out in full with real numbers so that nothing is left as a word you have to take
+on trust.
 
 A neuron takes a few numbers in, multiplies each one by a weight, adds the
 results together, adds one more number of its own, and then passes the total
-through a simple rule that decides what comes out. That is the whole of it, and
-everything else in this book is built by joining many neurons together and
-finding good values for their weights.
+through a simple rule that decides what comes out. Everything else in this book
+is built by joining many neurons together and finding good values for their
+weights.
 
-This page is for a reader who has read the two pages of the chapter before it
-and who is comfortable with multiplying, adding and reading a graph with two
-axes. You do not need to know anything about training, because the weights here
-were chosen by hand so that you can watch what they do. Everything is worked out
-on one made-up moment of one grasp, in which a robot arm is reaching for a cup
-and three sensors have just given their readings, and every number in every
-picture was worked out and printed by `docs/diagrams/inside_a_network_1.py`.
+This page is for a reader who has read the chapter before it and is comfortable
+with multiplying, adding and reading a graph with two axes. You do not need to
+know anything about training, because the weights here were chosen by hand so
+that you can watch what they do. Everything is worked out on one made-up moment
+of one grasp, in which a robot arm is reaching for a cup, and every number in
+every picture was worked out and printed by
+`docs/diagrams/inside_a_network_1.py`.
 
 ## Contents
 
@@ -57,9 +57,9 @@ patch of the camera picture is where the cup should be.
 
 Those three readings arrive in three different sorts of unit, and a neuron
 cannot do anything sensible with a 0.42 next to a 55, because the weight needed
-to make the second one matter would have to be about a hundred times smaller
-than the weight on the first. So each reading is first turned into a number
-between 0 and 1, which is called scaling it.
+to make the second one matter would have to be a hundred times smaller than the
+weight on the first. So each reading is first turned into a number between 0 and
+1, which is called scaling it.
 
 ![Three rows: 0.42 m unchanged, 55 mm divided by 100, and a 4 by 4 grid of pixel values averaging 76.5 then divided by 255](../../images/inside-a-network/one-neuron/scaling-the-readings.svg)
 
@@ -68,12 +68,11 @@ The distance is already between 0 and 1 so it goes in as it is, the opening of
 the sixteen pixel values in the patch add up to 1,224, which is an average of
 76.5 out of 255, and dividing that by 255 gives 0.300.
 
-So the three numbers that reach the neuron are 0.42, 0.55 and 0.30, and those
-three numbers describe this one moment of this one grasp. Now the neuron's own
-four numbers come in. Each input has a **weight**, which is a number that says
-how much that input counts and in which direction, and the whole neuron has one
-more number called its **bias**, which is added to the total whatever the inputs
-are.
+So the three numbers that reach the neuron are 0.42, 0.55 and 0.30, and now the
+neuron's own four numbers come in. Each input has a **weight**, which is a
+number that says how much that input counts and in which direction, and the
+whole neuron has one more number called its **bias**, which is added to the
+total whatever the inputs are.
 
 ![A bar chart of four numbers: weights -2.00, +1.50 and +0.80, and a bias of +0.50](../../images/inside-a-network/one-neuron/the-four-parameters.svg)
 
@@ -95,11 +94,10 @@ search is explained.
 
 ## 2. The weighted sum, line by line
 
-Now that the three inputs and the four parameters are all on the table, the
-neuron can do its first job, which is to work out the **weighted sum**. This
-means multiplying each input by its own weight, adding those products together,
-and then adding the bias. There is nothing hidden in it, and it is short enough
-to write out completely.
+Now that the three inputs and the four parameters are on the table, the neuron
+can do its first job, which is to work out the **weighted sum**. This means
+multiplying each input by its own weight, adding those products together, and
+then adding the bias, and it is short enough to write out completely.
 
 ```
 distance     0.42  x  -2.00  =  -0.840      running total  -0.840
@@ -154,11 +152,11 @@ the neuron owns actually control.
 
 ## 3. What changes when a weight or the bias changes
 
-The weighted sum in the section before this one used one particular set of four
-numbers, so the natural question is what would have happened with different
-ones. The answer is easiest to see by changing one number at a time and working
-the same sum out again, and the clearest single change is to flip the sign of
-the weight on the distance from -2.00 to +2.00.
+The weighted sum in the section before used one particular set of four numbers,
+so the natural question is what would have happened with different ones. The
+answer is easiest to see by changing one number at a time, and the clearest
+single change is to flip the sign of the weight on the distance from -2.00 to
++2.00.
 
 ![Two tables of the same three readings, one with the weight -2.00 reaching +0.725 and one with +2.00 reaching +2.405](../../images/inside-a-network/one-neuron/flipping-one-weight.svg)
 
@@ -209,9 +207,9 @@ same kind.
 
 The sections before this one kept finding straight lines, and that is not an
 accident of the numbers chosen. Multiplying by a weight and adding a bias can
-only ever make a straight line, and the surprising part is that doing it twice
-does not help, because two of these neurons in a row are exactly equal to one
-neuron with different numbers.
+only ever make a straight line, and doing it twice does not help, because two of
+these neurons in a row are exactly equal to one neuron with different
+numbers.
 
 ![Two boxes in a chain giving -0.340 then -1.420, above one box with weight -6.00 and bias +1.10 giving the same -1.420](../../images/inside-a-network/one-neuron/two-plain-layers.svg)
 
@@ -380,9 +378,9 @@ uses the rule only 1,024 times, which is one use of the rule for every 1,024
 multiply-adds, so even a rule that costs as much as 20 multiply-adds adds only
 1.95 per cent to the work of that layer.
 
-That picture quietly introduces the subject of the next page, which is that a
-layer of 1,024 neurons has over a million weights in it, and that those weights
-are arranged in a grid that a computer multiplies in one go.
+That picture also introduces the subject of the next page, which is that a layer
+of 1,024 neurons has over a million weights in it, and that those weights are
+arranged in a grid that a computer multiplies in one go.
 
 ---
 
@@ -422,7 +420,7 @@ with torch.no_grad():                               # fix them by hand, as this 
     neuron.weight.copy_(torch.tensor([[-2.0, 1.5, 0.8]]))
     neuron.bias.copy_(torch.tensor([0.5]))
 
-readings = torch.tensor([[0.42, 0.55, 0.30]])       # distance, opening/100, brightness/255
+readings = torch.tensor([[0.42, 0.55, 0.30]])       # the three scaled readings
 total = neuron(readings)                            # section 2: the weighted sum
 print(f"{total.item():.4f}")                        # 0.7250
 print(sum(p.numel() for p in neuron.parameters()))  # 4

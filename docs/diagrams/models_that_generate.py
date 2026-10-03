@@ -751,7 +751,10 @@ def _ddim(n: int, c: int, seed: int, steps: int, w: float = 1.0) -> tuple[Arr, A
     den = _den()
     rng = np.random.default_rng(seed)
     x = rng.normal(size=(n, 2))
-    order = np.unique(np.linspace(1, T_STEPS, steps).round().astype(int))[::-1]
+    if steps <= 1:
+        order = np.array([T_STEPS])
+    else:
+        order = np.unique(np.linspace(1, T_STEPS, steps).round().astype(int))[::-1]
     path = [x.copy()]
     for i, t in enumerate(order):
         eps = den.guided(x, int(t), c, w)
@@ -1157,15 +1160,25 @@ def conditioning_input() -> None:
     _save(fig, DIFF_DOC, 'conditioning-input.svg')
 
 
+COND: dict[str, tuple[Arr, float]] | None = None
+
+
+def _cond() -> dict[str, tuple[Arr, float]]:
+    global COND
+    if COND is None:
+        COND = {}
+        for name, c in (('not told', UNTOLD), ('told above', ABOVE),
+                        ('told below', BELOW)):
+            pts, _ = _ddpm(1200, c, seed=606)
+            frac = float((pts[:, 1] > 0).mean())
+            COND[name] = (pts, frac)
+            print(f'[s5] {name}: {frac * 100:.1f}% of the 1,200 generated waypoints '
+                  f'went above, inside the obstacle {_in_obstacle(pts) * 100:.2f}%')
+    return COND
+
+
 def conditional_samples() -> None:
-    d = _data()
-    out = {}
-    for name, c in (('not told', UNTOLD), ('told above', ABOVE), ('told below', BELOW)):
-        pts, _ = _ddpm(1200, c, seed=606)
-        frac = float((pts[:, 1] > 0).mean())
-        out[name] = (pts, frac)
-        print(f'[s5] {name}: {frac * 100:.1f}% of the 1,200 generated waypoints '
-              f'went above, inside the obstacle {_in_obstacle(pts) * 100:.2f}%')
+    out = _cond()
     fig, axes = plt.subplots(1, 3, figsize=(14.4, 5.4), facecolor='white')
     for ax, (name, (pts, frac)) in zip(axes, out.items()):
         _arena(ax, lim=2.4, labels=False)
@@ -1179,6 +1192,57 @@ def conditional_samples() -> None:
                  'and nothing else changed', fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, DIFF_DOC, 'conditional-samples.svg')
+
+
+def condition_accuracy() -> None:
+    d = _data()
+    p = _pred()
+    out = _cond()
+    inside = {name: _in_obstacle(pts) * 100 for name, (pts, _f) in out.items()}
+    pred_inside = float((np.hypot(p.grid, p.curve) < OBST_R).mean()) * 100
+    print(f'[s5] inside the obstacle: ' + ', '.join(
+        f'{name} {v:.2f}%' for name, v in inside.items())
+        + f'; the squared-error predictor of section 1 spends {pred_inside:.1f}% '
+          'of its path in there')
+    fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.2), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    names = list(out)
+    goes_up = [out[n][1] * 100 for n in names]
+    goes_dn = [100 - v for v in goes_up]
+    idx = np.arange(len(names))
+    ax.bar(idx, goes_up, width=0.5, color=LINK, edgecolor=INK, lw=0.6,
+           label='went above')
+    ax.bar(idx, goes_dn, bottom=goes_up, width=0.5, color=SLIDE, edgecolor=INK,
+           lw=0.6, label='went below')
+    for i, v in enumerate(goes_up):
+        ax.text(i, v / 2, f'{v:.1f}%', ha='center', fontsize=11, color='white',
+                weight='bold')
+        ax.text(i, v + (100 - v) / 2, f'{100 - v:.1f}%', ha='center', fontsize=11,
+                color='white', weight='bold')
+    ax.set_xticks(idx)
+    ax.set_xticklabels(names)
+    ax.set_ylabel('share of 1,200 generated waypoints (%)', fontsize=9.5)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.set_title('What the condition buys: the side is chosen\n'
+                 'by the asker rather than by chance',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    labels = ['the predictor\nof section 1'] + [n.replace(' ', '\n') for n in names]
+    vals = [pred_inside] + [inside[n] for n in names]
+    bars = ax.bar(labels, vals, color=[PURPLE, MUTED, LINK, SLIDE], width=0.55,
+                  edgecolor=INK, lw=0.6)
+    for b, v in zip(bars, vals):
+        ax.text(b.get_x() + b.get_width() / 2, v + 0.6, f'{v:.2f}%', ha='center',
+                fontsize=10.5, weight='bold', color=INK)
+    ax.set_ylim(0, max(vals) * 1.2)
+    ax.set_ylabel('share that lands inside the obstacle (%)', fontsize=9.5)
+    ax.set_title('And what it keeps: every version of the\n'
+                 'generator stays out of the obstacle',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, DIFF_DOC, 'condition-accuracy.svg')
 
 
 def guidance_arrows() -> None:
@@ -1530,6 +1594,62 @@ def _flow_sample(n: int, c: int, seed: int, steps: int) -> tuple[Arr, Arr]:
     return x, np.array(path)
 
 
+class Straight:
+    """A second flow model, trained on the first one's own start and end points.
+
+    The first model is trained on straight lines between a noise point picked at
+    random and a waypoint picked at random, and those lines cross, so the paths
+    it actually walks come out bent. Training a second model on the pairs the
+    first one produced removes the crossings, which is called rectifying or
+    reflowing the model.
+    """
+
+    def __init__(self) -> None:
+        z = np.random.default_rng(151).normal(size=(6000, 2))
+        f = _flow()
+        x = z.copy()
+        dt = 1.0 / 64
+        for i in range(64):
+            x = x + dt * f.vel(x, i * dt, UNTOLD)
+        self.pairs = (z, x)
+        rng = np.random.default_rng(152)
+        self.net = MLP([2 + 8, HIDDEN, HIDDEN, 2], seed=52)
+
+        def batches(_it: int) -> tuple[Arr, Arr]:
+            idx = rng.integers(0, len(z), 512)
+            z0, x1 = z[idx], x[idx]
+            t = rng.uniform(size=len(idx))
+            zt = (1.0 - t)[:, None] * z0 + t[:, None] * x1
+            return np.concatenate([zt, _tfeat(t)], axis=1), x1 - z0
+
+        _, self.hist, self.secs = _cached(
+            'straight', self.net, lambda: _adam(self.net, batches, FLOW_STEPS, 2e-3))
+
+    def vel(self, x: Arr, t: float) -> Arr:
+        return self.net.run(np.concatenate(
+            [x, _tfeat(np.full(len(x), t))], axis=1))
+
+    def draw(self, n: int, seed: int, steps: int) -> tuple[Arr, Arr]:
+        rng = np.random.default_rng(seed)
+        x = rng.normal(size=(n, 2))
+        path = [x.copy()]
+        dt = 1.0 / steps
+        for i in range(steps):
+            x = x + dt * self.vel(x, i * dt)
+            path.append(x.copy())
+        return x, np.array(path)
+
+
+ST: Straight | None = None
+
+
+def _st() -> Straight:
+    global ST
+    if ST is None:
+        ST = Straight()
+    return ST
+
+
 def _straightness(path: Arr) -> float:
     lengths = np.sqrt(((path[1:] - path[:-1]) ** 2).sum(-1)).sum(0)
     direct = np.sqrt(((path[-1] - path[0]) ** 2).sum(-1))
@@ -1643,35 +1763,39 @@ def straightness_compare() -> None:
     d = _data()
     _, fpath = _flow_sample(300, UNTOLD, seed=1414, steps=50)
     _, dpath = _ddim(300, UNTOLD, seed=1414, steps=50)
-    fs, ds = _straightness(fpath), _straightness(dpath)
-    print(f'[p2s1] over 300 paths: flow matching {fs:.3f}, diffusion {ds:.3f} '
-          'times the straight-line distance')
-    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.4), facecolor='white')
+    _, spath = _st().draw(300, seed=1414, steps=50)
+    fs, ds, ss = (_straightness(fpath), _straightness(dpath), _straightness(spath))
+    print(f'[p2s1] over 300 paths: diffusion {ds:.3f}, flow matching {fs:.3f}, '
+          f'the straightened flow {ss:.3f} times the straight-line distance')
+    fig, axes = plt.subplots(1, 4, figsize=(17.4, 5.0), facecolor='white')
     for ax, path, name, col, val in (
             (axes[0], dpath, 'diffusion, walking the noise back', PURPLE, ds),
-            (axes[1], fpath, 'flow matching, following the arrows', SLIDE, fs)):
+            (axes[1], fpath, 'flow matching, first training', LINK, fs),
+            (axes[2], spath, 'flow matching, straightened', SLIDE, ss)):
         _arena(ax, lim=3.0, labels=False)
         sh = _show(d.train, 400, 17)
         ax.scatter(sh[:, 0], sh[:, 1], s=4, color=GRID, alpha=0.9)
         for k in range(12):
-            ax.plot(path[:, k, 0], path[:, k, 1], color=col, lw=1.2, alpha=0.8)
+            ax.plot(path[:, k, 0], path[:, k, 1], color=col, lw=1.2, alpha=0.85)
             ax.plot(path[0, k, 0], path[0, k, 1], marker='o', ms=4, color=col)
-        ax.set_xlabel('x (m)', fontsize=9)
-        ax.set_ylabel('y (m)', fontsize=9)
+        ax.set_xlabel('x (m)', fontsize=8.5)
+        ax.set_ylabel('y (m)', fontsize=8.5)
         ax.set_title(f'{name}\npath is {val:.2f} times the straight line',
-                     fontsize=10.5, weight='bold', color=INK)
-    ax = axes[2]
+                     fontsize=10, weight='bold', color=INK)
+    ax = axes[3]
     _plain(ax)
-    bars = ax.bar(['diffusion', 'flow matching'], [ds, fs], color=[PURPLE, SLIDE],
-                  width=0.5, edgecolor=INK, lw=0.6)
+    names = ['diffusion', 'flow,\nfirst training', 'flow,\nstraightened']
+    vals = [ds, fs, ss]
+    bars = ax.bar(names, vals, color=[PURPLE, LINK, SLIDE], width=0.55,
+                  edgecolor=INK, lw=0.6)
     ax.axhline(1.0, color=MUTED, ls='--', lw=1.4)
-    ax.text(-0.45, 1.02, 'a perfectly straight path', fontsize=9.5, color=MUTED)
-    for b, v in zip(bars, [ds, fs]):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.02, f'{v:.2f}', ha='center',
-                fontsize=12, weight='bold', color=INK)
-    ax.set_ylim(0.9, max(ds, fs) * 1.18)
-    ax.set_ylabel('distance travelled, divided by the straight line', fontsize=9.5)
-    ax.set_title('How bent each path is', fontsize=10.5, weight='bold', color=INK)
+    ax.text(-0.45, 1.03, 'a perfectly straight path', fontsize=9, color=MUTED)
+    for b_, v in zip(bars, vals):
+        ax.text(b_.get_x() + b_.get_width() / 2, v + 0.05, f'{v:.2f}', ha='center',
+                fontsize=11.5, weight='bold', color=INK)
+    ax.set_ylim(0.9, max(vals) * 1.15)
+    ax.set_ylabel('distance travelled, divided by the straight line', fontsize=9)
+    ax.set_title('How bent each path is', fontsize=10, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, FLOW_DOC, 'straightness-compare.svg')
 
@@ -1684,21 +1808,26 @@ FEW: tuple[int, ...] = (1, 2, 4, 8, 16, 32, 64)
 
 
 class StepSweep:
-    """The measured error of both generators at each number of steps."""
+    """The measured error of all three generators at each number of steps."""
 
     def __init__(self) -> None:
         d = _data()
         self.flow: dict[int, float] = {}
         self.diff: dict[int, float] = {}
+        self.str: dict[int, float] = {}
         self.flow_pts: dict[int, Arr] = {}
         self.diff_pts: dict[int, Arr] = {}
+        self.str_pts: dict[int, Arr] = {}
         for n in FEW:
             fp, _ = _flow_sample(1500, UNTOLD, seed=1515, steps=n)
             dp, _ = _ddim(1500, UNTOLD, seed=1515, steps=n)
+            sp, _ = _st().draw(1500, seed=1515, steps=n)
             self.flow[n] = _mismatch(fp, d.ref)
             self.diff[n] = _mismatch(dp, d.ref)
+            self.str[n] = _mismatch(sp, d.ref)
             self.flow_pts[n] = fp
             self.diff_pts[n] = dp
+            self.str_pts[n] = sp
 
 
 SWEEP: StepSweep | None = None
@@ -1715,28 +1844,30 @@ def steps_vs_error_both() -> None:
     d = _data()
     s = _sweep()
     for n in FEW:
-        print(f'[p2s2] {n:3d} steps: flow {s.flow[n]:.4f}, diffusion '
-              f'{s.diff[n]:.4f}')
+        print(f'[p2s2] {n:3d} steps: diffusion {s.diff[n]:.4f}, flow '
+              f'{s.flow[n]:.4f}, straightened flow {s.str[n]:.4f}')
     target = 0.01
-    f_need = min((n for n in FEW if s.flow[n] <= target), default=None)
-    d_need = min((n for n in FEW if s.diff[n] <= target), default=None)
-    print(f'[p2s2] to get the mismatch under {target}, flow needs {f_need} steps '
-          f'and diffusion needs {d_need}')
+    need = {}
+    for name, got in (('diffusion', s.diff), ('flow', s.flow),
+                      ('straightened flow', s.str)):
+        need[name] = min((n for n in FEW if got[n] <= target), default=None)
+    print(f'[p2s2] to get the mismatch under {target}: ' + ', '.join(
+        f'{k} needs {v} steps' for k, v in need.items()))
 
-    fig, ax = plt.subplots(figsize=(10.2, 5.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(10.4, 5.8), facecolor='white')
     _plain(ax)
     ax.plot(FEW, [s.diff[n] for n in FEW], color=PURPLE, lw=2.6, marker='o', ms=6,
             label='diffusion, walking the noise back')
-    ax.plot(FEW, [s.flow[n] for n in FEW], color=SLIDE, lw=2.6, marker='s', ms=6,
-            label='flow matching, following the arrows')
+    ax.plot(FEW, [s.flow[n] for n in FEW], color=LINK, lw=2.6, marker='^', ms=6,
+            label='flow matching, first training')
+    ax.plot(FEW, [s.str[n] for n in FEW], color=SLIDE, lw=2.6, marker='s', ms=6,
+            label='flow matching, straightened')
     ax.axhline(d.floor, color=MUTED, ls='--', lw=1.3)
-    ax.text(1.1, d.floor * 1.5, f'real against real: {d.floor:.4f}', fontsize=9.5,
+    ax.text(1.05, d.floor * 1.35, f'real against real: {d.floor:.4f}', fontsize=9.5,
             color=MUTED)
-    for n in FEW:
-        ax.text(n, s.flow[n] * 0.62, f'{s.flow[n]:.3f}', ha='center', fontsize=8.5,
-                color=SLIDE)
-        ax.text(n, s.diff[n] * 1.3, f'{s.diff[n]:.3f}', ha='center', fontsize=8.5,
-                color=PURPLE)
+    ax.axhline(target, color=GRIP, ls=':', lw=1.6)
+    ax.text(1.05, target * 1.12, f'the line used below: {target}', fontsize=9.5,
+            color=GRIP)
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xticks(FEW)
@@ -1745,7 +1876,7 @@ def steps_vs_error_both() -> None:
     ax.set_ylabel('mismatch score (lower is better)', fontsize=9.5)
     ax.legend(fontsize=9.5, frameon=False, loc='upper right')
     ax.set_title('The same job, the same network size, the same data:\n'
-                 'flow matching gets there in far fewer steps',
+                 'what each generator gets for a given number of steps',
                  fontsize=12, weight='bold', color=INK)
     _save(fig, FLOW_DOC, 'steps-vs-error-both.svg')
 
@@ -1753,48 +1884,48 @@ def steps_vs_error_both() -> None:
 def few_step_panels() -> None:
     s = _sweep()
     shown = (1, 2, 4, 8)
-    fig, axes = plt.subplots(2, 4, figsize=(15.0, 8.0), facecolor='white')
+    fig, axes = plt.subplots(3, 4, figsize=(15.0, 11.6), facecolor='white')
     for col, n in enumerate(shown):
-        for row, (pts, name, colour) in enumerate((
-                (s.diff_pts[n], 'diffusion', PURPLE),
-                (s.flow_pts[n], 'flow matching', SLIDE))):
+        for row, (pts, name, colour, score) in enumerate((
+                (s.diff_pts[n], 'diffusion', PURPLE, s.diff[n]),
+                (s.flow_pts[n], 'flow, first training', LINK, s.flow[n]),
+                (s.str_pts[n], 'flow, straightened', SLIDE, s.str[n]))):
             ax = axes[row, col]
             _arena(ax, lim=2.8, labels=False)
             ax.scatter(pts[:900, 0], pts[:900, 1], s=5, color=colour, alpha=0.55)
             ax.set_xlabel('x (m)', fontsize=8.5)
             ax.set_ylabel('y (m)', fontsize=8.5)
-            score = s.diff[n] if row == 0 else s.flow[n]
             ax.set_title(f'{name}, {n} step{"s" if n > 1 else ""}\n'
                          f'mismatch {score:.3f}', fontsize=10, weight='bold',
                          color=INK)
-    fig.suptitle('One, two, four and eight steps, drawn from the same starting noise',
-                 fontsize=12.5, weight='bold', color=INK)
+    fig.suptitle('One, two, four and eight steps, every row starting from the '
+                 'same noise', fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, FLOW_DOC, 'few-step-panels.svg')
 
 
 def error_at_fixed_steps() -> None:
     s = _sweep()
-    pairs = [(2, s.diff[2], s.flow[2]), (4, s.diff[4], s.flow[4]),
-             (16, s.diff[16], s.flow[16]), (64, s.diff[64], s.flow[64])]
+    ns = (1, 2, 4, 16)
     print('[p2s2] side by side: ' + '; '.join(
-        f'{n} steps diffusion {a:.4f} flow {b:.4f} '
-        f'({a / b:.1f} times worse)' for n, a, b in pairs))
-    fig, ax = plt.subplots(figsize=(10.0, 5.4), facecolor='white')
+        f'{n} steps diffusion {s.diff[n]:.4f} flow {s.flow[n]:.4f} straightened '
+        f'{s.str[n]:.4f}' for n in ns))
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
     _plain(ax)
-    idx = np.arange(len(pairs))
-    ax.bar(idx - 0.19, [p[1] for p in pairs], width=0.36, color=PURPLE,
-           edgecolor=INK, lw=0.6, label='diffusion')
-    ax.bar(idx + 0.19, [p[2] for p in pairs], width=0.36, color=SLIDE,
-           edgecolor=INK, lw=0.6, label='flow matching')
-    for i, (_n, a, b) in enumerate(pairs):
-        ax.text(i - 0.19, a * 1.15, f'{a:.3f}', ha='center', fontsize=9, color=INK)
-        ax.text(i + 0.19, b * 1.15, f'{b:.3f}', ha='center', fontsize=9, color=INK)
+    idx = np.arange(len(ns))
+    for k, (got, name, col) in enumerate((
+            (s.diff, 'diffusion', PURPLE), (s.flow, 'flow, first training', LINK),
+            (s.str, 'flow, straightened', SLIDE))):
+        ax.bar(idx + (k - 1) * 0.27, [got[n] for n in ns], width=0.25, color=col,
+               edgecolor=INK, lw=0.5, label=name)
+        for i, n in enumerate(ns):
+            ax.text(i + (k - 1) * 0.27, got[n] * 1.18, f'{got[n]:.3f}', ha='center',
+                    fontsize=8, color=INK)
     ax.set_yscale('log')
     ax.set_xticks(idx)
-    ax.set_xticklabels([f'{p[0]} steps' for p in pairs])
+    ax.set_xticklabels([f'{n} step{"s" if n > 1 else ""}' for n in ns])
     ax.set_ylabel('mismatch score (lower is better)', fontsize=9.5)
-    ax.legend(fontsize=9.5, frameon=False)
+    ax.legend(fontsize=9, frameon=False)
     ax.set_title('The gap is largest where it matters most, at the smallest '
                  'step counts', fontsize=12, weight='bold', color=INK)
     _save(fig, FLOW_DOC, 'error-at-fixed-steps.svg')
@@ -1803,28 +1934,27 @@ def error_at_fixed_steps() -> None:
 def time_to_quality() -> None:
     s = _sweep()
     one = _pass_time(1)
-    print(f'[p2s2] one pass over a single point takes {one * 1e6:.1f} microseconds, '
-          'and both models are the same size')
+    print(f'[p2s2] one pass over a single point takes {one * 1e6:.1f} '
+          'microseconds, and all three models are the same size')
     for n in FEW:
-        print(f'[p2s2] {n:3d} steps costs {n * one * 1e3:.3f} ms: flow '
-              f'{s.flow[n]:.4f}, diffusion {s.diff[n]:.4f}')
-    fig, ax = plt.subplots(figsize=(10.2, 5.6), facecolor='white')
+        print(f'[p2s2] {n:3d} steps costs {n * one * 1e3:.3f} ms')
+    fig, ax = plt.subplots(figsize=(10.4, 5.6), facecolor='white')
     _plain(ax)
     times = np.array(FEW) * one * 1e3
-    ax.plot(times, [s.diff[n] for n in FEW], color=PURPLE, lw=2.6, marker='o',
-            ms=6, label='diffusion')
-    ax.plot(times, [s.flow[n] for n in FEW], color=SLIDE, lw=2.6, marker='s',
-            ms=6, label='flow matching')
+    for got, name, col, mk in ((s.diff, 'diffusion', PURPLE, 'o'),
+                               (s.flow, 'flow, first training', LINK, '^'),
+                               (s.str, 'flow, straightened', SLIDE, 's')):
+        ax.plot(times, [got[n] for n in FEW], color=col, lw=2.4, marker=mk, ms=6,
+                label=name)
     for n, tm in zip(FEW, times):
-        ax.text(tm, s.flow[n] * 0.62, f'{n}', ha='center', fontsize=9, color=SLIDE)
-        ax.text(tm, s.diff[n] * 1.3, f'{n}', ha='center', fontsize=9, color=PURPLE)
+        ax.text(tm, s.str[n] * 0.5, f'{n}', ha='center', fontsize=9, color=SLIDE)
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xlabel('measured time to generate one waypoint (ms)', fontsize=9.5)
     ax.set_ylabel('mismatch score (lower is better)', fontsize=9.5)
     ax.legend(fontsize=9.5, frameon=False)
-    ax.set_title('The same picture read as a budget: the number beside each point\n'
-                 'is the step count that bought that time',
+    ax.set_title('The same picture read as a budget: the number under each green\n'
+                 'point is the step count that bought that time',
                  fontsize=12, weight='bold', color=INK)
     _save(fig, FLOW_DOC, 'time-to-quality.svg')
 
@@ -2439,6 +2569,7 @@ def main() -> None:
     the_step_rule()
     conditioning_input()
     conditional_samples()
+    condition_accuracy()
     guidance_arrows()
     guidance_sweep()
     guidance_tradeoff()

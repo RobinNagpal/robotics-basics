@@ -429,7 +429,7 @@ def resize_mismatch() -> None:
     diff = np.abs(squash - crop).mean(axis=2)
     mad = float(diff.mean())
     frac = float((diff > 10.0).mean())
-    print(f'[p1-s2] resize mismatch: mean absolute pixel difference {mad:.1f} of 255, '
+    print(f'[p1-s1] resize mismatch: mean absolute pixel difference {mad:.1f} of 255, '
           f'{100 * frac:.0f}% of pixels differ by more than 10')
 
     fig, axes = plt.subplots(1, 4, figsize=(12.4, 3.9), facecolor='white')
@@ -1675,7 +1675,7 @@ def book_map() -> None:
     for a, b in NEEDS:
         xa, ya = pos[a]
         xb, yb = pos[b]
-        _arrow(ax, xa + bw / 2, ya, xb - bw / 2, yb, LINK_PALE, 1.2)
+        _arrow(ax, xa + bw / 2, ya, xb - bw / 2, yb, '#8fb8dd', 1.3)
     groups = {1: '#eef3f9', 2: '#eef3f9', 3: '#eef3f9', 4: '#eef3f9',
               5: '#e4f0e4', 6: '#e4f0e4', 7: '#e4f0e4',
               8: '#f6efe0', 9: '#f6efe0', 10: '#f6efe0', 11: '#f6efe0', 12: '#f6efe0',
@@ -1858,7 +1858,7 @@ def data_and_run_cost() -> None:
     for f, c in zip(FAMILIES, cols):
         ax.scatter([f.examples], [f.macs / 1e9], s=90, color=c, zorder=4,
                    edgecolor='white', linewidth=0.8)
-    offsets = [(11, -4), (-11, 8), (11, 4), (11, -5), (-12, 6), (11, -6),
+    offsets = [(11, -4), (11, 5), (11, 4), (11, -5), (-12, 6), (11, -6),
                (12, -14), (12, 6), (11, 5)]
     for f, (dx, dy) in zip(FAMILIES, offsets):
         ax.annotate(f.name, (f.examples, f.macs / 1e9), textcoords='offset points',
@@ -2262,7 +2262,7 @@ def data_cost_curve() -> None:
         ax.plot([h, h], [40, 100 * t], color=col, ls='--', lw=1.3)
         ax.scatter([h], [100 * t], color=col, s=42, zorder=4)
         right = h < 1e4
-        ax.text(h * (1.14 if right else 0.86), 100 * t - 1.6,
+        ax.text(h * (1.14 if right else 0.86), 100 * t - (1.6 if right else 6.5),
                 f'{100 * t:.0f}%: {h:,.0f} hours', fontsize=9.5, color=col,
                 ha='left' if right else 'right')
     ax.set_xscale('log')
@@ -2529,17 +2529,17 @@ def reading_order() -> None:
     for i, (word, folder, note) in enumerate(steps):
         x = 0.015 + i * (w + 0.015)
         here = i == 0
-        _box(ax, x, 0.42, w, 0.26, '', '#f3dede' if here else '#eef3f9',
+        _box(ax, x, 0.40, w, 0.33, '', '#f3dede' if here else '#eef3f9',
              edge=GRIP if here else INK)
-        ax.text(x + w / 2, 0.635, word, ha='center', va='center', fontsize=8.6, color=MUTED)
-        ax.text(x + w / 2, 0.555, titles[folder], ha='center', va='center', fontsize=9.0,
-                weight='bold', color=INK)
-        ax.text(x + w / 2, 0.472, f'{counts[folder]} chapters', ha='center', va='center',
+        ax.text(x + w / 2, 0.695, word, ha='center', va='center', fontsize=8.4, color=MUTED)
+        ax.text(x + w / 2, 0.585, _wrap(titles[folder], 15), ha='center', va='center',
+                fontsize=8.8, weight='bold', color=INK, linespacing=1.35)
+        ax.text(x + w / 2, 0.445, f'{counts[folder]} chapters', ha='center', va='center',
                 fontsize=8.6, color=MUTED)
-        ax.text(x + w / 2, 0.38, note, ha='center', va='top', fontsize=8.0, color=MUTED,
-                wrap=True)
+        ax.text(x + w / 2, 0.365, _wrap(note, 24), ha='center', va='top', fontsize=7.8,
+                color=MUTED, linespacing=1.4)
         if i:
-            _arrow(ax, x - 0.013, 0.55, x - 0.001, 0.55, MUTED, 1.5)
+            _arrow(ax, x - 0.014, 0.565, x - 0.002, 0.565, MUTED, 1.5)
     _save(fig, MAP_DOC, 'reading-order.svg')
 
 

@@ -1817,9 +1817,10 @@ LINK_L: float = 1.0
 MASS: float = 1.0
 DAMP: float = 0.25
 DT: float = 0.05
-STOP: float = 0.90            # the hard stop the joint cannot turn past, in radians
-TORQUE: float = 1.6
-GOAL: float = 0.85
+STOP: float = 0.45            # the hard stop the joint cannot turn past, in radians
+TORQUE: float = 1.1           # the torque the recorded episodes used
+TORQUE_PLAN: float = 1.6      # the torque the planner is allowed to ask for
+GOAL: float = 0.70            # the angle the planner is told to reach, which is past the stop
 
 
 def true_step(state: Arr, u: Arr) -> Arr:
@@ -1833,9 +1834,10 @@ def true_step(state: Arr, u: Arr) -> Arr:
     return np.stack([th_n, om_n], axis=-1)
 
 
-def _smooth_torque(n: int, horizon: int, rng: np.random.Generator, hold: int = 5) -> Arr:
+def _smooth_torque(n: int, horizon: int, rng: np.random.Generator, hold: int = 5,
+                   tmax: float = TORQUE) -> Arr:
     segs = int(np.ceil(horizon / hold))
-    vals = rng.uniform(-TORQUE, TORQUE, (n, segs))
+    vals = rng.uniform(-tmax, tmax, (n, segs))
     return np.repeat(vals, hold, axis=1)[:, :horizon]
 
 
@@ -1843,7 +1845,7 @@ def make_transitions(n_ep: int, horizon: int, seed: int, noise: float = 0.002
                      ) -> tuple[Arr, Arr, Arr, NDArray[np.bool_]]:
     """Collect (state, torque, next state) from the real system, as a recording would."""
     rng = np.random.default_rng(seed)
-    s = np.stack([rng.uniform(-1.0, 0.2, n_ep), rng.uniform(-0.8, 0.8, n_ep)], axis=1)
+    s = np.stack([rng.uniform(-1.0, -0.15, n_ep), rng.uniform(-0.8, 0.8, n_ep)], axis=1)
     us = _smooth_torque(n_ep, horizon, rng)
     states, acts, nexts, hits = [], [], [], []
     for k in range(horizon):
@@ -2036,7 +2038,7 @@ def one_step_error() -> None:
 def learned_against_true_physics() -> None:
     """What the model learned about gravity, against what gravity really does."""
     w = _w()
-    th = np.linspace(-1.3, 1.3, 200)
+    th = np.linspace(-1.4, 1.0, 200)
     zero = np.zeros_like(th)
     state = np.stack([th, zero], axis=1)
     pred = w.model.step(state, zero)
@@ -2262,3 +2264,659 @@ def reading_the_gripper() -> None:
                  'the one detail a grasp depends on', fontsize=11.5, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'reading-the-gripper.svg')
+
+
+# ==========================================================================
+# PART K -- page 4, section 3: error that piles up over a rollout
+# ==========================================================================
+
+ROLL: int = 60
+THRESH_DEG: float = 0.25
+
+
+def test_rollouts(n: int, seed: int, free_only: bool = True) -> tuple[Arr, Arr, Arr, float]:
+    """Fresh starts and torque sequences, run through the real system and the learned model.
+
+    With free_only, only the runs whose real path never touches the hard stop are kept, so
+    that the growth of the error is the model's own drift and not the unmodelled contact.
+    """
+    w = _w()
+    rng = np.random.default_rng(seed)
+    s0 = np.stack([rng.uniform(-1.0, -0.15, n), rng.uniform(-0.8, 0.8, n)], axis=1)
+    us = _smooth_torque(n, ROLL, rng)
+    tru = rollout(true_step, s0, us)
+    pre = rollout(w.model.step, s0, us)
+    free = ~np.any(tru[:, :, 0] >= STOP - 1e-9, axis=1)
+    share = float(free.mean())
+    if free_only:
+        return tru[free], pre[free], us[free], share
+    return tru, pre, us, share
+
+
+def rollout_vs_truth() -> None:
+    """One run of the real system beside the same run inside the learned model."""
+    tr, pr, _us, _share = test_rollouts(200, 5)
+    tru, pre = tr[0], pr[0]
+    gap = np.degrees(np.abs(pre[:, 0] - tru[:, 0]))
+    first = int(np.argmax(gap > THRESH_DEG)) if np.any(gap > THRESH_DEG) else ROLL
+    print(f'[rollout] on this run the two paths part by more than {THRESH_DEG:.2f} degrees '
+          f'after {first} steps, which is {first * DT:.2f} seconds')
+    print(f'[rollout] by step {ROLL} the gap is {gap[-1]:.2f} degrees')
+    t = np.arange(ROLL + 1) * DT
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(t, np.degrees(tru[:, 0]), color=INK, lw=2.4, label='the real system')
+    ax.plot(t, np.degrees(pre[:, 0]), color=PURPLE, lw=2, ls='--',
+            label='the learned model, run on its own output')
+    ax.axvline(first * DT, color=GRIP, lw=1.4, ls=':')
+    ax.text(first * DT + 0.05, np.degrees(tru[:, 0]).min(),
+            f'{THRESH_DEG:.2f} degrees apart\nafter {first * DT:.2f} s', fontsize=9, color=GRIP)
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('joint angle (degrees)', fontsize=10)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
+    ax.set_title('Same starting point, same torques, two paths',
+                 fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(t, gap, color=GRIP, lw=2)
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('how far apart the two angles are (degrees)', fontsize=10)
+    ax.set_title('The gap grows because each step starts from the last one',
+                 fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'rollout-vs-truth.svg')
+
+
+def error_vs_horizon() -> None:
+    """Averaged over many starts, how far ahead the model stays useful."""
+    w = _w()
+    tru, pre, _us, share = test_rollouts(600, 31)
+    n = tru.shape[0]
+    print(f'[horizon] {n} of 600 runs never touch the hard stop ({share * 100:.0f}%), and '
+          'only those are measured here')
+    gap = np.degrees(np.mean(np.abs(pre[:, :, 0] - tru[:, :, 0]), axis=0))
+    cross = int(np.argmax(gap > THRESH_DEG)) if np.any(gap > THRESH_DEG) else ROLL
+    for k in (1, 5, 10, 20, 40, 60):
+        print(f'[horizon] {k:2d} steps ahead ({k * DT:.2f} s): average gap {gap[k]:.3f} degrees')
+    print(f'[horizon] the average gap passes {THRESH_DEG:.2f} degrees at step {cross} '
+          f'({cross * DT:.2f} s)')
+    fig, ax = plt.subplots(figsize=(8.2, 4.6), facecolor='white')
+    _plain(ax)
+    ax.plot(np.arange(ROLL + 1), gap, color=PURPLE, lw=2.4)
+    ax.axhline(THRESH_DEG, color=GRIP, lw=1.5, ls='--')
+    ax.axvline(cross, color=GRIP, lw=1.5, ls=':')
+    ax.text(cross + 1.5, gap.min() * 2.0,
+            f'past {cross} steps the model is wrong\nby more than {THRESH_DEG:.2f} degrees',
+            fontsize=9.4, color=GRIP)
+    ax.set_yscale('log')
+    ax.set_xlabel('steps predicted ahead', fontsize=10)
+    ax.set_ylabel('average gap in the angle (degrees)', fontsize=10)
+    ax.set_title(f'Averaged over {n} starts: a one-step error of '
+                 f'{w.one_step_angle:.3f} degrees\nbecomes {gap[-1]:.1f} degrees by step {ROLL}',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'error-vs-horizon.svg')
+
+
+def phase_path() -> None:
+    """The same divergence seen as a path through angle and speed together."""
+    tr, pr, _us, _share = test_rollouts(200, 12)
+    tru, pre = tr[1], pr[1]
+    print(f'[phase] the real path ends at angle {np.degrees(tru[-1, 0]):.2f} degrees and speed '
+          f'{tru[-1, 1]:.2f} rad/s; the model ends at {np.degrees(pre[-1, 0]):.2f} degrees and '
+          f'{pre[-1, 1]:.2f} rad/s')
+    fig, ax = plt.subplots(figsize=(7.8, 5.0), facecolor='white')
+    _plain(ax)
+    ax.plot(np.degrees(tru[:, 0]), tru[:, 1], color=INK, lw=2.2, label='the real system')
+    ax.plot(np.degrees(pre[:, 0]), pre[:, 1], color=PURPLE, lw=2, ls='--',
+            label='the learned model')
+    for k in (0, 10, 20, 40, 60):
+        ax.plot(np.degrees(tru[k, 0]), tru[k, 1], 'o', color=INK, ms=6)
+        ax.plot(np.degrees(pre[k, 0]), pre[k, 1], 'o', color=PURPLE, ms=6)
+        ax.annotate(f'step {k}', (np.degrees(tru[k, 0]), tru[k, 1]),
+                    textcoords='offset points', xytext=(6, 6), fontsize=8.6, color=MUTED)
+    ax.set_xlabel('joint angle (degrees)', fontsize=10)
+    ax.set_ylabel('joint speed (radians a second)', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower left')
+    ax.set_title('The two paths start together and peel apart',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'phase-path.svg')
+
+
+def more_data_does_not_fix_it() -> None:
+    """More recorded transitions make the one-step prediction better and the rollout no better."""
+    rng = np.random.default_rng(44)
+    n = 400
+    s0 = np.stack([rng.uniform(-1.0, -0.15, n), rng.uniform(-0.8, 0.8, n)], axis=1)
+    us = _smooth_torque(n, ROLL, rng)
+    tru = rollout(true_step, s0, us)
+    free = ~np.any(tru[:, :, 0] >= STOP - 1e-9, axis=1)
+    s0, us, tru = s0[free], us[free], tru[free]
+    vst, vac, vnx, vhit = make_transitions(80, 30, seed=3, noise=0.0)
+    keepv = ~vhit
+    vst, vac, vnx = vst[keepv], vac[keepv], vnx[keepv]
+    eps = [10, 25, 50, 100, 200, 400]
+    ones, finals = [], []
+    for e in eps:
+        st, ac, nx, hit = make_transitions(e, 30, seed=1000 + e)
+        keep = ~hit
+        m = LearnedModel(st[keep], ac[keep], nx[keep])
+        one = float(np.degrees(_rmse(m.step(vst, vac)[:, 0], vnx[:, 0])))
+        pre = rollout(m.step, s0, us)
+        gap = float(np.degrees(np.mean(np.abs(pre[:, -1, 0] - tru[:, -1, 0]))))
+        ones.append(one)
+        finals.append(gap)
+        print(f'[data] {e * 30:6,} recorded transitions: one step off by {one:.4f} degrees, '
+              f'{ROLL} steps off by {gap:.2f} degrees')
+    print(f'[data] from the smallest to the largest set the one-step error falls '
+          f'{ones[0] / ones[-1]:.0f} times over, while the {ROLL}-step gap changes by a factor '
+          f'of only {max(finals) / min(finals):.2f}')
+    xs = [e * 30 for e in eps]
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(xs, ones, marker='o', color=TEAL, lw=2)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('recorded transitions used to fit the model', fontsize=10)
+    ax.set_ylabel('error one step ahead (degrees)', fontsize=10)
+    ax.set_title('One step ahead, more data helps a lot', fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(xs, finals, marker='s', color=GRIP, lw=2)
+    ax.set_xscale('log')
+    ax.set_xlabel('recorded transitions used to fit the model', fontsize=10)
+    ax.set_ylabel(f'gap after {ROLL} steps (degrees)', fontsize=10)
+    ax.set_ylim(0, max(finals) * 1.3)
+    ax.set_title(f'{ROLL} steps ahead, more data does not help at all',
+                 fontsize=11, weight='bold')
+    fig.suptitle('The far-off error comes from the shape of the model, not from a shortage '
+                 'of data', fontsize=12.5, weight='bold')
+    fig.tight_layout(rect=(0, 0, 1, 0.92))
+    _save(fig, WM_DOC, 'more-data-does-not-fix-it.svg')
+
+
+# ==========================================================================
+# PART L -- page 4, section 4: planning inside the model
+# ==========================================================================
+
+def step_cost(state: Arr, u: Arr) -> Arr:
+    return (state[..., 0] - GOAL) ** 2 + 0.05 * state[..., 1] ** 2 + 0.01 * u ** 2
+
+
+def plan_and_run(stepper, n_cand: int, horizon: int, steps: int = 50, seed: int = 0
+                 ) -> tuple[float, float, Arr]:
+    """Try n_cand torque sequences inside `stepper`, run the first torque of the best one."""
+    rng = np.random.default_rng(seed)
+    s = np.array([-0.80, 0.0])
+    traj = [s.copy()]
+    real_cost = 0.0
+    believed = 0.0
+    for _t in range(steps):
+        cands = _smooth_torque(n_cand, horizon, rng, tmax=TORQUE_PLAN)
+        batch = np.repeat(s[None, :], n_cand, axis=0)
+        cost = np.zeros(n_cand)
+        for k in range(horizon):
+            batch = stepper(batch, cands[:, k])
+            cost += step_cost(batch, cands[:, k])
+        best = int(np.argmin(cost))
+        believed += float(cost[best]) / horizon
+        u = cands[best, 0]
+        s = true_step(s, np.array(u))
+        real_cost += float(step_cost(s, np.array(u)))
+        traj.append(s.copy())
+    return real_cost, believed, np.array(traj)
+
+
+def candidate_sequences() -> None:
+    """The fan of candidate futures the planner looks at, and the one it picks."""
+    w = _w()
+    rng = np.random.default_rng(99)
+    s = np.array([-0.80, 0.0])
+    n_cand, horizon = 40, 20
+    cands = _smooth_torque(n_cand, horizon, rng, tmax=TORQUE_PLAN)
+    batch = np.repeat(s[None, :], n_cand, axis=0)
+    paths = [batch.copy()]
+    cost = np.zeros(n_cand)
+    for k in range(horizon):
+        batch = w.model.step(batch, cands[:, k])
+        cost += step_cost(batch, cands[:, k])
+        paths.append(batch.copy())
+    paths = np.stack(paths, axis=1)
+    best = int(np.argmin(cost))
+    real = rollout(true_step, s, cands[best])
+    print(f'[plan] {n_cand} candidate torque sequences of {horizon} steps were tried inside '
+          f'the model, which is {n_cand * horizon} model steps for one decision')
+    print(f'[plan] the best candidate scores {cost[best] / horizon:.4f} inside the model; '
+          f'run on the real system the same torques end at '
+          f'{np.degrees(real[-1, 0]):.2f} degrees against the model\'s '
+          f'{np.degrees(paths[best, -1, 0]):.2f} degrees')
+    t = np.arange(horizon + 1) * DT
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), facecolor='white')
+    _plain(ax)
+    for i in range(n_cand):
+        ax.plot(t, np.degrees(paths[i, :, 0]), color=LINK, lw=0.9, alpha=0.35)
+    ax.plot(t, np.degrees(paths[best, :, 0]), color=SLIDE, lw=2.6,
+            label='the candidate the planner picks')
+    ax.plot(t, np.degrees(real[:, 0]), color=INK, lw=2.2, ls='--',
+            label='what those torques really do')
+    ax.axhline(np.degrees(GOAL), color=JOINT, lw=1.6, ls=':', label='the angle it is aiming for')
+    ax.set_xlabel('seconds ahead', fontsize=10)
+    ax.set_ylabel('joint angle (degrees)', fontsize=10)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
+    ax.set_title(f'{n_cand} futures tried inside the model, {horizon} steps each',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'candidate-sequences.svg')
+
+
+def arithmetic_of_planning() -> None:
+    """How many futures fit inside one control period."""
+    period_ms = DT * 1000.0
+    per_call_us = [0.5, 5.0, 50.0, 500.0]
+    names = ['a handful of\nsums (0.5 us)', 'a small network\n(5 us)',
+             'a latent network\n(50 us)', 'a video model\n(500 us)']
+    budget = period_ms * 1000.0
+    allowed = [budget / c for c in per_call_us]
+    for nm, c, a in zip(names, per_call_us, allowed):
+        print(f'[arith] at {c} microseconds a step, {a:,.0f} model steps fit in the '
+              f'{period_ms:.0f} ms between commands, which is {a / 20:,.0f} candidates '
+              '20 steps long')
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.5), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    bars = ax.bar([n.replace('\n', ' ') for n in names], [a / 20 for a in allowed],
+                  color=[SLIDE, TEAL, JOINT, GRIP], width=0.55)
+    ax.bar_label(bars, labels=[f'{a / 20:,.0f}' for a in allowed], fontsize=9.5, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(0.1, max(allowed) / 20 * 40)
+    ax.tick_params(axis='x', labelsize=8.4)
+    ax.set_ylabel('candidate futures of 20 steps that fit\nin one control period', fontsize=10)
+    ax.set_title(f'{period_ms:.0f} ms between commands at {1 / DT:.0f} Hz',
+                 fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    cands = np.array([16, 64, 256, 1024])
+    for h, colour in zip([5, 10, 20, 40], [SLIDE, TEAL, JOINT, GRIP]):
+        ax.plot(cands, cands * h, marker='o', color=colour, lw=2, label=f'{h} steps ahead')
+    ax.set_xscale('log', base=2)
+    ax.set_yscale('log')
+    ax.set_xticks(cands)
+    ax.set_xticklabels([str(c) for c in cands])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+    ax.set_xlabel('candidate torque sequences tried', fontsize=10)
+    ax.set_ylabel('model steps for one decision', fontsize=10)
+    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    ax.set_title('Candidates times horizon is the whole bill',
+                 fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'arithmetic-of-planning.svg')
+
+
+CAND_LIST: list[int] = [4, 16, 64, 256]
+HORIZON_LIST: list[int] = [5, 10, 20, 40]
+
+
+def more_candidates() -> None:
+    """More candidates give a better plan, up to a point set by the model's own error."""
+    w = _w()
+    learned, perfect = [], []
+    for k in CAND_LIST:
+        a = float(np.mean([plan_and_run(w.model.step, k, 15, seed=s)[0] for s in range(3)]))
+        b = float(np.mean([plan_and_run(true_step, k, 15, seed=s)[0] for s in range(3)]))
+        learned.append(a)
+        perfect.append(b)
+        print(f'[cands] {k:4d} candidates: cost {a:.3f} planning in the learned model, '
+              f'{b:.3f} planning in the real one')
+    fig, ax = plt.subplots(figsize=(8.0, 4.6), facecolor='white')
+    _plain(ax)
+    ax.plot(CAND_LIST, learned, marker='o', color=PURPLE, lw=2, label='planned in the learned model')
+    ax.plot(CAND_LIST, perfect, marker='s', color=SLIDE, lw=2, label='planned in the real system')
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(CAND_LIST)
+    ax.set_xticklabels([str(c) for c in CAND_LIST])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+    ax.set_xlabel('candidate torque sequences tried for each decision', fontsize=10)
+    ax.set_ylabel('cost actually paid on the real system', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False)
+    ax.set_title('More candidates help, and the learned model keeps a gap\n'
+                 'that more candidates cannot close', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'more-candidates.svg')
+
+
+def horizon_hurts() -> None:
+    """Looking further ahead inside a wrong model makes the plan worse, not better."""
+    w = _w()
+    learned, perfect = [], []
+    for h in HORIZON_LIST:
+        a = float(np.mean([plan_and_run(w.model.step, 64, h, seed=s)[0] for s in range(3)]))
+        b = float(np.mean([plan_and_run(true_step, 64, h, seed=s)[0] for s in range(3)]))
+        learned.append(a)
+        perfect.append(b)
+        print(f'[horiz] planning {h:2d} steps ahead: cost {a:.3f} with the learned model, '
+              f'{b:.3f} with the real one')
+    best_h = HORIZON_LIST[int(np.argmin(learned))]
+    print(f'[horiz] the learned model plans best at {best_h} steps ahead, which is '
+          f'{best_h * DT:.2f} seconds')
+    fig, ax = plt.subplots(figsize=(8.0, 4.6), facecolor='white')
+    _plain(ax)
+    ax.plot(HORIZON_LIST, learned, marker='o', color=PURPLE, lw=2,
+            label='planned in the learned model')
+    ax.plot(HORIZON_LIST, perfect, marker='s', color=SLIDE, lw=2,
+            label='planned in the real system')
+    ax.axvline(best_h, color=GRIP, lw=1.4, ls=':')
+    ax.text(best_h + 0.6, max(learned) * 0.92,
+            f'best at {best_h} steps\n({best_h * DT:.2f} seconds)', fontsize=9.2, color=GRIP)
+    ax.set_xlabel('steps the planner looks ahead', fontsize=10)
+    ax.set_ylabel('cost actually paid on the real system', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Looking further ahead inside a model that drifts\nstops paying',
+                 fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'horizon-hurts.svg')
+
+
+# ==========================================================================
+# PART M -- page 4, sections 5 and 6: video, simulators and wrong physics
+# ==========================================================================
+
+VIDEO_HOURS: int = 10_000
+VIDEO_FPS: int = 30
+
+
+def labelled_against_unlabelled() -> None:
+    """Why video is tempting: nobody has to record what the robot did."""
+    robot_frames = N_TASKS * DEMOS_PER_TASK * EP.horizon
+    video_frames = VIDEO_HOURS * 3600 * VIDEO_FPS
+    print(f'[video] {N_TASKS} tasks x {DEMOS_PER_TASK} demonstrations x {EP.horizon} steps = '
+          f'{robot_frames:,} frames with a recorded action beside them')
+    print(f'[video] {VIDEO_HOURS:,} hours of ordinary video at {VIDEO_FPS} frames a second is '
+          f'{video_frames:,} frames with no action at all')
+    print(f'[video] that is {video_frames / robot_frames:,.0f} times as many frames')
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    bars = ax.bar(['frames with a\nrecorded action', 'frames of ordinary\nvideo'],
+                  [robot_frames, video_frames], color=[SLIDE, PURPLE], width=0.5)
+    ax.bar_label(bars, labels=[f'{robot_frames:,}', f'{video_frames:,}'], fontsize=10, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(1e4, video_frames * 25)
+    ax.set_ylabel('number of frames', fontsize=10)
+    ax.set_title(f'About {video_frames / robot_frames:,.0f} times as much video exists',
+                 fontsize=11, weight='bold')
+    ax = axes[1]
+    _blank(ax, (0, 1), (0, 1))
+    ax.text(0.5, 0.93, 'What each kind of frame can teach', ha='center', va='center',
+            fontsize=11.5, weight='bold', color=INK)
+    _box(ax, 0.03, 0.52, 0.44, 0.33,
+         'a frame with its action\n\nwhat I see, what I did,\nwhat happened next\n\n'
+         'enough to plan with', fc='#eaf7ee', ec=SLIDE, fs=9.4)
+    _box(ax, 0.53, 0.52, 0.44, 0.33,
+         'a frame of ordinary video\n\nwhat I see and what\nhappened next\n\n'
+         'no record of what caused it', fc='#eee9f7', ec=PURPLE, fs=9.4)
+    ax.text(0.5, 0.30, 'A world model trained on video learns how the world usually carries on.\n'
+            'To plan with it, the model still has to be told what the arm did, which is why\n'
+            'video pretraining is almost always followed by training on recorded episodes.',
+            ha='center', va='center', fontsize=9.6, color=INK)
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'labelled-against-unlabelled.svg')
+
+
+def cost_of_predicting_pixels() -> None:
+    """What it costs to predict a picture instead of a short list of numbers."""
+    frame = 256 * 256 * 3
+    diffusion_steps = 20
+    latent = 32
+    k, h = 64, 20
+    per_frame = frame * diffusion_steps
+    plan_pixels = k * h * per_frame
+    plan_latent = k * h * latent
+    print(f'[pixels] one predicted frame at 256 by 256 in colour is {frame:,} numbers, and a '
+          f'generator that takes {diffusion_steps} steps writes {per_frame:,} of them')
+    print(f'[pixels] one planning decision with {k} candidates {h} steps long writes '
+          f'{plan_pixels:,} numbers in pixels and {plan_latent:,} in a {latent}-number '
+          'squeezed space')
+    print(f'[pixels] the pixel version is {plan_pixels / plan_latent:,.0f} times the work')
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    names = [f'{latent} squeezed\nnumbers', f'one frame\n({frame:,} numbers)',
+             f'one frame through a\n{diffusion_steps}-step generator']
+    vals = [latent, frame, per_frame]
+    bars = ax.bar(names, vals, color=[SLIDE, JOINT, GRIP], width=0.55)
+    ax.bar_label(bars, labels=[f'{v:,}' for v in vals], fontsize=9.5, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(1, per_frame * 60)
+    ax.tick_params(axis='x', labelsize=8.6)
+    ax.set_ylabel('numbers written for one predicted step', fontsize=10)
+    ax.set_title('One step ahead', fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    bars = ax.bar(['in the squeezed space', 'in pixels'], [plan_latent, plan_pixels],
+                  color=[SLIDE, GRIP], width=0.45)
+    ax.bar_label(bars, labels=[f'{plan_latent:,}', f'{plan_pixels:,}'], fontsize=10, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(1e3, plan_pixels * 60)
+    ax.set_ylabel('numbers written for one planning decision', fontsize=10)
+    ax.set_title(f'{k} candidates, {h} steps each, in the {DT * 1000:.0f} ms '
+                 'between commands', fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'cost-of-predicting-pixels.svg')
+
+
+def simulator_against_learned() -> None:
+    """Where a learned stand-in for the physics is right, and where it is not."""
+    w = _w()
+    rng = np.random.default_rng(66)
+    n = 4000
+    st = np.stack([rng.uniform(-1.0, STOP + 0.25, n), rng.uniform(-2.0, 2.0, n)], axis=1)
+    ac = rng.uniform(-TORQUE_PLAN, TORQUE_PLAN, n)
+    nxt = true_step(st, ac)
+    pred = w.model.step(st, ac)
+    hit = nxt[:, 0] >= STOP - 1e-9
+    e_free = float(np.degrees(_rmse(pred[~hit, 0], nxt[~hit, 0])))
+    e_hit = float(np.degrees(_rmse(pred[hit, 0], nxt[hit, 0])))
+    e_free_sp = float(_rmse(pred[~hit, 1], nxt[~hit, 1]))
+    e_hit_sp = float(_rmse(pred[hit, 1], nxt[hit, 1]))
+    print(f'[sim] away from the stop the learned step is off by {e_free:.4f} degrees and '
+          f'{e_free_sp:.4f} rad/s; at the stop it is off by {e_hit:.3f} degrees and '
+          f'{e_hit_sp:.3f} rad/s')
+    print(f'[sim] that is {e_hit / e_free:,.0f} times worse in the angle and '
+          f'{e_hit_sp / e_free_sp:,.0f} times worse in the speed')
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    bars = ax.bar(['steps away from\nthe stop', 'steps that touch\nthe stop'],
+                  [e_free, e_hit], color=[SLIDE, GRIP], width=0.5)
+    ax.bar_label(bars, labels=[f'{e_free:.4f} deg', f'{e_hit:.2f} deg'], fontsize=10, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(e_free / 4, e_hit * 12)
+    ax.set_ylabel('one-step error in the angle (degrees)', fontsize=10)
+    ax.set_title(f'The same model, {e_hit / e_free:,.0f} times worse where it never looked',
+                 fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    bars = ax.bar(['steps away from\nthe stop', 'steps that touch\nthe stop'],
+                  [e_free_sp, e_hit_sp], color=[SLIDE, GRIP], width=0.5)
+    ax.bar_label(bars, labels=[f'{e_free_sp:.4f}', f'{e_hit_sp:.3f}'], fontsize=10, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(e_free_sp / 4, e_hit_sp * 12)
+    ax.set_ylabel('one-step error in the speed (radians a second)', fontsize=10)
+    ax.set_title('And the speed is where the contact really shows',
+                 fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'simulator-against-learned.svg')
+
+
+def through_the_stop() -> None:
+    """What the model does when the arm reaches the one thing it never saw."""
+    w = _w()
+    rng = np.random.default_rng(404)
+    found = None
+    for _try in range(200):
+        s0 = np.array([rng.uniform(-0.6, -0.2), rng.uniform(0.4, 0.8)])
+        us = _smooth_torque(1, ROLL, rng, tmax=TORQUE_PLAN)[0]
+        tru = rollout(true_step, s0, us)
+        if np.any(tru[:, 0] >= STOP - 1e-9):
+            found = (s0, us, tru)
+            break
+    assert found is not None
+    s0, us, tru = found
+    pre = rollout(w.model.step, s0, us)
+    first = int(np.argmax(tru[:, 0] >= STOP - 1e-9))
+    over = float(np.degrees(pre[:, 0].max() - STOP))
+    print(f'[stop] the real arm reaches the stop at step {first} ({first * DT:.2f} s); the '
+          f'model sails {over:.1f} degrees past it, up to '
+          f'{np.degrees(pre[:, 0].max()):.1f} degrees')
+    tru_all, pre_all, _u, share = test_rollouts(600, 31, free_only=False)
+    free = ~np.any(tru_all[:, :, 0] >= STOP - 1e-9, axis=1)
+    gap_free = np.degrees(np.mean(np.abs(pre_all[free, :, 0] - tru_all[free, :, 0]), axis=0))
+    gap_hit = np.degrees(np.mean(np.abs(pre_all[~free, :, 0] - tru_all[~free, :, 0]), axis=0))
+    print(f'[stop] averaged over runs that touch the stop the gap reaches {gap_hit[-1]:.1f} '
+          f'degrees by step {ROLL}, against {gap_free[-1]:.2f} degrees for runs that do not')
+    t = np.arange(ROLL + 1) * DT
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.5), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(t, np.degrees(tru[:, 0]), color=INK, lw=2.4, label='the real arm')
+    ax.plot(t, np.degrees(pre[:, 0]), color=PURPLE, lw=2, ls='--', label='the learned model')
+    ax.axhline(np.degrees(STOP), color=GRIP, lw=1.8)
+    ax.text(t[-1], np.degrees(STOP) + 0.7, 'the hard stop', color=GRIP, fontsize=9.5,
+            ha='right')
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('joint angle (degrees)', fontsize=10)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
+    ax.set_title(f'The model takes the arm {over:.0f} degrees through solid metal',
+                 fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(np.arange(ROLL + 1), gap_free, color=SLIDE, lw=2.2,
+            label='runs that never touch the stop')
+    ax.plot(np.arange(ROLL + 1), gap_hit, color=GRIP, lw=2.2, label='runs that touch it')
+    ax.set_yscale('log')
+    ax.set_xlabel('steps predicted ahead', fontsize=10)
+    ax.set_ylabel('average gap in the angle (degrees)', fontsize=10)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
+    ax.set_title('One rare event the model never learned costs more\n'
+                 'than all the ordinary drift put together', fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'through-the-stop.svg')
+
+
+def energy_drift() -> None:
+    """A model that is almost right still makes or destroys energy as it runs."""
+    w = _w()
+    s0 = np.array([-0.95, 0.0])
+    us = np.zeros(ROLL)
+    tru = rollout(true_step, s0, us)
+    pre = rollout(w.model.step, s0, us)
+
+    def energy(path: Arr) -> Arr:
+        return (0.5 * MASS * LINK_L ** 2 * path[:, 1] ** 2
+                + MASS * G * LINK_L * (1.0 - np.cos(path[:, 0])))
+
+    et, ep = energy(tru), energy(pre)
+    print(f'[energy] with no torque at all, the real arm goes from {et[0]:.4f} to {et[-1]:.4f} '
+          f'joules as damping takes the energy away')
+    print(f'[energy] the learned model goes from {ep[0]:.4f} to {ep[-1]:.4f} joules, which is '
+          f'{(ep[-1] - et[-1]) / et[0] * 100:+.1f}% of the starting energy out of nowhere')
+    t = np.arange(ROLL + 1) * DT
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(t, np.degrees(tru[:, 0]), color=INK, lw=2.4, label='the real arm')
+    ax.plot(t, np.degrees(pre[:, 0]), color=PURPLE, lw=2, ls='--', label='the learned model')
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('joint angle (degrees)', fontsize=10)
+    ax.legend(fontsize=9.2, frameon=False)
+    ax.set_title('Let go from rest with no torque at all', fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(t, et, color=INK, lw=2.4, label='the real arm')
+    ax.plot(t, ep, color=PURPLE, lw=2, ls='--', label='the learned model')
+    ax.set_xlabel('seconds', fontsize=10)
+    ax.set_ylabel('energy held by the arm (joules)', fontsize=10)
+    ax.legend(fontsize=9.2, frameon=False)
+    ax.set_title('Energy the real arm loses to friction, the model keeps',
+                 fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'energy-drift.svg')
+
+
+OPEN_K: list[int] = [4, 16, 64, 256, 1024, 4096]
+
+
+def plan_that_exploits_the_error() -> None:
+    """The planner finds the sequences the model is most wrong about."""
+    w = _w()
+    h = 40
+    believed, really, best = [], [], []
+    for k in OPEN_K:
+        bs, rs, gs = [], [], []
+        for seed in range(5):
+            rng = np.random.default_rng(1000 + seed)
+            s0 = np.array([-0.80, 0.0])
+            cands = _smooth_torque(k, h, rng, tmax=TORQUE_PLAN)
+            bm = np.repeat(s0[None, :], k, axis=0)
+            mc = np.zeros(k)
+            for j in range(h):
+                bm = w.model.step(bm, cands[:, j])
+                mc += step_cost(bm, cands[:, j])
+            bt = np.repeat(s0[None, :], k, axis=0)
+            tc = np.zeros(k)
+            for j in range(h):
+                bt = true_step(bt, cands[:, j])
+                tc += step_cost(bt, cands[:, j])
+            i = int(np.argmin(mc))
+            bs.append(mc[i] / h)
+            rs.append(tc[i] / h)
+            gs.append(tc.min() / h)
+        believed.append(float(np.mean(bs)))
+        really.append(float(np.mean(rs)))
+        best.append(float(np.mean(gs)))
+        print(f'[exploit] {k:5d} candidates: the model expects {believed[-1]:.4f}, the real '
+              f'system charges {really[-1]:.4f}, and the best of those candidates would have '
+              f'cost {best[-1]:.4f}')
+    flat = [r - b for r, b in zip(really, believed)]
+    lost = [r - g for r, g in zip(really, best)]
+    print(f'[exploit] the model flatters itself by between {min(flat):.4f} and {max(flat):.4f} '
+          'a step, however many candidates are tried')
+    print(f'[exploit] choosing by the model rather than by the truth costs between '
+          f'{min(lost):.4f} and {max(lost):.4f} a step, and that never goes away')
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.6), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(OPEN_K, believed, marker='o', color=PURPLE, lw=2, label='what the model expects to pay')
+    ax.plot(OPEN_K, really, marker='s', color=GRIP, lw=2, label='what the real system charges')
+    ax.plot(OPEN_K, best, marker='^', color=SLIDE, lw=2,
+            label='the best of the same candidates')
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(OPEN_K)
+    ax.set_xticklabels([str(k) for k in OPEN_K])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+    ax.set_xlabel('candidate torque sequences tried', fontsize=10)
+    ax.set_ylabel('average cost of one step', fontsize=10)
+    ax.legend(fontsize=9, frameon=False)
+    ax.set_title(f'Planning {h} steps ahead, towards an angle past the stop',
+                 fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(OPEN_K, flat, marker='o', color=GRIP, lw=2,
+            label='how much the model flatters itself')
+    ax.plot(OPEN_K, lost, marker='^', color=WRIST, lw=2,
+            label='how much is lost by choosing with the model')
+    ax.set_ylim(0, max(flat) * 1.35)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(OPEN_K)
+    ax.set_xticklabels([str(k) for k in OPEN_K])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+    ax.set_xlabel('candidate torque sequences tried', fontsize=10)
+    ax.set_ylabel('cost per step', fontsize=10)
+    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    ax.set_title('Trying more candidates improves the plan but never\ncloses either gap',
+                 fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'plan-that-exploits-the-error.svg')

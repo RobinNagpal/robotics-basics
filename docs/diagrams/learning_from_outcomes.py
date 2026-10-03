@@ -1258,52 +1258,62 @@ def learning_from_old_attempts() -> None:
 
 def on_policy_goes_stale() -> None:
     """On-policy: the same batch used again and again stops telling the truth."""
-    rng = np.random.default_rng(11)
-    theta = np.zeros((NS, NA))
     gamma = 0.95
-    base0 = np.zeros(NS)
-    cnt0 = np.zeros(NS)
-    for _ in range(25):            # warm up, so there is something to spoil
-        S, A, G, rets, outs = collect(theta, rng, 20, gamma)
+    blocks = list(range(0, 31))
+    curves: list[list[float]] = []
+    for seed in (11, 12, 13, 14):
+        rng = np.random.default_rng(seed)
+        theta = np.zeros((NS, NA))
+        base0 = np.zeros(NS)
+        cnt0 = np.zeros(NS)
+        for _ in range(25):            # warm up, so there is something to spoil
+            S, A, G, rets, outs = collect(theta, rng, 20, gamma)
+            for s, g in zip(S, G):
+                cnt0[s] += 1
+                base0[s] += (g - base0[s]) / cnt0[s]
+            ad = G - base0[S]
+            ad = ad / max(float(ad.std()), 1e-8)
+            theta = policy_update(theta, S, A, ad, softmax_rows(theta)[S, A], 20, 3.0,
+                                  0.2, True)
+        S, A, G, rets, outs = collect(theta, rng, 60, gamma)
+        base = np.zeros(NS)
+        cnt = np.zeros(NS)
         for s, g in zip(S, G):
-            cnt0[s] += 1
-            base0[s] += (g - base0[s]) / cnt0[s]
-        ad = G - base0[S]
-        ad = ad / max(float(ad.std()), 1e-8)
-        theta = policy_update(theta, S, A, ad, softmax_rows(theta)[S, A], 20, 3.0, 0.2,
-                              True)
-    S, A, G, rets, outs = collect(theta, rng, 60, gamma)
-    base = np.zeros(NS)
-    cnt = np.zeros(NS)
-    for s, g in zip(S, G):
-        cnt[s] += 1
-        base[s] += (g - base[s]) / cnt[s]
-    adv = G - base[S]
-    adv = adv / max(float(adv.std()), 1e-8)
-    p_old = softmax_rows(theta)[S, A]
-    passes: list[int] = []
-    truth: list[float] = []
-    for block in range(31):
-        if block > 0:
-            theta = policy_update(theta, S, A, adv, p_old, 4, 3.0, 0.2, True)
-        chk = np.random.default_rng(900 + block)
-        _, _, _, r2, _ = collect(theta, chk, 40, gamma)
-        passes.append(block * 4)
-        truth.append(float(np.mean(r2)))
-    bestat = int(np.argmax(truth))
-    print(f'[on-policy] one batch of 60 attempts, reused: the true reward peaks at '
-          f'{truth[bestat]:.2f} after {passes[bestat]} passes and falls to '
-          f'{truth[-1]:.2f} after {passes[-1]}')
-    fig, ax = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
+            cnt[s] += 1
+            base[s] += (g - base[s]) / cnt[s]
+        adv = G - base[S]
+        adv = adv / max(float(adv.std()), 1e-8)
+        p_old = softmax_rows(theta)[S, A]
+        row: list[float] = []
+        for block in blocks:
+            if block > 0:
+                theta = policy_update(theta, S, A, adv, p_old, 4, 3.0, 0.2, True)
+            chk = np.random.default_rng(900 + block)
+            _, _, _, r2, _ = collect(theta, chk, 30, gamma)
+            row.append(float(np.mean(r2)))
+        curves.append(row)
+    C = np.array(curves)
+    mean = C.mean(0)
+    passes = [b * 4 for b in blocks]
+    bestat = int(np.argmax(mean))
+    print(f'[on-policy] one batch of 60 attempts, reused, averaged over '
+          f'{C.shape[0]} runs: the true reward starts at {mean[0]:.2f}, peaks at '
+          f'{mean[bestat]:.2f} after {passes[bestat]} passes and falls to '
+          f'{mean[-1]:.2f} after {passes[-1]}')
+    fig, ax = plt.subplots(figsize=(9.0, 5.0), facecolor='white')
     _plain(ax)
-    ax.plot(passes, truth, marker='o', ms=4, color=WRIST, lw=2.0)
+    for row in C:
+        ax.plot(passes, row, color=WRIST, lw=0.9, alpha=0.35)
+    ax.plot(passes, mean, marker='o', ms=4, color=WRIST, lw=2.3,
+            label=f'average of {C.shape[0]} runs')
     ax.axvline(passes[bestat], color=MUTED, ls='--', lw=1.2)
-    ax.text(passes[bestat] + 1, min(truth) + 0.4,
-            f'best after {passes[bestat]} passes', fontsize=9.5, color=MUTED)
+    ax.text(passes[bestat] + 2, float(mean.min()), f'best after {passes[bestat]} passes',
+            fontsize=9.5, color=MUTED)
     ax.set_xlabel('number of gradient passes made over the same 60 attempts', fontsize=10)
     ax.set_ylabel('reward the policy really collects now', fontsize=10)
     ax.set_title('Reusing one batch helps for a while and then hurts',
                  fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
     fig.tight_layout()
     _save(fig, RL_DOC, 'on-policy-goes-stale.svg')
 
@@ -1359,21 +1369,25 @@ def with_and_without_the_limit() -> None:
     for use_clip, colour, name in ((True, LINK, 'with the limit'),
                                    (False, GRIP, 'without the limit')):
         h = res[use_clip][0]
-        ax.plot(np.arange(h.shape[1]), h.mean(0), color=colour, lw=2.0, label=name)
-        ax.fill_between(np.arange(h.shape[1]), h.min(0), h.max(0), color=colour,
-                        alpha=0.15)
+        for row in h:
+            ax.plot(np.arange(h.shape[1]), row, color=colour, lw=0.8, alpha=0.35)
+        ax.plot(np.arange(h.shape[1]), h.mean(0), color=colour, lw=2.2, label=name)
     ax.axhline(1.30, color=JOINT, ls=':', lw=1.3, label='the tray route, 1.30')
     ax.set_xlabel('round of collect-and-improve', fontsize=10)
     ax.set_ylabel('average reward of the 20 attempts in the round', fontsize=10)
-    ax.set_title('Three runs each, band shows best and worst', fontsize=11.5,
-                 weight='bold', color=INK)
+    ax.set_ylim(-11.0, 3.0)
+    ax.set_title('Three runs each, drawn faintly, with their average',
+                 fontsize=11.5, weight='bold', color=INK)
     ax.legend(fontsize=9, frameon=False, loc='lower left')
     ax = axes[1]
     _plain(ax)
     for use_clip, colour, name in ((True, LINK, 'with the limit'),
                                    (False, GRIP, 'without the limit')):
         st = res[use_clip][1]
-        ax.plot(np.arange(st.shape[1]), st.mean(0), color=colour, lw=2.0, label=name)
+        for row in st:
+            ax.plot(np.arange(st.shape[1]), row, color=colour, lw=0.8, alpha=0.35)
+        ax.plot(np.arange(st.shape[1]), st.max(0), color=colour, lw=2.2,
+                label=f'{name} (worst of the three)')
     ax.set_xlabel('round of collect-and-improve', fontsize=10)
     ax.set_ylabel('biggest change in one action chance, in one round', fontsize=10)
     ax.set_ylim(0, 1.05)
@@ -1503,6 +1517,9 @@ def the_reality_gap() -> None:
     ax.text(c + 0.5, ROWS - 1 - r + 0.5, 'fixture', ha='center', va='center',
             fontsize=8.5, color='white', weight='bold')
     _draw_path(ax, bad[0], bad[1], GRIP)
+    ax.annotate(f'pushes up into it\n{hits} times', xy=(c + 0.5, ROWS - 1 - r),
+                xytext=(c - 1.45, ROWS - 1 - r - 0.55), fontsize=9, color=GRIP,
+                ha='center', arrowprops={'arrowstyle': '->', 'color': GRIP, 'lw': 1.2})
     ax.text(2.5, -0.32, f'{len(bad[1])} actions, reward {bad[2].sum():.2f}, '
                         f'ends as "{bad[3]}"', ha='center', fontsize=10, color=INK)
     ax = axes[2]
@@ -1549,15 +1566,15 @@ def domain_randomisation() -> None:
     ax.set_xticklabels([f'{bl}' for bl in INTERIOR], fontsize=9, rotation=30)
     ax.set_xlabel('square the fixture really stands on', fontsize=10)
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
-    ax.set_ylim(0, 1.3)
     ax.axhline(float(np.mean(a)), color=GRIP, ls=':', lw=1.3)
     ax.axhline(float(np.mean(b)), color=SLIDE, ls=':', lw=1.3)
-    ax.text(len(INTERIOR) - 0.5, float(np.mean(a)) + 0.02,
-            f'average {float(np.mean(a)):.2f}', ha='right', fontsize=9, color=GRIP)
-    ax.text(len(INTERIOR) - 0.5, float(np.mean(b)) + 0.02,
-            f'average {float(np.mean(b)):.2f}', ha='right', fontsize=9, color=SLIDE)
+    ax.set_ylim(0, 1.5)
+    ax.text(-0.45, float(np.mean(a)) + 0.02, f'average {float(np.mean(a)):.2f}',
+            ha='left', fontsize=9, color=GRIP)
+    ax.text(-0.45, float(np.mean(b)) + 0.02, f'average {float(np.mean(b)):.2f}',
+            ha='left', fontsize=9, color=SLIDE)
     ax.set_title('Eight places the fixture could be', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    ax.legend(fontsize=9, frameon=False, loc='upper center', ncol=2)
     ax = axes[1]
     _table(ax, 'The route the randomised learner picks', small=True)
     ok = _route(rand[0])

@@ -50,14 +50,13 @@ models](../../07_learned-models/03_seeing-models/01_overview.md) in the next boo
 
 ## 1. A backbone and a head
 
-A vision model is almost never one single stack of layers that goes from pixels
-to an answer, because it is built in two pieces that are trained and reused
-differently. The first piece is the **backbone**, which is the large part that
-reads the picture and turns it into a set of numbers describing what is in it,
-without knowing anything about the question being asked. The second piece is the
-**head**, which is a small stack of layers that reads those numbers and turns
-them into the particular answer the job needs, such as a class name, a box or an
-outline.
+A vision model is almost never one single stack of layers from pixels to an
+answer, because it is built in two pieces that are trained and reused
+differently. The first is the **backbone**, the large part that reads the picture
+and turns it into numbers describing what is in it, without knowing anything
+about the question being asked. The second is the **head**, a small stack of
+layers that turns those numbers into the particular answer the job needs, such as
+a class name, a box or an outline.
 
 ![A picture feeding a stack of twelve blocks, with three arrows leaving the top into a classify head, a detect head and a segment head](../../images/models-that-see/vision-backbones/backbone-and-heads.svg)
 
@@ -65,7 +64,7 @@ One backbone of 85,798,656 parameters feeds three heads of 769,000, 1,331,808 an
 
 Those sizes are worked out from the layer shapes of a plain vision transformer
 with twelve blocks and 768 numbers per patch, which is the size most people start
-from. The lopsidedness is the whole reason for the split, because the expensive
+from. That lopsidedness is the whole reason for the split, because the expensive
 part is the part that does not care which job you are doing.
 
 ![A horizontal bar split into five coloured parts showing where the backbone's parameters sit](../../images/models-that-see/vision-backbones/parameter-split.svg)
@@ -73,7 +72,7 @@ part is the part that does not care which job you are doing.
 Inside the backbone, the feed-forward part of the blocks holds 56.67 million parameters and the attention part holds 28.35 million, while the patch embedding and the position vectors together hold less than a million.
 
 It is worth knowing where those numbers sit, because people often assume that a
-vision model is mostly attention. It is not. Two thirds of them, 56,669,184, are
+vision model is mostly attention. It is not: two thirds of them, 56,669,184, are
 in the feed-forward part of the twelve blocks, which is the ordinary stack of
 fully connected layers inside each block, and only 28,348,416 are in the
 attention part.
@@ -115,8 +114,8 @@ step.
 
 Dividing 224 by 16 gives 14, so the picture is cut into a 14 by 14 grid of 196 square patches, and each patch holds 16 times 16 times 3, which is 768 pixel numbers.
 
-The first thing the model does is cut the picture into squares. Each patch covers
-16 rows of 16 pixels in three colours, so it holds 768 numbers, and the 196
+The first thing the model does is cut the picture into squares, each covering 16
+rows of 16 pixels in three colours, so one patch holds 768 numbers and the 196
 patches together hold exactly the 150,528 numbers the picture started with,
 because nothing has been thrown away yet.
 
@@ -127,12 +126,11 @@ Patch 87 is flattened into 768 pixel numbers, and each output number is the sum 
 The second thing the model does is turn each patch into one vector, and this step
 is called the **patch embedding**. The 768 pixel numbers are laid out in one long
 row, in reading order, and that row is multiplied by a learned grid of weights to
-give 768 new numbers. The picture follows patch number 87, which covers the rim
-of the front glass: its first pixel numbers are 0.674, 0.784 and 0.842, the first
-weights are -0.029, -0.048 and -0.009, and adding up all 768 products gives
--0.1898. The weights used here are seeded random numbers, because this script
-trains no vision transformer, but the arithmetic is the arithmetic a trained one
-does.
+give 768 new numbers. For patch 87, which covers the rim of the front glass, the
+first pixel numbers are 0.674, 0.784 and 0.842, the first weights are -0.029,
+-0.048 and -0.009, and adding up all 768 products gives -0.1898. The weights here
+are seeded random numbers, because this script trains no vision transformer, but
+the arithmetic is the arithmetic a trained one does.
 
 ![The picture, the same patches shuffled into a random order, and a heat map of how alike the position vectors are to the one of patch 87](../../images/models-that-see/vision-backbones/position-and-shuffle.svg)
 
@@ -219,14 +217,13 @@ Trained on the same simulated pictures, the small convolutional network of 1,444
 Being given something rather than having to learn it is worth the most when
 examples are scarce, and that is the third difference. The curve comes from two
 small networks really trained here on simulated pictures of four shapes drawn at
-random places, sizes and brightnesses, and each point is the average of three
-runs. The convolutional one slides the same filters over every position; the
+random places, sizes and brightnesses, with each point the average of three runs.
+The convolutional one slides the same filters over every position, while the
 fully connected one treats every pixel position as its own input, which is much
 closer to what a vision transformer does, since a transformer is also not told
-that the picture has neighbours. The gap is 0.699 against 0.402 with 100
-pictures, and it has not closed by 3,200. This is why a vision transformer
-trained from scratch on a small dataset usually disappoints, and why people reach
-for a pretrained one instead.
+that the picture has neighbours. This is why a vision transformer trained from
+scratch on a small dataset usually disappoints, and why people reach for a
+pretrained one instead.
 
 ![Two columns of boxes comparing an older convolution block with a modern one, with the layer shapes and the counts](../../images/models-that-see/vision-backbones/conv-block-shapes.svg)
 
@@ -329,12 +326,10 @@ For a camera 1,280 pixels wide with a 60 degree view, a glass 70 millimetres acr
 The reason this matters follows from the camera rather than from the network. A
 camera 1,280 pixels wide with a 60 degree view has a focal length of 1,109
 pixels, and the width of a thing in pixels is its real width times that focal
-length divided by its distance. So a glass 70 millimetres across looks 155.2
-pixels wide at half a metre and 19.4 pixels at four metres, and a bolt 10
-millimetres across looks 11.1 pixels wide at one metre and 5.5 pixels at two.
-Beyond 2.42 metres the glass is narrower than a single cell of the stride-32
-grid, and the bolt is narrower than one of those cells at any distance past 0.35
-metres.
+length divided by its distance, so a glass 70 millimetres across looks 155.2
+pixels wide at half a metre and 19.4 pixels at four metres. Beyond 2.42 metres
+the glass is narrower than a single cell of the stride-32 grid, and the bolt is
+narrower than one of those cells at any distance past 0.35 metres.
 
 ![Two zoomed views of the small object with the stride-8 and stride-32 grids over it, beside a bar chart of the cells it covers](../../images/models-that-see/vision-backbones/small-object-cells.svg)
 

@@ -299,12 +299,10 @@ easier thing to learn.
 ## 5. Pruning, and why scattered zeros are rarely faster
 
 Distillation builds a smaller model from scratch, which takes a training run.
-**Pruning** takes the model you already have and throws weights away, which sounds
-cheaper, and this section explains why it usually is not.
-
-The simplest kind is magnitude pruning, which sets the smallest weights to zero on
-the grounds that a weight near zero was barely contributing anyway. The question is
-what that buys.
+**Pruning** instead takes the model you already have and throws weights away, which
+sounds cheaper, and this section explains why it usually is not. The simplest kind is
+magnitude pruning, which sets the smallest weights to zero on the grounds that a
+weight near zero was barely contributing, and the question is what that buys.
 
 ![Three pictures of the same 24 by 24 weight matrix: whole, with half the entries blanked at random positions, and with half the columns removed so it is 24 by 12](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/scattered-zeros-against-whole-channels.svg)
 
@@ -312,13 +310,12 @@ The three pictures show the same matrix pruned in two different ways, with the n
 of multiply-adds each one actually costs written underneath.
 
 The middle picture has half its weights set to zero, but the matrix is still 24 by 24,
-so the hardware still loads 24 by 24 numbers and still performs 576 multiply-adds,
-because an ordinary matrix multiplication has no way to skip the zeros. This is called
-**unstructured sparsity**, and it saves nothing on ordinary hardware unless the
-library and the chip both know how to skip. The right-hand picture removes twelve
-whole output channels, so the matrix really is 24 by 12 and really does cost 288
-multiply-adds. That is **structured pruning**, and it is what actually makes a model
-faster.
+so the hardware still performs 576 multiply-adds, because an ordinary matrix
+multiplication has no way to skip zeros. This is **unstructured sparsity**, and it
+saves nothing unless the library and the chip both know how to skip. The right-hand
+picture removes twelve whole output channels, so the matrix really is 24 by 12 and
+really does cost 288 multiply-adds, and that is **structured pruning**, which is what
+actually makes a model faster.
 
 ![Two panels: accuracy against the share of weights zeroed, with a star for 2:4 sparsity, and accuracy against arithmetic actually saved by removing whole neurons](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/accuracy-against-pruning.svg)
 
@@ -326,35 +323,33 @@ The left panel prunes weights wherever they happen to be, and the right panel re
 whole hidden neurons so that the saving is real, which is why the horizontal axes are
 labelled differently.
 
-Pruning wherever you like is remarkably forgiving. The network scores 0.933 whole,
-0.928 with half its weights zeroed, 0.919 with 60% zeroed and 0.880 with 70% zeroed,
-and it only collapses past 90%, where it reaches 0.524. Removing whole neurons costs
-much more for the same saving: keeping 32 of the 48 hidden neurons saves 49.5% of the
-arithmetic and costs 0.029 of accuracy, and keeping 16 saves 82.8% and costs 0.267.
-So the sparsity you can actually use is far more expensive than the sparsity you
-cannot, which is the honest summary of pruning.
+Pruning wherever you like is remarkably forgiving, because the network scores 0.933
+whole, 0.928 with half its weights zeroed and 0.880 with 70% zeroed, and it collapses
+only past 90%, where it reaches 0.524. Removing whole neurons costs much more for the
+same saving, because keeping 32 of the 48 hidden neurons saves 49.5% of the arithmetic
+and costs 0.029 of accuracy, while keeping 16 saves 82.8% and costs 0.267. So the
+sparsity you can use is far more expensive than the sparsity you cannot.
 
 ![Three groups of four real weights, with the two largest in each group kept and the two smallest set to zero](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/two-of-four-pattern.svg)
 
 The middle road is a pattern regular enough that hardware can be built to skip it,
 and the usual one keeps exactly two weights out of every run of four.
 
-In the first group of four the weights are +0.107, +0.221, +0.188 and +0.143, so the
-two largest, +0.221 and +0.188, are kept and the other two are set to zero. This is
-called 2:4 sparsity, it is exactly 50% zeros, and some recent graphics hardware can
-skip it and run such a matrix about twice as fast. What it costs on this network is
-0.873 accuracy against 0.928 for the same share of weights dropped freely, so forcing
-the zeros into a pattern cost 0.055. That is the shape of the whole choice: free
+In the first group the weights are +0.107, +0.221, +0.188 and +0.143, so the two
+largest are kept and the other two set to zero. This is called 2:4 sparsity, it is
+exactly 50% zeros, and some recent graphics hardware can skip it and run such a matrix
+about twice as fast. It costs 0.873 accuracy against 0.928 for the same share dropped
+freely, so forcing the zeros into a pattern cost 0.055. That is the whole choice: free
 sparsity is cheap in accuracy and worthless in speed, patterned sparsity costs some
-accuracy and pays back in speed, and removing whole channels costs the most accuracy
-and pays back on any hardware at all.
+accuracy and pays back in speed, and removing whole channels costs the most and pays
+back on any hardware at all.
 
 ---
 
 ## 6. What each method costs and what it buys
 
 The three methods have now been measured one at a time on the same small network, so
-this section puts them side by side and then shows that they are not a choice but a
+this section puts them side by side and shows that they are not a choice but a
 sequence.
 
 ![A table of eight methods with their accuracy, accuracy given up, memory saved, arithmetic saved and where the number came from](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/method-summary-table.svg)
@@ -378,24 +373,22 @@ memory.
 Every point is one method, placed by how much smaller it made the model and how much
 accuracy it gave up, so the best methods are low down and far to the right.
 
-The picture makes the ranking plain. Quantising to 8 or 4 bits sits on the bottom
-line, giving up nothing. Free pruning sits at one times smaller, which is to say it
-bought nothing. Distillation is far to the right at 20.7 times for 0.011. And the
-point furthest to the right is not a method at all but two methods one after the
-other.
+The ranking is plain. Quantising to 8 or 4 bits sits on the bottom line, giving up
+nothing, free pruning sits at one times smaller because it bought nothing, and
+distillation is far to the right at 20.7 times for 0.011. The point furthest to the
+right is not a method at all but two methods one after the other.
 
 ![Two bar charts for the teacher and student at three precisions: the bytes their weights take and the accuracy each reaches](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/distil-then-quantise.svg)
 
 The five bars are the teacher at two precisions and the student at three, with the
 bytes of weights on the left on a log scale and the accuracy on the right.
 
-The float teacher's weights take 6,540 bytes and it scores 0.933. The distilled
-student's weights take 316 bytes and it scores 0.931. Squeezing that student to 4
-bits takes it to 79 bytes and 0.930. So the two methods together give weights 83
-times smaller and 22 times less arithmetic for 0.003 of accuracy, which neither
-method reached alone, and that is the order people use in practice: distil first,
-because it changes the shape of the model, and quantise afterwards, because it works
-on whatever shape it is given.
+The float teacher's weights take 6,540 bytes and it scores 0.933, the distilled
+student's take 316 bytes for 0.931, and squeezing that student to 4 bits takes it to
+79 bytes and 0.930. So the two methods together give weights 83 times smaller and 22
+times less arithmetic for 0.003 of accuracy, which neither reached alone, and that is
+the order people use: distil first, because it changes the shape of the model, and
+quantise afterwards, because it works on whatever shape it is given.
 
 Two cautions belong with that number. The first is that this is a small network on a
 simulated job, so the shape of the result is trustworthy and the exact figures are

@@ -1419,17 +1419,28 @@ def _dq() -> dict[int, tuple[float, float, float]]:
     return DQ
 
 
-def _pass_time(batch: int, repeats: int = 40) -> float:
-    """Measured seconds for one pass of the denoiser over a batch of points."""
+PASS_TIME: dict[int, float] = {}
+
+
+def _pass_time(batch: int, repeats: int = 200) -> float:
+    """Measured seconds for one pass of the denoiser over a batch of points.
+
+    Measured once per batch size and then kept, so that every picture and every
+    printed figure in one run quotes the same timing.
+    """
+    if batch in PASS_TIME:
+        return PASS_TIME[batch]
     den = _den()
     x = np.zeros((batch, 2))
-    den.eps(x, 50, UNTOLD)
+    for _ in range(20):
+        den.eps(x, 50, UNTOLD)
     best = []
     for _ in range(repeats):
         start = time.perf_counter()
         den.eps(x, 50, UNTOLD)
         best.append(time.perf_counter() - start)
-    return float(np.median(best))
+    PASS_TIME[batch] = float(np.median(best))
+    return PASS_TIME[batch]
 
 
 def steps_vs_error() -> None:

@@ -107,7 +107,10 @@ and for a real model it is gathered from web pages, books, code and much else,
 then cleaned and stripped of repeats. The training job is the one the transformer
 chapter described: show the model real text, ask it to guess each next token, and
 change the weights so the token that really came next is given more probability.
-No labels are needed, because the text labels itself.
+No labels are needed, because the text labels itself, and [self-supervised
+pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md)
+explains that trick in full, together with the other ways a model is trained
+without anybody writing down the answers.
 
 ![A line falling from 2.34 bits per word at 250 sentences to 1.32 bits at 30,000, measured on held-out text](../../images/language-and-multimodal-models/large-language-models/more-text-lower-surprise.svg)
 

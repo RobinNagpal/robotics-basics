@@ -26,9 +26,8 @@ also uses the words float32, float16 and bfloat16, which
 introduced as the formats a number can be stored in.
 
 Everything in the pictures was worked out by
-`docs/diagrams/making_training_work.py`, which prints every number quoted here.
-The data is simulated by a seeded generator, but the arithmetic run on it is
-real.
+`docs/diagrams/making_training_work.py`, which prints every number quoted here,
+on data simulated by a seeded generator.
 
 ## Contents
 
@@ -121,13 +120,11 @@ Follow one of them through. The third number is 1.13, subtracting the average
 0.7733 gives 0.3567, and dividing by the spread 0.7473 gives 0.4773, after which
 the learned scale for that position, 1.00, and the learned shift, -0.20, turn it
 into 0.2773. The guard added before the square root, written 1e-05 and called
-epsilon, keeps a vector of six identical numbers from dividing by zero.
-
-The learned scale and shift matter because without them every vector would be
-forced to average 0 with spread 1, which throws away information the network
-might want. With them the network can undo the normalisation wherever that helps,
-so normalisation changes how easy the numbers are to train with rather than what
-the network can represent.
+epsilon, keeps a vector of six identical numbers from dividing by zero. The
+learned scale and shift matter because without them every vector would be forced
+to average 0 with spread 1, and with them the network can undo the normalisation
+wherever that helps, so normalisation changes how easy the numbers are to train
+with rather than what the network can represent.
 
 **Root-mean-square normalisation**, usually written RMS normalisation, does less
 work. It leaves the average alone, divides by the root-mean-square of the
@@ -228,13 +225,12 @@ called the **residual stream**.
 
 The stream starts at a size of 1.071 and each block reads it, works out a small change, and adds that change back, so nothing the earlier blocks wrote is ever overwritten.
 
-Those sizes are root-mean-square sizes of whole vectors rather than plain
-numbers, so they do not add up the way the labels might suggest: the first block
-adds a change of size 0.711 to a stream of size 1.071 and leaves a stream of size
-1.241, because the change points in a different direction from the stream. The
-arrangement is what lets a stack of fifty blocks train at all, because the
-gradient coming backwards has a clear path along the stream. The question is
-where the normalisation goes, and there are two places.
+Those sizes are root-mean-square sizes of whole vectors, so they do not add up
+the way the labels suggest: a change of size 0.711 added to a stream of size
+1.071 leaves a stream of size 1.241, because the change points in a different
+direction from the stream. The arrangement is what lets a stack of fifty blocks
+train at all, because the gradient coming backwards has a clear path along the
+stream, and the question is where the normalisation goes.
 
 ![Two sets of four rows of four numbers, the upper set showing the stream normalised first and the block's output added to the untouched stream, the lower set showing the output added first and the sum then normalised](../../images/making-training-work/normalisation-and-stability/pre-and-post-norm-order.svg)
 
@@ -389,32 +385,28 @@ gradient sizes rather than guessed.
 The second thing is what people do when a spike gets through anyway, which is
 to go back to the last saved copy of the weights, skip the batches around the one
 that caused it, and carry on, and that is one reason
-[checkpoints](../03_how-training-works/04_the-training-loop.md) are written often
-during a long run. If spikes keep coming back at the same place after a rewind
-then the cause is not one batch, and the usual next moves are to lower the
-learning rate, to lengthen the warmup, or to look again at section 4, since a
-spike is in the end a number inside the network getting much larger than the
-arithmetic was set up for.
+[checkpoints](../03_how-training-works/04_the-training-loop.md) are written often.
+If spikes keep coming back at the same place after a rewind then the cause is not
+one batch, and the usual next moves are to lower the learning rate, to lengthen
+the warmup, or to look again at section 4.
 
 ---
 
 ## 7. Where to read next
 
 - [Tokens and embeddings](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md)
-  is the next page, and it starts the next chapter by turning words and pictures
-  into the vectors that this page has been normalising.
+  is the next page, and it turns words and pictures into the vectors this page
+  has been normalising.
 - [A transformer block](../06_the-transformer/02_a-transformer-block.md) puts
   section 4's pre-norm arrangement together with attention and a feed-forward
-  part, which is the block every large model is built from.
+  part.
 - [The shape of the numbers](../02_inside-a-network/03_the-shape-of-the-numbers.md)
-  covers the number formats of section 5 in more detail, and what a matrix
-  multiply costs.
+  covers section 5's number formats in more detail, and what a matrix multiply
+  costs.
 - [Making a model smaller and faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md)
-  takes the precision question further down, to 8 and 4 bits, where the model
-  runs rather than trains.
+  takes precision down to 8 and 4 bits, where the model runs rather than trains.
 - [Running a model on a robot](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
-  is the catalogue page for getting a trained model onto an arm's own computer at
-  the speed the control loop needs.
+  is the catalogue page for getting a trained model onto an arm's own computer.
 
 ---
 

@@ -1922,8 +1922,11 @@ def four_jobs() -> None:
     ax = axes[0][1]
     _show(ax, rgb, 'putting a box round each object')
     for i, ob in enumerate(objects):
-        _draw_box(ax, ob['box'], CLASS_COLOUR[ob['cls']], ob['cls'], lw=2.0,
-                  above=i % 2 == 0)
+        _draw_box(ax, ob['box'], CLASS_COLOUR[ob['cls']], None, lw=2.0)
+        ax.text(ob['box'][0], ob['box'][1] - 5 - 15 * (i % 2), ob['cls'],
+                fontsize=8.5, color=CLASS_COLOUR[ob['cls']], weight='bold',
+                va='bottom',
+                bbox=dict(facecolor='white', edgecolor='none', alpha=0.8, pad=0.6))
     ax.set_xlabel(f'{len(objects)} boxes, each 4 numbers and a class name', fontsize=9)
 
     ax = axes[1][0]
@@ -1945,8 +1948,9 @@ def four_jobs() -> None:
     _show(ax, out, 'labelling every pixel with which object it belongs to')
     for i, ob in enumerate(objects):
         x1, y1, x2, y2 = ob['box']
-        ax.text((x1 + x2) / 2, y1 - 6, str(i + 1), fontsize=10, weight='bold',
-                color=INK, ha='center')
+        ax.text((x1 + x2) / 2, y1 - 6 - 14 * (i % 2), str(i + 1), fontsize=10,
+                weight='bold', color=INK, ha='center', va='bottom',
+                bbox=dict(facecolor='white', edgecolor='none', alpha=0.8, pad=0.5))
     ax.set_xlabel('each glass now has its own colour and its own pixel count',
                   fontsize=9)
     fig.suptitle('Four different jobs on one picture of a table',

@@ -25,9 +25,8 @@ only thing anybody wants from a model.
 
 Everything in the pictures was run by
 `docs/diagrams/making_training_work.py`, which prints every number quoted here.
-The data is simulated, because the measurements come from a smooth curve with
-noise added by a seeded generator and the camera frames in section 3 are
-synthetic, but the methods run on it are the real ones.
+The data is simulated by a seeded generator, but the methods run on it are the
+real ones.
 
 ## Contents
 
@@ -316,12 +315,11 @@ mean something, such as a screw thread or printed text, and above all anything
 about the arm's own movements, because a flipped picture paired with unflipped
 joint angles is a lie about which way the arm went.
 
-The honest way to decide is to ask, for each change you are considering, what
-real thing in the world would have produced it and whether the answer would
-still be the same if it had. Turning a mug upside down is safe only if your mugs
-are sometimes upside down, changing colour is safe until colour is what tells two
-parts apart, and adding noise is safe for almost everything, which is why nearly
-every pipeline uses it.
+The honest way to decide is to ask, for each change, what real thing in the
+world would have produced it and whether the answer would still be the same if it
+had. Changing colour is safe until colour is what tells two parts apart, and
+adding noise is safe for almost everything, which is why nearly every pipeline
+uses it.
 
 ![A log-log plot of training and held-out loss against the size of the random shift added to each input, with held-out loss falling from 3.63 at no jitter to 0.1397 at a jitter of 0.2 and rising again at 0.8](../../images/making-training-work/overfitting-and-generalisation/jitter-sweep.svg)
 

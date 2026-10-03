@@ -2326,11 +2326,12 @@ def rollout_vs_truth() -> None:
     ax.plot(t, np.degrees(pre[:, 0]), color=PURPLE, lw=2, ls='--',
             label='the learned model, run on its own output')
     ax.axvline(first * DT, color=GRIP, lw=1.4, ls=':')
-    ax.text(first * DT + 0.05, np.degrees(tru[:, 0]).min(),
-            f'{THRESH_DEG:.2f} degrees apart\nafter {first * DT:.2f} s', fontsize=9, color=GRIP)
+    ax.text(first * DT + 0.08, np.degrees(tru[:, 0]).max(),
+            f'{THRESH_DEG:.2f} degrees apart\nafter {first * DT:.2f} s', fontsize=9,
+            color=GRIP, va='top')
     ax.set_xlabel('seconds', fontsize=10)
     ax.set_ylabel('joint angle (degrees)', fontsize=10)
-    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
+    ax.legend(fontsize=9.2, frameon=False, loc='lower center')
     ax.set_title('Same starting point, same torques, two paths',
                  fontsize=11, weight='bold')
     ax = axes[1]
@@ -2338,7 +2339,7 @@ def rollout_vs_truth() -> None:
     ax.plot(t, gap, color=GRIP, lw=2)
     ax.set_xlabel('seconds', fontsize=10)
     ax.set_ylabel('how far apart the two angles are (degrees)', fontsize=10)
-    ax.set_title('The gap grows because each step starts from the last one',
+    ax.set_title('The gap opens and closes as the arm swings,\nand each swing opens it wider',
                  fontsize=11, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'rollout-vs-truth.svg')
@@ -2362,10 +2363,10 @@ def error_vs_horizon() -> None:
     ax.plot(np.arange(ROLL + 1), gap, color=PURPLE, lw=2.4)
     ax.axhline(THRESH_DEG, color=GRIP, lw=1.5, ls='--')
     ax.axvline(cross, color=GRIP, lw=1.5, ls=':')
-    ax.text(cross + 1.5, gap.min() * 2.0,
+    ax.text(cross + 2.0, THRESH_DEG * 0.35,
             f'past {cross} steps the model is wrong\nby more than {THRESH_DEG:.2f} degrees',
             fontsize=9.4, color=GRIP)
-    ax.set_yscale('log')
+    ax.set_ylim(0, gap.max() * 1.15)
     ax.set_xlabel('steps predicted ahead', fontsize=10)
     ax.set_ylabel('average gap in the angle (degrees)', fontsize=10)
     ax.set_title(f'Averaged over {n} starts: a one-step error of '

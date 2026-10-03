@@ -1507,7 +1507,7 @@ class Policies:
             ab = AB[ti][:, None]
             eps = rng.normal(size=x0.shape).astype(np.float32)
             xt = np.sqrt(ab) * x0 + np.sqrt(1 - ab) * eps
-            la = self.diff.step(np.concatenate([xt, obs, _temb(ti / K_STEPS)], 1), eps, lr)
+            la = self.diff.step(np.concatenate([xt, obs, _temb(ti / K_STEPS)], 1), x0, lr)
             tf = rng.uniform(0, 1, batch)
             z = rng.normal(size=x0.shape).astype(np.float32)
             xf = (1 - tf)[:, None] * z + tf[:, None] * x0
@@ -1545,9 +1545,8 @@ class Policies:
             ti, tp = int(ts[i]), int(ts[i + 1])
             ab_t, ab_p = AB[ti], AB[tp]
             u = np.full(len(obs), ti / K_STEPS, dtype=np.float32)
-            eps = self.diff(np.concatenate([x, obs, _temb(u)], 1))
-            x0 = np.clip((x - np.sqrt(1 - ab_t) * eps) / np.sqrt(max(ab_t, 1e-6)),
-                        -4.0, 4.0)
+            x0 = np.clip(self.diff(np.concatenate([x, obs, _temb(u)], 1)), -4.0, 4.0)
+            eps = (x - np.sqrt(ab_t) * x0) / np.sqrt(1 - ab_t)
             x = np.sqrt(ab_p) * x0 + np.sqrt(1 - ab_p) * eps
             path.append(x.copy())
         if trace:
@@ -1771,7 +1770,7 @@ def denoiser_shapes() -> None:
          weight='bold')
     _box(ax, 7.2, 1.6, 2.4, 2.6, f'two hidden layers\nof {p.diff.sizes[1]}\n\n'
                                  f'{p.diff.n_weights:,} weights', GRIP, fontsize=9.4)
-    _box(ax, 10.3, 2.0, 2.5, 1.8, f'the noise it thinks\nwas added\n{ADIM} numbers',
+    _box(ax, 10.3, 2.0, 2.5, 1.8, f'the chunk it thinks\nwas spoiled\n{ADIM} numbers',
          SLIDE, fontsize=9.4, weight='bold')
     for y in (4.0, 2.45, 1.05):
         _arrow(ax, (3.05, y), (3.85, 2.9), MUTED)
@@ -1781,7 +1780,7 @@ def denoiser_shapes() -> None:
                  'piece of movement', fontsize=12.2, weight='bold')
     print(f'[df] the denoiser takes {ADIM + 2 + TEMB} numbers and gives {ADIM}; '
           f'it holds {p.diff.n_weights:,} weights in two hidden layers of '
-          f'{p.diff.sizes[1]}')
+          f'{p.diff.sizes[1]}, and the averaging network holds {p.mean.n_weights:,}')
     fig.tight_layout()
     _save(fig, DF_DOC, 'denoiser-shapes.svg')
 
@@ -1962,34 +1961,73 @@ def steps_versus_quality() -> None:
     obs = np.repeat(ObstacleData.norm_obs(np.array([[SPLIT, 0.0]])), 300, axis=0)
     counts = [1, 2, 4, 8, 16, 32, 50]
     res: dict[str, list[float]] = {'diffusion': [], 'flow': []}
-    near = np.abs(d.obs_raw[:, 0] - SPLIT) < 0.8
-    real = d.to_norm(d.chunks_raw[near])
+    fence: dict[str, list[float]] = {'diffusion': [], 'flow': []}
+    near = (np.abs(d.obs_raw[:, 0] - SPLIT) < 0.8) & (np.abs(d.obs_raw[:, 1]) < 1.2)
+    real = d.to_norm(d.chunks_raw[near])[::3]
+    others = d.to_norm(d.chunks_raw[near])[1::7]
+    dd = np.sqrt(((others[:, None, :] - real[None, :, :]) ** 2).sum(2))
+    dd[dd < 1e-6] = 1e9
+    base = float(dd.min(1).mean())
+    sides_real = np.abs(d.chunks_raw[near][1::7].cumsum(1)[:, :, 1]).max(1)
+    cut = float(np.percentile(sides_real, 20))
+    print(f'[df] a real chunk sits {base:.2f} from the nearest other real chunk, and '
+          f'four real chunks in five swing more than {cut:.2f} cm sideways')
     for n in counts:
         for kind in ('diffusion', 'flow'):
             ch = p.ddim(obs, n, rng) if kind == 'diffusion' else p.euler(obs, n, rng)
             flat = d.to_norm(ch)
-            dist = np.sqrt(((flat[:, None, :] - real[None, ::6, :]) ** 2).sum(2)).min(1)
+            dist = np.sqrt(((flat[:, None, :] - real[None, :, :]) ** 2).sum(2)).min(1)
             res[kind].append(float(dist.mean()))
-        print(f'[df] {n:3d} steps: distance to the nearest real chunk, '
-              f'diffusion {res["diffusion"][-1]:.3f}, flow {res["flow"][-1]:.3f}')
-    fig, ax = plt.subplots(figsize=(11.0, 5.0), facecolor='white')
-    _plain(ax)
+            swing = np.abs(ch.cumsum(1)[:, :, 1]).max(1)
+            fence[kind].append(float((swing < cut).mean() * 100))
+        print(f'[df] {n:3d} passes: distance to the nearest real chunk, diffusion '
+              f'{res["diffusion"][-1]:.2f}, flow {res["flow"][-1]:.2f}; chunks that sit '
+              f'on the fence, diffusion {fence["diffusion"][-1]:.1f}%, flow '
+              f'{fence["flow"][-1]:.1f}%')
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white')
     x = np.arange(len(counts))
+    ax = axes[0]
+    _plain(ax)
     ax.plot(x, res['diffusion'], 'o-', color=PURPLE, lw=2.2, ms=7, label='diffusion')
     ax.plot(x, res['flow'], 's-', color=TEAL, lw=2.2, ms=7, label='flow matching')
+    ax.axhline(base, color=MUTED, ls=':', lw=1.6,
+               label=f'a real chunk sits {base:.2f} away')
     for i in (0, 1, 2, len(counts) - 1):
-        ax.text(x[i], res['diffusion'][i] * 1.03, f'{res["diffusion"][i]:.2f}',
+        ax.text(x[i], res['diffusion'][i] * 1.04, f'{res["diffusion"][i]:.2f}',
                 ha='center', fontsize=9, color=PURPLE)
-        ax.text(x[i], res['flow'][i] * 0.95, f'{res["flow"][i]:.2f}', ha='center',
+        ax.text(x[i], res['flow'][i] * 0.96, f'{res["flow"][i]:.2f}', ha='center',
                 fontsize=9, color=TEAL, va='top')
     ax.set_xticks(x)
     ax.set_xticklabels([str(c) for c in counts])
     ax.set_xlabel('passes through the network to make one chunk', fontsize=9.5)
     ax.set_ylabel('distance from the chunk made to the nearest real one', fontsize=9.5)
-    ax.set_ylim(0, max(res['diffusion']) * 1.15)
-    ax.legend(fontsize=9.5, frameon=False)
-    ax.set_title('How good the chunk is against how many passes it took',
-                 fontsize=11.8, weight='bold')
+    ax.set_ylim(0, max(res['diffusion'] + res['flow']) * 1.12)
+    ax.legend(fontsize=9.2, frameon=False)
+    ax.set_title('How real the chunk is against how many passes it took',
+                 fontsize=11.2, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    w = 0.38
+    ax.bar(x - w / 2, fence['diffusion'], width=w, color=PURPLE, alpha=0.85,
+           label='diffusion')
+    ax.bar(x + w / 2, fence['flow'], width=w, color=TEAL, alpha=0.85,
+           label='flow matching')
+    for i in range(len(counts)):
+        ax.text(x[i] - w / 2, fence['diffusion'][i] + 1.5, f'{fence["diffusion"][i]:.0f}',
+                ha='center', fontsize=8.4, color=PURPLE)
+        ax.text(x[i] + w / 2, fence['flow'][i] + 1.5, f'{fence["flow"][i]:.0f}',
+                ha='center', fontsize=8.4, color=TEAL)
+    ax.axhline(20, color=MUTED, ls=':', lw=1.6)
+    ax.text(len(counts) - 0.6, 22, 'one real chunk in five is this straight',
+            fontsize=8.8, color=MUTED, ha='right')
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(c) for c in counts])
+    ax.set_xlabel('passes through the network to make one chunk', fontsize=9.5)
+    ax.set_ylabel('chunks that sit on the fence (per cent)', fontsize=9.5)
+    ax.set_ylim(0, max(fence['diffusion'] + fence['flow'] + [25]) * 1.25)
+    ax.legend(fontsize=9.2, frameon=False, loc='upper right')
+    ax.set_title('With too few passes the answer slides back to the middle',
+                 fontsize=11.2, weight='bold')
     fig.tight_layout()
     _save(fig, DF_DOC, 'steps-versus-quality.svg')
 

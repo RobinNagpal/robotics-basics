@@ -7,7 +7,7 @@
 // book not listed in BOOK_INFO still appears, titled from its folder name, and
 // a chapter not listed in CHAPTER_TITLES uses the title of its first document.
 
-export type Accent = 'teal' | 'violet' | 'amber' | 'blue' | 'green' | 'rose' | 'gold';
+export type Accent = 'teal' | 'violet' | 'amber' | 'blue' | 'green' | 'rose' | 'gold' | 'indigo';
 
 export type BookInfo = {
   title: string;
@@ -18,7 +18,7 @@ export type BookInfo = {
   accent: Accent;
 };
 
-export const ACCENTS: Accent[] = ['teal', 'violet', 'amber', 'blue', 'green', 'rose', 'gold'];
+export const ACCENTS: Accent[] = ['teal', 'violet', 'amber', 'blue', 'green', 'rose', 'gold', 'indigo'];
 
 // The books are grouped into parts. A part is a shelf: several books that
 // belong together. The word "section" is already taken here, because a section
@@ -47,6 +47,14 @@ export const PARTS: Part[] = [
     blurb:
       'Start here. These four books build the ground every robot arm stands on: the Python and the maths, how a camera turns the world into numbers, the simulators and frameworks the field is built on, and ROS, the software the parts talk through.',
     books: ['robotics-intro', 'perception', 'frameworks', 'ros-and-rviz'],
+  },
+  {
+    slug: 'how-models-work',
+    title: 'How Models Work',
+    shortTitle: 'How Models Work',
+    blurb:
+      'One book, which explains the machinery. It starts with a single neuron worked out by hand and ends with the models that drive a robot arm today, so a reader who knows no machine learning at all can follow how a model is built, how it is trained, and what each family of model does inside.',
+    books: ['neural-networks'],
   },
   {
     slug: 'techniques-and-models',
@@ -115,6 +123,14 @@ export const BOOK_INFO: Record<string, BookInfo> = {
       'Several glasses of one kind stand on a table, and the arm has to work out which pixels belong to which glass. That one question is followed the whole way down: what makes it hard, what the camera can and cannot see, and ten ways to answer it. Three of the ten are written by hand and seven have something trained inside them, and each says what it costs, where it is the right tool, and where it breaks. The programs behind them are in the repository, and each solution names the folder it was built in.',
     accent: 'gold',
   },
+  'neural-networks': {
+    title: 'Neural Networks and AI Models',
+    shortTitle: 'Networks',
+    subtitle: 'How a model works and how it is trained, from nothing',
+    description:
+      'For a reader who knows some maths, some science and some programming, and nothing at all about machine learning. It starts with why some jobs cannot be written as rules, works one neuron out by hand, and builds up through layers, loss, gradient descent and backpropagation to the transformer, which nearly every model in use now is made of. It then explains each family in turn: pretraining and fine-tuning, diffusion and flow matching, models that see, language and vision-language models, learning from outcomes, the policies that move an arm, and world models. It ends with what it takes to run a model on a real robot and judge honestly whether it works.',
+    accent: 'indigo',
+  },
   'learned-models': {
     title: 'Learned Models',
     shortTitle: 'Models',
@@ -145,6 +161,19 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'two-arm-manipulation': 'Two-Arm Manipulation',
   'stone-stacking': 'Case Study: Stone Stacking',
   frontier: 'The Frontier',
+  'what-learning-means': 'What Learning From Data Means',
+  'inside-a-network': 'Inside a Neural Network',
+  'how-training-works': 'How Training Works',
+  'making-training-work': 'Making Training Work',
+  'turning-the-world-into-numbers': 'Turning the World Into Numbers',
+  'the-transformer': 'The Transformer',
+  'pretraining-and-adapting': 'Pretraining and Adapting',
+  'models-that-generate': 'Models That Generate',
+  'models-that-see': 'Models That See',
+  'language-and-multimodal-models': 'Language and Multimodal Models',
+  'learning-from-outcomes': 'Learning From Outcomes',
+  'models-that-act': 'Models That Act',
+  'using-a-model-for-real': 'Using a Model For Real',
   'what-models-are': 'What Models Are',
   'seeing-models': 'Seeing Models',
   '3d-models': '3D Models',

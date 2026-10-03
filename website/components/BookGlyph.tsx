@@ -5,7 +5,7 @@ import type { Accent } from '@/lib/books.config';
 export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
   const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
 
-  // Book 1: two frames, and a transform from one to the other.
+  // Robot Arm Basics: two frames, and a transform from one to the other.
   if (slug === 'robotics-intro') {
     return (
       <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
@@ -26,7 +26,7 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
     );
   }
 
-  // Book 2: a camera, its field of view, and a box found in the picture.
+  // Perception: a camera, its field of view, and a box found in the picture.
   if (slug === 'perception') {
     return (
       <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
@@ -41,7 +41,7 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
     );
   }
 
-  // Book 4: programs as nodes, joined by the topics they talk over.
+  // ROS and RViz: programs as nodes, joined by the topics they talk over.
   if (slug === 'ros-and-rviz') {
     return (
       <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
@@ -57,7 +57,7 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
     );
   }
 
-  // Book 5: a grid with obstacles and the shortest path found around them.
+  // Programming Techniques: a grid with obstacles and the shortest path round them.
   if (slug === 'programming-techniques') {
     return (
       <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
@@ -74,7 +74,33 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
     );
   }
 
-  // Book 6: a small neural network, three layers of neurons joined by weights.
+  // Neural Networks and AI Models: one neuron, which is where that book starts.
+  // Three inputs arrive on their weighted lines, the body adds them up, and the
+  // bent line of the rectified linear unit leaves on the right.
+  if (slug === 'neural-networks') {
+    const inputs = [16, 40, 64];
+    return (
+      <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
+        {inputs.map((y) => (
+          <circle key={`i${y}`} cx="14" cy={y} r="3.5" />
+        ))}
+        {inputs.map((y) => (
+          <path key={`w${y}`} d={`M18 ${y} L46 40`} opacity="0.55" />
+        ))}
+        <circle cx="54" cy="40" r="9" />
+        <path d="M50 40 L58 40 M54 36 L54 44" strokeWidth="1.3" />
+        <path d="M63 40 L78 40" />
+        <path d="M74 37 L78 40 L74 43" />
+        <g transform="translate(82 0)">
+          <path d="M0 56 L26 56" opacity="0.4" strokeWidth="1" />
+          <path d="M0 20 L0 56" opacity="0.4" strokeWidth="1" />
+          <path d="M0 42 L13 42 L26 20" strokeWidth="2.2" />
+        </g>
+      </svg>
+    );
+  }
+
+  // Learned Models: a small network, three layers of neurons joined by weights.
   if (slug === 'learned-models') {
     const left = [18, 40, 62];
     const mid = [12, 30, 50, 68];
@@ -92,8 +118,8 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
     );
   }
 
-  // Book 7: three tapered glasses on a table, with the camera looking down at
-  // them from above, which is the problem the whole book works through.
+  // Robotics by Example: three tapered glasses on a table, with the camera
+  // looking down at them, which is the problem the whole book works through.
   if (slug === 'robotics-by-example') {
     const glasses = [
       { x: 26, w: 7, h: 20 },
@@ -113,7 +139,7 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
     );
   }
 
-  // Book 3, and the fallback: an arm on a grid, reaching for a part.
+  // Frameworks, and the fallback: an arm on a grid, reaching for a part.
   return (
     <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
       <path d="M6 70 L114 70" opacity="0.5" />

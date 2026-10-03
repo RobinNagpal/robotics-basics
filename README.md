@@ -11,7 +11,7 @@ The repo has three folders:
 - `docs/` holds the docs, numbered in reading order.
 - `code/` holds the runnable examples and the pixi environment. Every `make` and
   `pixi` command, here and in the docs, is run from inside `code/`.
-- `website/` holds a Next.js site that presents the docs as six mini books. It
+- `website/` holds a Next.js site that presents the docs as eight mini books. It
   reads `docs/` directly, so it never needs its own copy.
 
 ```
@@ -146,7 +146,7 @@ to every method. Two arms doing unrelated things in one cell are deliberately ou
 scope — that is the one-arm problem, twice.
 
 **[Programming techniques](docs/05_programming-techniques/01_what-techniques-are/01_programmed-not-learned.md)**
-is Book 5: the written, language-independent techniques that arm software is
+holds the written, language-independent techniques that arm software is
 built from. After a short introduction and
 [a map of all of them](docs/05_programming-techniques/01_what-techniques-are/04_the-map-of-techniques.md),
 it covers 34 techniques in seven groups — geometry and cameras, searching and
@@ -157,7 +157,8 @@ works a real example, says where the technique is used on an arm and where it
 fails, and lists the libraries that already provide it.
 
 **[Learned models](docs/07_learned-models/01_what-models-are/01_what-a-model-is.md)**
-is Book 6, and it assumes you have never met a model. Its first chapter explains
+is the catalogue of models for an arm, and it assumes you have never met a
+model. Its first chapter explains
 what a model is, how one learns from examples, what is inside a neural network,
 the kinds of learning, and where the training data comes from. Its second
 chapter covers classical machine learning, the learned methods that are not
@@ -172,14 +173,28 @@ most used kinds come first in each family, then the ones used less often. The
 last chapter takes a model onto the arm: fine-tuning it, running it, testing it
 properly, and knowing when it is unsure.
 
-Books 5 and 6 are written to be read together. Every Book 5 page ends with the
-learned model that does the same job, every Book 6 page ends with the written
-technique, and both maps share one table that starts from the job the arm has
-to do.
+Programming techniques and learned models are written to be read together.
+Every programming techniques page ends with the learned model that does the same
+job, every learned models page ends with the written technique, and both maps
+share one table that starts from the job the arm has to do.
+
+**[Neural networks and AI models](docs/06_neural-networks/01_what-learning-means/01_why-not-just-write-the-rules.md)**
+comes before both of them, and it is the one book that explains the machinery
+rather than cataloguing it. It is for a reader who knows some maths, some
+science and some programming, and nothing at all about machine learning, so it
+starts with why some jobs cannot be written as rules, works one neuron out by
+hand, and builds up through layers, loss, gradient descent and
+backpropagation to the transformer that nearly every model in use now is made
+of. It then takes each family in turn — pretraining and fine-tuning, diffusion
+and flow matching, models that see, language and vision-language models,
+learning from outcomes, the policies that move an arm, and world models — and
+it ends with what it takes to run a model on a real robot and to judge honestly
+whether it works. Every section carries three or more diagrams, and every
+number in them was computed by the script that drew them.
 
 ## How the docs are ordered
 
-The docs are grouped into six mini books, the same ones the website shows:
+The docs are grouped into eight mini books, the same ones the website shows:
 
 ```
 docs/01_robotics-intro/   robot arm basics: Python, NumPy, maths, frames, kinematics, arm types
@@ -187,7 +202,9 @@ docs/02_perception/       cameras, and finding and measuring objects
 docs/03_frameworks/       tools and simulators, gripping, arm movement, training arms
 docs/04_ros-and-rviz/     ROS and the RViz 3D viewer
 docs/05_programming-techniques/ the algorithms arm software is built from
+docs/06_neural-networks/        how a neural network works and how a model is trained
 docs/07_learned-models/         every kind of learned model a robot arm uses
+docs/08_robotics-by-example/    one problem on a real table, solved ten ways
 ```
 
 Everything is numbered in the order it is meant to be read: the books, the chapter

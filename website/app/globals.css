@@ -36,6 +36,8 @@
   --rose-soft: #fce7f1;
   --gold: #8a6508;
   --gold-soft: #f7efdc;
+  --indigo: #3b3bb0;
+  --indigo-soft: #e8e8f8;
 
   --accent: #1f5fbf;
   --accent-soft: #e6eefb;
@@ -74,6 +76,8 @@
   --rose-soft: rgb(244 126 180 / 0.13);
   --gold: #d9ac4a;
   --gold-soft: rgb(217 172 74 / 0.13);
+  --indigo: #9b9bf2;
+  --indigo-soft: rgb(155 155 242 / 0.13);
 
   --accent: #7aa7ff;
   --accent-soft: rgb(122 167 255 / 0.12);
@@ -86,6 +90,7 @@
 [data-accent='green'] { --accent: var(--green); --accent-soft: var(--green-soft); }
 [data-accent='rose'] { --accent: var(--rose); --accent-soft: var(--rose-soft); }
 [data-accent='gold'] { --accent: var(--gold); --accent-soft: var(--gold-soft); }
+[data-accent='indigo'] { --accent: var(--indigo); --accent-soft: var(--indigo-soft); }
 
 /* -------------------------------------------------------------------- base */
 

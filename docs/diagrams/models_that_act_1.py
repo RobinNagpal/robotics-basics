@@ -6,7 +6,9 @@
         -> images/models-that-act/diffusion-and-flow-policies/
 
 Run with:  pixi run python ../docs/diagrams/models_that_act_1.py
-Add --png <folder> to also write PNG copies for checking by eye.
+Add --png <folder> to also write PNG copies for checking by eye, --only a,b to
+redraw named pictures while working, and --cache <file.npz> to keep the trained
+policy weights between runs instead of training them again.
 
 Every number drawn in a picture is worked out in this file, and the script prints
 them so that the two documents can quote the same values.
@@ -483,8 +485,9 @@ def one_example() -> None:
     action = 7
     total = cams + state + action
     print(f'[bc] one camera frame is {CAM_H} x {CAM_W} x {CAM_C} = {per_cam:,} numbers')
-    print(f'[bc] one example: {N_CAMS} frames = {cams:,} numbers, state {state}, '
-          f'label {action}, total {total:,}')
+    print(f'[bc] one example: {N_CAMS} frames = {cams:,} numbers plus {state} state '
+          f'numbers makes a question of {cams + state:,}, the label is {action}, '
+          f'and the whole example is {total:,}')
     print(f'[bc] the pictures are {100.0 * cams / total:.3f} per cent of the numbers')
 
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.7), facecolor='white',
@@ -1203,11 +1206,14 @@ def temporal_ensembling() -> None:
           f'weighted average of {m} chunks {je:.3f} mm, a drop of '
           f'{100 * (1 - je / jr):.1f} per cent')
 
+    k = 40
+    picks = store_blocks[k]
+    print(f'[bc] at step {k} the {len(picks)} chunks in hand guess ' +
+          ', '.join(f'{v[1] * 10:.3f}' for v in picks) +
+          f' mm sideways, and their weighted average is {ens_a[k][1] * 10:.3f} mm')
     fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
     ax = axes[0]
     _plain(ax)
-    k = 40
-    picks = store_blocks[k]
     vs = picks[:, 1] * 10
     span = max(vs.max() - vs.min(), 1e-3)
     for i, v in enumerate(vs):
@@ -1668,8 +1674,10 @@ def label_spread() -> None:
                label='the two things people actually did')
     ax.set_xlabel(f'sideways movement over the next {CHUNK2} steps (cm)', fontsize=9.5)
     ax.set_ylabel('recorded moments', fontsize=9.5)
-    ax.legend(fontsize=9.2, frameon=False, loc='upper center')
-    ax.set_title('One question, two very different labels', fontsize=11.5, weight='bold')
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.45)
+    ax.legend(fontsize=9.2, frameon=False, loc='upper left')
+    ax.set_title('One question, two very different labels', fontsize=11.5,
+                 weight='bold')
     ax = axes[1]
     _plain(ax)
     qs = np.linspace(lab.min() * 1.1, lab.max() * 1.1, 400)
@@ -1677,13 +1685,13 @@ def label_spread() -> None:
     ax.plot(qs, se, color=PURPLE, lw=2.4)
     ax.plot([lab.mean()], [se.min()], 'o', color=GRIP, ms=10)
     ax.annotate(f'lowest at {lab.mean():+.3f} cm,\nthe average of the labels',
-                xy=(lab.mean(), se.min()), xytext=(lab.mean() + 1.0, se.min() * 1.5),
-                fontsize=9.5, color=GRIP,
+                xy=(lab.mean(), se.min()), xytext=(lab.mean() - 1.0, se.max() * 0.55),
+                fontsize=9.5, color=GRIP, ha='center',
                 arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.3))
     for v, nm in ((lab[lab > 0].mean(), 'one way'), (lab[lab < 0].mean(), 'the other')):
         k = int(np.argmin(np.abs(qs - v)))
         ax.plot([v], [se[k]], 's', color=TEAL, ms=8)
-        ax.text(v, se[k] * 1.04, nm, ha='center', fontsize=9, color=TEAL)
+        ax.text(v, se[k] * 0.86, nm, ha='center', fontsize=9, color=TEAL, va='top')
     ax.set_xlabel('the one number the policy could put out (cm)', fontsize=9.5)
     ax.set_ylabel('average squared error against the labels', fontsize=9.5)
     ax.set_title('Squared error is lowest exactly at the average', fontsize=11.5,
@@ -1729,28 +1737,35 @@ def noising_a_chunk() -> None:
     j = int(np.argmin(np.abs(d.obs_raw[:, 0] - SPLIT)))
     x0 = d.y[j]
     levels = [0, 20, 40, 60, 100]
-    fig, axes = plt.subplots(1, len(levels), figsize=(13.2, 3.4), facecolor='white')
+    paths, keeps = [], []
     print('[df] noising one real chunk, 32 steps long:')
-    for ax, lv in zip(axes, levels):
+    for lv in levels:
         ab = AB[lv]
         xt = np.sqrt(ab) * x0 + np.sqrt(1 - ab) * rng.normal(size=ADIM)
         ch = xt.reshape(CHUNK2, 2) * d.act_std + d.act_mean
-        pt = d.obs_raw[j] + np.cumsum(ch, axis=0)
-        ax.plot(pt[:, 0], pt[:, 1], 'o-', color=LINK if lv == 0 else PURPLE, ms=3, lw=1.4)
-        ax.plot(d.obs_raw[j, 0], d.obs_raw[j, 1], 'o', color=GRIP, ms=6)
-        ax.set_title(f'step {lv}\nkeep {np.sqrt(ab):.2f} of it', fontsize=10,
-                     weight='bold')
-        ax.set_xlim(-10, 24)
-        ax.set_ylim(-12, 22)
+        paths.append(d.obs_raw[j] + np.cumsum(ch, axis=0))
+        keeps.append((float(np.sqrt(ab)), float(np.sqrt(1 - ab))))
+        print(f'[df]   step {lv:3d}: keeps {np.sqrt(ab):.3f} of the chunk and adds '
+              f'{np.sqrt(1 - ab):.3f} of noise')
+    allp = np.concatenate(paths)
+    xlo, xhi = allp[:, 0].min() - 1.5, allp[:, 0].max() + 1.5
+    ylo, yhi = allp[:, 1].min() - 1.5, allp[:, 1].max() + 1.5
+    fig, axes = plt.subplots(1, len(levels), figsize=(13.2, 3.6), facecolor='white')
+    for ax, lv, pt, (kp, _ns) in zip(axes, levels, paths, keeps):
+        ax.plot(pt[:, 0], pt[:, 1], 'o-', color=LINK if lv == 0 else PURPLE, ms=3.5,
+                lw=1.5)
+        ax.plot(d.obs_raw[j, 0], d.obs_raw[j, 1], 'o', color=GRIP, ms=7)
+        ax.set_title(f'step {lv}\nkeep {kp:.2f} of it', fontsize=10, weight='bold')
+        ax.set_xlim(xlo, xhi)
+        ax.set_ylim(ylo, yhi)
         ax.set_xticks([])
         ax.set_yticks([])
         for sp in ax.spines.values():
             sp.set_color(GRID)
-        print(f'[df]   step {lv:3d}: keeps {np.sqrt(ab):.3f} of the chunk and adds '
-              f'{np.sqrt(1 - ab):.3f} of noise')
-    axes[0].set_ylabel('the real chunk, drawn as a path', fontsize=9.5)
-    fig.suptitle('Noise added to one chunk of 32 future steps, in the shape the training '
-                 'uses', fontsize=12.5, weight='bold')
+    axes[0].set_ylabel('the chunk drawn as a path\n(red dot: where the gripper is)',
+                       fontsize=9.2)
+    fig.suptitle('Noise added to one real chunk of 32 future steps, in the shape the '
+                 'training uses', fontsize=12.5, weight='bold')
     fig.tight_layout()
     _save(fig, DF_DOC, 'noising-a-chunk.svg')
 
@@ -1776,8 +1791,8 @@ def denoiser_shapes() -> None:
         _arrow(ax, (3.05, y), (3.85, 2.9), MUTED)
     _arrow(ax, (6.55, 2.9), (7.15, 2.9), INK)
     _arrow(ax, (9.65, 2.9), (10.25, 2.9), INK)
-    ax.set_title('The denoiser: it never sees a picture of noise, it sees a spoiled '
-                 'piece of movement', fontsize=12.2, weight='bold')
+    ax.set_title('The denoiser works on a spoiled piece of movement, not a spoiled '
+                 'picture', fontsize=12.2, weight='bold')
     print(f'[df] the denoiser takes {ADIM + 2 + TEMB} numbers and gives {ADIM}; '
           f'it holds {p.diff.n_weights:,} weights in two hidden layers of '
           f'{p.diff.sizes[1]}, and the averaging network holds {p.mean.n_weights:,}')
@@ -1791,21 +1806,27 @@ def reverse_walk() -> None:
     rng = np.random.default_rng(12)
     obs = ObstacleData.norm_obs(np.array([[SPLIT, 0.0]]))
     _final, trace = p.ddim(obs, 20, rng, trace=True)
-    fig, axes = plt.subplots(1, 5, figsize=(13.2, 3.4), facecolor='white')
     picks = [0, 5, 10, 15, 20]
-    for ax, k in zip(axes, picks):
+    paths = []
+    for k in picks:
         ch = trace[k][0].reshape(CHUNK2, 2) * d.act_std + d.act_mean
-        pt = np.array([SPLIT, 0.0]) + np.cumsum(ch, axis=0)
-        ax.plot(pt[:, 0], pt[:, 1], 'o-', color=PURPLE if k < 20 else SLIDE, ms=3, lw=1.5)
-        ax.plot([SPLIT], [0.0], 'o', color=GRIP, ms=6)
+        paths.append(np.array([SPLIT, 0.0]) + np.cumsum(ch, axis=0))
+    allp = np.concatenate(paths)
+    xlo, xhi = allp[:, 0].min() - 1.5, allp[:, 0].max() + 1.5
+    ylo, yhi = allp[:, 1].min() - 1.5, allp[:, 1].max() + 1.5
+    fig, axes = plt.subplots(1, 5, figsize=(13.2, 3.6), facecolor='white')
+    for ax, k, pt in zip(axes, picks, paths):
+        ax.plot(pt[:, 0], pt[:, 1], 'o-', color=PURPLE if k < 20 else SLIDE, ms=3.5,
+                lw=1.5)
+        ax.plot([SPLIT], [0.0], 'o', color=GRIP, ms=7)
         ax.set_title(f'after {k} of 20 steps', fontsize=10, weight='bold')
-        ax.set_xlim(SPLIT - 10, SPLIT + 18)
-        ax.set_ylim(-14, 16)
+        ax.set_xlim(xlo, xhi)
+        ax.set_ylim(ylo, yhi)
         ax.set_xticks([])
         ax.set_yticks([])
         for sp in ax.spines.values():
             sp.set_color(GRID)
-    axes[0].set_ylabel('the chunk, drawn as a path', fontsize=9.5)
+    axes[0].set_ylabel('the chunk drawn as a path', fontsize=9.2)
     lens = [float(np.linalg.norm(trace[k][0])) for k in picks]
     print('[df] reverse walk: the size of the chunk numbers goes ' +
           ', '.join(f'{v:.1f}' for v in lens) + ' as the noise comes out')
@@ -1921,6 +1942,38 @@ def side_counts() -> None:
     _save(fig, DF_DOC, 'side-counts.svg')
 
 
+def crossing_histogram() -> None:
+    """Where each policy is sideways at the moment it reaches the box."""
+    x0, x1, y0, y1 = BOX
+    fig, axes = plt.subplots(3, 1, figsize=(11.2, 6.0), facecolor='white', sharex=True)
+    for ax, (kind, nm, col) in zip(axes, (('average', 'trained with squared error', GRIP),
+                                          ('diffusion', 'diffusion, 20 passes', LINK),
+                                          ('flow', 'flow matching, 20 passes', TEAL))):
+        rng = np.random.default_rng(77)
+        path = obst_rollout(kind, 300, rng)
+        hit = np.argmax(path[:, :, 0] > (x0 + x1) / 2, axis=0)
+        ys = path[hit, np.arange(300), 1]
+        _plain(ax)
+        ax.hist(ys, bins=np.linspace(-14, 14, 57), color=col, alpha=0.85)
+        ax.axvspan(y0, y1, color=MUTED, alpha=0.3)
+        inside = float(np.mean((ys > y0) & (ys < y1)) * 100)
+        ax.set_ylim(0, ax.get_ylim()[1] * 1.45)
+        ax.text(13.5, ax.get_ylim()[1] * 0.98, f'{nm}\n{inside:.1f} per cent inside '
+                                               f'the box', fontsize=9.5, color=col,
+                ha='right', va='top')
+        ax.set_ylabel('runs', fontsize=9.2)
+        print(f'[df] at the middle of the box, {kind:9s}: {inside:5.1f} per cent of 300 '
+              f'runs are inside it, average distance from the middle '
+              f'{np.abs(ys).mean():.2f} cm')
+    axes[0].set_title('Where the gripper is sideways at the moment it reaches the box',
+                      fontsize=12.0, weight='bold')
+    axes[2].set_xlabel('sideways position when the reach is half way (cm), with the '
+                       'box shaded', fontsize=9.5)
+    axes[2].set_xlim(-14, 14)
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'crossing-histogram.svg')
+
+
 # --------------------------------------------------------------------------
 # page 2, section 4 --- flow matching and the step count
 # --------------------------------------------------------------------------
@@ -1932,9 +1985,13 @@ def straight_versus_curved() -> None:
     _a, td = p.ddim(obs, 20, rng, trace=True)
     _b, tf = p.euler(obs, 20, rng, trace=True)
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white')
+    both = np.concatenate([td[:, :, :2].reshape(-1, 2), tf[:, :, :2].reshape(-1, 2)])
+    lim = (both.min() - 0.2, both.max() + 0.2)
     for ax, tr, nm, col in ((axes[0], td, 'diffusion, 20 steps', PURPLE),
                             (axes[1], tf, 'flow matching, 20 steps', TEAL)):
         _plain(ax)
+        ax.set_xlim(*lim)
+        ax.set_ylim(*lim)
         for i in range(6):
             ax.plot(tr[:, i, 0], tr[:, i, 1], '-o', color=col, ms=3, lw=1.2, alpha=0.8)
             ax.plot(tr[0, i, 0], tr[0, i, 1], 'o', color=GRIP, ms=7)
@@ -2017,15 +2074,14 @@ def steps_versus_quality() -> None:
                 ha='center', fontsize=8.4, color=PURPLE)
         ax.text(x[i] + w / 2, fence['flow'][i] + 1.5, f'{fence["flow"][i]:.0f}',
                 ha='center', fontsize=8.4, color=TEAL)
-    ax.axhline(20, color=MUTED, ls=':', lw=1.6)
-    ax.text(len(counts) - 0.6, 22, 'one real chunk in five is this straight',
-            fontsize=8.8, color=MUTED, ha='right')
+    ax.axhline(20, color=MUTED, ls=':', lw=1.6,
+               label='one real chunk in five is this straight')
     ax.set_xticks(x)
     ax.set_xticklabels([str(c) for c in counts])
     ax.set_xlabel('passes through the network to make one chunk', fontsize=9.5)
     ax.set_ylabel('chunks that sit on the fence (per cent)', fontsize=9.5)
     ax.set_ylim(0, max(fence['diffusion'] + fence['flow'] + [25]) * 1.25)
-    ax.legend(fontsize=9.2, frameon=False, loc='upper right')
+    ax.legend(fontsize=8.8, frameon=False, loc='upper right')
     ax.set_title('With too few passes the answer slides back to the middle',
                  fontsize=11.2, weight='bold')
     fig.tight_layout()
@@ -2088,34 +2144,37 @@ def receding_horizon() -> None:
     print(f'[df] receding horizon: a chunk covers {chunk_ms:.0f} ms, '
           f'{EXEC2} steps of it are played in {play:.1f} ms, and making the next one '
           f'takes {gen:.0f} ms, which leaves {play - gen:.1f} ms of slack')
-    fig, ax = plt.subplots(figsize=(12.0, 4.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(12.0, 5.0), facecolor='white')
     ax.axis('off')
-    ax.set_xlim(-90, 1150)
-    ax.set_ylim(-0.8, 4.2)
+    ax.set_xlim(-120, 1500)
+    ax.set_ylim(-1.0, 4.6)
     cols = [LINK, TEAL, PURPLE, WRIST]
     for c in range(4):
         t0 = c * play
-        ax.add_patch(plt.Rectangle((t0, 3.0), chunk_ms, 0.34, facecolor=cols[c],
-                                   alpha=0.16, edgecolor=cols[c], lw=1.0))
-        ax.add_patch(plt.Rectangle((t0, 3.0), play, 0.34, facecolor=cols[c], alpha=0.65,
+        y = 3.6 - c * 0.72
+        ax.add_patch(plt.Rectangle((t0, y), chunk_ms, 0.46, facecolor=cols[c],
+                                   alpha=0.18, edgecolor=cols[c], lw=1.0))
+        ax.add_patch(plt.Rectangle((t0, y), play, 0.46, facecolor=cols[c], alpha=0.75,
                                    edgecolor=cols[c], lw=1.0))
-        ax.add_patch(plt.Rectangle((t0 - gen, 2.0), gen, 0.34, facecolor=cols[c],
-                                   alpha=0.85, edgecolor=cols[c], lw=1.0))
-        ax.text(t0 - gen / 2, 1.85, f'{gen:.0f} ms', ha='center', va='top', fontsize=8.4,
+        ax.text(t0 + play / 2, y + 0.23, 'played', ha='center', va='center',
+                fontsize=8.8, color='white', weight='bold')
+        ax.text(t0 + play + (chunk_ms - play) / 2, y + 0.23, 'worked out, then dropped',
+                ha='center', va='center', fontsize=8.6, color=cols[c])
+        ax.add_patch(plt.Rectangle((t0 - gen, y), gen, 0.46, facecolor=INK, alpha=0.8,
+                                   edgecolor=INK, lw=0.8))
+        ax.text(-130, y + 0.23, f'chunk {c + 1}', ha='left', va='center', fontsize=9.5,
                 color=cols[c])
-        _arrow(ax, (t0 - gen / 2, 2.38), (t0 + play / 2, 2.96), cols[c], lw=1.1)
-        ax.text(t0 + play / 2, 3.17, f'chunk {c + 1}', ha='center', va='center',
-                fontsize=9, color='white' if c < 3 else INK, weight='bold')
-    ax.text(-85, 3.17, 'what the arm plays', fontsize=9.8, va='center')
-    ax.text(-85, 2.17, 'what the computer does', fontsize=9.8, va='center')
-    ax.plot([-gen, 1100], [1.3, 1.3], color=INK, lw=1.2)
-    for ms in range(0, 1101, 200):
-        ax.plot([ms, ms], [1.22, 1.38], color=INK, lw=1.2)
-        ax.text(ms, 1.1, f'{ms} ms', ha='center', fontsize=8.8, va='top')
-    ax.text(0, 0.45, f'pale part: the {chunk_ms - play:.0f} ms of each chunk that is '
-                     f'worked out and then thrown away', fontsize=9.2, color=MUTED)
-    ax.set_title(f'A chunk of {CHUNK2} steps is made every {play:.0f} ms and only its '
-                 f'first {EXEC2} steps are played', fontsize=12.0, weight='bold')
+    ax.plot([-gen, 1400], [0.45, 0.45], color=INK, lw=1.2)
+    for ms in range(0, 1401, 200):
+        ax.plot([ms, ms], [0.37, 0.53], color=INK, lw=1.2)
+        ax.text(ms, 0.25, f'{ms} ms', ha='center', fontsize=8.8, va='top')
+    ax.add_patch(plt.Rectangle((0, -0.75), 60, 0.3, facecolor=INK, alpha=0.8))
+    ax.text(75, -0.6, f'black: the {gen:.0f} ms of network time that makes that chunk, '
+                      f'which fits inside the {play:.0f} ms the chunk before it bought',
+            fontsize=9.2, color=INK, va='center')
+    ax.set_title(f'Receding horizon: every {play:.0f} ms a new chunk of {chunk_ms:.0f} ms '
+                 f'is made, and only its first {play:.0f} ms is used',
+                 fontsize=12.0, weight='bold')
     fig.tight_layout()
     _save(fig, DF_DOC, 'receding-horizon.svg')
 
@@ -2131,8 +2190,8 @@ def late_chunk() -> None:
     for ax, gen, nm, col in ((axes[0], fast, f'4 passes, {fast:.0f} ms', SLIDE),
                              (axes[1], slow, f'50 passes, {slow:.0f} ms', GRIP)):
         ax.axis('off')
-        ax.set_xlim(-60, 1250)
-        ax.set_ylim(-0.2, 2.3)
+        ax.set_xlim(-130, 1250)
+        ax.set_ylim(-0.4, 2.3)
         t = 0.0
         for c in range(3):
             ax.add_patch(plt.Rectangle((t, 1.2), play, 0.4, facecolor=LINK, alpha=0.6,
@@ -2141,8 +2200,12 @@ def late_chunk() -> None:
                     fontsize=8.8, color='white')
             ax.add_patch(plt.Rectangle((t, 0.5), gen, 0.4, facecolor=col, alpha=0.85,
                                        edgecolor=col))
-            ax.text(t + gen / 2, 0.7, f'{gen:.0f} ms', ha='center', va='center',
-                    fontsize=8.6, color='white')
+            if gen > 120:
+                ax.text(t + gen / 2, 0.7, f'{gen:.0f} ms', ha='center', va='center',
+                        fontsize=8.6, color='white')
+            else:
+                ax.text(t + gen / 2, 0.36, f'{gen:.0f} ms', ha='center', va='top',
+                        fontsize=8.6, color=col)
             if gen > play:
                 ax.add_patch(plt.Rectangle((t + play, 1.2), gen - play, 0.4,
                                            facecolor=GRIP, alpha=0.3, hatch='///',
@@ -2152,8 +2215,8 @@ def late_chunk() -> None:
                 t += gen
             else:
                 t += play
-        ax.text(-55, 1.4, 'arm', fontsize=9.5, va='center')
-        ax.text(-55, 0.7, 'network', fontsize=9.5, va='center')
+        ax.text(-70, 1.4, 'arm', fontsize=9.5, va='center')
+        ax.text(-70, 0.7, 'network', fontsize=9.5, va='center')
         ax.set_title(nm, fontsize=11.2, weight='bold', loc='left')
     fig.suptitle(f'The same chunk, made two ways, against {play:.0f} ms of movement in '
                  f'hand', fontsize=12.2, weight='bold')
@@ -2164,7 +2227,7 @@ def late_chunk() -> None:
 def latency_stack() -> None:
     play = EXEC2 / RATE * 1000.0
     counts = [2, 4, 8, 16]
-    fig, ax = plt.subplots(figsize=(11.2, 4.8), facecolor='white')
+    fig, ax = plt.subplots(figsize=(11.2, 5.1), facecolor='white')
     _plain(ax)
     parts = ['pictures into numbers', 'passes through the network', 'sending the chunk',
              'slack left over']
@@ -2190,9 +2253,9 @@ def latency_stack() -> None:
     ax.set_xlabel('milliseconds of the time the last chunk bought', fontsize=9.5)
     ax.set_xlim(0, play * 1.12)
     ax.legend(fontsize=9.0, frameon=False, ncol=4, loc='upper center',
-              bbox_to_anchor=(0.5, 1.15))
+              bbox_to_anchor=(0.5, 1.13))
     ax.set_title('Where the time inside one cycle goes', fontsize=11.8, weight='bold',
-                 pad=26)
+                 pad=44)
     fig.tight_layout()
     _save(fig, DF_DOC, 'latency-stack.svg')
 
@@ -2301,8 +2364,8 @@ def outside_the_demonstrations() -> None:
     ax.plot(*GOAL2, '*', color=INK, ms=16, zorder=7)
     ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
     ax.set_ylabel('sideways (cm)', fontsize=9.5)
-    ax.legend(fontsize=8.6, frameon=False, loc='upper left', ncol=2)
-    ax.set_ylim(-14, 26)
+    ax.legend(fontsize=8.6, frameon=False, loc='lower right', ncol=2)
+    ax.set_ylim(-16, 52)
     ax.set_title('Starting where nobody ever started', fontsize=11.5, weight='bold')
     ax = axes[1]
     _plain(ax)
@@ -2330,7 +2393,7 @@ PAGE1 = [action_vector, control_loop, absolute_versus_delta,
 
 PAGE2 = [two_ways_one_average, label_spread, averaging_rollouts,
          noising_a_chunk, denoiser_shapes, reverse_walk, conditioning,
-         diffusion_rollouts, side_counts,
+         diffusion_rollouts, side_counts, crossing_histogram,
          straight_versus_curved, steps_versus_quality, timing_table,
          receding_horizon, late_chunk, latency_stack,
          copied_mistake, no_notion_of_the_goal, outside_the_demonstrations]

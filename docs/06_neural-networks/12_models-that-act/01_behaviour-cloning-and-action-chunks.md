@@ -23,9 +23,9 @@ action space is. Section 5 also uses the transformer from
 [attention](../06_the-transformer/01_attention.md), but only its shape.
 
 Every number in the pictures below is worked out and printed by
-`docs/diagrams/models_that_act_1.py`. The arm, the task and the recordings are
-simulated, but the policy fitted to them is real and the failures it shows are the
-failures people hit on real arms.
+`docs/diagrams/models_that_act_1.py`. The arm and the recordings are simulated,
+but the policy fitted to them is real and the failures it shows are the ones
+people hit on real arms.
 
 ## Contents
 
@@ -42,11 +42,13 @@ failures people hit on real arms.
 
 ## 1. What a policy is, and what comes out of it
 
-A **policy** is a model that takes what the robot can sense right now and gives
-back what it should do right now, and it is asked that question again and again
-while the arm moves. The word comes from [reinforcement
+The introduction said that what comes out of this model is a movement, and the
+model that produces one has a name of its own. A **policy** is a model that takes
+what the robot can sense right now and gives back what it should do right now, and
+it is asked that question again and again while the arm moves. The word comes
+from [reinforcement
 learning](../11_learning-from-outcomes/01_reinforcement-learning.md), where it
-means the same thing, and the difference here is only that this policy is trained
+means the same thing, and the only difference here is that this policy is trained
 by copying a person.
 
 What it gives back is a short list of ordinary numbers, one for each thing the arm
@@ -60,11 +62,10 @@ The base joint is at +44.62 degrees inside a range of -170 to +170 degrees, whic
 becomes +0.262 after rescaling, and the other six numbers are worked out the same
 way.
 
-That rescaling matters here because the loss adds up the error over all seven
-numbers, so an unscaled joint would quietly take over that sum. The second thing
-to be exact about is when the answer is wanted, because the arm asks for a new
-command at a fixed rate and that rate sets the budget for everything the model
-does.
+That rescaling matters because the loss adds up the error over all seven numbers,
+so an unscaled joint would quietly take over that sum. The second thing to be
+exact about is when the answer is wanted, because the arm asks for a new command
+at a fixed rate and that rate sets the budget for everything the model does.
 
 ![Three timelines putting 8, 12 and 1 millisecond blocks inside periods of 20, 33.3 and 100 milliseconds](../../images/models-that-act/behaviour-cloning-and-action-chunks/the-control-loop.svg)
 
@@ -72,8 +73,8 @@ The same 21 milliseconds of work leaves 12.33 milliseconds spare in a loop runni
 30 times a second, leaves 79 milliseconds spare at 10 times a second, and arrives
 1.0 millisecond late at 50 times a second.
 
-Nothing about the model changes between those three rows, and yet in one of them
-the robot is already late, which is why section 4 is about producing more than one
+Nothing about the model changes between those rows, and yet in one of them the
+robot is already late, and section 4 answers that by producing more than one
 command per pass. The third thing is how a command is written down, because one
 way is to send the place the joint should go to and the other is to send the
 change from where it is now.
@@ -86,8 +87,8 @@ only 2.365 degrees.
 
 A command that says where to end up holds no memory of what happened before, so a
 small mistake does not stay in the arm, while a command that says how far to move
-gives numbers twenty-four times smaller in range and therefore easier to predict,
-at the price that every mistake is added to the arm's position for good.
+gives numbers twenty-four times smaller in range, at the price that every mistake
+is added to the arm's position for good.
 
 ---
 
@@ -110,15 +111,14 @@ reward, no search and no simulator anywhere in it.
 
 ![Three input boxes feeding a question box of 1,843,207 numbers and an answer box of 7, beside a log-scale bar chart](../../images/models-that-act/behaviour-cloning-and-action-chunks/one-example.svg)
 
-One example from a two-camera arm is 1,843,207 numbers of question and 7 numbers
-of answer, and the pictures are 99.9992 per cent of it.
+One example from a two-camera arm is 1,843,207 numbers of question and 7 of
+answer, and the pictures are 99.9992 per cent of it.
 
 Each camera frame of 480 rows by 640 columns in three colours is 921,600 numbers,
 two of them come to 1,843,200, and the seven joint readings bring the question to
 1,843,207 against an answer of seven. Almost everything the model reads is
 picture, which is why the camera part of the model is the expensive part. One
-demonstration then gives a great many examples, because every recorded moment in
-it is one.
+demonstration gives a great many examples, because every moment in it is one.
 
 ![Six joint angles over twelve seconds above a gripper signal that shuts at five seconds](../../images/models-that-act/behaviour-cloning-and-action-chunks/one-episode.svg)
 
@@ -135,8 +135,8 @@ Fifty episodes give 18,000 examples, which is 33.18 gigabytes of raw camera fram
 or 0.83 gigabytes once the frames are stored as video at a ratio of 40 to 1, while
 all the joint and action numbers together come to 1.01 megabytes.
 
-Now the fact that explains most of the design choices in this chapter: every one
-of those 18,000 examples is a person moving an arm in real time.
+One fact explains most of the design choices in this chapter, which is that every
+one of those 18,000 examples is a person moving an arm in real time.
 
 ![One person's 50 minutes split into moving, resetting, checking and setting up, beside hours against examples](../../images/models-that-act/behaviour-cloning-and-action-chunks/hours-of-a-day.svg)
 
@@ -162,8 +162,8 @@ The simulated task is a four-second reach of about 40 centimetres across a table
 recorded 30 times a second, so 120 steps. The demonstrator starts in roughly the
 same place each time, swings out on an arc of varying size, aims at a goal that
 moves a little from take to take, varies their speed and shakes slightly. The
-policy is fitted to 100 of those demonstrations, it is asked where to go next at
-every single step, and it writes its answer as a change rather than a place.
+policy is fitted to 100 of those demonstrations and writes its answer as a change
+rather than a place.
 
 ![Pale demonstration curves with two thick policy runs, one overshooting its goal and one stopping short](../../images/models-that-act/behaviour-cloning-and-action-chunks/drift-paths.svg)
 
@@ -188,9 +188,9 @@ to the next question.
 
 ![One run as dots coloured by how new its input is, beside that distance rising to 15.7 cm](../../images/models-that-act/behaviour-cloning-and-action-chunks/unseen-inputs.svg)
 
-The questions start about 1 centimetre from the nearest recorded moment, which is
-where a fresh demonstration also sits at 0.82 centimetres, and by four seconds
-they are 15.72 centimetres away, nineteen times further out.
+The questions start about 1 centimetre from the nearest recorded moment, where a
+fresh demonstration also sits at 0.82 centimetres, and by four seconds they are
+15.72 centimetres away, nineteen times further out.
 
 That is the whole mechanism. A small error moves the arm slightly off the states
 the demonstrations covered, so the next question is asked about a situation nobody
@@ -209,7 +209,7 @@ Going from 5 demonstrations to 400, which is eighty times the data and 28,800
 recorded moments, takes the error of one predicted step from 0.697 to 0.623
 millimetres and the drift at four seconds from 8.25 to 5.54 centimetres.
 
-More data makes each answer a little better and cannot change the shape of the
+More data makes each answer a little better but cannot change the shape of the
 problem, because the policy still visits states that no amount of ordinary
 demonstrating covers. Those states are exactly the ones a person never gets into,
 since a person corrects a mistake before it grows, so the fixes that work are not
@@ -220,19 +220,19 @@ about collecting more of the same.
 ## 4. Playing a chunk of the future instead of one step
 
 The last section ended with errors compounding once per decision, which suggests a
-blunt and effective fix: make fewer decisions. An **action chunk** is a block of
+blunt fix, which is to make fewer decisions. An **action chunk** is a block of
 future actions worked out in one go, so instead of asking the model for the next
-command, the robot asks it for the next several dozen commands and plays them one
-after another before asking again.
+command, the robot asks for the next several dozen and plays them one after
+another before asking again.
 
 ![Four timelines of a four-second reach cut into 120, 30, 8 and 3 decisions](../../images/models-that-act/behaviour-cloning-and-action-chunks/chunk-timeline.svg)
 
 The same four-second reach takes 120 decisions when one step is played per
 decision, 30 when four are, 8 when sixteen are and 3 when forty-eight are.
 
-Each of those marks is a place where the model can be wrong about a situation it
-has drifted into, so cutting 120 of them to 8 cuts the chances for the error to
-feed itself. In the four runs below the policy and the data are identical, and the
+Each mark is a place where the model can be wrong about a situation it has
+drifted into, so cutting 120 of them to 8 cuts the chances for the error to feed
+itself. In the four runs below the policy and the data are identical, and the
 only change is how many steps are played before it looks again.
 
 ![Four error curves for chunks of 1, 4, 16 and 48 steps, falling in that order](../../images/models-that-act/behaviour-cloning-and-action-chunks/chunk-drift.svg)
@@ -255,7 +255,7 @@ spikes in the blue line are where one chunk ends and the next begins.
 
 Those spikes are the cost of the idea in its simplest form, because the arm has
 been following one plan and is handed another, and the deeper cost is that a chunk
-is a promise made before the future happened. Section 6 measures both.
+is a promise made early. Section 6 measures both.
 
 ---
 
@@ -412,7 +412,8 @@ block = head(slots)
 print(tuple(block.shape), block.numel())                        # (1, 100, 14) 1400
 
 target = torch.zeros_like(block)            # the next 100 recorded actions
-print(nn.functional.l1_loss(block, target).item())              # 0.0
+loss = nn.functional.l1_loss(block, target)  # one number out of all 1,400 at once
+print(tuple(loss.shape), block.numel())                         # () 1400
 
 m = 0.01                                                        # section 6
 w = torch.exp(-m * torch.arange(8.0))

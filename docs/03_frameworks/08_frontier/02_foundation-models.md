@@ -670,7 +670,10 @@ control for every dollar spent collecting, and reports a data ladder from 1,000 
 
 **Why it matters.** In-context learning is how language models became useful
 without fine-tuning, and this is the first well-documented claim that the same
-thing works for manipulation. It also changes what a deployment looks like: if one
+thing works for manipulation. Book 7 explains the mechanism rather than the news, in
+[prompting with a
+demonstration](../../07_learned-models/10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md),
+which sets it against fine-tuning and measures what each one costs. It also changes what a deployment looks like: if one
 video is worth 380 episodes, then teaching a robot a new task becomes a recording
 rather than a data-collection campaign. The robustness claim is the one worth
 checking independently — the company reports that language-conditioned policies

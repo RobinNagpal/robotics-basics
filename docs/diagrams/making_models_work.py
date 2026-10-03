@@ -47,6 +47,7 @@ PURPLE: str = '#8e5bb5'
 PALE_GREY: str = '#eeeeee'
 
 EVAL: str = 'making-models-work-on-an-arm/evaluation-and-failure'
+PROMPT: str = 'making-models-work-on-an-arm/prompting-with-a-demonstration'
 SOM: str = 'planning-and-search/sampling-based-optimisation-and-mpc'
 
 
@@ -629,6 +630,96 @@ def print_mpc_numbers() -> None:
           f'{sum(f <= 1.0 for f in finals)}/{len(rs)}, hits {sum(r["hits"] for r in rs)}')
 
 
+# ==========================================================================
+# 03_also-used/02_prompting-with-a-demonstration.md
+# ==========================================================================
+
+# Both numbers below are quoted from other people and are marked as such wherever
+# they are drawn. One video demonstration being worth about 380 post-training
+# episodes is Skild's own figure for S1, reported in its launch post. Fifty
+# demonstrations is the size of the worked example on the fine-tuning page of this
+# same chapter, so the two routes are compared on a task that book already costs.
+VIDEO_WORTH_EPISODES: int = 380
+EPISODES_PER_TASK: int = 50
+
+
+def print_prompt_numbers() -> None:
+    """Print the arithmetic that the document quotes."""
+    print('prompting with a demonstration')
+    print(f'   one video is reported to be worth {VIDEO_WORTH_EPISODES} episodes')
+    print(f'   the fine-tuning example on this chapter uses {EPISODES_PER_TASK} episodes')
+    print(f'   so one video carries {VIDEO_WORTH_EPISODES / EPISODES_PER_TASK:.1f} times '
+          f'that example')
+    for tasks in (1, 5, 20, 100):
+        ft = tasks * EPISODES_PER_TASK
+        print(f'   {tasks:3} task(s): fine-tuning needs {ft:5} episodes and {tasks} training '
+              f'run(s); prompting needs {tasks} video(s) and no training run')
+
+
+def teaching_paths_picture() -> None:
+    """The two routes from a downloaded model to a robot doing your task."""
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
+    _axes(ax, (0, 10.4), (0, 5.4))
+
+    _box(ax, 0.2, 2.35, 1.7, 0.8, 'a model\nsomebody else\ntrained', face='#e8e8e8')
+
+    # The fine-tuning route: the weights change, and the result is a new file.
+    ax.text(2.3, 4.95, 'fine-tuning: the weights change', color=INK, fontsize=11, weight='bold')
+    _box(ax, 2.3, 3.85, 1.9, 0.8, f'collect\n{EPISODES_PER_TASK} episodes', face=LINK_PALE)
+    _box(ax, 4.5, 3.85, 1.6, 0.8, 'a training\nrun', face=LINK_PALE)
+    _box(ax, 6.4, 3.85, 1.8, 0.8, 'a new model\nfile', face='#bfe0c4')
+    _box(ax, 8.5, 3.85, 1.7, 0.8, 'the robot\ndoes the task', face='#bfe0c4')
+    for a, b in (((1.9, 2.95), (2.3, 4.25)), ((4.2, 4.25), (4.5, 4.25)),
+                 ((6.1, 4.25), (6.4, 4.25)), ((8.2, 4.25), (8.5, 4.25))):
+        _arrow(ax, a, b)
+    ax.text(2.3, 3.5, 'done once per task, and the file only knows that task',
+            color=MUTED, fontsize=9)
+
+    # The prompting route: nothing is trained, and the example arrives at run time.
+    ax.text(2.3, 2.35, 'prompting: the weights never change', color=INK, fontsize=11,
+            weight='bold')
+    _box(ax, 2.3, 1.25, 1.9, 0.8, 'record one\nvideo', face='#f3dca8')
+    _box(ax, 4.5, 1.25, 1.6, 0.8, 'the same\nmodel file', face='#e8e8e8')
+    _box(ax, 6.4, 1.25, 1.8, 0.8, 'the video goes\nin as input', face='#f3dca8')
+    _box(ax, 8.5, 1.25, 1.7, 0.8, 'the robot\ndoes the task', face='#bfe0c4')
+    for a, b in (((1.9, 2.55), (2.3, 1.65)), ((4.2, 1.65), (4.5, 1.65)),
+                 ((6.1, 1.65), (6.4, 1.65)), ((8.2, 1.65), (8.5, 1.65))):
+        _arrow(ax, a, b)
+    ax.text(2.3, 0.9, 'done once per task, and the file still knows every task',
+            color=MUTED, fontsize=9)
+    ax.text(2.3, 0.45,
+            f'reported equivalence: one video did the work of about '
+            f'{VIDEO_WORTH_EPISODES} episodes (Skild, for S1)',
+            color=MUTED, fontsize=9, style='italic')
+
+    _save(fig, PROMPT, 'two-ways-to-teach.svg')
+
+
+def teaching_effort_picture() -> None:
+    """How the effort of each route grows as a robot is asked to do more tasks."""
+    tasks = np.arange(0, 21)
+    fine_tuned = tasks * EPISODES_PER_TASK
+    prompted = tasks * (EPISODES_PER_TASK / VIDEO_WORTH_EPISODES)
+
+    fig, ax = plt.subplots(figsize=(8.6, 4.6))
+    ax.plot(tasks, fine_tuned, color=LINK, lw=2.2,
+            label=f'fine-tuning: {EPISODES_PER_TASK} episodes for each task')
+    ax.plot(tasks, prompted, color=JOINT, lw=2.2,
+            label='prompting: one video for each task')
+    ax.set_xlabel('tasks the robot is asked to do')
+    ax.set_ylabel('episodes of recording, in total')
+    ax.set_xlim(0, 20)
+    ax.set_ylim(0, 1050)
+    ax.grid(True, color=GRID, lw=0.6)
+    ax.legend(loc='upper left', frameon=False)
+    ax.annotate(f'{fine_tuned[-1]} episodes', (20, fine_tuned[-1]), textcoords='offset points',
+                xytext=(-8, -16), ha='right', color=LINK, fontsize=10)
+    ax.annotate(f'{prompted[-1]:.1f} episodes of equivalent effort', (20, prompted[-1]),
+                textcoords='offset points', xytext=(-8, 14), ha='right', color=JOINT, fontsize=10)
+    ax.set_title('One task hides the difference; twenty tasks do not', fontsize=11)
+    _save(fig, PROMPT, 'effort-against-tasks.svg')
+
+
 def main() -> None:
     """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
     global PNG_DIR
@@ -643,6 +734,9 @@ def main() -> None:
     print_mpc_numbers()
     ensemble_picture()
     learned_mpc_picture()
+    print_prompt_numbers()
+    teaching_paths_picture()
+    teaching_effort_picture()
     print(f'wrote the diagrams under {IMAGES}')
 
 

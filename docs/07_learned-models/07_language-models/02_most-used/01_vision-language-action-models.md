@@ -227,10 +227,41 @@ one that needs a bigger computer.
   450 million parameters. It is small enough to run on an ordinary computer, including
   a Mac, so it is the usual starting point for a beginner with a small arm.
 
-Newer and stronger models exist, such as π0.7 from Physical Intelligence and Gemini
-Robotics 2 from Google DeepMind, but neither of them can be downloaded. The [frontier
+Three more are worth knowing by name, because they can be downloaded and they fill
+gaps the five above leave.
+
+- [X-VLA](https://huggingface.co/2toINF/X-VLA-Pt), from an academic group in November
+  2025, is released under Apache-2.0 including its weights, which few models are.
+- [MolmoAct2](https://huggingface.co/allenai/MolmoAct2), from the Allen Institute for
+  AI in May 2026, has 5 billion parameters and is the most thoroughly evaluated open
+  model, although its model card declares no licence on the weights, so read that
+  before relying on it.
+- [GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T) above is the most capable open
+  model that its own vendor supports.
+
+### The ones you will read about but cannot have
+
+The strongest models of 2026 are not downloadable, and knowing their names matters
+anyway, because every claim you read about what robots can now do comes from one of
+them. π0.7 from Physical Intelligence, Gemini Robotics 2 from Google DeepMind, Helix
+2.5 from Figure and Dyna-2 from Dyna Robotics were all demonstrated rather than
+released.
+
+One of them is different in kind rather than in strength, and it is the reason this
+book has a page on the idea. [Skild S1](https://www.skild.ai/blogs/s1), announced in
+August 2026, is not told what to do in words at all. It is shown one video of the task
+and then does the task, with no fine-tuning. Everything else on this page learns a task
+by having that task trained into its weights, so a model that takes the task as an
+input instead is a different arrangement rather than a better model of the same
+arrangement. [Prompting with a
+demonstration](../../10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md)
+explains how that works and what it costs, and it is honest about how thin the
+published evidence still is.
+
+The [frontier
 document](../../../03_frameworks/08_frontier/02_foundation-models.md#10-the-open-shelf-what-you-can-download-today)
-lists what you can download today, with the licence of each one.
+lists what you can download today, with the licence of each one, and it is the page to
+check rather than this one when you want to know what is current.
 
 ---
 

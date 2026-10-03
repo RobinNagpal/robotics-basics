@@ -38,8 +38,9 @@ arithmetic.
 5. [Co-training: robot episodes and web pictures together](#5-co-training-robot-episodes-and-web-pictures-together)
 6. [Cross-embodiment: episodes from many different robots](#6-cross-embodiment-episodes-from-many-different-robots)
 7. [What generalisation really looks like, and what it costs to run](#7-what-generalisation-really-looks-like-and-what-it-costs-to-run)
-8. [Where to read next](#8-where-to-read-next)
-9. [Using it in Python](#9-using-it-in-python)
+8. [How the task is given: words, and then a video](#8-how-the-task-is-given-words-and-then-a-video)
+9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -416,14 +417,64 @@ to aim for is close to one that predicts what will happen.
 
 ---
 
-## 8. Where to read next
+## 8. How the task is given: words, and then a video
+
+Everything above concerns how a model turns pictures into movement. This section is
+about the other input, which is how the model is told which movement to make, because
+in 2026 that is where the arrangement changed.
+
+Every model described so far is told in words. The instruction "put the cup on the
+saucer" is turned into tokens, those tokens join the picture tokens, and attention
+mixes the two. Words are convenient and they are also a narrow channel: "fold the
+towel" does not say which fold, in which order, or to what standard, so the model
+supplies the missing detail from the average of its training data rather than from
+what you wanted.
+
+The alternative is to give the model an example of the task instead of a description of
+it. The example is a short video, it enters the model as more tokens exactly as the
+instruction did, and attention can then compare the current picture against the
+recording. Nothing about this needs a new kind of layer, which is the point worth
+taking from it: the machinery of section 2 already allows it, because a transformer
+attends over whatever tokens it is given and does not care what they came from.
+
+What it does need is pretraining that makes reading an example a thing the weights can
+do. That is the same requirement that made few-shot prompting work for text, and it is
+why the models that do this are built for it from the start rather than adapted to it
+afterwards.
+
+[Skild S1](https://www.skild.ai/blogs/s1), announced in August 2026, is the model that
+made this claim for manipulation. It is shown one video of a task lasting up to ten
+minutes and performs the task with no fine-tuning. The company reports 66 per cent
+success on tasks never seen before against 9 per cent for models prompted with words,
+and that one video did the work of about 380 episodes of post-training.
+
+Those figures should be read with care, and three facts decide how much weight to put
+on them. The headline comparison is an average of per-step success rather than of whole
+tasks completed, which flatters a long task. No architecture, parameter count or
+independent evaluation has been published. And the model is available only to
+commercial partners, so none of it can be checked on your own arm.
+
+The reason the idea belongs on this page anyway is that it separates two things this
+chapter has treated as one. A model's capability lives in its weights, but the task it
+performs need not. Once the task arrives as input, teaching a robot something new stops
+being a training problem and becomes a recording problem, and that is a different shape
+of engineering from everything else in this book.
+
+Book 7 works through what each route costs, and measures the trade on a worked example,
+in [prompting with a
+demonstration](../../07_learned-models/10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md).
+
+---
+
+## 9. Where to read next
 
 - [World models](04_world-models.md) is the next page, and it covers models that predict
   what will happen next rather than reacting to what is there now.
 - [Diffusion and flow policies](02_diffusion-and-flow-policies.md) holds the generative
   machinery the action head of section 4 is built from.
 - [Fine-tuning and adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md)
-  explains catastrophic forgetting in full, which is what co-training exists to solve.
+  explains catastrophic forgetting in full, which is what co-training exists to solve,
+  and its first rung is where section 8's video prompt belongs on the ladder.
 - [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   takes section 7's latency arithmetic further and says how to test a policy honestly.
 - [Vision-language-action models](../../07_learned-models/07_language-models/02_most-used/01_vision-language-action-models.md)
@@ -433,7 +484,7 @@ to aim for is close to one that predicts what will happen.
 
 ---
 
-## 9. Using it in Python
+## 10. Using it in Python
 
 Section 3 measured what binning does to an action and section 4 what a flow head does
 instead, and both are a handful of lines of real code. The lines below use NumPy and

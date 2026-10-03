@@ -55,6 +55,22 @@ training, so you can try a new one every minute, and that speed is why it is the
 to try first. What it cannot do is teach the model anything it does not already
 contain, because every behaviour a prompt reaches is one the pretrained weights hold.
 
+That last sentence is the one worth sitting with, because it is less limiting than it
+sounds. A prompt can carry worked examples as well as instructions, and a model
+pretrained on enough text learns to read an example and continue the pattern, which is
+called **in-context learning**. The examples are not training: no weight changes, and
+nothing is remembered once the request is over. What the weights hold is the general
+ability to use an example, and the example itself supplies the particular task. So the
+first rung reaches further than "ask more clearly", and for language models it is the
+reason most jobs never reach rung two at all.
+
+During 2026 the same arrangement was claimed for robots, with a video in place of the
+worked examples: the model is shown one recording of a task and performs that task,
+with nothing trained. Book 7 explains what that costs and how thin the evidence still
+is, in [prompting with a
+demonstration](../../07_learned-models/10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md),
+and section 7 of this page says where to read the rest.
+
 The second rung freezes the pretrained model and trains one small new layer on top,
 called a **head**, which turns the model's internal numbers into the answers your job
 needs. This is cheap and it breaks nothing, because the pretrained part cannot change,
@@ -413,7 +429,9 @@ corner.
   models](../12_models-that-act/03_vision-language-action-models.md) shows a robot
   model almost always reached by fine-tuning something larger.
 - [Fine-tuning](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md)
-  in the models catalogue gives the same choice from the robot's side.
+  in the models catalogue gives the same choice from the robot's side, and
+  [prompting with a demonstration](../../07_learned-models/10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md)
+  beside it is the first rung carried as far as it currently goes.
 
 ---
 

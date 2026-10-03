@@ -363,6 +363,15 @@ does not. Fine-tuning works when the new job is close to what the model was
 pretrained on, which is why a detector pretrained on everyday photos adapts well to
 parts on a table: both are colour pictures of solid objects.
 
+There is also a case where fine-tuning is the wrong shape of answer rather than a
+failing one. The cost of this page is paid once for each task, so a robot asked to do
+twenty different jobs pays it twenty times, and a robot whose jobs change every week
+pays it every week. [Prompting with a
+demonstration](../03_also-used/02_prompting-with-a-demonstration.md) is the
+alternative in that situation: the model is left alone and is shown one recording of
+the task instead. It is less accurate on any single task, for a reason that page
+measures, and today no model that works this way can be downloaded.
+
 It works badly in the cases below, and the table gives each one together with the
 sign you would see and what people do instead.
 
@@ -442,6 +451,9 @@ the part that decides whether the robot works.
 - [Classical machine learning](../../02_classical-machine-learning/01_overview.md)
   covers smaller models that are not neural networks, which sometimes need no
   fine-tuning at all.
+- [Prompting with a demonstration](../03_also-used/02_prompting-with-a-demonstration.md)
+  is the alternative to this whole page, in which the model never changes and the
+  task arrives as a recording.
 - [Uncertainty and confidence](../03_also-used/01_uncertainty-and-confidence.md)
   explains how to tell when a fine-tuned model is sure and wrong.
 - [Object detection](../../03_seeing-models/02_most-used/01_object-detection.md) explains

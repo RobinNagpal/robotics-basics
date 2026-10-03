@@ -22,7 +22,7 @@ explain them.
 ## Contents
 
 1. [What this chapter is for](#1-what-this-chapter-is-for)
-2. [The four pages](#2-the-four-pages)
+2. [The five pages](#2-the-five-pages)
 3. [In what order to read them](#3-in-what-order-to-read-them)
 4. [How this chapter connects to Book 3](#4-how-this-chapter-connects-to-book-3)
 5. [Where to read next](#5-where-to-read-next)
@@ -52,20 +52,23 @@ when it is unsure? Each page of this chapter answers one of them.
 
 ---
 
-## 2. The four pages
+## 2. The five pages
 
 Because the gap is four separate questions, this chapter has one page for each of
-them. The picture shows those four questions in the order a project usually meets
-them, and a model has to pass all four before the arm can rely on it.
+them, and a fifth page that gives a second way of answering the first question. The
+picture shows the four questions in the order a project usually meets them, and a
+model has to pass all four before the arm can rely on it. The fifth page hangs below
+the first step rather than standing in the row, because it is another way to do that
+step rather than another thing a model has to pass.
 
-![Four boxes in a row between "works in a notebook" and "works on the arm": fine-tuning, running a model on a robot and evaluation and failure in the most-used group, and uncertainty and confidence in the also-used group, each with the question it answers](../../images/making-models-work-on-an-arm/overview/notebook-to-arm.svg)
+![Four boxes in a row between "works in a notebook" and "works on the arm": fine-tuning, running a model on a robot and evaluation and failure in the most-used group, and uncertainty and confidence in the also-used group, each with the question it answers. A fifth box, prompting with a demonstration, hangs below fine-tuning as the other way to do that step](../../images/making-models-work-on-an-arm/overview/notebook-to-arm.svg)
 
 Like every chapter in this book, this one splits its pages into two groups. The
 **most used** group holds the steps that nearly every project with a model on an arm
 goes through, whereas the **also used** group holds a step that many projects need
 but not all of them.
 
-The table below lists the four pages. Read each row across: the page, its group, and
+The table below lists the five pages. Read each row across: the page, its group, and
 the question it answers.
 
 | Page | Group | The question it answers |
@@ -74,13 +77,20 @@ the question it answers.
 | [Running a model on a robot](02_most-used/02_running-a-model-on-a-robot.md) | most used | How fast must the model be, what computer does it run on, and how does it fit into the loop that drives the arm? |
 | [Evaluation and failure](02_most-used/03_evaluation-and-failure.md) | most used | How do I measure whether the model really works on the arm, and how do I find and sort the ways it fails? |
 | [Uncertainty and confidence](03_also-used/01_uncertainty-and-confidence.md) | also used | How can the robot tell when the model is unsure, and what should it do then? |
+| [Prompting with a demonstration](03_also-used/02_prompting-with-a-demonstration.md) | also used | Can I teach a task by showing one recording of it, instead of collecting data and training? |
 
 The three most-used pages follow one model through a whole project, so they are best
 read as one story. Fine-tuning adapts the model to your objects, then running it on
 the robot puts it inside the loop that drives the arm, and evaluation finally checks
-whether the result is good enough while showing you where it breaks. The also-used
+whether the result is good enough while showing you where it breaks. The first also-used
 page then adds one more safeguard, because it lets the robot stop, look again or ask
 a person when the model is not sure, instead of acting on a guess.
+
+The second also-used page stands apart from that story. It describes a newer way of
+doing the first step, in which a task is taught by showing the model one recording of
+it rather than by collecting examples and training on them. It is in the also-used
+group because, in 2026, no model that works this way can be downloaded, so it is worth
+understanding and cannot yet be used.
 
 ---
 
@@ -91,6 +101,11 @@ them in order, and each one also uses the words that the page before it introduc
 Fine-tuning comes first because adapting a downloaded model is usually the first
 thing a project does to it, and evaluation comes last because you can only measure a
 model once it is already running on the arm.
+
+Read the prompting page straight after fine-tuning, because it is the alternative to
+it and the comparison is what makes either one clear. Read it even though you cannot
+run it today, since knowing that the choice exists changes how you judge the cost of
+collecting data.
 
 Read the uncertainty page when your robot must decide by itself whether to act on an
 answer, which is the case for most robots that work near people or handle objects
@@ -121,6 +136,11 @@ Each page here has a partner there:
   lists the large models you might adapt, and which of them you can download. The
   [data and demonstration document](../../03_frameworks/08_frontier/03_data-and-demonstration.md)
   describes how the demonstrations for fine-tuning are recorded.
+- [Prompting with a demonstration](03_also-used/02_prompting-with-a-demonstration.md)
+  explains the alternative to adapting a model at all. The
+  [section on Skild](../../03_frameworks/08_frontier/02_foundation-models.md#9-skild-learning-from-one-video-and-self-play)
+  records the one model that works this way, when it appeared and what was claimed
+  for it.
 - [Running a model on a robot](02_most-used/02_running-a-model-on-a-robot.md)
   explains why speed and computer matter. The
   [hardware document](../../03_frameworks/08_frontier/05_hardware.md) lists the
@@ -143,6 +163,8 @@ Each page here has a partner there:
 ## 5. Where to read next
 
 - [Fine-tuning](02_most-used/01_fine-tuning.md) is the first page of this chapter.
+- [Prompting with a demonstration](03_also-used/02_prompting-with-a-demonstration.md)
+  is the alternative to it, and is best read straight afterwards.
 - [The map of models](../01_what-models-are/06_the-map-of-models.md) shows where
   this chapter sits in the whole book.
 - [The frontier: what changed in 2026](../../03_frameworks/08_frontier/01_overview.md)
@@ -190,9 +212,11 @@ observation dictionary from your own cameras and joints, in the shape the policy
 trained on, and you write the safety checks, the trial log and what the arm does when
 the model is wrong. None of that comes with the model.
 
-What you have to decide is what each of this chapter's four pages is about.
+What you have to decide is what each of this chapter's five pages is about.
 [Fine-tuning](02_most-used/01_fine-tuning.md) decides whether this downloaded policy
-needs teaching your objects first.
+needs teaching your objects first, and [prompting with a
+demonstration](03_also-used/02_prompting-with-a-demonstration.md) decides whether you
+could skip that teaching by showing it a recording instead.
 [Running a model on a robot](02_most-used/02_running-a-model-on-a-robot.md) decides
 whether the milliseconds that this snippet prints are small enough for your loop, and
 on which computer.

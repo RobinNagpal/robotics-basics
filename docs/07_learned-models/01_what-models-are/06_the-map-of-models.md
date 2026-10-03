@@ -240,7 +240,10 @@ overview and the same two groups:
   [evaluation and failure](../10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md),
   which measures whether it really works and how it fails.
 - Also used: [uncertainty and confidence](../10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md),
-  which tells the robot when a model is unsure, and what to do then.
+  which tells the robot when a model is unsure, and what to do then; and
+  [prompting with a demonstration](../10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md),
+  which teaches a task by showing the model one recording of it instead of collecting
+  examples and training on them.
 
 ---
 

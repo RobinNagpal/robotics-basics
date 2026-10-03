@@ -415,8 +415,8 @@ def three_stages() -> None:
 
 def notebook_to_arm() -> None:
     """The four questions between a model that works in a notebook and one that works on the arm."""
-    fig, ax = plt.subplots(figsize=(15, 6.8), facecolor='white')
-    _axes(ax, (0, 30), (1.8, 12.6))
+    fig, ax = plt.subplots(figsize=(15, 8.3), facecolor='white')
+    _axes(ax, (0, 30), (-1.4, 12.6))
     # the two ends
     _box(ax, 0.3, 4.4, 4.4, 4.2, face=PALE, edge=MUTED)
     _label(ax, 2.5, 7.6, 'works in a\nnotebook', size=12, weight='bold')
@@ -442,7 +442,14 @@ def notebook_to_arm() -> None:
     ax.plot([20.4, 24.6], [11.1, 11.1], color=PURPLE, lw=2)
     _label(ax, 12.5, 11.8, 'most used', size=10.5, color=LINK, weight='bold')
     _label(ax, 22.5, 11.8, 'also used', size=10.5, color=PURPLE, weight='bold')
-    _label(ax, 15, 2.6, 'Each page answers one question. A model has to pass all four '
+    # The first step has a second route, so it hangs below that step rather than
+    # standing in the row: it is another way to do the same thing, not another thing
+    # a model has to pass.
+    _arrow(ax, (7.5, 4.3), (7.5, 2.9), color=PURPLE, lw=1.4)
+    _box(ax, 5.0, 0.5, 5.0, 2.4, face='#e6e0f4', edge=PURPLE)
+    _label(ax, 7.5, 2.1, 'Prompting with a\ndemonstration', size=10.5, weight='bold')
+    _label(ax, 7.5, 1.0, 'the other way to\ndo this one step', size=9.5, color=MUTED)
+    _label(ax, 15, -0.9, 'Each page answers one question. A model has to pass all four '
            'before the arm can rely on it.', size=10.5, color=MUTED)
     _save(fig, 'making-models-work-on-an-arm/overview', 'notebook-to-arm.svg')
 

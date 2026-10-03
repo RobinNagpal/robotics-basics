@@ -320,6 +320,15 @@ gathered more than a million robot episodes from 22 different kinds of robot, wh
 many labs had recorded separately. Pooling them gave one dataset large enough to
 pretrain on.
 
+The phrase "or by simply asking it" above is worth returning to, because during 2026 it
+began to mean something new for robots. A foundation model for text can be put to a new
+job by writing a few worked examples into the question, with no training at all, and
+that is most of why such models spread so quickly. The same thing has now been claimed
+for manipulation: a model is shown one video of a task and does the task, with the task
+arriving as an input rather than being trained into the weights. [Prompting with a
+demonstration](../10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md)
+explains how that works, what it costs and how thin the evidence for it still is.
+
 Being a foundation model does not make a model always right, because it only means that
 the model starts from a broad base. So it still needs to be tested on your robot, and it
 still often needs fine-tuning.

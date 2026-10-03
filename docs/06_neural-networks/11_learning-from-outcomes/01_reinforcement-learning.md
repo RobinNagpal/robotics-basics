@@ -384,22 +384,52 @@ it visible.
 ```python
 import numpy as np
 
-n_states, n_actions, gamma, alpha = 50, 7, 0.95, 0.3   # section 1's world
+BLOCK, TRAY, BIN = (3, 2), (4, 2), (0, 4)              # section 1's little world
+MOVE = [(-1, 0), (1, 0), (0, -1), (0, 1)]              # up, down, left, right
+
+def step(state, action):
+    """The world answers: the next state, the reward, and whether it has ended."""
+    r, c, h = state // 10, (state // 2) % 5, state % 2  # row, column, holding
+    nr, nc, nh, reward, done = r, c, h, -0.1, False     # every action costs 0.1
+    if action < 4:
+        dr, dc = MOVE[action]
+        if 0 <= r + dr < 5 and 0 <= c + dc < 5:         # a wall leaves it where it was
+            nr, nc = r + dr, c + dc
+    elif action == 4:                                   # close the gripper
+        reward -= 0.05
+        if not h and (r, c) == BLOCK:
+            nh = 1
+    elif action == 5:                                   # open it
+        reward -= 0.05
+        if h:
+            if (r, c) == BIN:
+                reward, done = reward + 10.0, True
+            elif (r, c) == TRAY:
+                reward, done = reward + 2.0, True
+            else:
+                reward, nh = reward - 1.0, 0            # the block is dropped
+    return (nr * 5 + nc) * 2 + nh, reward, done
+
+n_states, n_actions, gamma, alpha = 50, 7, 0.95, 0.3
 Q = np.zeros((n_states, n_actions))                    # section 2's value table
 rng = np.random.default_rng(7)
 
 for attempt in range(6000):
     eps = 1.0 - 0.95 * attempt / 5999     # section 4: explore a lot, then less
-    state, done = 40, False               # state 40 is the start square
-    while not done:
+    state, seen = 40, []                  # state 40 is the start square
+    for _ in range(80):                   # give up after 80 moves
         if rng.random() < eps:
             action = int(rng.integers(n_actions))      # explore
         else:
             action = int(np.argmax(Q[state]))          # exploit
         nxt, reward, done = step(state, action)        # the world answers
-        target = reward if done else reward + gamma * Q[nxt].max()
-        Q[state, action] += alpha * (target - Q[state, action])   # section 3's rule
+        seen.append((state, action, nxt, reward, done))
         state = nxt
+        if done:
+            break
+    for st, ac, nxt, reward, done in reversed(seen):   # section 3's rule, last move first
+        target = reward if done else reward + gamma * Q[nxt].max()
+        Q[st, ac] += alpha * (target - Q[st, ac])
 
 print(Q[40].max())        # 5.43, the value of the start square
 print(np.argmax(Q[40]))   # 0, which is "up"
@@ -409,12 +439,18 @@ Both printed numbers are ones sections 2 and 3 quoted, and you can check the fir
 by hand, because the best attempt pays 9.85 ten steps away and costs about 0.1 a
 step before that.
 
+The one part worth a second look is that the attempt is remembered and the rule is
+then applied to its moves in reverse, last move first. Applying it as you go works
+too, but it is far slower to learn, because the reward at the bin has to travel
+back one square per attempt, whereas going backwards carries it the whole way in
+one. This is how the runs behind every picture on this page were made.
+
 A library does everything except that update rule. For a real arm the value table
 becomes a neural network, so `Q[state]` becomes a forward pass and the update
 becomes a loss and a gradient step. Stable-Baselines3 and CleanRL both ship
-proximal policy optimisation ready built, Gymnasium provides the `step` function
-above as the interface simulators implement, and MuJoCo and Isaac Lab provide the
-arm and the table.
+proximal policy optimisation ready built, the `step` function written out above is
+exactly the interface Gymnasium asks a simulator to provide, and MuJoCo and Isaac
+Lab provide the arm and the table.
 
 What you still decide is everything this page argued about. You choose the
 discount factor, and section 1 showed it changes which behaviour counts as best.

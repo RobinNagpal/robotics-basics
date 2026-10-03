@@ -2196,8 +2196,8 @@ def training_against_the_model() -> None:
     ax.plot(checkpoints, real, marker='s', color=SLIDE, lw=2.1,
             label='share of attempts that really reach the bin')
     ax.axhline(honest_score, color=INK, ls='--', lw=1.3)
-    ax.text(checkpoints[-1], honest_score + 0.03, f'a policy that does the job scores '
-            f'only {honest_score:.2f}', ha='right', fontsize=9.5, color=INK)
+    ax.text(checkpoints[0], honest_score + 0.03, f'a policy that does the job scores '
+            f'only {honest_score:.2f}', ha='left', fontsize=9.5, color=INK)
     for x, v in zip(checkpoints, model_score):
         ax.text(x, v + 0.03, f'{v:.2f}', ha='center', fontsize=9, color=PURPLE)
     for x, v in zip(checkpoints, real):
@@ -2206,7 +2206,8 @@ def training_against_the_model() -> None:
     ax.set_xlabel('attempts of training against the learned reward model', fontsize=10)
     ax.set_ylabel('score, and share of attempts', fontsize=10)
     ax.set_title('Training on the model\'s score alone', fontsize=12, weight='bold')
-    ax.legend(fontsize=9.5, frameon=False, loc='center right')
+    ax.legend(fontsize=9.5, frameon=False, loc='center right',
+              bbox_to_anchor=(1.0, 0.32))
     fig.tight_layout()
     _save(fig, RW_DOC, 'training-against-the-model.svg')
 
@@ -2683,7 +2684,7 @@ def the_two_scores_come_apart() -> None:
     sources = [('the learned reward model', model_reward_tables()),
                ('the true sparse reward', T_TRUE),
                ('the dense written reward', T_DENSE),
-               ('be near the block', T_DIST)]
+               ('a reward for being near the block', T_DIST)]
     xs: list[float] = []
     ys: list[float] = []
     cols: list[str] = []
@@ -2710,17 +2711,18 @@ def the_two_scores_come_apart() -> None:
           f'earns it reaches the bin on {ya[int(np.argmax(xa))]:.2f} of attempts')
     fig, ax = plt.subplots(figsize=(9.4, 5.6), facecolor='white')
     _plain(ax)
+    jit = np.random.default_rng(1).normal(0, 0.012, len(ya))
     for (name, _), colour in zip(sources, colours):
-        m = [c == colour for c in cols]
-        ax.scatter(xa[m], ya[m], s=46, color=colour, alpha=0.8, zorder=5,
-                   label=f'trained on {name}')
+        m = np.array([c == colour for c in cols])
+        ax.scatter(xa[m], ya[m] + jit[m], s=52, color=colour, alpha=0.75, zorder=5,
+                   edgecolor='white', lw=0.6, label=f'trained on {name}')
     ax.axvline(float(np.quantile(xa, 0.75)), color=MUTED, ls='--', lw=1.2)
     ax.set_xlabel('average score the learned reward model gives the policy', fontsize=10)
     ax.set_ylabel('share of attempts that really reach the bin', fontsize=10)
-    ax.set_ylim(-0.08, 1.18)
+    ax.set_ylim(-0.18, 1.35)
     ax.set_title(f'{len(xa)} policies, trained on four different rewards and stopped at '
                  'four points each', fontsize=11.5, weight='bold', color=INK)
-    ax.legend(fontsize=9, frameon=False, loc='lower left', ncol=2)
+    ax.legend(fontsize=9, frameon=False, loc='upper center', ncol=2)
     fig.suptitle('A higher score on the learned reward stops meaning a better robot',
                  fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
@@ -2802,14 +2804,14 @@ def staying_near_a_trusted_policy() -> None:
     for x, v in zip(betas, scores):
         ax.text(x, v - 0.07, f'{v:.2f}', ha='center', fontsize=9, color=PURPLE)
     ax.axhline(base_rate, color=MUTED, ls='--', lw=1.2)
-    ax.text(betas[-1], base_rate + 0.02, 'the trusted policy itself', ha='right',
+    ax.text(betas[0], base_rate + 0.03, 'the trusted policy itself', ha='left',
             fontsize=9, color=MUTED)
-    ax.set_ylim(-0.05, 1.15)
+    ax.set_ylim(-0.08, 1.20)
     ax.set_xlabel('how much the policy is charged for each action that differs from '
                   'the trusted one', fontsize=10)
     ax.set_ylabel('share of attempts, and model score', fontsize=10)
     ax.set_title('Three runs at each setting', fontsize=12, weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='center right')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     fig.suptitle('Holding the policy near one that is trusted keeps the hole from being '
                  'found', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()

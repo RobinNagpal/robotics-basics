@@ -18,9 +18,9 @@ statement of what you want, and the learner will do what it actually says.
 So this page works through the ways of getting a reward in the order people try
 them: writing one by hand, shaping it, learning one from examples of success and
 failure, learning one from a person's choices, and checking the outcome with a
-short program. For each it says what it is, what it buys you, why you would reach
-for it rather than the obvious alternative, and what it costs. Then it covers the
-failure they all share, which is called reward hacking.
+program. For each it says what it is, what it buys you, why you would reach for it
+rather than the obvious alternative, and what it costs. Then it covers the failure
+they all share, called reward hacking.
 
 It assumes you have read the page before, so that state, action, reward, return,
 policy and discount factor are familiar. The world is the same made-up table top,
@@ -73,9 +73,9 @@ much as doing the job, and a learner that maximises it is behaving correctly.
 Over four runs of 4,000 attempts the written reward rises from 22.56 to 77.20 while the share reaching the bin stays at 0.001.
 
 That pair of lines is what a reward failure looks like from the outside. The
-training curve climbs, the loss falls, every chart is green, and the robot never
-once does the job. Nothing the learner sees is wrong, and the only way to notice
-is to measure the job separately.
+training curve climbs, every chart is green, and the robot never once does the
+job. Nothing the learner sees is wrong, and the only way to notice is to measure
+the job separately.
 
 ![Two bar charts comparing three behaviours, one scored by the written reward where waiting wins with 78.2, and one scored by whether the block reached the bin where only one of them succeeds](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/three-behaviours-scored.svg)
 
@@ -137,9 +137,9 @@ as writing the reward. Everything that follows is about not having to.
 
 ## 3. A reward model learned from success and failure
 
-Sections 1 and 2 both ended at the same place, which is that writing the reward
-by hand is the problem. So the next idea is to stop writing it and to learn it,
-in exactly the way everything else in this book is learned, from examples.
+Sections 1 and 2 both ended at the same place, which is that writing the reward by
+hand is the problem, so the next idea is to stop writing it and learn it from
+examples, the way everything else in this book is learned.
 
 A **reward model** is an ordinary trained model whose input is a state, or a whole
 attempt, and whose output is a number saying how good it is. The examples are
@@ -158,10 +158,9 @@ The biggest weight is 1.70 for holding the block, and the score is 0.71 on the b
 
 What it buys you is a number for every state, learned rather than invented. Why
 reach for this rather than writing a dense reward yourself? Because labelling an
-attempt as a success or a failure is something an operator can do by watching, in
-a second, while writing a dense reward needs somebody to decide what every
-intermediate state is worth. Collecting a thousand labels is easier than getting
-one formula right.
+attempt as a success or a failure is something an operator can do by watching,
+while writing a dense reward needs somebody to decide what every intermediate state
+is worth. A thousand labels are easier to get than one right formula.
 
 ![A histogram of the model's score for states from successful and failed attempts, beside a line showing the score climbing along one good attempt](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/how-well-it-tells-them-apart.svg)
 
@@ -179,9 +178,9 @@ A policy trained on this score alone reaches 0.753 at every checkpoint from 250 
 
 ## 4. Asking a person which of two attempts was better
 
-Section 3 asked a person for a label, meaning a judgement about one attempt
-against an absolute standard, and this section asks for something easier, which
-is a judgement about one attempt against another.
+Section 3 asked a person for a judgement about one attempt against a standard, and
+this section asks for something easier, a judgement about one attempt against
+another.
 
 **Preference learning** means showing a person two attempts at the same job,
 asking only which they prefer, and fitting a reward so that the preferred one
@@ -191,7 +190,7 @@ the same attempt will disagree about the number while agreeing about the order.
 
 ![Two grids showing the paths of two attempts side by side, one reaching the bin and one wandering until the time runs out, with the fitted score of each](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/a-pair-to-judge.svg)
 
-The person is shown one attempt worth 8.90 and one worth minus 14.80, and the fitted model scores them minus 9.57 and minus 75.81, in the same order.
+The person is shown one attempt worth 8.90 and one worth minus 14.80, and the fitted model scores them minus 2.40 and minus 19.20, in the same order.
 
 The fitting works by giving each attempt a score, the total of the fitted
 per-state reward over the states it passed through, and adjusting the reward so
@@ -201,7 +200,7 @@ only most of the time, so that the effect of mistakes can be measured.
 
 ![Two grids of the fitted per-state reward and a bar chart of the fitted weights, with the reward least negative near the bin](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/what-the-preferences-taught.svg)
 
-From choices alone the fit gives minus 1.08 at the start, minus 1.00 on the block's square and minus 0.86 on the bin's while holding, so it rises along the route.
+From choices alone the fit scores the bin square while holding at minus 0.20, the best of the squares along the route, because it has found that the preferred attempts end far from the block's own square and close to the bin.
 
 ![A line chart of the share of held-out pairs ordered the same way as the truth, against the number of judged pairs on a log scale](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/how-many-pairs.svg)
 
@@ -212,17 +211,17 @@ Ten judged pairs order 0.83 of held-out pairs correctly and a hundred manage 0.9
 A careless judge costs accuracy rather than ruining the fit, because more pairs average the mistakes out.
 
 Why reach for preferences rather than the labels of section 3? Because the question
-is easier to answer, so answers are cheaper and more consistent, and because a
-preference can rank two failures where a yes or no cannot. What it costs is that
-the reward is only defined up to an ordering, and the person is still in the loop,
-which means the method runs at human speed.
+is easier, so answers are cheaper and more consistent, and because a preference can
+rank two failures where a yes or no cannot. What it costs is that the reward is
+only defined up to an ordering, and the person is still in the loop, so the method
+runs at human speed.
 
 ---
 
 ## 5. Verifiers: a program that checks the outcome
 
-Sections 3 and 4 both learned the reward, and a learned reward can be wrong.
-This section is about the case where you do not have to learn it at all.
+Sections 3 and 4 both learned the reward, and a learned reward can be wrong, so
+this section is about the case where you do not have to learn it at all.
 
 A **verifier** is a short program that looks at the finished attempt and decides
 whether it met the goal. It is not a model, it has no weights, and it cannot be
@@ -262,7 +261,7 @@ thing optimised at the end. The next section is about why that is needed.
 
 ## 6. Reward hacking, and what is done about it
 
-Every section above has shown the same failure in a different costume, and this
+Every section above has shown the same failure in a different form, and this
 section names it and says what is done.
 
 **Reward hacking** means finding a behaviour that scores highly on the reward and
@@ -279,10 +278,10 @@ Paying for a block put down on the near tray, and letting the attempt carry on, 
 
 The squeezing policy scores 78.2 against 13.6, 68.0 against 14.9 and 222.1 against 8.9, and never once puts the block in the bin.
 
-The same thing happens to a learned reward, and it happens faster, because a
-learned reward has places where it is wrong and a search finds them. The way to
-see it is to measure many policies twice, once by the reward they were trained
-on and once by the job.
+The same thing happens to a learned reward, and faster, because a learned reward
+has places where it is wrong and a search finds them. The way to see it is to
+measure many policies twice, once by the reward they were trained on and once by
+the job.
 
 ![A scatter plot of the learned reward model's score against the share of attempts really reaching the bin, for policies trained on four different rewards](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/the-two-scores-come-apart.svg)
 
@@ -291,11 +290,12 @@ Of 48 policies, the quarter with the highest learned-reward score never put the 
 Four things are done about this, and none is a cure. The first is to keep a
 **hold-out check on the real goal**, measured separately and never optimised,
 which is the only reason anybody notices the problem. The second is to use more
-than one reward at once, so that a hole in one is covered by another.
+than one reward at once, with the one that cannot be gamed in charge, so that a
+hole in the learned one is covered.
 
-![A bar chart comparing the share of attempts reaching the bin for a learner trained on the learned reward alone and one trained on the learned reward with the verifier added](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/two-rewards-together.svg)
+![A bar chart comparing the share of attempts reaching the bin for a learner trained on the learned reward alone and one trained on the verifier with the learned reward as a nudge](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/two-rewards-together.svg)
 
-Adding the verifier's payment to the learned reward model's score turns a policy that never finishes the job into one that does.
+Making the verifier's payment the main term and keeping the learned score as a small nudge turns a policy that never finishes the job into one that finishes every time.
 
 The third is to have a person watch recordings of what the policy does, because
 every failure on this page is obvious in two seconds of video and invisible in the
@@ -306,7 +306,7 @@ least.
 
 ![A line chart of the share of attempts reaching the bin and the learned-reward score against the strength of the charge for differing from a trusted policy](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/staying-near-a-trusted-policy.svg)
 
-With no charge the policy chases the learned reward and never reaches the bin; once the charge is large enough it is pulled back onto the trusted policy.
+With a charge below 3 the policy chases the learned reward and never reaches the bin, and at 3 and above it is pulled back onto the trusted policy and finishes every time.
 
 The honest summary is that none of these finds the hole, and all of them catch it
 only after the learner has. That is why serious work in this area reports a

@@ -2660,30 +2660,28 @@ def fig_prune_masks() -> None:
     """Section 5: scattered zeros leave the shape alone; whole neurons shrink it."""
     b = big()
     w = b.w[1][:24, :24]
-    flat = np.abs(w).ravel()
-    thresh = np.quantile(flat, 0.5)
-    scattered = np.abs(w) >= thresh
-    keep_cols = np.argsort(-np.linalg.norm(b.w[1], axis=1))[:12]
-    keep_cols.sort()
-    structured = np.zeros_like(scattered)
-    for c in keep_cols:
-        if c < 24:
-            structured[:, c] = True
-    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.9), facecolor='white')
-    titles = ['every weight kept', 'half the weights set to zero,\nwherever they happen to be',
-              'half the output channels\nremoved completely']
-    masks = [np.ones_like(scattered), scattered, structured]
-    costs = [f'{24 * 24:,} multiply-adds', f'{24 * 24:,} multiply-adds on ordinary hardware',
-             f'{24 * 12:,} multiply-adds, truly']
-    for ax, title, mask, cost in zip(axes, titles, masks, costs):
+    vmax = float(np.abs(w).max())
+    thresh = np.quantile(np.abs(w).ravel(), 0.5)
+    scattered = np.where(np.abs(w) >= thresh, np.abs(w), np.nan)
+    keep_cols = np.sort(np.argsort(-np.linalg.norm(w, axis=0))[:12])
+    narrow = np.abs(w[:, keep_cols])
+    fig, axes = plt.subplots(1, 3, figsize=(13.4, 5.0), facecolor='white')
+    panels = [('every weight kept', np.abs(w), 24, f'{24 * 24:,} multiply-adds',
+               'shape 24 x 24'),
+              ('half the weights set to zero,\nwherever they happen to be', scattered, 24,
+               f'{24 * 24:,} multiply-adds on\nordinary hardware', 'shape still 24 x 24'),
+              ('half the output channels\ntaken out completely', narrow, 12,
+               f'{24 * 12:,} multiply-adds, truly', 'shape now 24 x 12')]
+    for ax, (title, mat, width, cost, shape) in zip(axes, panels):
         _blank(ax)
-        ax.imshow(np.where(mask, np.abs(w), np.nan), cmap='Blues', vmin=0,
-                  vmax=float(np.abs(w).max()), interpolation='nearest')
-        ax.set_facecolor('#f3f3f3')
+        ax.imshow(mat, cmap='Blues', vmin=0, vmax=vmax, interpolation='nearest',
+                  extent=(0.0, float(width), 24.0, 0.0))
+        ax.add_patch(Rectangle((0, 0), width, 24, facecolor='none', edgecolor=INK, lw=1.2))
+        ax.set_xlim(0, 24)
+        ax.set_ylim(31.5, -1.0)
         ax.set_title(title, fontsize=10.6, weight='bold')
-        ax.text(11.5, 25.6, cost, ha='center', fontsize=9.6, color=INK)
-        ax.text(11.5, 27.3, f'shape still 24 x 24' if mask is not structured
-                else 'shape now 24 x 12', ha='center', fontsize=9.2, color=MUTED)
+        ax.text(12, 25.6, cost, ha='center', va='top', fontsize=9.6, color=INK)
+        ax.text(12, 29.6, shape, ha='center', va='top', fontsize=9.2, color=MUTED)
     fig.suptitle('A hole in a matrix is still a matrix: only taking whole channels out '
                  'makes the multiplication smaller',
                  fontsize=12.0, weight='bold', y=1.02)
@@ -2802,14 +2800,16 @@ def fig_accuracy_against_saving() -> None:
     _plain(ax)
     for name, acc, save, col in pts:
         ax.plot([save], [b.acc - acc], 'o', color=col, ms=11)
-        ax.annotate(name, xy=(save, b.acc - acc), xytext=(save * 1.07, b.acc - acc + 0.004),
-                    fontsize=9.3, color=col)
+        dy = -0.0085 if (b.acc - acc) > 0.05 else 0.004
+        ax.annotate(name, xy=(save, b.acc - acc), xytext=(save * 1.07, b.acc - acc + dy),
+                    fontsize=9.3, color=col, va='top' if dy < 0 else 'bottom')
     ax.axhline(0.0, color=INK, lw=1.0)
-    ax.text(1.02, -0.004, 'no accuracy lost at all', fontsize=9.3, color=INK)
+    ax.set_ylim(-0.006, 0.070)
+    ax.text(1.05, 0.0015, 'no accuracy lost at all', fontsize=9.3, color=INK)
     ax.set_xscale('log', base=2)
     ax.set_xticks([1, 2, 4, 8, 16, 32, 64, 128])
     ax.set_xticklabels(['1', '2', '4', '8', '16', '32', '64', '128'])
-    ax.set_xlim(0.85, 190)
+    ax.set_xlim(0.85, 330)
     ax.set_xlabel('times smaller than the trained network (log scale)', fontsize=10)
     ax.set_ylabel('accuracy given up', fontsize=10)
     ax.set_title('Measured on the same small network: a distilled student squeezed to 4 '
@@ -2827,42 +2827,45 @@ def fig_summary_table() -> None:
     pq = exp_ptq_qat()
     dist = exp_distil()
     st = exp_stack()
+
+    def gap(a: float) -> str:
+        return f'{round(b.acc, 3) - round(a, 3):+.3f}'
+
     rows = [
-        ('8-bit weights, one scale per channel', f'{pq["ptq"][0]:.3f}',
-         f'{b.acc - pq["ptq"][0]:+.3f}', '2 times', '2 times', 'measured'),
-        ('4-bit weights, one scale per channel', f'{pq["ptq"][3]:.3f}',
-         f'{b.acc - pq["ptq"][3]:+.3f}', '4 times', '4 times', 'measured'),
-        ('2-bit weights, quantisation-aware', f'{pq["qat"][5]:.3f}',
-         f'{b.acc - pq["qat"][5]:+.3f}', '8 times', '8 times', 'measured'),
-        ('half the weights zeroed freely', f'{d["uns"][3]:.3f}',
-         f'{b.acc - d["uns"][3]:+.3f}', 'none on ordinary\nhardware', 'none', 'measured'),
-        ('2 of every 4 weights kept', f'{d["two_four"]:.3f}',
-         f'{b.acc - d["two_four"]:+.3f}', '2 times, if the\nhardware knows',
-         'up to 2 times', 'measured, speed illustrative'),
-        ('32 of 48 hidden neurons kept', f'{d["stru"][2]:.3f}',
-         f'{b.acc - d["stru"][2]:+.3f}', '2.0 times', '2.0 times', 'measured'),
+        ('8-bit weights, a scale per channel', f'{pq["ptq"][0]:.3f}', gap(pq['ptq'][0]),
+         '2 times', '2 times', 'measured'),
+        ('4-bit weights, a scale per channel', f'{pq["ptq"][3]:.3f}', gap(pq['ptq'][3]),
+         '4 times', '4 times', 'measured'),
+        ('2-bit weights, trained for it', f'{pq["qat"][5]:.3f}', gap(pq['qat'][5]),
+         '8 times', '8 times', 'measured'),
+        ('half the weights zeroed freely', f'{d["uns"][3]:.3f}', gap(d['uns'][3]),
+         'none on ordinary\nhardware', 'none', 'measured'),
+        ('2 of every 4 weights kept', f'{d["two_four"]:.3f}', gap(d['two_four']),
+         '2 times, if the\nhardware knows', 'up to 2 times', 'measured, saving\nillustrative'),
+        ('32 of 48 hidden neurons kept', f'{d["stru"][2]:.3f}', gap(d['stru'][2]),
+         '2.0 times', '2.0 times', 'measured'),
         ('distilled into a smaller student', f'{dist["soft"][-1]:.3f}',
-         f'{b.acc - dist["soft"][-1]:+.3f}', '20.7 times', '22.0 times', 'measured'),
+         gap(dist['soft'][-1]), '20.7 times', '22.0 times', 'measured'),
         ('distilled, then squeezed to 4 bits', f'{st["rows"][4][1]:.3f}',
-         f'{b.acc - st["rows"][4][1]:+.3f}', '82.8 times', '22.0 times', 'measured'),
+         gap(st['rows'][4][1]), '82.8 times', '22.0 times', 'measured'),
     ]
-    fig, ax = plt.subplots(figsize=(13.6, 5.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(13.6, 5.8), facecolor='white')
     _blank(ax)
     heads = ['what was done', 'accuracy', 'accuracy\ngiven up', 'memory\nsaved',
              'arithmetic\nsaved', 'where the number\ncomes from']
-    xs = [0.02, 0.40, 0.50, 0.615, 0.745, 0.875]
+    xs = [0.015, 0.355, 0.445, 0.555, 0.685, 0.810]
     for x, h in zip(xs, heads):
-        ax.text(x, 0.93, h, fontsize=9.8, color=MUTED, weight='bold', va='top')
+        ax.text(x, 0.99, h, fontsize=9.8, color=MUTED, weight='bold', va='top')
     ax.plot([0.0, 1.0], [0.875, 0.875], color=INK, lw=1.0)
     for i, row in enumerate(rows):
-        y = 0.825 - i * 0.098
+        y = 0.815 - i * 0.100
         if i % 2 == 0:
-            ax.add_patch(Rectangle((0.0, y - 0.052), 1.0, 0.094, facecolor='#f6f6f6',
+            ax.add_patch(Rectangle((0.0, y - 0.050), 1.0, 0.096, facecolor='#f6f6f6',
                                    edgecolor='none'))
         for x, cell in zip(xs, row):
             ax.text(x, y, cell, fontsize=9.4, color=INK, va='center')
     ax.set_xlim(0, 1.0)
-    ax.set_ylim(-0.02, 1.0)
+    ax.set_ylim(-0.02, 1.02)
     ax.set_title(f'Every row measured on the same {b.n_param:,}-parameter network, whose '
                  f'own accuracy is {b.acc:.3f}',
                  fontsize=11.8, weight='bold')
@@ -2874,7 +2877,7 @@ def fig_stack_methods() -> None:
     st = exp_stack()
     rows = st['rows']                        # type: ignore[index]
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.2), facecolor='white')
-    names = [r[0].replace(', ', ',\n') for r in rows]
+    names = [r[0].replace(', ', '\n').replace(' a weight', '') for r in rows]
     accs = [r[1] for r in rows]
     bytes_ = [r[2] for r in rows]
     cols = [GRIP, WRIST, LINK, TEAL, SLIDE]

@@ -23,11 +23,11 @@ the families of model a robot arm runs, and the last is about getting one workin
 on a real machine.
 
 This page answers the question that comes before all of those. Why train a model
-at all, when a program is just rules and a person can write rules? The answer is
-that there are two kinds of job, and for one of them nobody can write the rule
-down, because the rule is not short enough to write. So this page shows three jobs
-of each kind, says what separates them, and then fits a program from examples with
-a calculator. Every number here was worked out by
+at all, when a program is just rules and a person can write rules? Because there
+are two kinds of job, and for one of them nobody can write the rule down, since it
+is not short enough to write. So this page shows three jobs of each kind, says
+what separates them, and then fits a program from examples with a calculator.
+Every number here was worked out by
 [`docs/diagrams/what_learning_means.py`](../../diagrams/what_learning_means.py),
 which also drew every picture, and everything that looks like sensor data is
 simulated with a fixed random seed.
@@ -150,12 +150,11 @@ separate, and the next section follows that clue.
 
 ## 3. What the difference between the two lists really is
 
-The six jobs split into two groups, and it is worth being exact about what
-separates them, because the rest of this book follows from it. The first
-difference is how many different inputs there are. A switch has two states, and a
-joint angle recorded to a tenth of a degree over 340 degrees has 3,401, so a
-person could write a table with one line per state, while a picture cannot be
-handled that way.
+The six jobs split into two groups, and being exact about what separates them
+matters, because the rest of this book follows from it. The first difference is
+how many different inputs there are. A switch has two states and a joint angle
+recorded to a tenth of a degree over 340 degrees has 3,401, so a person could
+write a table with one line per state, while a picture cannot be handled that way.
 
 ![A bar chart on a powers-of-ten scale comparing the number of different inputs for a switch, a joint angle, a 5 by 5 grey patch and an 18 by 26 picture](../../images/what-learning-means/why-not-just-write-the-rules/how-many-pictures.svg)
 
@@ -178,11 +177,10 @@ own colour and lighting.
 The best threshold on the brightness inside the rim gets 0.611 of unseen cups right, on the spread 0.850, on the wall 0.477 and on the inside minus the wall 0.884, while a model fitted to the first three numbers reaches 0.926 with nobody telling it about the subtraction.
 
 Read that chart as a person getting steadily cleverer. The first threshold barely
-beats a coin, the second is better by luck because a full cup's surface does vary
-more, and the third is useless alone. The fourth is good only because a person
-spent an afternoon working out that the cup's colour has to be cancelled. The last
-bar comes of handing the first three numbers to a program that searches for the
-combination itself, and it beats the person's answer.
+beats a coin, the second is better by luck, and the third is useless alone. The
+fourth is good only because a person spent an afternoon working out that the cup's
+colour has to be cancelled, and the last bar, which beats it, comes of handing the
+first three numbers to a program that searches for the combination itself.
 
 The third difference lies underneath the other two. Where a rule works, one input
 has exactly one right answer, and where no rule works, the same input happens with
@@ -245,12 +243,10 @@ it can be, and the picture below shows that by trying every slope in turn.
 
 Every slope between 0.2 and 2.6 was tried with the offset held at 0.5, and the total squared miss has one lowest point, 0.28 at a slope of 1.4.
 
-The misses are squared before adding for two reasons. Squaring makes every miss
-positive, so a line 2 mm too high on one measurement and 2 mm too low on the next
-cannot claim the two cancel out, and squaring makes one big miss cost more than
-several small ones, which is usually what you want when the gripper has 5 mm of
-clearance. So there is now a number saying how wrong an answer is, and three
-answers to compare with it.
+The misses are squared before adding so that a line 2 mm too high on one
+measurement and 2 mm too low on the next cannot claim the two cancel out, and so
+that one big miss costs more than several small ones. There is now a number saying
+how wrong an answer is, and three answers to compare with it.
 
 ![Two bar charts comparing always saying the average, the hand-written rule and the fitted line, by average squared miss and by typical miss in millimetres](../../images/what-learning-means/why-not-just-write-the-rules/three-answers.svg)
 
@@ -293,12 +289,12 @@ those are what the whole thing is for.
 
 At 0.25, 0.75, 1.25, 1.75 and 2.25 kilograms the line predicts 0.850, 1.550, 2.250, 2.950 and 3.650 millimetres, while measuring later gives 1.09, 1.62, 2.13, 2.67 and 3.23, so the misses run from +0.07 to -0.42 millimetres.
 
-Those five later measurements are simulated. The typical miss on them is 0.258 mm,
+Those five measurements are simulated. The typical miss on them is 0.258 mm,
 against 0.216 mm on the six the line was fitted to, which is worse and should be,
-because the line was never shown them. A prediction is something the model
-produces for any input you give it, while a label is what a person or an
-instrument produced for one input that actually happened, and keeping the two
-apart is most of what it takes to read an honest claim about a model.
+because the line was never shown them. A prediction is what the model produces for
+any input you give it, while a label is what a person or an instrument produced
+for one input that actually happened, and keeping the two apart is most of what it
+takes to read an honest claim about a model.
 
 A feature is not just any number you happen to have, because the answer has to
 depend on it, and the only way to find out whether it does is to look.
@@ -308,11 +304,10 @@ depend on it, and the only way to find out whether it does is to look.
 Across 60 simulated loads, drop and mass agree at +0.97 and a line through them misses by 0.24 millimetres, while drop and paint colour agree at -0.01 and the best line misses by 1.07 millimetres.
 
 The agreement number runs from -1 to +1, where +1 means the two always rise
-together, -1 means one rises as the other falls, and 0 means knowing one tells you
-nothing about the other. The mass is a feature of this job and the paint colour is
-not, and nothing about the two columns says which is which until you fit a line to
-each and compare the misses. The last thing to say about a label is that it is a
-measurement, and measurements wobble.
+together and 0 means knowing one tells you nothing about the other. The mass is a
+feature of this job and the paint colour is not, and nothing about the two columns
+says which is which until you fit a line to each. The last thing to say about a
+label is that it is a measurement, and measurements wobble.
 
 ![Twelve measurements of the tool tip drop taken at the same 1.0 kilogram mass, spread between 1.60 and 2.16 millimetres, with the average marked at 1.83](../../images/what-learning-means/why-not-just-write-the-rules/label-noise.svg)
 
@@ -352,10 +347,10 @@ The second cost is that you need examples, and more of them than feels reasonabl
 Averaged over 200 repeats with fresh simulated measurements, 3 examples give a typical miss of 0.640 millimetres, 20 give 0.231 and 160 give 0.221, which is as low as the 0.22 spread of the measurements allows.
 
 Going from 3 examples to 20 cuts the miss by nearly three times, while going from
-20 to 160 is worth almost nothing here, because the line holds two numbers and
-twenty examples already pin both down. A model with millions of numbers inside it
-does not flatten off so soon, which is why the models later in this book are
-trained on far more data.
+20 to 160 is worth almost nothing, because the line holds two numbers and twenty
+examples already pin both down. A model with millions of numbers does not flatten
+off so soon, which is why the models later in this book are trained on far more
+data.
 
 The third cost is that fitting believes its examples completely.
 
@@ -373,13 +368,11 @@ and correct outside the range you tested, and you can only have one when somebod
 knows the rule. A fitted model needs no such knowledge and finds relationships a
 person would never guess, and in exchange it is only as good as its examples, only
 trustworthy over the range they covered, and quietly wrong when they are wrong. So
-for the jobs in section 1 the written rule wins every time and you should write it,
-while for the jobs in section 2 there is no written rule for it to lose to.
-
-Everything else in this book is the same trade at a larger size, where the formula
-holds more numbers than two, the examples are counted in millions, and the search
-takes a building full of computers rather than one division. The shape of the idea
-does not change.
+for the jobs in section 1 the written rule wins and you should write it, while for
+the jobs in section 2 there is no written rule for it to lose to. Everything else
+in this book is the same trade at a larger size, where the formula holds more
+numbers, the examples are counted in millions, and the search takes a building
+full of computers rather than one division.
 
 ---
 

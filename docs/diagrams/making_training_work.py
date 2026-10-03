@@ -258,15 +258,20 @@ def fig_error_vs_degree() -> None:
     ax.plot(CV.degrees, CV.e_ho, 's-', color=GRIP, lw=2.0, ms=6,
             label='error on the 50 held-out points')
     ax.axhline(NOISE_SD, color=MUTED, ls=':', lw=1.3)
-    ax.text(0.1, NOISE_SD * 1.12, f'noise in the measurements: {NOISE_SD}',
+    ax.text(7.4, NOISE_SD * 1.15, f'noise in the measurements: {NOISE_SD}',
             fontsize=9, color=MUTED)
     i = CV.degrees.index(CV.best)
     ax.scatter([CV.best], [CV.e_ho[i]], s=200, facecolor='none',
                edgecolor=SLIDE, linewidth=2.2, zorder=6)
     ax.annotate(f'best held-out error\n{CV.e_ho[i]:.3f} at degree {CV.best}',
-                xy=(CV.best, CV.e_ho[i]), xytext=(CV.best + 0.7, 0.055),
+                xy=(CV.best, CV.e_ho[i]), xytext=(2.1, 0.038),
                 fontsize=9.5, color=SLIDE,
                 arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.3))
+    ax.annotate(f'training error is {CV.e_tr[-1]:.4f} here,\nbelow the bottom '
+                'of the axis', xy=(11, 0.027), xytext=(7.0, 0.012),
+                fontsize=9.2, color=LINK, ha='center',
+                arrowprops=dict(arrowstyle='->', color=LINK, lw=1.1))
+    ax.set_ylim(0.009, 5000)
     ax.set_yscale('log')
     ax.set_xticks(CV.degrees)
     ax.set_xlabel('degree of the polynomial, which is how flexible the model is',
@@ -475,7 +480,7 @@ def fig_reusing_the_test_set() -> None:
     ax.set_xlabel('how many candidates were compared on the same test set',
                   fontsize=10)
     ax.set_ylabel('success rate (%)', fontsize=10)
-    ax.set_ylim(60, 92)
+    ax.set_ylim(60, 94)
     ax.grid(True, color=GRID, lw=0.6)
     ax.legend(fontsize=9.3, loc='upper left')
     _title(ax, 'Picking the winner on the test set makes the test set lie: '
@@ -592,9 +597,9 @@ def fig_split_kinds_score() -> None:
                 f'{v * 100:.1f}%', ha='center', fontsize=11, color=INK,
                 weight='bold')
     ax.axhline(FR.chance * 100, color=MUTED, ls=':', lw=1.4)
-    ax.text(2.42, FR.chance * 100 + 1.4,
-            f'guessing: {FR.chance * 100:.1f}%', fontsize=9.2, color=MUTED,
-            ha='right')
+    ax.text(-0.42, FR.chance * 100 + 2.5,
+            f'guessing would score {FR.chance * 100:.1f}%', fontsize=9.2,
+            color=MUTED, ha='left')
     ax.set_ylim(0, 112)
     ax.set_ylabel('accuracy of the same model on held-out frames (%)', fontsize=10)
     ax.grid(True, axis='y', color=GRID, lw=0.6)
@@ -782,7 +787,7 @@ class Decay:
 def fig_weight_sizes(dec: Decay) -> None:
     fig, ax = plt.subplots(figsize=(7.8, 4.4))
     _plain(ax)
-    bins = np.linspace(-3.0, 3.0, 61)
+    bins = np.linspace(-7.5, 7.5, 76)
     a = dec.weights[0.0]
     b = dec.weights[dec.best_wd]
     ax.hist(a, bins=bins, color=GRIP, alpha=0.6, label=f'no weight decay, '
@@ -815,7 +820,7 @@ def fig_weight_decay_sweep(dec: Decay) -> None:
     ax.annotate(f'best: decay {dec.best_wd},\nvalidation '
                 f'{dec.final_ho[dec.best_i]:.4f}',
                 xy=(xs[dec.best_i], dec.final_ho[dec.best_i]),
-                xytext=(0.012, 0.9), fontsize=9.6, color=SLIDE,
+                xytext=(0.02, 0.055), fontsize=9.6, color=SLIDE,
                 arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.2))
     ax.annotate(f'no decay:\n{dec.final_ho[0]:.2f}', xy=(xs[0], dec.final_ho[0]),
                 xytext=(0.0045, 1.4), fontsize=9.6, color=GRIP,
@@ -1059,12 +1064,12 @@ def fig_double_descent() -> None:
     ax.plot(DD.ps, DD.e_te, 'o-', color=GRIP, lw=2.2, ms=5,
             label=f'error on {DD.n_te:,} held-out examples')
     ax.axvline(DD.n, color=MUTED, ls='--', lw=1.4)
-    ax.text(DD.n * 1.08, 1.86,
-            f'width = number of\ntraining examples ({DD.n})',
+    ax.text(DD.n * 1.12, 0.17,
+            f'width = number of training\nexamples ({DD.n})',
             fontsize=9.3, color=MUTED)
-    for i, note, dx, dy in ((DD.classic_i, 'best narrow model\n', 0.35, 0.42),
-                            (DD.peak_i, 'worst of all\n', 1.6, 0.06),
-                            (DD.final_i, 'widest model\n', 0.14, 0.42)):
+    for i, note, dx, dy in ((DD.classic_i, 'best narrow model\n', 0.30, 0.42),
+                            (DD.peak_i, 'worst of all\n', 0.33, 0.22),
+                            (DD.final_i, 'widest model\n', 0.13, 0.42)):
         ax.annotate(f'{note}width {DD.ps[i]}, error {DD.e_te[i]:.3f}',
                     xy=(DD.ps[i], DD.e_te[i]),
                     xytext=(DD.ps[i] * dx, DD.e_te[i] + dy),
@@ -1148,7 +1153,7 @@ class Scaling:
         e0 = vec.T @ (np.zeros(3) - w_opt)
         return {'lam': lam, 'vec': vec, 'w_opt': w_opt, 'loss_opt': loss_opt,
                 'e0': e0, 'lr_max': float(2.0 / lam[-1]),
-                'lr': float(1.9 / lam[-1]),
+                'lr': float(1.0 / lam[-1]),
                 'cond': float(lam[-1] / lam[0])}
 
     @staticmethod
@@ -1195,22 +1200,23 @@ def fig_feature_ranges() -> None:
              ['reach, standardised', 'height, standardised'])]
     for ax, (name, data, labels) in zip(axes, sets):
         _plain(ax)
+        if name == 'as measured':
+            ax.set_xscale('symlog', linthresh=0.05)
+            ax.set_xlim(0.004, 3.0e4)
         for i, lab in enumerate(labels):
             col = LINK if i == 0 else JOINT
             ax.scatter(data[:, i], np.full(SC.n, 1 - i) + np.random.default_rng(i)
                        .normal(0, 0.045, SC.n), s=9, color=col, alpha=0.55)
-            ax.text(data[:, i].mean(), 1 - i + 0.26,
-                    f'{lab}\nfrom {data[:, i].min():.3g} to '
-                    f'{data[:, i].max():.3g}, spread '
-                    f'{data[:, i].std():.3g}',
+            ax.text(data[:, i].mean(), 1 - i + 0.3,
+                    f'{lab}\nfrom {data[:, i].min():.4g} to '
+                    f'{data[:, i].max():.4g}\nspread '
+                    f'{data[:, i].std():.5g}',
                     ha='center', fontsize=9.0, color=INK)
         ax.set_yticks([])
-        ax.set_ylim(-0.75, 1.75)
+        ax.set_ylim(-0.85, 2.0)
         ax.set_xlabel('value of the feature', fontsize=10)
         ax.set_title(name, fontsize=11, color=INK)
         ax.grid(True, axis='x', color=GRID, lw=0.6)
-        if name == 'as measured':
-            ax.set_xscale('symlog', linthresh=0.1)
     fig.suptitle('Two features of the same reaching move, one about '
                  f'{SC.mu[0] / SC.mu[1]:,.0f} times bigger than the other '
                  'until both are standardised',
@@ -1220,30 +1226,32 @@ def fig_feature_ranges() -> None:
 
 def fig_steps_to_train() -> None:
     ts = np.unique(np.round(np.logspace(0, 8, 500)).astype(np.int64))
+    floor = 1e-6
     fig, ax = plt.subplots(figsize=(8.0, 4.6))
     _plain(ax)
-    ax.plot(ts, SC.excess(SC.raw, ts), color=GRIP, lw=2.2,
+    ax.plot(ts, np.maximum(SC.excess(SC.raw, ts), floor), color=GRIP, lw=2.2,
             label=f'as measured, learning rate {SC.raw["lr"]:.2g}')
-    ax.plot(ts, SC.excess(SC.std, ts), color=LINK, lw=2.2,
+    ax.plot(ts, np.maximum(SC.excess(SC.std, ts), floor), color=LINK, lw=2.2,
             label=f'standardised, learning rate {SC.std["lr"]:.3g}')
     ax.axhline(SC.target, color=MUTED, ls=':', lw=1.4)
-    ax.text(1.4, SC.target * 1.25,
+    ax.text(1.4, SC.target * 1.6,
             f'close enough: loss within {SC.target} of the best possible',
             fontsize=9.2, color=MUTED)
-    for info, steps, col in ((SC.std, SC.std_steps, LINK),
-                             (SC.raw, SC.raw_steps, GRIP)):
+    for info, steps, col, dy in ((SC.std, SC.std_steps, LINK, 60.0),
+                                 (SC.raw, SC.raw_steps, GRIP, 300.0)):
         ax.scatter([steps], [SC.target], s=130, facecolor='none',
                    edgecolor=col, linewidth=2.0, zorder=6)
         ax.annotate(f'{steps:,} steps', xy=(steps, SC.target),
-                    xytext=(steps, SC.target * 40), fontsize=10, color=col,
+                    xytext=(steps, SC.target * dy), fontsize=10.5, color=col,
                     ha='center',
                     arrowprops=dict(arrowstyle='->', color=col, lw=1.2))
     ax.set_xscale('log')
     ax.set_yscale('log')
+    ax.set_ylim(floor * 0.6, 2.0e4)
     ax.set_xlabel('gradient descent step (log scale)', fontsize=10)
     ax.set_ylabel('loss above the best possible loss (log scale)', fontsize=10)
     ax.grid(True, color=GRID, lw=0.6, which='both')
-    ax.legend(fontsize=9.5, loc='upper right')
+    ax.legend(fontsize=9.5, loc='lower left')
     _title(ax, f'Standardising the two features turns {SC.raw_steps:,} steps '
                f'into {SC.std_steps}')
     _save(fig, NRM_DOC, 'steps-to-train.svg')
@@ -1263,39 +1271,43 @@ def fig_weight_paths() -> None:
             ax.plot(np.maximum(ts, 1), path[:, j] / w_opt[j], lw=2.2, color=c,
                     label=lab)
         ax.axhline(1.0, color=MUTED, ls='--', lw=1.3)
-        ax.text(1.3, 1.06, 'the value that fits best', fontsize=9.0, color=MUTED)
+        ax.text(1.3, 1.10, 'the value that fits best', fontsize=9.0, color=MUTED)
         if name == 'as measured':
             ax.set_xscale('log')
             ax.set_xlabel('step (log scale)', fontsize=10)
+            ax.grid(True, color=GRID, lw=0.6, which='major')
         else:
             ax.set_xlabel('step', fontsize=10)
-        ax.set_ylim(-0.12, 1.35)
+            ax.grid(True, color=GRID, lw=0.6)
+        ax.set_ylim(-0.12, 1.28)
         ax.set_ylabel('weight, as a fraction of its best value', fontsize=10)
         ax.set_title(name, fontsize=11, color=INK)
-        ax.grid(True, color=GRID, lw=0.6, which='both')
         ax.legend(fontsize=9.2, loc='lower right')
-    fig.suptitle('In raw units the weight on reach is right after a few hundred '
-                 'steps while the weight on height is still near zero a million '
-                 'steps later', fontsize=11.5, weight='bold', color=INK, y=1.04)
+    fig.suptitle('In raw units the weight on reach settles within a few steps '
+                 'while the weight on height is still near zero a million steps '
+                 'later', fontsize=11.5, weight='bold', color=INK, y=1.04)
     _save(fig, NRM_DOC, 'weight-paths.svg')
 
 
 def fig_largest_learning_rate() -> None:
     fig, ax = plt.subplots(figsize=(7.6, 4.3))
     _plain(ax)
+    ax.set_axisbelow(True)
     names = ['as measured\n(millimetres and metres)', 'standardised\n(both)']
     vals = [SC.raw['lr_max'], SC.std['lr_max']]
     conds = [SC.raw['cond'], SC.std['cond']]
-    bars = ax.bar(names, vals, color=[GRIP, LINK], width=0.45, edgecolor='white')
+    bars = ax.bar(names, vals, color=[GRIP, LINK], width=0.45, edgecolor='white',
+                  zorder=3)
     for b, v, c in zip(bars, vals, conds):
-        ax.text(b.get_x() + b.get_width() / 2, v * 1.7,
+        ratio = f'{c:,.0f}' if c >= 10 else f'{c:.2f}'
+        ax.text(b.get_x() + b.get_width() / 2, v * 2.2,
                 f'largest safe\nlearning rate\n{v:.3g}', ha='center',
                 fontsize=10, color=INK, weight='bold')
-        ax.text(b.get_x() + b.get_width() / 2, v * 0.33,
-                f'curvature ratio\n{c:,.0f} to 1', ha='center',
-                fontsize=9.3, color='white')
+        ax.text(b.get_x() + b.get_width() / 2, v * 0.06,
+                f'curvature ratio\n{ratio} to 1', ha='center',
+                fontsize=9.3, color='white', zorder=4)
     ax.set_yscale('log')
-    ax.set_ylim(1e-7, 20.0)
+    ax.set_ylim(1e-7, 60.0)
     ax.set_ylabel('learning rate (log scale)', fontsize=10)
     ax.grid(True, axis='y', color=GRID, lw=0.6, which='both')
     _title(ax, 'Raw units force a learning rate '
@@ -1371,8 +1383,8 @@ def fig_layer_norm_steps() -> None:
         (f'divide by the spread, which is {NM.sd:.4f}', NM.ln, JOINT),
         ('multiply by the learned scale and add the learned shift',
          NM.ln_out, SLIDE)],
-        f'average of the squares is {NM.var:.4f}, and the spread is the square '
-        f'root of {NM.var:.4f} + {NM.eps:g}, which is {NM.sd:.4f}.  '
+        f'average of those squares is {NM.var:.4f}, and the spread is the '
+        f'square root of {NM.var:.4f} + {NM.eps:g}, which is {NM.sd:.4f}.  '
         f'The normalised numbers have average {NM.ln_mean:.4f} and spread '
         f'{NM.ln_sd:.4f}.')
     _title(ax, 'Layer normalisation, every step shown on one real vector of six '
@@ -1405,7 +1417,7 @@ def fig_layer_vs_rms() -> None:
     ax.bar(idx + 0.19, NM.rn_out, width=0.36, color=JOINT,
            label='root-mean-square normalisation')
     for i in idx:
-        ax.text(i, max(NM.ln_out[i], NM.rn_out[i]) + 0.1,
+        ax.text(i, max(NM.ln_out[i], NM.rn_out[i], 0.0) + 0.12,
                 f'{NM.diff[i]:+.3f}', ha='center', fontsize=9.0, color=MUTED)
     ax.axhline(0.0, color=INK, lw=0.9)
     ax.set_xticks(idx)
@@ -1488,22 +1500,22 @@ def fig_which_numbers_averaged() -> None:
         ax.text(-0.25, -r * 0.9 + 0.39, f'example {r + 1}', ha='right',
                 va='center', fontsize=9.4, color=INK)
     for c in range(6):
-        ax.text(c * 1.25 + 0.57, 0.6, f'feature {c + 1}', ha='center',
-                fontsize=8.6, color=MUTED, rotation=0)
+        ax.text(c * 1.25 + 0.57, 1.05, f'feature {c + 1}', ha='center',
+                fontsize=8.8, color=MUTED, rotation=0)
     ax.annotate('', xy=(6 * 1.25 - 0.1, 0.39), xytext=(-0.05, 0.39),
-                arrowprops=dict(arrowstyle='-', color=LINK, lw=3.0, alpha=0.35))
+                arrowprops=dict(arrowstyle='-', color=LINK, lw=3.0, alpha=0.22))
     ax.text(6 * 1.25 + 0.15, 0.39,
             f'layer normalisation averages\nacross one example: '
             f'average {BT.row_mean:.4f}, spread {BT.row_sd:.4f}',
             fontsize=9.4, color=LINK, va='center')
     ax.annotate('', xy=(0.57, -3 * 0.9), xytext=(0.57, 0.78),
-                arrowprops=dict(arrowstyle='-', color=JOINT, lw=3.0, alpha=0.45))
+                arrowprops=dict(arrowstyle='-', color=JOINT, lw=3.0, alpha=0.22))
     ax.text(0.57, -3 * 0.9 - 0.55,
             f'batch normalisation averages down one feature, across the other '
             f'examples:\naverage {BT.col_mean:.4f}, spread {BT.col_sd:.4f}',
             fontsize=9.4, color=INK, ha='left', va='top')
     ax.set_xlim(-2.6, 6 * 1.25 + 7.6)
-    ax.set_ylim(-4.7, 1.1)
+    ax.set_ylim(-4.7, 1.45)
     _title(ax, 'The same batch of 4 examples and 6 features, averaged two '
                'different ways')
     _save(fig, NRM_DOC, 'which-numbers-averaged.svg')
@@ -1559,7 +1571,7 @@ def fig_batch_size_noise() -> None:
     ax.set_xticks(BT.sizes)
     ax.set_xticklabels([str(m) for m in BT.sizes])
     ax.set_xlabel('how many examples are in the batch (log scale)', fontsize=10)
-    ax.set_ylabel('spread of the answer for one fixed example (log scale)',
+    ax.set_ylabel('spread of the answer for one\nfixed example (log scale)',
                   fontsize=10)
     ax.grid(True, color=GRID, lw=0.6, which='both')
     _title(ax, 'With a batch of 2 the answer for one example wobbles by '
@@ -1582,9 +1594,9 @@ def fig_train_and_predict_gap() -> None:
                 fontsize=12, color=INK, weight='bold')
     ax.axhline(0.0, color=INK, lw=0.9)
     ax.set_ylabel('the answer for the same single number', fontsize=10)
-    ax.set_ylim(min(0, min(vals)) - 0.5, max(vals) + 0.55)
+    ax.set_ylim(min(0, min(vals)) - 0.5, max(vals) + 0.85)
     ax.grid(True, axis='y', color=GRID, lw=0.6)
-    ax.text(0.5, max(vals) + 0.33,
+    ax.text(0.5, max(vals) + 0.45,
             f'stored average {BT.run_mean:.4f} and stored spread '
             f'{np.sqrt(BT.run_var):.4f} were learned on quiet pictures;\n'
             f'the room has got brighter by {BT.shift}, so the two routes now '
@@ -1735,8 +1747,11 @@ class Residual:
                 out.append(float(s.grad_norms[-1] / s.grad_norms[0]))
             self.share[name] = out
 
-    def _train(self, pre: bool, lr: float, steps: int = 220,
+    train_steps = 220
+
+    def _train(self, pre: bool, lr: float, steps: int = 0,
                warmup: int = 0) -> Arr:
+        steps = steps or self.train_steps
         s = Stack(self.d_in, self.d, self.hid, self.blocks, pre=pre, seed=0)
         p = s.params()
         m = [np.zeros_like(q) for q in p]
@@ -1833,13 +1848,14 @@ def fig_stream_size_through_depth() -> None:
     axes[0].plot(depth, RS.fwd['post-norm'], color=GRIP, lw=2.2,
                  label='post-norm')
     axes[0].annotate(f'{RS.fwd["pre-norm"][-1]:.3f} after {RS.deep} blocks',
-                     xy=(RS.deep, RS.fwd['pre-norm'][-1]), xytext=(9, 5.4),
+                     xy=(RS.deep, RS.fwd['pre-norm'][-1]), xytext=(17, 4.2),
                      fontsize=9.4, color=LINK,
                      arrowprops=dict(arrowstyle='->', color=LINK, lw=1.1))
     axes[0].annotate(f'pinned at {RS.fwd["post-norm"][-1]:.3f}',
                      xy=(RS.deep * 0.6, RS.fwd['post-norm'][-1]),
-                     xytext=(14, 2.1), fontsize=9.4, color=GRIP,
+                     xytext=(16, 2.1), fontsize=9.4, color=GRIP,
                      arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
+    axes[0].set_ylim(0.0, 6.4)
     axes[0].set_xlabel('block number', fontsize=10)
     axes[0].set_ylabel('size of the stream (root-mean-square)', fontsize=10)
     axes[0].grid(True, color=GRID, lw=0.6)
@@ -1854,15 +1870,17 @@ def fig_stream_size_through_depth() -> None:
     axes[1].annotate(f'{RS.share["pre-norm"][-1]:.2f} through '
                      f'{RS.depths[-1]} blocks',
                      xy=(RS.depths[-1], RS.share['pre-norm'][-1]),
-                     xytext=(14, RS.share['pre-norm'][-1] * 0.8),
-                     fontsize=9.4, color=LINK,
+                     xytext=(26, RS.share['pre-norm'][-1] * 2.4),
+                     fontsize=9.4, color=LINK, ha='center',
                      arrowprops=dict(arrowstyle='->', color=LINK, lw=1.1))
-    axes[1].annotate(f'{RS.share["post-norm"][-1]:.3f}',
+    axes[1].annotate(f'{RS.share["post-norm"][-1]:.2f} through the same '
+                     f'{RS.depths[-1]}',
                      xy=(RS.depths[-1], RS.share['post-norm'][-1]),
-                     xytext=(34, RS.share['post-norm'][-1] * 4.5),
-                     fontsize=9.4, color=GRIP,
+                     xytext=(26, RS.share['post-norm'][-1] * 0.42),
+                     fontsize=9.4, color=GRIP, ha='center',
                      arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
     axes[1].set_yscale('log')
+    axes[1].set_ylim(0.3, 40.0)
     axes[1].set_xlabel('how many blocks the gradient has to travel through',
                        fontsize=10)
     axes[1].set_ylabel('gradient at the first block, divided by\n'
@@ -1886,25 +1904,25 @@ def fig_learning_rate_stability() -> None:
     ax.plot(RS.lrs, post_v, 's-', color=GRIP, lw=2.2, ms=7, label='post-norm')
     ax.set_ylim(floor * 0.5, 4.0)
     ax.axhline(RS.var_y, color=MUTED, ls=':', lw=1.4)
-    ax.text(0.00105, RS.var_y * 1.25,
+    ax.text(0.00105, RS.var_y * 1.5,
             f'predicting the average every time would score {RS.var_y:.4f}',
             fontsize=9.2, color=MUTED)
     warm_y = max(RS.warm_final, floor)
     ax.scatter([0.01], [warm_y], s=150, facecolor='none',
                edgecolor=SLIDE, linewidth=2.2, zorder=6)
-    ax.annotate('post-norm with 50 steps of warmup,\nwhich lands back below '
-                f'{max(RS.warm_final, 1e-6):.0e}',
-                xy=(0.01, warm_y), xytext=(0.0012, 0.0009),
-                fontsize=9.4, color=SLIDE,
+    ax.annotate('post-norm with 50 steps\nof warmup lands back\n'
+                f'below {max(RS.warm_final, 1e-6):.0e}',
+                xy=(0.01, warm_y), xytext=(0.0155, 2.4e-5),
+                fontsize=9.4, color=SLIDE, ha='center',
                 arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.2))
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xticks(RS.lrs)
     ax.set_xticklabels([str(v) for v in RS.lrs])
     ax.set_xlabel('learning rate (log scale)', fontsize=10)
-    ax.set_ylabel('loss after 300 steps (log scale)', fontsize=10)
+    ax.set_ylabel(f'loss after {RS.train_steps} steps (log scale)', fontsize=10)
     ax.grid(True, color=GRID, lw=0.6, which='both')
-    ax.legend(fontsize=9.5, loc='center left')
+    ax.legend(fontsize=9.5, loc='upper left', bbox_to_anchor=(0.0, 0.88))
     _title(ax, f'{RS.blocks} blocks trained at four learning rates: post-norm '
                'stops learning at 0.01, pre-norm does not')
     _save(fig, NRM_DOC, 'learning-rate-stability.svg')
@@ -1998,11 +2016,11 @@ def fig_number_formats() -> None:
                         va='center', fontsize=8.6,
                         color='white' if col in (GRIP, JOINT) else INK)
             x += width * unit
-        ax.text(24 * unit + 0.35, y + 0.3,
+        ax.text(32 * unit + 0.45, y + 0.3,
                 f'largest {big:.3g}      smallest above zero {small:.2g}      '
                 f'step above 1 is {eps:.3g}', fontsize=9.2, va='center',
                 color=INK)
-    ax.set_xlim(-3.4, 24 * unit + 7.6)
+    ax.set_xlim(-3.4, 32 * unit + 7.9)
     ax.set_ylim(-3.0, 1.0)
     ax.text(0.0, 0.78, 'exponent bits set how far the format reaches; mantissa '
                        'bits set how fine its steps are',
@@ -2017,7 +2035,7 @@ def fig_what_stays_float32() -> None:
     _plain(ax)
     names = [p[0] for p in PR.pieces]
     mixed = [p[1] for p in PR.pieces]
-    plain = [p[2] if p[2] else p[1] for p in PR.pieces]
+    plain = [p[2] for p in PR.pieces]
     ypos = np.arange(len(names))
     ax.barh(ypos + 0.18, plain, height=0.34, color=MUTED,
             label=f'everything in float32: {PR.plain_bytes} bytes a weight')
@@ -2026,16 +2044,16 @@ def fig_what_stays_float32() -> None:
     for i, (m, p) in enumerate(zip(mixed, plain)):
         ax.text(m + 0.12, i - 0.18, f'{m}', va='center', fontsize=9.4,
                 color=LINK, weight='bold')
-        ax.text(p + 0.12, i + 0.18, f'{p}', va='center', fontsize=9.4,
-                color=MUTED)
+        ax.text(p + 0.12, i + 0.18, f'{p}' + (' (there is none)' if p == 0 else ''),
+                va='center', fontsize=9.4, color=MUTED)
     ax.set_yticks(ypos)
     ax.set_yticklabels(names, fontsize=9.4)
     ax.invert_yaxis()
-    ax.set_xlim(0, 5.6)
+    ax.set_xlim(0, 8.6)
     ax.set_xlabel('bytes held for every weight in the model', fontsize=10)
     ax.grid(True, axis='x', color=GRID, lw=0.6)
-    ax.legend(fontsize=9.4, loc='lower right')
-    ax.text(5.5, 4.35,
+    ax.legend(fontsize=9.4, loc='center right')
+    ax.text(8.5, 3.9,
             f'the saving is not here but in the activations: one layer\'s\n'
             f'{PR.act_tokens:,} rows of {PR.act_width:,} numbers take '
             f'{PR.act_f32:.0f} MB in float32\nand {PR.act_bf16:.0f} MB in '
@@ -2049,20 +2067,21 @@ def fig_what_stays_float32() -> None:
 def fig_loss_scale_underflow() -> None:
     fig, ax = plt.subplots(figsize=(8.4, 4.6))
     _plain(ax)
-    bins = np.logspace(-11, -1, 70)
+    bins = np.logspace(-11, 1, 84)
     ax.hist(PR.grads, bins=bins, color=LINK_PALE, edgecolor=LINK, lw=0.6,
             label='the gradient values')
     ax.hist(PR.grads * PR.scale, bins=bins, color=SLIDE, alpha=0.35,
             label=f'the same values multiplied by {PR.scale:.0f}')
     ax.axvline(PR.f16_floor, color=GRIP, lw=2.0)
-    ax.text(PR.f16_floor * 1.4, 1.0e4,
+    ax.text(PR.f16_floor * 0.7, 1.6,
             f'below {PR.f16_floor:.0g} a float16\nholds nothing but zero',
-            fontsize=9.3, color=GRIP)
+            fontsize=9.3, color=GRIP, ha='right')
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xlabel('size of one gradient value (log scale)', fontsize=10)
     ax.set_ylabel('how many of the 400,000 values (log scale)', fontsize=10)
     ax.grid(True, color=GRID, lw=0.6, which='both')
+    ax.set_ylim(0.6, 2.0e5)
     ax.legend(fontsize=9.4, loc='upper left')
     _title(ax, f'In float16 {PR.lost_f16:.1f}% of these gradients round to zero; '
                f'after the loss scale {PR.lost_f16_scaled:.1f}% do, and in '
@@ -2083,19 +2102,20 @@ def fig_overflow() -> None:
             label='what a bfloat16 holds')
     first = next(i for i, v in enumerate(PR.over_f16) if not np.isfinite(v))
     ax.axvline(first - 0.5, color=GRIP, ls=':', lw=1.5)
-    ax.text(first - 0.4, 3e6,
+    ax.text(first - 0.65, 1e23,
             f'float16 runs out at {PR.f16_max:,.0f};\nevery bigger value '
-            'becomes infinity,\nand one infinity makes every weight\nit touches '
+            'becomes infinity,\nand one infinity makes every\nweight it touches '
             'not a number',
-            fontsize=9.3, color=GRIP)
+            fontsize=9.3, color=GRIP, ha='right')
     ax.set_yscale('log')
     ax.set_xticks(xs)
-    ax.set_xticklabels([f'{v:.0e}' for v in PR.over_vals], fontsize=8.8)
+    ax.set_xticklabels([f'{v:,.6g}' for v in PR.over_vals], fontsize=8.6,
+                       rotation=20)
     ax.set_xlabel('the value being stored', fontsize=10)
     ax.set_ylabel('the value actually held (log scale)', fontsize=10)
-    ax.set_ylim(50, 1e40)
+    ax.set_ylim(50, 1e42)
     ax.grid(True, color=GRID, lw=0.6, which='both')
-    ax.legend(fontsize=9.4, loc='lower right')
+    ax.legend(fontsize=9.4, loc='upper left')
     _title(ax, f'bfloat16 reaches to {PR.bf16_max:.2g}, so a big activation '
                'never overflows it')
     _save(fig, NRM_DOC, 'overflow.svg')
@@ -2169,25 +2189,26 @@ def fig_loss_spike() -> None:
     ax.plot(steps, SK.base, color=LINK, lw=1.8)
     ax.scatter([SK.peak_step], [SK.peak], s=140, facecolor='none',
                edgecolor=GRIP, linewidth=2.2, zorder=6)
-    ax.annotate(f'peak {SK.peak:.4f} at step {SK.peak_step}',
-                xy=(SK.peak_step, SK.peak), xytext=(1720, 2.5),
+    ax.annotate(f'peak {SK.peak:.4f}\nat step {SK.peak_step}',
+                xy=(SK.peak_step, SK.peak), xytext=(1640, 2.12),
                 fontsize=9.6, color=GRIP,
                 arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.2))
     ax.annotate(f'just before: {SK.before:.4f}',
-                xy=(SK.bad_step - 5, SK.before), xytext=(420, 1.75),
+                xy=(SK.bad_step - 5, SK.before), xytext=(700, 1.80),
                 fontsize=9.6, color=INK,
                 arrowprops=dict(arrowstyle='->', color=INK, lw=1.1))
-    ax.annotate(f'still {SK.end_base:.4f} at step {SK.steps}, which the run had '
-                f'already passed\nbefore the spike',
-                xy=(SK.steps, SK.end_base), xytext=(560, 2.7),
-                fontsize=9.6, color=INK,
+    ax.annotate(f'still {SK.end_base:.4f} at step {SK.steps},\nwhich the run '
+                f'had passed long before',
+                xy=(SK.steps, SK.end_base), xytext=(2150, 1.84),
+                fontsize=9.6, color=INK, ha='center',
                 arrowprops=dict(arrowstyle='->', color=INK, lw=1.1))
     ax.axvline(SK.bad_step, color=MUTED, ls=':', lw=1.3)
-    ax.text(SK.bad_step - 30, 3.4, 'one bad batch arrives here', fontsize=9.3,
+    ax.text(SK.bad_step - 30, 2.25, 'one bad batch arrives here', fontsize=9.3,
             color=MUTED, ha='right')
+    ax.set_xlim(300, SK.steps + 30)
     ax.set_xlabel('training step', fontsize=10)
     ax.set_ylabel('training loss', fontsize=10)
-    ax.set_ylim(1.55, 3.9)
+    ax.set_ylim(1.57, 2.35)
     ax.grid(True, color=GRID, lw=0.6)
     _title(ax, 'A loss spike: one batch out of 2,600 sends the loss from '
                f'{SK.before:.3f} up to {SK.peak:.3f}')
@@ -2337,12 +2358,13 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
             f'spread {SC.height_m.std():.4f}'))
     print(p('ratio of the two spreads',
             f'{SC.reach_mm.std() / SC.height_m.std():,.0f}'))
+    print(p('ratio of the two typical sizes', f'{SC.mu[0] / SC.mu[1]:,.0f}'))
     for name, info in (('as measured', SC.raw), ('standardised', SC.std)):
         print(f'  {name}:')
         print('    ' + p('curvature, smallest to largest',
                          ' '.join(f'{v:.5g}' for v in np.asarray(info['lam']))))
         print('    ' + p('ratio of largest to smallest',
-                         f'{float(info["cond"]):,.0f}'))
+                         f'{float(info["cond"]):,.4f}'))
         print('    ' + p('largest safe learning rate',
                          f'{float(info["lr_max"]):.5g}'))
         print('    ' + p('best possible loss', f'{float(info["loss_opt"]):.6f}'))
@@ -2384,6 +2406,12 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
     print(p('answer using the batch', f'{BT.with_batch:+.4f}'))
     print(p('answer using the stored averages', f'{BT.with_running:+.4f}'))
     print('--- section 4: the residual stream')
+    print(p('gradient at the first block over the gradient at the last',
+            ' '.join(f'{d}:{v:.2f}' for d, v in zip(RS.depths,
+                                                    RS.share['pre-norm']))))
+    print(p('the same for post-norm',
+            ' '.join(f'{d}:{v:.2f}' for d, v in zip(RS.depths,
+                                                    RS.share['post-norm']))))
     print(p('stream size at blocks 0, 12, 24, 36, 48, pre-norm',
             ' '.join(f'{RS.fwd["pre-norm"][i]:.3f}' for i in (0, 12, 24, 36, 48))))
     print(p('stream size at the same blocks, post-norm',
@@ -2402,7 +2430,7 @@ def report(net: NetRun, dec: Decay, ji: Jitter) -> None:
     for name in ('pre-norm', 'post-norm'):
         for lr, v in zip(RS.lrs, RS.final[name]):
             print(f'  {name} at learning rate {lr:6g}: loss {v:.5f}')
-    print(p('post-norm at 0.01 with 50 warmup steps', f'{RS.warm_final:.5f}'))
+    print(p('post-norm at 0.01 with 50 warmup steps', f'{RS.warm_final:.3e}'))
     print('--- section 5: mixed precision')
     for name, s, e, m, big, small, eps, by in PR.formats:
         print(f'  {name:<9} {by} bytes  {e} exponent bits  {m} mantissa bits  '

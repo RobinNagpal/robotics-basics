@@ -1181,7 +1181,8 @@ def data_size_curve() -> None:
     ax.text(d['sizes'][0], 0.26, 'guessing', fontsize=9, color=MUTED)
     ax.set_xlabel('training pictures (log scale)', fontsize=10)
     ax.set_ylabel('share right on 800 held-out pictures', fontsize=10)
-    ax.legend(fontsize=9, frameon=False, loc='lower right')
+    ax.legend(fontsize=9, frameon=True, framealpha=0.95, edgecolor='white',
+              loc='lower right')
     ax.set_title('With few pictures the sliding window wins, because it is given '
                  'what the other must learn', fontsize=11.5, weight='bold', color=INK)
     fig.tight_layout()
@@ -1221,14 +1222,14 @@ def conv_block_shapes() -> None:
             ax.text(x0 + 4.5, y - 0.36, f'{pr:,}', fontsize=8.5, color=INK,
                     va='center')
             y -= 0.92
-        ax.text(x0, y - 0.1, f'{tot[0]:,} parameters', fontsize=10.5, weight='bold',
+        ax.text(x0, 3.5, f'{tot[0]:,} parameters', fontsize=11, weight='bold',
                 color=colour)
-        ax.text(x0, y - 0.75, f'{tot[1] / 1e6:.0f} million multiply-adds on a '
-                              f'{side} by {side} grid', fontsize=10, color=INK)
-    ax.text(0.2, 0.9, 'The modern block keeps one normalisation and one activation, '
+        ax.text(x0, 2.8, f'{tot[1] / 1e6:.0f} million multiply-adds on a '
+                         f'{side} by {side} grid', fontsize=10, color=INK)
+    ax.text(0.2, 1.5, 'The modern block keeps one normalisation and one activation, '
                       'widens the middle layer four times,', fontsize=10, color=INK)
-    ax.text(0.2, 0.35, 'and spreads out the window, which are all habits taken from '
-                       'the transformer block.', fontsize=10, color=INK)
+    ax.text(0.2, 0.9, 'and spreads out the window, which are all habits taken from '
+                      'the transformer block.', fontsize=10, color=INK)
     _save(fig, BACK_DOC, 'conv-block-shapes.svg')
 
 
@@ -1641,7 +1642,7 @@ def neighbours_picture() -> None:
             sp.set_linewidth(2.0)
         ax.set_title(f'the query: a {names[s["y"][q]]}', fontsize=9.5, color=INK,
                      weight='bold')
-        ax.set_ylabel(tag, fontsize=9.5, color=LINK if r else GRIP, weight='bold')
+        ax.set_ylabel(tag, fontsize=9.5, color=INK, weight='bold')
         for c in range(5):
             ax = axes[r][c + 1]
             i = idx[c]
@@ -1710,9 +1711,10 @@ def feature_space_map() -> None:
     f = _features()
     s = f['sets']['never seen']
     fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.0), facecolor='white')
-    for ax, space, tag in ((axes[0], s['pix'], 'raw pixels, 576 numbers a picture'),
-                           (axes[1], s['feat'],
-                            'backbone features, 48 numbers a picture')):
+    for ax, space, tag in (
+            (axes[0], s['pix'], f"raw pixels, {s['pix'].shape[1]} numbers a picture"),
+            (axes[1], s['feat'],
+             f"backbone features, {s['feat'].shape[1]} numbers a picture")):
         _plain(ax)
         pts = _pca2(space)
         for cls, colour in zip(range(3), (LINK, GRIP, SLIDE)):

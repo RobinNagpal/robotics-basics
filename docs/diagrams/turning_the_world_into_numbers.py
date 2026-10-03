@@ -3,7 +3,8 @@
     01_tokens-and-embeddings.md            -> images/turning-the-world-into-numbers/tokens-and-embeddings/
     02_pictures-sound-and-robot-states.md  -> images/turning-the-world-into-numbers/pictures-sound-and-robot-states/
 
-Run with:  python3 docs/diagrams/turning_the_world_into_numbers.py
+Run with:  pixi run python ../docs/diagrams/turning_the_world_into_numbers.py
+(plain `python3 turning_the_world_into_numbers.py` from docs/diagrams/ works too).
 Add --png <folder> to also write PNG copies for checking by eye.
 
 Every number drawn in a picture is worked out in this file, and the script
@@ -2410,7 +2411,8 @@ def scaled_training() -> None:
         b2 = np.zeros(y.shape[1])
         n = len(y)
         for _ in range(steps):
-            h = np.maximum(x @ w1 + b1, 0.0)
+            with np.errstate(over='ignore', invalid='ignore'):
+                h = np.maximum(x @ w1 + b1, 0.0)
             out = h @ w2 + b2
             d = (2.0 / n) * (out - y)
             if not np.isfinite(d).all():

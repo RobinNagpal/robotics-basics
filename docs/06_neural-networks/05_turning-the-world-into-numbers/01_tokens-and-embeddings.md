@@ -19,13 +19,12 @@ layer is and what training does, and nothing at all about language.
 
 The text behind the numbers here is made up: the script
 [`turning_the_world_into_numbers.py`](../../diagrams/turning_the_world_into_numbers.py)
-writes 3,200 short robot instructions from a set of sentence patterns, and then
+writes 3,200 short robot instructions from a set of sentence patterns, then
 builds a small tokeniser and a small table of word vectors from them. The
-methods are the real ones, worked out in full on that text, so every count,
-vector and similarity below is a genuine output rather than a number chosen to
-look right. What is small is the scale, because a real tokeniser is built from
-a vast amount of text and holds tens of thousands of pieces instead of a few
-hundred, so it cuts words up less finely than this one does.
+methods are the real ones, worked out in full on that text, so every count and
+similarity below is a genuine output. What is small is the scale, because a
+real tokeniser is built from a vast amount of text and holds tens of thousands
+of pieces, so it cuts words up less finely than this one.
 
 ## Contents
 
@@ -66,15 +65,14 @@ from, so each became a single token, and the model receives the numbers 72, 73,
 A word the tokeniser saw often gets a token of its own, while a rare word is spelled out of smaller pieces and a word it never saw at all is still spellable.
 
 The word "mug" appeared 1,323 times in the training text and earned a token of
-its own, and "gripper" appeared 405 times and earned one too. "Thermometer"
-appeared only 25 times, which was not enough to be worth a place, so the
-tokeniser spells it out of four pieces instead, and "polycarbonate" never
-appeared at all and is still spelled out of eight pieces that do exist. This is
-called **subword tokenisation**, because the pieces are parts of words rather
-than whole words, and it is what lets a model read a word nobody showed it
-during training. It also means the number of tokens in a sentence is not the
-number of words in it, which matters because everything a model costs is
-counted in tokens.
+its own, and "gripper" appeared 405 times and earned one too, while
+"thermometer" appeared only 25 times and is spelled out of four pieces instead,
+and "polycarbonate" never appeared at all and is still spelled out of eight
+pieces that do exist. This is called **subword tokenisation**, because the
+pieces are parts of words rather than whole words, and it is what lets a model
+read a word nobody showed it during training. It also means the token count of
+a sentence is not its word count, which matters because everything a model
+costs is counted in tokens.
 
 ![A bar chart of five robot instructions with three bars each: whole words, subword tokens and single letters](../../images/turning-the-world-into-numbers/tokens-and-embeddings/token-counts.svg)
 
@@ -103,10 +101,10 @@ A whole-word vocabulary gives the shortest sequence, ten tokens here, and that
 is its whole appeal. The cost is in the red box, because "polycarbonate" is not
 in the vocabulary and the tokeniser has nothing to hand the model except a
 single "unknown" token, which every unseen word also becomes. The model then
-cannot tell a polycarbonate lid from a titanium one, cannot read a part number
-and cannot spell anything back out, because the information was thrown away
-before the model ever ran. Languages keep making new words and robot work is
-full of part names and measurements, so this failure happens constantly.
+cannot tell a polycarbonate lid from a titanium one and cannot spell anything
+back out, because the information was thrown away before the model ever ran,
+and robot work is full of part names and measurements, so this happens
+constantly.
 
 Single letters have the opposite problem, because they never fail, every word
 being made of letters the vocabulary already holds, but the sequence is four
@@ -180,11 +178,10 @@ If you write the token as a row of zeros with a single 1 at its own place and
 multiply that row by the table, every term in every column is zero except the
 one multiplied by 1, so the answer is exactly the chosen row: column one works
 out as 0 times -0.50, plus 0 times -0.54, plus 1 times -0.57, plus three more
-zero terms, which gives -0.57. Nobody does the multiplying in practice, because
-reading row 45 out of memory is far cheaper, but writing it this way explains
-why the table trains like any other matrix of weights and why the gradient
-reaches only the rows that appeared in the batch. The table is small here
-because the vocabulary is small, and it is not small in a real model.
+zero terms, which gives -0.57. Nobody multiplies in practice, because reading
+row 45 out of memory is far cheaper, but writing it this way explains why the
+table trains like any other matrix of weights. The table is small here because
+the vocabulary is small, and it is not small in a real model.
 
 ![A bar chart on a log scale of embedding table sizes, from 2,574 weights for this page's table up to 524,288,000 for a large model](../../images/turning-the-world-into-numbers/tokens-and-embeddings/table-size.svg)
 
@@ -275,12 +272,12 @@ without caring which came first, and that is easy to show rather than assert.
 Both sentences become the tokens for the, mug, is, in, the and bowl, so adding
 the six rows gives -2.59, -0.18, -0.73, +0.06, -0.57 and -0.27 for both, to
 every decimal place, because addition does not care about order. A robot told
-to put the mug in the bowl and a robot told to put the bowl in the mug would do
-the same thing, which is why the order has to be put into the numbers
+to put the mug in the bowl would then do the same thing as one told to put the
+bowl in the mug, which is why the order has to be put into the numbers
 deliberately, and anything that does that is called a **positional encoding**.
-The most direct way is for the model to keep a second table with one row for
-each place in the sentence rather than for each token, learned in training like
-the first, and to add the row for the place to the row for the token.
+The most direct way is to keep a second table with one row for each place in
+the sentence rather than for each token, learned in training like the first,
+and to add the row for the place to the row for the token.
 
 ![A table of six learned position rows on the left, and on the right the row for mug added to the row for position 1 and then to the row for position 4, giving two different results](../../images/turning-the-world-into-numbers/tokens-and-embeddings/position-vectors-added.svg)
 

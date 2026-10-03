@@ -97,7 +97,9 @@ The network has bent itself into a shape that visits all 12 training points and 
 
 The shape of that red curve is what memorising looks like, because the network
 has not found a wrong pattern but no pattern at all, and has instead stored
-twelve answers and joined them up with whatever shape the weights allowed.
+twelve answers and joined them up with whatever shape the weights allowed. So
+the first thing to get right is how the held-back examples are chosen and
+used.
 
 ---
 
@@ -145,7 +147,8 @@ Picking the best of 50 equally good candidates on a 20-trial test set makes the 
 With one candidate the measured score averages 70.0%, with 12 it averages
 85.7%, and with 50 it averages 90.9%, while the winner's true rate never moves
 off 70%. Nothing improved, and the test set simply handed its own good luck to
-whichever candidate caught it, which is why it is read once.
+whichever candidate caught it, which is why it is read once. Reading it once is still not
+enough, though, because a split can be wrong before anybody reads anything.
 
 ---
 
@@ -168,9 +171,8 @@ into training while frame 41 may go into testing.
 Splitting frames at random leaves nearly identical pictures on both sides of the split, while splitting whole episodes keeps them together.
 
 In the simulated frames used here each episode is 40 frames long, and the
-distance from one frame to the next within an episode is 0.1372 while the
-distance to the nearest frame of any other episode is 2.6048, nineteen times
-further. So a model that answers a new frame by finding the most similar frame it
+distance from one frame to the next inside an episode is 0.1372 against 2.6048 to
+the nearest frame of any other episode, nineteen times further. So a model that answers a new frame by finding the most similar frame it
 trained on will find the neighbour from the same episode, copy its answer, and be
 right every time without having learned a thing.
 
@@ -199,7 +201,8 @@ Leakage has quieter forms, all from letting information cross the split, as
 when you work out the average and spread of your features over the whole dataset
 so that the test examples contribute to numbers the model uses. The question to
 ask of any split is always what the model could read off the test examples that
-it already saw in training.
+it already saw in training, and once the answer is nothing the measurement can be
+trusted to say whether the model is overfitting.
 
 ---
 
@@ -234,12 +237,12 @@ and usually runs from 0.1 to 0.5.
 
 Three of the eight units are set to zero by the mask, and the five that survive are each multiplied by 1.3333, which is one divided by 1 minus 0.25.
 
-The activations coming in are 1.753, 0.260, 0.000, 1.928, 1.398, 0.000, 0.624
-and 1.840, where the two zeros were already zero because the rectified linear
-unit in front of them had a negative input. This step's mask drops units 2, 5
-and 8, throwing away the 1.398 on unit 5 and the 1.840 on unit 8, so the layer
-sum falls from 7.8033 to 4.3050, which is far too small, and every surviving
-activation is then divided by 1 minus p to bring the sum back to 5.7400.
+The activations coming in are 1.75, 0.26, 0.00, 1.93, 1.40, 0.00, 0.62 and
+1.84, where the two zeros were already zero because the rectified linear unit in
+front of them had a negative input. This step's mask drops units 2, 5 and 8,
+throwing away the 1.40 on unit 5 and the 1.84 on unit 8, so the layer sum falls
+from 7.8033 to 4.3050, which is far too small, and every surviving activation is
+then divided by 1 minus p to bring the sum back to 5.7400.
 
 ![A bar chart with three bars: the layer sum of 7.8033 with no dropout, the average masked sum of 5.8573 with no scaling, and the average scaled sum of 7.8097](../../images/making-training-work/overfitting-and-generalisation/dropout-keeps-the-average.svg)
 
@@ -279,7 +282,8 @@ you collect more data and must retrain from scratch to change your mind. These
 three leave the model its full size and limit only how much of it gets used,
 each controlled by one number you can tune without rebuilding anything. The cost
 is that each adds a setting to choose, and every setting chosen on the validation
-set wears that set out a little, in the way section 2 described.
+set wears that set out a little, in the way section 2 described. All three
+weaken the model, and the next section does the opposite.
 
 ---
 
@@ -332,16 +336,17 @@ model something true about the world, namely that the reading at 1.40 metres and
 the reading at 1.45 metres should be about the same, and no amount of weight
 shrinking can tell it that. The cost is the same as everywhere else, because a
 shift of 0.8 metres is a lie, readings half a metre apart really being different,
-and the held-out loss rises to 0.8337 when you tell it.
+and the held-out loss rises to 0.8337 when you tell it. All of this follows one
+picture of how model size and error are related, and that picture is not the
+whole story.
 
 ---
 
 ## 6. Where the classical picture runs out
 
-Everything so far has followed one shape, and that shape was the settled
-teaching of the subject for about forty years. It is still right for a small
-model on a small dataset, which is most robot work, but it is no longer the whole
-story, and that is why large-model training looks like a violation of it.
+That shape was the settled teaching of the subject for about forty years, and
+it is still right for a small model on a small dataset, which is most robot
+work.
 
 ![A plot of training and held-out error against model flexibility, with training error falling steadily, held-out error dipping at degree 5, and the regions marked too simple and too flexible](../../images/making-training-work/overfitting-and-generalisation/the-classical-picture.svg)
 

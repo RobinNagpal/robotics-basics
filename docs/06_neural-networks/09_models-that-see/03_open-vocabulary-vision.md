@@ -21,8 +21,8 @@ trained, and you choose it when you ask the question.
 It is written for a reader who has read [vision
 backbones](01_vision-backbones.md) and [detection and
 segmentation](02_detection-and-segmentation.md), so you should already know what
-a backbone is, what a bounding box and a mask are, and what a region proposal
-is. You should also have read [self-supervised
+a backbone is, what a bounding box and a mask are, and how a detector guesses
+many boxes and then thins them down. You should also have read [self-supervised
 pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md)
 for contrastive learning and the shared picture-and-text space, and [tokens and
 embeddings](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md)
@@ -79,11 +79,10 @@ labelling before anything else happens.
 
 Growing the list from 80 names to 200 adds 90 hours of labelling, and that is before the model is trained again.
 
-Those 90 hours buy 120 extra names, which is nothing like the number of
-different things that turn up on a workbench, and the labelling is only the
-start, because the model then has to be trained again and every robot running
-the old model has to be updated. A list long enough for a real room is not
-reachable this way.
+Those 90 hours buy 120 extra names, which is nothing like the number of things
+that turn up on a workbench, and the labelling is only the start, because the
+model then has to be trained again and every robot running the old one updated.
+A list long enough for a real room is not reachable this way.
 
 That is why it is worth looking at what a model can do with no examples at all.
 Working with no labelled examples of a thing is called **zero-shot**, and working
@@ -125,7 +124,7 @@ two picture regions along each of them.
 
 ![A heatmap of six word rows and two picture-region rows against eight named directions, with values from 0.00 to 1.00 written in each cell](../../images/models-that-see/open-vocabulary-vision/shared-space-table.svg)
 
-The word "mug" has 0.90 on the handle direction while the word "cup" has only 0.35, and the two picture regions below the red line are the same white mug photographed twice, once with its handle hidden behind its body at 0.22 and once with the handle in view at 0.85.
+The word "mug" has 0.90 on the handle direction while "cup" has only 0.35, and the two picture regions below the red line are the same white mug photographed twice, once with its handle hidden at 0.22 and once with it in view at 0.85.
 
 Everything that follows is worked out from that table. To compare a picture
 region with a name you multiply the two lists together one direction at a time,
@@ -153,11 +152,11 @@ front of the lens, but a robot told to fetch a mug now has a region labelled
 
 Ranked against the region, "cup" comes first at 0.9904 and the right answer, "mug", comes second at 0.9228, with "jug" close behind at 0.9012.
 
-The fix for this particular failure is not a better model but a better
-viewpoint, and the picture below shows that. Turning the mug ninety degrees so
-that the handle faces the camera changes the picture region's value on the
-handle direction from 0.22 to 0.85 and nothing else, and that one change moves
-"mug" from 0.9228 to 0.9977 while it moves "cup" down from 0.9904 to 0.9571.
+The fix for this failure is not a better model but a better viewpoint. Turning
+the mug ninety degrees so that the handle faces the camera changes the region's
+value on the handle direction from 0.22 to 0.85 and nothing else, and that one
+change moves "mug" from 0.9228 to 0.9977 while moving "cup" down from 0.9904 to
+0.9571.
 
 ![A grouped bar chart of six names with the handle hidden and the handle in view, where mug rises from 0.923 to 0.998 and cup falls from 0.990 to 0.957](../../images/models-that-see/open-vocabulary-vision/handle-in-view.svg)
 
@@ -186,15 +185,17 @@ to work on a whole picture.
 ## 3. Finding and naming without a list
 
 Section 2 scored one region against one name, and a real picture has no regions
-marked on it, so something has to produce the regions first. That is the same
-region proposer the detector used on [detection and
-segmentation](02_detection-and-segmentation.md), and it is doing an easier job
-here, because it only has to say "there is some object here" rather than "there
-is a mug here". The naming is then a separate step, and the two steps together
-are called **open-vocabulary detection**: the proposer finds the boxes, the
-shared space names them, and the names come from a list you write at the moment
-you ask. That list of names is the **text prompt for vision**, and it is the
-part a robot program controls.
+marked on it, so something has to produce the regions first. The part that does
+that is a **region proposer**, which is a head on the backbone that returns a few
+hundred boxes that might hold an object, and it is the same machinery the
+detector on [detection and
+segmentation](02_detection-and-segmentation.md) used to guess many boxes at once.
+Its job here is easier, because it only has to say "there is some object here"
+rather than "there is a mug here". The naming is a separate step, and the two
+steps together are called **open-vocabulary detection**, because the proposer
+finds the boxes and the shared space names them from a list you write at the
+moment you ask. That list is the **text prompt for vision**, and it is the part a
+robot program controls.
 
 ![A drawing of five objects on a shelf, each in a blue box labelled with its closest name and score: mug 0.998, bowl 0.997, glass 0.997, tin can 0.999 and a red mug at 0.888](../../images/models-that-see/open-vocabulary-vision/proposals-and-names.svg)
 
@@ -217,7 +218,7 @@ hundred and twenty that do not.
 
 ![A histogram of best scores for present and absent cases that overlap heavily, beside a line chart of the percentage of right and wrong boxes kept as the threshold rises from 0.86 to 0.98](../../images/models-that-see/open-vocabulary-vision/threshold-sweep.svg)
 
-In this simulated set a threshold of 0.90 keeps all forty right boxes but also keeps 42 of the 120 wrong ones, while raising it to 0.93 cuts the wrong ones to 9 and throws away 21 of the right ones as well.
+In this simulated set a threshold of 0.90 keeps all forty right boxes and 42 of the 120 wrong ones, while raising it to 0.93 cuts the wrong ones to 9 and throws away 21 of the right ones too.
 
 No threshold in that sweep separates the two cases, and that is a property of the
 method rather than of the numbers chosen, because the scores all live in a narrow
@@ -233,7 +234,7 @@ than it sounds.
 
 ![Two panels showing a mug-shaped mask, the left with the tight box and its centre marked by a cross and the right with the filled mask, its centre marked by a dot and a line joining the two centres](../../images/models-that-see/open-vocabulary-vision/box-to-mask.svg)
 
-The tight box round this mug is 93 by 85 pixels, which is 7,905 pixels, while the mask inside it is 4,643 pixels, so 41.3 per cent of the box is not the mug at all, and the centre of the box sits 9.1 pixels from the centre of the mask.
+The tight box round this mug is 93 by 85, which is 7,905 pixels, while the mask inside it is 4,643, so 41.3 per cent of the box is not the mug and the box centre sits 9.1 pixels from the mask centre.
 
 At a distance of 0.42 metres, with a camera whose focal length is 615 pixels, one
 pixel covers 0.683 millimetres, so that 9.1 pixel difference is 6.2 millimetres
@@ -328,10 +329,9 @@ special word to explain it, only the table from section 2.
 The words "jug" and "mug" sit 0.988 apart, which is 0.012 from being the same direction, and "mug" and "cup" sit 0.944 apart, while "mug" and "tin can" are a comfortable 0.383.
 
 Telling a mug from a tin can is easy and telling a mug from a jug is close to
-impossible, and that is the wrong way round for a robot, because the two objects
-a person is most likely to confuse in words are also the two whose grasps differ
-most. Pouring from a jug and drinking from a mug need different grips, so the
-distinction the model is worst at is the distinction the arm most needs.
+impossible, which is the wrong way round for a robot, because the two objects a
+person is most likely to confuse in words are also the two whose grasps differ
+most. The distinction the model is worst at is the one the arm most needs.
 
 The fourth failure is the one that causes real damage, and it follows from there
 being no way to answer "nothing here". Every region gets a score, one of them is
@@ -354,8 +354,8 @@ The returned box sits 125 millimetres from the mug the words meant, and a grippe
 
 That is the real asymmetry between a benchmark and a robot. A benchmark score is
 an average over thousands of pictures, so a confident wrong answer is diluted by
-all the right ones, whereas an arm acts on one answer at a time and a confident
-wrong answer is indistinguishable from a right one until the fingers close. The
+all the right ones, whereas an arm acts on one answer at a time and cannot tell a
+confident wrong answer from a right one until the fingers close. The
 practical answers are to ask for several names at once and require the winner to
 beat the runner-up by a margin you have measured, to check the returned region
 against the depth measurement before moving, and to let the program answer "I

@@ -33,7 +33,7 @@ real.
 ## Contents
 
 1. [Why the numbers need keeping in range](#1-why-the-numbers-need-keeping-in-range)
-2. [Layer normalisation and RMS normalisation, worked out](#2-layer-normalisation-and-rms-normalisation-worked-out)
+2. [Layer normalisation and root-mean-square normalisation](#2-layer-normalisation-and-root-mean-square-normalisation)
 3. [Why batch normalisation lost ground](#3-why-batch-normalisation-lost-ground)
 4. [The residual stream, and where the normalisation sits](#4-the-residual-stream-and-where-the-normalisation-sits)
 5. [Mixed precision: which numbers stay large](#5-mixed-precision-which-numbers-stay-large)
@@ -93,11 +93,13 @@ with this. The average and spread must come from the training set alone and then
 be applied to the other sets, because using all the data lets the test examples
 [leak in](01_overfitting-and-generalisation.md#3-leakage-when-the-split-tells-you-a-lie).
 And the outputs need the same treatment, because a robot's joint angles in
-radians and gripper opening in millimetres are just as mismatched.
+radians and gripper opening in millimetres are just as mismatched. Scaling the
+inputs once is only the start, because the numbers deeper in the network drift as
+the weights change.
 
 ---
 
-## 2. Layer normalisation and RMS normalisation, worked out
+## 2. Layer normalisation and root-mean-square normalisation
 
 Section 1 scaled the inputs once, before training, and that fixes the first
 layer only, because the layers after it take the activations of the layer below
@@ -120,11 +122,11 @@ the learned scale for that position, 1.00, and the learned shift, -0.20, turn it
 into 0.2773. The guard added before the square root, written 1e-05 and called
 epsilon, keeps a vector of six identical numbers from dividing by zero.
 
-The learned scale and shift matter because without them every vector in the
-network would be forced to average 0 with spread 1, which throws away
-information the network might want. With them the network can undo the
-normalisation wherever that helps, so normalisation changes how easy the numbers
-are to train with rather than what the network can represent.
+The learned scale and shift matter because without them every vector would be
+forced to average 0 with spread 1, which throws away information the network
+might want. With them the network can undo the normalisation wherever that helps,
+so normalisation changes how easy the numbers are to train with rather than what
+the network can represent.
 
 **Root-mean-square normalisation**, usually written RMS normalisation, does less
 work. It leaves the average alone, divides by the root-mean-square of the
@@ -177,10 +179,9 @@ depends on which other examples happened to share its batch.
 
 The same activation of -0.89 comes out as +0.2905 when it sits beside three quiet examples and as -1.3338 when it sits beside three bright ones, a gap of 1.6243.
 
-That is not a bug but the definition, and it has three consequences that each
-hurt in modern work. The first is that the smaller the batch the noisier the
-answer, and large models are trained with few examples per device because each
-example is enormous.
+That is not a bug but the definition, and it has three consequences. The first
+is that the smaller the batch the noisier the answer, and large models are
+trained with few examples per device because each example is enormous.
 
 ![A log-log plot of the spread of the answer for one fixed example against batch size, falling from 0.7463 at a batch of 2 to 0.0749 at a batch of 256](../../images/making-training-work/normalisation-and-stability/batch-size-noise.svg)
 
@@ -227,29 +228,35 @@ called the **residual stream**.
 
 The stream starts at a size of 1.071 and each block reads it, works out a small change, and adds that change back, so nothing the earlier blocks wrote is ever overwritten.
 
-That arrangement is what lets a stack of fifty blocks train at all, because the
+Those sizes are root-mean-square sizes of whole vectors rather than plain
+numbers, so they do not add up the way the labels might suggest: the first block
+adds a change of size 0.711 to a stream of size 1.071 and leaves a stream of size
+1.241, because the change points in a different direction from the stream. The
+arrangement is what lets a stack of fifty blocks train at all, because the
 gradient coming backwards has a clear path along the stream. The question is
 where the normalisation goes, and there are two places.
 
 ![Two sets of four rows of four numbers, the upper set showing the stream normalised first and the block's output added to the untouched stream, the lower set showing the output added first and the sum then normalised](../../images/making-training-work/normalisation-and-stability/pre-and-post-norm-order.svg)
 
-Normalising before the block leaves the stream itself untouched and adds the block's output to it, while normalising after the add rewrites the stream, and the two give different answers on the same input.
+Normalising before the block leaves the stream itself untouched and adds the block's output to it, while normalising after the add rewrites the stream, and on this four-number stream the two answers differ by up to 1.387.
 
 The first arrangement is called **pre-norm**, and the block reads a normalised
 copy of the stream while the stream itself passes through unchanged. The second
-is called post-norm, and the normalisation sits on the stream, so the stream is
-rewritten at every block. Every transformer in wide use today is pre-norm, and
+is called **post-norm**, and the normalisation sits on the stream, so the stream
+is rewritten at every block. Every transformer in wide use today is pre-norm, and
 the reason shows up when you measure the two.
 
 ![Two panels: the left showing stream size against block number, pre-norm growing steadily while post-norm stays flat at 1, and the right showing how much of the gradient reaches the first block as the stack gets deeper](../../images/making-training-work/normalisation-and-stability/stream-size-through-depth.svg)
 
-In pre-norm the stream grows as blocks keep adding to it, while in post-norm the normalisation pins it to exactly 1 at every block, and the gradient that reaches the first block behaves differently in the two as the stack gets deeper.
+In pre-norm the stream grows as blocks keep adding to it, while in post-norm the normalisation pins it to exactly 1 at every block, and through 64 blocks the first block of a pre-norm stack is handed 7.20 times the gradient the last block gets against 2.87 times for post-norm.
 
 Pinning the stream to 1 sounds tidier, but it means every block's output is
-rescaled along with everything the earlier blocks wrote, so the clear path for
-the gradient is broken at every block. In pre-norm the path is an exact
-addition, so whatever gradient arrives at the top of the stack also arrives at
-the bottom, plus a contribution from each block along the way.
+rescaled along with everything the earlier blocks wrote, so the gradient must
+pass through a normalisation at every single block on its way back. In pre-norm
+the path is an exact addition, so whatever gradient arrives at the top of the
+stack also arrives at the bottom, plus a contribution from each block along the
+way, and the right-hand panel shows the early blocks of a pre-norm stack getting
+the stronger signal at every depth.
 
 ![A log-log plot of the loss after 220 steps against learning rate, with pre-norm improving steadily while post-norm collapses to the loss of predicting the average at a learning rate of 0.01](../../images/making-training-work/normalisation-and-stability/learning-rate-stability.svg)
 
@@ -263,7 +270,8 @@ and in this run 50 steps of warmup is enough to bring the post-norm stack back
 to a loss below 0.00001 at a learning rate of 0.01. So the cost of pre-norm is
 that the growing stream has to be normalised once more at the very end before
 the output layer, and the benefit is that the run survives a learning rate large
-enough to be worth using.
+enough to be worth using. All of this assumes the numbers are stored accurately
+enough to mean what they say, which is the next question.
 
 ---
 
@@ -331,7 +339,8 @@ not a number for the rest of the run. The standard answer is a loss scale that
 halves itself whenever an infinity appears and doubles slowly when none has
 appeared for a while, skipping the step each time. With bfloat16 none of this is
 needed, because its reach is float32's reach, which is why bfloat16 is the usual
-choice wherever the hardware supports it.
+choice wherever the hardware supports it, and why the remaining failure is one
+that no number format can prevent.
 
 ---
 

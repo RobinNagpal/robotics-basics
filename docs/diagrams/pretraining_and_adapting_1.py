@@ -1299,8 +1299,10 @@ def two_crops() -> None:
           f'columns = {ds.rows * SIDE} pixels')
     print(f'[dino] the two crops share {ds.overlap} rows, and they come from two views '
           f'of the same item, so the lighting part of the picture differs as well')
-    print(f'[dino] the shared part of the two views has a spread of {shared.std():.2f} '
-          f'per pixel, the lighting part {ds.pics.clean[0][0].std():.2f}')
+    content_sd = float(ds.pics.content.std())
+    light_sd = float((ds.pics.clean[0] - ds.pics.content).std())
+    print(f'[dino] across the batch the shared part has a spread of {content_sd:.2f} per '
+          f'pixel, the lighting part {light_sd:.2f}, and the noise {PIXEL_NOISE:.2f}')
     fig, axes = plt.subplots(1, 4, figsize=(13.2, 4.0), facecolor='white')
     for ax in axes:
         _blank(ax)
@@ -1872,7 +1874,7 @@ def batch_fills_the_chip() -> None:
             label='time to fetch the weights from memory')
     ax.plot(batches, times, color=INK, lw=1.2, ls=':', label='what you actually wait for')
     ax.axvline(knee, color=SLIDE, ls='--', lw=1.4)
-    ax.text(knee * 1.1, max(times) * 0.25, f'batch {knee}: the chip is finally busy',
+    ax.text(knee * 1.15, min(arith) * 1.6, f'batch {knee}: the chip is\nfinally busy',
             fontsize=9.5, color=SLIDE)
     ax.set_xscale('log')
     ax.set_yscale('log')
@@ -1922,7 +1924,7 @@ def bytes_per_parameter() -> None:
 
 
 def rounding_at_each_precision() -> None:
-    values = np.array([0.1, 0.015625, 3.14159265, 1234.5678, 6.02e-5])
+    values = np.array([9.5, 3.14159265, 1.0, 0.3, 0.1])
     rows: dict[str, list[float]] = {}
     f32 = values.astype(np.float32).astype(np.float64)
     f16 = values.astype(np.float16).astype(np.float64)
@@ -1935,13 +1937,13 @@ def rounding_at_each_precision() -> None:
         err = np.abs(got - values) / np.abs(values)
         rows[name] = list(err)
         print(f'[mem] {name:28s} ' + '  '.join(f'{v:.2e}' for v in err))
-    print(f'[mem] stored value of 0.1: float32 {f32[0]:.10f}, bfloat16 {bf16[0]:.10f}, '
-          f'float16 {f16[0]:.10f}')
-    print(f'[mem] 0.015625 is a half to the sixth power, so every one of them keeps it '
-          f'exactly: error {rows["float16"][1]:.1e}')
+    print(f'[mem] stored value of 0.1: float32 {f32[4]:.10f}, bfloat16 {bf16[4]:.10f}, '
+          f'float16 {f16[4]:.10f}, int8 {i8[4]:.10f}')
+    print(f'[mem] the one shared int8 scale is {scale:.6f}, which is the largest number '
+          f'in the set divided by 127')
     fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
     _plain(ax)
-    labels = ['0.1', '0.015625', '3.14159265', '1234.5678', '0.0000602']
+    labels = ['9.5', '3.14159265', '1.0', '0.3', '0.1']
     width = 0.2
     cols = [GRIP, LINK, SLIDE, PURPLE]
     for off, (name, errs), col in zip([-1.5 * width, -0.5 * width, 0.5 * width,
@@ -2053,27 +2055,28 @@ def training_memory_budget() -> None:
     bottom = 0.0
     cols = [LINK, WRIST, PURPLE, TEAL, SLIDE]
     for (k, v), col in zip(budget.items(), cols):
-        ax1.bar([0], [v / 1e9], bottom=[bottom / 1e9], color=col, width=0.5, label=k)
-        ax1.text(0.33, (bottom + v / 2) / 1e9, f'{v / 1e9:.0f} GB', fontsize=9.5,
-                 va='center')
+        ax1.bar([0], [v / 1e9], bottom=[bottom / 1e9], color=col, width=0.5)
+        ax1.text(0.3, (bottom + v / 2) / 1e9, f'{k.split(" (")[0]}: {v / 1e9:.0f} GB',
+                 fontsize=9.0, va='center')
         bottom += v
     ax1.bar([1], [run_only / 1e9], color=MUTED, width=0.5)
     ax1.text(1, run_only / 1e9 + total / 1e9 * 0.02, f'{run_only / 1e9:.0f} GB',
              ha='center', fontsize=10.5, weight='bold')
     ax1.set_xticks([0, 1])
     ax1.set_xticklabels(['training it', 'just running it'], fontsize=10)
+    ax1.set_xlim(-0.45, 2.1)
     ax1.set_ylim(0, total / 1e9 * 1.1)
     ax1.set_ylabel('gigabytes', fontsize=10)
     ax1.set_title(f'{total / 1e9:.0f} GB against {run_only / 1e9:.0f} GB: '
                   f'{total / run_only:.0f} times as much', fontsize=11.5, weight='bold')
-    ax1.legend(fontsize=8.5, frameon=False, loc='upper right')
     _plain(ax2)
     share = [v / total * 100 for v in budget.values()]
     ax2.barh(range(len(share))[::-1], share, color=cols, height=0.6)
     for i, v in enumerate(share):
         ax2.text(v + 1, len(share) - 1 - i, f'{v:.0f}%', va='center', fontsize=9.5)
     ax2.set_yticks(range(len(share))[::-1])
-    ax2.set_yticklabels([k.split(' (')[0] for k in budget], fontsize=9)
+    ax2.set_yticklabels(['parameters', 'gradients', 'master copy',
+                         'optimiser averages', 'activations'], fontsize=9)
     ax2.set_xlim(0, max(share) * 1.25)
     ax2.set_xlabel('share of the training memory (per cent)', fontsize=10)
     ax2.set_title('the parameters are the small part', fontsize=11.5, weight='bold')
@@ -2233,15 +2236,14 @@ def flops_and_days() -> None:
     configs = [('1 billion, 20 billion tokens', 1e9, 2e10),
                ('7 billion, 1.4 million million', 7e9, 1.4e12),
                ('70 billion, 10 million million', 7e10, 1e13)]
-    counts = [8, 64, 512, 4096]
+    counts = [8, 64, 512]
     print(f'[flop] sustained rate per accelerator: {EX_FLOPS * EX_USE / 1e12:.0f} million '
           f'million operations a second')
     fig, ax = plt.subplots(figsize=(10.4, 5.2), facecolor='white')
     _plain(ax)
     width = 0.2
     cols = [LINK, SLIDE, WRIST, PURPLE]
-    for off, k, col in zip([-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width],
-                           counts, cols):
+    for off, k, col in zip([-width, 0.0, width], counts, cols):
         days = []
         for name, n, d in configs:
             total = 6.0 * n * d
@@ -2249,14 +2251,14 @@ def flops_and_days() -> None:
         ax.bar(np.arange(len(configs)) + off, days, width=width, color=col,
                label=f'{k} accelerators')
         for i, v in enumerate(days):
-            ax.text(i + off, v * 1.15, f'{v:.1f}' if v >= 0.1 else f'{v:.2f}',
-                    ha='center', fontsize=8, rotation=90)
+            ax.text(i + off, v * 1.2, f'{v:.2g}', ha='center', fontsize=8.5,
+                    rotation=90)
     for name, n, d in configs:
         print(f'[flop] {name}: 6 x N x D = {6.0 * n * d:.2e} operations; '
               + ', '.join(f'{k} cards: {6.0 * n * d / (EX_FLOPS * EX_USE * k) / 86400:.2f} '
                           f'days' for k in counts))
     ax.set_yscale('log')
-    ax.set_ylim(0.005, 3e4)
+    ax.set_ylim(0.01, 3e5)
     ax.set_xticks(range(len(configs)))
     ax.set_xticklabels([c[0].replace(', ', ',\n') for c in configs], fontsize=9.5)
     ax.set_ylabel('days of training (log scale)', fontsize=10)
@@ -2278,8 +2280,9 @@ def iso_compute_grid() -> None:
     cs = ax.contour(ns / 1e9, ds / 1e12, cost.T, levels=levels, colors=INK,
                     linewidths=1.2)
     ax.clabel(cs, fmt={lv: f'{lv:.0e}' for lv in levels}, fontsize=8.5)
-    ax.plot([7.0], [1.4], marker='*', color=GRIP, markersize=16)
-    ax.text(7.6, 1.5, 'the example run', fontsize=9.5, color=GRIP, weight='bold')
+    ax.plot([7.0], [1.4], marker='*', color=GRIP, markersize=18)
+    ax.text(7.0, 0.45, 'the example run', fontsize=9.5, color=GRIP, weight='bold',
+            ha='center', bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 2.0})
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xlabel('parameters (billions, log scale)', fontsize=10)
@@ -2300,28 +2303,29 @@ def training_versus_serving() -> None:
     train = 6.0 * n * d
     per_token = 2.0 * n
     tokens_equal = train / per_token
-    print(f'[flop] serving costs about 2 x N = {per_token:.2e} operations a token')
-    print(f'[flop] the training run costs the same as serving '
-          f'{tokens_equal:.3e} tokens, which is 3 x D = {3 * d:.2e}')
-    words_per_person = 1000.0
-    people = tokens_equal / words_per_person
-    print(f'[flop] at {words_per_person:.0f} tokens a person a day that is '
-          f'{people / 1e6:.1f} million person-days of answers')
-    fig, ax = plt.subplots(figsize=(10.0, 5.0), facecolor='white')
+    print(f'[flop] answering costs about 2 x N = {per_token:.2e} operations a token')
+    print(f'[flop] the training run costs the same as answering '
+          f'{tokens_equal:.3e} tokens, which is three times the {d:.1e} tokens it '
+          f'was trained on')
+    served = np.logspace(9, 14, 60)
+    fig, ax = plt.subplots(figsize=(10.0, 5.2), facecolor='white')
     _plain(ax)
-    ax.bar([0, 1], [train / 1e21, tokens_equal * per_token / 1e21], color=[GRIP, LINK],
-           width=0.5)
-    ax.text(0, train / 1e21 * 1.03, f'{train:.2e}', ha='center', fontsize=11,
-            weight='bold')
-    ax.text(1, train / 1e21 * 1.03, f'{tokens_equal:.1e} tokens answered', ha='center',
-            fontsize=11, weight='bold')
-    ax.set_xticks([0, 1])
-    ax.set_xticklabels(['training the model once\n(6 x N x D)',
-                        'answering with it\n(2 x N a token)'], fontsize=10)
-    ax.set_ylim(0, train / 1e21 * 1.2)
-    ax.set_ylabel('thousand million million million operations', fontsize=10)
-    ax.set_title('One training run buys you three times its tokens in answers, '
-                 'and no more', fontsize=12, weight='bold')
+    ax.plot(served, served * per_token, color=LINK, lw=2.2,
+            label='operations spent answering, added up')
+    ax.axhline(train, color=GRIP, lw=2.0, ls='--',
+               label=f'the whole training run: {train:.2e} operations')
+    ax.plot([tokens_equal], [train], marker='o', color=INK, markersize=9, zorder=5)
+    ax.annotate(f'{tokens_equal:.2e} tokens answered\ncosts as much as training it once',
+                xy=(tokens_equal, train), xytext=(1.2e9, train * 2.2), fontsize=9.5,
+                arrowprops={'arrowstyle': '->', 'color': INK})
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('tokens the finished model has answered with (log scale)', fontsize=10)
+    ax.set_ylabel('operations (log scale)', fontsize=10)
+    ax.set_ylim(1e19, train * 20)
+    ax.set_title('Training is paid once; answering is paid every time, and it catches up',
+                 fontsize=12, weight='bold')
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     _save(fig, SDC_DOC, 'training-versus-serving.svg')
 
 
@@ -2433,7 +2437,7 @@ def grow_together() -> None:
     ax2.set_xlabel('operations in the run (log scale)', fontsize=10)
     ax2.set_ylabel('training tokens for each parameter', fontsize=10)
     ax2.set_ylim(0, float(np.max(ds / ns)) * 1.2)
-    ax2.set_title('so the tokens for each parameter barely move',
+    ax2.set_title('so the tokens for each parameter move slowly',
                   fontsize=11.5, weight='bold')
     fig.suptitle('Spend a budget of arithmetic well: make the model and the data grow '
                  'together', fontsize=12.5, weight='bold', y=1.0)
@@ -2517,8 +2521,9 @@ def quality_beats_volume() -> None:
     ax.set_xlabel('examples in the training set (log scale)', fontsize=10)
     ax.set_ylabel('accuracy on held-out pictures (per cent)', fontsize=10)
     ax.set_ylim(20, 103)
-    ax.set_title(f'200 clean examples beat 3,200 dirty ones: {100 * clean_200:.0f} '
-                 f'per cent against {100 * dirty_3200:.0f}', fontsize=12, weight='bold')
+    ax.set_title(f'200 clean examples are worth 3,200 with two labels in five wrong: '
+                 f'{100 * clean_200:.1f} against {100 * dirty_3200:.1f} per cent',
+                 fontsize=11.5, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     _save(fig, SDC_DOC, 'quality-beats-volume.svg')
 
@@ -2526,7 +2531,7 @@ def quality_beats_volume() -> None:
 def duplicates_waste_the_budget() -> None:
     bb = _bb()
     budget = 1600
-    fractions = [0.0, 0.25, 0.5, 0.75, 0.9]
+    fractions = [0.0, 0.5, 0.75, 0.9, 0.95, 0.98]
     test_f = bb.features(bb.test.a)
     accs, uniques = [], []
     for f in fractions:
@@ -2545,7 +2550,7 @@ def duplicates_waste_the_budget() -> None:
               f'examples, accuracy {accs[-1]:.3f}')
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.8), facecolor='white')
     _plain(ax1)
-    ax1.bar([f * 100 for f in fractions], uniques, width=7, color=LINK)
+    ax1.bar([f * 100 for f in fractions], uniques, width=4, color=LINK)
     for f, u in zip(fractions, uniques):
         ax1.text(f * 100, u + budget * 0.02, str(u), ha='center', fontsize=9.5)
     ax1.set_xlabel('percentage of the set that is copies', fontsize=10)

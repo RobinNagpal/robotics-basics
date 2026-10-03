@@ -235,7 +235,7 @@ it from examples.
 
 ![Twelve simulated 24 by 24 pictures of discs, squares, triangles and rings, beside a curve of accuracy against the number of training pictures for a convolutional network and a fully connected network](../../images/models-that-see/vision-backbones/data-size-curve.svg)
 
-Trained on the same simulated pictures, the small convolutional network of 1,444 parameters reaches CONVSMALL right with 100 training pictures and CONVBIG with 3,200, while the fully connected network of 74,244 parameters reaches FCSMALL and FCBIG.
+Trained on the same simulated pictures, the small convolutional network of 1,444 parameters is right 0.699 of the time with 100 training pictures and 0.909 with 3,200, while the fully connected network of 74,372 parameters reaches 0.402 and 0.620.
 
 Being given something rather than having to learn it is worth the most when
 examples are scarce, and that is the third difference. The curve above comes from
@@ -411,27 +411,55 @@ three shapes it has never been shown.
 
 ![A query picture and its five nearest pictures in raw pixels on one row, and its five nearest in the backbone features on the other, with matching shapes outlined in green](../../images/models-that-see/vision-backbones/neighbours-picture.svg)
 
-NEIGHBOURCAPTION
+The query is a cross, and the five nearest pictures in raw pixels are a bar, a cross and three more bars, while the five nearest in the backbone's 16 numbers are a cross, a bar, a cross, a diamond and a cross.
 
-NEIGHBOURBODY
+The backbone here is the small convolutional network from section 3, trained to
+tell four shapes apart, which it does on held-out pictures 0.972 of the time.
+What is asked of it now is something it was never trained for: the pictures above
+are three shapes it has never seen, a cross, a bar and a diamond, and the
+question is simply which other pictures its 16 output numbers put nearby. In raw
+pixels the nearest pictures are the ones with a similar overall brightness and a
+similar position, and only one of the five is the same shape as the query. In the
+backbone's numbers three of the five are.
 
 ![A bar chart comparing the share of the five nearest pictures that are the same shape, in raw pixels and in backbone features, for the four shapes the backbone was trained on and the three it never saw](../../images/models-that-see/vision-backbones/neighbour-agreement.svg)
 
-AGREECAPTION
+Of the five nearest pictures, 45 in every hundred are the same shape in raw pixels and 89 in the backbone features for the four shapes it was trained on, and 59 against 78 for three shapes it had never seen.
 
-AGREEBODY
+Counting that over every picture rather than one gives the bars above. For the
+four shapes the backbone was trained on, 45 in every hundred of the five nearest
+pictures are the same shape when you measure in raw pixels, and 89 in every
+hundred when you measure in the backbone's numbers. For the three shapes it was
+never shown, the same counts are 59 and 78. The second pair is the important one,
+because it says that the numbers carry something about shape in general rather
+than about the four particular shapes, and that is exactly what makes a frozen
+backbone worth downloading.
 
 ![Two scatter plots of 600 pictures of three unseen shapes flattened onto two directions, mixed together in raw pixels and separated into groups in the backbone features](../../images/models-that-see/vision-backbones/feature-space-map.svg)
 
-MAPCAPTION
+Flattened onto their two directions of greatest spread, 600 pictures of three unseen shapes lie in one mixed cloud in raw pixels, while in the backbone features the bars pull away completely and the crosses and diamonds separate in part.
 
-MAPBODY
+The same thing can be seen rather than counted. Each picture is 576 raw numbers
+or 16 backbone numbers, and both can be flattened onto the two directions along
+which they spread out most, which is what the scatter plots show. The raw pixels
+make one cloud with the three shapes mixed evenly through it. The backbone
+numbers pull the bars right away from the others and leave the crosses and
+diamonds partly apart, without ever having been told that these three shapes
+exist, which is why a small head trained on a few hundred examples can finish the
+job.
 
 ![Two scatter plots of distance between pairs of pictures against their difference in overall brightness, with a strong link in raw pixels and a weak one in the features](../../images/models-that-see/vision-backbones/why-pixels-fail.svg)
 
-WHYCAPTION
+Over 300 random pairs of pictures, the link between how different their overall brightness is and how far apart they are measures 0.93 in raw pixels and 0.49 in the backbone features.
 
-WHYBODY
+It is worth knowing why raw pixels fail, because the reason is not that pixels
+carry too little information but that the distance between them measures the
+wrong thing. Taking 300 random pairs of pictures and comparing the difference in
+their overall brightness with the distance between them gives a link of 0.93 in
+raw pixels, which means pixel distance is very nearly a measure of brightness.
+The same link in the backbone's numbers is 0.49. The backbone has not thrown
+brightness away, but it has stopped brightness from drowning everything else, and
+that is the plainest statement of what a pretrained backbone gives you.
 
 ---
 

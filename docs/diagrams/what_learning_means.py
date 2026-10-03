@@ -1726,7 +1726,7 @@ def supervised_labels() -> None:
         ax.text(i, v * 1.5, f'{v:,.0f} hours', ha='center', fontsize=11,
                 weight='bold', color=INK)
     ax.axhline(37.5, color=MUTED, ls='--', lw=1.3)
-    ax.text(-0.42, 44, 'the dashed line is one person-week, 37.5 hours', fontsize=9.5,
+    ax.text(-0.45, 44, 'one person-week\n(the dashed line)', fontsize=9.5,
             color=MUTED, ha='left')
     ax.set_yscale('log')
     ax.set_ylim(1, max(vals) * 25)

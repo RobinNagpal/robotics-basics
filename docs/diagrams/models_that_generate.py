@@ -1368,7 +1368,7 @@ def guidance_tradeoff() -> None:
             label='spread across it, times 10')
     ax.axhline(real_x, color=GRIP, ls='--', lw=1.3)
     ax.axhline(real_off * 10, color=PURPLE, ls='--', lw=1.3)
-    ax.text(0.05, real_x + 0.03, f'real: {real_x:.3f} m', fontsize=9, color=GRIP)
+    ax.text(2.45, real_x + 0.04, f'real: {real_x:.3f} m', fontsize=9, color=GRIP)
     ax.text(0.05, real_off * 10 + 0.03, f'real: {real_off:.3f} m', fontsize=9,
             color=PURPLE)
     ax.set_xlabel('guidance strength', fontsize=9.5)
@@ -1381,7 +1381,7 @@ def guidance_tradeoff() -> None:
     _plain(ax)
     ax.plot(ws, miss, color=SLIDE, lw=2.6, marker='o', ms=5)
     ax.plot([best], [miss.min()], marker='o', ms=11, color=INK)
-    ax.text(best + 0.12, miss.min() * 1.6,
+    ax.text(best + 0.35, miss.min() * 2.6,
             f'best at strength {best:.1f}\nmismatch {miss.min():.4f}',
             fontsize=9.5, color=INK)
     ax.set_yscale('log')
@@ -1444,10 +1444,10 @@ def steps_vs_error() -> None:
     ax.plot(STEP_COUNTS, [q[n][0] for n in STEP_COUNTS], color=LINK, lw=2.6,
             marker='o', ms=6)
     ax.axhline(d.floor, color=MUTED, ls='--', lw=1.3)
-    ax.text(30, d.floor * 1.6, f'real against real: {d.floor:.4f}', fontsize=9.5,
+    ax.text(2.2, d.floor * 1.25, f'real against real: {d.floor:.4f}', fontsize=9.5,
             color=MUTED)
     for n in STEP_COUNTS:
-        ax.text(n, q[n][0] * 1.12, f'{q[n][0]:.3f}', ha='center', fontsize=9,
+        ax.text(n, q[n][0] * 1.45, f'{q[n][0]:.3f}', ha='center', fontsize=9,
                 color=LINK)
     ax.set_xscale('log')
     ax.set_yscale('log')
@@ -1523,11 +1523,11 @@ def steps_vs_time() -> None:
         ax.plot(steps, steps * per, color=col, lw=2.2,
                 label=f'{per:.1f} ms for one pass')
     ax.axhline(100.0, color=INK, ls='--', lw=1.6)
-    ax.text(2, 106, 'the whole budget at 10 commands a second (100 ms)',
-            fontsize=9.5, color=INK)
+    ax.text(99, 104, 'the whole budget at 10 commands a second: 100 ms',
+            fontsize=9.5, color=INK, ha='right')
     ax.axhline(33.3, color=MUTED, ls='--', lw=1.6)
-    ax.text(2, 36, 'the whole budget at 30 commands a second (33 ms)',
-            fontsize=9.5, color=MUTED)
+    ax.text(99, 22, 'the whole budget at 30 commands a second: 33 ms',
+            fontsize=9.5, color=MUTED, ha='right')
     ax.set_ylim(0, 160)
     ax.set_xlabel('number of steps', fontsize=9.5)
     ax.set_ylabel('time to generate one action (ms)', fontsize=9.5)

@@ -2587,19 +2587,27 @@ def more_candidates() -> None:
     _save(fig, WM_DOC, 'more-candidates.svg')
 
 
+HOLD_GOAL: float = 0.20       # a reachable angle to hold, for the re-planning experiment
+EXTRA_PULL: float = -0.45     # a steady pull the model knows nothing about, in newton metres
+
+
+def _hold_cost(state: Arr, u: Arr) -> Arr:
+    return (state[..., 0] - HOLD_GOAL) ** 2 + 0.05 * state[..., 1] ** 2 + 0.01 * u ** 2
+
+
 def replanning_rate() -> None:
-    """How often the plan has to be remade before the model's drift stops mattering."""
+    """How often the plan has to be remade when the real arm is not quite the modelled one."""
     w = _w()
-    total, horizon, k = 40, 40, 256
-    every = [1, 2, 5, 10, 20, 40]
-    costs = []
+    total, horizon, k = 40, 25, 256
+    every = [1, 2, 5, 10, 20]
+    offs = []
     for e in every:
         runs = []
-        for seed in range(5):
-            rng = np.random.default_rng(2000 + seed)
+        for seed in range(6):
+            rng = np.random.default_rng(3000 + seed)
             s = np.array([-0.80, 0.0])
-            paid = 0.0
-            plan = np.zeros(0)
+            plan = np.zeros(horizon)
+            errs = []
             for t in range(total):
                 if t % e == 0:
                     cands = _smooth_torque(k, horizon, rng, tmax=TORQUE_PLAN)
@@ -2607,32 +2615,31 @@ def replanning_rate() -> None:
                     cost = np.zeros(k)
                     for j in range(horizon):
                         batch = w.model.step(batch, cands[:, j])
-                        cost += step_cost(batch, cands[:, j])
+                        cost += _hold_cost(batch, cands[:, j])
                     plan = cands[int(np.argmin(cost))]
                 u = plan[t % e]
-                s = true_step(s, np.array(u))
-                paid += float(step_cost(s, np.array(u)))
-            runs.append(paid / total)
-        costs.append(float(np.mean(runs)))
-        print(f'[replan] the plan remade every {e:2d} steps ({e * DT:.2f} s): the real system '
-              f'charges {costs[-1]:.4f} a step')
-    print(f'[replan] remaking it every step costs {costs[0]:.4f}, and running one plan to the '
-          f'end costs {costs[-1]:.4f}, which is {costs[-1] / costs[0]:.2f} times as much')
-    fig, ax = plt.subplots(figsize=(8.2, 4.6), facecolor='white')
+                s = true_step(s, np.array(u + EXTRA_PULL))
+                if t >= 20:
+                    errs.append(abs(float(s[0]) - HOLD_GOAL))
+            runs.append(float(np.mean(errs)))
+        offs.append(float(np.degrees(np.mean(runs))))
+        print(f'[replan] the plan remade every {e:2d} steps ({e * DT:.2f} s): the arm settles '
+              f'{offs[-1]:.2f} degrees away from the angle it was asked to hold')
+    print(f'[replan] remaking the plan at every step leaves {offs[0]:.2f} degrees of error '
+          f'against {offs[-1]:.2f} degrees when it is remade once a second')
+    fig, ax = plt.subplots(figsize=(8.4, 4.6), facecolor='white')
     _plain(ax)
-    ax.plot([e * DT for e in every], costs, marker='o', color=PURPLE, lw=2)
-    ax.axhline(costs[0], color=SLIDE, lw=1.5, ls='--',
-               label='remaking the plan at every step')
+    ax.plot([e * DT for e in every], offs, marker='o', color=PURPLE, lw=2)
     ax.set_xscale('log')
     ax.set_xticks([e * DT for e in every])
     ax.set_xticklabels([f'{e * DT:.2f}' for e in every])
     ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_xlabel('seconds between one plan and the next', fontsize=10)
-    ax.set_ylabel('cost actually paid, a step', fontsize=10)
-    ax.set_ylim(min(costs) * 0.9, max(costs) * 1.08)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax.set_title('A drifting model is still useful, as long as the plan is\n'
-                 'thrown away and made again from a fresh look', fontsize=11.5, weight='bold')
+    ax.set_ylabel('how far from the asked-for angle the arm settles\n(degrees)', fontsize=10)
+    ax.set_ylim(0, max(offs) * 1.2)
+    ax.set_title(f'With a steady pull of {abs(EXTRA_PULL):.2f} newton metres that the model\n'
+                 'knows nothing about, remaking the plan often is what saves it',
+                 fontsize=11.2, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'replanning-rate.svg')
 
@@ -2938,3 +2945,69 @@ def plan_that_exploits_the_error() -> None:
                  fontsize=11, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'plan-that-exploits-the-error.svg')
+
+
+def main() -> None:
+    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    global PNG_DIR
+    if len(sys.argv) == 3 and sys.argv[1] == '--png':
+        PNG_DIR = pathlib.Path(sys.argv[2])
+        PNG_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 03_vision-language-action-models.md
+    vla_input_output()
+    same_picture_two_sentences()
+    one_model_many_tasks()
+    vla_body_shapes()
+    resolution_and_tokens()
+    two_ways_to_get_an_action()
+    binning_one_dimension()
+    quantisation_error_vs_bins()
+    percentile_range_matters()
+    tokens_per_chunk()
+    flow_head_path()
+    flow_steps_vs_error()
+    head_vs_tokens_latency()
+    continuous_vs_binned()
+    forgetting_curve()
+    mixture_sweep()
+    data_sizes()
+    action_spaces_do_not_match()
+    normalising_per_robot()
+    pooling_helps()
+    pooling_vs_data()
+    position_coverage()
+    new_object_kind()
+    instruction_overlap()
+    four_cases()
+    cost_of_running()
+
+    # 04_world-models.md
+    one_step_job()
+    training_transitions()
+    one_step_error()
+    learned_against_true_physics()
+    pixels_to_latent()
+    variance_vs_latent_size()
+    what_is_lost()
+    reading_the_gripper()
+    rollout_vs_truth()
+    error_vs_horizon()
+    phase_path()
+    more_data_does_not_fix_it()
+    candidate_sequences()
+    arithmetic_of_planning()
+    more_candidates()
+    replanning_rate()
+    labelled_against_unlabelled()
+    cost_of_predicting_pixels()
+    simulator_against_learned()
+    through_the_stop()
+    energy_drift()
+    plan_that_exploits_the_error()
+
+    print(f'wrote the diagrams under {IMAGES}')
+
+
+if __name__ == '__main__':
+    main()

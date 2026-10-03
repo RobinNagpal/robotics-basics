@@ -22,16 +22,18 @@ What is real arithmetic and what is simulated:
   numpy.random.default_rng(7) for the speckle, and the squeezing is a real
   block average of that array, so the loss of detail in the small version is
   the real result of averaging.
-* The vector clouds that show the projector pulling picture vectors into the
-  token embedding space are simulated with numpy.random.default_rng(3), and the
-  cosine similarities and lengths drawn from them are real arithmetic on those
-  simulated vectors.
-* The training curves, the accuracy-against-working-out curves, the vote
-  curves, the beam search curves, the argument validation counts and the turn
-  counts on the reasoning page are all Monte Carlo simulations with the seeds
-  given in each function, run on the simple made-up task described in the
-  function. They are drawn to show the shape of a trade and are labelled
-  illustrative in the figures and in the pages. They are not benchmark scores.
+* The vector clouds and vector lengths that show why the two halves do not fit
+  together are simulated with numpy.random.default_rng(3), and the lengths and
+  distances drawn from them are real arithmetic on those simulated vectors.
+* The two training-order curves come from a real gradient descent run written
+  out in NumPy on a made-up task with numpy.random.default_rng(21), so the
+  curves are measured rather than drawn.
+* The accuracy-against-working-out curves, the vote curves, the beam search
+  curves, the argument validation counts and the episode turn and time counts
+  on the reasoning page are Monte Carlo simulations with the seeds given in
+  each class, run on the simple made-up tasks those classes describe. They are
+  drawn to show the shape of a trade and are labelled illustrative in the
+  figures and in the pages. They are not benchmark scores for any model.
 """
 
 import pathlib

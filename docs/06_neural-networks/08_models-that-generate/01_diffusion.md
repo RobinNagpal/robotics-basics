@@ -9,10 +9,10 @@ because a great many of the jobs a robot arm has to do have several right
 answers at once, and a model that gives back one answer for them gives back a
 wrong one.
 
-So this page answers three questions. Why is making something up a different
-job from predicting it? How does a **generative model**, which is a model that
-produces a whole new example rather than a single answer, actually work? And
-what does the most widely used kind, called **diffusion**, cost you in time?
+So this page answers three questions. Why is making something up different from
+predicting it? How does a **generative model**, which produces a whole new
+example rather than a single answer, work? And what does the most widely used
+kind, called **diffusion**, cost in time?
 
 It is for a reader who knows what a [neural
 network](../02_inside-a-network/01_one-neuron.md) is, what a
@@ -20,13 +20,13 @@ network](../02_inside-a-network/01_one-neuron.md) is, what a
 [training](../03_how-training-works/04_the-training-loop.md) does, and who has
 met no generative model before, so every word is explained where it appears.
 
-Everything below is worked through on one small example that you can see all of
-at once: a robot arm moves its gripper past a round obstacle, and the recorded
-demonstrations go either above it or below it, so each waypoint is a point in
-two dimensions and every step of the method can be drawn rather than described.
-The data is simulated, and every number in every picture is worked out and
-printed by `docs/diagrams/models_that_generate.py`, including the timings,
-which were measured on the machine that drew the pictures.
+Everything below is worked through on one example you can see all of at once: a
+robot arm moves its gripper past a round obstacle, and the demonstrations go
+either above it or below it, so each waypoint is a point in two dimensions and
+every step of the method can be drawn. The data is simulated, and every number
+in every picture is worked out and printed by
+`docs/diagrams/models_that_generate.py`, including the timings, which were
+measured on the machine that drew the pictures.
 
 ## Contents
 
@@ -351,7 +351,7 @@ cent, which on a real arm would be a collision about once in a hundred.
 
 ![Five panels of generated waypoints at 2, 5, 10, 25 and 100 steps, the first an almost empty scatter and the last two forming clean arcs](../../images/models-that-generate/diffusion/samples-at-few-steps.svg)
 
-The same model asked for its answer in 2, 5, 10, 25 and 100 steps, with mismatch scores of 1.586, 0.023, 0.014, 0.006 and 0.002.
+The same model asked for its answer in 2, 5, 10, 25 and 100 steps.
 
 Time, unlike quality, is perfectly predictable, because every step is one pass
 of the network and nothing else.

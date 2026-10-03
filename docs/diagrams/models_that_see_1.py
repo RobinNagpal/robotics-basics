@@ -1120,11 +1120,21 @@ def _data_curve() -> dict:
         hidden = 128
         conv, fc = [], []
         for n in sizes:
-            xtr, ytr = shape_pictures(n, classes, np.random.default_rng(100 + n))
-            conv.append(_conv_accuracy(
-                conv_net_train(xtr, ytr, 4, seed=7, steps=1200, lr=0.01), xte, yte))
-            fc.append(_fc_accuracy(
-                fc_net_train(xtr, ytr, 4, seed=7, steps=2500, hidden=hidden), xte, yte))
+            cs, fs = [], []
+            for seed in (3, 7, 11):
+                xtr, ytr = shape_pictures(n, classes,
+                                          np.random.default_rng(100 + n + seed))
+                cs.append(_conv_accuracy(conv_net_train(xtr, ytr, 4, seed=seed,
+                                                        steps=1200, lr=0.005),
+                                         xte, yte))
+                fs.append(_fc_accuracy(fc_net_train(xtr, ytr, 4, seed=seed,
+                                                    steps=2000, hidden=hidden),
+                                       xte, yte))
+            conv.append(float(np.mean(cs)))
+            fc.append(float(np.mean(fs)))
+            print(f'[data] {n} pictures: convolutional runs '
+                  f'{[round(v, 3) for v in cs]}, fully connected runs '
+                  f'{[round(v, 3) for v in fs]}')
         n_conv = 8 * 25 + 8 + 16 * 8 * 9 + 16 + 16 * 4 + 4
         n_fc = 576 * hidden + hidden + hidden * 4 + 4
         DATA_CURVE = {'sizes': sizes, 'conv': conv, 'fc': fc, 'n_conv': n_conv,
@@ -1138,7 +1148,7 @@ def data_size_curve() -> None:
           f"the fully connected one {d['n_fc']:,}")
     for n, c, f in zip(d['sizes'], d['conv'], d['fc']):
         print(f'[data] {n:5d} training pictures: convolutional {c:.3f}, '
-              f'fully connected {f:.3f}')
+              f'fully connected {f:.3f} (the average of three runs)')
 
     fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.8), facecolor='white',
                              width_ratios=[1.0, 1.3])
@@ -1560,15 +1570,12 @@ UNSEEN_CLASSES: list[str] = SHAPES[4:]
 
 
 def conv_features(p: dict[str, Arr], x: Arr) -> Arr:
-    """The numbers the backbone hands over: pooled activations of both layers."""
+    """The numbers the backbone hands over: the 16 pooled outputs of the last layer."""
     a1, _ = _conv_forward(x[:, None], p['w1'], p['b1'], 2, 2)
     r1 = np.maximum(a1, 0.0)
     a2, _ = _conv_forward(r1, p['w2'], p['b2'], 2, 1)
     r2 = np.maximum(a2, 0.0)
-    n, c, h, _ = r1.shape
-    g1 = r1.reshape(n, c, 2, h // 2, 2, h // 2).mean(axis=(3, 5)).reshape(n, -1)
-    g2 = r2.mean(axis=(2, 3))
-    return np.hstack([g1, g2])
+    return r2.mean(axis=(2, 3))
 
 
 FEATURES: dict | None = None
@@ -1579,8 +1586,8 @@ def _features() -> dict:
     if FEATURES is None:
         rng = np.random.default_rng(31)
         xtr, ytr = shape_pictures(1600, TRAIN_CLASSES, rng)
-        p = conv_net_train(xtr, ytr, len(TRAIN_CLASSES), seed=77, steps=1200,
-                           lr=0.01)
+        p = conv_net_train(xtr, ytr, len(TRAIN_CLASSES), seed=77, steps=1500,
+                           lr=0.005)
         xte, yte = shape_pictures(600, TRAIN_CLASSES, np.random.default_rng(32))
         acc = _conv_accuracy(p, xte, yte)
         xun, yun = shape_pictures(600, UNSEEN_CLASSES, np.random.default_rng(33))
@@ -1852,16 +1859,19 @@ def match_detections(dets: list[dict], truth: list[tuple[float, float, float, fl
     rows = []
     for d in dets:
         best, best_ov = -1, 0.0
+        any_ov = 0.0
         for k, t in enumerate(truth):
+            ov = _iou(d['box'], t)
+            any_ov = max(any_ov, ov)
             if k in used:
                 continue
-            ov = _iou(d['box'], t)
             if ov > best_ov:
                 best, best_ov = k, ov
         hit = best >= 0 and best_ov >= thresh
         if hit:
             used.add(best)
-        rows.append({'score': d['score'], 'iou': best_ov, 'hit': hit,
+        rows.append({'score': d['score'], 'iou': any_ov, 'free_iou': best_ov,
+                     'hit': hit, 'again': (not hit) and any_ov >= thresh,
                      'box': d['box'], 'from': d['from']})
     return rows
 
@@ -1907,8 +1917,9 @@ def four_jobs() -> None:
 
     ax = axes[0][1]
     _show(ax, rgb, 'putting a box round each object')
-    for ob in objects:
-        _draw_box(ax, ob['box'], CLASS_COLOUR[ob['cls']], ob['cls'], lw=2.0)
+    for i, ob in enumerate(objects):
+        _draw_box(ax, ob['box'], CLASS_COLOUR[ob['cls']], ob['cls'], lw=2.0,
+                  above=i % 2 == 0)
     ax.set_xlabel(f'{len(objects)} boxes, each 4 numbers and a class name', fontsize=9)
 
     ax = axes[1][0]
@@ -2046,7 +2057,10 @@ def grasp_point_from_each_job() -> None:
     print(f'[grasp] the box middle is at ({box_pt[0]:.0f}, {box_pt[1]:.0f}), the '
           f'class middle at ({class_pt[0]:.0f}, {class_pt[1]:.0f}) and the object '
           f'middle at ({inst_pt[0]:.0f}, {inst_pt[1]:.0f})')
-    print(f'[grasp] the class middle is {gap:.0f} pixels from the object middle')
+    print(f'[grasp] the class middle is {gap:.0f} pixels from the object middle, '
+          f'and the box middle is '
+          f'{np.hypot(box_pt[0] - inst_pt[0], box_pt[1] - inst_pt[1]):.0f} pixels '
+          f'from it')
     for name, hit in on_target.items():
         print(f'[grasp] the {name} lands on the chosen glass: {bool(hit)}')
 
@@ -2058,14 +2072,524 @@ def grasp_point_from_each_job() -> None:
              ('middle of the box', box_pt, JOINT),
              ('middle of the glass class region', class_pt, GRIP),
              ('middle of this object alone', inst_pt, SLIDE)]
-    for i, (name, pt, colour) in enumerate(marks):
+    for size, (name, pt, colour) in zip((0, 22, 16, 11), marks):
         if pt is None:
             continue
-        ax.plot([pt[0]], [pt[1]], marker='X', color=colour, markersize=15,
-                markeredgecolor='white', markeredgewidth=1.4)
+        ax.plot([pt[0]], [pt[1]], marker='X', color=colour, markersize=size,
+                markeredgecolor='white', markeredgewidth=1.2)
     ax.legend(handles=[plt.Line2D([], [], marker='X', ls='', color=c, markersize=11,
                                   label=n) for n, p, c in marks],
               fontsize=9.5, loc='lower left', framealpha=0.92)
     ax.set_xlabel(f'the class middle sits {gap:.0f} pixels away from the object '
                   f'middle, on a different glass', fontsize=10, color=INK)
     _save(fig, SEG_DOC, 'grasp-point-from-each-job.svg')
+
+
+# --------------------------------------------------------------------------
+# 02_detection-and-segmentation, section 2: boxes and how a guess is scored
+# --------------------------------------------------------------------------
+
+def box_as_numbers() -> None:
+    rgb, objects = _scene()
+    mug = next(o for o in objects if o['name'] == 'mug')
+    x1, y1, x2, y2 = mug['box']
+    cx, cy, bw, bh = (x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1
+    print(f'[box] the mug box by corners: ({x1:.0f}, {y1:.0f}) to ({x2:.0f}, '
+          f'{y2:.0f})')
+    print(f'[box] the same box by middle and size: ({cx:.0f}, {cy:.0f}) and '
+          f'{bw:.0f} by {bh:.0f}')
+    print(f'[box] the same box as fractions of the picture: {cx / W:.3f}, '
+          f'{cy / H:.3f}, {bw / W:.3f}, {bh / H:.3f}')
+    print(f'[box] the box holds {int(bw * bh):,} pixels and the mug itself '
+          f'{mug["area"]:,}, so {100 * mug["area"] / (bw * bh):.0f}% of the box is '
+          f'mug')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white',
+                             width_ratios=[1.15, 1.0])
+    ax = axes[0]
+    _show(ax, rgb[170:400, 330:520], 'the box around the mug')
+    bx = (x1 - 330, y1 - 170, x2 - 330, y2 - 170)
+    _draw_box(ax, bx, GRIP, None, lw=2.2)
+    ax.plot([(bx[0] + bx[2]) / 2], [(bx[1] + bx[3]) / 2], marker='+', color=GRIP,
+            markersize=12)
+    ax.annotate(f'({x1:.0f}, {y1:.0f})', (bx[0], bx[1]), textcoords='offset points',
+                xytext=(-6, 8), fontsize=9.5, color=GRIP, ha='left', weight='bold')
+    ax.annotate(f'({x2:.0f}, {y2:.0f})', (bx[2], bx[3]), textcoords='offset points',
+                xytext=(4, -12), fontsize=9.5, color=GRIP, ha='right', weight='bold')
+    ax.set_xlabel('the corner numbers are counted in pixels from the top left of '
+                  'the whole picture', fontsize=9)
+    ax = axes[1]
+    _blank(ax, (0, 10), (0, 10))
+    rows = [('the two corners', f'x1 = {x1:.0f},  y1 = {y1:.0f}\n'
+                                f'x2 = {x2:.0f},  y2 = {y2:.0f}', LINK),
+            ('the middle and the size', f'middle ({cx:.0f}, {cy:.0f})\n'
+                                        f'{bw:.0f} wide, {bh:.0f} tall', SLIDE),
+            ('as fractions of the picture', f'{cx / W:.3f}, {cy / H:.3f}\n'
+                                            f'{bw / W:.3f}, {bh / H:.3f}', PURPLE)]
+    ax.text(0.0, 9.4, 'The same box written three ways', fontsize=12.5,
+            weight='bold', color=INK)
+    y = 7.6
+    for name, body, colour in rows:
+        ax.text(0.0, y + 1.0, name, fontsize=10.5, color=colour, weight='bold')
+        _box(ax, 0.0, y - 0.6, 9.4, 1.5, colour, body, fs=11, alpha=0.14)
+        y -= 2.6
+    ax.text(0.0, 0.6, f'The box holds {int(bw * bh):,} pixels, and only '
+                      f'{mug["area"]:,} of them, or '
+                      f'{100 * mug["area"] / (bw * bh):.0f} in every hundred, are mug.',
+            fontsize=10, color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'box-as-numbers.svg')
+
+
+def iou_arithmetic() -> None:
+    rgb, objects = _scene()
+    truth = next(o for o in objects if o['name'] == 'glass_front')['box']
+    pick = [d for d in _dets() if d['from'] == 'glass_front']
+    guess = min(pick, key=lambda d: abs(_iou(d['box'], truth) - 0.6))['box']
+    ix1, iy1 = max(truth[0], guess[0]), max(truth[1], guess[1])
+    ix2, iy2 = min(truth[2], guess[2]), min(truth[3], guess[3])
+    iw, ih = ix2 - ix1, iy2 - iy1
+    inter = iw * ih
+    a_t = (truth[2] - truth[0]) * (truth[3] - truth[1])
+    a_g = (guess[2] - guess[0]) * (guess[3] - guess[1])
+    union = a_t + a_g - inter
+    print(f'[iou] true box ({truth[0]:.0f}, {truth[1]:.0f}, {truth[2]:.0f}, '
+          f'{truth[3]:.0f}) covers {a_t:,.0f} pixels')
+    print(f'[iou] guessed box ({guess[0]:.0f}, {guess[1]:.0f}, {guess[2]:.0f}, '
+          f'{guess[3]:.0f}) covers {a_g:,.0f} pixels')
+    print(f'[iou] the overlap is {iw:.0f} wide and {ih:.0f} tall, so {inter:,.0f} '
+          f'pixels; the union is {a_t:,.0f} + {a_g:,.0f} - {inter:,.0f} = '
+          f'{union:,.0f}')
+    print(f'[iou] intersection over union = {inter:,.0f} / {union:,.0f} = '
+          f'{inter / union:.3f}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.2), facecolor='white',
+                             width_ratios=[1.0, 1.1])
+    ax = axes[0]
+    view = rgb[170:370, 110:260]
+    _show(ax, view, 'one true box and one guess')
+    shift = (110, 170, 110, 170)
+    tb = tuple(t - s for t, s in zip(truth, shift))
+    gb = tuple(g - s for g, s in zip(guess, shift))
+    ax.add_patch(Rectangle((ix1 - 110, iy1 - 170), iw, ih, facecolor=JOINT,
+                           alpha=0.45, edgecolor='none'))
+    _draw_box(ax, tb, SLIDE, 'the true box', lw=2.2)
+    _draw_box(ax, gb, GRIP, 'the guess', lw=2.2, above=False)
+    ax.set_xlabel('the shaded rectangle is the overlap', fontsize=9.5)
+    ax = axes[1]
+    _blank(ax, (0, 10), (0, 10))
+    lines = [
+        ('the overlap, left and right',
+         f'from max({truth[0]:.0f}, {guess[0]:.0f}) = {ix1:.0f} '
+         f'to min({truth[2]:.0f}, {guess[2]:.0f}) = {ix2:.0f}, so {iw:.0f} wide'),
+        ('the overlap, top and bottom',
+         f'from max({truth[1]:.0f}, {guess[1]:.0f}) = {iy1:.0f} '
+         f'to min({truth[3]:.0f}, {guess[3]:.0f}) = {iy2:.0f}, so {ih:.0f} tall'),
+        ('the overlap in pixels',
+         f'{iw:.0f} x {ih:.0f} = {inter:,.0f}'),
+        ('the two boxes in pixels',
+         f'{a_t:,.0f} and {a_g:,.0f}'),
+        ('the union in pixels',
+         f'{a_t:,.0f} + {a_g:,.0f} - {inter:,.0f} = {union:,.0f}'),
+        ('overlap divided by union',
+         f'{inter:,.0f} / {union:,.0f} = {inter / union:.3f}'),
+    ]
+    ax.text(0.0, 9.5, 'Intersection over union, worked out', fontsize=12.5,
+            weight='bold', color=INK)
+    y = 8.2
+    for name, body in lines:
+        colour = SLIDE if 'divided' in name else MUTED
+        ax.text(0.0, y, name, fontsize=9.5, color=colour, weight='bold')
+        ax.text(0.0, y - 0.55, body, fontsize=10.5, color=INK, family='monospace')
+        y -= 1.42
+    _save(fig, SEG_DOC, 'iou-arithmetic.svg')
+
+
+def iou_ladder() -> None:
+    rgb, objects = _scene()
+    truth = next(o for o in objects if o['name'] == 'glass_front')['box']
+    w = truth[2] - truth[0]
+    h = truth[3] - truth[1]
+    shifts = [0.0, 0.10, 0.25, 0.45, 0.75]
+    fig, axes = plt.subplots(1, len(shifts), figsize=(14.0, 4.2), facecolor='white')
+    print('[ladder] the same true box with five guesses, each moved further:')
+    for ax, f in zip(axes, shifts):
+        guess = (truth[0] + f * w, truth[1] + f * h * 0.4, truth[2] + f * w,
+                 truth[3] + f * h * 0.4)
+        ov = _iou(truth, guess)
+        view = rgb[170:380, 120:300]
+        _show(ax, view, f'moved {f * 100:.0f}% of a width')
+        sh = (120, 170, 120, 170)
+        _draw_box(ax, tuple(t - s for t, s in zip(truth, sh)), SLIDE, None, lw=2.0)
+        _draw_box(ax, tuple(g - s for g, s in zip(guess, sh)), GRIP, None, lw=2.0)
+        ax.set_xlabel(f'overlap over union = {ov:.2f}', fontsize=11,
+                      color=GRIP if ov < 0.5 else SLIDE, weight='bold')
+        print(f'[ladder] moved by {f:.2f} of a width: overlap over union {ov:.3f}')
+    fig.suptitle('What different amounts of overlap look like, with the true box in '
+                 'green and the guess in red', fontsize=12.5, weight='bold',
+                 color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'iou-ladder.svg')
+
+
+def iou_threshold_count() -> None:
+    _, objects = _scene()
+    truth = [o['box'] for o in objects]
+    keep, _ = nms(_dets(), 0.5)
+    kept = [_dets()[i] for i in keep]
+    ths = [0.3, 0.5, 0.6, 0.7, 0.8, 0.9]
+    counts = []
+    for t in ths:
+        rows = match_detections(kept, truth, t)
+        counts.append(sum(1 for r in rows if r['hit']))
+        print(f'[thresh] at an overlap of {t:.1f} or more, {counts[-1]} of the '
+              f'{len(truth)} objects are counted as found, from {len(kept)} guesses')
+
+    fig, ax = plt.subplots(figsize=(9.0, 4.6), facecolor='white')
+    _plain(ax)
+    ax.bar([f'{t:.1f}' for t in ths], counts, color=LINK, alpha=0.88, width=0.55)
+    ax.axhline(len(truth), color=SLIDE, ls='--', lw=1.6)
+    ax.text(5.45, len(truth) + 0.12, f'{len(truth)} objects are really there',
+            fontsize=9.5, color=SLIDE, ha='right')
+    for i, c in enumerate(counts):
+        ax.text(i, c + 0.12, str(c), ha='center', fontsize=11, weight='bold',
+                color=INK)
+    ax.set_ylim(0, len(truth) + 1.2)
+    ax.set_xlabel('the overlap a guess must reach to count as right', fontsize=10)
+    ax.set_ylabel('objects counted as found', fontsize=10)
+    ax.set_title('The same guesses, scored against different ideas of "right"',
+                 fontsize=12, weight='bold', color=INK)
+    _save(fig, SEG_DOC, 'iou-threshold-count.svg')
+
+
+# --------------------------------------------------------------------------
+# 02_detection-and-segmentation, section 3: many guesses, and suppression
+# --------------------------------------------------------------------------
+
+ANCHORS: int = 3
+
+
+def why_many_guesses() -> None:
+    rgb, objects = _scene()
+    mug = next(o for o in objects if o['name'] == 'mug')
+    stride = 32
+    gw, gh = W // stride, H // stride
+    centres = [(stride / 2 + stride * i, stride / 2 + stride * j)
+               for j in range(gh) for i in range(gw)]
+    inside = [c for c in centres if mug['box'][0] <= c[0] <= mug['box'][2]
+              and mug['box'][1] <= c[1] <= mug['box'][3]]
+    print(f'[many] the stride-{stride} grid has {gw} by {gh} = {gw * gh} cells, and '
+          f'with {ANCHORS} box shapes a cell that is {gw * gh * ANCHORS} guesses for '
+          f'one picture')
+    print(f'[many] {len(inside)} cell middles fall inside the mug, so {len(inside)} '
+          f'cells can all see the mug and {len(inside) * ANCHORS} guesses are made '
+          f'about it')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.9), facecolor='white')
+    ax = axes[0]
+    _show(ax, rgb, f'the stride-{stride} grid over the whole picture')
+    for i in range(1, gw):
+        ax.plot([i * stride, i * stride], [0, H - 1], color=GRID, lw=0.6)
+    for j in range(1, gh):
+        ax.plot([0, W - 1], [j * stride, j * stride], color=GRID, lw=0.6)
+    _draw_box(ax, mug['box'], GRIP, 'the mug', lw=2.0)
+    for cxy in inside:
+        ax.plot([cxy[0]], [cxy[1]], marker='o', color=SLIDE, markersize=5)
+    ax.set_xlabel(f'{gw} x {gh} = {gw * gh} cells, each asked the same question',
+                  fontsize=9.5)
+    ax = axes[1]
+    view = rgb[220:380, 340:500]
+    _show(ax, view, 'the nine cells whose middles land on the mug')
+    rng = np.random.default_rng(55)
+    for cxy in inside:
+        ax.plot([cxy[0] - 340], [cxy[1] - 220], marker='o', color=SLIDE,
+                markersize=6)
+        for _ in range(ANCHORS):
+            w = (mug['box'][2] - mug['box'][0]) * rng.uniform(0.75, 1.25)
+            h = (mug['box'][3] - mug['box'][1]) * rng.uniform(0.75, 1.25)
+            _draw_box(ax, (cxy[0] - 340 - w / 2, cxy[1] - 220 - h / 2,
+                           cxy[0] - 340 + w / 2, cxy[1] - 220 + h / 2), LINK, None,
+                      lw=0.8)
+    ax.set_xlabel(f'{len(inside)} cells x {ANCHORS} box shapes = '
+                  f'{len(inside) * ANCHORS} guesses about one mug', fontsize=9.5)
+    fig.suptitle('Why a detector guesses many times: every cell answers for itself',
+                 fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'why-many-guesses.svg')
+
+
+def nms_steps() -> None:
+    rgb, _ = _scene()
+    dets = [d for d in _dets() if d['score'] >= 0.4]
+    thresh = 0.5
+    order = list(range(len(dets)))
+    steps: list[tuple[int, list[int]]] = []
+    keep: list[int] = []
+    while order:
+        i = order.pop(0)
+        keep.append(i)
+        dropped = [j for j in order if _iou(dets[i]['box'], dets[j]['box']) > thresh]
+        order = [j for j in order if j not in dropped]
+        steps.append((i, dropped))
+    print(f'[nms] {len(dets)} guesses score 0.40 or more, and suppression at an '
+          f'overlap of {thresh} leaves {len(keep)}')
+    for n, (i, dropped) in enumerate(steps[:4], start=1):
+        drops = ', '.join(f"{dets[j]['score']:.2f} (overlap "
+                          f"{_iou(dets[i]['box'], dets[j]['box']):.2f})"
+                          for j in dropped)
+        print(f'[nms] step {n}: keep the guess scoring {dets[i]["score"]:.2f}; '
+              f'drop {len(dropped)} guesses' + (f': {drops}' if drops else ''))
+    print('[nms] the boxes left standing, by score: '
+          + ', '.join(f'{dets[i]["score"]:.2f}' for i in keep))
+
+    fig, axes = plt.subplots(2, 3, figsize=(13.2, 7.4), facecolor='white')
+    flat = axes.ravel()
+    _show(flat[0], rgb, f'all {len(dets)} guesses scoring 0.40 or more')
+    for d in dets:
+        _draw_box(flat[0], d['box'], LINK, None, lw=1.1)
+    flat[0].set_xlabel('every guess, before anything is removed', fontsize=9)
+    shown = []
+    for n in range(4):
+        ax = flat[n + 1]
+        i, dropped = steps[n]
+        _show(ax, rgb, f'step {n + 1}: keep {dets[i]["score"]:.2f}, '
+                       f'drop {len(dropped)}')
+        for j in dropped:
+            _draw_box(ax, dets[j]['box'], GRIP, f'{dets[j]["score"]:.2f}', lw=1.2,
+                      fs=7.5)
+        for k in shown:
+            _draw_box(ax, dets[k]['box'], MUTED, None, lw=1.0)
+        _draw_box(ax, dets[i]['box'], SLIDE, f'{dets[i]["score"]:.2f}', lw=2.2,
+                  fs=8.5)
+        shown.append(i)
+        ax.set_xlabel('green is kept, red is dropped for overlapping it',
+                      fontsize=8.5)
+    ax = flat[5]
+    _show(ax, rgb, f'what is left: {len(keep)} boxes')
+    for i in keep:
+        _draw_box(ax, dets[i]['box'], SLIDE, f'{dets[i]["score"]:.2f}', lw=1.8,
+                  fs=8)
+    ax.set_xlabel('one box an object, except where the guesses were poor',
+                  fontsize=8.5)
+    fig.suptitle(f'Non-maximum suppression, step by step, at an overlap of {thresh}',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'nms-steps.svg')
+
+
+def nms_threshold() -> None:
+    _, objects = _scene()
+    dets = [d for d in _dets() if d['score'] >= 0.4]
+    ths = np.arange(0.1, 0.95, 0.05)
+    counts = []
+    for t in ths:
+        keep, _ = nms(dets, float(t))
+        counts.append(len(keep))
+    print('[nms-th] survivors at each suppression threshold: '
+          + ', '.join(f'{t:.2f}->{c}' for t, c in zip(ths, counts)))
+
+    fig, ax = plt.subplots(figsize=(9.6, 4.8), facecolor='white')
+    _plain(ax)
+    ax.plot(ths, counts, marker='o', color=LINK, lw=2)
+    ax.axhline(len(objects), color=SLIDE, ls='--', lw=1.6)
+    ax.text(0.9, len(objects) + 0.35, f'{len(objects)} objects are really there',
+            fontsize=9.5, color=SLIDE, ha='right')
+    ax.annotate('too strict: real objects that stand close\ntogether are removed as '
+                'duplicates', xy=(0.15, counts[1]), xytext=(0.22, 11.5),
+                fontsize=9.5, color=GRIP,
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.2))
+    ax.annotate('too loose: the same object keeps\nseveral boxes', xy=(0.85,
+                counts[-1]), xytext=(0.52, 14.5), fontsize=9.5, color=GRIP,
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.2))
+    ax.set_xlabel('the overlap above which a lower-scoring box is dropped',
+                  fontsize=10)
+    ax.set_ylabel('boxes left standing', fontsize=10)
+    ax.set_ylim(0, max(counts) + 3)
+    ax.set_title('One number decides how many boxes come out', fontsize=12,
+                 weight='bold', color=INK)
+    _save(fig, SEG_DOC, 'nms-threshold.svg')
+
+
+def nms_close_objects() -> None:
+    rgb, objects = _scene()
+    front = next(o for o in objects if o['name'] == 'glass_front')
+    back = next(o for o in objects if o['name'] == 'glass_back')
+    true_ov = _iou(front['box'], back['box'])
+    dets = [d for d in _dets() if d['score'] >= 0.4]
+    print(f'[close] the two glasses that stand together have boxes that overlap by '
+          f'{true_ov:.3f} of their union')
+    results = {}
+    for t in (0.3, 0.5):
+        keep, _ = nms(dets, t)
+        found = set()
+        for i in keep:
+            for ob in (front, back):
+                if _iou(dets[i]['box'], ob['box']) > 0.5:
+                    found.add(ob['name'])
+        results[t] = (len(keep), sorted(found))
+        print(f'[close] suppressing at {t}: {len(keep)} boxes left, and the glasses '
+              f'found are {sorted(found)}')
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.6), facecolor='white')
+    view = (120, 170, 260, 360)
+    sub = rgb[view[1]:view[3], view[0]:view[2]]
+    ax = axes[0]
+    _show(ax, sub, 'two real objects, standing close')
+    _draw_box(ax, (front['box'][0] - view[0], front['box'][1] - view[1],
+                   front['box'][2] - view[0], front['box'][3] - view[1]), SLIDE,
+              'glass in front', lw=2.0)
+    _draw_box(ax, (back['box'][0] - view[0], back['box'][1] - view[1],
+                   back['box'][2] - view[0], back['box'][3] - view[1]), LINK,
+              'glass behind', lw=2.0, above=False)
+    ax.set_xlabel(f'their true boxes already overlap by {true_ov:.2f}', fontsize=9.5)
+    for ax, t in ((axes[1], 0.3), (axes[2], 0.5)):
+        keep, _ = nms(dets, t)
+        _show(ax, sub, f'suppressing at an overlap of {t}')
+        for i in keep:
+            b = dets[i]['box']
+            if b[0] < view[2] and b[2] > view[0] and b[1] < view[3]:
+                _draw_box(ax, (b[0] - view[0], b[1] - view[1], b[2] - view[0],
+                               b[3] - view[1]), GRIP, f'{dets[i]["score"]:.2f}',
+                          lw=1.8, fs=8.5)
+        ax.set_xlabel(f'{len(results[t][1])} of the two glasses survive: '
+                      + ', '.join(results[t][1]), fontsize=9.5)
+    fig.suptitle('The price of suppression: a true object can be removed for looking '
+                 'like a duplicate', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, SEG_DOC, 'nms-close-objects.svg')
+
+
+# --------------------------------------------------------------------------
+# 02_detection-and-segmentation, section 4: precision, recall and the curve
+# --------------------------------------------------------------------------
+
+def _kept_rows(thresh: float = 0.5) -> tuple[list[dict], list[tuple]]:
+    _, objects = _scene()
+    truth = [o['box'] for o in objects]
+    keep, _ = nms(_dets(), 0.5)
+    kept = [_dets()[i] for i in keep]
+    return match_detections(kept, truth, thresh), truth
+
+
+def ranked_detections() -> None:
+    rows, truth = _kept_rows()
+    n = len(truth)
+    tp = fp = 0
+    table = []
+    for r in rows[:12]:
+        if r['hit']:
+            tp += 1
+        else:
+            fp += 1
+        why = 'yes' if r['hit'] else ('already found' if r['again'] else 'no')
+        table.append((r['score'], r['iou'], why, tp / (tp + fp), tp / n))
+    print('[rank] score  best overlap  right  precision  recall')
+    for s, ov, why, pr, rc in table:
+        print(f'[rank] {s:.2f}   {ov:.2f}     {why:14s} {pr:.2f}       {rc:.2f}')
+
+    fig, ax = plt.subplots(figsize=(10.6, 6.4), facecolor='white')
+    _blank(ax, (0, 10), (0, 10))
+    heads = ['score', 'best overlap', 'counts as right?', 'precision so far',
+             'recall so far']
+    xs = [0.6, 2.4, 4.4, 6.6, 8.6]
+    ax.text(0.0, 9.6, f'The guesses in score order, after suppression, against the '
+                      f'{n} real objects', fontsize=12.5, weight='bold', color=INK)
+    for x, h in zip(xs, heads):
+        ax.text(x, 8.9, h, fontsize=10, weight='bold', color=MUTED, ha='center')
+    y = 8.3
+    for s, ov, why, pr, rc in table:
+        colour = SLIDE if why == 'yes' else GRIP
+        ax.add_patch(Rectangle((0.0, y - 0.28), 9.7, 0.58, facecolor=colour,
+                               alpha=0.10, edgecolor='none'))
+        for x, val in zip(xs, [f'{s:.2f}', f'{ov:.2f}', why, f'{pr:.2f}',
+                               f'{rc:.2f}']):
+            ax.text(x, y - 0.06, val, fontsize=10.5, ha='center', color=INK)
+        y -= 0.68
+    ax.text(0.0, y - 0.1, 'A guess counts as right when it overlaps an object by 0.5 '
+                          'or more and that object has not already been found by a '
+                          'better-scoring guess.', fontsize=9.5, color=MUTED)
+    _save(fig, SEG_DOC, 'ranked-detections.svg')
+
+
+def precision_recall() -> None:
+    rows, truth = _kept_rows()
+    precision, recall, ap = pr_curve(rows, len(truth))
+    print(f'[pr] with {len(rows)} guesses and {len(truth)} objects, the average '
+          f'precision is {ap:.3f}')
+    print(f'[pr] at the top guess precision is {precision[0]:.2f} and recall '
+          f'{recall[0]:.2f}; at the end precision is {precision[-1]:.2f} and recall '
+          f'{recall[-1]:.2f}')
+
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.step(recall, precision, where='post', color=LINK, lw=2.2)
+    ax.fill_between(recall, precision, step='post', color=LINK, alpha=0.15)
+    ax.scatter(recall, precision, s=22, color=LINK)
+    for i in (0, 2, 5, len(rows) - 1):
+        ax.annotate(f'score {rows[i]["score"]:.2f}', (recall[i], precision[i]),
+                    textcoords='offset points', xytext=(8, 8), fontsize=9,
+                    color=MUTED)
+    ax.set_xlim(0, 1.02)
+    ax.set_ylim(0, 1.08)
+    ax.set_xlabel('recall: the share of the real objects found', fontsize=10)
+    ax.set_ylabel('precision: the share of the guesses that were right', fontsize=10)
+    ax.set_title(f'Precision against recall, walking down the score order; the area '
+                 f'under it is {ap:.3f}', fontsize=12, weight='bold', color=INK)
+    _save(fig, SEG_DOC, 'precision-recall.svg')
+
+
+def threshold_tradeoff() -> None:
+    rows, truth = _kept_rows()
+    ths = np.arange(0.05, 0.96, 0.05)
+    prec, rec = [], []
+    for t in ths:
+        taken = [r for r in rows if r['score'] >= t]
+        hits = sum(1 for r in taken if r['hit'])
+        prec.append(hits / len(taken) if taken else 1.0)
+        rec.append(hits / len(truth))
+    for t, p, r in zip(ths, prec, rec):
+        if abs(t - 0.3) < 0.01 or abs(t - 0.5) < 0.01 or abs(t - 0.7) < 0.01:
+            print(f'[trade] keeping guesses that score {t:.2f} or more: precision '
+                  f'{p:.2f}, recall {r:.2f}')
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.8), facecolor='white')
+    _plain(ax)
+    ax.plot(ths, prec, marker='o', color=LINK, lw=2, label='precision')
+    ax.plot(ths, rec, marker='s', color=GRIP, lw=2, label='recall')
+    ax.axvline(0.5, color=MUTED, ls=':', lw=1.4)
+    ax.text(0.51, 0.06, 'a common place to\nset the threshold', fontsize=9,
+            color=MUTED)
+    ax.set_ylim(0, 1.08)
+    ax.set_xlabel('the lowest score a guess may have and still be kept', fontsize=10)
+    ax.set_ylabel('share', fontsize=10)
+    ax.legend(fontsize=9.5, frameon=False, loc='center left')
+    ax.set_title('Raising the score threshold buys precision with recall',
+                 fontsize=12, weight='bold', color=INK)
+    _save(fig, SEG_DOC, 'threshold-tradeoff.svg')
+
+
+def ap_at_thresholds() -> None:
+    ths = [0.5, 0.6, 0.7, 0.8, 0.9]
+    aps = []
+    for t in ths:
+        rows, truth = _kept_rows(t)
+        aps.append(pr_curve(rows, len(truth))[2])
+        print(f'[ap] demanding an overlap of {t:.1f}: average precision '
+              f'{aps[-1]:.3f}')
+    print(f'[ap] the mean of those five numbers is {np.mean(aps):.3f}')
+
+    fig, ax = plt.subplots(figsize=(8.8, 4.6), facecolor='white')
+    _plain(ax)
+    ax.bar([f'{t:.1f}' for t in ths], aps, color=LINK, alpha=0.88, width=0.55)
+    ax.axhline(float(np.mean(aps)), color=GRIP, ls='--', lw=1.6)
+    ax.text(4.45, np.mean(aps) + 0.03, f'their mean, {np.mean(aps):.2f}',
+            fontsize=9.5, color=GRIP, ha='right')
+    for i, a in enumerate(aps):
+        ax.text(i, a + 0.02, f'{a:.2f}', ha='center', fontsize=10.5, weight='bold',
+                color=INK)
+    ax.set_ylim(0, 1.1)
+    ax.set_xlabel('the overlap a guess must reach to count as right', fontsize=10)
+    ax.set_ylabel('average precision', fontsize=10)
+    ax.set_title('One detector, five scores, depending on how strict you are',
+                 fontsize=12, weight='bold', color=INK)
+    _save(fig, SEG_DOC, 'ap-at-thresholds.svg')

@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-03T03:38:24.237974</dc:date>
+    <dc:date>2026-10-03T03:43:14.326002</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -50,7 +50,7 @@ Q 45.936 99.936 45.936 102.096
 L 45.936 225.504 
 Q 45.936 227.664 48.096 227.664 
 z
-" clip-path="url(#pb46e45559e)" style="fill: #f2eefa; stroke: #6a4fb3; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#p3429a1dd79)" style="fill: #f2eefa; stroke: #6a4fb3; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
     <path d="M 206.496 227.664 
@@ -63,7 +63,7 @@ Q 204.336 99.936 204.336 102.096
 L 204.336 225.504 
 Q 204.336 227.664 206.496 227.664 
 z
-" clip-path="url(#pb46e45559e)" style="fill: #e6dcf7; stroke: #6a4fb3; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#p3429a1dd79)" style="fill: #e6dcf7; stroke: #6a4fb3; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
     <path d="M 379.296 227.664 
@@ -76,7 +76,7 @@ Q 377.136 99.936 377.136 102.096
 L 377.136 225.504 
 Q 377.136 227.664 379.296 227.664 
 z
-" clip-path="url(#pb46e45559e)" style="fill: #d9ecec; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#p3429a1dd79)" style="fill: #d9ecec; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_6">
     <path d="M 552.096 227.664 
@@ -89,7 +89,7 @@ Q 549.936 99.936 549.936 102.096
 L 549.936 225.504 
 Q 549.936 227.664 552.096 227.664 
 z
-" clip-path="url(#pb46e45559e)" style="fill: #eef7f7; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#p3429a1dd79)" style="fill: #eef7f7; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_7">
     <path d="M 710.496 227.664 
@@ -102,7 +102,7 @@ Q 708.336 99.936 708.336 102.096
 L 708.336 225.504 
 Q 708.336 227.664 710.496 227.664 
 z
-" clip-path="url(#pb46e45559e)" style="fill: #fdf0d5; stroke: #f0a500; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#p3429a1dd79)" style="fill: #fdf0d5; stroke: #f0a500; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="text_1">
     <!-- The two joined up: a question in words becomes a grasp in millimetres -->
@@ -2346,7 +2346,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="pb46e45559e">
+  <clipPath id="p3429a1dd79">
    <rect x="21.6" y="21.6" width="806.4" height="316.8"/>
   </clipPath>
  </defs>

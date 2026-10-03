@@ -665,6 +665,7 @@ def blob_is_round() -> None:
 HIDDEN: int = 128
 DIFF_STEPS: int = 12000
 ABOVE, BELOW, UNTOLD = 0, 1, 2
+CLIP: float = 3.0   # the guess of the clean waypoint is kept in this range
 
 
 def _dinput(x: Arr, t: Arr, c: NDArray[np.int64]) -> Arr:
@@ -717,7 +718,12 @@ def _den() -> Denoiser:
 
 def _ddpm(n: int, c: int, seed: int, w: float = 1.0,
           snaps: tuple[int, ...] = ()) -> tuple[Arr, dict[int, Arr]]:
-    """The reverse walk, one step at a time, with fresh noise added back."""
+    """The reverse walk, one step at a time, with fresh noise added back.
+
+    The guess of the clean waypoint is kept inside the range the data occupies,
+    which is what every standard sampler does and what stops a strong guidance
+    setting running away.
+    """
     den = _den()
     rng = np.random.default_rng(seed)
     x = rng.normal(size=(n, 2))
@@ -726,9 +732,12 @@ def _ddpm(n: int, c: int, seed: int, w: float = 1.0,
         eps = den.guided(x, t, c, w)
         beta = float(SCHED['beta'][t])
         ab = float(SCHED['ab'][t])
-        mean = (x - beta / np.sqrt(1.0 - ab) * eps) / np.sqrt(1.0 - beta)
+        abp = float(SCHED['ab'][t - 1])
+        x0h = np.clip((x - np.sqrt(1.0 - ab) * eps) / np.sqrt(ab), -CLIP, CLIP)
+        mean = (np.sqrt(abp) * beta / (1.0 - ab) * x0h
+                + np.sqrt(1.0 - beta) * (1.0 - abp) / (1.0 - ab) * x)
         if t > 1:
-            sig = np.sqrt(beta * (1.0 - SCHED['ab'][t - 1]) / (1.0 - ab))
+            sig = np.sqrt(beta * (1.0 - abp) / (1.0 - ab))
             x = mean + sig * rng.normal(size=x.shape)
         else:
             x = mean
@@ -747,7 +756,7 @@ def _ddim(n: int, c: int, seed: int, steps: int, w: float = 1.0) -> tuple[Arr, A
     for i, t in enumerate(order):
         eps = den.guided(x, int(t), c, w)
         ab = float(SCHED['ab'][t])
-        x0h = (x - np.sqrt(1.0 - ab) * eps) / np.sqrt(ab)
+        x0h = np.clip((x - np.sqrt(1.0 - ab) * eps) / np.sqrt(ab), -CLIP, CLIP)
         prev = int(order[i + 1]) if i + 1 < len(order) else 0
         abp = float(SCHED['ab'][prev])
         x = np.sqrt(abp) * x0h + np.sqrt(1.0 - abp) * eps
@@ -1220,26 +1229,30 @@ def guidance_arrows() -> None:
 def guidance_sweep() -> None:
     d = _data()
     above_real = d.ref[d.ref_side == ABOVE]
-    ws = (0.0, 1.0, 2.0, 4.0, 8.0)
-    fig, axes = plt.subplots(1, 5, figsize=(17.5, 4.4), facecolor='white')
+    real_off = float(_arc_offset(above_real).std())
+    real_x = float(above_real[:, 0].std())
+    ws = (0.0, 0.5, 1.0, 2.0, 4.0)
+    fig, axes = plt.subplots(1, 5, figsize=(17.5, 4.6), facecolor='white')
     for ax, w in zip(axes, ws):
         pts, _ = _ddpm(1000, ABOVE, seed=707, w=w)
         frac = float((pts[:, 1] > 0).mean())
         off = float(_arc_offset(pts[pts[:, 1] > 0]).std())
+        along = float(pts[:, 0].std())
         mis = _mismatch(pts, above_real)
-        print(f'[s6] strength {w:.0f}: {frac * 100:.1f}% above, spread around the '
-              f'arc {off:.3f} m, mismatch against the real upper arc {mis:.4f}')
+        print(f'[s6] strength {w:.1f}: {frac * 100:.1f}% above, spread around the '
+              f'arc {off:.4f} m, spread along it {along:.3f} m, mismatch against '
+              f'the real upper arc {mis:.4f}')
         _arena(ax, lim=2.4, labels=False)
-        s = _show(pts, 700, 13)
-        ax.scatter(s[:, 0], s[:, 1], s=5, color=LINK, alpha=0.55)
+        sh = _show(pts, 700, 13)
+        ax.scatter(sh[:, 0], sh[:, 1], s=5, color=LINK, alpha=0.55)
         ax.set_xlabel('x (m)', fontsize=8.5)
         ax.set_ylabel('y (m)', fontsize=8.5)
-        ax.set_title(f'strength {w:.0f}\n{frac * 100:.0f}% above, '
-                     f'spread {off:.3f} m', fontsize=10, weight='bold', color=INK)
-    print(f'[s6] the real upper arc has spread {_arc_offset(above_real).std():.3f} m '
-          'around itself')
+        ax.set_title(f'strength {w:.1f}\n{frac * 100:.0f}% above, spread along '
+                     f'{along:.2f} m', fontsize=10, weight='bold', color=INK)
+    print(f'[s6] the real upper arc has spread {real_off:.4f} m around itself and '
+          f'{real_x:.3f} m along itself')
     fig.suptitle('Turning the guidance strength up: the condition is obeyed sooner, '
-                 'and the variety goes',
+                 'and then the variety goes',
                  fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, DIFF_DOC, 'guidance-sweep.svg')
@@ -1249,43 +1262,69 @@ def guidance_tradeoff() -> None:
     d = _data()
     above_real = d.ref[d.ref_side == ABOVE]
     real_off = float(_arc_offset(above_real).std())
-    ws = np.arange(0.0, 8.01, 0.5)
-    fracs, offs, miss = [], [], []
+    real_x = float(above_real[:, 0].std())
+    ws = np.arange(0.0, 4.01, 0.5)
+    fracs, offs, alongs, miss = [], [], [], []
     for w in ws:
-        pts, _ = _ddpm(800, ABOVE, seed=808, w=float(w))
+        pts, _ = _ddpm(600, ABOVE, seed=808, w=float(w))
         fracs.append(float((pts[:, 1] > 0).mean()))
         offs.append(float(_arc_offset(pts[pts[:, 1] > 0]).std()))
+        alongs.append(float(pts[:, 0].std()))
         miss.append(_mismatch(pts, above_real))
-    fracs, offs, miss = np.array(fracs), np.array(offs), np.array(miss)
+    fracs = np.array(fracs)
+    offs = np.array(offs)
+    alongs = np.array(alongs)
+    miss = np.array(miss)
     best = float(ws[int(np.argmin(miss))])
-    print(f'[s6] the lowest mismatch against the real upper arc is '
-          f'{miss.min():.4f} at strength {best:.1f}; at strength 1 it is '
-          f'{miss[ws == 1.0][0]:.4f} and at strength 8 it is {miss[-1]:.4f}')
-    print(f'[s6] spread around the arc: strength 0 {offs[0]:.3f} m, strength 1 '
-          f'{offs[ws == 1.0][0]:.3f} m, strength 8 {offs[-1]:.3f} m, real data '
-          f'{real_off:.3f} m')
+    print('[s6] sweep: ' + '; '.join(
+        f'w {w:.1f} obeyed {f * 100:.0f}% across {a:.3f} m mismatch {m:.4f}'
+        for w, f, a, m in zip(ws, fracs, alongs, miss)))
+    print(f'[s6] the lowest mismatch is {miss.min():.4f} at strength {best:.1f}; '
+          f'at strength 0 it is {miss[0]:.4f} and at strength 4 it is {miss[-1]:.4f}')
+    print(f'[s6] spread along the arc falls from {alongs[ws == 1.0][0]:.3f} m at '
+          f'strength 1 to {alongs[-1]:.3f} m at strength 4, while the real data '
+          f'has {real_x:.3f} m')
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.2), facecolor='white')
+    fig, axes = plt.subplots(1, 3, figsize=(15.4, 5.0), facecolor='white')
     ax = axes[0]
     _plain(ax)
-    ax.plot(ws, fracs * 100, color=LINK, lw=2.6, marker='o', ms=4)
+    ax.plot(ws, fracs * 100, color=LINK, lw=2.6, marker='o', ms=5)
+    ax.axhline(50, color=MUTED, ls='--', lw=1.2)
+    ax.text(1.4, 52, 'what no condition at all gives', fontsize=9, color=MUTED)
     ax.set_xlabel('guidance strength', fontsize=9.5)
     ax.set_ylabel('waypoints that went above (%)', fontsize=9.5)
     ax.set_ylim(40, 105)
-    ax.set_title('The condition is obeyed more as the strength rises',
-                 fontsize=11.5, weight='bold', color=INK)
-    ax2 = axes[1]
-    _plain(ax2)
-    ax2.plot(ws, offs, color=GRIP, lw=2.6, marker='o', ms=4,
-             label='spread of the generated waypoints')
-    ax2.axhline(real_off, color=MUTED, ls='--', lw=1.4)
-    ax2.text(4.1, real_off + 0.004, f'the real spread, {real_off:.3f} m',
-             fontsize=9.5, color=MUTED)
-    ax2.set_xlabel('guidance strength', fontsize=9.5)
-    ax2.set_ylabel('spread around the arc (m)', fontsize=9.5)
-    ax2.set_ylim(0, max(offs.max(), real_off) * 1.25)
-    ax2.set_title('But past about 2 the variety the data really has is lost',
-                  fontsize=11.5, weight='bold', color=INK)
+    ax.set_title('The condition is obeyed more',
+                 fontsize=11, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(ws, alongs, color=GRIP, lw=2.6, marker='o', ms=5,
+            label='spread along the arc')
+    ax.plot(ws, offs * 10, color=PURPLE, lw=2.6, marker='s', ms=5,
+            label='spread across it, times 10')
+    ax.axhline(real_x, color=GRIP, ls='--', lw=1.3)
+    ax.axhline(real_off * 10, color=PURPLE, ls='--', lw=1.3)
+    ax.text(0.05, real_x + 0.03, f'real: {real_x:.3f} m', fontsize=9, color=GRIP)
+    ax.text(0.05, real_off * 10 + 0.03, f'real: {real_off:.3f} m', fontsize=9,
+            color=PURPLE)
+    ax.set_xlabel('guidance strength', fontsize=9.5)
+    ax.set_ylabel('spread of the generated waypoints (m)', fontsize=9.5)
+    ax.set_ylim(0, max(alongs.max(), real_x) * 1.3)
+    ax.legend(fontsize=9, frameon=False, loc='lower left')
+    ax.set_title('But the variety goes with it',
+                 fontsize=11, weight='bold', color=INK)
+    ax = axes[2]
+    _plain(ax)
+    ax.plot(ws, miss, color=SLIDE, lw=2.6, marker='o', ms=5)
+    ax.plot([best], [miss.min()], marker='o', ms=11, color=INK)
+    ax.text(best + 0.12, miss.min() * 1.6,
+            f'best at strength {best:.1f}\nmismatch {miss.min():.4f}',
+            fontsize=9.5, color=INK)
+    ax.set_yscale('log')
+    ax.set_xlabel('guidance strength', fontsize=9.5)
+    ax.set_ylabel('mismatch against the real upper arc', fontsize=9.5)
+    ax.set_title('So there is one best setting,\nand it is not the largest one',
+                 fontsize=11, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, DIFF_DOC, 'guidance-tradeoff.svg')
 

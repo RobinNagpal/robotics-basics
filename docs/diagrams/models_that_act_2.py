@@ -1561,13 +1561,15 @@ def position_coverage() -> None:
     ax.scatter(seen[:, 0], seen[:, 1], s=9, color=LINK, alpha=0.55, label='seen in training')
     ax.add_patch(Rectangle((-TRAIN_HALF, -TRAIN_HALF), 2 * TRAIN_HALF, 2 * TRAIN_HALF,
                            facecolor='none', edgecolor=LINK, lw=2))
-    ax.add_patch(Rectangle((-1, -1), 2, 2, facecolor='none', edgecolor=GRIP, lw=2, ls='--'))
-    ax.set_xlim(-1.12, 1.12)
-    ax.set_ylim(-1.12, 1.12)
+    ax.add_patch(Rectangle((-1, -1), 2, 2, facecolor='none', edgecolor=GRIP, lw=2, ls='--',
+                           label='the whole camera view'))
+    ax.set_xlim(-1.14, 1.14)
+    ax.set_ylim(-1.14, 1.3)
     ax.set_aspect('equal')
     ax.set_xlabel('across the camera view', fontsize=10)
     ax.set_ylabel('up the camera view', fontsize=10)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper right')
+    ax.legend(fontsize=9, frameon=False, loc='upper center', ncol=2,
+              bbox_to_anchor=(0.5, 1.02))
     ax.set_title(f'The objects in training covered {covered:.0f}% of the view',
                  fontsize=11, weight='bold')
     ax = axes[1]
@@ -1804,3 +1806,459 @@ def cost_of_running() -> None:
             ha='center', va='center', fontsize=9.6, color=INK)
     fig.tight_layout()
     _save(fig, VLA_DOC, 'cost-of-running.svg')
+
+
+# ==========================================================================
+# PART I -- page 4: one simulated system, a learned model of it, and a planner
+# ==========================================================================
+
+G: float = 9.81
+LINK_L: float = 1.0
+MASS: float = 1.0
+DAMP: float = 0.25
+DT: float = 0.05
+STOP: float = 0.90            # the hard stop the joint cannot turn past, in radians
+TORQUE: float = 1.6
+GOAL: float = 0.85
+
+
+def true_step(state: Arr, u: Arr) -> Arr:
+    """One step of the real system: a one-joint arm with damping and a hard stop."""
+    th, om = state[..., 0], state[..., 1]
+    om_n = om + DT * (-(G / LINK_L) * np.sin(th) - DAMP * om + u / (MASS * LINK_L ** 2))
+    th_n = th + DT * om_n
+    hit = th_n > STOP
+    th_n = np.where(hit, STOP, th_n)
+    om_n = np.where(hit, 0.0, om_n)
+    return np.stack([th_n, om_n], axis=-1)
+
+
+def _smooth_torque(n: int, horizon: int, rng: np.random.Generator, hold: int = 5) -> Arr:
+    segs = int(np.ceil(horizon / hold))
+    vals = rng.uniform(-TORQUE, TORQUE, (n, segs))
+    return np.repeat(vals, hold, axis=1)[:, :horizon]
+
+
+def make_transitions(n_ep: int, horizon: int, seed: int, noise: float = 0.002
+                     ) -> tuple[Arr, Arr, Arr, NDArray[np.bool_]]:
+    """Collect (state, torque, next state) from the real system, as a recording would."""
+    rng = np.random.default_rng(seed)
+    s = np.stack([rng.uniform(-1.0, 0.2, n_ep), rng.uniform(-0.8, 0.8, n_ep)], axis=1)
+    us = _smooth_torque(n_ep, horizon, rng)
+    states, acts, nexts, hits = [], [], [], []
+    for k in range(horizon):
+        u = us[:, k]
+        s2 = true_step(s, u)
+        hits.append((s2[:, 0] >= STOP - 1e-9) | (s[:, 0] >= STOP - 1e-9))
+        states.append(s.copy())
+        acts.append(u.copy())
+        nexts.append(s2.copy())
+        s = s2
+    st = np.concatenate(states)
+    ac = np.concatenate(acts)
+    nx = np.concatenate(nexts)
+    hit = np.concatenate(hits)
+    st = st + rng.normal(0.0, noise, st.shape)
+    nx = nx + rng.normal(0.0, noise, nx.shape)
+    return st, ac, nx, hit
+
+
+def poly_features(st: Arr, u: Arr) -> Arr:
+    """Degree-two features of the angle, the speed and the torque."""
+    th, om = st[..., 0], st[..., 1]
+    one = np.ones_like(th)
+    return np.stack([one, th, om, u, th ** 2, om ** 2, u ** 2,
+                     th * om, th * u, om * u], axis=-1)
+
+
+class LearnedModel:
+    """A learned dynamics model: least squares from the features to the change in state."""
+
+    def __init__(self, st: Arr, ac: Arr, nx: Arr, lam: float = 1e-6) -> None:
+        phi = poly_features(st, ac)
+        target = nx - st
+        a = phi.T @ phi + lam * np.eye(phi.shape[1])
+        self.w = np.linalg.solve(a, phi.T @ target)
+
+    def step(self, state: Arr, u: Arr) -> Arr:
+        return state + poly_features(state, u) @ self.w
+
+
+class World:
+    """Everything the world-model page measures, worked out once."""
+
+    def __init__(self) -> None:
+        self.st, self.ac, self.nx, self.hit = make_transitions(400, 30, seed=2)
+        self.n = self.st.shape[0]
+        self.clean = ~self.hit
+        self.model = LearnedModel(self.st[self.clean], self.ac[self.clean], self.nx[self.clean])
+        self.vst, self.vac, self.vnx, vhit = make_transitions(80, 30, seed=3, noise=0.0)
+        keep = ~vhit
+        self.vst, self.vac, self.vnx = self.vst[keep], self.vac[keep], self.vnx[keep]
+        pred = self.model.step(self.vst, self.vac)
+        self.one_step_angle = float(np.degrees(_rmse(pred[:, 0], self.vnx[:, 0])))
+        self.one_step_speed = float(_rmse(pred[:, 1], self.vnx[:, 1]))
+        print(f'[world] {self.n} recorded transitions, of which {int(self.hit.sum())} touched '
+              f'the hard stop ({self.hit.mean() * 100:.2f}%) and were left out of the fit')
+        print(f'[world] one-step error on fresh data: {self.one_step_angle:.4f} degrees of '
+              f'angle and {self.one_step_speed:.4f} radians a second of speed')
+
+
+WORLD: World | None = None
+
+
+def _w() -> World:
+    global WORLD
+    if WORLD is None:
+        WORLD = World()
+    return WORLD
+
+
+def rollout(stepper, state: Arr, us: Arr) -> Arr:
+    """Run a sequence of torques through a stepper and return every state along the way."""
+    out = [state]
+    s = state
+    for k in range(us.shape[-1]):
+        s = stepper(s, us[..., k])
+        out.append(s)
+    return np.stack(out, axis=-2)
+
+
+def one_step_job() -> None:
+    """What a learned dynamics model is asked to do, with real numbers from the simulation."""
+    w = _w()
+    s0 = np.array([-0.45, 0.60])
+    u0 = 1.2
+    s1 = true_step(s0, np.array(u0))
+    p1 = w.model.step(s0, np.array(u0))
+    print(f'[one-step] from angle {np.degrees(s0[0]):+.2f} deg and speed {s0[1]:+.2f} rad/s '
+          f'with torque {u0:+.1f} Nm')
+    print(f'[one-step] the real system goes to {np.degrees(s1[0]):+.3f} deg and '
+          f'{s1[1]:+.3f} rad/s; the learned model says {np.degrees(p1[0]):+.3f} deg and '
+          f'{p1[1]:+.3f} rad/s')
+    fig, ax = plt.subplots(figsize=(10.8, 4.6), facecolor='white')
+    _blank(ax, (0, 1), (0.02, 1))
+    ax.text(0.5, 0.955, 'One step of a learned dynamics model, worked out on the simulated arm',
+            ha='center', va='center', fontsize=12.5, weight='bold', color=INK)
+    _box(ax, 0.02, 0.56, 0.24, 0.26,
+         'what it sees now\n\n'
+         f'angle {np.degrees(s0[0]):+.2f} degrees\nspeed {s0[1]:+.2f} radians a second',
+         fc='#eaf3fb', ec=LINK, fs=9.4)
+    _box(ax, 0.02, 0.17, 0.24, 0.26,
+         'what it is about to do\n\n'
+         f'torque {u0:+.1f} newton metres\nfor one step of {DT * 1000:.0f} ms',
+         fc='#fff6e0', ec=JOINT, fs=9.4)
+    _box(ax, 0.33, 0.30, 0.22, 0.42,
+         'the learned model\n\nten features of the\nangle, the speed and\nthe torque, times\n'
+         f'{w.model.w.size} learned numbers',
+         fc='#eee9f7', ec=PURPLE, fs=9.2)
+    _arrow(ax, 0.265, 0.69, 0.325, 0.56, colour=MUTED)
+    _arrow(ax, 0.265, 0.30, 0.325, 0.44, colour=MUTED)
+    _arrow(ax, 0.555, 0.69, 0.625, 0.69, colour=MUTED)
+    _box(ax, 0.63, 0.56, 0.345, 0.26,
+         'what the model says comes next\n\n'
+         f'angle {np.degrees(p1[0]):+.3f} degrees, '
+         f'speed {p1[1]:+.3f} radians a second',
+         fc='#eaf7ee', ec=SLIDE, fs=9.4)
+    _box(ax, 0.63, 0.17, 0.345, 0.26,
+         'what really comes next\n\n'
+         f'angle {np.degrees(s1[0]):+.3f} degrees, '
+         f'speed {s1[1]:+.3f} radians a second',
+         fc='white', ec=INK, fs=9.4)
+    ax.plot([0.60, 0.60], [0.30, 0.82], color=MUTED, lw=1.1, ls=':')
+    ax.plot([0.60, 0.625], [0.69, 0.69], color=MUTED, lw=1.1, ls=':')
+    ax.plot([0.60, 0.625], [0.30, 0.30], color=MUTED, lw=1.1, ls=':')
+    ax.text(0.592, 0.49, 'compare', ha='right', va='center', fontsize=9, color=MUTED,
+            rotation=90)
+    ax.text(0.80, 0.09, f'over fresh data the gap is {w.one_step_angle:.4f} degrees of angle',
+            ha='center', va='center', fontsize=9.6, color=INK)
+    _save(fig, WM_DOC, 'one-step-job.svg')
+
+
+def training_transitions() -> None:
+    """Where in the state space the recorded transitions sit."""
+    w = _w()
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.6), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    sub = slice(None, None, 7)
+    ax.scatter(np.degrees(w.st[sub, 0]), w.st[sub, 1], s=5, c=w.ac[sub], cmap='coolwarm',
+               alpha=0.6)
+    ax.axvline(np.degrees(STOP), color=GRIP, lw=2)
+    ax.text(np.degrees(STOP) - 1.5, 2.6, 'the hard stop', color=GRIP, fontsize=9.5,
+            ha='right')
+    ax.set_xlabel('joint angle (degrees)', fontsize=10)
+    ax.set_ylabel('joint speed (radians a second)', fontsize=10)
+    ax.set_title(f'{w.n:,} recorded transitions, coloured by the torque used',
+                 fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    bars = ax.bar(['away from\nthe stop', 'touching\nthe stop'],
+                  [int((~w.hit).sum()), int(w.hit.sum())], color=[LINK, GRIP], width=0.5)
+    ax.bar_label(bars, fmt='%d', fontsize=10, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(1, w.n * 4)
+    ax.set_ylabel('number of recorded transitions', fontsize=10)
+    ax.set_title(f'Only {w.hit.mean() * 100:.2f}% of the recording touches the stop,\n'
+                 'so the model barely learns it exists', fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'training-transitions.svg')
+
+
+def one_step_error() -> None:
+    """How close the learned one-step prediction is on data it did not see."""
+    w = _w()
+    pred = w.model.step(w.vst, w.vac)
+    err = np.degrees(pred[:, 0] - w.vnx[:, 0])
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    sub = slice(None, None, 5)
+    ax.scatter(np.degrees(w.vnx[sub, 0]), np.degrees(pred[sub, 0]), s=5, color=LINK, alpha=0.4)
+    lim = [np.degrees(w.vnx[:, 0]).min() - 2, np.degrees(w.vnx[:, 0]).max() + 2]
+    ax.plot(lim, lim, color=INK, lw=1.2, ls='--')
+    ax.set_xlabel('the angle the real system reaches (degrees)', fontsize=10)
+    ax.set_ylabel('the angle the model predicts (degrees)', fontsize=10)
+    ax.set_title(f'One step ahead the model is right to {w.one_step_angle:.3f} degrees',
+                 fontsize=11, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    ax.hist(err, bins=70, color=LINK_PALE, edgecolor=LINK, linewidth=0.5)
+    ax.axvline(0, color=INK, lw=1.2)
+    ax.set_xlabel('prediction minus truth, for one step (degrees)', fontsize=10)
+    ax.set_ylabel('number of transitions', fontsize=10)
+    ax.set_title('The one-step mistakes are small and sit around zero',
+                 fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'one-step-error.svg')
+
+
+def learned_against_true_physics() -> None:
+    """What the model learned about gravity, against what gravity really does."""
+    w = _w()
+    th = np.linspace(-1.3, 1.3, 200)
+    zero = np.zeros_like(th)
+    state = np.stack([th, zero], axis=1)
+    pred = w.model.step(state, zero)
+    dom_model = (pred[:, 1] - zero) / DT
+    dom_true = -(G / LINK_L) * np.sin(th)
+    seen_lo = float(np.percentile(w.st[:, 0], 1.0))
+    seen_hi = float(np.percentile(w.st[:, 0], 99.0))
+    inside = (th >= seen_lo) & (th <= seen_hi)
+    e_in = float(np.sqrt(np.mean((dom_model - dom_true)[inside] ** 2)))
+    e_out = float(np.sqrt(np.mean((dom_model - dom_true)[~inside] ** 2)))
+    print(f'[physics] the recording covered angles from {np.degrees(seen_lo):.1f} to '
+          f'{np.degrees(seen_hi):.1f} degrees')
+    print(f'[physics] the learned pull is wrong by {e_in:.4f} rad/s^2 inside those angles '
+          f'and by {e_out:.4f} rad/s^2 outside them')
+    fig, ax = plt.subplots(figsize=(8.4, 4.6), facecolor='white')
+    _plain(ax)
+    ax.plot(np.degrees(th), dom_true, color=INK, lw=2.4, label='what gravity really does')
+    ax.plot(np.degrees(th), dom_model, color=PURPLE, lw=2, ls='--',
+            label='what the learned model does')
+    ax.axvspan(np.degrees(seen_lo), np.degrees(seen_hi), color='#eaf3fb',
+               label='the middle 98% of the angles the recording covered')
+    ax.axvline(np.degrees(STOP), color=GRIP, lw=2)
+    ax.text(np.degrees(STOP) + 0.6, 6, 'the hard stop', color=GRIP, fontsize=9.5)
+    ax.set_xlabel('joint angle (degrees)', fontsize=10)
+    ax.set_ylabel('the pull on the joint (radians a second, each second)', fontsize=10)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower left')
+    ax.set_title('The model copies the real pull where it has seen it, and guesses elsewhere',
+                 fontsize=11, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'learned-against-true-physics.svg')
+
+
+# ==========================================================================
+# PART J -- page 4, section 2: predicting in a squeezed-down space
+# ==========================================================================
+
+IMG: int = 32
+ROD_LEN: float = 20.0
+GRIP_OPEN: float = 5.0
+GRIP_SHUT: float = 2.0
+
+
+def render(theta: float, grip: float) -> Arr:
+    """A small grey camera picture of the simulated arm, as a 32 by 32 grid of brightness."""
+    yy, xx = np.meshgrid(np.arange(IMG), np.arange(IMG), indexing='ij')
+    px, py = IMG / 2.0, 2.0
+    tipx = px + ROD_LEN * np.sin(theta)
+    tipy = py + ROD_LEN * np.cos(theta)
+    vx, vy = tipx - px, tipy - py
+    ln = vx * vx + vy * vy
+    t = np.clip(((xx - px) * vx + (yy - py) * vy) / ln, 0.0, 1.0)
+    d = np.hypot(xx - (px + t * vx), yy - (py + t * vy))
+    img = np.clip(1.0 - (d - 1.1) / 0.9, 0.0, 1.0)
+    nx, ny = -vy / np.sqrt(ln), vx / np.sqrt(ln)
+    for sign in (-1.0, 1.0):
+        fx = tipx + sign * grip / 2.0 * nx
+        fy = tipy + sign * grip / 2.0 * ny
+        df = np.hypot(xx - fx, yy - fy)
+        img = np.maximum(img, np.clip(1.0 - (df - 0.7) / 0.7, 0.0, 1.0))
+    return img
+
+
+class Latent:
+    """A squeezed-down space for the pictures, found by principal components."""
+
+    def __init__(self, n: int = 1200) -> None:
+        rng = np.random.default_rng(17)
+        self.theta = rng.uniform(-1.0, STOP, n)
+        self.open = rng.integers(0, 2, n).astype(float)
+        grips = np.where(self.open > 0.5, GRIP_OPEN, GRIP_SHUT)
+        self.imgs = np.stack([render(t, g) for t, g in zip(self.theta, grips)])
+        self.flat = self.imgs.reshape(n, -1)
+        self.mean = self.flat.mean(axis=0)
+        centred = self.flat - self.mean
+        _u, sv, vt = np.linalg.svd(centred, full_matrices=False)
+        self.sv = sv
+        self.vt = vt
+        self.scores = centred @ vt.T
+        total = float((sv ** 2).sum())
+        self.explained = np.cumsum(sv ** 2) / total * 100.0
+
+    def rebuild(self, k: int) -> Arr:
+        return (self.scores[:, :k] @ self.vt[:k] + self.mean).reshape(-1, IMG, IMG)
+
+    def read_grip(self, k: int) -> float:
+        x = np.concatenate([self.scores[:, :k], np.ones((self.scores.shape[0], 1))], axis=1)
+        tr, te = slice(None, 900), slice(900, None)
+        coef, *_ = np.linalg.lstsq(x[tr], self.open[tr], rcond=None)
+        got = (x[te] @ coef) > 0.5
+        return float(np.mean(got == (self.open[te] > 0.5)) * 100.0)
+
+
+LAT: Latent | None = None
+K_LIST: list[int] = [2, 4, 8, 16, 32, 64]
+
+
+def _lat() -> Latent:
+    global LAT
+    if LAT is None:
+        LAT = Latent()
+    return LAT
+
+
+def pixels_to_latent() -> None:
+    """How many numbers a picture is, and how many are kept."""
+    lat = _lat()
+    big = 256 * 256 * 3
+    print(f'[latent] one small picture here is {IMG} x {IMG} = {IMG * IMG} numbers')
+    print(f'[latent] a real camera frame of 256 by 256 in colour is {big:,} numbers')
+    for k in (8, 32):
+        print(f'[latent] the first {k} components hold {lat.explained[k - 1]:.2f}% of what '
+              f'moves in the pictures')
+    fig, axes = plt.subplots(1, 4, figsize=(11.2, 3.6), facecolor='white')
+    for ax, th in zip(axes, [-0.9, -0.3, 0.3, 0.85]):
+        ax.imshow(render(th, GRIP_OPEN), cmap='gray_r', origin='lower',
+                  vmin=0, vmax=1, interpolation='nearest')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(f'angle {np.degrees(th):+.0f} degrees', fontsize=10)
+    fig.suptitle(f'Four of the {len(lat.theta)} simulated camera pictures, each one '
+                 f'{IMG} by {IMG} = {IMG * IMG} numbers',
+                 fontsize=12, weight='bold')
+    fig.tight_layout(rect=(0, 0, 1, 0.92))
+    _save(fig, WM_DOC, 'pixels-to-latent.svg')
+
+
+def variance_vs_latent_size() -> None:
+    """How much of the picture a handful of numbers can hold."""
+    lat = _lat()
+    vals = [lat.explained[k - 1] for k in K_LIST]
+    for k, v in zip(K_LIST, vals):
+        print(f'[latent] {k:3d} numbers hold {v:.2f}% of what changes between pictures')
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.3), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.plot(K_LIST, vals, marker='o', color=TEAL, lw=2)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(K_LIST)
+    ax.set_xticklabels([str(k) for k in K_LIST])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+    ax.set_ylim(0, 103)
+    ax.set_xlabel('numbers kept for each picture', fontsize=10)
+    ax.set_ylabel('share of what changes between pictures\nthat is kept (per cent)',
+                  fontsize=10)
+    ax.set_title(f'{K_LIST[2]} numbers already hold {vals[2]:.1f}% of it',
+                 fontsize=11, weight='bold')
+    for k, v in zip(K_LIST, vals):
+        ax.annotate(f'{v:.1f}', (k, v), textcoords='offset points', xytext=(0, -16),
+                    ha='center', fontsize=8.6, color=INK)
+    ax = axes[1]
+    _plain(ax)
+    sizes = [IMG * IMG, 64, 32, 8]
+    names = [f'the picture\n({IMG * IMG} numbers)', '64 numbers', '32 numbers', '8 numbers']
+    weights = [n ** 2 for n in sizes]
+    bars = ax.bar(names, weights, color=[GRIP, WRIST, JOINT, SLIDE], width=0.55)
+    ax.bar_label(bars, labels=[f'{v:,}' for v in weights], fontsize=9, padding=3)
+    ax.set_yscale('log')
+    ax.set_ylim(10, max(weights) * 40)
+    ax.set_ylabel('weights in a one-layer model that maps\none state to the next', fontsize=10)
+    ax.tick_params(axis='x', labelsize=9)
+    ax.set_title('Predicting in the squeezed space is far less work',
+                 fontsize=11, weight='bold')
+    print(f'[latent] a one-layer predictor over raw pixels needs {(IMG * IMG) ** 2:,} weights, '
+          f'and over 8 numbers it needs {8 ** 2}')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'variance-vs-latent-size.svg')
+
+
+def what_is_lost() -> None:
+    """What the squeezing throws away: the small detail that matters for grasping."""
+    lat = _lat()
+    opens = np.flatnonzero(lat.open > 0.5)
+    shuts = np.flatnonzero(lat.open <= 0.5)
+    j = int(np.argmin(np.abs(lat.theta[shuts] - lat.theta[opens[0]])))
+    pick = [int(opens[0]), int(shuts[j])]
+    print(f'[lost] the two pictures shown sit at {np.degrees(lat.theta[pick[0]]):.1f} and '
+          f'{np.degrees(lat.theta[pick[1]]):.1f} degrees, one with the fingers open and one '
+          'with them shut')
+    r8 = lat.rebuild(8)
+    r64 = lat.rebuild(64)
+    fig, axes = plt.subplots(2, 3, figsize=(8.4, 5.8), facecolor='white')
+    for row, i in enumerate(pick):
+        for col, (img, name) in enumerate([(lat.imgs[i], 'the real picture'),
+                                           (r8[i], 'rebuilt from 8 numbers'),
+                                           (r64[i], 'rebuilt from 64 numbers')]):
+            ax = axes[row, col]
+            ax.imshow(img, cmap='gray_r', origin='lower', vmin=0, vmax=1,
+                      interpolation='nearest')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            if row == 0:
+                ax.set_title(name, fontsize=10.5, weight='bold')
+            if col == 0:
+                ax.set_ylabel('fingers '
+                              + ('open' if lat.open[i] > 0.5 else 'shut'), fontsize=10)
+    e8 = float(np.sqrt(np.mean((r8 - lat.imgs) ** 2)))
+    e64 = float(np.sqrt(np.mean((r64 - lat.imgs) ** 2)))
+    print(f'[lost] rebuilding from 8 numbers is {e8:.4f} off per pixel of brightness, '
+          f'and from 64 numbers {e64:.4f}')
+    fig.suptitle('The rod survives the squeeze; whether the fingers are open does not',
+                 fontsize=12.5, weight='bold')
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    _save(fig, WM_DOC, 'what-is-lost.svg')
+
+
+def reading_the_gripper() -> None:
+    """How well the open or shut fingers can be read back out of the squeezed numbers."""
+    lat = _lat()
+    accs = [lat.read_grip(k) for k in K_LIST]
+    for k, a in zip(K_LIST, accs):
+        print(f'[gripper] from {k:3d} numbers, whether the fingers are open is read right '
+              f'{a:.1f}% of the time')
+    fig, ax = plt.subplots(figsize=(8.0, 4.5), facecolor='white')
+    _plain(ax)
+    bars = ax.bar([str(k) for k in K_LIST], accs, color=TEAL, width=0.55)
+    ax.bar_label(bars, labels=[f'{a:.0f}%' for a in accs], fontsize=10, padding=3)
+    ax.axhline(50, color=GRIP, lw=1.6, ls='--')
+    ax.text(0.02, 52, 'guessing', color=GRIP, fontsize=9.5)
+    ax.set_ylim(0, 112)
+    ax.set_xlabel('numbers kept for each picture', fontsize=10)
+    ax.set_ylabel('how often the fingers are read right (per cent)', fontsize=10)
+    ax.set_title('A squeeze that keeps most of the picture can still lose\n'
+                 'the one detail a grasp depends on', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, WM_DOC, 'reading-the-gripper.svg')

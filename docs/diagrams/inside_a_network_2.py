@@ -1895,31 +1895,38 @@ def position_blindness() -> None:
           f'answers; row sums of the first answer '
           f'{np.round(out_a.sum(axis=1), 0).tolist()}')
 
-    fig, ax = plt.subplots(figsize=(13.2, 6.4), facecolor='white')
-    _blank(ax, (-2.6, 27.0), (-6.4, 6.4))
+    fig, ax = plt.subplots(figsize=(13.2, 7.0), facecolor='white')
+    _blank(ax, (-0.8, 24.6), (-8.4, 7.0))
     cell = 0.62
+    flat_cell = 0.2
     for i, (pic, flat, colour, label) in enumerate(
-            ((a, fa, LINK, 'block near the top left'),
+            ((a, fa, LINK, 'the block near the top left'),
              (b, fb, PURPLE, 'the same block moved down and right'))):
-        y = 5.4 - i * 5.4
-        _grid_at(ax, pic, 0.0, y, cell=cell, fmt='{:.0f}',
+        top = 6.0 - i * 6.6
+        _grid_at(ax, pic, 0.0, top, cell=cell, fmt='{:.0f}',
                  faces=_grey_faces(pic, top=10.0), size=7.0,
                  text_colours=[['white' if v < 5 else INK for v in row] for row in pic])
-        ax.text(2.48, y + 0.2, label, fontsize=9.5, ha='center', va='bottom',
+        ax.text(2.48, top + 0.15, label, fontsize=9.5, ha='center', va='bottom',
                 color=colour, weight='bold')
-        _grid_at(ax, flat.reshape(1, 64), 6.2, y - 1.6, cell=0.26, fmt='{:.0f}',
+        _grid_at(ax, flat.reshape(1, 64), 6.2, top - 2.3, cell=flat_cell,
                  faces=_grey_faces(flat.reshape(1, 64), top=10.0), show_text=False)
-        ax.text(6.2 + 8.3, y - 2.2, 'the same 64 numbers in one flat list', fontsize=9.5,
-                ha='center', va='top', color=MUTED)
+        for start in np.flatnonzero(flat > 5)[::3]:
+            _frame(ax, 6.2 + float(start) * flat_cell, top - 2.3, 3 * flat_cell,
+                   flat_cell, colour=colour, lw=1.6)
+        places = sorted(np.flatnonzero(flat > 5).tolist())
+        ax.text(6.2 + 6.4, top - 2.8, 'the same 64 numbers in one flat list\n'
+                'bright at places ' + ', '.join(str(v) for v in places),
+                fontsize=9.5, ha='center', va='top', color=MUTED)
         out = out_a if i == 0 else out_b
-        _grid_at(ax, out, 24.0 - 6.0, y, cell=cell, fmt='{:.0f}',
+        _grid_at(ax, out, 20.0, top - 0.62, cell=cell, fmt='{:.0f}',
                  faces=_faces(out, cmap='RdBu', vmin=-27, vmax=27), size=7.0)
-        ax.text(18.0 + 1.86, y + 0.2, 'what one 3 by 3 filter gives', fontsize=9.5,
+        ax.text(20.0 + 1.86, top + 0.15, 'what one 3 by 3 filter gives', fontsize=9.5,
                 ha='center', va='bottom', color=colour, weight='bold')
-    ax.text(6.2 + 8.3, -3.6, 'The two flat lists share no bright place at all, so a '
-            'weight that learned the block in the first\nplace does nothing in the '
-            'second. The filter gives the same numbers, moved to the same new place.',
-            fontsize=10.5, ha='center', va='top', color=INK)
+    ax.text(0.0, -6.0, 'The two flat lists share no bright place at all, so a weight '
+            'that learned the block in the first place does nothing in the\nsecond. '
+            'The filter gives exactly the same six numbers, moved to the same new '
+            'place, because it is the same filter everywhere.',
+            fontsize=10.5, ha='left', va='top', color=INK)
     _title(fig, 'A flat list forgets where a thing was; a filter does not')
     _save(fig, DOC4, 'position-blindness.svg')
 
@@ -2071,19 +2078,19 @@ def output_size() -> None:
           f'{strided.shape[1]}')
 
     fig, ax = plt.subplots(figsize=(13.2, 4.8), facecolor='white')
-    _blank(ax, (-0.8, 25.6), (-3.0, 5.2))
+    _blank(ax, (-0.8, 26.4), (-3.0, 5.2))
     cell = 0.62
     for i, (out, head, note) in enumerate(
             ((plain, 'slide it everywhere it fits',
               '7 - 3 + 1 = 5, so the answer is 5 by 5\nand the picture has shrunk'),
-             (padded, 'put a ring of table round the picture first',
+             (padded, 'add a ring of table first',
               '9 - 3 + 1 = 7, so the answer is 7 by 7\nand nothing has shrunk'),
-             (strided, 'take every second window instead',
+             (strided, 'step two, not one',
               'the answer is 3 by 3, a quarter of the\nsquares, and four times cheaper'))):
-        x0 = i * 8.4
+        x0 = i * 8.8
         _grid_at(ax, out, x0, 4.6, cell=cell, fmt='{:+.0f}',
                  faces=_faces(out, cmap='RdBu', vmin=-27, vmax=27), size=7.0)
-        ax.text(x0 + out.shape[1] * cell / 2, 4.8, head, fontsize=10, ha='center',
+        ax.text(x0, 4.8, head, fontsize=10.5, ha='left',
                 va='bottom', color=INK, weight='bold')
         ax.text(x0, 0.0, note, fontsize=9.5, ha='left', va='top', color=MUTED)
     _title(fig, 'What decides the size of the answer: the filter, the padding and how '

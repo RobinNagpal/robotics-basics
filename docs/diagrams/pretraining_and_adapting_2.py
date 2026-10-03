@@ -705,7 +705,7 @@ def big() -> Big:
 # ==========================================================================
 
 CURVE_N: list[int] = [4, 8, 16, 32, 64, 128, 256, 512]
-REPEATS: int = 9
+REPEATS: int = 15
 FT_STEPS: int = 300
 FT_LR: float = 0.05
 
@@ -1891,3 +1891,257 @@ def fig_qlora_recovers() -> None:
     ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
     ax2.set_axisbelow(True)
     _save(fig, FT_DOC, 'qlora-adapter-recovers.svg')
+
+
+def fig_forgetting_curves() -> None:
+    """Section 5: the old job falls apart while the new one is being learned."""
+    d = exp_forgetting()
+    s = sim()
+    hist = d['hist']                         # type: ignore[index]
+    old, new = hist[0], hist[1]              # type: ignore[index]
+    steps = np.arange(len(old))
+    fig, ax = plt.subplots(figsize=(11.0, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(steps, old, color=GRIP, lw=2.4, label='the old six-way job it was pretrained on')
+    ax.plot(steps, new, color=LINK, lw=2.4, label='the narrow new two-way job')
+    ax.axhline(1.0 / N_CLASS, color=MUTED, lw=1.2, ls=':')
+    ax.text(150, 1.0 / N_CLASS - 0.055, 'pure guessing on the old job', ha='center',
+            fontsize=9, color=MUTED)
+    for st, dx in ((10, 10), (50, 10), (300, -36)):
+        ax.plot([st], [old[st]], 'o', color=GRIP, ms=6)
+        ax.annotate(f'{old[st]:.3f}', xy=(st, old[st]), xytext=(st + dx, old[st] + 0.045),
+                    fontsize=9.3, color=GRIP)
+    ax.plot([0], [s.acc_old], 'o', color=GRIP, ms=6)
+    ax.annotate(f'{s.acc_old:.3f} before a single step', xy=(0, s.acc_old),
+                xytext=(26, s.acc_old + 0.03), fontsize=9.3, color=GRIP,
+                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.0))
+    ax.set_xlabel('steps of a hard full fine-tune on the new job', fontsize=10)
+    ax.set_ylabel('accuracy on a held-out test set', fontsize=10)
+    ax.set_xlim(0, 300)
+    ax.set_ylim(0, 1.03)
+    ax.set_title('Ten steps buy most of the new job and have already cost a quarter of the '
+                 'old one', fontsize=11.8, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='center right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'forgetting-curves.svg')
+
+
+def fig_forgetting_what_helps() -> None:
+    """Section 5: six recipes, and what each leaves of the old job."""
+    d = exp_forgetting()
+    recipes = d['recipes']                   # type: ignore[index]
+    names = [r[0] for r in recipes]
+    old = [r[1] for r in recipes]
+    new = [r[2] for r in recipes]
+    fig, ax = plt.subplots(figsize=(12.4, 5.4), facecolor='white')
+    _plain(ax)
+    xx = np.arange(len(names))
+    ax.bar(xx - 0.19, old, width=0.36, color=GRIP, label='the old six-way job')
+    ax.bar(xx + 0.19, new, width=0.36, color=LINK, label='the new two-way job')
+    for x, (o, n) in enumerate(zip(old, new)):
+        ax.text(x - 0.19, o + 0.014, f'{o:.3f}', ha='center', fontsize=9.2, color=INK)
+        ax.text(x + 0.19, n + 0.014, f'{n:.3f}', ha='center', fontsize=9.2, color=INK)
+    ax.set_xticks(xx)
+    ax.set_xticklabels(names, fontsize=9.2)
+    ax.set_ylabel('accuracy on a held-out test set', fontsize=10)
+    ax.set_ylim(0, 1.09)
+    ax.set_title('Mixing a quarter of the old data back in keeps the old job almost whole, '
+                 'and an adapter can simply be switched off',
+                 fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='upper left', ncol=2)
+    ax.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'forgetting-what-helps.svg')
+
+
+def fig_forgetting_mix() -> None:
+    """Section 5: how much of the old data has to go back into each batch."""
+    rows = exp_mix_fraction()
+    fracs = [r[0] for r in rows]
+    old = [r[1] for r in rows]
+    new = [r[2] for r in rows]
+    fig, ax = plt.subplots(figsize=(10.6, 5.2), facecolor='white')
+    _plain(ax)
+    xx = np.arange(len(fracs))
+    ax.plot(xx, old, marker='o', color=GRIP, lw=2.4, label='the old six-way job')
+    ax.plot(xx, new, marker='s', color=LINK, lw=2.4, label='the new two-way job')
+    for x, (o, n) in enumerate(zip(old, new)):
+        ax.annotate(f'{o:.3f}', xy=(x, o), xytext=(x, o + 0.035), ha='center',
+                    fontsize=9.2, color=GRIP)
+        ax.annotate(f'{n:.3f}', xy=(x, n), xytext=(x, n - 0.055), ha='center',
+                    fontsize=9.2, color=LINK)
+    ax.set_xticks(xx)
+    ax.set_xticklabels([f'{100 * f:.0f}%' for f in fracs], fontsize=10)
+    ax.set_xlabel('old examples added to each batch of new ones', fontsize=10)
+    ax.set_ylabel('accuracy on a held-out test set', fontsize=10)
+    ax.set_ylim(0, 1.09)
+    ax.set_title(f'Adding only 5% of the old data lifts the old job from {old[0]:.3f} to '
+                 f'{old[1]:.3f}, and the new job does not suffer',
+                 fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.8, frameon=False, loc='lower right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'forgetting-mix-fraction.svg')
+
+
+def fig_forgetting_frontier() -> None:
+    """Section 5: every learning rate and length, plotted as a trade-off."""
+    d = exp_forgetting()
+    front = d['front']                       # type: ignore[index]
+    lrs = sorted({f[0] for f in front})
+    cols = [TEAL, SLIDE, LINK, WRIST, GRIP]
+    fig, ax = plt.subplots(figsize=(10.8, 5.6), facecolor='white')
+    _plain(ax)
+    for lr, col in zip(lrs, cols):
+        pts = sorted([(f[1], f[3], f[2]) for f in front if f[0] == lr])
+        ax.plot([p[1] for p in pts], [p[2] for p in pts], marker='o', color=col, lw=1.8,
+                ms=6, label=f'learning rate {lr}')
+        for st, nx, oy in (pts[0], pts[-1]):
+            pass
+        ax.annotate(f'{pts[0][0]} steps', xy=(pts[0][1], pts[0][2]),
+                    xytext=(pts[0][1] - 0.012, pts[0][2] + 0.022), fontsize=8.4, color=col,
+                    ha='right')
+        ax.annotate(f'{pts[-1][0]} steps', xy=(pts[-1][1], pts[-1][2]),
+                    xytext=(pts[-1][1] + 0.008, pts[-1][2] - 0.035), fontsize=8.4, color=col)
+    s = sim()
+    ax.plot([s.acc_new_before], [s.acc_old], '*', color=INK, ms=16)
+    ax.annotate('before any fine-tuning', xy=(s.acc_new_before, s.acc_old),
+                xytext=(s.acc_new_before - 0.02, s.acc_old - 0.10), fontsize=9.5,
+                color=INK, arrowprops=dict(arrowstyle='-|>', color=INK, lw=1.0))
+    ax.set_xlabel('accuracy on the new two-way job', fontsize=10)
+    ax.set_ylabel('accuracy left on the old six-way job', fontsize=10)
+    ax.set_xlim(0.46, 0.88)
+    ax.set_ylim(0.0, 1.03)
+    ax.set_title('Every run is a trade between the two jobs, and each line follows one '
+                 'learning rate from 25 steps to 400', fontsize=11.3, weight='bold')
+    ax.legend(fontsize=9.3, frameon=False, loc='lower left')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'forgetting-frontier.svg')
+
+
+def fig_data_curves() -> None:
+    """Section 6: new-job accuracy against the number of new-job examples."""
+    c = exp_curves()
+    s = sim()
+    counts = c['_counts']                    # type: ignore[index]
+    fig, ax = plt.subplots(figsize=(11.0, 5.6), facecolor='white')
+    _plain(ax)
+    styles = [('head', SLIDE, 'o', f'a new head only, {counts[0]:,} numbers'),
+              ('lora2', LINK, 's', f'a rank-2 adapter, {counts[1]:,} numbers'),
+              ('full', GRIP, '^', f'every weight, {counts[2]:,} numbers')]
+    for key, col, mk, label in styles:
+        ax.plot(CURVE_N, c[key], marker=mk, color=col, lw=2.2, ms=6, label=label)
+    ax.axhline(s.acc_new_before, color=MUTED, lw=1.6, ls=':')
+    ax.text(4.2, s.acc_new_before - 0.028, f'before any tuning: {s.acc_new_before:.3f}',
+            fontsize=9.3, color=MUTED)
+    ax.axhline(s.ceiling, color=INK, lw=1.6, ls='--')
+    ax.text(4.2, s.ceiling + 0.012, f'nothing can beat {s.ceiling:.3f} on this job',
+            fontsize=9.3, color=INK)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(CURVE_N)
+    ax.set_xticklabels([str(n) for n in CURVE_N])
+    ax.set_xlabel('examples of the new job', fontsize=10)
+    ax.set_ylabel(f'accuracy on the new job (mean of {REPEATS} runs)', fontsize=10)
+    ax.set_ylim(0.44, 0.90)
+    ax.set_title('The cheap rungs climb first and then stop, and only full fine-tuning '
+                 'reaches the ceiling', fontsize=11.6, weight='bold')
+    ax.legend(fontsize=9.6, frameon=False, loc='lower right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _save(fig, FT_DOC, 'data-learning-curves.svg')
+
+
+def fig_data_distance() -> None:
+    """Section 6: three new jobs at increasing distance from the old one."""
+    d = exp_distance()
+    ns = d['ns']                             # type: ignore[index]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(13.0, 5.4), facecolor='white',
+                                  gridspec_kw={'width_ratios': [1.35, 1.0], 'wspace': 0.3})
+    _plain(ax)
+    cols = [SLIDE, LINK, GRIP]
+    for row, ceil, name, col, before in zip(d['curves'], d['ceilings'],   # type: ignore
+                                            d['jobs'], cols, d['befores']):   # type: ignore
+        ax.plot(ns, row, marker='o', color=col, lw=2.2, ms=5.5,
+                label=name.replace('\n', ' '))
+        ax.axhline(ceil, color=col, lw=1.0, ls='--', alpha=0.6)
+        ax.plot([ns[0] * 0.78], [before], '*', color=col, ms=13)
+    ax.text(3.0, 0.60, 'the stars are the accuracy\nbefore any fine-tuning',
+            fontsize=9.0, color=MUTED, ha='left')
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(ns)
+    ax.set_xticklabels([str(n) for n in ns])
+    ax.set_xlim(2.6, 620)
+    ax.set_xlabel('examples of the new job', fontsize=10)
+    ax.set_ylabel('accuracy on the new job', fontsize=10)
+    ax.set_ylim(0.45, 1.04)
+    ax.set_title('Three new jobs, each further from the old one', fontsize=11.4,
+                 weight='bold')
+    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    needed = [n if n is not None else 1024 for n in d['needed']]   # type: ignore[union-attr]
+    xx = np.arange(3)
+    ax2.bar(xx, needed, color=cols, width=0.56)
+    for x, (v, raw) in enumerate(zip(needed, d['needed'])):        # type: ignore[arg-type]
+        txt = f'{v}' if raw is not None else 'more than 512'
+        ax2.text(x, v * 1.08, txt, ha='center', fontsize=10, color=INK, weight='bold')
+    ax2.set_xticks(xx)
+    ax2.set_xticklabels(list(d['jobs']), fontsize=8.6)   # type: ignore[arg-type]
+    ax2.set_yscale('log', base=2)
+    ax2.set_yticks([8, 16, 32, 64, 128, 256, 512, 1024])
+    ax2.set_yticklabels(['8', '16', '32', '64', '128', '256', '512', ''])
+    ax2.set_ylim(8, 2200)
+    ax2.set_ylabel('examples needed to come within 0.03 of the ceiling', fontsize=9.6)
+    ax2.set_title('What each one costs in examples', fontsize=11.4, weight='bold')
+    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax2.set_axisbelow(True)
+    _save(fig, FT_DOC, 'data-vs-distance.svg')
+
+
+def fig_data_variation() -> None:
+    """Section 6: a more varied job needs more examples."""
+    d = exp_variation()
+    spreads = d['spreads']                   # type: ignore[index]
+    ns = d['ns']                             # type: ignore[index]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(13.0, 5.2), facecolor='white',
+                                  gridspec_kw={'width_ratios': [1.3, 1.0], 'wspace': 0.3})
+    _plain(ax)
+    cols = [TEAL, SLIDE, LINK, WRIST, GRIP]
+    for sp, row, ceil, col in zip(spreads, d['curves'], d['ceilings'], cols):  # type: ignore
+        ax.plot(ns, row, marker='o', color=col, lw=2.0, ms=5,
+                label=f'scatter {sp:.2f}, ceiling {ceil:.3f}')
+        ax.axhline(ceil, color=col, lw=0.9, ls='--', alpha=0.5)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks(ns)
+    ax.set_xticklabels([str(n) for n in ns])
+    ax.set_xlabel('examples of the new job', fontsize=10)
+    ax.set_ylabel('accuracy on the new job', fontsize=10)
+    ax.set_ylim(0.45, 1.02)
+    ax.set_title('A more varied job has a lower ceiling and a slower climb',
+                 fontsize=11.2, weight='bold')
+    ax.legend(fontsize=8.8, frameon=False, loc='lower right')
+    ax.grid(color=GRID, lw=0.6, alpha=0.6)
+    ax.set_axisbelow(True)
+    _plain(ax2)
+    needed = [n if n is not None else 1024 for n in d['needed']]  # type: ignore[union-attr]
+    xx = np.arange(len(spreads))
+    ax2.bar(xx, needed, color=cols, width=0.58)
+    for x, (v, raw) in enumerate(zip(needed, d['needed'])):       # type: ignore[arg-type]
+        txt = f'{v}' if raw is not None else 'more\nthan 512'
+        ax2.text(x, v * 1.1, txt, ha='center', fontsize=9.6, color=INK, weight='bold')
+    ax2.set_xticks(xx)
+    ax2.set_xticklabels([f'{sp:.2f}' for sp in spreads], fontsize=10)
+    ax2.set_xlabel('how widely the new job scatters', fontsize=10)
+    ax2.set_yscale('log', base=2)
+    ax2.set_yticks([32, 64, 128, 256, 512, 1024])
+    ax2.set_yticklabels(['32', '64', '128', '256', '512', ''])
+    ax2.set_ylim(32, 3000)
+    ax2.set_ylabel('examples needed to come within 0.03 of the ceiling', fontsize=9.6)
+    ax2.set_title('Twice the scatter, eight times the examples', fontsize=11.2,
+                  weight='bold')
+    ax2.grid(axis='y', color=GRID, lw=0.6, alpha=0.7)
+    ax2.set_axisbelow(True)
+    _save(fig, FT_DOC, 'data-vs-variation.svg')

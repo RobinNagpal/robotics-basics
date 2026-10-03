@@ -107,6 +107,21 @@ def _arrow(ax: Axes, x0: float, y0: float, x1: float, y1: float,
                                  shrinkA=0.0, shrinkB=0.0))
 
 
+def _wrap(text: str, width: int) -> str:
+    """Break a title into lines of at most `width` characters."""
+    lines, line = [], ''
+    for word in text.split():
+        trial = f'{line} {word}'.strip()
+        if len(trial) > width and line:
+            lines.append(line)
+            line = word
+        else:
+            line = trial
+    if line:
+        lines.append(line)
+    return '\n'.join(lines)
+
+
 def _resize(img: Arr, out_h: int, out_w: int) -> Arr:
     """Plain bilinear resize of a height x width x 3 picture."""
     h, w = img.shape[0], img.shape[1]
@@ -1609,6 +1624,14 @@ CHAPTERS: list[tuple[int, str, int]] = [
     (13, 'Using a model for real', 2),
 ]
 
+SHORT: dict[int, str] = {
+    1: 'What learning means', 2: 'Inside a network', 3: 'How training works',
+    4: 'Making training work', 5: 'The world as numbers', 6: 'The transformer',
+    7: 'Pretraining and adapting', 8: 'Models that generate', 9: 'Models that see',
+    10: 'Language and multimodal', 11: 'Learning from outcomes', 12: 'Models that act',
+    13: 'Using a model for real',
+}
+
 NEEDS: list[tuple[int, int]] = [
     (1, 2), (2, 3), (3, 4), (2, 5), (5, 6), (4, 6), (6, 7), (3, 8),
     (6, 9), (5, 9), (6, 10), (9, 10), (3, 11), (7, 12), (8, 12),
@@ -1641,14 +1664,14 @@ def book_map() -> None:
     pos: dict[int, tuple[float, float]] = {}
     for lv, members in levels.items():
         for k, c in enumerate(members):
-            y = 0.5 if len(members) == 1 else 0.5 + (k - (len(members) - 1) / 2) * 0.30
+            y = 0.5 if len(members) == 1 else 0.5 + (k - (len(members) - 1) / 2) * 0.295
             pos[c] = ((lv - 0.5) / max(levels), y)
 
-    fig, ax = plt.subplots(figsize=(14.5, 6.4), facecolor='white')
+    fig, ax = plt.subplots(figsize=(15.0, 7.0), facecolor='white')
     _blank(ax)
-    ax.set_xlim(-0.02, 1.02)
-    ax.set_ylim(0.03, 0.97)
-    bw, bh = 0.088, 0.145
+    ax.set_xlim(-0.01, 1.01)
+    ax.set_ylim(0.02, 0.98)
+    bw, bh = 0.098, 0.215
     for a, b in NEEDS:
         xa, ya = pos[a]
         xb, yb = pos[b]
@@ -1659,16 +1682,16 @@ def book_map() -> None:
               13: '#f3dede'}
     for c, (x, y) in pos.items():
         _box(ax, x - bw / 2, y - bh / 2, bw, bh, '', groups[c])
-        ax.text(x, y + 0.030, f'{c}', ha='center', va='center', fontsize=12,
+        ax.text(x, y + 0.062, f'{c}', ha='center', va='center', fontsize=12.5,
                 weight='bold', color=INK)
-        ax.text(x, y - 0.018, names[c], ha='center', va='center', fontsize=7.0,
-                color=INK, wrap=True)
-        ax.text(x, y - 0.052, f'{pages[c]} pages', ha='center', va='center',
-                fontsize=7.0, color=MUTED)
-    ax.text(0.5, 0.965, f'The whole book: {len(CHAPTERS)} chapters, {total} pages, '
+        ax.text(x, y - 0.005, _wrap(SHORT[c], 13), ha='center', va='center', fontsize=7.6,
+                color=INK, linespacing=1.35)
+        ax.text(x, y - 0.078, f'{pages[c]} pages', ha='center', va='center',
+                fontsize=7.4, color=MUTED)
+    ax.text(0.5, 0.975, f'The whole book: {len(CHAPTERS)} chapters, {total} pages, '
                         f'and what each one needs before it',
             ha='center', va='top', fontsize=13, weight='bold', color=INK)
-    ax.text(0.01, 0.08, 'blue: the machinery      green: how it is built and adapted      '
+    ax.text(0.01, 0.045, 'blue: the machinery      green: how it is built and adapted      '
                         'orange: the families      red: putting one to work',
             ha='left', va='center', fontsize=9.5, color=MUTED)
     _save(fig, MAP_DOC, 'book-map.svg')
@@ -1691,7 +1714,8 @@ def pages_per_chapter() -> None:
     for c, p in zip(nums, pages):
         ax.text(c, p + 0.12, str(p), ha='center', fontsize=10, color=INK)
     ax.set_xticks(nums)
-    ax.set_xticklabels([f'{c}\n{n}' for c, n, _ in CHAPTERS], fontsize=7.6)
+    ax.set_xticklabels([f'{c}. {n}' for c, n, _ in CHAPTERS], fontsize=8.4,
+                       rotation=32, ha='right')
     ax.set_ylim(0, 5.6)
     ax.set_ylabel('pages in the chapter', fontsize=10)
     ax2 = ax.twinx()
@@ -1701,7 +1725,7 @@ def pages_per_chapter() -> None:
     ax2.tick_params(labelsize=9.5)
     for c, v in zip(nums, cum):
         if c in (4, 7, 12, 13):
-            ax2.annotate(str(v), (c, v), textcoords='offset points', xytext=(-14, 2),
+            ax2.annotate(str(v), (c, v), textcoords='offset points', xytext=(-16, 5),
                          fontsize=9, color=INK)
     ax.set_title('Forty pages, and where you are after each chapter',
                  fontsize=12.5, weight='bold')
@@ -1834,8 +1858,8 @@ def data_and_run_cost() -> None:
     for f, c in zip(FAMILIES, cols):
         ax.scatter([f.examples], [f.macs / 1e9], s=90, color=c, zorder=4,
                    edgecolor='white', linewidth=0.8)
-    offsets = [(10, 8), (10, -16), (10, 8), (-10, -20), (-14, 10), (10, -16),
-               (10, 8), (10, -18), (10, 6)]
+    offsets = [(11, -4), (-11, 8), (11, 4), (11, -5), (-12, 6), (11, -6),
+               (12, -14), (12, 6), (11, 5)]
     for f, (dx, dy) in zip(FAMILIES, offsets):
         ax.annotate(f.name, (f.examples, f.macs / 1e9), textcoords='offset points',
                     xytext=(dx, dy), fontsize=8.8, color=INK,
@@ -1843,13 +1867,13 @@ def data_and_run_cost() -> None:
     period = 1000.0 / 20
     budget = POL.mac_rate['float16'] * period / 1000.0 / 1e9
     ax.axhline(budget, color=GRIP, ls='--', lw=1.5)
-    ax.text(2e2, budget * 1.15, f'all the arithmetic one 20 Hz loop has room for '
+    ax.text(1.6e2, budget * 1.12, f'all the arithmetic one 20 Hz loop has room for '
                                 f'on the example machine ({budget:.0f} thousand million)',
             fontsize=9, color=GRIP)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_xlim(1e2, 1e13)
-    ax.set_ylim(1e-2, 1e3)
+    ax.set_xlim(1e2, 1e14)
+    ax.set_ylim(1, 3e3)
     ax.set_xlabel('rough order of magnitude of training examples (example figures, '
                   'not measurements)', fontsize=10)
     ax.set_ylabel('multiply-adds for one decision, in thousand millions (log scale)',
@@ -1963,20 +1987,21 @@ def cost_against_budget() -> None:
         budget = rate / j[2]
         ax.plot([budget, budget], [yy - 0.34, yy + 0.34], color=GRIP, lw=2.2)
         share = 100 * j[3] / budget
-        ax.text(max(j[3], budget) * 1.5, yy,
-                f'{share:.3f}% of the budget' if share < 0.01 else f'{share:.1f}% of the budget',
-                va='center', fontsize=8.6, color=INK)
+        label = (f'one part in {budget / j[3]:,.0f} of the budget' if share < 0.5
+                 else f'{share:.1f}% of the budget')
+        ax.text(max(j[3], budget) * 1.8, yy, label, va='center', fontsize=8.6, color=INK)
         print(f'[p2-s3] {j[0]:44s} {j[1]:34s} {j[2]:6.1f} Hz  '
               f'{j[3]:18,.0f} operations  {share:9.4f}% of the budget')
     ax.set_xscale('log')
     ax.set_yticks(y)
     ax.set_yticklabels([f'{j[0]}\n{j[1]}' for j in JOBS], fontsize=8.4)
-    ax.set_xlim(1, 1e16)
+    ax.set_xlim(1, 1e17)
     ax.set_xlabel('arithmetic operations for one decision (log scale)', fontsize=10)
     ax.plot([], [], color=GRIP, lw=2.2, label='all the machine can do in one period at that rate')
     ax.plot([], [], color=SLIDE, lw=6, label='written, not learned')
     ax.plot([], [], color=LINK, lw=6, label='learned')
-    ax.legend(fontsize=9, frameon=False, loc='lower right')
+    ax.legend(fontsize=9, frameon=False, loc='upper center', ncol=3,
+              bbox_to_anchor=(0.5, -0.12))
     ax.set_title('Ten jobs, what to reach for, and whether it fits in the time',
                  fontsize=12.5, weight='bold')
     _save(fig, MAP_DOC, 'cost-against-budget.svg')
@@ -2021,46 +2046,46 @@ def data_needed() -> None:
 
 def choosing_a_family() -> None:
     """The questions that pick a family, in the order worth asking them."""
-    fig, ax = plt.subplots(figsize=(13.4, 6.4), facecolor='white')
+    fig, ax = plt.subplots(figsize=(14.2, 6.4), facecolor='white')
     _blank(ax)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.text(0.5, 0.985, 'Four questions, asked in this order, and where each answer leads',
             ha='center', va='top', fontsize=13, weight='bold', color=INK)
     qs = [
-        ('Can a person write down\nthe rule that decides it?', 0.10),
-        ('Is the answer a name, a box,\na mask or a depth reading?', 0.33),
-        ('Does it need words,\nor an object nobody listed?', 0.56),
-        ('Does it have to move the arm\nmoment by moment?', 0.79),
+        ('Can a person write down\nthe rule that decides it?', 0.095),
+        ('Is the answer a name, a box,\na mask or a depth reading?', 0.295),
+        ('Does it need words,\nor an object nobody listed?', 0.495),
+        ('Does it have to move the arm\nmoment by moment?', 0.695),
     ]
     for text, x in qs:
-        _box(ax, x - 0.085, 0.60, 0.17, 0.17, text, '#eef3f9', size=9.2)
+        _box(ax, x - 0.085, 0.60, 0.17, 0.17, text, '#eef3f9', size=9.0)
     for i in range(3):
         _arrow(ax, qs[i][1] + 0.085, 0.685, qs[i + 1][1] - 0.085, 0.685, MUTED, 1.6)
         ax.text((qs[i][1] + qs[i + 1][1]) / 2, 0.705, 'no', ha='center', fontsize=9,
                 color=MUTED)
     leaves = [
-        ('write it:\nthresholds, geometry,\nplanners, controllers', 0.10, '#e4f0e4',
+        ('write it:\nthresholds, geometry,\nplanners, controllers', 0.095, '#e4f0e4',
          'no training data at all'),
-        ('a classifier, a detector,\na segmenter or a depth model', 0.33, '#dfeaf6',
-         'already trained; fine-tune on 100s'),
-        ('a vision-language model,\nor an open-vocabulary detector', 0.56, '#e6dff5',
-         'already trained; prompt it'),
-        ('a behaviour-cloning,\ndiffusion or flow policy', 0.79, '#f6efe0',
-         '200 to 2,000 demonstrations'),
+        ('a classifier, a detector,\na segmenter or\na depth model', 0.295, '#dfeaf6',
+         'already trained;\nfine-tune on hundreds'),
+        ('a vision-language model,\nor an open-vocabulary\ndetector', 0.495, '#e6dff5',
+         'already trained;\nprompt it in words'),
+        ('a behaviour-cloning,\ndiffusion or\nflow policy', 0.695, '#f6efe0',
+         '200 to 2,000\ndemonstrations'),
     ]
     for text, x, col, note in leaves:
-        _box(ax, x - 0.095, 0.21, 0.19, 0.17, text, col, size=9.2)
-        ax.text(x, 0.165, note, ha='center', va='center', fontsize=8.6, color=MUTED)
+        _box(ax, x - 0.09, 0.21, 0.18, 0.17, text, col, size=9.0)
+        ax.text(x, 0.145, note, ha='center', va='center', fontsize=8.4, color=MUTED)
         _arrow(ax, x, 0.60, x, 0.385, MUTED, 1.6)
         ax.text(x + 0.012, 0.49, 'yes', ha='left', fontsize=9, color=MUTED)
-    _box(ax, 0.88, 0.21, 0.115, 0.17,
-         'a vision-language-\naction model,\nor break the job up', '#f3dede', size=9.2)
-    ax.text(0.9375, 0.165, 'co-trained on web and robot data', ha='center', va='center',
-            fontsize=8.0, color=MUTED)
-    _arrow(ax, qs[3][1] + 0.085, 0.685, 0.9375, 0.685, MUTED, 1.6)
-    _arrow(ax, 0.9375, 0.60, 0.9375, 0.385, MUTED, 1.6)
-    ax.text(0.875, 0.705, 'no', ha='center', fontsize=9, color=MUTED)
+    _box(ax, 0.835, 0.21, 0.155, 0.17,
+         'a vision-language-\naction model,\nor break the job up', '#f3dede', size=9.0)
+    ax.text(0.9125, 0.145, 'co-trained on web\nand robot data', ha='center', va='center',
+            fontsize=8.4, color=MUTED)
+    _arrow(ax, qs[3][1] + 0.085, 0.685, 0.9125, 0.685, MUTED, 1.6)
+    _arrow(ax, 0.9125, 0.60, 0.9125, 0.385, MUTED, 1.6)
+    ax.text(0.845, 0.705, 'no', ha='center', fontsize=9, color=MUTED)
     ax.text(0.5, 0.06, 'Ask the first question honestly. Three of the ten jobs on this page '
                        'are answered without any model at all, and those three run in '
                        'microseconds and never surprise you.',
@@ -2156,10 +2181,10 @@ def cost_comparison() -> None:
     ax2.bar([0, 1], [ms_written, ms_learned], color=[SLIDE, LINK], width=0.5)
     ax2.set_yscale('log')
     for i, v in enumerate([ms_written, ms_learned]):
-        ax2.text(i, v * 1.6, f'{v:.4f} ms' if v < 0.01 else f'{v:.2f} ms', ha='center',
-                 fontsize=10.5, weight='bold', color=INK)
+        txt = f'{v * 1000:.2f} microseconds' if v < 0.01 else f'{v:.2f} ms'
+        ax2.text(i, v * 1.8, txt, ha='center', fontsize=10.5, weight='bold', color=INK)
     ax2.axhline(1000 / 500, color=GRIP, ls='--', lw=1.4)
-    ax2.text(1.35, 1000 / 500 * 1.25, 'the 2 ms period of a 500 Hz loop', ha='right',
+    ax2.text(-0.46, 1000 / 500 * 2.2, 'the 2 ms period of a 500 Hz loop', ha='left',
              fontsize=9, color=GRIP)
     ax2.set_xticks([0, 1])
     ax2.set_xticklabels(['the written rule', 'the picture classifier'], fontsize=9.5)
@@ -2180,7 +2205,8 @@ def where_each_breaks() -> None:
     ]
     wr, ln = [], []
     for i, (name, kw) in enumerate(conds):
-        x, y = make_objects(2000, np.random.default_rng(700 + i), **kw)  # type: ignore[arg-type]
+        seed = 8 if i == 0 else 700 + i      # i == 0 is the very test set COL was measured on
+        x, y = make_objects(2000, np.random.default_rng(seed), **kw)  # type: ignore[arg-type]
         a_w = float((_written_rule(x) == y).mean())
         a_l = COL.accuracy_with(COL.mean, COL.std, x, y)
         wr.append(a_w)
@@ -2235,8 +2261,10 @@ def data_cost_curve() -> None:
         h = hours_for(t)
         ax.plot([h, h], [40, 100 * t], color=col, ls='--', lw=1.3)
         ax.scatter([h], [100 * t], color=col, s=42, zorder=4)
-        ax.text(h * 1.12, 100 * t - 1.5, f'{100 * t:.0f}%: {h:,.0f} hours',
-                fontsize=9.5, color=col)
+        right = h < 1e4
+        ax.text(h * (1.14 if right else 0.86), 100 * t - 1.6,
+                f'{100 * t:.0f}%: {h:,.0f} hours', fontsize=9.5, color=col,
+                ha='left' if right else 'right')
     ax.set_xscale('log')
     ax.set_xlim(10, 4e5)
     ax.set_ylim(40, 102)
@@ -2263,7 +2291,7 @@ def reliability_compounding() -> None:
         print(f'[p2-s5] at {100 * p:g}% a step, a task of {n:.1f} steps still succeeds '
               f'{100 * bar:.0f}% of the time; 20 steps gives {100 * p ** 20:.1f}%')
     ax1.axhline(100 * bar, color=INK, ls='--', lw=1.3)
-    ax1.text(26, 100 * bar + 1.5, 'a task that works 95 times in 100', fontsize=9, color=INK)
+    ax1.text(22, 100 * bar - 7, 'a task that works 95 times in 100', fontsize=9, color=INK)
     ax1.set_xlabel('steps in the task', fontsize=10)
     ax1.set_ylabel('chance the whole task works (%)', fontsize=10)
     ax1.set_ylim(0, 104)
@@ -2325,9 +2353,9 @@ def evaluation_cost() -> None:
     ax.set_xlabel('the improvement you are trying to prove, in percentage points', fontsize=10)
     ax.set_ylabel('trials needed on each of the two policies (log scale)', fontsize=10)
     ax2 = ax.twinx()
-    ax2.plot(100 * gains, [2 * n * secs / 3600 for n in per_arm], color=WRIST, lw=1.8, ls='--')
     ax2.set_yscale('log')
-    ax2.set_ylabel('hours of arm time, at 90 seconds a trial', fontsize=10)
+    ax2.set_ylim(*[v * 2 * secs / 3600 for v in ax.get_ylim()])
+    ax2.set_ylabel('hours of arm time for both, at 90 seconds a trial', fontsize=10)
     ax2.tick_params(labelsize=9.5)
     ax.set_title('Starting from 80%: what it costs to show you have improved it',
                  fontsize=12.5, weight='bold')
@@ -2425,10 +2453,11 @@ def library_shelf() -> None:
         x = 0.025 + i * (w + 0.013)
         here = f.endswith('neural-networks')
         col = '#f3dede' if here else '#eef3f9'
-        h = 0.10 + 0.030 * c
+        h = 0.17 + 0.028 * c
         _box(ax, x, 0.30, w, h, '', col, edge=GRIP if here else INK)
-        ax.text(x + w / 2, 0.30 + h - 0.055, t, ha='center', va='center', fontsize=8.4,
-                color=INK, weight='bold' if here else 'normal')
+        ax.text(x + w / 2, 0.30 + h - 0.075, _wrap(t, 14), ha='center', va='center',
+                fontsize=8.4, color=INK, weight='bold' if here else 'normal',
+                linespacing=1.35)
         ax.text(x + w / 2, 0.345, f'{c} chapters', ha='center', va='center', fontsize=8.6,
                 color=MUTED)
         ax.text(x + w / 2, 0.265, f'book {i + 1} on the shelf', ha='center', va='top',

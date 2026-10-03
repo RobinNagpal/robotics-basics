@@ -113,9 +113,9 @@ Reading 2,048 positions one after another takes 2,048 steps that cannot overlap,
 
 The comparison is not quite fair in the arithmetic, because the transformer's 24
 steps are each far larger pieces of work than the recurrent network's 2,048
-steps. That is exactly the point, though, because a graphics processing unit
-does thousands of multiplications at the same time and is idle the rest of the
-time, so one enormous step suits it and two thousand tiny ones do not.
+steps. That is exactly the point, though, because a graphics processing unit does
+thousands of multiplications at the same moment, so one enormous step fills it
+and two thousand tiny ones leave most of it with nothing to do.
 
 ![Two grids of twelve time slots by twelve positions, the first with one cell busy per slot along the diagonal, the second with all twelve busy in the first slot](../../images/the-transformer/why-the-transformer-won/hardware-busy.svg)
 
@@ -283,13 +283,13 @@ answer is exact and easy to show.
 
 ![Two panels: curves of how much weight an old token keeps for three forgetting rates, and bars of the weight left on the token 1,000 back beside the difference between two next-door tokens](../../images/the-transformer/why-the-transformer-won/what-it-gives-up.svg)
 
-A summary that keeps 0.98 each step leaves a token from 1,000 back with 1.7 thousand-millionths of its weight, and one that keeps 0.999 holds 0.368 of it but then weighs two next-door tokens almost the same, with a difference of only 0.001.
+A summary that keeps 0.98 each step leaves a token from 1,000 back with 1.7 thousand-millionths of its weight, while one that keeps 0.999 holds 0.368 of it but then weighs two next-door tokens almost the same, with a difference of only 0.001.
 
 The two panels together are the trade, and it cannot be escaped by choosing a
-better rate. Forget quickly and the far past is gone. Forget slowly and the far
-past survives but everything is blurred together, because the weights on two
-tokens that sit next to each other differ by only 0.001 and nothing in the
-summary can tell them apart. Attention has neither problem, since it can put
+better rate, because if the layer forgets quickly the far past is gone, and if
+it forgets slowly the far past survives but everything in it is blurred
+together, since the weights on two tokens that sit next to each other then
+differ by only 0.001 and nothing in the summary can tell them apart. Attention has neither problem, since it can put
 whatever weight it likes on any single earlier token and leave the rest at zero,
 which is exactly what is needed to find the one sentence in a long document that
 answers a question.
@@ -331,13 +331,13 @@ waiting.
 In a stated 24 GiB, 124 conversations of 2,048 tokens fit at once but only 7 of 32,768 tokens do, and sharing keys and values across four groups raises those to 498 and 31.
 
 The second open thing is that long contexts and many users pull against each
-other, because the memory that holds one person's long conversation is the memory
-that would have held thirty short ones. Sharing keys and values moves the line
-by a factor of four and does not change its shape.
+other, because the memory that holds one conversation of 32,768 tokens is the
+memory that would have held sixteen conversations of 2,048. Sharing keys and
+values moves the line by a factor of four and does not change its shape.
 
 ![Two panels: memory for a 32,768-token conversation under three designs, and how much weight each design can put on a token a given distance back](../../images/the-transformer/why-the-transformer-won/three-designs.svg)
 
-Attention over everything holds 3,072 MiB and can weight any one token freely, a window of 1,024 holds 96 MiB and can see nothing at all beyond its window in a layer, and a running summary holds 0.75 MiB but leaves a token 4,000 back with about eight thousand-million-millionths of a millionth of its weight.
+Attention over everything holds 3,072 MiB and can weight any one token freely, a window of 1,024 holds 96 MiB and sees nothing at all beyond its window, and a running summary holds 0.75 MiB but leaves a token 4,000 back with about 8 divided by a 1 with 36 noughts after it.
 
 The third open thing is the one those bars show, which is that nobody has a
 design that is cheap in memory and can still reach back and pick out a single

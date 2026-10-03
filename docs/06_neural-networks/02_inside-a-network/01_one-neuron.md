@@ -302,8 +302,8 @@ of them; the readings and the weights here are simulated, drawn from a fixed
 seed so that the picture can be made again.
 
 A neuron in that state is called a dead unit, and it is dead in a strong sense,
-because the training methods in the next chapter work by nudging each weight in
-the direction that would improve the answer, and a neuron whose output is 0 for
+because the training methods in the next chapter nudge each weight in the
+direction that would improve the answer, and a neuron whose output is 0 for
 every example gives no direction to nudge in. That shows up in the slope of the
 rule.
 
@@ -394,9 +394,8 @@ are arranged in a grid that a computer multiplies in one go.
 - [The shape of the numbers](03_the-shape-of-the-numbers.md) explains how those
   weights are stored and multiplied, and why the hardware is built the way it
   is.
-- [What a network can learn](04_what-a-network-can-learn.md) picks up the
-  argument of section 4 and shows why stacking layers with a rule between them
-  can follow any shape at all.
+- [What a network can learn](04_what-a-network-can-learn.md) picks up section 4
+  and shows why stacking layers with a rule between them can follow any shape.
 - [The score of being wrong](../03_how-training-works/01_the-score-of-being-wrong.md)
   starts the chapter that finds the weights and biases this page chose by hand.
 - [Backpropagation](../03_how-training-works/03_backpropagation.md) explains why
@@ -409,10 +408,10 @@ are arranged in a grid that a computer multiplies in one go.
 
 ## 8. Using it in Python
 
-Everything on this page is one line of PyTorch, which is the library most of
-this book's models are built with. The code below builds the same neuron as
-section 1, puts the same three readings through it, and then checks the
-arithmetic of sections 2, 5 and 6 against the numbers printed above.
+Everything on this page is one line of PyTorch, the library most of this book's
+models are built with. The code below builds the same neuron as section 1, puts
+the same three readings through it, and checks the arithmetic of sections 2, 5
+and 6.
 
 ```python
 import torch
@@ -425,16 +424,16 @@ with torch.no_grad():                               # fix them by hand, as this 
 
 readings = torch.tensor([[0.42, 0.55, 0.30]])       # distance, opening/100, brightness/255
 total = neuron(readings)                            # section 2: the weighted sum
-print(total.item())                                 # 0.7250000238418579
+print(f"{total.item():.4f}")                        # 0.7250
 print(sum(p.numel() for p in neuron.parameters()))  # 4
 
-print(torch.relu(total).item())                     # section 5: 0.7250000238418579
-print(torch.nn.functional.gelu(total).item())       # section 6: 0.5552042722702026
-print(torch.nn.functional.silu(total).item())       # section 6: 0.48836731910705566
+print(f"{torch.relu(total).item():.4f}")                      # section 5: 0.7250
+print(f"{torch.nn.functional.gelu(total).item():.4f}")        # section 6: 0.5552
+print(f"{torch.nn.functional.silu(total).item():.4f}")        # section 6: 0.4884
 
 below = torch.tensor([-0.135])                      # the sum at 0.85 m, from section 6
-print(torch.relu(below).item())                     # 0.0
-print(torch.nn.functional.gelu(below).item())       # -0.06025080755352974
+print(f"{torch.relu(below).item():.4f}")                      # 0.0000
+print(f"{torch.nn.functional.gelu(below).item():.4f}")        # -0.0603
 ```
 
 The class is called `nn.Linear` rather than `nn.Neuron` because it is written to
@@ -443,9 +442,10 @@ a single neuron out of it. The library gives you the weights, the bias, the
 multiplying and the adding, so you never write the arithmetic of section 2
 yourself.
 
-The numbers printed differ from this page's in the last few digits, which is not
-a mistake, because PyTorch works in a number format called float32 that keeps
-about seven digits, and the page [the shape of the
+Each number is printed to four decimal places on purpose, because PyTorch works
+in a number format called float32 that keeps only about seven digits, so the
+full printout would end in digits that depend on the order the machine added
+things up. The page [the shape of the
 numbers](03_the-shape-of-the-numbers.md) explains that format and the smaller
 ones models are run in.
 

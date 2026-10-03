@@ -327,7 +327,8 @@ def discounted(rewards: Arr, gamma: float) -> float:
 # drawing the table top
 # --------------------------------------------------------------------------
 
-def _table(ax: Axes, title: str = '', marks: bool = True, small: bool = False) -> None:
+def _table(ax: Axes, title: str = '', marks: bool = True, small: bool = False,
+           label_top: bool = False) -> None:
     """Draw the empty five-by-five table top with its four named squares."""
     ax.set_xlim(-0.05, COLS + 0.05)
     ax.set_ylim(-0.05, ROWS + 0.05)
@@ -343,7 +344,8 @@ def _table(ax: Axes, title: str = '', marks: bool = True, small: bool = False) -
             r, c = rc
             ax.add_patch(Rectangle((c, ROWS - 1 - r), 1, 1, color=colour, alpha=0.16,
                                    lw=0))
-            ax.text(c + 0.5, ROWS - 1 - r + 0.08, label, ha='center', va='bottom',
+            ax.text(c + 0.5, ROWS - 1 - r + (0.90 if label_top else 0.08), label,
+                    ha='center', va='bottom' if not label_top else 'top',
                     fontsize=7.0 if small else 8.0, color=colour, weight='bold')
     if title:
         ax.set_title(title, fontsize=10.5 if small else 11.5, weight='bold', color=INK)
@@ -371,7 +373,7 @@ def _draw_policy(ax: Axes, Q: Arr, holding: bool, colour: str = LINK,
 
 
 def _draw_numbers(ax: Axes, vals: Arr, holding: bool, fmt: str = '{:.1f}',
-                  size: float = 9.5, shade: bool = True) -> None:
+                  size: float = 9.5, shade: bool = True, dy: float = -0.14) -> None:
     """Write one number in every square, optionally shaded by how big it is."""
     layer = np.array([[vals[sid(r, c, holding)] for c in range(COLS)] for r in range(ROWS)])
     if shade:
@@ -384,7 +386,7 @@ def _draw_numbers(ax: Axes, vals: Arr, holding: bool, fmt: str = '{:.1f}',
     for r in range(ROWS):
         for c in range(COLS):
             x, y = _cell_xy(r, c)
-            ax.text(x, y - 0.14, fmt.format(layer[r, c]), ha='center', va='center',
+            ax.text(x, y + dy, fmt.format(layer[r, c]), ha='center', va='center',
                     fontsize=size, color=INK)
 
 
@@ -709,7 +711,7 @@ def policy_as_a_table() -> None:
         print(f'[policy] {name}: the trained policy picks "{ACTIONS[best]}" '
               f'with probability {greedy[best]:.2f}')
     axes[0].set_ylabel('chance of picking the action', fontsize=10)
-    axes[0].legend(fontsize=9, frameon=False, loc='upper left')
+    axes[0].legend(fontsize=9, frameon=False, loc='upper right')
     fig.suptitle('The policy is a chance for every action in every state',
                  fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
@@ -738,8 +740,8 @@ def policy_and_value_together() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
     for ax, holding, name in ((axes[0], False, 'empty gripper: walk to the block, then C'),
                               (axes[1], True, 'holding it: walk to the bin, then O')):
-        _table(ax, name, small=True)
-        _draw_numbers(ax, V, holding, '{:.2f}', 8.5)
+        _table(ax, name, small=True, label_top=True)
+        _draw_numbers(ax, V, holding, '{:.2f}', 8.5, dy=-0.34)
         _draw_policy(ax, Q, holding, PURPLE, 12.0)
     print('[policy-value] the best action in state 34 is '
           f'"{ACTIONS[int(np.argmax(Q[sid(*BLOCK, False)]))]}" and in state 9 it is '
@@ -753,35 +755,30 @@ def policy_and_value_together() -> None:
 def value_vs_return() -> None:
     Q, rets, succ, snaps = main_run()
     gamma = 0.95
-    pred: list[float] = []
-    real: list[float] = []
-    seen: list[bool] = []
-    for s in range(NS):
-        ss, aa, rr, out = greedy_path(Q, s0=s)
-        pred.append(float(Q[s].max()))
-        real.append(discounted(rr, gamma))
-        seen.append(bool(np.abs(Q[s]).sum() > 1e-9))
-    pred_a, real_a, seen_a = np.array(pred), np.array(real), np.array(seen)
-    gap = float(np.mean(np.abs(pred_a[seen_a] - real_a[seen_a])))
-    print(f'[check] {int(seen_a.sum())} of {NS} states were ever visited; for those the '
-          f'value estimate is out by {gap:.3f} on average')
-    print(f'[check] the {int((~seen_a).sum())} states never visited keep the value 0 '
-          f'they started with')
-    fig, ax = plt.subplots(figsize=(7.0, 6.0), facecolor='white')
-    _plain(ax)
-    lo = min(real_a.min(), pred_a.min()) - 0.5
-    hi = max(real_a.max(), pred_a.max()) + 0.5
-    ax.plot([lo, hi], [lo, hi], ls='--', color=MUTED, lw=1.2)
-    ax.scatter(real_a[seen_a], pred_a[seen_a], s=34, color=LINK, zorder=5,
-               label=f'{int(seen_a.sum())} states the learner visited')
-    ax.scatter(real_a[~seen_a], pred_a[~seen_a], s=34, color=GRIP, zorder=5,
-               marker='x', label=f'{int((~seen_a).sum())} states it never visited')
-    ax.set_xlabel('the discounted return the policy really collects from that state',
-                  fontsize=10)
-    ax.set_ylabel('the value the learner predicts for that state', fontsize=10)
-    ax.set_title(f'The value estimate matches the real return to {gap:.2f} on average',
-                 fontsize=12, weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.6), facecolor='white')
+    for ax, Qx, name in ((axes[0], snaps[2], f'after {MAIN_EPISODES // 10} attempts'),
+                         (axes[1], Q, f'after {MAIN_EPISODES} attempts')):
+        _plain(ax)
+        pred = np.array([float(Qx[s].max()) for s in range(NS)])
+        real = np.array([discounted(greedy_path(Qx, s0=s)[2], gamma) for s in range(NS)])
+        gap = float(np.mean(np.abs(pred - real)))
+        lo = min(float(pred.min()), float(real.min())) - 0.6
+        hi = max(float(pred.max()), float(real.max())) + 0.6
+        ax.plot([lo, hi], [lo, hi], ls='--', color=MUTED, lw=1.2)
+        ax.scatter(real, pred, s=34, color=LINK, zorder=5)
+        ax.set_xlabel('the discounted return the policy really collects', fontsize=10)
+        ax.set_title(f'{name}: out by {gap:.2f} on average', fontsize=11.5,
+                     weight='bold', color=INK)
+        ax.set_xlim(lo, hi)
+        ax.set_ylim(lo, hi)
+        ax.text(lo + 0.1 * (hi - lo), hi - 0.08 * (hi - lo),
+                'points on the dashed line are states whose value is right',
+                fontsize=9, color=MUTED)
+        print(f'[check] {name}: the value estimate is out by {gap:.3f} on average over '
+              f'all {NS} states, biggest gap {float(np.max(np.abs(pred - real))):.2f}')
+    axes[0].set_ylabel('the value the learner predicts', fontsize=10)
+    fig.suptitle('The value function is a prediction, and this is how good the '
+                 'prediction is', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RL_DOC, 'value-vs-return.svg')
 
@@ -810,10 +807,10 @@ def learning_curve() -> None:
     ax.set_ylabel('share of attempts that reached the bin', fontsize=10)
     ax.set_title('How often the block ended up in the bin', fontsize=11.5,
                  weight='bold', color=INK)
+    sm = _smooth(succ, k)
     for frac in (0.25, 0.5, 0.75, 1.0):
         i = int(frac * len(succ)) - 1
-        ax.text(i, _smooth(succ, k)[i] + 0.04, f'{_smooth(succ, k)[i]:.2f}',
-                ha='right', fontsize=9, color=PURPLE)
+        ax.text(i, sm[i] - 0.07, f'{sm[i]:.2f}', ha='right', fontsize=9, color=PURPLE)
     print(f'[curve] smoothed success rate at a quarter, half, three quarters and the '
           f'end: ' + ', '.join(f'{_smooth(succ, k)[int(f * len(succ)) - 1]:.2f}'
                                for f in (0.25, 0.5, 0.75, 1.0)))
@@ -885,9 +882,186 @@ def q_values_one_state() -> None:
     ax.set_xticklabels(ACTIONS, fontsize=10)
     ax.set_xlabel('action taken in state 35', fontsize=10)
     ax.set_ylabel('value of taking that action', fontsize=10)
-    ax.set_ylim(min(0, float(Q[s].min())) - 0.6, float(Q[s].max()) + 1.2)
-    ax.set_title('What one state learned: "up" is worth most, because the bin is up '
-                 'and to the right', fontsize=11.5, weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.set_ylim(min(0, float(Q[s].min())) - 0.6, float(Q[s].max()) + 2.6)
+    ax.set_title('What one state learned: "up" and "right" are worth the same, because '
+                 'the bin is up and to the right', fontsize=11.5, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper center', ncol=3)
     fig.tight_layout()
     _save(fig, RL_DOC, 'q-values-one-state.svg')
+
+
+# ==========================================================================
+# PAGE 1, section 4: exploring against taking the best known answer
+# ==========================================================================
+
+EXPLORE: dict[str, tuple[Arr, Arr, list[Arr], list[dict[str, float]]]] | None = None
+EXPLORE_SEEDS: int = 8
+EXPLORE_EPISODES: int = 6000
+
+
+def explore_runs() -> dict[str, tuple[Arr, Arr, list[Arr], list[dict[str, float]]]]:
+    """Two sets of runs: one that never explores, one that explores a lot."""
+    global EXPLORE
+    if EXPLORE is None:
+        out: dict[str, tuple[Arr, Arr, list[Arr], list[dict[str, float]]]] = {}
+        for name, eps in (('never explores', 0.0), ('explores 70% of the time', 0.7)):
+            curves, qs, ends = [], [], []
+            for seed in range(EXPLORE_SEEDS):
+                Q, rets, succ, _ = q_learn(EXPLORE_EPISODES, eps, seed=300 + seed)
+                curves.append(rets)
+                qs.append(Q)
+                ends.append(evaluate(Q, 40, seed=900 + seed)[0])
+            arr = np.array(curves)
+            out[name] = (arr, np.array([e['bin'] for e in ends]), qs, ends)
+            got = float(np.mean([e['bin'] for e in ends]))
+            print(f'[explore] {name}: {int(sum(e["bin"] > 0.5 for e in ends))} of '
+                  f'{EXPLORE_SEEDS} runs end up going to the bin, share of attempts at '
+                  f'the bin {got:.2f}, reward collected while training '
+                  f'{arr.mean():.2f}')
+        EXPLORE = out
+    return EXPLORE
+
+
+def explore_or_not() -> None:
+    runs = explore_runs()
+    V, Qs = value_iteration(0.95)
+    best = float(greedy_path(Qs)[2].sum())
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.9), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    for name, colour in (('never explores', GRIP), ('explores 70% of the time', LINK)):
+        arr = runs[name][0]
+        ax.plot(np.arange(arr.shape[1]), _smooth(arr.mean(0), 200), color=colour, lw=1.9,
+                label=name)
+    ax.axhline(best, color=SLIDE, ls='--', lw=1.3, label=f'best possible {best:.2f}')
+    ax.axhline(1.30, color=JOINT, ls=':', lw=1.3, label='the tray route, 1.30')
+    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_ylabel('reward collected in the attempt', fontsize=10)
+    ax.set_title(f'Reward during training, averaged over {EXPLORE_SEEDS} runs',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax.legend(fontsize=9, frameon=False, loc='lower right')
+    ax = axes[1]
+    _plain(ax)
+    names = ['never explores', 'explores 70% of the time']
+    final = [float(np.mean([evaluate(q, 40, seed=1200 + i)[1]
+                            for i, q in enumerate(runs[n][2])])) for n in names]
+    during = [float(runs[n][0].mean()) for n in names]
+    xs = np.arange(2)
+    ax.bar(xs - 0.2, during, width=0.4, color=MUTED, edgecolor=INK, lw=0.6,
+           label='average reward while training')
+    ax.bar(xs + 0.2, final, width=0.4, color=PURPLE, edgecolor=INK, lw=0.6,
+           label='reward of the policy it ends up with')
+    for x, v in zip(xs - 0.2, during):
+        ax.text(x, v + (0.2 if v >= 0 else -0.6), f'{v:.2f}', ha='center', fontsize=9.5)
+    for x, v in zip(xs + 0.2, final):
+        ax.text(x, v + 0.2, f'{v:.2f}', ha='center', fontsize=9.5)
+    ax.axhline(0, color=INK, lw=0.9)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylabel('reward', fontsize=10)
+    ax.set_ylim(-4.0, 11.0)
+    ax.set_title('Exploring costs reward now and buys a better answer later',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    print(f'[explore] average reward while training: never {during[0]:.2f}, '
+          f'exploring {during[1]:.2f}')
+    print(f'[explore] reward of the finished policy: never {final[0]:.2f}, '
+          f'exploring {final[1]:.2f}')
+    fig.suptitle('A run that never explores settles for the near tray',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'explore-or-not.svg')
+
+
+def where_each_one_ends_up() -> None:
+    runs = explore_runs()
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 5.4), facecolor='white')
+    for ax, name, colour in ((axes[0], 'never explores', GRIP),
+                             (axes[1], 'explores 70% of the time', LINK)):
+        Q = runs[name][2][0]
+        ss, aa, rr, out = greedy_path(Q)
+        _table(ax, f'{name}: ends at the {out}', small=True)
+        _draw_path(ax, ss, aa, colour)
+        ax.text(2.5, -0.32, f'{len(aa)} actions, reward {rr.sum():.2f}', ha='center',
+                fontsize=10, color=INK)
+        print(f'[explore] the first run that {name}: {len(aa)} actions, '
+              f'reward {rr.sum():.2f}, ends at the {out}')
+    fig.suptitle('The two finished policies, run with no exploring at all',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'where-each-one-ends-up.svg')
+
+
+def first_time_at_the_bin() -> None:
+    runs = explore_runs()
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.7), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    names = ['never explores', 'explores 70% of the time']
+    got = [int(sum(e['bin'] > 0.5 for e in runs[n][3])) for n in names]
+    ax.bar([0, 1], got, width=0.5, color=[GRIP, LINK], edgecolor=INK, lw=0.7)
+    for x, v in zip([0, 1], got):
+        ax.text(x, v + 0.12, f'{v} of {EXPLORE_SEEDS}', ha='center', fontsize=11,
+                weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(names, fontsize=10)
+    ax.set_ylim(0, EXPLORE_SEEDS + 1.4)
+    ax.set_ylabel('runs whose finished policy goes to the bin', fontsize=10)
+    ax.set_title('How many runs found the better answer', fontsize=11.5, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    for name, colour in ((names[0], GRIP), (names[1], LINK)):
+        arr = runs[name][0]
+        reach = (arr > 5.0).cumsum(1) > 0
+        ax.plot(np.arange(arr.shape[1]), reach.mean(0), color=colour, lw=1.9, label=name)
+    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_ylabel('share of runs that have reached the bin at least once', fontsize=10)
+    ax.set_ylim(-0.03, 1.05)
+    ax.set_title('When the bin was first found at all', fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='center right')
+    for name in names:
+        arr = runs[name][0]
+        first = [int(np.argmax(r > 5.0)) if (r > 5.0).any() else -1 for r in arr]
+        print(f'[explore] {name}: attempt at which each run first reached the bin: '
+              f'{first}')
+    fig.suptitle('Finding the bin at all is the whole difficulty',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'first-time-at-the-bin.svg')
+
+
+def the_price_of_exploring() -> None:
+    epss = [0.0, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8]
+    seeds = 6
+    during: list[float] = []
+    after: list[float] = []
+    for eps in epss:
+        d, a = [], []
+        for seed in range(seeds):
+            Q, rets, succ, _ = q_learn(4000, eps, seed=600 + seed)
+            d.append(float(rets.mean()))
+            a.append(evaluate(Q, 30, seed=1500 + seed)[1])
+        during.append(float(np.mean(d)))
+        after.append(float(np.mean(a)))
+        print(f'[sweep] exploring rate {eps:.2f}: reward while training '
+              f'{during[-1]:+6.2f}, reward of the finished policy {after[-1]:+6.2f}')
+    fig, ax = plt.subplots(figsize=(8.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(epss, during, marker='o', color=MUTED, lw=2.0,
+            label='reward collected while training')
+    ax.plot(epss, after, marker='s', color=PURPLE, lw=2.0,
+            label='reward of the policy it ends up with')
+    for x, v in zip(epss, after):
+        ax.text(x, v + 0.35, f'{v:.1f}', ha='center', fontsize=9, color=PURPLE)
+    for x, v in zip(epss, during):
+        ax.text(x, v - 0.9, f'{v:.1f}', ha='center', fontsize=9, color=MUTED)
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_xlabel('how often the learner takes a random action instead of its best one',
+                  fontsize=10)
+    ax.set_ylabel('reward', fontsize=10)
+    ax.set_ylim(min(during) - 2.0, 11.5)
+    ax.set_title('4,000 attempts at each exploring rate, averaged over '
+                 f'{seeds} runs', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='center left')
+    fig.tight_layout()
+    _save(fig, RL_DOC, 'the-price-of-exploring.svg')

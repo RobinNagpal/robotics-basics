@@ -20,9 +20,7 @@ It is for a reader who has read [attention](01_attention.md) and [a transformer
 block](02_a-transformer-block.md), so it does not explain attention, queries,
 keys, values, heads or the block again. It also assumes you know what a
 [token](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md) is and
-what a [loss](../03_how-training-works/01_the-score-of-being-wrong.md) is,
-because the training job here is an ordinary cross-entropy loss applied once at
-every position.
+what a [loss](../03_how-training-works/01_the-score-of-being-wrong.md) is.
 
 Every number in the pictures below was worked out by
 `docs/diagrams/the_transformer_2.py`, which prints each one. The example
@@ -88,9 +86,9 @@ sentence, and training nudges every weight so that this average comes down.
 At position 4 the model's favourite word is "lifts" at 0.352 while the right word "the" gets only 0.189, and at position 6 it puts 0.933 on the right word.
 
 Comparing the two shows that the loss cares only about the chance given to the
-one right word, because the model may spread the rest of its belief wherever it
-likes without being punished for it, which is why position 4 still costs 1.67
-even though the model was not far off.
+one right word, because the model may spread the rest of its belief where it
+likes without being punished, which is why position 4 still costs 1.67 even
+though the model was not far off.
 
 ![Two panels: bars comparing 50 sentence labels against 1,000 next-token signals from 1,000 tokens of text, and lines showing the same twenty-fold gap holding as the amount of text grows](../../images/the-transformer/training-and-running-a-transformer/signals-per-thousand-tokens.svg)
 
@@ -143,7 +141,7 @@ three allowed positions and zero on the other three.
 
 Without the mask, position 3 would take 0.197 of its mix from position 4, which is the word "lifts" that it is being asked to predict.
 
-This is the whole argument for the mask, and it is worth sitting with. Position 3
+This is the whole argument for the mask, and it is worth reading twice. Position 3
 has to predict "lifts", and position 4 holds "lifts" as its own input, so an
 unmasked model would put 0.197 of its weighted mix on the answer and more than
 half of its weight, 0.503, on that position and the ones after it. The loss
@@ -378,8 +376,7 @@ The way out is to answer several conversations at the same time, since the
 weights are read once per step whether one sequence waits on them or sixty-four.
 Throughput rises from 1,146 tokens a second at one sequence to 4,721 at 64, but
 the wait for any one conversation's next token never drops below about 212
-microseconds, because each sequence still has its own cache to read. That is why
-a busy service answers more people without answering any one of them faster.
+microseconds, because each sequence still has its own cache to read.
 
 ---
 

@@ -2457,8 +2457,9 @@ def scaled_training() -> None:
     ax.set_xscale('log')
     ax.set_xlim(0.01, max(err_raw.max(), err_sc.max()) * 6)
     ax.axvline(1.0, color=MUTED, ls='--', lw=1.1)
-    ax.text(1.12, -0.42, 'an error as big as the channel itself',
+    ax.text(1.12, 6.62, 'an error as big as the channel itself',
             fontsize=9, color=MUTED, va='center')
+    ax.set_ylim(6.9, -0.6)
     ax.set_xlabel('average error, as a share of that channel’s own spread '
                   '(log scale)', fontsize=10)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')

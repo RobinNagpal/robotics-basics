@@ -1301,6 +1301,941 @@ def chunk_length_trade() -> None:
 
 
 # ==========================================================================
+# PAGE 2 --- the two-way obstacle task, and the generators
+# ==========================================================================
+
+BOX: tuple[float, float, float, float] = (16.0, 24.0, -5.0, 5.0)
+GOAL2: Arr = np.array([40.0, 0.0])
+OBST_STEPS: int = 120
+CHUNK2: int = 32                  # steps the policy works out at once
+EXEC2: int = 8                    # steps it plays before working out the next
+ADIM: int = CHUNK2 * 2            # numbers in one chunk
+
+
+def _obst_profile(n: int, g: float, hesitate: bool = True) -> Arr:
+    tau = np.linspace(0.0, 1.0, n + 1)
+    sp = np.sin(np.pi * tau) ** g + 0.02
+    if hesitate:
+        sp = sp * (1.0 - 0.80 * np.exp(-((tau - 0.72) / 0.05) ** 2))
+    u = np.cumsum(sp)
+    return (u - u[0]) / (u[-1] - u[0])
+
+
+def obstacle_demo(rng: np.random.Generator, side: float | None = None,
+                  n: int = OBST_STEPS) -> tuple[Arr, Arr, float]:
+    start = np.array([0.0, 0.0]) + rng.normal(0, 0.5, 2)
+    goal = GOAL2 + rng.normal(0, 0.4, 2)
+    s = float(rng.choice([-1.0, 1.0])) if side is None else side
+    arc = s * rng.normal(9.0, 0.8)
+    u = _obst_profile(n, rng.normal(1.0, 0.08))
+    d = goal - start
+    perp = np.array([-d[1], d[0]]) / np.linalg.norm(d)
+    pos = start + u[:, None] * d + arc * np.sin(np.pi * u)[:, None] * perp
+    pos = pos + _tremor(rng, n + 1, 0.22)
+    return pos, np.diff(pos, axis=0), s
+
+
+def hits_box(path: Arr) -> Arr:
+    """True for each run whose path goes through the box. path is (steps, runs, 2)."""
+    x0, x1, y0, y1 = BOX
+    inside = ((path[..., 0] > x0) & (path[..., 0] < x1) &
+              (path[..., 1] > y0) & (path[..., 1] < y1))
+    return inside.any(axis=0)
+
+
+class ObstacleData:
+    """Every recorded moment of the obstacle demonstrations, ready for training."""
+
+    def __init__(self, n_demos: int = 400, seed: int = 5) -> None:
+        rng = np.random.default_rng(seed)
+        obs, chunks, paths, sides = [], [], [], []
+        for _ in range(n_demos):
+            pos, acts, s = obstacle_demo(rng)
+            keep = len(acts) - CHUNK2
+            obs.append(pos[:keep])
+            chunks.append(np.stack([acts[i:i + CHUNK2] for i in range(keep)]))
+            paths.append(pos)
+            sides.append(s)
+        self.paths = np.stack(paths, axis=1)
+        self.sides = np.array(sides)
+        self.obs_raw = np.concatenate(obs)
+        ch = np.concatenate(chunks)
+        self.act_scale = float(ch.std())
+        self.chunks_raw = ch
+        self.x = self.norm_obs(self.obs_raw)
+        self.y = (ch / self.act_scale).reshape(len(ch), -1)
+        self.n_demos = n_demos
+
+    @staticmethod
+    def norm_obs(p: Arr) -> Arr:
+        return np.column_stack([p[:, 0] / 20.0 - 1.0, p[:, 1] / 10.0])
+
+    def to_cm(self, y: Arr) -> Arr:
+        return y.reshape(len(y), CHUNK2, 2) * self.act_scale
+
+
+class Mlp:
+    """A small network of fully connected layers, trained with Adam in NumPy."""
+
+    def __init__(self, sizes: list[int], seed: int = 0) -> None:
+        rng = np.random.default_rng(seed)
+        self.n = len(sizes) - 1
+        self.W = [rng.normal(0, np.sqrt(2.0 / sizes[i]), (sizes[i], sizes[i + 1]))
+                  for i in range(self.n)]
+        self.B = [np.zeros(sizes[i + 1]) for i in range(self.n)]
+        self.mW = [np.zeros_like(w) for w in self.W]
+        self.vW = [np.zeros_like(w) for w in self.W]
+        self.mB = [np.zeros_like(b) for b in self.B]
+        self.vB = [np.zeros_like(b) for b in self.B]
+        self.t = 0
+        self.sizes = sizes
+
+    @property
+    def n_weights(self) -> int:
+        return sum(w.size for w in self.W) + sum(b.size for b in self.B)
+
+    def __call__(self, x: Arr) -> Arr:
+        h = x
+        for i in range(self.n):
+            z = h @ self.W[i] + self.B[i]
+            h = _silu(z) if i < self.n - 1 else z
+        return h
+
+    def step(self, x: Arr, target: Arr, lr: float) -> float:
+        zs, hs = [], [x]
+        h = x
+        for i in range(self.n):
+            z = h @ self.W[i] + self.B[i]
+            zs.append(z)
+            h = _silu(z) if i < self.n - 1 else z
+            hs.append(h)
+        loss = float(np.mean((h - target) ** 2))
+        d = 2.0 * (h - target) / (x.shape[0] * target.shape[1])
+        gW: list[Arr] = [np.zeros(0)] * self.n
+        gB: list[Arr] = [np.zeros(0)] * self.n
+        for i in reversed(range(self.n)):
+            gW[i] = hs[i].T @ d
+            gB[i] = d.sum(0)
+            if i > 0:
+                d = (d @ self.W[i].T) * _dsilu(zs[i - 1])
+        self.t += 1
+        b1, b2, eps = 0.9, 0.999, 1e-8
+        c1 = 1 - b1 ** self.t
+        c2 = 1 - b2 ** self.t
+        for i in range(self.n):
+            self.mW[i] = b1 * self.mW[i] + (1 - b1) * gW[i]
+            self.vW[i] = b2 * self.vW[i] + (1 - b2) * gW[i] ** 2
+            self.W[i] -= lr * (self.mW[i] / c1) / (np.sqrt(self.vW[i] / c2) + eps)
+            self.mB[i] = b1 * self.mB[i] + (1 - b1) * gB[i]
+            self.vB[i] = b2 * self.vB[i] + (1 - b2) * gB[i] ** 2
+            self.B[i] -= lr * (self.mB[i] / c1) / (np.sqrt(self.vB[i] / c2) + eps)
+        return loss
+
+
+TEMB: int = 16
+K_STEPS: int = 100
+
+
+def _temb(u: Arr) -> Arr:
+    freqs = 2.0 ** np.arange(TEMB // 2)
+    ang = u[:, None] * np.pi * freqs[None, :]
+    return np.concatenate([np.sin(ang), np.cos(ang)], axis=1)
+
+
+def _abar() -> Arr:
+    s = 0.008
+    t = np.arange(K_STEPS + 1) / K_STEPS
+    f = np.cos((t + s) / (1 + s) * np.pi / 2) ** 2
+    return f / f[0]
+
+
+AB: Arr = _abar()
+
+
+class Policies:
+    """Three policies trained on the same obstacle demonstrations."""
+
+    def __init__(self) -> None:
+        self.data = ObstacleData()
+        d = self.data
+        n = len(d.x)
+        rng = np.random.default_rng(3)
+        hid = 256
+        self.diff = Mlp([ADIM + 2 + TEMB, hid, hid, ADIM], seed=1)
+        self.flow = Mlp([ADIM + 2 + TEMB, hid, hid, ADIM], seed=2)
+        self.mean = Mlp([2, hid, hid, ADIM], seed=4)
+        steps, batch = 9000, 256
+        self.losses: dict[str, list[float]] = {'diffusion': [], 'flow': [], 'averaging': []}
+        for it in range(steps):
+            lr = 1.5e-3 * (0.5 * (1 + np.cos(np.pi * it / steps)) * 0.9 + 0.1)
+            j = rng.integers(0, n, batch)
+            x0, obs = d.y[j], d.x[j]
+            ti = rng.integers(1, K_STEPS + 1, batch)
+            ab = AB[ti][:, None]
+            eps = rng.normal(size=x0.shape)
+            xt = np.sqrt(ab) * x0 + np.sqrt(1 - ab) * eps
+            la = self.diff.step(np.concatenate([xt, obs, _temb(ti / K_STEPS)], 1), eps, lr)
+            tf = rng.uniform(0, 1, batch)
+            z = rng.normal(size=x0.shape)
+            xf = (1 - tf)[:, None] * z + tf[:, None] * x0
+            lb = self.flow.step(np.concatenate([xf, obs, _temb(tf)], 1), x0 - z, lr)
+            lc = self.mean.step(obs, x0, lr)
+            if it % 50 == 0:
+                self.losses['diffusion'].append(la)
+                self.losses['flow'].append(lb)
+                self.losses['averaging'].append(lc)
+        print(f'[df] trained on {n:,} recorded moments from {d.n_demos} demonstrations; '
+              f'each network holds {self.diff.n_weights:,} weights '
+              f'(the averaging one {self.mean.n_weights:,})')
+        print(f'[df] final training loss: diffusion {self.losses["diffusion"][-1]:.4f}, '
+              f'flow {self.losses["flow"][-1]:.4f}, '
+              f'averaging {self.losses["averaging"][-1]:.4f}')
+
+    # ---- samplers, all returning chunks in centimetres ----
+
+    def ddim(self, obs: Arr, n_steps: int, rng: np.random.Generator,
+             trace: bool = False) -> Arr | tuple[Arr, Arr]:
+        x = rng.normal(size=(len(obs), ADIM))
+        ts = np.linspace(K_STEPS, 0, n_steps + 1).round().astype(int)
+        path = [x.copy()]
+        for i in range(n_steps):
+            ti, tp = int(ts[i]), int(ts[i + 1])
+            ab_t, ab_p = AB[ti], AB[tp]
+            u = np.full(len(obs), ti / K_STEPS)
+            eps = self.diff(np.concatenate([x, obs, _temb(u)], 1))
+            x0 = np.clip((x - np.sqrt(1 - ab_t) * eps) / np.sqrt(ab_t), -4, 4)
+            x = np.sqrt(ab_p) * x0 + np.sqrt(1 - ab_p) * eps
+            path.append(x.copy())
+        if trace:
+            return self.data.to_cm(x), np.stack(path)
+        return self.data.to_cm(x)
+
+    def euler(self, obs: Arr, n_steps: int, rng: np.random.Generator,
+              trace: bool = False) -> Arr | tuple[Arr, Arr]:
+        x = rng.normal(size=(len(obs), ADIM))
+        path = [x.copy()]
+        for i in range(n_steps):
+            u = np.full(len(obs), i / n_steps)
+            v = self.flow(np.concatenate([x, obs, _temb(u)], 1))
+            x = x + v / n_steps
+            path.append(x.copy())
+        if trace:
+            return self.data.to_cm(x), np.stack(path)
+        return self.data.to_cm(x)
+
+    def average(self, obs: Arr) -> Arr:
+        return self.data.to_cm(self.mean(obs))
+
+
+POL: Policies | None = None
+
+
+def _pol() -> Policies:
+    global POL
+    if POL is None:
+        POL = Policies()
+    return POL
+
+
+def obst_rollout(kind: str, n_runs: int, rng: np.random.Generator, n_steps: int = 20,
+                 start_offset: float = 0.0, steps: int = OBST_STEPS,
+                 execute: int = EXEC2) -> Arr:
+    p = _pol()
+    pos = np.column_stack([rng.normal(0, 0.5, n_runs),
+                           rng.normal(0, 0.5, n_runs) + start_offset])
+    path = np.zeros((steps + 1, n_runs, 2))
+    path[0] = pos
+    t = 0
+    while t < steps:
+        o = ObstacleData.norm_obs(pos)
+        if kind == 'average':
+            ch = p.average(o)
+        elif kind == 'diffusion':
+            ch = p.ddim(o, n_steps, rng)
+        else:
+            ch = p.euler(o, n_steps, rng)
+        for i in range(min(execute, steps - t)):
+            pos = pos + ch[:, i] + rng.normal(0, 0.02, (n_runs, 2))
+            t += 1
+            path[t] = pos
+    return path
+
+
+def _draw_box(ax: Axes, label: bool = True) -> None:
+    x0, x1, y0, y1 = BOX
+    ax.add_patch(plt.Rectangle((x0, y0), x1 - x0, y1 - y0, facecolor=MUTED, alpha=0.35,
+                               edgecolor=INK, lw=1.4, zorder=5))
+    if label:
+        ax.text((x0 + x1) / 2, 0, 'box', ha='center', va='center', fontsize=10,
+                color='white', zorder=6, weight='bold')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 1 --- the averaging problem
+# --------------------------------------------------------------------------
+
+def two_ways_one_average() -> None:
+    d = _pol().data
+    up = d.paths[:, d.sides > 0]
+    dn = d.paths[:, d.sides < 0]
+    mean_path = d.paths.mean(axis=1)
+    print(f'[df] {d.n_demos} demonstrations: {up.shape[1]} go one side, '
+          f'{dn.shape[1]} the other')
+    print(f'[df] the average of all of them passes the box at y = '
+          f'{mean_path[OBST_STEPS // 2, 1]:+.2f} cm, which is inside it')
+    fig, ax = plt.subplots(figsize=(11.2, 5.0), facecolor='white')
+    _plain(ax)
+    for i in range(0, up.shape[1], 8):
+        ax.plot(up[:, i, 0], up[:, i, 1], color=LINK, lw=0.9, alpha=0.5,
+                label='demonstrations going one way' if i == 0 else None)
+    for i in range(0, dn.shape[1], 8):
+        ax.plot(dn[:, i, 0], dn[:, i, 1], color=TEAL, lw=0.9, alpha=0.5,
+                label='demonstrations going the other way' if i == 0 else None)
+    ax.plot(mean_path[:, 0], mean_path[:, 1], color=GRIP, lw=3.0,
+            label='the average of all of them')
+    _draw_box(ax)
+    ax.plot(*GOAL2, '*', color=INK, ms=16, zorder=7)
+    ax.text(GOAL2[0], GOAL2[1] + 1.4, 'goal', ha='center', fontsize=9.5)
+    ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
+    ax.set_ylabel('sideways (cm)', fontsize=9.5)
+    ax.legend(fontsize=9.2, frameon=False, loc='lower left')
+    ax.set_title('Both ways round the box are right, and the average of them is not',
+                 fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'two-ways-one-average.svg')
+
+
+def label_spread() -> None:
+    d = _pol().data
+    near = np.abs(d.obs_raw[:, 0] - 2.0) < 0.6
+    lab = d.chunks_raw[near].sum(axis=1)[:, 1]
+    print(f'[df] at 2 cm along the reach there are {near.sum()} recorded moments; '
+          f'over the next {CHUNK2} steps they move sideways by '
+          f'{lab[lab > 0].mean():+.2f} cm one way and {lab[lab < 0].mean():+.2f} cm the '
+          f'other, and the average of all of them is {lab.mean():+.3f} cm')
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    ax.hist(lab, bins=40, color=LINK, alpha=0.8)
+    ax.axvline(lab.mean(), color=GRIP, lw=2.4,
+               label=f'the average label, {lab.mean():+.3f} cm')
+    ax.axvline(lab[lab > 0].mean(), color=TEAL, lw=1.6, ls='--')
+    ax.axvline(lab[lab < 0].mean(), color=TEAL, lw=1.6, ls='--',
+               label='the two things people actually did')
+    ax.set_xlabel('sideways movement over the next 32 steps (cm)', fontsize=9.5)
+    ax.set_ylabel('recorded moments', fontsize=9.5)
+    ax.legend(fontsize=9.2, frameon=False, loc='upper center')
+    ax.set_title('One question, two very different labels', fontsize=11.5, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    qs = np.linspace(lab.min() * 1.1, lab.max() * 1.1, 400)
+    se = ((lab[None, :] - qs[:, None]) ** 2).mean(1)
+    ax.plot(qs, se, color=PURPLE, lw=2.4)
+    ax.plot([lab.mean()], [se.min()], 'o', color=GRIP, ms=10)
+    ax.annotate(f'lowest at {lab.mean():+.3f} cm,\nthe average of the labels',
+                xy=(lab.mean(), se.min()), xytext=(lab.mean() + 1.0, se.min() * 1.5),
+                fontsize=9.5, color=GRIP,
+                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.3))
+    for v, nm in ((lab[lab > 0].mean(), 'one way'), (lab[lab < 0].mean(), 'the other')):
+        k = int(np.argmin(np.abs(qs - v)))
+        ax.plot([v], [se[k]], 's', color=TEAL, ms=8)
+        ax.text(v, se[k] * 1.04, nm, ha='center', fontsize=9, color=TEAL)
+    ax.set_xlabel('the one number the policy could put out (cm)', fontsize=9.5)
+    ax.set_ylabel('average squared error against the labels', fontsize=9.5)
+    ax.set_title('Squared error is lowest exactly at the average', fontsize=11.5,
+                 weight='bold')
+    print(f'[df] squared error: {se.min():.2f} at the average, '
+          f'{se[int(np.argmin(np.abs(qs - lab[lab > 0].mean())))]:.2f} at the one way')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'label-spread.svg')
+
+
+def averaging_rollouts() -> None:
+    rng = np.random.default_rng(31)
+    path = obst_rollout('average', 200, rng)
+    hit = hits_box(path)
+    end = np.linalg.norm(path[-1] - GOAL2, axis=1)
+    print(f'[df] the averaging policy: {hit.mean() * 100:.1f} per cent of 200 runs go '
+          f'through the box, and the average end point is {end.mean():.2f} cm from the goal')
+    fig, ax = plt.subplots(figsize=(11.2, 5.0), facecolor='white')
+    _plain(ax)
+    for i in range(0, 200, 2):
+        ax.plot(path[:, i, 0], path[:, i, 1], color=GRIP if hit[i] else SLIDE,
+                lw=0.8, alpha=0.5)
+    _draw_box(ax)
+    ax.plot(*GOAL2, '*', color=INK, ms=16, zorder=7)
+    ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
+    ax.set_ylabel('sideways (cm)', fontsize=9.5)
+    ax.set_ylim(-12, 12)
+    ax.text(1, 10.2, f'{hit.sum()} of 200 runs go through the box', fontsize=10,
+            color=GRIP, weight='bold')
+    ax.set_title('A policy trained with squared error drives into the thing it was '
+                 'shown going round', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'averaging-rollouts.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 2 --- the diffusion policy
+# --------------------------------------------------------------------------
+
+def noising_a_chunk() -> None:
+    d = _pol().data
+    rng = np.random.default_rng(9)
+    j = int(np.argmin(np.abs(d.obs_raw[:, 0] - 6.0)))
+    x0 = d.y[j]
+    levels = [0, 20, 40, 60, 100]
+    fig, axes = plt.subplots(1, len(levels), figsize=(13.2, 3.4), facecolor='white')
+    print('[df] noising one real chunk, 32 steps long:')
+    for ax, lv in zip(axes, levels):
+        ab = AB[lv]
+        xt = np.sqrt(ab) * x0 + np.sqrt(1 - ab) * rng.normal(size=ADIM)
+        ch = (xt.reshape(CHUNK2, 2) * d.act_scale)
+        pt = d.obs_raw[j] + np.cumsum(ch, axis=0)
+        ax.plot(pt[:, 0], pt[:, 1], 'o-', color=LINK if lv == 0 else PURPLE, ms=3, lw=1.4)
+        ax.plot(d.obs_raw[j, 0], d.obs_raw[j, 1], 'o', color=GRIP, ms=6)
+        ax.set_title(f'step {lv}\nkeep {np.sqrt(ab):.2f} of it', fontsize=10,
+                     weight='bold')
+        ax.set_xlim(-10, 24)
+        ax.set_ylim(-12, 22)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for sp in ax.spines.values():
+            sp.set_color(GRID)
+        print(f'[df]   step {lv:3d}: keeps {np.sqrt(ab):.3f} of the chunk and adds '
+              f'{np.sqrt(1 - ab):.3f} of noise')
+    axes[0].set_ylabel('the real chunk, drawn as a path', fontsize=9.5)
+    fig.suptitle('Noise added to one chunk of 32 future steps, in the shape the training '
+                 'uses', fontsize=12.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'noising-a-chunk.svg')
+
+
+def denoiser_shapes() -> None:
+    p = _pol()
+    fig, ax = plt.subplots(figsize=(12.4, 4.6), facecolor='white')
+    ax.axis('off')
+    ax.set_xlim(0, 13)
+    ax.set_ylim(0, 5.2)
+    _box(ax, 0.1, 3.4, 2.9, 1.2, f'the noisy chunk\n{CHUNK2} steps x 2 = {ADIM} numbers',
+         PURPLE, fontsize=9.2)
+    _box(ax, 0.1, 1.9, 2.9, 1.1, 'where the gripper is\n2 numbers', TEAL, fontsize=9.2)
+    _box(ax, 0.1, 0.5, 2.9, 1.1, f'which noise step\n{TEMB} numbers', WRIST, fontsize=9.2)
+    _box(ax, 3.9, 1.6, 2.6, 2.6,
+         f'{ADIM} + 2 + {TEMB}\n= {ADIM + 2 + TEMB} numbers in', LINK, fontsize=9.6,
+         weight='bold')
+    _box(ax, 7.2, 1.6, 2.4, 2.6, f'two hidden layers\nof {p.diff.sizes[1]}\n\n'
+                                 f'{p.diff.n_weights:,} weights', GRIP, fontsize=9.4)
+    _box(ax, 10.3, 2.0, 2.5, 1.8, f'the noise it thinks\nwas added\n{ADIM} numbers',
+         SLIDE, fontsize=9.4, weight='bold')
+    for y in (4.0, 2.45, 1.05):
+        _arrow(ax, (3.05, y), (3.85, 2.9), MUTED)
+    _arrow(ax, (6.55, 2.9), (7.15, 2.9), INK)
+    _arrow(ax, (9.65, 2.9), (10.25, 2.9), INK)
+    ax.set_title('The denoiser: it never sees a picture of noise, it sees a spoiled '
+                 'piece of movement', fontsize=12.2, weight='bold')
+    print(f'[df] the denoiser takes {ADIM + 2 + TEMB} numbers and gives {ADIM}; '
+          f'it holds {p.diff.n_weights:,} weights in two hidden layers of '
+          f'{p.diff.sizes[1]}')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'denoiser-shapes.svg')
+
+
+def reverse_walk() -> None:
+    p = _pol()
+    d = p.data
+    rng = np.random.default_rng(12)
+    obs = ObstacleData.norm_obs(np.array([[2.0, 0.0]]))
+    obs = np.repeat(obs, 1, axis=0)
+    _final, trace = p.ddim(obs, 20, rng, trace=True)
+    fig, axes = plt.subplots(1, 5, figsize=(13.2, 3.4), facecolor='white')
+    picks = [0, 5, 10, 15, 20]
+    for ax, k in zip(axes, picks):
+        ch = trace[k][0].reshape(CHUNK2, 2) * d.act_scale
+        pt = np.array([2.0, 0.0]) + np.cumsum(ch, axis=0)
+        ax.plot(pt[:, 0], pt[:, 1], 'o-', color=PURPLE if k < 20 else SLIDE, ms=3, lw=1.5)
+        ax.plot([2.0], [0.0], 'o', color=GRIP, ms=6)
+        ax.set_title(f'after {k} of 20 steps', fontsize=10, weight='bold')
+        ax.set_xlim(-8, 20)
+        ax.set_ylim(-14, 16)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for sp in ax.spines.values():
+            sp.set_color(GRID)
+    axes[0].set_ylabel('the chunk, drawn as a path', fontsize=9.5)
+    lens = [float(np.linalg.norm(trace[k][0])) for k in picks]
+    print('[df] reverse walk: the size of the chunk numbers goes ' +
+          ', '.join(f'{v:.1f}' for v in lens) + ' as the noise comes out')
+    fig.suptitle('The reverse walk turns noise into one whole movement, not an average '
+                 'of two', fontsize=12.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'reverse-walk.svg')
+
+
+def conditioning() -> None:
+    p = _pol()
+    rng = np.random.default_rng(4)
+    places = [np.array([2.0, 0.0]), np.array([12.0, 6.5]), np.array([12.0, -6.5])]
+    fig, axes = plt.subplots(1, 3, figsize=(13.0, 4.2), facecolor='white')
+    for ax, pl in zip(axes, places):
+        obs = np.repeat(ObstacleData.norm_obs(pl[None, :]), 40, axis=0)
+        ch = p.ddim(obs, 20, rng)
+        ups = 0
+        for i in range(40):
+            pt = pl + np.cumsum(ch[i], axis=0)
+            ups += int(pt[-1, 1] > pl[1])
+            ax.plot(pt[:, 0], pt[:, 1], color=LINK, lw=0.9, alpha=0.6)
+        ax.plot(*pl, 'o', color=GRIP, ms=9, zorder=6)
+        _draw_box(ax, label=False)
+        ax.set_xlim(-2, 30)
+        ax.set_ylim(-14, 14)
+        _plain(ax)
+        ax.set_xlabel('distance along the reach (cm)', fontsize=9)
+        ax.set_title(f'from ({pl[0]:.0f}, {pl[1]:+.0f}) cm:\n{ups} of 40 chunks go up',
+                     fontsize=10.5, weight='bold')
+        print(f'[df] conditioned on ({pl[0]:.0f}, {pl[1]:+.0f}) cm: {ups} of 40 chunks '
+              f'go up and {40 - ups} go down')
+    axes[0].set_ylabel('sideways (cm)', fontsize=9.5)
+    fig.suptitle('The same denoiser, three different places: what it generates follows '
+                 'what it is told', fontsize=12.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'conditioning.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 3 --- the two policies side by side
+# --------------------------------------------------------------------------
+
+def diffusion_rollouts() -> None:
+    rng = np.random.default_rng(31)
+    path = obst_rollout('diffusion', 200, rng)
+    hit = hits_box(path)
+    end = np.linalg.norm(path[-1] - GOAL2, axis=1)
+    up = (path[OBST_STEPS // 2, :, 1] > 0)
+    print(f'[df] the diffusion policy: {hit.sum()} of 200 runs go through the box, '
+          f'{up.sum()} pass above and {200 - up.sum()} below, and the average end point '
+          f'is {end.mean():.2f} cm from the goal')
+    fig, ax = plt.subplots(figsize=(11.2, 5.0), facecolor='white')
+    _plain(ax)
+    for i in range(0, 200, 2):
+        ax.plot(path[:, i, 0], path[:, i, 1], color=GRIP if hit[i] else SLIDE,
+                lw=0.8, alpha=0.5)
+    _draw_box(ax)
+    ax.plot(*GOAL2, '*', color=INK, ms=16, zorder=7)
+    ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
+    ax.set_ylabel('sideways (cm)', fontsize=9.5)
+    ax.set_ylim(-12, 12)
+    ax.text(1, 10.2, f'{hit.sum()} of 200 runs go through the box', fontsize=10,
+            color=SLIDE, weight='bold')
+    ax.set_title('The same data, generated instead of averaged: each run picks a side '
+                 'and keeps it', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'diffusion-rollouts.svg')
+
+
+def side_counts() -> None:
+    rng = np.random.default_rng(31)
+    out = {}
+    for kind in ('average', 'diffusion', 'flow'):
+        path = obst_rollout(kind, 200, rng)
+        hit = hits_box(path)
+        mid = path[OBST_STEPS // 2, :, 1]
+        end = np.linalg.norm(path[-1] - GOAL2, axis=1)
+        out[kind] = (hit.mean() * 100, (mid > 2).sum(), (mid < -2).sum(),
+                     int(((mid >= -2) & (mid <= 2)).sum()), end.mean())
+        print(f'[df] {kind:10s}: {hit.mean() * 100:5.1f} per cent hit the box, '
+              f'{out[kind][1]:3d} go up, {out[kind][2]:3d} go down, '
+              f'{out[kind][3]:3d} go straight at it, end {end.mean():.2f} cm from the goal')
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    names = ['averaging\n(squared error)', 'diffusion\n(20 steps)', 'flow\n(20 steps)']
+    vals = [out[k][0] for k in ('average', 'diffusion', 'flow')]
+    ax.bar(np.arange(3), vals, color=[GRIP, LINK, TEAL], width=0.55, alpha=0.9)
+    for i, v in enumerate(vals):
+        ax.text(i, v + 1.5, f'{v:.1f}%', ha='center', fontsize=10, color=INK)
+    ax.set_xticks(np.arange(3))
+    ax.set_xticklabels(names, fontsize=9.2)
+    ax.set_ylim(0, max(max(vals) * 1.25, 10))
+    ax.set_ylabel('runs that go through the box (per cent)', fontsize=9.5)
+    ax.set_title('The same training data, three ways of giving an answer',
+                 fontsize=11.5, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    w = 0.27
+    for i, k in enumerate(('average', 'diffusion', 'flow')):
+        ax.bar([i - w, i, i + w], [out[k][1], out[k][3], out[k][2]], width=w * 0.92,
+               color=[TEAL, GRIP, LINK], alpha=0.9)
+        for dx, v in zip((-w, 0, w), (out[k][1], out[k][3], out[k][2])):
+            ax.text(i + dx, v + 3, str(v), ha='center', fontsize=8.8, color=INK)
+    ax.set_xticks(np.arange(3))
+    ax.set_xticklabels(names, fontsize=9.2)
+    ax.set_ylim(0, 230)
+    ax.set_ylabel('runs out of 200', fontsize=9.5)
+    ax.set_title('Left bar: passes above. Middle: straight at the box. Right: below',
+                 fontsize=10.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'side-counts.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 4 --- flow matching and the step count
+# --------------------------------------------------------------------------
+
+def straight_versus_curved() -> None:
+    p = _pol()
+    rng = np.random.default_rng(77)
+    obs = np.repeat(ObstacleData.norm_obs(np.array([[2.0, 0.0]])), 6, axis=0)
+    _a, td = p.ddim(obs, 20, rng, trace=True)
+    _b, tf = p.euler(obs, 20, rng, trace=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white')
+    for ax, tr, nm, col in ((axes[0], td, 'diffusion, 20 steps', PURPLE),
+                            (axes[1], tf, 'flow matching, 20 steps', TEAL)):
+        _plain(ax)
+        for i in range(6):
+            ax.plot(tr[:, i, 0], tr[:, i, 1], '-o', color=col, ms=3, lw=1.2, alpha=0.8)
+            ax.plot(tr[0, i, 0], tr[0, i, 1], 'o', color=GRIP, ms=7)
+            ax.plot(tr[-1, i, 0], tr[-1, i, 1], '*', color=SLIDE, ms=13)
+        ax.set_xlabel('first number of the chunk', fontsize=9.5)
+        ax.set_ylabel('second number of the chunk', fontsize=9.5)
+        ln = np.abs(np.diff(tr[:, :, :2], axis=0)).sum(0).sum(1).mean()
+        direct = np.abs(tr[-1, :, :2] - tr[0, :, :2]).sum(1).mean()
+        ax.set_title(f'{nm}\npath length {ln:.2f} against {direct:.2f} straight',
+                     fontsize=11.0, weight='bold')
+        print(f'[df] {nm}: the walk covers {ln:.2f} in the first two numbers, '
+              f'and the straight line between its ends is {direct:.2f}')
+    fig.suptitle('Where the two generators travel, drawn in the first two of the '
+                 f'{ADIM} numbers (red dot: the noise it starts from)',
+                 fontsize=12.0, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'straight-versus-curved.svg')
+
+
+def steps_versus_quality() -> None:
+    p = _pol()
+    d = p.data
+    rng = np.random.default_rng(55)
+    obs = np.repeat(ObstacleData.norm_obs(np.array([[2.0, 0.0]])), 300, axis=0)
+    counts = [1, 2, 4, 8, 16, 32, 50]
+    res: dict[str, list[float]] = {'diffusion': [], 'flow': []}
+    near = np.abs(d.obs_raw[:, 0] - 2.0) < 0.8
+    real = d.chunks_raw[near].reshape(int(near.sum()), -1) / d.act_scale
+    for n in counts:
+        for kind in ('diffusion', 'flow'):
+            ch = p.ddim(obs, n, rng) if kind == 'diffusion' else p.euler(obs, n, rng)
+            flat = ch.reshape(len(ch), -1) / d.act_scale
+            dist = np.sqrt(((flat[:, None, :] - real[None, ::3, :]) ** 2).sum(2)).min(1)
+            res[kind].append(float(dist.mean()))
+        print(f'[df] {n:3d} steps: distance to the nearest real chunk, '
+              f'diffusion {res["diffusion"][-1]:.3f}, flow {res["flow"][-1]:.3f}')
+    fig, ax = plt.subplots(figsize=(11.0, 5.0), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(counts))
+    ax.plot(x, res['diffusion'], 'o-', color=PURPLE, lw=2.2, ms=7, label='diffusion')
+    ax.plot(x, res['flow'], 's-', color=TEAL, lw=2.2, ms=7, label='flow matching')
+    for i in (0, 1, 2, len(counts) - 1):
+        ax.text(x[i], res['diffusion'][i] * 1.03, f'{res["diffusion"][i]:.2f}',
+                ha='center', fontsize=9, color=PURPLE)
+        ax.text(x[i], res['flow'][i] * 0.95, f'{res["flow"][i]:.2f}', ha='center',
+                fontsize=9, color=TEAL, va='top')
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(c) for c in counts])
+    ax.set_xlabel('passes through the network to make one chunk', fontsize=9.5)
+    ax.set_ylabel('distance from the chunk made to the nearest real one', fontsize=9.5)
+    ax.set_ylim(0, max(res['diffusion']) * 1.15)
+    ax.legend(fontsize=9.5, frameon=False)
+    ax.set_title('How good the chunk is against how many passes it took',
+                 fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'steps-versus-quality.svg')
+
+
+ENCODE_MS: float = 11.0
+PASS_MS: float = 6.0
+SEND_MS: float = 2.0
+
+
+def timing_table() -> None:
+    counts = [1, 2, 4, 8, 16, 32, 50, 100]
+    budget = EXEC2 / RATE * 1000.0
+    tight = 3 / RATE * 1000.0
+    print(f'[df] stated costs: {ENCODE_MS:.0f} ms to turn the pictures into numbers, '
+          f'{PASS_MS:.0f} ms a pass, {SEND_MS:.0f} ms to send')
+    print(f'[df] playing {EXEC2} steps at {RATE:.0f} Hz gives {budget:.1f} ms; '
+          f'playing 3 gives {tight:.1f} ms')
+    totals = []
+    for n in counts:
+        tot = ENCODE_MS + PASS_MS * n + SEND_MS
+        totals.append(tot)
+        print(f'[df]   {n:3d} passes: {tot:6.1f} ms  '
+              f'{"fits" if tot <= budget else "too slow"} in {budget:.0f} ms, '
+              f'{"fits" if tot <= tight else "too slow"} in {tight:.0f} ms')
+    fig, ax = plt.subplots(figsize=(11.4, 5.2), facecolor='white')
+    _plain(ax)
+    x = np.arange(len(counts))
+    cols = [SLIDE if t <= tight else (LINK if t <= budget else GRIP) for t in totals]
+    ax.bar(x, totals, color=cols, width=0.6, alpha=0.9)
+    for i, t in enumerate(totals):
+        ax.text(i, t + 8, f'{t:.0f}', ha='center', fontsize=9.2, color=INK)
+    ax.axhline(budget, color=INK, lw=1.6, ls='--')
+    ax.text(len(counts) - 0.4, budget + 10, f'{budget:.0f} ms: the time {EXEC2} steps '
+                                            f'of the last chunk last', fontsize=9.2,
+            ha='right', color=INK)
+    ax.axhline(tight, color=GRIP, lw=1.6, ls=':')
+    ax.text(len(counts) - 0.4, tight + 10, f'{tight:.0f} ms: the time 3 steps last',
+            fontsize=9.2, ha='right', color=GRIP)
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(c) for c in counts])
+    ax.set_xlabel('passes through the network to make one chunk', fontsize=9.5)
+    ax.set_ylabel('time to make one chunk (milliseconds)', fontsize=9.5)
+    ax.set_ylim(0, max(totals) * 1.12)
+    ax.set_title(f'At {PASS_MS:.0f} ms a pass, {ENCODE_MS:.0f} ms for the pictures and '
+                 f'{SEND_MS:.0f} ms to send', fontsize=11.8, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'timing-table.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 5 --- receding horizon
+# --------------------------------------------------------------------------
+
+def receding_horizon() -> None:
+    gen = ENCODE_MS + PASS_MS * 4 + SEND_MS
+    play = EXEC2 / RATE * 1000.0
+    chunk_ms = CHUNK2 / RATE * 1000.0
+    print(f'[df] receding horizon: a chunk covers {chunk_ms:.0f} ms, '
+          f'{EXEC2} steps of it are played in {play:.1f} ms, and making the next one '
+          f'takes {gen:.0f} ms, which leaves {play - gen:.1f} ms of slack')
+    fig, ax = plt.subplots(figsize=(12.0, 4.6), facecolor='white')
+    ax.axis('off')
+    ax.set_xlim(-90, 1150)
+    ax.set_ylim(-0.8, 4.2)
+    cols = [LINK, TEAL, PURPLE, WRIST]
+    for c in range(4):
+        t0 = c * play
+        ax.add_patch(plt.Rectangle((t0, 3.0), chunk_ms, 0.34, facecolor=cols[c],
+                                   alpha=0.16, edgecolor=cols[c], lw=1.0))
+        ax.add_patch(plt.Rectangle((t0, 3.0), play, 0.34, facecolor=cols[c], alpha=0.65,
+                                   edgecolor=cols[c], lw=1.0))
+        ax.add_patch(plt.Rectangle((t0 - gen, 2.0), gen, 0.34, facecolor=cols[c],
+                                   alpha=0.85, edgecolor=cols[c], lw=1.0))
+        ax.text(t0 - gen / 2, 1.85, f'{gen:.0f} ms', ha='center', va='top', fontsize=8.4,
+                color=cols[c])
+        _arrow(ax, (t0 - gen / 2, 2.38), (t0 + play / 2, 2.96), cols[c], lw=1.1)
+        ax.text(t0 + play / 2, 3.17, f'chunk {c + 1}', ha='center', va='center',
+                fontsize=9, color='white' if c < 3 else INK, weight='bold')
+    ax.text(-85, 3.17, 'what the arm plays', fontsize=9.8, va='center')
+    ax.text(-85, 2.17, 'what the computer does', fontsize=9.8, va='center')
+    ax.plot([-gen, 1100], [1.3, 1.3], color=INK, lw=1.2)
+    for ms in range(0, 1101, 200):
+        ax.plot([ms, ms], [1.22, 1.38], color=INK, lw=1.2)
+        ax.text(ms, 1.1, f'{ms} ms', ha='center', fontsize=8.8, va='top')
+    ax.text(0, 0.45, f'pale part: the {chunk_ms - play:.0f} ms of each chunk that is '
+                     f'worked out and then thrown away', fontsize=9.2, color=MUTED)
+    ax.set_title(f'A chunk of {CHUNK2} steps is made every {play:.0f} ms and only its '
+                 f'first {EXEC2} steps are played', fontsize=12.0, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'receding-horizon.svg')
+
+
+def late_chunk() -> None:
+    play = EXEC2 / RATE * 1000.0
+    fast = ENCODE_MS + PASS_MS * 4 + SEND_MS
+    slow = ENCODE_MS + PASS_MS * 50 + SEND_MS
+    print(f'[df] with 50 passes the chunk takes {slow:.0f} ms, which is '
+          f'{slow - play:.0f} ms longer than the {play:.0f} ms of movement in hand, '
+          f'so the arm waits {slow - play:.0f} ms in every cycle')
+    fig, axes = plt.subplots(2, 1, figsize=(11.6, 5.0), facecolor='white')
+    for ax, gen, nm, col in ((axes[0], fast, f'4 passes, {fast:.0f} ms', SLIDE),
+                             (axes[1], slow, f'50 passes, {slow:.0f} ms', GRIP)):
+        ax.axis('off')
+        ax.set_xlim(-60, 1250)
+        ax.set_ylim(-0.2, 2.3)
+        t = 0.0
+        for c in range(3):
+            ax.add_patch(plt.Rectangle((t, 1.2), play, 0.4, facecolor=LINK, alpha=0.6,
+                                       edgecolor=LINK))
+            ax.text(t + play / 2, 1.4, f'chunk {c + 1} plays', ha='center', va='center',
+                    fontsize=8.8, color='white')
+            ax.add_patch(plt.Rectangle((t, 0.5), gen, 0.4, facecolor=col, alpha=0.85,
+                                       edgecolor=col))
+            ax.text(t + gen / 2, 0.7, f'{gen:.0f} ms', ha='center', va='center',
+                    fontsize=8.6, color='white')
+            if gen > play:
+                ax.add_patch(plt.Rectangle((t + play, 1.2), gen - play, 0.4,
+                                           facecolor=GRIP, alpha=0.3, hatch='///',
+                                           edgecolor=GRIP))
+                ax.text(t + play + (gen - play) / 2, 1.75, f'arm waits\n{gen - play:.0f} ms',
+                        ha='center', fontsize=8.6, color=GRIP)
+                t += gen
+            else:
+                t += play
+        ax.text(-55, 1.4, 'arm', fontsize=9.5, va='center')
+        ax.text(-55, 0.7, 'network', fontsize=9.5, va='center')
+        ax.set_title(nm, fontsize=11.2, weight='bold', loc='left')
+    fig.suptitle(f'The same chunk, made two ways, against {play:.0f} ms of movement in '
+                 f'hand', fontsize=12.2, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'late-chunk.svg')
+
+
+def latency_stack() -> None:
+    play = EXEC2 / RATE * 1000.0
+    counts = [2, 4, 8, 16]
+    fig, ax = plt.subplots(figsize=(11.2, 4.8), facecolor='white')
+    _plain(ax)
+    parts = ['pictures into numbers', 'passes through the network', 'sending the chunk',
+             'slack left over']
+    cols = [WRIST, PURPLE, SLIDE, GRID]
+    for i, n in enumerate(counts):
+        vals = [ENCODE_MS, PASS_MS * n, SEND_MS]
+        vals.append(max(play - sum(vals), 0.0))
+        left = 0.0
+        for v, col, nm in zip(vals, cols, parts):
+            ax.barh([i], [v], left=[left], color=col, height=0.55, alpha=0.9,
+                    label=nm if i == 0 else None, edgecolor='white')
+            if v > 18:
+                ax.text(left + v / 2, i, f'{v:.0f}', ha='center', va='center',
+                        fontsize=9, color=INK if col == GRID else 'white')
+            left += v
+        print(f'[df] {n:2d} passes: {ENCODE_MS:.0f} + {PASS_MS * n:.0f} + {SEND_MS:.0f} '
+              f'= {sum(vals[:3]):.0f} ms used of {play:.0f} ms, '
+              f'{vals[3]:.0f} ms spare')
+    ax.axvline(play, color=INK, lw=1.6, ls='--')
+    ax.text(play + 4, len(counts) - 0.4, f'{play:.0f} ms', fontsize=9.5, color=INK)
+    ax.set_yticks(np.arange(len(counts)))
+    ax.set_yticklabels([f'{n} passes' for n in counts], fontsize=9.5)
+    ax.set_xlabel('milliseconds of the time the last chunk bought', fontsize=9.5)
+    ax.set_xlim(0, play * 1.12)
+    ax.legend(fontsize=9.0, frameon=False, ncol=4, loc='upper center',
+              bbox_to_anchor=(0.5, 1.15))
+    ax.set_title('Where the time inside one cycle goes', fontsize=11.8, weight='bold',
+                 pad=26)
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'latency-stack.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 6 --- what they still cannot do
+# --------------------------------------------------------------------------
+
+def copied_mistake() -> None:
+    p = _pol()
+    d = p.data
+    rng = np.random.default_rng(66)
+    path = obst_rollout('diffusion', 60, rng)
+    demo_sp = np.linalg.norm(np.diff(d.paths, axis=0), axis=2) * RATE
+    demo_x = d.paths[:-1, :, 0]
+    roll_sp = np.linalg.norm(np.diff(path, axis=0), axis=2) * RATE
+    roll_x = path[:-1, :, 0]
+    bins = np.linspace(0, 40, 41)
+    centres = (bins[:-1] + bins[1:]) / 2
+
+    def profile(xs: Arr, sp: Arr) -> Arr:
+        idx = np.clip(np.digitize(xs.ravel(), bins) - 1, 0, len(centres) - 1)
+        out = np.zeros(len(centres))
+        for b in range(len(centres)):
+            m = idx == b
+            out[b] = sp.ravel()[m].mean() if m.any() else np.nan
+        return out
+
+    dp, rp = profile(demo_x, demo_sp), profile(roll_x, roll_sp)
+    win = (centres > 26) & (centres < 33)
+    print(f'[df] the demonstrator slows from {np.nanmax(dp):.1f} cm/s to '
+          f'{np.nanmin(dp[win]):.1f} cm/s at about {centres[win][np.nanargmin(dp[win])]:.0f} cm')
+    print(f'[df] the policy slows to {np.nanmin(rp[win]):.1f} cm/s at the same place, '
+          f'so it copied the pause')
+    fig, ax = plt.subplots(figsize=(11.2, 4.8), facecolor='white')
+    _plain(ax)
+    ax.plot(centres, dp, 'o-', color=LINK, lw=2.2, ms=5, label='the demonstrations')
+    ax.plot(centres, rp, 's-', color=GRIP, lw=2.2, ms=5, label='the diffusion policy')
+    ax.axvspan(26, 33, color=WRIST, alpha=0.15)
+    ax.text(29.5, np.nanmax(dp) * 0.25, 'the demonstrator\nhesitates here', ha='center',
+            fontsize=9.5, color=WRIST)
+    ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
+    ax.set_ylabel('speed of the gripper (cm a second)', fontsize=9.5)
+    ax.set_ylim(0, np.nanmax(dp) * 1.2)
+    ax.legend(fontsize=9.5, frameon=False, loc='upper left')
+    ax.set_title('Nothing in the training says to be quick, so the policy copies the '
+                 'pause as carefully as the movement', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'copied-mistake.svg')
+
+
+def no_notion_of_the_goal() -> None:
+    rng = np.random.default_rng(88)
+    path = obst_rollout('diffusion', 40, rng)
+    moved = GOAL2 + np.array([0.0, 11.0])
+    to_old = np.linalg.norm(path[-1] - GOAL2, axis=1).mean()
+    to_new = np.linalg.norm(path[-1] - moved, axis=1).mean()
+    print(f'[df] with the object moved {moved[1] - GOAL2[1]:.0f} cm sideways, the policy '
+          f'still ends {to_old:.2f} cm from the old place and {to_new:.2f} cm from the '
+          f'new one')
+    fig, ax = plt.subplots(figsize=(11.2, 4.8), facecolor='white')
+    _plain(ax)
+    for i in range(40):
+        ax.plot(path[:, i, 0], path[:, i, 1], color=LINK, lw=0.9, alpha=0.55)
+    _draw_box(ax)
+    ax.plot(*GOAL2, 'x', color=MUTED, ms=14, mew=3)
+    ax.text(GOAL2[0], GOAL2[1] - 2.2, 'where the object\nwas in every demonstration',
+            ha='center', fontsize=9.2, color=MUTED, va='top')
+    ax.plot(*moved, '*', color=GRIP, ms=18)
+    ax.text(moved[0], moved[1] + 1.2, 'where the object is now', ha='center',
+            fontsize=9.5, color=GRIP)
+    ax.annotate('', xy=(moved[0], moved[1] - 0.8), xytext=(GOAL2[0], GOAL2[1] + 0.8),
+                arrowprops=dict(arrowstyle='<->', color=GRIP, lw=1.4))
+    ax.text(GOAL2[0] + 0.8, (GOAL2[1] + moved[1]) / 2, f'{to_new:.1f} cm out',
+            fontsize=9.5, color=GRIP, va='center')
+    ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
+    ax.set_ylabel('sideways (cm)', fontsize=9.5)
+    ax.set_ylim(-12, 18)
+    ax.set_title('The policy has no idea there is an object: it goes where the hand '
+                 'always went', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'no-notion-of-the-goal.svg')
+
+
+def outside_the_demonstrations() -> None:
+    offsets = [0.0, 3.0, 6.0, 10.0, 15.0]
+    ends, hits = [], []
+    for off in offsets:
+        rng = np.random.default_rng(101)
+        path = obst_rollout('diffusion', 60, rng, start_offset=off)
+        ends.append(float(np.linalg.norm(path[-1] - GOAL2, axis=1).mean()))
+        hits.append(float(hits_box(path).mean() * 100))
+        print(f'[df] starting {off:4.1f} cm away from any demonstrated start: '
+              f'ends {ends[-1]:5.2f} cm from the goal, {hits[-1]:5.1f} per cent hit the box')
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.7), facecolor='white',
+                             gridspec_kw={'width_ratios': [1.25, 1]})
+    ax = axes[0]
+    _plain(ax)
+    for off, col in zip(offsets, (LINK, TEAL, PURPLE, WRIST, GRIP)):
+        rng = np.random.default_rng(101)
+        path = obst_rollout('diffusion', 12, rng, start_offset=off)
+        for i in range(12):
+            ax.plot(path[:, i, 0], path[:, i, 1], color=col, lw=1.0, alpha=0.7,
+                    label=f'start {off:.0f} cm out' if i == 0 else None)
+    _draw_box(ax)
+    ax.plot(*GOAL2, '*', color=INK, ms=16, zorder=7)
+    ax.set_xlabel('distance along the reach (cm)', fontsize=9.5)
+    ax.set_ylabel('sideways (cm)', fontsize=9.5)
+    ax.legend(fontsize=8.6, frameon=False, loc='upper left', ncol=2)
+    ax.set_ylim(-14, 26)
+    ax.set_title('Starting where nobody ever started', fontsize=11.5, weight='bold')
+    ax = axes[1]
+    _plain(ax)
+    ax.plot(offsets, ends, 'o-', color=GRIP, lw=2.2, ms=7)
+    for o, e in zip(offsets, ends):
+        ax.text(o, e * 1.06, f'{e:.1f}', ha='center', fontsize=9, color=GRIP)
+    ax.set_xlabel('how far the start is from any demonstrated start (cm)', fontsize=9.5)
+    ax.set_ylabel('distance from the goal at the end (cm)', fontsize=9.5)
+    ax.set_ylim(0, max(ends) * 1.2)
+    ax.set_title('It does not come back', fontsize=11.5, weight='bold')
+    fig.tight_layout()
+    _save(fig, DF_DOC, 'outside-the-demonstrations.svg')
+
+
+# ==========================================================================
 # main
 # ==========================================================================
 
@@ -1311,7 +2246,12 @@ PAGE1 = [action_vector, control_loop, absolute_versus_delta,
          act_shapes, act_attention_cost, act_output_block,
          temporal_ensembling, ensembling_weights_picture, chunk_length_trade]
 
-PAGE2: list = []
+PAGE2 = [two_ways_one_average, label_spread, averaging_rollouts,
+         noising_a_chunk, denoiser_shapes, reverse_walk, conditioning,
+         diffusion_rollouts, side_counts,
+         straight_versus_curved, steps_versus_quality, timing_table,
+         receding_horizon, late_chunk, latency_stack,
+         copied_mistake, no_notion_of_the_goal, outside_the_demonstrations]
 
 
 def main() -> None:

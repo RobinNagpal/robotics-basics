@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-03T03:28:37.105946</dc:date>
+    <dc:date>2026-10-03T03:42:17.053942</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -43,7 +43,7 @@ L 239.454222 144.476573
 L 239.454222 90.78731 
 L 45.986667 90.78731 
 z
-" clip-path="url(#pecfcbf5a70)" style="fill: #ececec; stroke: #aaaaaa; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#pf8a3e522dc)" style="fill: #ececec; stroke: #aaaaaa; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
     <path d="M 239.454222 144.476573 
@@ -51,7 +51,7 @@ L 655.653333 144.476573
 L 655.653333 90.78731 
 L 239.454222 90.78731 
 z
-" clip-path="url(#pecfcbf5a70)" style="fill: #e3f1e6; stroke: #2a9d3f; stroke-width: 1.4; stroke-linejoin: miter"/>
+" clip-path="url(#pf8a3e522dc)" style="fill: #e3f1e6; stroke: #2a9d3f; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
     <path d="M 45.986667 231.721626 
@@ -59,7 +59,7 @@ L 655.653333 231.721626
 L 655.653333 181.387942 
 L 45.986667 181.387942 
 z
-" clip-path="url(#pecfcbf5a70)" style="fill: #eef3f9; stroke: #3b82c4; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#pf8a3e522dc)" style="fill: #eef3f9; stroke: #3b82c4; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="matplotlib.axis_1"/>
    <g id="matplotlib.axis_2"/>
@@ -1497,7 +1497,7 @@ L 119.146667 178.032363
 L 119.146667 157.227773 
 L 116.098333 157.227773 
 z
-" clip-path="url(#pecfcbf5a70)" style="fill: #777777; stroke: #777777; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pf8a3e522dc)" style="fill: #777777; stroke: #777777; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_7">
     <path d="M 472.753333 147.832152 
@@ -1508,12 +1508,12 @@ L 472.753333 178.032363
 L 472.753333 157.227773 
 L 469.705 157.227773 
 z
-" clip-path="url(#pecfcbf5a70)" style="fill: #777777; stroke: #777777; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pf8a3e522dc)" style="fill: #777777; stroke: #777777; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
   </g>
  </g>
  <defs>
-  <clipPath id="pecfcbf5a70">
+  <clipPath id="pf8a3e522dc">
    <rect x="21.6" y="37.098047" width="658.44" height="255.024"/>
   </clipPath>
  </defs>

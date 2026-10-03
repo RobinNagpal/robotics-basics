@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-03T03:38:26.758022</dc:date>
+    <dc:date>2026-10-03T03:43:24.330158</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -43,7 +43,7 @@ L 618.331765 158.155143
 L 618.331765 128.789663 
 L 27.508235 128.789663 
 z
-" clip-path="url(#p646612bad2)" style="fill: #f4f4f4"/>
+" clip-path="url(#p5eea29f4d0)" style="fill: #f4f4f4"/>
    </g>
    <g id="patch_4">
     <path d="M 27.508235 216.886102 
@@ -51,7 +51,7 @@ L 618.331765 216.886102
 L 618.331765 187.520622 
 L 27.508235 187.520622 
 z
-" clip-path="url(#p646612bad2)" style="fill: #f4f4f4"/>
+" clip-path="url(#p5eea29f4d0)" style="fill: #f4f4f4"/>
    </g>
    <g id="patch_5">
     <path d="M 27.508235 275.617061 
@@ -59,7 +59,7 @@ L 618.331765 275.617061
 L 618.331765 246.251581 
 L 27.508235 246.251581 
 z
-" clip-path="url(#p646612bad2)" style="fill: #f4f4f4"/>
+" clip-path="url(#p5eea29f4d0)" style="fill: #f4f4f4"/>
    </g>
    <g id="patch_6">
     <path d="M 27.508235 334.348019 
@@ -67,14 +67,14 @@ L 618.331765 334.348019
 L 618.331765 304.98254 
 L 27.508235 304.98254 
 z
-" clip-path="url(#p646612bad2)" style="fill: #f4f4f4"/>
+" clip-path="url(#p5eea29f4d0)" style="fill: #f4f4f4"/>
    </g>
    <g id="matplotlib.axis_1"/>
    <g id="matplotlib.axis_2"/>
    <g id="line2d_1">
     <path d="M 27.508235 95.019362 
 L 618.331765 95.019362 
-" clip-path="url(#p646612bad2)" style="fill: none; stroke: #222222; stroke-width: 1.2; stroke-linecap: square"/>
+" clip-path="url(#p5eea29f4d0)" style="fill: none; stroke: #222222; stroke-width: 1.2; stroke-linecap: square"/>
    </g>
    <g id="text_1">
     <!-- step -->
@@ -1952,7 +1952,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p646612bad2">
+  <clipPath id="p5eea29f4d0">
    <rect x="21.6" y="45.098047" width="602.64" height="321.552"/>
   </clipPath>
  </defs>

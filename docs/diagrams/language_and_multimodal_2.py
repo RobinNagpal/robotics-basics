@@ -2070,10 +2070,10 @@ def rtu_tool_loop() -> None:
     _arrow(ax, 1.525, 3.13, 1.525, 2.74, colour=MUTED)
     _arrow(ax, 2.72, 2.12, 2.93, 2.12, colour=MUTED)
     _arrow(ax, 4.125, 2.72, 4.125, 3.13, colour=MUTED)
-    ax.annotate('', xy=(1.525, 4.34), xytext=(4.125, 4.34),
+    ax.annotate('', xy=(1.525, 4.36), xytext=(4.125, 4.36),
                 arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.5,
-                                connectionstyle='arc3,rad=-0.45'))
-    ax.text(2.82, 4.96, 'then round again', ha='center', fontsize=9.6, color=GRIP)
+                                connectionstyle='arc3,rad=0.45'))
+    ax.text(2.82, 5.00, 'then round again', ha='center', fontsize=9.6, color=GRIP)
     x0 = 6.0
     ax.text(x0, 4.84, 'the three turns, written out', fontsize=11, weight='bold')
     y = 4.52
@@ -2196,8 +2196,8 @@ def rtu_tool_cost() -> None:
              ('reading the result back in', 0.06)]
     turn = sum(v for _, v in parts)
     fig: Figure = plt.figure(figsize=(10.4, 4.1))
-    ax1: Axes = fig.add_axes((0.30, 0.22, 0.30, 0.58))
-    ax2: Axes = fig.add_axes((0.70, 0.22, 0.26, 0.58))
+    ax1: Axes = fig.add_axes((0.08, 0.40, 0.42, 0.42))
+    ax2: Axes = fig.add_axes((0.62, 0.22, 0.34, 0.60))
     _plain(ax1)
     _plain(ax2)
     left = 0.0
@@ -2210,7 +2210,7 @@ def rtu_tool_cost() -> None:
     ax1.set_xlim(0, turn * 1.02)
     ax1.set_title(f'One turn takes {turn:.2f} seconds', fontsize=11.5, weight='bold')
     ax1.legend(fontsize=8.6, frameon=False, loc='upper center',
-               bbox_to_anchor=(0.5, -0.35), ncol=2)
+               bbox_to_anchor=(0.5, -0.42), ncol=2)
     turns = np.arange(1, 7)
     ax2.bar(turns, turns * turn, color=GRIP, width=0.6)
     ax2.set_xlabel('turns of the loop', fontsize=10)
@@ -2220,8 +2220,8 @@ def rtu_tool_cost() -> None:
     for t in (3, 6):
         ax2.text(t, t * turn + 0.12, f'{t * turn:.1f} s', ha='center', fontsize=9.3)
     ax2.set_ylim(0, 6 * turn * 1.2)
-    fig.text(0.5, 0.005, 'illustrative: the writing rate and the tool time are '
-             'stated assumptions', ha='center', fontsize=9, color=MUTED,
+    fig.text(0.98, 0.02, 'illustrative: the writing rate and the tool time are '
+             'stated assumptions', ha='right', fontsize=9, color=MUTED,
              style='italic')
     _save(fig, RTU_DOC, 'tool-cost.svg')
     print(f'[4d] one turn of the loop takes {turn:.2f} s '
@@ -2500,7 +2500,7 @@ def rtu_agent_loop() -> None:
     _arrow(ax, 7.56, 1.97, 6.94, 1.97, colour=MUTED)
     _arrow(ax, 5.60, 2.54, 5.60, 3.18, colour=MUTED)
     _arrow(ax, 3.37, 3.72, 4.26, 3.72, colour=PURPLE)
-    ax.text(5.60, 2.72, 'not yet', ha='center', fontsize=9, color=MUTED)
+    ax.text(5.76, 2.72, 'not yet', ha='left', fontsize=9, color=MUTED)
     _box(ax, 0.35, 1.45, 3.0, 0.75, 'done, or out of turns,\nor out of time',
          face='#eeeeee', edge=MUTED, size=9.6)
     _arrow(ax, 4.26, 1.97, 3.39, 1.97, colour=GRIP)
@@ -2556,8 +2556,11 @@ def rtu_time_spread() -> None:
     ax2: Axes = fig.add_axes((0.57, 0.20, 0.38, 0.60))
     _plain(ax1)
     _plain(ax2)
-    ax1.boxplot([e.secs], widths=0.4, showfliers=False,
+    ax1.boxplot([e.secs], widths=0.4, showfliers=True,
+                flierprops=dict(marker='.', markersize=2.5, markerfacecolor=MUTED,
+                                markeredgecolor='none', alpha=0.45),
                 medianprops=dict(color=GRIP, lw=2.0))
+    ax1.set_yscale('log')
     ax1.set_xticklabels(['one agent loop'], fontsize=10)
     ax1.set_ylabel('seconds to finish', fontsize=10)
     ax1.set_title(f'Half inside {med:.1f} s, but the\nslowest took '
@@ -2641,6 +2644,7 @@ def rtu_rate_ladder() -> None:
              PURPLE, 'a sentence about the scene, 60 tokens long'),
             ('one agent loop', 1000.0 * med, GRIP,
              'several turns, each with a tool call in it')]
+    rows = sorted(rows, key=lambda r: r[1])
     fig: Figure = plt.figure(figsize=(10.8, 4.4))
     ax: Axes = fig.add_axes((0.26, 0.17, 0.71, 0.64))
     _plain(ax)
@@ -2670,8 +2674,8 @@ def rtu_cycle_budget() -> None:
              ('write it to the drivers', 0.25, WRIST),
              ('spare, for safety checks', cycle_ms - 1.00, MUTED)]
     fig: Figure = plt.figure(figsize=(10.4, 4.2))
-    ax1: Axes = fig.add_axes((0.07, 0.30, 0.40, 0.50))
-    ax2: Axes = fig.add_axes((0.58, 0.20, 0.38, 0.60))
+    ax1: Axes = fig.add_axes((0.07, 0.42, 0.40, 0.40))
+    ax2: Axes = fig.add_axes((0.58, 0.22, 0.38, 0.60))
     _plain(ax1)
     _plain(ax2)
     left = 0.0
@@ -2684,7 +2688,7 @@ def rtu_cycle_budget() -> None:
     ax1.set_title(f'One control cycle is {cycle_ms:.0f} ms', fontsize=11.5,
                   weight='bold')
     ax1.legend(fontsize=8.4, frameon=False, loc='upper center',
-               bbox_to_anchor=(0.5, -0.45), ncol=2)
+               bbox_to_anchor=(0.5, -0.50), ncol=2)
     bars = ax2.bar(['one control\ncycle', 'one model\ntoken',
                     'one short\nmodel answer'],
                    [cycle_ms, TOKEN_MS,
@@ -2699,8 +2703,8 @@ def rtu_cycle_budget() -> None:
                  ha='center', fontsize=9.8)
     ax2.set_title(f'One token alone is {TOKEN_MS / cycle_ms:.0f} cycles long',
                   fontsize=11.5, weight='bold')
-    fig.text(0.5, 0.005, 'illustrative: the parts of the cycle are stated '
-             'assumptions, the ratios follow from them', ha='center', fontsize=9,
+    fig.text(0.98, 0.02, 'illustrative: the parts of the cycle are stated '
+             'assumptions, the ratios follow from them', ha='right', fontsize=9,
              color=MUTED, style='italic')
     _save(fig, RTU_DOC, 'cycle-budget.svg')
     print(f'[7c] one control cycle is {cycle_ms:.0f} ms and one token is '
@@ -2746,11 +2750,11 @@ def rtu_boundary() -> None:
                 fontsize=9.2, color=INK)
     ax.annotate('', xy=(3.3, 2.15), xytext=(3.3, 3.25),
                 arrowprops=dict(arrowstyle='-|>', color=PURPLE, lw=2.0))
-    ax.text(3.45, 2.72, 'down: a goal in words, and nothing else', fontsize=10,
+    ax.text(3.45, 3.02, 'down: a goal in words, and nothing else', fontsize=10,
             color=PURPLE, va='center')
     ax.annotate('', xy=(8.3, 3.25), xytext=(8.3, 2.15),
                 arrowprops=dict(arrowstyle='-|>', color=TEAL, lw=2.0))
-    ax.text(8.15, 2.72, 'up: did it work, and what was seen', fontsize=10,
+    ax.text(8.15, 2.22, 'up: did it work, and what was seen', fontsize=10,
             color=TEAL, va='center', ha='right')
     ax.text(0.4, 0.82, 'above the line nothing has a deadline, and a slow answer '
             'only makes the robot wait', fontsize=10.2, color=PURPLE, va='top')

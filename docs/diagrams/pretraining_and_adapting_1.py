@@ -358,7 +358,7 @@ def labels_versus_free_signal() -> None:
                         fontsize=9.5)
     ax1.set_ylim(0, free * 1.16)
     ax1.set_ylabel('training signals', fontsize=10)
-    ax1.set_title(f'The same {_si(n_sent)} sentences, two ways of getting a signal',
+    ax1.set_title(f'{_si(n_sent)} sentences, two kinds of signal',
                   fontsize=11.5, weight='bold')
 
     _plain(ax2)
@@ -369,7 +369,8 @@ def labels_versus_free_signal() -> None:
     ax2.set_xticklabels(['hand labels', 'next-word targets'], fontsize=9.5)
     ax2.set_ylim(0, hours * 1.25)
     ax2.set_ylabel(f'person-hours at {SECONDS_PER_LABEL:.0f} seconds a label', fontsize=10)
-    ax2.set_title('What each column of signal costs a person', fontsize=11.5, weight='bold')
+    ax2.set_title('What each one costs a person', fontsize=11.5, weight='bold')
+    fig.subplots_adjust(wspace=0.32)
     _save(fig, SSP_DOC, 'labels-versus-free-signal.svg')
 
 
@@ -443,7 +444,8 @@ def one_picture_many_targets() -> None:
         ax2.text(i, v * 1.5, _si(v), ha='center', fontsize=11, weight='bold')
     ax2.set_ylim(0.5, numbers * 12)
     ax2.set_ylabel('training signals from one picture (log scale)', fontsize=10)
-    ax2.set_title('One picture, one label, or hundreds of guesses', fontsize=11.5, weight='bold')
+    ax2.set_title('One label, or hundreds of guesses', fontsize=11.5, weight='bold')
+    fig.subplots_adjust(wspace=0.3)
     _save(fig, SSP_DOC, 'one-picture-many-targets.svg')
 
 
@@ -500,16 +502,17 @@ def four_recipes() -> None:
     words = sentence[:-1]
     for i, w in enumerate(words):
         shown_word = i < len(words) - 1
-        _box(ax, 0.2 + i * 1.22, 1.3, 1.1, 0.7, w if shown_word else '?',
+        _box(ax, 0.2 + i * 1.32, 1.3, 1.24, 0.7, w if shown_word else '?',
              face=LINK_PALE if shown_word else '#fbdcdc',
              edge=LINK if shown_word else GRIP,
-             weight='normal' if shown_word else 'bold', size=9.0)
+             weight='normal' if shown_word else 'bold', size=8.2)
     ax.text(0.2, 2.55, 'Next word: hide what comes next', fontsize=11, weight='bold')
     ax.text(0.2, 0.75, f'answer = "{words[-1]}", taken from the text', fontsize=9.5, color=MUTED)
 
     ax = axes[0, 1]
     _blank(ax)
-    ax.imshow(shown.reshape(SIDE, SIDE), cmap='Greys_r', interpolation='nearest')
+    hidden_map = matplotlib.colormaps['Greys_r'].with_extremes(bad=GRIP)
+    ax.imshow(shown.reshape(SIDE, SIDE), cmap=hidden_map, interpolation='nearest')
     ax.set_title('Masked patches: hide part of the picture', fontsize=11, weight='bold')
     ax.text(0.5, -0.09, f'answer = the {int(mask.sum())} hidden pixel values',
             transform=ax.transAxes, ha='center', fontsize=9.5, color=MUTED)
@@ -628,8 +631,8 @@ def context_helps() -> None:
     cols = [MUTED, GRIP, WRIST, SLIDE]
     ax.bar(range(4), losses, color=cols, width=0.55)
     for i, (lo, pp) in enumerate(zip(losses, perp)):
-        ax.text(i, lo + 0.06, f'{lo:.3f}\n({pp:.1f} words of doubt)', ha='center',
-                fontsize=10, weight='bold')
+        ax.text(i, lo + 0.06, f'{lo:.3f}\n(like a choice between {pp:.1f} words)',
+                ha='center', fontsize=9.5, weight='bold')
     ax.set_xticks(range(4))
     ax.set_xticklabels(names, fontsize=9.5)
     ax.set_ylim(0, max(losses) * 1.22)
@@ -925,7 +928,7 @@ class Contrastive:
     def __init__(self, n: int = 6000, dim_pic: int = 24, dim_txt: int = 20,
                  dim_out: int = 16, content: int = 5, noise: float = 2.2,
                  tau: float = 0.1, batch: int = 32, steps: int = 1500,
-                 lr: float = 0.4, seed: int = 9) -> None:
+                 lr: float = 0.08, seed: int = 9) -> None:
         rng = np.random.default_rng(seed)
         c = rng.normal(size=(n, content))
         a_pic = rng.normal(size=(content, dim_pic))
@@ -1106,7 +1109,7 @@ def contrastive_training() -> None:
           f'rest {np.mean(before[~np.eye(k, dtype=bool)]):+.3f}')
     print(f'[clip] after:  matching {np.mean(np.diag(after)):+.3f}, '
           f'rest {np.mean(after[~np.eye(k, dtype=bool)]):+.3f}')
-    fig = plt.figure(figsize=(11.4, 4.8), facecolor='white')
+    fig = plt.figure(figsize=(13.0, 4.8), facecolor='white')
     ax1 = fig.add_subplot(1, 3, 1)
     ax1.set_facecolor('white')
     _draw_grid(ax1, before, 'before training')
@@ -1125,7 +1128,7 @@ def contrastive_training() -> None:
     ax3.set_title('the loss falling', fontsize=11, weight='bold')
     fig.suptitle('Pulling matching pairs together and pushing the rest apart',
                  fontsize=12.5, weight='bold', y=1.02)
-    fig.subplots_adjust(wspace=0.45)
+    fig.subplots_adjust(wspace=0.55)
     _save(fig, SSP_DOC, 'contrastive-training.svg')
 
 
@@ -1291,11 +1294,14 @@ def two_crops() -> None:
     ds = _ds()
     pic_a = ds.pics.a[0].reshape(SIDE, SIDE)
     pic_b = ds.pics.b[0].reshape(SIDE, SIDE)
+    shared = ds.pics.content[0].reshape(SIDE, SIDE)
     print(f'[dino] picture {SIDE} by {SIDE}; each crop is {ds.rows} rows by {SIDE} '
           f'columns = {ds.rows * SIDE} pixels')
     print(f'[dino] the two crops share {ds.overlap} rows, and they come from two views '
           f'of the same item, so the lighting part of the picture differs as well')
-    fig, axes = plt.subplots(1, 3, figsize=(11.0, 4.2), facecolor='white')
+    print(f'[dino] the shared part of the two views has a spread of {shared.std():.2f} '
+          f'per pixel, the lighting part {ds.pics.clean[0][0].std():.2f}')
+    fig, axes = plt.subplots(1, 4, figsize=(13.2, 4.0), facecolor='white')
     for ax in axes:
         _blank(ax)
     vmin = float(min(pic_a.min(), pic_b.min()))
@@ -1303,20 +1309,24 @@ def two_crops() -> None:
     axes[0].imshow(pic_a, cmap='Greys_r', vmin=vmin, vmax=vmax, interpolation='nearest')
     axes[0].add_patch(Rectangle((-0.5, -0.5), SIDE, ds.rows, fill=False, edgecolor=LINK,
                                 lw=2.6))
-    axes[0].set_title(f'view one, the top {ds.rows} rows taken', fontsize=10.5,
-                      weight='bold')
+    axes[0].set_title(f'view one,\ntop {ds.rows} rows taken', fontsize=10.5, weight='bold')
     axes[1].imshow(pic_b, cmap='Greys_r', vmin=vmin, vmax=vmax, interpolation='nearest')
     axes[1].add_patch(Rectangle((-0.5, SIDE - ds.rows - 0.5), SIDE, ds.rows, fill=False,
                                 edgecolor=GRIP, lw=2.6))
-    axes[1].set_title(f'view two, the bottom {ds.rows} rows taken', fontsize=10.5,
+    axes[1].set_title(f'view two,\nbottom {ds.rows} rows taken', fontsize=10.5,
                       weight='bold')
     gap = np.full((2, SIDE), np.nan)
+    crop_map = matplotlib.colormaps['Greys_r'].with_extremes(bad='white')
     axes[2].imshow(np.vstack([pic_a[:ds.rows], gap, pic_b[SIDE - ds.rows:]]),
-                   cmap='Greys_r', vmin=vmin, vmax=vmax, interpolation='nearest')
-    axes[2].set_title(f'the two crops the model sees,\neach {ds.rows * SIDE} pixels',
+                   cmap=crop_map, vmin=vmin, vmax=vmax, interpolation='nearest')
+    axes[2].set_title(f'the two crops,\neach {ds.rows * SIDE} pixels', fontsize=10.5,
+                      weight='bold')
+    axes[3].imshow(shared, cmap='Greys_r', interpolation='nearest')
+    axes[3].set_title('the part the two views share,\nwhich decides the class',
                       fontsize=10.5, weight='bold')
     fig.suptitle('Two crops of one item: the object is the same, '
-                 'and everything else is not', fontsize=12.5, weight='bold', y=1.04)
+                 'and the lighting and the noise are not',
+                 fontsize=12.5, weight='bold', y=1.04)
     _save(fig, SSP_DOC, 'two-crops.svg')
 
 
@@ -1380,7 +1390,8 @@ def agreement_rises() -> None:
     ax2.set_ylim(0, 105)
     ax2.set_title('two crops, one answer, on items never trained on',
                   fontsize=11.5, weight='bold')
-    ax2.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax2.legend(fontsize=9.5, frameon=False, loc='upper left')
+    fig.subplots_adjust(wspace=0.3)
     _save(fig, SSP_DOC, 'agreement-rises.svg')
 
 
@@ -1575,9 +1586,8 @@ def backbone_and_head() -> None:
     ax1.set_yscale('log')
     ax1.set_ylim(50, back_numbers * 40)
     ax1.set_xticks([0, 1, 2])
-    ax1.set_xticklabels(['the frozen backbone\n(no labels, never trained again)',
-                         'the head\n(trained on labels)',
-                         'the whole network\nfrom scratch'], fontsize=9)
+    ax1.set_xticklabels(['the frozen\nbackbone', 'the head\n(trained)',
+                         'the whole network,\nfrom scratch'], fontsize=9)
     ax1.set_ylabel('numbers in the model (log scale)', fontsize=10)
     ax1.set_title('This page\'s demonstration', fontsize=11.5, weight='bold')
     _plain(ax2)
@@ -1629,9 +1639,10 @@ def what_the_features_track() -> None:
         ax.set_yticklabels([f'feature {i + 1}' for i in range(bb.k)], fontsize=8)
         ax.axvline(N_CONTENT - 0.5, color=GRIP, lw=2.0)
         ax.set_title(key, fontsize=11, weight='bold')
-        fig.colorbar(im, ax=ax, fraction=0.035, pad=0.02)
+        fig.colorbar(im, ax=ax, fraction=0.03, pad=0.03)
     fig.suptitle('What each learned feature follows: the two-view backbone keeps the '
                  'content and drops the lighting', fontsize=12.5, weight='bold', y=1.02)
+    fig.subplots_adjust(wspace=0.5)
     _save(fig, SSP_DOC, 'what-the-features-track.svg')
 
 
@@ -1651,7 +1662,7 @@ def few_labels_beat_many() -> None:
         col, mark, label = style[key]
         ax.plot(bb.sizes, [100 * v for v in ys], marker=mark, color=col, lw=2.0, label=label)
     ax.axhline(25, color=MUTED, ls=':', lw=1.2)
-    ax.text(bb.sizes[-1], 26.5, 'guessing one of four: 25 per cent', ha='right',
+    ax.text(bb.sizes[0], 26.5, 'guessing one of four: 25 per cent', ha='left',
             fontsize=9, color=MUTED)
     ax.set_xscale('log')
     ax.set_xticks(bb.sizes)
@@ -1680,11 +1691,15 @@ def labels_needed() -> None:
     cols = {'frozen backbone': SLIDE, 'top 8 directions': WRIST, 'from scratch': GRIP}
     for off, (key, vals) in zip([-width, 0.0, width], rows.items()):
         xs = np.arange(len(targets)) + off
-        heights = [v if v is not None else 0.0 for v in vals]
-        ax.bar(xs, heights, width=width, color=cols[key], label=key)
+        heights = [v if v is not None else 18000.0 for v in vals]
+        alphas = [1.0 if v is not None else 0.3 for v in vals]
+        for x, h, al in zip(xs, heights, alphas):
+            ax.bar([x], [h], width=width, color=cols[key], alpha=al,
+                   hatch='' if al == 1.0 else '//')
+        ax.bar([xs[0]], [0.0], width=width, color=cols[key], label=key)
         for x, v in zip(xs, vals):
             if v is None:
-                ax.text(x, 60, 'not reached\nby 3,200', ha='center', fontsize=8.5,
+                ax.text(x, 300, 'never, even\nwith 3,200', ha='center', fontsize=8.5,
                         rotation=90, color=INK)
             else:
                 ax.text(x, v * 1.08, f'{v:.0f}', ha='center', fontsize=9.5, weight='bold')

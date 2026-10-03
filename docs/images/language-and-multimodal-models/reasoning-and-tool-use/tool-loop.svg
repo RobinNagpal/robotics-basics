@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-03T03:38:47.974071</dc:date>
+    <dc:date>2026-10-03T03:43:33.018027</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -50,7 +50,7 @@ Q 45.936 107.136 45.936 109.296
 L 45.936 189.504 
 Q 45.936 191.664 48.096 191.664 
 z
-" clip-path="url(#pa151d2adac)" style="fill: #e6dcf7; stroke: #6a4fb3; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pe2d719df65)" style="fill: #e6dcf7; stroke: #6a4fb3; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
     <path d="M 48.096 306.864 
@@ -63,7 +63,7 @@ Q 45.936 222.336 45.936 224.496
 L 45.936 304.704 
 Q 45.936 306.864 48.096 306.864 
 z
-" clip-path="url(#pa151d2adac)" style="fill: #fdf0d5; stroke: #f0a500; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pe2d719df65)" style="fill: #fdf0d5; stroke: #f0a500; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
     <path d="M 235.296 306.864 
@@ -76,7 +76,7 @@ Q 233.136 222.336 233.136 224.496
 L 233.136 304.704 
 Q 233.136 306.864 235.296 306.864 
 z
-" clip-path="url(#pa151d2adac)" style="fill: #d9ecec; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pe2d719df65)" style="fill: #d9ecec; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="patch_6">
     <path d="M 235.296 191.664 
@@ -89,7 +89,7 @@ Q 233.136 107.136 233.136 109.296
 L 233.136 189.504 
 Q 233.136 191.664 235.296 191.664 
 z
-" clip-path="url(#pa151d2adac)" style="fill: #eef7f7; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
+" clip-path="url(#pe2d719df65)" style="fill: #eef7f7; stroke: #0f8b8d; stroke-width: 1.1; stroke-linejoin: miter"/>
    </g>
    <g id="text_1">
     <!-- One turn of the tool loop, and the three turns the question actually took -->
@@ -1577,18 +1577,18 @@ z
 " style="fill: #777777; stroke: #777777; stroke-width: 1.3; stroke-linecap: round"/>
    </g>
    <g id="patch_10">
-    <path d="M 317.106079 106.453799 
-Q 224.999706 188.026461 134.1488 107.565171 
+    <path d="M 317.106079 102.346201 
+Q 224.999706 20.773539 134.1488 101.234829 
 " style="fill: none; stroke: #e05555; stroke-width: 1.5; stroke-linecap: round"/>
-    <path d="M 135.817252 111.71442 
-L 134.1488 107.565171 
-L 138.46927 108.719958 
+    <path d="M 138.46927 100.080042 
+L 134.1488 101.234829 
+L 135.817252 97.08558 
 z
 " style="fill: #e05555; stroke: #e05555; stroke-width: 1.5; stroke-linecap: round"/>
    </g>
    <g id="text_10">
     <!-- then round again -->
-    <g style="fill: #e05555" transform="translate(183.42825 60.48) scale(0.096 -0.096)">
+    <g style="fill: #e05555" transform="translate(183.42825 57.6) scale(0.096 -0.096)">
      <use xlink:href="#DejaVuSans-57"/>
      <use xlink:href="#DejaVuSans-4b" transform="translate(39.203125 0)"/>
      <use xlink:href="#DejaVuSans-48" transform="translate(102.578125 0)"/>
@@ -3404,7 +3404,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="pa151d2adac">
+  <clipPath id="pe2d719df65">
    <rect x="21.6" y="21.6" width="806.4" height="396"/>
   </clipPath>
  </defs>

@@ -1930,24 +1930,24 @@ def two_valleys() -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.0), facecolor='white')
     _plain(axes[0])
-    axes[0].plot(ws, np.minimum(curve, 1.35), color=INK, lw=2.4)
+    print(f'[g6] the wavy loss rises to {curve.max():.4f} at w = '
+          f'{ws[int(np.argmax(curve))]:.3f}')
+    axes[0].plot(ws, curve, color=INK, lw=2.4)
     for start, hist, colour in runs:
         axes[0].plot(hist, _wavy(hist), color=colour, lw=1.3, ls='--')
         axes[0].scatter(hist[::6], _wavy(hist[::6]), s=28, color=colour, zorder=4)
         axes[0].scatter([start], [_wavy(start)[0]], s=130, marker='s', color=colour,
                         edgecolor=INK, lw=0.7, zorder=5)
-        axes[0].text(start, _wavy(start)[0] - 0.05, f'start at {start:.1f}', fontsize=9.5,
-                     color=colour, ha='center', va='top')
+        axes[0].text(start + 0.12, _wavy(start)[0], f'start at {start:.1f}', fontsize=9.5,
+                     color=colour, ha='left', va='center')
     for i in mins:
-        axes[0].scatter([ws[i]], [curve[i]], s=110, marker='v', color=SLIDE, zorder=6)
-        axes[0].text(ws[i], curve[i] + 0.04, f'{curve[i]:.3f}', fontsize=9, color=SLIDE,
-                     ha='center')
+        axes[0].text(ws[i], curve[i] - 0.04, f'{curve[i]:.3f}', fontsize=9.5, color=SLIDE,
+                     ha='center', va='top', weight='bold')
     axes[0].set_xlabel('the one weight, w', fontsize=10)
     axes[0].set_ylabel('mean squared error', fontsize=10)
     axes[0].set_xlim(0, 7)
-    axes[0].set_ylim(-0.12, 1.4)
-    axes[0].set_title('Four bottoms, marked with triangles, and two runs that land in '
-                      'different ones',
+    axes[0].set_ylim(-0.16, float(curve.max()) * 1.12)
+    axes[0].set_title('Four bottoms, with their losses, and two runs',
                       fontsize=11, weight='bold', color=INK)
     _plain(axes[1])
     for start, hist, colour in runs:
@@ -1957,8 +1957,7 @@ def two_valleys() -> None:
     axes[1].set_ylim(1e-7, 3)
     axes[1].set_xlabel('step number', fontsize=10)
     axes[1].set_ylabel('mean squared error (log scale)', fontsize=10)
-    axes[1].set_title('One run reaches a loss of nearly zero and the other stops well '
-                      'above it',
+    axes[1].set_title('One run ends near zero, the other well above it',
                       fontsize=11, weight='bold', color=INK)
     axes[1].legend(fontsize=9.5, frameon=False, loc='center right')
     axes[1].grid(True, which='major', color=GRID, lw=0.5)
@@ -2014,7 +2013,7 @@ def a_saddle() -> None:
                  va='top')
     axes[0].scatter([0.0, 0.0], [1.0, -1.0], s=170, marker='*', color=SLIDE,
                     edgecolor=INK, lw=0.7, zorder=6)
-    axes[0].text(0.06, 1.05, 'a real bottom', fontsize=9.5, color=SLIDE)
+    axes[0].text(0.10, 1.20, 'a real bottom', fontsize=9.5, color=SLIDE, ha='left')
     axes[0].set_xlabel('first weight, a', fontsize=10)
     axes[0].set_ylabel('second weight, b', fontsize=10)
     axes[0].set_title('A saddle point: uphill along a, downhill along b', fontsize=11.5,
@@ -2063,8 +2062,9 @@ def all_directions_up() -> None:
     for d, f in shown:
         if d in (1, 2, 3, 4):
             axes[0].text(d + 0.12, f * 1.5, f'{f:.4f}', fontsize=9.5, color=INK)
-    axes[0].text(6.4, 2.0e-6, 'at 7 and 8 weights not one\nof the 200,000 was a bottom',
-                 fontsize=9.0, color=GRIP, ha='center', va='top')
+    axes[0].text(0.97, 0.21, 'at 7 and 8 weights not one\nof the 200,000 was a bottom',
+                 transform=axes[0].transAxes, fontsize=9.0, color=GRIP, ha='right',
+                 va='top')
     axes[0].set_xlabel('number of weights', fontsize=10)
     axes[0].set_ylabel('share of flat points that are bottoms (log scale)', fontsize=10)
     axes[0].set_ylim(1e-7, 4.0)

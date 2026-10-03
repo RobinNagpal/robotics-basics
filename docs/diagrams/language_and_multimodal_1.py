@@ -512,10 +512,9 @@ def whole_vocabulary() -> None:
     ax2.set_ylabel('running total of the probability', fontsize=10, color=GRIP)
     ax2.tick_params(labelsize=9.5, colors=GRIP)
     ax2.spines['top'].set_visible(False)
-    ax.annotate(f'the top 8 words hold {k8:.3f}',
-                xy=(8, cum[7]), xycoords=ax2.get_yaxis_transform(),
-                xytext=(0.30, 0.52), textcoords='axes fraction', fontsize=10, color=GRIP,
-                arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.1))
+    ax2.annotate(f'the top 8 words hold {k8:.3f}', xy=(8, cum[7]),
+                 xytext=(0.26, 0.56), textcoords='axes fraction', fontsize=10,
+                 color=GRIP, arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.1))
     ax.annotate(f'the least likely word still gets {smallest:.1e}',
                 xy=(len(d), d[-1]), xytext=(0.12, 0.14), textcoords='axes fraction',
                 fontsize=10, color=LINK,

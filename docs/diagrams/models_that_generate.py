@@ -48,7 +48,7 @@ import matplotlib  # noqa: E402
 matplotlib.use('Agg')
 from matplotlib.axes import Axes  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
-from matplotlib.patches import Circle, FancyArrow, Rectangle  # noqa: E402
+from matplotlib.patches import Circle, Rectangle  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from numpy.typing import NDArray  # noqa: E402

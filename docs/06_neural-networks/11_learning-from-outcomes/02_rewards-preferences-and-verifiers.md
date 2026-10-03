@@ -370,10 +370,11 @@ nothing gives, because an untrained model says the two sides are equally likely
 and the natural logarithm of a half is minus 0.693. Seeing that number is how
 you check the loss is wired up correctly before training anything.
 
-The library gives you the fitting and nothing else. TRL and similar packages wrap
-both as ready-made trainers, and the preference loss above is exactly what direct
-preference optimisation and the reward-model stage of learning from human feedback
-use. The verifier of section 5 has no library, because it is your own program.
+The library gives you the fitting and nothing else. Hugging Face's TRL package and
+similar ones wrap both as ready-made trainers, and the preference loss above is
+exactly what direct preference optimisation and the reward-model stage of learning
+from human feedback use. The verifier of section 5 has no library at all, because
+it is your own program.
 
 What you still have to decide is everything this page was about. You decide what
 the reward measures, and section 1 showed that paying for being near the object

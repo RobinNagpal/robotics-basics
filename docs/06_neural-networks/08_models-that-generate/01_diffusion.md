@@ -408,6 +408,15 @@ the model that drew the pictures.
 import torch
 from torch import nn
 
+# The chapter's running example, so that this block runs as it stands: 6,000
+# recorded waypoints, about half passing above the obstacle at the origin and
+# half below, which is the two-moded shape sections 1 and 2 describe.
+g = torch.Generator().manual_seed(8)
+wx = torch.rand(6000, generator=g) * 4 - 2
+side = torch.where(torch.rand(6000, generator=g) < 0.5, -1.0, 1.0)
+wy = side * 1.41 * torch.cos(wx * torch.pi / 4)
+waypoints = torch.stack([wx, wy], 1) + 0.05 * torch.randn(6000, 2, generator=g)
+
 T = 100                                              # section 2: how many steps
 tt = torch.arange(T + 1) / T
 f = torch.cos((tt + 0.008) / 1.008 * torch.pi / 2) ** 2

@@ -1554,12 +1554,14 @@ def domain_randomisation() -> None:
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
     ax.axhline(float(np.mean(a)), color=GRIP, ls=':', lw=1.3)
     ax.axhline(float(np.mean(b)), color=SLIDE, ls=':', lw=1.3)
+    ax.text(7.52, float(np.mean(a)) - 0.065, f'{float(np.mean(a)):.2f} average',
+            ha='right', fontsize=8.5, color=GRIP)
+    ax.text(7.52, float(np.mean(b)) + 0.02, f'{float(np.mean(b)):.2f} average',
+            ha='right', fontsize=8.5, color=SLIDE)
     ax.set_ylim(0, 1.5)
-    ax.text(-0.45, float(np.mean(a)) + 0.02, f'average {float(np.mean(a)):.2f}',
-            ha='left', fontsize=9, color=GRIP)
-    ax.text(-0.45, float(np.mean(b)) + 0.02, f'average {float(np.mean(b)):.2f}',
-            ha='left', fontsize=9, color=SLIDE)
-    ax.set_title('Eight places the fixture could be', fontsize=11.5, weight='bold')
+    ax.set_title(f'Eight places the fixture could be: average '
+                 f'{float(np.mean(a)):.2f} against {float(np.mean(b)):.2f}',
+                 fontsize=11.5, weight='bold')
     ax.legend(fontsize=9, frameon=False, loc='upper center', ncol=2)
     ax = axes[1]
     _table(ax, 'The route the randomised learner picks', small=True)
@@ -2163,6 +2165,11 @@ def training_against_the_model() -> None:
     w, _, _ = reward_model()
     score = _sigmoid(FEAT @ w)
     checkpoints = [250, 500, 1000, 2000, 4000, 6000]
+    V, Qhonest = value_iteration(0.95, t=T_TRUE)
+    hss, haa, hrr, hout = greedy_path(Qhonest, t=T_TRUE)
+    honest_score = float(np.mean(score[hss]))
+    print(f'[against model] a policy that really does the job scores '
+          f'{honest_score:.3f} on the same model')
     model_score: list[float] = []
     real: list[float] = []
     for n in checkpoints:
@@ -2188,6 +2195,9 @@ def training_against_the_model() -> None:
             label='average score the reward model gives')
     ax.plot(checkpoints, real, marker='s', color=SLIDE, lw=2.1,
             label='share of attempts that really reach the bin')
+    ax.axhline(honest_score, color=INK, ls='--', lw=1.3)
+    ax.text(checkpoints[-1], honest_score + 0.03, f'a policy that does the job scores '
+            f'only {honest_score:.2f}', ha='right', fontsize=9.5, color=INK)
     for x, v in zip(checkpoints, model_score):
         ax.text(x, v + 0.03, f'{v:.2f}', ha='center', fontsize=9, color=PURPLE)
     for x, v in zip(checkpoints, real):
@@ -2388,12 +2398,13 @@ def people_make_mistakes() -> None:
     ax.set_xticks(counts)
     ax.set_xticklabels([str(c) for c in counts])
     ax.axhline(0.5, color=MUTED, ls='--', lw=1.2)
-    ax.set_ylim(0.45, 1.03)
+    ax.set_ylim(0.45, 1.06)
     ax.set_xlabel('number of judged pairs (log scale)', fontsize=10)
     ax.set_ylabel('share of held-out pairs it orders the same way', fontsize=10)
     ax.set_title('A careless judge costs pairs, not correctness', fontsize=12,
                  weight='bold', color=INK)
-    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    ax.text(26, 0.515, 'guessing', fontsize=9, color=MUTED)
+    ax.legend(fontsize=9.5, frameon=False, loc='center right')
     fig.tight_layout()
     _save(fig, RW_DOC, 'people-make-mistakes.svg')
 
@@ -2593,10 +2604,10 @@ def the_tray_loop() -> None:
     ax = axes[0]
     _table(ax, f'The loop: block to tray, {trays} times over', small=True)
     _draw_path(ax, ss, aa, GRIP)
-    ax.annotate('block picked up and put down\nhere, over and over',
-                xy=(TRAY[1] + 0.5, ROWS - 1 - TRAY[0] + 0.5),
-                xytext=(TRAY[1] - 1.9, ROWS - 1 - TRAY[0] + 1.9), fontsize=9,
-                color=GRIP, ha='center',
+    ax.annotate('block picked up here and\nput down again, over and over',
+                xy=(TRAY[1] + 0.52, ROWS - 1 - TRAY[0] + 0.9),
+                xytext=(0.05, ROWS - 1 - TRAY[0] + 2.4), fontsize=9,
+                color=GRIP, ha='left',
                 arrowprops={'arrowstyle': '->', 'color': GRIP, 'lw': 1.2})
     ax.text(2.5, -0.32, f'all {len(aa)} actions of one attempt, collecting '
                         f'{rr.sum():.2f}', ha='center', fontsize=9.5, color=INK)
@@ -2717,22 +2728,23 @@ def the_two_scores_come_apart() -> None:
 
 
 def two_rewards_together() -> None:
+    """The verifier made the main term, with the learned score kept as a nudge."""
     P, R, D, OUT, STAY = W2
     w, _, _ = reward_model()
     score = _sigmoid(FEAT @ w)
     model_only = model_reward_tables()
-    both: Tables = (P, model_only[1] + np.where(OUT == 'bin', 5.0, 0.0), D, OUT, STAY)
-    res = {}
-    for name, tab in (('learned reward alone', model_only),
-                      ('learned reward and the verifier', both)):
+    both: Tables = (P, 0.2 * score[P] - 0.1 + np.where(OUT == 'bin', 20.0, 0.0),
+                    D, OUT, STAY)
+    res: dict[str, float] = {}
+    for name, tab in (('the learned reward alone', model_only),
+                      ('the verifier, nudged by the learned reward', both)):
         rates = []
         for seed in range(4):
             Q, _, _, _ = q_learn(6000, 1.0, seed=340 + seed, eps1=0.05, t=tab)
             rates.append(evaluate(Q, 30, seed=99, t=W2)[0]['bin'])
         res[name] = float(np.mean(rates))
-        print(f'[fix] trained on "{name}": reaches the bin on {res[name]:.2f} of '
-              f'attempts')
-    fig, ax = plt.subplots(figsize=(8.6, 5.0), facecolor='white')
+        print(f'[fix] trained on {name}: reaches the bin on {res[name]:.2f} of attempts')
+    fig, ax = plt.subplots(figsize=(8.8, 5.0), facecolor='white')
     _plain(ax)
     names = list(res)
     vals = [res[n] for n in names]
@@ -2740,12 +2752,13 @@ def two_rewards_together() -> None:
     for x, v in zip(np.arange(2), vals):
         ax.text(x, v + 0.03, f'{v:.2f}', ha='center', fontsize=13, weight='bold')
     ax.set_xticks(np.arange(2))
-    ax.set_xticklabels(names, fontsize=10.5)
+    ax.set_xticklabels(['the learned reward alone',
+                        'the verifier, nudged by\nthe learned reward'], fontsize=10.5)
     ax.set_ylim(0, 1.18)
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
     ax.set_title('Four runs of 6,000 attempts each', fontsize=12, weight='bold')
-    fig.suptitle('Adding a reward nobody can argue with closes the hole in the learned '
-                 'one', fontsize=13, weight='bold', color=INK)
+    fig.suptitle('Putting the reward nobody can argue with in charge closes the hole',
+                 fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RW_DOC, 'two-rewards-together.svg')
 

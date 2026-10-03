@@ -375,6 +375,15 @@ and no noise to put back.
 import torch
 from torch import nn
 
+# The chapter's running example, so that this block runs as it stands: 6,000
+# recorded waypoints, about half passing above the obstacle at the origin and
+# half below, which is the two-moded shape sections 1 and 2 describe.
+g = torch.Generator().manual_seed(8)
+wx = torch.rand(6000, generator=g) * 4 - 2
+side = torch.where(torch.rand(6000, generator=g) < 0.5, -1.0, 1.0)
+wy = side * 1.41 * torch.cos(wx * torch.pi / 4)
+waypoints = torch.stack([wx, wy], 1) + 0.05 * torch.randn(6000, 2, generator=g)
+
 net = nn.Sequential(nn.Linear(3, 128), nn.Tanh(),   # 2 for the point, 1 for the time
                     nn.Linear(128, 128), nn.Tanh(),
                     nn.Linear(128, 2))              # section 1: names a direction
@@ -388,22 +397,24 @@ for _ in range(4000):                               # section 1: the training lo
     loss = ((net(torch.cat([xt, t], 1)) - (x1 - x0)) ** 2).mean()
     opt.zero_grad(); loss.backward(); opt.step()
 
-steps = 8                                           # section 2: the step count
-x = torch.randn(1000, 2)
-for i in range(steps):                              # section 2: follow the arrows
-    t = torch.full((1000, 1), i / steps)
-    x = x + net(torch.cat([x, t], 1)) / steps
-print(x.shape)                                      # torch.Size([1000, 2])
+def follow(start, steps):                           # section 2: follow the arrows
+    x = start.clone()
+    for i in range(steps):
+        t = torch.full((len(x), 1), i / steps)
+        x = x + net(torch.cat([x, t], 1)) / steps
+    return x
 
-pairs_end = x.detach()                              # section 1: straightening it
-pairs_start = torch.randn_like(pairs_end)           # (in real use, the same noise
-                                                    #  that produced each end point)
+print(follow(torch.randn(1000, 2), 8).shape)        # torch.Size([1000, 2])
+
+start = torch.randn(6000, 2)                        # section 1: straightening it
+end = follow(start, 64).detach()                    # each start's own finish
+# a second network trained on these (start, end) pairs is the straightened model
 ```
 
-Those five lines of training loop are the whole of flow matching, and the one
-thing the short version hides is the straightening from section 1, which needs
-you to keep each starting noise point beside the waypoint it produced and then
-train a second network on exactly those pairs rather than on fresh random ones.
+Those five lines of training loop are the whole of flow matching, and the last
+two lines are the whole of the straightening from section 1, which works only
+because each starting noise point is kept beside the waypoint it produced
+rather than beside a fresh random one.
 
 In practice the libraries cover all of it. Hugging Face's `diffusers` package
 provides `FlowMatchEulerDiscreteScheduler`, which is the loop above as a
@@ -412,11 +423,12 @@ scheduler object, together with the latent autoencoders of section 4 as
 decoder joined up. LeRobot ships flow-matching policies for arms with the
 control-rate question of section 5 already answered in its configuration files.
 
-What you still have to decide is the part that is yours. How many steps you can
-afford, which section 5 shows is set by your control rate rather than by taste.
-Whether the extra training round for straightening is worth it, which depends on
-whether you are short of training time or short of running time. Whether to
-generate in a latent space at all, which depends on how large and how redundant
-your data is. And how long the code should be if you do, which section 4 shows
-is a question about how many real choices went into the data rather than a
-question about the network.
+What you still have to decide is the part that is yours. You have to decide how
+many steps you can afford, and section 5 showed that your control rate settles
+that rather than your taste. You have to decide whether the extra training round
+for straightening is worth it, which turns on whether you are shorter of
+training time or of running time. You have to decide whether to generate in a
+latent space at all, which turns on how large and how redundant your data is.
+And if you do, you have to decide how long the code should be, which section 4
+showed is a question about how many real choices went into the data rather than
+a question about the network.

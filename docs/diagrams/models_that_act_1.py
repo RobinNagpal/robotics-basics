@@ -1376,18 +1376,24 @@ class ObstacleData:
         self.sides = np.array(sides)
         self.obs_raw = np.concatenate(obs)
         ch = np.concatenate(chunks)
-        self.act_scale = float(ch.std())
+        # each of the two action numbers gets its own scale, because a step along
+        # the reach and a step sideways are nothing like the same size
+        self.act_mean = ch.reshape(-1, 2).mean(0)
+        self.act_std = ch.reshape(-1, 2).std(0)
         self.chunks_raw = ch
         self.x = self.norm_obs(self.obs_raw).astype(np.float32)
-        self.y = (ch / self.act_scale).reshape(len(ch), -1).astype(np.float32)
+        self.y = self.to_norm(ch)
         self.n_demos = n_demos
+
+    def to_norm(self, ch: Arr) -> Arr:
+        return ((ch - self.act_mean) / self.act_std).reshape(len(ch), -1).astype(np.float32)
 
     @staticmethod
     def norm_obs(p: Arr) -> Arr:
         return np.column_stack([p[:, 0] / 20.0 - 1.0, p[:, 1] / 10.0]).astype(np.float32)
 
     def to_cm(self, y: Arr) -> Arr:
-        return y.reshape(len(y), CHUNK2, 2) * self.act_scale
+        return y.reshape(len(y), CHUNK2, 2) * self.act_std + self.act_mean
 
 
 class Mlp:
@@ -1454,7 +1460,8 @@ K_STEPS: int = 100
 
 
 def _temb(u: Arr) -> Arr:
-    freqs = 2.0 ** np.arange(TEMB // 2)
+    """Turn the noise level into a few smooth numbers the network can read."""
+    freqs = np.arange(1, TEMB // 2 + 1)
     ang = u[:, None] * np.pi * freqs[None, :]
     return np.concatenate([np.sin(ang), np.cos(ang)], axis=1).astype(np.float32)
 
@@ -1466,7 +1473,7 @@ def _abar() -> Arr:
     return f / f[0]
 
 
-AB: Arr = _abar().astype(np.float32)
+AB: Arr = np.clip(_abar(), 0.01, 1.0).astype(np.float32)
 
 
 class Policies:
@@ -1540,7 +1547,7 @@ class Policies:
             u = np.full(len(obs), ti / K_STEPS, dtype=np.float32)
             eps = self.diff(np.concatenate([x, obs, _temb(u)], 1))
             x0 = np.clip((x - np.sqrt(1 - ab_t) * eps) / np.sqrt(max(ab_t, 1e-6)),
-                        -3.0, 3.0)
+                        -4.0, 4.0)
             x = np.sqrt(ab_p) * x0 + np.sqrt(1 - ab_p) * eps
             path.append(x.copy())
         if trace:
@@ -1728,7 +1735,7 @@ def noising_a_chunk() -> None:
     for ax, lv in zip(axes, levels):
         ab = AB[lv]
         xt = np.sqrt(ab) * x0 + np.sqrt(1 - ab) * rng.normal(size=ADIM)
-        ch = (xt.reshape(CHUNK2, 2) * d.act_scale)
+        ch = xt.reshape(CHUNK2, 2) * d.act_std + d.act_mean
         pt = d.obs_raw[j] + np.cumsum(ch, axis=0)
         ax.plot(pt[:, 0], pt[:, 1], 'o-', color=LINK if lv == 0 else PURPLE, ms=3, lw=1.4)
         ax.plot(d.obs_raw[j, 0], d.obs_raw[j, 1], 'o', color=GRIP, ms=6)
@@ -1788,7 +1795,7 @@ def reverse_walk() -> None:
     fig, axes = plt.subplots(1, 5, figsize=(13.2, 3.4), facecolor='white')
     picks = [0, 5, 10, 15, 20]
     for ax, k in zip(axes, picks):
-        ch = trace[k][0].reshape(CHUNK2, 2) * d.act_scale
+        ch = trace[k][0].reshape(CHUNK2, 2) * d.act_std + d.act_mean
         pt = np.array([SPLIT, 0.0]) + np.cumsum(ch, axis=0)
         ax.plot(pt[:, 0], pt[:, 1], 'o-', color=PURPLE if k < 20 else SLIDE, ms=3, lw=1.5)
         ax.plot([SPLIT], [0.0], 'o', color=GRIP, ms=6)
@@ -1820,7 +1827,7 @@ def conditioning() -> None:
         ups = 0
         for i in range(40):
             pt = pl + np.cumsum(ch[i], axis=0)
-            ups += int(pt[-1, 1] > pl[1])
+            ups += int(pt[:, 1].mean() > 0)
             ax.plot(pt[:, 0], pt[:, 1], color=LINK, lw=0.9, alpha=0.6)
         ax.plot(*pl, 'o', color=GRIP, ms=9, zorder=6)
         _draw_box(ax, label=False)
@@ -1828,10 +1835,10 @@ def conditioning() -> None:
         ax.set_ylim(-14, 14)
         _plain(ax)
         ax.set_xlabel('distance along the reach (cm)', fontsize=9)
-        ax.set_title(f'from ({pl[0]:.0f}, {pl[1]:+.0f}) cm:\n{ups} of 40 chunks go up',
-                     fontsize=10.5, weight='bold')
+        ax.set_title(f'from ({pl[0]:.0f}, {pl[1]:+.0f}) cm:\n{ups} of 40 chunks stay '
+                     f'above the box', fontsize=10.5, weight='bold')
         print(f'[df] conditioned on ({pl[0]:.0f}, {pl[1]:+.0f}) cm: {ups} of 40 chunks '
-              f'go up and {40 - ups} go down')
+              f'stay above the box and {40 - ups} below')
     axes[0].set_ylabel('sideways (cm)', fontsize=9.5)
     fig.suptitle('The same denoiser, three different places: what it generates follows '
                  'what it is told', fontsize=12.5, weight='bold')
@@ -1956,11 +1963,11 @@ def steps_versus_quality() -> None:
     counts = [1, 2, 4, 8, 16, 32, 50]
     res: dict[str, list[float]] = {'diffusion': [], 'flow': []}
     near = np.abs(d.obs_raw[:, 0] - SPLIT) < 0.8
-    real = d.chunks_raw[near].reshape(int(near.sum()), -1) / d.act_scale
+    real = d.to_norm(d.chunks_raw[near])
     for n in counts:
         for kind in ('diffusion', 'flow'):
             ch = p.ddim(obs, n, rng) if kind == 'diffusion' else p.euler(obs, n, rng)
-            flat = ch.reshape(len(ch), -1) / d.act_scale
+            flat = d.to_norm(ch)
             dist = np.sqrt(((flat[:, None, :] - real[None, ::6, :]) ** 2).sum(2)).min(1)
             res[kind].append(float(dist.mean()))
         print(f'[df] {n:3d} steps: distance to the nearest real chunk, '

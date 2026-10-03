@@ -1283,17 +1283,17 @@ def on_policy_goes_stale() -> None:
         truth.append(float(np.mean(r2)))
     V, Qstar = value_iteration(gamma)
     best = float(greedy_path(Qstar)[2].sum())
-    print(f'[on-policy] the same {len(S)} stored steps from 1,500 random attempts: '
-          f'the policy-gradient method moves the policy from {truth[0]:.2f} to '
+    print(f'[on-policy] {len(S)} stored steps from 1,500 attempts by the same random '
+          f'policy: the policy-gradient method moves the policy from {truth[0]:.2f} to '
           f'{truth[-1]:.2f} after {passes[-1]} passes')
-    print(f'[on-policy] the off-policy method reached 8.90 on the same data, and the '
-          f'best possible is {best:.2f}')
+    print(f'[on-policy] the off-policy method reached 8.90 on attempts from that same '
+          f'random policy, and the best possible is {best:.2f}')
     fig, ax = plt.subplots(figsize=(9.2, 5.0), facecolor='white')
     _plain(ax)
     ax.plot(passes, truth, marker='o', ms=4, color=WRIST, lw=2.2,
             label='a policy-gradient method, on the stored attempts')
     ax.axhline(8.90, color=TEAL, ls='--', lw=1.6,
-               label='Q-learning on exactly the same attempts')
+               label='Q-learning, on attempts from that same random policy')
     ax.set_ylim(-11.5, 10.5)
     ax.set_xlabel('gradient passes made over the stored attempts', fontsize=10)
     ax.set_ylabel('reward the policy really collects', fontsize=10)
@@ -1554,10 +1554,6 @@ def domain_randomisation() -> None:
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
     ax.axhline(float(np.mean(a)), color=GRIP, ls=':', lw=1.3)
     ax.axhline(float(np.mean(b)), color=SLIDE, ls=':', lw=1.3)
-    ax.text(7.52, float(np.mean(a)) - 0.065, f'{float(np.mean(a)):.2f} average',
-            ha='right', fontsize=8.5, color=GRIP)
-    ax.text(7.52, float(np.mean(b)) + 0.02, f'{float(np.mean(b)):.2f} average',
-            ha='right', fontsize=8.5, color=SLIDE)
     ax.set_ylim(0, 1.5)
     ax.set_title(f'Eight places the fixture could be: average '
                  f'{float(np.mean(a)):.2f} against {float(np.mean(b)):.2f}',

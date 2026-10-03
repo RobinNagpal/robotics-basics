@@ -172,7 +172,7 @@ happens immediately rather than eventually, as the next picture shows.
 
 ![A chart of the model's score and the share of attempts really reaching the bin against the number of training attempts, with the score flat at 0.75 and the share flat at zero](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/training-against-the-model.svg)
 
-A policy trained on this score alone reaches 0.753 at every checkpoint from 250 attempts to 6,000 and never puts the block in the bin, because the highest-scoring thing it can do is hold it.
+A policy trained on this score alone reaches 0.753 at every checkpoint and never puts the block in the bin, while a policy that really does the job scores only 0.57.
 
 ---
 
@@ -348,13 +348,14 @@ both in PyTorch, because the shapes are the part worth seeing.
 import torch
 from torch import nn
 
+torch.manual_seed(0)
 reward_model = nn.Sequential(nn.Linear(6, 32), nn.ReLU(), nn.Linear(32, 1))
 
 # section 3: states from attempts that worked are 1, from attempts that failed are 0
 states = torch.randn(14914, 6)                      # six measurements per state
 labels = torch.randint(0, 2, (14914, 1)).float()
 loss = nn.BCEWithLogitsLoss()(reward_model(states), labels)
-print(round(loss.item(), 3))                        # about 0.7 before any training
+print(round(loss.item(), 3))                        # 0.7
 
 # section 4: a pair of attempts, and which one the person preferred
 better = torch.randn(256, 20, 6)                    # 256 pairs, 20 states each
@@ -362,13 +363,16 @@ worse = torch.randn(256, 20, 6)
 score_better = reward_model(better).sum(dim=1)      # an attempt's score is the total
 score_worse = reward_model(worse).sum(dim=1)
 pref_loss = -torch.nn.functional.logsigmoid(score_better - score_worse).mean()
-print(round(pref_loss.item(), 3))                   # about 0.7 before any training
+print(round(pref_loss.item(), 3))                   # 0.789
 ```
 
-Both printed numbers are about 0.693, which is what a model that has learned
-nothing gives, because an untrained model says the two sides are equally likely
-and the natural logarithm of a half is minus 0.693. Seeing that number is how
-you check the loss is wired up correctly before training anything.
+A model that has learned nothing should give 0.693 on either loss, because it
+says the two sides are equally likely and the natural logarithm of a half is minus
+0.693. The first number is 0.700, which is that. The second is 0.789, which is
+higher, because an attempt's score is the total over its twenty states, so even
+tiny per-state differences add up and the untrained model is already confidently
+wrong about half the pairs. Checking those two numbers before training anything is
+how you find out whether the loss is wired up the way you think.
 
 The library gives you the fitting and nothing else. Hugging Face's TRL package and
 similar ones wrap both as ready-made trainers, and the preference loss above is

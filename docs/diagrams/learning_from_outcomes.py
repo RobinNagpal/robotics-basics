@@ -1266,7 +1266,7 @@ def on_policy_goes_stale() -> None:
         theta = np.zeros((NS, NA))
         base0 = np.zeros(NS)
         cnt0 = np.zeros(NS)
-        for _ in range(25):            # warm up, so there is something to spoil
+        for _ in range(55):            # warm up, so there is something to spoil
             S, A, G, rets, outs = collect(theta, rng, 20, gamma)
             for s, g in zip(S, G):
                 cnt0[s] += 1
@@ -1911,11 +1911,13 @@ def how_fast_each_one_learns() -> None:
         print(f'[shaping] {name}: reaches the bin on {arr[:, -200:].mean():.2f} of the '
               f'last 200 attempts; first passed half of attempts at attempt {half}')
     ax.set_ylim(-0.03, 1.07)
-    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_xlim(0, 900)
+    ax.set_xlabel('attempt number (all three stay at 1.00 for the remaining 5,100)',
+                  fontsize=10)
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
     ax.set_title('Four runs of each, averaged', fontsize=12, weight='bold', color=INK)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    fig.suptitle('A dense reward reaches the goal sooner than a sparse one',
+    fig.suptitle('What matters is the shape of the shaping, not that it is dense',
                  fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RW_DOC, 'how-fast-each-one-learns.svg')
@@ -1943,9 +1945,9 @@ def shaping_that_changes_the_answer() -> None:
     _draw_policy(axes[1], Q, True, PURPLE, 12.0)
     ax = axes[2]
     _plain(ax)
-    held = np.array([0.5 * t for t in range(MAXSTEPS + 1)])
+    held = np.array([HOLD_BONUS * t for t in range(MAXSTEPS + 1)])
     ax.plot(np.arange(MAXSTEPS + 1), held, color=GRIP, lw=2.2,
-            label='keep holding: 0.50 a step, for ever')
+            label=f'keep holding: {HOLD_BONUS:.2f} a step, for ever')
     ax.axhline(10.0, color=SLIDE, ls='--', lw=1.8, label='put it in the bin: +10, once')
     ax.set_xlabel('steps spent holding the block', fontsize=10)
     ax.set_ylabel('reward collected', fontsize=10)
@@ -2139,7 +2141,7 @@ def how_well_it_tells_them_apart() -> None:
     ax.set_ylabel('how many states', fontsize=10)
     ax.set_title(f'It gets {acc:.0%} of them on the right side of 0.5', fontsize=11.5,
                  weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='upper center')
+    ax.legend(fontsize=9, frameon=False, loc='upper right')
     ax = axes[1]
     _plain(ax)
     V, Qt = value_iteration(0.95, t=T_TRUE)
@@ -2203,8 +2205,8 @@ def training_against_the_model() -> None:
     for x, v in zip(checkpoints, model_score):
         ax.text(x, v + 0.03, f'{v:.2f}', ha='center', fontsize=9, color=PURPLE)
     for x, v in zip(checkpoints, real):
-        ax.text(x, v - 0.06, f'{v:.2f}', ha='center', fontsize=9, color=SLIDE)
-    ax.set_ylim(0, 1.1)
+        ax.text(x, v + 0.03, f'{v:.2f}', ha='center', fontsize=9, color=SLIDE)
+    ax.set_ylim(-0.06, 1.12)
     ax.set_xlabel('attempts of training against the learned reward model', fontsize=10)
     ax.set_ylabel('score, and share of attempts', fontsize=10)
     ax.set_title('Training on the model\'s score alone', fontsize=12, weight='bold')
@@ -2261,13 +2263,14 @@ def make_pairs(eps_list: list[tuple[NDArray[np.int64], float, str]], n: int,
 
 
 PREF: tuple[list[tuple[NDArray[np.int64], float, str]], Arr] | None = None
+PREF_TAU: float = 0.5
 
 
 def preference_fit() -> tuple[list[tuple[NDArray[np.int64], float, str]], Arr]:
     global PREF
     if PREF is None:
         eps_list = sample_attempts(600, 33)
-        pairs = make_pairs(eps_list, 2000, 2.0, 34)
+        pairs = make_pairs(eps_list, 2000, PREF_TAU, 34)
         w = fit_from_preferences(pairs, eps_list)
         print(f'[preferences] {len(eps_list)} attempts, {len(pairs)} judged pairs')
         print('[preferences] fitted weights: ' + ', '.join(
@@ -2341,7 +2344,7 @@ def how_many_pairs() -> None:
     for n in counts:
         got = []
         for seed in range(8):
-            pairs = make_pairs(eps_list, n, 2.0, 200 + seed)
+            pairs = make_pairs(eps_list, n, PREF_TAU, 200 + seed)
             w = fit_from_preferences(pairs, eps_list)
             sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
             sc = sums @ w
@@ -2375,7 +2378,7 @@ def people_make_mistakes() -> None:
     counts = [25, 100, 500, 2000]
     fig, ax = plt.subplots(figsize=(9.0, 5.2), facecolor='white')
     _plain(ax)
-    for tau, colour, name in ((0.5, SLIDE, 'careful judge'), (2.0, LINK, 'ordinary judge'),
+    for tau, colour, name in ((PREF_TAU, SLIDE, 'careful judge'), (2.0, LINK, 'ordinary judge'),
                               (8.0, GRIP, 'careless judge')):
         agree = []
         for n in counts:
@@ -2474,8 +2477,8 @@ def where_they_disagree() -> None:
     ax.hist(model[passed == 1], bins=bins, color=SLIDE, alpha=0.7,
             label='the verifier says yes')
     ax.axvline(cut, color=INK, ls='--', lw=1.3)
-    ax.text(cut + 0.01, ax.get_ylim()[1] * 0.85, f'middling passing\nattempt: {cut:.2f}',
-            fontsize=9, color=INK)
+    ax.text(cut - 0.02, ax.get_ylim()[1] * 0.92, f'a middling passing\nattempt scores '
+            f'{cut:.2f}', fontsize=9, color=INK, ha='right')
     ax.set_xlabel('average score the reward model gives the attempt', fontsize=10)
     ax.set_ylabel('how many attempts', fontsize=10)
     ax.set_title('The model and the verifier are not the same measurement',
@@ -2575,7 +2578,9 @@ def learning_from_the_verifier_alone() -> None:
     ax.plot(np.arange(runs['dense'].shape[1]), _smooth(runs['dense'].mean(0), 200),
             color=WRIST, lw=2.1, label='the dense written reward')
     ax.set_ylim(-0.03, 1.07)
-    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_xlim(0, 3200)
+    ax.set_xlabel('attempt number (both stay at 1.00 for the remaining 2,800)',
+                  fontsize=10)
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
     ax.set_title('Four runs each, averaged', fontsize=12, weight='bold', color=INK)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
@@ -2601,8 +2606,13 @@ def the_tray_loop() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(12.2, 5.2), facecolor='white')
     ax = axes[0]
     _table(ax, f'The loop: block to tray, {trays} times over', small=True)
-    _draw_path(ax, ss[:14], aa[:14], GRIP)
-    ax.text(2.5, -0.32, f'first 14 of {len(aa)} actions; the whole attempt collects '
+    _draw_path(ax, ss, aa, GRIP)
+    ax.annotate('block picked up and put down\nhere, over and over',
+                xy=(TRAY[1] + 0.5, ROWS - 1 - TRAY[0] + 0.5),
+                xytext=(TRAY[1] - 1.9, ROWS - 1 - TRAY[0] + 1.9), fontsize=9,
+                color=GRIP, ha='center',
+                arrowprops={'arrowstyle': '->', 'color': GRIP, 'lw': 1.2})
+    ax.text(2.5, -0.32, f'all {len(aa)} actions of one attempt, collecting '
                         f'{rr.sum():.2f}', ha='center', fontsize=9.5, color=INK)
     ax = axes[1]
     _plain(ax)
@@ -2761,7 +2771,7 @@ def staying_near_a_trusted_policy() -> None:
     base = model_reward_tables()[1]
     penalty = np.ones((NS, NA))
     penalty[np.arange(NS), trusted] = 0.0
-    betas = [0.0, 0.05, 0.1, 0.2, 0.4, 0.8]
+    betas = [0.0, 1.0, 2.0, 3.0, 3.5, 4.0, 5.0]
     rates, scores = [], []
     w, _, _ = reward_model()
     score = _sigmoid(FEAT @ w)

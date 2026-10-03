@@ -100,9 +100,11 @@ already met.
 The page on [training and running a
 transformer](../06_the-transformer/03_training-and-running-a-transformer.md)
 showed next-token prediction as the way a language model is trained, where a
-**token** is a piece of a word. It is one example of the general idea above,
-chosen because text is a sequence, so what to hide is obvious. Here the tokens
-are whole words, to keep the arithmetic small.
+token is a piece of a word, as [tokens and
+embeddings](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md)
+explained. It is one example of the general idea above, chosen because text is a
+sequence, so what to hide is obvious. Here the tokens are whole words, to keep
+the arithmetic small.
 
 ![One sentence of eight words with arrows from each position to the word that follows it](../../images/pretraining-and-adapting/self-supervised-pretraining/next-token-pairs.svg)
 
@@ -151,11 +153,12 @@ section takes the idea to data that is not a sequence.
 
 ## 3. Masked prediction: hide part of it and fill it in
 
-A picture has no next word, because nothing in a picture comes first, so covering
-what comes next does not transfer. What transfers is the idea underneath it,
-which is to hide part of the input and make the model produce the hidden part
-from what is left, and that is called **masked prediction**. The **mask** is the
-list of which parts are hidden.
+The method in section 2 needs an order, and a picture has no next word, because
+nothing in a picture comes first, so covering what comes next does not transfer
+to pictures at all. What transfers is the idea underneath it, which is to hide
+part of the input and make the model produce the hidden part from what is left,
+and that is called **masked prediction**. The **mask** is the list of which parts
+are hidden.
 
 ![Three panels: the simulated picture, the same picture with its 100 patches outlined and 50 shaded red, and the picture with those patches removed](../../images/pretraining-and-adapting/self-supervised-pretraining/masked-patches.svg)
 
@@ -211,9 +214,10 @@ the caption written under it, and you train two models, one that turns a picture
 into a short list of numbers and one that turns a caption into a short list of
 numbers, so that the two lists of a matching pair point the same way while the
 lists of things that do not go together point different ways. That short list is
-a **vector**, and how much two vectors point the same way is their **cosine
-similarity**, which runs from +1 for the same direction to -1 for the opposite
-one.
+a vector, and how much two vectors point the same way is their cosine similarity,
+which runs from +1 for the same direction to -1 for the opposite one, and both
+words were explained on [tokens and
+embeddings](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md).
 
 In the simulated data each item has a hidden content vector, and the picture side
 and the caption side are two noisy views of it, so the only thing the two sides
@@ -329,13 +333,14 @@ the next section's subject.
 
 ## 6. What you are left holding, and what it buys
 
-Pretraining does not end with a model that does a job anybody wants. It ends with
-a **representation**, which is a way of turning a raw input into a shorter list
-of numbers that says what is in it, and the part of the network that does that
-turning is the **backbone**. The job you care about is then done by a **head**, a
-small network that reads those numbers and gives the answer you want, and when
-the backbone's weights are left exactly as pretraining made them while only the
-head is trained, the backbone is **frozen**.
+The four methods of sections 2 to 5 all end in the same place, and it is not a
+model that does a job anybody wants. Each ends with a **representation**, which
+is a way of turning a raw input into a shorter list of numbers that says what is
+in it, and the part of the network that does that turning is the **backbone**.
+The job you care about is then done by a **head**, a small network that reads
+those numbers and gives the answer you want, and when the backbone's weights are
+left exactly as pretraining made them while only the head is trained, the
+backbone is **frozen**.
 
 ![Two bar charts of parameter counts on log scales: 3,200 against 212 against 12,964, and 302 million against 20,500](../../images/pretraining-and-adapting/self-supervised-pretraining/backbone-and-head.svg)
 
@@ -344,7 +349,7 @@ Here the frozen backbone holds 3,200 numbers and the head 212, against 12,964 fo
 The backbone here was fitted on 20,000 unlabelled pairs of views by the simplest
 method of the two-crops kind that can be worked out exactly rather than by
 gradient descent: it keeps the eight directions of the picture on which two views
-of one item agree most. Six of those directions agree across views above 0.91 and
+of one item agree most. Six of those directions agree across views with a correlation above 0.91 and
 the seventh drops to 0.277, which is the method finding, without being told, that
 there are six things worth knowing about these pictures.
 

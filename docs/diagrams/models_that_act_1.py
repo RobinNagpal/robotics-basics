@@ -40,6 +40,7 @@ from numpy.typing import NDArray  # noqa: E402
 
 IMAGES: pathlib.Path = pathlib.Path(__file__).resolve().parents[1] / 'images' / 'models-that-act'
 PNG_DIR: pathlib.Path | None = None     # set by --png <dir> to also write PNG copies
+CACHE: pathlib.Path | None = None       # set by --cache <file> to keep trained weights
 
 GRID: str = '#d6d6d6'
 LINK: str = '#3b82c4'
@@ -1362,13 +1363,13 @@ class ObstacleData:
         ch = np.concatenate(chunks)
         self.act_scale = float(ch.std())
         self.chunks_raw = ch
-        self.x = self.norm_obs(self.obs_raw)
-        self.y = (ch / self.act_scale).reshape(len(ch), -1)
+        self.x = self.norm_obs(self.obs_raw).astype(np.float32)
+        self.y = (ch / self.act_scale).reshape(len(ch), -1).astype(np.float32)
         self.n_demos = n_demos
 
     @staticmethod
     def norm_obs(p: Arr) -> Arr:
-        return np.column_stack([p[:, 0] / 20.0 - 1.0, p[:, 1] / 10.0])
+        return np.column_stack([p[:, 0] / 20.0 - 1.0, p[:, 1] / 10.0]).astype(np.float32)
 
     def to_cm(self, y: Arr) -> Arr:
         return y.reshape(len(y), CHUNK2, 2) * self.act_scale
@@ -1380,9 +1381,10 @@ class Mlp:
     def __init__(self, sizes: list[int], seed: int = 0) -> None:
         rng = np.random.default_rng(seed)
         self.n = len(sizes) - 1
-        self.W = [rng.normal(0, np.sqrt(2.0 / sizes[i]), (sizes[i], sizes[i + 1]))
+        self.W = [rng.normal(0, np.sqrt(2.0 / sizes[i]),
+                             (sizes[i], sizes[i + 1])).astype(np.float32)
                   for i in range(self.n)]
-        self.B = [np.zeros(sizes[i + 1]) for i in range(self.n)]
+        self.B = [np.zeros(sizes[i + 1], dtype=np.float32) for i in range(self.n)]
         self.mW = [np.zeros_like(w) for w in self.W]
         self.vW = [np.zeros_like(w) for w in self.W]
         self.mB = [np.zeros_like(b) for b in self.B]
@@ -1439,7 +1441,7 @@ K_STEPS: int = 100
 def _temb(u: Arr) -> Arr:
     freqs = 2.0 ** np.arange(TEMB // 2)
     ang = u[:, None] * np.pi * freqs[None, :]
-    return np.concatenate([np.sin(ang), np.cos(ang)], axis=1)
+    return np.concatenate([np.sin(ang), np.cos(ang)], axis=1).astype(np.float32)
 
 
 def _abar() -> Arr:
@@ -1449,7 +1451,7 @@ def _abar() -> Arr:
     return f / f[0]
 
 
-AB: Arr = _abar()
+AB: Arr = _abar().astype(np.float32)
 
 
 class Policies:
@@ -1460,23 +1462,32 @@ class Policies:
         d = self.data
         n = len(d.x)
         rng = np.random.default_rng(3)
-        hid = 256
+        hid = 224
         self.diff = Mlp([ADIM + 2 + TEMB, hid, hid, ADIM], seed=1)
         self.flow = Mlp([ADIM + 2 + TEMB, hid, hid, ADIM], seed=2)
         self.mean = Mlp([2, hid, hid, ADIM], seed=4)
-        steps, batch = 9000, 256
+        steps, batch = 5000, 256
         self.losses: dict[str, list[float]] = {'diffusion': [], 'flow': [], 'averaging': []}
+        if CACHE is not None and CACHE.exists():
+            z = np.load(CACHE)
+            for nm, net in (('d', self.diff), ('f', self.flow), ('m', self.mean)):
+                for i in range(net.n):
+                    net.W[i] = z[f'{nm}W{i}']
+                    net.B[i] = z[f'{nm}B{i}']
+            print(f'[df] loaded the trained weights from {CACHE}')
+            self.losses = {k: [float(z[f'loss_{k}'])] for k in self.losses}
+            return
         for it in range(steps):
             lr = 1.5e-3 * (0.5 * (1 + np.cos(np.pi * it / steps)) * 0.9 + 0.1)
             j = rng.integers(0, n, batch)
             x0, obs = d.y[j], d.x[j]
             ti = rng.integers(1, K_STEPS + 1, batch)
             ab = AB[ti][:, None]
-            eps = rng.normal(size=x0.shape)
+            eps = rng.normal(size=x0.shape).astype(np.float32)
             xt = np.sqrt(ab) * x0 + np.sqrt(1 - ab) * eps
             la = self.diff.step(np.concatenate([xt, obs, _temb(ti / K_STEPS)], 1), eps, lr)
             tf = rng.uniform(0, 1, batch)
-            z = rng.normal(size=x0.shape)
+            z = rng.normal(size=x0.shape).astype(np.float32)
             xf = (1 - tf)[:, None] * z + tf[:, None] * x0
             lb = self.flow.step(np.concatenate([xf, obs, _temb(tf)], 1), x0 - z, lr)
             lc = self.mean.step(obs, x0, lr)
@@ -1490,18 +1501,28 @@ class Policies:
         print(f'[df] final training loss: diffusion {self.losses["diffusion"][-1]:.4f}, '
               f'flow {self.losses["flow"][-1]:.4f}, '
               f'averaging {self.losses["averaging"][-1]:.4f}')
+        if CACHE is not None:
+            out = {}
+            for nm, net in (('d', self.diff), ('f', self.flow), ('m', self.mean)):
+                for i in range(net.n):
+                    out[f'{nm}W{i}'] = net.W[i]
+                    out[f'{nm}B{i}'] = net.B[i]
+            for k, v in self.losses.items():
+                out[f'loss_{k}'] = np.array(v[-1])
+            CACHE.parent.mkdir(parents=True, exist_ok=True)
+            np.savez(CACHE, **out)
 
     # ---- samplers, all returning chunks in centimetres ----
 
     def ddim(self, obs: Arr, n_steps: int, rng: np.random.Generator,
              trace: bool = False) -> Arr | tuple[Arr, Arr]:
-        x = rng.normal(size=(len(obs), ADIM))
+        x = rng.normal(size=(len(obs), ADIM)).astype(np.float32)
         ts = np.linspace(K_STEPS, 0, n_steps + 1).round().astype(int)
         path = [x.copy()]
         for i in range(n_steps):
             ti, tp = int(ts[i]), int(ts[i + 1])
             ab_t, ab_p = AB[ti], AB[tp]
-            u = np.full(len(obs), ti / K_STEPS)
+            u = np.full(len(obs), ti / K_STEPS, dtype=np.float32)
             eps = self.diff(np.concatenate([x, obs, _temb(u)], 1))
             x0 = np.clip((x - np.sqrt(1 - ab_t) * eps) / np.sqrt(ab_t), -4, 4)
             x = np.sqrt(ab_p) * x0 + np.sqrt(1 - ab_p) * eps
@@ -1512,10 +1533,10 @@ class Policies:
 
     def euler(self, obs: Arr, n_steps: int, rng: np.random.Generator,
               trace: bool = False) -> Arr | tuple[Arr, Arr]:
-        x = rng.normal(size=(len(obs), ADIM))
+        x = rng.normal(size=(len(obs), ADIM)).astype(np.float32)
         path = [x.copy()]
         for i in range(n_steps):
-            u = np.full(len(obs), i / n_steps)
+            u = np.full(len(obs), i / n_steps, dtype=np.float32)
             v = self.flow(np.concatenate([x, obs, _temb(u)], 1))
             x = x + v / n_steps
             path.append(x.copy())
@@ -1924,7 +1945,7 @@ def steps_versus_quality() -> None:
         for kind in ('diffusion', 'flow'):
             ch = p.ddim(obs, n, rng) if kind == 'diffusion' else p.euler(obs, n, rng)
             flat = ch.reshape(len(ch), -1) / d.act_scale
-            dist = np.sqrt(((flat[:, None, :] - real[None, ::3, :]) ** 2).sum(2)).min(1)
+            dist = np.sqrt(((flat[:, None, :] - real[None, ::6, :]) ** 2).sum(2)).min(1)
             res[kind].append(float(dist.mean()))
         print(f'[df] {n:3d} steps: distance to the nearest real chunk, '
               f'diffusion {res["diffusion"][-1]:.3f}, flow {res["flow"][-1]:.3f}')
@@ -2264,6 +2285,9 @@ def main() -> None:
         if args[0] == '--png' and len(args) > 1:
             PNG_DIR = pathlib.Path(args[1])
             PNG_DIR.mkdir(parents=True, exist_ok=True)
+            args = args[2:]
+        elif args[0] == '--cache' and len(args) > 1:
+            globals()['CACHE'] = pathlib.Path(args[1])
             args = args[2:]
         elif args[0] == '--only' and len(args) > 1:
             only = args[1].split(',')

@@ -64,8 +64,9 @@ One backbone of 85,798,656 parameters feeds three heads of 769,000, 1,331,808 an
 
 Those sizes are worked out from the layer shapes of a plain vision transformer
 with twelve blocks and 768 numbers per patch, which is the size most people start
-from. That lopsidedness is the whole reason for the split, because the expensive
-part is the part that does not care which job you are doing.
+from. The gap between the backbone and the heads is the whole reason for the
+split, because the expensive part is the part that does not care which job you
+are doing.
 
 ![A horizontal bar split into five coloured parts showing where the backbone's parameters sit](../../images/models-that-see/vision-backbones/parameter-split.svg)
 

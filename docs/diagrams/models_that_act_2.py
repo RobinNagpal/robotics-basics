@@ -17,7 +17,7 @@ What is simulated, and what is real:
   plus a gripper command that closes once. The joint position deltas are the
   differences of that trajectory at 20 readings a second.
 * Everything done to those episodes is real arithmetic: the per-dimension
-  percentile normalisation, the uniform and quantile binning, the measured
+  percentile normalisation, the binning, the measured
   quantisation error, the integrated drift, the discrete cosine transform
   compression, and the flow-matching action head, which is a small network
   trained in NumPy by gradient descent.
@@ -25,7 +25,7 @@ What is simulated, and what is real:
   networks trained in NumPy on simulated data, with the two-link arm geometry
   and its Jacobian worked out exactly.
 * The world-model page uses one simulated system: a one-joint arm (a pendulum)
-  with viscous damping, a torque input and a hard stop at 0.9 radians. The
+  with viscous damping, a torque input and a hard stop at 0.45 radians. The
   step function is exact for that system, and it stands in for "the truth".
   The learned dynamics model is a real least-squares fit of degree-two
   polynomial features to noisy transitions from that system, and the pictures
@@ -1012,9 +1012,12 @@ def head_vs_tokens_latency() -> None:
     bars = ax.barh(names[::-1], vals[::-1], color=cols[::-1])
     ax.bar_label(bars, labels=[f'{v:.0f} ms' for v in vals[::-1]], fontsize=9, padding=3)
     ax.axvline(prefill_ms, color=LINK, lw=1.6, ls='--')
-    ax.text(prefill_ms * 1.08, -0.45, f'{prefill_ms:.0f} ms just to read\nthe pictures in',
-            fontsize=8.6, color=LINK, va='bottom')
+    ax.annotate(f'{prefill_ms:.0f} ms of every bar is\njust reading the pictures in',
+                xy=(prefill_ms, len(vals) - 2.0), xytext=(prefill_ms * 2.6, len(vals) - 3.1),
+                fontsize=8.8, color=LINK, va='center',
+                arrowprops=dict(arrowstyle='->', color=LINK, lw=0.9))
     ax.set_xlim(0, max(vals) * 1.22)
+    ax.set_ylim(-0.7, len(vals) - 0.3)
     ax.set_xlabel(f'time to produce one chunk, if reading the input costs {prefill_ms:.0f} ms,\n'
                   f'one action token costs {per_token_ms:.0f} ms and one head step costs '
                   f'{head_ms:.1f} ms', fontsize=9.6)

@@ -310,11 +310,11 @@ to answer "nothing".
 Two slots both cover the mug well, at a cost of 0.071 and 0.173, so the matching gives the mug to the cheaper one and trains the other to answer "nothing", which is what teaches the model never to answer twice.
 
 That one-to-one rule is the whole trick, and it is worth seeing on a single
-object. Two slots both cover the mug, at costs of 0.071 and 0.173, and both would
-be perfectly good boxes, but the matching gives the mug to the cheaper one and
-tells the other that the right answer is "nothing". Over many pictures this
-teaches the model that answering twice is always punished, so at the end of
-training it does not do it.
+object. Both of the slots over the mug would be perfectly good boxes, and nothing
+about either of them is wrong, yet only the cheaper one is allowed to keep it,
+and the other is told that the right answer there is "nothing". Over many
+pictures this teaches the model that answering twice is always punished, so by
+the end of training it does not do it.
 
 ![A bar chart comparing what the grid detector hands over before and after suppression with what set prediction hands over](../../images/models-that-see/detection-and-segmentation/before-and-after.svg)
 
@@ -346,9 +346,8 @@ A mask is not a shape or an outline inside the computer. It is a grid of numbers
 the same size as the region it describes, each between 0 and 1, saying how sure
 the model is that this pixel is part of the object. Cutting at 0.5 turns them
 into zeros and ones, and the window above shows that happening at the mug's left
-edge, where the numbers climb from 0.04 to 0.81 across eight pixels. The two
-agree on 8,086 of the 8,265 pixels either of them claims, which is an overlap of
-0.978.
+edge, where the numbers climb from 0.04 to 0.81 across eight pixels. The cut mask
+and the true one agree on 8,086 of the 8,265 pixels that either of them claims.
 
 ![A row of boxes showing the mask head, from the detector's box through four convolutions to the stretch back to the box](../../images/models-that-see/detection-and-segmentation/mask-head.svg)
 
@@ -383,11 +382,11 @@ A point at (175, 266) can honestly mean the one glass, which is 5,753 pixels, or
 The newest kind of segmentation model changes the question. Instead of being
 trained on a list of classes and asked which pixels are mugs, a **promptable
 segmentation** model is given a point or a box and asked which pixels belong to
-the thing there, and the Segment Anything family works this way. A point at (175,
-266) is genuinely ambiguous, because it could mean the one glass of 5,753 pixels
-or the group of 14,515, so the model returns more than one mask with a confidence
-for each. None of these answers carries a class name, because the model was never
-told what any of these things are called.
+the thing there, and the Segment Anything family works this way. A single point
+is genuinely ambiguous, because it can mean the one glass or the group of them,
+so the model returns more than one mask with a confidence for each and lets
+whatever asked the question choose. None of these answers carries a class name,
+because the model was never told what any of these things are called.
 
 ![The near glass's mask with the grasp line across its narrow way, beside the mug's box with the parts that are not mug shaded](../../images/models-that-see/detection-and-segmentation/mask-to-grasp.svg)
 
@@ -397,11 +396,10 @@ That is exactly why these models are used inside robot pipelines as a tool rathe
 than as a recogniser. Something else decides what to pick, usually a detector or
 a vision-language model, and the promptable model is then handed that box or
 point and asked only for the pixels, which it does well on objects nobody trained
-it on. Those pixels are what the grasp is worked out from: the mask of the near
-glass is 50 pixels across its narrow way, which at 0.80 metres from a camera 640
-pixels wide with a 60 degree view is 72 millimetres, so the fingers know how far
-to open. The mug's box, by contrast, holds 1,819 pixels of table, and a point
-chosen inside it can easily be none of the mug.
+it on. Those pixels are what the grasp is worked out from, because the narrow way
+across the mask is how far the fingers have to open, and 72 millimetres is a
+width a gripper can be told. A point chosen inside the box alone carries no such
+promise, since 18 in every hundred of that box is table.
 
 ---
 

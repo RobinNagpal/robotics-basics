@@ -1137,6 +1137,8 @@ def exp_distil() -> dict[str, object]:
     ns = [10, 20, 40, 80, 160, 320, 640]
     hard: list[float] = []
     soft: list[float] = []
+    q8v: list[float] = []
+    q4v: list[float] = []
     for n in ns:
         hv: list[float] = []
         sv: list[float] = []
@@ -1148,6 +1150,11 @@ def exp_distil() -> dict[str, object]:
             hv.append(accuracy(w, b, s.x_old_t, s.y_old_t))
             w, b = train_distil(student_sizes, xs, ys, zl, 3.0, 0.9, 2000, 0.05, rng)
             sv.append(accuracy(w, b, s.x_old_t, s.y_old_t))
+            if n == ns[-1]:
+                q8v.append(accuracy(quantise_net(w, 8, 'per-channel'), b,
+                                    s.x_old_t, s.y_old_t))
+                q4v.append(accuracy(quantise_net(w, 4, 'per-channel'), b,
+                                    s.x_old_t, s.y_old_t))
         hard.append(float(np.mean(hv)))
         soft.append(float(np.mean(sv)))
     print('--- distillation ---')
@@ -1166,10 +1173,13 @@ def exp_distil() -> dict[str, object]:
     print('    examples   ' + ' '.join(f'{n:>6}' for n in ns))
     print('    hard label ' + ' '.join(f'{v:6.3f}' for v in hard))
     print('    soft target' + ' '.join(f'{v:6.3f}' for v in soft))
+    print(f'  the same students squeezed: 8 bits {np.mean(q8v):.3f}, '
+          f'4 bits {np.mean(q4v):.3f}')
     out = {'ns': ns, 'hard': hard, 'soft': soft, 'rows': rows, 'ent': ent,
            'z': z, 'true': int(s.y_old[pick]), 'n_student': n_student,
            'student_sizes': student_sizes, 'teacher_acc': t.acc,
-           'teacher_param': t.n_param, 'teacher_macs': t.macs}
+           'teacher_param': t.n_param, 'teacher_macs': t.macs,
+           'q8': float(np.mean(q8v)), 'q4': float(np.mean(q4v))}
     _CACHE['distil'] = out
     return out
 
@@ -1239,33 +1249,32 @@ def exp_prune() -> dict[str, object]:
 
 
 def exp_stack() -> dict[str, object]:
-    """Distil into a student, then quantise the student: the two methods together."""
+    """Distil into a student, then quantise the student: the two methods together.
+
+    The students are the same five runs the distillation curve ends on, so the
+    numbers here and in exp_distil are the same kind of number.
+    """
     if 'stack' in _CACHE:
         return _CACHE['stack']           # type: ignore[return-value]
     s = sim()
     t = big()
     d = exp_distil()
     sizes: list[int] = d['student_sizes']        # type: ignore[assignment]
-    rng = np.random.default_rng(999)
-    idx = rng.permutation(len(s.y_old))[:640]
-    w, b = train_distil(sizes, s.x_old[idx], s.y_old[idx], t.logits[idx],
-                        3.0, 0.9, 2000, 0.05, rng)
     n_student: int = d['n_student']              # type: ignore[assignment]
-    rows: list[tuple[str, float, float, float]] = []
-    rows.append(('teacher, 16 bits a weight', accuracy(t.w, t.b, s.x_old_t, s.y_old_t),
-                 t.n_param * 2.0, float(t.macs)))
-    rows.append(('teacher, 4 bits a weight',
-                 accuracy(quantise_net(t.w, 4, 'per-channel'), t.b, s.x_old_t, s.y_old_t),
-                 t.n_param * 0.5, float(t.macs)))
-    rows.append(('student, 16 bits a weight', accuracy(w, b, s.x_old_t, s.y_old_t),
-                 n_student * 2.0, float(macs(sizes))))
-    rows.append(('student, 8 bits a weight',
-                 accuracy(quantise_net(w, 8, 'per-channel'), b, s.x_old_t, s.y_old_t),
-                 n_student * 1.0, float(macs(sizes))))
-    rows.append(('student, 4 bits a weight',
-                 accuracy(quantise_net(w, 4, 'per-channel'), b, s.x_old_t, s.y_old_t),
-                 n_student * 0.5, float(macs(sizes))))
-    print('--- the two methods one after the other ---')
+    rows: list[tuple[str, float, float, float]] = [
+        ('teacher, 16 bits a weight', accuracy(t.w, t.b, s.x_old_t, s.y_old_t),
+         t.n_param * 2.0, float(t.macs)),
+        ('teacher, 4 bits a weight',
+         accuracy(quantise_net(t.w, 4, 'per-channel'), t.b, s.x_old_t, s.y_old_t),
+         t.n_param * 0.5, float(t.macs)),
+        ('student, 16 bits a weight', d['soft'][-1], n_student * 2.0,   # type: ignore[index]
+         float(macs(sizes))),
+        ('student, 8 bits a weight', d['q8'], n_student * 1.0,          # type: ignore[index]
+         float(macs(sizes))),
+        ('student, 4 bits a weight', d['q4'], n_student * 0.5,          # type: ignore[index]
+         float(macs(sizes))),
+    ]
+    print('--- the two methods one after the other (mean of 5 students) ---')
     for name, acc, by, mc in rows:
         print(f'  {name:28s} accuracy {acc:.3f}, {by:9,.0f} bytes of weights, '
               f'{mc:7,.0f} multiply-adds')
@@ -2068,8 +2077,8 @@ def fig_data_distance() -> None:
                 label=name.replace('\n', ' '))
         ax.axhline(ceil, color=col, lw=1.0, ls='--', alpha=0.6)
         ax.plot([ns[0] * 0.78], [before], '*', color=col, ms=13)
-    ax.text(10.0, 0.875, 'the stars on the left are the accuracy before any fine-tuning',
-            fontsize=9.0, color=MUTED, ha='left')
+    ax.text(5.0, 0.865, 'the stars on the left are the accuracy before any fine-tuning',
+            fontsize=8.8, color=MUTED, ha='left')
     ax.set_xscale('log', base=2)
     ax.set_xticks(ns)
     ax.set_xticklabels([str(n) for n in ns])
@@ -2088,8 +2097,10 @@ def fig_data_distance() -> None:
     for x, (bf, raw) in enumerate(zip(d['befores'], d['needed'])):   # type: ignore[arg-type]
         ax2.text(x, bf + 0.015, f'{bf:.3f}', ha='center', fontsize=10.5, color=INK,
                  weight='bold')
-        txt = f'{raw} examples\nto fix it' if raw is not None else 'more than 512\nexamples'
-        ax2.text(x, 0.06, txt, ha='center', fontsize=9.6, color='white', weight='bold')
+        txt = (f'{raw}\nexamples\nto fix it' if raw is not None
+               else 'more than\n512 examples\nneeded')
+        ax2.text(x, 0.14, txt, ha='center', va='center', fontsize=8.6, color='white',
+                 weight='bold')
     ax2.set_xticks(xx)
     ax2.set_xticklabels(list(d['jobs']), fontsize=8.6)   # type: ignore[arg-type]
     ax2.set_ylim(0, 1.0)
@@ -2278,10 +2289,7 @@ def fig_weights_and_levels() -> None:
     ax.set_xlabel('one output channel of a trained weight matrix, weight by weight',
                   fontsize=10)
     ax.set_ylabel('weight', fontsize=10)
-    ax.set_ylim(-0.76, 0.63)
-    ax.text(22.0, -0.70, 'the small numbers down the left are the fifteen whole numbers a '
-                         '4-bit integer can hold, from -7 to +7',
-            fontsize=9.0, color=MUTED, ha='center')
+    ax.set_ylim(-0.63, 0.63)
     ax.set_title(f'The step between levels is {scale4:.5f}, so every weight has to move to '
                  f'the nearest line',                     # type: ignore[str-format]
                  fontsize=11.6, weight='bold')
@@ -2338,8 +2346,8 @@ def fig_error_per_weight() -> None:
     ax.axhline(d['rms4'], color=GRIP, lw=1.2, ls='--')    # type: ignore[index]
     ax.axhline(-d['rms4'], color=GRIP, lw=1.2, ls='--')   # type: ignore[index]
     ax.set_ylim(-0.055, 0.060)
-    ax.text(len(w) - 0.5, 0.050,                          # type: ignore[index]
-            f'root-mean-square error at 4 bits: {d["rms4"]:.6f}', ha='right', fontsize=9.3,
+    ax.text(0.0, 0.050,                                   # type: ignore[index]
+            f'root-mean-square error at 4 bits: {d["rms4"]:.6f}', ha='left', fontsize=9.3,
             color=GRIP,
             bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='none'))
     ax.axhline(d['rms8'], color=LINK, lw=1.2, ls=':')     # type: ignore[index]
@@ -2375,6 +2383,7 @@ def fig_error_vs_bits() -> None:
     ax.set_xlabel('bits kept for each weight', fontsize=10)
     ax.set_ylabel('root-mean-square error left in the weights (log scale)', fontsize=10)
     ax.set_xlim(1.5, 11.2)
+    ax.set_ylim(2e-4, 0.40)
     ax.set_title('Each extra bit halves the step and so halves the error, which is why '
                  '8 bits is nearly free and 4 is not',
                  fontsize=11.6, weight='bold')
@@ -2607,8 +2616,8 @@ def fig_student_curves() -> None:
             ha='right', fontsize=9.5, color=GRIP)
     for n, h, s_ in zip(ns, d['hard'], d['soft']):                  # type: ignore[arg-type]
         if n in (20, 40):
-            ax.annotate(f'{s_ - h:+.3f}', xy=(n, (h + s_) / 2), xytext=(n * 1.1,
-                        (h + s_) / 2 - 0.018), fontsize=9.4, color=SLIDE, weight='bold')
+            ax.annotate(f'{s_ - h:+.3f}', xy=(n, (h + s_) / 2), xytext=(n * 1.12,
+                        (h + s_) / 2 - 0.034), fontsize=9.4, color=SLIDE, weight='bold')
     ax.set_xscale('log', base=2)
     ax.set_xticks(ns)
     ax.set_xticklabels([str(n) for n in ns])
@@ -2794,8 +2803,8 @@ def fig_accuracy_against_saving() -> None:
                 PURPLE))
     pts.append(('distilled student', dist['soft'][-1],
                 base_bytes / (dist['n_student'] * 2.0), GRIP))
-    pts.append(('distilled student,\n4-bit weights', st['rows'][4][1],
-                base_bytes / st['rows'][4][2], INK))
+    pts.append(('distilled student,\n4-bit weights', dist['q4'],
+                base_bytes / (dist['n_student'] * 0.5), INK))
     fig, ax = plt.subplots(figsize=(11.4, 5.8), facecolor='white')
     _plain(ax)
     for name, acc, save, col in pts:
@@ -2805,16 +2814,17 @@ def fig_accuracy_against_saving() -> None:
                     fontsize=9.3, color=col, va='top' if dy < 0 else 'bottom')
     ax.axhline(0.0, color=INK, lw=1.0)
     ax.set_ylim(-0.006, 0.070)
-    ax.text(1.05, 0.0015, 'no accuracy lost at all', fontsize=9.3, color=INK)
+    ax.text(11.0, 0.0012, 'no accuracy lost at all', fontsize=9.3, color=INK)
     ax.set_xscale('log', base=2)
     ax.set_xticks([1, 2, 4, 8, 16, 32, 64, 128])
     ax.set_xticklabels(['1', '2', '4', '8', '16', '32', '64', '128'])
     ax.set_xlim(0.85, 330)
     ax.set_xlabel('times smaller than the trained network (log scale)', fontsize=10)
     ax.set_ylabel('accuracy given up', fontsize=10)
-    ax.set_title('Measured on the same small network: a distilled student squeezed to 4 '
-                 'bits is 83 times smaller for 0.003 of accuracy',
-                 fontsize=11.6, weight='bold')
+    best = pts[-1]
+    ax.set_title(f'Measured on the same small network: a distilled student squeezed to 4 '
+                 f'bits is {best[2]:.0f} times smaller for {b.acc - best[1]:.3f} '
+                 f'of accuracy', fontsize=11.6, weight='bold')
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
     ax.set_axisbelow(True)
     _save(fig, SM_DOC, 'accuracy-lost-against-size-saved.svg')
@@ -2846,8 +2856,8 @@ def fig_summary_table() -> None:
          '2.0 times', '2.0 times', 'measured'),
         ('distilled into a smaller student', f'{dist["soft"][-1]:.3f}',
          gap(dist['soft'][-1]), '20.7 times', '22.0 times', 'measured'),
-        ('distilled, then squeezed to 4 bits', f'{st["rows"][4][1]:.3f}',
-         gap(st['rows'][4][1]), '82.8 times', '22.0 times', 'measured'),
+        ('distilled, then squeezed to 4 bits', f'{dist["q4"]:.3f}',
+         gap(dist['q4']), '82.8 times', '22.0 times', 'measured'),
     ]
     fig, ax = plt.subplots(figsize=(13.6, 5.8), facecolor='white')
     _blank(ax)

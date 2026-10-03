@@ -13,16 +13,17 @@ ladder from almost free to very expensive, so most of this page is about where o
 that ladder to stand and what each rung costs.
 
 It assumes you have read the two pages before it, so you know what pretraining is,
-what a frozen backbone is, and what a floating-point operation (FLOP) is. It also
-assumes you know what a transformer block holds, from [a transformer
-block](../06_the-transformer/02_a-transformer-block.md), and what an optimiser keeps
-in memory, from [the training loop](../03_how-training-works/04_the-training-loop.md).
+what a frozen backbone is and what a floating-point operation (FLOP) is. It also
+assumes you know what a [transformer
+block](../06_the-transformer/02_a-transformer-block.md) holds and what an optimiser
+keeps in memory, from [the training
+loop](../03_how-training-works/04_the-training-loop.md).
 
 The parameter counts and memory sizes are exact arithmetic on one stated shape, a
-transformer of 32 blocks with a width of 4096, a feed-forward inner width of 11008
-and a vocabulary of 32000. The learning experiments are simulated, because a small
-network is trained in NumPy on made-up readings of six objects and then fine-tuned.
-Every number is printed by `docs/diagrams/pretraining_and_adapting_2.py`.
+transformer of 32 blocks with a width of 4096, a feed-forward inner width of 11008 and
+a vocabulary of 32000. The learning experiments are simulated, because a small network
+is trained in NumPy on made-up readings of six objects and then fine-tuned. Every
+number is printed by `docs/diagrams/pretraining_and_adapting_2.py`.
 
 ## Contents
 
@@ -51,9 +52,8 @@ under each column is how many numbers that rung actually changes.
 The first rung leaves the weights alone and writes a better **prompt**, which is the
 text or picture you put in front of the model before the real question. It costs no
 training, so you can try a new one every minute, and that speed is why it is the rung
-to try first. What it cannot do is teach the model something it does not already
-contain, because every behaviour a prompt can reach is one the pretrained weights
-already hold.
+to try first. What it cannot do is teach the model anything it does not already
+contain, because every behaviour a prompt reaches is one the pretrained weights hold.
 
 The second rung freezes the pretrained model and trains one small new layer on top,
 called a **head**, which turns the model's internal numbers into the answers your job
@@ -63,7 +63,7 @@ running into exactly that wall.
 
 The third rung adds an **adapter**, which is a small set of extra weights placed
 beside the existing ones and trained while those stay frozen, and the most used kind
-by far is low-rank adaptation, which section 3 works out in full. The fourth rung
+by far is low-rank adaptation, written LoRA, which section 3 works out in full. The fourth rung
 lets the last few blocks train normally, which gives real room to move while leaving
 most of the file alone. The fifth is **full fine-tuning**, where every weight is free,
 and it is the most capable and by far the most expensive.
@@ -119,11 +119,10 @@ The parameters are not spread evenly, and the feed-forward parts of the blocks h
 almost two thirds of them.
 
 The embedding table is 32000 times 4096, which is 131,072,000 numbers, and the output
-head is the same again. In one block the attention part holds four matrices of 4096
-by 4096, which is 67,108,864, and the feed-forward part three matrices of 4096 by
-11008, which is 135,266,304, so one block is 202,383,360 and 32 blocks are
-6,476,267,520. With the embeddings, the head and the small normalisation scales that
-is 6,738,415,616 parameters.
+head is the same again. In one block the attention part holds four matrices of 4096 by
+4096, which is 67,108,864, and the feed-forward part three of 4096 by 11008, which is
+135,266,304, so one block is 202,383,360 and 32 blocks are 6,476,267,520. With the
+embeddings, the head and the normalisation scales that is 6,738,415,616 parameters.
 
 ![Two bars broken into bytes: a frozen parameter costs 2, and a trainable one costs 2 for the weight, 2 for the gradient and 4 plus 4 for the optimiser](../../images/pretraining-and-adapting/fine-tuning-and-adapters/bytes-per-parameter.svg)
 
@@ -153,9 +152,8 @@ Unfreezing is not an all-or-nothing choice, so the left panel shows what each ex
 unfrozen block costs and the right panel what share of the model it puts in play.
 
 Each block costs 1.88 GiB more and is 3.00% of the model, so on a 24 GiB card you can
-unfreeze 6 blocks and reach 23.86 GiB with nothing left over. That is the honest
-reason people reach for adapters: not that unfreezing is wrong, but that the memory
-runs out after a sixth of the model.
+unfreeze 6 blocks and reach 23.86 GiB with nothing left over. That is the honest reason
+people reach for adapters, because the memory runs out after a sixth of the model.
 
 ---
 
@@ -215,17 +213,16 @@ change, because the product of the two thin matrices adds up more terms, and her
 grows 55.83 times between rank 1 and rank 128, so a learning rate that suited rank 4
 would be far too large at rank 64. Dividing by the rank pulls the other way, and
 dividing by the square root of the rank leaves the change almost unchanged from rank 2
-upwards, which is why some libraries now offer that third choice. In practice alpha is
-one knob for the overall strength, and once it is set the rank can change without
-re-tuning everything else.
+upwards, which is why some libraries offer that third choice. Alpha is one knob for the
+overall strength, and once it is set the rank can change without re-tuning the rest.
 
-The folding is what makes LoRA cheap to deploy. Because the product has the same shape
-as the original matrix, you can add it into the original weights once, before the
+The folding is what makes LoRA cheap to deploy, because the product has the same shape
+as the original matrix, so it can be added into the original weights once before the
 model is ever run. Computing it as a separate side path costs 16,842,752 multiply-adds
 per token instead of 16,777,216, which is 0.39% more, while folding brings the count
-back to exactly 16,777,216. The two ways agree to within 3.8e-17, which is the
-rounding of the arithmetic itself, so the folded model is not an approximation of the
-adapted one, it is the same model.
+back to exactly 16,777,216. The two ways agree to within 3.8e-17, the rounding of the
+arithmetic itself, so the folded model is the same model rather than an approximation
+of it.
 
 ---
 
@@ -255,12 +252,11 @@ The left panel shows that 4-bit storage is never exactly 4 bits a weight, and th
 right shows what the extra bits buy, measured on a real trained weight matrix.
 
 Four-bit integers cannot cover the range of a weight matrix alone, so each small group
-of weights also stores a scale, which is one ordinary number that every integer in the
+of weights also stores a scale, which is one ordinary number every integer in the
 group is multiplied by. With groups of 64 and a 16-bit scale each, the true cost is
-4.250 bits a weight, or 3.33 GiB for this model, while groups of 32 cost 4.500 bits
-and 3.53 GiB. Measured on one real 48 by 48 trained matrix, the error left in the
-weights falls from 15.54% with a single scale for the whole matrix to 10.27% with one
-per group of 48 and 7.20% with one per group of 8.
+4.250 bits a weight, or 3.33 GiB, while groups of 32 cost 4.500 bits and 3.53 GiB.
+Measured on a real 48 by 48 trained matrix, the error left in the weights falls from
+15.54% with one scale for the whole matrix to 10.27% with one per group of 48.
 
 ![Two panels of bar charts: accuracy on the old job for a float, 8-bit and 4-bit base, and accuracy on a new job for four combinations of base and adapter](../../images/pretraining-and-adapting/fine-tuning-and-adapters/qlora-adapter-recovers.svg)
 
@@ -270,12 +266,11 @@ on 64 examples.
 
 Squeezing the simulated network to 4 bits moves its accuracy on the old six-way job
 from 0.933 to 0.930, and at 8 bits there is no measurable loss at all. On the new job
-the 4-bit base alone scores 0.495, which is no better than guessing between two
-classes, and a rank-2 adapter lifts it to 0.691, against 0.708 for the same adapter on
-an unsqueezed base. So the base being slightly wrong costs a little, the adapter does
-nearly all the work either way, and what you buy is the ability to train at all. The
-cost that is easy to forget is speed, because 4-bit weights have to be turned back into
-ordinary numbers before every multiplication, which makes each step slower.
+the 4-bit base alone scores 0.495, no better than guessing between two classes, and a
+rank-2 adapter lifts it to 0.691 against 0.708 on an unsqueezed base. So the base being
+slightly wrong costs a little, the adapter does nearly all the work either way, and
+what you buy is the ability to train at all. The cost easy to forget is speed, because
+4-bit weights have to become ordinary numbers again before every multiplication.
 
 ---
 
@@ -310,11 +305,11 @@ two-way job on the right, so a good recipe is one where both bars are tall.
 
 Four things are usually suggested, and this experiment tests all four. Stopping after
 ten steps leaves the old job at 0.709 and the new at 0.759, so it helps but gives up
-some of the new job. Using a learning rate of 0.012 instead of 0.15 leaves them at
-0.771 and 0.816, which is better on both counts. Mixing a quarter of the old data into
-every batch leaves them at 0.874 and 0.800, the best result here. A rank-2 adapter at
-the same gentle learning rate leaves the old job at 0.699, which is no better than
-tuning everything gently, because an adapter still changes what every layer computes.
+some of the new job. A learning rate of 0.012 instead of 0.15 leaves them at 0.771 and
+0.816, better on both counts. Mixing a quarter of the old data into every batch leaves
+them at 0.874 and 0.800, the best result here. A rank-2 adapter at the same gentle
+learning rate leaves the old job at 0.699, no better than tuning everything gently,
+because an adapter still changes what every layer computes.
 
 That last result deserves saying plainly, because adapters are often described as a
 cure for forgetting and this experiment says they are not by themselves. What an
@@ -359,13 +354,12 @@ the dashed line is the best accuracy anything could reach on this job, which is 
 because the two clouds of readings overlap.
 
 Before tuning the model scores 0.495, which is useless. Training a new head climbs to
-about 0.68 and stops, and it even wobbles downwards with more examples, because the
-frozen features do not contain the distinction the new job needs and more examples
-only move the compromise the head settles on. A rank-2 adapter reaches 0.748 by 32
-examples. A full fine-tune starts worst, at 0.579 with four examples, because it has
-the most freedom and the fewest examples to constrain it, and ends best, at 0.813 with
-512. That is the trade-off in one picture: fewer trainable numbers win when examples
-are scarce, more win when they are plentiful.
+about 0.68 and stops, and even wobbles downwards with more examples, because the frozen
+features do not contain the distinction the new job needs, so more examples only move
+the compromise the head settles on. A rank-2 adapter reaches 0.748 by 32 examples. A
+full fine-tune starts worst, at 0.579 with four examples, because it has the most
+freedom and fewest examples to constrain it, and ends best at 0.813 with 512. Fewer
+trainable numbers win when examples are scarce, and more win when they are plentiful.
 
 ![Three curves for three new jobs at increasing distance from the old one, beside bars of the accuracy before tuning with the examples each needed](../../images/pretraining-and-adapting/fine-tuning-and-adapters/data-vs-distance.svg)
 
@@ -397,30 +391,29 @@ Putting the three together gives a way to reason rather than a number to quote. 
 new job is the old job in a new style, so the model already does better than chance,
 then tens to a few hundred examples on a small adapter are usually enough. If it needs
 a distinction the model never had to make, expect thousands, and expect a plain head to
-fail however many you collect. And whatever the job, the examples have to cover its
-variety, so a narrow set collected in one afternoon in one corner of one room gives you
-a model that works in that corner of that room.
+fail however many you collect. And the examples have to cover the job's variety, so a
+narrow set collected in one corner of one room gives a model that works in that
+corner.
 
 ---
 
 ## 7. Where to read next
 
 - [Making a model smaller and faster](04_making-a-model-smaller-and-faster.md) is the
-  next page, and it explains the quantisation section 4 used here, together with
-  distillation and pruning.
+  next page, and it explains the quantisation section 4 used here, with distillation
+  and pruning.
 - [Self-supervised pretraining](01_self-supervised-pretraining.md) is where the model
   you are fine-tuning came from, and what a frozen backbone already knows.
 - [Scale, data and compute](02_scale-data-and-compute.md) gives the arithmetic behind
-  the FLOP counts in section 1 and the memory cost of a parameter.
+  section 1's FLOP counts.
 - [Post-training a language
   model](../10_language-and-multimodal-models/02_post-training-a-language-model.md)
   uses these methods to turn a raw pretrained model into one that follows instructions.
 - [Vision-language-action
   models](../12_models-that-act/03_vision-language-action-models.md) shows a robot
-  model that is almost always reached by fine-tuning something larger.
+  model almost always reached by fine-tuning something larger.
 - [Fine-tuning](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md)
-  in the models catalogue gives the same choice from the robot's side, with the named
-  scripts you would run.
+  in the models catalogue gives the same choice from the robot's side.
 
 ---
 

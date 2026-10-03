@@ -358,7 +358,7 @@ of the network and nothing else.
 
 ![A straight line of generation time against step count, beside four lines for networks of different speeds crossing dashed budget lines at 100 ms and 33 ms](../../images/models-that-generate/diffusion/steps-vs-time.svg)
 
-One pass over a single point was measured at 29.1 microseconds, so 2 steps take 0.058 ms, 25 take 0.728 ms and 100 take 2.910 ms, while 64 points at once cost 0.149 ms a pass, or 14.908 ms for 100 steps.
+One pass over a single point was measured at 27.4 microseconds, so 2 steps take 0.055 ms, 25 take 0.684 ms and 100 take 2.736 ms, while 64 points at once cost 0.145 ms a pass, or 14.526 ms for 100 steps.
 
 The network on this page is tiny, so its own timings are not a guide to
 anything real, but the arithmetic is, and the right-hand chart does it for

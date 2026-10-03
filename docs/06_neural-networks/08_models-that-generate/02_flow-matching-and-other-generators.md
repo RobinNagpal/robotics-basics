@@ -24,7 +24,7 @@ past a round obstacle of radius 0.5 m and the recorded waypoints form two arcs,
 one above and one below. Every number below is worked out and printed by
 `docs/diagrams/models_that_generate.py`, and the timings were measured on the
 machine that drew the pictures, where one pass of the small network used
-throughout took about 25 microseconds.
+throughout was measured at 27.4 microseconds.
 
 ## Contents
 
@@ -136,19 +136,18 @@ on pairs that each had one partner.
 
 ![A bar chart grouped at 1, 2, 4 and 16 steps, with the straightened flow flat at 0.002 while the other two fall from above 1 down to 0.005 and 0.003](../../images/models-that-generate/flow-matching-and-other-generators/error-at-fixed-steps.svg)
 
-At one step the straightened model is 835 times better than diffusion by the mismatch score, at four steps 14 times better, and at sixteen steps 3 times better, so the advantage is almost all at the cheap end.
+At one step diffusion scores 1.670 and the straightened model 0.002; at four steps they score 0.026 and 0.002; and at sixteen steps 0.005 and 0.002, so the advantage shrinks as the step count grows.
 
-This is the pattern to remember, because it is exactly the pattern a robot
-cares about. At the expensive end, where there is time for thirty or sixty
-passes, the three methods are the same within measurement noise, and at
-sixty-four steps diffusion is slightly ahead at 0.0013. At the cheap end, where
-the control rate allows one or two passes, only the straightened model produces
-anything usable at all. The same picture with time on the horizontal axis says
-the same thing in the units a deadline is written in.
+This is the pattern a robot cares about. At thirty-two steps the three score
+0.0018, 0.0021 and 0.0018, which is the same within measurement noise, and at
+sixty-four steps diffusion is slightly ahead at 0.0013. At one or two steps,
+which is all a tight control rate allows, only the straightened model produces
+anything usable. The same picture with time on the horizontal axis says it in
+the units a deadline is written in.
 
 ![A chart of mismatch against measured generation time from 0.025 ms to 1.57 ms, with the step count printed under each point of the flat straightened-flow line](../../images/models-that-generate/flow-matching-and-other-generators/time-to-quality.svg)
 
-One step costs 0.025 ms, eight cost 0.196 ms and sixty-four cost 1.570 ms, because every step is one pass of the same network.
+One step costs 0.027 ms, eight cost 0.219 ms and sixty-four cost 1.751 ms, because every step is one pass of the same network.
 
 What this costs is a second round of training and a round of generating in
 between, which roughly doubles the work of building the model, and it costs the
@@ -198,7 +197,7 @@ nobody uses it for pictures or for robot actions is in the next picture.
 
 ![A rising orange line of generation time against the number of pieces, crossing a flat green line for 2 flow steps almost immediately and a dashed purple line for 50 diffusion steps at 50 pieces](../../images/models-that-generate/flow-matching-and-other-generators/autoregressive-cost.svg)
 
-A two-piece answer costs 0.057 ms made one piece at a time, a sixteen-piece answer costs 0.457 ms and a sixty-four-piece answer costs 1.829 ms, while two steps of a straightened flow model cost 0.057 ms however many numbers the answer holds.
+A two-piece answer costs 0.055 ms made one piece at a time, a sixteen-piece answer costs 0.438 ms and a sixty-four-piece answer costs 1.751 ms, while two steps of a straightened flow model cost 0.055 ms however many numbers the answer holds.
 
 The cost grows with the size of the answer and cannot be avoided by better
 hardware, because the pieces have to be made in order and none of them can
@@ -291,16 +290,16 @@ Diffusion with 50 steps scores 0.0022, the first flow model with 8 steps scores 
 
 The table below gathers the measurements. Read each row as one method, with the
 passes column giving how many times the network has to run to make one answer,
-the time column giving that many passes at the measured 24.5 microseconds each,
+the time column giving that many passes at the measured 27.4 microseconds each,
 and the last column saying what the method costs you that the others do not.
 
 | Method | Passes for one answer | Measured time | Mismatch score | What it costs |
 | --- | --- | --- | --- | --- |
-| diffusion, 50 steps | 50 | 1.24 ms | 0.0022 | the most passes of any method here |
-| flow matching, 8 steps | 8 | 0.20 ms | 0.0072 | still several passes |
-| straightened flow, 2 steps | 2 | 0.05 ms | 0.0028 | a second round of training |
-| one piece at a time, 2 pieces | 2 | 0.05 ms | 0.0016 | one pass per piece of the answer |
-| one piece at a time, 16 pieces | 16 | 0.39 ms | not measured here | the passes cannot overlap |
+| diffusion, 50 steps | 50 | 1.368 ms | 0.0022 | the most passes of any method here |
+| flow matching, 8 steps | 8 | 0.219 ms | 0.0072 | still several passes |
+| straightened flow, 2 steps | 2 | 0.055 ms | 0.0028 | a second round of training |
+| one piece at a time, 2 pieces | 2 | 0.055 ms | 0.0016 | one pass per piece of the answer |
+| one piece at a time, 16 pieces | 16 | 0.438 ms | not measured here | the passes cannot overlap |
 
 ![A bar chart of passes needed to reach a mismatch of 0.01: 1 for the straightened flow, 8 for the first flow model, 16 for diffusion, and 2 and 16 for the two autoregressive cases](../../images/models-that-generate/flow-matching-and-other-generators/passes-needed.svg)
 
@@ -329,7 +328,7 @@ exactly that problem.
 
 ![A chart of mismatch against measured time for all three step-based generators plus the two-stage model, with the straightened flow flat and lowest at the cheap end](../../images/models-that-generate/flow-matching-and-other-generators/error-vs-time-frontier.svg)
 
-Everything on one pair of axes: below about 0.4 ms the straightened flow model is the only one near the floor, and above about 0.8 ms all three methods are within measurement noise of each other.
+Everything on one pair of axes: up to the cost of sixteen steps the straightened flow model is the only one near the floor, and from thirty-two steps onwards all three methods are within measurement noise of each other.
 
 So the guidance is this. Generate one piece at a time when the answer is a
 sequence whose pieces genuinely come in an order and whose length is modest,

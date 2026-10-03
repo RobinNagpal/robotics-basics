@@ -19,9 +19,16 @@ The methods run on that data are real and written in NumPy: a squared-error
 regression network, a denoising diffusion model with a cosine noise schedule
 trained to predict the added noise, ancestral and deterministic samplers,
 classifier-free guidance, a conditional flow-matching model with Euler
-sampling, a two-stage histogram autoregressive model, and an autoencoder with
-a flow-matching model trained in its code space. All timings are measured with
-time.perf_counter on the machine that drew the pictures.
+sampling, a second flow model rectified on the first one's own pairs, a
+two-stage histogram autoregressive model, and an autoencoder with a
+flow-matching model trained in its code space.
+
+All timings are measured with time.perf_counter on the machine that drew the
+pictures, once per batch size and then reused, so every picture in one run
+quotes the same timing; the timings therefore move a little from run to run
+while everything else is fixed by seeds. Setting the environment variable
+MTG_CACHE to a folder keeps the trained networks there between runs, which only
+saves time and changes nothing that is drawn.
 """
 
 import os

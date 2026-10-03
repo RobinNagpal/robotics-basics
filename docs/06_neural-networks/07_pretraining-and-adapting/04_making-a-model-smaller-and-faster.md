@@ -15,9 +15,8 @@ weights away. Running a model on the robot's own computer rather than on a serve
 called **edge inference**, and everything here serves that.
 
 It assumes you have read the chapter so far, so you know what a parameter is, what a
-floating-point operation (FLOP) is, and what the softmax turns a model's raw outputs
-into. The one new idea is that a number does not have to be stored in 32 bits, and
-section 2 builds that from nothing.
+floating-point operation (FLOP) is and what the softmax turns a model's raw outputs
+into. The one new idea is that a number need not be stored in 32 bits.
 
 Every number in the pictures is worked out by
 `docs/diagrams/pretraining_and_adapting_2.py`. The parameter counts and memory sizes
@@ -56,9 +55,9 @@ graphics card with 24 GiB.
 Stored at 32 bits a weight the model needs 25.10 GiB, which fits on neither, and at 16
 bits it needs 12.55 GiB, which fits on the card but not the robot. At 8 bits, plus a
 small allowance for the scales that section 3 explains, it needs 6.47 GiB, which fits
-inside 8 GiB with very little room for anything else, and at 4 bits it needs 3.33 GiB,
-the first size that leaves the robot room for its pictures, its own program and the
-model's working memory at once.
+inside 8 GiB with little room left, and at 4 bits it needs 3.33 GiB, the first size
+that leaves the robot room for its pictures, its program and the model's working
+memory at once.
 
 Memory is not only a question of fitting, because the model has to be read as well as
 stored, and reading it usually sets the speed.
@@ -98,13 +97,12 @@ Section 1 assumed a weight could be stored in 8 bits or 4, so this section says 
 that means and what it costs, using 48 real weights from one output channel of a
 network that was actually trained.
 
-A weight is normally stored as a float32, which is 32 bits holding a very wide range
-of values to about seven decimal places. That precision is wasted, because the
-weights in one channel of a trained network all sit in a narrow band, and in the
-column used here the smallest is -0.47174 and the largest is +0.57539, so the largest
-size of any of them is 0.57539. **Quantisation** uses that fact, because it picks a
-**step size**, replaces each weight by the whole number of steps nearest to it, and
-stores only that whole number.
+A weight is normally stored as a float32, which is 32 bits holding a very wide range of
+values to about seven decimal places. That precision is wasted, because the weights in
+one channel all sit in a narrow band, and here the smallest is -0.47174 and the largest
+is +0.57539, so the largest size of any of them is 0.57539. **Quantisation** uses that,
+because it picks a **step size**, replaces each weight by the whole number of steps
+nearest to it, and stores only that whole number.
 
 ![A number line drawn twice, once with 15 evenly spaced 4-bit levels and once with 255 8-bit levels, with six real weights marked on each](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/step-size-number-line.svg)
 
@@ -122,14 +120,13 @@ size itself.
 Each blue point is a weight as it was trained, and each red square is where it ends up
 once it has been turned into a 4-bit integer and back again.
 
-Take the first weight, which is +0.1071. Dividing by the 4-bit step of 0.082199 gives
-1.30, which rounds to the integer 1, so what is stored is the single number 1, and
-reading it back gives 0.0822. The same weight at 8 bits divides by 0.004531 to give
-23.6, which rounds to 24 and reads back as 0.1087. The first eight weights become the
-integers 1, 3, 2, 2, 0, 2, 5 and 4 at four bits, and 24, 49, 42, 31, 9, 40, 100 and
-73 at eight bits. The fifth is worth noticing, because +0.0387 becomes the integer 0
-at four bits and so reads back as exactly nothing, which is the cost of quantisation:
-the weights come back changed.
+Take the first weight, +0.1071. Dividing by the 4-bit step of 0.082199 gives 1.30,
+which rounds to the integer 1, so what is stored is the single number 1 and reading it
+back gives 0.0822. At 8 bits it divides by 0.004531 to give 23.6, which rounds to 24
+and reads back as 0.1087. The first eight weights become the integers 1, 3, 2, 2, 0,
+2, 5 and 4 at four bits, and 24, 49, 42, 31, 9, 40, 100 and 73 at eight. The fifth is
+worth noticing, because +0.0387 becomes 0 at four bits and reads back as exactly
+nothing, which is the cost of quantisation.
 
 ![Bars of the read-back error for each of the 48 weights at 4 bits and at 8 bits, with the root-mean-square error marked](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/error-per-weight.svg)
 
@@ -166,14 +163,14 @@ Each bar is one output channel of a real trained weight matrix, and its height i
 largest weight in that channel, which is what a scale for that channel would be set
 by.
 
-If the whole matrix shares one scale, that scale is set by the single largest weight
-anywhere in it, which here is 0.980, and every channel whose own largest weight is
-0.45 then uses less than half of the levels available to it. Giving each channel its
-own scale fixes that, and it is called **per-channel quantisation**. The lower panel
-shows why it matters so much, because real trained networks often have a few channels
-whose weights are much larger than the rest, and here one channel has been made eight
-times louder to show the effect, which drags the single shared scale up to 4.491 and
-wastes most of the levels for every other channel.
+If the whole matrix shares one scale, that scale is set by the largest weight anywhere
+in it, which here is 0.980, and every channel whose own largest weight is 0.45 then
+uses less than half the levels available to it. Giving each channel its own scale
+fixes that, and it is called **per-channel quantisation**. The lower panel shows why
+it matters, because real trained networks often have a few channels whose weights are
+much larger than the rest, and here one channel has been made eight times louder,
+which drags the shared scale up to 4.491 and wastes most of the levels for every other
+channel.
 
 ![Grouped bars of the error left at 4 bits for three choices of scale, on the plain matrix and on the one with a loud channel](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/scale-choice-error.svg)
 
@@ -181,11 +178,10 @@ The bars are the error left in the weights after quantising to 4 bits and readin
 them back, as a share of the typical size of the weights themselves.
 
 On the matrix as trained, one scale for the whole matrix leaves 15.5% error, one per
-channel leaves 10.3%, and one for every group of 16 weights leaves 8.6%. On the
-matrix with one loud channel the shared scale leaves 51.9%, which is a ruined matrix,
-while the per-channel scale leaves 10.9% and the grouped scale 9.3%, barely different
-from before. So finer scales cost a little storage, as the last page's QLoRA figures
-showed, and they buy protection from exactly the unevenness trained networks have.
+channel leaves 10.3% and one for every group of 16 weights leaves 8.6%. On the matrix
+with one loud channel the shared scale leaves 51.9%, a ruined matrix, while the
+per-channel scale leaves 10.9% and the grouped scale 9.3%. So finer scales cost a
+little storage and buy protection from exactly the unevenness trained networks have.
 
 The second question is when the squeezing happens. **Post-training quantisation**
 means training the model normally and squeezing the finished weights, which is what
@@ -240,29 +236,27 @@ example.
 The left panel is what the hard label tells the student about this example, and the
 right panel is what the teacher tells it about the same example.
 
-The example's true class is 5. The hard label is a 1 in one place and a 0 in the other
-five, and that is the whole message. The teacher's raw outputs are +19.76, -2.89,
--3.20, -10.16, -14.66 and +22.30, which the softmax turns into 0.927 for class 5 and
-0.073 for class 0, with the other four effectively zero. So the teacher says something
-the label cannot, which is that this reading is a class 5 but looks a little like a
-class 0 and nothing like the rest. These probabilities are called **soft targets**,
-and measured as information the teacher's answer carries 0.378 bits while the hard
-label carries none beyond naming the class.
+The example's true class is 5, and the hard label is a 1 in one place and a 0 in the
+other five. The teacher's raw outputs are +19.76, -2.89, -3.20, -10.16, -14.66 and
++22.30, which the softmax turns into 0.927 for class 5 and 0.073 for class 0, with the
+other four effectively zero. So the teacher says what the label cannot, which is that
+this reading is a class 5 but looks a little like a class 0 and nothing like the rest.
+These probabilities are called **soft targets**, and the teacher's answer carries 0.378
+bits of information while the hard label carries none beyond naming the class.
 
 ![Grouped bars of the same example's probabilities at temperatures 1, 2, 3, 5 and 8, beside a curve of information in bits against temperature](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/temperature-sweep.svg)
 
 The left panel shows the same teacher answer flattened by five different
 temperatures, and the right panel measures how much it then carries.
 
-The trouble with soft targets is that a well-trained teacher is usually very sure, so
-most of its answers are nearly a 1 and five nearly-zeros, and the extra information
-hides in numbers too small to matter to the training. Dividing the raw outputs by a
-number greater than one before the softmax flattens the answer, and that number is the
-**temperature**. At temperature 1 this example gives 0.927 and 0.073 and carries 0.378
-bits, at temperature 3 it gives 0.699 and 0.300 and carries 0.886 bits, and at
-temperature 8 it gives 0.544 and 0.396 and carries 1.361 bits. The student is trained
-on the flattened answer and then used normally, so the temperature exists only during
-training.
+The trouble is that a well-trained teacher is usually very sure, so most of its answers
+are nearly a 1 and five nearly-zeros, and the extra information hides in numbers too
+small to matter to training. Dividing the raw outputs by a number greater than one
+before the softmax flattens the answer, and that number is the **temperature**. At
+temperature 1 this example gives 0.927 and 0.073 and carries 0.378 bits, at temperature
+3 it gives 0.699 and 0.300 and carries 0.886, and at temperature 8 it gives 0.544 and
+0.396 and carries 1.361. The student is trained on the flattened answer and then used
+normally, so the temperature exists only during training.
 
 ![Two curves of student accuracy against the number of teaching examples, one trained on hard labels and one on the teacher's answers](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/student-against-hard-labels.svg)
 
@@ -333,13 +327,12 @@ The middle road is a pattern regular enough that hardware can be built to skip i
 and the usual one keeps exactly two weights out of every run of four.
 
 In the first group the weights are +0.107, +0.221, +0.188 and +0.143, so the two
-largest are kept and the other two set to zero. This is called 2:4 sparsity, it is
-exactly 50% zeros, and some recent graphics hardware can skip it and run such a matrix
-about twice as fast. It costs 0.873 accuracy against 0.928 for the same share dropped
-freely, so forcing the zeros into a pattern cost 0.055. That is the whole choice: free
-sparsity is cheap in accuracy and worthless in speed, patterned sparsity costs some
-accuracy and pays back in speed, and removing whole channels costs the most and pays
-back on any hardware at all.
+largest are kept and the other two set to zero. This is 2:4 sparsity, it is exactly 50%
+zeros, and some recent graphics hardware can skip it and run such a matrix about twice
+as fast. It costs 0.873 accuracy against 0.928 for the same share dropped freely, so
+the pattern cost 0.055. That is the whole choice, because free sparsity is cheap in
+accuracy and worthless in speed, patterned sparsity costs some accuracy and pays back
+in speed, and removing whole channels costs the most and pays back on any hardware.
 
 ---
 
@@ -357,12 +350,11 @@ is an illustration of what real hardware would give.
 
 The rows that cost nothing are the quantisation ones, because 8-bit and 4-bit weights
 with a scale per channel both score 0.933, and 2-bit weights with quantisation-aware
-training score 0.914 for eight times less memory. Half the weights zeroed freely
-scores 0.928 and saves nothing you can use. Keeping two of every four scores 0.873 and
-would save up to two times on hardware that knows the pattern, which is the one row
-whose saving is an illustration rather than a measurement. Keeping 32 of 48 hidden
-neurons scores 0.904 for two times less of both, and distilling into a smaller student
-scores 0.922 for 20.7 times less memory.
+training score 0.914 for eight times less memory. Half the weights zeroed freely scores
+0.928 and saves nothing you can use. Keeping two of every four scores 0.873 and would
+save up to two times on hardware that knows the pattern, the one row whose saving is an
+illustration rather than a measurement. Keeping 32 of 48 hidden neurons scores 0.904
+for two times less of both, and distilling scores 0.922 for 20.7 times less memory.
 
 ![A scatter of accuracy given up against how many times smaller the model became, with eight methods marked](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/accuracy-lost-against-size-saved.svg)
 

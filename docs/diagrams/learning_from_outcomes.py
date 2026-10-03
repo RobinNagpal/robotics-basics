@@ -2255,7 +2255,7 @@ def make_pairs(eps_list: list[tuple[NDArray[np.int64], float, str]], n: int,
         if i == j:
             continue
         gi, gj = eps_list[i][1], eps_list[j][1]
-        p = 1.0 / (1.0 + np.exp(-(gi - gj) / tau))
+        p = float(_sigmoid(np.array([(gi - gj) / tau]))[0])
         out.append((i, j, int(rng.random() < p)))
     return out
 
@@ -2340,7 +2340,7 @@ def how_many_pairs() -> None:
     agree: list[float] = []
     for n in counts:
         got = []
-        for seed in range(4):
+        for seed in range(8):
             pairs = make_pairs(eps_list, n, 2.0, 200 + seed)
             w = fit_from_preferences(pairs, eps_list)
             sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
@@ -2380,7 +2380,7 @@ def people_make_mistakes() -> None:
         agree = []
         for n in counts:
             got = []
-            for seed in range(4):
+            for seed in range(8):
                 pairs = make_pairs(eps_list, n, tau, 300 + seed)
                 w = fit_from_preferences(pairs, eps_list)
                 sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
@@ -2669,40 +2669,51 @@ def high_score_failed_task() -> None:
 
 
 def the_two_scores_come_apart() -> None:
-    tab = model_reward_tables()
+    """Many policies, trained on several different rewards and stopped at several
+    points, each measured twice: by the learned reward model and by the real job."""
     w, _, _ = reward_model()
     score = _sigmoid(FEAT @ w)
+    sources = [('the learned reward model', model_reward_tables()),
+               ('the true sparse reward', T_TRUE),
+               ('the dense written reward', T_DENSE),
+               ('be near the block', T_DIST)]
     xs: list[float] = []
     ys: list[float] = []
-    for seed in range(6):
-        for n in (200, 400, 800, 1500, 3000, 6000):
-            Q, _, _, _ = q_learn(n, 1.0, seed=320 + seed, eps1=0.05, t=tab)
-            rng = np.random.default_rng(6000 + seed)
-            sc, hit = [], []
-            for _ in range(30):
-                ss, aa, rr, out = rollout(Q, rng, 0.0, W2)
-                sc.append(float(np.mean(score[ss])))
-                hit.append(1.0 if out == 'bin' else 0.0)
-            xs.append(float(np.mean(sc)))
-            ys.append(float(np.mean(hit)))
+    cols: list[str] = []
+    colours = [PURPLE, SLIDE, TEAL, GRIP]
+    for (name, tab), colour in zip(sources, colours):
+        for seed in range(3):
+            for n in (300, 800, 2000, 6000):
+                Q, _, _, _ = q_learn(n, 1.0, seed=320 + seed, eps1=0.1, t=tab)
+                rng = np.random.default_rng(6000 + seed)
+                sc, hit = [], []
+                for _ in range(25):
+                    ss, aa, rr, out = rollout(Q, rng, 0.0, W2)
+                    sc.append(float(np.mean(score[ss])))
+                    hit.append(1.0 if out == 'bin' else 0.0)
+                xs.append(float(np.mean(sc)))
+                ys.append(float(np.mean(hit)))
+                cols.append(colour)
     xa, ya = np.array(xs), np.array(ys)
     top = xa >= np.quantile(xa, 0.75)
     print(f'[come apart] {len(xa)} policies measured; among the quarter with the '
           f'highest model score, the share of attempts that really reach the bin is '
           f'{ya[top].mean():.2f}, against {ya[~top].mean():.2f} for the rest')
-    print(f'[come apart] best model score {xa.max():.3f} belongs to a policy that '
-          f'reaches the bin on {ya[int(np.argmax(xa))]:.2f} of attempts')
-    fig, ax = plt.subplots(figsize=(8.8, 5.4), facecolor='white')
+    print(f'[come apart] the best model score is {xa.max():.3f}, and the policy that '
+          f'earns it reaches the bin on {ya[int(np.argmax(xa))]:.2f} of attempts')
+    fig, ax = plt.subplots(figsize=(9.4, 5.6), facecolor='white')
     _plain(ax)
-    ax.scatter(xa, ya, s=42, color=PURPLE, alpha=0.8, zorder=5)
+    for (name, _), colour in zip(sources, colours):
+        m = [c == colour for c in cols]
+        ax.scatter(xa[m], ya[m], s=46, color=colour, alpha=0.8, zorder=5,
+                   label=f'trained on {name}')
     ax.axvline(float(np.quantile(xa, 0.75)), color=MUTED, ls='--', lw=1.2)
-    ax.text(float(np.quantile(xa, 0.75)) + 0.004, 0.06,
-            'the quarter with the\nhighest model score', fontsize=9, color=MUTED)
     ax.set_xlabel('average score the learned reward model gives the policy', fontsize=10)
     ax.set_ylabel('share of attempts that really reach the bin', fontsize=10)
-    ax.set_ylim(-0.05, 1.08)
-    ax.set_title(f'{len(xa)} policies, each stopped at a different point in training',
-                 fontsize=12, weight='bold', color=INK)
+    ax.set_ylim(-0.08, 1.18)
+    ax.set_title(f'{len(xa)} policies, trained on four different rewards and stopped at '
+                 'four points each', fontsize=11.5, weight='bold', color=INK)
+    ax.legend(fontsize=9, frameon=False, loc='lower left', ncol=2)
     fig.suptitle('A higher score on the learned reward stops meaning a better robot',
                  fontsize=13, weight='bold', color=INK)
     fig.tight_layout()

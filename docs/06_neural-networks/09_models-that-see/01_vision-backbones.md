@@ -177,10 +177,10 @@ came from.
 
 ## 3. Convolutional backbones, and what they still do better
 
-The vision transformer took over most of the ground from about 2021 onwards, but
-it did not take all of it, and a page that left you thinking convolutions are
-finished would be giving bad advice. So this section says what each design is
-given and what each has to learn.
+The vision transformer of the last section took over most of the ground from
+about 2021 onwards, but it did not take all of it, and a page that left you
+thinking convolutions are finished would be giving bad advice. So this section
+says what each design is given and what each has to learn.
 
 ![The picture with four squares round its middle showing what one output number has seen, beside a curve of how that grows with depth](../../images/models-that-see/vision-backbones/receptive-field.svg)
 

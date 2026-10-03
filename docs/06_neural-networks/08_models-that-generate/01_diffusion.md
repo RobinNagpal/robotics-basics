@@ -221,11 +221,11 @@ steps carry most of the fine detail. Here is one step written out in full.
 
 Going back from step 40 to 39 for the point (0.620, 1.050), the network names the noise (0.399, 0.586), the share removed is 0.0224, the new middle is (0.612, 1.040), and fresh noise of spread 0.146 goes on top.
 
-The step barely moves the middle of the point, by less than a centimetre, and
-yet the fresh noise added on top has a spread fourteen times larger than that
-movement, so a single step looks almost like pure randomness and only the
-hundred steps together add up to a shape. That is also why the path a point
-takes is such a wandering one.
+The step barely moves the middle of the point, from (0.620, 1.050) to
+(0.612, 1.040), and yet the fresh noise added on top has a spread of 0.146,
+which is many times that movement, so a single step looks almost like pure
+randomness and only the hundred steps together add up to a shape. That is also
+why the path a point takes is such a wandering one.
 
 ![Two panels of three coloured paths from noise to the arcs, the left one jagged and wandering and the right one smooth, with the travelled distance 17.3 and 1.38 times the straight line](../../images/models-that-generate/diffusion/one-sample-path.svg)
 

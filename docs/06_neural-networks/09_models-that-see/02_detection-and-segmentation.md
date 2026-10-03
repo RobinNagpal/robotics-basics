@@ -5,8 +5,8 @@ the large shared part of a vision model, which reads a picture and turns it into
 numbers, and it ended with the point that the same backbone can serve several
 different jobs because each job only needs its own small head. This page is about
 those jobs. It explains what each one gives back, how a guess is scored against
-the truth, and why the two most common jobs on a robot arm are not the ones a
-beginner usually reaches for.
+the truth, and why the job an arm needs is often not the one a beginner reaches
+for.
 
 The page answers six questions. What are the four different jobs that people run
 together under the word recognition, and which one does an arm actually need?
@@ -75,11 +75,11 @@ pixel with which individual object it belongs to, and that job is called
 Labelling by class puts all 14,515 glass pixels into one region 140 pixels wide, whose middle at (217, 264) lands on no glass at all, while labelling by object gives three regions of 3,009, 5,753 and 5,753 pixels with three usable middles.
 
 The difference between the third job and the fourth is the one that matters on a
-robot arm, and the three glasses show why. Labelling by class puts all 14,515
-glass pixels into a single region 2.8 times the width of one glass, whose middle
-at (217, 264) lands on no glass at all but on the gap between two of them.
-Labelling by object gives three regions with three middles, and each of those is
-a point the arm can actually go to.
+robot arm, and the three glasses show why. The class region is 2.8 times the
+width of one glass, so its middle falls in the gap between two of them, and an
+arm sent to that point would close its fingers on air. Labelling by object
+instead gives three regions with three middles, and each of those is a point the
+arm can actually go to.
 
 ![A bar chart on a log scale of how many numbers each of the four jobs produces for one picture](../../images/models-that-see/detection-and-segmentation/output-sizes.svg)
 

@@ -1,36 +1,33 @@
 # Vision-language-action models
 
 The page before this one, [diffusion and flow policies](02_diffusion-and-flow-policies.md),
-showed how a generative model can write a whole chunk of movement at once, and it left
-one thing unfinished. A diffusion policy or a flow policy is trained on
-demonstrations of one job, so it does that job and nothing else, and if you want the
-arm to do a second job you train a second policy. This page is about the model that
-removes that limit, because it takes a sentence as well as a picture, and the sentence
-says which job to do.
+showed how a generative model can write a whole chunk of movement at once, and it left one
+thing unfinished, because a diffusion policy or a flow policy is trained on demonstrations
+of one job and so does that job and nothing else. This page is about the model that removes
+that limit, since it takes a sentence as well as a picture and the sentence says which job
+to do.
 
-A **vision-language-action model** is one trained model that reads camera pictures and
-a written instruction, and gives back the numbers that move a robot arm. The name is
-just a list of what goes in and what comes out, and it is usually shortened to VLA. The
-point of it is that one model covers many jobs, because the job is named in words
-rather than built into the weights.
+A **vision-language-action model** is one trained model that reads camera pictures and a
+written instruction and gives back the numbers that move a robot arm. The name is a list
+of what goes in and what comes out, it is usually shortened to VLA, and the point of it is
+that one model covers many jobs because the job is named in words rather than built into
+the weights.
 
-This page is for a reader who has read the two pages before it in this chapter, so you
-should already know what a policy is in the robot sense, what behaviour cloning is,
-what an action chunk is, and why a chunk is better than one step at a time. Those words
-are explained on [behaviour cloning and action
-chunks](01_behaviour-cloning-and-action-chunks.md). You should also have read [vision-language
-models](../10_language-and-multimodal-models/03_vision-language-models.md), because the
-body of a vision-language-action model is a vision-language model, and this page does
-not explain that part again.
+This page is for a reader who has read the two pages before it, so you should already know
+what a policy is in the robot sense, what behaviour cloning is and what an action chunk is,
+all of which are explained on [behaviour cloning and action
+chunks](01_behaviour-cloning-and-action-chunks.md). You should also have read
+[vision-language models](../10_language-and-multimodal-models/03_vision-language-models.md),
+because the body of this model is a vision-language model and that part is not explained
+again here.
 
-The page answers four questions. What is this model made of? How is a movement written
-down so that a model built to predict words can produce one? How is it trained so that
-learning to move does not destroy everything else it knew? And what does it really carry
-over to situations it was not trained on, which is the part most often oversold. Every
-number in the pictures is worked out by
+The page answers four questions. What is this model made of? How is a movement written down
+so that a model built to predict words can produce one? How is it trained so that learning
+to move does not destroy what it knew? And what does it really carry over to situations it
+was not trained on? Every number in the pictures is worked out by
 [`docs/diagrams/models_that_act_2.py`](../../diagrams/models_that_act_2.py), and the robot
-episodes are simulated from smooth made-up curves, although everything done to them is
-real arithmetic.
+episodes are simulated from smooth made-up curves, although everything done to them is real
+arithmetic.
 
 ## Contents
 
@@ -57,12 +54,11 @@ arm.
 
 One call takes 525 tokens in and gives back 70 numbers, which are ten steps of seven.
 
-Each camera picture is cut into squares of 14 pixels by 14 pixels, which gives 16 rows of
-16 squares, so 256 for each camera and 512 for the two. The instruction is eleven words,
-which comes to about 12 tokens once an end marker is added, and the six joint readings are
-packed into one more, so the sequence is 525 tokens. What comes out is a chunk of ten
-steps holding six joint movements and one gripper command each, which is 70 numbers and
-covers half a second at 20 commands a second.
+Each camera picture is cut into squares of 14 pixels by 14 pixels, which gives 256 squares
+for each camera and 512 for the two. The instruction comes to about 12 tokens once an end
+marker is added, and the six joint readings are packed into one more, so the sequence is
+525 tokens. What comes out is ten steps holding six joint movements and one gripper
+command each, which is 70 numbers and covers half a second at 20 commands a second.
 
 The reason this is worth doing is that the instruction changes the answer. The next
 picture takes the same cameras and the same joint readings and shows what two different
@@ -82,9 +78,9 @@ keep working, and on how much data each one learns from.
 With twelve tasks and 150 demonstrations each, a separate policy learns from 150 episodes
 while one instruction-conditioned policy learns from all 1,800.
 
-That is 45,000 frames against 540,000, twelve times as many, and the shared model also
-reuses what it learned about one task when it does another. The cost is that it is much
-larger and much slower than a per-task policy, which is what section 7 is about.
+That is 45,000 frames against 540,000, and the shared model also reuses what it learned
+about one task when it does another. The cost is that it is much larger and much slower
+than a per-task policy, which is what section 7 is about.
 
 ---
 
@@ -101,28 +97,26 @@ real shapes through one call.
 
 Every number here follows from the picture size, the patch size and the token width.
 
-Two colour pictures of 224 by 224 pixels are 301,056 numbers, each patch of 14 by 14
-pixels is 588 numbers, and one layer of 588 by 1,024 weights, which is 602,112 weights,
-turns each patch into a token of 1,024 numbers. The words are looked up in a table of
-32,000 by 1,024, which is 32,768,000 numbers. The 525 tokens are then 537,600 numbers, and
-inside every attention layer the model compares every token with every token, which is
-275,625 pairs, and that last count is why the camera resolution is such an expensive
-choice.
+Two colour pictures of 224 by 224 pixels are 301,056 numbers, each patch is 588 numbers,
+and one layer of 602,112 weights turns each patch into a token of 1,024 numbers. The words
+are looked up in a table of 32,000 by 1,024, which is 32,768,000 numbers. The 525 tokens
+are then 537,600 numbers, and inside every attention layer the model compares every token
+with every token, which is 275,625 pairs, and that count is why the camera resolution is
+such an expensive choice.
 
 ![Two bar charts, the left showing tokens rising from 525 to 4,621 as the picture grows from 224 to 672 pixels, the right showing attention work rising to 77.5 times the starting cost](../../images/models-that-act/vision-language-action-models/resolution-and-tokens.svg)
 
 Going from 224 to 672 pixels a side multiplies the tokens by about nine and the attention
 work by 77.5.
 
-Doubling the width of the picture puts four times as many patches in, and because
-attention compares every pair of tokens, four times as many tokens is about sixteen times
-as much attention work. A robot that must see a small screw pays for that sharpness at
-every single call, which is why these models usually take one wide view of the scene and
-one close view from a camera on the wrist rather than one very sharp view of everything.
+Doubling the width of the picture puts four times as many patches in, and because attention
+compares every pair, four times as many tokens is about sixteen times as much work. A robot
+that must see a small screw pays for that sharpness at every call, which is why these models
+usually take one wide view of the scene and one close view from a wrist camera rather than
+one very sharp view of everything.
 
 The new part is the output, because something has to turn the model's last token of 1,024
-numbers into the 70 numbers of a chunk, and the choice of how is the real design split in
-this family.
+numbers into the 70 numbers of a chunk, and the choice of how is the real design split.
 
 ![A branch diagram from the model's last token into two boxes, one describing a 32,768,000-weight output layer producing 70 tokens one after another, the other a 364,358-weight head producing all 70 numbers at once](../../images/models-that-act/vision-language-action-models/two-ways-to-get-an-action.svg)
 
@@ -139,12 +133,11 @@ time.
 ## 3. Way one: every action number becomes a token
 
 The first way starts from a problem of types, because a language model chooses one entry
-from a fixed list while a joint movement is a number that can take any value.
-**Action tokenisation** fixes that mismatch by chopping the range of each action number
-into a fixed set of bins and treating each bin as one entry in the vocabulary, so that
-saying "bin 137" is the same kind of act as saying the word "bowl". The first thing to
-settle is the range the bins cover, and it is settled from the training data rather than
-from the arm's data sheet.
+from a fixed list while a joint movement can take any value. **Action tokenisation** fixes
+that by chopping the range of each action number into bins and treating each bin as one
+entry in the vocabulary, so that saying "bin 137" is the same kind of act as saying the
+word "bowl". The range the bins cover is settled from the training data rather than from
+the arm's data sheet.
 
 ![A histogram of one joint's commanded movement with two red lines at the 1st and 99th percentile, beside a close-up histogram crossed by twelve evenly spaced bin edges](../../images/models-that-act/vision-language-action-models/binning-one-dimension.svg)
 
@@ -193,31 +186,29 @@ already rebuilds the chunk to 0.110 degrees using 24 tokens instead of 300. Seve
 systems compress the chunk this way before tokenising it, and that is the honest answer to
 the token count rather than fewer bins.
 
-So the case for action tokenisation is that it is the simplest thing that can be done, it
-needs no new machinery, it trains with the loss the language model already used, and
-because actions live in the same vocabulary as words the model can take robot data and
-text data in the same batch. Its cost is one pass through the whole model for every single
-number it produces.
+So action tokenisation is the simplest thing that can be done, it needs no new machinery,
+it trains with the loss the language model already used, and because actions live in the
+same vocabulary as words the model can take robot data and text in the same batch. Its
+cost is one pass through the whole model for every number it produces.
 
 ---
 
 ## 4. Way two: a small continuous action head
 
 The alternative keeps the same body and replaces the output. Instead of naming a bin, a
-small extra network called an **action head** takes the model's last token and produces
-all 70 numbers at once, as ordinary numbers rather than choices from a list. The head is
-almost always generative, built with flow matching or diffusion, for the reason given on
-[diffusion and flow policies](02_diffusion-and-flow-policies.md): a plain network trained
-with squared error answers an ambiguous situation by averaging the possible movements, and
-the average of two good movements is usually a bad one.
+small extra network called an **action head** takes the model's last token and produces all
+70 numbers at once. The head is almost always generative, built with flow matching or
+diffusion, for the reason given on [diffusion and flow
+policies](02_diffusion-and-flow-policies.md): a plain network trained with squared error
+answers an ambiguous situation by averaging the possible movements, and the average of two
+good movements is usually a bad one.
 
-A flow-matching head works by starting from a list of random numbers and walking it,
-in a few equal steps, into a list of action numbers, following a direction the head has
-learned to predict. The head used in the pictures below is real: it is a small network
-trained in NumPy on the simulated chunks, by the method described on [flow matching and
-other generators](../08_models-that-generate/02_flow-matching-and-other-generators.md).
-What it is told about the situation is the ten actions just before the chunk, which
-stands in for the pictures and the instruction a real model would be given.
+A flow-matching head starts from a list of random numbers and walks it, in a few equal
+steps, into a list of action numbers, following a direction it has learned to predict. The
+head in the pictures below is real, a small network trained in NumPy on the simulated
+chunks by the method described on [flow matching and other
+generators](../08_models-that-generate/02_flow-matching-and-other-generators.md), and what
+it is told about the situation is the ten actions just before the chunk.
 
 ![Two charts, the left showing one noise sample walked into an action in one, two, four and thirty-two steps, the right showing twenty-four different noise samples converging towards a narrow band](../../images/models-that-act/vision-language-action-models/flow-head-path.svg)
 
@@ -256,13 +247,11 @@ Binning moves this chunk by 0.0073 degrees, while the head's own chunk sits 0.32
 from the demonstrated one, and over 200 situations it lands 0.315 degrees away a joint a
 step.
 
-That comparison is worth reading carefully, because it says the binned version is the one
-that copies a given chunk most exactly. The head is not trying to copy a given chunk; it
-is drawing one of the movements that fit the situation, and its wobble is partly the price
-of being able to choose and partly the price of a small head trained for a few seconds in
-NumPy rather than a large one trained for days. So the honest summary of the two ways is
-that tokens are simpler, copy more exactly and train with no new machinery, while the head
-is roughly ten times faster in practice and handles ambiguity properly, and most recent
+The binned version copies a given chunk most exactly, which is true and not the point,
+because the head is not trying to copy a chunk but to draw one of the movements that fit
+the situation, and its wobble is partly the price of choosing and partly the price of a
+small head trained for seconds in NumPy. So tokens are simpler and copy more exactly,
+while the head is roughly ten times faster and handles ambiguity properly, and most recent
 systems take the head.
 
 ---
@@ -270,15 +259,12 @@ systems take the head.
 ## 5. Co-training: robot episodes and web pictures together
 
 Both ways of producing an action leave the same question open, which is how to train the
-thing without ruining it. The body knows what a bowl is and what the word "left" means
-because it was trained on an enormous amount of ordinary pictures and text, and training
-it on robot episodes alone destroys exactly that, for the reason set out under
-catastrophic forgetting on [fine-tuning and
-adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md): the weights that
-held the old skill are free to move, and gradient descent moves them wherever the new job
-wants them. The effect is easy to measure on a small simulated version of the same
-situation, where one network is first trained on a general job and then taught a second
-one.
+thing without ruining it. The body knows what a bowl is because it was trained on an
+enormous amount of ordinary pictures and text, and training it on robot episodes alone
+destroys exactly that, for the reason set out under catastrophic forgetting on
+[fine-tuning and adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md).
+The effect is easy to measure on a small simulated version of the same situation, where
+one network is trained on a general job and then taught a second one.
 
 ![Two charts of accuracy against training steps, the left showing the general job falling from 96 to 59 per cent while the robot job rises, the right showing both staying high when a quarter of the batches are general data](../../images/models-that-act/vision-language-action-models/forgetting-curve.svg)
 
@@ -359,13 +345,13 @@ With 25 of its own examples arm B does better with the pool, 7.61 degrees agains
 and with 50 the two are level, while from 100 examples upwards its own data alone is the
 better teacher.
 
-That is the honest shape of the result in this small experiment, and it matches what the
-method is for. Pooling other robots' episodes buys the most where a new robot has almost
-no data of its own, because the shared part of the job, which here is working out where
-the object is from the camera, gets learned from everybody's data at once. Once the new
-robot has a few hundred episodes, the shared network has to split its capacity between
-bodies and that costs more than the pooling gains. So cross-embodiment data starts a new
-robot quickly rather than making a well-served robot better.
+That is the honest shape of the result in this small experiment. Pooling buys the most
+where a new robot has almost no data of its own, because the shared part of the job, which
+here is working out where the object is from the camera, gets learned from everybody's
+data at once. Once the new robot has a few hundred episodes the shared network must split
+its capacity between bodies, and that costs more than the pooling gains, so
+cross-embodiment data starts a new robot quickly rather than making a well-served robot
+better.
 
 ---
 
@@ -383,11 +369,11 @@ Where the training objects covered 36 per cent of the camera view the error stay
 0.36 and 0.47 degrees inside that area, and rises to 2.62 and then 13.07 degrees outside
 it.
 
-So "the same task with the object moved" is two different claims. Moved within the patch
-of table the demonstrations covered, the model is fine, and that is what people see in a
-demonstration video. Moved to a corner nobody ever put an object in, it is thirty times
-worse, and no wording of the instruction fixes that. The second change is a new object of
-a kind the model has seen, which separates cleanly from a new kind altogether.
+So "the same task with the object moved" is two claims. Moved within the patch of table the
+demonstrations covered, the model is fine, and that is what people see in a demonstration
+video. Moved to a corner nobody ever put an object in, it is thirty times worse. The second
+change is a new object of a kind the model has seen, which separates cleanly from a new
+kind altogether.
 
 ![A scatter of object widths and heights showing two separated clusters, beside a bar chart of grasp error at 0.08 cm for a new object of the trained kind, 1.30 cm for the untrained kind and 0.12 cm once 150 of them are added](../../images/models-that-act/vision-language-action-models/new-object-kind.svg)
 
@@ -409,12 +395,11 @@ the training instructions, while two new tasks reuse only 40 and 50 per cent.
 
 The word count is a crude stand-in rather than a measurement of what the model does, and
 the real reason rewording works is that the language half was trained on far more text
-than the robot data holds, so it already treats "place the red block into the bowl" and
-"put the red block in the bowl" as near neighbours. This is the one place where the web
-pretraining pays off directly. The fourth change is a genuinely new task, and today it
-does not work, because a model shown twelve tasks does not do a thirteenth for being asked
-nicely, and what people call zero-shot success here is almost always one of the first
-three cases rather than the fourth.
+than the robot data holds, so it already treats those sentences as near neighbours. This
+is where the web pretraining pays off directly. The fourth change is a genuinely new task,
+and today it does not work, because a model shown twelve tasks does not do a thirteenth
+for being asked nicely, and what people call zero-shot success here is almost always one
+of the first three cases.
 
 ![A five-row table of changes, verdicts and reasons, with three rows marked as not working and two as working](../../images/models-that-act/vision-language-action-models/four-cases.svg)
 
@@ -430,16 +415,15 @@ three things people do about it.
 At 100 commands a second the chunk must cover at least 31 steps with action tokens, 3.3
 with the head and 0.3 with a distilled model ten times faster.
 
-The first fix is a longer chunk, which costs reaction time because the arm is running on a
+The first fix is a longer chunk, which costs reaction time because the arm is acting on a
 picture that is by then old. The second is a smaller model trained to copy the big one,
-which is the distillation described on [making a model smaller and
-faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md), and which
+the distillation described on [making a model smaller and
+faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md), which
 costs some of the big model's knowledge. The third, on the right of the picture, runs the
-big model slowly to decide what to aim for and a small fast policy underneath it to move
-the joints, so the big model fires about once for every 31 steps of the fast one. That
-split is now the usual arrangement, and it is what makes the next page's subject useful,
-because a model that decides what to aim for is close to a model that predicts what will
-happen.
+big model slowly to decide what to aim for and a small fast policy underneath to move the
+joints, so the big model fires about once for every 31 steps of the fast one. That split
+is now usual, and it leads straight into the next page, because a model that decides what
+to aim for is close to one that predicts what will happen.
 
 ---
 
@@ -466,12 +450,11 @@ happen.
 
 ## 9. Using it in Python
 
-Section 3 measured what binning does to an action and section 4 measured what a flow head
-does instead, and both are a handful of lines of real code. The lines below use NumPy and
-PyTorch to do the two things on a batch of chunks, so you can see that the binning is
-arithmetic rather than a library and that the head is an ordinary small network. No
-library gives you a whole vision-language-action model as one call, so this shows the
-output end, which is the part that differs between designs.
+Section 3 measured what binning does to an action and section 4 what a flow head does
+instead, and both are a handful of lines of real code. The lines below use NumPy and
+PyTorch, so you can see that binning is arithmetic rather than a library and that the head
+is an ordinary small network. No library gives you a whole vision-language-action model as
+one call, so this shows the output end, which is the part that differs between designs.
 
 ```python
 import numpy as np
@@ -513,21 +496,20 @@ print('chunk shape from the head:', tuple(sample(torch.zeros(4, 1024)).shape))
 PyTorch gives you the layers, the gradients and the optimiser, and a library such as
 Hugging Face `transformers` gives you the vision-language model that would supply the
 1,024-number context in the last line. What no library decides is everything this page has
-been about. You choose the range the bins cover, and section 3 showed that this costs
-millimetres while the number of bins costs almost nothing. You choose between the two
-output styles, and section 4 showed that is worth about ten times in speed. You choose the
-mixture of robot and web data, and section 5 showed that five per cent of the old data is
-the difference between keeping and losing what the model knew.
+been about: you choose the range the bins cover, which section 3 showed costs millimetres
+while the number of bins costs almost nothing; you choose between the two output styles,
+which section 4 showed is worth about ten times in speed; and you choose the mixture of
+robot and web data, which section 5 showed is the difference between keeping and losing
+what the model knew.
 
-The subtle line above is the walk inside `sample`, which starts from random numbers and
-takes equal steps in a direction the head predicts. The number of steps is the knob
-measured in section 4: one step leaves the chunk 0.615 degrees out and eight steps leaves
-it 0.035 degrees out. Training that head needs the flow-matching loss described on [flow
-matching and other
+The subtle line is the walk inside `sample`, which starts from random numbers and takes
+equal steps in a direction the head predicts, and the number of steps is the knob measured
+in section 4. Training that head needs the flow-matching loss described on [flow matching
+and other
 generators](../08_models-that-generate/02_flow-matching-and-other-generators.md), which is
-a handful of lines more: draw a random list, mix it with a real chunk in some proportion,
-and train the head to predict the difference between them.
+a few lines more: draw a random list, mix it with a real chunk in some proportion, and
+train the head to predict the difference.
 
-None of the code above is the hard part. The hard part is collecting the demonstrations,
-and the measurements in section 7 say why, because what the model can do is set almost
-entirely by where the objects were when somebody recorded them.
+None of this code is the hard part. The hard part is collecting the demonstrations, and
+section 7 says why, because what the model can do is set almost entirely by where the
+objects were when somebody recorded them.

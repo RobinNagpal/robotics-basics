@@ -22,10 +22,10 @@ section 2 builds that from nothing.
 Every number in the pictures is worked out by
 `docs/diagrams/pretraining_and_adapting_2.py`. The parameter counts and memory sizes
 are exact arithmetic on one stated transformer shape, 32 blocks of width 4096 with a
-feed-forward inner width of 11008 and a vocabulary of 32000. The memory bandwidth,
-the arithmetic rate and the size of the robot's memory are stated assumptions, and
-the pictures say so. The quantisation, distillation and pruning experiments are real
-runs on a small network trained in NumPy on simulated readings of six objects.
+feed-forward inner width of 11008 and a vocabulary of 32000. The memory bandwidth, the
+arithmetic rate and the robot's memory are stated assumptions. The quantisation,
+distillation and pruning experiments are real runs on a small network trained in NumPy
+on simulated readings of six objects.
 
 ## Contents
 
@@ -54,15 +54,15 @@ The four bars are the same model stored four ways, and the two lines are a small
 robot computer with 8 GiB of memory shared with everything else and a desktop
 graphics card with 24 GiB.
 
-Stored at 32 bits a weight the model needs 25.10 GiB, which fits on neither. At 16
-bits it needs 12.55 GiB, which fits on the card but not on the robot. At 8 bits, plus
-a small allowance for the scales that section 3 explains, it needs 6.47 GiB, which
-fits inside 8 GiB with very little room for anything else. At 4 bits it needs 3.33
-GiB, the first size that leaves the robot room for its pictures, its own program and
-the model's working memory at once.
+Stored at 32 bits a weight the model needs 25.10 GiB, which fits on neither, and at 16
+bits it needs 12.55 GiB, which fits on the card but not the robot. At 8 bits, plus a
+small allowance for the scales that section 3 explains, it needs 6.47 GiB, which fits
+inside 8 GiB with very little room for anything else, and at 4 bits it needs 3.33 GiB,
+the first size that leaves the robot room for its pictures, its own program and the
+model's working memory at once.
 
 Memory is not only a question of fitting, because the model has to be read as well as
-stored, and reading it is usually what sets the speed.
+stored, and reading it usually sets the speed.
 
 ![Two bar charts: the time to read every weight once at each precision, and the words a second that allows](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/bandwidth-tokens-per-second.svg)
 
@@ -70,12 +70,12 @@ Writing one word with a transformer reads every weight in the model exactly once
 the time that takes is simply the size of the weights divided by how fast the machine
 can read memory, assumed here to be 100 GB a second.
 
-At 16 bits a weight the model is 13.48 GB, so reading it once takes 134.8 ms, which
-allows at best 7.4 words a second. At 8 bits it takes 69.5 ms and allows 14.4 words a
-second, and at 4 bits it takes 35.8 ms and allows 27.9. Nothing in that calculation
-involves arithmetic at all, which is the point: when a model writes one word at a
-time it is usually waiting for memory rather than for multiplication, and that is why
-storing the weights in fewer bits makes it faster as well as smaller.
+At 16 bits a weight the model is 13.48 GB, so reading it once takes 134.8 ms and
+allows at best 7.4 words a second, while at 8 bits it takes 69.5 ms and allows 14.4,
+and at 4 bits it takes 35.8 ms and allows 27.9. Nothing in that calculation involves
+arithmetic at all, which is the point, because a model writing one word at a time is
+usually waiting for memory rather than for multiplication, and that is why fewer bits
+makes it faster as well as smaller.
 
 ![Two bar charts: the milliseconds a control loop leaves at 5, 10, 30 and 50 Hz, and the words of this model that fits in](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/latency-budget.svg)
 
@@ -83,12 +83,11 @@ The left panel is how long one decision may take if the arm asks for a new comma
 given number of times a second, and the right panel turns that into words of this
 model, assuming the robot's accelerator does 20 TFLOP a second.
 
-A forward pass through this model costs about 13.5 GFLOP for each word. A control
-loop running 10 times a second leaves 100 ms, which is 2,000 GFLOP, which is about
-148 words. A loop running 30 times a second leaves 33 ms, which is about 49 words,
-and that is the whole budget, with nothing left for the camera, the planner or the
-safety checks. So a large model cannot sit inside a fast control loop and has to be
-called less often with its answers reused, which is one of the reasons the
+A forward pass costs about 13.5 GFLOP for each word, so a loop running 10 times a
+second leaves 100 ms, which is 2,000 GFLOP or about 148 words, and a loop running 30
+times a second leaves 33 ms, which is about 49 words with nothing left for the camera,
+the planner or the safety checks. So a large model cannot sit inside a fast control
+loop and has to be called less often with its answers reused, which is one reason the
 action-chunking idea exists in [models that
 act](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md).
 
@@ -113,16 +112,16 @@ stores only that whole number.
 Both lines cover the same range, from -0.57539 to +0.57539, and the only difference
 is how finely it is cut.
 
-A 4-bit signed integer can hold the whole numbers from -7 to +7, which is 15 levels,
-so the step is 0.57539 divided by 7, which is 0.082199. An 8-bit signed integer can
-hold -127 to +127, which is 255 levels, so its step is 0.57539 divided by 127, which
-is 0.004531. The number that every integer is multiplied by to get back a weight is
-called the **scale**, and here it is the step size itself.
+A 4-bit signed integer holds the whole numbers from -7 to +7, which is 15 levels, so
+the step is 0.57539 divided by 7, which is 0.082199, while an 8-bit integer holds -127
+to +127, which is 255 levels and a step of 0.004531. The number every integer is
+multiplied by to get a weight back is called the **scale**, and here it is the step
+size itself.
 
 ![48 real weights drawn as points with the 15 four-bit levels as horizontal gridlines, and the read-back value beside each weight](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/weights-and-levels.svg)
 
-Each blue point is a weight as it was trained, and each red square is where that
-weight ends up once it has been turned into a 4-bit integer and back again.
+Each blue point is a weight as it was trained, and each red square is where it ends up
+once it has been turned into a 4-bit integer and back again.
 
 Take the first weight, which is +0.1071. Dividing by the 4-bit step of 0.082199 gives
 1.30, which rounds to the integer 1, so what is stored is the single number 1, and
@@ -139,9 +138,9 @@ Each pair of bars is one weight, and the bar is how far the read-back value is f
 the value that training left there.
 
 At 4 bits the worst weight is out by 0.040540 and the root-mean-square error over the
-48 weights is 0.024840. At 8 bits the worst is out by 0.002239 and the
-root-mean-square error is 0.001341, which is 19 times smaller. That ratio is not an
-accident, because every extra bit doubles the number of levels and so halves the step.
+48 is 0.024840, while at 8 bits the worst is out by 0.002239 and the root-mean-square
+error is 0.001341, which is 19 times smaller. That ratio is no accident, because every
+extra bit doubles the number of levels and so halves the step.
 
 ![A log plot of root-mean-square error against the number of bits kept, from 2 bits to 10](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/error-vs-bits.svg)
 
@@ -159,8 +158,8 @@ instead, because a network can absorb a surprising amount of noise in its weight
 ## 3. Where the scale comes from, and when to choose it
 
 Section 2 used one scale for one column of weights, and that was a choice rather than
-a necessity, so this section shows what the choice is worth and then asks a second
-question: whether the squeezing should happen after training or during it.
+a necessity, so this section shows what the choice is worth and then asks whether the
+squeezing should happen after training or during it.
 
 ![Two bar charts of the largest weight in each of 48 channels, once as trained and once with a single channel made eight times louder](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/per-channel-scales.svg)
 
@@ -202,18 +201,17 @@ The two lines are the same small network measured on the same test set, and the
 dashed line is what it scored before anything was squeezed.
 
 The network scores 0.933 in full precision. Squeezed after training with one scale
-per channel, it still scores 0.933 at 8 bits, 0.933 at 4 bits and 0.920 at 3 bits,
-and only at 2 bits does it fall to 0.828. Trained with the squeezing switched on it
-scores 0.927 at 3 bits and 0.914 at 2 bits, so the extra work is worth nothing at all
-until the weights get very small indeed, and then it is worth 0.086. That is the
-honest shape of this trade: post-training quantisation is nearly free and needs no
-training run, so it is what you reach for first, and quantisation-aware training is
-what you reach for when 4 bits is not small enough.
+per channel it still scores 0.933 at 8 bits, 0.933 at 4 bits and 0.920 at 3 bits, and
+only at 2 bits does it fall to 0.828, while trained with the squeezing switched on it
+scores 0.927 at 3 bits and 0.914 at 2. So the extra work is worth nothing until the
+weights get very small indeed, and then it is worth 0.086, which means post-training
+quantisation is what you reach for first and quantisation-aware training is what you
+reach for when 4 bits is not small enough.
 
 ![Two panels: accuracy against bits for three choices of scale, and accuracy at 4 bits for four ways of setting the range](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/scale-and-clipping-accuracy.svg)
 
-The left panel repeats the choice of scale as accuracy rather than as error, and the
-right panel asks where the range should be cut off.
+The left panel repeats the choice of scale as accuracy rather than error, and the
+right asks where the range should be cut off.
 
 Measured as accuracy, the choice of scale makes no difference down to 4 bits, where a
 shared scale gives 0.928 against 0.933 for a scale per channel, and an enormous
@@ -274,13 +272,13 @@ only difference being what it was told to aim at, and the dashed line is the tea
 it is copying.
 
 With 20 examples the student reaches 0.750 from hard labels and 0.812 from the
-teacher's answers, and with 40 examples it reaches 0.844 and 0.895. With 640 examples
-the two meet at 0.920 and 0.922. That is the whole story of distillation in one
-picture: the teacher's answer carries more information per example, so it is worth
-most when examples are few, and it is worth nothing once there are enough examples
-for the hard labels to say the same thing. The second useful consequence is that the
-examples used for distillation need no labels at all, because the teacher supplies
-the target, so you can distil on any pile of unlabelled recordings you happen to have.
+teacher's answers, with 40 it reaches 0.844 and 0.895, and with 640 the two meet at
+0.920 and 0.922. That is the whole story in one picture, because the teacher's answer
+carries more information per example, so it is worth most when examples are few and
+worth nothing once there are enough for the hard labels to say the same thing. The
+second useful consequence is that distillation examples need no labels at all, since
+the teacher supplies the target, so you can distil on any pile of unlabelled
+recordings you have.
 
 ![Three bar charts comparing the teacher and the student on parameters, multiply-adds and accuracy](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/teacher-and-student-size.svg)
 
@@ -355,18 +353,17 @@ sequence.
 ![A table of eight methods with their accuracy, accuracy given up, memory saved, arithmetic saved and where the number came from](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/method-summary-table.svg)
 
 Read each row as one thing done to the same 3,270-parameter network, whose own
-accuracy is 0.933, with the last column saying whether the saving was measured here
-or is an illustration of what real hardware would give.
+accuracy is 0.933, with the last column saying whether the saving was measured here or
+is an illustration of what real hardware would give.
 
 The rows that cost nothing are the quantisation ones, because 8-bit and 4-bit weights
-with a scale per channel both score 0.933, for two times and four times less memory,
-and 2-bit weights with quantisation-aware training score 0.914 for eight times less.
-Half the weights zeroed freely scores 0.928 and saves nothing you can use. Keeping
-two weights of every four scores 0.873 and would save up to two times on hardware
-that knows the pattern, which is the one row whose saving is an illustration rather
-than a measurement. Keeping 32 of 48 hidden neurons scores 0.904 for two times less
-of both, and distilling into a smaller student scores 0.922 for 20.7 times less
-memory.
+with a scale per channel both score 0.933, and 2-bit weights with quantisation-aware
+training score 0.914 for eight times less memory. Half the weights zeroed freely
+scores 0.928 and saves nothing you can use. Keeping two of every four scores 0.873 and
+would save up to two times on hardware that knows the pattern, which is the one row
+whose saving is an illustration rather than a measurement. Keeping 32 of 48 hidden
+neurons scores 0.904 for two times less of both, and distilling into a smaller student
+scores 0.922 for 20.7 times less memory.
 
 ![A scatter of accuracy given up against how many times smaller the model became, with eight methods marked](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/accuracy-lost-against-size-saved.svg)
 
@@ -408,29 +405,26 @@ way to know is to time it.
 - [Diffusion](../08_models-that-generate/01_diffusion.md) is the next page, and it
   starts a new chapter on models that generate something rather than name it.
 - [Fine-tuning and adapters](03_fine-tuning-and-adapters.md) is the page before this
-  one, and its QLoRA section is the clearest example of quantisation being used for
-  something other than deployment.
+  one, and its QLoRA section uses quantisation for training rather than deployment.
 - [Scale, data and compute](02_scale-data-and-compute.md) explains the FLOP counts
-  and the graphics card behind section 1's speed arithmetic.
+  behind section 1's speed arithmetic.
 - [Running and evaluating a
   model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md) covers
-  what happens after this page, which is exporting the squeezed model to a runtime
-  and measuring it honestly.
+  what happens next, which is exporting the squeezed model and measuring it honestly.
 - [Vision backbones](../09_models-that-see/01_vision-backbones.md) is where the
-  teacher and student in section 4 usually come from in a robot, because a small
-  distilled vision backbone is the most common thing to put on an arm.
+  teacher and student of section 4 usually come from, because a small distilled vision
+  backbone is the most common thing to put on an arm.
 - [Running a model on a
   robot](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
-  in the models catalogue gives the same subject from the robot's side, with the real
-  hardware and the real deadlines.
+  in the models catalogue gives the same subject from the robot's side.
 
 ---
 
 ## 8. Using it in Python
 
-Section 2 worked out the step size and the integers by hand, and this section does
-the same with PyTorch, because the arithmetic is short enough to write out and seeing
-it written removes most of the mystery from the word quantisation.
+Section 2 worked out the step size and the integers by hand, and this section does the
+same with PyTorch, because seeing the arithmetic written out removes most of the
+mystery from the word quantisation.
 
 ```python
 import torch
@@ -460,23 +454,21 @@ print([f'{v:.3f}' for v in torch.softmax(logits / 3, 0)])
 # ['0.300', '0.000', '0.000', '0.000', '0.000', '0.700']
 ```
 
-The first block is section 2 exactly, and the printed integers and the printed worst
-error are the same numbers the pictures carry. The second block is section 3's
-comparison, run on a random matrix rather than a trained one, so the two printed
-fractions will not match the page's measured 51.9% and 10.9%, but the gap between
-them will be of the same kind and in the same direction. The third block is section
-4's example, and the two printed lists are the first and the third row of the
-temperature picture, with the last digit differing because the teacher's raw outputs
-have been written here to two decimal places.
+The first block is section 2 exactly, and its printed integers and worst error are the
+numbers the pictures carry. The second is section 3's comparison, run on a random
+matrix rather than a trained one, so the printed fractions will not match the measured
+51.9% and 10.9%, although the gap between them will be of the same kind. The third is
+section 4's example, and the two printed lists are the first and third rows of the
+temperature picture, with the last digit differing because the raw outputs are written
+here to two decimal places.
 
-What the libraries do is everything above, written out efficiently and for a whole
-model at once. In PyTorch the usual route is `torch.ao.quantization` for 8-bit work,
-`bitsandbytes` for the 4-bit weights that the last page's QLoRA uses, and an export to
-a runtime such as ONNX Runtime or TensorRT when the model goes on a robot. For
-distillation there is no special library to speak of, because the training loop is an
-ordinary one with a different target, and `torch.nn.utils.prune` will set weights to
-zero while leaving the shapes alone, so the actual shrinking of the matrices is
-something you do yourself.
+What the libraries do is all of that, written out efficiently and for a whole model at
+once. In PyTorch the usual route is `torch.ao.quantization` for 8-bit work,
+`bitsandbytes` for the 4-bit weights QLoRA uses, and an export to a runtime such as
+ONNX Runtime or TensorRT when the model goes on a robot. Distillation needs no special
+library, because the training loop is an ordinary one with a different target, and
+`torch.nn.utils.prune` sets weights to zero while leaving the shapes alone, so the
+actual shrinking of the matrices is something you do yourself.
 
 What you still decide is the part no library can. You choose how many bits, and
 section 3 showed that 8 is free, 4 is nearly free and 2 needs a training run. You

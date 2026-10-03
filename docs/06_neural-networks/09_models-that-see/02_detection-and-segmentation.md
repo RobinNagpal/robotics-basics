@@ -346,8 +346,9 @@ A mask is not a shape or an outline inside the computer. It is a grid of numbers
 the same size as the region it describes, each between 0 and 1, saying how sure
 the model is that this pixel is part of the object. Cutting at 0.5 turns them
 into zeros and ones, and the window above shows that happening at the mug's left
-edge, where the numbers climb from 0.04 to 0.81 across eight pixels. The cut mask
-and the true one agree on 8,086 of the 8,265 pixels that either of them claims.
+edge, where each row climbs from near 0 on the table side to above 0.6 on the mug
+side across eight pixels. The cut mask and the true one agree on 8,086 of the
+8,265 pixels that either of them claims.
 
 ![A row of boxes showing the mask head, from the detector's box through four convolutions to the stretch back to the box](../../images/models-that-see/detection-and-segmentation/mask-head.svg)
 

@@ -922,11 +922,12 @@ def error_by_time() -> None:
     _plain(ax)
     ax.plot(ts, errs, color=GRIP, lw=2.4)
     ax.axhline(1.0, color=MUTED, ls='--', lw=1.2)
-    ax.text(3, 1.03, 'what guessing zero would score', fontsize=9, color=MUTED)
+    ax.text(55, 1.03, 'what guessing zero would score', fontsize=9, color=MUTED)
     for t in (1, 25, 50, 75, 100):
         ax.plot([t], [errs[t - 1]], marker='o', ms=6, color=PURPLE)
-        ax.text(t + (4 if t == 1 else 0), errs[t - 1] + 0.035,
-                f'{errs[t - 1]:.2f}', ha='center', fontsize=9, color=PURPLE)
+        lab = f'{errs[t - 1]:.2f}' if errs[t - 1] >= 0.01 else f'{errs[t - 1]:.3f}'
+        ax.text(t + (4 if t == 1 else 0), errs[t - 1] + 0.05, lab, ha='center',
+                fontsize=9, color=PURPLE)
     ax.set_xlabel('step t the network is asked about', fontsize=9.5)
     ax.set_ylabel('average squared error of the named noise', fontsize=9.5)
     ax.set_ylim(0, 1.2)

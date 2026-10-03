@@ -96,12 +96,21 @@ def _arrow(ax: Axes, xy_from: tuple[float, float], xy_to: tuple[float, float],
                                 shrinkA=2, shrinkB=2))
 
 
+def _sigmoid(x: Arr) -> Arr:
+    out = np.empty_like(x)
+    pos = x >= 0
+    out[pos] = 1.0 / (1.0 + np.exp(-x[pos]))
+    e = np.exp(x[~pos])
+    out[~pos] = e / (1.0 + e)
+    return out
+
+
 def _silu(x: Arr) -> Arr:
-    return x / (1.0 + np.exp(-x))
+    return x * _sigmoid(x)
 
 
 def _dsilu(x: Arr) -> Arr:
-    s = 1.0 / (1.0 + np.exp(-x))
+    s = _sigmoid(x)
     return s * (1.0 + x * (1.0 - s))
 
 
@@ -1309,6 +1318,7 @@ BOX: tuple[float, float, float, float] = (16.0, 24.0, -5.0, 5.0)
 GOAL2: Arr = np.array([40.0, 0.0])
 OBST_STEPS: int = 120
 CHUNK2: int = 32                  # steps the policy works out at once
+SPLIT: float = 10.0               # how far along the reach the two ways part
 EXEC2: int = 8                    # steps it plays before working out the next
 ADIM: int = CHUNK2 * 2            # numbers in one chunk
 
@@ -1322,6 +1332,11 @@ def _obst_profile(n: int, g: float, hesitate: bool = True) -> Arr:
     return (u - u[0]) / (u[-1] - u[0])
 
 
+def _bump(u: Arr) -> Arr:
+    """Zero for the first quarter of the reach, then a swing out and back."""
+    return np.exp(-((u - 0.5) / 0.17) ** 2)
+
+
 def obstacle_demo(rng: np.random.Generator, side: float | None = None,
                   n: int = OBST_STEPS) -> tuple[Arr, Arr, float]:
     start = np.array([0.0, 0.0]) + rng.normal(0, 0.5, 2)
@@ -1331,7 +1346,7 @@ def obstacle_demo(rng: np.random.Generator, side: float | None = None,
     u = _obst_profile(n, rng.normal(1.0, 0.08))
     d = goal - start
     perp = np.array([-d[1], d[0]]) / np.linalg.norm(d)
-    pos = start + u[:, None] * d + arc * np.sin(np.pi * u)[:, None] * perp
+    pos = start + u[:, None] * d + arc * _bump(u)[:, None] * perp
     pos = pos + _tremor(rng, n + 1, 0.22)
     return pos, np.diff(pos, axis=0), s
 
@@ -1466,7 +1481,7 @@ class Policies:
         self.diff = Mlp([ADIM + 2 + TEMB, hid, hid, ADIM], seed=1)
         self.flow = Mlp([ADIM + 2 + TEMB, hid, hid, ADIM], seed=2)
         self.mean = Mlp([2, hid, hid, ADIM], seed=4)
-        steps, batch = 5000, 256
+        steps, batch = 10000, 256
         self.losses: dict[str, list[float]] = {'diffusion': [], 'flow': [], 'averaging': []}
         if CACHE is not None and CACHE.exists():
             z = np.load(CACHE)
@@ -1524,7 +1539,8 @@ class Policies:
             ab_t, ab_p = AB[ti], AB[tp]
             u = np.full(len(obs), ti / K_STEPS, dtype=np.float32)
             eps = self.diff(np.concatenate([x, obs, _temb(u)], 1))
-            x0 = np.clip((x - np.sqrt(1 - ab_t) * eps) / np.sqrt(ab_t), -4, 4)
+            x0 = np.clip((x - np.sqrt(1 - ab_t) * eps) / np.sqrt(max(ab_t, 1e-6)),
+                        -3.0, 3.0)
             x = np.sqrt(ab_p) * x0 + np.sqrt(1 - ab_p) * eps
             path.append(x.copy())
         if trace:
@@ -1628,9 +1644,10 @@ def two_ways_one_average() -> None:
 
 def label_spread() -> None:
     d = _pol().data
-    near = np.abs(d.obs_raw[:, 0] - 2.0) < 0.6
+    near = np.abs(d.obs_raw[:, 0] - SPLIT) < 0.6
     lab = d.chunks_raw[near].sum(axis=1)[:, 1]
-    print(f'[df] at 2 cm along the reach there are {near.sum()} recorded moments; '
+    print(f'[df] at {SPLIT:.0f} cm along the reach there are {near.sum()} recorded '
+          f'moments; '
           f'over the next {CHUNK2} steps they move sideways by '
           f'{lab[lab > 0].mean():+.2f} cm one way and {lab[lab < 0].mean():+.2f} cm the '
           f'other, and the average of all of them is {lab.mean():+.3f} cm')
@@ -1643,7 +1660,7 @@ def label_spread() -> None:
     ax.axvline(lab[lab > 0].mean(), color=TEAL, lw=1.6, ls='--')
     ax.axvline(lab[lab < 0].mean(), color=TEAL, lw=1.6, ls='--',
                label='the two things people actually did')
-    ax.set_xlabel('sideways movement over the next 32 steps (cm)', fontsize=9.5)
+    ax.set_xlabel(f'sideways movement over the next {CHUNK2} steps (cm)', fontsize=9.5)
     ax.set_ylabel('recorded moments', fontsize=9.5)
     ax.legend(fontsize=9.2, frameon=False, loc='upper center')
     ax.set_title('One question, two very different labels', fontsize=11.5, weight='bold')
@@ -1703,7 +1720,7 @@ def averaging_rollouts() -> None:
 def noising_a_chunk() -> None:
     d = _pol().data
     rng = np.random.default_rng(9)
-    j = int(np.argmin(np.abs(d.obs_raw[:, 0] - 6.0)))
+    j = int(np.argmin(np.abs(d.obs_raw[:, 0] - SPLIT)))
     x0 = d.y[j]
     levels = [0, 20, 40, 60, 100]
     fig, axes = plt.subplots(1, len(levels), figsize=(13.2, 3.4), facecolor='white')
@@ -1766,18 +1783,17 @@ def reverse_walk() -> None:
     p = _pol()
     d = p.data
     rng = np.random.default_rng(12)
-    obs = ObstacleData.norm_obs(np.array([[2.0, 0.0]]))
-    obs = np.repeat(obs, 1, axis=0)
+    obs = ObstacleData.norm_obs(np.array([[SPLIT, 0.0]]))
     _final, trace = p.ddim(obs, 20, rng, trace=True)
     fig, axes = plt.subplots(1, 5, figsize=(13.2, 3.4), facecolor='white')
     picks = [0, 5, 10, 15, 20]
     for ax, k in zip(axes, picks):
         ch = trace[k][0].reshape(CHUNK2, 2) * d.act_scale
-        pt = np.array([2.0, 0.0]) + np.cumsum(ch, axis=0)
+        pt = np.array([SPLIT, 0.0]) + np.cumsum(ch, axis=0)
         ax.plot(pt[:, 0], pt[:, 1], 'o-', color=PURPLE if k < 20 else SLIDE, ms=3, lw=1.5)
-        ax.plot([2.0], [0.0], 'o', color=GRIP, ms=6)
+        ax.plot([SPLIT], [0.0], 'o', color=GRIP, ms=6)
         ax.set_title(f'after {k} of 20 steps', fontsize=10, weight='bold')
-        ax.set_xlim(-8, 20)
+        ax.set_xlim(SPLIT - 10, SPLIT + 18)
         ax.set_ylim(-14, 16)
         ax.set_xticks([])
         ax.set_yticks([])
@@ -1796,7 +1812,7 @@ def reverse_walk() -> None:
 def conditioning() -> None:
     p = _pol()
     rng = np.random.default_rng(4)
-    places = [np.array([2.0, 0.0]), np.array([12.0, 6.5]), np.array([12.0, -6.5])]
+    places = [np.array([SPLIT, 0.0]), np.array([18.0, 6.5]), np.array([18.0, -6.5])]
     fig, axes = plt.subplots(1, 3, figsize=(13.0, 4.2), facecolor='white')
     for ax, pl in zip(axes, places):
         obs = np.repeat(ObstacleData.norm_obs(pl[None, :]), 40, axis=0)
@@ -1808,7 +1824,7 @@ def conditioning() -> None:
             ax.plot(pt[:, 0], pt[:, 1], color=LINK, lw=0.9, alpha=0.6)
         ax.plot(*pl, 'o', color=GRIP, ms=9, zorder=6)
         _draw_box(ax, label=False)
-        ax.set_xlim(-2, 30)
+        ax.set_xlim(-2, 36)
         ax.set_ylim(-14, 14)
         _plain(ax)
         ax.set_xlabel('distance along the reach (cm)', fontsize=9)
@@ -1906,7 +1922,7 @@ def side_counts() -> None:
 def straight_versus_curved() -> None:
     p = _pol()
     rng = np.random.default_rng(77)
-    obs = np.repeat(ObstacleData.norm_obs(np.array([[2.0, 0.0]])), 6, axis=0)
+    obs = np.repeat(ObstacleData.norm_obs(np.array([[SPLIT, 0.0]])), 6, axis=0)
     _a, td = p.ddim(obs, 20, rng, trace=True)
     _b, tf = p.euler(obs, 20, rng, trace=True)
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white')
@@ -1936,10 +1952,10 @@ def steps_versus_quality() -> None:
     p = _pol()
     d = p.data
     rng = np.random.default_rng(55)
-    obs = np.repeat(ObstacleData.norm_obs(np.array([[2.0, 0.0]])), 300, axis=0)
+    obs = np.repeat(ObstacleData.norm_obs(np.array([[SPLIT, 0.0]])), 300, axis=0)
     counts = [1, 2, 4, 8, 16, 32, 50]
     res: dict[str, list[float]] = {'diffusion': [], 'flow': []}
-    near = np.abs(d.obs_raw[:, 0] - 2.0) < 0.8
+    near = np.abs(d.obs_raw[:, 0] - SPLIT) < 0.8
     real = d.chunks_raw[near].reshape(int(near.sum()), -1) / d.act_scale
     for n in counts:
         for kind in ('diffusion', 'flow'):

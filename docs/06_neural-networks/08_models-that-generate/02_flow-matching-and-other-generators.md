@@ -280,9 +280,10 @@ train and cover the whole range of the data instead of a part of it.
 
 ## 5. Which generator suits which job
 
-All three generators have now been built on the same data and measured on the
-same score, so the comparison can be made with numbers rather than opinions.
-The settings below are the ones each method would actually be run at.
+Section 4 was the last of the methods, so all of them have now been built on
+the same data and measured with the same score, and the comparison can be made
+with numbers rather than opinions. The settings below are the ones each method
+would actually be run at.
 
 ![Five panels: real demonstrations, diffusion at 50 steps, first-training flow at 8 steps, straightened flow at 2 steps and the two-stage model, all forming the two arcs](../../images/models-that-generate/flow-matching-and-other-generators/all-generators-samples.svg)
 

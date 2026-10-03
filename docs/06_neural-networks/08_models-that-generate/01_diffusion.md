@@ -96,9 +96,10 @@ one.
 
 ## 2. Adding noise, one small step at a time
 
-A generator has to turn something easy into something hard, starting from a
-shape nobody had to learn, such as plain round random noise, and finishing on
-the shape the data actually has. Diffusion builds that journey backwards, by
+Section 1 asked for a model that produces one answer drawn from the whole set
+of right ones, and building one means turning something easy into something
+hard: starting from a shape nobody had to learn, such as plain round random
+noise, and finishing on the shape the data actually has. Diffusion builds that journey backwards, by
 first destroying the data in small steps and writing down exactly what it did,
 and then training a network to undo one of those steps at a time. Destroying it
 needs no learning, because each step just shrinks the point a little towards
@@ -251,9 +252,9 @@ half, which no single answer can do.
 
 ## 5. Conditioning: the same denoiser told what to make
 
-A generator that produces a fair sample of everything in the data is a curious
-object rather than a useful one, because a robot is not asked for a typical
-waypoint but for one that suits the situation in front of it. Making that
+What section 4 produced is a fair sample of everything in the data, and that is
+a curious object rather than a useful one, because a robot is not asked for a
+typical waypoint but for one that suits the situation in front of it. Making that
 possible is called **conditioning**, and it needs no new idea, because the
 extra information is simply handed to the denoiser alongside the noisy point
 every time it is asked.
@@ -346,8 +347,7 @@ Generating with 2, 5, 10, 25, 50 and 100 steps gives mismatch scores of 1.586, 0
 Two steps is useless, five steps is already roughly the right shape, and after
 about twenty-five the improvement is small. The obstacle figures count rare
 events so they are noisier, but the five-step run is the worst at 0.87 per
-cent, which on a real arm would be a collision about once in every hundred and
-fifteen waypoints.
+cent, which on a real arm would be a collision about once in a hundred.
 
 ![Five panels of generated waypoints at 2, 5, 10, 25 and 100 steps, the first an almost empty scatter and the last two forming clean arcs](../../images/models-that-generate/diffusion/samples-at-few-steps.svg)
 
@@ -437,15 +437,14 @@ for t in range(T, 0, -1):                            # section 4: the reverse wa
 ```
 
 The library gives you the automatic differentiation, the optimiser and the
-layers, and nothing else here is hidden, because the schedule is four lines of
-arithmetic, the training loop is six and the reverse walk is five. In practice
-nobody writes those lines, because Hugging Face's `diffusers` package provides
-the schedules as `DDPMScheduler` and `DDIMScheduler`, the reverse step as
-`scheduler.step`, and ready-built denoisers such as `UNet2DModel` for pictures
-and `UNet1DModel` for sequences of actions, while LeRobot ships a complete
-diffusion policy for arms built on those pieces. Using them means your schedule
-matches everybody else's, which matters because a sampler written for one
-schedule gives wrong answers on another.
+layers, and nothing else is hidden, because the schedule is four lines, the
+training loop six and the reverse walk five. In practice nobody writes them,
+because Hugging Face's `diffusers` package provides the schedules as
+`DDPMScheduler` and `DDIMScheduler`, the reverse step as `scheduler.step`, and
+ready-built denoisers such as `UNet2DModel` and `UNet1DModel`, while LeRobot
+ships a complete diffusion policy for arms built on those pieces. Using them
+means your schedule matches everybody else's, which matters because a sampler
+written for one schedule gives wrong answers on another.
 
 What you still have to decide is what no library chooses for you: how many
 steps to train with, how many to generate with, how often to drop the condition

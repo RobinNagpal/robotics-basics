@@ -429,14 +429,14 @@ What cross-entropy costs in return is that it will chase a single mislabelled
 example without limit, since there is no cap on what it can charge, and the
 [overfitting
 page](../04_making-training-work/01_overfitting-and-generalisation.md) deals with
-what to do about that.
+that.
 
-The loss, then, is the thing you have chosen to make small, and nothing in
-training questions that choice afterwards. A model trained on squared error will
-sacrifice many small mistakes to avoid one large one, a model trained on absolute
-error will do the opposite, and a model trained on cross-entropy will become
-confident because confidence is what it is paid for. The next page takes the
-landscape this page drew and shows how a model walks down it.
+The loss, then, is what you have chosen to make small, and nothing in training
+questions that choice afterwards. A model trained on squared error will sacrifice
+many small mistakes to avoid one large one, a model trained on absolute error
+will do the opposite, and a model trained on cross-entropy will become confident
+because confidence is what it is paid for. The next page takes the landscape this
+page drew and shows how a model walks down it.
 
 ---
 
@@ -502,19 +502,17 @@ for w in (2.0, 3.0073, 4.0):
 The library gives you the arithmetic and, more usefully, gives it to you in a
 form that can be walked down later. Every one of these losses returns a single
 number for a whole batch, which is the one-number requirement from section 1, and
-each one also records how it was worked out so that the next page's method can
-ask it which way is downhill. That bookkeeping is the real service, because
-writing the average of squared differences yourself takes one line while writing
-the slope of it through a hundred-layer network takes a year.
+each also records how it was worked out so that the next page's method can ask it
+which way is downhill. That bookkeeping is the real service, because writing the
+average of squared differences yourself takes one line while writing the slope of
+it through a hundred-layer network takes a year.
 
 One detail catches nearly everybody once, which is that `nn.CrossEntropyLoss`
 expects the raw logits and does the softmax itself, so passing it probabilities
-you have already softmaxed applies softmax twice and quietly gives a wrong,
-much flatter loss. It is written that way because doing the two steps together is
-both faster and safer against very large logits, and the same is true of
-`nn.BCEWithLogitsLoss` for the two-way choice in section 5. If you need the
-probabilities as well, work them out separately with `torch.softmax` for display
-and keep passing the logits to the loss.
+you have already softmaxed applies softmax twice and quietly gives a wrong, much
+flatter loss. It is written that way because doing the two steps together is
+faster and safer against very large logits, and the same is true of
+`nn.BCEWithLogitsLoss` for the two-way choice in section 5.
 
 What you still have to decide is everything this page has been about. You choose
 which loss matches the cost of being wrong in your cell, you choose the Huber

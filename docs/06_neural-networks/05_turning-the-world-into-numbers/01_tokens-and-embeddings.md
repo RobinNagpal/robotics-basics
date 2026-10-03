@@ -190,14 +190,13 @@ because the vocabulary is small, and it is not small in a real model.
 
 Four embedding tables and the weights each one holds, with the memory each needs when every weight is stored in two bytes.
 
-The table on this page holds 429 times 6, which is 2,574 weights, or about 5
-kilobytes, while a vocabulary of 32,000 at 1,024 numbers a token holds
-32,768,000 weights at 65.5 megabytes, and a vocabulary of 128,000 at 4,096
-numbers a token holds 524,288,000 weights, a little over a gigabyte, which is
-often the single largest block of weights in a model. The width of a row is
-also the width that runs through every layer after it, so it is chosen once and
-everything else follows. Having those numbers is only half the point, because
-what makes them useful is where they end up relative to each other.
+The table on this page holds 429 times 6, which is 2,574 weights, while a
+vocabulary of 32,000 at 1,024 numbers a token holds 32,768,000 weights at 65.5
+megabytes, and one of 128,000 at 4,096 numbers a token holds 524,288,000
+weights, a little over a gigabyte, which is often the single largest block of
+weights in a model. The width of a row is also the width that runs through
+every layer after it, so it is chosen once and everything else follows. What
+makes those numbers useful is where they end up relative to each other.
 
 ---
 
@@ -252,16 +251,14 @@ look at a trained table.
 
 The nearest tokens to four given tokens, using all 64 numbers of each row rather than the six that fit in a picture.
 
-The nearest tokens to "mug" are cup at 0.92, bottle at 0.88, bowl at 0.87, box
-at 0.85 and block at 0.80, which are all things an arm picks up, and the
-nearest to "gripper" are wrist at 0.99, arm at 0.97, camera at 0.97 and elbow
-at 0.95, which are all parts of the robot, after which the list drops to 0.37
-because the text holds only four such words. The nearest to "red" are green,
-blue and yellow, and then "carefully" at 0.70, which is a reminder that the
-grouping follows sentence position rather than meaning, since colours and
-adverbs sit in front of the same words. Everything in this section treats the
-tokens as an unordered collection, which is exactly the problem the next
-section fixes.
+The nearest tokens to "mug" are cup at 0.92, bottle at 0.88, bowl at 0.87 and
+box at 0.85, which are all things an arm picks up, and the nearest to "gripper"
+are wrist at 0.99, arm at 0.97, camera at 0.97 and elbow at 0.95, which are all
+parts of the robot, after which the list drops to 0.37 because the text holds
+only four such words. The nearest to "red" are green, blue and yellow, and then
+"carefully" at 0.70, which is a reminder that the grouping follows sentence
+position rather than meaning. Everything here treats the tokens as an unordered
+collection, which is exactly the problem the next section fixes.
 
 ---
 
@@ -365,12 +362,11 @@ All 2,016 pairs of tokens in the table, comparing the real cosine with the cosin
 Flattening to two directions and then measuring cosine tracks the real answer
 with a correlation of only 0.26, and the worst pair is wrong by 1.73, which on
 a scale running from -1 to +1 means the picture reverses the relationship
-completely. Keeping the first six numbers does far better at 0.89, and even
-there the worst pair is out by 0.78. This is why the scores in section 4 for
-mug, cup, bowl and block were all 0.99 on six numbers and spread out to 0.92,
-0.87 and 0.80 on all 64, since fewer directions leave less room to tell things
-apart. The second thing to be careful about is the idea that a row holds the
-meaning of a word.
+completely. Keeping the first six numbers does better at 0.89, and even there
+the worst pair is out by 0.78, which is why section 4's scores for mug, cup and
+bowl were all 0.99 on six numbers and spread out to 0.92 and 0.87 on all 64.
+The second thing to be careful about is the idea that a row holds the meaning
+of a word.
 
 ![Two sentences whose only difference is mug or bolt, both containing the token "it", with arrows from both to a single row of six numbers](../../images/turning-the-world-into-numbers/tokens-and-embeddings/one-row-many-meanings.svg)
 
@@ -385,8 +381,7 @@ numbers with those of the tokens around it. By the middle of a trained model
 the numbers where "it" sits are nothing like the row that was looked up, and
 that is the intended behaviour rather than a flaw.
 
-The arrangement is also not tidy even where it is real, because directions in a
-trained table do not line up neatly with properties, and there are far more
+The arrangement is not tidy even where it is real, because there are far more
 properties worth representing than there are directions to put them in, so
 several properties share each direction and a direction read off a trained
 model usually turns out to mean several things at once. The honest summary is
@@ -460,23 +455,18 @@ print(turn(pair, torch.tensor(3.0), torch.tensor(1.0)))  # tensor([0.5119, 0.048
 The library gives you the table, its random starting values, its gradients and
 a lookup that handles a whole batch of sentences at once. It does not give you
 the tokeniser, because a tokeniser belongs to a particular model: the
-vocabulary, the merge list and the numbering were all fixed when that model was
-trained, so using a different tokeniser with a trained model gives nonsense,
+vocabulary, the merge list and the numbering were fixed when that model was
+trained, so pairing a trained model with a different tokeniser gives nonsense,
 since row 45 would then stand for a different piece of text. In practice you
 load the tokeniser that came with the model, which in Hugging Face's
 `transformers` package is `AutoTokenizer.from_pretrained(name)`, and you call it
 on your text to get the numbers that go into `ids` above.
 
-What you have to decide is mostly settled by that same choice, because a
-pretrained model fixes the vocabulary size, the width of a row and the kind of
-positional encoding, and changing any of them means training from scratch. If
-you are training something small of your own, the two real decisions are how
-many pieces the vocabulary holds, which trades the table's size against the
-length of every sequence as section 2 showed, and how wide a row is, which sets
-the width of every layer after it.
-
-The one decision that is yours either way is what you put into the tokeniser,
-because text that looks nothing like what the tokeniser was built from gets
-chopped into many more tokens than you expect, and that costs time and context
-on every call. It is worth measuring the token count of the text your robot
-will really produce rather than assuming it matches the count of words.
+That same choice settles most of the decisions, because a pretrained model
+fixes the vocabulary size, the width of a row and the kind of positional
+encoding, and changing any of them means training from scratch. The decision
+that stays yours is what you put into the tokeniser, because text unlike
+anything it was built from gets chopped into far more tokens than you expect,
+and that costs time and context on every call, so it is worth measuring the
+token count of the text your robot will really produce rather than assuming it
+matches the count of words.

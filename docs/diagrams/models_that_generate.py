@@ -2399,28 +2399,29 @@ def pixels_vs_latent_cost() -> None:
 
 def all_generators_samples() -> None:
     d = _data()
-    s = _sweep()
-    a = _ar()
+    a_ = _ar()
     one = _pass_time(1)
     rows = [
         ('diffusion, 50 steps', _ddim(1500, UNTOLD, seed=1818, steps=50)[0], 50,
          PURPLE),
-        ('flow matching, 4 steps', _flow_sample(1500, UNTOLD, seed=1818, steps=4)[0],
-         4, SLIDE),
-        ('one piece at a time', a.draw(1500, seed=1818), 2, WRIST),
+        ('flow, 8 steps', _flow_sample(1500, UNTOLD, seed=1818, steps=8)[0], 8,
+         LINK),
+        ('straightened flow, 2 steps', _st().draw(1500, seed=1818, steps=2)[0], 2,
+         SLIDE),
+        ('one piece at a time', a_.draw(1500, seed=1818), 2, WRIST),
     ]
     print('[p2s5] side by side at the settings a robot would use:')
     for name, pts, passes, _col in rows:
         print(f'[p2s5]   {name}: mismatch {_mismatch(pts, d.ref):.4f}, inside the '
               f'obstacle {_in_obstacle(pts) * 100:.2f}%, {passes} passes, '
               f'{passes * one * 1e3:.3f} ms')
-    fig, axes = plt.subplots(1, 4, figsize=(17.0, 4.8), facecolor='white')
+    fig, axes = plt.subplots(1, 5, figsize=(18.0, 4.8), facecolor='white')
     _arena(axes[0], lim=2.4, labels=False)
     sh = _show(d.ref, 800, 20)
-    axes[0].scatter(sh[:, 0], sh[:, 1], s=5, color=LINK, alpha=0.55)
+    axes[0].scatter(sh[:, 0], sh[:, 1], s=5, color=GRID, alpha=0.9)
     axes[0].set_xlabel('x (m)', fontsize=8.5)
     axes[0].set_ylabel('y (m)', fontsize=8.5)
-    axes[0].set_title('real demonstrations\nmismatch 0 by definition', fontsize=10.5,
+    axes[0].set_title('real demonstrations\nmismatch 0 by definition', fontsize=10,
                       weight='bold', color=INK)
     for ax, (name, pts, passes, col) in zip(axes[1:], rows):
         _arena(ax, lim=2.4, labels=False)
@@ -2428,9 +2429,9 @@ def all_generators_samples() -> None:
         ax.set_xlabel('x (m)', fontsize=8.5)
         ax.set_ylabel('y (m)', fontsize=8.5)
         ax.set_title(f'{name}\nmismatch {_mismatch(pts, d.ref):.4f}, '
-                     f'{passes} passes', fontsize=10.5, weight='bold', color=INK)
-    fig.suptitle('The three generators of this chapter, at the settings a robot '
-                 'would actually use', fontsize=12.5, weight='bold', color=INK)
+                     f'{passes} passes', fontsize=10, weight='bold', color=INK)
+    fig.suptitle('The generators of this chapter, at the settings a robot would '
+                 'actually use', fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, FLOW_DOC, 'all-generators-samples.svg')
 
@@ -2467,10 +2468,10 @@ def control_rate_budget() -> None:
     _plain(ax)
     ax.axis('off')
     lines = ['at 2.0 ms for one pass:', '',
-             '  50 denoising steps  = 100.0 ms  -> 10 Hz at best, nothing to spare',
-             '  10 denoising steps  =  20.0 ms  -> fits 30 Hz',
-             '   4 flow steps       =   8.0 ms  -> fits 50 Hz',
-             '   1 flow step        =   2.0 ms  -> fits anything',
+             '  50 denoising steps = 100.0 ms -> 10 Hz at best, nothing to spare',
+             '  16 denoising steps =  32.0 ms -> fits 30 Hz',
+             '   8 flow steps      =  16.0 ms -> fits 50 Hz',
+             '   2 straightened    =   4.0 ms -> fits anything',
              '',
              'and a 16-piece answer made one piece',
              'at a time needs 16 passes = 32.0 ms,',
@@ -2486,24 +2487,30 @@ def control_rate_budget() -> None:
 def passes_needed() -> None:
     s = _sweep()
     target = 0.01
-    f_need = min((n for n in FEW if s.flow[n] <= target), default=max(FEW))
-    d_need = min((n for n in FEW if s.diff[n] <= target), default=max(FEW))
-    names = ['flow matching', 'diffusion', 'one piece at a time\n(2-piece answer)',
+    need = {n_: min((n for n in FEW if got[n] <= target), default=max(FEW))
+            for n_, got in (('flow, straightened', s.str),
+                            ('flow, first training', s.flow),
+                            ('diffusion', s.diff))}
+    names = ['flow,\nstraightened', 'flow,\nfirst training', 'diffusion',
+             'one piece at a time\n(2-piece answer)',
              'one piece at a time\n(16-piece answer)']
-    vals = [f_need, d_need, 2, 16]
-    print(f'[p2s5] passes needed to reach a mismatch of {target}: flow {f_need}, '
-          f'diffusion {d_need}; one piece at a time always needs one pass per piece')
-    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
+    vals = [need['flow, straightened'], need['flow, first training'],
+            need['diffusion'], 2, 16]
+    print(f'[p2s5] passes needed to reach a mismatch of {target}: ' + ', '.join(
+        f'{k} {v}' for k, v in need.items())
+        + '; one piece at a time always needs one pass per piece')
+    fig, ax = plt.subplots(figsize=(11.0, 5.4), facecolor='white')
     _plain(ax)
-    bars = ax.bar(names, vals, color=[SLIDE, PURPLE, WRIST, WRIST], width=0.55,
-                  edgecolor=INK, lw=0.6)
-    for b, v in zip(bars, vals):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.4, str(v), ha='center',
+    bars = ax.bar(names, vals, color=[SLIDE, LINK, PURPLE, WRIST, WRIST],
+                  width=0.55, edgecolor=INK, lw=0.6)
+    for b_, v in zip(bars, vals):
+        ax.text(b_.get_x() + b_.get_width() / 2, v + 0.4, str(v), ha='center',
                 fontsize=12, weight='bold', color=INK)
     ax.set_ylim(0, max(vals) * 1.25)
+    ax.tick_params(labelsize=8.5)
     ax.set_ylabel('passes through the network for one answer', fontsize=9.5)
-    ax.set_title(f'What each generator costs for one answer, where the first two\n'
-                 f'are measured at the same quality (mismatch {target})',
+    ax.set_title(f'What each generator costs for one answer, where the first '
+                 f'three\nare measured at the same quality (mismatch {target})',
                  fontsize=12, weight='bold', color=INK)
     _save(fig, FLOW_DOC, 'passes-needed.svg')
 
@@ -2511,22 +2518,23 @@ def passes_needed() -> None:
 def error_vs_time_frontier() -> None:
     d = _data()
     s = _sweep()
-    a = _ar()
+    a_ = _ar()
     one = _pass_time(1)
-    ar_mis = _mismatch(a.draw(1500, seed=1919), d.ref)
+    ar_mis = _mismatch(a_.draw(1500, seed=1919), d.ref)
     print(f'[p2s5] the two-stage model scores {ar_mis:.4f} for 2 passes '
           f'({2 * one * 1e3:.3f} ms)')
-    fig, ax = plt.subplots(figsize=(10.4, 5.6), facecolor='white')
+    fig, ax = plt.subplots(figsize=(10.6, 5.8), facecolor='white')
     _plain(ax)
     times = np.array(FEW) * one * 1e3
-    ax.plot(times, [s.diff[n] for n in FEW], color=PURPLE, lw=2.4, marker='o',
-            ms=6, label='diffusion')
-    ax.plot(times, [s.flow[n] for n in FEW], color=SLIDE, lw=2.4, marker='s',
-            ms=6, label='flow matching')
+    for got, name, col, mk in ((s.diff, 'diffusion', PURPLE, 'o'),
+                               (s.flow, 'flow, first training', LINK, '^'),
+                               (s.str, 'flow, straightened', SLIDE, 's')):
+        ax.plot(times, [got[n] for n in FEW], color=col, lw=2.4, marker=mk, ms=6,
+                label=name)
     ax.plot([2 * one * 1e3], [ar_mis], marker='D', ms=10, color=WRIST,
-            label='one piece at a time')
+            label='one piece at a time, 2 pieces')
     ax.axhline(d.floor, color=MUTED, ls='--', lw=1.3)
-    ax.text(times[0], d.floor * 1.35, f'real against real: {d.floor:.4f}',
+    ax.text(times[0], d.floor * 1.3, f'real against real: {d.floor:.4f}',
             fontsize=9.5, color=MUTED)
     ax.set_xscale('log')
     ax.set_yscale('log')

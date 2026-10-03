@@ -2581,42 +2581,60 @@ def more_candidates() -> None:
     ax.set_xlabel('candidate torque sequences tried for each decision', fontsize=10)
     ax.set_ylabel('cost actually paid on the real system', fontsize=10)
     ax.legend(fontsize=9.5, frameon=False)
-    ax.set_title('More candidates help, and the learned model keeps a gap\n'
-                 'that more candidates cannot close', fontsize=11.5, weight='bold')
+    ax.set_title('With the plan remade at every step, the learned model\n'
+                 'very nearly matches a perfect one', fontsize=11.5, weight='bold')
     fig.tight_layout()
     _save(fig, WM_DOC, 'more-candidates.svg')
 
 
-def horizon_hurts() -> None:
-    """Looking further ahead inside a wrong model makes the plan worse, not better."""
+def replanning_rate() -> None:
+    """How often the plan has to be remade before the model's drift stops mattering."""
     w = _w()
-    learned, perfect = [], []
-    for h in HORIZON_LIST:
-        a = float(np.mean([plan_and_run(w.model.step, 64, h, seed=s)[0] for s in range(3)]))
-        b = float(np.mean([plan_and_run(true_step, 64, h, seed=s)[0] for s in range(3)]))
-        learned.append(a)
-        perfect.append(b)
-        print(f'[horiz] planning {h:2d} steps ahead: cost {a:.3f} with the learned model, '
-              f'{b:.3f} with the real one')
-    best_h = HORIZON_LIST[int(np.argmin(learned))]
-    print(f'[horiz] the learned model plans best at {best_h} steps ahead, which is '
-          f'{best_h * DT:.2f} seconds')
-    fig, ax = plt.subplots(figsize=(8.0, 4.6), facecolor='white')
+    total, horizon, k = 40, 40, 256
+    every = [1, 2, 5, 10, 20, 40]
+    costs = []
+    for e in every:
+        runs = []
+        for seed in range(5):
+            rng = np.random.default_rng(2000 + seed)
+            s = np.array([-0.80, 0.0])
+            paid = 0.0
+            plan = np.zeros(0)
+            for t in range(total):
+                if t % e == 0:
+                    cands = _smooth_torque(k, horizon, rng, tmax=TORQUE_PLAN)
+                    batch = np.repeat(s[None, :], k, axis=0)
+                    cost = np.zeros(k)
+                    for j in range(horizon):
+                        batch = w.model.step(batch, cands[:, j])
+                        cost += step_cost(batch, cands[:, j])
+                    plan = cands[int(np.argmin(cost))]
+                u = plan[t % e]
+                s = true_step(s, np.array(u))
+                paid += float(step_cost(s, np.array(u)))
+            runs.append(paid / total)
+        costs.append(float(np.mean(runs)))
+        print(f'[replan] the plan remade every {e:2d} steps ({e * DT:.2f} s): the real system '
+              f'charges {costs[-1]:.4f} a step')
+    print(f'[replan] remaking it every step costs {costs[0]:.4f}, and running one plan to the '
+          f'end costs {costs[-1]:.4f}, which is {costs[-1] / costs[0]:.2f} times as much')
+    fig, ax = plt.subplots(figsize=(8.2, 4.6), facecolor='white')
     _plain(ax)
-    ax.plot(HORIZON_LIST, learned, marker='o', color=PURPLE, lw=2,
-            label='planned in the learned model')
-    ax.plot(HORIZON_LIST, perfect, marker='s', color=SLIDE, lw=2,
-            label='planned in the real system')
-    ax.axvline(best_h, color=GRIP, lw=1.4, ls=':')
-    ax.text(best_h + 0.6, max(learned) * 0.92,
-            f'best at {best_h} steps\n({best_h * DT:.2f} seconds)', fontsize=9.2, color=GRIP)
-    ax.set_xlabel('steps the planner looks ahead', fontsize=10)
-    ax.set_ylabel('cost actually paid on the real system', fontsize=10)
+    ax.plot([e * DT for e in every], costs, marker='o', color=PURPLE, lw=2)
+    ax.axhline(costs[0], color=SLIDE, lw=1.5, ls='--',
+               label='remaking the plan at every step')
+    ax.set_xscale('log')
+    ax.set_xticks([e * DT for e in every])
+    ax.set_xticklabels([f'{e * DT:.2f}' for e in every])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+    ax.set_xlabel('seconds between one plan and the next', fontsize=10)
+    ax.set_ylabel('cost actually paid, a step', fontsize=10)
+    ax.set_ylim(min(costs) * 0.9, max(costs) * 1.08)
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
-    ax.set_title('Looking further ahead inside a model that drifts\nstops paying',
-                 fontsize=11.5, weight='bold')
+    ax.set_title('A drifting model is still useful, as long as the plan is\n'
+                 'thrown away and made again from a fresh look', fontsize=11.5, weight='bold')
     fig.tight_layout()
-    _save(fig, WM_DOC, 'horizon-hurts.svg')
+    _save(fig, WM_DOC, 'replanning-rate.svg')
 
 
 # ==========================================================================

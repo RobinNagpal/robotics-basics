@@ -800,25 +800,26 @@ def more_demos() -> None:
     _plain(ax)
     ax.plot(sizes, [v * 10 for v in steps_err], 'o-', color=LINK, lw=2.2, ms=7)
     for n, v in zip(sizes, steps_err):
-        ax.text(n, v * 10 * 1.04, f'{v * 10:.3f} mm', ha='center', fontsize=9,
-                color=LINK)
+        ax.text(n, v * 10 * 1.06, f'{v * 10:.3f} mm', ha='center', fontsize=9,
+                color=LINK, va='bottom')
     ax.set_xscale('log')
     ax.set_xticks(list(sizes))
     ax.set_xticklabels([str(n) for n in sizes])
-    ax.set_ylim(0, max(steps_err) * 10 * 1.2)
+    ax.set_ylim(0, max(steps_err) * 10 * 1.3)
     ax.set_xlabel('demonstrations in the training set (log scale)', fontsize=9.5)
     ax.set_ylabel('error of one predicted step (mm)', fontsize=9.5, color=LINK)
     ax2 = ax.twinx()
     ax2.plot(sizes, finals, 's--', color=GRIP, lw=2.0, ms=7)
     for n, v in zip(sizes, finals):
-        ax2.text(n, v * 0.93, f'{v:.2f} cm', ha='center', fontsize=9, color=GRIP,
+        ax2.text(n, v * 0.90, f'{v:.2f} cm', ha='center', fontsize=9, color=GRIP,
                  va='top')
-    ax2.set_ylim(0, max(finals) * 1.2)
+    ax2.set_ylim(0, max(finals) * 1.3)
     ax2.set_ylabel('distance from where it should be after 4 s (cm)', fontsize=9.5,
                    color=GRIP)
     ax2.tick_params(labelsize=9.5, colors=GRIP)
-    ax.set_title('One step gets much better; the whole reach hardly does',
-                 fontsize=11.5, weight='bold')
+    ax.set_title(f'One step\'s error falls by {100 * (1 - steps_err[-1] / steps_err[0]):.0f} '
+                 f'per cent, the drift by {100 * (1 - finals[-1] / finals[0]):.0f} per cent',
+                 fontsize=11.0, weight='bold')
     fig.tight_layout()
     _save(fig, BC_DOC, 'more-demos.svg')
 
@@ -827,14 +828,14 @@ def unseen_inputs() -> None:
     s = _sim()
     t = np.arange(REACH_STEPS) * DT
     path, _c, gap = s.runs[1]
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.9), facecolor='white')
+    fig, axes = plt.subplots(1, 2, figsize=(13.2, 4.9), facecolor='white')
     ax = axes[0]
     _plain(ax)
     keep = s.store.obs
     sub = np.random.default_rng(1).choice(len(keep), 2500, replace=False)
     ax.plot(keep[sub, 0], keep[sub, 1], '.', color=LINK_PALE, ms=2.6,
             label='where the demonstrations went')
-    worst = int(np.argsort(np.linalg.norm(path - s.ref, axis=2)[-1])[-1])
+    worst = int(np.argmax(gap[-1]))
     sc = ax.scatter(path[:-1, worst, 0], path[:-1, worst, 1], c=gap[:, worst],
                     cmap='YlOrRd', s=22, vmin=0, zorder=4, edgecolors='none')
     cb = fig.colorbar(sc, ax=ax, fraction=0.04)
@@ -1076,7 +1077,7 @@ def act_attention_cost() -> None:
     ax.set_xlabel('cameras feeding the encoder', fontsize=9.5)
     ax.set_ylabel('token pairs per head per layer (millions)', fontsize=9.5)
     ax.set_ylim(0, pairs[-1] / 1e6 * 1.3)
-    ax.set_title('Adding a camera adds tokens, and the work goes up with the square',
+    ax.set_title(f'Two cameras instead of one: {pairs[1] / pairs[0]:.1f} times the pairs',
                  fontsize=11.2, weight='bold')
     print('[bc] attention pairs per head per layer: ' +
           ', '.join(f'{n} cameras ({tk} tokens): {p:,}'
@@ -1095,9 +1096,8 @@ def act_attention_cost() -> None:
     ax.set_xlabel(f'steps in the chunk, at {ACT_RATE:.0f} Hz', fontsize=9.5)
     ax.set_ylabel('pairs in the decoder (millions)', fontsize=9.5)
     ax.set_ylim(0, dec[-1] / 1e6 * 1.45)
-    ax.set_title(f'Even a {chunks[-1]}-step chunk gives the decoder '
-                 f'{dec[-1] / c["enc_pairs"]:.2f} of an encoder layer\'s pairs',
-                 fontsize=10.6, weight='bold')
+    ax.set_title(f'A {chunks[-1]}-step chunk: {dec[-1] / c["enc_pairs"]:.2f} of an '
+                 f'encoder layer', fontsize=11.2, weight='bold')
     print('[bc] decoder pairs by chunk length: ' +
           ', '.join(f'{ch}: {d:,}' for ch, d in zip(chunks, dec)))
     fig.tight_layout()
@@ -1220,11 +1220,11 @@ def temporal_ensembling() -> None:
     _plain(ax)
     tt = np.arange(len(raw_a)) * DT
     ax.plot(tt, raw_a[:, 1] * 10, color=GRIP, lw=1.5, label='newest chunk only')
-    ax.plot(tt, ens_a[:, 1] * 10, color=LINK, lw=2.2,
+    ax.plot(tt, ens_a[:, 1] * 10, color=LINK, lw=2.4,
             label=f'weighted average of up to {m}')
     ax.set_xlabel('time through the run (seconds)', fontsize=9.5)
     ax.set_ylabel('command, sideways part (mm)', fontsize=9.5)
-    ax.legend(fontsize=9.2, frameon=False, loc='upper right')
+    ax.legend(fontsize=9.2, frameon=False, loc='lower right')
     ax.set_title(f'The averaged command changes {100 * (1 - je / jr):.0f} per cent less '
                  f'from step to step', fontsize=11.2, weight='bold')
     fig.tight_layout()

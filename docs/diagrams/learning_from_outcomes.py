@@ -202,10 +202,19 @@ def rewrite_reward(t: Tables, fn) -> Tables:
 # running and learning
 # --------------------------------------------------------------------------
 
+INTERIOR: list[tuple[int, int]] = [(r, c) for r in (1, 2, 3) for c in (1, 2, 3)]
+
+
 def rollout(Q: Arr, rng: np.random.Generator, eps: float, t: Tables,
-            slip: float = 0.0, maxsteps: int = MAXSTEPS, s0: int = S0
+            slip: float = 0.0, maxsteps: int = MAXSTEPS, s0: int = S0,
+            hazard: tuple[int, int] | None = None, hp: float = 0.0
             ) -> tuple[NDArray[np.int64], NDArray[np.int64], Arr, str]:
-    """One attempt with an epsilon-greedy policy read off the table Q."""
+    """One attempt with an epsilon-greedy policy read off the table Q.
+
+    A hazard is one square that is slippery in the real cell: carrying the block
+    onto it drops the block with chance hp, which costs 1 and puts the block back
+    on its own square.
+    """
     P, R, D, OUT, STAY = t
     s = s0
     out = 'timeout'
@@ -221,10 +230,16 @@ def rollout(Q: Arr, rng: np.random.Generator, eps: float, t: Tables,
             a = int(cand[0]) if len(cand) == 1 else int(rng.choice(cand))
         ss.append(s)
         aa.append(a)
-        rr.append(R[s, a])
+        rew = float(R[s, a])
         s2 = int(P[s, a])
         if slip > 0.0 and a < 4 and rng.random() < slip:
             s2 = int(STAY[s, a])
+        if hazard is not None and a < 4 and unsid(s)[2]:
+            r2, c2, h2 = unsid(s2)
+            if (r2, c2) == hazard and h2 and rng.random() < hp:
+                s2 = sid(r2, c2, False)
+                rew -= 1.0
+        rr.append(rew)
         if D[s, a]:
             out = OUT[s, a]
             break
@@ -236,8 +251,9 @@ def q_learn(episodes: int, eps0: float, seed: int, eps1: float | None = None,
             gamma: float = 0.95, alpha: float = 0.3, slip: float = 0.0,
             t: Tables = WORLD, maxsteps: int = MAXSTEPS,
             count: list[int] | None = None,
-            slip_range: tuple[float, float] | None = None
-            ) -> tuple[Arr, Arr, Arr, list[Arr]]:
+            slip_range: tuple[float, float] | None = None,
+            hazard: tuple[int, int] | None = None, hp: float = 0.0,
+            random_hazard: bool = False) -> tuple[Arr, Arr, Arr, list[Arr]]:
     """Tabular Q-learning. Returns Q, the return of every attempt, whether every
     attempt put the block in the bin, and snapshots of Q at a few points."""
     P, R, D, OUT, STAY = t
@@ -250,7 +266,11 @@ def q_learn(episodes: int, eps0: float, seed: int, eps1: float | None = None,
     for ep in range(episodes):
         e = eps0 if eps1 is None else eps0 + (eps1 - eps0) * ep / max(1, episodes - 1)
         sl = slip if slip_range is None else float(rng.uniform(*slip_range))
-        ss, aa, rr, out = rollout(Q, rng, e, t, sl, maxsteps)
+        hz, p = hazard, hp
+        if random_hazard:
+            hz = INTERIOR[int(rng.integers(len(INTERIOR)))]
+            p = float(rng.uniform(0.3, 0.8))
+        ss, aa, rr, out = rollout(Q, rng, e, t, sl, maxsteps, hazard=hz, hp=p)
         for i in range(len(ss) - 1, -1, -1):
             s, a = int(ss[i]), int(aa[i])
             tgt = rr[i] if D[s, a] else rr[i] + gamma * Q[P[s, a]].max()
@@ -265,7 +285,8 @@ def q_learn(episodes: int, eps0: float, seed: int, eps1: float | None = None,
 
 
 def evaluate(Q: Arr, n: int = 60, seed: int = 0, slip: float = 0.0, t: Tables = WORLD,
-             maxsteps: int = MAXSTEPS, score: Tables | None = None
+             maxsteps: int = MAXSTEPS, score: Tables | None = None,
+             hazard: tuple[int, int] | None = None, hp: float = 0.0
              ) -> tuple[dict[str, float], float]:
     """Run the greedy policy n times and report how the attempts ended.
 
@@ -277,7 +298,7 @@ def evaluate(Q: Arr, n: int = 60, seed: int = 0, slip: float = 0.0, t: Tables = 
     rets: list[float] = []
     Rs = (score if score is not None else t)[1]
     for _ in range(n):
-        ss, aa, rr, out = rollout(Q, rng, 0.0, t, slip, maxsteps)
+        ss, aa, rr, out = rollout(Q, rng, 0.0, t, slip, maxsteps, hazard=hazard, hp=hp)
         outs.append(out)
         rets.append(float(Rs[ss, aa].sum()))
     arr = np.array(outs)

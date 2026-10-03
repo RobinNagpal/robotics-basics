@@ -9,9 +9,9 @@ broad family of model that robots use today actually do inside?
 The book is for somebody who can do arithmetic, fractions and percentages, who has
 met a little school algebra, who knows what a graph with two axes shows, and who
 can read a short program with variables, loops and functions. It assumes you know
-**nothing** about machine learning. If you have never met the words model,
+**nothing** about machine learning, so if you have never met the words model,
 training, gradient, token, embedding, transformer, diffusion or policy, you are
-the reader this book was written for, because each of those words is explained in
+the reader it was written for, because each of those words is explained in
 ordinary English on the page that first needs it.
 
 The book has thirteen chapters that build on each other. The first five give you
@@ -19,8 +19,8 @@ the vocabulary, take a network apart one neuron at a time, show how training fin
 the numbers inside it, and show how a picture or a joint angle becomes numbers at
 all. The middle explains the one design almost every large model uses today, and
 how such a model is trained once and then adapted. The later chapters go through
-the families of model a robot arm actually runs, and the last is about getting one
-working on a real machine.
+the families of model a robot arm runs, and the last is about getting one working
+on a real machine.
 
 This page answers the question that comes before all of those. Why train a model
 at all, when a program is just rules and a person can write rules? The answer is
@@ -110,7 +110,7 @@ That picture is simulated, with 18 rows of 26 pixels, of which 117 are glass. Th
 best brightness rule gets 0.816 of the pixels right, which sounds respectable
 until you notice that saying "there is no glass anywhere" already scores 0.750,
 and that the rule misses 86 of the 117 glass pixels. A better threshold might be
-hiding somewhere, so the script tried every one.
+hiding, so the script tried every one.
 
 ![A curve of accuracy against threshold for all 256 thresholds in each direction, peaking at 0.816 and never getting far above the no-glass baseline of 0.750](../../images/what-learning-means/why-not-just-write-the-rules/threshold-sweep.svg)
 
@@ -141,10 +141,10 @@ Across 1,600 simulated cups the full ones average 117.7 brightness inside the ri
 
 The ranges overlap because every cup has its own colour and its own lighting, and
 those move the brightness far more than the coffee does. The best threshold on
-that one number gets 0.659 of the cups right when chosen on them and only 0.611 on
-cups it has not seen, against the 0.5 that tossing a coin gets. The right-hand
-panel shows the answer is in the data after all, because once the wall brightness
-is known too, the two clouds separate. The next section follows that clue.
+that number gets 0.659 of the cups right when chosen on them and 0.611 on cups it
+has not seen, against the 0.5 a coin gets. The right-hand panel shows the answer
+is in the data after all, because once the wall brightness is known the two clouds
+separate, and the next section follows that clue.
 
 ---
 
@@ -177,13 +177,12 @@ own colour and lighting.
 
 The best threshold on the brightness inside the rim gets 0.611 of unseen cups right, on the spread 0.850, on the wall 0.477 and on the inside minus the wall 0.884, while a model fitted to the first three numbers reaches 0.926 with nobody telling it about the subtraction.
 
-Read that chart as a story about a person getting steadily cleverer. The first
-threshold barely beats a coin, the second is better by luck because a full cup's
-surface does vary more than an empty one's, and the third is useless alone. The
-fourth is good only because a person spent an afternoon working out that the cup's
-colour has to be cancelled. The last bar comes of handing the first three numbers
-to a program that searches for the combination by itself, and it beats the
-person's answer.
+Read that chart as a person getting steadily cleverer. The first threshold barely
+beats a coin, the second is better by luck because a full cup's surface does vary
+more, and the third is useless alone. The fourth is good only because a person
+spent an afternoon working out that the cup's colour has to be cancelled. The last
+bar comes of handing the first three numbers to a program that searches for the
+combination itself, and it beats the person's answer.
 
 The third difference lies underneath the other two. Where a rule works, one input
 has exactly one right answer, and where no rule works, the same input happens with
@@ -295,10 +294,10 @@ those are what the whole thing is for.
 At 0.25, 0.75, 1.25, 1.75 and 2.25 kilograms the line predicts 0.850, 1.550, 2.250, 2.950 and 3.650 millimetres, while measuring later gives 1.09, 1.62, 2.13, 2.67 and 3.23, so the misses run from +0.07 to -0.42 millimetres.
 
 Those five later measurements are simulated. The typical miss on them is 0.258 mm,
-against 0.216 mm on the six the line was fitted to, which is a little worse and
-should be, because the line was never shown them. A prediction is something the
-model produces for any input you give it, while a label is something a person or
-an instrument produced for one input that actually happened, and keeping the two
+against 0.216 mm on the six the line was fitted to, which is worse and should be,
+because the line was never shown them. A prediction is something the model
+produces for any input you give it, while a label is what a person or an
+instrument produced for one input that actually happened, and keeping the two
 apart is most of what it takes to read an honest claim about a model.
 
 A feature is not just any number you happen to have, because the answer has to
@@ -342,9 +341,9 @@ At 3 kilograms the line is out by +0.23 millimetres, at 4 by +1.38, at 5 by +2.5
 
 A rule written by a person who understands the arm would have that stop in it, and
 a fitted line never will unless somebody hangs a four kilogram mass on the wrist
-and measures. That is not a fault in the fitting but a plain statement that a model
-knows what its examples knew and nothing else, which is why so much of this book
-is about where the data comes from.
+and measures. That is not a fault in the fitting but a statement that a model knows
+what its examples knew and nothing else, which is why so much of this book is
+about where the data comes from.
 
 The second cost is that you need examples, and more of them than feels reasonable.
 
@@ -369,19 +368,18 @@ arithmetic can tell a wrong label from a right one when it only sees numbers. A
 hand-written rule behaves the opposite way, since it ignores the data and is
 therefore immune to bad data and to good data alike.
 
-That is the honest trade. A written rule is exact, checkable without any
-measurements and correct outside the range you tested, and you can only have one
-when somebody knows the rule. A fitted model needs no such knowledge and will find
-relationships a person would never guess, and in exchange it is only as good as
-its examples, only trustworthy over the range they covered, and quietly wrong when
-they are wrong. For the jobs in section 1 the written rule wins every time and you
-should write it, while for the jobs in section 2 there is no written rule for it
-to lose to.
+That is the honest trade. A written rule is exact, checkable without measurements
+and correct outside the range you tested, and you can only have one when somebody
+knows the rule. A fitted model needs no such knowledge and finds relationships a
+person would never guess, and in exchange it is only as good as its examples, only
+trustworthy over the range they covered, and quietly wrong when they are wrong. So
+for the jobs in section 1 the written rule wins every time and you should write it,
+while for the jobs in section 2 there is no written rule for it to lose to.
 
 Everything else in this book is the same trade at a larger size, where the formula
-holds more numbers than two, the examples are counted in millions rather than
-sixes, and the search takes a building full of computers rather than one division.
-The shape of the idea does not change.
+holds more numbers than two, the examples are counted in millions, and the search
+takes a building full of computers rather than one division. The shape of the idea
+does not change.
 
 ---
 

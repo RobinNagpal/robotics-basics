@@ -53,7 +53,7 @@ sensor can record.
 
 ![A simulated photo of a blue mug on a pale table, with a small red square marked on it, and the red, green and blue number grids for that square](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/three-colour-grids.svg)
 
-An eight by eight corner of a simulated photo, written out as the three grids of whole numbers that the camera actually produces.
+An eight by eight corner of a simulated photo is written out as the three grids of whole numbers that the camera actually produces.
 
 Over that small square the red channel averages 61.1, the green 91.1 and the
 blue 173.5, which is what a blue surface looks like as numbers. The whole photo
@@ -66,7 +66,7 @@ that channel's spread.
 
 ![The same four by four corner of the red channel written three ways: as whole numbers up to 255, as values between 0 and 1, and as values centred on zero](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/scaling-the-values.svg)
 
-One corner of the red channel at each stage of the scaling, ending as numbers that sit a little either side of zero.
+One corner of the red channel is shown at each stage of the scaling, and it ends as numbers that sit a little either side of zero.
 
 The first row of that corner is 50, 53, 57 and 60 as the camera gives it, 0.196,
 0.208, 0.224 and 0.235 after dividing by 255, and -2.14, -2.09, -2.01 and -1.95
@@ -77,7 +77,7 @@ training is allowed to go.
 
 ![Two panels: loss curves for the same fit on raw and on scaled inputs, each at its own fastest safe learning rate, and a log-scale bar chart of the curvature ratio](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/why-scale.svg)
 
-The same straight line fitted twice to the same data, where the run on raw 0-to-255 values never reaches the answer that the scaled run reaches in a few steps.
+The same straight line is fitted twice to the same data, and the run on raw 0-to-255 values never reaches the answer that the scaled run reaches in a few steps.
 
 Both runs fit two numbers to the same 400 examples, where one input runs from 0
 to 255 and the other from 0 to 1. The raw run cannot use a learning rate above
@@ -103,7 +103,7 @@ and call each square one token. One of those squares is called a **patch**, and
 
 ![A simulated photo of a mug with a white 14 by 14 grid drawn over it and one square outlined in red](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/patch-grid.svg)
 
-A 224 by 224 photo cut into 16 by 16 squares, which gives 14 squares across and 14 down, so 196 patches in all.
+A 224 by 224 photo is cut into 16 by 16 squares, which gives 14 squares across and 14 down, so 196 patches in all.
 
 Each patch holds 16 times 16 pixels in 3 channels, which is 768 numbers, and
 those numbers become one token in exactly the sense the previous page used, as
@@ -112,7 +112,7 @@ Turning a square of pixels into a row of numbers takes two steps.
 
 ![One patch of a mug, the first few of its 768 numbers in a row, and the 32 numbers it becomes after one matrix multiply](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/patch-to-vector.svg)
 
-A patch flattened into 768 numbers and then multiplied by one learned matrix, which turns it into a token the same width as every other token in the model.
+A patch is flattened into 768 numbers and then multiplied by one learned matrix, which turns it into a token the same width as every other token in the model.
 
 The patch is first laid out in one line, with the red grid, then the green,
 then the blue, and each value divided by 255, so the first eight numbers of
@@ -128,7 +128,7 @@ decision, and it is more expensive than it looks.
 
 ![Two bar charts: the token count for five combinations of picture size and patch size, and the attention work each implies, on a log scale](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/patch-count-cost.svg)
 
-Five ways of cutting a photo, with the tokens each produces and what each costs in attention work, measured against the first case.
+Five ways of cutting a photo are compared by the tokens each produces and by what each costs in attention work, measured against the first case.
 
 A 224 by 224 picture in 16-pixel patches gives 196 tokens, and the same picture
 in 14-pixel patches gives 256. A 448 by 448 picture in 16-pixel patches gives
@@ -152,7 +152,7 @@ that number is a distance, usually in metres or in millimetres.
 
 ![A 12 by 12 grid of distances in metres, shaded from near to far, with twenty cells shown in red and marked with dashes](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/depth-grid.svg)
 
-A simulated depth frame where the table runs from 1.00 m at the top to 0.70 m at the bottom, the mug sits at 0.62 m, and twenty pixels have no reading at all.
+In this simulated depth frame the table runs from 1.00 m at the top to 0.70 m at the bottom, the mug sits at 0.62 m, and twenty pixels have no reading at all.
 
 The distances here run from 0.616 m to 0.998 m, and the mug is a flat block of
 0.62 m because its top is level. The red cells are the part that catches people
@@ -182,7 +182,7 @@ distance away.
 
 ![The three lines of arithmetic that turn a pixel into a position, six rows of the resulting list, and a scatter plot of the whole cloud seen from above](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/depth-to-points.svg)
 
-A 3,072-pixel depth frame turned into 2,927 three-number positions, with the 145 pixels that had no reading simply left out.
+A 3,072-pixel depth frame becomes 2,927 three-number positions, because the 145 pixels that had no reading are simply left out.
 
 The arithmetic is a single idea: a pixel far from the centre of the picture is
 looking off at an angle, so the further away the thing it sees is, the further
@@ -221,7 +221,7 @@ readings a second is 8,000 numbers in a row.
 
 ![A waveform of a simulated gripper closing and then touching a mug, with a close-up of 200 of the readings underneath](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/waveform.svg)
 
-Half a second of simulated sound, 8,000 readings, with the motor running until 0.30 seconds and a sharp knock when the gripper touches.
+Half a second of simulated sound holds 8,000 readings, with the motor running until 0.30 seconds and a sharp knock when the gripper touches.
 
 The readings run from -1.132 to +1.336 after being scaled, and the average size
 of a reading is 0.2129 while the motor runs and 0.0209 after the knock. The
@@ -235,7 +235,7 @@ second, and the resulting grid is called a **spectrogram**.
 
 ![A spectrogram with time across and pitch up, showing bright horizontal lines while the motor runs and a bright vertical line at the knock](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/spectrogram.svg)
 
-The same sound as a grid of 61 frames by 129 pitches, where the motor shows as steady lines and the knock as one bright column across every pitch.
+The same sound becomes a grid of 61 frames by 129 pitches, where the motor shows as steady lines and the knock as one bright column across every pitch.
 
 Each window here is 256 readings, which is 16.0 milliseconds, and the windows
 start 8.0 milliseconds apart, which gives 61 of them, each producing 129
@@ -248,7 +248,7 @@ a photo.
 
 ![Two line charts of the same frame of sound, one with the sizes as the arithmetic gives them and one after taking logarithms](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/one-frame.svg)
 
-One frame of the sound, where the raw sizes hide everything except the loudest pitch until logarithms are taken.
+One frame of the sound is drawn twice, and the raw sizes hide everything except the loudest pitch until logarithms are taken.
 
 In frame 18, which starts at 0.144 seconds, the loudest pitch is 125 cycles a
 second at a size of 19.14, while the quietest is 0.00229, so the largest is
@@ -273,7 +273,7 @@ wrist is feeling.
 
 ![Three charts over the same two seconds: six joint angles, the same six as speeds, and the gripper opening with the downward force at the wrist](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/joint-traces.svg)
 
-Two seconds of a simulated reach recorded 100 times a second, with the gripper closing near the end and the wrist force rising as it grips.
+Two seconds of a simulated reach are recorded 100 times a second, with the gripper closing near the end and the wrist force rising as it grips.
 
 Every one of those curves is 200 numbers, one each hundredth of a second. The
 base joint turns from 0.000 to 0.620 radians and reaches 0.706 radians a second
@@ -286,7 +286,7 @@ in a fixed order.
 
 ![Sixteen boxed numbers in two columns, each labelled with what it is and what unit it is in](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/state-vector.svg)
 
-Everything the arm knows about itself at one instant, as the sixteen numbers that go into the model: six angles, six speeds, the gripper opening and three forces.
+Everything the arm knows about itself at one instant arrives as sixteen numbers: six angles, six speeds, the gripper opening and three forces.
 
 The order never changes, because the model learns which position means which
 joint and has no other way of telling them apart, so swapping two channels
@@ -323,7 +323,7 @@ four completely different ways depending on what the code receiving it does.
 
 ![Four small drawings of the same two-link arm, with the grey arm in its old pose and the blue arm after reading the same two numbers as angles, as a change in angles, as speeds and as a change in hand position](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/action-meanings.svg)
 
-The same two numbers, 0.10 and 0.05, read four ways, moving the hand anywhere from 0.8 centimetres to 45.2 centimetres.
+The same two numbers, 0.10 and 0.05, read four ways, move the hand anywhere from 0.8 centimetres to 45.2 centimetres.
 
 Read as **joint angles**, the two numbers are where the joints should now be,
 so the arm swings to 0.10 and 0.05 radians and the hand moves 45.2 centimetres.
@@ -338,7 +338,7 @@ also changes how hard the learning problem is.
 
 ![Two histograms of the same two-second movement, the first showing six absolute joint angles spread far apart and the second showing their step-to-step changes all piled near zero](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/absolute-vs-delta.svg)
 
-The same movement written as absolute angles, which spread across three radians, and as changes, which all sit within 0.006 radians of zero.
+The same movement is written as absolute angles, which spread across three radians, and as changes, which all sit within 0.006 radians of zero.
 
 As absolute angles, each joint sits in its own band, from -2.150 for the first
 wrist joint to +1.425 for the elbow, so a model must produce six quite
@@ -353,7 +353,7 @@ loss.
 
 ![Two bar charts of the share each of seven action channels takes of the total squared error, one on a log scale before scaling where the gripper takes all of it, and one after scaling where all seven are near a seventh](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/loss-dominated.svg)
 
-Seven action channels, each predicted equally badly relative to its own size, and the share of the loss each one gets before and after scaling.
+Seven action channels are each predicted equally badly relative to their own size, and the chart gives the share of the loss each one takes before and after scaling.
 
 The six joint changes are in radians with spreads near 0.002, and the gripper
 opening is in millimetres with a spread of 29.280, so one channel is 95,428
@@ -370,7 +370,7 @@ size of that effect is worth seeing rather than assuming.
 
 ![A log-scale bar chart of seven action channels, each with two bars: the error after training on raw targets and after training on scaled targets](../../images/turning-the-world-into-numbers/pictures-sound-and-robot-states/scaled-training.svg)
 
-The same small network trained twice for the same 6,000 steps, each at its own best learning rate, where the run on raw targets gets the gripper right and the six joint channels hopelessly wrong.
+The same small network is trained twice for the same 6,000 steps, each run at its own best learning rate, and the run on raw targets gets the gripper right and the six joint channels hopelessly wrong.
 
 Trained on targets in the robot's own units, the six joint channels end with
 average errors between 32.70 and 250.18 times their own spread, which means the

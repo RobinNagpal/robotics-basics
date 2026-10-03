@@ -242,11 +242,13 @@ in a few equal steps, into a list of action numbers, following a direction the h
 learned to predict. The head used in the pictures below is real: it is a small network
 trained in NumPy on the simulated chunks, by the method described on [flow matching and
 other generators](../08_models-that-generate/02_flow-matching-and-other-generators.md).
+What it is told about the situation is the ten actions just before the chunk, which
+stands in for the pictures and the instruction a real model would be given.
 
 ![Two charts, the left showing one noise sample walked into an action in one, two, four and thirty-two steps, the right showing twenty-four different noise samples converging towards a narrow band](../../images/models-that-act/vision-language-action-models/flow-head-path.svg)
 
-With one big step this joint lands 0.097 degrees away from where thirty-two small steps
-land it, and with four steps it lands 0.024 degrees away.
+With one big step this joint lands 0.245 degrees away from where thirty-two small steps
+land it, with two steps 0.190 degrees away and with four steps 0.053 degrees away.
 
 The paths are nearly straight, which is what flow matching is for, and that straightness
 is why a handful of steps is enough. The right-hand chart starts twenty-four different
@@ -256,10 +258,10 @@ which is the head agreeing with itself about what to do.
 The number of steps is the knob that trades exactness for time, and the trade can be
 measured.
 
-![A log-log chart showing the distance from a 128-step answer falling from 0.729 degrees at one step to 0.010 degrees at thirty-two steps](../../images/models-that-act/vision-language-action-models/flow-steps-vs-error.svg)
+![A log-log chart showing the distance from a 128-step answer falling from 0.615 degrees at one step to 0.007 degrees at thirty-two steps](../../images/models-that-act/vision-language-action-models/flow-steps-vs-error.svg)
 
-Taking one step instead of many leaves the chunk 0.729 degrees out, two steps leaves
-0.214 degrees, four leaves 0.099 degrees and eight leaves 0.047 degrees, which is 0.497
+Taking one step instead of many leaves the chunk 0.615 degrees out, two steps leaves
+0.178 degrees, four leaves 0.077 degrees and eight leaves 0.035 degrees, which is 0.363
 millimetres at the fingertip.
 
 Eight steps is therefore already below what the arm can repeat, and that is the whole
@@ -280,17 +282,20 @@ difference much more than it cares about a hundredth of a degree.
 
 The last comparison is what the two outputs actually produce for one chunk.
 
-![A line chart of one joint's movement over ten steps showing the demonstrated chunk, the version written through 256 bins, and the head's output at sixteen and at four walking steps](../../images/models-that-act/vision-language-action-models/continuous-vs-binned.svg)
+![A line chart of one joint's movement falling over ten steps, with the demonstrated chunk and the binned version lying on top of each other and the head's two outputs tracking them with a small wobble](../../images/models-that-act/vision-language-action-models/continuous-vs-binned.svg)
 
-Writing this chunk through 256 bins moves it by 0.0088 degrees, while the head run with
-four steps instead of sixteen differs from itself by 0.0643 degrees.
+Writing this chunk through 256 bins moves it by 0.0073 degrees, while the head's own
+chunk sits 0.326 degrees from the demonstrated one, and over 200 situations the head
+lands 0.315 degrees away for each joint at each step.
 
 That comparison is worth reading carefully, because it says the binned version is the one
 that copies a given chunk most exactly. The head is not trying to copy a given chunk; it
-is drawing one of the movements that fit the situation, and its wobble is the price of
-being able to choose. So the honest summary of the two ways is that tokens are simpler,
-copy more exactly and train with no new machinery, while the head is roughly ten times
-faster in practice and handles ambiguity properly, and most recent systems take the head.
+is drawing one of the movements that fit the situation, and its wobble is partly the price
+of being able to choose and partly the price of a small head trained for a few seconds in
+NumPy rather than a large one trained for days. So the honest summary of the two ways is
+that tokens are simpler, copy more exactly and train with no new machinery, while the head
+is roughly ten times faster in practice and handles ambiguity properly, and most recent
+systems take the head.
 
 ---
 
@@ -570,8 +575,8 @@ knew.
 
 The one line above that is doing something subtle is the walk inside `sample`. It starts
 from random numbers and takes equal steps in a direction the head predicts, and the
-number of steps is the knob measured in section 4: one step leaves the chunk 0.729 degrees
-out and eight steps leaves it 0.047 degrees out. Training that head is not shown here,
+number of steps is the knob measured in section 4: one step leaves the chunk 0.615 degrees
+out and eight steps leaves it 0.035 degrees out. Training that head is not shown here,
 because it needs the flow-matching loss described on [flow matching and other
 generators](../08_models-that-generate/02_flow-matching-and-other-generators.md), but it
 is a handful of lines more: draw a random list, mix it with a real chunk in some

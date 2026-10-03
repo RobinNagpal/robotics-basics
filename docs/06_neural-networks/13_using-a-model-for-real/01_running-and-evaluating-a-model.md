@@ -107,10 +107,10 @@ one popular library hands back a picture with blue first and another with red fi
 
 Swapping red and blue takes the same weights from 95.5% to 24.3%, and the model then answers "grey plate" for almost everything.
 
-With four kinds of object, guessing at random gets about 25% right, so the swap has
-taken this model all the way down to guessing. The confusion matrix shows why it is
-hard to spot: the model is not scattering its answers but giving one confident wrong
-answer, which looks more like a broken camera than a broken settings file.
+With four kinds of object, guessing at random gets about 25% right, so the swap has taken
+this model down to guessing. The confusion matrix shows why it is hard to spot: the model
+is not scattering its answers but giving one confident wrong answer, which looks more
+like a broken camera than a broken settings file.
 
 The same fault has a second form on the output side, because a policy gives numbers
 between -1 and 1 that have to be turned back into joint angles using the ranges the
@@ -161,10 +161,10 @@ and an activation into one piece of work, which is where 396 drops to 96.
 
 The same model goes from 14.8 milliseconds to 2.6 milliseconds in five steps, and each step costs something different.
 
-Freezing the graph buys no speed on its own and buys steadiness, because the time one
-call takes stops wandering with whatever Python was doing. Rewriting the weights with
-two bytes a number is the large win at 4.8 milliseconds, and one byte gets to 2.6, but
-that last step needs a calibration set and the accuracy has to be measured again, as
+Freezing the graph buys steadiness rather than speed, because the time one call takes
+stops wandering with whatever Python was doing. Rewriting the weights with two bytes a
+number is the large win at 4.8 milliseconds, and one byte gets to 2.6, but that last step
+needs a calibration set and the accuracy has to be measured again, as
 [making a model smaller and faster](../07_pretraining-and-adapting/04_making-a-model-smaller-and-faster.md)
 explains. The reason to export rather than keep calling the training framework is those
 numbers, and the cost is that the exported file is harder to inspect and has to be built
@@ -199,9 +199,8 @@ answer until the batch it is in has been filled.
 
 With one arm asking twenty times a second, no batch larger than one meets the 50 millisecond deadline, and it takes twelve arms sharing the machine before a batch of six does.
 
-At a batch of one there is no waiting and the answer takes 7.2 milliseconds, and every
-extra place in the batch adds one more arrival interval of waiting for whoever asked
-first. The timeline below follows the unhappy case in full.
+Every extra place in the batch adds one more arrival interval of waiting for whoever
+asked first, and the timeline below follows the unhappy case in full.
 
 ![A timeline of eight requests arriving 25 ms apart, a 175 ms wait for the batch to fill, a 38 ms call, four missed deadline markers and the command finally ready at 213 ms](../../images/using-a-model-for-real/running-and-evaluating-a-model/batch-timeline.svg)
 
@@ -261,10 +260,10 @@ arm can be commanded.
 Sections 1 to 5 got the model running, and this section asks whether it works. The
 number training gives you is a loss on a held-out set, and it is tempting to treat a
 lower loss as a better robot, but those two things are only loosely tied together. The
-script shows this with 180 simulated policies, each making a small position mistake at
-every step of a 40-step reach, where the arm corrects part of the error it has and
-carries the rest, and the grasp succeeds only if the error never leaves an 11 millimetre
-tolerance. Some of those policies also make a rare large mistake.
+script shows this with 180 simulated policies. Each makes a small position mistake at
+every step of a 40-step reach, the arm carries part of its error forward, and the grasp
+succeeds only if the error never leaves an 11 millimetre tolerance. Some also make a rare
+large mistake.
 
 ![A scatter of 180 policies, training loss on the x axis against success rate on the y axis, coloured by how often each one makes a big mistake, with two circled policies at the same loss scoring 69% and 99%](../../images/using-a-model-for-real/running-and-evaluating-a-model/loss-not-success.svg)
 

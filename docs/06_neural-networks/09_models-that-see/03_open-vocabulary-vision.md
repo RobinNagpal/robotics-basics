@@ -277,12 +277,11 @@ measure where each one is, and then test the relation on those measurements.
 Subtracting the bowl's distance from each mug's distance puts mug A 170 millimetres further away and mug B 135 millimetres nearer, so only mug A satisfies "behind", and combining 0.6 times the match score with 0.4 times the relation gives 0.929 against 0.529.
 
 The combining weights are a choice rather than a law, and the useful part is that
-the relation contributes a clean yes or no that comes from measured distances.
-Those distances come from a depth camera or from one of the methods on the next
-page, which is one reason that page follows this one.
+the relation contributes a clean yes or no from measured distances, which come
+from a depth camera or from one of the methods on the next page.
 
-It is worth seeing exactly why the matching failed, because the same reason
-explains most of section 5. The phrase "the mug behind the bowl" and the phrase
+It is worth seeing why the matching failed, because the same reason explains most
+of section 5. The phrase "the mug behind the bowl" and the phrase
 "the mug in front of the bowl" put the same values on every direction a picture
 can have, and differ only on the direction that records which way round the
 depth order goes.

@@ -1261,6 +1261,17 @@ def on_policy_goes_stale() -> None:
     rng = np.random.default_rng(11)
     theta = np.zeros((NS, NA))
     gamma = 0.95
+    base0 = np.zeros(NS)
+    cnt0 = np.zeros(NS)
+    for _ in range(25):            # warm up, so there is something to spoil
+        S, A, G, rets, outs = collect(theta, rng, 20, gamma)
+        for s, g in zip(S, G):
+            cnt0[s] += 1
+            base0[s] += (g - base0[s]) / cnt0[s]
+        ad = G - base0[S]
+        ad = ad / max(float(ad.std()), 1e-8)
+        theta = policy_update(theta, S, A, ad, softmax_rows(theta)[S, A], 20, 3.0, 0.2,
+                              True)
     S, A, G, rets, outs = collect(theta, rng, 60, gamma)
     base = np.zeros(NS)
     cnt = np.zeros(NS)
@@ -1431,112 +1442,135 @@ def how_many_attempts() -> None:
 
 
 SIM2REAL: tuple[list[Arr], list[Arr]] | None = None
+REAL_FIXTURE: tuple[int, int] = (1, 2)
 
 
 def sim2real_runs() -> tuple[list[Arr], list[Arr]]:
-    """One set of policies trained in a perfect simulator, one set trained with the
-    slipping chance drawn fresh for every attempt."""
+    """Policies trained in one perfect simulator, and policies trained with a
+    fixture standing on a different square every attempt."""
     global SIM2REAL
     if SIM2REAL is None:
-        clean, rand = [], []
-        for seed in range(6):
-            Q, _, _, _ = q_learn(6000, 1.0, seed=400 + seed, eps1=0.05, slip=0.0)
-            clean.append(Q)
-            Q2, _, _, _ = q_learn(6000, 1.0, seed=800 + seed, eps1=0.05,
-                                  slip_range=(0.0, 0.35))
-            rand.append(Q2)
+        def make(kw: dict, seeds: range) -> list[Arr]:
+            pols: list[Arr] = []
+            for sd in seeds:
+                Q, _, _, _ = q_learn(12000, 1.0, seed=sd, eps1=0.05, **kw)
+                if evaluate(Q, 6, seed=7, tie='first')[0]['bin'] > 0.99:
+                    pols.append(Q)
+                if len(pols) == 6:
+                    break
+            return pols
+        clean = make({}, range(401, 425))
+        rand = make({'random_block': True}, range(801, 830))
+        print(f'[sim2real] kept {len(clean)} runs trained in the perfect simulator and '
+              f'{len(rand)} trained with the fixture moved about, out of runs that '
+              f'learned the job at all')
         SIM2REAL = (clean, rand)
     return SIM2REAL
 
 
+def _route(Q: Arr, blocked: tuple[int, int] | None = None
+           ) -> tuple[NDArray[np.int64], NDArray[np.int64], Arr, str]:
+    return rollout(Q, np.random.default_rng(1), 0.0, WORLD, blocked=blocked, tie='first')
+
+
 def the_reality_gap() -> None:
     clean, rand = sim2real_runs()
-    slips = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35]
-    got = []
-    for sl in slips:
-        v = float(np.mean([evaluate(Q, 60, seed=3000 + i, slip=sl)[0]['bin']
-                           for i, Q in enumerate(clean)]))
-        got.append(v)
-        print(f'[gap] policy trained in the perfect simulator, tested with a '
-              f'{sl:.2f} chance that a move does not happen: reaches the bin on '
-              f'{v:.2f} of attempts')
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.9), facecolor='white')
-    ax = axes[0]
-    _plain(ax)
-    ax.plot(slips, got, marker='o', color=GRIP, lw=2.1)
-    for x, v in zip(slips, got):
-        ax.text(x, v + 0.035, f'{v:.2f}', ha='center', fontsize=9, color=GRIP)
-    ax.set_ylim(-0.03, 1.12)
-    ax.set_xlabel('chance that a commanded move does not happen', fontsize=10)
-    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
-    ax.set_title('Trained where every move works, tested where some do not',
-                 fontsize=11.5, weight='bold', color=INK)
+    Q = clean[0]
+    ok = _route(Q)
+    bad = _route(Q, REAL_FIXTURE)
+    print(f'[gap] in the simulator the policy takes {"".join(SHORT[a] for a in ok[1])}, '
+          f'{len(ok[1])} actions, reward {ok[2].sum():.2f}, ends as "{ok[3]}"')
+    print(f'[gap] in the cell with a fixture on square {REAL_FIXTURE} the same policy '
+          f'takes {len(bad[1])} actions, reward {bad[2].sum():.2f}, ends as "{bad[3]}"')
+    hits = int(sum(1 for i, a in enumerate(bad[1]) if a < 4
+                   and unsid(int(P_OF(bad[0][i], a)))[:2] == REAL_FIXTURE))
+    print(f'[gap] it pushes against the fixture {hits} times in one attempt')
+    rate_sim = float(np.mean([evaluate(q, 6, seed=7, tie='first')[0]['bin']
+                              for q in clean]))
+    rate_real = float(np.mean([evaluate(q, 6, seed=7, blocked=REAL_FIXTURE,
+                                        tie='first')[0]['bin'] for q in clean]))
+    print(f'[gap] over {len(clean)} runs: reaches the bin on {rate_sim:.2f} of attempts '
+          f'in the simulator and {rate_real:.2f} in the cell with the fixture')
+    fig, axes = plt.subplots(1, 3, figsize=(15.2, 5.0), facecolor='white')
+    _table(axes[0], 'In the simulator', small=True)
+    _draw_path(axes[0], ok[0], ok[1], SLIDE)
+    axes[0].text(2.5, -0.32, f'{len(ok[1])} actions, reward {ok[2].sum():.2f}',
+                 ha='center', fontsize=10, color=INK)
     ax = axes[1]
-    _table(ax, 'One failed attempt at a 0.25 slipping chance', small=True)
-    rng = np.random.default_rng(12)
-    for _ in range(40):
-        ss, aa, rr, out = rollout(clean[0], rng, 0.0, WORLD, slip=0.25)
-        if out != 'bin':
-            break
-    _draw_path(ax, ss, aa, GRIP)
-    ax.text(2.5, -0.32, f'{len(aa)} actions, reward {rr.sum():.2f}, ended as "{out}"',
-            ha='center', fontsize=10, color=INK)
-    print(f'[gap] one failed attempt at 0.25: {len(aa)} actions, reward {rr.sum():.2f}, '
-          f'ended as {out}')
-    fig.suptitle('The reality gap: the world the policy meets is not the world it '
-                 'learned in', fontsize=13, weight='bold', color=INK)
+    _table(ax, 'In the real cell, same policy', small=True)
+    r, c = REAL_FIXTURE
+    ax.add_patch(Rectangle((c, ROWS - 1 - r), 1, 1, color=INK, alpha=0.55, lw=0))
+    ax.text(c + 0.5, ROWS - 1 - r + 0.5, 'fixture', ha='center', va='center',
+            fontsize=8.5, color='white', weight='bold')
+    _draw_path(ax, bad[0], bad[1], GRIP)
+    ax.text(2.5, -0.32, f'{len(bad[1])} actions, reward {bad[2].sum():.2f}, '
+                        f'ends as "{bad[3]}"', ha='center', fontsize=10, color=INK)
+    ax = axes[2]
+    _plain(ax)
+    ax.bar([0, 1], [rate_sim, rate_real], width=0.5, color=[SLIDE, GRIP], edgecolor=INK,
+           lw=0.7)
+    for x, v in zip([0, 1], [rate_sim, rate_real]):
+        ax.text(x, v + 0.03, f'{v:.2f}', ha='center', fontsize=12, weight='bold')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['in the simulator', 'in the real cell'], fontsize=10.5)
+    ax.set_ylim(0, 1.15)
+    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
+    ax.set_title(f'{len(clean)} runs, each tried six times', fontsize=11.5, weight='bold')
+    fig.suptitle('The reality gap: one square of furniture the simulator did not have',
+                 fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RL_DOC, 'the-reality-gap.svg')
 
 
+def P_OF(s: int, a: int) -> int:
+    return int(WORLD[0][int(s), int(a)])
+
+
 def domain_randomisation() -> None:
     clean, rand = sim2real_runs()
-    slips = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.45]
-    a = [float(np.mean([evaluate(Q, 60, seed=3000 + i, slip=sl)[0]['bin']
-                        for i, Q in enumerate(clean)])) for sl in slips]
-    b = [float(np.mean([evaluate(Q, 60, seed=3000 + i, slip=sl)[0]['bin']
-                        for i, Q in enumerate(rand)])) for sl in slips]
-    for sl, x, y in zip(slips, a, b):
-        print(f'[randomise] slipping chance {sl:.2f}: one fixed simulator {x:.2f}, '
+    a = [float(np.mean([evaluate(q, 4, seed=7, blocked=bl, tie='first')[0]['bin']
+                        for q in clean])) for bl in INTERIOR]
+    b = [float(np.mean([evaluate(q, 4, seed=7, blocked=bl, tie='first')[0]['bin']
+                        for q in rand])) for bl in INTERIOR]
+    for bl, x, y in zip(INTERIOR, a, b):
+        print(f'[randomise] fixture on square {bl}: one perfect simulator {x:.2f}, '
               f'randomised simulator {y:.2f}')
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.9), facecolor='white')
+    print(f'[randomise] averaged over the {len(INTERIOR)} squares: '
+          f'{float(np.mean(a)):.2f} against {float(np.mean(b)):.2f}')
+    fig, axes = plt.subplots(1, 2, figsize=(13.2, 5.0), facecolor='white')
     ax = axes[0]
     _plain(ax)
-    ax.plot(slips, a, marker='o', color=GRIP, lw=2.1, label='trained in one perfect simulator')
-    ax.plot(slips, b, marker='s', color=SLIDE, lw=2.1,
-            label='trained with the slipping chance drawn fresh each attempt')
-    ax.axvspan(0.0, 0.35, color=SLIDE, alpha=0.08, zorder=0)
-    ax.text(0.175, 0.08, 'range the randomised\nlearner saw', ha='center', fontsize=9,
-            color=SLIDE)
-    ax.set_ylim(-0.03, 1.12)
-    ax.set_xlabel('chance that a commanded move does not happen, at test time',
-                  fontsize=10)
+    xs = np.arange(len(INTERIOR))
+    ax.bar(xs - 0.2, a, width=0.4, color=GRIP, edgecolor=INK, lw=0.6,
+           label='trained in one perfect simulator')
+    ax.bar(xs + 0.2, b, width=0.4, color=SLIDE, edgecolor=INK, lw=0.6,
+           label='trained with the fixture moved every attempt')
+    ax.set_xticks(xs)
+    ax.set_xticklabels([f'{bl}' for bl in INTERIOR], fontsize=9, rotation=30)
+    ax.set_xlabel('square the fixture really stands on', fontsize=10)
     ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
-    ax.set_title('Six runs each', fontsize=11.5, weight='bold', color=INK)
+    ax.set_ylim(0, 1.3)
+    ax.axhline(float(np.mean(a)), color=GRIP, ls=':', lw=1.3)
+    ax.axhline(float(np.mean(b)), color=SLIDE, ls=':', lw=1.3)
+    ax.text(len(INTERIOR) - 0.5, float(np.mean(a)) + 0.02,
+            f'average {float(np.mean(a)):.2f}', ha='right', fontsize=9, color=GRIP)
+    ax.text(len(INTERIOR) - 0.5, float(np.mean(b)) + 0.02,
+            f'average {float(np.mean(b)):.2f}', ha='right', fontsize=9, color=SLIDE)
+    ax.set_title('Eight places the fixture could be', fontsize=11.5, weight='bold')
     ax.legend(fontsize=9, frameon=False, loc='lower left')
     ax = axes[1]
-    _plain(ax)
-    xs = np.arange(3)
-    pick = [0.0, 0.2, 0.45]
-    va = [a[slips.index(p)] for p in pick]
-    vb = [b[slips.index(p)] for p in pick]
-    ax.bar(xs - 0.2, va, width=0.4, color=GRIP, edgecolor=INK, lw=0.6,
-           label='one perfect simulator')
-    ax.bar(xs + 0.2, vb, width=0.4, color=SLIDE, edgecolor=INK, lw=0.6,
-           label='randomised simulator')
-    for x, v in zip(xs - 0.2, va):
-        ax.text(x, v + 0.025, f'{v:.2f}', ha='center', fontsize=9.5)
-    for x, v in zip(xs + 0.2, vb):
-        ax.text(x, v + 0.025, f'{v:.2f}', ha='center', fontsize=9.5)
-    ax.set_xticks(xs)
-    ax.set_xticklabels([f'test slip {p:.2f}' for p in pick], fontsize=10)
-    ax.set_ylim(0, 1.15)
-    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
-    ax.set_title('Including the last one, which is outside the range it trained on',
-                 fontsize=11.5, weight='bold', color=INK)
-    ax.legend(fontsize=9, frameon=False, loc='lower left')
-    fig.suptitle('Domain randomisation: train on many worlds so the real one is one '
-                 'of them', fontsize=13, weight='bold', color=INK)
+    _table(ax, 'The route the randomised learner picks', small=True)
+    ok = _route(rand[0])
+    _draw_path(ax, ok[0], ok[1], SLIDE)
+    for bl in INTERIOR:
+        r, c = bl
+        ax.add_patch(Rectangle((c, ROWS - 1 - r), 1, 1, fill=False, edgecolor=INK,
+                               lw=1.0, ls=':'))
+    ax.text(2.5, -0.32, 'dotted squares are where a fixture may stand; the route\n'
+                        'crosses as few of them as it can', ha='center', fontsize=9.5,
+            color=INK)
+    fig.suptitle('Domain randomisation: change the simulator every attempt, and the '
+                 'policy stops relying on it', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RL_DOC, 'domain-randomisation.svg')
 
@@ -1544,34 +1578,25 @@ def domain_randomisation() -> None:
 def what_randomising_costs() -> None:
     curves_a, curves_b = [], []
     for seed in range(4):
-        _, r1, s1, _ = q_learn(6000, 1.0, seed=400 + seed, eps1=0.05, slip=0.0)
-        _, r2, s2, _ = q_learn(6000, 1.0, seed=800 + seed, eps1=0.05,
-                               slip_range=(0.0, 0.35))
+        _, _, s1, _ = q_learn(12000, 1.0, seed=401 + seed, eps1=0.05)
+        _, _, s2, _ = q_learn(12000, 1.0, seed=801 + seed, eps1=0.05, random_block=True)
         curves_a.append(s1)
         curves_b.append(s2)
-    A = np.array(curves_a)
-    B = np.array(curves_b)
-    print(f'[cost of randomising] share of training attempts that reached the bin: '
-          f'perfect simulator {A.mean():.2f}, randomised {B.mean():.2f}')
+    A, B = np.array(curves_a), np.array(curves_b)
     clean, rand = sim2real_runs()
-    at0_a = float(np.mean([evaluate(Q, 60, seed=4000 + i, slip=0.0)[0]['bin']
-                           for i, Q in enumerate(clean)]))
-    at0_b = float(np.mean([evaluate(Q, 60, seed=4000 + i, slip=0.0)[0]['bin']
-                           for i, Q in enumerate(rand)]))
-    ret_a = float(np.mean([evaluate(Q, 60, seed=4000 + i, slip=0.0)[1]
-                           for i, Q in enumerate(clean)]))
-    ret_b = float(np.mean([evaluate(Q, 60, seed=4000 + i, slip=0.0)[1]
-                           for i, Q in enumerate(rand)]))
-    print(f'[cost of randomising] in the perfect world the two policies reach the bin '
-          f'on {at0_a:.2f} and {at0_b:.2f} of attempts, with reward {ret_a:.2f} and '
-          f'{ret_b:.2f}')
+    ret_a = float(np.mean([evaluate(q, 6, seed=7, tie='first')[1] for q in clean]))
+    ret_b = float(np.mean([evaluate(q, 6, seed=7, tie='first')[1] for q in rand]))
+    print(f'[cost of randomising] share of training attempts that reached the bin: '
+          f'perfect simulator {A.mean():.3f}, randomised {B.mean():.3f}')
+    print(f'[cost of randomising] back in the perfect simulator the two policies collect '
+          f'{ret_a:.2f} and {ret_b:.2f}')
     fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.9), facecolor='white')
     ax = axes[0]
     _plain(ax)
-    ax.plot(np.arange(A.shape[1]), _smooth(A.mean(0), 200), color=GRIP, lw=2.0,
+    ax.plot(np.arange(A.shape[1]), _smooth(A.mean(0), 300), color=GRIP, lw=2.0,
             label='one perfect simulator')
-    ax.plot(np.arange(B.shape[1]), _smooth(B.mean(0), 200), color=SLIDE, lw=2.0,
-            label='randomised simulator')
+    ax.plot(np.arange(B.shape[1]), _smooth(B.mean(0), 300), color=SLIDE, lw=2.0,
+            label='fixture moved every attempt')
     ax.set_ylim(-0.03, 1.05)
     ax.set_xlabel('attempt number', fontsize=10)
     ax.set_ylabel('share of attempts reaching the bin while training', fontsize=10)
@@ -1580,21 +1605,16 @@ def what_randomising_costs() -> None:
     ax = axes[1]
     _plain(ax)
     xs = np.arange(2)
-    ax.bar(xs - 0.2, [at0_a, at0_b], width=0.4, color=PURPLE, edgecolor=INK, lw=0.6,
-           label='reaches the bin, perfect world')
-    ax.bar(xs + 0.2, [ret_a / 9.0, ret_b / 9.0], width=0.4, color=TEAL, edgecolor=INK,
-           lw=0.6, label='reward, as a share of the best possible 8.90')
-    for x, v in zip(xs - 0.2, [at0_a, at0_b]):
-        ax.text(x, v + 0.025, f'{v:.2f}', ha='center', fontsize=9.5)
-    for x, v in zip(xs + 0.2, [ret_a, ret_b]):
-        ax.text(x, v / 9.0 + 0.025, f'{v:.2f}', ha='center', fontsize=9.5)
+    ax.bar(xs, [ret_a, ret_b], width=0.5, color=[GRIP, SLIDE], edgecolor=INK, lw=0.6)
+    for x, v in zip(xs, [ret_a, ret_b]):
+        ax.text(x, v + 0.2, f'{v:.2f}', ha='center', fontsize=12, weight='bold')
     ax.set_xticks(xs)
     ax.set_xticklabels(['one perfect simulator', 'randomised simulator'], fontsize=10)
-    ax.set_ylim(0, 1.18)
+    ax.set_ylim(0, 10.6)
+    ax.set_ylabel('reward in the perfect simulator', fontsize=10)
     ax.set_title('What it costs back in the easy world', fontsize=11.5, weight='bold')
-    ax.legend(fontsize=9, frameon=False, loc='lower left')
-    fig.suptitle('Randomising buys a policy that survives the gap, and it is not free',
-                 fontsize=13, weight='bold', color=INK)
+    fig.suptitle('Randomising buys a policy that survives the gap, and the bill is '
+                 'training time', fontsize=13, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, RL_DOC, 'what-randomising-costs.svg')
 
@@ -2356,3 +2376,179 @@ def people_make_mistakes() -> None:
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     fig.tight_layout()
     _save(fig, RW_DOC, 'people-make-mistakes.svg')
+
+
+# ---------------- section 5: verifiers ----------------
+
+def verifier(out: str) -> int:
+    """A three-line program: did the block end up in the bin?"""
+    return 1 if out == 'bin' else 0
+
+
+def the_verifier_along_an_attempt() -> None:
+    w, _, _ = reward_model()
+    score = _sigmoid(FEAT @ w)
+    V, Qt = value_iteration(0.95, t=T_TRUE)
+    good = greedy_path(Qt, t=T_TRUE)
+    rng = np.random.default_rng(7)
+    V2, Qd = value_iteration(0.95, t=T_DIST)
+    poor = greedy_path(Qd, t=T_DIST)
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), facecolor='white', sharey=True)
+    for ax, (ss, aa, rr, out), name, colour in (
+            (axes[0], good, 'an attempt that works', SLIDE),
+            (axes[1], poor, 'an attempt that waits by the block', GRIP)):
+        _plain(ax)
+        n = min(len(ss), 20)
+        ax.plot(np.arange(n), score[ss][:n], marker='o', ms=4, color=PURPLE, lw=1.9,
+                label='score from the learned reward model')
+        ver = np.zeros(n)
+        if out == 'bin' and len(ss) <= n:
+            ver[len(ss) - 1] = 1.0
+        ax.step(np.arange(n), ver, where='post', color=colour, lw=2.2,
+                label='answer from the verifier program')
+        ax.set_ylim(-0.05, 1.12)
+        ax.set_xlabel('step of the attempt', fontsize=10)
+        ax.set_title(f'{name}: verifier says {verifier(out)}', fontsize=11.5,
+                     weight='bold')
+        ax.legend(fontsize=9, frameon=False, loc='upper left')
+        print(f'[verifier] {name}: ends as "{out}", verifier answer {verifier(out)}, '
+              f'reward model score along the way '
+              f'{[round(float(v), 2) for v in score[ss][:12]]}')
+    axes[0].set_ylabel('score, and the verifier answer', fontsize=10)
+    fig.suptitle('A verifier answers once and is never wrong; a reward model answers '
+                 'every step and sometimes is', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'the-verifier-along-an-attempt.svg')
+
+
+def where_they_disagree() -> None:
+    w, _, _ = reward_model()
+    score = _sigmoid(FEAT @ w)
+    eps_list = sample_attempts(400, 44)
+    model = np.array([float(np.mean(score[ss])) for ss, _, _ in eps_list])
+    passed = np.array([verifier(res) for _, _, res in eps_list])
+    cut = float(np.median(model[passed == 1])) if passed.any() else 0.5
+    fooled = int(((model >= cut) & (passed == 0)).sum())
+    missed = int(((model < cut) & (passed == 1)).sum())
+    print(f'[verifier] of {len(eps_list)} attempts the verifier passes {int(passed.sum())}')
+    print(f'[verifier] taking the model score of a middling passing attempt as the bar, '
+          f'{fooled} failing attempts score above it and {missed} passing attempts score '
+          f'below it')
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 4.8), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    bins = np.linspace(0, 1, 26)
+    ax.hist(model[passed == 0], bins=bins, color=GRIP, alpha=0.7,
+            label='the verifier says no')
+    ax.hist(model[passed == 1], bins=bins, color=SLIDE, alpha=0.7,
+            label='the verifier says yes')
+    ax.axvline(cut, color=INK, ls='--', lw=1.3)
+    ax.text(cut + 0.01, ax.get_ylim()[1] * 0.85, f'middling passing\nattempt: {cut:.2f}',
+            fontsize=9, color=INK)
+    ax.set_xlabel('average score the reward model gives the attempt', fontsize=10)
+    ax.set_ylabel('how many attempts', fontsize=10)
+    ax.set_title('The model and the verifier are not the same measurement',
+                 fontsize=11.5, weight='bold')
+    ax.legend(fontsize=9, frameon=False, loc='upper left')
+    ax = axes[1]
+    _plain(ax)
+    xs = np.arange(2)
+    ax.bar(xs, [fooled, missed], width=0.5, color=[GRIP, JOINT], edgecolor=INK, lw=0.6)
+    for x, v in zip(xs, [fooled, missed]):
+        ax.text(x, v + 1.0, str(v), ha='center', fontsize=12, weight='bold')
+    ax.set_xticks(xs)
+    ax.set_xticklabels(['failed, but scored high', 'passed, but scored low'],
+                       fontsize=10)
+    ax.set_ylabel('number of attempts', fontsize=10)
+    ax.set_ylim(0, max(fooled, missed) * 1.3 + 2)
+    ax.set_title(f'Out of {len(eps_list)} attempts', fontsize=11.5, weight='bold')
+    fig.suptitle('Where a learned score and a program disagree',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'where-they-disagree.svg')
+
+
+def what_a_program_can_check() -> None:
+    V, Qt = value_iteration(0.95, t=T_TRUE)
+    ss, aa, rr, out = greedy_path(Qt, t=T_TRUE)
+    r, c, h = unsid(int(ss[-1]))
+    checks = [
+        ('the block ended up in the bin', True,
+         'the outcome of the attempt is recorded', f'answer: {verifier(out)}'),
+        ('the gripper finished on the bin square', True,
+         'the state holds the row and the column', f'answer: {int((r, c) == BIN)}'),
+        ('the gripper was empty at the end', True,
+         'the state holds the holding flag', f'answer: {int(not h)}'),
+        ('the block was set down gently', False,
+         'nothing in the state measures force', 'cannot be answered'),
+        ('the block finished the right way up', False,
+         'nothing in the state measures turning', 'cannot be answered'),
+    ]
+    for name, can, why, ans in checks:
+        print(f'[verifier] "{name}": {"a program can check it" if can else "no program here can check it"}, '
+              f'because {why}; {ans}')
+    fig, axes = plt.subplots(1, 2, figsize=(13.4, 4.9), facecolor='white',
+                             gridspec_kw={'width_ratios': [0.8, 1.4]})
+    ax = axes[0]
+    ax.axis('off')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.text(0.0, 0.95, 'Everything the state holds', fontsize=11.5, weight='bold',
+            color=INK)
+    fields = [('row', f'{r}'), ('column', f'{c}'), ('holding the block', f'{h}'),
+              ('how the attempt ended', f'"{out}"')]
+    y = 0.80
+    for name, val in fields:
+        ax.text(0.03, y, name, fontsize=10.5, color=LINK, weight='bold')
+        ax.text(0.75, y, val, fontsize=10.5, color=INK)
+        y -= 0.14
+    ax.text(0.0, y - 0.02, 'These four numbers are the whole record\nof an attempt in '
+                           'this world.', fontsize=9.5, color=MUTED, va='top')
+    ax = axes[1]
+    ax.axis('off')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.text(0.0, 0.95, 'What a short program can decide from them', fontsize=11.5,
+            weight='bold', color=INK)
+    y = 0.80
+    for name, can, why, ans in checks:
+        ax.text(0.0, y, 'yes' if can else 'no', fontsize=10.5,
+                color=SLIDE if can else GRIP, weight='bold')
+        ax.text(0.09, y, name, fontsize=10, color=INK)
+        ax.text(0.09, y - 0.055, why, fontsize=8.8, color=MUTED)
+        ax.text(0.99, y, ans, fontsize=9.5, color=INK, ha='right')
+        y -= 0.165
+    fig.suptitle('A verifier can only ask about things the record actually holds',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'what-a-program-can-check.svg')
+
+
+def learning_from_the_verifier_alone() -> None:
+    P, R, D, OUT, STAY = W2
+    Rv = np.where(OUT == 'bin', 1.0, 0.0)
+    T_VER: Tables = (P, Rv, D, OUT, STAY)
+    runs = shaping_runs()
+    ver = []
+    for seed in range(4):
+        _, _, sc, _ = q_learn(6000, 1.0, seed=260 + seed, eps1=0.05, t=T_VER)
+        ver.append(sc)
+    Varr = np.array(ver)
+    print(f'[verifier] trained on the verifier alone: reaches the bin on '
+          f'{Varr[:, -200:].mean():.2f} of the last 200 attempts')
+    print(f'[verifier] trained on the dense reward: {runs["dense"][:, -200:].mean():.2f}')
+    fig, ax = plt.subplots(figsize=(9.6, 5.2), facecolor='white')
+    _plain(ax)
+    ax.plot(np.arange(Varr.shape[1]), _smooth(Varr.mean(0), 200), color=TEAL, lw=2.1,
+            label='verifier alone: 1 if the block is in the bin, 0 otherwise')
+    ax.plot(np.arange(runs['dense'].shape[1]), _smooth(runs['dense'].mean(0), 200),
+            color=WRIST, lw=2.1, label='the dense written reward')
+    ax.set_ylim(-0.03, 1.07)
+    ax.set_xlabel('attempt number', fontsize=10)
+    ax.set_ylabel('share of attempts that reach the bin', fontsize=10)
+    ax.set_title('Four runs each, averaged', fontsize=12, weight='bold', color=INK)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
+    fig.suptitle('A verifier is the slowest honest reward there is',
+                 fontsize=13, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, RW_DOC, 'learning-from-the-verifier-alone.svg')

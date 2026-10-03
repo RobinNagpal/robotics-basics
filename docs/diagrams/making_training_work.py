@@ -597,9 +597,10 @@ def fig_split_kinds_score() -> None:
                 f'{v * 100:.1f}%', ha='center', fontsize=11, color=INK,
                 weight='bold')
     ax.axhline(FR.chance * 100, color=MUTED, ls=':', lw=1.4)
-    ax.text(-0.42, FR.chance * 100 + 2.5,
-            f'guessing would score {FR.chance * 100:.1f}%', fontsize=9.2,
+    ax.text(2.55, FR.chance * 100 + 2.0,
+            f'guessing would\nscore {FR.chance * 100:.1f}%', fontsize=9.4,
             color=MUTED, ha='left')
+    ax.set_xlim(-0.6, 3.5)
     ax.set_ylim(0, 112)
     ax.set_ylabel('accuracy of the same model on held-out frames (%)', fontsize=10)
     ax.grid(True, axis='y', color=GRID, lw=0.6)
@@ -1234,9 +1235,9 @@ def fig_steps_to_train() -> None:
     ax.plot(ts, np.maximum(SC.excess(SC.std, ts), floor), color=LINK, lw=2.2,
             label=f'standardised, learning rate {SC.std["lr"]:.3g}')
     ax.axhline(SC.target, color=MUTED, ls=':', lw=1.4)
-    ax.text(1.4, SC.target * 1.6,
+    ax.text(2.0e3, SC.target * 2.2,
             f'close enough: loss within {SC.target} of the best possible',
-            fontsize=9.2, color=MUTED)
+            fontsize=9.2, color=MUTED, ha='center')
     for info, steps, col, dy in ((SC.std, SC.std_steps, LINK, 60.0),
                                  (SC.raw, SC.raw_steps, GRIP, 300.0)):
         ax.scatter([steps], [SC.target], s=130, facecolor='none',
@@ -1279,13 +1280,14 @@ def fig_weight_paths() -> None:
         else:
             ax.set_xlabel('step', fontsize=10)
             ax.grid(True, color=GRID, lw=0.6)
-        ax.set_ylim(-0.12, 1.28)
+        ax.set_ylim(-0.12, min(3.2, max(1.3, float(
+            (path[:, :2] / w_opt[:2]).max()) * 1.08)))
         ax.set_ylabel('weight, as a fraction of its best value', fontsize=10)
         ax.set_title(name, fontsize=11, color=INK)
         ax.legend(fontsize=9.2, loc='lower right')
-    fig.suptitle('In raw units the weight on reach settles within a few steps '
-                 'while the weight on height is still near zero a million steps '
-                 'later', fontsize=11.5, weight='bold', color=INK, y=1.04)
+    fig.suptitle('In raw units the weight on height is still near zero a '
+                 'million steps in, while standardising lands both within five '
+                 'steps', fontsize=11.5, weight='bold', color=INK, y=1.04)
     _save(fig, NRM_DOC, 'weight-paths.svg')
 
 
@@ -1500,8 +1502,8 @@ def fig_which_numbers_averaged() -> None:
         ax.text(-0.25, -r * 0.9 + 0.39, f'example {r + 1}', ha='right',
                 va='center', fontsize=9.4, color=INK)
     for c in range(6):
-        ax.text(c * 1.25 + 0.57, 1.05, f'feature {c + 1}', ha='center',
-                fontsize=8.8, color=MUTED, rotation=0)
+        ax.text(c * 1.25 + 0.57, 1.02, f'feature\n{c + 1}', ha='center',
+                va='center', fontsize=8.8, color=MUTED, linespacing=1.15)
     ax.annotate('', xy=(6 * 1.25 - 0.1, 0.39), xytext=(-0.05, 0.39),
                 arrowprops=dict(arrowstyle='-', color=LINK, lw=3.0, alpha=0.22))
     ax.text(6 * 1.25 + 0.15, 0.39,
@@ -1515,7 +1517,7 @@ def fig_which_numbers_averaged() -> None:
             f'examples:\naverage {BT.col_mean:.4f}, spread {BT.col_sd:.4f}',
             fontsize=9.4, color=INK, ha='left', va='top')
     ax.set_xlim(-2.6, 6 * 1.25 + 7.6)
-    ax.set_ylim(-4.7, 1.45)
+    ax.set_ylim(-4.7, 1.6)
     _title(ax, 'The same batch of 4 examples and 6 features, averaged two '
                'different ways')
     _save(fig, NRM_DOC, 'which-numbers-averaged.svg')
@@ -1876,7 +1878,7 @@ def fig_stream_size_through_depth() -> None:
     axes[1].annotate(f'{RS.share["post-norm"][-1]:.2f} through the same '
                      f'{RS.depths[-1]}',
                      xy=(RS.depths[-1], RS.share['post-norm'][-1]),
-                     xytext=(26, RS.share['post-norm'][-1] * 0.42),
+                     xytext=(24, RS.share['post-norm'][-1] * 0.34),
                      fontsize=9.4, color=GRIP, ha='center',
                      arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
     axes[1].set_yscale('log')
@@ -2006,25 +2008,25 @@ def fig_number_formats() -> None:
         ax.text(-0.3, y + 0.3, f'{name}\n{by} bytes', ha='right', va='center',
                 fontsize=9.8, color=INK, weight='bold')
         x = 0.0
-        for width, col, lab in ((s, GRIP, 'sign'), (e, JOINT, f'{e} exponent bits'),
-                                (m, LINK_PALE, f'{m} mantissa bits')):
+        for width, col in ((s, GRIP), (e, JOINT), (m, LINK_PALE)):
             ax.add_patch(mpatches.Rectangle((x, y), width * unit, 0.6,
                                             facecolor=col, edgecolor=INK,
                                             linewidth=0.9))
-            if width * unit > 0.5:
-                ax.text(x + width * unit / 2, y + 0.3, lab, ha='center',
-                        va='center', fontsize=8.6,
-                        color='white' if col in (GRIP, JOINT) else INK)
+            ax.text(x + width * unit / 2, y + 0.3, str(width), ha='center',
+                    va='center', fontsize=9.0,
+                    color='white' if col in (GRIP, JOINT) else INK)
             x += width * unit
         ax.text(32 * unit + 0.45, y + 0.3,
+                f'{e} exponent bits and {m} mantissa bits      '
                 f'largest {big:.3g}      smallest above zero {small:.2g}      '
-                f'step above 1 is {eps:.3g}', fontsize=9.2, va='center',
+                f'step above 1 is {eps:.3g}', fontsize=9.0, va='center',
                 color=INK)
-    ax.set_xlim(-3.4, 32 * unit + 7.9)
+    ax.set_xlim(-3.4, 32 * unit + 11.6)
     ax.set_ylim(-3.0, 1.0)
-    ax.text(0.0, 0.78, 'exponent bits set how far the format reaches; mantissa '
-                       'bits set how fine its steps are',
-            fontsize=9.5, color=MUTED)
+    ax.text(0.0, 0.78, 'each box is a group of bits, labelled with how many: '
+                       'the exponent sets how far the format reaches and the '
+                       'mantissa sets how fine its steps are',
+            fontsize=9.3, color=MUTED)
     _title(ax, 'bfloat16 keeps float32\'s 8 exponent bits and spends the saving '
                'on precision, while float16 does the opposite')
     _save(fig, NRM_DOC, 'number-formats.svg')
@@ -2053,12 +2055,12 @@ def fig_what_stays_float32() -> None:
     ax.set_xlabel('bytes held for every weight in the model', fontsize=10)
     ax.grid(True, axis='x', color=GRID, lw=0.6)
     ax.legend(fontsize=9.4, loc='center right')
-    ax.text(8.5, 3.9,
-            f'the saving is not here but in the activations: one layer\'s\n'
-            f'{PR.act_tokens:,} rows of {PR.act_width:,} numbers take '
-            f'{PR.act_f32:.0f} MB in float32\nand {PR.act_bf16:.0f} MB in '
-            f'bfloat16, and the matrix multiplies run faster',
-            fontsize=9.2, color=MUTED, ha='right', va='bottom')
+    fig.text(0.5, -0.03,
+             f'the saving is not here but in the activations: one layer\'s '
+             f'{PR.act_tokens:,} rows of {PR.act_width:,} numbers take '
+             f'{PR.act_f32:.0f} MB in float32 and {PR.act_bf16:.0f} MB in '
+             f'bfloat16, and the matrix multiplies run faster',
+             fontsize=9.2, color=MUTED, ha='center', va='top')
     _title(ax, 'Mixed precision halves two pieces and adds a new one, so every '
                f'weight still costs {PR.mixed_bytes} bytes')
     _save(fig, NRM_DOC, 'what-stays-float32.svg')
@@ -2073,9 +2075,10 @@ def fig_loss_scale_underflow() -> None:
     ax.hist(PR.grads * PR.scale, bins=bins, color=SLIDE, alpha=0.35,
             label=f'the same values multiplied by {PR.scale:.0f}')
     ax.axvline(PR.f16_floor, color=GRIP, lw=2.0)
-    ax.text(PR.f16_floor * 0.7, 1.6,
-            f'below {PR.f16_floor:.0g} a float16\nholds nothing but zero',
-            fontsize=9.3, color=GRIP, ha='right')
+    ax.annotate(f'below {PR.f16_floor:.0g} a float16\nholds nothing but zero',
+                xy=(PR.f16_floor, 2.0e3), xytext=(1.6e-11, 2.0e4),
+                fontsize=9.3, color=GRIP, ha='left',
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.1))
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xlabel('size of one gradient value (log scale)', fontsize=10)

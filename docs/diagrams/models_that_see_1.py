@@ -1997,9 +1997,11 @@ def class_versus_instance() -> None:
         gy, gx = np.nonzero(g['mask'])
         ax.plot([gx.mean()], [gy.mean()], marker='X', color=INK, markersize=11,
                 markeredgecolor='white')
-        ax.text(gx.mean(), g['box'][1] - 8 - 16 * (i % 2), f'{g["area"]:,} px',
-                fontsize=9, ha='center', va='bottom', color=INK, weight='bold',
-                bbox=dict(facecolor='white', edgecolor='none', alpha=0.8, pad=0.8))
+        below = i == 1
+        ax.text(gx.mean(), g['box'][3] + 10 if below else g['box'][1] - 8,
+                f'{g["area"]:,} px', fontsize=9, ha='center',
+                va='top' if below else 'bottom', color=INK, weight='bold',
+                bbox=dict(facecolor='white', edgecolor='none', alpha=0.85, pad=0.8))
     ax.set_xlabel('three regions with three middles, one of which the arm can reach',
                   fontsize=9.5)
     fig.suptitle('Why picking one glass out of several needs the fourth job, not '
@@ -2458,14 +2460,21 @@ def nms_close_objects() -> None:
     for ax, t in ((axes[1], 0.3), (axes[2], 0.5)):
         keep, _ = nms(dets, t)
         _show(ax, sub, f'suppressing at an overlap of {t}')
-        for i in keep:
+        for n, i in enumerate(keep):
             b = dets[i]['box']
-            if b[0] < view[2] and b[2] > view[0] and b[1] < view[3]:
+            if b[0] < view[2] and b[2] > view[0] and b[1] < view[3] and b[3] > view[1]:
                 _draw_box(ax, (b[0] - view[0], b[1] - view[1], b[2] - view[0],
-                               b[3] - view[1]), GRIP, f'{dets[i]["score"]:.2f}',
-                          lw=1.8, fs=8.5)
+                               b[3] - view[1]), GRIP, None, lw=1.8)
+                ty = max(b[1] - view[1] - 4 - 14 * (n % 2), 12.0)
+                ax.text(max(b[0] - view[0], 2.0), ty, f'{dets[i]["score"]:.2f}',
+                        fontsize=8.5, color=GRIP, weight='bold', va='bottom',
+                        bbox=dict(facecolor='white', edgecolor='none', alpha=0.8,
+                                  pad=0.6))
+        ax.set_xlim(-0.5, sub.shape[1] - 0.5)
+        ax.set_ylim(sub.shape[0] - 0.5, -0.5)
         ax.set_xlabel(f'{len(results[t][1])} of the two glasses survive: '
-                      + ', '.join(results[t][1]), fontsize=9.5)
+                      + ', '.join(n.replace('_', ' ') for n in results[t][1]),
+                      fontsize=9.5)
     fig.suptitle('The price of suppression: a true object can be removed for looking '
                  'like a duplicate', fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
@@ -2791,8 +2800,8 @@ def before_and_after() -> None:
     ax.bar([r[0] for r in rows], [r[1] for r in rows],
            color=[r[2] for r in rows], alpha=0.88, width=0.55)
     ax.axhline(len(objects), color=INK, ls='--', lw=1.6)
-    ax.text(3.45, len(objects) + 0.6, f'{len(objects)} objects are really there',
-            fontsize=9.5, ha='right', color=INK)
+    ax.text(-0.42, len(objects) + 0.5, f'{len(objects)} objects are really there',
+            fontsize=9.5, ha='left', color=INK)
     for i, r in enumerate(rows):
         ax.text(i, r[1] + 0.6, str(r[1]), ha='center', fontsize=11, weight='bold',
                 color=INK)
@@ -2845,10 +2854,10 @@ def duplicate_pressure() -> None:
     for c, colour in ((a, LINK), (b, PURPLE)):
         won = c['name'] == winner
         _box(ax, 0.0, y - 1.2, 9.6, 1.6, SLIDE if won else GRIP,
-             f'{c["name"]}: cost {costs[c["name"]]:.3f}  ->  '
-             + ('matched to the mug, so learn the mug\'s box and the name "mug"'
-                if won else 'not matched, so learn to answer "nothing"'),
-             fs=10, alpha=0.18)
+             f'{c["name"]}, cost {costs[c["name"]]:.3f}\n'
+             + ('matched to the mug, so it learns the mug\'s\nbox and the name "mug"'
+                if won else 'not matched, so it learns to answer\n"nothing"'),
+             fs=9.5, alpha=0.18)
         y -= 2.4
     ax.text(0.0, 2.4, 'Because the match is one to one, exactly one slot is ever '
                       'asked to\nname a given object, and every other slot is '
@@ -3000,7 +3009,8 @@ def mask_resolution() -> None:
               f'{inter / union:.3f}; of the {int(wrong.sum())} pixels it gets wrong, '
               f'{in_handle} are in the thin handle')
 
-    fig, axes = plt.subplots(1, 4, figsize=(13.4, 4.2), facecolor='white')
+    fig, axes = plt.subplots(1, 4, figsize=(13.8, 4.3), facecolor='white',
+                             width_ratios=[1, 1, 1, 1.35])
     for ax, s in zip(axes[:3], (7, 14, 28)):
         _show(ax, _overlay(rgb[y1:y2, x1:x2], coarse_versions[s], TEAL, 0.55),
               f'drawn on a {s} by {s} grid')

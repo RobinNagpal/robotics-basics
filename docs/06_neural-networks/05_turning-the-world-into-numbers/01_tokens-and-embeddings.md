@@ -51,7 +51,7 @@ model ever receives.
 
 ![The sentence "pick up the blue mug and put it on the tray" above a row of eleven labelled boxes, each with a small number underneath it](../../images/turning-the-world-into-numbers/tokens-and-embeddings/sentence-into-tokens.svg)
 
-One instruction cut into eleven tokens, with each token's place in the vocabulary of 429 written underneath it.
+One instruction is cut into eleven tokens, and the number under each one is its place in the vocabulary of 429.
 
 The open box character stands for the space in front of a word, which the
 tokeniser keeps inside the token so that it can rebuild the sentence exactly.
@@ -76,7 +76,7 @@ costs is counted in tokens.
 
 ![A bar chart of five robot instructions with three bars each: whole words, subword tokens and single letters](../../images/turning-the-world-into-numbers/tokens-and-embeddings/token-counts.svg)
 
-Five robot instructions counted three ways, with the subword count always between the word count and the letter count.
+Five robot instructions are counted three ways, and the subword count always sits between the word count and the letter count.
 
 The first sentence is eleven words and eleven tokens, because every word in it
 is common, while the fourth is ten words and twenty-seven tokens, because it
@@ -95,7 +95,7 @@ giving every single letter its own token.
 
 ![The sentence "unscrew the polycarbonate lid and place it in the bin" split three ways: ten whole words with one marked unknown in red, twenty-one subword pieces, and forty-four letters](../../images/turning-the-world-into-numbers/tokens-and-embeddings/three-ways-to-split.svg)
 
-The same instruction split three ways, with the whole-word row losing the one word it has never seen.
+The same instruction is split three ways, and the whole-word row loses the one word it has never seen.
 
 A whole-word vocabulary gives the shortest sequence, ten tokens here, and that
 is its whole appeal. The cost is in the red box, because "polycarbonate" is not
@@ -135,7 +135,7 @@ round adds one new piece to the vocabulary.
 
 ![On the left, the ten pairs joined first with how often each appeared; on the right, the word gripper going from eight pieces down to one as those merges are applied](../../images/turning-the-world-into-numbers/tokens-and-embeddings/merge-table.svg)
 
-The first ten merges and the effect of the merge list on one word, which collapses from eight pieces to one in seven steps.
+The first ten merges are listed on the left, and on the right the merge list collapses one word from eight pieces to one in seven steps.
 
 The first pair joined is a space and the letter t, which appeared 11,845 times,
 and the third joins the results of the first two into the whole word "the",
@@ -161,7 +161,7 @@ stands for one token, and all of them together, one row per token, make the
 
 ![A table of ten tokens with their vocabulary numbers and six learned numbers each, with the row for the token mug highlighted and an arrow pointing to it](../../images/turning-the-world-into-numbers/tokens-and-embeddings/embedding-table.svg)
 
-Ten rows of a 429-row embedding table, each holding six numbers, with the row that token number 45 picks out.
+Ten rows of a 429-row embedding table each hold six numbers, and token number 45 picks out the highlighted one.
 
 The lookup is as simple as it sounds, because the tokeniser says the word is
 token number 45, the model goes to row 45, and it takes the six numbers there.
@@ -185,7 +185,7 @@ the vocabulary is small, and it is not small in a real model.
 
 ![A bar chart on a log scale of embedding table sizes, from 2,574 weights for this page's table up to 524,288,000 for a large model](../../images/turning-the-world-into-numbers/tokens-and-embeddings/table-size.svg)
 
-Four embedding tables and the weights each one holds, with the memory each needs when every weight is stored in two bytes.
+Four embedding tables are compared by the weights each holds and by the memory each needs when every weight is stored in two bytes.
 
 The table on this page holds 429 times 6, which is 2,574 weights, while a
 vocabulary of 32,000 at 1,024 numbers a token holds 32,768,000 weights at 65.5
@@ -211,7 +211,7 @@ exactly opposite ways.
 
 ![Two side-by-side tables of six multiplications each, one comparing mug with bowl and one comparing mug with table, each ending in a division that gives the cosine](../../images/turning-the-world-into-numbers/tokens-and-embeddings/cosine-worked.svg)
 
-Cosine similarity worked out in full twice, giving 0.995 for mug against bowl and 0.219 for mug against table.
+Cosine similarity is worked out in full twice, and it gives 0.995 for mug against bowl and 0.219 for mug against table.
 
 For mug and bowl the six products add up to 0.4438, the two lengths are 0.6356
 and 0.7019, and dividing gives 0.995, while for mug and table the products add
@@ -222,7 +222,7 @@ Doing that for every pair gives a picture of the whole arrangement.
 
 ![A ten by ten grid of cosine similarities, with dark blocks where the four containers meet each other, where table meets shelf, where gripper meets wrist and where red meets blue](../../images/turning-the-world-into-numbers/tokens-and-embeddings/similarity-heatmap.svg)
 
-Every pair of ten tokens, scored by cosine similarity, showing four blocks of things that are used in the same way.
+Every pair of ten tokens is scored by cosine similarity, and four blocks appear where things are used in the same way.
 
 Mug, cup, bowl and block score 0.99 against each other, table and shelf score
 0.99, gripper and wrist score 1.00 and red and blue score 1.00, while mug
@@ -246,7 +246,7 @@ look at a trained table.
 
 ![Four small bar charts showing the five nearest tokens to mug, gripper, table and red, with their cosine scores](../../images/turning-the-world-into-numbers/tokens-and-embeddings/nearest-neighbours.svg)
 
-The nearest tokens to four given tokens, using all 64 numbers of each row rather than the six that fit in a picture.
+The five nearest tokens to each of four given tokens are found using all 64 numbers of a row rather than the six that fit in a picture.
 
 The nearest tokens to "mug" are cup at 0.92, bottle at 0.88, bowl at 0.87 and
 box at 0.85, which are all things an arm picks up, and the nearest to "gripper"
@@ -281,7 +281,7 @@ and to add the row for the place to the row for the token.
 
 ![A table of six learned position rows on the left, and on the right the row for mug added to the row for position 1 and then to the row for position 4, giving two different results](../../images/turning-the-world-into-numbers/tokens-and-embeddings/position-vectors-added.svg)
 
-The same token at two different places in the sentence, which after the addition is two different lists of numbers.
+The same token at two different places in the sentence becomes two different lists of numbers once the position row is added.
 
 The token for "mug" is -0.50, -0.12, +0.09, -0.03, -0.35, +0.09 wherever it
 appears, but at position 1 it becomes -0.27, +0.03, +0.30, +0.18, -0.28, -0.04
@@ -300,7 +300,7 @@ rate so that some sweep round quickly and others barely move.
 
 ![Three circles showing the first, second and third pair of numbers of the token mug, each with six arrows for positions 0 to 5, turning fast in the first panel and barely at all in the third](../../images/turning-the-world-into-numbers/tokens-and-embeddings/rope-rotation.svg)
 
-The same token at positions 0 to 5, with its first pair of numbers turning 1.0000 radians a step, its second 0.2154 and its third 0.0464.
+The same token is drawn at positions 0 to 5, and its first pair of numbers turns 1.0000 radians a step, its second 0.2154 and its third 0.0464.
 
 The first pair of the row for "mug" starts at (-0.500, -0.120) at position 0
 and by position 3 has become (+0.512, +0.048), which is the same point turned
@@ -340,7 +340,7 @@ this subject.
 
 ![Two scatter plots of the same twelve tokens projected onto two different pairs of directions, with the words sitting in completely different places in each](../../images/turning-the-world-into-numbers/tokens-and-embeddings/two-shadows.svg)
 
-The same twelve rows of 64 numbers, flattened onto two different pairs of directions: the picture changes completely while the table has not changed at all.
+The same twelve rows of 64 numbers are flattened onto two different pairs of directions, so the picture changes completely while the table has not changed at all.
 
 Each row in this chapter's table holds 64 numbers and a page can show only two,
 so any flat picture is a shadow cast by something with 64 directions in it. In
@@ -354,7 +354,7 @@ squashing can be measured rather than guessed.
 
 ![Two scatter plots of cosine in the squashed version against cosine using all 64 numbers, one for two directions with a correlation of 0.26 and one for the first six numbers with a correlation of 0.89](../../images/turning-the-world-into-numbers/tokens-and-embeddings/shadow-distorts.svg)
 
-All 2,016 pairs of tokens in the table, comparing the real cosine with the cosine you get after throwing most of the numbers away.
+All 2,016 pairs of tokens in the table are plotted, comparing the real cosine with the cosine you get after throwing most of the numbers away.
 
 Flattening to two directions and then measuring cosine tracks the real answer
 with a correlation of only 0.26, and the worst pair is wrong by 1.73, which on

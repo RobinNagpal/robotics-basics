@@ -107,13 +107,13 @@ matrix means nothing more than a grid of numbers, a tensor of shape
 
 One fully connected layer worked out in full: twelve multiplies, three row totals, three biases added and three ReLUs applied.
 
-The weights and inputs in that drawing are made up so that they are easy to follow.
-Follow the first row, where the weights +0.5, -0.2, +0.8 and +0.1 meet the inputs 2,
-1, -1 and 3, giving the products +1.0, -0.2, -0.8 and +0.3, which add up to 0.30; the
-bias of +0.10 makes 0.40, and because that is above 0 the ReLU leaves it and the
-neuron gives 0.40. The second neuron reaches -1.90 after its bias, so its ReLU gives
-0.00, and the third reaches 3.35 and gives 3.35. Each row of the twelve products is
-one neuron's share, which is exactly what a matrix multiply computes.
+The weights and inputs there are made up so that they are easy to follow. In the
+first row the weights +0.5, -0.2, +0.8 and +0.1 meet the inputs 2, 1, -1 and 3,
+giving the products +1.0, -0.2, -0.8 and +0.3, which add up to 0.30; the bias of
++0.10 makes 0.40, and because that is above 0 the ReLU leaves it. The second neuron
+reaches -1.90 after its bias, so its ReLU gives 0.00, and the third reaches 3.35.
+Each row of the twelve products is one neuron's share, which is exactly what a
+matrix multiply computes.
 
 ![Two shape pairs: (2, 4) times (4, 3) giving (2, 3) in green, and (2, 4) times (3, 3) marked refused in red](../../images/inside-a-network/the-shape-of-the-numbers/shapes-must-match.svg)
 
@@ -165,11 +165,10 @@ The bigger the multiply, the more arithmetic the machine gets out of each number
 Count it for two square grids of size N. The multiply does N x N x N multiply-adds,
 because each of the N x N squares of the answer needs N products added, while
 fetching needs only 3 x N x N, the two grids in and the one out. At 16 by 16 that is
-4,096 multiply-adds for 768 numbers moved, 5.3 each; at 256 by 256 it is 16,777,216
-for 196,608, which is 85.3 each; and at 4,096 by 4,096 it is 68,719,476,736 for
-50,331,648, which is 1,365.3 each. Adding two grids together, by contrast, does one
-addition for every three numbers moved whatever the size, and a machine built for
-that kind of work would spend nearly all its time waiting for memory.
+4,096 multiply-adds for 768 numbers moved, 5.3 each, and at 4,096 by 4,096 it is
+68,719,476,736 for 50,331,648, which is 1,365.3 each. Adding two grids together, by
+contrast, does one addition for every three numbers moved whatever the size, and a
+machine built for that work would spend nearly all its time waiting for memory.
 
 ![An 8 by 8 answer grid with a 4 by 4 block outlined, the four rows and four columns it needs, and a table of block sizes against numbers loaded and multiply-adds](../../images/inside-a-network/the-shape-of-the-numbers/tiles-reuse.svg)
 
@@ -213,10 +212,9 @@ Four readings of a seven-joint arm go through the same layer in one multiply, an
 
 The four readings there are simulated, drawn at random from the range of a joint,
 and the weights are made up too. The readings form a tensor of shape `(4, 7)`, the
-weights one of shape `(7, 3)`, and the answer comes out as `(4, 3)`, one row for each
-reading. The batch is the first number of the shape, and it is the one number in a
-shape that says nothing about the problem and everything about how the work is
-packaged.
+weights one of shape `(7, 3)`, and the answer comes out as `(4, 3)`. The batch is the
+first number of the shape, and it is the one number in a shape that says nothing
+about the problem and everything about how the work is packaged.
 
 ![Two panels: numbers moved per example falling from 2,363,136 at batch 1 to 13,056 at batch 256, and a bar chart comparing 1,024 examples one at a time with all at once](../../images/inside-a-network/the-shape-of-the-numbers/per-example-traffic.svg)
 
@@ -257,8 +255,7 @@ than in a laboratory, and the usual fix is to make each weight smaller.
 Section 4 ended with the weights dominating the traffic, so this section asks how
 big one weight has to be. Every number so far has been counted as four bytes, and
 that is a choice rather than a law. A **byte** is eight bits, and a bit is one
-position holding either 0 or 1, so the question is how many bits one number gets and
-how they are split up.
+position holding either 0 or 1, so the question is how the bits are split up.
 
 ![Four bars showing the bit layout of float32, bfloat16, float16 and int8, with the sign bit, the exponent bits and the fraction bits labelled and the byte count beside each](../../images/inside-a-network/the-shape-of-the-numbers/number-formats.svg)
 
@@ -313,8 +310,8 @@ arithmetic can recover from, while bfloat16 never overflows but finishes at
 4,620,288, which is 54 per cent short because once the total is large each new
 addition is too small for seven digits to notice. The lesson hardware designers drew
 is to keep the stored numbers small and the running totals large, so a card today
-usually holds weights at two bytes and adds the products up in float32 inside the
-multiplier, an arrangement that
+holds weights at two bytes and adds the products up in float32 inside the
+multiplier, which
 [normalisation and stability](../04_making-training-work/02_normalisation-and-stability.md)
 covers under the name mixed precision.
 

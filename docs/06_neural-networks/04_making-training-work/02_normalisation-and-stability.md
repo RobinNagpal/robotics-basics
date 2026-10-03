@@ -12,10 +12,10 @@ choice of model.
 
 So this page answers four questions. Why does a feature measured in millimetres
 beside one measured in metres make training almost impossible? What do the
-normalisation layers inside a modern network actually calculate? Why is the
-normalisation placed where it is, around the running total that a stack of
-blocks keeps? And what goes wrong when the numbers are held in half the usual
-number of bits, which every large run does today for speed?
+normalisation layers inside a modern network calculate? Why is the normalisation
+placed where it is, around the running total a stack of blocks keeps? And what
+goes wrong when the numbers are held in half the usual number of bits, which
+every large run does today for speed?
 
 The page assumes you know what a
 [gradient](../03_how-training-works/03_backpropagation.md) is, what a
@@ -53,26 +53,27 @@ were recorded.
 
 ![Two panels of scattered points, the left one showing reach from 222 to 638 and height from 0.08 to 0.61 on a stretched axis, the right one showing both features after standardising, from about -1.7 to 1.7](../../images/making-training-work/normalisation-and-stability/feature-ranges.svg)
 
-The reach runs from 222.0 to 637.7 with a spread of 123.496, and the height runs from 0.0801 to 0.6128 with a spread of 0.1555, so one feature is about 1,304 times bigger than the other.
+The reach runs from 222 to 637.7 with a spread of 123.5, and the height runs from 0.08009 to 0.6128 with a spread of 0.15554, so one feature is about 1,304 times bigger than the other.
 
 Each feature gets one weight, and the loss is the usual squared error. The
-trouble is that the gradient on a weight is proportional to the size of the
-feature it multiplies, so the weight on reach gets a gradient about 794 times
-bigger than the one on height, and a single learning rate has to serve both.
+gradient on a weight is proportional to the size of the feature it multiplies, so
+the weight on reach gets a gradient about 794 times bigger than the one on
+height, and a single learning rate has to serve both.
 
-![A log-log plot of loss above the best possible against gradient descent step, with the standardised run dropping almost immediately and the raw run creeping down over ten million steps](../../images/making-training-work/normalisation-and-stability/steps-to-train.svg)
+![A log-log plot of loss above the best possible against gradient descent step, with the standardised run dropping almost immediately and the raw run creeping down over twenty million steps](../../images/making-training-work/normalisation-and-stability/steps-to-train.svg)
 
-Standardising the two features gets the loss within 0.001 of the best possible in 21 steps, while leaving them in millimetres and metres takes 10,666,305 steps for the same thing.
+Standardising the two features gets the loss within 0.001 of the best possible in 2 steps, while leaving them in millimetres and metres takes 20,283,999 steps for the same thing.
 
-That is a factor of about half a million, and it is not a badly chosen learning
-rate, because each run uses the largest rate that is stable for it. Gradient
-descent on a squared-error loss can be worked out in closed form, so the script
-does that and checks the formula against a real loop, and both give a loss of
-0.17413 above the best possible after 2,000 steps.
+That is a factor of about ten million, and it is not a badly chosen learning
+rate, because each run uses half the largest rate that is stable for its own
+problem, which is the usual safe choice. Gradient descent on a squared-error loss
+can be worked out in closed form, so the script does that and checks the formula
+against a real loop, and both give a loss of 0.174332 above the best possible
+after 2,000 steps.
 
-![Two panels of weight value as a fraction of its best value against step, the raw panel showing the reach weight arriving quickly while the height weight stays near zero for a million steps, the standardised panel showing both arrive within about twenty steps](../../images/making-training-work/normalisation-and-stability/weight-paths.svg)
+![Two panels of weight value as a fraction of its best value against step, the raw panel showing the height weight flat at zero until a million steps, the standardised panel showing both weights reaching their best value within five steps](../../images/making-training-work/normalisation-and-stability/weight-paths.svg)
 
-In raw units the weight on reach is close to its best value after a few hundred steps while the weight on height is still near zero a million steps later, and after standardising both arrive together.
+In raw units the weight on height has not moved off zero after a million steps and both weights only settle near ten million, while after standardising both arrive within five steps.
 
 So the slowness is one weight moving at the wrong speed rather than everything
 being sluggish. **Normalisation** is the general name for any step that rescales
@@ -193,11 +194,10 @@ short ones are padded out with filler so the batch is a rectangle, so averaging
 down a column mixes real numbers with filler and the answer for a real number
 changes with how much padding its batch happens to carry.
 
-The third consequence is the awkward one. At prediction time there is often only
-one example, so there is no column to average, and batch normalisation keeps a
-running average and spread during training and uses those stored numbers
-instead, which means the layer calculates one thing while training and a
-different thing while predicting.
+The third consequence is the awkward one. At prediction time there is often
+only one example, so there is no column to average, and batch normalisation keeps
+a running average and spread during training and uses those instead, which means
+the layer calculates one thing while training and another while predicting.
 
 ![A bar chart of the two answers for the same single number, minus 0.4005 using the current batch and plus 0.6388 using the stored averages, with the stored average and spread printed above](../../images/making-training-work/normalisation-and-stability/train-and-predict-gap.svg)
 
@@ -258,16 +258,16 @@ stack also arrives at the bottom, plus a contribution from each block along the
 way, and the right-hand panel shows the early blocks of a pre-norm stack getting
 the stronger signal at every depth.
 
-![A log-log plot of the loss after 220 steps against learning rate, with pre-norm improving steadily while post-norm collapses to the loss of predicting the average at a learning rate of 0.01](../../images/making-training-work/normalisation-and-stability/learning-rate-stability.svg)
+![A log-log plot of the loss after 220 training steps against learning rate, with pre-norm improving steadily while post-norm collapses to the loss of predicting the average at a learning rate of 0.01](../../images/making-training-work/normalisation-and-stability/learning-rate-stability.svg)
 
-A stack of 24 blocks trains under both arrangements at learning rates of 0.001 and 0.003, but at 0.01 and above the post-norm stack collapses to a loss of 0.8368, which is what predicting the average of the targets would score.
+A stack of 24 blocks trains under both arrangements at learning rates of 0.001 and 0.003, but at 0.01 and above the post-norm stack collapses to a loss of 0.8368 after 220 steps, which is what predicting the average of the targets would score.
 
 That is the honest shape of the difference. At a small learning rate post-norm
 is fine and is in fact slightly better here, and at a large one it dies, while
 pre-norm keeps training. The usual repair for post-norm is warmup, meaning the
 learning rate starts near zero and is raised over the first few hundred steps,
 and in this run 50 steps of warmup is enough to bring the post-norm stack back
-to a loss below 0.00001 at a learning rate of 0.01. So the cost of pre-norm is
+to a loss of 0.000000042 at a learning rate of 0.01. So the cost of pre-norm is
 that the growing stream has to be normalised once more at the very end before
 the output layer, and the benefit is that the run survives a learning rate large
 enough to be worth using. All of this assumes the numbers are stored accurately
@@ -304,13 +304,12 @@ Mixed precision halves the weights used for the arithmetic and halves the gradie
 So mixed precision is not about saving memory on the weights, which is widely
 assumed and wrong. The pieces that stay in float32 are the master copy of the
 weights, the optimiser's two running averages, and the places where many numbers
-are added up, meaning the loss itself, the averages and spreads inside the
-normalisation layers, and the sum inside a softmax. The master copy is kept
-because a training step often changes a weight by less than one bfloat16 step,
-and adding a change that small to a bfloat16 weight does nothing, so the weight
-would never move. The saving is in the activations, because one layer's output
-for 2,048 rows of 4,096 numbers takes 32 MB in float32 and 16 MB in bfloat16,
-and a deep model holds many such outputs at once.
+are added up, meaning the loss, the averages and spreads inside the normalisation
+layers, and the sum inside a softmax. The master copy is kept because a training
+step often changes a weight by less than one bfloat16 step, and adding a change
+that small to a bfloat16 weight does nothing, so the weight would never move. The
+saving is in the activations, because one layer's output for 2,048 rows of 4,096
+numbers takes 32 MB in float32 and 16 MB in bfloat16.
 
 ![A histogram on log axes of 400,000 gradient values, with a red line at the point below which a float16 holds nothing but zero, and the same values shifted right by the loss scale](../../images/making-training-work/normalisation-and-stability/loss-scale-underflow.svg)
 
@@ -371,8 +370,8 @@ The gradient size is 0.1462 on an ordinary step and 994.1 on the bad one, which 
 That is the single most useful thing to log during a training run, because the
 gradient size names the step that went wrong while the loss only shows the damage
 afterwards. In real runs the bad step usually turns out to be a batch holding
-something odd, such as a page of repeated characters or a demonstration where the
-arm was knocked, and sometimes it is not the data at all.
+something odd, such as a page of repeated characters or a demonstration where
+the arm was knocked.
 
 ![Three loss curves from step 1,200 onwards: nothing done, which spikes and ends at 1.6276, gradient clipping, which ends at 1.6017, and rewinding and skipping the batch, which ends at 1.6018](../../images/making-training-work/normalisation-and-stability/what-to-do-about-a-spike.svg)
 
@@ -463,15 +462,13 @@ for batch, target in loader:
 ```
 
 The two printed vectors are exactly the numbers in section 2's pictures, which
-is worth checking for yourself, because it shows that `nn.LayerNorm` and
-`nn.RMSNorm` really are the arithmetic worked out there and not something more
-complicated. `torch.autocast` is doing a great deal for you in those four lines:
-it keeps a list of which operations are safe in bfloat16 and which are not, so
-the matrix multiplies run in bfloat16 while the normalisation statistics, the
-softmax sums and the loss stay in float32, and it does that without you changing
-a single layer. With float16 instead of bfloat16 you would also need
-`torch.amp.GradScaler` for section 5's loss scale, and it handles the halving,
-the doubling and the skipped steps on its own.
+shows that `nn.LayerNorm` and `nn.RMSNorm` really are the arithmetic worked out
+there. `torch.autocast` is doing a great deal in those four lines, because it
+keeps a list of which operations are safe in bfloat16 and which are not, so the
+matrix multiplies run in bfloat16 while the normalisation statistics, the softmax
+sums and the loss stay in float32, without you changing a single layer. With
+float16 you would also need `torch.amp.GradScaler` for section 5's loss scale,
+and it handles the halving, the doubling and the skipped steps on its own.
 
 What you still have to decide is where the normalisation goes, which the
 `Block` above answers by putting it before the feed-forward part, and which of

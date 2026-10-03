@@ -119,9 +119,9 @@ relative to each other.
 
 In this simulated row the prediction is 0.62 times the true distance plus 0.09, putting the mug 83 millimetres too near and the far table 216 millimetres too near, while keeping the near-to-far order exactly right.
 
-A model whose output is right up to one multiplication and one addition like that
-is still useful, because order is preserved, and the next section is about what
-you can and cannot do with it.
+A model whose output is right up to one multiplication and one addition is still
+useful, because the order is preserved, and the next section is about what you
+can and cannot do with it.
 
 ---
 
@@ -174,10 +174,10 @@ distance directly.
 ## 4. Two cameras, and the arithmetic of the shift
 
 Section 3 needed real distances to pin a relative map to, and the oldest way of
-measuring one is to use two cameras instead of one. Two cameras a fixed distance
-apart, looking at the same scene, are called a **stereo** pair, the distance
-between them is the baseline, and the difference between where a point lands in
-the two pictures is called the disparity. The whole method is one division.
+measuring one is to use two cameras. Two cameras a fixed distance apart, looking
+at the same scene, are called a **stereo** pair, the distance between them is the
+baseline, and the difference between where a point lands in the two pictures is
+called the disparity. The whole method is one division.
 
 ![A plan view of two cameras 60 millimetres apart with lines to a point at 0.40 metres, beside a curve of disparity against distance with marked values from 140 to 10.5 pixels](../../images/models-that-see/depth-and-3d/stereo-geometry.svg)
 
@@ -310,8 +310,8 @@ why point-based networks are more common now.
 
 ## 7. Learned scenes: radiance fields and splatting
 
-Sections 1 to 6 all described one camera position at one moment, and a point
-cloud built that way has holes wherever the camera could not see. The last idea
+Sections 1 to 6 all described one camera position at one moment, so a point cloud
+built that way has holes wherever the camera could not see. The last idea
 on this page is different in kind, because instead of measuring one view it fits
 a description of the whole scene to many photographs at once, and then draws the
 scene again from any viewpoint you ask for.

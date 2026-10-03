@@ -17,8 +17,8 @@ it against a weight, because that shape is the ground the next page walks down.
 
 It assumes you know what a weight, a layer and a parameter are, and no statistics
 at all. Every number in the pictures was worked out by
-`docs/diagrams/how_training_works_1.py`, and the small tables were chosen
-by hand so that you can redo the sums yourself.
+`docs/diagrams/how_training_works_1.py`, and the small tables were chosen by hand
+so that you can redo the sums yourself.
 
 ## Contents
 
@@ -93,14 +93,13 @@ than you would expect.
 
 ![A table of eight parts with the travel needed, the travel predicted, the error, the error squared and the size of the error, with column totals of zero, 36 and 14](../../images/how-training-works/the-score-of-being-wrong/the-error-table.svg)
 
-The signed errors add to zero, the squared errors to 36 and the error sizes
-to 14.
+The signed errors add to zero, the squared errors to 36 and the error sizes to 14.
 
-Read the table one row at a time: the part, the travel it really needed, what
-the model predicted, and the difference. The last two columns
-throw the sign away, and the signed total shows why that matters, because it
-comes to exactly zero, so a model 2 mm too high on one part and 2 mm too low on
-another would look perfect if you added the errors up.
+Read the table one row at a time: the part, the travel it really needed, what the
+model predicted, and the difference. The last two columns throw the sign away,
+and the signed total shows why that matters, because it comes to exactly zero, so
+a model 2 mm too high on one part and 2 mm too low on another would look perfect
+if you added the errors up.
 
 The **squared error** of one prediction is the error multiplied by itself, and
 the loss for the whole set is the average of those, here 36 divided by 8, or
@@ -114,7 +113,7 @@ Squaring an error of 4 mm charges 16, four times what its size alone charges.
 The left chart is the heart of the difference. At an error of 1 mm both penalties
 charge 1, at 2 mm the squared penalty is 4 against 2, at 4 mm it is 16 against 4,
 and at 12 mm it is 144 against 12, so squared error charges a big mistake far
-more than twice what it charges one half the size. On the right, part 7, the one
+more than twice what it charges one of half the size. On the right, part 7, the one
 4 mm miss, supplies 16 of the squared total of 36 but only 4 of the absolute
 total of 14, which is enough to change which model wins.
 
@@ -151,7 +150,8 @@ middle readings sit. The squared-error answer is always the average, which is
 dragged by anything extreme, while the absolute-error answer is always the middle
 value, which does not care how far away the extremes are. A depth camera that
 returns one nonsense reading in fifty is ordinary, which is why robot code often
-scores distances with absolute error.
+scores distances with absolute error. Both of these losses score an answer that
+is a number.
 
 ---
 
@@ -167,7 +167,8 @@ A **logit** is one of those raw scores, whatever comes out of the last layer for
 that one answer, so it can be any size and can be negative, and on its own it
 means nothing except that a larger logit means the model prefers that answer
 more. A **probability** is a number between 0 and 1 saying how likely something
-is, and the probabilities over answers that cover everything must add up to 1. Turning logits into probabilities is the job of **softmax**.
+is, and the probabilities over answers that cover everything must add up to 1.
+Turning logits into probabilities is the job of **softmax**.
 
 ![A table turning four logits into four probabilities by raising e to each logit, adding the four results to 59.965 and dividing, beside a bar chart of the logits and the probabilities](../../images/how-training-works/the-score-of-being-wrong/softmax-arithmetic.svg)
 
@@ -243,7 +244,7 @@ about 12 times the sure right answer, even though anybody scoring accuracy would
 count both as correct, so cross-entropy pushes the model not merely to be right
 but to be right confidently, and the sure wrong answer costs about 44 times the
 sure right answer and three times more than guessing. In real training the loss
-is averaged over a batch, which is a group of examples handled together.
+is averaged over a batch, a group of examples handled together.
 
 ![Two bar charts over six pictures, the probability each one gave to mug and the cross-entropy loss it was charged, with the batch average marked](../../images/how-training-works/the-score-of-being-wrong/batch-average.svg)
 
@@ -273,8 +274,8 @@ millimetres, was 3.1, 5.8, 9.2, 11.9 and 15.1.
 
 ![Five measured parts as dots, with three straight lines through the origin for w = 2.000, w = 3.007 and w = 4.000, and thin vertical lines showing each line's errors](../../images/how-training-works/the-score-of-being-wrong/five-points-three-lines.svg)
 
-Setting w to 2.000 gives a loss of 11.182, w = 4.000 gives 10.862, and w = 3.007
-gives 0.021.
+Here w = 2.000 gives a loss of 11.182, w = 4.000 gives 10.862 and w = 3.007 gives
+0.021.
 
 The thin vertical lines are the errors, and they shrink almost to nothing for the
 middle line. The loss is 11.1820 at w = 2.0, 2.8520 at 2.5, 0.0220 at 3.0, 2.6920
@@ -290,9 +291,8 @@ think about training, because the horizontal axis is the weight, the vertical
 axis is the loss, and training is the job of finding the bottom. Here the bottom
 sits at the total of height times travel divided by the total of height times
 height, which is 165.4 divided by 55, or 3.0073. A real network has millions of
-weights, so nobody can draw its landscape or solve for its bottom, but the idea
-carries over unchanged and the next page walks down this very curve. The shape
-depends on which loss you chose.
+weights, so nobody can draw its landscape, but the idea carries over and the next
+page walks down this very curve. The shape depends on which loss you chose.
 
 ![Two charts of the same five parts against the same weight, the squared error as one smooth curve and the absolute error as five straight pieces joined at kinks](../../images/how-training-works/the-score-of-being-wrong/squared-and-absolute-landscape.svg)
 
@@ -453,7 +453,7 @@ can be walked down later. Every one of these losses returns a single number for 
 whole batch, which is the requirement from section 1, and each also records how
 it was worked out so that the next page's method can ask which way is downhill.
 That bookkeeping is the real service, because writing the average of squared
-differences takes one line while writing the slope of it through a hundred-layer
+differences takes one line while writing its slope through a hundred-layer
 network takes a year.
 
 One detail catches nearly everybody once, which is that `nn.CrossEntropyLoss`

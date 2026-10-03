@@ -9,12 +9,11 @@ trained on, and a model with enough weights can drive it down to almost nothing
 by learning those particular examples one by one, without learning anything that
 holds for an example it has not seen.
 
-So this page answers one question. How do you tell a model that has learned
-the pattern from a model that has only memorised the answers? The short answer
-is to keep some examples back, never train on them, and watch the error on
-those instead, and the rest of the page is needed because keeping examples back
-is easy to do wrongly and because each way of pushing a model towards learning
-costs you something.
+So this page answers one question. How do you tell a model that has learned the
+pattern from a model that has only memorised the answers? The short answer is to
+keep some examples back and watch the error on those instead, and the rest of the
+page is needed because keeping examples back is easy to do wrongly and because
+each way of pushing a model towards learning costs you something.
 
 The page assumes you know what a [loss](../03_how-training-works/01_the-score-of-being-wrong.md)
 is, what a [gradient descent step](../03_how-training-works/02_gradient-descent.md)
@@ -72,13 +71,11 @@ on its training examples than on new ones is said to **overfit**.
 
 Training error falls at every single degree while held-out error reaches its lowest point of 0.482 at degree 5 and then climbs by a factor of more than three thousand.
 
-The best held-out error, 0.4816, is larger than the 0.35 of sensor noise,
-because 12 points cannot pin the curve down exactly even at the best degree. The
-important part is that the training error keeps improving from degree 5 onwards
-while the held-out error gets worse, so it cannot be used to choose the degree at
-all. The same happens with a network, and this one has one input, two hidden
-layers of 96 units, and 9,601 weights and biases, which is about 800 free numbers
-for each of the 12 training points.
+The important part is that the training error keeps improving from degree 5
+onwards while the held-out error gets worse, so it cannot be used to choose the
+degree at all. The same happens with a network, and this one has one input, two
+hidden layers of 96 units, and 9,601 weights and biases, which is about 800 free
+numbers for each of the 12 training points.
 
 ![A log-log plot of training loss and held-out loss against training step, with both falling together until step 481, after which the held-out loss turns and climbs to 3.63 while the training loss keeps falling to 0.0096](../../images/making-training-work/overfitting-and-generalisation/network-train-and-held-out.svg)
 
@@ -224,9 +221,9 @@ using that copy rather than the weights you end with.
 Early stopping keeps the weights from step 481, where the validation loss was 0.2204, instead of the weights from step 8,000, where it was 3.6261.
 
 You do not stop the moment the validation loss ticks upwards, because it
-wobbles, so you wait a fixed number of scores for a new low before giving up,
-and that number is called the patience. The cost is a validation set and the
-time spent pausing training to score it.
+wobbles, so you wait a fixed number of scores for a new low before giving up, and
+that number is called the patience. The cost is the time spent pausing training
+to score the validation set.
 
 The second method changes the network during training. **Dropout** means
 choosing, at every training step and at random, some fraction of the units in a
@@ -460,10 +457,8 @@ The library does three things for you. It applies the dropout mask and the
 1.3333 scaling and turns both off when you call `model.eval()`, which is the
 thing people most often forget and the reason a model can look worse in testing
 than in training. It applies weight decay inside the optimiser rather than by
-adding a term to the loss, which is what the W in AdamW means and what makes the
-decay strength mean the same thing at every learning rate. And `state_dict` and
-`load_state_dict` make keeping and restoring the best weights two lines rather
-than a bookkeeping exercise.
+adding a term to the loss, which is what the W in AdamW means. And `state_dict`
+and `load_state_dict` make keeping and restoring the best weights two lines.
 
 What you still have to decide is everything that matters. The library has no
 idea that your frames came from episodes, so the split is yours to get right, and

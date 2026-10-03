@@ -1075,9 +1075,12 @@ def softmax_of_one_row() -> None:
     cols = [MUTED] * k
     cols[r] = SLIDE
     ax1.bar(range(k), row, color=cols, width=0.6)
+    span = float(row.max() - min(row.min(), 0.0))
     for j, v in enumerate(row):
-        ax1.text(j, v + (0.03 if v >= 0 else -0.08), f'{v:+.2f}', ha='center', fontsize=9.5)
+        ax1.text(j, v + (0.04 * span if v >= 0 else -0.13 * span), f'{v:+.2f}',
+                 ha='center', fontsize=9.5)
     ax1.axhline(0, color=INK, lw=0.8)
+    ax1.set_ylim(min(row.min() * 1.45, -0.05), row.max() * 1.25)
     ax1.set_xticks(range(k))
     ax1.set_xticklabels([f'cap {j + 1}' for j in range(k)], fontsize=9)
     ax1.set_ylabel(f'similarity to picture {r + 1}', fontsize=10)
@@ -1693,7 +1696,7 @@ def labels_needed() -> None:
     cols = {'frozen backbone': SLIDE, 'top 8 directions': WRIST, 'from scratch': GRIP}
     for off, (key, vals) in zip([-width, 0.0, width], rows.items()):
         xs = np.arange(len(targets)) + off
-        heights = [v if v is not None else 18000.0 for v in vals]
+        heights = [v if v is not None else 6000.0 for v in vals]
         alphas = [1.0 if v is not None else 0.3 for v in vals]
         for x, h, al in zip(xs, heights, alphas):
             ax.bar([x], [h], width=width, color=cols[key], alpha=al,
@@ -1706,7 +1709,7 @@ def labels_needed() -> None:
             else:
                 ax.text(x, v * 1.08, f'{v:.0f}', ha='center', fontsize=9.5, weight='bold')
     ax.set_yscale('log')
-    ax.set_ylim(30, 20000)
+    ax.set_ylim(30, 40000)
     ax.set_xticks(range(len(targets)))
     ax.set_xticklabels([f'{t:.0%} accuracy' for t in targets], fontsize=10)
     ax.set_ylabel('labelled examples needed (log scale)', fontsize=10)
@@ -2103,9 +2106,9 @@ def activations_grow_with_batch() -> None:
     ax.plot(batches, [(fixed + a) / 1e9 for a in acts_cp], marker='s', color=SLIDE, lw=2.0,
             label='keeping one per block and recomputing the rest')
     ax.axhline(fixed / 1e9, color=MUTED, ls='--', lw=1.3)
-    ax.text(batches[0], fixed / 1e9 * 1.04,
+    ax.text(batches[-1], fixed / 1e9 * 0.93,
             f'parameters, gradients and optimiser state: {fixed / 1e9:.0f} GB',
-            fontsize=9, color=MUTED)
+            fontsize=9, color=MUTED, ha='right', va='top')
     ax.set_xscale('log')
     ax.set_xticks(batches)
     ax.set_xticklabels([str(b) for b in batches])
@@ -2567,7 +2570,7 @@ def duplicates_waste_the_budget() -> None:
         ax2.text(f * 100, 100 * a + 1.2, f'{100 * a:.1f}', ha='center', fontsize=9.5)
     ax2.set_xlabel('percentage of the set that is copies', fontsize=10)
     ax2.set_ylabel('accuracy on held-out pictures (per cent)', fontsize=10)
-    ax2.set_ylim(20, 103)
+    ax2.set_ylim(20, 108)
     ax2.set_title('and the accuracy falls with every copy', fontsize=11.5, weight='bold')
     fig.suptitle('Copies cost the same to train on and teach nothing, which is why '
                  'duplicates are taken out first', fontsize=12.5, weight='bold', y=1.0)

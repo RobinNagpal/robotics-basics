@@ -622,6 +622,7 @@ def quantisation_error_vs_bins() -> None:
     ax.set_yscale('log')
     ax.set_xticks(BIN_LIST)
     ax.set_xticklabels([str(b) for b in BIN_LIST])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_xlabel('number of bins each action number is written in', fontsize=10)
     ax.set_ylabel('error of one joint in one step (degrees)', fontsize=10)
     ax.legend(fontsize=9, frameon=False, loc='lower left')
@@ -969,6 +970,7 @@ def flow_steps_vs_error() -> None:
     ax.set_yscale('log')
     ax.set_xticks(STEP_LIST)
     ax.set_xticklabels([str(k) for k in STEP_LIST])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_xlabel('number of steps the head takes to produce one chunk', fontsize=10)
     ax.set_ylabel('distance from the 128-step answer\n(degrees a joint a step)', fontsize=10)
     ax.set_title('Fewer steps is faster and less exact, and the fall is steep at first',
@@ -1517,6 +1519,7 @@ def pooling_vs_data() -> None:
     ax.set_xscale('log')
     ax.set_xticks(sizes)
     ax.set_xticklabels([str(n) for n in sizes])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_xlabel('training examples recorded on arm B', fontsize=10)
     ax.set_ylabel('error in the joint movement it asks for (degrees)', fontsize=10)
     ax.set_ylim(0, max(max(alone), max(with_a)) * 1.15)

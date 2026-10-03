@@ -2822,8 +2822,9 @@ def fig_accuracy_against_saving() -> None:
     ax.set_xlabel('times smaller than the trained network (log scale)', fontsize=10)
     ax.set_ylabel('accuracy given up', fontsize=10)
     best = pts[-1]
+    lost = round(b.acc, 3) - round(best[1], 3)
     ax.set_title(f'Measured on the same small network: a distilled student squeezed to 4 '
-                 f'bits is {best[2]:.0f} times smaller for {b.acc - best[1]:.3f} '
+                 f'bits is {best[2]:.0f} times smaller for {lost:.3f} '
                  f'of accuracy', fontsize=11.6, weight='bold')
     ax.grid(color=GRID, lw=0.6, alpha=0.6)
     ax.set_axisbelow(True)
@@ -2918,7 +2919,7 @@ def fig_stack_methods() -> None:
     ax2.set_axisbelow(True)
     fig.suptitle(f'Distilling and then quantising gives '
                  f'{rows[0][2] / rows[4][2]:.0f} times smaller weights for '
-                 f'{rows[0][1] - rows[4][1]:.3f} of accuracy',
+                 f'{round(rows[0][1], 3) - round(rows[4][1], 3):.3f} of accuracy',
                  fontsize=12.0, weight='bold', y=1.02)
     _save(fig, SM_DOC, 'distil-then-quantise.svg')
 

@@ -813,14 +813,15 @@ def noise_prediction_target() -> None:
     ax.text(0.45, 0.72, f'the noise, times {np.sqrt(1 - ab):.3f}\n'
             f'({eps[0, 0]:.2f}, {eps[0, 1]:.2f})', fontsize=9.5, color=GRIP)
     ax.plot(xt[0, 0], xt[0, 1], marker='X', ms=14, color=PURPLE, zorder=5)
-    ax.text(xt[0, 0] + 0.15, xt[0, 1] - 0.45,
+    ax.text(xt[0, 0] + 0.22, xt[0, 1] - 0.72,
             f'what the network is shown:\n({xt[0, 0]:.2f}, {xt[0, 1]:.2f}), '
             f'at t = {t}', fontsize=9.5, color=PURPLE)
     guess = (xt - np.sqrt(1 - ab) * hat) / np.sqrt(ab)
     ax.annotate('', xy=(guess[0, 0], guess[0, 1]), xytext=(xt[0, 0], xt[0, 1]),
                 arrowprops=dict(arrowstyle='->', color=SLIDE, lw=2.4, ls='--'))
-    ax.plot(guess[0, 0], guess[0, 1], marker='o', ms=9, color=SLIDE, zorder=5)
-    ax.text(guess[0, 0] + 0.12, guess[0, 1] + 0.05,
+    ax.plot(guess[0, 0], guess[0, 1], marker='o', ms=17, color=SLIDE, zorder=6,
+            markerfacecolor='none', markeredgewidth=2.4)
+    ax.text(guess[0, 0] + 0.22, guess[0, 1] + 0.30,
             f'taking out the noise it named,\n({hat[0, 0]:.2f}, {hat[0, 1]:.2f}), '
             f'puts the clean\nwaypoint at ({guess[0, 0]:.2f}, {guess[0, 1]:.2f}),'
             f'\nwhich is nowhere a waypoint sits',

@@ -169,6 +169,8 @@ class Shape:
 
     def report(self) -> None:
         print('--- the stated picture model ---')
+        print(f'the stated shape            {IMG} by {IMG} pixels, {PATCH} by {PATCH} '
+              f'patches, {BLOCKS} blocks, width {WIDTH}, feed-forward inner width {FF}')
         print(f'tokens per picture          {TOKENS}')
         print(f'patch embedding             {self.patch_embed:,}')
         print(f'position table + token      {self.positions:,}')
@@ -1164,15 +1166,20 @@ def fig_rung_arithmetic() -> None:
     _save(fig, 'rung-arithmetic.svg')
 
 
-def fig_rung_human_hours() -> None:
-    """Stacked human hours against machine minutes, by rung."""
+def human_hours() -> dict[str, list[float]]:
+    """The hours a person spends at each rung, at the stated rates."""
     collect = RUN.pictures / PICTURES_AN_HOUR
-    hours = {
+    return {
         'writing the prompt or the code': [1.0, 2.0, 3.0, 5.0, 6.0, 10.0],
         'collecting and checking examples': [0.5, 0.5, collect + 1.5, collect + 1.5,
                                              collect + 1.5, collect + 1.5],
         'running it and judging it': [0.5, 1.0, 2.0, 4.0, 6.0, 10.0],
     }
+
+
+def fig_rung_human_hours() -> None:
+    """Stacked human hours against machine minutes, by rung."""
+    hours = human_hours()
     fig, ax = plt.subplots(figsize=(10.2, 4.6))
     _plain(ax)
     xs = np.arange(6)
@@ -1457,7 +1464,7 @@ def fig_cheap_test_hours(C: 'Candidates') -> None:
         ax.text(v + 0.6, i, f'{v:.1f} hours for all {CANDIDATES}', va='center',
                 fontsize=9.5, color=INK)
     ax.axvline(40, color=INK, linewidth=1.1, linestyle='--')
-    ax.text(40.6, -0.52, 'a working week', fontsize=9, color=INK)
+    ax.text(40.6, 0.5, 'a working week', fontsize=9, color=INK, va='center')
     ax.set_yticks([0, 1])
     ax.set_yticklabels(ways, fontsize=9.5)
     ax.invert_yaxis()
@@ -1649,10 +1656,10 @@ def fig_three_jobs_examples(J: 'Jobs') -> None:
     _save(fig, 'three-jobs-examples.svg')
 
 
-def fig_three_jobs_hours(J: 'Jobs') -> None:
-    """What stopping at the right rung saves against going to the top of the ladder."""
+def job_hours(J: 'Jobs') -> list[tuple[str, float, str]]:
+    """The hours each job costs at its chosen rung and at the rungs above it."""
     collect_a = J.a_hours + 2.0
-    rows = [
+    return [
         ('A, head on frozen features', collect_a + 3.0, LINK),
         ('A, full fine-tune instead', collect_a + 14.0, PURPLE),
         ('A, from nothing instead', PRE.small_hours, GRIP),
@@ -1661,6 +1668,11 @@ def fig_three_jobs_hours(J: 'Jobs') -> None:
         ('C, an adapter on a policy', J.c_hours + 8.0, TEAL),
         ('C, from nothing instead', PRE.small_hours, GRIP),
     ]
+
+
+def fig_three_jobs_hours(J: 'Jobs') -> None:
+    """What stopping at the right rung saves against going to the top of the ladder."""
+    rows = job_hours(J)
     fig, ax = plt.subplots(figsize=(10.4, 4.6))
     _plain(ax)
     ys = np.arange(len(rows))
@@ -1731,6 +1743,42 @@ def fig_job_a_where_to_stop(L: 'Ladder') -> None:
     _save(fig, 'job-a-where-to-stop.svg')
 
 
+def report_pictures(L: 'Ladder', J: 'Jobs') -> None:
+    """Print the remaining numbers that only the pictures would otherwise show."""
+    print('--- the numbers drawn in the pictures ---')
+    print(f'one picture is {IMG} by {IMG} pixels in 3 colours, which is '
+          f'{3 * IMG * IMG:,} numbers')
+    counts = rung_trainable()
+    kept = rung_kept_bytes()
+    for i, name in enumerate(RUNG_NAMES):
+        print(f'{name:27s} trains {counts[i]:>10,} '
+              f'({100 * counts[i] / SH.whole:.6g}% of the model), keeps '
+              f'{kept[i]:>12,.0f} bytes = {kept[i] / 1024:9.1f} KiB = '
+              f'{kept[i] / 2 ** 20:7.1f} MiB')
+    print(f'twenty jobs: {20 * kept[3] / 2 ** 20:,.0f} MiB of adapters against '
+          f'{20 * kept[4] / 2 ** 30:,.1f} GiB of fine-tunes')
+    for i, name in enumerate(RUNG_NAMES):
+        print(f'{name:27s} {RUN.flop[i]:.3g} FLOP for the stated run')
+    hours = human_hours()
+    for i, name in enumerate(RUNG_NAMES):
+        total = sum(v[i] for v in hours.values())
+        print(f'{name:27s} {total:5.1f} hours of a person, against '
+              f'{RUN.flop[i] / DESKTOP / 60:.2f} minutes of machine')
+    print(f'collecting {RUN.pictures} pictures at {PICTURES_AN_HOUR:.0f} an hour is '
+          f'{RUN.pictures / PICTURES_AN_HOUR:.1f} hours')
+    print(f'the backbone pretrain is {PRE.small_pictures:,} pictures and '
+          f'{PRE.small_passes} passes')
+    for name, h, _ in job_hours(J):
+        print(f'{name:28s} {h:8.1f} hours')
+    for rung in (2, 4):
+        gains = np.diff(L.test[rung])
+        row = ', '.join(f'{SIZES[i]}->{SIZES[i + 1]} {g:+.3f}'
+                        for i, g in enumerate(gains))
+        print(f'{RUNG_NAMES[rung]:27s} gain per doubling: {row}')
+    print(f'the held-out set in the simulation is 1,500 examples, and the climb test '
+          f'is read at {CLIMB_AT} examples')
+
+
 def main() -> None:
     """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
     global PNG_DIR
@@ -1748,6 +1796,7 @@ def main() -> None:
     ladder.report()
     cands = Candidates()
     cands.report()
+    report_pictures(ladder, jobs)
 
     fig_ladder_what_moves()
     fig_ladder_trainable_bars()

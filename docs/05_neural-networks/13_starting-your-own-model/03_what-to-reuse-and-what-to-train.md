@@ -7,13 +7,12 @@ page told you in what order to do the work. It did not say what you are actually
 training, and this page answers that, because for almost everybody the honest answer
 is that you are training very little of it.
 
-The reason is that somebody has already paid for most of the model you need. A
-published model has had millions of pictures or thousands of millions of words pushed
-through it, and what came out is a file of numbers that already measures edges, parts,
-objects, words and relations, so your job is usually a small question asked of those
-measurements. The choices form a ladder of six rungs, from using a published model
-exactly as it is up to training one from nothing, and this page is about which rung to
-stand on and what each one costs.
+The reason is that somebody has already paid for most of the model you need. A published
+model has had millions of pictures or thousands of millions of words pushed through it,
+and what came out is a file of numbers that already measures edges, parts, objects, words
+and relations, so your job is usually a small question asked of those measurements. The
+choices form a ladder of six rungs, and this page is about which rung to stand on and
+what each one costs.
 
 The page assumes you have read [fine-tuning and
 adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md), which
@@ -22,14 +21,14 @@ matrix and why training hard on a narrow set of examples destroys what the model
 already good at. This page does not explain those mechanisms again, but decides between
 them using numbers rather than habit.
 
-Two kinds of number appear here. The parameter counts, the memory sizes and the
-arithmetic counts are exact sums on one stated model: a transformer over picture
-patches, 224 by 224 pixels cut into 16 by 16 patches, so 197 pieces of input, with 12
-blocks, a width of 768 and a feed-forward inner width of 3072. The learning experiments
-are simulated, on a made-up job small enough to run hundreds of times, and the page says
-so wherever it quotes one. The speed of the machines, the rent and the minutes a person
-takes to collect one example are stated assumptions, given in full where they are used.
-Every number below is printed by `docs/diagrams/starting_your_own_model_3.py`.
+Two kinds of number appear here. The parameter counts, the memory sizes and the arithmetic
+counts are exact sums on one stated model: a transformer over picture patches, 224 by 224
+pixels cut into 16 by 16 patches, so 197 pieces of input, with 12 blocks, a width of 768
+and a feed-forward inner width of 3072. The learning experiments are simulated, on a
+made-up job small enough to run hundreds of times, and the page says so wherever it quotes
+one. The speed of the machines, the rent and the minutes a person takes to collect one
+example are stated assumptions. Every number below is printed by
+`docs/diagrams/starting_your_own_model_3.py`.
 
 ## Contents
 
@@ -48,22 +47,22 @@ Every number below is printed by `docs/diagrams/starting_your_own_model_3.py`.
 
 The order of the work from the page before assumed you already knew what you were
 training, so the first thing to fix is that, and the choice has only six answers: use a
-published model exactly as it is, write a better prompt for it, train a small new layer
-on top of its frozen output, train an adapter beside its weights, fine-tune the whole of
-it, or train the same shape from random numbers. They are in order of what they let
-training change, and that order is also the order of what they cost.
+published model as it is, write a better prompt for it, train a small new layer on top of
+its frozen output, train an adapter beside its weights, fine-tune the whole of it, or
+train the same shape from random numbers. They are in order of what they let training
+change, which is also the order of what they cost.
 
 ![Six copies of a 12-block picture model, coloured by what each rung lets training change, with the count of changed numbers under each](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/ladder-what-moves.svg)
 
-Each column is the same model, and the colour marks the parts that training is allowed
-to move, with the count of numbers it moves written underneath.
+Each column is the same model, and the colour marks the parts training may move, with the
+count of numbers it moves written underneath.
 
 Working the sums out for the stated shape gives those counts. One block holds 2,362,368
-numbers in its attention part and 4,722,432 in its feed-forward part, so a block is
-7,087,872 and the twelve blocks are 85,054,464; with the patch embedding and the
-position table that is a backbone of 85,798,656. A head that turns its output into six
-answers is 768 times 6 plus 6, which is 4,614, and an adapter of rank 8 beside the
-attention output and both feed-forward matrices of every block is 884,736.
+numbers in its attention part and 4,722,432 in its feed-forward part, so the twelve blocks
+are 85,054,464, and with the patch embedding and the position table the backbone is
+85,798,656. A head that turns its output into six answers is 768 times 6 plus 6, which is
+4,614, and an adapter of rank 8 beside the attention output and both feed-forward matrices
+of every block is 884,736.
 
 ![Horizontal bars on a logarithmic scale of the numbers each rung trains: nothing, nothing, 4,614, 889,350 and 85,803,270 twice](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/ladder-trainable-bars.svg)
 
@@ -77,48 +76,45 @@ which is the pretrained file in one case and a random draw in the other.
 
 ![Horizontal bars on a logarithmic scale of the bytes kept for each extra job: nothing, 1,600 bytes of prompt, 9.0 KiB, 1.7 MiB and 163.7 MiB twice](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/ladder-bytes-kept.svg)
 
-The second thing a rung costs is storage, because every job you adapt the model for
-leaves behind a file you have to keep and ship.
+The second thing a rung costs is storage, because every job leaves behind a file you have
+to keep and ship.
 
-Storing the changed numbers at two bytes each, a head is 9.0 KiB and an adapter is
-1.7 MiB, while a fine-tune is the whole 163.7 MiB again. A cell that does twenty jobs
-keeps 34 MiB of adapters beside one base model, or 3.2 GiB of separate models, which is
-why a fleet with many jobs reaches for adapters even when memory during training was
-never the problem.
+Storing the changed numbers at two bytes each, a head is 9.0 KiB and an adapter 1.7 MiB,
+while a fine-tune is the whole 163.7 MiB again. A cell that does twenty jobs keeps 34 MiB
+of adapters beside one base model, or 3.2 GiB of separate models, which is why a fleet
+with many jobs reaches for adapters even when memory was never the problem.
 
 ![Paired bars for each rung, showing accuracy on the 256 examples it trained on beside accuracy on 1,500 held back](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/climb-test-fit-or-data.svg)
 
-The last picture is the test that tells you to climb, and it is two numbers you already
-have: how well the model does on the examples it trained on, and how well it does on
-examples it has never seen.
+The last picture is the test that tells you to climb, and it needs two numbers you already
+have: how well the model does on the examples it trained on, and on examples it has never
+seen.
 
-These numbers come from the simulated job of the next section, measured at 256
-examples. A head on frozen features gets 0.572 of its own training examples right, so it
-cannot even fit what it was shown, and no amount of extra data fixes that, because the
-frozen output does not contain the distinction the job needs; the answer is to climb. An
-adapter and a full fine-tune both reach 1.000 on their own examples while reaching 0.631
-and 0.638 on held-out ones, and that gap is the opposite illness, which is that the
-model has learned these particular examples rather than the job; the answer there is
-more examples, not a higher rung. So the rule is short: a low left bar says climb, and a
-wide gap between the bars says collect.
+These numbers come from the simulated job of the next section, measured at 256 examples. A
+head on frozen features gets 0.572 of its own training examples right, so it cannot even
+fit what it was shown, and no amount of extra data fixes that, because the frozen output
+does not contain the distinction the job needs; the answer is to climb. An adapter and a
+full fine-tune both reach 1.000 on their own examples while reaching 0.631 and 0.638 on
+held-out ones, and that gap is the opposite fault, which is that the model has learned
+these particular examples rather than the job. So the rule is short: a low left bar says
+climb, and a wide gap between the bars says collect.
 
 ---
 
 ## 2. What each rung costs and what it buys
 
 The climb test says when to move, and this section says what moving costs, because the
-three bills are not alike: one rung costs you examples, another costs memory, and the
-last costs a person's week. The accuracy figures come from a simulated job, built so
-that the whole ladder can be run ten times over and measured rather than asserted.
+bills differ: one rung costs examples, another memory, and the last a person's week. The accuracy figures come from a simulated job, built so the whole ladder can be run ten
+times and measured rather than asserted.
 
 One example in that simulation is 200 numbers standing in for one look at one object,
 mixed from 16 hidden ones by a fixed random rule put through a cosine. Six of the hidden
 numbers say how strongly each part of the object is present and ten are nuisance,
 standing for the lighting, the background and the pose. The published model was
 pretrained on 12,000 examples of a six-way job, which is to say which part is strongest,
-and it reaches 0.701 on that. The new job asks a different question about the same
-parts, which is whether the first two are both present, exactly one of them, or neither,
-and the best anything could do on it is 0.826 while guessing scores 0.333.
+and it reaches 0.701 on that. The new job asks whether the first two parts are both
+present, exactly one, or neither, and the best anything could do on it is 0.826 while
+guessing scores 0.333.
 
 ![Six curves of held-out accuracy against the number of your own examples, from 4 to 1,024, with a ceiling line at 0.826](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/rung-learning-curves.svg)
 
@@ -126,33 +122,31 @@ Every line is one rung, averaged over ten separate worlds, and the number of you
 examples runs along the bottom.
 
 Using the model as it is scores 0.387 whatever you do, because nothing about it changes.
-The prompt rung, which here is choosing the best fixed reading of the model's existing
-answers without training anything, climbs to about 0.41 and stops, because a prompt can
-only reach behaviour the weights already hold. A head on frozen features reaches 0.505
-at 512 examples and goes no further, an adapter reaches 0.656 and a full fine-tune 0.683.
+The prompt rung, which here is choosing the best fixed reading of its existing answers
+without training anything, climbs to about 0.41 and stops, because a prompt can only reach
+behaviour the weights already hold. A head on frozen features reaches 0.505 at 512
+examples and goes no further, an adapter reaches 0.656 and a full fine-tune 0.683.
 So the gain from each climb at 512 examples is 0.015 for the prompt, 0.103 for the head,
 0.150 for the adapter and 0.027 for the full fine-tune, which says that the two climbs
 worth making here are onto the head and onto the adapter.
 
-The last line is the honest one. Training the same shape from random numbers reaches
-0.675 at 512 examples, which is as good as fine-tuning the pretrained model, and this is
-the one place where the simulation is kinder to training from nothing than real work is.
-Its input is 200 numbers while a real picture is 150,528, and its pretraining was 12,000
-examples rather than a million. A small model on a small input is exactly the case where
-training from nothing works, which section 3 returns to, and it is not the case you are
-in when the input is a camera frame.
+The last line is the honest one. Training the same shape from random numbers reaches 0.675
+at 512 examples, which is as good as fine-tuning, and this is the one place where the
+simulation is kinder to training from nothing than real work is, because its input is 200
+numbers while a real picture is 150,528. A small model on a small input is exactly the
+case where training from nothing works, which section 3 returns to, and it is not the case
+you are in when the input is a camera frame.
 
 ![Stacked memory bars for each rung on the picture model, beside two bars for a 6.74 thousand million number model against a 24 GiB line](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/rung-memory.svg)
 
-The left panel reads from the bottom as the frozen weights, then everything training
-has to keep for the weights it is changing, then the values saved for the backward
-pass.
+The left panel reads from the bottom as the frozen weights, then what training keeps for
+the weights it is changing, then the values saved for the backward pass.
 
-A frozen weight costs 2 bytes and a trained one costs 12, because training keeps the
-weight, its gradient and two running averages, and that recipe comes from the
-fine-tuning page. On the stated picture model a frozen backbone with a head needs
-0.16 GiB, an adapter run 1.25 GiB and a full fine-tune 2.04 GiB at batches of 32, so
-every rung fits on an ordinary small card with room to spare. That is worth saying out
+A frozen weight costs 2 bytes and a trained one 12, because training keeps the weight, its
+gradient and two running averages, which is the recipe from the fine-tuning page. On the
+stated picture model a frozen backbone with a head needs 0.16 GiB, an adapter run
+1.25 GiB and a full fine-tune 2.04 GiB at batches of 32, so every rung fits on an ordinary
+small card with room to spare. That is worth saying out
 loud, because people reach for adapters out of habit: at 85.8 million numbers there is
 no memory reason to, and the reason only appears at the fine-tuning page's 6.74 thousand
 million number model, where a full fine-tune needs 75.31 GiB and a rank-8 adapter
@@ -163,12 +157,11 @@ million number model, where a full fine-tune needs 75.31 GiB and a rank-8 adapte
 The arithmetic for one stated run of 500 pictures and 30 passes over them, with the
 seconds it takes on a card that sustains 40 million million operations a second.
 
-A head on frozen features costs one forward pass for each picture, done once, because
-the output can be saved and the head then trained on the saved numbers a hundred times
-over, so the whole thing is 1.76e+13 operations and 0.44 seconds. An adapter costs
-1.01e+15 and 25.4 seconds, because the gradient still travels back through every block
-even though the blocks do not change, and a full fine-tune costs 1.52e+15 and
-38.0 seconds. These are seconds, not days, which is the real finding of the section.
+A head on frozen features costs one forward pass for each picture, done once, because the
+output can be saved and the head then trained on the saved numbers a hundred times over,
+so the whole thing is 1.76e+13 operations and 0.44 seconds. An adapter costs 1.01e+15 and
+25.4 seconds, because the gradient still travels back through every block even though the
+blocks do not change, and a full fine-tune costs 1.52e+15 and 38.0 seconds.
 
 ![Stacked bars of the hours a person spends at each rung, with a flat line for the machine time](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/rung-human-hours.svg)
 
@@ -177,9 +170,9 @@ time drawn along the bottom.
 
 Collecting and labelling 500 pictures at a stated 200 an hour is 2.5 hours, writing the
 code is hours more and judging the result is hours again, so the rungs cost between 2.0
-and 24.0 hours of somebody's attention while the machine never works for longer than
-0.6 minutes. Choosing a rung is therefore mostly a choice about how much of a person's
-week to spend.
+and 24.0 hours of somebody's attention while the machine never works longer than
+0.6 minutes. Choosing a rung is mostly a choice about how much of a person's week to
+spend.
 
 ---
 
@@ -198,8 +191,8 @@ one year.
 Training costs about six operations for every parameter and every token, which the
 [scale page](../07_pretraining-and-adapting/02_scale-data-and-compute.md) works out in
 full. Pretraining the stated picture backbone on 1,200,000 pictures for 300 passes is
-3.65e+19 operations, which is 10.6 days on one desktop card sustaining 40 million million
-a second, so for a model that size the arithmetic is not the obstacle. Pretraining the
+3.65e+19 operations, or 10.6 days on one desktop card sustaining 40 million million a
+second, so at that size the arithmetic is not the obstacle. Pretraining the
 6.74 thousand million number language model over 1.4 million million tokens is 5.66e+22
 operations, which is 16,378 days on that same card, or 44.8 years, and 8.00 days on 512
 rented accelerators, which at a stated two dollars an accelerator-hour is 196,537
@@ -212,193 +205,181 @@ The left panel counts pictures and the right counts the hours of a person behind
 at a stated 200 pictures an hour including the labelling.
 
 The second half of the argument is harder to buy your way out of. The 500 pictures of the
-stated run are 0.042 per cent of a 1,200,000 picture pretraining set, which is 2,400
-times smaller, and collecting that set yourself takes 6,000 hours, or 3.3 working years.
-One person working a full year of 1,800 hours collects 360,000 pictures, which is 30 per
-cent of it, or 72,000 demonstrations at 40 an hour, which is 36,000,000 frames of the
-same few scenes. Frames of one scene are nearly the same picture again, so they cannot
-stand in for a million different ones, which is why nobody teaches a robot model to see
-from their own demonstrations alone.
+stated run are 0.042 per cent of a 1,200,000 picture pretraining set, and collecting that
+set yourself takes 6,000 hours, or 3.3 working years. One person working a full year of
+1,800 hours collects 360,000 pictures, which is 30 per cent of it, or 72,000
+demonstrations at 40 an hour, which is 36,000,000 frames of the same few scenes. Frames of
+one scene are nearly the same picture again, so they cannot stand in for a million
+different ones, which is why nobody teaches a robot model to see from their own
+demonstrations alone.
 
 ![Two panels: a stated budget of 200 accelerator-hours against one pretraining run, and the number of fine-tunes, adapter runs and probes the same budget buys](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/budget-buys.svg)
 
 The same money, spent two ways: on the top rung on the left, and on the rungs below it
 on the right.
 
-A budget of 200 accelerator-hours is 1.15e+20 operations. Spent on pretraining the big
-model it pays for 0.2035 per cent of one run, which is nothing you can use, while spent
-on the rungs below it the same budget buys 75,725 full fine-tunes of the picture model,
-or 113,594 adapter runs, or 6,537,865 frozen-feature probes. The top rung is not a
-cheaper way to the same place; it is a different and much larger project.
+A budget of 200 accelerator-hours is 1.15e+20 operations. Spent on pretraining the big model
+it pays for 0.2035 per cent of one run, while spent on the rungs below it the same budget
+buys 75,725 full fine-tunes of the picture model, or 113,594 adapter runs, or 6,537,865
+frozen-feature probes.
 
 ![Horizontal bars on a logarithmic scale comparing a one million number model on 5,000 examples with a fine-tune, a backbone pretrain and a large pretrain](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/small-model-exception.svg)
 
 The one honest exception, drawn beside the three things it is not.
 
-A model of about a million numbers, trained on 5,000 of your own examples for 200
-passes, costs 6e+12 operations, which is 0.1 seconds. If your input is already a short
-list of numbers, such as joint angles, forces, or the output of a camera model you did
-not train, then a small network from random numbers is a reasonable and completely
-reachable thing to build, and the simulation in section 2 is exactly that case. What
-you must not do is reason from the small case to the large one. The moment the input is
-a raw picture, the structure you would have to learn is the structure a published model
-already holds, and your few hundred examples cannot pay for it.
+A model of about a million numbers, trained on 5,000 of your own examples for 200 passes,
+costs 6e+12 operations, which is 0.1 seconds. If your input is already a short list of
+numbers, such as joint angles, forces, or the output of a camera model you did not train,
+then a small network from random numbers is a reachable thing to build, and section 2's
+simulation is exactly that case. What you must not do is reason from the small case to the
+large one, because once the input is a raw picture the structure you would have to learn
+is the structure a published model already holds, and your few hundred examples cannot pay
+for it.
 
 ---
 
 ## 4. Choosing a published starting point for your job
 
 Since almost every rung starts from somebody else's model, the choice of whose model
-matters more than anything else on this page, and it is usually made badly. The common
-way is to take whichever model sits highest on a public list of scores, and the
-experiment below says that this is close to useless, because such a list measures how
-well a model does its own job and not how well it does yours.
+matters more than anything else on this page, and it is usually made badly. The common way
+is to take whichever model sits highest on a public list of scores, and the experiment
+below says that is close to useless, because such a list measures how well a model does
+its own job rather than yours.
 
-The experiment is simulated and the simulation needs describing honestly. Eight models
-are pretrained in the world of section 2, each on its own job, which is to say which of
-several directions in part space is strongest. Two things differ between them and they
-are set separately on purpose. The first is how much those directions overlap with the
-two parts our job depends on. The second is how many classes its own job has, which is
-three for one model and eight for another, and that alone moves the score it would
-publish without changing what it is worth to us. Setting them separately is the point:
-nothing in the real world ties a model's benchmark to your job either.
+The experiment is simulated and needs describing honestly. Eight models are pretrained in
+the world of section 2, each on its own job. Two things differ between them and are set
+separately on purpose: how much that job overlaps with the two parts our job depends on,
+and how many classes it has, which is three for one model and eight for another and which
+moves the score it would publish without changing what it is worth to us. Setting them
+separately is the point, because nothing in the real world ties a model's benchmark to
+your job either.
 
 ![Two scatter plots of eight models, one against its score on its own job and one against how well its features carry what our job needs](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/own-score-against-worth.svg)
 
 Each point is one of the eight models, placed by what it reaches on our job after a
-fine-tune on 512 of our examples, against two different things you might have chosen
-it by.
+fine-tune on 512 of our examples, against two things you might have chosen it by.
 
 Against its own published score the relation is weakly negative, with a correlation
-coefficient of −0.354, which means a higher score went very slightly with a worse
-result for us. Against the overlap, measured as how well a straight line through the
-model's frozen output recovers the two measurements our job depends on, the relation is
-+0.915. The overlap is not something you read off a web page, but it is something you
-can measure in an afternoon, and the next picture shows the cheap way to measure it.
+coefficient of −0.354, so a higher score went very slightly with a worse result for us.
+Against the overlap, measured as how well a straight line through the model's frozen
+output recovers the two measurements our job depends on, the relation is +0.915. The
+overlap is not something you read off a web page, but you can measure it in an afternoon,
+and the next picture shows how.
 
 ![A scatter of a 64-example frozen-feature probe against a 512-example full fine-tune for the same eight models](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/probe-predicts.svg)
 
 The cheap test on the bottom axis and the expensive one up the side, with the eight
 models lettered A to H.
 
-The cheap test is a head on frozen features, trained on 64 of your own examples. It
-needs no training of the model itself, it costs one forward pass for each of your
-pictures, and in this experiment it put all eight models in exactly the same order as
-the full fine-tune did, giving a rank correlation of +1.000. That is the test to run
-before committing a week: collect a small honest set of your own examples, push them
-once through each candidate, train a head on the saved output, and read off the order.
+The cheap test is a head on frozen features, trained on 64 of your own examples. It trains
+nothing inside the model, it costs one forward pass for each of your pictures, and here it
+put all eight models in exactly the same order as the full fine-tune did, giving a rank
+correlation of +1.000. That is the test to run before committing a week: collect a small
+honest set of your own examples, push them once through each candidate, train a head on
+the saved output, and read off the order.
 
 ![Bars of what each of the eight models reaches on our job, with the one picked by its own score and the one picked by the probe marked](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/pick-by-score-costs.svg)
 
-The same eight models, in the order they were listed, by what they actually reach on
-our job, which has a ceiling of 0.843.
+The same eight models, by what they actually reach on our job, which has a ceiling of
+0.843.
 
-Picking by the published score chooses model G, which ends at 0.712, while the best of
-the eight is H at 0.737, so the habit costs 0.025 of the answers here. The probe
-chooses H. The gap is not enormous, and it would not be, because all eight models are
-reasonable; what matters is that the cheap measurement found the best one and the
-published number did not.
+Picking by the published score chooses model G, which ends at 0.712, while the best of the
+eight is H at 0.737, so the habit costs 0.025 of the answers here. The gap is small
+because all eight models are reasonable, and what matters is that the cheap measurement
+found the best one while the published number did not.
 
 ![Two bars of the hours a person spends screening eight candidates, by probe and by fine-tuning attempt](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/cheap-test-hours.svg)
 
 What the two ways of choosing cost a person, at a stated 20 minutes for one probe and
 6 hours for one fine-tuning attempt.
 
-Screening all eight candidates with a probe is 2.7 hours, and fine-tuning all eight is
-48 hours, so the probe saves 45.3 hours, which is more than a working week. That is the
-cheap test that saves the week, and it is worth running even when you are sure, because
-being sure is how people end up fine-tuning the wrong starting point for five days.
+Screening all eight candidates with a probe is 2.7 hours and fine-tuning all eight is 48
+hours, so the probe saves 45.3 hours, which is more than a working week. It is worth
+running even when you are sure, because being sure is how people fine-tune the wrong
+starting point for five days.
 
 ---
 
 ## 5. Licences, read before the work and not after
 
-The model you chose in section 4 came with terms, and this section is about reading
-them first, because the cost of reading them is half an hour and the cost of finding
-out late is everything you built. The words that follow describe what to look for
-rather than what any particular model allows, since terms change and no page should be
-trusted on the current state of a specific one; go to the model's own page and read it.
+The model you chose in section 4 came with terms, and this section is about reading them
+first, because reading costs half an hour and finding out late costs everything you built.
+What follows says what to look for rather than what any particular model allows, since
+terms change and no page should be trusted on the state of a specific one.
 
 ![Five boxes naming the code, the weights, the acceptable-use policy, the pretraining data and your own data, with what each one covers](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/four-sets-of-terms.svg)
 
 Five separate sets of terms reach one model you put to work, and they are written by
 different parties and do not have to agree with one another.
 
-The first mistake is to think there is one licence. The programs that train and serve
-the model have their own, usually an ordinary open-source one. The **weights**, meaning
-the file of numbers you download, have their own and it is often not an open-source
-licence at all, whatever the phrase "open weights" suggests, because an open-weight
-model is simply one whose numbers you can download. Many weights come with an
-**acceptable-use policy**, which is a separate list of things nobody may use the model
-for whatever else their licence says. The data the model was pretrained on has its own
-terms, which matter when somebody asks where your model's knowledge came from. And your
-own recordings have terms too, set by whoever owns the parts, the factory or the faces
-in the picture.
+The first mistake is to think there is one licence. The programs that train and serve the
+model have their own, usually an ordinary open-source one. The **weights**, meaning the
+file of numbers you download, have their own, and it is often not an open-source licence
+at all, whatever the phrase "open weights" suggests, because an open-weight model is
+simply one whose numbers you can download. Many weights also come with an
+**acceptable-use policy**, which is a separate list of things nobody may use the model for
+whatever else the licence says. The pretraining data has its own terms, which matter when
+somebody asks where your model's knowledge came from, and your own recordings have terms
+too, set by whoever owns the parts, the factory or the faces in the picture.
 
 ![A grid of five kinds of clause against four things you might do, with the blocked pairs marked and counted](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/clause-grid.svg)
 
 Each row is a kind of clause that really appears in model terms, each column is
 something you might do with the result, and a red cell is a refusal.
 
-Reading across the rows gives the questions to ask. Does the licence allow commercial
-use at all, or only research? Does it stop applying above some size of company? May the
-model's outputs be used to train another model, which matters whenever you plan to
-distil a large model into a small one? Does an acceptable-use policy name uses that are
-forbidden outright, which is the one row that blocks even a demonstration in your own
-lab? And must anything you build from it carry the same terms, which decides whether
-you may hand the weights to a customer? In this stated grid 12 of the 20 pairs are
-refusals, and a product you sell is blocked by 4 of the 5 kinds while a demonstration
-in the lab is blocked by only 1, which is the pattern to expect: the further the work
-travels from your own bench, the more of the terms apply.
+Reading across the rows gives the questions to ask. Does the licence allow commercial use
+at all, or only research? Does it stop applying above some size of company? May the
+model's outputs train another model, which matters whenever you plan to distil a large
+model into a small one? Does an acceptable-use policy forbid some uses outright, which is
+the one row that blocks even a demonstration in your own lab? And must anything you build
+carry the same terms, which decides whether you may hand the weights to a customer? In
+this stated grid 12 of the 20 pairs are refusals, and a product you sell is blocked by 4
+of the 5 kinds while a lab demonstration is blocked by 1, which is the pattern to expect:
+the further the work travels from your own bench, the more of the terms apply.
 
 ![Bars of the hours each stage of a project costs, with a rising line of hours spent so far and a line at half an hour for reading the terms](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/read-it-first.svg)
 
 The hours a project has spent by the end of each stage, against the half hour that
 reading the terms would have cost at the start.
 
-By the time the model is in the cell the project has cost 36.3 hours at the stated
-rates, and a clause found then throws all of it away, while reading the terms at the
-first stage costs 0.5 hours, which is 73 times less. There is nothing clever in this
-figure and that is the point: the only reason anybody skips the reading is that it feels
-like it is not the work, and it is cheaper than every other thing on the chart.
+By the time the model is in the cell the project has cost 36.3 hours at the stated rates,
+and a clause found then throws all of it away, while reading the terms at the first stage
+costs 0.5 hours, which is 73 times less.
 
 ---
 
 ## 6. Three robot jobs, taken down the ladder
 
-The rules in the five sections above are easier to trust once you watch them decide
-something, so this section takes three real robot jobs down the ladder and stops each
-one where it should stop. The reasoning is shown, because the reasoning is the part you
-will reuse.
+The rules above are easier to trust once you watch them decide something, so this section
+takes three robot jobs down the ladder and stops each where it should, with the reasoning
+shown.
 
 ![Three ladders of six rungs, with the stopping rung marked on each and the reason written underneath](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/three-jobs-ladders.svg)
 
 The three jobs, each taken up the ladder only as far as it has to go, with the cost at
 the rung where it stops.
 
-The first job is to tell six part types apart on a tray under a fixed overhead camera.
-A published picture model already separates rigid objects of different shapes, so the
-question is only which of six names to attach, and a head on frozen features answers
-it; the climb test from section 1 confirms this, because such a head fits its own
-examples easily. The second job is to turn a spoken instruction into one of twenty
-robot calls. A published language model already holds that behaviour, so the job needs
-no training at all, only a clear prompt that lists the twenty calls and says what each
-one does. The third job is to pick up one soft part with your own gripper. The model
-has never seen that gripper or that part, so the frozen output does not contain what
-the job needs, and the honest rung is an adapter on a published policy.
+The first job is to tell six part types apart on a tray under a fixed overhead camera. A
+published picture model already separates rigid objects of different shapes, so the
+question is only which of six names to attach, and a head on frozen features answers it.
+The second job is to turn a spoken instruction into one of twenty robot calls, and a
+published language model already holds that behaviour, so it needs no training at all,
+only a clear prompt that lists the twenty calls and says what each one does. The third job
+is to pick up one soft part with your own gripper, and because the model has never seen
+that gripper or that part the frozen output does not contain what the job needs, so the
+honest rung is an adapter on a published policy.
 
 ![The factors of each job multiplied out, giving 576 combinations for the first job and 60 for the third, and none for the second](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/three-jobs-examples.svg)
 
 How many examples each job needs, worked out from what varies in the job rather than
 guessed.
 
-The number of examples is a product of the things that change the answer. For the first
-job there are 6 part types, 8 ways a part can lie, 3 lighting conditions and 4 places on
-the tray, which is 576 combinations, and two pictures of each is 1,152 pictures, or
-5.8 hours at a stated 200 an hour. For the third there are 5 starting places, 4 ways the
-part can lie and 3 heights of stack, which is 60 combinations and 120 demonstrations, or
-3 hours at a stated 40 an hour. The second job needs none at all, because the rung it
-stops on trains nothing.
+The number of examples is a product of the things that change the answer. The first job
+has 6 part types, 8 ways a part can lie, 3 lighting conditions and 4 places on the tray,
+which is 576 combinations, and two pictures of each is 1,152 pictures, or 5.8 hours at a
+stated 200 an hour. The third has 5 starting places, 4 ways the part can lie and 3 heights
+of stack, which is 60 combinations and 120 demonstrations, or 3 hours at a stated 40 an
+hour. The second needs none at all, because the rung it stops on trains nothing.
 
 ![Horizontal bars on a logarithmic scale of the hours each job costs at its chosen rung, at a full fine-tune and from nothing](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/three-jobs-hours.svg)
 
@@ -406,12 +387,11 @@ What each job costs a person at the rung it stopped on, beside what the rungs ab
 would have cost, with the from-nothing rows counting only the collecting.
 
 Stopping in the right place saves hours at the top of the chart and years at the bottom.
-The first job is 10.8 hours at its head, 21.8 hours if fine-tuned instead, and the
-from-nothing version would need a pretraining-sized set of pictures, which is 6,000
-hours, or 3.3 working years of collecting alone. The second job is 2.0 hours as a prompt
-against 24.0 hours as a fine-tune. The third is 11.0 hours as an adapter, and from
-nothing it is the same 3.3 working years, because 120 demonstrations give 60 distinct
-scenes while the seeing part of a published model came from 1,200,000 of them.
+The first job is 10.8 hours at its head and 21.8 hours if fine-tuned instead, while from
+nothing it would need 6,000 hours of collecting alone, which is 3.3 working years. The
+second is 2.0 hours as a prompt against 24.0 hours as a fine-tune, and the third is
+11.0 hours as an adapter against those same 3.3 years, because 120 demonstrations give 60
+distinct scenes while the seeing part of a published model came from 1,200,000 of them.
 
 ![Two panels: the head and the fine-tune curves against examples, and what each doubling of the examples bought](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/job-a-where-to-stop.svg)
 
@@ -420,10 +400,11 @@ panel is what each doubling of the examples bought.
 
 The last decision each job needs is when to stop collecting, and the right panel answers
 it. A doubling that buys less than a hundredth of the answers is not worth another
-afternoon, and on the simulated job the head rung crosses below that line between 16 and
-32 examples while the full fine-tune is still buying 0.022 at the last doubling. So
-collect a few hundred, draw this chart from your own held-out set, and let the shape of
-it rather than a rule of thumb tell you whether to collect more, climb a rung, or stop.
+afternoon, and on the simulated job the head is below that line from 256 examples onwards,
+buying 0.001 and then losing 0.007, while the full fine-tune is still buying 0.022 at the
+last doubling. So collect a few hundred, draw this chart from your own held-out set, and
+let its shape rather than a rule of thumb tell you whether to collect more, climb a rung,
+or stop.
 
 ---
 
@@ -442,6 +423,10 @@ it rather than a rule of thumb tell you whether to collect more, climb a rung, o
   is where section 3's six operations for every parameter and every token come from.
 - [When it does not work](06_when-it-does-not-work.md) takes over when the rung you
   chose is training and the numbers are wrong.
+- [Recipes for models that act and
+  predict](05_recipes-for-models-that-act-and-predict.md) does the same for the models
+  that move the arm, where the rung you pick matters more because every example costs
+  somebody's time at the robot.
 - [Fine-tuning](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md)
   in the models catalogue gives the same choice from the robot's side, with the named
   models people start from.
@@ -493,25 +478,20 @@ print(f'{gib(backbone, head):.2f} GiB')            # 0.16 GiB, a head on frozen 
 print(f'{gib(0, backbone + head):.2f} GiB')        # 0.96 GiB, a full fine-tune
 ```
 
-The first two blocks are worth running before anything else, because they take a second
-and they tell you whether the model you are about to start from is the shape you think
-it is. The hand arithmetic and the real model agree exactly at 85,798,656, once the
-thousand-way head the library ships is taken off, and that agreement is a good sign that
-you have understood the shape rather than copied a number.
+The first two blocks take a second and say whether the model you are about to start from
+is the shape you think it is, and here the hand arithmetic and the real model agree
+exactly at 85,798,656 once the thousand-way head the library ships is taken off.
 
 What the libraries do for you is the surgery and the bookkeeping. Setting
-`requires_grad_(False)` on every parameter and then attaching a new layer is the whole
-of the third rung, because anything whose gradient is not wanted is simply not given
-one. `get_peft_model` walks the model, finds every layer whose name matches
-`target_modules`, puts a pair of thin matrices beside it, marks everything else as
-frozen and arranges the forward pass so the side path is added; the count it prints,
-884,736, is the same one section 1 worked out by hand. Nothing here downloads weights,
-and in real work the line that does is where you pass a published model's name instead
-of `None`.
+`requires_grad_(False)` on every parameter and then attaching a new layer is the whole of
+the third rung, because anything whose gradient is not wanted is simply not given one.
+`get_peft_model` walks the model, finds every layer whose name matches `target_modules`,
+puts a pair of thin matrices beside it, marks everything else as frozen and arranges the
+forward pass so the side path is added, and the count it prints, 884,736, is the one
+section 1 worked out by hand.
 
-What you still decide is everything this page has been about. You choose the rung, using
-the two bars of section 1 to say whether to climb; you choose which published model to
-start from, using the cheap probe of section 4 rather than a public score; you read the
-terms of section 5 before any of it; and you decide how many examples to collect, using
-the product of what varies in your job from section 6 and the doubling test that says
-when to stop.
+What you still decide is everything this page has been about: the rung, using the two bars
+of section 1 to say whether to climb; which published model to start from, using the cheap
+probe of section 4 rather than a public score; the terms of section 5, read before any of
+it; and how many examples to collect, using the product of what varies in your job and the
+doubling test that says when to stop.

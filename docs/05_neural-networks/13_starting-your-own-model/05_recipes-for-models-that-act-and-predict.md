@@ -2,20 +2,19 @@
 
 [Recipes for the models that see and understand](04_recipes-for-models-that-see-and-understand.md),
 the page before this one, gave a starting recipe for each family of model that
-looks at the world and says what is in it. This page does the same job for the
-other half, which is the models that move the arm or predict what happens to it,
-and it keeps the same shape so that the two pages read as one reference.
+looks at the world and says what is in it. This page does the same for the other
+half, the models that move the arm or predict what happens to it, and keeps the
+same shape so that the two read as one reference.
 
 One thing changes, and it changes nearly every number here. A picture of a mug
 can be downloaded and labelled by somebody who has never seen a robot, while a
 recording of an arm doing a job can only be made by a person driving that arm in
-real time, so every example below is expensive in a way nothing on the previous
-page was.
+real time, so every example below is expensive.
 
 Each recipe answers the same six questions. What is one training example, as a
-thing on disk? Roughly how many do you need, and what sets that number? Which
-published starting point do you begin from? What is the first milestone, what is
-the one number to watch, and what is the mistake almost everybody makes first?
+thing on disk? How many do you need, and what sets that number? Which published
+starting point do you begin from? What is the first milestone, the one number to
+watch, and the mistake almost everybody makes first?
 
 The page assumes you have read
 [models that act](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md)
@@ -23,18 +22,17 @@ and the three pages after it, so that a policy, an action chunk and a world mode
 are familiar, and that you have worked through
 [before you train anything](01_before-you-train-anything.md) and
 [what to reuse and what to train](03_what-to-reuse-and-what-to-train.md). Three
-warnings run through it, each of which costs weeks: the action space must be
-written down before any data is collected, two people's demonstrations are not
-interchangeable, and a simulator is a project in itself.
+warnings run through it, each costing weeks: the action space must be written
+down before any data is collected, two people's demonstrations are not
+interchangeable, and a simulator is a project in itself. Section 6 ends by saying
+which family to attempt first.
 
 Every number in the pictures is worked out and printed by
 [`docs/diagrams/starting_your_own_model_5.py`](../../diagrams/starting_your_own_model_5.py).
-The table, the gripper, the box in its way and the person demonstrating are
-simulated, but everything done to them is real: the policies are networks trained
-by Adam in NumPy, the generating policy is a real diffusion model over action
-chunks, and the dynamics model is a real one-step predictor. Section 6 ends by
-saying which of the six families a person with one arm and a few weeks should
-attempt.
+The table, the gripper, the box and the person demonstrating are simulated, but
+everything done to them is real: the policies are networks trained by Adam in
+NumPy, the generating policy is a real diffusion model over action chunks, and
+the dynamics model is a real one-step predictor.
 
 ## Contents
 
@@ -53,9 +51,9 @@ attempt.
 
 The introduction said every example here is made by a person in real time, and
 this recipe is where that is most directly true, because behaviour cloning is
-supervised learning on moments a person produced. The method is explained on
-[behaviour cloning and action chunks](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md),
-so this section only covers starting one.
+supervised learning on moments a person produced, as
+[behaviour cloning and action chunks](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md)
+explains.
 
 ![A file listing of one episode folder beside a log-scale bar chart of bytes for raw frames, video, numbers and the task sentence](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/one-demonstration-on-disk.svg)
 
@@ -63,22 +61,21 @@ One four-second episode recorded 30 times a second holds 120 moments, and storin
 it costs 5.54 megabytes, of which the two camera videos are 99.87 per cent.
 
 One training example is one row of the state table, the two camera frames beside
-it, and the commands recorded after it, so one episode gives 120 examples. The
-raw frames would be 221.18 megabytes, and writing them as video is the only
-reason a thousand episodes fits on a laptop. What governs the recipe is not bytes
-but minutes.
+it, and the commands recorded after it, so one episode gives 120 examples, and
+the raw frames would be 221.18 megabytes if they were not stored as video. What
+governs the recipe is not bytes but minutes.
 
 ![A stacked bar splitting one episode into moving, resetting, checking and the spoiled take, beside a log-log line of person-hours against episodes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/hours-of-a-person.svg)
 
 With four seconds of movement, eighteen to put the objects back, six to check and
-save, and one take in six thrown away, a usable episode costs 33.6 seconds of a
-person, so fifty cost 28 minutes and five thousand cost 46.7 hours.
+save, and one take in six thrown away, a usable episode costs 33.6 seconds, so
+fifty cost 28 minutes and five thousand cost 46.7 hours.
 
 How many you need is set by how much the job varies, which is best seen by
 measuring the same task twice with one more thing moving about. In the simulated
 reach below a gripper must reach a goal somewhere on a patch of table without
-touching a box in the way, and a run works only if it ends within 1.5 centimetres
-and never touches the box.
+touching a box, and a run works only if it ends within 1.5 centimetres and never
+touches it.
 
 ![Two success curves against the number of demonstrations on a log scale, with a shaded spread, beside two bars of person-minutes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/success-against-demonstrations.svg)
 
@@ -86,24 +83,24 @@ With the box always in the same place the policy works on four runs in five by 1
 demonstrations, and with the box moving as well it takes 40, which is four times
 as many for one extra thing varying.
 
-Both curves climb steeply and then flatten, from 0.604 to 0.938 in the first case
-and from 0.454 to 0.887 in the second, so once a policy is stuck at four runs in
-five, recording another two hundred episodes of the same thing is the wrong move.
-Count instead what has to be covered before you start, which is every way the
-object can lie times every lighting condition, and for six orientations and four
-lightings that is a few hundred episodes rather than a few dozen.
+Both curves climb steeply and then flatten, from 0.604 to 0.938 and from 0.454 to
+0.887, so once a policy is stuck at four runs in five, recording two hundred more
+episodes of the same thing is the wrong move. Count instead what has to be
+covered, which is every way the object can lie times every lighting condition,
+and for six orientations and four lightings that is a few hundred episodes rather
+than a few dozen.
 
-The starting point is a library rather than a model, since there is no pretrained
-plain cloning policy worth downloading.
+The starting point is a library rather than a model, since no pretrained plain
+cloning policy is worth downloading.
 [LeRobot](https://github.com/huggingface/lerobot) records demonstrations, trains
 policies on them and runs them, while
 [robomimic](https://github.com/ARISE-Initiative/robomimic) has plain behaviour
 cloning already built. The first milestone is the single-batch test from
-[the order of the work](02_the-order-of-the-work.md), and the one number to watch
+[the order of the work](02_the-order-of-the-work.md), and the number to watch
 afterwards is the share of whole runs on the arm that finish the job, because the
 loss falls while the drift measured in
 [why copying one step at a time drifts](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md#3-why-copying-one-step-at-a-time-drifts)
-quietly gets worse.
+gets worse.
 
 The first warning belongs here. The action space is the list of numbers a command
 is made of, with what they mean and how they are scaled, and it must be written
@@ -116,23 +113,23 @@ millimetres as changes per step, and a policy trained on one and read as the
 other ends 41.12 centimetres from the goal instead of 0.38.
 
 Those three bars are one trained policy on one arm: played as trained it misses
-by 0.38 centimetres, read as places rather than changes it misses by 41.12, and
-with its two axes swapped it misses by 60.70. No amount of extra data fixes any
-of that, because the recordings and the runner disagree about what a number
-means, so write the joint order, the units, place or change, the rate and the
-scaling numbers into a file beside the weights.
+by 0.38 centimetres, read as places rather than changes by 41.12, and with its
+two axes swapped by 60.70. No amount of extra data fixes that, because the
+recordings and the runner disagree about what a number means, so write the joint
+order, the units, place or change, the rate and the scaling numbers into a file
+beside the weights.
 
 ![Two people's paths round the same box, a histogram of how far each moves next, and four bars of success for four ways of gathering eighty recordings](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/two-demonstrators.svg)
 
-At the same moment of the same job one person's recordings differ from each other
-by 1.68 millimetres while the two people differ by 7.01, and eighty recordings
-from one person train a better policy than forty from each.
+At the same moment of the same job one person's recordings differ by 1.68
+millimetres while the two people differ by 7.01, and eighty recordings from one
+person train a better policy than forty from each.
 
 The training asks for one answer close to every label, so where two people
-answered differently it gives the average, and on the mixed set the best possible
-single answer is wrong by 6.47 times as much, squared. The cost is small while
-both people pass the box on the same side, since success falls only from 0.788 to
-0.704, and it grows to 0.614 when they pass on opposite sides. One person on two
+answered differently it gives the average, and on the mixed set the best single
+answer is wrong by 6.47 times as much, squared. The cost is small while both
+people pass the box on the same side, since success falls only from 0.788 to
+0.704, and grows to 0.614 when they pass on opposite sides. One person on two
 days counts as two people, because a handle set up differently shows up in the
 labels the same way. The mistake almost everybody makes first is to judge the
 policy by its loss, which falls on moments a person visited while the arm visits
@@ -146,7 +143,7 @@ Section 1 ended with a policy judged by whole runs, and the cheapest way to
 improve those runs is to stop asking for one command at a time. A chunk is a
 block of future commands worked out in one go, and
 [playing a chunk of the future instead of one step](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md#4-playing-a-chunk-of-the-future-instead-of-one-step)
-measures why it helps, which is that the error feeds itself once per decision.
+measures why it helps: the error feeds itself once per decision.
 
 ![One recorded chunk of 32 steps drawn as two lines with the padded tail shaded, beside a log-scale bar chart of label numbers per episode](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/one-chunk-example.svg)
 
@@ -154,9 +151,8 @@ One episode still gives 120 examples, but with a chunk of 32 steps each label is
 64 numbers instead of two, so the episode carries 7,680 label numbers rather than
 240.
 
-The pictures, the recordings and the number of examples are unchanged, which is
-the best thing about this recipe, and only the label grows. The last 31 examples
-of every episode run past its end, which is 25.8 per cent of them, and those are
+The pictures, the recordings and the number of examples are unchanged, and only
+the label grows. The last 31 examples of every episode run past its end and are
 padded by repeating the final command, so an episode truncated mid-job teaches
 the policy to stop half way. How long the chunk should be is decided twice, and
 the first answer comes from the clock.
@@ -176,23 +172,22 @@ comes from the task, and it is a trade.
 
 Playing more of each chunk raises the share of runs that work from 0.67 at one
 step a decision to 0.99 at thirty-two, while the miss after the goal moves part
-way through rises from 0.48 to 0.61 centimetres.
+way through rises from 0.54 to 1.12 centimetres.
 
-The long chunk wins easily here, and the cost of the promise only shows at the
-far end, where the arm carries on for more than a second before looking again. On
-a task where things move while the arm works that cost arrives much sooner, which
-is why the usual arrangement is to work out a long chunk and play only its front,
-as
+The long chunk wins easily here, and the cost of the promise shows only at the
+far end, where the arm carries on for over a second before looking again. Where
+things move while the arm works that cost arrives much sooner, which is why the
+usual arrangement is to work out a long chunk and play only its front, as
 [receding horizon](../12_models-that-act/02_diffusion-and-flow-policies.md#5-receding-horizon-generating-while-the-arm-is-still-moving)
 describes.
 
 The starting point is the action-chunking transformer packaged in LeRobot, which
 reads the recordings LeRobot already made. The first milestone is the single
-batch again, then one whole run of the job on the arm however ugly, and the one
+batch again, then one whole run of the job on the arm however ugly, and the
 number to watch is the share of runs that work at the chunk length you intend to
 ship, since success at one length says nothing about another. The mistake almost
 everybody makes first is to take a chunk length from a paper and run it at a
-different command rate, because the floor is set by your clock and your model.
+different command rate.
 
 ---
 
@@ -201,21 +196,21 @@ different command rate, because the floor is set by your clock and your model.
 Sections 1 and 2 both trained a policy to give one answer, and this section is
 about when that is the wrong thing to ask for. A diffusion or flow policy builds
 its answer out of noise instead of reading it off, which lets it produce one of
-several good movements rather than their average, and
+several good movements rather than their average, as
 [diffusion and flow policies](../12_models-that-act/02_diffusion-and-flow-policies.md)
-explains the machinery. One question decides whether you need one, and you can
-answer it on recordings you already have.
+explains. One question decides whether you need one, and you can answer it on
+recordings you already have.
 
 ![A set of demonstrations going both ways round a box with their straight-through average, beside two histograms of the sideways movement recorded at one moment](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/two-answer-test.svg)
 
-Where the demonstrator went both ways round the box, the average of the labels
-lies 41.0 millimetres from the nearest label anybody recorded, and where only one
-way was ever recorded it lies 0.0 millimetres from one.
+Where the demonstrator went both ways round the box the average of the labels
+lies 27.9 millimetres from the nearest label anybody recorded, against a spread
+of 6.2 inside one group, while where one way was recorded it lies 0.0 from a real
+label.
 
-That distance is the whole test: near zero, the average is itself a reasonable
-answer and a plain policy is fine, while several times the spread within one
-group, the average is a movement nobody would make and a plain policy makes it
-anyway.
+That distance is the whole test: near zero the average is itself a reasonable
+answer, while several times the spread inside one group it is a movement nobody
+would make, and a plain policy makes it anyway.
 
 ![Two sets of simulated runs round a box, one from a policy giving one answer and one from a policy generating its answer, beside bars comparing them](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/averaging-and-generating.svg)
 
@@ -225,46 +220,47 @@ policy that generates one drives through on 0.03 and finishes on 0.89.
 
 One training example is exactly what it was in section 2, so a generating policy
 can be fitted to recordings you already hold, and how many you need hardly
-changes either, except that both answers must appear often enough to be learned.
-What it costs is passes through the network.
+changes, except that both answers must appear often enough to be learned. What it
+costs is passes through the network.
 
 ![A curve of success against the number of denoising passes with the plain policy as a line, beside bars of the milliseconds those passes cost](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/what-generating-costs.svg)
 
-On the same task recorded with one right answer, the generating policy needs
-sixteen passes to match what the plain policy does in one, and at three
-milliseconds a pass those sixteen eat 48 of the 267 milliseconds a chunk of eight
-buys.
+On a task recorded with one right answer the plain policy works on 0.94 of runs
+in a single pass while the generating policy reaches 0.84 only after sixteen,
+which at three milliseconds a pass eat 48 of the 267 a chunk of eight buys.
 
 The starting point is the diffusion policy packaged in LeRobot, which trains on
 the same dataset as the action-chunking transformer, so swapping between them is
 a configuration change. The first milestone is a picture rather than a run:
 generate twenty chunks at one observation and check that they fall into the
-groups the demonstrations fall into instead of one blurred lump. The one number
-to watch is the share of runs that fail the way the averaging failed, which here
-is the share that hit the box.
+groups the demonstrations fall into rather than one blurred lump. The number to
+watch is the share of runs that fail the way the averaging failed, which here is
+the share that hit the box.
 
-![Simulated runs where some change which side of the box they pass, beside three curves against the steps played per decision](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/changing-its-mind.svg)
+![Runs at two passes a chunk beside runs at sixteen, and curves of success and box hits against the number of passes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/too-few-passes.svg)
 
-Asked for a new chunk at every step the policy changes which side of the box it
-is passing on 0.15 of its runs, and playing eight steps of each chunk before
-asking again brings that down to 0.05.
+On the two-answer task the same policy works on 0.06 of runs with two passes a
+chunk, 0.58 with four and 0.88 with sixteen, while the share that drives through
+the box falls from 0.38 to 0.04.
 
-That is the mistake almost everybody makes first, because generating a fresh
-chunk every step sounds safer and is not. A policy that gives one answer gives
-the same answer twice, while a policy that samples can sample the other answer
-next time, and a movement that starts round one side of a box and switches goes
-through it.
+That is the mistake almost everybody makes first, because the passes are the
+slowest part of the policy and cutting them is the obvious way to meet the clock
+in section 2. A half-built chunk is not a worse answer, it is noise, so fix the
+chunk length first and the passes second, and if both cannot be met use a flow
+policy, which needs fewer passes, as
+[flow matching](../08_models-that-generate/02_flow-matching-and-other-generators.md)
+explains.
 
 ---
 
 ## 4. A model that is told the job in words
 
 The three policies so far each do one job, and this section covers the model that
-takes a sentence as well as a picture so that one model can do several.
-[Vision-language-action models](../12_models-that-act/03_vision-language-action-models.md)
-explains what is inside one, and the question here is what fine-tuning one
-involves and whether it is a sensible first project. Start with what must fit in
-the graphics card.
+takes a sentence as well as a picture so that one model can do several, explained
+on
+[vision-language-action models](../12_models-that-act/03_vision-language-action-models.md).
+The question here is what fine-tuning one involves and whether it is a sensible
+first project, so start with what must fit in the graphics card.
 
 ![Bars of memory for training every weight against training an adapter, at two model sizes, beside bars of trainable weights for five adapter ranks](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/what-fine-tuning-costs.svg)
 
@@ -273,14 +269,14 @@ training a rank-16 adapter on it needs 0.94, while the same two numbers for a
 7-billion-weight model are 84.00 and 14.04 gigabytes.
 
 A trained weight costs memory for itself, its gradient and the optimiser's two
-running averages, which is twelve bytes if the weights are kept in two, while a
-frozen weight costs only two. An adapter, explained on
+running averages, which is twelve bytes where a frozen weight costs two. An
+adapter, explained on
 [fine-tuning and adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md),
 replaces each big square matrix with two thin ones, so a rank-16 adapter on a
 1,024-wide matrix trains 32,768 weights instead of 1,048,576, which over 24
-blocks of four such matrices is 0.70 per cent of the small model. One training
-example is a section 2 example with a sentence attached, and the sentence is
-where first attempts are wasted.
+blocks of four is 0.70 per cent of the small model. One training example is a
+section 2 example with a sentence attached, and the sentence is where first
+attempts are wasted.
 
 ![Bars of the information an instruction carries for one to sixteen jobs, beside bars of the final miss with and without the job tag for one, two and four jobs](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/instruction-information.svg)
 
@@ -289,9 +285,9 @@ does as well without it, while with four jobs the model told which job misses by
 0.5 centimetres and the model not told misses by 11.9.
 
 Those two bars are the same network on the same recordings, differing only in
-whether the job was part of the input, and the untold one fails because it is
-averaging four jobs. How many demonstrations you need follows: the model must
-learn every job, so the recordings must cover every job.
+whether the job was part of the input, and the untold one fails because it
+averages four jobs. How many demonstrations you need follows, since the model
+must learn every job.
 
 ![Two success curves against the total number of demonstrations, one for a single job and one for four jobs in one model, beside bars of the gap between them](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/jobs-and-data.svg)
 
@@ -305,15 +301,15 @@ arm; [OpenVLA](https://huggingface.co/openvla/openvla-7b) has 7 billion
 parameters and an MIT licence; the π0 models and NVIDIA's GR00T need an NVIDIA
 graphics card. The first milestone is to run the downloaded model on your own arm
 before any training, because a starting point that already half works is a
-different project from one that does not, and the one number to watch while
-fine-tuning is the success rate per job rather than the average, since an average
-hides a job that has collapsed.
+different project, and the number to watch while fine-tuning is the success rate
+per job rather than the average, since an average hides a job that has
+collapsed.
 
 So is it a sensible first project? Only if you really need one model for several
-jobs chosen by a sentence, because for one job a chunk policy from section 2 is
-smaller, faster and far easier to debug. The mistake almost everybody makes first
-is to reach for the biggest model because it generalises, and then to find it
-generalises in the ways measured in
+jobs chosen by a sentence, because for one job a chunk policy is smaller, faster
+and far easier to debug. The mistake almost everybody makes first is to reach for
+the biggest model because it generalises, and then to find it generalises in the
+ways measured in
 [what generalisation really looks like](../12_models-that-act/03_vision-language-action-models.md#7-what-generalisation-really-looks-like-and-what-it-costs-to-run)
 rather than the way they needed.
 
@@ -322,11 +318,11 @@ rather than the way they needed.
 ## 5. A model that predicts what happens next
 
 Every model so far answers what to do, and this one answers what will happen,
-which is a different job with a different kind of data.
-[World models](../12_models-that-act/04_world-models.md) explains the family. One
-training example is a state, the command sent at that moment, and the state one
-step later, which means a script can produce them by pushing the arm around
-inside safe limits with nobody in the room.
+which is a different job with a different kind of data, explained on
+[world models](../12_models-that-act/04_world-models.md). One training example is
+a state, the command sent at that moment, and the state one step later, which
+means a script can produce them by pushing the arm around inside safe limits with
+nobody in the room.
 
 ![Bars comparing transitions gathered by a script with examples gathered by a person, beside a log-log curve of one-step error against the number of transitions](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/data-without-a-person.svg)
 
@@ -336,10 +332,10 @@ and the one-step error falls from 0.242 to 0.089 millimetres as the transitions 
 from 600 to 12,000.
 
 That curve answers how many you need, and it is the friendliest answer on this
-page, because 12,000 transitions is about ten minutes of pushing and more buys
-nothing. The data is cheap because predicting what happens next needs no
-judgement about what should happen, so nobody has to supply any. What you must
-measure before trusting the model is how far ahead it may be believed.
+page, because 12,000 transitions is ten minutes of pushing and more buys nothing.
+The data is cheap because predicting what happens next needs no judgement about
+what should happen. What you must measure first is how far ahead the model may be
+believed.
 
 ![Four real paths with the model's predictions dashed over them, beside a curve of the average gap against the number of steps predicted ahead](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/horizon-you-can-trust.svg)
 
@@ -350,9 +346,9 @@ Each step is fed the model's own answer from the step before, so a small bias
 piles up, exactly as
 [error that piles up over a rollout](../12_models-that-act/04_world-models.md#3-error-that-piles-up-over-a-rollout)
 measures on another system, and the habit to build is to find your own crossing
-point and plan no further ahead. Within that limit, predicting ahead earns its
-keep for one honest reason: a model of what happens lets you write a new job as a
-cost and solve it without recording anything.
+point and plan no further ahead. Predicting ahead then earns its keep for one
+honest reason: it lets you write a new job as a cost and solve it without
+recording anything.
 
 ![Simulated runs of a written rule and of a planner lined up on the box, bars of how often each hits the box and works, and a curve of miss against the time between plans](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/planning-against-it.svg)
 
@@ -360,12 +356,12 @@ A written rule reaches the goal to within 0.07 centimetres and drives through th
 box on 0.58 of its runs, while a planner searching inside the learned model hits
 the box on 0.01 and finishes the job on 0.72, with no demonstrations recorded.
 
-The model there was fitted to random pushing with no goal, no box and no person,
-and the box arrived afterwards as a penalty in the cost the planner scores
-futures against, so the job changed without the data changing. The right-hand
-curve carries the other half of the method, which is that the plan is remade
-constantly, since remaking it every five steps leaves the arm 1.05 centimetres
-from the goal while remaking it every twenty leaves 6.51.
+The model was fitted to random pushing with no goal, no box and no person, and
+the box arrived afterwards as a penalty in the planner's cost, so the job changed
+without the data changing. The right-hand curve carries the other half of the
+method, which is that the plan is remade constantly, since remaking it every five
+steps leaves the arm 1.05 centimetres from the goal while every twenty leaves
+6.51.
 
 ![A log-scale bar chart of how many futures fit in one command period at four model speeds, beside lines of model steps against futures tried](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/planning-arithmetic.svg)
 
@@ -378,10 +374,10 @@ futures of 20 steps is 1,280 calls, which is why the models planned against on
 arms predict a few dozen numbers rather than pictures. The starting points are
 designs rather than downloads, since a model of your arm fits only your arm, and
 TD-MPC2 and the Dreamer family are the two to copy. The first milestone is the
-one-step error on held-out transitions, the one number to watch after that is the
-horizon at which the rollout error crosses your tolerance, and the mistake almost
-everybody makes first is to judge the model by its one-step error alone, which
-looks superb and says nothing about the rollout.
+one-step error on held-out transitions, the number to watch is the horizon at
+which the rollout error crosses your tolerance, and the mistake almost everybody
+makes first is to judge the model by its one-step error, which says nothing about
+the rollout.
 
 ---
 
@@ -390,16 +386,15 @@ looks superb and says nothing about the rollout.
 The five recipes so far learn from something somebody provided, and this one
 learns from its own attempts scored by a reward, which is
 [reinforcement learning](../11_learning-from-outcomes/01_reinforcement-learning.md).
-One training example is not collected but produced: an episode the policy itself
-drove, with the reward it earned, thrown away as the policy changes. So the
-question is not how many examples you need but how many attempts.
+One training example is not collected but produced: an episode the policy drove,
+with the reward it earned, thrown away as the policy changes. So the question is
+not how many examples you need but how many attempts.
 
 ![A learning curve of success against rounds of the search for two searches, beside a log-scale bar chart of hours on a real arm for demonstrations against tries](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/what-the-search-costs.svg)
 
-The search took 20,000 episodes to go from working on none of its runs to working
-on all of them, which on a real arm at four seconds a try and twenty to reset
-would be 133 hours, against the 22 minutes of a person that forty demonstrations
-cost.
+The search took 20,000 episodes to go from working on none of its runs to all of
+them, which on a real arm at four seconds a try and twenty to reset would be 133
+hours, against the 22 minutes of a person that forty demonstrations cost.
 
 That comparison is the third warning. Choosing reinforcement learning means
 building a simulator first, and a simulator is a project in itself: a model of
@@ -407,7 +402,7 @@ the arm and the objects, contact that behaves, a camera view if the policy uses
 pictures, a reset that puts everything back, and a reward that cannot be earned
 the wrong way. MuJoCo, PyBullet and Isaac give you the physics and
 Stable-Baselines3 gives you PPO and SAC, so what is left is the part specific to
-your cell, which is also the part that decides whether any of it transfers.
+your cell, which decides whether any of it transfers.
 
 ![Five bars of success for one policy on five arms that differ from the simulator, beside two curves of success against how late commands arrive](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/the-simulator-must-be-right.svg)
 
@@ -416,21 +411,21 @@ moves only 0.85 of what it is told, drops to 0.65 when commands arrive five step
 late, and drops to 0.59 when three things are wrong at once.
 
 The curves on the right show what is done about that. The policy searched in one
-simulator survives a delay of four steps and collapses to nothing by six, while
-the policy searched in many, with the gain, the obstacle size and the reported
-goal drawn fresh for every task, works at every delay tested. That is domain
-randomisation, described in
+simulator survives a delay of four steps and collapses by six, while the policy
+searched in many, with the gain, the obstacle size and the reported goal drawn
+fresh for every task, works at every delay tested. That is domain randomisation,
+described in
 [why this happens in a simulator](../11_learning-from-outcomes/01_reinforcement-learning.md#6-why-this-happens-in-a-simulator-and-what-the-crossing-costs),
 and its cost shows in the learning curve above, where the randomised search needs
-many more rounds to reach a worse score in its own simulator.
+many more rounds to reach a worse score at home.
 
 It is nonetheless the right call when the job cannot be demonstrated because it
 needs force or speed a person cannot produce through a handle, when the outcome
 can be scored by a program as
 [rewards, preferences and verifiers](../11_learning-from-outcomes/02_rewards-preferences-and-verifiers.md)
 sets out, and when what is learned is contact a simulator can represent. The
-mistake almost everybody makes first is to start the simulator and the policy in
-the same week.
+mistake almost everybody makes first is to start the simulator and the policy the
+same week.
 
 ![Four bars of success for a searched policy in its simulator, on a different arm, randomised on a different arm, and a cloned policy, beside a table of what each approach asks for](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/cloning-against-searching.svg)
 
@@ -446,10 +441,9 @@ than one right answer; and attempt the world model of section 5 if you want a
 planner rather than a policy. Do not attempt a vision-language-action model as a
 first project unless you truly need several jobs chosen by a sentence, and do not
 attempt a reinforcement-learned policy at all unless you already have a simulator
-you trust, because the weeks will go into the simulator and the policy will never
-arrive. The cloned policy has no reality gap, because its data came from the arm
-itself, and at the start that is worth more than everything the other families
-offer.
+you trust. The cloned policy has no reality gap, because its data came from the
+arm itself, and at the start that is worth more than everything the other
+families offer.
 
 ---
 
@@ -457,17 +451,16 @@ offer.
 
 - [When it does not work](06_when-it-does-not-work.md) is the next page, and it
   takes each failure named above, from a loss that will not fall to a policy that
-  works for one person and not another, and gives the cheapest test for each.
+  works for one person and not another, and gives the cheapest test.
 - [Recipes for the models that see and understand](04_recipes-for-models-that-see-and-understand.md)
-  is the other half of this reference, and its perception models are usually what
-  a policy here stands on.
+  is the other half of this reference, and its models are what a policy here
+  usually stands on.
 - [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   takes over once a policy works, and sets out the timing budget in full.
 - [Behaviour cloning](../../07_learned-models/06_movement-models/02_most-used/01_behaviour-cloning.md)
-  in the catalogue of movement models lists the published policies of this kind
-  and what each costs to run.
+  in the catalogue of movement models lists the published policies of this kind.
 - [Vision-language-action models](../../07_learned-models/07_language-models/02_most-used/01_vision-language-action-models.md)
-  in the same catalogue gives the current models and their licences.
+  in the same catalogue gives the current models and licences.
 
 ---
 
@@ -513,17 +506,16 @@ small.print_trainable_parameters()
 ```
 
 What the libraries give you is narrow, because PyTorch supplies the loss and the
-layer while `peft` supplies the adapter, which is the only one of the three that
-would be real work to write yourself. Everything about the action space is yours,
-since PyTorch has no idea whether your seven numbers are places or changes, which
-order the joints are in, or what the scaling constants were, and it will train
-happily on a mixture of two conventions while the loss falls.
+layer while `peft` supplies the adapter, the only one of the three that would be
+real work to write yourself. Everything about the action space is yours, since
+PyTorch has no idea whether your seven numbers are places or changes, which order
+the joints are in, or what the scaling constants were, and it will train happily
+on a mixture of two conventions while the loss falls.
 
-The two constants `lo` and `hi` deserve a last word, because they are worked out
-from the dataset and so change when you add data to it, which makes a policy
-trained with one pair and run with another the failure measured in section 1.
-Save them in the file that holds the weights and never work them out again at run
-time. In a real project `LeRobotDataset` from LeRobot does the recording and the
-loading, and its packaged policies already contain the chunk head above with a
-camera encoder in front of it, so the lines here are the parts you still decide
-even when you use it.
+The constants `lo` and `hi` deserve a last word, because they are worked out from
+the dataset and change when you add to it, which makes a policy trained with one
+pair and run with another the failure measured in section 1, so save them in the
+file that holds the weights. In a real project `LeRobotDataset` does the
+recording and the loading and LeRobot's packaged policies already contain the
+chunk head above, so the lines here are the parts you still decide even when you
+use it.

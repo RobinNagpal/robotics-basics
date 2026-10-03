@@ -26,16 +26,16 @@ are familiar, and that you have worked through
 [what to reuse and what to train](03_what-to-reuse-and-what-to-train.md). Three
 warnings run through it, because each costs weeks: the action space has to be
 written down before any data is collected, two people's demonstrations are not
-interchangeable, and a simulator is a project in itself. Section 6 ends by saying
-which of the six families a person with one arm and a few weeks should attempt.
+interchangeable, and a simulator is a project in itself.
 
 Every number in the pictures is worked out and printed by
 [`docs/diagrams/starting_your_own_model_5.py`](../../diagrams/starting_your_own_model_5.py).
 The table, the gripper, the box in its way and the person demonstrating are
 simulated, but everything done to them is real: the policies are networks trained
 by Adam in NumPy, the generating policy is a real diffusion model over action
-chunks, the dynamics model is a real one-step predictor, and the searched policy
-comes from a real search against a reward.
+chunks, and the dynamics model is a real one-step predictor. Section 6 ends by
+saying which of the six families a person with one arm and a few weeks should
+attempt.
 
 ## Contents
 
@@ -163,11 +163,10 @@ One episode still gives 120 examples, but with a chunk of 32 steps each label is
 
 The pictures, the recordings and the number of examples are unchanged, which is
 the best thing about this recipe, and only the label grows. The last 31 examples
-of every episode run past its end, which is 25.8 per cent of them, and those
-labels are padded by repeating the final command, so an episode that ends with
-the gripper already closed teaches the policy to keep doing nothing, while an
-episode truncated mid-job teaches it to stop half way. How long the chunk should
-be is decided twice, and the first answer comes from the clock.
+of every episode run past its end, which is 25.8 per cent of them, and those are
+padded by repeating the final command, so an episode truncated mid-job teaches
+the policy to stop half way. How long the chunk should be is decided twice, and
+the first answer comes from the clock.
 
 ![A log-scale bar chart of the movement time each chunk length buys at 30 commands a second, with three model speeds as lines, beside a table of the shortest workable chunk](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/chunk-and-the-clock.svg)
 
@@ -187,7 +186,7 @@ step a decision to 0.99 at thirty-two, while the miss after the goal moves part
 way through rises from 0.48 to 0.61 centimetres.
 
 The long chunk wins easily here, and the cost of the promise only shows at the
-far end where the arm carries on for more than a second before looking again. On
+far end, where the arm carries on for more than a second before looking again. On
 a task where things move while the arm works that cost arrives much sooner, which
 is why the usual arrangement is to work out a long chunk and play only its front,
 as
@@ -288,12 +287,10 @@ running averages, which is twelve bytes if the weights are kept in two, while a
 frozen weight costs only its two. An adapter, explained on
 [fine-tuning and adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md),
 replaces each big square matrix with two thin ones, so a rank-16 adapter on a
-1,024-wide matrix trains 32,768 weights instead of 1,048,576, and across 24
-blocks of four such matrices that is 3,145,728 weights, or 0.70 per cent of the
-small model. So a small model can be adapted on an ordinary graphics card while a
-seven-billion-weight one cannot be fully trained on anything you are likely to
-own. One training example is a section 2 example with a sentence attached, and
-the sentence is where first attempts are wasted.
+1,024-wide matrix trains 32,768 weights instead of 1,048,576, which across 24
+blocks of four such matrices is 0.70 per cent of the small model. One training
+example is a section 2 example with a sentence attached, and the sentence is
+where first attempts are wasted.
 
 ![Bars of the information an instruction carries for one to sixteen jobs, beside bars of the final miss with and without the job tag for one, two and four jobs](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/instruction-information.svg)
 
@@ -325,9 +322,9 @@ average, since an average hides a job that has collapsed.
 
 So is it a sensible first project? Only if you really need one model to do
 several jobs chosen by a sentence, because for one job a chunk policy from
-section 2 is smaller, faster, trains on less and is far easier to debug. The
-mistake almost everybody makes first is to reach for the biggest model because it
-generalises, and then to find that it generalises in the ways measured in
+section 2 is smaller, faster and far easier to debug. The mistake almost
+everybody makes first is to reach for the biggest model because it generalises,
+and then to find that it generalises in the ways measured in
 [what generalisation really looks like](../12_models-that-act/03_vision-language-action-models.md#7-what-generalisation-really-looks-like-and-what-it-costs-to-run)
 rather than the way they needed.
 
@@ -351,10 +348,9 @@ millimetres as the transitions go from 600 to 12,000.
 
 That right-hand curve answers how many you need, and it is the friendliest answer
 on this page, because 12,000 transitions is about ten minutes of pushing and more
-buys nothing. The data is cheap for a reason worth stating, which is that
-predicting what happens next needs no judgement about what should happen, so
-nobody has to supply any. What you must measure before trusting the model is how
-far ahead it may be believed.
+buys nothing. The data is cheap because predicting what happens next needs no
+judgement about what should happen, so nobody has to supply any. What you must
+measure before trusting the model is how far ahead it may be believed.
 
 ![Four real paths with the model's predictions dashed over them, beside a curve of the average gap against the number of steps predicted ahead](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/horizon-you-can-trust.svg)
 
@@ -365,10 +361,9 @@ Each step is fed the model's own answer from the step before, so a small bias
 piles up exactly as
 [error that piles up over a rollout](../12_models-that-act/04_world-models.md#3-error-that-piles-up-over-a-rollout)
 measures on another system, and the habit to build is to find your own crossing
-point and plan no further ahead than that. Within that limit, here is when
-predicting ahead earns its keep, stated honestly: not because the predictions
-beat a demonstration, which they do not, but because a model of what happens lets
-you write a new job as a cost and solve it without recording anything.
+point and plan no further ahead than that. Within that limit, predicting ahead
+earns its keep for one honest reason: a model of what happens lets you write a
+new job as a cost and solve it without recording anything.
 
 ![Simulated runs of a written rule and of a planner lined up on the box, bars of how often each hits the box and works, and a curve of miss against the time between plans](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/planning-against-it.svg)
 
@@ -394,9 +389,8 @@ hundred.
 Every step of every candidate future is one call of the model, so one decision
 with 64 futures of 20 steps is 1,280 calls, which is why the models planned
 against on arms predict a few dozen numbers rather than pictures. The starting
-points are designs rather than downloads, because a model of your arm can only be
-fitted to your arm, and TD-MPC2 and the Dreamer family are the two to copy, with
-DayDreamer showing the approach running on real robots without a simulator. The
+points are designs rather than downloads, since a model of your arm can only be
+fitted to your arm, and TD-MPC2 and the Dreamer family are the two to copy. The
 first milestone is the one-step error on held-out transitions, the one number to
 watch after that is the horizon at which the rollout error crosses your
 tolerance, and the mistake almost everybody makes first is to judge the model by
@@ -423,13 +417,12 @@ the 22 minutes of a person that forty demonstrations cost.
 
 That comparison is the third warning, and it is why this recipe starts with a
 sentence nobody wants to hear. Choosing reinforcement learning means building a
-simulator first, and a simulator is a project in itself: a model of the arm, a
-model of the objects, contact that behaves, a camera view if the policy uses
-pictures, a reset that puts everything back, and a reward that cannot be earned
-the wrong way. MuJoCo, PyBullet and Isaac give you the physics and
-Stable-Baselines3 gives you PPO and SAC already written, so what is left to you
-is exactly the part specific to your cell, which is also the part that decides
-whether any of it transfers.
+simulator first, and a simulator is a project in itself: a model of the arm and
+the objects, contact that behaves, a camera view if the policy uses pictures, a
+reset that puts everything back, and a reward that cannot be earned the wrong
+way. MuJoCo, PyBullet and Isaac give you the physics and Stable-Baselines3 gives
+you PPO and SAC already written, so what is left is exactly the part specific to
+your cell, which is also the part that decides whether any of it transfers.
 
 ![Five bars of success for one policy on five arms that differ from the simulator, beside two curves of success against how late commands arrive](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/the-simulator-must-be-right.svg)
 
@@ -443,8 +436,8 @@ while the policy searched in many, with the gain, the obstacle size and the
 reported goal drawn fresh for every task, works at every delay tested. That is
 domain randomisation, described in
 [why this happens in a simulator](../11_learning-from-outcomes/01_reinforcement-learning.md#6-why-this-happens-in-a-simulator-and-what-the-crossing-costs),
-and its cost is visible in the learning curve above, where the randomised search
-needs many more rounds to reach a worse score in its own simulator.
+and its cost shows in the learning curve above, where the randomised search needs
+many more rounds to reach a worse score in its own simulator.
 
 This is nonetheless the right call when the job cannot be demonstrated because it
 needs force or speed a person cannot produce through a handle, when the outcome
@@ -462,11 +455,11 @@ forty demonstrations works on 0.80 of runs on the arm its recordings came from.
 
 Reading that chart beside the hours gives the answer for a person with one arm
 and a few weeks. Attempt the chunk policy of section 2 first, because it is the
-smallest thing that works and the others are variations on it. Attempt the
+smallest thing that works and the others are variations on it; attempt the
 generating policy of section 3 only if the test in that section says your task
-has more than one right answer. Attempt the world model of section 5 if you want
-a planner rather than a policy, since its data is the only cheap data here. Do
-not attempt a vision-language-action model as a first project unless you truly
+has more than one right answer; and attempt the world model of section 5 if you
+want a planner rather than a policy, since its data is the only cheap data here.
+Do not attempt a vision-language-action model as a first project unless you truly
 need several jobs chosen by a sentence, and do not attempt a reinforcement-learned
 policy at all unless you already have a simulator you trust, because the few
 weeks will go into the simulator and the policy will never arrive. The cloned
@@ -540,13 +533,12 @@ small.print_trainable_parameters()
 # trainable params: 131,072 || all params: 4,329,472 || trainable%: 3.0274
 ```
 
-What the libraries give you is narrow and worth being clear about, because
-PyTorch supplies the loss and the layer while `peft` supplies the adapter, which
-is the only one of the three that would be real work to write yourself.
-Everything about the action space is yours, since PyTorch has no idea whether
-your seven numbers are places or changes, which order the joints are in, or what
-the scaling constants were, and it will train happily on a mixture of two
-conventions while the loss falls.
+What the libraries give you is narrow, because PyTorch supplies the loss and the
+layer while `peft` supplies the adapter, which is the only one of the three that
+would be real work to write yourself. Everything about the action space is yours,
+since PyTorch has no idea whether your seven numbers are places or changes, which
+order the joints are in, or what the scaling constants were, and it will train
+happily on a mixture of two conventions while the loss falls.
 
 The two constants `lo` and `hi` deserve a last word, because they are computed
 from the dataset and so change when you add data to it, which makes a policy

@@ -71,7 +71,7 @@ only that your code can learn.
 
 ![Held-out loss against learning rate across ten powers of ten, flat and high at both ends with a dip in the middle](../../images/starting-your-own-model/when-it-does-not-work/learning-rate-band.svg)
 
-Only the band from 0.00032 to 0.0316 beats answering with zero, and the best value in this short run of 1,200 steps is 0.0316, at a held-out loss of 0.00167.
+Only the band from 0.00032 to 0.03162 beats answering with zero, and the best value in this short run of 1,200 steps is 0.03162, at a held-out loss of 0.00167.
 
 If that test passes, the rate is usually outside its band, which is a hundred times
 wide against the ten powers of ten people try. Below the band the loss falls so
@@ -102,12 +102,13 @@ first.
 
 ![Training and held-out loss falling together over 6,000 steps and flattening just above a dashed line marking the noise](../../images/starting-your-own-model/when-it-does-not-work/a-floor-not-a-bug.svg)
 
-Both curves flatten at about 0.00098, against a dashed line at 0.00061, which is the variance of the noise in the recorded commands themselves.
+Both curves flatten at 0.000978, against a dashed line at 0.000608, which is the variance of the noise in the recorded commands themselves.
 
 The demonstrator here is sloppy far from the object and careful close to it, so every
-recorded command carries noise that no model can predict. On real data you find the
-same floor by recording one situation twice, since half the variance of the
-difference between the two recordings is a lower limit on the loss.
+recorded command carries noise that no model can predict, and the run ends at 1.61
+times that noise. On real data you find the same floor by recording one situation
+twice, since half the variance of the difference between the two recordings is a
+lower limit on the loss.
 
 ![Training and held-out loss against hidden width from 1 to 128 on a log scale, dropping steeply to width 4 and then flat](../../images/starting-your-own-model/when-it-does-not-work/floor-and-model-size.svg)
 

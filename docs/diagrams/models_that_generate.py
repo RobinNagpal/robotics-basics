@@ -1942,6 +1942,433 @@ def autoregressive_cost() -> None:
     _save(fig, FLOW_DOC, 'autoregressive-cost.svg')
 
 
+# --------------------------------------------------------------------------
+# page 2, section 4: generating in a small space
+# --------------------------------------------------------------------------
+
+NT: int = 16            # how many sideways readings make up one trajectory
+XS: Arr = np.linspace(-1.7, 1.7, NT)
+
+
+def _traj(n: int, rng: np.random.Generator) -> tuple[Arr, NDArray[np.int64]]:
+    """n whole demonstrations, each one 16 sideways readings along the path."""
+    side = rng.integers(0, 2, n)
+    sign = 1.0 - 2.0 * side
+    amp = rng.uniform(1.0, 1.8, n)
+    wide = rng.uniform(0.6, 1.1, n)
+    y = (sign * amp)[:, None] * np.exp(-(XS[None, :] / wide[:, None]) ** 2)
+    return y + rng.normal(0.0, 0.03, (n, NT)), side
+
+
+class Squeeze:
+    """An autoencoder: 16 numbers in, a code of k numbers, 16 numbers out."""
+
+    def __init__(self, k: int, steps: int = 7000, seed: int = 30) -> None:
+        rng = np.random.default_rng(seed)
+        self.k = k
+        self.train, self.side = _traj(4000, rng)
+        self.test, self.test_side = _traj(1000, rng)
+        self.net = MLP([NT, 64, k, 64, NT], seed=seed)
+
+        def batches(_it: int) -> tuple[Arr, Arr]:
+            idx = rng.integers(0, len(self.train), 256)
+            return self.train[idx], self.train[idx]
+
+        _, self.hist, self.secs = _cached(
+            f'squeeze{k}', self.net, lambda: _adam(self.net, batches, steps, 3e-3))
+        self.error = float(np.mean((self.net.run(self.test) - self.test) ** 2))
+
+    def code(self, x: Arr) -> Arr:
+        return self.net.acts(x)[2]
+
+    def decode(self, z: Arr) -> Arr:
+        a = z
+        for i in (2, 3):
+            za = a @ self.net.p[2 * i] + self.net.p[2 * i + 1]
+            a = np.tanh(za) if i < self.net.n - 1 else za
+        return a
+
+
+SQ: dict[int, Squeeze] = {}
+
+
+def _sq(k: int) -> Squeeze:
+    if k not in SQ:
+        SQ[k] = Squeeze(k)
+    return SQ[k]
+
+
+def trajectory_dataset() -> None:
+    s = _sq(2)
+    print(f'[p2s4] the trajectory set holds {len(s.train)} demonstrations, each '
+          f'{NT} numbers long, so one demonstration is a point in {NT} dimensions')
+    print(f'[p2s4] each one is really made from 3 choices: which side, how far '
+          f'out, how wide')
+    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    for k in range(40):
+        ax.plot(XS, s.train[k], color=LINK if s.side[k] == 0 else SLIDE, lw=1.0,
+                alpha=0.8)
+    ax.axhline(0, color=MUTED, lw=1.0)
+    ax.set_xlabel('forward position x (m)', fontsize=9.5)
+    ax.set_ylabel('sideways position y (m)', fontsize=9.5)
+    ax.set_title(f'40 whole demonstrations, each {NT} numbers long',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    one = s.train[0]
+    ax.bar(np.arange(NT), one, color=LINK, edgecolor=INK, lw=0.5)
+    for i in (0, 7, 8, 15):
+        ax.text(i, one[i] + 0.06 * np.sign(one[i] + 1e-9), f'{one[i]:+.2f}',
+                ha='center', fontsize=8.5, color=INK)
+    ax.set_xticks(np.arange(NT))
+    ax.set_xticklabels([f'{i + 1}' for i in range(NT)], fontsize=8)
+    ax.set_xlabel('which of the 16 readings', fontsize=9.5)
+    ax.set_ylabel('sideways position y (m)', fontsize=9.5)
+    ax.set_title('One of them written out as its 16 numbers',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, FLOW_DOC, 'trajectory-dataset.svg')
+
+
+def autoencoder_reconstruction() -> None:
+    s = _sq(2)
+    out = s.net.run(s.test)
+    worst = int(np.argmax(((out - s.test) ** 2).mean(1)))
+    print(f'[p2s4] with a code of 2 numbers the average squared error on held-out '
+          f'demonstrations is {s.error:.5f} m^2, which is {np.sqrt(s.error):.4f} m '
+          'of typical error on each reading')
+    print(f'[p2s4] the worst of the 1,000 held-out demonstrations is out by '
+          f'{np.sqrt(((out[worst] - s.test[worst]) ** 2).mean()):.4f} m')
+    fig, axes = plt.subplots(1, 3, figsize=(14.6, 5.0), facecolor='white')
+    for ax, idx in zip(axes, (0, 1, worst)):
+        _plain(ax)
+        z = s.code(s.test[idx:idx + 1])[0]
+        ax.plot(XS, s.test[idx], color=LINK, lw=2.4, marker='o', ms=4,
+                label='the real demonstration')
+        ax.plot(XS, out[idx], color=GRIP, lw=2.0, ls='--', marker='s', ms=4,
+                label='rebuilt from its 2-number code')
+        err = float(np.sqrt(np.mean((out[idx] - s.test[idx]) ** 2)))
+        ax.set_xlabel('forward position x (m)', fontsize=9)
+        ax.set_ylabel('sideways position y (m)', fontsize=9)
+        ax.legend(fontsize=8.5, frameon=False, loc='lower center')
+        ax.set_title(f'code ({z[0]:+.2f}, {z[1]:+.2f})\ntypical error {err:.3f} m',
+                     fontsize=10.5, weight='bold', color=INK)
+    fig.suptitle('16 numbers squeezed into 2 and built back up, '
+                 'for two ordinary demonstrations and the worst one',
+                 fontsize=12, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, FLOW_DOC, 'autoencoder-reconstruction.svg')
+
+
+def code_size_vs_error() -> None:
+    ks = (1, 2, 3, 4, 8)
+    errs = []
+    for k in ks:
+        e = _sq(k).error
+        errs.append(e)
+        print(f'[p2s4] a code of {k} number{"s" if k > 1 else ""}: average squared '
+              f'error {e:.5f} m^2, typical error {np.sqrt(e):.4f} m')
+    fig, ax = plt.subplots(figsize=(9.8, 5.4), facecolor='white')
+    _plain(ax)
+    ax.plot(ks, np.sqrt(errs), color=PURPLE, lw=2.6, marker='o', ms=7)
+    for k, e in zip(ks, errs):
+        ax.text(k, np.sqrt(e) * 1.1, f'{np.sqrt(e):.3f} m', ha='center',
+                fontsize=9.5, color=PURPLE)
+    ax.axvline(3, color=MUTED, ls='--', lw=1.4)
+    ax.text(3.1, max(np.sqrt(errs)) * 0.6,
+            'three real choices went into\neach demonstration', fontsize=9.5,
+            color=MUTED)
+    ax.set_yscale('log')
+    ax.set_xticks(ks)
+    ax.set_xlabel('how many numbers the code has', fontsize=9.5)
+    ax.set_ylabel('typical error of the rebuilt demonstration (m)', fontsize=9.5)
+    ax.set_title('The code only has to be as big as the data really is:\n'
+                 'past three numbers almost nothing is gained',
+                 fontsize=12, weight='bold', color=INK)
+    _save(fig, FLOW_DOC, 'code-size-vs-error.svg')
+
+
+class LatentFlow:
+    """A flow-matching model trained on the 2-number codes, not on the 16 numbers."""
+
+    def __init__(self) -> None:
+        s = _sq(2)
+        self.codes = s.code(s.train)
+        self.mean = self.codes.mean(0)
+        self.sd = self.codes.std(0)
+        z = (self.codes - self.mean) / self.sd
+        rng = np.random.default_rng(141)
+        self.net = MLP([2 + 8, 64, 64, 2], seed=41)
+
+        def batches(_it: int) -> tuple[Arr, Arr]:
+            idx = rng.integers(0, len(z), 256)
+            z1 = z[idx]
+            z0 = rng.normal(size=z1.shape)
+            t = rng.uniform(size=len(idx))
+            zt = (1.0 - t)[:, None] * z0 + t[:, None] * z1
+            return np.concatenate([zt, _tfeat(t)], axis=1), z1 - z0
+
+        _, self.hist, self.secs = _cached(
+            'latentflow', self.net, lambda: _adam(self.net, batches, 8000, 3e-3))
+
+    def draw(self, n: int, seed: int, steps: int = 8) -> Arr:
+        rng = np.random.default_rng(seed)
+        z = rng.normal(size=(n, 2))
+        dt = 1.0 / steps
+        for i in range(steps):
+            v = self.net.run(np.concatenate(
+                [z, _tfeat(np.full(n, i * dt))], axis=1))
+            z = z + dt * v
+        return z * self.sd + self.mean
+
+
+LF: LatentFlow | None = None
+
+
+def _lf() -> LatentFlow:
+    global LF
+    if LF is None:
+        LF = LatentFlow()
+    return LF
+
+
+def latent_codes() -> None:
+    s = _sq(2)
+    lf = _lf()
+    made = lf.draw(600, seed=1717)
+    built = s.decode(made)
+    print(f'[p2s4] the 4,000 real codes fill a patch from '
+          f'({lf.codes[:, 0].min():+.2f}, {lf.codes[:, 1].min():+.2f}) to '
+          f'({lf.codes[:, 0].max():+.2f}, {lf.codes[:, 1].max():+.2f})')
+    frac = float((built[:, NT // 2] > 0).mean())
+    print(f'[p2s4] 600 demonstrations generated in the code space and built back '
+          f'up: {frac * 100:.1f}% swerve above')
+    print(f'[p2s4] their middle reading has spread {built[:, NT // 2].std():.3f} m '
+          f'against {s.test[:, NT // 2].std():.3f} m for real ones')
+
+    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.2), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    up = s.side == 0
+    ax.scatter(lf.codes[up, 0], lf.codes[up, 1], s=6, color=LINK, alpha=0.5,
+               label='swerves above')
+    ax.scatter(lf.codes[~up, 0], lf.codes[~up, 1], s=6, color=SLIDE, alpha=0.5,
+               label='swerves below')
+    ax.set_xlabel('first number of the code', fontsize=9.5)
+    ax.set_ylabel('second number of the code', fontsize=9.5)
+    ax.legend(fontsize=9, frameon=False)
+    ax.set_title('Where the 4,000 real demonstrations\nland in the 2-number space',
+                 fontsize=10.5, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    ax.scatter(lf.codes[:, 0], lf.codes[:, 1], s=5, color=GRID, alpha=0.9)
+    ax.scatter(made[:, 0], made[:, 1], s=7, color=GRIP, alpha=0.6)
+    ax.set_xlabel('first number of the code', fontsize=9.5)
+    ax.set_ylabel('second number of the code', fontsize=9.5)
+    ax.set_title('600 new codes made by a flow model\nthat never saw the 16 numbers',
+                 fontsize=10.5, weight='bold', color=INK)
+    ax = axes[2]
+    _plain(ax)
+    for k in range(40):
+        ax.plot(XS, built[k], color=GRIP, lw=1.0, alpha=0.8)
+    ax.axhline(0, color=MUTED, lw=1.0)
+    ax.set_xlabel('forward position x (m)', fontsize=9.5)
+    ax.set_ylabel('sideways position y (m)', fontsize=9.5)
+    ax.set_title('40 of those codes built back up into\nwhole demonstrations',
+                 fontsize=10.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, FLOW_DOC, 'latent-codes.svg')
+
+
+def pixels_vs_latent_cost() -> None:
+    pic = 512 * 512 * 3
+    small = 64 * 64 * 4
+    print(f'[p2s4] a 512 by 512 colour picture is {pic:,} numbers; shrunk by 8 on '
+          f'each side with 4 channels it is {small:,}, which is {pic / small:.0f} '
+          'times fewer')
+    traj = NT
+    code = 2
+    print(f'[p2s4] the demonstration here goes from {traj} numbers to {code}, '
+          f'which is {traj / code:.0f} times fewer')
+    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.2), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    bars = ax.bar(['every pixel\n512 x 512 x 3', 'the small code\n64 x 64 x 4'],
+                  [pic, small], color=[GRIP, SLIDE], width=0.5, edgecolor=INK,
+                  lw=0.6)
+    for b, v in zip(bars, [pic, small]):
+        ax.text(b.get_x() + b.get_width() / 2, v * 1.15, f'{v:,}', ha='center',
+                fontsize=11, weight='bold', color=INK)
+    ax.set_yscale('log')
+    ax.set_ylim(1e3, pic * 4)
+    ax.set_ylabel('numbers the generator has to work on', fontsize=9.5)
+    ax.set_title(f'A picture generator: {pic / small:.0f} times fewer numbers\n'
+                 'once the picture is squeezed first',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    steps = np.arange(1, 51)
+    ax.plot(steps, steps * pic / 1e6, color=GRIP, lw=2.6,
+            label='working on every pixel')
+    ax.plot(steps, steps * small / 1e6, color=SLIDE, lw=2.6,
+            label='working on the small code')
+    ax.set_xlabel('number of generating steps', fontsize=9.5)
+    ax.set_ylabel('millions of numbers touched in all', fontsize=9.5)
+    ax.legend(fontsize=9.5, frameon=False)
+    ax.set_title('And every step pays the saving again,\n'
+                 'which is what makes 50 steps affordable',
+                 fontsize=11.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, FLOW_DOC, 'pixels-vs-latent-cost.svg')
+
+
+# --------------------------------------------------------------------------
+# page 2, section 5: which generator suits which job
+# --------------------------------------------------------------------------
+
+def all_generators_samples() -> None:
+    d = _data()
+    s = _sweep()
+    a = _ar()
+    one = _pass_time(1)
+    rows = [
+        ('diffusion, 50 steps', _ddim(1500, UNTOLD, seed=1818, steps=50)[0], 50,
+         PURPLE),
+        ('flow matching, 4 steps', _flow_sample(1500, UNTOLD, seed=1818, steps=4)[0],
+         4, SLIDE),
+        ('one piece at a time', a.draw(1500, seed=1818), 2, WRIST),
+    ]
+    print('[p2s5] side by side at the settings a robot would use:')
+    for name, pts, passes, _col in rows:
+        print(f'[p2s5]   {name}: mismatch {_mismatch(pts, d.ref):.4f}, inside the '
+              f'obstacle {_in_obstacle(pts) * 100:.2f}%, {passes} passes, '
+              f'{passes * one * 1e3:.3f} ms')
+    fig, axes = plt.subplots(1, 4, figsize=(17.0, 4.8), facecolor='white')
+    _arena(axes[0], lim=2.4, labels=False)
+    sh = _show(d.ref, 800, 20)
+    axes[0].scatter(sh[:, 0], sh[:, 1], s=5, color=LINK, alpha=0.55)
+    axes[0].set_xlabel('x (m)', fontsize=8.5)
+    axes[0].set_ylabel('y (m)', fontsize=8.5)
+    axes[0].set_title('real demonstrations\nmismatch 0 by definition', fontsize=10.5,
+                      weight='bold', color=INK)
+    for ax, (name, pts, passes, col) in zip(axes[1:], rows):
+        _arena(ax, lim=2.4, labels=False)
+        ax.scatter(pts[:800, 0], pts[:800, 1], s=5, color=col, alpha=0.55)
+        ax.set_xlabel('x (m)', fontsize=8.5)
+        ax.set_ylabel('y (m)', fontsize=8.5)
+        ax.set_title(f'{name}\nmismatch {_mismatch(pts, d.ref):.4f}, '
+                     f'{passes} passes', fontsize=10.5, weight='bold', color=INK)
+    fig.suptitle('The three generators of this chapter, at the settings a robot '
+                 'would actually use', fontsize=12.5, weight='bold', color=INK)
+    fig.tight_layout()
+    _save(fig, FLOW_DOC, 'all-generators-samples.svg')
+
+
+def control_rate_budget() -> None:
+    rates = [(10, 100.0), (30, 33.3), (50, 20.0)]
+    pers = [0.5, 1.0, 2.0, 5.0]
+    print('[p2s5] how many passes fit inside one control period:')
+    table = []
+    for hz, ms in rates:
+        row = [int(ms // per) for per in pers]
+        table.append(row)
+        print(f'[p2s5]   {hz} commands a second ({ms:.0f} ms): ' + ', '.join(
+            f'{n} passes at {per:.1f} ms each' for n, per in zip(row, pers)))
+    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.4), facecolor='white')
+    ax = axes[0]
+    _plain(ax)
+    idx = np.arange(len(pers))
+    for k, (hz, _ms) in enumerate(rates):
+        ax.bar(idx + (k - 1) * 0.27, table[k], width=0.25,
+               color=[LINK, SLIDE, GRIP][k], edgecolor=INK, lw=0.5,
+               label=f'{hz} commands a second')
+        for i, v in enumerate(table[k]):
+            ax.text(i + (k - 1) * 0.27, v * 1.1, str(v), ha='center', fontsize=8.5,
+                    color=INK)
+    ax.set_yscale('log')
+    ax.set_xticks(idx)
+    ax.set_xticklabels([f'{p:.1f} ms\nper pass' for p in pers])
+    ax.set_ylabel('passes that fit in one period', fontsize=9.5)
+    ax.legend(fontsize=9, frameon=False)
+    ax.set_title('How many passes a control rate pays for',
+                 fontsize=11.5, weight='bold', color=INK)
+    ax = axes[1]
+    _plain(ax)
+    ax.axis('off')
+    lines = ['at 2.0 ms for one pass:', '',
+             '  50 denoising steps  = 100.0 ms  -> 10 Hz at best, nothing to spare',
+             '  10 denoising steps  =  20.0 ms  -> fits 30 Hz',
+             '   4 flow steps       =   8.0 ms  -> fits 50 Hz',
+             '   1 flow step        =   2.0 ms  -> fits anything',
+             '',
+             'and a 16-piece answer made one piece',
+             'at a time needs 16 passes = 32.0 ms,',
+             'which already misses 50 Hz']
+    ax.text(0.0, 0.95, '\n'.join(lines), fontsize=11.5, family='monospace',
+            va='top', color=INK)
+    ax.set_title('The same arithmetic written out', fontsize=11.5, weight='bold',
+                 color=INK, loc='left')
+    fig.tight_layout()
+    _save(fig, FLOW_DOC, 'control-rate-budget.svg')
+
+
+def passes_needed() -> None:
+    s = _sweep()
+    target = 0.01
+    f_need = min((n for n in FEW if s.flow[n] <= target), default=max(FEW))
+    d_need = min((n for n in FEW if s.diff[n] <= target), default=max(FEW))
+    names = ['flow matching', 'diffusion', 'one piece at a time\n(2-piece answer)',
+             'one piece at a time\n(16-piece answer)']
+    vals = [f_need, d_need, 2, 16]
+    print(f'[p2s5] passes needed to reach a mismatch of {target}: flow {f_need}, '
+          f'diffusion {d_need}; one piece at a time always needs one pass per piece')
+    fig, ax = plt.subplots(figsize=(10.4, 5.4), facecolor='white')
+    _plain(ax)
+    bars = ax.bar(names, vals, color=[SLIDE, PURPLE, WRIST, WRIST], width=0.55,
+                  edgecolor=INK, lw=0.6)
+    for b, v in zip(bars, vals):
+        ax.text(b.get_x() + b.get_width() / 2, v + 0.4, str(v), ha='center',
+                fontsize=12, weight='bold', color=INK)
+    ax.set_ylim(0, max(vals) * 1.25)
+    ax.set_ylabel('passes through the network for one answer', fontsize=9.5)
+    ax.set_title(f'What each generator costs for one answer, where the first two\n'
+                 f'are measured at the same quality (mismatch {target})',
+                 fontsize=12, weight='bold', color=INK)
+    _save(fig, FLOW_DOC, 'passes-needed.svg')
+
+
+def error_vs_time_frontier() -> None:
+    d = _data()
+    s = _sweep()
+    a = _ar()
+    one = _pass_time(1)
+    ar_mis = _mismatch(a.draw(1500, seed=1919), d.ref)
+    print(f'[p2s5] the two-stage model scores {ar_mis:.4f} for 2 passes '
+          f'({2 * one * 1e3:.3f} ms)')
+    fig, ax = plt.subplots(figsize=(10.4, 5.6), facecolor='white')
+    _plain(ax)
+    times = np.array(FEW) * one * 1e3
+    ax.plot(times, [s.diff[n] for n in FEW], color=PURPLE, lw=2.4, marker='o',
+            ms=6, label='diffusion')
+    ax.plot(times, [s.flow[n] for n in FEW], color=SLIDE, lw=2.4, marker='s',
+            ms=6, label='flow matching')
+    ax.plot([2 * one * 1e3], [ar_mis], marker='D', ms=10, color=WRIST,
+            label='one piece at a time')
+    ax.axhline(d.floor, color=MUTED, ls='--', lw=1.3)
+    ax.text(times[0], d.floor * 1.35, f'real against real: {d.floor:.4f}',
+            fontsize=9.5, color=MUTED)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('measured time to make one waypoint (ms)', fontsize=9.5)
+    ax.set_ylabel('mismatch score (lower is better)', fontsize=9.5)
+    ax.legend(fontsize=9.5, frameon=False)
+    ax.set_title('Everything on one pair of axes: what each generator buys\n'
+                 'for the time it takes', fontsize=12, weight='bold', color=INK)
+    _save(fig, FLOW_DOC, 'error-vs-time-frontier.svg')
+
+
 def main() -> None:
     """Draw every picture. Pass --png <folder> to also write PNG copies."""
     global PNG_DIR
@@ -1971,6 +2398,34 @@ def main() -> None:
     one_sample_path()
     generated_vs_real()
     the_step_rule()
+    conditioning_input()
+    conditional_samples()
+    guidance_arrows()
+    guidance_sweep()
+    guidance_tradeoff()
+    steps_vs_error()
+    samples_at_few_steps()
+    steps_vs_time()
+    flow_pairing()
+    vector_field_arrows()
+    flow_paths()
+    straightness_compare()
+    steps_vs_error_both()
+    few_step_panels()
+    error_at_fixed_steps()
+    time_to_quality()
+    autoregressive_pieces()
+    autoregressive_samples()
+    autoregressive_cost()
+    trajectory_dataset()
+    autoencoder_reconstruction()
+    code_size_vs_error()
+    latent_codes()
+    pixels_vs_latent_cost()
+    all_generators_samples()
+    control_rate_budget()
+    passes_needed()
+    error_vs_time_frontier()
     print(f'wrote the diagrams under {IMAGES}')
 
 

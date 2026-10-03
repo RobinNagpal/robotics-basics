@@ -1782,8 +1782,8 @@ def fig_qlora_memory() -> None:
     ax.bar(xx, rest, bottom=base, color=PURPLE, width=0.52,
            label='gradients and optimiser state for what is trained')
     ax.axhline(CARD_GIB, color=GRIP, lw=2.0, ls='--')
-    ax.text(-0.45, CARD_GIB + 1.8, f'a {CARD_GIB:.0f} GiB graphics card', fontsize=9.5,
-            color=GRIP)
+    ax.text(2.45, CARD_GIB + 1.8, f'a {CARD_GIB:.0f} GiB graphics card', fontsize=9.5,
+            color=GRIP, ha='right')
     for x, (b, r) in enumerate(zip(base, rest)):
         ax.text(x, b + r + 1.8, f'{b + r:.2f} GiB', ha='center', fontsize=10, color=INK,
                 weight='bold',
@@ -1818,10 +1818,10 @@ def fig_qlora_groups() -> None:
                 fontsize=9.2, color=INK)
     ax.set_xticks(xx)
     ax.set_xticklabels([f'{g} weights\nto a scale' for g in groups], fontsize=9.3)
-    ax.set_ylim(0, 5.1)
+    ax.set_ylim(0, 6.2)
     ax.set_ylabel('bits stored for each weight', fontsize=10)
     ax.set_title('What the scales add to four bits', fontsize=11.2, weight='bold')
-    ax.legend(fontsize=9.3, frameon=False, loc='lower right')
+    ax.legend(fontsize=9.3, frameon=False, loc='upper right')
     _plain(ax2)
     w = b.w[1]
     gsizes = [8, 16, 24, 48]
@@ -1837,8 +1837,9 @@ def fig_qlora_groups() -> None:
         ax2.annotate(f'groups of {g}\n{e:.2f}%', xy=(x, e), xytext=(x, e + 0.22),
                      fontsize=9.0, color=INK, ha='center')
     ax2.axhline(per_tensor, color=GRIP, lw=1.8, ls='--')
-    ax2.text(0.05, per_tensor + 0.08, f'one scale for the whole matrix: {per_tensor:.2f}%',
+    ax2.text(0.28, per_tensor - 0.75, f'one scale for the whole matrix: {per_tensor:.2f}%',
              fontsize=9.3, color=GRIP)
+    ax2.set_xlim(0.2, 2.35)
     ax2.set_xlabel('extra bits per weight spent on scales', fontsize=10)
     ax2.set_ylabel('error left after reading the weights back (%)', fontsize=10)
     ax2.set_ylim(min(errs) - 0.5, per_tensor + 1.4)

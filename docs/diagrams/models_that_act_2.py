@@ -1522,8 +1522,11 @@ def pooling_vs_data() -> None:
 TRAIN_HALF: float = 0.6       # the objects in training sat in the middle of the camera view
 
 
+COVERAGE: dict[str, float] = {}
+
+
 def position_coverage() -> None:
-    """The same task with the object moved: inside the training spread it works, outside it does not."""
+    """The same task with the object moved: inside the seen area it works, outside it does not."""
     rng = np.random.default_rng(77)
     seen = rng.uniform(-TRAIN_HALF, TRAIN_HALF, (400, 2))
     covered = (2 * TRAIN_HALF) ** 2 / 4.0 * 100
@@ -1546,7 +1549,11 @@ def position_coverage() -> None:
         vals.append(float(np.mean(err[m])))
         print(f'[coverage] objects {edges[i]:.1f} to {edges[i + 1]:.1f} from the middle: '
               f'error {vals[-1]:.2f} degrees ({int(m.sum())} test objects)')
-    print(f'[coverage] {len(xtr)} of 2400 training objects were kept')
+    COVERAGE['inside'] = float(np.mean(vals[:3]))
+    COVERAGE['edge'] = float(vals[-1])
+    print(f'[coverage] {len(xtr)} of 2400 training objects were kept; the average error '
+          f'inside the seen area is {COVERAGE["inside"]:.2f} degrees and at the edge of the '
+          f'view it is {COVERAGE["edge"]:.2f} degrees')
 
     fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.7), facecolor='white')
     ax = axes[0]
@@ -1701,15 +1708,24 @@ def four_cases() -> None:
     e_same = _rmse(_poly2(mw[200:], mh[200:]) @ coef, y_m[200:])
     e_new = _rmse(_poly2(bw, bh) @ coef, y_b)
 
+    if not COVERAGE:
+        position_coverage()
+    known: set[str] = set()
+    for line in TRAIN_INSTRUCTIONS:
+        known.update(line.split())
+    same = [sum(w in known for w in t.split()) / len(t.split()) * 100
+            for t, k in TEST_INSTRUCTIONS if k.startswith('the same')]
+    lo_w, hi_w = min(same), max(same)
     rows = [
         ('the same task, object moved\ninside the area seen before',
-         'works', 'the error stays near 0.6 degrees across the middle of the view', SLIDE),
+         'works', f'the error stays near {COVERAGE["inside"]:.1f} degrees everywhere inside '
+         'the area the training objects covered', SLIDE),
         ('the same task, said in\ndifferent words',
-         'usually works', 'every word of the reworded sentences was already in the '
-         'training instructions', SLIDE),
+         'usually works', f'{lo_w:.0f} to {hi_w:.0f} per cent of the words in the reworded '
+         'sentences already appear in the training instructions', SLIDE),
         ('the same task, object moved\noutside the area seen before',
-         'does not work', 'the error grows to about 11 degrees at the edge of the view',
-         GRIP),
+         'does not work', f'the error grows to about {COVERAGE["edge"]:.0f} degrees at the '
+         'edge of the camera view', GRIP),
         ('a new object of a kind\nthe model never saw',
          'does not work', f'the error on the unseen kind is {e_new / e_same:.0f} times the '
          'error on a new object of a seen kind', GRIP),
@@ -1760,6 +1776,7 @@ def cost_of_running() -> None:
     ax.set_yscale('log')
     ax.set_xticks(rates)
     ax.set_xticklabels([str(r) for r in rates])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_xlabel('commands the arm wants each second', fontsize=10)
     ax.set_ylabel('shortest chunk that still covers\none call of the model (steps)', fontsize=10)
     ax.legend(fontsize=8.8, frameon=False, loc='upper left')
@@ -1777,8 +1794,11 @@ def cost_of_running() -> None:
              fc='#fdeeee', ec=GRIP, fs=8.6)
     ax.text(0.02, 0.45, f'a small fast policy, every {1000 / 100:.0f} ms', fontsize=9.5,
             color=SLIDE)
-    for i in range(24):
-        _box(ax, 0.03 + i * 0.0395, 0.28, 0.034, 0.13, '', fc='#eaf7ee', ec=SLIDE, fs=6)
+    n_fast = int(round(span / 10.0))
+    for i in range(3 * 10):
+        ax.add_patch(Rectangle((0.03 + i * 0.0315, 0.28), 0.026, 0.13,
+                               facecolor='#eaf7ee', edgecolor=SLIDE, linewidth=0.9))
+    print(f'[cost] the big model fires once for about every {n_fast} steps of the fast policy')
     ax.text(0.5, 0.13, f'the big model looks {1000 / span:.1f} times a second, while the small '
             'one\nkeeps the arm moving 100 times a second towards its goal',
             ha='center', va='center', fontsize=9.6, color=INK)

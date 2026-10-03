@@ -449,8 +449,10 @@ def loss_at_this_prediction() -> None:
     ax.text(TARGET + 0.08, 3.6, f'target {TARGET:.1f}', fontsize=10, color=SLIDE)
     ax.annotate(f'u = {f["u"]:.2f}, loss = {f["loss"]:.4f}\nslope {slope:.2f}: '
                 f'raising u lowers the loss',
-                xy=(f['u'], f['loss']), xytext=(f['u'] - 1.55, 3.3), fontsize=10.5,
-                color=INK, arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.2))
+                xy=(f['u'], f['loss']), xytext=(f['u'] - 1.45, 4.3), fontsize=10.5,
+                color=INK, arrowprops=dict(arrowstyle='-|>', color=GRIP, lw=1.2),
+                bbox=dict(boxstyle='round,pad=0.25', facecolor='white',
+                          edgecolor='none', alpha=0.95))
     ax.set_xlabel('what the network says, u', fontsize=10)
     ax.set_ylabel('loss', fontsize=10)
     ax.set_title('The first slope of the backward pass: how the loss changes when the output changes',

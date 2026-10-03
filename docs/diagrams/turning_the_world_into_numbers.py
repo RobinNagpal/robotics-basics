@@ -2310,7 +2310,8 @@ def absolute_vs_delta() -> None:
         ax.hist(absolute[:, i], bins=30, alpha=0.65, label=nm)
     ax.set_xlabel('joint angle (radians)', fontsize=10)
     ax.set_ylabel('how many readings', fontsize=10)
-    ax.legend(fontsize=8.2, frameon=False, ncol=2)
+    ax.legend(fontsize=8.2, frameon=False, ncol=2, loc='upper left')
+    ax.set_ylim(0, 44)
     ax.set_title('What the model must learn to output, as absolute angles',
                  fontsize=11.2, weight='bold', color=INK)
     ax = axes[1]
@@ -2376,7 +2377,8 @@ def loss_dominated() -> None:
             ax.set_xscale('log')
             ax.set_xlim(min(vals) * 0.3, 1e5)
             for i, v in enumerate(vals):
-                ax.text(v * 1.6, i, f'{v:.1e}%', va='center', fontsize=9.2, color=INK)
+                lab = f'{v:.1f}%' if v >= 1 else f'{v:.1e}%'
+                ax.text(v * 1.6, i, lab, va='center', fontsize=9.2, color=INK)
             ax.set_xlabel('share of the total squared error (log scale)', fontsize=10)
         else:
             ax.set_xlim(0, 24)
@@ -2455,13 +2457,13 @@ def scaled_training() -> None:
     ax.set_xscale('log')
     ax.set_xlim(0.01, max(err_raw.max(), err_sc.max()) * 6)
     ax.axvline(1.0, color=MUTED, ls='--', lw=1.1)
-    ax.text(1.05, len(names) - 0.4, 'an error as big as the channel itself',
-            fontsize=9, color=MUTED)
+    ax.text(1.12, -0.42, 'an error as big as the channel itself',
+            fontsize=9, color=MUTED, va='center')
     ax.set_xlabel('average error, as a share of that channel’s own spread '
                   '(log scale)', fontsize=10)
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
-    ax.set_title('The same model, the same 4,000 steps: scaling the targets is what '
-                 'lets the small channels be learned',
+    ax.set_title(f'The same model, the same {steps:,} steps: scaling the targets is '
+                 'what lets the small channels be learned',
                  fontsize=12.2, weight='bold', color=INK, loc='left')
     _save(fig, STA_DOC, 'scaled-training.svg')
 

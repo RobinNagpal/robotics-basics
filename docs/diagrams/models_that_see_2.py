@@ -762,7 +762,7 @@ def relation_from_geometry() -> None:
     ax.set_ylim(0, 6.0)
     rows = [('mug A', za, da, rel_a, comb_a, LINK), ('mug B', zb, db, rel_b, comb_b, PURPLE)]
     heads = ['', 'z (m)', 'z minus bowl z', 'behind?', 'combined']
-    xs = [0.2, 2.2, 3.8, 6.9, 8.4]
+    xs = [0.2, 2.2, 3.8, 6.9, 8.8]
     for x, hd in zip(xs, heads):
         ax.text(x, 5.3, hd, fontsize=10, weight='bold', ha='left')
     ax.plot([0.2, 9.8], [5.05, 5.05], color=INK, lw=1.1)

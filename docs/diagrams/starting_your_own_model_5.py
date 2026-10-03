@@ -1543,11 +1543,11 @@ def horizon_you_can_trust() -> None:
         reals.append(real[:, :2].copy())
         preds.append(pred[:, :2].copy())
     gaps_arr = np.array(gaps)
-    cross = int(np.argmax(gaps_arr > 10.0)) + 1 if (gaps_arr > 10.0).any() else 0
+    cross = int(np.argmax(gaps_arr > 1.0)) + 1 if (gaps_arr > 1.0).any() else 0
     print(f'[world] one step ahead the model is out by {one:.3f} mm')
     for h in (1, 5, 10, 20, 40, 60):
         print(f'[world] {h:2d} steps ahead ({h / HZ:.2f} s): out by {gaps[h - 1]:.2f} mm')
-    print(f'[world] the gap passes 10 mm at step {cross}, which is {cross / HZ:.2f} s')
+    print(f'[world] the gap passes 1 mm at step {cross}, which is {cross / HZ:.2f} s')
 
     fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
     _plain(axl)
@@ -1567,11 +1567,11 @@ def horizon_you_can_trust() -> None:
 
     _plain(axr)
     axr.plot(np.arange(1, 61), gaps, color=PURPLE, lw=2.2)
-    axr.axhline(10.0, color=MUTED, ls='--', lw=1.1)
-    axr.text(2, 11.5, 'a centimetre out', fontsize=9.5, color=MUTED)
+    axr.axhline(1.0, color=MUTED, ls='--', lw=1.1)
+    axr.text(2, 1.15, 'a millimetre out', fontsize=9.5, color=MUTED)
     if cross:
         axr.axvline(cross, color=GRIP, ls=':', lw=1.4)
-        axr.text(cross + 1.5, max(gaps) * 0.6, f'step {cross}\n{cross / HZ:.2f} s',
+        axr.text(cross + 1.5, max(gaps) * 0.55, f'step {cross}\n{cross / HZ:.2f} s',
                  fontsize=9.5, color=GRIP)
     axr.set_xlabel('steps predicted ahead', fontsize=10)
     axr.set_ylabel('average gap from the truth (mm)', fontsize=10)
@@ -1846,33 +1846,42 @@ def _feats(pos: Arr, goal: Arr, box: Arr) -> Arr:
     return np.concatenate([to_goal, rep, one], -1)
 
 
-def rl_run(W: Arr, goal: Arr, box: Arr, rng: np.random.Generator, gain: float = 1.0,
-           lag: float = 0.0, box_err: Arr | None = None, goal_err: Arr | None = None,
-           steps: int = STEPS) -> Arr:
-    """Run a batch of searched policies. W is (C, 5, 2), goal and box are (E, 2)."""
+def rl_run(W: Arr, goal: Arr, box: Arr, rng: np.random.Generator, gain=1.0,
+           delay=0, goal_err: Arr | None = None, steps: int = STEPS) -> Arr:
+    """Run a batch of searched policies. W is (C, 5, 2), goal and box are (E, 2).
+
+    The policy is always told the nominal box and the reported goal. What the arm
+    really does is set by `gain` and by `delay`, the number of steps a command
+    takes to reach the joints, and by `margin` inside rl_score.
+    """
     c = len(W)
     e = len(goal)
+    g = np.asarray(gain, float).reshape(1, -1, 1) if np.ndim(gain) else float(gain)
+    dly = np.broadcast_to(np.asarray(delay, int), (e,)).copy()
+    buf = np.zeros((int(dly.max()) + 1, c, e, 2))
     pos = rng.normal(0, 0.004, (c, e, 2))
-    told_goal = goal + (0.0 if goal_err is None else goal_err)
-    real_box = box + (0.0 if box_err is None else box_err)
-    last = np.zeros((c, e, 2))
+    told_goal = goal if goal_err is None else goal + goal_err
     out = [pos.copy()]
+    idx = np.arange(e)
     for _ in range(steps):
         f = _feats(pos, told_goal[None, :, :], box[None, :, :])
-        a = np.einsum('cef,cfa->cea', f, W) * 0.03
-        a = np.clip(a, -MAX_STEP, MAX_STEP)
-        last = (1 - lag) * a + lag * last
-        pos = pos + gain * last + rng.normal(0, 0.0008, (c, e, 2))
+        a = np.clip(np.einsum('cef,cfa->cea', f, W) * 0.03, -MAX_STEP, MAX_STEP)
+        buf = np.concatenate([a[None], buf[:-1]], 0) if len(buf) > 1 else a[None]
+        applied = np.transpose(buf[dly, :, idx, :], (1, 0, 2))
+        pos = pos + g * applied + rng.normal(0, 0.0008, (c, e, 2))
         out.append(pos.copy())
-    paths = np.stack(out, 2)
-    return paths, real_box
+    return np.stack(out, 2)
 
 
-def rl_score(paths: Arr, goal: Arr, box: Arr) -> tuple[Arr, Arr]:
+def rl_score(paths: Arr, goal: Arr, box: Arr, margin=0.0) -> tuple[Arr, Arr]:
     """Reward for the search, and whether each run worked."""
+    mg = np.asarray(margin, dtype=float).reshape(1, -1) if np.ndim(margin) else float(margin)
     d = np.linalg.norm(paths[:, :, -1, :] - goal[None, :, :], axis=-1)
-    inside = ((np.abs(paths[:, :, :, 0] - box[None, :, None, 0]) < HW)
-              & (np.abs(paths[:, :, :, 1] - box[None, :, None, 1]) < HH)).any(2)
+    gx = np.abs(paths[:, :, :, 0] - box[None, :, None, 0])
+    gy = np.abs(paths[:, :, :, 1] - box[None, :, None, 1])
+    hw = HW + (mg[:, :, None] if np.ndim(mg) else mg)
+    hh = HH + (mg[:, :, None] if np.ndim(mg) else mg)
+    inside = ((gx < hw) & (gy < hh)).any(2)
     length = np.linalg.norm(np.diff(paths, axis=2), axis=-1).sum(2)
     reward = -100.0 * d - 30.0 * inside - 2.0 * length
     return reward, (d < TOL) & ~inside
@@ -1884,20 +1893,19 @@ def cem_search(rng: np.random.Generator, randomise: bool = False,
     mu = np.zeros((5, 2))
     sd = np.ones((5, 2))
     best_r, best_s = [], []
-    for g in range(gens):
+    for _g in range(gens):
         W = mu[None] + sd[None] * rng.normal(0, 1, (POP, 5, 2))
         goal = np.stack([rng.uniform(0.34, 0.46, TASKS), rng.uniform(-0.05, 0.10, TASKS)], 1)
         box = np.stack([rng.uniform(*OX, TASKS), rng.uniform(*OY, TASKS)], 1)
         if randomise:
-            gain = float(rng.uniform(0.80, 1.20))
-            lag = float(rng.uniform(0.0, 0.35))
-            berr = rng.uniform(-0.015, 0.015, (TASKS, 2))
+            gain = rng.uniform(0.80, 1.20, TASKS)
+            margin = rng.uniform(0.0, 0.025, TASKS)
             gerr = rng.uniform(-0.010, 0.010, (TASKS, 2))
+            dly = rng.integers(0, 7, TASKS)
         else:
-            gain, lag, berr, gerr = 1.0, 0.0, None, None
-        paths, real_box = rl_run(W, goal, box, rng, gain=gain, lag=lag,
-                                 box_err=berr, goal_err=gerr)
-        reward, ok = rl_score(paths, goal, real_box)
+            gain, margin, gerr, dly = 1.0, 0.0, None, 0
+        paths = rl_run(W, goal, box, rng, gain=gain, delay=dly, goal_err=gerr)
+        reward, ok = rl_score(paths, goal, box, margin=margin)
         mean_r = reward.mean(1)
         keep = np.argsort(-mean_r)[:ELITE]
         mu = W[keep].mean(0)
@@ -1930,12 +1938,11 @@ def _s6() -> Section6:
 def _rl_eval(W: Arr, rng: np.random.Generator, **kw) -> float:
     goal = np.stack([rng.uniform(0.34, 0.46, EVAL), rng.uniform(-0.05, 0.10, EVAL)], 1)
     box = np.stack([rng.uniform(*OX, EVAL), rng.uniform(*OY, EVAL)], 1)
-    berr = kw.pop('box_err_size', 0.0)
+    margin = kw.pop('margin', 0.0)
     gerr = kw.pop('goal_err_size', 0.0)
-    kw['box_err'] = None if berr == 0 else np.full((EVAL, 2), berr)
     kw['goal_err'] = None if gerr == 0 else np.full((EVAL, 2), gerr)
-    paths, real_box = rl_run(W[None], goal, box, rng, **kw)
-    return float(rl_score(paths, goal, real_box)[1].mean())
+    paths = rl_run(W[None], goal, box, rng, **kw)
+    return float(rl_score(paths, goal, box, margin=margin)[1].mean())
 
 
 def what_the_search_costs() -> None:
@@ -1993,11 +2000,9 @@ def the_simulator_must_be_right() -> None:
     base = _rl_eval(s.plain, np.random.default_rng(611))
     cases = [('nothing wrong', dict()),
              ('arm moves 0.85 of\nwhat it is told', dict(gain=0.85)),
-             ('commands lag\nbehind', dict(lag=0.35)),
-             ('box 1.5 cm from\nwhere it is said to be', dict(box_err_size=0.015)),
-             ('camera reports the\ngoal 1 cm out', dict(goal_err_size=0.010)),
-             ('all four at once', dict(gain=0.85, lag=0.35, box_err_size=0.015,
-                                       goal_err_size=0.010))]
+             ('commands arrive\n5 steps late', dict(delay=5)),
+             ('real obstacle 2.5 cm\nbigger all round', dict(margin=0.025)),
+             ('all three at once', dict(gain=0.85, delay=5, margin=0.025))]
     vals = []
     for name, kw in cases:
         v = _rl_eval(s.plain, np.random.default_rng(611), **kw)
@@ -2008,7 +2013,7 @@ def the_simulator_must_be_right() -> None:
     fig, (axl, axr) = plt.subplots(1, 2, figsize=(13.2, 4.8), facecolor='white',
                                    gridspec_kw={'width_ratios': [1.25, 1.0]})
     _plain(axl)
-    cols = [SLIDE] + [GRIP] * 4 + [INK]
+    cols = [SLIDE] + [GRIP] * 3 + [INK]
     bars = axl.bar(range(len(cases)), vals, color=cols, width=0.6)
     axl.set_xticks(range(len(cases)))
     axl.set_xticklabels([c[0] for c in cases], fontsize=8.5)
@@ -2022,29 +2027,30 @@ def the_simulator_must_be_right() -> None:
     axl.set_title('One policy, six arms it might meet', fontsize=12, weight='bold')
 
     _plain(axr)
-    gains = np.linspace(0.70, 1.20, 11)
-    plain = [_rl_eval(s.plain, np.random.default_rng(612), gain=float(g)) for g in gains]
-    rand = [_rl_eval(s.rand, np.random.default_rng(612), gain=float(g)) for g in gains]
-    axr.plot(gains, plain, marker='o', color=GRIP, lw=2, label='searched in one simulator')
-    axr.plot(gains, rand, marker='s', color=PURPLE, lw=2, label='searched in many')
-    axr.axvline(1.0, color=MUTED, ls='--', lw=1.1)
-    axr.text(1.005, 0.08, 'the simulator', fontsize=9.5, color=MUTED)
+    dls = list(range(0, 8))
+    plain = [_rl_eval(s.plain, np.random.default_rng(612), delay=d) for d in dls]
+    rand = [_rl_eval(s.rand, np.random.default_rng(612), delay=d) for d in dls]
+    axr.plot(dls, plain, marker='o', color=GRIP, lw=2, label='searched in one simulator')
+    axr.plot(dls, rand, marker='s', color=PURPLE, lw=2, label='searched in many')
+    axr.axvline(0, color=MUTED, ls='--', lw=1.1)
+    axr.text(0.12, 0.08, 'what the simulator assumed', fontsize=9.5, color=MUTED)
     axr.set_ylim(0, 1.05)
-    axr.set_xlabel('share of the commanded movement the arm really makes', fontsize=10)
+    axr.set_xlabel('steps a command takes to reach the joints', fontsize=10)
     axr.set_ylabel('runs that work, out of 1', fontsize=10)
-    axr.legend(fontsize=9.5, frameon=False, loc='lower right')
+    axr.legend(fontsize=9.5, frameon=False, loc='lower left')
     axr.grid(color=GRID, lw=0.6)
     axr.set_axisbelow(True)
     axr.set_title('Randomising widens the range that works', fontsize=12, weight='bold')
-    for g, a, b in zip(gains, plain, rand):
-        print(f'[gap] arm gain {g:.2f}: one simulator {a:.3f}, randomised {b:.3f}')
+    for d, a, b in zip(dls, plain, rand):
+        print(f'[gap] commands {d} steps late ({d / HZ * 1000:.0f} ms): '
+              f'one simulator {a:.3f}, randomised {b:.3f}')
     _save(fig, 'the-simulator-must-be-right.svg')
 
 
 def cloning_against_searching() -> None:
     """Which of the two to start, given one arm and a few weeks."""
     s = _s6()
-    real = dict(gain=0.85, lag=0.35, box_err_size=0.015, goal_err_size=0.010)
+    real = dict(gain=0.85, delay=5, margin=0.025)
     sim_plain = _rl_eval(s.plain, np.random.default_rng(621))
     real_plain = _rl_eval(s.plain, np.random.default_rng(621), **real)
     real_rand = _rl_eval(s.rand, np.random.default_rng(621), **real)
@@ -2110,6 +2116,26 @@ def main() -> None:
         PNG_DIR.mkdir(parents=True, exist_ok=True)
     one_demonstration_on_disk()
     hours_of_a_person()
+    success_against_demonstrations()
+    action_space_locked()
+    two_demonstrators()
+    one_chunk_example()
+    chunk_length_trade()
+    chunk_and_the_clock()
+    two_answer_test()
+    averaging_and_generating()
+    what_generating_costs()
+    changing_its_mind()
+    what_fine_tuning_costs()
+    instruction_information()
+    sharing_across_tasks()
+    horizon_you_can_trust()
+    planning_against_it()
+    planning_arithmetic()
+    data_without_a_person()
+    what_the_search_costs()
+    the_simulator_must_be_right()
+    cloning_against_searching()
     print(f'wrote the diagrams under {IMAGES / DOC}')
 
 

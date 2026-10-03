@@ -56,6 +56,10 @@ picture and gives back one name from a list you fixed in advance.
 
 One training example is a picture file sitting in a folder named after its label, and the label is a single word for the whole picture.
 
+The same model names a region rather than a whole picture when you cut the region
+out first and hand it over on its own, which is how a classifier usually sits
+behind a detector.
+
 One training example is one picture file and one word, and the word is usually the
 name of the folder the file sits in. Nobody draws a box, traces an outline or
 measures anything, which is why one person can take and sort a few hundred
@@ -236,11 +240,11 @@ The box round the glass lying between two others holds 953 pixels, or 11.0 per c
 The mistake almost everybody makes first is to pay for pixels before checking
 whether a box would do, and two quick tests settle it. The first is how much of
 the box is really the object: the tray fills its box completely, the mug fills
-0.798 of it and the bolt only 0.711, so a point taken from the middle of the
-bolt's box lands on the table about three times in ten. The second is whether
-objects of the same kind touch, since the box round the lying glass holds 953
-pixels of its neighbours and a grasp worked out from it can close on the wrong
-glass. If both tests come back clean, use a detector and keep the ten hours.
+0.798 of it and the bolt only 0.711, so nearly three pixels in ten inside the
+bolt's box are table rather than bolt. The second is whether objects of the same
+kind touch, since the box round the lying glass holds 953 pixels of its
+neighbours and a grasp worked out from it can close on the wrong glass. If both
+tests come back clean, use a detector and keep the ten hours.
 
 ---
 
@@ -312,8 +316,9 @@ model while that angle is still wrong and then blame the model.
 
 ## 5. A language model job: a prompt, retrieval, a fine-tune, or none of them
 
-Those three recipes end in millimetres and this one ends in words, which makes it
-the family where people most often build something far larger than the job needs.
+The recipes so far all end in millimetres and this one ends in words, which makes
+it the family where people most often build something far larger than the job
+needs.
 The honest headline is that most robot language jobs need none of the three things
 in this section's title.
 

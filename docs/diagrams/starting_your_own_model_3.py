@@ -193,7 +193,7 @@ SH = Shape()
 
 # the six rungs, in order, with what each one lets training change
 RUNG_NAMES: list[str] = ['use it as it is', 'a better prompt', 'a head on frozen features',
-                         'a rank-8 adapter', 'a full fine-tune', 'train from nothing']
+                         'an adapter', 'a full fine-tune', 'train from nothing']
 RUNG_SHORT: list[str] = ['as it is', 'prompt', 'head', 'adapter', 'full', 'scratch']
 
 
@@ -397,6 +397,9 @@ NUISANCE_SPREAD: float = 1.0
 
 SIZES: list[int] = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
 SEEDS: int = 10
+PRETRAIN_EXAMPLES: int = 12000
+PRETRAIN_STEPS: int = 2500
+PRETRAIN_BATCH: int = 256
 
 # the learning rate and the number of steps for each rung, each chosen once
 RUNG_FIT: dict[str, tuple[int, float]] = {
@@ -456,18 +459,32 @@ def _with_adapter(p: list[Arr], extra: dict[str, Arr]) -> list[Arr]:
     return out
 
 
+CLIP: float = 5.0        # the largest gradient length any step is allowed to use
+
+
 def _train(p: list[Arr], x: Arr, y: Ints, steps: int, lr: float, free: list[int],
-           extra: dict[str, Arr] | None = None) -> list[Arr]:
-    """Momentum gradient descent on the free weights, and on the adapter if given."""
+           extra: dict[str, Arr] | None = None, batch: int = 0,
+           rng: np.random.Generator | None = None) -> list[Arr]:
+    """Momentum gradient descent on the free weights, and on the adapter if given.
+
+    The gradient is shortened to CLIP whenever it is longer than that, which is
+    what keeps the larger learning rates here from blowing up. With `batch` set,
+    each step uses a fresh random handful of the examples rather than all of them.
+    """
     p = [q.copy() for q in p]
     vel = [np.zeros_like(q) for q in p]
     evel = {k: np.zeros_like(v) for k, v in (extra or {}).items()}
-    n = len(x)
     for _ in range(steps):
+        if batch and rng is not None:
+            take = rng.integers(0, len(x), size=batch)
+            xb, yb = x[take], y[take]
+        else:
+            xb, yb = x, y
+        n = len(xb)
         base = _with_adapter(p, extra) if extra is not None else p
-        h1, h2, z = _forward(base, x)
+        h1, h2, z = _forward(base, xb)
         dz = _softmax(z)
-        dz[np.arange(n), y] -= 1.0
+        dz[np.arange(n), yb] -= 1.0
         dz /= n
         g: list[Arr] = [np.zeros(0)] * 6
         g[4] = h2.T @ dz
@@ -476,18 +493,20 @@ def _train(p: list[Arr], x: Arr, y: Ints, steps: int, lr: float, free: list[int]
         g[2] = h1.T @ dh2
         g[3] = dh2.sum(axis=0)
         dh1 = (dh2 @ base[2].T) * (h1 > 0)
-        g[0] = x.T @ dh1
+        g[0] = xb.T @ dh1
         g[1] = dh1.sum(axis=0)
+        length = np.sqrt(sum(float((q * q).sum()) for q in g))
+        step = lr * min(1.0, CLIP / (length + 1e-12))
         if extra is not None:
             for j, idx in enumerate((0, 2)):
                 pairs = (('a', g[idx] @ extra[f'b{j}'].T),
                          ('b', extra[f'a{j}'].T @ g[idx]))
                 for key, grad in pairs:
                     k = f'{key}{j}'
-                    evel[k] = 0.9 * evel[k] - lr * grad
+                    evel[k] = 0.9 * evel[k] - step * grad
                     extra[k] = extra[k] + evel[k]
         for i in free:
-            vel[i] = 0.9 * vel[i] - lr * g[i]
+            vel[i] = 0.9 * vel[i] - step * g[i]
             p[i] = p[i] + vel[i]
     return p
 
@@ -526,9 +545,10 @@ class Ladder:
     def _one(self, seed: int) -> tuple[Arr, Arr, float, float]:
         world = World(seed)
         rng = world.rng
-        xs, ys, _ = world.draw(1500, 'source')
-        xs_t, ys_t, _ = world.draw(800, 'source')
-        net = _train(_init_net(rng, OBS, PARTS), xs, ys, 700, 0.08, [0, 1, 2, 3, 4, 5])
+        xs, ys, _ = world.draw(PRETRAIN_EXAMPLES, 'source')
+        xs_t, ys_t, _ = world.draw(1500, 'source')
+        net = _train(_init_net(rng, OBS, PARTS), xs, ys, PRETRAIN_STEPS, 0.08,
+                     [0, 1, 2, 3, 4, 5], batch=PRETRAIN_BATCH, rng=rng)
         source_acc = _acc(net, xs_t, ys_t)
         x_te, y_te, seen_te = world.draw(1500, 'new')
         ceiling = world.ceiling(seen_te, y_te)
@@ -656,7 +676,9 @@ class Candidates:
     def __init__(self) -> None:
         rng = np.random.default_rng(11)
         self.share = np.linspace(0.05, 0.95, CANDIDATES)
-        self.own_noise = rng.permutation(np.linspace(0.15, 1.10, CANDIDATES))
+        # how many classes each candidate's own job has, which sets the score it
+        # publishes without changing what its features are worth to us
+        self.own_classes = rng.permutation(np.array([3, 3, 4, 4, 6, 6, 8, 8]))
         self.own: list[float] = []
         self.overlap: list[float] = []
         self.probe: list[float] = []
@@ -688,13 +710,13 @@ class Candidates:
     def _one(self, i: int, rng: np.random.Generator) -> tuple[float, float, float, float, float]:
         world = World(500 + i)
         share = self.share[i]
-        wanted = np.zeros((2, PARTS))
-        wanted[0, 0] = 1.0
-        wanted[1, 1] = 1.0
+        classes = int(self.own_classes[i])
+        near_mask = np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0.0])
         dirs = []
-        for _ in range(4):
-            near = rng.normal(0.0, 1.0, size=PARTS) * np.array([1, 1, 0, 0, 0, 0])
-            far = rng.normal(0.0, 1.0, size=PARTS) * np.array([0, 0, 1, 1, 1, 1])
+        for _ in range(classes):
+            raw = rng.normal(0.0, 1.0, size=PARTS)
+            near = raw * near_mask
+            far = raw * (1.0 - near_mask)
             d = (share * near / (np.linalg.norm(near) + 1e-9)
                  + (1 - share) * far / (np.linalg.norm(far) + 1e-9))
             dirs.append(d / (np.linalg.norm(d) + 1e-9))
@@ -704,15 +726,16 @@ class Candidates:
             parts = world.rng.normal(0.0, 1.0, size=(n, PARTS))
             y = (parts @ basis.T).argmax(axis=1)
             seen = np.concatenate(
-                [parts + world.rng.normal(0.0, self.own_noise[i], size=(n, PARTS)),
+                [parts + world.rng.normal(0.0, LOOK_NOISE, size=(n, PARTS)),
                  world.rng.normal(0.0, NUISANCE_SPREAD, size=(n, NUISANCE))], axis=1)
             x = np.cos(seen @ world.mix + world.phase) + world.rng.normal(
                 0.0, 0.02, size=(n, OBS))
             return x, y.astype(np.int64)
 
-        xs, ys = source(1500)
-        xs_t, ys_t = source(800)
-        net = _train(_init_net(rng, OBS, 4), xs, ys, 700, 0.08, [0, 1, 2, 3, 4, 5])
+        xs, ys = source(PRETRAIN_EXAMPLES)
+        xs_t, ys_t = source(1500)
+        net = _train(_init_net(rng, OBS, classes), xs, ys, PRETRAIN_STEPS, 0.08,
+                     [0, 1, 2, 3, 4, 5], batch=PRETRAIN_BATCH, rng=rng)
         own = _acc(net, xs_t, ys_t)
 
         # the overlap, measured rather than assumed: how well a straight line
@@ -740,11 +763,11 @@ class Candidates:
     def report(self) -> None:
         print(f'--- {CANDIDATES} simulated published models, one new job ---')
         print(f'the best anything could do on the new job is {self.ceiling:.3f}')
-        print(f'{"model":>6s} {"own job":>8s} {"overlap":>8s} {"probe 64":>9s} '
-              f'{"tune 512":>9s}')
+        print(f'{"model":>6s} {"classes":>8s} {"own job":>8s} {"overlap":>8s} '
+              f'{"probe 64":>9s} {"tune 512":>9s}')
         for i in range(CANDIDATES):
-            print(f'{chr(65 + i):>6s} {self.own[i]:8.3f} {self.overlap[i]:8.3f} '
-                  f'{self.probe[i]:9.3f} {self.ft[i]:9.3f}')
+            print(f'{chr(65 + i):>6s} {self.own_classes[i]:8d} {self.own[i]:8.3f} '
+                  f'{self.overlap[i]:8.3f} {self.probe[i]:9.3f} {self.ft[i]:9.3f}')
         print(f'its score on its own job against its worth here: r = {self.r_own:+.3f}')
         print(f'its overlap with our job against its worth here: r = '
               f'{self.r_overlap:+.3f}')

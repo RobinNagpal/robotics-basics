@@ -2,29 +2,26 @@
 
 The page before this one, [world models](../12_models-that-act/04_world-models.md), was the
 last of the pages that take a family of model apart and show what it does inside. Together
-with the forty pages before it, it leaves you knowing what a neuron does, what a loss is,
-what a transformer is for, how a diffusion model turns noise into an answer and what a
-policy gives back when it looks at a camera picture. It also leaves one question open, and
-it is almost certainly the question that brought you here: you would like to make one of
-these, so where do you start, and what do you actually do first?
+with the forty pages before it, it leaves you knowing what a neuron does, what a loss is, what
+a transformer is for and what a policy gives back when it looks at a camera picture. It also
+leaves one question open, and it is almost certainly the question that brought you here: you
+would like to make one of these, so where do you start?
 
 This chapter answers that, and it is practical from here to its last page. This first page is
 the one that saves a month, because the month people lose is hardly ever lost inside the
 training loop. It is lost before training starts, on a job nobody wrote down clearly, measured
 by a number nobody agreed on, against nothing at all, using examples nobody looked at, split
-in a way that quietly hands the answers to the model.
-
-So the page goes through five decisions in the order you should make them: whether a model is
-the right answer at all, how to write the job down as what goes in, what comes out and the one
-number that says it worked, which cheap baselines have to be beaten before training is
-allowed, how few examples you can honestly start with and what looking at them means, and how
+in a way that quietly hands the answers to the model. So the page goes through five decisions
+in the order you should make them: whether a model is the right answer at all, how to write
+the job down as what goes in, what comes out and the one number that says it worked, which
+cheap baselines have to be beaten first, how few examples you can honestly start with, and how
 to split those examples before a single weight changes.
 
 It is written for a reader who has followed the book this far, so it assumes you know what
 weights, a loss and a held-out set are, and assumes you have never started a model of your
 own. You should have read [why not just write the
-rules](../01_what-learning-means/01_why-not-just-write-the-rules.md), because section 1 here
-returns to the question that page opened and answers it with measurements.
+rules](../01_what-learning-means/01_why-not-just-write-the-rules.md), because section 1 returns
+to the question that page opened and answers it with measurements.
 
 Everything below is measured on one simulated work cell. An arm picks small parts off trays
 and puts them in a box, there are 40 trays with 6 parts on each, and the camera measures each
@@ -49,13 +46,12 @@ rules, the baselines and the small networks, is real arithmetic. The script is
 ## 1. Is a model the right answer at all
 
 The chapter opens with this question because it is the only one here that can save the whole
-month rather than part of it, and the test is short. If a person can write the rule down in
-an afternoon, and the numbers in that rule do not change, then write the rule, because a
-model is for the jobs where nobody can write the rule down at all.
-
-The first job in this cell is on the easy side of that line. The arm needs to know whether
-its gripper is holding anything, and it has two readings to go on: how far apart the fingers
-are, in millimetres, and how much current the gripper motor is drawing, in amperes.
+month rather than part of it, and the test is short. If a person can write the rule down in an
+afternoon, and the numbers in that rule do not change, then write the rule, because a model is
+for the jobs where nobody can write the rule down at all. The first job in this cell is on the
+easy side of that line: the arm needs to know whether its gripper is holding anything, and it
+has two readings to go on, how far apart the fingers are in millimetres and how much current
+the gripper motor is drawing in amperes.
 
 ![A scatter of finger gap against motor current, with grey points for an empty gripper and blue points for a held part, cut by three red threshold lines, beside a bar chart of 99.7 per cent for the rule and 99.6 per cent for a network](../../images/starting-your-own-model/before-you-train-anything/written-rule-works.svg)
 
@@ -66,13 +62,11 @@ on the same two readings gets 99.6 per cent.
 Anybody can read those three numbers off the plot in a few minutes, and no model beats a rule
 that is already right nearly every time. Robot jobs on this side include counting how often
 the gripper has closed, stopping the arm when a measured force passes a limit, turning encoder
-counts into an angle, refusing a target outside the reachable space and holding a conveyor at
-a set speed, and in each of them a person knows the rule and can say why each number in it is
-what it is.
-
-The second job is not like that. The arm has to choose between a pinch with the fingertips, a
-wrap with the whole hand and a suction cup, and the right grip depends on all five of the
-camera's measurements together.
+counts into an angle and refusing a target outside the reachable space, and in each of them a
+person knows the rule and can say why each number in it is what it is. The second job is not
+like that, because the arm has to choose between a pinch with the fingertips, a wrap with the
+whole hand and a suction cup, and the right grip depends on all five of the camera's
+measurements together.
 
 ![A scatter of measured width against measured shine with points coloured by the right grip, cut by two dashed hand-chosen thresholds, beside a bar chart of how much of each grip the hand rule finds](../../images/starting-your-own-model/before-you-train-anything/written-rule-fails.svg)
 
@@ -86,32 +80,28 @@ buys, because the numbers in them have to come from somewhere.
 
 ![A chart of accuracy against the number of conditions in the rule, where the holding job jumps to 98.7 per cent after one condition and the grip job climbs to 74.0 per cent after five and then stops, with the five thresholds listed](../../images/starting-your-own-model/before-you-train-anything/conditions-to-get-there.svg)
 
-The holding job is finished by one condition at 98.7 per cent, while the grip job goes from
-37.5 per cent with no conditions to 46.0 with one, 69.8 with three and 74.0 with five, and
-adding seven more conditions changes nothing at all.
+One condition finishes the holding job at 98.7 per cent, while the grip job climbs from 37.5
+per cent with none to 46.0 with one, 69.8 with three and 74.0 with five, after which seven
+more change nothing.
 
 The conditions in that second curve were not written by a person. A search went through a
 recording of 144 parts and picked each threshold to cut the most mistakes, arriving at a width
-of 48.8 millimetres and a mass of 19.5 grams, and nobody could have written those numbers down
+of 48.8 millimetres and a mass of 19.5 grams, and nobody could have written those down
 beforehand. That is the real test hiding inside the first one, because the moment you need a
 recording to set the numbers in your rule you are already fitting a model, and a list of five
 thresholds is a poor one. The jobs on this side include choosing a grip for an unfamiliar
-part, finding parts in a cluttered tray picture, telling a chipped part from a sound one and
-deciding where on an unfamiliar shape to put the fingers.
-
+part, finding parts in a cluttered tray picture and telling a chipped part from a sound one.
 The other half of the test is whether the rule stays written.
 
 ![Two charts: accuracy of the holding rule falling as the current sensor drifts while the re-measured threshold stays flat, and the threshold the training readings pick falling in a straight line with the drift](../../images/starting-your-own-model/before-you-train-anything/the-rule-that-changed.svg)
 
-When the motor's brushes wear and the current sensor reads 0.18 amperes low, the rule with
-its threshold left at 0.45 falls from 99.7 per cent to 93.9 per cent, and measuring the
-threshold again on fresh readings brings it back to 99.2 per cent.
+When the brushes wear and the current sensor reads 0.18 amperes low, the rule left at 0.45
+falls from 99.7 per cent to 93.9, and measuring the threshold again brings it back to 99.2.
 
-That is the honest cost of choosing a rule, and it is worth saying plainly: a written rule
-usually fails by drifting rather than by being wrong, and somebody has to notice and measure
-it again. The repair is one number and takes minutes, which is a far smaller bill than
-retraining a model, so drift is not a reason to reach for one. A model is the answer only when
-nobody can write the rule at all, and the next step is to write down exactly what it is for.
+That is the honest cost of a rule: it usually fails by drifting rather than by being wrong,
+and somebody has to notice and measure it again. The repair is one number and takes minutes,
+a far smaller bill than retraining a model, so drift is not a reason to reach for one. A model
+is the answer only when nobody can write the rule at all.
 
 ---
 
@@ -120,11 +110,9 @@ nobody can write the rule at all, and the next step is to write down exactly wha
 Section 1 settled that the grip job needs a model, and this section turns that into something
 a model can be trained against, because "choose the right grip" is not yet a job. A job is
 three things written down: exactly what goes in, with its units and how many numbers there
-are; exactly what comes out; and the one number that says whether it worked. Writing those
-down takes an hour, and it is the hour that most often gets skipped.
-
-What goes in has to be counted rather than described, because the count decides what the
-model will cost before you have trained anything.
+are; exactly what comes out; and the one number that says whether it worked. What goes in has
+to be counted rather than described, because the count decides what the model will cost before
+you have trained anything.
 
 ![Two log-scale bar charts: the numbers in one example for four possible inputs, 5, 7, 150,528 and 602,112, and the weights a first layer of 16 units would need for each, 80, 112, 2,408,448 and 9,633,792](../../images/starting-your-own-model/before-you-train-anything/input-and-output-written-down.svg)
 
@@ -132,46 +120,38 @@ Five measured numbers is five numbers, one 224 by 224 colour picture is 150,528 
 four of those pictures is 602,112, so a first layer of 16 units needs 80 weights in the
 first case and 2,408,448 in the third.
 
-The five numbers for this job are the width in millimetres, the height in millimetres, the
-estimated mass in grams, how shiny the surface is from zero to one, and how flat the top face
-is on the same scale. Writing the units down matters, because a model fed millimetres and a
-model fed metres are different models, and feeding a working system the same quantity in a
-different unit is the commonest way to break it later. What comes out is as short: one of
-pinch, wrap and suction, so the output is three numbers and the largest of them is the answer.
-
-The third thing is the one that gets written vaguely, and the usual vague version is "the arm
-should pick things up reliably". That cannot be measured, because reliability is not a thing
-until somebody says what counts as a success, and the same recording gives very different
-answers depending on the choice.
+The five numbers here are the width in millimetres, the height in millimetres, the estimated
+mass in grams, how shiny the surface is from zero to one, and how flat the top face is on the
+same scale. Writing the units down matters, because feeding a working system the same quantity
+in a different unit is the commonest way to break it later. What comes out is as short: one of
+pinch, wrap and suction, so the output is three numbers and the largest is the answer. The
+third thing is the one that gets written vaguely, usually as "the arm should pick things up
+reliably", and that cannot be measured, because reliability is not a thing until somebody says
+what counts as a success.
 
 ![Three bars from the same 200 attempts: 92.0 per cent closed on something, 72.5 per cent reached the box in time, and 71.5 per cent did so undamaged](../../images/starting-your-own-model/before-you-train-anything/vague-becomes-measurable.svg)
 
-Out of one recording of 200 simulated attempts, 184 ended with the gripper closed on
-something, 145 ended with the part in the box within ten seconds, and 143 of those were
-undamaged, which is 92.0, 72.5 and 71.5 per cent of the same attempts.
+Of one recording of 200 simulated attempts, 184 ended with the gripper closed on something,
+145 with the part in the box within ten seconds and 143 undamaged as well, which is 92.0,
+72.5 and 71.5 per cent of the same attempts.
 
 So the worked version of the vague sentence is this: the input is the five measured numbers
 for one part, in the units above; the output is one of pinch, wrap and suction; and the one
 number is the share of attempts in which the part ends up in the box within ten seconds and
-undamaged, counted over parts from trays the model has never been trained on. That can be
-measured by somebody who was not in the room, and the gap between the first bar and the last
-is 20.5 points of nothing.
-
-There is a second way to pick the wrong number, which is to pick one that a useless answer
-already scores well on. Alongside the grip job this cell has a crack inspection, and about
-one part in ten is cracked.
+undamaged, counted over parts from trays nobody trained on. That can be measured by somebody
+who was not in the room, and the gap between the first bar and the last is 20.5 points of
+nothing. A second way to pick the wrong number is to pick one a useless answer already scores
+well on, which this cell's crack inspection shows, since about one part in ten is cracked.
 
 ![Bars showing 90.0 per cent accuracy and 0.0 per cent of cracks found for always answering "no crack" against 93.8 per cent and 75.0 per cent for a real detector, beside a histogram of detector scores](../../images/starting-your-own-model/before-you-train-anything/the-wrong-one-number.svg)
 
-Because only 24 of the 240 parts are cracked, a program that always answers "no crack" is
-90.0 per cent accurate while finding none of them at all, and a real detector scores 93.8
-per cent accuracy, finds 75.0 per cent of the cracks and is right about 66.7 per cent of the
-parts it flags.
+Because only 24 of the 240 parts are cracked, always answering "no crack" is 90.0 per cent
+accurate while finding none, while a real detector scores 93.8 per cent accuracy and finds
+75.0 per cent of the cracks.
 
-Accuracy on that job is worthless as the one number, because the thing you care about is the
-share of cracked parts found, and that is what has to be written on the sheet. The last
-thing to settle about the one number is how many attempts it will be measured over, because
-a success rate from a handful of tries is mostly noise.
+Accuracy is worthless as the one number there, because what you care about is the share of
+cracked parts found, and that is what goes on the sheet. The last thing to settle is how many
+attempts the number will be measured over, because a success rate from a few tries is noise.
 
 ![A chart of the spread of reported success rates for 20, 60, 200 and 600 trials of a model that really succeeds 70 per cent of the time, with the 95 per cent intervals marked](../../images/starting-your-own-model/before-you-train-anything/how-many-trials.svg)
 
@@ -179,28 +159,24 @@ For a model that really succeeds on 70 attempts in 100, twenty trials give a ran
 possible answers 37.3 points wide, sixty trials 22.6 points, two hundred trials 12.6 points
 and six hundred trials 7.3 points.
 
-Twenty trials on a real arm is an afternoon, and an afternoon buys you a number that could
-be anywhere from 48 to 86 per cent for the very same model. Deciding in advance how many
-attempts the final measurement needs is part of writing the job down, and it also tells you
-how much arm time the project will cost. With the three things written, the next question is
-what the model has to beat.
+Twenty trials on a real arm is an afternoon, and that afternoon buys a number which could be
+anywhere from 48 to 86 per cent for the very same model. Deciding in advance how many attempts
+the final measurement needs is part of writing the job down, and it also says how much arm
+time the project will cost.
 
 ---
 
 ## 3. The baseline a model has to beat
 
-The job from section 2 now has an input, an output and a number, which means that anything
-at all can be scored on it, and that is the point of this section. A **baseline** is a cheap
-answer to the job that took no training, and its score is what a model has to beat before
-anybody is allowed to be pleased. There are three worth running every time, they take
-minutes between them, and the reason to insist on all three is that they fail in different
-places.
-
-The first baseline is to always give the most common answer, which measures how unbalanced
-the job is. The second is the rule somebody would have written, from section 1. The third is
-**nearest neighbour**, which stores every training example and answers a new one by finding
-the stored example whose numbers are closest and copying its answer, so it is the whole of
-machine learning with the learning taken out.
+The job from section 2 now has an input, an output and a number, so anything at all can be
+scored on it, and that is the point of this section. A **baseline** is a cheap answer to the
+job that took no training, and its score is what a model has to beat before anybody is allowed
+to be pleased. Three are worth running every time, because they fail in different places. The
+first is to always give the most common answer, which measures how unbalanced the job is. The
+second is the rule somebody would have written, from section 1. The third is **nearest
+neighbour**, which stores every training example and answers a new one by finding the stored
+example whose numbers are closest and copying its answer, so it is machine learning with the
+learning taken out.
 
 ![A bar chart of five scores on the grip job: 37.5 per cent for the most common class, 75.0 for the written rule, 63.0 for nearest neighbour on the raw numbers, 79.2 for nearest neighbour on scaled numbers and 80.1 for a small network](../../images/starting-your-own-model/before-you-train-anything/three-baselines-classification.svg)
 
@@ -208,14 +184,13 @@ On the same 1,728 training and 576 held-out frames, always answering "pinch" sco
 cent, the written rule 75.0, nearest neighbour on the raw numbers 63.0, nearest neighbour
 after scaling each number to the same spread 79.2, and a small trained network 80.1.
 
-That picture is the honest shape of most first attempts. The network wins, but it wins by
-0.9 points over a method that fits in two lines and does no training at all, and if the
-network had come in at 78 per cent somebody would still have reported it as a success. The
-gap between the two nearest-neighbour bars is worth its own sentence: the only difference is
-that the second one divides each of the five numbers by its spread first, so that a width in
-millimetres stops drowning a shininess between zero and one, and that one change is worth
-16.2 points. The same job has a second half, how hard to squeeze the part, which asks for a
-number in newtons rather than one of three answers, and there the baselines change.
+That is the honest shape of most first attempts. The network wins, but by 0.9 points over a
+method that fits in two lines and does no training at all, and at 78 per cent somebody would
+still have reported it as a success. The gap between the two nearest-neighbour bars deserves
+its own sentence, because the only difference is that the second divides each of the five
+numbers by its spread first, so a width in millimetres stops drowning a shininess between zero
+and one, and that one change is worth 16.2 points. The second half of the job, how hard to
+squeeze, asks for a number in newtons instead, and there the baselines change.
 
 ![A bar chart of average error in newtons for predicting the average, a written physics rule, nearest neighbour and a network, beside a scatter showing the physics rule's error growing with shininess](../../images/starting-your-own-model/before-you-train-anything/three-baselines-regression.svg)
 
@@ -223,15 +198,13 @@ Always predicting the average squeeze force is wrong by 0.550 newtons on average
 from school physics is wrong by 0.202, nearest neighbour by 0.175 and a small network by
 0.144, while the forces themselves spread by 0.921 newtons.
 
-That physics rule is one line, the mass times gravity times a safety factor divided by twice
-an assumed friction, and its error comes within six hundredths of a newton of the network's
-while costing nothing to write. It is also honest about where it fails, since its error grows
-with shininess, because shiny parts are more slippery than its fixed friction number assumes.
+That physics rule is one line, the mass times gravity times a safety factor divided by twice an
+assumed friction, and its error comes within six hundredths of a newton of the network's while
+costing nothing to write. It is honest about where it fails too, since its error grows with
+shininess, because shiny parts are more slippery than its fixed friction number assumes.
 Whenever physics or geometry gives an approximate answer, that answer is a baseline, and a
-model that cannot clearly beat it has proved nothing except that it ran.
-
-The last thing to measure about a baseline is that it does not stand still while the model
-learns.
+model that cannot clearly beat it has proved nothing except that it ran. The last thing to
+measure about a baseline is that it does not stand still while the model learns.
 
 ![A chart of held-out accuracy against the number of training parts on a log scale, with the network's curve rising past the flat lines for the written rule and the most common class](../../images/starting-your-own-model/before-you-train-anything/baseline-moves-with-data.svg)
 
@@ -241,14 +214,14 @@ on 64 parts 78.8, which is the first point at which it passes the written rule's
 Until sixty-four parts have been recorded the model is worse than the rule, so a project that
 stopped at thirty-two would have concluded that the model does not work when all it had shown
 was that the recording was too small. Compare the two at the same amount of data every time,
-and keep comparing as the recording grows, because the curves cross somewhere and you want to
-know where. The other way to read a score is one class at a time.
+because the curves cross somewhere and you want to know where. The other way to read a score
+is one class at a time.
 
 ![A grouped bar chart of how much of each grip the four methods find, where the most common class gets all the pinches and none of the others](../../images/starting-your-own-model/before-you-train-anything/baseline-per-class.svg)
 
-The most common class reaches 37.5 per cent by getting 100 per cent of the pinches and 0 per
-cent of the wraps and suctions, while the written rule gets 50.9, 93.8 and 84.5 per cent of
-the three and the network gets 72.7, 85.9 and 66.7.
+The most common class reaches 37.5 per cent by finding every pinch and no wrap or suction at
+all, while the written rule finds 50.9, 93.8 and 84.5 per cent of the three and the network
+finds 72.7, 85.9 and 66.7.
 
 That is how you find out what a method is really doing, and here it shows the rule and the
 network failing on different parts of the same job, which tells you where the next examples
@@ -267,9 +240,9 @@ comes from counting the kinds of situation rather than the examples.
 
 ![A curve of how many of twelve kinds of part have been seen at least twice against the number of parts recorded, beside a bar chart of how many of the 240 parts fall into each kind](../../images/starting-your-own-model/before-you-train-anything/enough-to-cover-the-cases.svg)
 
-Ten combinations of grip, surface and top shape actually occur among the 240 parts, and a
-recording of 8 parts has seen 2.1 of them at least twice, 24 parts 6.0, 48 parts 7.6, 100
-parts 8.9 and 200 parts all 10, with the rarest kind holding only 4 of the 240 parts.
+Ten combinations of grip, surface and top shape occur among the 240 parts, and a recording of
+8 parts has seen 2.1 of them at least twice, 24 parts 6.0, 48 parts 7.6, 100 parts 8.9 and
+200 parts all ten.
 
 That is a better argument for a number than any round figure, because it is specific to your
 cell: three grips, shiny and dull surfaces and flat and curved tops make ten kinds here, while
@@ -280,10 +253,9 @@ hundred rather than ten, because of simple arithmetic.
 
 ![Three curves of the chance of meeting a fault at least once against the number of examples you open and look at, for faults affecting 20, 5 and 2 per cent of examples](../../images/starting-your-own-model/before-you-train-anything/faults-in-the-first-hundred.svg)
 
-A fault that affects one example in twenty shows up in a sample of ten only 40.1 per cent of
-the time, in a sample of thirty 78.5 per cent of the time and in a sample of a hundred 99.4
-per cent of the time, while a fault affecting one in fifty needs a hundred to reach 86.7 per
-cent.
+A fault affecting one example in twenty shows up in a sample of ten only 40.1 per cent of the
+time, in thirty 78.5 per cent and in a hundred 99.4 per cent, while a fault affecting one in
+fifty needs a hundred to reach 86.7 per cent.
 
 Looking at ten examples feels like looking, and it misses three faults in five, while a
 hundred catches nearly everything and costs an hour of somebody's time. What you are looking
@@ -291,10 +263,9 @@ for is not mysterious, and the three faults planted in this cell are the three t
 
 ![A bar chart of held-out accuracy for clean data, mislabelled parts, a stuck sensor reading, 96 different parts and 24 parts recorded four times, beside a scatter showing the stuck reading as a flat line](../../images/starting-your-own-model/before-you-train-anything/what-the-faults-cost.svg)
 
-Training on the recording as it stands gives 80.1 per cent, labelling 10 of the 144 parts
-wrongly gives 71.3, freezing the shininess reading on 8 of the 24 training trays gives 78.0,
-and recording 24 parts four times each instead of 96 different parts gives 65.9 against 71.4
-for the same number of frames.
+The recording as it stands gives 80.1 per cent, labelling 10 of the 144 parts wrongly gives
+71.3, freezing the shininess reading on 8 of the 24 training trays gives 78.0, and 24 parts
+recorded four times each give 65.9 against 71.4 for 96 different parts.
 
 A wrong label costs 8.8 points from 10 parts in 144, and you find it by opening examples and
 asking whether you agree with the answer written beside them. A sensor stuck at one value
@@ -322,15 +293,13 @@ With the examples collected and looked at, one decision remains before training.
 ## 5. The split, decided before any training
 
 The examples from section 4 cannot all be used for training, because a score on examples the
-model has already seen says nothing, and how they are divided has to be settled before any
-weight changes. That is not tidiness: divide them after seeing the results and you will
-divide them in whatever way makes the results look best, without ever deciding to.
-
-Why a held-back set is needed, and what it measures, is explained in [overfitting and
-generalisation](../04_making-training-work/01_overfitting-and-generalisation.md), which is
-worth rereading before you decide. What belongs here is the decision itself and the
-robot-specific trap in it, which is that a robot records continuously and so produces many
-examples of the same thing.
+model has seen says nothing, and how they are divided has to be settled before any weight
+changes. That is not tidiness: divide them after seeing the results and you will divide them
+in whatever way makes the results look best, without ever deciding to. Why a held-back set is
+needed at all is explained in [overfitting and
+generalisation](../04_making-training-work/01_overfitting-and-generalisation.md), and what
+belongs here is the decision itself and the robot-specific trap in it, which is that a robot
+records continuously and so produces many examples of the same thing.
 
 ![A bar chart of held-out accuracy under three kinds of split, with whiskers, beside a histogram showing how much closer the nearest frame of the same part is than the nearest frame of any other part](../../images/starting-your-own-model/before-you-train-anything/three-splits-three-scores.svg)
 
@@ -339,15 +308,14 @@ the frames are divided at random, 81.6 per cent when whole parts are held out an
 cent when whole trays are, and the nearest frame of the same part sits 13.7 times closer than
 the nearest frame of any other part.
 
-The first of those three is the trap, and it is not a small one. The camera takes twelve
-frames of each part as the arm comes down, those twelve are nearly the same picture, and
-dividing frames at random puts eleven in the training set and the twelfth in the held-out
-set, so the model answers the twelfth by remembering the eleventh, scores a hundred per cent
-and has learned nothing. The second and third scores sit inside each other's spread here,
-which is honest rather than convenient, because the model has already met 24 trays and a
-twenty-fifth is not much of a surprise. Where the scenes differ more, such as a new room or a
-different lighting rig, that third bar falls much further, and the page on overfitting
-measures exactly that on another set of recordings.
+The first of those three is the trap. The camera takes twelve frames of each part as the arm
+comes down, those twelve are nearly the same picture, and dividing frames at random puts
+eleven in the training set and the twelfth in the held-out set, so the model answers the
+twelfth by remembering the eleventh, scores a hundred per cent and has learned nothing. The
+second and third scores sit inside each other's spread here, which is honest rather than
+convenient, because the model has already met 24 trays and a twenty-fifth is not much of a
+surprise, while in a cell whose scenes differ more, such as a new room or a different lighting
+rig, that third bar falls much further.
 
 The unit you split along is whatever you want the model to work on next. Splitting by frame
 answers "how will it do on a frame it has seen", which is a question nobody has; splitting by
@@ -361,13 +329,11 @@ the part's real width, and the shine reading between 0.369 under and 0.285 over,
 twelve frames of one part differ from each other by only 0.33 millimetres.
 
 A tray is therefore a real thing and not a label, because its camera alignment and its
-lighting shift every reading taken on it by far more than the camera's own noise. A model
-trained on twenty-four trays and tested on the other eight is being asked whether it copes
-with an alignment it has not met, which is what matters when the cell is moved or the camera
-is bumped, so picking the unit is picking which question your final number answers.
-
-Once the unit is chosen, the split is written down and never touched again, which means
-naming the trays rather than saying "twenty per cent".
+lighting shift every reading taken on it by far more than the camera's own noise, so a model
+tested on held-out trays is being asked whether it copes with an alignment it has not met.
+That is what matters when the cell is moved or the camera is bumped. Once the unit is chosen
+the split is written down and never touched again, which means naming the trays rather than
+saying "twenty per cent".
 
 ![A grid of 40 trays of 6 parts each, coloured pale blue for training, orange for validation and red for test, with the counts in the key](../../images/starting-your-own-model/before-you-train-anything/the-split-written-down.svg)
 
@@ -375,10 +341,9 @@ Twenty-four trays, which is 144 parts and 1,728 frames, are for training, eight 
 parts and 576 frames are for choosing between models, and the eight trays numbered 0, 4, 5,
 10, 14, 15, 16 and 37 are read once at the end.
 
-Three sets rather than two is what the page on overfitting explains, and the short version is
-that the set you choose settings on cannot also be the set you report, because the number you
-report would then be the number you chose on. The last thing to decide is how big that final
-set has to be, which follows from section 2's measurement of how noisy a success rate is.
+There are three sets rather than two because the set you choose settings on cannot also be the
+set you report, or the number reported would be the number you chose on. The last thing to
+decide is how big that final set has to be, which follows from section 2.
 
 ![A chart of how often the better of two models is correctly chosen against the number of held-out attempts given to each, for a ten-point gap and a five-point gap](../../images/starting-your-own-model/before-you-train-anything/how-many-held-out-attempts.svg)
 
@@ -390,8 +355,7 @@ be right 92.3 per cent of the time.
 So the size of the held-out set is not a matter of taste, it is set by the smallest difference
 you need to see. Two candidate models usually differ by about five points once a project is
 going, and a held-out set of a few dozen cannot tell those apart, so every comparison made on
-it is close to a coin toss. Writing that size down before training is the last entry on the
-sheet.
+it is close to a coin toss.
 
 ---
 
@@ -462,24 +426,20 @@ That is the whole of this page, and the next one starts the work.
 
 ## 7. Where to read next
 
-- [The order of the work](02_the-order-of-the-work.md) is the next page, and it takes the
-  job you have just written down and says what to run first, in the order that finds faults
-  most cheaply, starting with deliberately overfitting a single batch.
-- [What to reuse and what to train](03_what-to-reuse-and-what-to-train.md) answers the
-  question this page leaves open once a model is justified, which is whether to train one at
-  all or start from somebody else's.
+- [The order of the work](02_the-order-of-the-work.md) is the next page, and it says what to
+  run first on the job you have just written down, in the order that finds faults most cheaply.
+- [What to reuse and what to train](03_what-to-reuse-and-what-to-train.md) answers the question
+  this page leaves open, which is whether to train a model at all or start from somebody else's.
 - [Overfitting and generalisation](../04_making-training-work/01_overfitting-and-generalisation.md)
-  explains why the split of section 5 is needed, what each of the three sets is for, and the
-  other ways information leaks across the line.
+  explains why the split of section 5 is needed and the other ways information leaks across it.
 - [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
-  takes the one number of section 2 onto a real arm, where trials cost time and a failure has
-  to be read rather than counted.
+  takes the one number of section 2 onto a real arm, where trials cost time.
 - [Nearest neighbours and locally weighted regression](../../07_learned-models/02_classical-machine-learning/02_most-used/04_nearest-neighbours-and-locally-weighted-regression.md)
-  in the next book is the catalogue entry for the third baseline of section 3, including when
-  it is worth keeping as the finished answer rather than as a baseline.
+  is the catalogue entry for the third baseline of section 3, including when it is worth
+  keeping as the finished answer.
 - [Evaluation and failure](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md)
-  is the catalogue page for measuring a model on an arm, and it lists what people actually
-  report and what those reports leave out.
+  lists what people actually report when they measure a model on an arm, and what those
+  reports leave out.
 
 ---
 

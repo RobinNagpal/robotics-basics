@@ -1443,43 +1443,54 @@ def fig_randomise_what_you_do_not_know() -> None:
     ys2 = np.concatenate(ys2)
     print(f'  nominal training set {xs.shape[0]} rows, '
           f'randomised training set {xs2.shape[0]} rows')
-    print('  the eight settings drawn (sensor noise, calibration in mm, '
-          'delay in periods, drive):')
+    print('  the eight settings drawn (sensor noise, delay in periods, drive):')
     for s in settings:
-        print(f'    noise x{s[0]:.1f}  cal {1000 * s[1]:+5.1f} mm  '
-              f'delay {s[2]}  drive {s[3]:.2f}')
+        print(f'    noise x{s[0]:.1f}  delay {s[2]}  drive {s[3]:.2f}')
+    fixed = dict(REAL)
+    fixed['cal'] = 0.0
     out = {}
     for name, (a, b) in (('trained at one setting', (xs, ys)),
                          ('trained across a range', (xs2, ys2))):
         net, _, _ = train(a, b, width=32, lr=3e-3, steps=6000, seed=0)
         _, ok_sim = rollout(net, 600, 61)
         _, ok_real = rollout(net, 600, 61, **REAL)
-        out[name] = (float(ok_sim.mean()), float(ok_real.mean()))
-        print(f'  {name:24s} simulator {out[name][0]:.1%}  arm {out[name][1]:.1%}')
-    fig, ax = plt.subplots(figsize=(7.8, 4.2))
+        _, ok_cal = rollout(net, 600, 61, **fixed)
+        out[name] = (float(ok_sim.mean()), float(ok_real.mean()),
+                     float(ok_cal.mean()))
+        print(f'  {name:24s} simulator {out[name][0]:.1%}  '
+              f'arm as it is {out[name][1]:.1%}  '
+              f'arm with the 12 mm offset measured and taken out '
+              f'{out[name][2]:.1%}')
+    fig, ax = plt.subplots(figsize=(8.4, 4.4))
     _plain(ax)
     pos = np.arange(2)
     w = 0.32
     names = list(out)
-    ax.bar(pos - w / 2, [100 * out[n][0] for n in names], width=w, color=LINK,
-           label='run in the simulator it trained in')
-    ax.bar(pos + w / 2, [100 * out[n][1] for n in names], width=w, color=GRIP,
-           label='run with the four real differences')
+    ax.bar(pos - w / 2, [100 * out[n][1] for n in names], width=w, color=GRIP,
+           label='the 12 mm offset left in place')
+    ax.bar(pos + w / 2, [100 * out[n][2] for n in names], width=w, color=SLIDE,
+           label='the 12 mm offset measured and taken out')
     for p_, n in zip(pos, names):
-        ax.text(p_ - w / 2, 100 * out[n][0] + 1.8, f'{100 * out[n][0]:.0f}%',
+        ax.text(p_ - w / 2, 100 * out[n][1] + 2.0, f'{100 * out[n][1]:.1f}%',
                 ha='center', fontsize=10, color=INK)
-        ax.text(p_ + w / 2, 100 * out[n][1] + 1.8, f'{100 * out[n][1]:.0f}%',
+        ax.text(p_ + w / 2, 100 * out[n][2] + 2.0, f'{100 * out[n][2]:.1f}%',
                 ha='center', fontsize=10, color=INK)
+    ax.axhline(100 * out['trained at one setting'][0], color=MUTED, ls=':', lw=1.5)
+    ax.text(1.45, 100 * out['trained at one setting'][0] + 2.0,
+            f'what it scored in the simulator: '
+            f'{100 * out["trained at one setting"][0]:.1f}%',
+            ha='right', fontsize=9, color=MUTED)
     ax.set_xticks(pos)
-    ax.set_xticklabels(['trained at one setting', 'trained across a range'],
+    ax.set_xticklabels(['trained at one setting',
+                        'trained across a range of\ndelay, drive and sensor noise'],
                        fontsize=10)
-    ax.set_ylabel('attempts that succeeded (%), 600 trials', fontsize=10)
-    ax.set_ylim(0, 132)
-    ax.set_title('The same amount of data, recorded under a spread of settings',
+    ax.set_ylabel('attempts that succeeded on the arm (%), 600 trials', fontsize=10)
+    ax.set_ylim(0, 128)
+    ax.set_title('Randomise what you cannot measure, and measure what you can',
                  fontsize=11.5, fontweight='bold', color=INK)
     ax.grid(axis='y', color=GRID, lw=0.7)
     ax.set_axisbelow(True)
-    ax.legend(fontsize=9, loc='upper center', ncol=2, framealpha=0.95)
+    ax.legend(fontsize=9, loc='upper left', framealpha=0.95)
     _save(fig, 'randomise-what-you-do-not-know.svg')
 
 

@@ -516,7 +516,7 @@ def one_name_is_not_a_place() -> None:
     ax1.plot([mx], [my], marker='o', ms=9, color=TEAL)
     ax1.annotate('', xy=(mx, my), xytext=(cx, cy),
                  arrowprops=dict(arrowstyle='<->', color=PURPLE, lw=1.8))
-    ax1.text((cx + mx) / 2 + 26, (cy + my) / 2 - 26, f'{d_px:.0f} px = {d_mm:.0f} mm',
+    ax1.text((cx + mx) / 2 + 48, (cy + my) / 2 - 32, f'{d_px:.0f} px = {d_mm:.0f} mm',
              fontsize=10.5, color=PURPLE, weight='bold', ha='center')
     ax1.text(cx - 10, cy + 34, 'middle of the picture', fontsize=9, color=GRIP,
              ha='right')
@@ -673,6 +673,8 @@ def rare_class_split() -> None:
 
     counts = {'glass': 300 * 3, 'mug': 300, 'tray': 300, 'bolt': 300,
               'cracked cup': RARE_PICS}
+    print('      instances in 300 pictures of the scene: ' +
+          ', '.join(f'{k} {v}' for k, v in counts.items()))
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.6, 4.8), facecolor='white',
                                    gridspec_kw={'width_ratios': [1.0, 1.25]})
     _plain(ax1)
@@ -1222,13 +1224,14 @@ def where_depth_labels_come_from() -> None:
         ax1.text(v + 0.25, i, f'{v:.1f} mm', va='center', fontsize=10.5, weight='bold',
                  color=cols[i])
     ax1.axvline(GRIP_MARGIN_MM, color=GRIP, ls='--', lw=1.5)
-    ax1.text(GRIP_MARGIN_MM + 0.2, 2.62, f'gripper margin, {GRIP_MARGIN_MM} mm',
+    ax1.text(GRIP_MARGIN_MM + 0.2, 2.68, f'gripper margin, {GRIP_MARGIN_MM} mm',
              fontsize=9, color=GRIP, va='center')
     ax1.set_xlim(0, 12)
     ax1.set_xlabel(f'error the label carries at {Z_TABLE:.2f} m (mm)', fontsize=10)
     ax1.set_title('Three honest ways to get a metric depth label',
                   fontsize=11, weight='bold')
     ax1.invert_yaxis()
+    ax1.set_ylim(2.95, -0.65)
     _blank(ax2, (0, 10), (0, 10))
     ax2.text(0.1, 9.8, 'one training example for a metric depth model', fontsize=10.5,
              weight='bold', color=INK, va='top')
@@ -1341,7 +1344,7 @@ def cue_ambiguity_floor() -> None:
         ax2.text(i, b + 0.12, f'{b:+.2f} mm', ha='center', fontsize=10.5, weight='bold',
                  color=GRIP)
     ax2.axhline(5.0, color=INK, ls='--', lw=1.5)
-    ax2.text(-0.42, 5.2, 'the 5 mm the ruler was out', fontsize=9.5, color=INK)
+    ax2.text(-0.44, 5.15, 'the ruler was 5 mm out', fontsize=9.5, color=INK)
     ax2.set_ylim(0, 7.6)
     ax2.set_xlabel('training examples', fontsize=10)
     ax2.set_ylabel('average error left in the model (mm)', fontsize=10)
@@ -1407,8 +1410,9 @@ def depth_error_budget() -> None:
         ax2.text(i, v + 0.60, f'{v:.2f} mm', ha='center', fontsize=11, weight='bold',
                  color=[GRIP, SLIDE][i])
     ax2.axhline(GRIP_MARGIN_MM, color=INK, ls='--', lw=1.6)
-    ax2.text(-0.44, GRIP_MARGIN_MM + 0.22, f'{GRIP_MARGIN_MM} mm margin', fontsize=10,
+    ax2.text(-0.56, GRIP_MARGIN_MM + 0.24, f'{GRIP_MARGIN_MM} mm margin', fontsize=10,
              color=INK)
+    ax2.set_xlim(-0.65, 1.6)
     ax2.set_ylim(0, 11)
     ax2.set_ylabel('all four added in quadrature (mm)', fontsize=10)
     ax2.set_title('Calibrating the angle fixed the grasp;\ntraining a depth model would '

@@ -1,4 +1,4 @@
-"""Generate the diagrams for both pages of docs/06_neural-networks/13_using-a-model-for-real/.
+"""Generate the diagrams for both pages of docs/05_neural-networks/13_using-a-model-for-real/.
 
     01_running-and-evaluating-a-model.md -> images/using-a-model-for-real/running-and-evaluating-a-model/
     02_the-map-of-models.md              -> images/using-a-model-for-real/the-map-of-models/
@@ -2425,8 +2425,8 @@ BOOKS: list[tuple[str, str]] = [
     ('02_perception', 'Perception'),
     ('03_frameworks', 'Frameworks and Manipulation'),
     ('04_ros-and-rviz', 'ROS and RViz'),
-    ('05_programming-techniques', 'Programming Techniques'),
-    ('06_neural-networks', 'Neural Networks and AI Models'),
+    ('06_programming-techniques', 'Programming Techniques'),
+    ('05_neural-networks', 'Neural Networks and AI Models'),
     ('07_learned-models', 'Learned Models'),
     ('08_robotics-by-example', 'Robotics by Example'),
 ]
@@ -2511,9 +2511,9 @@ def reading_order() -> None:
     """One suggested path through the rest of the library after this book."""
     counts = {f: _chapter_count(f) for f, _ in BOOKS}
     steps = [
-        ('you are here', '06_neural-networks', 'the machinery, from one neuron up'),
+        ('you are here', '05_neural-networks', 'the machinery, from one neuron up'),
         ('next', '07_learned-models', 'which models exist for an arm, and what each costs'),
-        ('then', '05_programming-techniques', 'the methods nobody had to train'),
+        ('then', '06_programming-techniques', 'the methods nobody had to train'),
         ('then', '02_perception', 'what the camera really measures'),
         ('then', '03_frameworks', 'simulators, and training an arm in one'),
         ('last', '08_robotics-by-example', 'one problem solved ten ways, written and learned'),

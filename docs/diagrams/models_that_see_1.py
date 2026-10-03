@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first two pages of docs/06_neural-networks/09_models-that-see/.
+"""Generate the diagrams for the first two pages of docs/05_neural-networks/09_models-that-see/.
 
     01_vision-backbones.md            -> images/models-that-see/vision-backbones/
     02_detection-and-segmentation.md  -> images/models-that-see/detection-and-segmentation/

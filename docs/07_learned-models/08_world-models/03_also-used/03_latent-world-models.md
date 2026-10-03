@@ -335,11 +335,11 @@ This page has assumed that the code is learned, but a person can choose the numb
 instead. So the written alternative replaces the learned code with a few numbers that
 a person chooses and measures. In the cube-and-bowl example, the camera finds the
 cube with
-[thresholding and colour masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+[thresholding and colour masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 , and a
-[Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+[Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
 keeps its position steady from frame to frame.
-[Sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+[Sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 then plans the moves with a written model of what each move does. PlaNet, in section
 5, plans in the same way, but inside a learned code.
 

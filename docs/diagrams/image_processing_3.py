@@ -1,5 +1,5 @@
 """Generate the diagrams for the additions to
-docs/05_programming-techniques/05_image-and-point-cloud-processing/.
+docs/06_programming-techniques/05_image-and-point-cloud-processing/.
 
 This covers three things:
 

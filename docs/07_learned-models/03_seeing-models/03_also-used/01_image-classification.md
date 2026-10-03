@@ -312,10 +312,10 @@ action for a wrong answer, such as simply trying again.
 A trained network is not the only way to answer a yes-or-no question about a
 picture, because Book 5 answers some of them with a written rule. [Thresholding
 and colour
-masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 can check that the gripper holds something, by counting the depth pixels nearer
 than the fingertips. [Edges and
-contours](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md)
+contours](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md)
 can name the shape of a flat part, such as a triangle or a hexagon, by counting
 the corners of its outline. The written rule wins when the scene is controlled
 and the answer depends on one thing you can measure, such as a height, a colour

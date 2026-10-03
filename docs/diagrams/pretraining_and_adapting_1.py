@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first two pages of docs/06_neural-networks/07_pretraining-and-adapting/.
+"""Generate the diagrams for the first two pages of docs/05_neural-networks/07_pretraining-and-adapting/.
 
     01_self-supervised-pretraining.md -> images/pretraining-and-adapting/self-supervised-pretraining/
     02_scale-data-and-compute.md      -> images/pretraining-and-adapting/scale-data-and-compute/

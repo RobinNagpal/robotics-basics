@@ -331,9 +331,9 @@ grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md) finds pairs of
 surface points that face each other, checks that the gripper has room to close, and
 writes rules for known kinds of object. Book 5 prepares the shape those rules work
 on. For example,
-[clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 cuts each object out of the point cloud, and
-[RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md)
+[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md)
 fits a plane or a cylinder to it to measure it. The written way wins when the
 objects are known or have a shape you can describe. Instead, the model wins when
 the next object could be anything, lying at any angle in clutter.

@@ -361,14 +361,14 @@ your robot.
 
 A trained network is not the only way to find an object, because Book 5 finds
 objects with written rules instead. First, [thresholding and colour
-masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 marks the pixels that have a chosen colour, or the points that stand above the
 table in a depth picture. Then
-[clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 splits those pixels or points into separate objects, and gives each one a box
 and a centre. For one known object with printing on it, such as a boxed product,
 [image features and
-matching](../../../05_programming-techniques/03_searching-and-matching/03_also-used/01_image-features-and-matching.md)
+matching](../../../06_programming-techniques/03_searching-and-matching/03_also-used/01_image-features-and-matching.md)
 finds it by matching small spots against a stored picture. The written way wins
 in a cell you control, for example parts in colours nothing else shares,
 standing apart on a plain table, because it needs no labelled pictures and gives

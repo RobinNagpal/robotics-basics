@@ -1,4 +1,4 @@
-"""Generate the diagrams for both pages of docs/06_neural-networks/04_making-training-work/.
+"""Generate the diagrams for both pages of docs/05_neural-networks/04_making-training-work/.
 
     01_overfitting-and-generalisation.md -> images/making-training-work/overfitting-and-generalisation/
     02_normalisation-and-stability.md    -> images/making-training-work/normalisation-and-stability/

@@ -11,7 +11,7 @@ explains what a point cloud is. You should also know, from
 that a network is made of layers that turn a list of numbers into another list of
 numbers.
 
-> Before this page, it helps to have read [clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md), which splits a point cloud into objects with written rules and thins it onto small cubes called voxels. This page shows what a trained model adds.
+> Before this page, it helps to have read [clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md), which splits a point cloud into objects with written rules and thins it onto small cubes called voxels. This page shows what a trained model adds.
 
 ## Contents
 
@@ -342,10 +342,10 @@ printed labels, for example when parts in a bin all look alike.
 
 Book 5 finds objects in a point cloud with a written recipe instead, the one that
 Book 2's section 1.6 describes.
-[RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md),
+[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md),
 a method that fits a shape when many of the points belong to something else, finds
 the table plane so that it can be removed. Then
-[clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 groups the points that are left into one cluster per object. The recipe needs no
 labelled clouds, and it works on objects the robot has never seen. The point cloud
 model wins when objects touch, as they do in a full bin, because clustering merges

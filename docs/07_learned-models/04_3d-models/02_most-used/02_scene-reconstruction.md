@@ -11,7 +11,7 @@ knows what a point cloud is. You should also know, from
 [how a model learns](../../01_what-models-are/02_how-a-model-learns.md), that training
 means adjusting a model a little at a time until its answers match the examples.
 
-> Before this page, it helps to have read [multi-view geometry](../../../05_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md), which explains how lines of sight from known camera places cross at a point. NeRF and Gaussian splatting use the same idea with many photos.
+> Before this page, it helps to have read [multi-view geometry](../../../06_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md), which explains how lines of sight from known camera places cross at a point. NeRF and Gaussian splatting use the same idea with many photos.
 
 ## Contents
 
@@ -314,13 +314,13 @@ scene that will stay still.
 ## 9. The written alternative
 
 Instead of fitting a scene, Book 5 builds 3D from many views with written methods.
-[Multi-view geometry](../../../05_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md)
+[Multi-view geometry](../../../06_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md)
 finds points seen from two or more known camera places, and measures the height of
 glass from how far its outline shifts. Then
-[volumetric maps](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
+[volumetric maps](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
 combine many depth pictures into one map of small cubes, each marked free, occupied
 or not yet seen, and
-[iterative closest point](../../../05_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
+[iterative closest point](../../../06_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
 lines up point clouds taken from several places to remove small errors in the camera
 poses. These need no fitting and no graphics card, and they give measured shapes.
 Instead, scene reconstruction wins when the arm needs new pictures from views it

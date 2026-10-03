@@ -358,7 +358,7 @@ A twelve-second trial costs 43.8 megabytes with the two compressed camera stream
 The joint readings cost half a megabyte a trial and the two compressed camera streams
 cost 21.6 megabytes each, while the exact block of numbers fed into the network costs
 144.5 megabytes on its own, so keep that one only for trials that failed. The page on
-[sensor streams](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
+[sensor streams](../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
 describes how such streams are recorded with their timestamps lined up, which matters
 because an unaligned log cannot say which thing happened first.
 
@@ -378,9 +378,9 @@ the arm when the measured force passes a threshold, and it brakes the arm if no 
 arrives within 120 milliseconds. The reason to write this rather than train it is that
 written code can be read, argued about and tested exhaustively while a network cannot,
 and the cost is that the clamp sometimes spoils a legitimate fast motion. The
-[safety monitoring](../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
+[safety monitoring](../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
 page describes how such a layer is built, and
-[proportional-integral-derivative (PID) control](../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md)
+[proportional-integral-derivative (PID) control](../../06_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md)
 describes the controller underneath it.
 
 ---

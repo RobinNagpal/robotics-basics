@@ -9,7 +9,7 @@ and tokens into numbers. You do not need to know how to program a robot, because
 page uses only a few lines of Python in one example, and explains each line.
 
 > Before this page, it helps to have read [behaviour
-> trees](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md),
+> trees](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md),
 > which shows how the steps and retries of a task are written by hand. The planner
 > on this page chooses the same kind of steps from a request in words.
 
@@ -318,9 +318,9 @@ ordinary code between the planner and the robot.
 
 Instead, the written alternative is a task program that a person writes in advance.
 [Finite state
-machines](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
+machines](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
 and [behaviour
-trees](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
+trees](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
 hold the steps, the checks and the retries, and the robot follows them exactly. When
 the order of the steps depends on where things are, Book 3's [task and motion
 planning](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#5-task-and-motion-planning)

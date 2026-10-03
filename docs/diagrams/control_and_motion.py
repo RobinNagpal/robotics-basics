@@ -1,4 +1,4 @@
-"""Generate the diagrams for docs/05_programming-techniques/07_control-and-motion/.
+"""Generate the diagrams for docs/06_programming-techniques/07_control-and-motion/.
 
 This covers 01_overview, 02_pid-control, 03_trajectory-generation and
 04_impedance-and-force-control. Each document's pictures go to a folder named

@@ -12,7 +12,7 @@ model: the first guesses depth from one photo, the second measures depth from
 two photos taken side by side, and the third repairs the holes that a depth
 camera leaves on shiny and clear objects.
 
-> Before this page, it helps to have read [multi-view geometry](../../../05_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md), which explains how the shift of a point between two pictures gives its depth. The stereo models on this page learn the matching and keep that geometry.
+> Before this page, it helps to have read [multi-view geometry](../../../06_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md), which explains how the shift of a point between two pictures gives its depth. The stereo models on this page learn the matching and keep that geometry.
 
 ## Contents
 
@@ -317,7 +317,7 @@ wrong, and several of the best models have research-only licences.
 ## 9. The written alternative
 
 A trained network is not the only way to get distances, because [multi-view
-geometry](../../../05_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md)
+geometry](../../../06_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md)
 in Book 5 measures depth with no model at all. It finds the depth of a point
 from two pictures taken from known places, and from one picture when the point
 is known to lie on the table. Most depth cameras already do this inside the

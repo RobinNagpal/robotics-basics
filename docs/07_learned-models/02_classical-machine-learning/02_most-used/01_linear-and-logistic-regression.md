@@ -23,7 +23,7 @@ Every number on this page comes from a real run of the diagram script
 answer is known exactly. But the methods themselves are real, and they are
 written in NumPy.
 
-> Before this page, it helps to have read [least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md) in Book 5. Linear regression is least-squares fitting, used to learn from examples.
+> Before this page, it helps to have read [least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md) in Book 5. Linear regression is least-squares fitting, used to learn from examples.
 
 ## Contents
 
@@ -329,7 +329,7 @@ small, fast and easy to check, they appear in many places on an arm.
   the weights are the links' masses and friction numbers. Finding the weights
   from logged motion is linear regression, often weighted, because some recorded
   motions are more reliable than others. Book 5's
-  [arm dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
+  [arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
   page describes the formula.
 - **Predicting grasp success from a few numbers.** As in this page's example,
   logistic regression on force, width, mass or approach angle gives a quick
@@ -364,7 +364,7 @@ see, and what people do about it.
 | too many features for the examples | tiny error on the examples, large error on new ones; very large weights | ridge regression, with λ chosen by leave-one-out checking |
 | features of very different sizes | the penalty shrinks some weights much more than others; gradient descent is slow | scale every feature to a similar size first |
 | two features carry the same information | the weights jump around between fits and have opposite signs | drop one of them, or use ridge regression |
-| a few bad readings | the line tilts towards them | weighted least squares if you know which readings are poor; [RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md) from Book 5 if you do not |
+| a few bad readings | the line tilts towards them | weighted least squares if you know which readings are poor; [RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md) from Book 5 if you do not |
 | a new input beyond the examples | the prediction runs off, as the ridge curve did below 0.4 m | collect examples there, or refuse to predict outside the known range |
 | the two classes are perfectly separated (logistic) | the weights keep growing as training goes on | add a ridge penalty, which scikit-learn does by default |
 | a rare class (logistic) | the model says "no" almost every time and still looks accurate | weight the rare class's examples more, and judge the model on the rare class |
@@ -431,10 +431,10 @@ What they cost:
 
 Section 8 compared these methods with a neural network, but the closer
 competitor is a formula that somebody wrote by hand. Book 5's
-[least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+[least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 is the same maths used for a different purpose, which is fitting a shape whose
 formula is known, such as a plane or a circle, to measured points. Book 5's
-[system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+[system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
 finds the numbers in a physics formula, such as a motor's gain or a joint's
 friction, from logged motion, which is linear regression with features chosen by
 the physics. The written way wins when you know the formula, because then the
@@ -461,7 +461,7 @@ numbers matter together and you want the threshold learned from logged results.
 - [Uncertainty and confidence](../../10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md)
   explains how a robot should use a chance, such as logistic regression's, to
   decide whether to act.
-- [Least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+- [Least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   in Book 5 goes through the maths of the fit in more detail.
 
 ---

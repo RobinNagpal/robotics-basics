@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first half of docs/05_programming-techniques/06_planning-and-search/.
+"""Generate the diagrams for the first half of docs/06_programming-techniques/06_planning-and-search/.
 
 This covers 01_overview, 02_graph-search and 03_sampling-based-planning. Each
 document's pictures go to a folder named after it, under

@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first two pages of docs/06_neural-networks/06_the-transformer/.
+"""Generate the diagrams for the first two pages of docs/05_neural-networks/06_the-transformer/.
 
     01_attention.md            -> images/the-transformer/attention/
     02_a-transformer-block.md  -> images/the-transformer/a-transformer-block/

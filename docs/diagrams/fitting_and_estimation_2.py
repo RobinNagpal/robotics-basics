@@ -1,4 +1,4 @@
-"""Generate the second set of diagrams for docs/05_programming-techniques/04_fitting-and-estimation/.
+"""Generate the second set of diagrams for docs/06_programming-techniques/04_fitting-and-estimation/.
 
 This covers:
   03_also-used/01_system-identification  -> docs/images/fitting-and-estimation/system-identification/

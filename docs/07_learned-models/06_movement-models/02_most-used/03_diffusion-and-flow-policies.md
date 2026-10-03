@@ -379,11 +379,11 @@ question you might ask about your task.
 The table above ended with programmed motion, so this section says what that written
 code would be. The written way to reach round an obstacle is a motion planner.
 [Sampling-based
-planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
+planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
 is told where the box is, finds one route round it, and checks that route for
 collisions. It returns one route, so it never blends a way round the left with a way
 round the right. [Trajectory
-generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
+generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
 then makes that route smooth, and Book 3's [planning a
 path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) explains how
 these planners behave on a real arm.

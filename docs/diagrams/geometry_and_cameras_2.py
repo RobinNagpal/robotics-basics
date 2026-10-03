@@ -1,5 +1,5 @@
 """Generate the diagrams for the two newer pages of
-docs/05_programming-techniques/02_geometry-and-cameras/.
+docs/06_programming-techniques/02_geometry-and-cameras/.
 
 This covers 02_most-used/04_pose-from-points and 03_also-used/01_multi-view-geometry.
 Each document's pictures go to a folder named after it, under

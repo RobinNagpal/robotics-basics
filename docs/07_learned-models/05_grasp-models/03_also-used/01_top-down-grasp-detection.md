@@ -294,9 +294,9 @@ work to run on current software.
 
 Instead of a network, a written top-down grasp is built from Book 5's picture
 methods and Book 3's rules. A depth limit from [thresholding and colour
-masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 marks what stands above the table, and then [edges and
-contours](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md)
+contours](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md)
 traces each object's outline. The smallest turned rectangle round that outline
 gives the angle for the wrist, while the outline's width checks that the part fits
 between the fingers. Book 3's [choosing a

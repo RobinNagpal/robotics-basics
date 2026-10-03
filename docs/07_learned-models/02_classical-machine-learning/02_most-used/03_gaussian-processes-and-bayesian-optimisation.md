@@ -23,7 +23,7 @@ Every number on this page comes from a real run of the diagram script
 answer is known exactly. But the methods themselves are real, and they are
 written in NumPy.
 
-> Before this page, it helps to have read [PID control](../../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md) in Book 5. The Bayesian optimisation examples tune its gains, on the same simulated joint.
+> Before this page, it helps to have read [PID control](../../../06_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md) in Book 5. The Bayesian optimisation examples tune its gains, on the same simulated joint.
 
 ## Contents
 
@@ -221,7 +221,7 @@ tens of trials rather than thousands.
 Here the joint from Book 5's PID page is told to move from 0 to 0.5 radians. The
 proportional gain Kp is fixed at 20, and the integral gain Ki at 5. So the task
 is to find the best derivative gain Kd between 0 and 2. The
-[PID page](../../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md#tuning-the-three-gains)
+[PID page](../../../06_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md#tuning-the-three-gains)
 explains the three gains.
 
 Each trial runs the move for one second and gives one **score**, where lower is
@@ -380,7 +380,7 @@ scores up to 76, would otherwise squash the differences between the good ones.
 Section 4 said a GP wants few examples with few inputs, and six jobs on an arm
 look exactly like that. **Tuning controller gains on the real arm.** This is
 this page's main example, where a PID loop or an
-[impedance controller](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md#choosing-the-damping)
+[impedance controller](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md#choosing-the-damping)
 has gains that a model gets roughly right and the real arm gets exactly right.
 Bayesian optimisation runs a short test move, scores it, and picks the next
 gains, often reaching good gains in 15 to 30 trials. For impedance control, the
@@ -396,7 +396,7 @@ noisy success rate.
 
 **Learning a small correction to the arm's dynamics.** This is the worked
 example above, where Book 5's
-[arm dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
+[arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
 gives the torque each joint should need. A real arm needs a little more or less,
 because of friction, cables and wear, so a GP learns that difference from logged
 motion. The controller then adds the learned torque as feed-forward, and uses
@@ -530,10 +530,10 @@ must be safe.
 
 Section 8 compared these two methods with other learned ones, but Book 5 does
 both of their jobs without learning at all. For tuning, Book 5's
-[PID page](../../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md#tuning-the-three-gains)
+[PID page](../../../06_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md#tuning-the-three-gains)
 tunes the gains by hand in a fixed order, or starts from the Ziegler–Nichols
 table. The
-[impedance page](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md#choosing-the-damping)
+[impedance page](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md#choosing-the-damping)
 works out the damping from the stiffness and the mass with a formula. The
 written way wins when a formula or a skilled person gets close in a few tries,
 which for one joint is common. Bayesian optimisation wins when several settings
@@ -541,7 +541,7 @@ interact, when the score is something only a real trial can measure, such as
 grasp success, and when a person's time is the scarce thing.
 
 For learning a correction to the arm's motion, Book 5's
-[system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+[system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
 fits the numbers in a physics formula, such as a friction coefficient, by least
 squares, with error bars of its own. It wins whenever the formula has the right
 shape, because it needs fewer examples and it behaves sensibly far from the
@@ -550,7 +550,7 @@ So the usual choice is both: the physics formula first, and a GP on what it gets
 wrong.
 
 For search in general, Book 5's
-[sampling-based optimisation](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+[sampling-based optimisation](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 tries many settings and narrows the search around the best. It needs no model of
 the score, and wins when a trial is cheap, as in a simulator. So Bayesian
 optimisation wins when each trial is a run of the real arm.
@@ -572,7 +572,7 @@ optimisation wins when each trial is a run of the real arm.
   learns a whole controller by trial, when there are far too many settings for
   Bayesian optimisation.
 - Book 5's
-  [system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+  [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
   is the physics-first way to learn the arm's numbers.
 
 ---

@@ -15,7 +15,7 @@ need to know what an example is, although you do not need labels for this page,
 because PCA learns from examples alone.
 
 > Before this page, it helps to have read
-> [planes: the singular value decomposition](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md#planes-the-singular-value-decomposition)
+> [planes: the singular value decomposition](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md#planes-the-singular-value-decomposition)
 > in Book 5. That section finds the directions in which a set of 3D points
 > spreads out. PCA is the same calculation, used on any kind of numbers.
 
@@ -234,9 +234,9 @@ widely in two directions along the surface and hardly at all out of it. So the
 direction of least spread, which is the last principal component, is the normal.
 
 Book 5 uses exactly this calculation.
-[Iterative closest point](../../../05_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md#51-surface-normals)
+[Iterative closest point](../../../06_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md#51-surface-normals)
 finds a normal at every point of a scan from its nearest neighbours, and
-[least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md#planes-the-singular-value-decomposition)
+[least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md#planes-the-singular-value-decomposition)
 fits a whole plane this way, with a real run on 150 points. The same directions
 taken over a whole object give its long axis and its thin axis, which tells a
 gripper which way to close. Book 1 shows this for a bar in
@@ -372,7 +372,7 @@ spread. Libraries centre for you, but code written by hand must do it itself.
 **A few bad readings pull the directions.** One depth point on the wall behind a
 box can turn the box's normal by several degrees, because PCA squares the
 distances. So the fix is to remove outliers first, for example with
-[RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md),
+[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md),
 or to fit the normal to a smaller patch.
 
 **The largest spread is not always the useful part.** PCA keeps what varies
@@ -458,13 +458,13 @@ the same ones for every new example.
 Section 9 compared PCA with other learned methods, but for some of its jobs
 there is no learning involved at all. For surfaces, PCA is itself the written
 method, and Book 5's
-[least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md#planes-the-singular-value-decomposition)
+[least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md#planes-the-singular-value-decomposition)
 fits a plane to points with the SVD, where the plane's normal is PCA's last
 direction. So nothing is learned there that a person could not also write down.
 
 For movements, the written alternative is to describe each move by the few
 numbers that made it. Book 5's
-[trajectory generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md#the-s-curve-profile)
+[trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md#the-s-curve-profile)
 builds a whole move from its start, its goal and its limits, so the goal posture
 already is a short description of the move. That wins whenever your own program
 made the moves. But PCA wins when the moves were recorded from a person or a
@@ -472,7 +472,7 @@ learned policy, and nobody knows which few numbers made them.
 
 For force and sensor signals, the written alternative is to pick the summary
 numbers by hand, such as the smoothed force and its slope from Book 5's
-[sensor streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md).
+[sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md).
 Hand-picked numbers have a clear meaning and need no data. But PCA wins when you
 do not know which features matter, and you have recordings to learn from.
 
@@ -490,9 +490,9 @@ do not know which features matter, and you have recordings to learn from.
 - [Latent world models](../../08_world-models/03_also-used/03_latent-world-models.md)
   show the learned, curved version of PCA: an encoder that squeezes a camera
   picture into a short code.
-- [Least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+- [Least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   in Book 5 fits planes with the same calculation, and
-  [iterative closest point](../../../05_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
+  [iterative closest point](../../../06_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
   uses its normals to line up two scans.
 - The [overview of classical machine learning](../01_overview.md) puts PCA next
   to the other methods of this chapter.

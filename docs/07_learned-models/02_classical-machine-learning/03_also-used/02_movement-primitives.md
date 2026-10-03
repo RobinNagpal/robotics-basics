@@ -21,7 +21,7 @@ Every number on this page comes from a real run of the diagram script
 `docs/diagrams/classical_ml_4.py`. The demonstrations are simulated, but the
 methods themselves are real, and they are written in NumPy.
 
-> Before this page, read Book 5's [trajectory generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md). It explains what a trajectory is, why a motion must start and stop smoothly, and how a controller follows the targets a movement primitive produces.
+> Before this page, read Book 5's [trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md). It explains what a trajectory is, why a motion must start and stop smoothly, and how a controller follows the targets a movement primitive produces.
 
 ## Contents
 
@@ -220,7 +220,7 @@ A ProMP answers this with **conditioning**: of all the paths the demonstrations
 allow, keep only those that pass through the via-point, and describe what is
 left. This is a short sum with the mean and covariance, with no retraining at
 all. It uses the same kind of update as the
-[Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#update)
+[Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#update)
 in Book 5, treating the via-point as one very precise measurement.
 
 ![The grey band before the via-point, and the narrower blue band of paths that pass through it](../../../images/classical-machine-learning/movement-primitives/promp-via-point.svg)
@@ -278,7 +278,7 @@ the arm's pose during the motion matters.
   when the target moves, even during the motion, because the goal can be changed
   while the DMP runs.
 - **Joining motions into a task.** A task is often written as a
-  [finite state machine](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
+  [finite state machine](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
   that runs one primitive after another: reach, grasp, lift, pour, put back.
   Each primitive is taught separately.
 - **Improving by practice.** Because a DMP is only a few dozen numbers, a robot
@@ -359,7 +359,7 @@ it never saw.
 
 Neither kind checks the joints' limits, because a DMP run with a short duration
 or a far goal can ask for more speed than the joints allow. Book 5's
-[trajectory generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
+[trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
 limits and a safety check are still needed underneath.
 
 Orientation needs care, because the hand's turn cannot be learned as three
@@ -413,7 +413,7 @@ the demonstrated ones.
 ## 10. The written alternative
 
 Book 5's
-[trajectory generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
+[trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
 does the same job with no learning at all. Someone writes down a few waypoints,
 such as "lift to 25 cm, move over the bowl, lower to 18 cm", and the generator
 joins them with a smooth curve that obeys the joints' limits. For a new goal,
@@ -424,7 +424,7 @@ the motion is easier to show than to describe, such as the exact curve of a pour
 or the swing of a wiping stroke, and when a ProMP's spread is useful.
 
 When the path must also avoid obstacles, Book 5's
-[trajectory optimisation](../../../05_programming-techniques/06_planning-and-search/02_most-used/03_trajectory-optimisation.md)
+[trajectory optimisation](../../../06_programming-techniques/06_planning-and-search/02_most-used/03_trajectory-optimisation.md)
 finds a smooth path that keeps clear of them. So some methods start that
 optimisation from a primitive's path, and the result then stays close to the
 demonstration.
@@ -443,7 +443,7 @@ demonstration.
 - [Where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md#3-human-demonstrations)
   explains teleoperation, the other common way to record demonstrations.
 - Book 5's
-  [impedance and force control](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
+  [impedance and force control](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
   explains the springs and dampers used in the controller that follows a
   primitive, and in hand-guiding itself.
 

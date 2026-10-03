@@ -1,4 +1,4 @@
-"""Generate the diagrams for both pages of docs/06_neural-networks/08_models-that-generate/.
+"""Generate the diagrams for both pages of docs/05_neural-networks/08_models-that-generate/.
 
     01_diffusion.md                            -> images/models-that-generate/diffusion/
     02_flow-matching-and-other-generators.md   -> images/models-that-generate/flow-matching-and-other-generators/

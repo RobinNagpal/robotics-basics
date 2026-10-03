@@ -20,7 +20,7 @@ Every number on this page comes from a real run of the diagram script
 answer is known. But the methods themselves are real, and they are written in
 NumPy.
 
-> Before this page, it helps to have read the k-means part of [clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md#k-means-k-centres-moved-to-the-average), because a Gaussian mixture is a softer version of k-means, and the predict and update steps of the [Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#2-the-idea-in-one-sentence), because the forward algorithm in section 4 works the same way.
+> Before this page, it helps to have read the k-means part of [clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md#k-means-k-centres-moved-to-the-average), because a Gaussian mixture is a softer version of k-means, and the predict and update steps of the [Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#2-the-idea-in-one-sentence), because the forward algorithm in section 4 works the same way.
 
 ## Contents
 
@@ -119,7 +119,7 @@ that weight. We know neither, so EM guesses one and improves both in turn.
 For the box weights, EM stopped after 11 rounds of those two steps.
 
 EM is k-means with soft edges. K-means, from Book 5's
-[clustering page](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md#k-means-k-centres-moved-to-the-average),
+[clustering page](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md#k-means-k-centres-moved-to-the-average),
 gives each point wholly to its nearest centre, while EM gives each point partly
 to every bell. EM also learns each bell's width and tilt, which k-means does
 not.
@@ -253,7 +253,7 @@ state, and it repeats two steps at every new reading.
    state's bell, then scale the three chances so they add up to 1.
 
 These are the same two steps as the
-[Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#predict)
+[Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#predict)
 in Book 5. But the Kalman filter tracks a number, such as a position, while the
 forward algorithm tracks a choice between a few states. It uses only past
 readings, so it can run live on the robot.
@@ -428,15 +428,15 @@ be a few meaningful numbers.
 
 Section 9 compared these methods with other learned ones, but Book 5 does all
 three of their jobs without learning. For sorting readings into groups, Book 5's
-[clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 page does the same job with k-means or mean shift. It wins when the groups are
 well apart, while the mixture wins when they overlap.
 
 For tracking contact, the written way is a threshold with a
-[finite state machine](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md):
+[finite state machine](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md):
 switch to "in contact" when the force stays above a set value for a few
 readings, as in the
-[guarded moves](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md#guarded-moves-stop-when-you-feel-it)
+[guarded moves](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md#guarded-moves-stop-when-you-feel-it)
 of Book 5. It wins when the readings are clean and the states are few, because
 it is easy to read and to test. But the HMM wins when the readings are noisy,
 when several readings must be combined, or when you want a chance rather than a
@@ -444,7 +444,7 @@ yes or no.
 
 For reproducing a motion, the written way is to pick a few waypoints by hand and
 let
-[trajectory generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
+[trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
 join them smoothly. It wins when you can say where the path should go, while GMR
 wins when the motion is easier to show than to describe.
 
@@ -460,7 +460,7 @@ wins when the motion is easier to show than to describe.
 - [Behaviour cloning](../../06_movement-models/02_most-used/01_behaviour-cloning.md)
   learns movement from many demonstrations with a network.
 - Book 5's
-  [Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+  [Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
   explains predict and update for a continuous number.
 
 ---

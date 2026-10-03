@@ -307,11 +307,11 @@ changing, asking about the latest photo is simpler.
 There is no written alternative for the meaning itself. This is because the link
 between words and what things look like comes from an image model trained on millions
 of pictures with captions. However, the map underneath does have a written form. [Volumetric
-maps](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
+maps](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
 combine many depth pictures into one 3D map. They merge the many readings of each
 small cube into one answer, just as the fusion step on this page does with lists of
 numbers. Then
-[clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 groups the points above the table into objects, so that a written program can keep a
 list of where each object is. That is enough when the robot only needs to know where
 things are, and not what they are called.

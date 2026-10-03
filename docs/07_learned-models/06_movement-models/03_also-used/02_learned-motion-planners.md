@@ -20,7 +20,7 @@ free. So a learned planner earns its place in a smaller set of jobs, which this
 page describes.
 
 > Before this page, it helps to have read [sampling-based
-> planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md),
+> planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md),
 > which explains the ordinary planner and the collision checker that the networks on
 > this page learn from. Section 1 gives just enough of it if you have not.
 
@@ -360,12 +360,12 @@ situation, and the right-hand column as the usual choice.
 
 On this page the written alternative is unusually close at hand, because it is the
 set of ordinary tools these networks learn from. [Sampling-based
-planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
+planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
 finds the route and checks it for collisions, and [numerical inverse
-kinematics](../../../05_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
+kinematics](../../../06_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
 finds the joint angles. When an optimiser needs a smooth distance to obstacles, the
 written tool is a distance field, which [volumetric
-maps](../../../05_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
+maps](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
 explains. Book 3's [planning a
 path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) explains how
 these planners behave on a real arm.

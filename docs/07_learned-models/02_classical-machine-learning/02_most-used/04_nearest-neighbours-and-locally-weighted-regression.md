@@ -24,7 +24,7 @@ Every number on this page comes from a real run of the diagram script
 answer is known exactly. But the methods themselves are real, and they are
 written in NumPy.
 
-> Before this page, it helps to have read [nearest-neighbour search](../../../05_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md) in Book 5. It explains how a program finds the closest stored points quickly, which every method on this page needs.
+> Before this page, it helps to have read [nearest-neighbour search](../../../06_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md) in Book 5. It explains how a program finds the closest stored points quickly, which every method on this page needs.
 
 ## Contents
 
@@ -75,7 +75,7 @@ at all, because it simply keeps every example. To answer a new input, called the
 
 k is a number that you choose, such as 5, and step 1 is the slow part when there
 are many examples. So Book 5's
-[nearest-neighbour search](../../../05_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
+[nearest-neighbour search](../../../06_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
 builds a **k-d tree**, a structure that finds the neighbours without measuring
 every distance.
 
@@ -223,7 +223,7 @@ testing several widths on held-back examples.
 
 An arm's **inverse dynamics** is the torque each joint needs to make a given
 motion. Book 5's
-[arm dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
+[arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
 computes it from a physics formula. For a seven-joint arm the input is 21
 numbers, which are the angle, speed and acceleration of each joint, and the
 output is seven torques. The formula misses friction, cables and wear, so
@@ -485,7 +485,7 @@ check the distance yourself.
 ## 11. The written alternative
 
 Book 5's
-[nearest-neighbour search](../../../05_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
+[nearest-neighbour search](../../../06_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
 is the programmed half of kNN, because it finds the closest stored points
 exactly. On its own it is a lookup table, where you store the grasps you have
 tested by hand and look up the nearest one. That wins when a person can list the
@@ -494,7 +494,7 @@ which is a vote or a weighted average over several neighbours, so that noise in
 one example does not decide the answer.
 
 For the arm's dynamics, the written alternative is Book 5's
-[system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
+[system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
 which fits the numbers in a physics formula. It wins whenever the formula has
 the right shape, because it needs far fewer examples and it behaves sensibly
 away from the data. But LWR and LWPR win for effects the formula does not
@@ -517,7 +517,7 @@ the formula first, and a local learner on what it gets wrong.
 - The [chapter overview](../01_overview.md) compares all the methods of this
   chapter in one table.
 - Book 5's
-  [nearest-neighbour search](../../../05_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
+  [nearest-neighbour search](../../../06_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
   explains k-d trees and fast search in detail.
 
 ---

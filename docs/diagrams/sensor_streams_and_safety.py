@@ -1,8 +1,8 @@
 """Generate the diagrams for two pages in Book 5.
 
-- docs/05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md
+- docs/06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md
   writes to docs/images/fitting-and-estimation/sensor-streams/
-- docs/05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md
+- docs/06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md
   writes to docs/images/control-and-motion/safety-monitoring/
 
 Run with:  pixi run python ../docs/diagrams/sensor_streams_and_safety.py

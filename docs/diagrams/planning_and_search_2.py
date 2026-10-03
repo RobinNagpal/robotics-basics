@@ -1,6 +1,6 @@
 """Generate the diagrams for the second half of the planning-and-search chapter.
 
-The documents are in docs/05_programming-techniques/06_planning-and-search/:
+The documents are in docs/06_programming-techniques/06_planning-and-search/:
 04_trajectory-optimisation.md and 05_numerical-inverse-kinematics.md. Each
 picture illustrates one idea from its own document, and goes to
 docs/images/planning-and-search/<doc-name>/.

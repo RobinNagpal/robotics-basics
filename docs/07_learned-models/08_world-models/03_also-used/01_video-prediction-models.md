@@ -323,11 +323,11 @@ What it costs you:
 This page has assumed all along that the model draws pictures, but a robot can avoid
 pictures altogether. So the written alternative measures the object instead of
 drawing it. The camera finds the cube with
-[thresholding and colour masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+[thresholding and colour masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 , and a written model of pushing predicts how it will move. Book 3's
 [quasi-static planar pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing)
 is that model. The planning loop in section 6 is written code either way.
-[Sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+[Sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 tries many sequences of moves, does the first move of the best one, and plans again.
 
 The written way wins for rigid objects that the camera can measure, because it is

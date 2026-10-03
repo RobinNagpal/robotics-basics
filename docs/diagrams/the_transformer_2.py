@@ -1,4 +1,4 @@
-"""Generate the diagrams for the last two pages of docs/06_neural-networks/06_the-transformer/.
+"""Generate the diagrams for the last two pages of docs/05_neural-networks/06_the-transformer/.
 
     03_training-and-running-a-transformer.md -> images/the-transformer/training-and-running-a-transformer/
     04_why-the-transformer-won.md            -> images/the-transformer/why-the-transformer-won/

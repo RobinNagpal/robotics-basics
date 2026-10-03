@@ -1,5 +1,5 @@
 """Generate the diagrams for the first two pages of
-docs/06_neural-networks/10_language-and-multimodal-models/.
+docs/05_neural-networks/10_language-and-multimodal-models/.
 
     01_large-language-models.md           -> images/language-and-multimodal-models/large-language-models/
     02_post-training-a-language-model.md  -> images/language-and-multimodal-models/post-training-a-language-model/

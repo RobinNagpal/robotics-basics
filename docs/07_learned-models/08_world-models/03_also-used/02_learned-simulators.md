@@ -298,7 +298,7 @@ written one is enough. So the written alternative is a hand-written physics
 simulator, given the right material numbers. Book 3's
 [the simulators](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#2-the-simulators)
 describes the ones people run. Book 5's
-[system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+[system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
 explains how to measure the numbers inside a physical model from the real thing. It
 works when there are a few numbers, such as a joint's friction or a finger's
 stiffness. That page itself notes that cloth, soft objects and tangled cables have no
@@ -307,7 +307,7 @@ small set of numbers that fits.
 So the written simulator wins for rigid objects and for materials whose numbers are
 known, while the learned simulator wins for a real towel or real dough. In both
 cases, the planning in section 6 is written code, of the kind
-[sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+[sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 explains.
 
 ---

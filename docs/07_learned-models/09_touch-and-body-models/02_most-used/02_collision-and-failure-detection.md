@@ -14,9 +14,9 @@ need to know any physics beyond this: a motor that has to push harder uses more
 electric current.
 
 > Before this page, it helps to have read [arm
-> dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md),
+> dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md),
 > which works out the torque each joint should need, and [sensor
-> streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md),
+> streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md),
 > which turns a noisy reading into a clean alarm. This page uses the first as the
 > expected torque and the second to raise the alarm.
 
@@ -303,11 +303,11 @@ This page has argued for adding a learned model, so the last question is what th
 written version alone gives you. The written alternative is the
 expected-against-measured check with a textbook physics model, which is the second
 alternative in section 8, and Book 5 gives the pieces.
-[Arm dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
+[Arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
 works out the torque each joint should need, and
-[sensor streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
+[sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
 turns the gap into an alarm that does not flicker.
-[Safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
+[Safety monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
 covers the software checks that act on such an alarm, and where certified safety
 equipment must take over.
 

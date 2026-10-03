@@ -100,7 +100,7 @@ which shows that a model can be sure and wrong at the same time.
 
 If you use only written techniques and no learned models, then you do not need this
 chapter at all. Book 5 covers those techniques instead, and its
-[safety monitoring](../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
+[safety monitoring](../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
 page is the written check that sits around any model as well.
 
 ---

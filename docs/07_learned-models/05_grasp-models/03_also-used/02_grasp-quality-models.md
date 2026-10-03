@@ -327,7 +327,7 @@ its [antipodal
 test](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#3-friction-cones-and-the-antipodal-test)
 checks that the two contacts face each other. The sampler is written code in both
 cases, and its better version, the [cross-entropy
-method](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#the-cross-entropy-method-narrow-the-search),
+method](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#the-cross-entropy-method-narrow-the-search),
 is explained in Book 5. The formulas win when you have a full 3D model of the
 object and know exactly where it is. The quality model wins instead when you have
 only one noisy depth picture of an object it has never seen.

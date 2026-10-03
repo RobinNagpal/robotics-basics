@@ -334,12 +334,12 @@ situation, and the column on the right as the usual choice.
 The table above put hand-written force control in the last row, so this section says
 what that code is. The written way to fit a peg into a hole is force control with a
 search pattern. [Impedance and force
-control](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
+control](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
 makes the arm give way like a spring, so that when the peg meets the edge of the
 hole, the side force pushes it towards the centre. Then a small written search, such
 as the spiral in section 8, covers the rest when the hole's position is not known
 exactly. For moves through free space, the written choice is [sampling-based
-planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md).
+planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md).
 Book 3's [position, stiffness and
 force](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#4-position-stiffness-and-force)
 explains which contact jobs compliance suits.

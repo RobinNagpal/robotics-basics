@@ -318,9 +318,9 @@ list of jobs.
 
 For suction, the plain geometry that section 8 describes is built from Book 5
 pages.
-[RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md)
+[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md)
 fits flat patches to the depth points. Then the [distance
-transform](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md)
+transform](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md)
 finds the point of a part's mask that is furthest from every edge, and says whether
 the cup fits there. For affordances, the written way is instead a rule for each kind
 of object, such as "hold a knife by the handle", written as Book 3's [rules from a

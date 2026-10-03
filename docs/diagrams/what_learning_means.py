@@ -1,4 +1,4 @@
-"""Generate the diagrams for chapter 1 of docs/06_neural-networks/.
+"""Generate the diagrams for chapter 1 of docs/05_neural-networks/.
 
     01_what-learning-means/01_why-not-just-write-the-rules.md
         -> images/what-learning-means/why-not-just-write-the-rules/

@@ -17,7 +17,7 @@ simulated. The script makes up a five-class "model" and draws its right answers 
 random, so that we know the truth exactly, however the methods run on those numbers
 are the real ones.
 
-> Before this page, it helps to have read [the Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#what-the-filter-keeps), which explains the spread of a set of readings and how a program keeps track of how unsure it is.
+> Before this page, it helps to have read [the Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md#what-the-filter-keeps), which explains the spread of a set of readings and how a program keeps track of how unsure it is.
 
 ## Contents
 
@@ -338,7 +338,7 @@ A robot has three useful things it can do instead of acting.
   the arm to move out of the view, and ask the model again. A picture from a new
   angle often removes the doubt. Choosing the best new viewpoint is its own
   technique, covered in Book 5's
-  [visibility and next-best-view](../../../05_programming-techniques/06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
+  [visibility and next-best-view](../../../06_programming-techniques/06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
   page.
 - **Ask a bigger model.** A **cascade** is a chain of models, from cheap to
   expensive. The small, fast model answers first. Only when it is unsure does the
@@ -507,7 +507,7 @@ expensive.
   shows an ensemble used to decide how far ahead a prediction can be trusted.
 - [Grasp quality models](../../05_grasp-models/03_also-used/02_grasp-quality-models.md)
   are the models whose scores most often decide whether an arm acts.
-- [Safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
+- [Safety monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
   in Book 5 covers the programmed checks that stop an arm whatever a model says.
 
 ---

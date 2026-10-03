@@ -274,10 +274,10 @@ There is no full written alternative, because no written program can answer a qu
 that nobody planned for. But the two jobs a vision-language model does most on an arm
 do have written versions. To pick out an object by a fixed property, such as "the red
 mug", [thresholding and colour
-masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 is fast and exact, while to check that a step worked, a measurement is more reliable.
 [Sensor
-streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
+streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
 turns how far the gripper closed, or the weight on a scale, into a clean yes or no.
 
 The written way wins whenever the question is fixed and a colour or a sensor reading

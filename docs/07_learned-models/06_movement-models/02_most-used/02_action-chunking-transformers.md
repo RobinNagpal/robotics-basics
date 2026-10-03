@@ -376,9 +376,9 @@ chapter, it needs ordinary control and safety code underneath it.
 Section 9 compared ACT with other learned policies, and this section compares it
 with code you write yourself. ACT does the same job as behaviour cloning, so its
 written alternative is the same one: a route from [sampling-based
-planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md),
+planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md),
 turned into smooth joint targets by [trajectory
-generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md).
+generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md).
 A written motion is planned as one whole movement, so it does not have the adding-up
 of small mistakes that chunking was built to fix. Book 3's [programmed
 methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md) shows

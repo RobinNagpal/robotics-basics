@@ -1,4 +1,4 @@
-"""Generate the diagrams for the last two pages of docs/06_neural-networks/03_how-training-works/.
+"""Generate the diagrams for the last two pages of docs/05_neural-networks/03_how-training-works/.
 
     03_backpropagation.md   -> images/how-training-works/backpropagation/
     04_the-training-loop.md -> images/how-training-works/the-training-loop/

@@ -1,4 +1,4 @@
-"""Generate the diagrams for docs/06_neural-networks/05_turning-the-world-into-numbers/.
+"""Generate the diagrams for docs/05_neural-networks/05_turning-the-world-into-numbers/.
 
     01_tokens-and-embeddings.md            -> images/turning-the-world-into-numbers/tokens-and-embeddings/
     02_pictures-sound-and-robot-states.md  -> images/turning-the-world-into-numbers/pictures-sound-and-robot-states/

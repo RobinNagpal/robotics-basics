@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first half of docs/05_programming-techniques/08_decisions-and-task-logic/.
+"""Generate the diagrams for the first half of docs/06_programming-techniques/08_decisions-and-task-logic/.
 
 This covers 01_overview, 02_finite-state-machines and 03_behaviour-trees. Each
 document's pictures go to a folder named after it, under

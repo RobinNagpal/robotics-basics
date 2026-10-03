@@ -352,12 +352,12 @@ the robot still needs depth before it can reach for the object.
 
 A trained network is not the only way to get a mask, because Book 5 makes masks
 with written rules instead. [Thresholding and colour
-masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 makes a mask from a colour, a brightness or a height above the table. Then
 [morphology and the distance
-transform](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md)
+transform](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md)
 removes specks, fills holes, and can split parts that touch.
-[Clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+[Clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 then turns the mask, or the depth points above the table, into one piece per
 object. The written way wins when each object has a colour or a height that
 nothing else shares, because it runs in milliseconds and needs no traced

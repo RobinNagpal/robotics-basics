@@ -18,7 +18,7 @@ details, but in practice they decide whether a policy trains at all, and whether
 someone else's recordings are any use to you.
 
 > Before this page, it helps to have read [rigid
-> transforms](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md),
+> transforms](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md),
 > which explains frames, rotation matrices and quaternions. Sections 3 to 5 of this
 > page use all three.
 
@@ -110,7 +110,7 @@ its **pose** is where it is, as three numbers (x, y and z), together with how it
 turned. The action then says where the gripper should be, and ordinary code works
 out the joint angles that put it there. That code is called **inverse kinematics**,
 and Book 5 explains it in
-[numerical inverse kinematics](../../../05_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md).
+[numerical inverse kinematics](../../../06_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md).
 
 So the picture below shows why the choice between them matters. Two different
 arms put the gripper in exactly the same place, pointing straight down at a
@@ -188,7 +188,7 @@ point, so small errors do not add up inside the chunk.
 Sections 3 and 4 dealt with where the arm goes, and the action also says how the
 gripper should be turned. A turn in 3D has three degrees of freedom, but there are
 several ways to write it as numbers. Book 5's page on [rigid
-transforms](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md#quaternions-in-plain-words)
+transforms](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md#quaternions-in-plain-words)
 explains each one, so here the question is only which of them a network can learn.
 
 - **Three angles**, often called roll, pitch and yaw, or **Euler angles**. They are
@@ -531,9 +531,9 @@ There is no written alternative here, because this page does not describe a mode
 that does a job. Instead it describes the numbers that every policy reads and
 writes.
 Written code makes the same choices, and Book 5 explains them there. [Rigid
-transforms](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+transforms](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
 covers the ways to write down a turn, and [numerical inverse
-kinematics](../../../05_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
+kinematics](../../../06_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
 turns a gripper pose into joint angles.
 
 The difference is only in what a bad choice costs you. A number that jumps, such
@@ -555,7 +555,7 @@ choices at work or moves on to the methods that do not copy a person.
   their actions are rescaled to a fixed range.
 - [Learning from human video](../03_also-used/04_learning-from-human-video.md)
   depends on relative gripper-pose actions.
-- Book 5's [rigid transforms](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+- Book 5's [rigid transforms](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
   explains rotation matrices, quaternions and three angles in detail, and Book 3's
   [Euler angles, intrinsic and extrinsic](../../../03_frameworks/03_arm-movement/08_frames-and-conventions.md#24-euler-angles-intrinsic-and-extrinsic)
   explains why three angles need a stated convention.

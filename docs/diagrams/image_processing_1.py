@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first half of docs/05_programming-techniques/05_image-and-point-cloud-processing/.
+"""Generate the diagrams for the first half of docs/06_programming-techniques/05_image-and-point-cloud-processing/.
 
 This covers 01_overview, 02_thresholding-and-colour-masks and
 03_morphology-and-distance-transform. Each document's pictures go to a folder

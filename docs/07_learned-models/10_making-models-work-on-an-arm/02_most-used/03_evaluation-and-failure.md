@@ -233,7 +233,7 @@ Sorting pays off in three ways.
 - **It tells you whether a model is the problem at all.** A slip may come from the
   gripper's force rather than from the model, and a wrong spot may come from a camera
   that has moved and needs
-  [calibration](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md)
+  [calibration](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md)
   again.
 - **It tells you what data to collect.** If most failures are slips, the next
   demonstrations should include lifts that almost slip and are caught. The
@@ -251,8 +251,8 @@ Sorting failures tells you what to improve later, but the arm also needs to do
 something sensible at the moment a failure happens. Every model fails sometimes, so
 the arm needs a plan for it, and that plan is not part of the model at all. It is
 written by people, usually as a
-[behaviour tree](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
-or a [finite state machine](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
+[behaviour tree](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
+or a [finite state machine](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
 around the model.
 
 ![A decision chart: a check says something is wrong; if anyone is at risk, stop; otherwise look again, retry, hand back to the written method, or ask a person](../../../images/making-models-work-on-an-arm/evaluation-and-failure/what-to-do-on-failure.svg)
@@ -265,7 +265,7 @@ order below matters.
 
 - **Stop.** If anything or anyone is at risk, the arm stops and waits for a person.
   This comes before everything else, and it is done by the
-  [safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
+  [safety monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
   layer, not by the model.
 - **Look again.** If the model was unsure what it saw, the arm moves the camera to a
   new angle and asks the model again. The
@@ -308,7 +308,7 @@ section only says how they fit into evaluation.
   explains it.
 - **System identification.** You measure your real arm, such as its delays and
   frictions, and set the simulator to match. Book 5's
-  [system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+  [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
   page shows how.
 - **Test in simulation first.** Use the simulator as a filter, because a model that
   fails in simulation will almost certainly fail on the arm as well. A model that
@@ -468,7 +468,7 @@ how wide the range is.
 - [Collision and failure detection](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
   covers the models that notice a failure while it happens.
 - Book 5's
-  [safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
+  [safety monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
   covers the programmed checks that stop an arm whatever the model says.
 
 ---

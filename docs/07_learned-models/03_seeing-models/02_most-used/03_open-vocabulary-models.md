@@ -315,7 +315,7 @@ There is no written alternative for finding things from words, because the link
 between a word and what the thing looks like can only be learned from a very
 large number of pictures with captions. Only the click-to-outline half has a
 partial written stand-in. After the table is removed,
-[clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 splits the depth points that are left into separate objects without knowing what
 they are, as long as those objects stand apart. The robot can then choose an
 object by its place, such as the nearest one, but never by its name.

@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first two pages of docs/06_neural-networks/02_inside-a-network/.
+"""Generate the diagrams for the first two pages of docs/05_neural-networks/02_inside-a-network/.
 
 Each document's pictures go to a folder named after it, under
 docs/images/inside-a-network/:

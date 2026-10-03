@@ -12,7 +12,7 @@ uses the moving dots from its section 4.3. You should also know from
 to train a model on examples.
 
 > Before this page, it helps to have read [sensor
-> streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md),
+> streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md),
 > which explains windows of readings, smoothing, rates of change and thresholds that
 > do not flicker. A slip model reads the same kind of window.
 
@@ -298,7 +298,7 @@ What it costs you:
 This page has argued for learning the model, so the last question is when a written
 rule is enough. The written alternative is the fixed rule in section 9, built with
 the tools in Book 5's
-[sensor streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
+[sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
 . That page shows how to smooth a force reading, find how fast it is changing, and
 turn it into a flag that does not flicker on and off. Book 3's
 [slip, and the checks that cannot fire](../../../03_frameworks/02_gripping/05_holding-on.md#4-slip-and-the-checks-that-cannot-fire)

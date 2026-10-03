@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first two pages of docs/06_neural-networks/12_models-that-act/.
+"""Generate the diagrams for the first two pages of docs/05_neural-networks/12_models-that-act/.
 
     01_behaviour-cloning-and-action-chunks.md
         -> images/models-that-act/behaviour-cloning-and-action-chunks/

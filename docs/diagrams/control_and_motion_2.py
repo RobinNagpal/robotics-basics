@@ -1,6 +1,6 @@
 """Generate the diagrams for the arm dynamics page of Book 5, chapter 7.
 
-The page is docs/05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md.
+The page is docs/06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md.
 Its pictures go to docs/images/control-and-motion/arm-dynamics/.
 
 Run with:  pixi run python ../docs/diagrams/control_and_motion_2.py

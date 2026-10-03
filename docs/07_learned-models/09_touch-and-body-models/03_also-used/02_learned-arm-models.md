@@ -12,9 +12,9 @@ joint has a motor and an encoder, which is the sensor that measures the joint's
 angle.
 
 > Before this page, it helps to have read [arm
-> dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md),
+> dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md),
 > which explains the textbook model of the torque each joint needs, and [system
-> identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
+> identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
 > which measures the numbers inside it. This page learns the part that those two
 > leave out.
 
@@ -298,13 +298,13 @@ This page has argued for adding a learned correction, so the last question is wh
 the written model alone gives you. The written alternative is the textbook model with
 its numbers measured on your own arm, which is the first alternative in section 8.
 Book 5's
-[arm dynamics](../../../05_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
+[arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
 explains the model.
-[System identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+[System identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
 explains how to move the arm so that the data can tell the numbers apart, and how to
 fit them. The geometry calibration in section 3.4 is written code too: a fit of the
 kind that
-[least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+[least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 explains.
 
 Because it needs little data and behaves sensibly everywhere, the written model wins

@@ -15,7 +15,7 @@ By the end you will know the words that every later page uses: example,
 label, loss, gradient descent, learning rate, epoch, training set, test set,
 overfitting, underfitting and checkpoint.
 
-> Before this page, it helps to have read [least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md), which finds the two numbers of a line by making the sum of squared errors as small as possible. Training a model does the same job for many more numbers.
+> Before this page, it helps to have read [least-squares fitting](../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md), which finds the two numbers of a line by making the sum of squared errors as small as possible. Training a model does the same job for many more numbers.
 
 ## Contents
 

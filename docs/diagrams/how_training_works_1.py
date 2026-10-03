@@ -1,4 +1,4 @@
-"""Generate the diagrams for the first two pages of docs/06_neural-networks/03_how-training-works/.
+"""Generate the diagrams for the first two pages of docs/05_neural-networks/03_how-training-works/.
 
     01_the-score-of-being-wrong.md  -> images/how-training-works/the-score-of-being-wrong/
     02_gradient-descent.md          -> images/how-training-works/gradient-descent/

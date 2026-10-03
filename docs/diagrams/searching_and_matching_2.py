@@ -1,4 +1,4 @@
-"""Generate more diagrams for docs/05_programming-techniques/03_searching-and-matching/.
+"""Generate more diagrams for docs/06_programming-techniques/03_searching-and-matching/.
 
 This script draws the pictures for two pieces of that chapter:
 

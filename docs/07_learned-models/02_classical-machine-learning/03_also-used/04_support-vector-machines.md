@@ -384,10 +384,10 @@ What it costs:
 
 Section 7 compared an SVM with other learned models, but Book 5 detects contact
 without learning at all. The guarded moves in
-[impedance and force control](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
+[impedance and force control](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
 stop the arm when the measured force passes a set limit. The power and force
 limits in
-[safety monitoring](../../../05_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md#power-and-force-limiting)
+[safety monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md#power-and-force-limiting)
 do the same for the whole arm. So each of these is a boundary set by hand, which
 means one threshold on one number, or a straight line through two numbers.
 

@@ -1,5 +1,5 @@
 """Generate the diagrams for the second half of
-docs/05_programming-techniques/05_image-and-point-cloud-processing/.
+docs/06_programming-techniques/05_image-and-point-cloud-processing/.
 
 This covers 04_edges-and-contours and 05_clustering. Each document's pictures go
 to a folder named after it, under docs/images/image-and-point-cloud-processing/.

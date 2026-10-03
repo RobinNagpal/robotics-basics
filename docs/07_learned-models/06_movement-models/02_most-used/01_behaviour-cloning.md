@@ -407,7 +407,7 @@ real fit.
 The faint lines are 40 recorded demonstrations, of which half go to the red bin at
 (−25, 45) cm and half go to the blue bin at (25, 45) cm. The script for this page
 fitted the simplest possible policy to them, with the method of
-[least-squares fitting](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md).
+[least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md).
 The policy says how far to move, given where the mug is. On the left, the policy
 was given only where the mug is, so it ends at (−1.1, 44.8) cm, between the bins and
 in neither of them. On the right it was also given a one-hot goal, and when it is
@@ -543,11 +543,11 @@ Section 9 named programming the motion by hand as the obvious alternative, so th
 section says which code you would actually write. The written way to do the same job
 is to find the object, plan a route to it, and move the arm along that route, and
 Book 5 covers the three parts of that. [Sampling-based
-planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
+planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
 finds a route that hits nothing. [Trajectory
-generation](../../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
+generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
 turns the route into smooth targets for each joint, and [PID
-control](../../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md)
+control](../../../06_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md)
 makes each joint follow them. Book 3's [programmed
 methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md) shows
 how these parts are put together on one arm.

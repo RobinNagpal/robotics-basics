@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/05_programming-techniques/03_searching-and-matching/.
+"""Generate the diagrams used in docs/06_programming-techniques/03_searching-and-matching/.
 
 Each document's pictures go to a folder named after it, under
 docs/images/searching-and-matching/.

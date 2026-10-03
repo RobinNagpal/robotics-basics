@@ -13,7 +13,7 @@ chapter looks at one photo at a time, whereas this page looks at a video, which
 is a series of photos, called **frames**, taken one after another. It covers
 three kinds of model: optical flow, point tracking and object tracking.
 
-> Before this page, it helps to have read the [Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md) and [assignment and matching](../../../05_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md). The object trackers in section 3 are built from both: the filter predicts where each object will be, and assignment pairs each new box with an object.
+> Before this page, it helps to have read the [Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md) and [assignment and matching](../../../06_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md). The object trackers in section 3 are built from both: the filter predicts where each object will be, and assignment pairs each new box with an object.
 
 ## Contents
 
@@ -298,13 +298,13 @@ first place.
 ## 9. The written alternative
 
 Object tracking is already mostly written code, because a [Kalman
-filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
 predicts where each object will be, and [assignment and
-matching](../../../05_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md)
+matching](../../../06_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md)
 decides which new box belongs to which object. So a tracker such as SORT needs
 no training beyond its detector. To follow one coloured object with no detector
 at all, the mean shift method on the
-[clustering](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
+[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 page moves a window to the matching pixels in each new frame. The written way
 wins for a few objects that move smoothly, such as boxes on a belt, while the
 optical flow and point tracking models win when the robot must follow every

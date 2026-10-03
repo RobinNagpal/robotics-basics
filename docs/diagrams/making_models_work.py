@@ -1,7 +1,7 @@
 """Generate the diagrams for docs/07_learned-models/10_making-models-work-on-an-arm/.
 
 It also draws the two pictures for the section "A learned model inside MPC" of
-docs/05_programming-techniques/06_planning-and-search/03_also-used/
+docs/06_programming-techniques/06_planning-and-search/03_also-used/
 02_sampling-based-optimisation-and-mpc.md, because that section is about a
 learned model and uses the same kind of code.
 

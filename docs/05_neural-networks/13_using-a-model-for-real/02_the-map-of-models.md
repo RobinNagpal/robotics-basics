@@ -169,9 +169,9 @@ decision, and the page of this book that explains it.
 
 | The job | Reach for | Data it needs | Arithmetic for one decision | Page to re-read |
 | --- | --- | --- | --- | --- |
-| Find a bright part on a plain belt | A written colour threshold | none | 921,600 operations | [thresholds and colour masks](../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) |
-| Hold 5 newtons against a surface | A written force controller | none | 40 operations | [proportional-integral-derivative (PID) control](../../05_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md) |
-| Move from A to B without hitting anything | A written planner | none | about 2 million operations | [sampling-based planning](../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md) |
+| Find a bright part on a plain belt | A written colour threshold | none | 921,600 operations | [thresholds and colour masks](../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md) |
+| Hold 5 newtons against a surface | A written force controller | none | 40 operations | [proportional-integral-derivative (PID) control](../../06_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md) |
+| Move from A to B without hitting anything | A written planner | none | about 2 million operations | [sampling-based planning](../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md) |
 | Stop the arm when something is wrong | Written limits and a watchdog | none | 12 operations | [running and evaluating a model](01_running-and-evaluating-a-model.md) |
 | Name which of twenty known parts is in the bin | A picture classifier | about 20,000 labelled pictures, or a fine-tune of a few hundred | 4.6 thousand million | [what a network can learn](../02_inside-a-network/04_what-a-network-can-learn.md) |
 | Find an object nobody labelled | An open-vocabulary detector | already trained; you write a text prompt | 39.1 thousand million | [open-vocabulary vision](../09_models-that-see/03_open-vocabulary-vision.md) |
@@ -214,7 +214,7 @@ The classifier does 30,377 times the arithmetic of the written rule, which on th
 The second case is speed. A 500 hertz force loop has 2 milliseconds for everything, and
 the classifier alone would take most of that, so no network goes inside a loop that
 fast. This is why the layer that keeps the arm safe is written rather than learned, and
-why [calibration](../../05_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md)
+why [calibration](../../06_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md)
 and [inverse kinematics](../../01_robotics-intro/04_kinematics/02_inverse-kinematics.md)
 stay written even on robots whose perception is entirely learned.
 
@@ -228,7 +228,7 @@ fall over, in different places, and neither says so. A written rule fails in a w
 can read and repair, because you can see the threshold that was crossed. A network
 fails in a way you can only measure, by running the trials of the page before. That
 difference, rather than accuracy, is usually what should decide. The
-[map of techniques](../../05_programming-techniques/01_what-techniques-are/04_the-map-of-techniques.md)
+[map of techniques](../../06_programming-techniques/01_what-techniques-are/04_the-map-of-techniques.md)
 lists the written methods in full, and
 [classical machine learning](../../07_learned-models/02_classical-machine-learning/01_overview.md)
 covers the fitted methods that are not neural networks and often win on a few hundred
@@ -362,7 +362,7 @@ This is the last page of the book, so these links point outwards rather than onw
 - [Making models work on an arm](../../07_learned-models/10_making-models-work-on-an-arm/01_overview.md)
   is that book's chapter on fine-tuning, running, testing and trusting a model, with
   named tools.
-- [The map of techniques](../../05_programming-techniques/01_what-techniques-are/04_the-map-of-techniques.md)
+- [The map of techniques](../../06_programming-techniques/01_what-techniques-are/04_the-map-of-techniques.md)
   lists every written method a robot arm uses, which is section 4's half of the answer.
 - [Cameras](../../02_perception/01_camera/01_basics.md) explains what a camera measures,
   which this book assumed throughout and never said.

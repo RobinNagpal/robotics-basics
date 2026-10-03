@@ -1,4 +1,4 @@
-"""Generate the diagrams for docs/05_programming-techniques/02_geometry-and-cameras/.
+"""Generate the diagrams for docs/06_programming-techniques/02_geometry-and-cameras/.
 
 This covers 01_overview, 02_pinhole-camera-model, 03_rigid-transforms and
 04_calibration. Each document's pictures go to a folder named after it, under

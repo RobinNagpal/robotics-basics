@@ -1,6 +1,6 @@
 """Generate the diagrams for visibility, next-best-view and topological sort.
 
-The documents are in docs/05_programming-techniques/06_planning-and-search/03_also-used/:
+The documents are in docs/06_programming-techniques/06_planning-and-search/03_also-used/:
 03_visibility-and-next-best-view.md, and the topological sort section of
 01_graph-search.md. Each picture illustrates one idea from its own document,
 and goes to docs/images/planning-and-search/<doc-name>/.

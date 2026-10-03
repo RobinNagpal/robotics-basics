@@ -1,4 +1,4 @@
-"""Generate the diagrams for the second half of docs/05_programming-techniques/08_decisions-and-task-logic/.
+"""Generate the diagrams for the second half of docs/06_programming-techniques/08_decisions-and-task-logic/.
 
 This covers 04_greedy-algorithms-and-set-cover and 05_optimisation-solvers. Each
 document's pictures go to a folder named after it, under

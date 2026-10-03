@@ -1,4 +1,4 @@
-"""Generate the diagrams for the last two pages of docs/06_neural-networks/09_models-that-see/.
+"""Generate the diagrams for the last two pages of docs/05_neural-networks/09_models-that-see/.
 
     03_open-vocabulary-vision.md -> images/models-that-see/open-vocabulary-vision/
     04_depth-and-3d.md           -> images/models-that-see/depth-and-3d/

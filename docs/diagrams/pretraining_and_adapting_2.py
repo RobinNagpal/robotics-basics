@@ -1,4 +1,4 @@
-"""Generate the diagrams for the last two pages of docs/06_neural-networks/07_pretraining-and-adapting/.
+"""Generate the diagrams for the last two pages of docs/05_neural-networks/07_pretraining-and-adapting/.
 
     03_fine-tuning-and-adapters.md            -> images/pretraining-and-adapting/fine-tuning-and-adapters/
     04_making-a-model-smaller-and-faster.md   -> images/pretraining-and-adapting/making-a-model-smaller-and-faster/

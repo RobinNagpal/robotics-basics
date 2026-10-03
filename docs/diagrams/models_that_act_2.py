@@ -1,4 +1,4 @@
-"""Generate the diagrams for the last two pages of docs/06_neural-networks/12_models-that-act/.
+"""Generate the diagrams for the last two pages of docs/05_neural-networks/12_models-that-act/.
 
     03_vision-language-action-models.md -> images/models-that-act/vision-language-action-models/
     04_world-models.md                  -> images/models-that-act/world-models/

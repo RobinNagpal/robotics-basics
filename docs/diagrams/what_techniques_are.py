@@ -1,4 +1,4 @@
-"""Generate the diagrams for docs/05_programming-techniques/01_what-techniques-are/.
+"""Generate the diagrams for docs/06_programming-techniques/01_what-techniques-are/.
 
 This covers 01_programmed-not-learned, 02_the-building-blocks,
 03_choosing-a-technique and 04_the-map-of-techniques. Each document's pictures go

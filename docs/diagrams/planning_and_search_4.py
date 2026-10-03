@@ -1,5 +1,5 @@
 """Generate the diagrams for the collision, constraint and sampling-optimisation parts
-of docs/05_programming-techniques/06_planning-and-search/.
+of docs/06_programming-techniques/06_planning-and-search/.
 
 This covers two documents:
 

@@ -1,4 +1,4 @@
-"""Generate the diagrams for two pages of docs/06_neural-networks/10_language-and-multimodal-models/.
+"""Generate the diagrams for two pages of docs/05_neural-networks/10_language-and-multimodal-models/.
 
     03_vision-language-models.md   -> images/language-and-multimodal-models/vision-language-models/
     04_reasoning-and-tool-use.md   -> images/language-and-multimodal-models/reasoning-and-tool-use/

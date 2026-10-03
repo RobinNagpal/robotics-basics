@@ -1,4 +1,4 @@
-"""Generate the diagrams for the last two pages of docs/06_neural-networks/02_inside-a-network/.
+"""Generate the diagrams for the last two pages of docs/05_neural-networks/02_inside-a-network/.
 
     03_the-shape-of-the-numbers.md  -> images/inside-a-network/the-shape-of-the-numbers/
     04_what-a-network-can-learn.md  -> images/inside-a-network/what-a-network-can-learn/

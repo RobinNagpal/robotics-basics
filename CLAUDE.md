@@ -31,8 +31,8 @@ docs/03_frameworks/07_stone-stacking.md
 `docs/` has three levels, and the website reads them as they are:
 
 - A top-level folder is a **book**: `01_robotics-intro`, `02_perception`,
-  `03_frameworks`, `04_ros-and-rviz`, `05_programming-techniques`,
-  `06_neural-networks`, `07_learned-models`, `08_robotics-by-example`.
+  `03_frameworks`, `04_ros-and-rviz`, `05_neural-networks`,
+  `06_programming-techniques`, `07_learned-models`, `08_robotics-by-example`.
 - A folder inside a book is a **chapter**, and each `.md` file in it is a
   **section**. A `.md` file directly inside a book is a chapter with one section.
 - A folder inside a chapter, such as `07_case-study/`, shows as a labelled group of
@@ -86,7 +86,7 @@ to sit where you meant it to.
 The number prefix on a folder or a file says what to read first. It is not part of
 the address of anything.
 
-The site strips it: `docs/05_programming-techniques/02_geometry-and-cameras/` is
+The site strips it: `docs/06_programming-techniques/02_geometry-and-cameras/` is
 served at `/programming-techniques/geometry-and-cameras/`. So **never write a book
 number into a URL**, and never say "book 5" where a link would do, because books
 get renumbered when one is inserted and the sentence then points at the wrong book.
@@ -99,7 +99,7 @@ Inside the docs, link to the file and let the site work out the address.
 
 ```
 docs/02_perception/              code/src/02_perception/
-docs/05_programming-techniques/  code/src/05_programming-techniques/
+docs/06_programming-techniques/  code/src/06_programming-techniques/
 docs/08_robotics-by-example/     code/src/08_robotics-by-example/
 ```
 

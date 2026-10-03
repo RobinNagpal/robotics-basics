@@ -336,11 +336,11 @@ of today's best VLAs are well below what a production line needs.
 ## 9. The written alternative
 
 The written alternative is a pipeline made only of ordinary code. A [behaviour
-tree](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
+tree](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
 holds the order of the steps and the retries. [Pose from
-points](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
+points](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
 finds a known object, and [sampling-based
-planning](../../../05_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
+planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
 moves the arm to it. Book 3's [programmed
 methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md) shows
 these parts working together on one arm.

@@ -14,10 +14,10 @@ examples. Beyond that starting point, no other machine learning is needed
 here.
 
 > Before this page, it helps to have read
-> [sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md),
+> [sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md),
 > which explains the cross-entropy method and model predictive control that
 > section 3 uses to plan, and
-> [system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
+> [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
 > which measures the numbers a physics model needs. Section 7 compares a learned
 > model with that.
 
@@ -158,7 +158,7 @@ search towards the best sequences. The arm then does only the **first** action,
 measures the real state again and plans again from there, and this loop is called
 **model predictive control**, or **MPC**. Because the plan is thrown away after one
 step, a wrong prediction five steps ahead does little harm. Book 5's
-[sampling-based optimisation and MPC](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+[sampling-based optimisation and MPC](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 page teaches these methods step by step, with real numbers.
 
 However, two things change when the model is learned. First, the planner searches for
@@ -167,7 +167,7 @@ wrong in a hopeful direction. Second, the model is only trustworthy near its tra
 records. This is why the ensemble matters: the planner uses the copies' average as
 the prediction, and it prefers sequences on which the copies agree. The Book 5 page
 has a
-[worked example of a learned ensemble inside MPC](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#a-learned-model-inside-mpc)
+[worked example of a learned ensemble inside MPC](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#a-learned-model-inside-mpc)
 that shows how much this helps.
 
 ![Left: many imagined push sequences, with the one ending nearest the goal in green. Right: the arm does only the first push, then plans again](../../../images/world-models/learned-dynamics-models/try-many-plans.svg)
@@ -318,7 +318,7 @@ The "real" block in the script is made to be a little different from those table
 numbers, as real blocks are. Its friction is higher than the table says, and it also
 rises with speed. The recorded distances have up to about 2 mm of measuring error as
 well. The learned part is a small model made of 8 smooth bumps, fitted by
-[least squares](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+[least squares](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 . It stands in for a small network, because it behaves the same way for this purpose.
 
 ![Left: 12 measured pushes, the textbook formula, which predicts too far, and the formula plus a learned correction, which follows the pushes. Right: what the formula gets wrong at each speed, and the learned correction](../../../images/world-models/learned-dynamics-models/physics-plus-correction.svg)
@@ -409,7 +409,7 @@ to its commands.
 - **The formula's numbers are just wrong.** If the only error is one wrong value,
   such as the friction coefficient, it is simpler to measure that value properly.
   Book 5's page on
-  [system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+  [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
   explains how. A residual model is worth it when the error has a shape that no
   single number fixes.
 
@@ -507,12 +507,12 @@ The sections above assumed that the model is learned, but the planner does not
 require that. The written alternative keeps the planner and replaces the learned
 model with a written one, because the planning loop in section 3 is written code
 either way. Book 5's
-[sampling-based optimisation and model predictive control](../../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
+[sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 explains random shooting, the cross-entropy method and model predictive control in
 full. The model can then be a physics formula for pushing, such as Book 3's
 [quasi-static planar pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing)
 , with its numbers measured by
-[system identification](../../../05_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
+[system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
 .
 
 The written model wins when the objects are simple and a formula with a few measured

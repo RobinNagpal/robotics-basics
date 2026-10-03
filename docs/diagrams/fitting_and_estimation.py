@@ -1,4 +1,4 @@
-"""Generate the diagrams for docs/05_programming-techniques/04_fitting-and-estimation/.
+"""Generate the diagrams for docs/06_programming-techniques/04_fitting-and-estimation/.
 
 This covers 01_overview, 02_least-squares-fitting, 03_ransac and 04_kalman-filter.
 Each document's pictures go to a folder named after it, under

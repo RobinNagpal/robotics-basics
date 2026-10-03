@@ -60,7 +60,7 @@ questions, because the tree picks them itself by looking at many past cases.
 
 A decision tree is not the same thing as a **behaviour tree**, which is a
 hand-written plan that decides what a robot does next. Book 5 explains those in
-[behaviour trees](../../../05_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md),
+[behaviour trees](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md),
 and the two kinds of tree share only the word "tree".
 
 ---
@@ -564,11 +564,11 @@ Section 10 compared trees with other learned models, but the rules in Book 5 do
 the same jobs without learning at all. For slip, the rule comes from physics,
 because an object slides when the sideways force is more than the friction times
 the squeezing force. Book 5's
-[sensor streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
+[sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
 shows how to smooth the force readings, take how fast they change, and turn them
 into a flag with thresholds that do not flicker. For contact, the guarded moves
 in
-[impedance and force control](../../../05_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
+[impedance and force control](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
 stop the arm when the measured force passes a set limit.
 
 A hand-written rule is itself a tiny decision tree, so the difference between

@@ -1,4 +1,4 @@
-"""Generate the diagrams for both pages of docs/06_neural-networks/11_learning-from-outcomes/.
+"""Generate the diagrams for both pages of docs/05_neural-networks/11_learning-from-outcomes/.
 
     01_reinforcement-learning.md              -> images/learning-from-outcomes/reinforcement-learning/
     02_rewards-preferences-and-verifiers.md   -> images/learning-from-outcomes/rewards-preferences-and-verifiers/

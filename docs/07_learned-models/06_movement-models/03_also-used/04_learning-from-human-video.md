@@ -140,7 +140,7 @@ Python, so the results below are copied from that run.
    camera's sideways is the robot's right, and the camera's down is the robot's
    down. The thumb tip therefore becomes (0.620, −0.020, 0.450), and the index tip
    becomes (0.605, −0.075, 0.460). The
-   [rigid transforms page](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+   [rigid transforms page](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
    explains this step in full.
 4. **Place the gripper between the two tips.** The gripper's centre goes to the
    midpoint of the two tips, which is (0.613, −0.048, 0.455) metres, rounded to the
@@ -330,7 +330,7 @@ where the blue ring is the area the arm can reach. The script checks every point
 25 % of the path is outside the ring. So a reach check like step 6 of the worked
 example has to run on every frame. And even a reachable path can need a joint angle
 the arm does not have, which a check with the arm's
-[inverse kinematics](../../../05_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
+[inverse kinematics](../../../06_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
 catches.
 
 **Force is missing.** A video shows where a hand went, and not how hard it pressed.
@@ -406,9 +406,9 @@ replay](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#1-te
 records a motion from a person with no model at all. The person moves the arm to each
 position, by buttons or by hand, and then the arm plays the positions back. The
 retargeting steps on this page are written code themselves. [Rigid
-transforms](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+transforms](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
 moves the hand points into the robot's frame, and [sensor
-streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#smoothing-moving-average-exponential-and-median-filters)
+streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#smoothing-moving-average-exponential-and-median-filters)
 explains the median filter that cleans the pinch.
 
 So the written way is better when one fixed motion is enough. But learning from

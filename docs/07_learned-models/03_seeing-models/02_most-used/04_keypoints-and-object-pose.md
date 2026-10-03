@@ -16,7 +16,7 @@ where an object is, and an outline says only which pixels belong to it, so neith
 of them says which way the object is turned. That is the job of the models on this
 page.
 
-> Before this page, it helps to have read [pose from points](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md), which explains Perspective-n-Point (PnP), the geometry that section 3 uses to turn keypoints into a pose.
+> Before this page, it helps to have read [pose from points](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md), which explains Perspective-n-Point (PnP), the geometry that section 3 uses to turn keypoints into a pose.
 
 ## Contents
 
@@ -433,7 +433,7 @@ single grasp, then tracking gives you nothing, because estimation alone is enoug
   a mask of the object in the first frame only. While it tracks, it also builds a 3D
   model of the object. Its authors describe it as "near real-time", and its licence
   also allows research use only.
-- A **[Kalman filter](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)**, a small program that blends a prediction of where the object
+- A **[Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)**, a small program that blends a prediction of where the object
   should be with each new measurement, is often put after a pose tracker, because it
   smooths the six numbers further and bridges a frame or two of bad readings.
   [Tracking and motion](../03_also-used/03_tracking-and-motion.md) describes the same
@@ -506,14 +506,14 @@ other check before it does anything risky.
 
 Book 5 finds poses with written geometry instead, and section 9 above says when
 that is enough. [Pose from
-points](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
+points](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
 is the same PnP step that section 3 uses, so when the points come from a printed
 marker, or from spots matched against a stored picture, no network is needed at
 all. [Iterative closest
-point](../../../05_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md),
+point](../../../06_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md),
 or ICP, lines up a CAD model with a depth scan and turns a rough pose into one
 that is often right to within a millimetre, but it needs a good first guess.
-[RANSAC](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md),
+[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md),
 a method that fits a shape when some of the points belong to something else,
 fits a plane, a circle or a cylinder to depth points, which is enough for simple
 shapes. The written way wins for one known part, a fixture with a marker, or a

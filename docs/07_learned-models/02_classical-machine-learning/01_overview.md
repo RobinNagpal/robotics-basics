@@ -228,22 +228,22 @@ This chapter is not a separate world, since its methods connect backwards to
 Book 5 and forwards to the neural network chapters of this book.
 
 Many classical methods share their maths with a written technique in
-[Book 5](../../05_programming-techniques/01_what-techniques-are/01_programmed-not-learned.md),
+[Book 5](../../06_programming-techniques/01_what-techniques-are/01_programmed-not-learned.md),
 so the difference between the two books is the purpose rather than the formula.
 This means Book 5 fits a formula it already knows, while this chapter learns a
 shape that nobody wrote down. Linear regression is
-[least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+[least-squares fitting](../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 used to predict. k-nearest neighbours is built on
-[nearest-neighbour search](../../05_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md).
+[nearest-neighbour search](../../06_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md).
 A Gaussian mixture model is a softer form of the k-means method in
-[clustering](../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md).
+[clustering](../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md).
 A hidden Markov model tracks a hidden state over time, as the
-[Kalman filter](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
+[Kalman filter](../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
 does, but for a state that jumps between a few phases. Movement primitives are
 learned versions of the curves in
-[trajectory generation](../../05_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md).
+[trajectory generation](../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md).
 And Bayesian optimisation is a careful relative of
-[sampling-based optimisation](../../05_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md),
+[sampling-based optimisation](../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md),
 built for when each try is expensive. So each method page in this chapter names
 its written alternative in Book 5.
 
@@ -278,7 +278,7 @@ whether to act.
 - [Fine-tuning](../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md)
   covers adapting a pretrained network, including training a small classical
   model on top of it.
-- [Least-squares fitting](../../05_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
+- [Least-squares fitting](../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   in Book 5 explains the maths under linear regression.
 
 ---

@@ -308,7 +308,7 @@ What it costs you:
 Part of the written alternative is already on this page, in section 4.1. Photometric
 stereo, in section 4.1, turns the tactile picture into a height map with no learning.
 For the cheaper choice of no tactile sensor, Book 5's
-[sensor streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
+[sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
 explains how to turn the finger position and the wrist force into clean yes-or-no
 checks, such as "the fingers stopped on something". Book 3's
 [the finger-gap check, and what it cannot see](../../../03_frameworks/02_gripping/05_holding-on.md#41-the-finger-gap-check-and-what-it-cannot-see)

@@ -410,12 +410,12 @@ situation, and the right column as what people usually use.
 
 The first row of the table above was a written rule, and this section says how to
 build one. Book 5 covers the three parts of that job. [Sensor
-streams](../../../05_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
+streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
 turns a reading, such as how far the gripper closed or the weight on a scale, into a
 clean yes-or-no flag. [Thresholding and colour
-masks](../../../05_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
+masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
 checks a picture for a known colour in a known place. And [pose from
-points](../../../05_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
+points](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
 measures where an object with a printed marker is.
 
 So the written rule is better whenever a measurement like these answers "is it

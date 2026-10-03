@@ -145,10 +145,10 @@ needs a second arm at all, the two ways the arms can be coupled, and what that d
 to every method. Two arms doing unrelated things in one cell are deliberately out of
 scope — that is the one-arm problem, twice.
 
-**[Programming techniques](docs/05_programming-techniques/01_what-techniques-are/01_programmed-not-learned.md)**
+**[Programming techniques](docs/06_programming-techniques/01_what-techniques-are/01_programmed-not-learned.md)**
 holds the written, language-independent techniques that arm software is
 built from. After a short introduction and
-[a map of all of them](docs/05_programming-techniques/01_what-techniques-are/04_the-map-of-techniques.md),
+[a map of all of them](docs/06_programming-techniques/01_what-techniques-are/04_the-map-of-techniques.md),
 it covers 34 techniques in seven groups — geometry and cameras, searching and
 matching, fitting and estimation, image and point cloud processing, planning
 and search, control and motion, and decisions and task logic. Each group puts
@@ -178,7 +178,7 @@ Every programming techniques page ends with the learned model that does the same
 job, every learned models page ends with the written technique, and both maps
 share one table that starts from the job the arm has to do.
 
-**[Neural networks and AI models](docs/06_neural-networks/01_what-learning-means/01_why-not-just-write-the-rules.md)**
+**[Neural networks and AI models](docs/05_neural-networks/01_what-learning-means/01_why-not-just-write-the-rules.md)**
 comes before both of them, and it is the one book that explains the machinery
 rather than cataloguing it. It is for a reader who knows some maths, some
 science and some programming, and nothing at all about machine learning, so it
@@ -201,8 +201,8 @@ docs/01_robotics-intro/   robot arm basics: Python, NumPy, maths, frames, kinema
 docs/02_perception/       cameras, and finding and measuring objects
 docs/03_frameworks/       tools and simulators, gripping, arm movement, training arms
 docs/04_ros-and-rviz/     ROS and the RViz 3D viewer
-docs/05_programming-techniques/ the algorithms arm software is built from
-docs/06_neural-networks/        how a neural network works and how a model is trained
+docs/05_neural-networks/        how a neural network works and how a model is trained
+docs/06_programming-techniques/ the algorithms arm software is built from
 docs/07_learned-models/         every kind of learned model a robot arm uses
 docs/08_robotics-by-example/    one problem on a real table, solved ten ways
 ```

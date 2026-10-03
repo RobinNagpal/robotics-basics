@@ -54,12 +54,11 @@ somebody also counts as a place to put things.
 Every action costs a little, and only putting the block down pays: 10 in the bin and 2 on the tray.
 
 The first word is the state. The **state** is everything the learner can see at
-one moment, and it is what its decision is based on. Here it is the square the
-gripper stands on together with whether it holds the block, which makes 50 states;
-on a real arm it is the joint angles, the gripper opening and a camera picture.
-The second word is the action. An **action** is one of the things the learner can
-choose to do, and here there are seven: four moves, closing the gripper, opening
-it, and waiting.
+one moment. Here it is the square the gripper stands on together with whether it
+holds the block, which makes 50 states; on a real arm it is the joint angles, the
+gripper opening and a camera picture. The second word is the action. An **action**
+is one of the things the learner can choose to do, and here there are seven: four
+moves, closing the gripper, opening it, and waiting.
 
 ![Two grids with a state number in every square, and a third showing where each action from state 34 leads](../../images/learning-from-outcomes/reinforcement-learning/state-and-action.svg)
 
@@ -68,9 +67,8 @@ Closing the gripper on the block moves the learner from state 34 to state 35.
 The third word is the reward. A **reward** is a single number arriving after each
 action that says how good the result was. It is not advice and never says what
 should have been done instead, which is what makes this different from earlier
-chapters. Here every action costs 0.10, a gripper command costs another 0.05, and
-putting the block in the bin pays 10, so the action that finishes the job returns
-9.85.
+chapters. Here every action costs 0.10, a gripper command another 0.05, and the
+bin pays 10, so the action that finishes the job returns 9.85.
 
 ![A grid showing the ten-step route to the bin, beside a bar chart of the ten rewards](../../images/learning-from-outcomes/reinforcement-learning/reward-sequence.svg)
 
@@ -127,7 +125,7 @@ just happened, and a value says what the future is worth from here.
 The start square is worth 5.43, the block's square 6.66, and the bin's square 9.85 once the block is held.
 
 The two are tied together, because once you know what every state is worth,
-choosing an action is easy: take the action leading to the best state. That is why
+choosing an action is easy: take the one leading to the best state. That is why
 the arrows below run uphill through the numbers.
 
 ![The same two grids with an arrow or letter in every square showing the action the policy takes](../../images/learning-from-outcomes/reinforcement-learning/policy-and-value-together.svg)
@@ -149,14 +147,14 @@ Early on the prediction is out by 0.16 over the 50 states, and by the end by 0.0
 
 ## 3. Learning the whole thing from nothing
 
-Sections 1 and 2 said what gets learned, and this section shows it being learned
-from a table of zeros, using nothing but the rewards that come back.
+Sections 1 and 2 said what gets learned, and this section shows it learned from a
+table of zeros, using nothing but the rewards that come back.
 
 The method is Q-learning, which keeps one number for every state and action pair,
 meaning the value of taking that action there and behaving well afterwards. All
 350 numbers start at zero, and after every action the learner moves the number for
-the action it took a little way towards the reward it got plus the value of the
-best action in the state it landed in. That rule is enough.
+the action it took towards the reward it got plus the value of the best action in
+the state it landed in. That rule is enough.
 
 ![Two line charts over 6,000 attempts, one of the reward per attempt and one of the share reaching the bin](../../images/learning-from-outcomes/reinforcement-learning/learning-curve.svg)
 
@@ -199,12 +197,11 @@ Section 3 passed over one setting, which decides whether the whole thing works a
 all.
 
 A learner that always takes the action it believes is best never finds out about
-anything better, while a learner that always acts at random finds out about
-everything and collects nothing meanwhile. Choosing between the two is the
-trade-off between **exploring**, which means taking an action to find out what it
-does, and **exploiting**, which means taking the action you already believe is
-best. The usual way to settle it is to take a random action with some small chance
-and the best one the rest of the time.
+anything better, while one that always acts at random finds out about everything
+and collects nothing meanwhile. Choosing between the two is the trade-off between
+**exploring**, taking an action to find out what it does, and **exploiting**,
+taking the action you already believe is best. The usual way to settle it is to
+take a random action with some small chance and the best one otherwise.
 
 ![Two panels: reward per attempt for the two learners, and reward while training against reward of the finished policy](../../images/learning-from-outcomes/reinforcement-learning/explore-or-not.svg)
 
@@ -220,10 +217,9 @@ a better answer later.
 
 The learner that never explores settles on the tray and never discovers that the bin pays five times as much.
 
-The failure there is not bad learning, because its policy is the best possible
-route to the tray. The failure is that it never saw the bin, so the bin was never
-part of the problem it was solving, and this is the most common way a
-reinforcement learning run fails on a real task.
+The failure there is not bad learning, because its policy is the best route to
+the tray. The failure is that it never saw the bin, so the bin was never part of
+the problem it was solving, and this is the most common way such a run fails.
 
 ![Two panels: how many of eight runs of each kind reach the bin, and when the exploring runs first reached it](../../images/learning-from-outcomes/reinforcement-learning/first-time-at-the-bin.svg)
 
@@ -245,15 +241,15 @@ and operator time.
 
 ## 5. Whose attempts you learn from, and how big a step to take
 
-Section 4 was about which attempts get made, and this section is about two
-questions that follow: whether a learner may use attempts some other policy
-made, and how far it may change itself after reading them.
+Section 4 was about which attempts get made, and this section is about whether a
+learner may use attempts some other policy made, and how far it may change itself
+after reading them.
 
 A method is **off-policy** when it can learn from attempts made by any policy at
 all, including old versions of itself and a person driving the arm by hand.
 Q-learning is off-policy, because its rule asks what the best action in the next
-state is worth rather than what the collecting policy did, so every attempt ever
-made can be stored and reused.
+state is worth rather than what the collecting policy did, so any attempt can be
+stored and reused.
 
 ![Two panels: the reward of the policy read off the table over 40 passes through stored attempts, and the route it takes](../../images/learning-from-outcomes/reinforcement-learning/learning-from-old-attempts.svg)
 
@@ -271,10 +267,10 @@ plainly.
 
 Given exactly the same stored attempts, a policy-gradient method moves from minus 9.49 to minus 9.01 after 80 passes, while Q-learning reached 8.90.
 
-Why use an on-policy method at all? Because it works directly on the thing you
-want, so it handles actions that are real numbers rather than a short list, which
-is what an arm needs. The price is that every improvement needs fresh attempts,
-and that is what **proximal policy optimisation (PPO)** is built to reduce. It is the most widely used policy-gradient method, and its idea
+Why use an on-policy method at all? Because it works directly on the policy, so it
+handles actions that are real numbers rather than a short list, which is what an
+arm needs. The price is that every improvement needs fresh attempts, and that is
+what **proximal policy optimisation (PPO)** is built to reduce. It is the most widely used policy-gradient method, and its idea
 is to collect a batch, improve the policy on it several times over rather than
 once, but refuse to let any action's chance move more than a fixed fraction from
 what it was when the batch was collected, by paying the update nothing for a
@@ -285,8 +281,8 @@ change beyond that band.
 Raising a good action's chance beyond 1.2 times earns nothing extra, so the update stops pushing.
 
 Take the limit away and the result is a collapse rather than a slow decline,
-because one large step can push an action's chance all the way to certainty, and a
-policy that only ever takes one action collects no information about any other.
+because one large step can push an action's chance to certainty, and a policy that
+only ever takes one action collects no information about any other.
 
 ![Two line charts, one of reward per round with and without the limit, one of the biggest change in an action's chance](../../images/learning-from-outcomes/reinforcement-learning/with-and-without-the-limit.svg)
 
@@ -300,8 +296,8 @@ than against 8.90.
 
 ## 6. Why this happens in a simulator, and what the crossing costs
 
-Every number so far came from a world that costs nothing to run, and this
-section is about what happens when the world is a real arm on a real bench.
+Every number so far came from a world that costs nothing to run, and this section
+is about what happens when the world is a real arm on a bench.
 
 The worked example used 6,000 attempts and 239,361 separate actions in a world
 with 50 states. A real pick-and-place task has a state made of a camera picture
@@ -343,8 +339,8 @@ Averaged over the eight squares the fixture could stand on, perfect-simulator po
 
 What it costs is worth saying, because domain randomisation is often described as
 free and is not. The randomised learner is solving a harder problem, so it needs
-more attempts, and if the range is drawn too wide then no single policy does well
-on any of them.
+more attempts, and too wide a range leaves no single policy doing well on any of
+them.
 
 ![Two panels: the share of training attempts reaching the bin for both learners, and what each collects back in the perfect simulator](../../images/learning-from-outcomes/reinforcement-learning/what-randomising-costs.svg)
 

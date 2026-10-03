@@ -821,11 +821,13 @@ def noise_prediction_target() -> None:
                 arrowprops=dict(arrowstyle='->', color=SLIDE, lw=2.4, ls='--'))
     ax.plot(guess[0, 0], guess[0, 1], marker='o', ms=17, color=SLIDE, zorder=6,
             markerfacecolor='none', markeredgewidth=2.4)
-    ax.text(guess[0, 0] + 0.22, guess[0, 1] + 0.30,
-            f'taking out the noise it named,\n({hat[0, 0]:.2f}, {hat[0, 1]:.2f}), '
-            f'puts the clean\nwaypoint at ({guess[0, 0]:.2f}, {guess[0, 1]:.2f}),'
-            f'\nwhich is nowhere a waypoint sits',
-            fontsize=9.5, color=SLIDE)
+    ax.annotate(f'taking out the noise it named,\n'
+                f'({hat[0, 0]:.2f}, {hat[0, 1]:.2f}), puts the clean\n'
+                f'waypoint at ({guess[0, 0]:.2f}, {guess[0, 1]:.2f}), which\n'
+                f'is nowhere a waypoint sits',
+                xy=(guess[0, 0] - 0.18, guess[0, 1] - 0.14),
+                xytext=(-2.9, -1.9), fontsize=9.5, color=SLIDE,
+                arrowprops=dict(arrowstyle='->', color=SLIDE, lw=1.6))
     print(f'[s3] taking the named noise back out puts the clean waypoint at '
           f'({guess[0, 0]:.3f}, {guess[0, 1]:.3f}), which is between the two arcs '
           f'rather than on either of them')
@@ -1226,10 +1228,13 @@ def condition_accuracy() -> None:
     ax.bar(idx, goes_dn, bottom=goes_up, width=0.5, color=SLIDE, edgecolor=INK,
            lw=0.6, label='went below')
     for i, v in enumerate(goes_up):
-        ax.text(i, v / 2, f'{v:.1f}%', ha='center', fontsize=11, color='white',
-                weight='bold')
-        ax.text(i, v + (100 - v) / 2, f'{100 - v:.1f}%', ha='center', fontsize=11,
-                color='white', weight='bold')
+        for share, base, col in ((v, 0.0, LINK), (100 - v, v, SLIDE)):
+            if share >= 12:
+                ax.text(i, base + share / 2, f'{share:.1f}%', ha='center',
+                        fontsize=11, color='white', weight='bold')
+            else:
+                ax.text(i + 0.33, base + share / 2, f'{share:.1f}%', ha='left',
+                        fontsize=10, color=col, weight='bold')
     ax.set_xticks(idx)
     ax.set_xticklabels(names)
     ax.set_ylim(0, 118)

@@ -1280,7 +1280,7 @@ def exp_stack() -> dict[str, object]:
               f'{mc:7,.0f} multiply-adds')
     print(f'  the 4-bit student is {rows[0][2] / rows[4][2]:.0f} times smaller and '
           f'{rows[0][3] / rows[4][3]:.0f} times less arithmetic than the float teacher, '
-          f'for {rows[0][1] - rows[4][1]:.3f} of accuracy')
+          f'for {round(rows[0][1], 3) - round(rows[4][1], 3):.3f} of accuracy')
     out = {'rows': rows}
     _CACHE['stack'] = out
     return out

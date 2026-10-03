@@ -89,20 +89,20 @@ Section 1 failed because the written reward paid for something other than the
 job, so the obvious repair is to pay only for the job, and this section is about
 what that costs and what the middle ground looks like.
 
-A **sparse reward** pays nothing until the job is done and then pays once. It is
-exactly right, because the only thing it rewards is the thing you want. A
-**dense reward** pays something after every action. It is easier to learn from,
-because the learner gets a signal before its first success, and it is harder to
-get right, because every one of those payments is a claim about what is good.
+A **sparse reward** pays nothing until the job is done and then pays once, which
+is exactly right, because the only thing it rewards is the thing you want. A
+**dense reward** pays something after every action, which is easier to learn from
+because the learner gets a signal before its first success, and harder to get
+right because every payment is a claim about what is good.
 
 ![Two bar charts of the ten rewards of the same attempt, one sparse with nine small costs and a single 9.85, and one dense where every step pays something](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/sparse-against-dense.svg)
 
 The same ten actions collect 8.90 under the sparse reward, all of it at the last step, and 2.60 under a dense reward that charges 0.30 a square.
 
 Changing a reward to make it easier to learn from is called **reward shaping**,
-and the important thing about it is that a shaping term is not a hint. It is
-part of the reward, so it changes which behaviour scores highest, and the
-learner optimises the reward it is given rather than the one you meant.
+and a shaping term is not a hint: it is part of the reward, so it changes which
+behaviour scores highest, and the learner optimises the reward it is given rather
+than the one you meant.
 
 ![A line chart of the share of attempts reaching the bin over 6,000 attempts for three rewards, where the potential-based one rises almost immediately and the other two take a few hundred attempts](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/how-fast-each-one-learns.svg)
 
@@ -118,12 +118,11 @@ line, and the difference between the two dense rewards is how they were built.
 Adding 1.00 a step for holding the block makes carrying it about for ever worth 67.95 against 14.90 for putting it in the bin, so the best policy never puts it down.
 
 That is shaping changing the answer rather than the speed, and it is the normal
-case rather than a trick. There is, though, one way of writing a shaping term
-that provably cannot do this. Attach a number to every state, and make the
-shaping payment the difference between the number at the state you arrive in and
-the number at the state you left. Along any route the differences cancel out
-except at the two ends, so no loop can be made profitable and the ranking of
-whole behaviours is unchanged.
+case rather than a trick. There is one way of writing a shaping term that provably
+cannot do this: attach a number to every state, and make the shaping payment the
+difference between the number at the state you arrive in and the one you left.
+Along any route the differences cancel out except at the two ends, so no loop can
+be made profitable.
 
 ![Two grids showing the number attached to each square, rising towards the block with an empty gripper and towards the bin while holding, beside a bar chart of how many states keep the same best action](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/shaping-that-keeps-the-answer.svg)
 
@@ -169,9 +168,8 @@ one formula right.
 The model scores 0.56 on average for states from attempts that worked against 0.35 for ones that failed, and climbs from 0.29 to 0.77 along a good attempt.
 
 What it costs is that the model is only right where it has seen examples, and a
-policy trained against it will go looking for the places where it is wrong. That
-is not a worry about the future but something that happens immediately, and the
-next picture is what happened here.
+policy trained against it goes looking for the places where it is wrong. That
+happens immediately rather than eventually, as the next picture shows.
 
 ![A chart of the model's score and the share of attempts really reaching the bin against the number of training attempts, with the score flat at 0.75 and the share flat at zero](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/training-against-the-model.svg)
 
@@ -241,12 +239,11 @@ Along an attempt that works the model's score climbs from 0.29 to 0.77 while the
 
 Out of 400 attempts the verifier passes 300, and taking a middling passing attempt's score of 0.58 as a bar, 147 passing attempts fall below it.
 
-What the verifier buys you is a reward that cannot be gamed, because there is
-nothing in it to find a hole in: the only way to raise it is to do the job. Why
-reach for it rather than a learned reward model? Because it is exactly right,
-costs nothing to run, needs no labelled data, and never drifts. What it costs is
-that it can only ask about things the record actually holds, and that it says
-nothing until the very end.
+The verifier buys you a reward that cannot be gamed, because the only way to raise
+it is to do the job. Why reach for it rather than a learned reward model? Because
+it is exactly right, costs nothing to run and needs no labelled data. What it
+costs is that it can only ask about things the record holds, and says nothing
+until the very end.
 
 ![Two panels, one listing the four things the record of an attempt holds, and one listing five questions with whether a short program can decide each from them](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/what-a-program-can-check.svg)
 
@@ -268,12 +265,11 @@ thing optimised at the end. The next section is about why that is needed.
 Every section above has shown the same failure in a different costume, and this
 section names it and says what is done.
 
-**Reward hacking** means finding a behaviour that scores highly on the reward
-and does not do the job. It is not the learner cheating, because the learner has
-no idea what the job is: the reward is the entire statement of what is wanted,
-and the learner is doing exactly what it was asked. The clearest example in this
-world comes from a reward that pays for putting the block down anywhere tidy
-rather than only in the bin.
+**Reward hacking** means finding a behaviour that scores highly on the reward and
+does not do the job. It is not the learner cheating, because the reward is the
+entire statement of what is wanted and the learner is doing exactly what it was
+asked. The clearest example here comes from a reward that pays for putting the
+block down anywhere tidy rather than only in the bin.
 
 ![Two panels: the gripper looping between the block and the tray, and a chart of the reward collected over the attempt rising to 222.10 against 8.90 for the policy that does the job](../../images/learning-from-outcomes/rewards-preferences-and-verifiers/the-tray-loop.svg)
 

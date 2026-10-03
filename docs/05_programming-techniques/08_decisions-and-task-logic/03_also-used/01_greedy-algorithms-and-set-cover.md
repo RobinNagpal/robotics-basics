@@ -318,7 +318,7 @@ common places where it does.
   one mug. The clean-up step, called non-maximum suppression, is greedy, because it keeps the
   box with the highest confidence, removes the boxes that overlap it, and then
   repeats. Book 6 explains it in
-  [cleaning up the extra boxes](../../../06_learned-models/03_seeing-models/02_most-used/01_object-detection.md#cleaning-up-the-extra-boxes).
+  [cleaning up the extra boxes](../../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md#cleaning-up-the-extra-boxes).
 - **Matching detections to tracked objects.** Greedy matching pairs the closest
   detection and track first, then the next closest, and so on, which is fast. But it
   can make a wrong pair when two objects pass close to each other.
@@ -433,11 +433,11 @@ problem is only counting which views see which objects, greedy already solves it
 in a fraction of a millisecond with a proven limit, and an exact solver is there
 when greedy is not good enough. Instead, where learning appears around greedy choices, it
 supplies the scores that greedy ranks. A
-[grasp quality model](../../../06_learned-models/05_grasp-models/03_also-used/02_grasp-quality-models.md)
+[grasp quality model](../../../07_learned-models/05_grasp-models/03_also-used/02_grasp-quality-models.md)
 scores each candidate grasp, and a bin-picking cell then takes the highest score
 first, as section 5 described; a detector's confidences decide in the same way
 which box non-maximum suppression keeps. A
-[language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
+[language model as planner](../../../07_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
 also chooses one step at a time, but it chooses which task step to do next from a
 request in words, not which set of views covers every object.
 

@@ -655,7 +655,7 @@ what you would see, and this is what people use instead.
 
 | what goes wrong | the sign you would see | what people use instead |
 |---|---|---|
-| Objects touch or stand closer than the tolerance | One cluster is twice the expected size, or has a strange shape | Push them apart first; the distance transform and watershed on the [morphology page](02_morphology-and-distance-transform.md); a learned [segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md) |
+| Objects touch or stand closer than the tolerance | One cluster is twice the expected size, or has a strange shape | Push them apart first; the distance transform and watershed on the [morphology page](02_morphology-and-distance-transform.md); a learned [segmentation model](../../../07_learned-models/03_seeing-models/02_most-used/02_segmentation.md) |
 | The tolerance is smaller than the point spacing | One object comes back as many small clusters | Raise the tolerance above the voxel diagonal, or use a finer voxel size |
 | Stray points bridge two objects | Two objects join under Euclidean clustering | DBSCAN with a `min_pts` that stray points cannot reach; a statistical outlier filter before clustering |
 | Point density varies a lot, for example near and far objects | Far objects break up, or near objects join | Voxel downsampling first; HDBSCAN, a version of DBSCAN that adapts to density |
@@ -727,17 +727,17 @@ on a large cloud is slow unless you downsample first and use a k-d tree.
 
 That second alternative is worth a closer look, because two kinds of model in
 Book 6 do this job. A
-[segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
+[segmentation model](../../../07_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
 gives one mask per object in the colour picture, and the depth points inside each
 mask become that object's points. A
-[point cloud model](../../../06_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
+[point cloud model](../../../07_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
 names every 3D point directly. Either one can split objects that touch, which
 clustering cannot do, and it can also say what each object is. However, a model
 needs labelled training data and a computer that can run it, and it only knows the
 kinds of object it was trained on. So choose clustering when objects stand apart,
 or when the robot can push them apart, and choose a model when touching objects
 are the normal case. Book 6's
-[Gaussian mixture models](../../../06_learned-models/02_classical-machine-learning/03_also-used/01_mixture-models-and-hidden-markov-models.md)
+[Gaussian mixture models](../../../07_learned-models/02_classical-machine-learning/03_also-used/01_mixture-models-and-hidden-markov-models.md)
 are the learned cousin of k-means: each cluster becomes a soft, stretched blob, and
 every point gets a chance of belonging to each cluster instead of one hard answer.
 

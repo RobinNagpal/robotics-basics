@@ -32,7 +32,7 @@ docs/03_frameworks/07_stone-stacking.md
 
 - A top-level folder is a **book**: `01_robotics-intro`, `02_perception`,
   `03_frameworks`, `04_ros-and-rviz`, `05_programming-techniques`,
-  `06_learned-models`, `07_robotics-by-example`.
+  `07_learned-models`, `08_robotics-by-example`.
 - A folder inside a book is a **chapter**, and each `.md` file in it is a
   **section**. A `.md` file directly inside a book is a chapter with one section.
 - A folder inside a chapter, such as `07_case-study/`, shows as a labelled group of
@@ -100,7 +100,7 @@ Inside the docs, link to the file and let the site work out the address.
 ```
 docs/02_perception/              code/src/02_perception/
 docs/05_programming-techniques/  code/src/05_programming-techniques/
-docs/07_robotics-by-example/     code/src/07_robotics-by-example/
+docs/08_robotics-by-example/     code/src/08_robotics-by-example/
 ```
 
 Inside that folder the code keeps its own areas, such as
@@ -245,19 +245,19 @@ until somebody asks for it by number.
 
 ```bash
 # one page
-python narration/narrate.py --doc docs/07_robotics-by-example/01_the-cell.md
+python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md
 
 # one chapter
-python narration/narrate.py --book 07 --chapter 02
+python narration/narrate.py --book 08 --chapter 02
 
 # after editing a page: the same command, which remakes only the changed sections
-python narration/narrate.py --doc docs/07_robotics-by-example/01_the-cell.md
+python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md
 
 # convert a page that is still v0 into the sectioned shape
-python narration/narrate.py --doc docs/07_robotics-by-example/01_the-cell.md --v1
+python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md --v1
 
 # make the recordings and put them in the bucket
-python narration/narrate.py --book 07 --upload
+python narration/narrate.py --book 08 --upload
 ```
 
 Two more flags matter when something has gone wrong. `--stage transcript` stops

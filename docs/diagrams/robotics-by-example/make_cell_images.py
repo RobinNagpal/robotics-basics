@@ -1,4 +1,4 @@
-"""Diagrams for 07_robotics-by-example/01_the-cell.md, the layout, the reach and the sensors.
+"""Diagrams for 08_robotics-by-example/01_the-cell.md, the layout, the reach and the sensors.
 
 Every dimension is read from the project's own constants rather than typed in,
 so a picture cannot drift from the code. If a number moves in
@@ -26,7 +26,7 @@ from matplotlib.colors import to_rgba  # noqa: E402
 from matplotlib.patches import Circle, FancyArrowPatch, Rectangle, Wedge  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+sys.path.insert(0, str(ROOT / "code" / "src" / "08_robotics-by-example" / "work_cell"))
 
 from work_cell.arm.dimensions import (  # noqa: E402
     CAMERA_OFFSET,
@@ -67,7 +67,7 @@ NOTE = 8.2
 MM = 1000.0  # the drawings are in millimetres; the constants are in metres
 
 # The lens, read out of the model the simulator loads rather than typed here.
-_WORK_CELL = ROOT / "code" / "src" / "07_robotics-by-example" / "work_cell" / "work_cell"
+_WORK_CELL = ROOT / "code" / "src" / "08_robotics-by-example" / "work_cell" / "work_cell"
 _XACRO = (_WORK_CELL / "arm" / "camera" / "wrist_camera.urdf.xacro").read_text()
 
 

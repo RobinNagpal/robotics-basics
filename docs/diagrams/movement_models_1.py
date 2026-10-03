@@ -1,6 +1,6 @@
 """Generate the diagrams for the first half of the movement-models chapter.
 
-The chapter is docs/06_learned-models/06_movement-models/. This script
+The chapter is docs/07_learned-models/06_movement-models/. This script
 draws the pictures for three of its documents:
 
     01_overview.md

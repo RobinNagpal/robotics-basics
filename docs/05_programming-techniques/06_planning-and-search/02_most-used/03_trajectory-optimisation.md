@@ -490,11 +490,11 @@ smoothness, as the 4.7 cm in section 2 shows.
 
 Section 7 weighed this method against a sampler, and Book 6 adds learned helpers
 for it, along with one learned way to replace it. From
-[learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md),
+[learned motion planners](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md),
 a learned collision distance gives the obstacle cost a smooth distance without a
 distance field, and a learned route planner gives a quick first guess, which is
 what this method depends on most; the exact check still tests the final path. A
-[diffusion or flow policy](../../../06_learned-models/06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
+[diffusion or flow policy](../../../07_learned-models/06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
 replaces the optimiser instead. It learns whole stretches of motion from people's
 demonstrations, so it picks one real way round an obstacle rather than a blend of
 them. So it wins when the right motion is easier to show than to write as a cost,

@@ -933,7 +933,7 @@ still costs far less than the seconds one arm movement costs.
 
 The code for this solution and for the two that follow it lives in one folder,
 with one environment, described in [its own
-README](../../../../code/src/07_robotics-by-example/problem-2-pretrained/README.md).
+README](../../../../code/src/08_robotics-by-example/problem-2-pretrained/README.md).
 
     make setup                      # once: install the environment, fetch weights
     make train SOLUTION=sam

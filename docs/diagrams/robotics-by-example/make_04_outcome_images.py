@@ -43,7 +43,7 @@ from diagram_style import (
 )
 from matplotlib.patches import Circle, FancyArrowPatch, Rectangle, Wedge
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "08_robotics-by-example" / "work_cell"))
 
 set_document("choosing-the-next-look")
 

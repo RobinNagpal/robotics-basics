@@ -64,7 +64,7 @@ hidden part](10_amodal-masks-for-the-hidden-part.md).
 
 All three of those run on this machine as it stands, through the same MPS
 backend, and
-[`problem-2-pretrained`](../../../../code/src/07_robotics-by-example/problem-2-pretrained/README.md) holds their
+[`problem-2-pretrained`](../../../../code/src/08_robotics-by-example/problem-2-pretrained/README.md) holds their
 code beside what each of them scored. So the claim that a borrowed model is
 usable here is a measured one rather than an expectation, and the condition that
 matters for such a model is the second one above: it has to run without CUDA,

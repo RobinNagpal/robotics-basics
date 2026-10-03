@@ -1,4 +1,4 @@
-"""Generate the diagrams for docs/06_learned-models/10_making-models-work-on-an-arm/.
+"""Generate the diagrams for docs/07_learned-models/10_making-models-work-on-an-arm/.
 
 It also draws the two pictures for the section "A learned model inside MPC" of
 docs/05_programming-techniques/06_planning-and-search/03_also-used/

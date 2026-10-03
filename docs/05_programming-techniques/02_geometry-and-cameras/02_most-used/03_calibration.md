@@ -543,15 +543,15 @@ resolution.
 No model in Book 6 measures a camera's lens numbers or its place on the arm. So
 the learned alternative is to skip calibration altogether. A **policy**, a
 network from Book 6's
-[movement models](../../../06_learned-models/06_movement-models/01_overview.md),
+[movement models](../../../07_learned-models/06_movement-models/01_overview.md),
 turns pictures straight into arm movements, so no lens numbers or hand-eye
 transform appear anywhere in the plan. But the policy then learns one camera in
 one place. Book 6's
-[diffusion and flow policies](../../../06_learned-models/06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
+[diffusion and flow policies](../../../07_learned-models/06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
 notes that a camera moved by a few centimetres can confuse it, and the fix is
 more demonstrations, while a calibrated camera can be moved and recalibrated in
 half an hour. For the arm's own geometry, Book 6's
-[learned arm models](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
+[learned arm models](../../../07_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
 describes a small network that learns what kinematic calibration leaves out,
 such as links that bend under their own weight. It then adds that on top of the
 calibrated numbers rather than replacing them.

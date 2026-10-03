@@ -332,7 +332,7 @@ concrete places.
   table uses the ground-plane constraint to place flat parts, with no depth sensor.
 - **Building a 3D model of the scene.** A camera that moves through many poses and
   triangulates many points builds a 3D model. Book 6's
-  [scene reconstruction](../../../06_learned-models/04_3d-models/02_most-used/02_scene-reconstruction.md)
+  [scene reconstruction](../../../07_learned-models/04_3d-models/02_most-used/02_scene-reconstruction.md)
   covers the learned methods that do this.
 
 ---
@@ -405,7 +405,7 @@ space may not allow.
 ## 7. The learned alternative
 
 Book 6's
-[depth from pictures](../../../06_learned-models/03_seeing-models/03_also-used/02_depth-from-pictures.md)
+[depth from pictures](../../../07_learned-models/03_seeing-models/03_also-used/02_depth-from-pictures.md)
 covers two learned models for this job. A learned stereo model, such as
 RAFT-Stereo or FoundationStereo, does the matching with a network, then turns
 each shift into a depth with the same rule as this page, so its answer is still

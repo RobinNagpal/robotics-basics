@@ -217,12 +217,12 @@ is why this chapter comes first after the introduction.
   candidate view.
 
 Book 6 has learned models that do parts of this job differently.
-[Depth from pictures](../../06_learned-models/03_seeing-models/03_also-used/02_depth-from-pictures.md)
+[Depth from pictures](../../07_learned-models/03_seeing-models/03_also-used/02_depth-from-pictures.md)
 guesses a depth for every pixel from a colour picture alone, or from a stereo
 pair, which replaces the depth sensor but not the pinhole model, because the
 guessed depth still goes through the same formula. So multi-view geometry is the
 measured alternative to that guess.
-[Keypoints and object pose](../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+[Keypoints and object pose](../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 estimates an object's full pose, a rotation and a shift, which is a rigid
 transform in the camera's frame. Most of those models find keypoints and then
 hand them to [pose from points](02_most-used/04_pose-from-points.md) for the

@@ -453,9 +453,9 @@ on hard pictures, such as large changes of angle, poor light and little texture.
 Even so, RANSAC is still used after them in the same way. But they need a graphics processor to run at camera
 rate and a large set of model weights, and it is harder to see what went wrong when
 they fail. Book 6's
-[keypoints and object pose](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+[keypoints and object pose](../../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 describes networks that find an object's named points and its pose directly, and
-[tracking and motion](../../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
+[tracking and motion](../../../07_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
 describes point trackers that follow spots from picture to picture. So a classical
 matcher is still the better first choice when the object has good texture and the
 camera angle does not change much, because it needs no training and one stored

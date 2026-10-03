@@ -56,7 +56,7 @@ from matplotlib.colors import to_rgba
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "08_robotics-by-example" / "work_cell"))
 
 set_document("is-anything-hiding-there")
 

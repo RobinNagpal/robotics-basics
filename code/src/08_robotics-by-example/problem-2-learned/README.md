@@ -20,7 +20,7 @@ picture-to-shape step from examples, and nobody wrote a correction.
 Each glass pixel points at the middle of its own glass, and the votes are
 counted. No boundary has to be found, so no boundary can be got wrong. A glass
 that is partly hidden still votes for the right middle from what shows of it.
-This is [solution 6](../../../../docs/07_robotics-by-example/02_many-glasses-of-one-kind/05_learned/06_a-network-trained-from-scratch.md),
+This is [solution 6](../../../../docs/08_robotics-by-example/02_many-glasses-of-one-kind/05_learned/06_a-network-trained-from-scratch.md),
 the one the solution overview names for the day glasses are allowed to touch.
 
 **The learned parts sit where a mistake is cheap.**

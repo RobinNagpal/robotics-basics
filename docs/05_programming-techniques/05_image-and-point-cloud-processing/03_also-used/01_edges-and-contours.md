@@ -588,7 +588,7 @@ do instead.
 | Camera at a slant | Squares look like irregular four-sided shapes; circles look like ellipses; roundness drops | Look from straight above, or correct the view with the camera's known pose |
 | A small or far object | Corners get rounded off; a hexagon reports 4 or 8 corners | Move the camera closer; use a larger tolerance only if the shapes are very different |
 | Noise in the mask | A single stray pixel adds an extra corner or an extra tiny contour | An opening step on the mask, and a minimum contour area |
-| See-through or shiny objects | The edge found is a reflection, not the object's border | A [segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md) trained on such objects |
+| See-through or shiny objects | The edge found is a reflection, not the object's border | A [segmentation model](../../../07_learned-models/03_seeing-models/02_most-used/02_segmentation.md) trained on such objects |
 
 Book 2 gives the same trade-off as five jobs these methods suit and five they
 cannot do, in [edges, contours and connected components](../../../02_perception/02_object-perception/03_programmed-methods.md#13-edges-contours-and-connected-components).
@@ -657,10 +657,10 @@ it says nothing about the parts of the object the camera cannot see.
 
 Because section 7 named a trained model as the obvious alternative, this section
 says what that model gives you and what it asks for in return. A
-[segmentation model](../../../06_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
-or an [object detector](../../../06_learned-models/03_seeing-models/02_most-used/01_object-detection.md)
+[segmentation model](../../../07_learned-models/03_seeing-models/02_most-used/02_segmentation.md)
+or an [object detector](../../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md)
 from Book 6 finds the object's outline or box, and a
-[keypoint and pose model](../../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+[keypoint and pose model](../../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 finds which way that object is turned. A model copes with the texture, clutter and
 shadows that break contours. But it needs labelled training pictures and a
 computer that can run it, and it can fail in ways that are hard to explain. So

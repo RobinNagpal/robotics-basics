@@ -156,14 +156,14 @@ the most used techniques first and the ones used less often second. Each page
 works a real example, says where the technique is used on an arm and where it
 fails, and lists the libraries that already provide it.
 
-**[Learned models](docs/06_learned-models/01_what-models-are/01_what-a-model-is.md)**
+**[Learned models](docs/07_learned-models/01_what-models-are/01_what-a-model-is.md)**
 is Book 6, and it assumes you have never met a model. Its first chapter explains
 what a model is, how one learns from examples, what is inside a neural network,
 the kinds of learning, and where the training data comes from. Its second
 chapter covers classical machine learning, the learned methods that are not
 neural networks: regression, decision trees and forests, Gaussian processes,
 nearest neighbours, mixture models, movement primitives and more.
-[The map of models](docs/06_learned-models/01_what-models-are/06_the-map-of-models.md)
+[The map of models](docs/07_learned-models/01_what-models-are/06_the-map-of-models.md)
 then splits the neural network models into seven families — models that see, that work in 3D,
 that choose a grasp, that move the arm, that understand words, that predict
 what happens next, and that make sense of touch and force — and each family has
@@ -187,7 +187,7 @@ docs/02_perception/       cameras, and finding and measuring objects
 docs/03_frameworks/       tools and simulators, gripping, arm movement, training arms
 docs/04_ros-and-rviz/     ROS and the RViz 3D viewer
 docs/05_programming-techniques/ the algorithms arm software is built from
-docs/06_learned-models/         every kind of learned model a robot arm uses
+docs/07_learned-models/         every kind of learned model a robot arm uses
 ```
 
 Everything is numbered in the order it is meant to be read: the books, the chapter

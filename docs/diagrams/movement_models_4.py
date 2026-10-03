@@ -1,6 +1,6 @@
 """Generate the diagrams for two "also used" pages of the movement-models chapter.
 
-The documents are in docs/06_learned-models/06_movement-models/03_also-used/:
+The documents are in docs/07_learned-models/06_movement-models/03_also-used/:
 03_reward-and-progress-models.md and 04_learning-from-human-video.md. Each picture
 illustrates one idea from its own document, and goes to
 docs/images/movement-models/<doc-name>/.

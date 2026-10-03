@@ -275,15 +275,15 @@ actually happen.
   press.
 
 Book 6 has learned models that do parts of this job as well. For example, a
-[movement model](../../06_learned-models/06_movement-models/01_overview.md)
+[movement model](../../07_learned-models/06_movement-models/01_overview.md)
 decides where the arm should go next, from camera pictures, so it replaces the
 planner and sometimes the trajectory layer, but not the controller: its output is
 still a stream of joint targets that a PID loop must follow. A
-[learned arm model](../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
+[learned arm model](../../07_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 predicts the torque a joint needs, and it usually corrects the physics model from the
 [arm dynamics](02_most-used/03_arm-dynamics.md) page rather than replacing it, so
 that the result can be added to a PID loop to make it follow more closely. A
-[force and slip model](../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+[force and slip model](../../07_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
 reads the touch signals that a force controller could then act on. None of these
 removes the need for the programmed loops on this chapter's pages, because they sit
 on top of those loops rather than in place of them.
@@ -306,7 +306,7 @@ on top of those loops rather than in place of them.
   shows these layers in ROS 2, with the settings that ship with them.
 - Book 3's [holding on](../../03_frameworks/02_gripping/05_holding-on.md#3-compliance-impedance-and-admittance)
   covers impedance and admittance from the gripper's point of view.
-- Book 6's [movement models overview](../../06_learned-models/06_movement-models/01_overview.md)
+- Book 6's [movement models overview](../../07_learned-models/06_movement-models/01_overview.md)
   shows what a learned policy takes over, and what it still leaves to these loops.
 
 ---

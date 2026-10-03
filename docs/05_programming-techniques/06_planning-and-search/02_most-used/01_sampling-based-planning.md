@@ -846,10 +846,10 @@ what falls between two checks.
 ## 11. The learned alternative
 
 Section 10 weighed sampling against the two written alternatives, and Book 6's
-[learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md)
+[learned motion planners](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md)
 page covers a third one, which is networks that either help this planner or stand
 in for it. A
-[learned sampler](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#3-how-a-learned-route-planner-works)
+[learned sampler](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#3-how-a-learned-route-planner-works)
 picks its samples where routes usually pass, such as the front of a gap between
 shelves, which is exactly the fix for the narrow gap in section 8. A learned route
 planner, such as Motion Policy Networks, gives a whole route from a point cloud in

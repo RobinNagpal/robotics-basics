@@ -1,5 +1,5 @@
 """Generate the diagrams for two pages of
-docs/06_learned-models/02_classical-machine-learning/03_also-used/.
+docs/07_learned-models/02_classical-machine-learning/03_also-used/.
 
     01_mixture-models-and-hidden-markov-models.md
         -> images/classical-machine-learning/mixture-models-and-hidden-markov-models/

@@ -403,7 +403,7 @@ add to fix it.
 
 | Situation | The sign you would see | What people use instead or add |
 | --- | --- | --- |
-| The load changes a lot, such as an empty gripper against a 3 kg part | good tuning with one load, overshoot or sagging with the other | gravity compensation from a mass model; gains scheduled by load; a [learned arm model](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md) as feed-forward |
+| The load changes a lot, such as an empty gripper against a 3 kg part | good tuning with one load, overshoot or sagging with the other | gravity compensation from a mass model; gains scheduled by load; a [learned arm model](../../../07_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md) as feed-forward |
 | Fast moves on a heavy arm, where joints push on each other | following error that grows with speed and changes with pose | computed-torque control from a dynamics model, such as Pinocchio's; PID remains on top to clean up |
 | A slow or delayed sensor, such as a camera at 30 frames a second | the arm oscillates around the target, more with higher gain | lower gains; model predictive control; a [Kalman filter](../../04_fitting-and-estimation/02_most-used/03_kalman-filter.md) that predicts across the delay |
 | The motor hits its torque limit | a large overshoot after big moves only | anti-windup, as shown above |
@@ -483,17 +483,17 @@ solid object.
 Because the loop must answer every few milliseconds, there is no learned model that
 replaces it, since a network is almost never fast enough to sit inside such a loop.
 Book 6's
-[running a model on a robot](../../../06_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#2-how-fast-is-fast-enough)
+[running a model on a robot](../../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#2-how-fast-is-fast-enough)
 explains the usual split: a learned policy runs at its own slower speed and gives
 targets, and a fast programmed loop such as PID follows them. A
-[learned arm model](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
+[learned arm model](../../../07_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 helps the loop instead of replacing it. It learns the torque each joint needs,
 including gearbox friction and cable pull that the textbook model leaves out, and
 that torque is added to the PID output as feed-forward. This pays off when wear or
 a new gripper makes plain PID lag, and the size of the learned correction should
 be limited, because a learned model gives no guarantee. Learning can also pick the
 gains themselves: Book 6's
-[Bayesian optimisation](../../../06_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
+[Bayesian optimisation](../../../07_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
 tries a few sets of gains on the real joint, scores each test move, and chooses the
 next set to try, so it finds good gains in tens of trials instead of hand tuning.
 

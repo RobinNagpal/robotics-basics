@@ -328,7 +328,7 @@ see on the robot and what people use instead.
 | A counter is not reset at the right time. | After a few failures on earlier mugs, every new mug goes straight to "ask for help". | Reset counters on the arrow that ends the attempt, as "holding" does here, and test that path. |
 | Two things must happen at once, such as carrying a mug while watching the force. | The machine can only be in "carry" or "check force", not both. | Parallel regions in a statechart, or a Parallel node in a behaviour tree. |
 | The same steps are needed in two places, such as "detect" before picking and before placing. | States are copied, and the copies drift apart. | Nested machines that can be reused as one state, or behaviour tree subtrees. |
-| The task changes every day. | Someone must redraw the machine for each new job. | A task planner, or a [language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md) that picks the steps. |
+| The task changes every day. | Someone must redraw the machine for each new job. | A task planner, or a [language model as planner](../../../07_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md) that picks the steps. |
 
 A rough guide is this: up to about ten states a flat state machine is often the
 clearest choice, but beyond that you should use nested states or move to a behaviour
@@ -398,7 +398,7 @@ planned for.
 
 Because a state machine only handles the situations you listed, the learned
 alternative is a
-[language model as planner](../../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
+[language model as planner](../../../07_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
 from Book 6, which chooses the robot's steps from a request in plain words and fills in
 steps the person never said. It wins when the request changes from one day to the
 next and nobody can list every request in advance. A state machine still wins for
@@ -406,9 +406,9 @@ a task that stays the same, because it is free to run, fast, and does the same
 thing every time, and you can check what happens in every state; even with a
 planner, Book 6 puts a checker in ordinary code between the planner and the robot.
 More often, learned models feed a state machine instead of replacing it. The
-[collision and failure detection](../../../06_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+[collision and failure detection](../../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
 page shows a learned model that can send the "empty" or "dropped" event, and
-[force and slip models](../../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
+[force and slip models](../../../07_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
 shows how a slip can be caught before the mug falls.
 
 ---

@@ -307,7 +307,7 @@ wherever two lists of things must be paired one to one.
 - **Following objects from frame to frame.** This is the example on this page:
   matching each detected mug to the mug seen one frame ago, so that the robot keeps
   a steady name for each object while it plans. Book 6's
-  [tracking and motion](../../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
+  [tracking and motion](../../../07_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
   page describes learned trackers, and most of them pair their boxes with the
   Hungarian algorithm in exactly this way.
 - **Matching detections to the robot's list of known objects.** A robot that keeps a
@@ -332,7 +332,7 @@ wherever two lists of things must be paired one to one.
   that rule is called a **mutual nearest neighbour** check, which is a cheap form of
   one-to-one matching.
 - **Training a learned detector.** Book 6's
-  [object detection](../../../06_learned-models/03_seeing-models/02_most-used/01_object-detection.md#transformers-a-fixed-set-of-answers)
+  [object detection](../../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md#transformers-a-fixed-set-of-answers)
   page describes the DETR detector, which is trained by matching each real object to
   exactly one of the model's answers, and that match is made with the Hungarian
   algorithm.
@@ -428,7 +428,7 @@ Section 6 named a poor cost as the main weakness, and that is exactly where lear
 helps. There is no learned model that replaces the pairing step itself, because once
 the costs are known, the Hungarian algorithm finds the best pairing exactly and
 quickly. What learning improves is therefore the cost, not the pairing. Book 6's
-[tracking and motion](../../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
+[tracking and motion](../../../07_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
 describes trackers that also compare how the objects look, using an **embedding**,
 which is a list of numbers that describes each box. Two look-alike objects that pass
 close to each other are then less likely to swap names, and a matching step still

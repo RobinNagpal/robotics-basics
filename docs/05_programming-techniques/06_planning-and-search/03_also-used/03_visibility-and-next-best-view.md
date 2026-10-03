@@ -485,13 +485,13 @@ Since the test is written by hand, the last question is what a learned model wou
 do in its place. There is no learned model in Book 6 that replaces the sight-line
 test. This is because the test is an exact formula that runs in microseconds, and
 a network could only copy it less exactly. The nearest learned alternative is
-instead to skip the extra view altogether. A [shape completion](../../../06_learned-models/04_3d-models/03_also-used/01_shape-completion.md)
+instead to skip the extra view altogether. A [shape completion](../../../07_learned-models/04_3d-models/03_also-used/01_shape-completion.md)
 model guesses the hidden back of an object from one picture. So it wins when the
 camera cannot get round the object, such as in a bin or on a shelf, or when every
 extra move costs too much time. However, the back it gives is invented rather than
 measured, so Book 6's rule is to use completion when you cannot look, and to look
 when you can afford it. The two also work together, because a model's low
-[confidence](../../../06_learned-models/10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md#7-declining-to-act-the-reject-option-and-cascades)
+[confidence](../../../07_learned-models/10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md#7-declining-to-act-the-reject-option-and-cascades)
 is the signal to look again, and this page then chooses where.
 
 ---

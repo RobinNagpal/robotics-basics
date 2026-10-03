@@ -809,7 +809,7 @@ part of them.
 
 The code for this solution lives with the other two borrowed-model solutions, in
 one folder with one environment, described in
-[`problem-2-pretrained/README.md`](../../../../code/src/07_robotics-by-example/problem-2-pretrained/README.md).
+[`problem-2-pretrained/README.md`](../../../../code/src/08_robotics-by-example/problem-2-pretrained/README.md).
 
 Setting the environment up and fetching the weights is done once:
 

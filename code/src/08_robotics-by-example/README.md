@@ -3,7 +3,7 @@
 This folder holds the programs behind Book 7, *Robotics by Example*. The book
 works through one problem: several glasses of one kind stand on a table, and the
 arm has to work out which pixels belong to which glass. The documents are in
-`docs/07_robotics-by-example/`, and each solution document says which folder
+`docs/08_robotics-by-example/`, and each solution document says which folder
 here was built from it.
 
 The code came from the `v5-pick-glasses` project, where the same problem is one
@@ -31,7 +31,7 @@ PyTorch as well. Run them from inside their own folder, where their `Makefile`
 and `pixi.toml` are, rather than from `code/`:
 
 ```bash
-cd code/src/07_robotics-by-example/problem-2-programmed
+cd code/src/08_robotics-by-example/problem-2-programmed
 make run
 ```
 

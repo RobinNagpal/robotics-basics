@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/06_learned-models/08_world-models/.
+"""Generate the diagrams used in docs/07_learned-models/08_world-models/.
 
 Each document's pictures go to a folder named after it, under
 docs/images/world-models/.

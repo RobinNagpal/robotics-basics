@@ -293,7 +293,7 @@ learned from records of the arm pushing the block. The planner itself does not
 change at all when this happens. CEM, the horizon of 5 pushes, the warm start,
 the score and "do only the first push" all stay the same. Instead, only the
 prediction step inside `score_by_simulating` is replaced. Book 6's
-[learned dynamics models](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
+[learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
 page explains how such a model is built and trained.
 
 A single learned model carries a danger that a written one does not, because the
@@ -349,7 +349,7 @@ guessing. With the cost for disagreement the planner chose fewer long pushes, an
 the runs that touched the mug fell from 26 to 13 of 60. However, sixty runs is
 only just enough to show this, because the 95% confidence intervals are 30.6% to
 56.8% and 12.1% to 34.2%, which barely overlap. Book 6's
-[evaluation and failure](../../../06_learned-models/10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md#3-counting-successes-and-how-sure-the-count-is)
+[evaluation and failure](../../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md#3-counting-successes-and-how-sure-the-count-is)
 page explains these intervals.
 
 The weight on the spread is itself a setting to choose, and too much of it makes
@@ -371,7 +371,7 @@ differentiate the result. Here are the concrete places it turns up on an arm.
   grasp, or slide a box against a wall. The contact is hard to model with a clean
   formula, so a sampled plan through a rough model, corrected by MPC, is common.
 - **MPC with a learned model.** Book 6's
-  [learned dynamics models](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#planning-with-it)
+  [learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#planning-with-it)
   plan with CEM and MPC through a neural network. The network has a gradient,
   but it is often unreliable, and CEM only needs the network's predictions.
   PETS, listed on that page, is the standard example.
@@ -381,7 +381,7 @@ differentiate the result. Here are the concrete places it turns up on an arm.
   settling time, so CMA-ES can tune a handful of gains this way, in simulation or
   on the real arm.
 - **Choosing a grasp.** Book 6's
-  [grasp quality models](../../../06_learned-models/05_grasp-models/03_also-used/02_grasp-quality-models.md#where-the-candidates-come-from)
+  [grasp quality models](../../../07_learned-models/05_grasp-models/03_also-used/02_grasp-quality-models.md#where-the-candidates-come-from)
   use CEM to refine grasp candidates towards the ones the model scores highest.
 - **Paths with costs that have no gradient.** STOMP, on the
   [trajectory optimisation](../02_most-used/03_trajectory-optimisation.md#3-chomp-stomp-and-trajopt)
@@ -484,11 +484,11 @@ changed the result from 9.2 cm to 0.2 cm.
 [A learned model inside MPC](#a-learned-model-inside-mpc) in section 3 keeps the
 search and learns only the prediction, but the other learned alternative replaces
 the search itself. A policy that learns without a model, such as a
-[reinforcement learning policy](../../../06_learned-models/06_movement-models/03_also-used/01_reinforcement-learning-policies.md),
+[reinforcement learning policy](../../../07_learned-models/06_movement-models/03_also-used/01_reinforcement-learning-policies.md),
 turns the state straight into the next action in one pass, with no rollouts at
 each step. So it wins when each decision must be fast and the task stays fixed.
 However, Book 6 says it
-[needs far more attempts to learn](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#9-why-this-kind-and-what-it-costs),
+[needs far more attempts to learn](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#9-why-this-kind-and-what-it-costs),
 and it learns only one task, while MPC with a model can push the block to a
 different mark tomorrow just by changing the score. So choose MPC when the goal
 changes, or when the search fits in the time between steps.
@@ -503,7 +503,7 @@ changes, or when the search fits in the time between steps.
   [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#7-model-predictive-control)
   covers MPC in practice, and the gradient-based MPC libraries.
 - Book 6's
-  [learned dynamics models](../../../06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
+  [learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
   explains the learned model that CEM and MPC most often plan through.
 - Book 3's [pushing and sliding](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md)
   explains the physics behind the pushing example on this page.

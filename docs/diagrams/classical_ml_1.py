@@ -1,4 +1,4 @@
-"""Generate the diagrams for one page of docs/06_learned-models/02_classical-machine-learning/.
+"""Generate the diagrams for one page of docs/07_learned-models/02_classical-machine-learning/.
 
     02_most-used/01_linear-and-logistic-regression.md
         -> images/classical-machine-learning/linear-and-logistic-regression/

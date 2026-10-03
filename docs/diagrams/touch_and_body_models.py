@@ -1,4 +1,4 @@
-"""Generate the diagrams used in docs/06_learned-models/09_touch-and-body-models/.
+"""Generate the diagrams used in docs/07_learned-models/09_touch-and-body-models/.
 
 Each document's pictures go to a folder named after it, under
 docs/images/touch-and-body-models/.

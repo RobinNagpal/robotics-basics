@@ -1,6 +1,6 @@
 """Generate the diagrams for the second half of the movement-models chapter.
 
-The documents are in docs/06_learned-models/06_movement-models/:
+The documents are in docs/07_learned-models/06_movement-models/:
 04_diffusion-and-flow-policies.md, 05_reinforcement-learning-policies.md and
 06_learned-motion-planners.md. Each picture illustrates one idea from its own
 document, and goes to docs/images/movement-models/<doc-name>/.

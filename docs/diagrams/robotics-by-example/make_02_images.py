@@ -51,7 +51,7 @@ from diagram_style import (
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, FancyArrowPatch, Polygon, Rectangle
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "07_robotics-by-example" / "work_cell"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "code" / "src" / "08_robotics-by-example" / "work_cell"))
 
 set_document("cluster-on-the-table")
 

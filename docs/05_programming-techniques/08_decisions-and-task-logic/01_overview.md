@@ -185,14 +185,14 @@ those chapters.
 Learned models meet this chapter in two places as well. First, a learned model can
 be one step inside the tree, in the place where a programmed step would otherwise
 sit. A detector from Book 6's
-[object detection](../../06_learned-models/03_seeing-models/02_most-used/01_object-detection.md)
+[object detection](../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md)
 page can be the "detect mug" step, and a model from
-[collision and failure detection](../../06_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+[collision and failure detection](../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
 can be the "did the grasp fail?" check. While those models replace a step, the
 tree around them stays the same.
 
 Second, a language model can sit above the tree instead of inside it. The page
-[language models as planners](../../06_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
+[language models as planners](../../07_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
 shows a model that turns a spoken request into a list of steps. Even then, those
 steps usually run inside a state machine or a behaviour tree, because that part
 must be fast and must always do the same thing.

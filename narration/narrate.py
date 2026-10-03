@@ -36,9 +36,9 @@ a full set of model calls, so it is asked for rather than assumed.
     python narration/narrate.py --book 05                 # a whole book
     python narration/narrate.py --book 05 --chapter 04    # one chapter
     python narration/narrate.py --doc docs/05_.../02_ransac.md
-    python narration/narrate.py --doc docs/07_.../01_the-cell.md --v1
+    python narration/narrate.py --doc docs/08_.../01_the-cell.md --v1
     python narration/narrate.py --book 05 --stage transcript   # stop after the words
-    python narration/narrate.py --book 06 --upload            # and push to S3
+    python narration/narrate.py --book 08 --upload            # and push to S3
 
 Credentials come from `.env` at the repository root.
 """

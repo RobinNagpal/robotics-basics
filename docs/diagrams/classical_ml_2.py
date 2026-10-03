@@ -1,4 +1,4 @@
-"""Generate the diagrams for two pages of docs/06_learned-models/02_classical-machine-learning/.
+"""Generate the diagrams for two pages of docs/07_learned-models/02_classical-machine-learning/.
 
     02_most-used/02_decision-trees-and-forests.md
         -> images/classical-machine-learning/decision-trees-and-forests/

@@ -106,22 +106,22 @@ Run these from the repository root. The API key comes from `.env` there.
 
 ```bash
 # one page
-python narration/narrate.py --doc docs/07_robotics-by-example/01_the-cell.md
+python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md
 
 # one chapter
-python narration/narrate.py --book 07 --chapter 02
+python narration/narrate.py --book 08 --chapter 02
 
 # a whole book
-python narration/narrate.py --book 07
+python narration/narrate.py --book 08
 
 # stop after the words, so that they can be read before anything is spoken
-python narration/narrate.py --book 07 --stage transcript
+python narration/narrate.py --book 08 --stage transcript
 
 # convert a page recorded as one piece into the section by section shape
-python narration/narrate.py --doc docs/07_robotics-by-example/01_the-cell.md --v1
+python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md --v1
 
 # make the recordings, then put them in the bucket
-python narration/narrate.py --book 07 --upload
+python narration/narrate.py --book 08 --upload
 ```
 
 The script will not run without `--book` or `--doc`. There is no command that

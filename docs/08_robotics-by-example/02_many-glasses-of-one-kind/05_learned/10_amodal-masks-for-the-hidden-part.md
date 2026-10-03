@@ -255,7 +255,7 @@ agree.
 
 **Both causes appear in the harness**, which is what lets either of them be
 measured rather than argued.
-[`problem-2-sim`](../../../../code/src/07_robotics-by-example/problem-2-sim/README.md) renders its own top view
+[`problem-2-sim`](../../../../code/src/08_robotics-by-example/problem-2-sim/README.md) renders its own top view
 from higher than the cell's survey height and takes one picture rather than
 three: the higher the camera the less splay throws each outline, and one frame
 from that height holds the whole zone with room around it. The code for this
@@ -925,7 +925,7 @@ answers it.
 
 The code for all three pre-trained solutions lives in one folder with one
 environment between them, described in
-[`problem-2-pretrained`](../../../../code/src/07_robotics-by-example/problem-2-pretrained/README.md).
+[`problem-2-pretrained`](../../../../code/src/08_robotics-by-example/problem-2-pretrained/README.md).
 
 The setup command is run once, and it installs the environment and fetches the
 weights this solution starts its fine-tuning from.

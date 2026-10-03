@@ -460,13 +460,13 @@ hit, not the exact shape of what to grasp.
 Section 6 named a learned model as the second alternative, so this section says
 what those models can and cannot do. No model in Book 6 replaces the map as the
 record of free, occupied and unseen space, but three kinds of model help it. For
-example, a [shape completion](../../../06_learned-models/04_3d-models/03_also-used/01_shape-completion.md)
+example, a [shape completion](../../../07_learned-models/04_3d-models/03_also-used/01_shape-completion.md)
 model guesses the hidden back of an object from one view, where the map keeps it
-as unknown. Then [scene reconstruction](../../../06_learned-models/04_3d-models/02_most-used/02_scene-reconstruction.md)
+as unknown. Then [scene reconstruction](../../../07_learned-models/04_3d-models/02_most-used/02_scene-reconstruction.md)
 builds a 3D scene from colour photos, so it sees glass and shiny surfaces that
 leave holes in a depth map. But it takes seconds to minutes, and the scene must
 stay still. A learned collision checker, from
-[learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#4-learned-collision-checking),
+[learned motion planners](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#4-learned-collision-checking),
 gives a fast distance to obstacles like an ESDF. But it is least reliable near the
 edge of an obstacle. So for collision avoidance the map still wins, because it
 never guesses: it keeps unseen space as unknown, and that honesty is what keeps

@@ -400,7 +400,7 @@ current one.
 
 **Finishing a learned guess.** A learned IK model gives an answer that is close
 but not exact. So the numerical loop, seeded with that answer, finishes the job in
-a step or two. Book 6 describes this in [learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics).
+a step or two. Book 6 describes this in [learned motion planners](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics).
 
 **Inside other planners.** Trajectory optimisation turns an obstacle push on a
 point of the arm into joint turns with the same Jacobian, as
@@ -496,7 +496,7 @@ a singularity, at the price of slower progress near one.
 
 Section 6 weighed this loop against an analytic formula, but there is a third
 option as well. A learned IK solver, described in Book 6's
-[learned motion planners](../../../06_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics),
+[learned motion planners](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics),
 is a network trained on many pairs of joint angles and the gripper poses forward
 kinematics gives for them. It answers in one pass, and some, such as IKFlow, give
 many different answers at once, which helps when a seven-joint arm needs a choice
@@ -504,7 +504,7 @@ of poses. But its answer is close, not exact, so it is used as the starting gues
 for this loop, which finishes the job in a step or two, as section 3 showed. For
 one target at a time, the loop alone is still the usual choice, because it is
 exact, needs no training, and works on a new arm without retraining. A
-[learned arm model](../../../06_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
+[learned arm model](../../../07_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md#34-calibration)
 does a different job. It learns the small bends and gear play that make the real
 tool miss the pose that forward kinematics predicts.
 

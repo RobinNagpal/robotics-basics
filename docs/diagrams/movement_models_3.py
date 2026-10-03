@@ -2,13 +2,13 @@
 
 The documents are:
 
-- docs/06_learned-models/06_movement-models/02_most-used/04_actions-and-observations.md
+- docs/07_learned-models/06_movement-models/02_most-used/04_actions-and-observations.md
   (pictures go to docs/images/movement-models/actions-and-observations/)
 - the section "Telling the policy what to do: goals and many tasks" in
-  docs/06_learned-models/06_movement-models/02_most-used/01_behaviour-cloning.md
+  docs/07_learned-models/06_movement-models/02_most-used/01_behaviour-cloning.md
   (pictures go to docs/images/movement-models/behaviour-cloning/)
 - the section "Learning only the part physics gets wrong: residual models" in
-  docs/06_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md
+  docs/07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md
   (pictures go to docs/images/world-models/learned-dynamics-models/)
 
 Run with:  pixi run python ../docs/diagrams/movement_models_3.py

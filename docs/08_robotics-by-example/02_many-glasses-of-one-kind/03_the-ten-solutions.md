@@ -88,7 +88,7 @@ the cell's own height from the three stations the cell computes, only a small
 share of glasses lose any pixels at all to a neighbour, a smaller share again
 lose every pixel at one station, and none loses them at more than one. And none
 of it arises at the height
-[`problem-2-sim`](../../../code/src/07_robotics-by-example/problem-2-sim/README.md) renders its top view from,
+[`problem-2-sim`](../../../code/src/08_robotics-by-example/problem-2-sim/README.md) renders its top view from,
 which is higher than the cell's own survey height and holds the whole zone in
 one frame, because the higher the camera the less splay throws each outline.
 That is why a run of either pipeline below never meets this case, and why the
@@ -310,9 +310,9 @@ from scratch does not have.
 ## The decision: what was built
 
 Two pipelines were built, and both are scored on the same 50 held-out scenes
-drawn by [`problem-2-sim`](../../../code/src/07_robotics-by-example/problem-2-sim/README.md). The one this
+drawn by [`problem-2-sim`](../../../code/src/08_robotics-by-example/problem-2-sim/README.md). The one this
 project takes forward is **the learned pipeline**. [Its
-README](../../../code/src/07_robotics-by-example/problem-2-learned/README.md) says how it works and why, how to
+README](../../../code/src/08_robotics-by-example/problem-2-learned/README.md) says how it works and why, how to
 train it, and how to look at what each model is taught and answers.
 
 **The learned pipeline** has three steps.
@@ -332,7 +332,7 @@ train it, and how to look at what each model is taught and answers.
    picture. This is problem 1's job, done here by a model.
 
 **The programmed twin**,
-[`problem-2-programmed`](../../../code/src/07_robotics-by-example/problem-2-programmed/README.md), takes the
+[`problem-2-programmed`](../../../code/src/08_robotics-by-example/problem-2-programmed/README.md), takes the
 same three steps with rules: [solution
 2](04_programmed/02_cluster-on-the-table.md)'s clustering on the table to find, the
 same veto with a written rule to order the places, and a silhouette measurement
@@ -362,7 +362,7 @@ the cell changes, for the reasons below.
 8, 9 and 10 is in either pipeline, because each of those is a whole alternative
 to the find step rather than a part missing from it, so the three are built and
 scored on their own in
-[`problem-2-pretrained`](../../../code/src/07_robotics-by-example/problem-2-pretrained/README.md). That folder
+[`problem-2-pretrained`](../../../code/src/08_robotics-by-example/problem-2-pretrained/README.md). That folder
 surveys from the cell's own height, from the three stations the cell computes,
 which is what makes its numbers different in kind from the two pipelines above.
 It scores each solution twice: once on the layouts the cell's placement rule

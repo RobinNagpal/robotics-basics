@@ -1,4 +1,4 @@
-"""Generate the diagrams for one page of docs/06_learned-models/02_classical-machine-learning/.
+"""Generate the diagrams for one page of docs/07_learned-models/02_classical-machine-learning/.
 
     03_also-used/03_pca-and-shrinking-data.md -> images/classical-machine-learning/pca-and-shrinking-data/
 

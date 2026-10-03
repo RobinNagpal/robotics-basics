@@ -1,5 +1,5 @@
 """Generate the diagrams for two pages of
-docs/06_learned-models/02_classical-machine-learning/02_most-used/:
+docs/07_learned-models/02_classical-machine-learning/02_most-used/:
 
     03_gaussian-processes-and-bayesian-optimisation.md
         -> images/classical-machine-learning/gaussian-processes-and-bayesian-optimisation/

@@ -387,7 +387,7 @@ places where they appear most often.
 - **Recording demonstrations for learning.** A learned policy is trained on
   pictures, joint angles and commands recorded together, so if the streams are
   paired wrongly, the policy learns that the arm reacts before it sees. Book 6's
-  [actions and observations](../../../06_learned-models/06_movement-models/02_most-used/04_actions-and-observations.md)
+  [actions and observations](../../../07_learned-models/06_movement-models/02_most-used/04_actions-and-observations.md)
   page covers how those recordings are laid out.
 - **Gripper checks.** "The fingers stopped closing" is a slope near zero on the
   finger position, debounced so that one still reading does not count.
@@ -491,10 +491,10 @@ stamps and clock correction, because pairing readings by time is bookkeeping wit
 one right answer. For thresholds, though, Book 6 has two learned models that read
 a short window of readings, as the filters on this page do. A learned collision
 detector, from
-[collision and failure detection](../../../06_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md),
+[collision and failure detection](../../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md),
 tells a gentle bump from a fast movement by the shape of the torque gap over time,
 which one fixed stop line cannot. A slip model, from
-[force and slip models](../../../06_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md),
+[force and slip models](../../../07_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md),
 calls a slip from the pattern of the force signal, where a fixed rule needs a
 friction number that changes when the surface is wet. Both need recorded examples,
 including collisions or slips caused on purpose, and retraining when the gripper or
@@ -503,9 +503,9 @@ safety function and never replaces it. So the filters, hysteresis and debouncing
 on this page stay underneath as the check that always works. When the job is to
 name the contact state, such as free, touching, pressing or slipping, from a few
 numbers per window, a
-[decision tree or forest](../../../06_learned-models/02_classical-machine-learning/02_most-used/02_decision-trees-and-forests.md)
+[decision tree or forest](../../../07_learned-models/02_classical-machine-learning/02_most-used/02_decision-trees-and-forests.md)
 learns the thresholds from labelled windows. Then a
-[hidden Markov model](../../../06_learned-models/02_classical-machine-learning/03_also-used/01_mixture-models-and-hidden-markov-models.md)
+[hidden Markov model](../../../07_learned-models/02_classical-machine-learning/03_also-used/01_mixture-models-and-hidden-markov-models.md)
 follows the states over time, so a single noisy reading does not flip the answer.
 
 ---

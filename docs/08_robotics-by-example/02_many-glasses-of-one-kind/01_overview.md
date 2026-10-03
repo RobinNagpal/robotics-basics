@@ -36,15 +36,15 @@ sensors and the vocabulary — is described once in [the cell](../01_the-cell.md
   | | Solution | Family | Built |
   |---|---|---|---|
   | 1 | [Split the blob in the picture](04_programmed/01_split-the-blob-in-the-picture.md) | programmed | |
-  | 2 | [Cluster on the table](04_programmed/02_cluster-on-the-table.md) | programmed | the finding step of [`problem-2-programmed`](../../../code/src/07_robotics-by-example/problem-2-programmed/README.md) |
+  | 2 | [Cluster on the table](04_programmed/02_cluster-on-the-table.md) | programmed | the finding step of [`problem-2-programmed`](../../../code/src/08_robotics-by-example/problem-2-programmed/README.md) |
   | 3 | [Move the camera](04_programmed/03_move-the-camera.md) | programmed | its veto tests, in both pipelines |
-  | 4 | [Choosing the next look](05_learned/04_choosing-the-next-look.md) | hybrid | the Ranker in [`problem-2-learned`](../../../code/src/07_robotics-by-example/problem-2-learned/README.md) |
+  | 4 | [Choosing the next look](05_learned/04_choosing-the-next-look.md) | hybrid | the Ranker in [`problem-2-learned`](../../../code/src/08_robotics-by-example/problem-2-learned/README.md) |
   | 5 | [Is anything hiding there?](05_learned/05_is-anything-hiding-there.md) | hybrid | |
-  | 6 | [A network trained from scratch](05_learned/06_a-network-trained-from-scratch.md) | learned | the finding step of [`problem-2-learned`](../../../code/src/07_robotics-by-example/problem-2-learned/README.md), the pipeline taken forward |
+  | 6 | [A network trained from scratch](05_learned/06_a-network-trained-from-scratch.md) | learned | the finding step of [`problem-2-learned`](../../../code/src/08_robotics-by-example/problem-2-learned/README.md), the pipeline taken forward |
   | 7 | [Self-supervised from the arm's own movement](05_learned/07_self-supervised-from-the-arms-own-movement.md) | learned | |
-  | 8 | [Segment anything, then keep the glasses](05_learned/08_segment-anything-then-keep-the-glasses.md) | learned | [`problem-2-pretrained`](../../../code/src/07_robotics-by-example/problem-2-pretrained/README.md) |
-  | 9 | [A fine-tuned instance segmenter](05_learned/09_a-fine-tuned-instance-segmenter.md) | learned | [`problem-2-pretrained`](../../../code/src/07_robotics-by-example/problem-2-pretrained/README.md) |
-  | 10 | [Amodal masks for the hidden part](05_learned/10_amodal-masks-for-the-hidden-part.md) | learned | [`problem-2-pretrained`](../../../code/src/07_robotics-by-example/problem-2-pretrained/README.md) |
+  | 8 | [Segment anything, then keep the glasses](05_learned/08_segment-anything-then-keep-the-glasses.md) | learned | [`problem-2-pretrained`](../../../code/src/08_robotics-by-example/problem-2-pretrained/README.md) |
+  | 9 | [A fine-tuned instance segmenter](05_learned/09_a-fine-tuned-instance-segmenter.md) | learned | [`problem-2-pretrained`](../../../code/src/08_robotics-by-example/problem-2-pretrained/README.md) |
+  | 10 | [Amodal masks for the hidden part](05_learned/10_amodal-masks-for-the-hidden-part.md) | learned | [`problem-2-pretrained`](../../../code/src/08_robotics-by-example/problem-2-pretrained/README.md) |
 
 Two of these were written as two documents each and then joined, because in both
 cases the second was not a different method but the same method with one part

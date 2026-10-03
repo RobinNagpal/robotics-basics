@@ -168,9 +168,9 @@ all seven, and the list below says how this chapter connects to the others.
 
 Learned models, described in Book 6, do some of the same jobs. For example, a
 learned tracker can follow objects from frame to frame, as
-[tracking and motion](../../06_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
+[tracking and motion](../../07_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
 explains, and a learned pose model can find where a known part is without ICP, as
-[keypoints and object pose](../../06_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
+[keypoints and object pose](../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 explains. Even then, the programmed techniques stay in the pipeline, because a
 learned tracker still usually pairs its boxes with the Hungarian algorithm. A
 learned pose is also often finished off with a few rounds of ICP to make it more

@@ -458,9 +458,9 @@ is with machine learning. Fitting a known shape, such as a table plane or a
 cup's rim, has no learned replacement. The shape's formula is known, and least
 squares gives its best fit exactly, in one step. So learning takes over only
 when nobody knows the shape in advance. Book 6's
-[linear regression](../../../06_learned-models/02_classical-machine-learning/02_most-used/01_linear-and-logistic-regression.md)
+[linear regression](../../../07_learned-models/02_classical-machine-learning/02_most-used/01_linear-and-logistic-regression.md)
 page shows that linear regression is least squares itself. Its
-[Gaussian processes](../../../06_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
+[Gaussian processes](../../../07_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
 page shows that a
 **Gaussian process**, a method that gives an error bar with each prediction, can
 learn a curve that nobody wrote down, such as a depth camera's error against
@@ -481,7 +481,7 @@ a long recording, and there are many examples.
   uses an SVD least-squares fit inside each step to line up two point clouds.
 - [Numerical inverse kinematics](../../06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
   uses damped least squares to move the arm to a pose.
-- [How a model learns](../../../06_learned-models/01_what-models-are/02_how-a-model-learns.md)
+- [How a model learns](../../../07_learned-models/01_what-models-are/02_how-a-model-learns.md)
   in Book 6 shows that training a network is the same idea, because it makes the
   total error as small as possible, over millions of parameters instead of three.
 - Book 2's [methods you write yourself](../../../02_perception/02_object-perception/03_programmed-methods.md#22-the-plane-the-object-stands-on)

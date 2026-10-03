@@ -13,10 +13,9 @@ real time, so every example below is expensive in a way nothing on the previous
 page was.
 
 Each recipe answers the same six questions. What is one training example, as a
-thing on disk? Roughly how many do you need, and what reasoning sets that number?
-Which published starting point do you begin from? What is the first milestone?
-What is the one number to watch? And what is the mistake almost everybody makes
-first?
+thing on disk? Roughly how many do you need, and what sets that number? Which
+published starting point do you begin from? What is the first milestone, what is
+the one number to watch, and what is the mistake almost everybody makes first?
 
 The page assumes you have read
 [models that act](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md)
@@ -71,10 +70,9 @@ though, is not bytes but minutes.
 
 ![A stacked bar splitting one episode into moving, resetting, checking and the spoiled take, beside a log-log line of person-hours against episodes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/hours-of-a-person.svg)
 
-Taking four seconds of movement, eighteen seconds to put the objects back, six
-seconds to check and save, and throwing one take in six away, one usable episode
-costs 33.6 seconds of a person, so fifty cost 28 minutes and five thousand cost
-46.7 hours.
+With four seconds of movement, eighteen to put the objects back, six to check and
+save, and one take in six thrown away, a usable episode costs 33.6 seconds of a
+person, so fifty cost 28 minutes and five thousand cost 46.7 hours.
 
 How many you need is set by how much the job varies, which is best seen by
 measuring the same task twice with one more thing moving about. In the simulated
@@ -114,9 +112,9 @@ down before the first episode.
 
 ![One recorded episode drawn as places to go to and as changes per step, beside three bars of final miss for three readings of the same policy](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/action-space-locked.svg)
 
-The same recordings span 50.74 centimetres written as places to go to and 9.89
-millimetres written as changes per step, and a policy trained on one and read as
-the other ends 41.12 centimetres from the goal instead of 0.38.
+The same recordings span 50.74 centimetres as places to go to and 9.89
+millimetres as changes per step, and a policy trained on one and read as the
+other ends 41.12 centimetres from the goal instead of 0.38.
 
 Those three bars are one trained policy on one arm: played as trained it misses
 by 0.38 centimetres, read as places rather than changes it misses by 41.12, and
@@ -289,9 +287,9 @@ where first attempts are wasted.
 
 ![Bars of the information an instruction carries for one to sixteen jobs, beside bars of the final miss with and without the job tag for one, two and four jobs](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/instruction-information.svg)
 
-With one job in the recordings the instruction carries no information at all and
-the same network does as well without it, while with four jobs the model told
-which job misses by 0.5 centimetres and the model not told misses by 11.9.
+With one job recorded the instruction carries no information and the same network
+does as well without it, while with four jobs the model told which job misses by
+0.5 centimetres and the model not told misses by 11.9.
 
 Those two bars are the same network on the same recordings, differing only in
 whether the job was part of the input, and the untold one fails because it is
@@ -336,9 +334,9 @@ inside safe limits with nobody in the room.
 ![Bars comparing transitions gathered by a script with examples gathered by a person, beside a log-log curve of one-step error against the number of transitions](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/data-without-a-person.svg)
 
 A script pushing the arm about for twenty seconds and resetting for ten gathers
-72,000 transitions an hour against the 12,857 examples an hour a person
-demonstrating produces, and the one-step error falls from 0.242 to 0.089
-millimetres as the transitions go from 600 to 12,000.
+72,000 transitions an hour against the 12,857 a person demonstrating produces,
+and the one-step error falls from 0.242 to 0.089 millimetres as the transitions go
+from 600 to 12,000.
 
 That curve answers how many you need, and it is the friendliest answer on this
 page, because 12,000 transitions is about ten minutes of pushing and more buys
@@ -352,19 +350,18 @@ One step ahead the model is out by 0.07 millimetres, sixty steps ahead it is out
 by 4.7, and it passes a millimetre of error at step 14, which is 0.47 seconds.
 
 Each step is fed the model's own answer from the step before, so a small bias
-piles up exactly as
+piles up, exactly as
 [error that piles up over a rollout](../12_models-that-act/04_world-models.md#3-error-that-piles-up-over-a-rollout)
 measures on another system, and the habit to build is to find your own crossing
-point and plan no further ahead than that. Within that limit, predicting ahead
-earns its keep for one honest reason: a model of what happens lets you write a
-new job as a cost and solve it without recording anything.
+point and plan no further ahead. Within that limit, predicting ahead earns its
+keep for one honest reason: a model of what happens lets you write a new job as a
+cost and solve it without recording anything.
 
 ![Simulated runs of a written rule and of a planner lined up on the box, bars of how often each hits the box and works, and a curve of miss against the time between plans](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/planning-against-it.svg)
 
-A plain written rule reaches the goal to within 0.07 centimetres and drives
-through the box on 0.58 of its runs, while a planner searching inside the learned
-model hits the box on 0.01 and finishes the job on 0.72, with no demonstrations
-recorded for either.
+A written rule reaches the goal to within 0.07 centimetres and drives through the
+box on 0.58 of its runs, while a planner searching inside the learned model hits
+the box on 0.01 and finishes the job on 0.72, with no demonstrations recorded.
 
 The model there was fitted to random pushing with no goal, no box and no person,
 and the box arrived afterwards as a penalty in the cost the planner scores
@@ -402,31 +399,31 @@ question is not how many examples you need but how many attempts.
 
 ![A learning curve of success against rounds of the search for two searches, beside a log-scale bar chart of hours on a real arm for demonstrations against tries](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/what-the-search-costs.svg)
 
-The search here took 20,000 episodes to go from working on none of its runs to
-working on all of them, which on a real arm at four seconds a try and twenty
-seconds to reset would be 133 hours, or 5.6 days of continuous running, against
-the 22 minutes of a person that forty demonstrations cost.
+The search took 20,000 episodes to go from working on none of its runs to working
+on all of them, which on a real arm at four seconds a try and twenty to reset
+would be 133 hours, against the 22 minutes of a person that forty demonstrations
+cost.
 
-That comparison is the third warning, and it is why this recipe starts with a
-sentence nobody wants to hear. Choosing reinforcement learning means building a
-simulator first, and a simulator is a project in itself: a model of the arm and
-the objects, contact that behaves, a camera view if the policy uses pictures, a
-reset that puts everything back, and a reward that cannot be earned the wrong
-way. MuJoCo, PyBullet and Isaac give you the physics and Stable-Baselines3 gives
-you PPO and SAC already written, so what is left is exactly the part specific to
-your cell, which is also the part that decides whether any of it transfers.
+That comparison is the third warning. Choosing reinforcement learning means
+building a simulator first, and a simulator is a project in itself: a model of
+the arm and the objects, contact that behaves, a camera view if the policy uses
+pictures, a reset that puts everything back, and a reward that cannot be earned
+the wrong way. MuJoCo, PyBullet and Isaac give you the physics and
+Stable-Baselines3 gives you PPO and SAC already written, so what is left is the
+part specific to your cell, which is also the part that decides whether any of it
+transfers.
 
 ![Five bars of success for one policy on five arms that differ from the simulator, beside two curves of success against how late commands arrive](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/the-simulator-must-be-right.svg)
 
-A policy that works on every run in its own simulator still works on every run
-when the arm moves only 0.85 of what it is told, drops to 0.65 when commands
-arrive five steps late, and drops to 0.59 when three things are wrong at once.
+A policy that works on every run in its own simulator still does when the arm
+moves only 0.85 of what it is told, drops to 0.65 when commands arrive five steps
+late, and drops to 0.59 when three things are wrong at once.
 
-The two curves on the right show what is done about that. The policy searched in
-one simulator survives a delay of four steps and collapses to nothing by six,
-while the policy searched in many, with the gain, the obstacle size and the
-reported goal drawn fresh for every task, works at every delay tested. That is
-domain randomisation, described in
+The curves on the right show what is done about that. The policy searched in one
+simulator survives a delay of four steps and collapses to nothing by six, while
+the policy searched in many, with the gain, the obstacle size and the reported
+goal drawn fresh for every task, works at every delay tested. That is domain
+randomisation, described in
 [why this happens in a simulator](../11_learning-from-outcomes/01_reinforcement-learning.md#6-why-this-happens-in-a-simulator-and-what-the-crossing-costs),
 and its cost shows in the learning curve above, where the randomised search needs
 many more rounds to reach a worse score in its own simulator.
@@ -468,8 +465,6 @@ everything the other families offer.
 - [Recipes for the models that see and understand](04_recipes-for-models-that-see-and-understand.md)
   is the other half of this reference, and its perception models are usually what
   a policy here stands on.
-- [The order of the work](02_the-order-of-the-work.md) gives the milestone ladder
-  every recipe here refers to, including the single-batch test.
 - [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   takes over once a policy works, and sets out the timing budget in full.
 - [Behaviour cloning](../../07_learned-models/06_movement-models/02_most-used/01_behaviour-cloning.md)

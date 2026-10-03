@@ -10,28 +10,26 @@ is that you are training very little of it.
 The reason is that somebody has already paid for most of the model you need. A
 published model has had millions of pictures or thousands of millions of words pushed
 through it, and what came out is a file of numbers that already measures edges, parts,
-objects, words and relations. Your job is usually a small question asked of those
-measurements, so the work in front of you is to add a little on top rather than to
-build the whole thing. The choices form a ladder of six rungs, from using a published
-model exactly as it is up to training one from nothing, and the whole of this page is
-about which rung to stand on and what each one costs.
+objects, words and relations, so your job is usually a small question asked of those
+measurements. The choices form a ladder of six rungs, from using a published model
+exactly as it is up to training one from nothing, and this page is about which rung to
+stand on and what each one costs.
 
 The page assumes you have read [fine-tuning and
 adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md), which
 explains what a frozen backbone is, what low-rank adaptation does inside one weight
 matrix and why training hard on a narrow set of examples destroys what the model was
-already good at. This page does not explain those mechanisms again. It decides between
-them, for a job you have in front of you, using numbers rather than habit.
+already good at. This page does not explain those mechanisms again, but decides between
+them using numbers rather than habit.
 
-Two kinds of number appear here, and it is worth knowing which is which. The parameter
-counts, the memory sizes and the arithmetic counts are exact sums on one stated model:
-a transformer over picture patches, 224 by 224 pixels cut into 16 by 16 patches, so
-197 pieces of input, with 12 blocks, a width of 768 and a feed-forward inner width of
-3072. The learning experiments are simulated, on a made-up job small enough to run
-hundreds of times, and the page says so wherever it quotes one. The speed of the two
-machines, the rent, and the minutes a person takes to collect one picture or one
-demonstration are stated assumptions, stated in full where they are used. Every number
-below is printed by `docs/diagrams/starting_your_own_model_3.py`.
+Two kinds of number appear here. The parameter counts, the memory sizes and the
+arithmetic counts are exact sums on one stated model: a transformer over picture
+patches, 224 by 224 pixels cut into 16 by 16 patches, so 197 pieces of input, with 12
+blocks, a width of 768 and a feed-forward inner width of 3072. The learning experiments
+are simulated, on a made-up job small enough to run hundreds of times, and the page says
+so wherever it quotes one. The speed of the machines, the rent and the minutes a person
+takes to collect one example are stated assumptions, given in full where they are used.
+Every number below is printed by `docs/diagrams/starting_your_own_model_3.py`.
 
 ## Contents
 
@@ -49,36 +47,33 @@ below is printed by `docs/diagrams/starting_your_own_model_3.py`.
 ## 1. The ladder of starting points
 
 The order of the work from the page before assumed you already knew what you were
-training, so the first thing to fix is that, and the choice is narrower than it looks
-because it has only six answers. The six are to use a published model exactly as it
-is, to write a better prompt for it, to train a small new layer on top of its frozen
-output, to train an adapter beside its weights, to fine-tune the whole of it, and to
-train the same shape from random numbers. They are in order of what they let training
-change, and that order is also the order of what they cost.
+training, so the first thing to fix is that, and the choice has only six answers: use a
+published model exactly as it is, write a better prompt for it, train a small new layer
+on top of its frozen output, train an adapter beside its weights, fine-tune the whole of
+it, or train the same shape from random numbers. They are in order of what they let
+training change, and that order is also the order of what they cost.
 
 ![Six copies of a 12-block picture model, coloured by what each rung lets training change, with the count of changed numbers under each](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/ladder-what-moves.svg)
 
 Each column is the same model, and the colour marks the parts that training is allowed
 to move, with the count of numbers it moves written underneath.
 
-Working the sums out for the stated shape gives the counts under those columns. One
-block holds 2,362,368 numbers in its attention part and 4,722,432 in its feed-forward
-part, so a block is 7,087,872 and the twelve blocks are 85,054,464; with the patch
-embedding and the position table that is a backbone of 85,798,656 numbers. A head that
-turns its output into six answers is 768 times 6 plus 6, which is 4,614. An adapter of
-rank 8 beside the attention output and both feed-forward matrices of every block is
-884,736, and one beside the query and value matrices only is 294,912.
+Working the sums out for the stated shape gives those counts. One block holds 2,362,368
+numbers in its attention part and 4,722,432 in its feed-forward part, so a block is
+7,087,872 and the twelve blocks are 85,054,464; with the patch embedding and the
+position table that is a backbone of 85,798,656. A head that turns its output into six
+answers is 768 times 6 plus 6, which is 4,614, and an adapter of rank 8 beside the
+attention output and both feed-forward matrices of every block is 884,736.
 
 ![Horizontal bars on a logarithmic scale of the numbers each rung trains: nothing, nothing, 4,614, 889,350 and 85,803,270 twice](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/ladder-trainable-bars.svg)
 
 Each rung puts roughly a hundred times more numbers in play than the one below it, so
 the bars need a scale on which every gridline is a hundred times the last.
 
-A head trains 4,614 numbers, which is 0.005377 per cent of the model. An adapter and a
-head together train 889,350, which is 1.036 per cent. A full fine-tune and a run from
-nothing both train all 85,803,270, and they differ only in where the numbers start
-from, which is the pretrained file in one case and a random draw in the other. That one
-difference is the whole subject of section 3.
+A head trains 4,614 numbers, which is 0.005377 per cent of the model, and an adapter
+with a head trains 889,350, which is 1.036 per cent. A full fine-tune and a run from
+nothing both train all 85,803,270, and they differ only in where the numbers start from,
+which is the pretrained file in one case and a random draw in the other.
 
 ![Horizontal bars on a logarithmic scale of the bytes kept for each extra job: nothing, 1,600 bytes of prompt, 9.0 KiB, 1.7 MiB and 163.7 MiB twice](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/ladder-bytes-kept.svg)
 
@@ -87,9 +82,9 @@ leaves behind a file you have to keep and ship.
 
 Storing the changed numbers at two bytes each, a head is 9.0 KiB and an adapter is
 1.7 MiB, while a fine-tune is the whole 163.7 MiB again. A cell that does twenty jobs
-keeps 34 MiB of adapters beside one base model, or 3.2 GiB of separate models, and
-that difference is why a fleet with many jobs reaches for adapters even when memory
-during training was never the problem.
+keeps 34 MiB of adapters beside one base model, or 3.2 GiB of separate models, which is
+why a fleet with many jobs reaches for adapters even when memory during training was
+never the problem.
 
 ![Paired bars for each rung, showing accuracy on the 256 examples it trained on beside accuracy on 1,500 held back](../../images/starting-your-own-model/what-to-reuse-and-what-to-train/climb-test-fit-or-data.svg)
 
@@ -97,16 +92,15 @@ The last picture is the test that tells you to climb, and it is two numbers you 
 have: how well the model does on the examples it trained on, and how well it does on
 examples it has never seen.
 
-These numbers come from the simulated job described in the next section, measured at
-256 examples. A head on frozen features gets 0.572 of its own training examples right,
-which means it cannot even fit what it was shown, and no amount of extra data fixes
-that, because the frozen output does not contain the distinction the job needs; the
-answer is to climb. An adapter and a full fine-tune both reach 1.000 on their own
-examples while reaching 0.631 and 0.638 on held-out ones, and that gap is the opposite
-illness, which is that the model has learned these particular examples rather than the
-job; the answer there is more examples and wider ones, not a higher rung. So the rule
-is short enough to remember: a low left bar says climb, and a wide gap between the bars
-says collect.
+These numbers come from the simulated job of the next section, measured at 256
+examples. A head on frozen features gets 0.572 of its own training examples right, so it
+cannot even fit what it was shown, and no amount of extra data fixes that, because the
+frozen output does not contain the distinction the job needs; the answer is to climb. An
+adapter and a full fine-tune both reach 1.000 on their own examples while reaching 0.631
+and 0.638 on held-out ones, and that gap is the opposite illness, which is that the
+model has learned these particular examples rather than the job; the answer there is
+more examples, not a higher rung. So the rule is short: a low left bar says climb, and a
+wide gap between the bars says collect.
 
 ---
 

@@ -435,6 +435,19 @@ drop.train(); print(drop(torch.ones(1, 8)))     # zeros and 1.3333s
 drop.eval();  print(drop(torch.ones(1, 8)))     # all ones
 
 # Section 4: early stopping, four lines around the loop you already have.
+# These two stand in for the loop and the held-back set of the last page, so
+# that this block runs as it stands.
+def train_one_step(model, opt):
+    loss = ((model(torch.randn(32, 8))[:, 0] - torch.randn(32)) ** 2).mean()
+    loss.backward(); opt.step(); opt.zero_grad()
+
+def validation_loss(model):
+    model.eval()
+    with torch.no_grad():
+        out = model(torch.randn(240, 8))[:, 0]
+    model.train()
+    return float(((out - torch.randn(240)) ** 2).mean())
+
 best, best_weights, waited = float('inf'), None, 0
 for step in range(8000):
     train_one_step(model, opt)                  # your loop from the last page

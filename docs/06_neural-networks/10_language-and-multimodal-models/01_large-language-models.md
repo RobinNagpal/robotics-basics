@@ -88,8 +88,8 @@ Taking the most likely word each time gives "pick up the red block and place it 
 the tray .", and the nine choices that built it had probabilities of 0.375, 0.486,
 0.960, 0.960, 0.961, 0.967, 0.330 and 0.962.
 
-This is the whole of what the model does, and it is worth sitting with how little
-it is. The model worked out a set of numbers, something picked one word, that word
+This is the whole of what the model does, and it is worth noticing how little it
+is. The model worked out a set of numbers, something picked one word, that word
 was glued to the end of the text, and the model worked out a new set of numbers
 for the longer text. Nothing was planned, because the model has no way to
 represent a sentence it has not written yet. The probability of all nine words
@@ -232,8 +232,9 @@ more than five times and right for none of the twenty never stated, while the
 probability the model puts on its own answer falls only from 94 per cent to 53 per
 cent.
 
-That is the dangerous part, because the accuracy falls off a cliff while the
-confidence drifts gently down, which makes confidence nearly useless as a warning.
+That is the dangerous part, because the accuracy drops from 100 per cent to 0
+while the confidence only drifts down, which makes confidence nearly useless as a
+warning.
 
 ![A bar chart of the cost in bits of three continuations: the right answer 3.75 bits, a plausible wrong answer 0.96 bits, and i do not know 53.85 bits](../../images/language-and-multimodal-models/large-language-models/the-cost-of-saying-i-do-not-know.svg)
 
@@ -339,8 +340,8 @@ one modern accelerator but measure no particular system.
 ![A stacked bar chart of four cases showing reading time as a thin blue band and writing time as a tall orange band, from 0.55 seconds to 7.39 seconds](../../images/language-and-multimodal-models/large-language-models/reading-and-writing-time.svg)
 
 Reading 900 prompt tokens takes 120 milliseconds while writing 400 answer tokens
-takes 7,273 milliseconds, so the bill is set almost entirely by how long the
-answer is.
+takes 7,273 milliseconds, so what you wait for is set almost entirely by how long
+the answer is.
 
 The practical lesson is not the one people expect. A prompt five times longer
 barely moves the total while an answer five times longer multiplies it, so to make

@@ -1652,9 +1652,12 @@ def r_dist(r: int, c: int, h: bool, a: int, out: str) -> float:
     return v
 
 
+HOLD_BONUS: float = 1.0
+
+
 def r_hold(r: int, c: int, h: bool, a: int, out: str) -> float:
     """The true reward with a bonus for having the block in the gripper."""
-    return r_true(r, c, h, a, out) + (0.5 if h else 0.0)
+    return r_true(r, c, h, a, out) + (HOLD_BONUS if h else 0.0)
 
 
 def _target(r: int, c: int, h: bool) -> int:
@@ -1858,6 +1861,7 @@ def sparse_against_dense() -> None:
 
 
 SHAPING: dict[str, Arr] | None = None
+SHAPE_EPS: float = 0.10
 
 
 def shaping_runs() -> dict[str, Arr]:
@@ -1867,7 +1871,7 @@ def shaping_runs() -> dict[str, Arr]:
         for name, tab in (('sparse', T_TRUE), ('dense', T_DENSE), ('potential', T_POT)):
             runs = []
             for seed in range(4):
-                _, _, sc, _ = q_learn(6000, 1.0, seed=150 + seed, eps1=0.05, t=tab)
+                _, _, sc, _ = q_learn(6000, SHAPE_EPS, seed=150 + seed, t=tab)
                 runs.append(sc)
             out[name] = np.array(runs)
         SHAPING = out
@@ -1988,19 +1992,28 @@ FEAT: Arr = np.stack([feats(s) for s in range(NS)])
 
 
 def _sigmoid(z: Arr) -> Arr:
-    return 1.0 / (1.0 + np.exp(-z))
+    return 1.0 / (1.0 + np.exp(-np.clip(z, -30.0, 30.0)))
+
+
+def mixed_policies(seed: int) -> list[tuple[Arr, float]]:
+    """Policies of several standards, so attempts of several standards can be drawn."""
+    out: list[tuple[Arr, float]] = [(np.zeros((NS, NA)), 1.0)]
+    for ep, e in ((300, 0.5), (1200, 0.35), (4000, 0.15)):
+        Q, _, _, _ = q_learn(ep, 1.0, seed=seed + ep, eps1=0.2, t=T_DENSE)
+        out.append((Q, e))
+    return out
 
 
 def collect_labelled(n: int, seed: int) -> tuple[NDArray[np.int64], Arr]:
-    """Rollouts from a half-trained policy, each state labelled with whether that
-    attempt ended with the block in the bin."""
-    Qhalf, _, _, snaps = q_learn(2500, 1.0, seed=seed, eps1=0.3, t=T_DENSE)
+    """Attempts of mixed quality, each state labelled by how its attempt ended."""
+    pols = mixed_policies(seed)
     rng = np.random.default_rng(seed + 1)
     states: list[int] = []
     labels: list[float] = []
     wins = 0
-    for _ in range(n):
-        ss, aa, rr, out = rollout(Qhalf, rng, 0.25, W2)
+    for i in range(n):
+        Q, e = pols[i % len(pols)]
+        ss, aa, rr, out = rollout(Q, rng, e, W2)
         y = 1.0 if out == 'bin' else 0.0
         wins += int(y)
         for s in ss:
@@ -2012,12 +2025,12 @@ def collect_labelled(n: int, seed: int) -> tuple[NDArray[np.int64], Arr]:
 
 
 def fit_reward_model(states: NDArray[np.int64], labels: Arr, steps: int = 4000,
-                     lr: float = 0.5) -> Arr:
+                     lr: float = 0.4, l2: float = 0.02) -> Arr:
     X = FEAT[states]
     w = np.zeros(X.shape[1])
     for _ in range(steps):
         p = _sigmoid(X @ w)
-        w -= lr * (X.T @ (p - labels)) / len(labels)
+        w -= lr * ((X.T @ (p - labels)) / len(labels) + l2 * w)
     return w
 
 
@@ -2202,7 +2215,7 @@ def sample_attempts(n: int, seed: int) -> list[tuple[NDArray[np.int64], float, s
 
 def fit_from_preferences(pairs: list[tuple[int, int, int]],
                          eps_list: list[tuple[NDArray[np.int64], float, str]],
-                         steps: int = 3000, lr: float = 0.2) -> Arr:
+                         steps: int = 3000, lr: float = 0.2, l2: float = 0.02) -> Arr:
     """Bradley-Terry: make the better-liked attempt score higher."""
     sums = np.stack([FEAT[ss].sum(0) for ss, _, _ in eps_list])
     w = np.zeros(FEAT.shape[1])
@@ -2212,7 +2225,7 @@ def fit_from_preferences(pairs: list[tuple[int, int, int]],
     dif = sums[A] - sums[B]
     for _ in range(steps):
         p = _sigmoid(dif @ w)
-        w -= lr * (dif.T @ (p - y)) / max(len(pairs), 1)
+        w -= lr * ((dif.T @ (p - y)) / max(len(pairs), 1) + l2 * w)
     return w
 
 
@@ -2532,7 +2545,7 @@ def learning_from_the_verifier_alone() -> None:
     runs = shaping_runs()
     ver = []
     for seed in range(4):
-        _, _, sc, _ = q_learn(6000, 1.0, seed=260 + seed, eps1=0.05, t=T_VER)
+        _, _, sc, _ = q_learn(6000, SHAPE_EPS, seed=260 + seed, t=T_VER)
         ver.append(sc)
     Varr = np.array(ver)
     print(f'[verifier] trained on the verifier alone: reaches the bin on '

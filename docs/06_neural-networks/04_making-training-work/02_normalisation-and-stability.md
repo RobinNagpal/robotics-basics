@@ -440,8 +440,16 @@ class Block(nn.Module):
         return stream + self.ff(self.norm(stream))
 
 # Sections 5 and 6: bfloat16 arithmetic, then clipping before every step.
+# The first four lines stand in for your own model and data, so that this block
+# runs as it stands; autocast takes whichever device you actually have.
+model, loss_fn = nn.Sequential(nn.Linear(4, 16), nn.GELU(), nn.Linear(16, 1)), nn.MSELoss()
+opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+loader = torch.utils.data.DataLoader(
+    torch.utils.data.TensorDataset(torch.randn(64, 4), torch.randn(64, 1)), batch_size=32)
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 for batch, target in loader:
-    with torch.autocast('cuda', dtype=torch.bfloat16):
+    with torch.autocast(device, dtype=torch.bfloat16):
         loss = loss_fn(model(batch), target)
     loss.backward()
     size = nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)

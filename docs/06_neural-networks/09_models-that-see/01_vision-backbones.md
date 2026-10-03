@@ -61,7 +61,7 @@ outline.
 
 ![A picture feeding a stack of twelve blocks, with three arrows leaving the top into a classify head, a detect head and a segment head](../../images/models-that-see/vision-backbones/backbone-and-heads.svg)
 
-One backbone of 85,798,656 parameters feeds three heads of 769,000, 1,331,808 and 2,950,145 parameters, so each head is between one and four parts in a hundred of the shared part.
+One backbone of 85,798,656 parameters feeds three heads of 769,000, 1,331,808 and 2,950,145, so each head is between one and four parts in a hundred of it.
 
 Those sizes are worked out from the layer shapes of a plain vision transformer
 with twelve blocks and 768 numbers per patch, which is the size most people start
@@ -80,7 +80,7 @@ attention part.
 
 ![Two bar charts comparing three separate models against one shared backbone, and training everything against training the heads only](../../images/models-that-see/vision-backbones/shared-vs-separate.svg)
 
-Doing three jobs with three separate models costs 262,446,921 parameters, while one shared backbone with three heads costs 90,849,609, and if the backbone is frozen only 5,050,953 of those numbers ever change.
+Three separate models cost 262,446,921 parameters against 90,849,609 for one shared backbone with three heads, and freezing it leaves only 5,050,953 numbers changing.
 
 So the practical consequence is that one pretrained backbone serves several jobs
 at once. If a robot has to name what is on the table, draw a box round each
@@ -108,9 +108,8 @@ detail the job needs, no small head can put the detail back.
 Now that the backbone has a name, the next question is what goes on inside it,
 and the most common answer today is a **vision transformer**, which is a
 transformer whose tokens are square patches of a picture instead of pieces of
-words. The whole of this section follows one picture of a stated size, 224 pixels
-across and 224 pixels down, through that backbone, and every count below is
-printed by the script.
+words. This section follows one picture of 224 by 224 pixels through it, step by
+step.
 
 ![A 224 by 224 picture of a table, overlaid with a red 14 by 14 grid, beside the same grid with the patches numbered](../../images/models-that-see/vision-backbones/patch-grid.svg)
 
@@ -137,7 +136,7 @@ does.
 
 ![The picture, the same patches shuffled into a random order, and a heat map of how alike the position vectors are to the one of patch 87](../../images/models-that-see/vision-backbones/position-and-shuffle.svg)
 
-Shuffling the patches leaves the model with exactly the same bag of vectors, so a position vector is added to each one, and those vectors are most alike for patches that sit near each other, 0.986 for the next patch along and 0.706 for the far corner.
+Shuffling the patches leaves the same bag of vectors, so a position vector is added to each, and those are most alike for patches near each other: 0.986 for the next patch along against 0.706 for the far corner.
 
 The third thing the model does is add position. Attention treats its input as a
 bag, so if you shuffled the 196 patches the model would get the same set of
@@ -150,7 +149,7 @@ near what.
 
 ![A strip of tokens with a red class token in front, beside a bar chart of how much each token changes between two different pictures](../../images/models-that-see/vision-backbones/class-token.svg)
 
-The class token is a learned vector that is the same for every picture, so between two different pictures it changes by exactly 0.0 while the patch tokens change by 0.057 on average.
+The class token is the same learned vector for every picture, so between two pictures it changes by exactly 0.0 while the patch tokens change by 0.057 on average.
 
 The fourth thing the model does is put one extra token in front, called the
 **class token**, which is a vector of 768 numbers that is learned during training
@@ -187,7 +186,7 @@ given and what each has to learn.
 
 ![The picture with four squares round its middle showing what one output number has seen, beside a curve of how that grows with depth](../../images/models-that-see/vision-backbones/receptive-field.svg)
 
-One number from a 3 by 3 convolution has looked at 3 pixels across after one layer and 13 after six layers, or 35 after six layers if the grid is halved along the way, while one number from attention has looked at all 224 pixels after the very first block.
+One number from a 3 by 3 convolution has looked at 3 pixels across after one layer and 13 after six, or 35 if the grid is halved along the way, while attention has looked at all 224 after the first block.
 
 The first difference is how far one output number can see, which is called its
 receptive field. A convolution looks through a small window, so after one layer
@@ -201,7 +200,7 @@ waiting for a dozen layers.
 
 ![The picture and the same picture with the camera moved five pixels sideways, both with the patch grid drawn, beside a bar chart of how much each kind of feature changed](../../images/models-that-see/vision-backbones/shift-test.svg)
 
-Moving the camera five pixels sideways leaves the convolution maps exactly unchanged once they are shifted back, by 0.00 per cent, and changes the patch vectors by 3.41 per cent, while a move of a whole patch of 16 pixels leaves both unchanged.
+Moving the camera five pixels sideways changes the convolution maps by 0.00 per cent once they are shifted back, and the patch vectors by 3.41 per cent, while a move of a whole 16-pixel patch leaves both unchanged.
 
 The second difference is what happens when the thing moves. This test takes the
 same scene twice, once with the camera five pixels further to the right, runs
@@ -231,7 +230,7 @@ for a pretrained one instead.
 
 ![Two columns of boxes comparing an older convolution block with a modern one, with the layer shapes and the counts](../../images/models-that-see/vision-backbones/conv-block-shapes.svg)
 
-The older block uses two 3 by 3 convolutions with a normalisation and an activation after each, while the modern one uses one wide 7 by 7 window per channel, one normalisation, one activation, and a middle layer four times as wide, which costs 79,200 parameters against 166,464.
+The older block uses two 3 by 3 convolutions each followed by a normalisation and an activation, while the modern one uses one 7 by 7 window per channel, one normalisation, one activation and a middle layer four times as wide, costing 79,200 parameters against 166,464.
 
 What really happened after 2021 is less dramatic than the headlines suggested,
 because the convolution did not lose to attention so much as copy it. A modern
@@ -269,7 +268,7 @@ part that compares every patch with every patch.
 
 ![A curve of multiply-adds against picture side for both designs, beside a bar chart of the share of transformer work spent comparing patches](../../images/models-that-see/vision-backbones/cost-vs-resolution.svg)
 
-As the picture grows from 224 to 1,024 pixels across, the transformer goes from 17.6 to 659.8 thousand million multiply-adds while the convolutional network goes from 4.1 to 85.4, and the share spent comparing every patch with every patch rises from 4.1 to 46.9 in every hundred.
+From 224 to 1,024 pixels across, the transformer goes from 17.6 to 659.8 thousand million multiply-adds and the convolutional network from 4.1 to 85.4, while the share spent comparing patches rises from 4.1 to 46.9 in every hundred.
 
 That small share of 4.1 in every hundred is the reason people are surprised by
 what happens next. Comparing every patch with every patch costs the square of the
@@ -308,12 +307,12 @@ vision, where the token counts are large by nature.
 ## 5. Features at several sizes
 
 The costs in the last section all assumed one grid of patches, and for naming a
-picture one grid is enough. For finding things it is not, and this section
-explains why, using the camera arithmetic that decides the matter.
+picture one grid is enough. For finding things it is not, and the camera
+arithmetic below is what decides the matter.
 
 ![The same scene shown at four grid sizes, with the small bolt disappearing as the grid gets coarser](../../images/models-that-see/vision-backbones/pyramid-grids.svg)
 
-The same scene at the four levels a detector uses holds 19,200, 4,800, 1,200 and 300 cells, and the small bolt that spans 4.5 by 2.5 cells at the finest level spans 0.56 by 0.31 of a cell at the coarsest.
+The four levels hold 19,200, 4,800, 1,200 and 300 cells, and the small bolt that spans 4.5 by 2.5 cells at the finest spans 0.56 by 0.31 of a cell at the coarsest.
 
 A backbone does not give back only one grid of numbers. A convolutional backbone
 halves its grid several times as it goes, so the grid it hands over after the
@@ -325,7 +324,7 @@ a **feature pyramid**.
 
 ![A curve of apparent width in pixels against distance for a glass and a bolt, with lines for the cell size of three grids](../../images/models-that-see/vision-backbones/apparent-size.svg)
 
-For a camera 1,280 pixels wide with a 60 degree view, a glass 70 millimetres across looks 77.6 pixels wide at one metre and 19.4 pixels wide at four metres, so beyond 2.42 metres it is narrower than one cell of the stride-32 grid.
+For a camera 1,280 pixels wide with a 60 degree view, a glass 70 millimetres across looks 77.6 pixels wide at one metre and 19.4 at four, so beyond 2.42 metres it is narrower than one stride-32 cell.
 
 The reason this matters follows from the camera rather than from the network. A
 camera 1,280 pixels wide with a 60 degree view has a focal length of 1,109
@@ -350,7 +349,7 @@ ones.
 
 ![Four levels of a pyramid, each with a 1 by 1 convolution, and arrows carrying each coarse level down to the next finer one](../../images/models-that-see/vision-backbones/top-down-pathway.svg)
 
-Each level is brought to 256 channels by a 1 by 1 convolution costing between 65,792 and 524,544 parameters, and the coarse levels are stretched to twice the size and added downwards, which costs 3,344,384 parameters in all.
+Each level is brought to 256 channels by a 1 by 1 convolution, and the coarse levels are stretched to twice the size and added downwards, which costs 3,344,384 parameters in all.
 
 The fine levels have a problem of their own, which is that they come from early
 layers that have not looked at much of the picture yet, so they know where the
@@ -388,7 +387,7 @@ the query, while in the backbone's numbers three of the five are.
 
 ![A bar chart of the share of the five nearest pictures that are the same shape, in raw pixels and in backbone features](../../images/models-that-see/vision-backbones/neighbour-agreement.svg)
 
-Of the five nearest pictures, 45 in every hundred are the same shape in raw pixels and 89 in the backbone features for the four shapes it was trained on, and 59 against 78 for three shapes it had never seen.
+Of the five nearest pictures, 45 in every hundred are the same shape in raw pixels against 89 in the backbone features for the four trained shapes, and 59 against 78 for three it had never seen.
 
 Counting that over every picture rather than one gives the bars above, and the
 second pair of bars is the important one, because it says that the numbers carry
@@ -397,7 +396,7 @@ was trained on. That is exactly what makes a frozen backbone worth downloading.
 
 ![Two scatter plots of 600 pictures of three unseen shapes flattened onto two directions, one from raw pixels and one from the backbone features](../../images/models-that-see/vision-backbones/feature-space-map.svg)
 
-Flattened onto their two directions of greatest spread, 600 pictures of three unseen shapes lie in one mixed cloud in raw pixels, while in the backbone features the bars pull away completely and the crosses and diamonds separate in part.
+Flattened onto their two directions of greatest spread, 600 pictures of three unseen shapes lie in one mixed cloud in raw pixels, while in the backbone features the bars pull away and the crosses and diamonds separate in part.
 
 The same thing can be seen rather than counted. Each picture is 576 raw numbers
 or 16 backbone numbers, and both can be flattened onto the two directions along
@@ -448,9 +447,8 @@ gives you.
 
 ## 8. Using it in Python
 
-This section builds the two backbones of this page in PyTorch, with `torchvision`
-supplying the published arrangements, and prints the counts that sections 1, 2
-and 5 worked out by hand.
+This section builds the two backbones of this page in PyTorch, and prints the
+counts that sections 1, 2 and 5 worked out by hand.
 
 ```python
 import torch

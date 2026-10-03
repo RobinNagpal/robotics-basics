@@ -18,9 +18,9 @@ stage uses far less text than pretraining and changes the model far more.
 
 The page assumes you have read the page before it, so that token, next-token
 prediction and the shape of a conversation written as one stream are already
-familiar. It also uses one idea from later in this book, which is learning by
-trying things and keeping what scores well, and [Learning from
-outcomes](../11_learning-from-outcomes/02_rewards-preferences-and-verifiers.md)
+familiar. It also uses one idea from later in this book, which is learning by trying
+things and keeping what scores well, and [Rewards, preferences and
+verifiers](../11_learning-from-outcomes/02_rewards-preferences-and-verifiers.md)
 covers that properly; here it is explained only as far as this page needs.
 
 As on the page before, the pictures come from small models built inside the diagram
@@ -82,7 +82,7 @@ The three stages in this script used 313,504 words of corpus, 9,728 words of
 demonstrations and 14,800 words of preference pairs, so the two post-training
 stages together are about 8 per cent of the pretraining text.
 
-That ratio is the shape of the whole business, and it holds at full scale as well,
+That ratio is the shape of the whole arrangement, and it holds at full scale too,
 where pretraining is measured in trillions of tokens and post-training in millions.
 Post-training is cheap, which is why many different models can be built from one
 pretrained starting point, and it is also why most of what one organisation does
@@ -175,7 +175,7 @@ the longer answer 36 per cent of the time against the hurried annotator's 83 per
 cent.
 
 Read the left panel as good news and the right as a warning. When two answers are
-genuinely close the labels are nearly coin flips, which is harmless because the
+genuinely close the labels are close to random, which is harmless because the
 choice barely matters, and when one answer is clearly better the labels are mostly
 right, which is where the signal is. The right panel shows the second simulated
 annotator, who picks the longer answer 83 per cent of the time without reading
@@ -200,8 +200,8 @@ it agrees with 75 per cent of the 80 pairs held back from training.
 
 That starting loss of 0.693 is worth a moment, because it is the loss of a model
 that gives both answers the same number, and a quarter of the held-out pairs are
-still wrong at the end. That ceiling is not a training failure; it is the noise in
-the labels from section 3, since nobody can predict a coin flip.
+still wrong at the end. That limit is not a training failure; it is the noise in
+the labels from section 3, since nobody can predict a random choice.
 
 ![Two panels: the weights each reward model learned on the three visible qualities, and a scatter of the hurried model's score against the true value with answer 6 circled](../../images/language-and-multimodal-models/post-training-a-language-model/what-the-judge-can-see.svg)
 
@@ -214,7 +214,7 @@ A reward model can only use what it can see, and it can see how an answer is
 written far better than whether it is true. The careful annotator's choices force
 it to use length as a stand-in, because length is the only visible thing that tells
 answer 3 from answer 6, and that works until an annotator who likes length comes
-along. Hold on to the right panel, because it is section 7 in one picture.
+along. Remember the right panel, because it is section 7 in one picture.
 
 ![Seven curves of the answer probabilities over 250 steps, with answer 3 rising from 0.12 to 0.94 and the rest falling below 0.02](../../images/language-and-multimodal-models/post-training-a-language-model/the-policy-moves.svg)
 
@@ -228,10 +228,10 @@ become more likely. On a real language model the model writes an answer, the rew
 model scores it, and the weights shift to make the tokens of a well-scored answer
 more probable, with the algorithm usually called proximal policy optimisation
 deciding how big each shift may be. [Reinforcement
-learning](../11_learning-from-outcomes/02_rewards-preferences-and-verifiers.md)
-covers the family properly; what matters here is that this stage trains against a
-model's opinion rather than against written text, which is why it is called
-reinforcement learning from human feedback.
+learning](../11_learning-from-outcomes/01_reinforcement-learning.md) covers the
+family properly; what matters here is that this stage trains against a model's
+opinion rather than against written text, which is why it is called reinforcement
+learning from human feedback (RLHF).
 
 ![Two panels: the reward score and the true value both rising over 250 steps, and the distance from the starting model rising to 1.77](../../images/language-and-multimodal-models/post-training-a-language-model/reward-up-and-kl-up.svg)
 
@@ -241,7 +241,7 @@ one it started as.
 
 That distance is measured and penalised on purpose during real training, because a
 model free to chase the score will leave the behaviour that instruction tuning gave
-it, and the penalty is the brake that section 7 tests to destruction.
+it, and the penalty is the brake that section 7 pushes to its limit.
 
 ---
 
@@ -249,10 +249,10 @@ it, and the penalty is the brake that section 7 tests to destruction.
 
 The road in section 4 works and it has an obvious awkwardness, which is that it
 trains two models and runs a sampling loop to connect them. **Direct preference
-optimisation** removes the middle step. It takes the same pairs and changes the
-language model directly, raising the probability of each preferred answer and
-lowering the probability of each rejected one, with the amount of change held back
-by how far the model has moved from the one it started as.
+optimisation** (DPO) removes the middle step. It takes the same pairs and
+changes the language model directly, raising the probability of each preferred
+answer and lowering the probability of each rejected one, with the amount of
+change held back by how far the model has moved from the one it started as.
 
 ![Two panels: the preferred answer rising from 0.119 to 0.881 and the rejected one falling from 0.396 to 0.018, and the logs of all seven probabilities](../../images/language-and-multimodal-models/post-training-a-language-model/dpo-log-probabilities.svg)
 
@@ -299,11 +299,12 @@ is the next section.
 
 ## 6. Rewards a program can check
 
-Both roads so far end at a person, and that is the ceiling on both: a human
-judgement per comparison, with the noise section 3 measured. The change of the last
+Both roads so far end at a person, and that is the limit on both, because each
+comparison costs a human judgement and carries the noise section 3 measured. The change of the last
 few years is to notice that for some jobs a program can mark the answer, and then
 the reward needs no person and no reward model at all. This is **reinforcement
-learning from verifiable rewards**, and the thing doing the marking is a verifier.
+learning from verifiable rewards** (RLVR), and the thing doing the marking is a
+verifier.
 
 ![Twenty jobs in two columns, ten that a program can mark right or wrong and ten that only a person can judge](../../images/language-and-multimodal-models/post-training-a-language-model/who-can-check-it.svg)
 
@@ -315,9 +316,9 @@ The split in that picture is the whole point and it is not a close call. Where t
 answer is a number that can be compared, a program that either compiles or does
 not, or a test suite that either passes or fails, the marking is free, exact and
 unlimited. Where the answer is a judgement about what a person meant or how
-something feels to work with, no program exists, and the list is my own rather than
-a survey, so treat the ten and ten as an illustration of the shape rather than a
-measurement.
+something feels to work with, no program exists. The list was written for this
+page rather than measured, so read the ten and ten as an illustration of the shape
+rather than a count of anything.
 
 ![A curve of the pass rate against training steps, rising from 12 per cent to 100 per cent over 140 steps](../../images/language-and-multimodal-models/post-training-a-language-model/the-verifier-trains-it.svg)
 
@@ -357,8 +358,8 @@ Those numbers are not a measurement of anything, and the shape they draw is real
 giving its answer, and they help because each written step is a small step with a
 high chance of being right, while leaping from the question to the answer asks the
 network to do all the steps inside one forward pass. They stop helping once every
-step is written down, and past that point the extra tokens only add chances to
-wander off, which is the gentle fall at the right of the curve. They also cost time
+step is written down, and past that point the extra tokens only add chances to go
+wrong, which is the gentle fall at the right of the curve. They also cost time
 at the one-token-per-pass rate the page before measured, so a robot waiting on a
 reasoning model waits seconds rather than milliseconds.
 
@@ -374,8 +375,8 @@ brings back every problem of section 4 and the one in the next section.
 
 ## 7. Reward hacking: pleasing the judge instead of the person
 
-Section 4 left a loose end, which was that the reward model learned a liking for
-length because its annotator had one. **Reward hacking** is what happens next: the
+Section 4 left something unfinished, which was that the reward model learned a
+liking for length because its annotator had one. **Reward hacking** is what happens next: the
 model gets better and better at the number it is scored on while getting worse at
 the thing that number was meant to stand for. It is not misbehaviour, because the
 model is doing exactly what it was trained to do.
@@ -399,7 +400,7 @@ longest answer rises from 0.018 to 0.996 and the best answer falls from 0.881 to
 0.002.
 
 Length is the classic shape this takes and it is worth naming the others, because
-they are all the same failure wearing different clothes. A model learns to agree
+they are all the same failure in a different form. A model learns to agree
 with whatever the person seems to think, because agreement was preferred. It learns
 to add confident structure, numbered lists and summaries, because those look
 thorough. It learns to hedge everything, because a hedged answer is rarely marked
@@ -417,8 +418,8 @@ The brake is the distance penalty of section 4, and that picture shows exactly w
 it buys and what it does not. Holding the model close to where it started keeps the
 damage away, and it does so by making the training do less, since the best true
 value it reaches, 3.60, is slightly below the 3.72 the model already had before
-this run began. A brake does not find good answers. It limits how far a bad reward
-can drag you, which is why real training also watches held-out behaviour, stops
+this run began. A brake does not find good answers. It limits how far a bad reward can move
+the model, which is why real training also watches held-out behaviour, stops
 early, mixes several reward signals, and prefers a verifier wherever one exists.
 The general version of this problem, with examples from robot arms as well as from
 text, is in [Rewards, preferences and

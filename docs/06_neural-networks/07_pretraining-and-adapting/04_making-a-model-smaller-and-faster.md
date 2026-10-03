@@ -1,37 +1,31 @@
 # Making a model smaller and faster
 
 The page before this one, [fine-tuning and
-adapters](03_fine-tuning-and-adapters.md), ended with a model that does your job,
-and it quietly assumed that the model could be run at all. On a desk with a graphics
-card that assumption is safe. On a robot it is not, because a robot carries a small
-computer with a few gigabytes of memory, it has to answer in a few tens of
-milliseconds so the arm keeps moving, and it has a power budget that a desktop card
-would use up on its own. So this page is about the step after fine-tuning, which is
-making a trained model small enough and fast enough to live on the machine that has
-to use it.
+adapters](03_fine-tuning-and-adapters.md), ended with a model that does your job, and
+it quietly assumed the model could be run at all. On a desk with a graphics card that
+assumption is safe. On a robot it is not, because a robot carries a small computer
+with a few gigabytes of memory and has to answer in a few tens of milliseconds so the
+arm keeps moving. So this page is about the step after fine-tuning, which is making a
+trained model small enough and fast enough to live on the machine that uses it.
 
-There are three methods and they are not alternatives, because they work on different
-things and they stack. **Quantisation** stores each weight in fewer bits.
+There are three methods, and they are not alternatives, because they work on
+different things and they stack. **Quantisation** stores each weight in fewer bits.
 **Distillation** trains a smaller model to copy a larger one. **Pruning** throws
-weights away. The page explains each one from the arithmetic upwards, measures what
-it costs, and ends with one table of what you get for what you give up. Running a
-model on the robot's own computer rather than on a server is called **edge
-inference**, and everything here is in service of that.
+weights away. Running a model on the robot's own computer rather than on a server is
+called **edge inference**, and everything here is in service of that.
 
-It is written for a reader who has read the chapter so far, so it assumes you know
-what a parameter is, what a floating-point operation (FLOP) is, what a frozen
-backbone is, and what the softmax turns a model's raw outputs into, all of which
-earlier pages explain. The one new idea is that a number does not have to be stored
-in 32 bits, and section 2 builds that from nothing.
+It assumes you have read the chapter so far, so you know what a parameter is, what a
+floating-point operation (FLOP) is, and what the softmax turns a model's raw outputs
+into. The one new idea is that a number does not have to be stored in 32 bits, and
+section 2 builds that from nothing.
 
 Every number in the pictures is worked out by
 `docs/diagrams/pretraining_and_adapting_2.py`. The parameter counts and memory sizes
-are exact arithmetic on one stated transformer shape, which is 32 blocks of width
-4096 with a feed-forward inner width of 11008 and a vocabulary of 32000. The memory
-bandwidth, the arithmetic rate and the size of the robot's memory are stated
-assumptions, and the pictures say so where they are used. The quantisation,
-distillation and pruning experiments are real runs on a small network trained in
-NumPy on simulated readings of six objects.
+are exact arithmetic on one stated transformer shape, 32 blocks of width 4096 with a
+feed-forward inner width of 11008 and a vocabulary of 32000. The memory bandwidth,
+the arithmetic rate and the size of the robot's memory are stated assumptions, and
+the pictures say so. The quantisation, distillation and pruning experiments are real
+runs on a small network trained in NumPy on simulated readings of six objects.
 
 ## Contents
 
@@ -48,11 +42,11 @@ NumPy on simulated readings of six objects.
 
 ## 1. What has to fit on the robot's own computer
 
-Before choosing a method it is worth being exact about what is actually too big,
-because the answer is not one thing but three: the model has to fit in memory, it has
-to be read from memory fast enough, and it has to be worked through inside the time
-the arm leaves it. The stated model from the last page, with 6,738,415,616
-parameters, is big enough to fail all three.
+Before choosing a method it is worth being exact about what is too big, because the
+answer is not one thing but three: the model has to fit in memory, it has to be read
+from memory fast enough, and it has to be worked through inside the time the arm
+leaves it. The stated model from the last page, with 6,738,415,616 parameters, fails
+all three.
 
 ![Bars of memory for the same model at float32, bfloat16, int8 and int4, with lines at 8 GiB and 24 GiB](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/memory-by-precision.svg)
 
@@ -60,12 +54,12 @@ The four bars are the same model stored four ways, and the two lines are a small
 robot computer with 8 GiB of memory shared with everything else and a desktop
 graphics card with 24 GiB.
 
-Stored at 32 bits a weight the model needs 25.10 GiB, which does not fit on either.
-At 16 bits it needs 12.55 GiB, which fits on the card but not on the robot. At 8 bits
-a weight, plus a small allowance for the scales that section 3 explains, it needs
-6.47 GiB, which fits inside 8 GiB with very little room for anything else. At 4 bits
-it needs 3.33 GiB, which is the first size that leaves the robot room to hold its
-pictures, its own program and the model's working memory at the same time.
+Stored at 32 bits a weight the model needs 25.10 GiB, which fits on neither. At 16
+bits it needs 12.55 GiB, which fits on the card but not on the robot. At 8 bits, plus
+a small allowance for the scales that section 3 explains, it needs 6.47 GiB, which
+fits inside 8 GiB with very little room for anything else. At 4 bits it needs 3.33
+GiB, the first size that leaves the robot room for its pictures, its own program and
+the model's working memory at once.
 
 Memory is not only a question of fitting, because the model has to be read as well as
 stored, and reading it is usually what sets the speed.
@@ -106,13 +100,13 @@ The first picture in section 1 assumed that a weight could be stored in 8 bits o
 so this section says exactly what that means and what it costs, using 48 real weights
 taken from one output channel of a network that was actually trained.
 
-A weight is normally stored as a float32, which is 32 bits able to hold a very wide
-range of values to about seven decimal places. That precision is wasted, because the
-weights in one channel of a trained network all sit in a narrow band. In the column
-used here the smallest is -0.47174 and the largest is +0.57539, so the largest size
-of any of them is 0.57539. **Quantisation** uses that fact: it picks a **step size**,
-replaces each weight by the whole number of steps nearest to it, and stores only that
-whole number.
+A weight is normally stored as a float32, which is 32 bits holding a very wide range
+of values to about seven decimal places. That precision is wasted, because the
+weights in one channel of a trained network all sit in a narrow band, and in the
+column used here the smallest is -0.47174 and the largest is +0.57539, so the largest
+size of any of them is 0.57539. **Quantisation** uses that fact, because it picks a
+**step size**, replaces each weight by the whole number of steps nearest to it, and
+stores only that whole number.
 
 ![A number line drawn twice, once with 15 evenly spaced 4-bit levels and once with 255 8-bit levels, with six real weights marked on each](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/step-size-number-line.svg)
 
@@ -132,14 +126,12 @@ weight ends up once it has been turned into a 4-bit integer and back again.
 
 Take the first weight, which is +0.1071. Dividing by the 4-bit step of 0.082199 gives
 1.30, which rounds to the integer 1, so what is stored is the single number 1, and
-reading it back gives 1 times 0.082199, which is 0.0822. The same weight at 8 bits
-divides by 0.004531 to give 23.6, which rounds to 24, and reading that back gives
-0.1087. The first eight weights of the column become the integers 1, 3, 2, 2, 0, 2, 5
-and 4 at four bits, and 24, 49, 42, 31, 9, 40, 100 and 73 at eight bits.
-
-The fifth of those is worth noticing, because +0.0387 becomes the integer 0 at four
-bits and so reads back as exactly nothing. That is the cost of quantisation: the
-weights come back changed.
+reading it back gives 0.0822. The same weight at 8 bits divides by 0.004531 to give
+23.6, which rounds to 24 and reads back as 0.1087. The first eight weights become the
+integers 1, 3, 2, 2, 0, 2, 5 and 4 at four bits, and 24, 49, 42, 31, 9, 40, 100 and
+73 at eight bits. The fifth is worth noticing, because +0.0387 becomes the integer 0
+at four bits and so reads back as exactly nothing, which is the cost of quantisation:
+the weights come back changed.
 
 ![Bars of the read-back error for each of the 48 weights at 4 bits and at 8 bits, with the root-mean-square error marked](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/error-per-weight.svg)
 
@@ -157,11 +149,10 @@ The vertical axis is on a log scale, so a straight line means that each extra bi
 multiplies the error by a fixed factor, and here that factor is close to a half.
 
 The error is 0.1706854 at two bits, 0.0248399 at four, 0.0013408 at eight and
-0.0003551 at ten. Going from eight bits to four multiplies the error by 18.5, which
-is why 8-bit storage is usually described as free and 4-bit storage is not. Whether
-that error matters is a separate question that section 3 answers by measuring
-accuracy rather than error, because a network can absorb a surprising amount of
-noise in its weights.
+0.0003551 at ten, so going from eight bits to four multiplies it by 18.5, which is
+why 8-bit storage is usually described as free and 4-bit storage is not. Whether that
+error matters is a separate question that section 3 answers by measuring accuracy
+instead, because a network can absorb a surprising amount of noise in its weights.
 
 ---
 
@@ -177,34 +168,33 @@ Each bar is one output channel of a real trained weight matrix, and its height i
 largest weight in that channel, which is what a scale for that channel would be set
 by.
 
-If the whole matrix shares one scale, that scale has to be set by the single largest
-weight anywhere in it, which here is 0.980, and every channel whose own largest
-weight is 0.45 then uses less than half of the levels available to it. Giving each
-channel its own scale fixes that, and it is called **per-channel quantisation**. The
-lower panel shows why it matters so much in practice: real trained networks often
-have a few channels whose weights are much larger than the rest, and here one channel
-has been made eight times louder to show the effect, which drags the single shared
-scale up to 4.491 and wastes most of the levels for every other channel.
+If the whole matrix shares one scale, that scale is set by the single largest weight
+anywhere in it, which here is 0.980, and every channel whose own largest weight is
+0.45 then uses less than half of the levels available to it. Giving each channel its
+own scale fixes that, and it is called **per-channel quantisation**. The lower panel
+shows why it matters so much, because real trained networks often have a few channels
+whose weights are much larger than the rest, and here one channel has been made eight
+times louder to show the effect, which drags the single shared scale up to 4.491 and
+wastes most of the levels for every other channel.
 
 ![Grouped bars of the error left at 4 bits for three choices of scale, on the plain matrix and on the one with a loud channel](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/scale-choice-error.svg)
 
 The bars are the error left in the weights after quantising to 4 bits and reading
 them back, as a share of the typical size of the weights themselves.
 
-On the matrix as trained, one scale for the whole matrix leaves 15.5% error, one
-scale per channel leaves 10.3%, and one scale for every group of 16 weights leaves
-8.6%. On the matrix with one loud channel, the single shared scale leaves 51.9%,
-which is a ruined matrix, while the per-channel scale leaves 10.9% and the grouped
-scale 9.3%, barely different from before. So finer scales cost a little storage, as
-the last page's QLoRA figures showed, and they buy protection from exactly the kind of
-unevenness that trained networks actually have.
+On the matrix as trained, one scale for the whole matrix leaves 15.5% error, one per
+channel leaves 10.3%, and one for every group of 16 weights leaves 8.6%. On the
+matrix with one loud channel the shared scale leaves 51.9%, which is a ruined matrix,
+while the per-channel scale leaves 10.9% and the grouped scale 9.3%, barely different
+from before. So finer scales cost a little storage, as the last page's QLoRA figures
+showed, and they buy protection from exactly the unevenness trained networks have.
 
 The second question is when the squeezing happens. **Post-training quantisation**
-means training the model normally and squeezing the finished weights, which is the
-method everything above has used. The alternative is to let the model know during
-training that its weights will be squeezed, by rounding them in the forward pass while
-still updating the unrounded copies, so that training can settle on weights that
-survive rounding. That is called quantisation-aware training.
+means training the model normally and squeezing the finished weights, which is what
+everything above has done. The alternative is to let the model know during training
+that its weights will be squeezed, by rounding them in the forward pass while still
+updating the unrounded copies, so that training settles on weights that survive
+rounding, and that is called quantisation-aware training.
 
 ![Two curves of accuracy against the number of bits kept, one for squeezing after training and one for training with the squeezing switched on](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/ptq-vs-qat.svg)
 
@@ -225,15 +215,14 @@ what you reach for when 4 bits is not small enough.
 The left panel repeats the choice of scale as accuracy rather than as error, and the
 right panel asks where the range should be cut off.
 
-Measured as accuracy, the choice of scale makes no difference at all down to 4 bits,
-where a single shared scale gives 0.928 against 0.933 for a scale per channel, and it
-makes an enormous difference at 2 bits, where a single shared scale gives 0.675
-against 0.828. The right panel tests the other obvious idea, which is to ignore the
-few largest weights and set the scale from, say, the 99th largest out of a hundred,
-so that the ordinary weights get finer steps. On this network it does not help: the
-largest weight gives 0.933 and the 95th percentile gives 0.929. Cutting off the range
-only pays when a few extreme values are stretching it, which is the situation the
-loud channel above was built to show, and per-channel scales already deal with that.
+Measured as accuracy, the choice of scale makes no difference down to 4 bits, where a
+shared scale gives 0.928 against 0.933 for a scale per channel, and an enormous
+difference at 2 bits, where a shared scale gives 0.675 against 0.828. The right panel
+tests the other obvious idea, which is to ignore the few largest weights and set the
+scale from, say, the 99th largest out of a hundred, so the ordinary weights get finer
+steps. On this network it does not help, because the largest weight gives 0.933 and
+the 95th percentile gives 0.929. Cutting off the range only pays when a few extreme
+values are stretching it, and per-channel scales already deal with that.
 
 ---
 
@@ -243,10 +232,10 @@ Quantisation keeps the model and shrinks its numbers, which has a floor, because
 below about 3 bits a weight the accuracy goes. The other direction is to keep the
 numbers and shrink the model, and the way to do that without simply training a small
 model badly is **distillation**, which means training a small model to copy a large
-one. The large model is called the **teacher** and the small one the **student**.
+one. The large model is the **teacher** and the small one the **student**.
 
 The obvious way to train a small model is on the same labelled examples the teacher
-saw. Distillation does something better, and the reason is worth seeing on one real
+saw, and distillation does something better, for a reason worth seeing on one real
 example.
 
 ![Two bar charts for the same example: a one-hot hard label, and the teacher's six probabilities with 0.927 on the right class and 0.073 on another](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/soft-target-one-example.svg)
@@ -254,15 +243,14 @@ example.
 The left panel is what the hard label tells the student about this example, and the
 right panel is what the teacher tells it about the same example.
 
-The example's true class is 5. The hard label is a 1 in one place and a 0 in the
-other five, and that is the whole message. The teacher's raw outputs on the same
-example are +19.76, -2.89, -3.20, -10.16, -14.66 and +22.30, which the softmax turns
-into 0.927 for class 5 and 0.073 for class 0, with the other four effectively zero.
-So the teacher is saying something the label cannot say, which is that this reading
-is a class 5 but it looks a little like a class 0 and nothing like the rest. These
-probabilities are called **soft targets**, and measured as information the teacher's
-answer carries 0.378 bits while the hard label carries none at all beyond naming the
-class.
+The example's true class is 5. The hard label is a 1 in one place and a 0 in the other
+five, and that is the whole message. The teacher's raw outputs are +19.76, -2.89,
+-3.20, -10.16, -14.66 and +22.30, which the softmax turns into 0.927 for class 5 and
+0.073 for class 0, with the other four effectively zero. So the teacher says something
+the label cannot, which is that this reading is a class 5 but looks a little like a
+class 0 and nothing like the rest. These probabilities are called **soft targets**,
+and measured as information the teacher's answer carries 0.378 bits while the hard
+label carries none beyond naming the class.
 
 ![Grouped bars of the same example's probabilities at temperatures 1, 2, 3, 5 and 8, beside a curve of information in bits against temperature](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/temperature-sweep.svg)
 
@@ -271,13 +259,13 @@ temperatures, and the right panel measures how much it then carries.
 
 The trouble with soft targets is that a well-trained teacher is usually very sure, so
 most of its answers are nearly a 1 and five nearly-zeros, and the extra information
-is hidden in numbers too small to matter to the training. Dividing the teacher's raw
-outputs by a number greater than one before the softmax flattens the answer, and that
-number is the **temperature**. At temperature 1 this example gives 0.927 and 0.073
-and carries 0.378 bits; at temperature 3 it gives 0.699 and 0.300 and carries 0.886
-bits; at temperature 8 it gives 0.544 and 0.396 and carries 1.361 bits. The student
-is trained on the flattened answer and then used normally, so the temperature only
-exists during training.
+hides in numbers too small to matter to the training. Dividing the raw outputs by a
+number greater than one before the softmax flattens the answer, and that number is the
+**temperature**. At temperature 1 this example gives 0.927 and 0.073 and carries 0.378
+bits, at temperature 3 it gives 0.699 and 0.300 and carries 0.886 bits, and at
+temperature 8 it gives 0.544 and 0.396 and carries 1.361 bits. The student is trained
+on the flattened answer and then used normally, so the temperature exists only during
+training.
 
 ![Two curves of student accuracy against the number of teaching examples, one trained on hard labels and one on the teacher's answers](../../images/pretraining-and-adapting/making-a-model-smaller-and-faster/student-against-hard-labels.svg)
 
@@ -299,12 +287,12 @@ the target, so you can distil on any pile of unlabelled recordings you happen to
 The three panels are what the student saves and what it gives up, measured on the
 same test set.
 
-The teacher here holds 3,270 parameters and does 3,168 multiply-adds for one
-decision, and the student holds 158 parameters and does 144, so it is 20.7 times
-smaller and does 22.0 times less arithmetic. For that it gives up 0.011 of accuracy,
-scoring 0.922 against the teacher's 0.933. The reason this is a good trade is that the
-student was not trained on the task from nothing; it was trained to copy a model that
-had already found a good answer, which is a much easier thing to learn.
+The teacher holds 3,270 parameters and does 3,168 multiply-adds for one decision, and
+the student holds 158 and does 144, so it is 20.7 times smaller and does 22.0 times
+less arithmetic, and for that it gives up 0.011 of accuracy, scoring 0.922 against
+0.933. The trade is good because the student was not trained on the task from
+nothing, but to copy a model that had already found a good answer, which is a much
+easier thing to learn.
 
 ---
 

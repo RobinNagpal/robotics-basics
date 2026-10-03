@@ -94,11 +94,10 @@ varies at random, with a small classifier trained on 4,000 of them in NumPy and 
 
 Dividing by twice the right spread drops the classifier from 95.5% to 79.5%, and subtracting a mean that is 0.2 too large drops it to 74.8%.
 
-Read the left curve from the middle outwards, where the green mark is the setting the
-model trained with. The right curve is steeper, because shifting every input by a fixed
-amount moves the whole cloud of points away from the boundaries the classifier learned.
-In both cases nothing fails and nothing is logged, and the model answers every question
-confidently and is simply worse.
+The green mark is the setting the model trained with. The right curve is steeper, because
+shifting every input by a fixed amount moves the whole cloud of points away from the
+boundaries the classifier learned. In both cases nothing fails and nothing is logged, and
+the model answers every question confidently and is simply worse.
 
 The commonest version of this fault is not a wrong number but a wrong order, because
 one popular library hands back a picture with blue first and another with red first.
@@ -130,8 +129,8 @@ is to save the preprocessing settings inside the checkpoint and never retype the
 
 ## 3. Export and runtimes: making the file run fast
 
-Section 2 was about getting the right numbers into the model, and this section is about
-getting the answer out quickly. Running a trained model is called **inference**, to
+Section 2 got the right numbers into the model, and this section gets the answer out
+quickly. Running a trained model is called **inference**, to
 separate it from training, and the obvious way to do it is to call the training framework
 that made the model, which works and is slow for reasons that have nothing to do with the
 arithmetic.
@@ -235,8 +234,8 @@ does not fit at 50 hertz is a fact about the camera rather than the network.
 Getting the picture out of the camera takes 19.0 milliseconds, which is 63.2% of the loop, while the network takes 15.8%.
 
 The model is only the fourth largest cost, so shaving a millisecond off the network is
-work, while buying a faster camera, or starting the next exposure while the current
-picture is still being processed, is usually worth more.
+work, while buying a faster camera, or exposing the next picture while the current one is
+still being processed, is usually worth more.
 
 There is one more trick, and it comes from the policies of
 [diffusion and flow policies](../12_models-that-act/02_diffusion-and-flow-policies.md),
@@ -265,9 +264,9 @@ every step of a 40-step reach, the arm carries part of its error forward, and th
 succeeds only if the error never leaves an 11 millimetre tolerance. Some also make a rare
 large mistake.
 
-![A scatter of 180 policies, training loss on the x axis against success rate on the y axis, coloured by how often each one makes a big mistake, with two circled policies at the same loss scoring 69% and 99%](../../images/using-a-model-for-real/running-and-evaluating-a-model/loss-not-success.svg)
+![A scatter of 180 policies, training loss on the x axis against success rate on the y axis, coloured by how often each one makes a big mistake, with two circled policies at nearly the same loss scoring 69% and 99%](../../images/using-a-model-for-real/running-and-evaluating-a-model/loss-not-success.svg)
 
-Loss and success rate agree only loosely, and two of the simulated policies with the same loss of about 6.1 square millimetres succeed 69% and 99% of the time.
+Loss and success rate agree only loosely, and two of the simulated policies, with losses of 6.1 and 6.0 square millimetres, succeed 69% and 99% of the time.
 
 The reason is in the colour. A policy whose mistakes are small and steady keeps the arm
 inside the tolerance even though its average squared error is large, while a policy that
@@ -285,11 +284,10 @@ the object starts in each one, and what counts as a success.
 In this simulation the same policy scores 90% in the 192 trials inside the box the demonstrations covered and 48% in the 384 trials outside it.
 
 Inputs the model was not trained on are called **out-of-distribution**, which means they
-come from a different mix of situations than the training data did. The heat map has a
-green middle where the demonstrations were and a ring of red where nobody ever put the
-object, so a trial list that stays in the green reports 90% and is not a lie about
-anything except what the robot will do tomorrow. The second thing the list decides is
-how many trials to run, and this is where most reported numbers fall apart.
+come from a different mix of situations than the training data did. A trial list that
+stays in the green middle reports 90% and is not a lie about anything except what the
+robot will do tomorrow. The second thing the list decides is how many trials to run, and
+this is where most reported numbers fall apart.
 
 ![Left: exact 95% intervals for scores of 70% and 90% at 10, 20, 50, 100, 200 and 500 trials. Right: the chance those two intervals do not overlap, rising from 4% at 20 trials to 85% at 120](../../images/using-a-model-for-real/running-and-evaluating-a-model/trials-and-intervals.svg)
 
@@ -325,20 +323,20 @@ measures the shape of that gap on the colour classifier from section 2.
 The same weights score 95.5% on the conditions they trained on, 87.8% under light 45% brighter, 76.6% against a warmer tablecloth and 71.5% through a noisier camera.
 
 None of those changes is dramatic and none is anything a person would mention, which is
-the point. On a real arm the same list includes a sunnier afternoon, a new tablecloth, and
-a replacement gripper whose fingers are three millimetres narrower, so that every grasp
-closes slightly too early. Changing any of them means running the evaluation again,
-because nothing in the training promised anything about them.
+the point. On a real arm the list includes a sunnier afternoon, a new tablecloth, and a
+replacement gripper whose fingers are three millimetres narrower, so that every grasp
+closes slightly too early. Any of them means running the evaluation again, because
+nothing in the training promised anything about them.
 
 ---
 
 ## 7. Reading a failure, and the safety layer that is not learned
 
 Section 6 counted failures, and this section is about understanding one. When an arm
-knocks a mug over, three different things can have happened and from outside the robot
-they look the same: the perception lost the object, the policy chose badly while seeing
-perfectly well, or the hardware refused to do what it was told. Telling them apart means
-reading three recorded streams against each other.
+knocks a mug over, three different things can have happened and from outside they look
+the same: the perception lost the object, the policy chose badly while seeing perfectly
+well, or the hardware refused to do what it was told. Telling them apart means reading
+three recorded streams against each other.
 
 ![Three simulated episodes: a detector score falling from 0.91 to 0.18 with the target then jumping about, a commanded joint shaking at 4 Hz while nothing else changes, and a measured joint flatlining while its command keeps rising](../../images/using-a-model-for-real/running-and-evaluating-a-model/failure-triage.svg)
 
@@ -398,7 +396,7 @@ describes the controller underneath it.
 - [Overfitting and generalisation](../04_making-training-work/01_overfitting-and-generalisation.md)
   explains the split that section 6's loss number comes from.
 - [Running a model on a robot](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
-  is the catalogue page for this subject, covering the choice of computer for real models.
+  is the catalogue page for this subject, for real named models.
 - [Evaluation and failure](../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md)
   is the catalogue page for section 6, with a worked mug-picking evaluation.
 
@@ -456,10 +454,10 @@ print(f"{100 * successes / trials:.0f}%  from {100 * lo:.1f}% to {100 * hi:.1f}%
 ```
 
 The parameter count of 1,415 is 14 times 64 plus 64 biases, then 64 times 7 plus 7
-biases. The interval of 68.3% to 98.8% is the same exact interval section 6's picture
-draws for eighteen successes in twenty trials, and `scipy` gets it from the beta
-distribution in two lines. The timing line prints whatever your own machine gives, which
-is the one number on this page nobody can work out for you.
+biases. The interval of 68.3% to 98.8% is the one section 6's picture draws for eighteen
+successes in twenty trials, and `scipy` gets it from the beta distribution in two lines.
+The timing line prints whatever your own machine gives, which is the one number on this
+page nobody can work out for you.
 
 The libraries do a lot here, because `torch.jit.trace` and the newer `torch.compile`
 freeze the graph of section 3, ONNX Runtime and TensorRT are runtimes that then join the

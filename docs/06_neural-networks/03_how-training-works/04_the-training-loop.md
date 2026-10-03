@@ -411,6 +411,13 @@ warm = torch.optim.lr_scheduler.LinearLR(opt, 0.01, 1.0, total_iters=60)
 cos = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=540)
 sched = torch.optim.lr_scheduler.SequentialLR(opt, [warm, cos], [60])    # section 4
 
+# A stand-in for your own data, so that this block runs as it stands: 960
+# examples of four readings and one answer, which is 30 batches of 32.
+x = torch.randn(960, 4)
+y = x @ torch.tensor([1.5, -0.8, 0.3, 2.0]) + 0.1 * torch.randn(960)
+loader = torch.utils.data.DataLoader(
+    torch.utils.data.TensorDataset(x, y), batch_size=32, shuffle=True)
+
 for epoch in range(epochs):
     for x, y in loader:                 # line 1: loader hands out batches of 32
         out = model(x)                  # line 2: the forward pass

@@ -116,7 +116,7 @@ figures are rough orders of magnitude, not measurements.
 
 ![Two log-scale bar charts: calls in a 6 second pick-and-place, from 1 for the language model to 3,000 for the safety checks, and the arithmetic each one costs over the episode](../../images/using-a-model-for-real/the-map-of-models/calls-per-episode.svg)
 
-In one six-second pick-and-place the language model is asked once and the written safety checks run 3,000 times, and the detector and depth model between them take 83% of the episode's arithmetic.
+In one six-second pick-and-place the language model is asked once and the written safety checks run 3,000 times, while the detector and the depth model together cost 2,573 of the episode's 3,108 thousand million multiply-adds.
 
 This is how the families actually sit together on a working arm. Each one runs at the
 rate its job needs rather than at the rate of the control loop: the language model
@@ -202,10 +202,10 @@ rule a person wrote, which is to pick whichever nominal colour is nearest.
 The written rule scores 85.4% with no training data at all, and the learned classifier needs about 16 examples before it draws level and 64 before it reaches 94.0%.
 
 Below sixteen examples the learned method is not merely worse, it is unstable, because
-its accuracy varies by ten points from one run to the next depending on which examples
-it happened to get. The written rule has no such variance, because it has nothing to
-fit. This is the real shape of the trade: learning buys accuracy with data, and if you
-have no data it buys nothing.
+its accuracy over nine runs spreads by 11.0 points at eight examples and still by 4.8
+points at sixteen, depending on which examples it happened to get. The written rule has
+no such spread, because it has nothing to fit. This is the real shape of the trade:
+learning buys accuracy with data, and if you have no data it buys nothing.
 
 ![Two log-scale bars: 150,564 operations for the written rule against 4,573,642,752 for the classifier, and 0.04 microseconds against 1.27 milliseconds with a dashed 2 ms line](../../images/using-a-model-for-real/the-map-of-models/cost-comparison.svg)
 
@@ -220,7 +220,7 @@ stay written even on robots whose perception is entirely learned.
 
 ![A grouped bar chart of the written rule and the learned classifier under four conditions, 85 against 96 as expected, 60 against 88 brighter, 74 against 77 on a warmer tablecloth and 71 against 72 with a noisier camera](../../images/using-a-model-for-real/the-map-of-models/where-each-breaks.svg)
 
-Neither method survives a change it was not built for: brighter light costs the written rule 25 points and the learned one 8, and a warmer tablecloth costs them 12 and 19.
+Neither method survives a change it was not built for: brighter light takes the written rule from 85.4% to 60.5% and the learned one from 95.5% to 87.8%, and a warmer tablecloth takes them to 73.9% and 76.6%.
 
 The third case is honesty about failure, and this picture is the one that should stop
 anybody from thinking the choice is between a fragile rule and a robust network. Both

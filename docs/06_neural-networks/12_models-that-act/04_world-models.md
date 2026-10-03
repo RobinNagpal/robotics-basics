@@ -483,6 +483,13 @@ measure for your own system rather than guess. You choose how often to remake th
 and section 4 showed that remaking it at every step is what makes a drifting model usable
 at all.
 
+One thing to notice when you run it is that the gaps it prints are larger than section 3's,
+and the reason is worth checking for yourself. The snippet keeps every recorded transition,
+including the few that touch the hard stop, and the single rollout it runs happens to reach
+the stop once, so what it is printing is section 6's failure rather than section 3's steady
+drift. Add a line that counts how many steps of the real path sit at the stop and you can
+watch the two kinds of error separate.
+
 The last line of the loop above is the one to take away. Print the gap at a few horizons,
 on your own system, before you trust the model for anything. The one-step number will look
 excellent and it will tell you almost nothing, and the number at thirty steps is the one

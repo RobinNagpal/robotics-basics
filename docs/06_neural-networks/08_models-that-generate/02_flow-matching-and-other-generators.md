@@ -67,7 +67,7 @@ journey, and those arrows can be drawn straight out of the trained network.
 
 ![Three panels of blue arrows on a grid at times 0.15, 0.50 and 0.85, pointing outwards from the middle and converging onto the two arcs by the last panel](../../images/models-that-generate/flow-matching-and-other-generators/vector-field-arrows.svg)
 
-The arrows the trained model gives at three moments in the journey: 1.92 m long on average at time 0.15, 1.61 m at time 0.50 and 2.16 m at time 0.85, by which point they have stopped pointing outwards in general and started pointing at the arcs in particular.
+The arrows the trained model gives at three moments in the journey: 1.94 m long on average at time 0.15, 1.64 m at time 0.50 and 2.16 m at time 0.85, by which point they have stopped pointing outwards in general and started pointing at the arcs in particular.
 
 Early on, the arrows carry everything outwards away from the middle, because
 almost all of the data is away from the middle. Late on, they point at the

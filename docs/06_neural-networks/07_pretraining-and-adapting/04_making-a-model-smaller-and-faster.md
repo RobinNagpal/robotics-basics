@@ -372,11 +372,12 @@ The five bars are the teacher at two precisions and the student at three, with t
 bytes of weights on the left on a log scale and the accuracy on the right.
 
 The float teacher's weights take 6,540 bytes and it scores 0.933, the distilled
-student's take 316 bytes for 0.931, and squeezing that student to 4 bits takes it to
-79 bytes and 0.930. So the two methods together give weights 83 times smaller and 22
-times less arithmetic for 0.003 of accuracy, which neither reached alone, and that is
-the order people use: distil first, because it changes the shape of the model, and
-quantise afterwards, because it works on whatever shape it is given.
+student's take 316 bytes for 0.922, and squeezing that student to 4 bits takes it to
+79 bytes and 0.916. So the two methods together give weights 83 times smaller and 22
+times less arithmetic for 0.017 of accuracy, of which distillation cost 0.011 and the
+last fourfold shrink cost the other 0.006. That is the order people use them in, since
+distilling changes the shape of the model and quantising then works on whatever shape
+it is given.
 
 Two cautions belong with that number. This is a small network on a simulated job, so
 the shape of the result is trustworthy and the exact figures are not, and a real model

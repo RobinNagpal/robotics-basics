@@ -3,7 +3,7 @@
     05_recipes-for-models-that-act-and-predict.md
         -> images/starting-your-own-model/recipes-for-models-that-act-and-predict/
 
-Run with:  python3 docs/diagrams/starting_your_own_model_5.py
+Run with:  pixi run python ../docs/diagrams/starting_your_own_model_5.py
 Add --png <folder> to also write PNG copies for checking by eye.
 
 Every number drawn in a picture is worked out in this file, and the script prints
@@ -1036,8 +1036,8 @@ def two_answer_test() -> None:
         ax.set_ylim(0, ax.get_ylim()[1] * 1.18)
         ax.text(mean, ax.get_ylim()[1] * 0.97, f' mean {mean:+.1f} mm', fontsize=9.5,
                 color=GRIP, va='top')
-        ax.set_title(f'{"Both ways" if name == "two ways" else "One way"}: the mean is '
-                     f'{near:.1f} mm from any real label', fontsize=11.5, weight='bold')
+        ax.set_title(f'{"Both ways" if name == "two ways" else "One way"}: '
+                     f'{near:.1f} mm from any real label', fontsize=10.5, weight='bold')
     _save(fig, 'two-answer-test.svg')
 
 
@@ -1130,7 +1130,7 @@ def what_generating_costs() -> None:
     axl.set_ylim(0, 1.05)
     axl.set_xlabel('passes through the network for one chunk', fontsize=10)
     axl.set_ylabel('runs that work, out of 1', fontsize=10)
-    axl.legend(fontsize=9.5, frameon=False, loc='upper left')
+    axl.legend(fontsize=9.5, frameon=False, loc='lower right')
     axl.grid(color=GRID, lw=0.6)
     axl.set_axisbelow(True)
     axl.set_title('When there is one right answer, generating adds nothing',
@@ -1184,8 +1184,8 @@ def too_few_passes() -> None:
         ax.set_ylim(-0.16, 0.16)
         ax.set_xlabel('along the table (m)', fontsize=10)
         ax.set_ylabel('across the table (m)', fontsize=10)
-        ax.set_title(f'{k} passes a chunk: works on '
-                     f'{done[passes.index(k)]:.2f} of runs', fontsize=11.5, weight='bold')
+        ax.set_title(f'{k} passes: works on {done[passes.index(k)]:.2f} of runs',
+                     fontsize=11, weight='bold')
 
     axr = axes[2]
     _plain(axr)
@@ -1200,8 +1200,7 @@ def too_few_passes() -> None:
     axr.legend(fontsize=9.5, frameon=False, loc='center right')
     axr.grid(color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('Cutting passes to save time destroys the policy',
-                  fontsize=11.5, weight='bold')
+    axr.set_title('Cutting passes destroys the policy', fontsize=11, weight='bold')
     _save(fig, 'too-few-passes.svg')
 
 
@@ -1679,9 +1678,9 @@ def planning_against_it() -> None:
     shift = np.stack([0.20 - box[:, 0], -box[:, 1]], 1)
     for name, col in (('written rule', GRIP), ('planning in the\nlearned model', LINK)):
         paths = runs[name]
-        for i in range(30):
+        for i in range(18):
             ax0.plot(paths[i, :, 0] + shift[i, 0], paths[i, :, 1] + shift[i, 1],
-                     color=col, lw=1.0, alpha=0.55)
+                     color=col, lw=0.9, alpha=0.6)
     ax0.add_patch(Rectangle((0.20 - HW, -HH), 2 * HW, 2 * HH, color='#999999'))
     ax0.plot([], [], color=GRIP, lw=2, label='written rule')
     ax0.plot([], [], color=LINK, lw=2, label='planning in the learned model')
@@ -2034,7 +2033,7 @@ def the_simulator_must_be_right() -> None:
     axr.plot(dls, plain, marker='o', color=GRIP, lw=2, label='searched in one simulator')
     axr.plot(dls, rand, marker='s', color=PURPLE, lw=2, label='searched in many')
     axr.axvline(0, color=MUTED, ls='--', lw=1.1)
-    axr.text(0.15, 0.46, 'what the simulator assumed', fontsize=9.5, color=MUTED)
+    axr.text(0.15, 0.22, 'what the simulator assumed', fontsize=9.5, color=MUTED)
     axr.set_ylim(0, 1.05)
     axr.set_xlabel('steps a command takes to reach the joints', fontsize=10)
     axr.set_ylabel('runs that work, out of 1', fontsize=10)

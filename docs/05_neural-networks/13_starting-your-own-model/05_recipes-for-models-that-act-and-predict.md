@@ -8,7 +8,7 @@ same shape so that the two read as one reference.
 
 One thing changes, and it changes nearly every number here. A picture of a mug
 can be downloaded and labelled by somebody who has never seen a robot, while a
-recording of an arm doing a job can only be made by a person driving that arm in
+recording of an arm doing a job can only be made by a person driving the arm in
 real time, so every example below is expensive.
 
 Each recipe answers the same six questions. What is one training example, as a
@@ -19,7 +19,7 @@ watch, and the mistake almost everybody makes first?
 The page assumes you have read
 [models that act](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md)
 and the three pages after it, so that a policy, an action chunk and a world model
-are familiar, and that you have worked through
+are familiar, and that you have read
 [before you train anything](01_before-you-train-anything.md) and
 [what to reuse and what to train](03_what-to-reuse-and-what-to-train.md). Three
 warnings run through it, each costing weeks: the action space must be written
@@ -29,10 +29,10 @@ which family to attempt first.
 
 Every number in the pictures is worked out and printed by
 [`docs/diagrams/starting_your_own_model_5.py`](../../diagrams/starting_your_own_model_5.py).
-The table, the gripper, the box and the person demonstrating are simulated, but
-everything done to them is real: the policies are networks trained by Adam in
-NumPy, the generating policy is a real diffusion model over action chunks, and
-the dynamics model is a real one-step predictor.
+The table, the gripper, the box and the demonstrator are simulated, but everything
+done to them is real: the policies are networks trained by Adam in NumPy, the
+generating policy is a real diffusion model over action chunks, and the dynamics
+model is a real one-step predictor.
 
 ## Contents
 
@@ -102,9 +102,9 @@ loss falls while the drift measured in
 [why copying one step at a time drifts](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md#3-why-copying-one-step-at-a-time-drifts)
 gets worse.
 
-The first warning belongs here. The action space is the list of numbers a command
-is made of, with what they mean and how they are scaled, and it must be written
-down before the first episode.
+The first warning belongs here. The **action space** is the list of numbers a
+command is made of, with what they mean and how they are scaled, and it must be
+settled before the first episode.
 
 ![One recorded episode drawn as places to go to and as changes per step, beside three bars of final miss for three readings of the same policy](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/action-space-locked.svg)
 
@@ -114,10 +114,12 @@ other ends 41.12 centimetres from the goal instead of 0.38.
 
 Those three bars are one trained policy on one arm: played as trained it misses
 by 0.38 centimetres, read as places rather than changes by 41.12, and with its
-two axes swapped by 60.70. No amount of extra data fixes that, because the
-recordings and the runner disagree about what a number means, so write the joint
-order, the units, place or change, the rate and the scaling numbers into a file
-beside the weights.
+axes swapped by 60.70. No amount of extra data fixes that, because the recordings
+and the runner disagree about what a number means, so write the joint order, the
+units, place or change, the rate and the scaling numbers into a file beside the
+weights.
+
+The second warning is about who holds the handle.
 
 ![Two people's paths round the same box, a histogram of how far each moves next, and four bars of success for four ways of gathering eighty recordings](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/two-demonstrators.svg)
 
@@ -129,7 +131,7 @@ The training asks for one answer close to every label, so where two people
 answered differently it gives the average, and on the mixed set the best single
 answer is wrong by 6.47 times as much, squared. The cost is small while both
 people pass the box on the same side, since success falls only from 0.788 to
-0.704, and grows to 0.614 when they pass on opposite sides. One person on two
+0.704, and it falls to 0.614 when they pass on opposite sides. One person on two
 days counts as two people, because a handle set up differently shows up in the
 labels the same way. The mistake almost everybody makes first is to judge the
 policy by its loss, which falls on moments a person visited while the arm visits
@@ -205,8 +207,8 @@ recordings you already have.
 
 Where the demonstrator went both ways round the box the average of the labels
 lies 27.9 millimetres from the nearest label anybody recorded, against a spread
-of 6.2 inside one group, while where one way was recorded it lies 0.0 from a real
-label.
+of 6.2 inside one group, and where one way was recorded it lies 0.0 millimetres
+from a real label.
 
 That distance is the whole test: near zero the average is itself a reasonable
 answer, while several times the spread inside one group it is a movement nobody
@@ -226,16 +228,16 @@ costs is passes through the network.
 ![A curve of success against the number of denoising passes with the plain policy as a line, beside bars of the milliseconds those passes cost](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/what-generating-costs.svg)
 
 On a task recorded with one right answer the plain policy works on 0.94 of runs
-in a single pass while the generating policy reaches 0.84 only after sixteen,
-which at three milliseconds a pass eat 48 of the 267 a chunk of eight buys.
+in a single pass while the generating policy reaches 0.84 only after sixteen, and
+those sixteen take 48 of the 267 milliseconds a chunk of eight buys.
 
 The starting point is the diffusion policy packaged in LeRobot, which trains on
 the same dataset as the action-chunking transformer, so swapping between them is
 a configuration change. The first milestone is a picture rather than a run:
 generate twenty chunks at one observation and check that they fall into the
 groups the demonstrations fall into rather than one blurred lump. The number to
-watch is the share of runs that fail the way the averaging failed, which here is
-the share that hit the box.
+watch is the share of runs that fail the way the averaging failed, here the share
+that hit the box.
 
 ![Runs at two passes a chunk beside runs at sixteen, and curves of success and box hits against the number of passes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/too-few-passes.svg)
 
@@ -282,7 +284,7 @@ attempts are wasted.
 
 With one job recorded the instruction carries no information and the same network
 does as well without it, while with four jobs the model told which job misses by
-0.5 centimetres and the model not told misses by 11.9.
+0.4 centimetres and the model not told misses by 12.4.
 
 Those two bars are the same network on the same recordings, differing only in
 whether the job was part of the input, and the untold one fails because it
@@ -398,9 +400,9 @@ hours, against the 22 minutes of a person that forty demonstrations cost.
 
 That comparison is the third warning. Choosing reinforcement learning means
 building a simulator first, and a simulator is a project in itself: a model of
-the arm and the objects, contact that behaves, a camera view if the policy uses
-pictures, a reset that puts everything back, and a reward that cannot be earned
-the wrong way. MuJoCo, PyBullet and Isaac give you the physics and
+the arm and the objects, contact that behaves, a camera view if the policy needs
+one, a reset that puts everything back, and a reward that cannot be earned the
+wrong way. MuJoCo, PyBullet and Isaac give you the physics and
 Stable-Baselines3 gives you PPO and SAC, so what is left is the part specific to
 your cell, which decides whether any of it transfers.
 
@@ -413,15 +415,15 @@ late, and drops to 0.59 when three things are wrong at once.
 The curves on the right show what is done about that. The policy searched in one
 simulator survives a delay of four steps and collapses by six, while the policy
 searched in many, with the gain, the obstacle size and the reported goal drawn
-fresh for every task, works at every delay tested. That is domain randomisation,
-described in
+fresh for every task, works at every delay tested. That is **domain
+randomisation**, described in
 [why this happens in a simulator](../11_learning-from-outcomes/01_reinforcement-learning.md#6-why-this-happens-in-a-simulator-and-what-the-crossing-costs),
 and its cost shows in the learning curve above, where the randomised search needs
 many more rounds to reach a worse score at home.
 
 It is nonetheless the right call when the job cannot be demonstrated because it
-needs force or speed a person cannot produce through a handle, when the outcome
-can be scored by a program as
+needs force or speed no handle can carry, when the outcome can be scored by a
+program as
 [rewards, preferences and verifiers](../11_learning-from-outcomes/02_rewards-preferences-and-verifiers.md)
 sets out, and when what is learned is contact a simulator can represent. The
 mistake almost everybody makes first is to start the simulator and the policy the

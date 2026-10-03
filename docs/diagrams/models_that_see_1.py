@@ -206,7 +206,6 @@ def scene() -> tuple[Arr, list[dict]]:
         ('bolt', 'bolt', _ellipse(yy, xx, 344, 186, 9.0, 5.0), (0.34, 0.34, 0.36)),
     ]
     objects: list[dict] = []
-    painted = np.zeros((H, W), dtype=bool)
     # painted later means painted in front, so earlier objects lose hidden pixels
     for name, cls, mask, colour in specs:
         rgb[mask] = colour
@@ -220,7 +219,6 @@ def scene() -> tuple[Arr, list[dict]]:
         ys, xs = np.nonzero(vis)
         ob['box'] = (float(xs.min()), float(ys.min()), float(xs.max()), float(ys.max()))
         ob['area'] = int(vis.sum())
-    del painted
     # a little shading so the shapes are not flat, and faint noise
     shade = 1.0 - 0.00035 * (yy - 150.0)
     rgb *= np.clip(shade, 0.85, 1.05)[..., None]
@@ -312,7 +310,6 @@ def resnet50_layers(img: int = 224) -> list[tuple[str, int, int, int, int]]:
 
 def resnet_counts(img: int = 224, classes: int = 1000) -> dict[str, float]:
     """Parameters and multiply-adds of the 50-layer residual network, from its shapes."""
-    params = 9472 + 64 * 2                     # the 7x7 stem and its normalisation
     macs = 0.0
     by_stage: dict[str, float] = {}
     params = 0.0
@@ -3149,3 +3146,68 @@ def mask_to_grasp() -> None:
                  'across it', fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, SEG_DOC, 'mask-to-grasp.svg')
+
+
+def main() -> None:
+    """Draw every picture. Pass --png <folder> to also write PNG copies for checking."""
+    global PNG_DIR
+    if len(sys.argv) == 3 and sys.argv[1] == '--png':
+        PNG_DIR = pathlib.Path(sys.argv[2])
+        PNG_DIR.mkdir(parents=True, exist_ok=True)
+    # 01_vision-backbones.md
+    backbone_and_heads()
+    parameter_split()
+    shared_vs_separate()
+    work_per_second()
+    patch_grid()
+    patch_to_vector()
+    position_and_shuffle()
+    class_token()
+    shapes_ladder()
+    receptive_field()
+    shift_test()
+    data_size_curve()
+    conv_block_shapes()
+    work_per_picture()
+    cost_vs_resolution()
+    patch_size_and_tokens()
+    attention_memory()
+    pyramid_grids()
+    apparent_size()
+    small_object_cells()
+    top_down_pathway()
+    neighbours_picture()
+    neighbour_agreement()
+    feature_space_map()
+    why_pixels_fail()
+    # 02_detection-and-segmentation.md
+    four_jobs()
+    class_versus_instance()
+    output_sizes()
+    grasp_point_from_each_job()
+    box_as_numbers()
+    iou_arithmetic()
+    iou_ladder()
+    iou_threshold_count()
+    why_many_guesses()
+    nms_steps()
+    nms_threshold()
+    nms_close_objects()
+    ranked_detections()
+    precision_recall()
+    threshold_tradeoff()
+    ap_at_thresholds()
+    query_slots()
+    matching_cost()
+    before_and_after()
+    duplicate_pressure()
+    mask_as_numbers()
+    mask_head()
+    mask_resolution()
+    prompt_to_mask()
+    mask_to_grasp()
+    print(f'wrote the diagrams under {IMAGES}')
+
+
+if __name__ == '__main__':
+    main()

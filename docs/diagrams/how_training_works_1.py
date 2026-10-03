@@ -1341,7 +1341,7 @@ def loss_against_step() -> None:
                       fontsize=11.5, weight='bold', color=INK)
     axes[1].grid(True, which='both', color=GRID, lw=0.5)
     fig.suptitle('Forty steps at a learning rate of 0.03: the gap to the bottom is cut '
-                 'by about a third every step',
+                 'to about an eighth of itself every step',
                  fontsize=12.5, weight='bold', color=INK)
     fig.tight_layout()
     _save(fig, DESC_DOC, 'loss-against-step.svg')

@@ -476,20 +476,19 @@ them will be of the same kind and in the same direction. The third block is sect
 temperature picture, with the last digit differing because the teacher's raw outputs
 have been written here to two decimal places.
 
-What the libraries do for you is everything above this written out efficiently and
-for a whole model at once. In PyTorch the usual route is `torch.ao.quantization` for
-8-bit work, `bitsandbytes` for the 4-bit weights that the last page's QLoRA uses, and
-an export to a runtime such as ONNX Runtime or TensorRT when the model has to go on a
-robot. For distillation there is no special library to speak of, because the training
-loop is an ordinary one with a different target, and for structured pruning
-`torch.nn.utils.prune` will set weights to zero while leaving the shapes alone, so
-the actual shrinking of the matrices is something you do yourself.
+What the libraries do is everything above, written out efficiently and for a whole
+model at once. In PyTorch the usual route is `torch.ao.quantization` for 8-bit work,
+`bitsandbytes` for the 4-bit weights that the last page's QLoRA uses, and an export to
+a runtime such as ONNX Runtime or TensorRT when the model goes on a robot. For
+distillation there is no special library to speak of, because the training loop is an
+ordinary one with a different target, and `torch.nn.utils.prune` will set weights to
+zero while leaving the shapes alone, so the actual shrinking of the matrices is
+something you do yourself.
 
-What you still have to decide is the part no library can decide. You choose how many
-bits, and section 3 showed that 8 is free, 4 is nearly free and 2 needs a training
-run. You choose how finely the scales are shared, which costs a little storage and
-buys protection from uneven weights. You choose whether to distil, which costs a
-training run and a teacher but gives savings that quantisation cannot reach. And you
-decide what accuracy you are willing to give up, which is a question about your robot
-and not about your model, because the difference between 0.933 and 0.922 means
-nothing until somebody says what a failed grasp costs.
+What you still decide is the part no library can. You choose how many bits, and
+section 3 showed that 8 is free, 4 is nearly free and 2 needs a training run. You
+choose how finely the scales are shared. You choose whether to distil, which costs a
+training run and a teacher but reaches savings quantisation cannot. And you decide
+what accuracy you will give up, which is a question about your robot rather than your
+model, because the difference between 0.933 and 0.922 means nothing until somebody
+says what a failed grasp costs.

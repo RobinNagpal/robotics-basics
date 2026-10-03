@@ -120,7 +120,7 @@ never overshoot.
 ![Two charts of the loss against the step number for forty steps, the left on an ordinary scale and the right with the vertical axis in powers of ten](../../images/how-training-works/gradient-descent/loss-against-step.svg)
 
 The loss falls from 99.5020 to 11.5214 after one step and 1.3508 after two, and
-the gap to the bottom falls by about a third every step.
+the gap to the bottom is cut to about an eighth at every step.
 
 The left chart is the one a training run prints, and it has the shape every run
 has: a steep fall and then a long flat stretch where nothing seems to be
@@ -355,7 +355,7 @@ better.
 ![On the left a contour map of a saddle with a path that slows near the middle and then escapes downwards, and on the right the loss against step number showing a long flat stretch](../../images/how-training-works/gradient-descent/a-saddle.svg)
 
 The run slows almost to a stop near the saddle at a loss of 0.0000 around step 20
-and then falls away to a real bottom at -0.2500 by step 50.
+and then falls away towards a real bottom at -0.2500.
 
 A **saddle point** is a place where the slope is zero in every direction but the
 loss goes up in some directions and down in others. The made-up loss here is

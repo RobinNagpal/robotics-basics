@@ -293,7 +293,7 @@ vectors that [Tokens and
 embeddings](../05_turning-the-world-into-numbers/01_tokens-and-embeddings.md)
 described, so a question about a scalpel can find a note about a blade.
 
-![Two bar charts of the drawer the model would name for the scalpel: without retrieval it says 3 at 0.533, and with 75 retrieved words in the prompt it says 8 at 0.797](../../images/language-and-multimodal-models/large-language-models/before-and-after-retrieval.svg)
+![Two bar charts of the drawer the model would name for the scalpel: without retrieval it says 3 at 0.533, and with 61 retrieved words in the prompt it says 8 at 0.797](../../images/language-and-multimodal-models/large-language-models/before-and-after-retrieval.svg)
 
 With nothing but the question the model gives the right drawer a probability of
 0.077, and with the three best-matching notes in the prompt the right drawer rises
@@ -307,11 +307,11 @@ imitates that by mixing its counts with what the prompt says comes next. Either
 way the knowledge lives in the prompt, so correcting a wrong fact means editing a
 document rather than retraining anything.
 
-![Three bar charts: questions answered right rise from 16 to 40, prompt tokens from 51 to 190, and the time spent reading the prompt from 6.8 to 25.3 milliseconds](../../images/language-and-multimodal-models/large-language-models/retrieval-accuracy-and-cost.svg)
+![Three bar charts: questions answered right rise from 16 to 40, prompt tokens from 51 to 161, and the time spent reading the prompt from 6.8 to 21.5 milliseconds](../../images/language-and-multimodal-models/large-language-models/retrieval-accuracy-and-cost.svg)
 
 Retrieval turns 16 right answers out of 40 into 40 out of 40, and pays for it with
-a prompt that grows from 51 tokens to 190 and a reading time that grows from 6.8
-milliseconds to 25.3.
+a prompt that grows from 51 tokens to 161 and a reading time that grows from 6.8
+milliseconds to 21.5.
 
 The honest comparison with the obvious alternative, which is to train the facts
 into the model, runs like this. Training them in keeps the prompt short and the

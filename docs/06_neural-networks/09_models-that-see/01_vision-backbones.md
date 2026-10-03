@@ -5,9 +5,9 @@ generators](../08_models-that-generate/02_flow-matching-and-other-generators.md)
 finished the chapter on models that make something new, by walking a cloud of
 noise along a learned direction until it became a picture or a set of robot
 movements. This chapter turns that round. A picture already exists, because a
-camera on the robot took it, and the job is to work out what is in it, where it
-is, and which pixels belong to it. The models that do this are built on one
-shared part, and this page explains that part.
+camera on the robot took it, and the job is to work out what is in it and where.
+The models that do this are all built on one shared part, and this page explains
+that part.
 
 The page answers five questions. What is a **backbone**, and why is almost every
 vision model built as one large shared piece with a small piece bolted on top?
@@ -18,14 +18,13 @@ features at several sizes rather than one? And what do the numbers out of a
 pretrained backbone look like, measured rather than described?
 
 It is written for a reader who has read
-[attention](../06_the-transformer/01_attention.md), because this page does not
-explain again what a query, a key and a value are, and
-[pictures, sound and robot
+[attention](../06_the-transformer/01_attention.md), because it does not explain
+again what a query, a key and a value are, and [pictures, sound and robot
 states](../05_turning-the-world-into-numbers/02_pictures-sound-and-robot-states.md),
-which explains how a photograph becomes a grid of numbers and what a patch is.
-It also assumes the convolution from [what a network can
-learn](../02_inside-a-network/04_what-a-network-can-learn.md) and the idea of a
-pretrained, frozen model from [self-supervised
+which explains how a photograph becomes a grid of numbers and what a patch is. It
+also assumes the convolution from [what a network can
+learn](../02_inside-a-network/04_what-a-network-can-learn.md) and the frozen
+pretrained model from [self-supervised
 pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md).
 
 Every number in the pictures is worked out by the script that draws them. The
@@ -425,27 +424,25 @@ gives you.
 ## 7. Where to read next
 
 - [Detection and segmentation](02_detection-and-segmentation.md) is the next
-  page, and it puts heads on this backbone: boxes, outlines, the measurements
-  that say whether a guess was right, and the way modern detectors avoid
-  guessing twice.
+  page, and it puts heads on this backbone: boxes, outlines, and the
+  measurements that say whether a guess was right.
 - [Open-vocabulary vision](03_open-vocabulary-vision.md) then explains how a
-  backbone can name a thing nobody listed when it was trained, by learning
-  picture and word vectors in the same space.
+  backbone can name a thing nobody listed when it was trained.
 - [Depth and 3D](04_depth-and-3d.md) covers what else a backbone can give back,
   such as a distance for every pixel, which is what turns a box on a screen into
   a place an arm can reach.
 - [Vision-language
   models](../10_language-and-multimodal-models/03_vision-language-models.md)
-  shows the other common use of the backbone in this page, which is to feed a
-  language model with picture tokens.
+  shows the other common use of this backbone, which is to feed a language model
+  with picture tokens.
 - [Self-supervised
   pretraining](../07_pretraining-and-adapting/01_self-supervised-pretraining.md)
   explains how these backbones are trained without anybody labelling the
-  pictures, which is where a frozen backbone's quality comes from.
+  pictures, which is where their quality comes from.
 - [Image
   classification](../../07_learned-models/03_seeing-models/03_also-used/01_image-classification.md)
   is the catalogue page for the simplest head of all, with the real models you
-  can download and what each costs to run.
+  can download.
 
 ---
 
@@ -481,25 +478,22 @@ for name, grid in levels(scene).items():         # the four levels of the pyrami
 
 The library gives you the arrangement, the arithmetic and a set of trained
 weights, and the counts it prints are the ones this page worked out from the
-layer shapes: 86,567,656 for the vision transformer with its classify head, and
-25,557,032 for the 50-layer convolutional network with its own. Passing
-`weights='DEFAULT'` instead of `weights=None` downloads a backbone that somebody
-has already trained on millions of pictures, which is what section 6 measured,
-and `requires_grad_(False)` on the backbone's parameters is what freezing means
-in code.
+layer shapes. Passing `weights='DEFAULT'` instead of `weights=None` downloads a
+backbone somebody has already trained on millions of pictures, which is what
+section 6 measured, and `requires_grad_(False)` on the backbone's parameters is
+what freezing means in code.
 
 What you still have to decide is the shape of the problem rather than the shape
 of the layers. You choose how large a picture to feed in, knowing from section 4
 what each extra pixel costs and from section 5 what a smaller picture does to
 small objects. You choose whether to freeze the backbone, which makes training
-cheap and quick but limits how far the model can move from what it already knows,
-or to fine-tune it, which is the subject of [fine-tuning and
+cheap but limits how far the model can move from what it knows, or to fine-tune
+it, which is the subject of [fine-tuning and
 adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md). You
-choose which levels to take from the backbone, because `create_feature_extractor`
-will hand you any of them and a head that only names things needs only the last.
+choose which levels to take, because `create_feature_extractor` will hand you any
+of them and a head that only names things needs only the last.
 
-The one thing the library will not decide for you is which backbone suits the
-robot, and the honest way to settle that is to measure both on your own pictures
-at the resolution you will really use, since the counts above tell you what the
-arithmetic costs but not what your camera, your objects and your computer will do
-with it.
+The one thing the library will not decide is which backbone suits your robot, and
+the honest way to settle that is to measure both on your own pictures at the
+resolution you will really use, because the counts above say what the arithmetic
+costs but not what your camera, your objects and your computer will do with it.

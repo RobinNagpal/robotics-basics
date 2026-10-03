@@ -172,9 +172,9 @@ later idea on this page exists because of that number.
 ## 3. Why copying one step at a time drifts
 
 The training in section 2 is honest supervised learning, and a model fitted that
-way can be very accurate on the examples it was fitted to and still fail on the
-robot. This section shows that failure happening and names it, because it is the
-central problem of behaviour cloning and everything after it is a response.
+way can still fail on the robot. This section shows that failure happening and
+names it, because it is the central problem of behaviour cloning and everything
+after it is a response.
 
 The simulated task is a four-second reach of about 40 centimetres across a table,
 recorded 30 times a second, so 120 steps. The demonstrator starts in roughly the
@@ -188,9 +188,9 @@ every single step, and it writes its answer as a change rather than a place.
 Over 40 runs the policy ends on average 7.65 centimetres from where it should be,
 the best run ends 0.26 centimetres out and the worst ends 20.22 centimetres out.
 
-Each single prediction is good. The error of one predicted step, measured against
-demonstrations the policy was not fitted to, is 0.623 millimetres. The trouble is
-what those small errors do to each other over 120 steps.
+Each single prediction is good, because the error of one predicted step, measured
+against demonstrations the policy was not fitted to, is 0.623 millimetres. The
+trouble is what those small errors do to each other over 120 steps.
 
 ![The average error rising to 7.65 cm over four seconds, above a dotted curve showing what unrelated wobble would give, beside a bar chart of three servo noise levels](../../images/models-that-act/behaviour-cloning-and-action-chunks/error-over-time.svg)
 
@@ -198,11 +198,11 @@ The error climbs to 7.65 centimetres by four seconds, which is 2.53 centimetres
 more than it would be if each step's mistake were unrelated wobble, and turning
 the joints' own error off entirely leaves it at 7.36 centimetres.
 
-Those two facts together say where the error comes from. It is not noise in the
-motors, because perfect motors barely change it, and it is not independent
-mistakes adding up, because independent mistakes would grow like the square root
-of the number of steps while this grows faster. It is that the mistakes point the
-same way, and they do that because of what each one does to the next question.
+Those two facts say where the error comes from. It is not noise in the motors,
+because perfect motors barely change it, and it is not independent mistakes adding
+up, because those would grow like the square root of the number of steps while
+this grows faster. The mistakes point the same way, because of what each one does
+to the next question.
 
 ![Left: one run drawn as dots coloured by how far its input is from the training data. Right: that distance rising from about 1 cm to 15.7 cm over four seconds](../../images/models-that-act/behaviour-cloning-and-action-chunks/unseen-inputs.svg)
 
@@ -211,13 +211,13 @@ recorded moment, which is where a fresh demonstration also sits at 0.82
 centimetres, and by four seconds they are 15.72 centimetres away, nineteen times
 further out.
 
-That is the whole mechanism, and it has a name. A small error moves the arm
-slightly off the states the demonstrations covered, so the next question is asked
-about a situation nobody ever recorded, the model's answer there is worse because
-it was never trained there, and that worse answer moves the arm further off still.
-This is called **covariate shift**, which means that the inputs the model meets
-when it is running are drawn from a different spread than the inputs it was
-trained on, and the policy itself is what shifted them.
+That is the whole mechanism. A small error moves the arm slightly off the states
+the demonstrations covered, so the next question is asked about a situation nobody
+ever recorded, the model's answer there is worse because it was never trained
+there, and that worse answer moves the arm further off still. This is called
+**covariate shift**, which means the inputs the model meets while running come
+from a different spread than the inputs it was trained on, and here the policy
+itself is what shifted them.
 
 It is tempting to think more demonstrations will fix this, and they help much less
 than you would hope.
@@ -228,12 +228,11 @@ Going from 5 demonstrations to 400, which is eighty times the data and 28,800
 recorded moments, takes the error of one predicted step from 0.697 to 0.623
 millimetres and the drift at four seconds from 8.25 to 5.54 centimetres.
 
-More data makes each answer a little better, and it cannot change the shape of the
+More data makes each answer a little better and cannot change the shape of the
 problem, because the policy still visits states that no amount of ordinary
 demonstrating covers. Those states are exactly the ones a person never gets into,
-since a person corrects a mistake before it grows. So the fixes that work are not
-about collecting more of the same, and the next two sections are the ones actually
-used.
+since a person corrects a mistake before it grows, so the fixes that work are not
+about collecting more of the same.
 
 ---
 

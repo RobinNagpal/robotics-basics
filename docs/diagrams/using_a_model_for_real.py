@@ -1910,8 +1910,11 @@ def calls_per_episode() -> None:
         total_work += calls * macs
         print(f'[p2-s2] {nm:38s} {rate:7.2f} a second, {calls:6.1f} calls in {secs:.0f} s, '
               f'{calls * macs:9.1f} thousand million multiply-adds')
+    seeing = rows[2][1] * secs * rows[2][2] + rows[3][1] * secs * rows[3][2]
     print(f'[p2-s2] the whole episode: {total_calls:.0f} calls and '
           f'{total_work:,.0f} thousand million multiply-adds')
+    print(f'[p2-s2] the detector and the depth model together cost {seeing:,.0f} of those '
+          f'{total_work:,.0f}, which is {100 * seeing / total_work:.0f}%')
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.8, 4.8), facecolor='white',
                                    gridspec_kw={'width_ratios': [1.0, 1.0]})
@@ -2038,6 +2041,8 @@ def data_needed() -> None:
     ax2.set_ylabel(f'hours of a person driving the arm, at {secs_each:.0f} s each', fontsize=9.5)
     ax2.set_ylim(0, max(hours) * 1.22)
     ax2.set_title('The one cost you pay yourself', fontsize=11.5, weight='bold')
+    for j in learned:
+        print(f'[p2-s3] {j[1]:34s} needs about {j[4]:,.0f} {j[5]}')
     for c, h in zip(counts, hours):
         print(f'[p2-s3] {c:,} demonstrations at {secs_each:.0f} seconds each is '
               f'{h:.1f} hours of a person driving the arm')

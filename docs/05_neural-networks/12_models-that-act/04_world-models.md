@@ -378,9 +378,13 @@ at, which for an arm means deliberately recording contact rather than only succe
 
 ## 7. Where to read next
 
+- [Starting a model of your
+  own](../13_starting-your-own-model/01_before-you-train-anything.md) is the
+  next chapter, and it answers the question these twelve chapters leave open:
+  you know how these models work, so how do you begin making one.
 - [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
-  is the next page, and it takes the latency and honesty arguments of sections 4 and 6
-  and applies them to testing a model properly on a real robot.
+  comes after that chapter, and it takes the latency and honesty arguments of sections 4
+  and 6 and applies them to testing a model properly on a real robot.
 - [Reinforcement learning](../11_learning-from-outcomes/01_reinforcement-learning.md)
   explains the learning-by-trying side of this, and a world model is what lets that trying
   happen inside a model instead of on the robot.

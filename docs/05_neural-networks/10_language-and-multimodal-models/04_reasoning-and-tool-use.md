@@ -418,6 +418,11 @@ at a fixed rate with no loop around them.
 
 ## 8. Where to read next
 
+- [Recipes for models that see and
+  understand](../13_starting-your-own-model/04_recipes-for-models-that-see-and-understand.md)
+  covers the language and vision-language jobs in its last two sections, and
+  says when the answer is a prompt, when it is retrieval, and when it is none of
+  them.
 - [Reinforcement learning](../11_learning-from-outcomes/01_reinforcement-learning.md)
   is the next page, and it explains learning by trying something and seeing how
   it turned out, which is where the training behind long working out comes from.

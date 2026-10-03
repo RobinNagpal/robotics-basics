@@ -1,8 +1,9 @@
 # Running and evaluating a model
 
-The page before this one, [world models](../12_models-that-act/04_world-models.md),
-finished the book's tour of the families, and like every page before it, it ended with a
-model that had been trained. This page is about what happens after that, because a
+The chapter before this one ended with [a page on what to do when your model does not
+work](../13_starting-your-own-model/06_when-it-does-not-work.md), and the chapter before
+that finished the book's tour of the families. Both leave you in the same place, with a
+model that has been trained. This page is about what happens after that, because a
 trained model is a file on a disk and a working robot is something else. It answers two
 questions: what has to happen between that file and an arm that moves, and how do you
 then find out honestly whether it works?

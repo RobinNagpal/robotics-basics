@@ -317,6 +317,11 @@ reward number as a tool rather than a result.
 
 ## 7. Where to read next
 
+- [Recipes for models that act and
+  predict](../13_starting-your-own-model/05_recipes-for-models-that-act-and-predict.md)
+  is honest about what learning from outcomes costs to start, because it means
+  building a simulator first, which is a different project from the one you
+  thought.
 - [Behaviour cloning and action chunks](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md)
   is the next page, and it shows the approach that avoids this whole problem by
   copying what a person did instead of scoring what the robot did.

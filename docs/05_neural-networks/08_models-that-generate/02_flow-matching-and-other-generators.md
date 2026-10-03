@@ -346,6 +346,10 @@ always does.
 
 ## 6. Where to read next
 
+- [Recipes for models that act and
+  predict](../13_starting-your-own-model/05_recipes-for-models-that-act-and-predict.md)
+  says how to start a generative model of your own, and the one question that
+  decides whether you need one at all.
 - [Vision backbones](../09_models-that-see/01_vision-backbones.md) is the next
   page, and it explains how a camera picture is turned into the numbers that a
   conditioned generator can be handed.

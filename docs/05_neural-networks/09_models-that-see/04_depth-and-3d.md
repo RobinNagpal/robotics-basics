@@ -369,6 +369,11 @@ cannot go.
 
 ## 8. Where to read next
 
+- [Recipes for models that see and
+  understand](../13_starting-your-own-model/04_recipes-for-models-that-see-and-understand.md)
+  gives the starting recipe for each of these: what one training example is, how
+  many you need, what to begin from, and the mistake almost everybody makes
+  first.
 - [Large language
   models](../10_language-and-multimodal-models/01_large-language-models.md) is
   the next page, and it starts the chapter on models that read and write words

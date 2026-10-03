@@ -66,9 +66,9 @@ it costs 5.54 megabytes, of which the two camera videos are 99.87 per cent.
 One training example is one row of the state table, the two camera frames beside
 it, and the block of commands recorded after it, so one episode gives 120
 examples. The raw frames would be 221.18 megabytes, and writing them as video at
-forty to one is the only reason a thousand episodes fits on a laptop. The joint
-and action numbers come to 7,200 bytes, so almost everything the model reads is
-picture. What governs the recipe, though, is not bytes but minutes.
+forty to one is the only reason a thousand episodes fits on a laptop, while the
+joint and action numbers come to 7,200 bytes. What governs the recipe, though, is
+not bytes but minutes.
 
 ![A stacked bar splitting one episode into moving, resetting, checking and the spoiled take, beside a log-log line of person-hours against episodes](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/hours-of-a-person.svg)
 
@@ -79,7 +79,7 @@ costs 33.6 seconds of a person, so fifty cost 28 minutes and five thousand cost
 
 How many you need is set by how much the job varies, which is best seen by
 measuring the same task twice with one more thing moving about. In the simulated
-reach below a gripper must get to a goal somewhere on a patch of table without
+reach below a gripper must reach a goal somewhere on a patch of table without
 touching a box in the way, and a run works only if it ends within 1.5 centimetres
 of the goal and never touches the box.
 
@@ -95,8 +95,7 @@ five, recording another two hundred episodes of the same thing is the wrong move
 Count instead what has to be covered before you start, which is every way the
 object can lie times every lighting condition times every starting pose with a
 few examples of each, and for six orientations and four lighting conditions that
-is a few hundred episodes rather than a few dozen. This simulated task needs tens
-only because the policy reads six clean numbers instead of two camera pictures.
+is a few hundred episodes rather than a few dozen.
 
 The starting point is a library rather than a model, since there is no useful
 pretrained plain cloning policy to download.
@@ -111,9 +110,9 @@ loss falls while the drift measured in
 [why copying one step at a time drifts](../12_models-that-act/01_behaviour-cloning-and-action-chunks.md#3-why-copying-one-step-at-a-time-drifts)
 quietly gets worse.
 
-The first warning belongs here, because it destroys work already done. The action
-space is the list of numbers a command is made of, with what they mean and how
-they are scaled, and it must be written down before the first episode.
+The first warning belongs here. The action space is the list of numbers a command
+is made of, with what they mean and how they are scaled, and it must be written
+down before the first episode.
 
 ![One recorded episode drawn as places to go to and as changes per step, beside three bars of final miss for three readings of the same policy](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/action-space-locked.svg)
 
@@ -121,13 +120,13 @@ The same recordings span 50.74 centimetres written as places to go to and 9.89
 millimetres written as changes per step, and a policy trained on one and read as
 the other ends 41.12 centimetres from the goal instead of 0.38.
 
-Those three bars are one trained policy on one arm. Played as trained it misses
+Those three bars are one trained policy on one arm: played as trained it misses
 by 0.38 centimetres, read as places rather than changes it misses by 41.12, and
-with its two axes swapped, which is what happens when the order of the joints in
-the recording is not the order the runner sends, it misses by 60.70. No amount of
+with its two axes swapped, which happens when the order of the joints in the
+recording is not the order the runner sends, it misses by 60.70. No amount of
 extra data fixes any of that, because the recordings and the runner disagree
 about what a number means, so write the joint order, the units, place or change,
-the rate and the scaling numbers into a file and save it beside the weights.
+the rate and the scaling numbers into a file beside the weights.
 
 ![Two people's paths round the same box, a histogram of how far each moves next, and four bars of success for four ways of gathering eighty recordings](../../images/starting-your-own-model/recipes-for-models-that-act-and-predict/two-demonstrators.svg)
 
@@ -139,12 +138,12 @@ The training asks for one answer close to every label, so where two people
 answered differently it gives the average, and on the mixed set the best possible
 single answer is wrong by 6.47 times as much, squared. Here the cost is small,
 because both people pass the box on the same side and the average of two safe
-paths is still safe, so success only falls from 0.788 to 0.704; when they pass on
-opposite sides it falls to 0.614, because then the average goes through the box.
-One person on two days counts as two people, since a handle set up differently
-shows up in the labels the same way. The mistake almost everybody makes first is
-to judge the policy by its loss, which is driven down on moments a person
-visited while the arm visits moments nobody did.
+paths is still safe, so success only falls from 0.788 to 0.704, while when they
+pass on opposite sides it falls to 0.614 because the average then goes through
+the box. One person on two days counts as two people, since a handle set up
+differently shows up in the labels the same way. The mistake almost everybody
+makes first is to judge the policy by its loss, which is driven down on moments a
+person visited while the arm visits moments nobody did.
 
 ---
 

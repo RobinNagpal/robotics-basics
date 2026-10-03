@@ -374,7 +374,7 @@ needs no labels, and no cheaper design has yet matched all three at once.
   a transformer whose tokens are camera pictures and arm movements, and whose
   sequences are short enough to run at control speed.
 - [Running and evaluating a
-  model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+  model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   turns the latency arithmetic here into a budget for a real robot.
 - [Language models](../../07_learned-models/07_language-models/01_overview.md)
   in the catalogue book lists the named models built this way and what each one

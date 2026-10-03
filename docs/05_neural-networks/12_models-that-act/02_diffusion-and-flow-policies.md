@@ -297,7 +297,7 @@ Reading that picture the other way round is how these systems are actually
 designed, because the number of passes is chosen last, after the camera encoder
 and the sending have taken their share and after somebody has decided how much
 slack a real robot needs. [Running and evaluating a
-model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md) goes
+model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md) goes
 through the rest of that budget.
 
 ---
@@ -367,7 +367,7 @@ and a person able to stop it.
   generators](../08_models-that-generate/02_flow-matching-and-other-generators.md)
   gives the machinery of section 4 properly, with the vector field written out.
 - [Running and evaluating a
-  model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md) is
+  model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md) is
   where the latency budget of section 5 is set out in full, together with how to
   test a policy honestly.
 - [Diffusion and flow

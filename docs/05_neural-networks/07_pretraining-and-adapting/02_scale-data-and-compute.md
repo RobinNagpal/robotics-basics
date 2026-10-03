@@ -399,7 +399,7 @@ is what the next page is about.
 - [Making a model smaller and faster](04_making-a-model-smaller-and-faster.md)
   picks up section 2's int8 column and turns it into a model that fits on a
   robot's own computer.
-- [Running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+- [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   takes section 1's point about batches and memory and turns it into a latency
   budget for a real arm.
 - [Vision-language-action models](../12_models-that-act/03_vision-language-action-models.md)

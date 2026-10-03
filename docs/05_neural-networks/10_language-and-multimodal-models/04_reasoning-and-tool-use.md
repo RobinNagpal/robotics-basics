@@ -430,7 +430,7 @@ at a fixed rate with no loop around them.
 - [Vision-language-action models](../12_models-that-act/03_vision-language-action-models.md)
   is what sits below the line in section 7, and it runs at a fixed rate with no
   loop around it.
-- [Running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+- [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   takes the latency budget of section 7 seriously and shows how it is measured on
   a real machine.
 - [Language models as planners](../../07_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)

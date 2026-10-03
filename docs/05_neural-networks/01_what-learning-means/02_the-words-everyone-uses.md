@@ -147,7 +147,7 @@ data centre, before anybody uses the model. Inference is paid for every single
 time the robot looks at a cup, on whatever computer is bolted to the robot, and
 it has to finish before the arm reaches the cup. The two have completely
 different budgets, and
-[running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+[running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
 is about the second of them. Both of them depend on the examples, which is the
 next thing to name.
 

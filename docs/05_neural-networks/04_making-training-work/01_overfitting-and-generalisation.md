@@ -387,7 +387,7 @@ too big" is a claim to check with a measurement rather than a rule.
 - [Normalisation and stability](02_normalisation-and-stability.md) is the next
   page, and it deals with the other half of making training work, which is
   keeping the numbers inside the network in a range the arithmetic can handle.
-- [Running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+- [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   takes section 2's honest number to real trials.
 - [Scale, data and compute](../07_pretraining-and-adapting/02_scale-data-and-compute.md)
   says how much data a model of a given size needs, the other side of section

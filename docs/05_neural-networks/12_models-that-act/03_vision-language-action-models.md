@@ -424,7 +424,7 @@ to aim for is close to one that predicts what will happen.
   machinery the action head of section 4 is built from.
 - [Fine-tuning and adapters](../07_pretraining-and-adapting/03_fine-tuning-and-adapters.md)
   explains catastrophic forgetting in full, which is what co-training exists to solve.
-- [Running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+- [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   takes section 7's latency arithmetic further and says how to test a policy honestly.
 - [Vision-language-action models](../../07_learned-models/07_language-models/02_most-used/01_vision-language-action-models.md)
   in the next book is the catalogue for this family, with the named models and their costs.

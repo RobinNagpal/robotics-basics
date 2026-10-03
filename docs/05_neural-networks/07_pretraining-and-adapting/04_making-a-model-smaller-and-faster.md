@@ -382,7 +382,7 @@ it is given.
 Two cautions belong with that number. This is a small network on a simulated job, so
 the shape of the result is trustworthy and the exact figures are not, and a real model
 has to be measured on its real job after every step, which is what [running and
-evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
 is about. And memory saved is not automatically time saved, because a 4-bit weight has
 to be turned back into an ordinary number before it can be multiplied, so a model four
 times smaller and no faster is a common and disappointing result, and the only way to
@@ -399,7 +399,7 @@ know is to time it.
 - [Scale, data and compute](02_scale-data-and-compute.md) explains the FLOP counts
   behind section 1's speed arithmetic.
 - [Running and evaluating a
-  model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md) covers
+  model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md) covers
   what happens next, which is exporting the squeezed model and measuring it honestly.
 - [Vision backbones](../09_models-that-see/01_vision-backbones.md) is where the
   teacher and student of section 4 usually come from, because a small distilled vision

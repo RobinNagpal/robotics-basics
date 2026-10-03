@@ -173,6 +173,7 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'language-and-multimodal-models': 'Language and Multimodal Models',
   'learning-from-outcomes': 'Learning From Outcomes',
   'models-that-act': 'Models That Act',
+  'starting-your-own-model': 'Starting a Model of Your Own',
   'using-a-model-for-real': 'Using a Model For Real',
   'what-models-are': 'What Models Are',
   'seeing-models': 'Seeing Models',

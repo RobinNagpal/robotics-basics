@@ -378,7 +378,7 @@ at, which for an arm means deliberately recording contact rather than only succe
 
 ## 7. Where to read next
 
-- [Running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+- [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   is the next page, and it takes the latency and honesty arguments of sections 4 and 6
   and applies them to testing a model properly on a real robot.
 - [Reinforcement learning](../11_learning-from-outcomes/01_reinforcement-learning.md)
@@ -387,7 +387,7 @@ at, which for an arm means deliberately recording contact rather than only succe
 - [Diffusion](../08_models-that-generate/01_diffusion.md) explains the generative
   machinery that a video prediction model is built from, including why it takes many
   steps to produce one frame.
-- [The map of models](../13_using-a-model-for-real/02_the-map-of-models.md) is the closing
+- [The map of models](../14_using-a-model-for-real/02_the-map-of-models.md) is the closing
   page of this book, and it puts world models beside every other family in one place.
 - [World models](../../07_learned-models/08_world-models/01_overview.md) in the next book
   is the catalogue for this family, and

@@ -1,4 +1,4 @@
-"""Generate the diagrams for both pages of docs/05_neural-networks/13_using-a-model-for-real/.
+"""Generate the diagrams for both pages of docs/05_neural-networks/14_using-a-model-for-real/.
 
     01_running-and-evaluating-a-model.md -> images/using-a-model-for-real/running-and-evaluating-a-model/
     02_the-map-of-models.md              -> images/using-a-model-for-real/the-map-of-models/

@@ -326,7 +326,7 @@ reward number as a tool rather than a result.
 - [Post-training a language model](../10_language-and-multimodal-models/02_post-training-a-language-model.md)
   shows preferences and verifiers used on text, which is where most of the work
   on them has happened.
-- [Running and evaluating a model](../13_using-a-model-for-real/01_running-and-evaluating-a-model.md)
+- [Running and evaluating a model](../14_using-a-model-for-real/01_running-and-evaluating-a-model.md)
   explains how to measure the real job honestly, which is the hold-out check
   this page leaned on.
 - [Reward and progress models](../../07_learned-models/06_movement-models/03_also-used/03_reward-and-progress-models.md)

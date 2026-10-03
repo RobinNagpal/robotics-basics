@@ -489,7 +489,8 @@ def fig_single_batch_test() -> None:
         net, curve, _ = train(xa, ya, width=32, lr=3e-3, steps=2000, seed=0,
                               batch=8, mu=SIM.mu, sd=SIM.sd, **kw)
         final = full_loss(net, standardise(xa, SIM.mu, SIM.sd), ya)
-        print(f'  {label:36s} final loss on the 8 examples {final:.3e}')
+        print(f'  {label:36s} final loss on the 8 examples {final:.3e} '
+              f'= {final:.9f}')
         ax.plot(curve[:, 0], curve[:, 1], color=colour, lw=2.0,
                 label=f'{label}  ({final:.1e})')
     ax.set_ylim(1e-13, 30)
@@ -518,8 +519,9 @@ def fig_learning_rate_band() -> None:
     ok = out < SIM.spread_var
     best = int(np.nanargmin(out))
     print(f'  best learning rate {rates[best]:.2e} with held-out loss {out[best]:.5f}')
-    print(f'  beats answering with zero from {rates[ok][0]:.2e} to {rates[ok][-1]:.2e}, '
-          f'{rates[ok][-1] / rates[ok][0]:.0f} times wide')
+    print(f'  beats answering with zero from {rates[ok][0]:.5f} to {rates[ok][-1]:.5f}, '
+          f'{rates[ok][-1] / rates[ok][0]:.0f} times wide, '
+          f'and the best rate written out is {rates[best]:.5f}')
     print('  all: ' + ', '.join(f'{r:.1e}:{v:.4f}' for r, v in zip(rates, out)))
 
     fig, ax = plt.subplots(figsize=(8.0, 4.3))
@@ -807,7 +809,7 @@ def fig_would_more_data_fix_it() -> None:
         tls.append(full_loss(net, standardise(xs, net.mu, net.sd), ys))
         hls.append(held_loss(net, SIM.xho, SIM.yho))
         print(f'  {c:4d} attempts  training {tls[-1]:.6f}  held out {hls[-1]:.6f}  '
-              f'gap {hls[-1] / tls[-1]:.1f} times')
+              f'gap {hls[-1] / tls[-1]:,.1f} times')
     fig, ax = plt.subplots(figsize=(8.2, 4.3))
     _plain(ax)
     ax.plot(counts, tls, 'o-', color=LINK, lw=2.0, ms=5.5, label='training loss')
@@ -1050,6 +1052,8 @@ def fig_states_it_reaches_itself() -> None:
     _plain(ax)
     _plain(ax2)
     ax.scatter(rec, 100 * suc, s=55, color=WRIST)
+    ax.set_xticks([0.0002, 0.0004, 0.0006, 0.0008])
+    ax.set_xticklabels(['0.0002', '0.0004', '0.0006', '0.0008'])
     ax.set_xlabel('error on states the demonstrator reached', fontsize=10)
     ax.set_ylabel('attempts that succeeded (%)', fontsize=10)
     ax.set_title(f'What the held-out loss measures\nrank correlation {sr:+.2f}',
@@ -1363,7 +1367,9 @@ def fig_one_difference_at_a_time() -> None:
         ax.text(i, 100 * v + 1.8, f'{100 * v:.1f}%', ha='center', fontsize=10,
                 color=INK)
     ax.set_xticks(range(len(vals)))
-    ax.set_xticklabels([c[0].replace(' ', '\n', 1) for c in cases], fontsize=9)
+    ax.set_xticklabels(['the simulator\nit trained in', 'noisier\nsensors',
+                        'object\n12 mm off', 'two periods\nof delay',
+                        '15% weaker\ndrive', 'all four\ntogether'], fontsize=9)
     ax.set_ylabel('attempts that succeeded (%), 600 trials', fontsize=10)
     ax.set_ylim(0, 112)
     ax.set_title('Putting each real-world difference into the simulator, one at a time',
@@ -1476,10 +1482,10 @@ def fig_randomise_what_you_do_not_know() -> None:
         ax.text(p_ + w / 2, 100 * out[n][2] + 2.0, f'{100 * out[n][2]:.1f}%',
                 ha='center', fontsize=10, color=INK)
     ax.axhline(100 * out['trained at one setting'][0], color=MUTED, ls=':', lw=1.5)
-    ax.text(1.45, 100 * out['trained at one setting'][0] + 2.0,
+    ax.text(-0.46, 100 * out['trained at one setting'][0] + 2.5,
             f'what it scored in the simulator: '
             f'{100 * out["trained at one setting"][0]:.1f}%',
-            ha='right', fontsize=9, color=MUTED)
+            ha='left', fontsize=9, color=MUTED)
     ax.set_xticks(pos)
     ax.set_xticklabels(['trained at one setting',
                         'trained across a range of\ndelay, drive and sensor noise'],

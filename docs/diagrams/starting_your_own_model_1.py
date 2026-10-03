@@ -452,9 +452,9 @@ def s1_written_rule_works() -> None:
                   color=[GRIP, LINK], width=0.55)
     bx.bar_label(bars, fmt='%.1f%%', fontsize=11, padding=3)
     bx.set_ylim(0, 112)
-    bx.axhline(50, color=MUTED, ls=':', lw=1.4)
-    bx.set_xlim(-0.6, 1.9)
-    bx.text(1.62, 50, 'guessing', fontsize=9.5, color=MUTED, ha='left', va='center')
+    bx.plot([-0.45, 1.45], [50, 50], color=MUTED, ls=':', lw=1.4)
+    bx.set_xlim(-0.6, 1.95)
+    bx.text(1.55, 50, 'guessing', fontsize=9.5, color=MUTED, ha='left', va='center')
     bx.set_ylabel('share of held-out readings right (%)', fontsize=10)
     bx.set_title('The model buys nothing here', fontsize=12, weight='bold')
     _save(fig, 'written-rule-works.svg')
@@ -480,7 +480,7 @@ def s1_written_rule_fails() -> None:
     ax.axvline(45.0, color=INK, lw=1.8, ls='--')
     ax.axhline(0.4, color=INK, lw=1.8, ls='--')
     ax.text(47.5, 0.03, 'width > 45 mm', fontsize=9.5, color=INK, rotation=90, va='bottom')
-    ax.text(2.0, 0.43, 'shine > 0.4', fontsize=9.5, color=INK)
+    ax.text(2.0, 0.455, 'shine > 0.4', fontsize=9.5, color=INK)
     ax.set_xlabel('measured width (mm)', fontsize=10)
     ax.set_ylabel('measured shine (0 to 1)', fontsize=10)
     ax.set_xlim(-2, 102)
@@ -492,9 +492,9 @@ def s1_written_rule_fails() -> None:
     per = [float((pred[CELL.y[te] == g] == g).mean()) * 100 for g in range(3)]
     bars = bx.bar(GRIPS, per, color=GRIP_COLOURS, width=0.55)
     bx.bar_label(bars, fmt='%.1f%%', fontsize=11, padding=3)
-    bx.axhline(acc * 100, color=GRIP, lw=2)
-    bx.set_xlim(-0.6, 3.1)
-    bx.text(2.6, acc * 100, f'all frames\n{acc * 100:.1f}%', fontsize=10,
+    bx.plot([-0.45, 2.45], [acc * 100] * 2, color=GRIP, lw=2)
+    bx.set_xlim(-0.6, 3.4)
+    bx.text(2.55, acc * 100, f'all frames\n{acc * 100:.1f}%', fontsize=10,
             color=GRIP, ha='left', va='center')
     bx.set_ylim(0, 108)
     bx.set_ylabel('share of that grip found (%)', fontsize=10)
@@ -853,8 +853,8 @@ def s3_three_baselines() -> None:
     colours = [MUTED, GRIP, WRIST, JOINT, LINK]
     bars = ax.bar(names, vals, color=colours, width=0.6)
     ax.bar_label(bars, fmt='%.1f%%', fontsize=12, padding=4)
-    ax.axhline(BASE.chance, color=INK, ls=':', lw=1.6)
-    ax.set_xlim(-0.6, 5.6)
+    ax.plot([-0.45, 4.45], [BASE.chance] * 2, color=INK, ls=':', lw=1.6)
+    ax.set_xlim(-0.6, 5.9)
     ax.text(4.55, BASE.chance, f'guessing one\nof three: {BASE.chance:.1f}%',
             fontsize=10, color=INK, ha='left', va='center')
     ax.axhline(max(BASE.majority, BASE.rule, BASE.nn_raw, BASE.nn_scaled),
@@ -1066,18 +1066,18 @@ def s4_enough_to_cover() -> None:
     fig, (ax, bx) = plt.subplots(1, 2, figsize=(12.6, 5.0), facecolor='white',
                                  gridspec_kw={'width_ratios': [1.2, 1.0]})
     _plain(ax)
-    ax.plot(sizes, covered, color=LINK, lw=2)
-    ax.plot(sizes, np.array(all_covered) / 100.0 * n_kinds, color=PURPLE, lw=2, ls='--')
-    ax.axhline(n_kinds, color=MUTED, ls=':', lw=1.4)
-    ax.text(242, n_kinds, f'all {n_kinds} kinds', fontsize=9.5, color=MUTED, va='center')
-    for n in (24, 100):
+    ax.plot(sizes, covered, color=LINK, lw=2, label='kinds seen at least twice')
+    ax.plot(sizes, np.array(all_covered) / 100.0 * n_kinds, color=PURPLE, lw=2, ls='--',
+            label=f'share of draws with all {n_kinds}, on the same scale')
+    ax.plot([0, 232], [n_kinds] * 2, color=MUTED, ls=':', lw=1.4)
+    ax.text(236, n_kinds, f'all {n_kinds}\nkinds', fontsize=9.5, color=MUTED, va='center')
+    for n, tx, ty in ((24, 38.0, 4.2), (100, 112.0, 10.7)):
         i = sizes.index(n)
         ax.plot([n], [covered[i]], marker='o', ms=7, color=LINK)
         ax.annotate(f'{covered[i]:.1f} kinds after {n} parts', xy=(n, covered[i]),
-                    xytext=(n + 16, covered[i] - 2.0), fontsize=10, color=LINK,
+                    xytext=(tx, ty), fontsize=10, color=LINK,
                     arrowprops=dict(arrowstyle='->', color=LINK, lw=1.3))
-    ax.text(96, 1.0, f'dashed line: the share of draws in which\nall {n_kinds} appear '
-                     'twice, on the same scale', fontsize=9.5, color=PURPLE)
+    ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     ax.set_xlim(0, 290)
     ax.set_ylim(0, n_kinds + 1.6)
     ax.set_xlabel('parts recorded', fontsize=10)
@@ -1277,13 +1277,12 @@ def s5_three_splits() -> None:
     bars = ax.bar(names, vals, color=[GRIP, JOINT, SLIDE], width=0.55,
                   yerr=err, capsize=6, ecolor=INK)
     ax.bar_label(bars, fmt='%.1f%%', fontsize=12, padding=14)
-    ax.axhline(100.0 / 3.0, color=INK, ls=':', lw=1.5)
-    ax.set_xlim(-0.6, 3.1)
-    ax.text(2.6, 100.0 / 3.0, 'guessing', fontsize=9.5, color=INK, ha='left', va='center')
+    ax.plot([-0.45, 2.45], [100.0 / 3.0] * 2, color=INK, ls=':', lw=1.5)
+    ax.set_xlim(-0.6, 3.3)
+    ax.text(2.55, 100.0 / 3.0, 'guessing', fontsize=9.5, color=INK, ha='left', va='center')
     ax.set_ylim(0, 118)
     ax.set_ylabel('share of held-out frames right (%)', fontsize=10)
-    ax.set_title('One model, one recording, three answers\n(bars are the average of five '
-                 'draws, whiskers the range)', fontsize=12, weight='bold')
+    ax.set_title('One model, one recording, three answers', fontsize=12, weight='bold')
 
     _plain(bx)
     same, other = [], []
@@ -1303,8 +1302,8 @@ def s5_three_splits() -> None:
     bx.set_xlabel('distance in the five measured numbers (standardised)', fontsize=10)
     bx.set_ylabel('number of frames', fontsize=10)
     bx.legend(fontsize=9.5, frameon=False, loc='upper right')
-    bx.set_title(f'Why: the same part again is {np.mean(other) / np.mean(same):.1f} times '
-                 'closer than any other part', fontsize=12, weight='bold')
+    bx.set_title(f'The same part again is {np.mean(other) / np.mean(same):.1f} times closer',
+                 fontsize=12, weight='bold')
     print(f'[s5] nearest frame of the same part sits {np.mean(same):.3f} away on average '
           f'and the nearest frame of any other part {np.mean(other):.3f}, which is '
           f'{np.mean(other) / np.mean(same):.1f} times further')
@@ -1476,8 +1475,8 @@ def s6_the_gate() -> None:
 
     fig, ax = plt.subplots(figsize=(11.0, 5.6), facecolor='white')
     _plain(ax)
-    ax.axhspan(lo * 100, hi * 100, color=GRIP, alpha=0.14)
-    ax.axhline(base, color=GRIP, lw=2)
+    ax.axhspan(lo * 100, hi * 100, color=GRIP, alpha=0.14, xmax=0.78)
+    ax.plot([-0.45, 3.4], [base] * 2, color=GRIP, lw=2)
     ax.text(3.52, base, f'the written rule\n{base:.1f}% '
                         f'({lo * 100:.0f} to {hi * 100:.0f})',
             fontsize=10.5, color=GRIP, ha='left', va='center')
@@ -1488,7 +1487,7 @@ def s6_the_gate() -> None:
     bars = ax.bar(names, vals, color=[MUTED, JOINT, LINK], width=0.5,
                   yerr=err, capsize=6, ecolor=INK)
     ax.bar_label(bars, fmt='%.1f%%', fontsize=11.5, padding=16)
-    ax.axhline(100.0 / 3.0, color=INK, ls=':', lw=1.4)
+    ax.plot([-0.45, 3.4], [100.0 / 3.0] * 2, color=INK, ls=':', lw=1.4)
     ax.text(3.52, 100.0 / 3.0, 'guessing', fontsize=9.5, color=INK, ha='left', va='center')
     ax.set_xlim(-0.6, 4.6)
     ax.set_ylim(0, 118)
@@ -1553,17 +1552,34 @@ def s6_best_of_k() -> None:
     ax.plot(ks, chosen_te, marker='s', ms=4.5, color=LINK, lw=2,
             label='score on the set read once at the end')
     ax.fill_between(ks, chosen_te, chosen_val, color=GRIP, alpha=0.12)
-    ax.annotate(f'{gaps[-1]:.1f} points of\nfree score', xy=(24, (chosen_val[-1] +
-                                                               chosen_te[-1]) / 2),
-                xytext=(18.0, chosen_te[-1] - 4.0), fontsize=10, color=GRIP,
+    mid = (chosen_val[-1] + chosen_te[-1]) / 2
+    ax.annotate(f'{gaps[-1]:.1f} points of\nfree score', xy=(23.6, mid),
+                xytext=(16.0, mid + 1.1), fontsize=10.5, color=GRIP,
                 arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.3))
+    ax.set_ylim(min(chosen_te) - 0.8, max(chosen_val) + 0.9)
     ax.set_xticks(range(0, 25, 2))
     ax.set_xlabel('candidate models compared before one is kept', fontsize=10)
     ax.set_ylabel('share of held-out frames right (%)', fontsize=10)
-    ax.legend(fontsize=10, frameon=False, loc='lower right')
+    ax.legend(fontsize=10, frameon=False, loc='lower left')
     ax.set_title('The more candidates you compare, the more the chosen one flatters itself',
                  fontsize=12.5, weight='bold')
     _save(fig, 'best-of-k.svg')
+
+
+def derived() -> None:
+    """Print the differences the page quotes, so no number in it is worked out by hand."""
+    print(f'[d] the recording holds {CELL.n_parts} parts and {len(CELL.y)} frames')
+    print(f'[d] scaling the five numbers before nearest neighbour is worth '
+          f'{RESULTS["b_nn_scaled"] - RESULTS["b_nn_raw"]:.1f} points '
+          f'({RESULTS["b_nn_raw"]:.1f} to {RESULTS["b_nn_scaled"]:.1f})')
+    print(f'[d] the network beats scaled nearest neighbour by '
+          f'{RESULTS["b_model"] - RESULTS["b_nn_scaled"]:.1f} points')
+    print(f'[d] the loosest definition of success beats the strictest by '
+          f'{RESULTS["def_a"] - RESULTS["def_c"]:.1f} points')
+    print(f'[d] mislabelling costs {RESULTS["fault_clean"] - RESULTS["fault_mislabel"]:.1f} '
+          f'points, the stuck sensor {RESULTS["fault_clean"] - RESULTS["fault_stuck"]:.1f}, '
+          f'and recording 24 parts four times instead of 96 different ones '
+          f'{RESULTS["fault_variety"] - RESULTS["fault_dup"]:.1f}')
 
 
 def s6_inflation() -> None:
@@ -1672,6 +1688,7 @@ def main() -> None:
     s6_best_of_k()
     s6_inflation()
     s6_sheet()
+    derived()
     print(f'wrote the diagrams under {IMAGES / DOC}')
 
 

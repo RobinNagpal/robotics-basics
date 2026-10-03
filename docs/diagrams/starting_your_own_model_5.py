@@ -256,8 +256,10 @@ def run(pol: Policy, goal: Arr, box: Arr, play: int, rng: np.random.Generator,
         for j in range(min(play, pol.chunk)):
             if t >= STEPS:
                 break
-            if move is not None and t == move[0]:
-                g = g + move[1]
+            if move is not None:
+                hit_now = np.asarray(move[0]) == t
+                if hit_now.any():
+                    g = np.where(hit_now[:, None], g + move[1], g)
             last = (1 - lag) * blk[:, j, :] + lag * last
             pos = pos + gain * last + rng.normal(0, noise, (m, 2))
             out.append(pos.copy())
@@ -758,11 +760,12 @@ def chunk_length_trade() -> None:
     pol = clone(path, goal, box, BIG_CHUNK, 81, steps=3000)
     _, gev, bev, _ = demos(EVAL, np.random.default_rng(555))
     shift = np.tile(np.array([[0.0, 0.08]]), (EVAL, 1))
+    when = np.random.default_rng(32).integers(20, 100, EVAL)
     still, moved, coll = [], [], []
     for play in PLAYS:
         p1 = run(pol, gev, bev, play, np.random.default_rng(31))
         d1, c1, s1 = judge(p1, gev, bev)
-        p2 = run(pol, gev, bev, play, np.random.default_rng(31), move=(60, shift))
+        p2 = run(pol, gev, bev, play, np.random.default_rng(31), move=(when, shift))
         d2 = np.linalg.norm(p2[:, -1, :] - (gev + shift), axis=1)
         still.append(float(np.median(d1)) * 100)
         moved.append(float(np.median(d2)) * 100)
@@ -779,7 +782,7 @@ def chunk_length_trade() -> None:
     _plain(axl)
     axl.plot(PLAYS, still, marker='o', color=LINK, lw=2, label='goal stays put')
     axl.plot(PLAYS, moved, marker='s', color=GRIP, lw=2,
-             label='goal moves 8 cm half way through')
+             label='goal moves 8 cm part way through')
     axl.plot(PLAYS, total, marker='^', color=PURPLE, lw=1.6, ls='--', label='the two added')
     axl.axvline(best, color=MUTED, ls=':', lw=1.2)
     axl.text(best * 1.1, max(total) * 0.92, f'lowest at {best}', fontsize=9.5, color=MUTED)
@@ -791,7 +794,8 @@ def chunk_length_trade() -> None:
     axl.legend(fontsize=9.5, frameon=False, loc='upper left')
     axl.grid(color=GRID, lw=0.6)
     axl.set_axisbelow(True)
-    axl.set_title('A chunk is a promise made early', fontsize=12, weight='bold')
+    axl.set_title('A chunk is a promise made before the goal moved',
+                  fontsize=12, weight='bold')
 
     _plain(axr)
     axr.bar([str(p) for p in PLAYS], coll, color=SLIDE, width=0.6)
@@ -863,6 +867,7 @@ def chunk_and_the_clock() -> None:
 # --------------------------------------------------------------------------
 
 DIFF_T: int = 100                # noise levels used in training
+GEN_CHUNK: int = 16              # the chunk both section 3 policies produce
 NARROW: dict[str, tuple[float, float]] = dict(gx=(0.38, 0.46), gy=(-0.015, 0.015),
                                               ox=(0.19, 0.21), oy=(-0.01, 0.01))
 
@@ -877,17 +882,20 @@ def _abar(T: int) -> Arr:
 class Diffusion:
     """A denoising diffusion model over one chunk of actions, trained in NumPy."""
 
-    def __init__(self, p: list[list[Arr]], scale: float, chunk: int, abar: Arr) -> None:
+    def __init__(self, p: list[list[Arr]], scale: float, chunk: int, abar: Arr,
+                 omu: Arr, osd: Arr) -> None:
         self.p = p
         self.scale = scale
         self.chunk = chunk
         self.abar = abar
+        self.omu = omu
+        self.osd = osd
 
     def _eps(self, x: Arr, obs: Arr, t: int) -> Arr:
         frac = t / DIFF_T
         feats = np.tile(np.array([[frac, np.cos(np.pi * frac), np.sin(2 * np.pi * frac)]]),
                         (len(x), 1))
-        return net_fwd(self.p, np.concatenate([x, obs, feats], 1))[0]
+        return net_fwd(self.p, np.concatenate([x, (obs - self.omu) / self.osd, feats], 1))[0]
 
     def __call__(self, obs: Arr, passes: int = 16,
                  rng: np.random.Generator | None = None) -> Arr:
@@ -903,10 +911,12 @@ class Diffusion:
 
 
 def diffusion_fit(path: Arr, goal: Arr, box: Arr, chunk: int, seed: int,
-                  steps: int = 9000, hidden: int = 256) -> Diffusion:
+                  steps: int = 16000, hidden: int = 320) -> Diffusion:
     X, Y = examples(path, goal, box, chunk)
     scale = float(Y.std())
     Y = Y / scale
+    omu, osd = X.mean(0), X.std(0) + 1e-9
+    X = (X - omu) / osd
     abar = _abar(DIFF_T)
     p = net_init([chunk * 2 + 6 + 3, hidden, hidden, chunk * 2], seed)
     rng = np.random.default_rng(seed + 3)
@@ -924,7 +934,7 @@ def diffusion_fit(path: Arr, goal: Arr, box: Arr, chunk: int, seed: int,
         inp = np.concatenate([xt, obs, feats], 1)
         out, acts = net_fwd(p, inp)
         g = (out - eps) * (2.0 / batch)
-        lr = 2e-3 * min(1.0, 3.0 - 2.0 * it / steps)
+        lr = 2e-3 * (0.05 + 0.95 * 0.5 * (1 + np.cos(np.pi * it / steps)))
         for i in range(len(p) - 1, -1, -1):
             w, b = p[i]
             gw = acts[i].T @ g
@@ -936,7 +946,7 @@ def diffusion_fit(path: Arr, goal: Arr, box: Arr, chunk: int, seed: int,
                 v[i][k] = 0.999 * v[i][k] + 0.001 * gr ** 2
                 par -= lr * (m[i][k] / (1 - 0.9 ** it)) / (
                     np.sqrt(v[i][k] / (1 - 0.999 ** it)) + 1e-8)
-    return Diffusion(p, scale, chunk, abar)
+    return Diffusion(p, scale, chunk, abar, omu, osd)
 
 
 def run_diffusion(gen: Diffusion, goal: Arr, box: Arr, play: int,
@@ -963,10 +973,10 @@ class Section3:
         self.two = demos(400, np.random.default_rng(301), both_sides=True, **NARROW)
         self.one = demos(400, np.random.default_rng(302), both_sides=False, **NARROW)
         self.ev = demos(EVAL, np.random.default_rng(303), **NARROW)
-        self.reg_two = clone(*self.two[:3], BIG_CHUNK, 311, steps=3000)
-        self.reg_one = clone(*self.one[:3], BIG_CHUNK, 312, steps=3000)
-        self.gen_two = diffusion_fit(*self.two[:3], BIG_CHUNK, 321)
-        self.gen_one = diffusion_fit(*self.one[:3], BIG_CHUNK, 322)
+        self.reg_two = clone(*self.two[:3], GEN_CHUNK, 311, steps=3000)
+        self.reg_one = clone(*self.one[:3], GEN_CHUNK, 312, steps=3000)
+        self.gen_two = diffusion_fit(*self.two[:3], GEN_CHUNK, 321)
+        self.gen_one = diffusion_fit(*self.one[:3], GEN_CHUNK, 322)
 
 
 _S3: Section3 | None = None
@@ -982,10 +992,10 @@ def _s3() -> Section3:
 def two_answer_test() -> None:
     """The test that says whether a task needs a generated answer."""
     s = _s3()
-    mid = STEPS // 2
+    mid = 30
     out = {}
     for name, (path, goal, box, amp) in (('two ways', s.two), ('one way', s.one)):
-        blk = np.diff(path, axis=1)[:, mid:mid + BIG_CHUNK, :]
+        blk = np.diff(path, axis=1)[:, mid:mid + GEN_CHUNK, :]
         side = blk[:, :, 1].sum(1) * 1000
         mean = float(side.mean())
         near = float(np.min(np.abs(side - mean)))
@@ -1003,7 +1013,7 @@ def two_answer_test() -> None:
     _plain(ax0)
     ax0.add_patch(Rectangle((box[0, 0] - HW, box[0, 1] - HH), 2 * HW, 2 * HH,
                             color='#bbbbbb'))
-    up = np.diff(path, axis=1)[:, mid:mid + BIG_CHUNK, 1].sum(1) > 0
+    up = np.diff(path, axis=1)[:, mid:mid + GEN_CHUNK, 1].sum(1) > 0
     for i in np.where(up)[0][:25]:
         ax0.plot(path[i, :, 0], path[i, :, 1], color=LINK, lw=1.1, alpha=0.6)
     for i in np.where(~up)[0][:25]:
@@ -1020,14 +1030,14 @@ def two_answer_test() -> None:
         side, mean, near, within = out[name]
         ax.hist(side, bins=30, color=col, alpha=0.8)
         ax.axvline(mean, color=GRIP, lw=2.2)
-        ax.text(mean, ax.get_ylim()[1] * 0.92, f'  mean {mean:+.1f} mm',
-                fontsize=9.5, color=GRIP)
-        ax.set_xlabel(f'sideways movement over the next {BIG_CHUNK} steps (mm)',
+        ax.set_xlabel(f'sideways movement over the next {GEN_CHUNK} steps (mm)',
                       fontsize=10)
         ax.set_ylabel('recorded moments', fontsize=10)
-        ax.set_title(f'{"Both ways recorded" if name == "two ways" else "One way recorded"}'
-                     f': nearest real label {near:.1f} mm from the mean',
-                     fontsize=11.5, weight='bold')
+        ax.set_ylim(0, ax.get_ylim()[1] * 1.18)
+        ax.text(mean, ax.get_ylim()[1] * 0.97, f' mean {mean:+.1f} mm', fontsize=9.5,
+                color=GRIP, va='top')
+        ax.set_title(f'{"Both ways" if name == "two ways" else "One way"}: the mean is '
+                     f'{near:.1f} mm from any real label', fontsize=11.5, weight='bold')
     _save(fig, 'two-answer-test.svg')
 
 
@@ -1048,8 +1058,8 @@ def averaging_and_generating() -> None:
 
     fig, axes = plt.subplots(1, 3, figsize=(14.8, 4.5), facecolor='white',
                              gridspec_kw={'wspace': 0.26})
-    for ax, paths, bad, name in ((axes[0], reg, c_r, 'trained to give one answer'),
-                                 (axes[1], gen, c_g, 'trained to generate an answer')):
+    for ax, paths, bad, name in ((axes[0], reg, c_r, 'One answer'),
+                                 (axes[1], gen, c_g, 'Generated answer')):
         _plain(ax)
         ax.add_patch(Rectangle((bev[0, 0] - HW, bev[0, 1] - HH), 2 * HW, 2 * HH,
                                color='#bbbbbb'))
@@ -1120,7 +1130,7 @@ def what_generating_costs() -> None:
     axl.set_ylim(0, 1.05)
     axl.set_xlabel('passes through the network for one chunk', fontsize=10)
     axl.set_ylabel('runs that work, out of 1', fontsize=10)
-    axl.legend(fontsize=9.5, frameon=False, loc='lower right')
+    axl.legend(fontsize=9.5, frameon=False, loc='upper left')
     axl.grid(color=GRID, lw=0.6)
     axl.set_axisbelow(True)
     axl.set_title('When there is one right answer, generating adds nothing',
@@ -1143,60 +1153,56 @@ def what_generating_costs() -> None:
     _save(fig, 'what-generating-costs.svg')
 
 
-def changing_its_mind() -> None:
-    """The mistake: asking a generator again too often lets it switch answers."""
+def too_few_passes() -> None:
+    """The mistake: cutting the passes to meet the clock, on a two-answer task."""
     s = _s3()
     _, gev, bev, _ = s.ev
-    plays = (1, 2, 4, 8, 16, 32)
-    coll, swap, done = [], [], []
-    keep = None
-    for play in plays:
-        paths = run_diffusion(s.gen_two, gev, bev, play, np.random.default_rng(47), passes=16)
+    passes = (1, 2, 4, 8, 16, 32)
+    coll, done = [], []
+    keep = {}
+    for k in passes:
+        paths = run_diffusion(s.gen_two, gev, bev, PLAY, np.random.default_rng(47), passes=k)
         d, c, ok = judge(paths, gev, bev)
-        rel = paths[:, :, 1] - bev[:, None, 1]
-        crossed = ((rel.max(1) > 0.03) & (rel.min(1) < -0.03))
         coll.append(float(c.mean()))
-        swap.append(float(crossed.mean()))
         done.append(float(ok.mean()))
-        if play == 1:
-            keep = (paths, crossed)
-        print(f'[mind] {play:2d} steps a decision: changes side on {swap[-1]:.3f} of runs, '
-              f'hits the box on {coll[-1]:.3f}, works on {done[-1]:.3f}')
+        if k in (2, 16):
+            keep[k] = (paths, c)
+        print(f'[passes] two right answers, {k:2d} passes: hits the box {coll[-1]:.3f}, '
+              f'works {done[-1]:.3f}, median miss {np.median(d) * 100:.2f} cm')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
-    _plain(axl)
-    paths, crossed = keep
-    axl.add_patch(Rectangle((bev[0, 0] - HW, bev[0, 1] - HH), 2 * HW, 2 * HH,
-                            color='#bbbbbb'))
-    shown = 0
-    for i in np.where(crossed)[0]:
-        axl.plot(paths[i, :, 0], paths[i, :, 1], color=GRIP, lw=1.3, alpha=0.9)
-        shown += 1
-        if shown == 8:
-            break
-    for i in np.where(~crossed)[0][:40]:
-        axl.plot(paths[i, :, 0], paths[i, :, 1], color=LINK, lw=0.9, alpha=0.35)
-    axl.set_xlabel('along the table (m)', fontsize=10)
-    axl.set_ylabel('across the table (m)', fontsize=10)
-    axl.set_title('Asked again every step, some runs change their mind',
-                  fontsize=11.5, weight='bold')
+    fig, axes = plt.subplots(1, 3, figsize=(14.8, 4.5), facecolor='white',
+                             gridspec_kw={'wspace': 0.26})
+    for ax, k in zip(axes[:2], (2, 16)):
+        _plain(ax)
+        paths, bad = keep[k]
+        ax.add_patch(Rectangle((bev[0, 0] - HW, bev[0, 1] - HH), 2 * HW, 2 * HH,
+                               color='#bbbbbb'))
+        for i in range(120):
+            ax.plot(paths[i, :, 0], paths[i, :, 1],
+                    color=GRIP if bad[i] else LINK, lw=1.0,
+                    alpha=0.8 if bad[i] else 0.45)
+        ax.set_ylim(-0.16, 0.16)
+        ax.set_xlabel('along the table (m)', fontsize=10)
+        ax.set_ylabel('across the table (m)', fontsize=10)
+        ax.set_title(f'{k} passes a chunk: works on '
+                     f'{done[passes.index(k)]:.2f} of runs', fontsize=11.5, weight='bold')
 
+    axr = axes[2]
     _plain(axr)
-    axr.plot(plays, swap, marker='o', color=GRIP, lw=2, label='changes side mid-run')
-    axr.plot(plays, coll, marker='s', color=WRIST, lw=2, label='hits the box')
-    axr.plot(plays, done, marker='^', color=SLIDE, lw=2, label='works')
+    axr.plot(passes, done, marker='o', color=SLIDE, lw=2, label='works')
+    axr.plot(passes, coll, marker='s', color=GRIP, lw=2, label='hits the box')
     axr.set_xscale('log', base=2)
-    axr.set_xticks(plays)
-    axr.set_xticklabels([str(p) for p in plays], fontsize=9.5)
+    axr.set_xticks(passes)
+    axr.set_xticklabels([str(k) for k in passes], fontsize=9.5)
     axr.set_ylim(0, 1.05)
-    axr.set_xlabel('steps played before a new chunk is generated', fontsize=10)
+    axr.set_xlabel('passes through the network for one chunk', fontsize=10)
     axr.set_ylabel('share of 300 runs', fontsize=10)
     axr.legend(fontsize=9.5, frameon=False, loc='center right')
     axr.grid(color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('Playing more of each chunk settles the choice',
+    axr.set_title('Cutting passes to save time destroys the policy',
                   fontsize=11.5, weight='bold')
-    _save(fig, 'changing-its-mind.svg')
+    _save(fig, 'too-few-passes.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1254,11 +1260,14 @@ def what_fine_tuning_costs() -> None:
     counts = [BLOCKS * PER_BLOCK * 2 * WIDTH * r for r in ranks]
     axr.bar([str(r) for r in ranks], counts, color=LINK_PALE, edgecolor=LINK, width=0.6)
     for i, (r, c) in enumerate(zip(ranks, counts)):
-        axr.text(i, c * 1.04, f'{c / 1e6:.2f} M\n{100 * c / 450e6:.2f}% of 450 M',
-                 ha='center', fontsize=9.5, color=INK)
+        axr.text(i, c * 1.04, f'{c / 1e6:.2f} M', ha='center', fontsize=10, color=INK)
         print(f'[tune] rank {r:2d}: {c:,} trainable weights, '
               f'{100 * c / 450e6:.3f} per cent of a 450-million-weight model')
-    axr.set_ylim(0, max(counts) * 1.3)
+    axr.set_ylim(0, max(counts) * 1.35)
+    axr.text(0.03, 0.93, f'a rank-{rank} adapter is {100 * adapter / 450e6:.2f} per cent of a\n'
+                         f'450-million-weight model, and {100 * adapter / 7e9:.2f} per cent of\n'
+                         f'a 7-billion-weight one', transform=axr.transAxes, fontsize=9.5,
+             color=MUTED, va='top')
     axr.set_xlabel('rank of the adapter', fontsize=10)
     axr.set_ylabel('weights you actually train', fontsize=10)
     axr.grid(axis='y', color=GRID, lw=0.6)
@@ -1270,30 +1279,30 @@ def what_fine_tuning_costs() -> None:
 TASK_GOALS: Arr = np.array([[0.34, 0.10], [0.46, 0.10], [0.34, -0.04], [0.46, -0.04]])
 
 
-def _task_demos(n_each: int, k: int, rng: np.random.Generator) -> tuple[Arr, Arr, Arr]:
+def _task_demos(n_each: int, k: int, rng: np.random.Generator) -> tuple[Arr, Arr, Arr, Arr]:
     """Demonstrations of k fixed jobs, with the job written down as a tag."""
-    paths, tags, goals = [], [], []
+    paths, tags, goals, boxes = [], [], [], []
     for j in range(k):
-        gx = (TASK_GOALS[j, 0],) * 2
-        gy = (TASK_GOALS[j, 1],) * 2
-        p, g, b, _ = demos(n_each, rng, gx=gx, gy=gy,
-                           ox=(FIXED_BOX[0],) * 2, oy=(FIXED_BOX[1],) * 2)
+        p, g, b, _ = demos(n_each, rng, gx=(TASK_GOALS[j, 0],) * 2,
+                           gy=(TASK_GOALS[j, 1],) * 2)
         paths.append(p)
         goals.append(g)
+        boxes.append(b)
         t = np.zeros((n_each, k))
         t[:, j] = 1.0
         tags.append(t)
     return (np.concatenate(paths, 0), np.concatenate(goals, 0),
-            np.concatenate(tags, 0))
+            np.concatenate(boxes, 0), np.concatenate(tags, 0))
 
 
 def _fit_tagged(path: Arr, extra: Arr, chunk: int, seed: int,
                 steps: int = 2500) -> Policy:
+    """Train a chunk policy whose observation is the gripper and whatever `extra` holds."""
     step = np.diff(path, axis=1)
     n = len(path)
     pad = np.concatenate([step, np.zeros((n, chunk, 2))], 1)
-    obs = np.concatenate([path[:, :STEPS, :],
-                          np.repeat(extra[:, None, :], STEPS, 1)], 2).reshape(-1, 2 + extra.shape[1])
+    obs = np.concatenate([path[:, :STEPS, :], np.repeat(extra[:, None, :], STEPS, 1)],
+                         2).reshape(-1, 2 + extra.shape[1])
     blk = np.stack([pad[:, s:s + chunk, :] for s in range(STEPS)], 1).reshape(-1, chunk * 2)
     scale = float(blk.std())
     p = net_train(net_init([obs.shape[1], 128, 128, chunk * 2], seed), obs, blk / scale,
@@ -1317,35 +1326,38 @@ def _run_tagged(pol: Policy, extra: Arr, play: int, rng: np.random.Generator) ->
     return np.stack(out, 1)
 
 
+def _eval_tasks(k: int, rng: np.random.Generator) -> tuple[Arr, Arr, Arr]:
+    which = rng.integers(0, k, EVAL)
+    tag = np.zeros((EVAL, k))
+    tag[np.arange(EVAL), which] = 1.0
+    box = np.stack([rng.uniform(*OX, EVAL), rng.uniform(*OY, EVAL)], 1)
+    return TASK_GOALS[which], box, tag
+
+
 def instruction_information() -> None:
     """A sentence only helps when the recordings differ in what the sentence says."""
-    box = np.tile(np.array([FIXED_BOX]), (EVAL, 1))
-    told, guess, bits = [], [], []
+    told, guess = [], []
     for k in (1, 2, 4):
         rng = np.random.default_rng(401 + k)
-        path, goal, tag = _task_demos(40, k, rng)
-        fixed = np.tile(np.array([FIXED_BOX]), (len(path), 1))
-        pol_t = _fit_tagged(path, np.concatenate([fixed, tag], 1), CHUNK, 410 + k)
-        pol_n = _fit_tagged(path, fixed, CHUNK, 420 + k)
-        ev = np.random.default_rng(99)
-        which = ev.integers(0, k, EVAL)
-        etag = np.zeros((EVAL, k))
-        etag[np.arange(EVAL), which] = 1.0
-        goals = TASK_GOALS[which]
-        pt = _run_tagged(pol_t, np.concatenate([box, etag], 1), PLAY, np.random.default_rng(5))
-        pn = _run_tagged(pol_n, box, PLAY, np.random.default_rng(5))
-        told.append(float(np.median(np.linalg.norm(pt[:, -1, :] - goals, axis=1))) * 100)
-        guess.append(float(np.median(np.linalg.norm(pn[:, -1, :] - goals, axis=1))) * 100)
-        bits.append(float(np.log2(k)))
-        print(f'[words] {k} job(s), {np.log2(k):.0f} bits in the instruction: told which job '
-              f'{told[-1]:.2f} cm, not told {guess[-1]:.2f} cm')
+        path, goal, box, tag = _task_demos(40, k, rng)
+        pol_t = _fit_tagged(path, np.concatenate([box, tag], 1), CHUNK, 410 + k)
+        pol_n = _fit_tagged(path, box, CHUNK, 420 + k)
+        g_ev, b_ev, t_ev = _eval_tasks(k, np.random.default_rng(99))
+        pt = _run_tagged(pol_t, np.concatenate([b_ev, t_ev], 1), PLAY,
+                         np.random.default_rng(5))
+        pn = _run_tagged(pol_n, b_ev, PLAY, np.random.default_rng(5))
+        told.append(float(np.median(np.linalg.norm(pt[:, -1, :] - g_ev, axis=1))) * 100)
+        guess.append(float(np.median(np.linalg.norm(pn[:, -1, :] - g_ev, axis=1))) * 100)
+        print(f'[words] {k} job(s), {np.log2(k):.0f} bit(s) in the instruction: '
+              f'told which job {told[-1]:.2f} cm, not told {guess[-1]:.2f} cm')
 
     fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
     _plain(axl)
     ks = [1, 2, 4, 8, 16]
     axl.bar([str(k) for k in ks], [np.log2(k) for k in ks], color=JOINT, width=0.6)
     for i, k in enumerate(ks):
-        axl.text(i, np.log2(k) + 0.08, f'{np.log2(k):.0f} bits', ha='center',
+        b = np.log2(k)
+        axl.text(i, b + 0.08, f'{b:.0f} bit' + ('' if b == 1 else 's'), ha='center',
                  fontsize=10, color=INK)
     axl.set_ylim(0, 4.8)
     axl.set_xlabel('different jobs in the recordings', fontsize=10)
@@ -1375,70 +1387,63 @@ def instruction_information() -> None:
     _save(fig, 'instruction-information.svg')
 
 
-def sharing_across_tasks() -> None:
-    """When one model for four jobs beats four models for one job each."""
-    box = np.tile(np.array([FIXED_BOX]), (EVAL, 1))
-    k = 4
-    counts = (5, 10, 20, 40)
-    shared, alone = [], []
-    for n_each in counts:
-        rng = np.random.default_rng(431 + n_each)
-        path, goal, tag = _task_demos(n_each, k, rng)
-        fixed = np.tile(np.array([FIXED_BOX]), (len(path), 1))
-        pol = _fit_tagged(path, np.concatenate([fixed, tag], 1), CHUNK, 440 + n_each)
-        ev = np.random.default_rng(99)
-        which = ev.integers(0, k, EVAL)
-        etag = np.zeros((EVAL, k))
-        etag[np.arange(EVAL), which] = 1.0
-        goals = TASK_GOALS[which]
-        p_sh = _run_tagged(pol, np.concatenate([box, etag], 1), PLAY,
-                           np.random.default_rng(5))
-        shared.append(float(np.median(np.linalg.norm(p_sh[:, -1, :] - goals, axis=1))) * 100)
-        errs = []
-        for j in range(k):
-            sel = tag[:, j] > 0
-            solo = _fit_tagged(path[sel], fixed[sel], CHUNK, 460 + n_each + j)
-            m_j = int((which == j).sum())
-            if m_j == 0:
-                continue
-            p_j = _run_tagged(solo, box[:m_j], PLAY, np.random.default_rng(5))
-            errs.append(np.linalg.norm(p_j[:, -1, :] - TASK_GOALS[j], axis=1))
-        alone.append(float(np.median(np.concatenate(errs))) * 100)
-        print(f'[share] {n_each} demonstrations of each of {k} jobs: one model for all '
-              f'{shared[-1]:.2f} cm, four separate models {alone[-1]:.2f} cm')
+def jobs_and_data() -> None:
+    """What each extra job costs in recordings."""
+    totals = (20, 40, 80, 160, 320)
+    lines = {}
+    for k in (1, 4):
+        got = []
+        for total in totals:
+            reps = []
+            for rep in range(2):
+                rng = np.random.default_rng(471 + 7 * rep + total)
+                path, goal, box, tag = _task_demos(total // k, k, rng)
+                pol = _fit_tagged(path, np.concatenate([box, tag], 1), CHUNK,
+                                  480 + rep * 11 + total)
+                g_ev, b_ev, t_ev = _eval_tasks(k, np.random.default_rng(99))
+                paths = _run_tagged(pol, np.concatenate([b_ev, t_ev], 1), PLAY,
+                                    np.random.default_rng(5 + rep))
+                d = np.linalg.norm(paths[:, -1, :] - g_ev, axis=1)
+                c = hits_box(paths, b_ev)
+                reps.append(float(((d < TOL) & ~c).mean()))
+            got.append(float(np.mean(reps)))
+            print(f'[jobs] {k} job(s), {total:3d} recordings in all '
+                  f'({total // k} each): success {got[-1]:.3f}')
+        lines[k] = got
 
     fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
     _plain(axl)
-    axl.plot(counts, shared, marker='o', color=LINK, lw=2, label='one model, told the job')
-    axl.plot(counts, alone, marker='s', color=WRIST, lw=2, label='one model for each job')
+    axl.plot(totals, lines[1], marker='o', color=LINK, lw=2, label='one job')
+    axl.plot(totals, lines[4], marker='s', color=GRIP, lw=2, label='four jobs, one model')
+    axl.axhline(0.80, color=MUTED, ls='--', lw=1.1)
     axl.set_xscale('log', base=2)
-    axl.set_xticks(counts)
-    axl.set_xticklabels([str(c) for c in counts], fontsize=9.5)
-    axl.set_xlabel('demonstrations recorded of each job', fontsize=10)
-    axl.set_ylabel('median miss at the end (cm)', fontsize=10)
-    axl.legend(fontsize=9.5, frameon=False, loc='upper right')
+    axl.set_xticks(totals)
+    axl.set_xticklabels([str(t) for t in totals], fontsize=9.5)
+    axl.set_ylim(0, 1.05)
+    axl.set_xlabel('demonstrations recorded in all (log scale)', fontsize=10)
+    axl.set_ylabel('runs that work, out of 1', fontsize=10)
+    axl.legend(fontsize=9.5, frameon=False, loc='lower right')
     axl.grid(color=GRID, lw=0.6)
     axl.set_axisbelow(True)
-    axl.set_title('Sharing pays most when each job has least',
+    axl.set_title('Four jobs need more recordings than one',
                   fontsize=12, weight='bold')
 
     _plain(axr)
-    gain = [(a - s) / a * 100 for a, s in zip(alone, shared)]
-    cols = [SLIDE if g > 0 else GRIP for g in gain]
-    axr.bar([str(c) for c in counts], gain, color=cols, width=0.6)
-    for i, g in enumerate(gain):
-        axr.text(i, g + (1.5 if g > 0 else -3.5), f'{g:+.0f}%', ha='center',
-                 fontsize=10, color=INK)
-        print(f'[share] at {counts[i]} each, sharing changes the miss by {g:+.1f} per cent')
+    gaps = [a - b for a, b in zip(lines[1], lines[4])]
+    axr.bar([str(t) for t in totals], gaps, color=WRIST, width=0.6)
+    for i, g in enumerate(gaps):
+        axr.text(i, g + 0.012, f'{g:+.2f}', ha='center', fontsize=10, color=INK)
+        print(f'[jobs] at {totals[i]} recordings the four-job model is '
+              f'{g:+.3f} behind the one-job model')
     axr.axhline(0, color=INK, lw=1.0)
-    axr.set_ylim(min(gain) - 8, max(gain) + 10)
-    axr.set_xlabel('demonstrations recorded of each job', fontsize=10)
-    axr.set_ylabel('how much better one shared model is (per cent)', fontsize=10)
+    axr.set_ylim(min(0, min(gaps)) - 0.05, max(gaps) + 0.09)
+    axr.set_xlabel('demonstrations recorded in all', fontsize=10)
+    axr.set_ylabel('how far the four-job model is behind', fontsize=10)
     axr.grid(axis='y', color=GRID, lw=0.6)
     axr.set_axisbelow(True)
-    axr.set_title('The gain from sharing shrinks as data arrives',
+    axr.set_title('The gap closes as the recordings pile up',
                   fontsize=12, weight='bold')
-    _save(fig, 'sharing-across-tasks.svg')
+    _save(fig, 'jobs-and-data.svg')
 
 
 # --------------------------------------------------------------------------
@@ -1568,7 +1573,7 @@ def horizon_you_can_trust() -> None:
     _plain(axr)
     axr.plot(np.arange(1, 61), gaps, color=PURPLE, lw=2.2)
     axr.axhline(1.0, color=MUTED, ls='--', lw=1.1)
-    axr.text(2, 1.15, 'a millimetre out', fontsize=9.5, color=MUTED)
+    axr.text(34, 1.2, 'a millimetre out', fontsize=9.5, color=MUTED)
     if cross:
         axr.axvline(cross, color=GRIP, ls=':', lw=1.4)
         axr.text(cross + 1.5, max(gaps) * 0.55, f'step {cross}\n{cross / HZ:.2f} s',
@@ -1671,22 +1676,19 @@ def planning_against_it() -> None:
                              gridspec_kw={'wspace': 0.28})
     ax0, ax1, ax2 = axes
     _plain(ax0)
-    show = 0
+    shift = np.stack([0.20 - box[:, 0], -box[:, 1]], 1)
     for name, col in (('written rule', GRIP), ('planning in the\nlearned model', LINK)):
         paths = runs[name]
-        for i in range(25):
-            ax0.plot(paths[i, :, 0], paths[i, :, 1], color=col, lw=1.0, alpha=0.6)
-        show += 1
-    for i in range(6):
-        ax0.add_patch(Rectangle((box[i, 0] - HW, box[i, 1] - HH), 2 * HW, 2 * HH,
-                                color='#bbbbbb', alpha=0.5))
+        for i in range(30):
+            ax0.plot(paths[i, :, 0] + shift[i, 0], paths[i, :, 1] + shift[i, 1],
+                     color=col, lw=1.0, alpha=0.55)
+    ax0.add_patch(Rectangle((0.20 - HW, -HH), 2 * HW, 2 * HH, color='#999999'))
     ax0.plot([], [], color=GRIP, lw=2, label='written rule')
     ax0.plot([], [], color=LINK, lw=2, label='planning in the learned model')
-    ax0.set_xlabel('along the table (m)', fontsize=10)
+    ax0.set_xlabel('along the table, every run lined up on its box (m)', fontsize=10)
     ax0.set_ylabel('across the table (m)', fontsize=10)
     ax0.legend(fontsize=9, frameon=False, loc='lower right')
-    ax0.set_title('The same model, a new job written as a cost',
-                  fontsize=11.5, weight='bold')
+    ax0.set_title('A new job, written as a cost', fontsize=11.5, weight='bold')
 
     _plain(ax1)
     names = list(res)
@@ -1700,14 +1702,13 @@ def planning_against_it() -> None:
     for xi, v in zip(x + 0.18, work):
         ax1.text(xi, v + 0.02, f'{v:.2f}', ha='center', fontsize=9.5, color=INK)
     ax1.set_xticks(x)
-    ax1.set_xticklabels([n.replace('\n', ' ') for n in names], fontsize=8.5)
+    ax1.set_xticklabels(['written\nrule', 'learned\nmodel', 'real\nphysics'], fontsize=9.5)
     ax1.set_ylim(0, 1.15)
     ax1.set_ylabel('share of 150 runs', fontsize=10)
     ax1.legend(fontsize=9.5, frameon=False, loc='upper center')
     ax1.grid(axis='y', color=GRID, lw=0.6)
     ax1.set_axisbelow(True)
-    ax1.set_title('Nobody recorded a single demonstration',
-                  fontsize=11.5, weight='bold')
+    ax1.set_title('No demonstrations at all', fontsize=11.5, weight='bold')
 
     _plain(ax2)
     ax2.plot([e / HZ * 1000 for e in every], far, marker='o', color=PURPLE, lw=2)
@@ -1718,7 +1719,7 @@ def planning_against_it() -> None:
     ax2.set_ylabel('median miss at the end (cm)', fontsize=10)
     ax2.grid(color=GRID, lw=0.6)
     ax2.set_axisbelow(True)
-    ax2.set_title('Throwing the plan away often is what makes it work',
+    ax2.set_title('A stale plan costs more than a wrong model',
                   fontsize=11.5, weight='bold')
     _save(fig, 'planning-against-it.svg')
 
@@ -1736,7 +1737,7 @@ def planning_arithmetic() -> None:
 
     fig, (axl, axr) = plt.subplots(1, 2, figsize=(12.6, 4.6), facecolor='white')
     _plain(axl)
-    labs = [f'{u:g} us' for u in speeds]
+    labs = [f'{u:g}' for u in speeds]
     axl.bar(labs, fits, color=[SLIDE, LINK, JOINT, GRIP], width=0.6)
     for i, f in enumerate(fits):
         axl.text(i, f * 1.25, f'{f:,.0f}', ha='center', fontsize=10, color=INK)
@@ -1745,7 +1746,7 @@ def planning_arithmetic() -> None:
              fontsize=9.5, color=MUTED, ha='right')
     axl.set_yscale('log')
     axl.set_ylim(0.5, max(fits) * 12)
-    axl.set_xlabel('time one step of the model takes', fontsize=10)
+    axl.set_xlabel('time one step of the model takes (microseconds)', fontsize=10)
     axl.set_ylabel(f'futures of {PLAN_H} steps that fit in {period:.1f} ms (log scale)',
                    fontsize=10)
     axl.grid(axis='y', color=GRID, lw=0.6)
@@ -1757,7 +1758,7 @@ def planning_arithmetic() -> None:
     for h, c in ((10, LINK), (20, PURPLE), (40, GRIP)):
         axr.plot(cand, cand * h, marker='o', color=c, lw=2, label=f'{h} steps ahead')
     axr.axhline(period * 1000 / 5.0, color=MUTED, ls='--', lw=1.2)
-    axr.text(4.5, period * 1000 / 5.0 * 1.25, 'what fits at 5 us a step',
+    axr.text(4.5, period * 1000 / 5.0 * 1.25, 'what fits at 5 microseconds a step',
              fontsize=9.5, color=MUTED)
     axr.set_xscale('log')
     axr.set_yscale('log')
@@ -1998,11 +1999,11 @@ def the_simulator_must_be_right() -> None:
     """Each thing the simulator gets wrong, measured on its own."""
     s = _s6()
     base = _rl_eval(s.plain, np.random.default_rng(611))
-    cases = [('nothing wrong', dict()),
-             ('arm moves 0.85 of\nwhat it is told', dict(gain=0.85)),
-             ('commands arrive\n5 steps late', dict(delay=5)),
-             ('real obstacle 2.5 cm\nbigger all round', dict(margin=0.025)),
-             ('all three at once', dict(gain=0.85, delay=5, margin=0.025))]
+    cases = [('nothing\nwrong', dict()),
+             ('arm moves\n0.85 of what\nit is told', dict(gain=0.85)),
+             ('commands\n5 steps\nlate', dict(delay=5)),
+             ('obstacle\n2.5 cm bigger\nall round', dict(margin=0.025)),
+             ('all three\nat once', dict(gain=0.85, delay=5, margin=0.025))]
     vals = []
     for name, kw in cases:
         v = _rl_eval(s.plain, np.random.default_rng(611), **kw)
@@ -2016,7 +2017,7 @@ def the_simulator_must_be_right() -> None:
     cols = [SLIDE] + [GRIP] * 3 + [INK]
     bars = axl.bar(range(len(cases)), vals, color=cols, width=0.6)
     axl.set_xticks(range(len(cases)))
-    axl.set_xticklabels([c[0] for c in cases], fontsize=8.5)
+    axl.set_xticklabels([c[0] for c in cases], fontsize=9.5)
     for b, v in zip(bars, vals):
         axl.text(b.get_x() + b.get_width() / 2, v + 0.02, f'{v:.2f}', ha='center',
                  fontsize=10, color=INK)
@@ -2024,7 +2025,7 @@ def the_simulator_must_be_right() -> None:
     axl.set_ylabel('runs that work, out of 1', fontsize=10)
     axl.grid(axis='y', color=GRID, lw=0.6)
     axl.set_axisbelow(True)
-    axl.set_title('One policy, six arms it might meet', fontsize=12, weight='bold')
+    axl.set_title('One policy, five arms it might meet', fontsize=12, weight='bold')
 
     _plain(axr)
     dls = list(range(0, 8))
@@ -2033,11 +2034,11 @@ def the_simulator_must_be_right() -> None:
     axr.plot(dls, plain, marker='o', color=GRIP, lw=2, label='searched in one simulator')
     axr.plot(dls, rand, marker='s', color=PURPLE, lw=2, label='searched in many')
     axr.axvline(0, color=MUTED, ls='--', lw=1.1)
-    axr.text(0.12, 0.08, 'what the simulator assumed', fontsize=9.5, color=MUTED)
+    axr.text(0.15, 0.46, 'what the simulator assumed', fontsize=9.5, color=MUTED)
     axr.set_ylim(0, 1.05)
     axr.set_xlabel('steps a command takes to reach the joints', fontsize=10)
     axr.set_ylabel('runs that work, out of 1', fontsize=10)
-    axr.legend(fontsize=9.5, frameon=False, loc='lower left')
+    axr.legend(fontsize=9.5, frameon=False, loc='center left')
     axr.grid(color=GRID, lw=0.6)
     axr.set_axisbelow(True)
     axr.set_title('Randomising widens the range that works', fontsize=12, weight='bold')
@@ -2065,7 +2066,8 @@ def cloning_against_searching() -> None:
     print(f'[choose] cloned policy from 40 demonstrations, on the arm they were '
           f'recorded on: {bc:.3f}')
 
-    fig, (axl, axr) = plt.subplots(1, 2, figsize=(13.0, 4.8), facecolor='white')
+    fig, (axl, axr) = plt.subplots(1, 2, figsize=(14.4, 4.8), facecolor='white',
+                                   gridspec_kw={'width_ratios': [1.0, 1.45]})
     _plain(axl)
     labs = ['searched,\nin its simulator', 'searched,\non the other arm',
             'searched with\nrandomising,\non the other arm',
@@ -2087,21 +2089,19 @@ def cloning_against_searching() -> None:
     _table_axes(axr)
     axr.set_xlim(0, 1)
     axr.set_ylim(0, 1)
-    rows = [('what it needs first', 'somebody to drive the arm',
-             'a simulator of the arm and a reward'),
-            ('data it consumes', f'40 episodes, {40 * per / 60:.0f} minutes',
+    rows = [('what it needs first', 'somebody to drive it', 'a simulator and a reward'),
+            ('data it uses here', f'40 episodes, {40 * per / 60:.0f} minutes',
              f'{GENS * POP * TASKS:,} episodes'),
             ('where that data comes from', 'the real arm', 'the simulator only'),
-            ('what can go wrong', 'the copy drifts', 'the simulator is not the arm'),
-            ('first milestone', 'one run of the task works',
-             'the reward rises for ten rounds')]
-    axr.text(0.30, 0.93, 'copying a person', fontsize=11, weight='bold', color=LINK)
+            ('what goes wrong', 'the copy drifts', 'the simulator is not the arm'),
+            ('first milestone', 'one run works end to end', 'the reward keeps rising')]
+    axr.text(0.34, 0.93, 'copying a person', fontsize=11, weight='bold', color=LINK)
     axr.text(0.68, 0.93, 'searching for a policy', fontsize=11, weight='bold', color=GRIP)
     axr.plot([0.0, 1.0], [0.89, 0.89], color=GRID, lw=1.2)
     for i, (a, b, c) in enumerate(rows):
         y = 0.78 - i * 0.16
         axr.text(0.0, y, a, fontsize=10, color=INK)
-        axr.text(0.30, y, b, fontsize=10, color=LINK)
+        axr.text(0.34, y, b, fontsize=10, color=LINK)
         axr.text(0.68, y, c, fontsize=10, color=GRIP)
     axr.set_title('What each one asks of you before it starts',
                   fontsize=12, weight='bold')
@@ -2125,10 +2125,10 @@ def main() -> None:
     two_answer_test()
     averaging_and_generating()
     what_generating_costs()
-    changing_its_mind()
+    too_few_passes()
     what_fine_tuning_costs()
     instruction_information()
-    sharing_across_tasks()
+    jobs_and_data()
     horizon_you_can_trust()
     planning_against_it()
     planning_arithmetic()

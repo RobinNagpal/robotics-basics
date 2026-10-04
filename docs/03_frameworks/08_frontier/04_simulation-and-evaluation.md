@@ -493,6 +493,18 @@ on Cosmos-transferred images still learned its contact behaviour from the underl
 simulator, with that simulator's guessed friction. It also needs substantial NVIDIA
 hardware to run, which puts it out of reach on a Mac.
 
+**What has happened since this section was written.** NVIDIA published the Cosmos 3
+family after the research above, with [Cosmos3-Nano](https://huggingface.co/nvidia/Cosmos3-Nano)
+and [Cosmos3-Edge](https://huggingface.co/nvidia/Cosmos3-Edge) on Hugging Face. Two
+things changed that matter here. The licence is no longer the NVIDIA Open Model
+License but OpenMDW 1.1, so the warning above about the code licence differing from
+the model licence has to be checked again rather than carried over. And the newer
+family takes a sequence of actions as an input and predicts the video those actions
+would cause, which is the property that makes a video model usable as a world model
+rather than only as a way of making pictures. The models catalogue works through what
+that is good for, and what it costs to run, in
+[video prediction models](../../07_learned-models/08_world-models/03_also-used/01_video-prediction-models.md#51-cosmos-3).
+
 ### 4.4 World models that actually shipped, inside policies
 
 This is the development I did not expect, and it is the answer to the question of

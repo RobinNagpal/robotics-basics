@@ -97,7 +97,10 @@ cannot do is say "move 3 mm to the left". So there are two main ways to teach it
 ### Way 1: write the movement as tokens
 
 The first way was shown by Google's RT-2 in 2023, and it writes each movement as text.
-The model then outputs a movement in exactly the same way that it outputs a word.
+The model then outputs a movement in exactly the same way that it outputs a word. RT-2
+was never released, so it appears here only because it is the clearest example of the
+method, and the models you can actually use are in [section
+5](#5-well-known-models-of-this-kind).
 
 ![A movement cut into eight parts, each written as one of 256 steps, giving the string 1 128 91 241 5 101 127 217](../../../images/language-models/vision-language-action-models/actions-as-words.svg)
 
@@ -113,7 +116,8 @@ whole movement therefore becomes eight numbers, such as `1 128 91 241 5 101 127 
 The benefit is that no new part is needed, because the model already writes numbers as
 tokens. So the training simply adds examples in which the right answer to a picture
 and an instruction is a string of eight numbers. OpenVLA, the first open VLA, uses the
-same idea.
+same idea, and [section 5.6](#56-openvla) is about it. Of the models in section 5, only
+OpenVLA and π0-FAST write movements this way.
 
 The drawback is that 256 steps is coarse, and the model writes the numbers one token
 at a time. Writing one token takes about as long as writing one word in a chat
@@ -123,8 +127,13 @@ window. So a model that writes eight tokens for every movement is slow.
 
 The second way keeps the vision-language model for the understanding, and adds a
 second, smaller network that only produces movements. This smaller network is called
-the **action expert**, and π0 from Physical Intelligence, GR00T from NVIDIA and
-SmolVLA from Hugging Face all work this way.
+the **action expert**, and most of the models in [section
+5](#5-well-known-models-of-this-kind) work this way:
+[SmolVLA](#51-smolvla-the-one-to-start-with) from Hugging Face, [π0 and
+π0.5](#52-the-pi-models-from-physical-intelligence) from Physical Intelligence, [GR00T
+N1.7](#53-gr00t-n17-from-nvidia) from NVIDIA,
+[MolmoAct2](#54-molmoact2-from-the-allen-institute-for-ai) from the Allen Institute for
+AI, and [X-VLA](#55-x-vla) from an academic group.
 
 ![What goes in, then ten random points being moved step by step into a smooth path of gripper positions](../../../images/language-models/vision-language-action-models/backbone-and-action-expert.svg)
 
@@ -141,7 +150,8 @@ The picture below shows what happens, in four steps.
    where it should go next.
 
 This method of starting from random numbers and moving them step by step is called
-**flow matching**. The page on
+**flow matching**, and every model named just above produces its movements this way,
+which is why those two words come up again in section 5. The page on
 [diffusion and flow policies](../../06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
 explains it in more detail, and why it copes well when a task can be done in more
 than one way.
@@ -215,23 +225,25 @@ ends with one recommendation you can follow. The size of a model is given as its
 of **parameters**, and a parameter is one of the adjustable numbers inside the network
 that training sets.
 
-Read the table one row at a time: the row names a model, says what it is best at, gives
-its size and its two licences, says how current it is, and ends with the case for
-choosing it. A model has two licences because the programs and the trained numbers are
-published separately and often on different terms, so the column gives the code first
-and the weights second. Every licence here was read from the project's own files in
-September 2026 by the [frontier
+The table has two columns, so read a row from left to right as one sentence about one
+model. The left column names the model and says how current it is. The right column
+holds everything else: the size, the licence on the code and the licence on the trained
+numbers, what the model is best at, and the case for choosing it. A model has two
+licences because the programs and the trained numbers are published separately and often
+on different terms, so each row names the code licence first and the weights second.
+Every licence here was read from the project's own files in September 2026 by the
+[frontier
 document](../../../03_frameworks/08_frontier/02_foundation-models.md#10-the-open-shelf-what-you-can-download-today),
 which is the page to check when you want to know what is current.
 
-| Model | Best at | Size | Licence: code / weights | How current | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| [SmolVLA](https://huggingface.co/lerobot/smolvla_base) | running on hardware you already own | 450 million | Apache-2.0 / Apache-2.0 | most used in 2026 | you are learning, with a small arm and one computer |
-| [π0, π0-FAST and π0.5](https://github.com/Physical-Intelligence/openpi) | smooth two-armed tasks such as folding cloth | not stated | Apache-2.0 / served from the project's own storage | most used in 2026 | you have an NVIDIA card, and a robot like ALOHA or DROID |
-| [GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T) | working on a robot it was not trained on | 3 billion | Apache-2.0 / NVIDIA Open Model License | most used in 2026 | you want the most capable open model, and you have NVIDIA hardware |
-| [MolmoAct2](https://huggingface.co/allenai/MolmoAct2) | published evidence you can check | 5 billion | Apache-2.0 / none declared on the model card | worth betting on | you have to justify the choice with numbers, or you own an SO-100 |
-| [X-VLA](https://huggingface.co/2toINF/X-VLA-Pt) | being adapted to an unusual robot | 0.9 billion | not checked / Apache-2.0 | worth betting on | you need a permissive licence on the weights themselves |
-| [OpenVLA](https://huggingface.co/openvla/openvla-7b) | being the number everyone compares against | 7 billion | MIT / MIT | historical | you want the baseline, or one whole model you can read |
+| Model | What decides it |
+| --- | --- |
+| [SmolVLA](https://huggingface.co/lerobot/smolvla_base), most used in 2026 | It has 450 million parameters, and both its code and its weights are Apache-2.0. It is the one model here that runs on hardware you already own. Pick it when you are learning, with a small arm and one computer. |
+| [π0, π0-FAST and π0.5](https://github.com/Physical-Intelligence/openpi), most used in 2026 | Their size is not stated, their code is Apache-2.0, and their weights are served from the project's own storage with no licence of their own. They are the best models here at smooth two-armed tasks such as folding cloth. Pick them when you have an NVIDIA card and a robot like ALOHA or DROID. |
+| [GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T), most used in 2026 | It has 3 billion parameters, its code is Apache-2.0, and its weights are under the NVIDIA Open Model License. It is the best model here at working on a robot it was not trained on. Pick it when you want the most capable open model and you have NVIDIA hardware. |
+| [MolmoAct2](https://huggingface.co/allenai/MolmoAct2), worth betting on | It has 5 billion parameters, its code is Apache-2.0, and its model card declares no licence for the weights. It publishes more evidence about itself than anything else here. Pick it when you have to justify the choice with numbers, or when you own an SO-100. |
+| [X-VLA](https://huggingface.co/2toINF/X-VLA-Pt), worth betting on | It has 0.9 billion parameters, its code licence has not been checked, and its weights are Apache-2.0. It is built to be adapted to an unusual robot. Pick it when the licence on the weights themselves has to be permissive. |
+| [OpenVLA](https://huggingface.co/openvla/openvla-7b), historical | It has 7 billion parameters, and its code and its weights are both MIT. It is the number everyone compares against. Pick it when you want that baseline, or one whole model you can read. |
 
 ### 5.1 SmolVLA, the one to start with
 

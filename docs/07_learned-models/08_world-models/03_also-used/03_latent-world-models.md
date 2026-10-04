@@ -95,7 +95,11 @@ The last section said what passes in and out, so this section says what is
 inside. A latent world model has four parts, and each one has a single job. The
 first turns a picture into a code, the second predicts the next code, and the
 third predicts the score. Then the fourth turns a code back into a picture, and it
-is used mainly during training.
+is used mainly during training. The 2018 World Models paper in
+[section 5.1](#51-world-models) is the clearest description of this arrangement,
+and the shortlist keeps it for that reason rather than to run it. The entries you
+would run rearrange these parts, and several of them leave one of the four out,
+which this section points out as each part appears.
 
 ### Squeezing a picture into a code
 
@@ -118,6 +122,15 @@ close to the original but slightly blurred.
 Once again, the drawing uses a tiny picture and a tiny code so that you can see
 each part. Real codes are larger, as the last section said, but the idea behind
 them is the same.
+
+Two entries in the shortlist change this part. TD-MPC2, in
+[section 5.5](#55-td-mpc2), has no decoder at all, so its code is trained only to
+be good at predicting the score and the value of a state and never at drawing the
+picture back. V-JEPA 2-AC, in [section 5.6](#56-v-jepa-2-and-v-jepa-2-ac), does
+not learn the encoder from your robot's pictures at all, because it is trained on
+a large amount of internet video before your robot has moved. DreamerV3, in
+[section 5.3](#53-dreamerv3), is the entry that keeps the decoder, which is what
+lets you draw what it imagined and look at it.
 
 ### Predicting the next code
 
@@ -153,7 +166,10 @@ the next idea possible.
 Because the model is fast, its predictions are sometimes called **imagination**,
 or a **dream**. Those names only mean "a rollout that the model made up, not one
 that happened". The key idea of the Dreamer family is that a policy can practise
-inside this imagination, and it works in the three steps below.
+inside this imagination, and it works in the three steps below. DreamerV3, in
+[section 5.3](#53-dreamerv3), is the entry that does it, and DayDreamer, in
+[section 5.4](#54-daydreamer), is the same idea split into two programs so that
+it can run on an arm that cannot be hurried.
 
 1. **Start from real moments.** Take codes from real pictures that the robot saw
    earlier.
@@ -170,6 +186,15 @@ the task.
 Many of these imagined stretches can run in the time the real arm makes one
 move. So the real arm is used only to collect new pictures now and then, and to
 check that the policy works.
+
+Practising is not the only use of a fast code. Instead of training a policy, a
+program can search over sequences of actions inside the code before every move,
+which is the planning on the
+[learned dynamics models](../02_most-used/01_learned-dynamics-models.md#planning-with-it)
+page with codes in place of measured positions. PlaNet, in
+[section 5.2](#52-planet), does that and has no policy at all, and TD-MPC2, in
+[section 5.5](#55-td-mpc2), searches in the same way before each move, which is
+the model predictive control its name refers to.
 
 ![On the left, three practice attempts on the real arm; on the right, many imagined attempts inside the world model](../../../images/world-models/latent-world-models/real-vs-imagined.svg)
 
@@ -218,22 +243,23 @@ for this page, and this section is here so that you can pick one. The Dreamer
 line is the reference point for the whole family, so three of the six entries
 come from the group that built it and a fourth is a direct answer to it.
 
-Read the table one row at a time. The Size column is worth reading twice,
-because its published numbers run from hundreds of parameters to hundreds of
-millions, and the small numbers are not mistakes. The Licence column matters as
-much, because two of these repositories
-have no licence file at all, which means you have no stated permission to use
-the code. Where a number is not published, the cell says `not stated` rather
-than giving a guess.
+Read the table one row at a time. The left column names the model and says how
+current it is. The right column holds the rest: what the model is best at, how
+big it is, its licence, and when to pick it. The sizes are worth reading twice,
+because the published numbers run from hundreds of parameters to hundreds of
+millions, and the small numbers are not mistakes. The licences matter as much,
+because two of these repositories have no licence file at all, which means you
+have no stated permission to use the code. Where a number is not published, the
+row says `not stated` rather than giving a guess.
 
-| Model | How current | What it is best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| [World Models](#51-world-models) | historical | showing the whole idea in three small parts | 4,348,547 for the encoder and decoder, 422,368 for the predictor, 867 for the policy | no licence file in the code repository | you want the shortest explanation of the design |
-| [PlaNet](#52-planet) | historical | planning inside a learned code, with no policy | not stated | Apache-2.0 | you want planning rather than a trained policy |
-| [DreamerV3](#53-dreamerv3) | most used in 2026 | one agent that works on many tasks without retuning | config blocks from `size1m` to `size400m` | the MIT licence text, in its licence file | you want the complete reference agent |
-| [DayDreamer](#54-daydreamer) | historical | learning on a real robot with no simulator | not stated | no licence file | you are wiring Dreamer to a real arm |
-| [TD-MPC2](#55-td-mpc2) | most used in 2026 | continuous control, with published checkpoints | 5M for each single-task checkpoint, up to 317M for the 80-task one | MIT | you control an arm and want weights to start from |
-| [V-JEPA 2 and V-JEPA 2-AC](#56-v-jepa-2-and-v-jepa-2-ac) | worth betting on | codes learned from internet video, not from your arm | about 326M for the published ViT-L encoder | MIT | you cannot record enough data of your own |
+| Model | What decides it |
+| --- | --- |
+| [**5.1 World Models**](#51-world-models), historical | It is best at showing the whole idea in three small parts. Its published parameter counts are 4,348,547 for the encoder and decoder, 422,368 for the predictor and 867 for the policy. The code repository has no licence file. Pick it when you want the shortest explanation of the design. |
+| [**5.2 PlaNet**](#52-planet), historical | It is best at planning inside a learned code, with no policy anywhere. Its size is not stated, and the licence is Apache-2.0. Pick it when you want planning rather than a trained policy. |
+| [**5.3 DreamerV3**](#53-dreamerv3), most used in 2026 | It is best at being one agent that works on many tasks without retuning. Its configuration blocks run from `size1m` to `size400m`. Its licence file holds the MIT licence text. Pick it when you want the complete reference agent. |
+| [**5.4 DayDreamer**](#54-daydreamer), historical | It is best at learning on a real robot with no simulator. Its size is not stated, and it has no licence file. Pick it when you are wiring Dreamer to a real arm. |
+| [**5.5 TD-MPC2**](#55-td-mpc2), most used in 2026 | It is best at continuous control, and it is the only entry with published checkpoints. Each single-task checkpoint holds 5 million parameters, and the 80-task agent holds up to 317 million. The licence is MIT. Pick it when you control an arm and want weights to start from. |
+| [**5.6 V-JEPA 2 and V-JEPA 2-AC**](#56-v-jepa-2-and-v-jepa-2-ac), worth betting on | They are best at codes learned from internet video rather than from your own arm. The published ViT-L encoder holds about 326 million parameters. The licence is MIT. Pick them when you cannot record enough data of your own. |
 
 ### 5.1 World Models
 

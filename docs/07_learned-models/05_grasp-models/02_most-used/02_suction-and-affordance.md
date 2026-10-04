@@ -129,18 +129,44 @@ A network whose output is a picture the same size as its input is called a **ful
 convolutional network**. The
 [encoders and decoders](../../01_what-models-are/03_inside-a-neural-network.md#7-encoders-and-decoders)
 section of the inside a neural network page explains its two halves.
+SuctionNet-1Billion, in
+[section 5.2](#52-suctionnet-1billion-the-current-suction-benchmark), is a network
+of exactly this shape, and AffordanceNet, in
+[section 5.4](#54-affordancenet-the-one-the-affordance-papers-measure-against),
+puts a second branch beside it that draws a box round each object first and then
+paints the labels inside the box.
 
 Systems that paint a finger-grasp map next to the suction map need one extra step
 for angles. This is because a finger grasp needs an angle while a suction cup does
 not. So they turn the input picture by several angles, run the network on each
 turned copy, and keep the best answer. That means a network which only learned one
-jaw direction can find grasps at any angle.
+jaw direction can find grasps at any angle. Dex-Net 4.0, in
+[section 5.1](#51-the-dex-net-suction-models-30-and-40), is a system of that kind,
+because it paints a suction map and a finger-grasp map for the same object and
+then picks whichever of the two scores better.
 
 Suction models often split the score into two parts rather than one. A **seal
 score** says whether the cup will seal on the surface. A **wrench score** then says
 whether that seal is strong enough to hold the object's weight, given where the cup
 sits compared with the object's centre of mass. A cup at the very edge of a heavy box may seal and still
-tear off, because the box's weight twists it.
+tear off, because the box's weight twists it. SuctionNet-1Billion's baseline model
+does exactly this, because it gives the network two output channels and multiplies
+them together, and
+[section 5.2](#52-suctionnet-1billion-the-current-suction-benchmark) describes
+it.
+
+Two models in the shortlist paint a map that is neither of the two described so
+far. Where2Act, in
+[section 5.5](#55-where2act-affordances-for-things-that-move), scores a pixel for
+one action at a time, so its answer says how likely a push or a pull is to move
+something there rather than what the part is for. CLIPSeg, in
+[section 5.6](#56-clipseg-asking-for-a-part-in-words), has no fixed list of jobs
+at all. An affordance model's last layer has one channel for each job it was
+trained on, and that is what fixes the list. CLIPSeg replaces those channels with
+a text encoder, so you give it a phrase and it scores every pixel against that
+phrase instead. The
+[open-vocabulary models](../../03_seeing-models/02_most-used/03_open-vocabulary-models.md)
+page explains that design.
 
 ---
 
@@ -188,25 +214,29 @@ kinds the best answer often involves no model at all, so read
 
 Every licence below was read from the project's own licence file, and Book 3's
 [suction models](../../../03_frameworks/02_gripping/04_models-that-grasp.md#6-suction-models)
-section covers the suction half in more detail. Read the table as one row per
-model, in the order the sub-sections cover them. The "how big it is" column gives
-the download size of the weights, where the file is published somewhere its size
-can be read, because none of these projects publishes a parameter count.
+section covers the suction half in more detail. The table has one row per model,
+in the order the sub-sections cover them. The left column names the model and says
+how current it is. The right column starts with the cup or the gripper the model
+assumes, because that is what decides whether its answer applies to your hardware,
+and then gives what the model is best at, how big it is, the licence of its code
+and when to pick it. A size is the download size of the weights, given where the
+file is published somewhere its size can be read, because none of these projects
+publishes a parameter count.
 
-| Model | How current | Best at | How big it is | Licence of the code | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| Dex-Net 3.0 and 4.0 | historical | a packaged suction policy you can call in five lines | not stated | University of California: education, research and not-for-profit only | you want a working suction policy today and can run it under an old Python |
-| SuctionNet-1Billion | most used in 2026 | a current suction model, and the benchmark others report on | not stated | no licence file at all | you are measuring a suction model against published numbers |
-| GraspGen's suction model | worth betting on | a suction cup whose radius you know | weights 907 megabytes plus 166 megabytes | NVIDIA License: non-commercial | your cup is not 30 millimetres and you can rescale for it |
-| AffordanceNet | historical | finding objects and painting their parts in one pass | not stated; 150 milliseconds per picture | only the licences of the code it was built from | you are reading the paper, not shipping the model |
-| Where2Act | historical | where to push or pull a door, a drawer or a lid | not stated | no licence file at all | your objects have moving parts and you work in simulation |
-| CLIPSeg, used for parts | most used in 2026 | asking for "the handle" in words, with no training | weights 603 megabytes; output 352 by 352 pixels | Apache-2.0, on the model card and on `transformers` | you need part labels now, for objects nobody listed |
+| Model | What decides it |
+| --- | --- |
+| **Dex-Net 3.0 and 4.0**, historical | The cup is one rubber cup of one diameter and one stiffness, fixed in the weights, and nothing in the answer tells you how far your own cup differs from it. It is best at giving you a packaged suction policy you can call in five lines. The size of the weights is `not stated`, and the licence is a University of California grant for education, research and not-for-profit use only. Pick it when you want a working suction policy today and can run it under an old Python. |
+| **SuctionNet-1Billion**, most used in 2026 | The cup is the one its physics model used when the labels were made, and the repository offers no way to change it. It is a current suction model, and it is the benchmark other people report their numbers on. The size of the weights is `not stated`, and there is no licence file at all. Pick it when you are measuring a suction model against published numbers. |
+| **GraspGen's suction model**, worth betting on | It is the only model here that states its cup, which is a single cup of 30 millimetre radius, and its README gives a correction for a different one: scale the object's points by your radius divided by 0.030. So it is the one to use when you know your cup's radius. The weights are 907 megabytes plus 166 megabytes, and the code is under the NVIDIA License, which permits non-commercial use only. Pick it when your cup is not 30 millimetres and you can rescale for it. |
+| **AffordanceNet**, historical | It assumes no cup and no gripper, because it paints part labels that you then filter another model's grasps against. It is best at finding objects and painting their parts in one pass, and the paper reports 150 milliseconds per picture. The size of the weights is `not stated`, and the only licences in the repository are those of the code it was built from. Pick it when you are reading the paper, not shipping the model. |
+| **Where2Act**, historical | It assumes no cup and no gripper either, and what it paints is where a push or a pull would move something rather than where a hold would work. So it is best at saying where to push or pull a door, a drawer or a lid. The size of the weights is `not stated`, and there is no licence file at all. Pick it when your objects have moving parts and you work in simulation. |
+| **CLIPSeg, used for parts**, most used in 2026 | It assumes no cup and no gripper, because you type a phrase, it paints the pixels that match, and you filter grasps with that. It is best at asking for "the handle" in words, and nothing has to be trained first. The weights are 603 megabytes, the output is 352 by 352 pixels whatever size you gave it, and the licence is Apache-2.0 on the model card and on `transformers`. Pick it when you need part labels now, for objects nobody listed. |
 
-One warning before the sub-sections. A suction model's score answers the question
-"would the cup I was trained on seal here", and that cup is fixed in the weights. A
-model trained on a 30 millimetre cup scores a flat patch 25 millimetres wide as
-good, because that cup fits there, while a 50 millimetre cup does not. Each
-sub-section below therefore names the cup its model assumes.
+Every row above opens with a cup or a gripper for one reason. A suction model's
+score answers the question "would the cup I was trained on seal here", and that cup
+is fixed in the weights. A model trained on a 30 millimetre cup scores a flat patch
+25 millimetres wide as good, because that cup fits there, while a 50 millimetre cup
+does not. Each sub-section below says more about the cup its model assumes.
 
 ### 5.1 The Dex-Net suction models, 3.0 and 4.0
 

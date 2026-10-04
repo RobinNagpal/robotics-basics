@@ -93,16 +93,24 @@ robot usually tries the rectangle with the highest score.
 
 Since the last section described the rectangles that come out, this section
 describes how they are produced. There are two main ways to build this kind of
-model. The older way finds one rectangle for the whole picture, while the newer way
-paints an answer onto every pixel instead.
+model, and one variation on the newer of the two. The older way finds one rectangle
+for the whole picture, while the newer way paints an answer onto every pixel
+instead. The variation scores a grasp at every pixel rather than painting one. Every
+model named below is also in section 5, which says which of them to use.
 
 ### One rectangle per picture
 
 The earliest models of the older way looked at many small patches of the picture,
 one at a time, and asked a network "is there a good grasp here?" This was slow,
-because the picture has thousands of patches. A later model looked at the whole
-picture once and gave back the four numbers of one rectangle directly. That was
-fast, but it could only give one grasp per picture.
+because the picture has thousands of patches. Lenz, Lee and Saxena's patch
+classifier worked that way, and
+[section 5.5](#55-lenz-lee-and-saxenas-patch-classifier) describes it. A later model
+looked at the whole picture once and gave back the four numbers of one rectangle
+directly, which was Redmon and Angelova's detector in
+[section 5.4](#54-redmon-and-angelovas-single-pass-detector). That was fast, but it
+could only give one grasp per picture. Both models are named here because they are
+the clearest way to see where this kind came from, and section 5 marks both of them
+as historical rather than as models to install.
 
 ### A map for every pixel
 
@@ -132,7 +140,22 @@ Because the network generates a grasp for every pixel rather than checking grasp
 one at a time, this design is called **generative**. Its big advantage is speed,
 since one pass through a small network gives every possible grasp in the picture. A
 model this fast can run again while the arm is moving, so the grasp can follow an
-object that is pushed or slides.
+object that is pushed or slides. GG-CNN and GR-ConvNet are both built this way, and
+[section 5.1](#51-gg-cnn-the-small-network-that-can-run-on-every-frame) and
+[section 5.2](#52-gr-convnet-the-same-three-maps-from-a-larger-network) recommend
+them.
+
+### A score for every pixel, and a height as well
+
+This variation starts from a scorer rather than from a map painter. A small network
+that gives one proposed grasp a score can be run as a convolution over the whole
+depth picture, and then one pass scores a grasp at every fourth pixel and at each of
+16 different gripper heights. The answer is the best pixel, angle and height
+together, rather than a height read out of the depth picture afterwards.
+FC-GQ-CNN works this way, and
+[section 5.3](#53-fc-gq-cnn-the-dex-net-top-down-policy) says when to choose it. The
+scorer it is built from is a kind of model in its own right, and the
+[grasp quality models](02_grasp-quality-models.md) page describes that kind.
 
 ---
 
@@ -175,20 +198,22 @@ implement it, so that you can choose one and start work instead of reading five
 papers first. The last sub-section is a short rule for choosing, and a reader in a
 hurry can read only that.
 
-Read the table one row at a time. The size column counts the weights in the network,
-because that number decides whether the model runs on a computer with no graphics
-card. The licence column is the licence on the code, and Book 3's
+Read the table one row at a time. The left column names the model, the year it was
+published and how current it is. The right column holds everything else: what the
+model is best at, how many weights it has, the licence on its code, and the one
+condition that should make you choose that row rather than another. The weights are
+counted because that number decides whether the model runs on a computer with no
+graphics card. Each licence is the licence on the code, and Book 3's
 [models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md#2-planar-models-a-grasp-is-a-rectangle)
-read each one from the project's own licence file in September 2026. The last column
-gives the one condition that should make you choose that row rather than another.
+read every one of them from the project's own licence file in September 2026.
 
-| Model | What it is best at | Size, in weights | Code licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| [GG-CNN](https://github.com/dougsm/ggcnn) (2018) | running many times a second on a small computer | 62,420 | BSD-3-Clause | the arm has to keep looking while it reaches |
-| [GR-ConvNet](https://github.com/skumra/robotic-grasping) (2020) | reading colour and depth together | 1,900,900 | BSD-3-Clause | a depth camera alone sees your objects badly |
-| [FC-GQ-CNN](https://github.com/BerkeleyAutomation/gqcnn) (2019) | choosing the gripper's height as well as the pixel | not stated | University of California Regents: education, research and not-for-profit use only | you are doing research and want the sampler and the search as well as the network |
-| Redmon and Angelova's detector (2015) | nothing you would use today | not stated | not stated | never; read the paper to see where the single-pass idea came from |
-| Lenz, Lee and Saxena's detector (2015) | nothing you would use today | not stated | not stated | never; read the paper to see what the first deep version cost |
+| Model | What decides it |
+| --- | --- |
+| [**GG-CNN**](https://github.com/dougsm/ggcnn) (2018), most used in 2026 | It is best at running many times a second on a small computer. It has 62,420 weights, and its code licence is BSD-3-Clause. Pick it when the arm has to keep looking while it reaches. |
+| [**GR-ConvNet**](https://github.com/skumra/robotic-grasping) (2020), most used in 2026 when depth is not enough | It is best at reading colour and depth together. It has 1,900,900 weights, and its code licence is BSD-3-Clause. Pick it when a depth camera alone sees your objects badly. |
+| [**FC-GQ-CNN**](https://github.com/BerkeleyAutomation/gqcnn) (2019), historical | It is best at choosing the gripper's height as well as the pixel. Its size in weights is `not stated`, and its code licence is a University of California Regents grant for education, research and not-for-profit use only. Pick it when you are doing research and want the sampler and the search as well as the network. |
+| **Redmon and Angelova's detector** (2015), historical | It is best at nothing you would use today. Its size in weights is `not stated` and its licence is `not stated`. Never pick it, and read the paper instead to see where the single-pass idea came from. |
+| **Lenz, Lee and Saxena's detector** (2015), historical | It is best at nothing you would use today. Its size in weights is `not stated` and its licence is `not stated`. Never pick it, and read the paper instead to see what the first deep version cost. |
 
 The two 2015 rows are in the table because this page would be dishonest without
 them, not because you should install them.

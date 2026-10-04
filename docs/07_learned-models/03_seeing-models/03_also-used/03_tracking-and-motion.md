@@ -95,7 +95,9 @@ mug 1, not a new mug.
 
 ### Optical flow
 
-A modern optical flow model, such as RAFT, works in these steps.
+A modern optical flow model, such as RAFT, works in these steps. RAFT is also the
+flow model [section 5.6](#56-raft-for-motion-at-every-pixel) recommends, so the
+steps below describe a model you would actually install.
 
 1. An encoder turns each of the two frames into a grid of small embeddings, where an
    **embedding** is a list of numbers that describes a small patch of the picture.
@@ -129,6 +131,8 @@ two, and it must also keep going when the point is hidden.
 
 CoTracker makes that last idea stronger, because it tracks many points together, so
 if one point on a mug is hidden, the other points on the same mug help place it.
+CoTracker3, which [section 5.5](#55-cotracker3-for-points-on-something-that-bends)
+recommends, is the current version of that model.
 
 ### Object tracking
 
@@ -146,11 +150,24 @@ Most object trackers for robots use a method called **tracking by detection**.
    object. A known object with no box is kept for a few frames as "hidden", with its
    predicted position, in case it comes back.
 
-Some trackers also compare how the objects look, using an embedding for each
-box, so that they can tell apart two objects that pass close to each other. SAM
-2 works differently, because you click once on an object in one frame, and it
-then keeps a memory of what the object looked like and draws the outline in
-every later frame.
+Those four steps are the whole of SORT, which
+[section 5.2](#52-sort-the-one-that-explains-the-others) keeps as the clearest way
+to read the method, and almost the whole of ByteTrack, which
+[section 5.1](#51-bytetrack-for-several-objects-at-once) recommends. Neither of
+those two holds any learned weights, so the only network in this route is the
+detector in step 1. Some trackers also compare how the objects look, using an
+embedding for each box, so that they can tell apart two objects that pass close to
+each other.
+
+The other two object trackers in section 5 do not follow this route at all. SAM 2,
+from [section 5.3](#53-sam-2-for-following-one-object-you-pointed-at), needs no
+detector, because you click once on an object in one frame, and it then keeps a
+memory of what the object looked like and draws the outline in every later frame.
+SAM 3, from
+[section 5.4](#54-sam-3-one-model-that-detects-and-follows-what-you-name), needs
+neither a detector nor a click, because you give it a short phrase and one model
+finds every object the phrase describes, numbers them itself, and then follows them
+with the memory that SAM 2 uses.
 
 ---
 
@@ -188,19 +205,21 @@ three kinds of this page apart, because picking the wrong kind costs much more t
 picking the wrong model inside a kind. Two of the best known names below are not
 learned models at all.
 
-The table compares them. Read each row as: which of the three kinds the model
-belongs to, what it is best at, how big it is, what licence it carries, and the
-case that should make you pick it. A cell says `not stated` where the project
-that made the model publishes no number.
+The table compares them. The left column names the model and says how current it
+is. The right column begins with which of the three kinds the model belongs to,
+because that is the choice that matters most, and then gives what it is best at,
+how big it is, what licence it carries, and the case that should make you pick it.
+The right column says `not stated` where the project that made the model publishes
+no number.
 
-| Model | Kind | Best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| ByteTrack | object tracking, many at once | keeping one number on each of several objects that your detector already finds | no weights of its own | MIT | a detector already works, and several objects move at once |
-| SORT | object tracking, many at once | showing in a few hundred lines what tracking by detection is | no weights of its own | GPL-3.0 for the original code | you want to read the method rather than ship it |
-| SAM 2 | object tracking, one object at a time | following the outline of one object somebody pointed at, through hidden spells and changes of shape | 38.9M to 224.4M parameters | Apache-2.0 for both code and weights | something can point at the object once, and the camera films without a break |
-| SAM 3 | object tracking, from a written phrase | finding and then following every object that matches a short phrase, with no detector of your own | 848M parameters | bespoke SAM License, and the weights need an access request | you cannot train a detector, and you can say in words what to follow |
-| CoTracker3 | point tracking | following points you chose on something that bends, such as cloth | not stated | CC-BY-NC for most of the code | the thing you follow has no fixed shape |
-| RAFT | optical flow | measuring how far every pixel moved between two frames | 5.3M parameters for `raft_large`, 1.0M for `raft_small` | BSD-3-Clause | you need motion everywhere and no identity |
+| Model | What decides it |
+| --- | --- |
+| **ByteTrack**, most used in 2026 | Object tracking, many at once. It is best at keeping one number on each of several objects that your detector already finds. It has no weights of its own, and its original code is MIT. Pick it when a detector already works and several objects move at once. |
+| **SORT**, historical | Object tracking, many at once. It is best at showing in a few hundred lines what tracking by detection is. It has no weights of its own, and its original code is GPL-3.0. Pick it when you want to read the method rather than ship it. |
+| **SAM 2**, most used in 2026 | Object tracking, one object at a time. It is best at following the outline of one object somebody pointed at, through hidden spells and changes of shape. It comes in sizes from 38.9 million to 224.4 million parameters, and both its code and its weights are Apache-2.0. Pick it when something can point at the object once and the camera films without a break. |
+| **SAM 3**, worth betting on | Object tracking, from a written phrase. It is best at finding and then following every object that matches a short phrase, with no detector of your own. It has 848 million parameters, it carries a bespoke SAM License, and its weights need an access request. Pick it when you cannot train a detector and you can say in words what to follow. |
+| **CoTracker3**, worth betting on | Point tracking. It is best at following points you chose on something that bends, such as cloth. Its size is `not stated`, and most of its code is CC-BY-NC. Pick it when the thing you follow has no fixed shape. |
+| **RAFT**, most used in 2026 | Optical flow. It is best at measuring how far every pixel moved between two frames. It has 5.3 million parameters for `raft_large` and 1.0 million for `raft_small`, under the BSD-3-Clause licence. Pick it when you need motion everywhere and no identity. |
 
 Every size above is the number its own project publishes. ByteTrack and SORT have
 no size because they hold no learned weights at all, as the next two sub-sections

@@ -104,6 +104,11 @@ expected torque on one joint as a dashed line, and the measured torque as a soli
 line, and they match closely until the forearm hits a box. The bottom half shows
 the gap between them, and when that gap crosses the stop line, the arm stops.
 
+This subtraction, with the textbook physics in step 1, is the method
+[section 5.1](#51-the-momentum-observer-with-a-textbook-physics-model) recommends for
+noticing contact, and it contains no learning at all. That is worth saying plainly,
+because it is the method almost every arm already runs.
+
 So the quality of the whole method depends on step 1. If the prediction is poor, the
 gap is never near zero, even with no collision. Then the stop line has to be set
 high, and gentle collisions are missed. This is where learning helps most, because
@@ -111,6 +116,8 @@ a learned model can predict the expected torque better than the textbook physics
 can. It manages that by learning the friction and other effects the textbook leaves
 out, and the [learned arm models](../03_also-used/02_learned-arm-models.md) page
 explains how.
+[Section 5.2](#52-a-learned-torque-model-behind-the-same-limit) recommends exactly
+that. It keeps the whole of section 5.1 and replaces only its prediction.
 
 ### 3.2 Where the arm was hit
 
@@ -137,10 +144,16 @@ movement makes a large gap for a moment, and so does a hard stop, while a gentle
 bump makes a small gap with a particular shape over time. So a network trained on
 many examples of both can tell them apart better than one fixed stop line can.
 
+The best-known detector of this kind is CollisionNet, and
+[section 5.3](#53-collisionnet-a-classifier-that-reads-the-window) describes it. That
+section also says why most arms keep the subtraction of section 3.1 anyway, which is
+that this network has to be trained on real collisions somebody caused on purpose.
+
 ### 3.4 Learned failure detectors
 
 However, a failure detector usually watches a whole task rather than one moment,
-and there are two common ways to build one.
+and there are two common ways to build one, with a third for an arm that a learned
+model drives.
 
 The first way learns what a normal run looks like, from many runs that went well.
 Then it flags any run that looks different. This is called **anomaly
@@ -161,12 +174,26 @@ squeeze its input down to a few numbers and then rebuild the input from them. It
 learns to rebuild normal runs well, so when it is shown an odd run, it rebuilds
 that run badly. This means a bad rebuild is a sign that the run is unusual.
 
+[Section 5.4](#54-an-anomaly-detector-trained-on-good-runs-only) recommends this way
+for the second job on this page. The published work it names is an autoencoder of the
+kind just described. However, the version most people start with is simpler, and it is
+a few hundred small decision trees on a handful of summary numbers describing each run.
+
 The second way instead trains a model on labelled examples of success and failure. A
 **vision-language model** is a model that reads a picture and answers a question
 about it in words, so it can look at a picture after a task and answer "did the mug
 end up on the shelf?" The
 [vision-language models](../../07_language-models/02_most-used/02_vision-language-models.md)
 page covers this.
+[Section 5.5](#55-a-vision-language-model-as-the-judge-of-a-finished-attempt) recommends
+a model of this kind as the judge of a finished attempt.
+
+The third way watches neither the sensors nor the finished picture. It watches the
+model that drives the arm, and it reports trouble when that model's own output stops
+making sense, which can happen before the forces or the positions look unusual. This way
+exists only for an arm driven by a learned model, and
+[section 5.6](#56-sentinel-for-an-arm-driven-by-a-learned-policy) recommends Sentinel
+for it.
 
 ## 4. How it is trained
 
@@ -203,19 +230,22 @@ measured, which is the subtraction in section 3.1, and learning helps there only
 the expected torque more accurate. For noticing that a whole task has failed, learned
 models have arrived properly, and the last three entries below are all of that kind.
 
-Read the table as: the method, which of the two jobs it does, what it is best at, how big
-it is, its licence, and the one case that should make you choose it. A cell says `not
-stated` where nobody has published the figure. "Yours" in the licence column means the
-model comes out of your own training run, so no licence restricts it.
+Read the table one row at a time. The left column names the method and says whether a
+developer starting today would reach for it. The right column holds everything else, and
+it opens with which of this page's two jobs the method does, because that decides whether
+the row concerns you at all. After that it gives what the method is best at, how big it
+is, its licence, and the one case that should make you choose it. A cell says `not stated`
+where nobody has published the figure. Where the licence is yours, the model comes out of
+your own training run, so no licence restricts it.
 
-| Method | Which job | Best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| [5.1 The momentum observer](#51-the-momentum-observer-with-a-textbook-physics-model) | the arm hit something | an answer in milliseconds, with no training data at all | not a learned model | Pinocchio is BSD-2 | always, and first |
-| [5.2 A learned torque model behind the same limit](#52-a-learned-torque-model-behind-the-same-limit) | the arm hit something | lowering the limit until gentle contacts reach it | yours to choose; one small model per joint | yours; scikit-learn is BSD 3-Clause | section 5.1 misses a push you can feel by hand |
-| [5.3 CollisionNet](#53-collisionnet-a-classifier-that-reads-the-window) | the arm hit something | explaining why the field kept the subtraction | `not stated`; 8,449 numbers in the version below | none published | your arm reports current and has no description file |
-| [5.4 An anomaly detector on good runs only](#54-an-anomaly-detector-trained-on-good-runs-only) | the task failed | flagging a failure you have no example of | yours to choose; 200 small trees below | yours; scikit-learn is BSD 3-Clause | you have many good runs and almost no failures |
-| [5.5 A vision-language model as the judge](#55-a-vision-language-model-as-the-judge-of-a-finished-attempt) | the task failed | answering "did this attempt succeed?" for a task it has never seen | 8.9 GB, on a 4-billion-parameter backbone | Apache-2.0 | one cell does many different tasks |
-| [5.6 Sentinel](#56-sentinel-for-an-arm-driven-by-a-learned-policy) | the task failed | catching a learned policy going wrong before the task does | no weights; it watches your own policy | MIT | a generative policy drives the arm |
+| Model | What decides it |
+| --- | --- |
+| [**5.1 The momentum observer**](#51-the-momentum-observer-with-a-textbook-physics-model), most used in 2026 | This method notices that the arm hit something. It is best at an answer in milliseconds, with no training data at all, and it is not a learned model. Pinocchio, which does the physics, is BSD-2. Pick it always, and first. |
+| [**5.2 A learned torque model behind the same limit**](#52-a-learned-torque-model-behind-the-same-limit), most used in 2026 | This method notices that the arm hit something. It is best at lowering the limit until gentle contacts reach it. The size is yours to choose, and it is one small model per joint. The licence is yours, and scikit-learn is BSD 3-Clause. Pick it when section 5.1 misses a push you can feel by hand. |
+| [**5.3 CollisionNet**](#53-collisionnet-a-classifier-that-reads-the-window), historical | This method notices that the arm hit something. It is best at explaining why the field kept the subtraction. Its size is `not stated`, and the version written out below has 8,449 numbers. No licence is published. Pick it when your arm reports current and has no description file. |
+| [**5.4 An anomaly detector on good runs only**](#54-an-anomaly-detector-trained-on-good-runs-only), most used in 2026 | This method notices that the task failed. It is best at flagging a failure you have no example of. The size is yours to choose, and the version below is 200 small trees. The licence is yours, and scikit-learn is BSD 3-Clause. Pick it when you have many good runs and almost no failures. |
+| [**5.5 A vision-language model as the judge**](#55-a-vision-language-model-as-the-judge-of-a-finished-attempt), worth betting on | This method notices that the task failed. It is best at answering "did this attempt succeed?" for a task it has never seen. The checkpoint is 8.9 GB, on a 4-billion-parameter backbone, and the licence is Apache-2.0. Pick it when one cell does many different tasks. |
+| [**5.6 Sentinel**](#56-sentinel-for-an-arm-driven-by-a-learned-policy), worth betting on | This method notices that the task failed. It is best at catching a learned policy going wrong before the task does. There are no weights, because it watches your own policy, and the licence is MIT. Pick it when a generative policy drives the arm. |
 
 ### 5.1 The momentum observer, with a textbook physics model
 

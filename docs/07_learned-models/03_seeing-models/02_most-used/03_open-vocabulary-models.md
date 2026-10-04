@@ -17,8 +17,19 @@ general-purpose picture features.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
+   · [Turning pictures and words into numbers](#turning-pictures-and-words-into-numbers)
+   · [Finding boxes from words](#finding-boxes-from-words)
+   · [Finding outlines from a click](#finding-outlines-from-a-click)
+   · [General picture features](#general-picture-features)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
+   · [CLIP](#51-clip-the-model-the-others-are-built-on)
+   · [OWL-ViT and OWLv2](#52-owl-vit-and-owlv2)
+   · [Grounding DINO](#53-grounding-dino)
+   · [YOLOE](#54-yoloe)
+   · [SAM 2](#55-sam-2)
+   · [SAM 3](#56-sam-3)
+   · [How to choose](#57-how-to-choose)
 6. [A worked example: "pick up the blue mug"](#6-a-worked-example-pick-up-the-blue-mug)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
@@ -96,6 +107,10 @@ and the mug with its saucer.
 
 ## 3. How it works inside
 
+This section takes the four kinds of model listed in
+[section 2](#2-what-goes-in-and-what-comes-out) in turn, and each one ends by naming
+the models that [section 5](#5-well-known-models) recommends for that kind.
+
 ### Turning pictures and words into numbers
 
 To match words against pictures at all, both have to become the same kind of thing,
@@ -116,6 +131,10 @@ A model like CLIP does this with two networks.
 Each picture is scored against each sentence, and the matching pairs get the
 darkest squares.
 
+CLIP is in [section 5.1](#51-clip-the-model-the-others-are-built-on). It is kept
+there because the rest of this page is built on the idea it introduced, rather than
+because you would call it often yourself.
+
 ### Finding boxes from words
 
 A detector like Grounding DINO or OWL-ViT uses that same idea, but it applies it to
@@ -128,6 +147,17 @@ parts of a picture rather than to the whole picture.
    around the object.
 5. Finally it outputs the boxes whose scores are above a set threshold, together
    with their scores.
+
+The shortlist recommends both of the models named above. OWL-ViT's newer version
+OWLv2 is in [section 5.2](#52-owl-vit-and-owlv2), and Grounding DINO is in
+[section 5.3](#53-grounding-dino).
+
+There is a faster variant of the same five steps. Grounding DINO and OWLv2 run a
+large network over the picture and the words together, whereas the faster variant
+turns your words into numbers once and then compares those numbers against the
+regions found by an ordinary fast detector head. That is how YOLOE works, in
+[section 5.4](#54-yoloe), and it is what lets a model of this kind answer every
+frame of a live camera.
 
 ### Finding outlines from a click
 
@@ -142,7 +172,14 @@ than a word.
 Because only step 3 repeats for each new click, the model can answer a new click
 very quickly once the photo has been encoded. SAM 2 adds a memory, so it can follow
 the same outline through the frames of a video, and the page
-[tracking and motion](../03_also-used/03_tracking-and-motion.md) covers that.
+[tracking and motion](../03_also-used/03_tracking-and-motion.md) covers that. SAM 2
+is the version of this design to use, in [section 5.5](#55-sam-2).
+
+The newest model of this kind replaces the click with words. Its prompt encoder
+takes a short phrase rather than a point, and it returns an outline for every object
+in the picture that matches the phrase, so one model answers both "find the thing I
+described" and "give me its outline". That is SAM 3, in
+[section 5.6](#56-sam-3).
 
 ### General picture features
 
@@ -151,6 +188,11 @@ it turns each small patch of a picture into an embedding. Patches that show the
 same kind of thing get similar embeddings, even across different photos, so the
 handle of one mug gets numbers close to the handle of another mug. Other models are
 often built on top of DINOv2, because its features are good and free to use.
+
+DINOv2 is here to complete the picture rather than as something to call from a robot
+program, and it is the one kind in this section with no entry in
+[section 5](#5-well-known-models). The paragraph after that section's table says
+why.
 
 ---
 
@@ -194,25 +236,24 @@ kinds of data in general.
 This section names the models you would actually download, and says which of them
 answers "find the thing I described in words" well enough to put on a robot.
 
-Read the table like this. The first column is the model, the second says what it
-is best at, the third says how large it is, the fourth gives the licence of the
-code and the licence of the weights separately, and the last says when to pick
-it. A **parameter** is one number inside the model that training chooses, so a
-model with more parameters is a larger download and a slower answer. The counts
-come
-from each model's own page on Hugging Face, except for YOLOE, whose counts come
-from the Ultralytics documentation. The two licences are apart because they often
-differ, and it is the one on the weights that decides whether you may ship the
-robot.
+Read the table like this. The left column is the model, with a word on how current
+it is. The right column holds everything else: what the model is, what it is best
+at, how large it is, the licence of its code and the licence of its weights, and
+when to pick it. A **parameter** is one number inside the model that training
+chooses, so a model with more parameters is a larger download and a slower answer.
+The counts come from each model's own page on Hugging Face, except for YOLOE, whose
+counts come from the Ultralytics documentation. The two licences are given apart
+because they often differ, and it is the one on the weights that decides whether you
+may ship the robot.
 
-| Model | What it is best at | Parameters | Licence (code / weights) | Pick it when |
-| --- | --- | --- | --- | --- |
-| CLIP | scoring one picture against several sentences | 428 M (`openai/clip-vit-large-patch14`) | MIT / the model card states no licence | you already have a cropped picture and only have to choose between words |
-| OWLv2 | boxes from short names, with the least setup | 155 M (`google/owlv2-base-patch16-ensemble`) | Apache-2.0 / Apache-2.0 | your objects have ordinary names and you want one install and one call |
-| Grounding DINO | boxes from a longer phrase | 172 M (tiny), 233 M (base) | Apache-2.0 / Apache-2.0 | the prompt is a description, such as "the blue mug on the left" |
-| YOLOE | open-vocabulary boxes and outlines at camera speed | 3.9 M to 55.2 M | AGPL-3.0 / AGPL-3.0 | the model has to keep up with a live camera on the robot |
-| SAM 2 | exact outlines from a click or a box | 39 M (tiny), 224 M (large) | Apache-2.0 / Apache-2.0 | something else has already decided where the object is |
-| SAM 3 | every object matching a phrase, with outlines | 860 M | bespoke SAM License / same licence, and the download is gated | you want words to outlines in one model and can accept that licence |
+| Model | What decides it |
+| --- | --- |
+| **CLIP**, historical | It is a picture encoder and a text encoder together, and `openai/clip-vit-large-patch14` holds 428 M parameters. Its code is MIT, and the model card for its weights states no licence. It is best at scoring one picture against several sentences. Pick it when you already have a cropped picture and only have to choose between words. |
+| **OWLv2**, most used in 2026 | It is a detector driven by words, and `google/owlv2-base-patch16-ensemble` holds 155 M parameters, with Apache-2.0 on both the code and the weights. It gives boxes from short names with the least setup of any model here. Pick it when your objects have ordinary names and you want one install and one call. |
+| **Grounding DINO**, most used in 2026 | It is a detector driven by words, and it holds 172 M parameters in its tiny model and 233 M in its base model, with Apache-2.0 on both the code and the weights. It is best at boxes from a longer phrase. Pick it when the prompt is a description, such as "the blue mug on the left". |
+| **YOLOE**, worth betting on | It is a fast detector that takes words as its prompt, and its sizes hold 3.9 M to 55.2 M parameters, with AGPL-3.0 on both the code and the weights. It gives open-vocabulary boxes and outlines at camera speed. Pick it when the model has to keep up with a live camera on the robot. |
+| **SAM 2**, most used in 2026 | It is a promptable segmentation model, and it holds 39 M parameters in its tiny model and 224 M in its large one, with Apache-2.0 on both the code and the weights. It gives exact outlines from a click or a box. Pick it when something else has already decided where the object is. |
+| **SAM 3**, worth betting on | It is a promptable segmentation model driven by a phrase, and it holds 860 M parameters. One bespoke licence, the SAM License, covers both its code and its weights, and the download is gated. It finds every object that matches a phrase and outlines each one. Pick it when you want words to outlines in one model and can accept that licence. |
 
 DINOv2, from section 3, is not in the table. It answers no prompt, so it cannot be
 compared with the models here, and [3D feature

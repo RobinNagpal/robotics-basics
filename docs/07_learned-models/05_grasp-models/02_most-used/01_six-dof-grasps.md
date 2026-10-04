@@ -106,7 +106,10 @@ away any pose where the gripper would pass through a point, or where the fingers
 would not close on anything. A small network then looks at the points between the
 fingers of each pose that is left, and says "good" or "bad". This design is easy to
 follow, because each rejection has a reason you can read. It is slow, though, since
-most random poses are bad.
+most random poses are bad. GPD works this way, and it is the model of this design
+you can still run today, so
+[section 5.1](#51-gpd-the-one-you-can-read-and-the-one-you-can-sell) recommends
+it.
 
 ### Generate directly
 
@@ -114,7 +117,18 @@ Instead of sampling at random, the second design trains a network to produce gra
 directly. One kind of network, called a **variational autoencoder**, learns to turn
 random numbers into grasp poses that look like the good grasps it saw in training.
 A second network then scores each grasp, and a third step moves each grasp a little
-to raise its score.
+to raise its score. 6-DOF GraspNet works this way, and
+[section 5.2](#52-contact-graspnet-the-design-everything-else-copies) names it as
+the model Contact-GraspNet replaced. It appears here because it is the clearest
+example of the design rather than because you should install it. The shortlist in
+[section 5](#5-well-known-models) has the models to use.
+
+Newer models of this design replace the variational autoencoder with a **diffusion
+model**, which starts from random numbers and cleans them up step by step into a
+grasp pose. GraspGen and GraspGenX, in
+[section 5.6](#56-graspgen-and-graspgenx-the-models-that-ask-which-gripper-you-have),
+work that way, and they still score the grasps they produce with a second
+network.
 
 ### A grasp for every point
 
@@ -144,12 +158,21 @@ grasp in which that point is where one finger touches.
 
 Tying each grasp to a point that the camera actually saw makes the problem much
 smaller. The network does not have to search all of space, since it only has to
-answer one question about each point it was given.
+answer one question about each point it was given. Contact-GraspNet in
+[section 5.2](#52-contact-graspnet-the-design-everything-else-copies) is the model
+that made this design the standard one, and the three models built on
+GraspNet-1Billion follow it: graspnet-baseline in
+[section 5.3](#53-graspnet-baseline-the-reference-for-the-standard-benchmark),
+AnyGrasp in [section 5.4](#54-anygrasp-the-strongest-and-the-least-free) and
+EconomicGrasp in
+[section 5.5](#55-economicgrasp-the-one-you-can-train-yourself).
 
 Some newer models add one more step before this, because they first ask, for each
 point, whether anything near there can be grasped at all. Points on a flat table or
 deep in a gap get a low answer and are skipped, which saves time in cluttered
-scenes.
+scenes. EconomicGrasp is one of them, which is why it carries a label generation
+pass of its own, `dataset/generate_graspness.py`, that you run before any training
+starts.
 
 ---
 
@@ -196,26 +219,30 @@ shortest real code for each.
 
 Every licence below was read from the project's own licence file, and Book 3's
 [models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md#4-six-degree-of-freedom-models)
-explains each one in more detail. Read the table as one row per model, in the
-order the sub-sections cover them. The "how big it is" column gives the
-download size of the weights and the graphics memory the project's own
-instructions ask for, because none of these projects publishes a parameter count.
-`not stated` means the project does not say and the file is not published where
-its size can be read.
+explains each one in more detail. The table has one row per model, in the order
+the sub-sections cover them. The left column names the model and says how current
+it is. The right column starts with the gripper the model's weights assume,
+because that is what decides whether the model is any use to you, and then gives
+what the model is best at, how big it is, the licence of its code and when to pick
+it. A size is the download size of the weights and the graphics memory the
+project's own instructions ask for, because none of these projects publishes a
+parameter count. `not stated` means the project does not say and the file is not
+published where its size can be read.
 
-| Model | How current | Best at | How big it is | Licence of the code | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| GPD | historical | grasps you can explain, on any processor | weights 14.5 megabytes, in the repository; no graphics card needed | BSD-2-Clause | you have no NVIDIA card, or you must sell the product |
-| Contact-GraspNet | most used in 2026 | a first working 6-DoF model on a cluttered scene | weights 27 megabytes; 8 gigabytes of graphics memory to run, 24 to train | a PDF file; no machine-readable licence | you want the design the rest of the field assumes |
-| graspnet-baseline | most used in 2026 | comparing your work against the standard benchmark | not stated | Shanghai Jiao Tong University, non-commercial research only | you are measuring against GraspNet-1Billion |
-| AnyGrasp | most used in 2026 | the best grasps, including on moving objects | not stated | no licence file; a machine-locked key | accuracy matters more than freedom to ship |
-| EconomicGrasp | worth betting on | training your own model cheaply | weights 189 megabytes each; 5.81 gigabytes of graphics memory to train | MIT | you must train on your own data and own the result |
-| GraspGen and GraspGenX | worth betting on | a gripper that is not a Franka or a Robotiq | GraspGenX weights 1.7 gigabytes; 20 grasp predictions per second | GraspGen non-commercial; GraspGenX Apache-2.0 | your gripper is unusual, or you want a clean licence |
+| Model | What decides it |
+| --- | --- |
+| **GPD**, historical | It is the only model here that asks you for your own gripper's measurements, in metres, instead of assuming somebody else's. It is best at grasps you can explain, and it is the only one that runs on any processor. The weights are 14.5 megabytes and sit inside the repository, no graphics card is needed, and the code is BSD-2-Clause. Pick it when you have no NVIDIA card, or when you must sell the product. |
+| **Contact-GraspNet**, most used in 2026 | Its weights assume the Franka Panda hand, which opens 80 millimetres, written as `gripper_width: 0.08` in its own configuration file. It is best at getting a first working 6-DoF model onto a cluttered scene. The weights are 27 megabytes, running it asks for 8 gigabytes of graphics memory and training it asks for 24, and the licence is a PDF file rather than anything a machine can read. Pick it when you want the design the rest of the field assumes. |
+| **graspnet-baseline**, most used in 2026 | Its weights assume the two-finger parallel gripper that GraspNet-1Billion was built with, which opens 100 millimetres, written as `GRASP_MAX_WIDTH = 0.1` in its own code. It is best at comparing your work against the standard benchmark. The size of the weights is `not stated`, and the licence is a Shanghai Jiao Tong University agreement for non-commercial research only. Pick it when you are measuring against GraspNet-1Billion. |
+| **AnyGrasp**, most used in 2026 | Its weights assume a two-finger gripper that opens no more than 100 millimetres, and it quietly reduces `max_gripper_width` to that. It finds the best grasps of any model here, and it is the only one that works on objects that are moving. The size of the weights is `not stated`, there is no licence file, and it needs a machine-locked key. Pick it when accuracy matters more than freedom to ship. |
+| **EconomicGrasp**, worth betting on | Its weights assume the same GraspNet-1Billion gripper, which opens 100 millimetres at most, and that is the `--grasp_max_width 0.1` setting it is trained with. It is best at training your own model cheaply. The weights are 189 megabytes each, training asks for 5.81 gigabytes of graphics memory, and the licence is MIT. Pick it when you must train on your own data and own the result. |
+| **GraspGen and GraspGenX**, worth betting on | They take the gripper as an input rather than fixing it in the weights. GraspGen publishes one model each for a Franka Panda, a Robotiq 2F-140 and a 30 millimetre suction cup, while GraspGenX covers grippers from a Robotiq 2F-85 to a Barrett hand and lets you add one of your own, so they are the ones to use for a gripper that is not a Franka or a Robotiq. GraspGenX's weights are 1.7 gigabytes and its README reports 20 grasp predictions per second. GraspGen's code licence is non-commercial while GraspGenX's is Apache-2.0, and both sets of weights are under the NVIDIA Open Model License. Pick them when your gripper is unusual, or when you want a clean licence. |
 
-One warning before the sub-sections. A grasp pose only means something for the
-gripper it was predicted for, so a model trained on a gripper that opens 80
-millimetres will propose grasps a gripper that opens 38 millimetres cannot make.
-Each sub-section below therefore names the gripper its model assumes.
+Every row above opens with a gripper for one reason. A grasp pose only means
+something for the gripper it was predicted for, so a model trained on a gripper
+that opens 80 millimetres will propose grasps a gripper that opens 38 millimetres
+cannot make. Each sub-section below says more about the gripper its model
+assumes.
 
 ### 5.1 GPD, the one you can read and the one you can sell
 

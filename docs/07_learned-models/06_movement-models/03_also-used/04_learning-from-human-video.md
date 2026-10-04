@@ -89,25 +89,34 @@ turns a picture into a list of numbers the rest of the network can use. You can 
 the encoder on human video first, with no actions at all, so that it learns what
 hands, objects and contact look like. Then you train the policy on a small number of
 robot demonstrations, starting from that encoder. For example, R3M and VC-1 are two
-encoders trained in this way. This gives the least help, but it is the safest,
-because the video never
+encoders trained in this way, and sub-section 7.6 covers R3M. VC-1 is named here
+only to show that R3M is not the only one, and section 7 leaves it out because its
+repository is Attribution-NonCommercial. The same idea is now also applied to a
+whole policy rather than only to its encoder, and GR00T N1.7 in sub-section 7.4 is
+one you can download with that pretraining already done. This route gives the
+least help, but it is the safest, because the video never
 has to say anything about movement.
 
 **Track the hand and map it onto the gripper.** A **hand pose estimator** is a model
 that finds the position of each joint of a hand in a picture, and it runs on every
-frame of the video. Then a second step, called **retargeting**, turns the hand's
-motion into a motion the robot's gripper can make. The result is a demonstration with
-actions, made up from the video, and section 4 works through one frame of it.
+frame of the video. Sub-sections 7.1 and 7.2 recommend two of these, one for live
+video and one for video processed afterwards. Then a second step, called
+**retargeting**, turns the hand's motion into a motion the robot's gripper can
+make, and sub-section 7.3 recommends a library for that step. The result is a
+demonstration with actions, made up from the video, and section 4 works through one
+frame of it.
 
 **Learn actions from the video itself.** A **latent-action model** watches two frames
 of video and learns a short code for "what changed between them". However, nobody
 tells it what the codes mean at all. Later, a little robot data links each code
 to a real robot
-movement, and section 5 explains this.
+movement, and section 5 explains this. LAPA, in sub-section 7.5, is the one
+openly published model of this kind.
 
 **Edit the video.** Some 2026 work redraws the video, so that the human hand becomes
 a robot gripper. The frontier document calls this the video-editing route, and it is
-new, so this page does not cover it further.
+new, so this page does not cover it further. Section 7 has no model for it either,
+because nothing from that route can be downloaded yet.
 
 The frontier document names three routes, which are visual pretraining,
 retargeting and video editing. Latent actions sit between the first two, because
@@ -210,7 +219,8 @@ then named with a little robot data.
 The appeal is that it works on any video, including video with no visible hand.
 The cost is that nothing makes the codes match what the robot can do. So a code
 can stand for a camera shake, or for something that happened with no action at
-all.
+all. The model to look at if you want to try this is LAPA, in sub-section 7.5,
+which is the only openly published one.
 
 ---
 
@@ -258,19 +268,19 @@ would reach for it, **worth betting on** means it is not the default yet but the
 field is moving that way, and **historical** means it is kept because it explains
 how the current tools work.
 
-The table is the short answer. Read each row as one tool. The second column says
-what it is best at, the third says how big it is and what hardware it needs, the
-fourth gives its licence, and the last says when to pick it. A cell says `not
-stated` where the figure is not published.
+The table is the short answer. Read each row as one tool. The left column names
+the tool and carries its mark. The right column says what the tool is best at,
+how big it is and what hardware it needs, its licence, and when to pick it.
+Where a row says `not stated`, the figure is not published.
 
-| Tool | Best at | Size and hardware | Licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| MediaPipe Hand Landmarker | 21 hand points per frame, while the camera runs | 7.8 MB model file; a laptop processor | Apache-2.0 for the library | you want hand tracking on your own video today |
-| HaMeR | a full 3D hand from one picture, including hidden fingers | not stated; its install instructions target an NVIDIA graphics card | MIT for the code; the MANO hand model has its own registration | the video is processed after recording and MediaPipe loses fingers |
-| dex-retargeting | turning tracked hand points into robot joint commands | a solver, not a network; runs on the processor | MIT | you have hand points and need gripper commands out of them |
-| NVIDIA Isaac GR00T N1.7 | a policy whose pretraining already included 20,000 hours of human video | 3 billion parameters; about 6 GB to download; 16 GB or more of video memory | Apache-2.0 for the code; NVIDIA Open Model License for the weights | you have an NVIDIA graphics card and want that pretraining done for you |
-| LAPA | learning actions from video that has no action labels at all | 7 billion parameters; its fine-tuning ran on four 80 GB graphics cards | MIT for the code and the published weights | you have a lot of video, little robot data, and a cluster |
-| R3M | a camera encoder trained on human video, to start a small policy from | a ResNet-50 encoder; runs on a laptop | MIT | you will train your own policy and want the cheapest gain there is |
+| Tool | What decides it |
+| --- | --- |
+| **MediaPipe Hand Landmarker**, most used in 2026 | This one finds 21 hand points per frame while the camera runs. The model file is 7.8 MB, and it runs on a laptop processor. The library is Apache-2.0. Pick it when you want hand tracking on your own video today. |
+| **HaMeR**, most used in 2026 | This one recovers a full 3D hand from one picture, including hidden fingers. Its size is `not stated`, and its install instructions target an NVIDIA graphics card. The code is MIT, and the MANO hand model it uses has its own registration. Pick it when the video is processed after recording and MediaPipe loses fingers. |
+| **dex-retargeting**, most used in 2026 | This one turns tracked hand points into robot joint commands. It is a solver rather than a network, so it runs on the processor. Its licence is MIT. Pick it when you have hand points and need gripper commands out of them. |
+| **NVIDIA Isaac GR00T N1.7**, worth betting on | This is a policy whose pretraining already included 20,000 hours of human video. It has 3 billion parameters, it is about 6 GB to download, and it wants 16 GB or more of video memory. The code is Apache-2.0, and the weights carry the NVIDIA Open Model License. Pick it when you have an NVIDIA graphics card and want that pretraining done for you. |
+| **LAPA**, worth betting on | This one learns actions from video that has no action labels at all. It has 7 billion parameters, and its fine-tuning ran on four 80 GB graphics cards. The code and the published weights are MIT. Pick it when you have a lot of video, little robot data, and a cluster. |
+| **R3M**, historical | This is a camera encoder trained on human video, and you start a small policy from it. It is a ResNet-50 encoder, and it runs on a laptop. Its licence is MIT. Pick it when you will train your own policy and want the cheapest gain there is. |
 
 Three much-discussed 2026 results are deliberately absent, because you cannot
 download any of them. They are Skild's S1, explained in

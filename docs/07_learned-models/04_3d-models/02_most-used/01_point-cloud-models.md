@@ -111,7 +111,9 @@ cloud model needs a design that ignores order altogether.
 ### One small network for every point, then the largest number
 
 The first model that solved this well is called **PointNet**, and researchers at
-Stanford University published it in 2017. It works in four steps.
+Stanford University published it in 2017. It is explained here because every later
+model on this page reuses its two ideas, and [section 5.1](#51-pointnet) says why you
+should read it rather than run it. It works in four steps.
 
 1. Take one point, as its three numbers.
 2. Pass it through a small network, which turns those three numbers into a longer
@@ -150,7 +152,8 @@ alone and never looks at the points right next to it. So PointNet is poor at sma
 details, such as the thin gap between a handle and the side of a mug.
 
 Instead, **PointNet++**, from the same group later in 2017, fixes this by looking at
-small groups of points first.
+small groups of points first. [Section 5.2](#52-pointnet) recommends it, and explains
+that you usually meet it inside a grasp model rather than calling it yourself.
 
 ![Small groups of nearby points, then bigger groups made from those](../../../images/3d-models/point-cloud-models/small-neighbourhoods.svg)
 
@@ -179,12 +182,16 @@ The first cuts space into small cubes called **voxels**, where a voxel is simply
 pixel. The model marks each cube that has a point in it and then works on the grid of
 cubes. Most cubes in a room are empty air, so the model only computes on the cubes
 that hold points. That trick is called **sparse convolution**, and it is fast on
-large scenes.
+large scenes. [Section 5.3](#53-minkowskiengine-and-spconv) recommends the two
+libraries that people run it with.
 
 The second design uses **attention**, which is a way for each point to look at other
 points and decide which of them matter to it most. It is the same idea that language
 models use to decide which words in a sentence matter to each other. Point
 Transformer models use it on groups of nearby points.
+[Section 5.4](#54-point-transformer-v3) recommends the current one, Point Transformer
+V3, which reaches its neighbours by sorting the points into an order rather than by
+searching for them.
 
 ---
 
@@ -205,6 +212,12 @@ of that data comes from one of three places.
 - **Simulation**, where a robot team places 3D models of its own objects in a
     simulated bin and makes a simulated depth camera look at them. The simulator
     knows which object every point came from, so the labels cost nothing.
+
+All three of those places need somebody to label the points first, and there is a
+fourth route that does not. A model can be trained on unlabelled clouds, by giving it
+a task whose answer is already in the cloud, and then it needs only a few labelled
+clouds of yours to finish the job. [Section 5.5](#55-sonata) recommends Sonata, which
+is a Point Transformer V3 trained that way.
 
 Training itself works as in
 [how a model learns](../../01_what-models-are/02_how-a-model-learns.md). The model
@@ -227,18 +240,20 @@ shortlist. It says what each one is best at, what it costs you, and what to type
 run it.
 
 Read the table as a first pass, then read the sub-section for the one or two you are
-considering. The "size you download" column answers how big each model is, and it
-matters that several of these ship code with no trained weights at all, because a
+considering. The left column names the model and says how current it is. The right
+column holds everything that decides between them: what the model is best at, how big
+the download is, what its licence allows, and when to pick it. Read the download part
+carefully, because several of these ship code with no trained weights at all, and a
 model with no weights is a model you have to train yourself. Every licence below was
 read from the project's own licence file.
 
-| Model | Best at | Size you download | Licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| [PointNet](https://github.com/charlesq34/pointnet) | one name for one object, already cut out | code only, no weights released | MIT | you are learning how these models work |
-| [PointNet++](https://github.com/charlesq34/pointnet2) | one object and its parts, a few thousand points | code only, no weights released | MIT | the grasp model you want already contains it |
-| [MinkowskiEngine](https://github.com/NVIDIA/MinkowskiEngine) and [spconv](https://github.com/traveller59/spconv) | whole rooms and full bins, hundreds of thousands of points | libraries rather than models | MIT, and Apache-2.0 for spconv | speed on a large cloud decides the job |
-| [Point Transformer V3](https://github.com/Pointcept/PointTransformerV3) | a name on every point of a room scan | 554 MB for the ScanNet checkpoint | MIT for the code | accuracy on a whole scene matters most |
-| [Sonata](https://github.com/facebookresearch/sonata) | the same job with far fewer labels of your own | 434 MB, about 108 million learned numbers | Apache-2.0 code, CC BY-NC 4.0 weights | you have few labelled clouds and no product to ship |
+| Model | What decides it |
+| --- | --- |
+| [PointNet](https://github.com/charlesq34/pointnet), historical | It gives one name to one object that has already been cut out of the scene. The download is code only, because no weights were released, and the licence is MIT. Pick it when you are learning how these models work. |
+| [PointNet++](https://github.com/charlesq34/pointnet2), most used in 2026 | It names one object and its parts, from a few thousand points. The download is code only, because no weights were released, and the licence is MIT. Pick it when the grasp model you want already contains it. |
+| [MinkowskiEngine](https://github.com/NVIDIA/MinkowskiEngine) and [spconv](https://github.com/traveller59/spconv), most used in 2026 | They carry whole rooms and full bins, of hundreds of thousands of points. What you download is a library rather than a model, under MIT for MinkowskiEngine and Apache-2.0 for spconv. Pick them when speed on a large cloud decides the job. |
+| [Point Transformer V3](https://github.com/Pointcept/PointTransformerV3), most used in 2026 | It puts a name on every point of a room scan. The ScanNet checkpoint is 554 MB, and the code is MIT licensed. Pick it when accuracy on a whole scene matters most. |
+| [Sonata](https://github.com/facebookresearch/sonata), worth betting on | It does the same job with far fewer labels of your own. The download is 434 MB, with about 108 million learned numbers, and the code is Apache-2.0 while the weights are CC BY-NC 4.0. Pick it when you have few labelled clouds and no product to ship. |
 
 ### 5.1 PointNet
 

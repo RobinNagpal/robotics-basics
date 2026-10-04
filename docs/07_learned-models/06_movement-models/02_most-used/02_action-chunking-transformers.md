@@ -34,7 +34,7 @@ small mistakes adding up that is described there.
    · [6.2 The original ACT code, and one number it left behind](#62-the-original-act-code-and-one-number-it-left-behind)
    · [6.3 The diffusion policy in LeRobot, when the routes disagree](#63-the-diffusion-policy-in-lerobot-when-the-routes-disagree)
    · [6.4 SmolVLA, a chunk from pretrained weights](#64-smolvla-a-chunk-from-pretrained-weights)
-   · [6.5 Pi0.5 in LeRobot, and what a slow chunk needs](#65-pi05-in-lerobot-and-what-a-slow-chunk-needs)
+   · [6.5 π0.5 in LeRobot, and what a slow chunk needs](#65-π05-in-lerobot-and-what-a-slow-chunk-needs)
    · [6.6 How to choose](#66-how-to-choose)
 7. [A worked example: a cup into a box with a cheap arm](#7-a-worked-example-a-cup-into-a-box-with-a-cheap-arm)
 8. [What goes wrong](#8-what-goes-wrong)
@@ -133,6 +133,18 @@ The plot on the right shows the chunk for one joint, the elbow, which is 100
 targets, one every fiftieth of a second. The numbers in that plot are made up to
 show the shape, because a real chunk depends on the task.
 
+These three steps are the policy that
+[section 6.1](#61-act-in-lerobot-the-one-to-start-with) recommends, and the original
+code in [section 6.2](#62-the-original-act-code-and-one-number-it-left-behind) holds
+the same network. The counts belong to the ALOHA rig of section 5: four cameras, 14
+joint targets for two arms, and a chunk of 100. A cheap single arm has fewer of each,
+and the other models in [section 6](#6-well-known-models-of-this-kind) keep the three
+steps and change the numbers. SmolVLA, in
+[section 6.4](#64-smolvla-a-chunk-from-pretrained-weights), and π0.5, in
+[section 6.5](#65-π05-in-lerobot-and-what-a-slow-chunk-needs), also add one input
+that the steps above do not have, which is a sentence saying which task to do, and
+they read it in the same transformer that reads the pictures.
+
 ### The style numbers
 
 The three steps above give one chunk for one situation, but people do the same task
@@ -161,7 +173,9 @@ It is only a partial fix, because setting the style to "typical" at run time sti
 gives one answer. So if half the demonstrations go left of an obstacle and half go
 right, ACT can still struggle. But the
 [diffusion and flow policies](03_diffusion-and-flow-policies.md) on the next page
-handle that case better.
+handle that case better, and the one to reach for is the diffusion policy in
+[section 6.3](#63-the-diffusion-policy-in-lerobot-when-the-routes-disagree), which
+sits in the same library and takes the same recordings.
 
 ### Blending overlapping chunks
 
@@ -266,21 +280,23 @@ and trained ACT on tasks that need the robot to move around a room, and ALOHA 2
 (2024), from Google DeepMind, is a sturdier redesign whose designs and simulation
 model were published.
 
-Read the table as a filter rather than as a ranking. Find the row that matches the
-hardware you have, read its last column, and then read that model's sub-section. The
-size column holds the number of trainable values that the project itself states, and
-`not stated` where no project document gives a figure. The Mac column means an Apple
-Silicon Mac with no separate graphics card, and its answers come from LeRobot's
+Read the table as a filter rather than as a ranking. The left column names the model
+and says how much use it gets. The right column holds what you filter on: what it is
+best at, its size, its licence, whether it trains on an Apple Silicon Mac with no
+separate graphics card, and when to pick it. Find the row that matches the hardware
+you have, then read that model's sub-section. A size is the number of trainable
+values that the project itself states, and it says `not stated` where no project
+document gives a figure. The answers about the Mac come from LeRobot's
 [compute hardware guide](https://huggingface.co/docs/lerobot/hardware_guide), which
 groups policies by the video memory they need to train at a batch size of eight.
 
-| Model | Best at | Size | Licence | Trains on a Mac | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| ACT in LeRobot (2023) | one careful task on your own arm, trained from nothing | about 80 million | Apache-2.0 | yes, in about 6 to 14 hours | you have an arm, two cameras and about 50 recordings |
-| The original ACT code (2023) | reading the implementation the paper was written from | about 80 million | MIT | `not stated` | never for a project, only to read |
-| Diffusion policy in LeRobot (2023) | tasks where the demonstrations disagree about the route | `not stated` | Apache-2.0 in LeRobot, MIT for the original | marginal, about 8 to 14 GB | your ACT policy wavers between two routes |
-| SmolVLA (2025) | starting from trained weights, and being told the task in a sentence | 450 million | Apache-2.0 on the code and on the weights | running yes, training marginal | fifty recordings are not enough, or one policy must do several tasks |
-| π0.5 in LeRobot (2025) | working in a room it was not trained in | `not stated` | Apache-2.0 code, Gemma terms on the LeRobot weights | no | you can rent a large card and need that generalisation |
+| Model | What decides it |
+| --- | --- |
+| **ACT in LeRobot** (2023), most used in 2026 | It is best at one careful task on your own arm, trained from nothing. It has about 80 million trainable values, and it is Apache-2.0. It trains on a Mac in about 6 to 14 hours. Pick it when you have an arm, two cameras and about 50 recordings. |
+| **The original ACT code** (2023), historical | It is best at reading the implementation the paper was written from. It has about 80 million trainable values, and it is MIT. Whether it trains on a Mac is `not stated`. Never pick it for a project, and open it only to read. |
+| **Diffusion policy in LeRobot** (2023), most used in 2026 | It is best at tasks where the demonstrations disagree about the route. Its size is `not stated`, and its licence is Apache-2.0 in LeRobot and MIT for the original. Training it on a Mac is marginal, because it needs about 8 to 14 GB. Pick it when your ACT policy wavers between two routes. |
+| **SmolVLA** (2025), worth betting on | It is best at starting from trained weights, and at being told the task in a sentence. It has 450 million trainable values, and both its code and its weights are Apache-2.0. Running it on a Mac works, and training it there is marginal. Pick it when fifty recordings are not enough, or when one policy must do several tasks. |
+| **π0.5 in LeRobot** (2025), worth betting on | It is best at working in a room it was not trained in. Its size is `not stated`, its code is Apache-2.0, and the weights LeRobot serves carry Gemma terms. It does not train on a Mac. Pick it when you can rent a large card and need that generalisation. |
 
 ### 6.1 ACT in LeRobot, the one to start with
 
@@ -519,7 +535,7 @@ What Hugging Face gives you is a policy that has already seen 487 people's robot
 your recordings only have to teach it your room. What you supply is still the
 recordings, the sentence, and a card to train on.
 
-### 6.5 Pi0.5 in LeRobot, and what a slow chunk needs
+### 6.5 π0.5 in LeRobot, and what a slow chunk needs
 
 **Worth betting on**, as the direction rather than as this weekend's work. π0.5,
 which this page also spells π0.5, is a vision-language-action policy from Physical

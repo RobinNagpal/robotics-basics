@@ -98,7 +98,9 @@ It also means the scene comes out at its real size, in metres.
 Without an arm, a program such as COLMAP works out the poses from the photos alone.
 It finds the same small spots in many photos and works back to where each camera must
 have been. This takes time, and the result has no real size until you
-measure something in the scene.
+measure something in the scene. COLMAP is not one of the models in
+[section 5](#5-well-known-models), but it is the step in front of most of them, and
+[section 5.3](#53-nerfstudio) recommends the toolkit that runs it for you.
 
 ### Step 2 with NeRF: a network that answers questions about any spot
 
@@ -135,6 +137,16 @@ The steps for one pixel are the four below.
 That same walk also gives the depth of the pixel, which is the distance to where the
 line first becomes solid.
 
+The original NeRF is described here because it is the clearest version of this idea,
+and not because you should run it.
+[Section 5.1](#51-the-nerf-line-the-original-and-instant-ngp) calls it historical and
+names the models to use instead. One variation on it is worth knowing now, because the
+shortlist recommends it. Instead of asking the network how solid a point is, you can
+ask how far that point is from the nearest surface, and the surface is then exactly the
+set of points where that distance is zero. That is NeuS, in
+[section 5.4](#54-neus), and it is how this design gives back a surface you can
+measure.
+
 ### Step 2 with Gaussian splatting: many soft blobs
 
 Instead of a network, **Gaussian splatting** stores the scene as a long list of small
@@ -154,7 +166,10 @@ many times a second.
 
 Gaussian splatting is therefore not a neural network at all. It belongs in this book
 because it is fitted in the same way, from the same inputs, and because robot teams
-use it for the same jobs as NeRF.
+use it for the same jobs as NeRF. It is also the method the shortlist points you at
+first. [Section 5.2](#52-3d-gaussian-splatting) covers the paper that everybody means
+by "splatting", and [section 5.3](#53-nerfstudio) recommends the toolkit to run it
+with on a real job.
 
 ### Step 3: fit it to the photos
 
@@ -170,6 +185,12 @@ rough places. Then the program repeats these steps many thousands of times.
 When the drawings match all the photos, the scene is finished, because it must now be
 right from every direction that had a photo. Since the photos came from all round,
 the only way to match them all is to have the shape in the right place.
+
+One entry in the shortlist does none of this. VGGT, in
+[section 5.5](#55-vggt-and-the-dust3r-family), is trained once on many scenes
+beforehand, so you hand it a few photos and it answers straight away, with no fitting
+and no camera poses of your own. [Section 4](#4-how-it-is-trained) explains the
+difference between the two ways of training.
 
 ---
 
@@ -202,19 +223,22 @@ it answers the question the two methods raise: which of them is ready for a work
 and which is still a research result.
 
 Read the table as a first pass, then read the sub-section for the one or two you are
-considering. The "size you download" column means different things in different rows,
-because a fitted scene is not a trained model: most of these projects ship code and
-no weights, so what you download is a program that then needs a graphics card and
-hours of your time, while the last row ships a trained model in the ordinary sense.
-Every licence below was read from the project's own licence file.
+considering. The left column names the project and says how current it is. The right
+column holds everything that decides between them: what the project is best at, how
+big the download is, what its licence allows, and when to pick it. The download part
+means different things in different rows, because a fitted scene is not a trained
+model. Most of these projects ship code and no weights, so what you download is a
+program that then needs a graphics card and hours of your time, while the last row
+ships a trained model in the ordinary sense. Every licence below was read from the
+project's own licence file.
 
-| Model | Best at | Size you download | Licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| [NeRF](https://github.com/bmild/nerf) and [Instant-NGP](https://github.com/NVlabs/instant-ngp) | a field you can ask about any point in space | code only, no weights | MIT, and NVIDIA research-and-evaluation-only for Instant-NGP | the scene is transparent or shiny and pictures are not enough |
-| [3D Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting) | new views of a still scene, drawn fast | code only; the authors' set of fitted scenes is a 14 GB download | Inria and Max Planck, research only | you are reproducing the paper's results |
-| [Nerfstudio](https://github.com/nerfstudio-project/nerfstudio) | running either method on your own photos | `pip install`; about 6 GB of graphics memory to fit, or 12 GB for the larger setting | Apache-2.0 | this is a real job in a real work cell |
-| [NeuS](https://github.com/Totoro97/NeuS) | a measured surface you can ship | code only, no weights | MIT | you need a surface in millimetres, not a picture |
-| [VGGT](https://github.com/facebookresearch/vggt) | 3D from a few photos with no fitting at all | 5.0 GB, about 1.26 billion learned numbers | code allows commercial use, the open checkpoint does not | you cannot wait minutes for a fit |
+| Model | What decides it |
+| --- | --- |
+| [NeRF](https://github.com/bmild/nerf) and [Instant-NGP](https://github.com/NVlabs/instant-ngp), historical | They give you a field you can ask about any point in space. The download is code only, with no weights, and the licence is MIT for NeRF and NVIDIA's research-and-evaluation-only terms for Instant-NGP. Pick them when the scene is transparent or shiny and pictures are not enough. |
+| [3D Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting), most used in 2026 | It is best at new views of a still scene, drawn fast. The download is code only, although the authors' set of fitted scenes is a separate 14 GB download, and the Inria and Max Planck licence is research only. Pick it when you are reproducing the paper's results. |
+| [Nerfstudio](https://github.com/nerfstudio-project/nerfstudio), most used in 2026 | It runs either method on your own photos. It installs with `pip install` under Apache-2.0, and fitting needs about 6 GB of graphics memory, or 12 GB for the larger setting. Pick it when this is a real job in a real work cell. |
+| [NeuS](https://github.com/Totoro97/NeuS), most used in 2026 | It gives you a measured surface you can ship. The download is code only, with no weights, and the licence is MIT. Pick it when you need a surface in millimetres rather than a picture. |
+| [VGGT](https://github.com/facebookresearch/vggt), worth betting on | It gives you 3D from a few photos with no fitting at all. The download is 5.0 GB, with about 1.26 billion learned numbers, and the code allows commercial use while the open checkpoint does not. Pick it when you cannot wait minutes for a fit. |
 
 ### 5.1 The NeRF line: the original and Instant-NGP
 

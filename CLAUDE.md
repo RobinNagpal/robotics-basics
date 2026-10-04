@@ -285,7 +285,10 @@ python3 - <<'PY'
 import pathlib, re, urllib.parse
 def slug(h):
     h=re.sub(r'`','',h); h=re.sub(r'\[([^\]]*)\]\([^)]*\)',r'\1',h); h=re.sub(r'\*\*?','',h)
-    return re.sub(r'[^a-z0-9\s_-]','',h.lower().strip()).replace(' ','-')
+    # Keep letters of any alphabet, because the site's own slug generator does: a
+    # heading with a Greek letter in a model's name becomes an id containing that
+    # letter. Stripping it here made the checker reject links that work.
+    return re.sub(r'[^\w\s-]','',h.lower().strip(),flags=re.UNICODE).replace(' ','-')
 docs=sorted(pathlib.Path('docs').rglob('*.md'))+[pathlib.Path('README.md')]
 anchors={p:{slug(m) for m in re.findall(r'^#{1,6}\s+(.*)$',p.read_text(),re.M)} for p in docs}
 # Code is not prose: a Python line such as d["k"](x) looks exactly like a

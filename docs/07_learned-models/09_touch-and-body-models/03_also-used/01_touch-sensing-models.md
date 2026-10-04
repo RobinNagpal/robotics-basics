@@ -128,6 +128,11 @@ However, the method needs a calibration before it can be used. You press a small
 of known size into the pad and record how each slope looks. After that, it works for
 any shape.
 
+GelSight's own software ships a small network that does almost this job, with the same
+calibration on a ball, and
+[section 6.1](#61-gelsights-own-depth-network-inside-gsrobotics) recommends it for shape
+on a gel sensor.
+
 ### 4.2 With learning: a network reads the picture
 
 Instead, a neural network can learn the same thing, and more besides. The network
@@ -144,6 +149,21 @@ The steps are:
 3. The CNN reads the change and builds up a set of numbers that describe it.
 4. A small last part of the network turns those numbers into the answers: contact
    or not, where, what shape, how much force.
+
+In practice you rarely train the whole of such a network yourself. You take the first
+part from a model somebody else has already trained, and you train only step 4 on your
+own presses, which is what
+[section 6.2](#62-an-image-backbone-of-your-own-fine-tuned) recommends. Two models
+later in this page are first parts of that kind, trained on tactile pictures rather than
+on photographs. [Section 6.4](#64-sparsh-from-meta) covers Sparsh, and
+[section 6.5](#65-transferable-tactile-transformers-t3) covers T3, which keeps one shared
+middle section and a small separate part for each sensor and each task.
+
+A sensor that gives only a handful of numbers rather than a picture has nothing for a
+CNN to slide a filter across. There the whole model is a small one you fit yourself on
+those few numbers, and
+[section 6.3](#63-a-small-model-on-a-magnetic-skin) recommends that for a magnetic skin
+or an array.
 
 ### 4.3 Seeing the sideways push
 
@@ -205,18 +225,21 @@ answer. For the arrays, and for any sensor nobody has published a model for, the
 is that you train a small model of your own on a few hundred presses, and here that is
 the usual case rather than the exception.
 
-Read the table as: the model, the sensor it needs, what it is best at, how big it is,
-its licence, and the one case that should make you choose it. A cell says `not stated`
-where nobody has published the figure. "Yours" in the licence column means the model
-comes out of your own training run, so no licence restricts it.
+Read the table one row at a time. The left column names the model and says whether a
+developer starting today would reach for it. The right column holds everything else, and
+it opens with the sensor the model needs, because that is what decides most of this
+choice. After that it gives what the model is best at, how big it is, its licence, and
+the one case that should make you choose it. A cell says `not stated` where nobody has
+published the figure. Where the licence is yours, the model comes out of your own
+training run, so no licence restricts it.
 
-| Model | Sensor it needs | Best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| [6.1 GelSight's depth network](#61-gelsights-own-depth-network-inside-gsrobotics) | a camera behind a gel | a height map of the dent, pixel by pixel | 8,834 numbers, counted from its own source | GPL-3.0 | you want shape from a gel sensor |
-| [6.2 An image backbone of your own](#62-an-image-backbone-of-your-own-fine-tuned) | any sensor that gives a picture | contact place, shape and force from a few thousand presses | 11,689,512 numbers for ResNet-18, published by torchvision | yours | the answer you need is not one anybody published |
-| [6.3 A small model on a magnetic skin](#63-a-small-model-on-a-magnetic-skin) | AnySkin, eFlesh, or any taxel array | force and shear from fifteen numbers | smaller than a photograph | yours | your sensor is a skin or an array |
-| [6.4 Sparsh](#64-sparsh-from-meta) | DIGIT, GelSight'17, GelSight Mini | starting from few labels on those three | a small and a base backbone; counts not stated | CC BY-NC 4.0, no commercial use | you own one of those three, and sell nothing |
-| [6.5 Transferable Tactile Transformers (T3)](#65-transferable-tactile-transformers-t3) | thirteen camera-based sensors | not training from scratch when the sensor changes | not stated | MIT | the same as 6.4, but commercially |
+| Model | What decides it |
+| --- | --- |
+| [**6.1 GelSight's depth network**](#61-gelsights-own-depth-network-inside-gsrobotics), most used in 2026 | It needs a camera behind a gel. It is best at a height map of the dent, pixel by pixel. It has 8,834 numbers, counted from its own source, and the licence is GPL-3.0. Pick it when you want shape from a gel sensor. |
+| [**6.2 An image backbone of your own**](#62-an-image-backbone-of-your-own-fine-tuned), most used in 2026 | It needs any sensor that gives a picture. It is best at contact place, shape and force from a few thousand presses. ResNet-18 has 11,689,512 numbers, a figure published by torchvision. The model comes out of your own training run, so the licence is yours. Pick it when the answer you need is not one anybody published. |
+| [**6.3 A small model on a magnetic skin**](#63-a-small-model-on-a-magnetic-skin), most used in 2026 | It needs AnySkin, eFlesh, or any taxel array. It is best at force and shear from fifteen numbers. It is smaller than a photograph, and the licence is yours. Pick it when your sensor is a skin or an array. |
+| [**6.4 Sparsh**](#64-sparsh-from-meta), worth betting on | It needs a DIGIT, a GelSight'17 or a GelSight Mini. It is best at starting from few labels on those three sensors. There is a small backbone and a base one, and their parameter counts are `not stated`. The licence is CC BY-NC 4.0, with no commercial use. Pick it when you own one of those three, and sell nothing. |
+| [**6.5 Transferable Tactile Transformers (T3)**](#65-transferable-tactile-transformers-t3), worth betting on | It works with thirteen camera-based sensors. Its strength is that you do not have to train from scratch when the sensor changes. Its size is `not stated`, and the licence is MIT. Pick it in the same case as section 6.4, when you sell something. |
 
 ### 6.1 GelSight's own depth network, inside gsrobotics
 

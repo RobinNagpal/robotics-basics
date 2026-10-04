@@ -127,6 +127,23 @@ itself. They output "the cube moves 8 cm along x and turns 15°", and the progra
 adds that to the old state. This is easier for the network to learn, because the
 change is small and it looks similar wherever the cube is on the table.
 
+The shortlist in section 5 recommends three other shapes for this one step, and
+they differ only in what the model is made of.
+[Section 5.2](#52-a-physics-formula-plus-a-learned-correction) keeps a physics
+formula and learns only a small correction for what that formula gets wrong, and
+[section 7](#7-learning-only-the-part-physics-gets-wrong-residual-models)
+explains that shape in full.
+[Section 5.5](#55-pilco-a-gaussian-process-model) uses a **Gaussian process**
+in place of the network, which means it fits a smooth curve through the recorded
+points rather than adjusting the weights of a network. TD-MPC2, in
+[section 5.3](#53-td-mpc2), does not predict the state numbers at all. It
+predicts a short code of the state instead, which is what
+[latent world models](../03_also-used/03_latent-world-models.md) are about.
+
+The rest of this section is written about the network, because that is the
+common case. The rolling forward and the planning it describes apply to all four
+shapes, though, because all four answer the same question about one step.
+
 ### Many steps in a row
 
 One step is usually a short time, such as a tenth of a second. So to see further
@@ -145,7 +162,11 @@ trusted, and the usual way is to train several copies of the model. Each copy
 starts from different random numbers, so each one learns slightly differently.
 This group of copies is called an **ensemble**, and it is read in a simple way.
 Where the copies agree, the prediction is probably right, and where they
-disagree, the model has not seen enough examples of that situation.
+disagree, the model has not seen enough examples of that situation. An ensemble
+of small networks is the first entry in the shortlist, and
+[section 5.1](#51-an-ensemble-of-small-networks-the-pets-way) recommends it.
+A Gaussian process reports the same thing without any copies, because it states
+its own spread at every point.
 
 ![Five model copies chain their own predictions; they stay close to the real path for a few steps and then spread apart](../../../images/world-models/learned-dynamics-models/rolling-forward.svg)
 
@@ -170,10 +191,20 @@ However, two things change when the model is learned. First, the planner searche
 whatever the model says works best, so it is drawn to the places where the model is
 wrong in a hopeful direction. Second, the model is only trustworthy near its training
 records. This is why the ensemble matters: the planner uses the copies' average as
-the prediction, and it prefers sequences on which the copies agree. The Book 5 page
+the prediction, and it prefers sequences on which the copies agree. That same page
 has a
 [worked example of a learned ensemble inside MPC](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#a-learned-model-inside-mpc)
 that shows how much this helps.
+
+Planning this way is what both
+[section 5.1](#51-an-ensemble-of-small-networks-the-pets-way) and
+[section 5.3](#53-td-mpc2) do. A dynamics model does not have to be planned
+with, though. MBPO, in
+[section 5.4](#54-mbpo-the-model-as-extra-practice), rolls the model forward
+only while a policy is being trained, so that the policy gets extra practice,
+and then the model is put aside before the robot runs. The rest of this page
+describes planning, because that is the use which needs the model while the arm
+is moving.
 
 ![Left: many imagined push sequences, with the one ending nearest the goal in green. Right: the arm does only the first push, then plans again](../../../images/world-models/learned-dynamics-models/try-many-plans.svg)
 
@@ -225,19 +256,20 @@ yourself from your own recordings, in minutes or hours rather than the weeks a
 large model takes. So four of the five entries below are methods and one is a
 ready-made program with published weights.
 
-Read the table one row at a time. Each row names the method, says what it is
-best at and how big the model you end up with is, gives the licence of the code
-you would start from, and says when to pick it. The size column describes the
+Read the table one row at a time. The left column names the method and says how
+much it is used in 2026. The right column holds the rest: what the method is
+best at, how big the model you end up with is, the licence of the code you would
+start from, and when to pick it. Every size in the right column describes the
 model you train, not a download, except for TD-MPC2, which does publish trained
 models.
 
-| Method or model | Best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| [5.1 An ensemble of small networks, the PETS way](#51-an-ensemble-of-small-networks-the-pets-way) | planning a few steps ahead on one task, from your own recordings | you choose it; small enough to train on a laptop processor | your own code, or MIT for MBRL-Lib | you can measure the state and you can record the real arm |
-| [5.2 A physics formula plus a learned correction](#52-a-physics-formula-plus-a-learned-correction) | tasks where a formula is already roughly right | one small network on top of your formula | your own code | throwing, sliding, and the arm's own motors |
-| [5.3 TD-MPC2](#53-td-mpc2) | continuous control in a simulator that gives a reward | 1, 5, 19, 48 or 317 million numbers; single-task runs use the 5 million one | MIT | you have a simulator, a reward and an NVIDIA graphics card |
-| [5.4 MBPO, the model as extra practice](#54-mbpo-the-model-as-extra-practice) | making a learning policy need fewer real attempts | a small ensemble beside the policy | MIT for MBRL-Lib | you already train a policy and each attempt is expensive |
-| [5.5 PILCO, a Gaussian process model](#55-pilco-a-gaussian-process-model) | learning from a few tens of attempts | not fixed; it grows with the number of records | not stated for the original code; MIT for GPyTorch | each attempt is slow or risky, so you have very little data |
+| Method or model | What decides it |
+| --- | --- |
+| [**5.1 Ensemble of small networks (PETS)**](#51-an-ensemble-of-small-networks-the-pets-way), most used in 2026 | It is best at planning a few steps ahead on one task, from your own recordings. You choose the size, and it is small enough to train on a laptop processor. The licence is your own code, or MIT if you start from MBRL-Lib. Pick it when you can measure the state and you can record the real arm. |
+| [**5.2 Physics formula plus a correction**](#52-a-physics-formula-plus-a-learned-correction), most used in 2026 | It is best at tasks where a formula is already roughly right. It is one small network, learned on top of your formula, so the licence is that of your own code. Pick it for throwing, for sliding, and for the arm's own motors. |
+| [**5.3 TD-MPC2**](#53-td-mpc2), most used ready-made program in 2026 | It is best at continuous control in a simulator that gives a reward. The published models hold 1, 5, 19, 48 or 317 million numbers, and single-task runs use the 5 million one. The licence is MIT. Pick it when you have a simulator, a reward and an NVIDIA graphics card. |
+| [**5.4 MBPO**](#54-mbpo-the-model-as-extra-practice), worth betting on | It is best at making a learning policy need fewer real attempts. The model is a small ensemble beside the policy, used as extra practice for it, and MBRL-Lib provides the method under MIT. Pick it when you already train a policy and each attempt is expensive. |
+| [**5.5 PILCO**](#55-pilco-a-gaussian-process-model), historical | It is a Gaussian process model rather than a network, and it is best at learning from a few tens of attempts. Its size is not fixed, because it grows with the number of records. The licence is not stated for the original code, and GPyTorch, which is what you would use today, is MIT. Pick it when each attempt is slow or risky, so that you have very little data. |
 
 ### 5.1 An ensemble of small networks, the PETS way
 

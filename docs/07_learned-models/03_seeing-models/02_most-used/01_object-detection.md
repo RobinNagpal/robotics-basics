@@ -102,7 +102,8 @@ That list of boxes has to come from somewhere, and a detector begins the work ju
 as a classifier does. So a backbone turns the picture into grids of numbers that
 describe edges, parts and objects, and then a detection **head** turns those grids
 into boxes. There are three main ways to build that head, and this section takes
-them in turn.
+them in turn. The shortlist in [section 5](#5-well-known-models) holds models of
+all three ways, and each way below names the ones that belong to it.
 
 ### Two stages: first guess the places, then check each one
 
@@ -116,8 +117,10 @@ The oldest way of building the head splits the work into two separate steps.
    box a little, so that the box fits the object better.
 
 This way is accurate, but it is slower, because the second step runs once for each
-proposal. The best-known model of this kind is Faster R-CNN, described in
-[section 5](#5-well-known-models).
+proposal. The best-known model of this kind is Faster R-CNN, and
+[section 5.5](#55-faster-r-cnn) recommends it for fine-tuning in plain PyTorch.
+Faster R-CNN is also the only two-stage model in that shortlist, because the two
+ways below are both faster.
 
 ### One stage: look once, answer for every cell
 
@@ -140,7 +143,9 @@ because the backbone's numbers for each cell already carry information about the
 area around it.
 
 The whole picture goes through the network only once, which is why one-stage
-detectors are fast enough to run on every frame of a live camera.
+detectors are fast enough to run on every frame of a live camera. The one-stage model
+in the shortlist is Ultralytics YOLO26, the current release of that same YOLO family,
+and [section 5.1](#51-ultralytics-yolo26) recommends it.
 
 ### Cleaning up the extra boxes
 
@@ -177,7 +182,9 @@ A newer way avoids that cleanup step altogether by using a transformer, the kind
 of network that the [classification
 page](../03_also-used/01_image-classification.md#3-how-it-works-inside)
 mentioned. The first model of this kind was DETR, short for "detection
-transformer".
+transformer", and it is the clearest one to explain the idea with. The shortlist
+keeps DETR in [section 5.6](#56-detr) for that reason rather than for use on a
+robot.
 
 1. The model starts with a fixed number of empty answer slots, for example 100.
    These slots are called **queries**.
@@ -190,6 +197,11 @@ During training, each real object is matched to exactly one query, so the model
 learns to give one box per object and needs no cleanup step at all. This is also
 simpler for the program after the network, and it avoids the weakness with close
 objects described above.
+
+Three of the models the shortlist recommends for real work are built this way, each
+changing a different part of DETR's design: RT-DETR in
+[section 5.2](#52-rt-detr), RF-DETR in [section 5.3](#53-rf-detr) and D-FINE in
+[section 5.4](#54-d-fine).
 
 ---
 
@@ -233,21 +245,22 @@ This section is the shortlist a real project chooses from. For each model it say
 what the model is, why you would pick it rather than the obvious alternative, what
 it costs you, and what to type to run it.
 
-Read the table as a shortlist and not as a ranking. The columns are the model, the
-job it is best at, its size, its licence, and when to pick it. The size is given as
-the number of parameters, which is the count of numbers the network learned during
+Read the table as a shortlist and not as a ranking. The left column names the model
+and says how current it is. The right column holds everything else about it: the job
+it is best at, its size, its licence, and when to pick it. A size is given as the
+number of parameters, which is the count of numbers the network learned during
 training, written in millions. Every number was read from the project's own
 published table or model card, and each sub-section names which. Two projects
 measure on different machines, so treat the sizes as a rough guide to scale.
 
-| Model | Best at | Size, in millions of parameters | Licence (code / weights) | Pick it when |
-| --- | --- | --- | --- | --- |
-| Ultralytics YOLO26 | getting a working detector running in an afternoon | 2.4 to 55.7, over five sizes | AGPL-3.0, or a paid Enterprise licence | you can publish your own source code, or you pay for the other licence |
-| RT-DETR | a permissive transformer detector inside a library you may already use | 43.0 for the ResNet-50 checkpoint | Apache-2.0 / Apache-2.0 | you want no licence restriction, and no cleanup step after the network |
-| RF-DETR | the best boxes available at a given speed, under a permissive licence | 30.5 to 33.9 for Nano to Large; 126.4 and 126.9 for XL and 2XL | Apache-2.0 for Nano to Large; PML 1.0 for XL and 2XL | the licence must stay permissive and the boxes must be good |
-| D-FINE | placing the edges of the box precisely | 62.9 for the largest checkpoint | Apache-2.0 | you fine-tune on your own objects and you measure from the box |
-| Faster R-CNN | fine-tuning in plain PyTorch with no new dependency | 43.7 for `fasterrcnn_resnet50_fpn_v2` | BSD-3-Clause | you already use torchvision, and you do not need 30 frames a second |
-| DETR | understanding how a query-based detector works | 41.6 for the ResNet-50 checkpoint | Apache-2.0 / Apache-2.0 | you are learning the design rather than shipping a robot |
+| Model | What decides it |
+| --- | --- |
+| **Ultralytics YOLO26**, most used in 2026 | It is a one-stage detector, and its five sizes hold 2.4 to 55.7 million parameters under AGPL-3.0 or under a paid Enterprise licence. It is best at getting a working detector running in an afternoon. Pick it when you can publish your own source code, or when you pay for the other licence. |
+| **RT-DETR**, most used in 2026 | It is a transformer detector, and its ResNet-50 checkpoint holds 43.0 million parameters, with Apache-2.0 on both the code and the weights. It is the most familiar permissive transformer detector, because it sits inside a library you may already use. Pick it when you want no licence restriction, and no cleanup step after the network. |
+| **RF-DETR**, worth betting on | It is a transformer detector, and its sizes hold 30.5 to 33.9 million parameters for Nano to Large, and 126.4 and 126.9 million for XL and 2XL. Nano to Large are Apache-2.0, while XL and 2XL are PML 1.0. It gives the best boxes available at a given speed under a permissive licence. Pick it when the licence must stay permissive and the boxes must be good. |
+| **D-FINE**, worth betting on | It is a transformer detector, and its largest checkpoint holds 62.9 million parameters under Apache-2.0. It is best at placing the edges of the box precisely. Pick it when you fine-tune on your own objects and you measure from the box. |
+| **Faster R-CNN**, historical | It is a two-stage detector, and `fasterrcnn_resnet50_fpn_v2` holds 43.7 million parameters under BSD-3-Clause. It is best at fine-tuning in plain PyTorch with no new dependency. Pick it when you already use torchvision, and you do not need 30 frames a second. |
+| **DETR**, historical | It is the first transformer detector, and its ResNet-50 checkpoint holds 41.6 million parameters, with Apache-2.0 on both the code and the weights. It is best at explaining how a query-based detector works. Pick it when you are learning the design rather than shipping a robot. |
 
 ### 5.1 Ultralytics YOLO26
 

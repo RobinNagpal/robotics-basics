@@ -153,6 +153,17 @@ In the picture, each row is one plan of eight positions. The arm plays the four
 filled positions, throws away the four hollow ones, and starts a new plan from
 where it now is.
 
+The six steps above are Diffusion Policy, which
+[section 6.1](#61-diffusion-policy-the-one-you-train-yourself) recommends as the
+model to train on your own recordings, and every other model in
+[section 6](#6-well-known-models-of-this-kind) is a variation on them. What differs
+most between those models is how many times steps 3 and 4 repeat: 100 times for
+Diffusion Policy, 10 times for π0, π0.5 and SmolVLA, and 4 times for GR00T N1.7.
+Section 4 explains why some of them need so few. Those pretrained models, which are
+π0, π0.5, SmolVLA and GR00T N1.7, also read one input that the list above does not
+have, which is a sentence saying which task to do, and it joins the scene
+description made in step 1.
+
 ---
 
 ## 4. Diffusion and flow matching: the difference
@@ -194,7 +205,7 @@ The table below compares the two methods, and you read across each row.
 | Shape of the way from noise to answer | wiggly | close to a straight line |
 | Clean-up steps needed | many | few |
 | Handles several good ways to do a task | yes | yes |
-| Where you meet it | Diffusion Policy, RDT-1B, Octo | π0 and most newer large robot models |
+| Where you meet it | Diffusion Policy and Octo, in sections 6.1 and 6.5 | π0, π0.5, SmolVLA and GR00T N1.7, in sections 6.2 to 6.4, and most newer large robot models |
 
 ---
 
@@ -246,21 +257,26 @@ names the ones you can download and run. For each model it says what it is, why 
 would pick it rather than the obvious alternative, what it costs you, and which
 library runs it.
 
-Read the table as a shortlist, with one row per model. The "steps per chunk" column
-is how many times the network runs to produce one chunk of actions, which section 4
-said is what decides the speed, and every figure in that column is the default in
+Read the table as a shortlist, with one row per model. The left column names the
+model and says how much use it gets. The right column holds the rest: what it is best
+at, its size, how many steps it takes per chunk, the memory it needs to train, the
+licence on its code and on its weights, and when to pick it. Steps per chunk is how
+many times the network runs to produce one chunk of actions, which section 4 said is
+what decides the speed, and every such figure is the default in
 [LeRobot](https://github.com/huggingface/lerobot)'s own configuration file for that
-policy. The memory column is the video memory LeRobot's hardware guide gives for
-training at batch size 8. A cell says `not stated` where the project publishes no
-number, because a guessed number is worse than none.
+policy. Do not read those step counts as a speed ratio on their own, because the
+networks differ in size, and section 6.1 sets that out. The memory figures are the
+video memory LeRobot's hardware guide gives for training at batch size 8. A cell says
+`not stated` where the project publishes no number, because a guessed number is worse
+than none.
 
-| Model | Best at | Size | Steps per chunk | Memory to train | Licence: code / weights | Pick it when |
-| --- | --- | --- | --- | --- | --- | --- |
-| Diffusion Policy | one task, trained from your own recordings | not stated | 100 | about 8 to 14 GB | MIT / you train them yourself | you have one task, a few hundred demonstrations and one consumer graphics card |
-| π0 and π0.5 | a pretrained policy you aim at a new task with words | not stated | 10 | about 24 to 40 GB | Apache-2.0 / mixed, see 6.2 | you have a large NVIDIA card and want pretraining and language instructions |
-| SmolVLA | learning on cheap hardware | 450 million | 10 | about 10 to 16 GB | Apache-2.0 / Apache-2.0 | you work on a laptop or a Mac, or you need one clean licence |
-| GR00T N1.7 | a pretrained policy with a vendor behind it | 3 billion | 4 | about 24 to 40 GB | Apache-2.0 / NVIDIA Open Model License | you have an NVIDIA card with 40 GB or more and want supported software |
-| Octo | explaining where this design came from | not stated | not stated | not stated | MIT / MIT | never for new work |
+| Model | What decides it |
+| --- | --- |
+| **Diffusion Policy**, most used in 2026 | It is best at one task, trained from your own recordings. Its size is not stated, and it runs the network 100 times for each chunk, which is the most of any row here. Training it needs about 8 to 14 GB. Its code is MIT, and you train the weights yourself. Pick it when you have one task, a few hundred demonstrations and one consumer graphics card. |
+| **π0 and π0.5**, most used in 2026 among flow policies | They are best at being a pretrained policy that you aim at a new task with words. Their size is not stated, and they run the network 10 times for each chunk. Training them needs about 24 to 40 GB. Their code is Apache-2.0, and their weights are mixed, which section 6.2 sets out. Pick them when you have a large NVIDIA card and want pretraining and language instructions. |
+| **SmolVLA**, most used in 2026 on cheap hardware | It is best at learning on cheap hardware. It has 450 million parameters, and it runs the network 10 times for each chunk. Training it needs about 10 to 16 GB. Both its code and its weights are Apache-2.0. Pick it when you work on a laptop or a Mac, or when you need one clean licence. |
+| **GR00T N1.7**, worth betting on | It is best at being a pretrained policy with a vendor behind it. It has 3 billion parameters, and it runs the network 4 times for each chunk, which is the fewest of any row here. Training it needs about 24 to 40 GB. Its code is Apache-2.0, and its weights carry the NVIDIA Open Model License. Pick it when you have an NVIDIA card with 40 GB or more and want supported software. |
+| **Octo**, historical | It is best at explaining where this design came from. Its size, its steps per chunk and the memory it needs to train are all not stated. Both its code and its weights are MIT. Never pick it for new work. |
 
 ### 6.1 Diffusion Policy, the one you train yourself
 

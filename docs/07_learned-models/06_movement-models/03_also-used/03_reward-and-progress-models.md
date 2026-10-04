@@ -89,7 +89,8 @@ pictures of your own task, each marked by a person as success or failure. Then i
 gives a score from 0 to 1 for any new picture. It is small and fast, but it only
 knows your one task. HIL-SERL, the real-arm learning system in the
 [reinforcement learning page](01_reinforcement-learning-policies.md#5-well-known-models-and-methods),
-uses one of these as its reward.
+uses one of these as its reward, and its classifier is the judge that sub-section
+7.1 recommends.
 
 **A progress estimator.** This gives a score for every frame of the video, and not
 just for the last one. The score then rises as the task gets closer to done. The
@@ -98,14 +99,20 @@ tasks.
 They turn each picture into a short list of numbers, called an **embedding**, and an
 embedding is made so that similar pictures get similar lists. The progress is then
 read from how close the current embedding is to the embedding of the goal picture,
-and section 4 works through this with real numbers.
+and section 4 works through this with real numbers. VIP, in sub-section 7.5, is
+where that method comes from, and Robometer in sub-section 7.2 is the one you can
+download and use today. SARM in sub-section 7.4 is the same idea with the task
+split into named stages, so that the score says which stage the arm is in as well
+as how far through it is.
 
 **A vision-language model used as the judge.** A
 [vision-language model](../../07_language-models/02_most-used/02_vision-language-models.md)
 is a large model that takes pictures and a question in words, and answers in words.
 So you ask it "Is the red mug in the bowl?" and it answers, and you can also ask it
 to rate progress. It needs no training on your task, but it is slow, and it can be
-wrong in ways that are hard to predict.
+wrong in ways that are hard to predict. TOPReward, in sub-section 7.3, is the
+packaged version of this kind, and it reads the reward out of how likely the
+model thought one word was rather than out of the sentence it wrote.
 
 **A reward learned from demonstrations.** This is called **inverse reinforcement
 learning**. Normal reinforcement learning starts from a reward and learns a
@@ -116,7 +123,7 @@ person
 moved that way. The idea is that the reward carries over to new situations better
 than the copied movement does. But it is rarely used on real arms today, and the
 [learned methods document](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#13-learning-the-goal-instead-of-the-motion)
-explains why.
+explains why. GAIL, in sub-section 7.6, is the version of it you can run.
 
 ---
 
@@ -148,8 +155,8 @@ bowl, the camera sees six frames, and the last one is the goal.
    0.297 and 0.149, and they add up to exactly 1, which is the whole distance from
    start to goal.
 
-Step 5 is how VIP, one of the best-known progress estimators, is used as a
-reward for reinforcement learning. A step that moves towards the goal earns a
+Step 5 is how VIP, one of the best-known progress estimators and the subject of
+sub-section 7.5, is used as a reward for reinforcement learning. A step that moves towards the goal earns a
 positive reward, while a step that moves away earns a negative one. So the small
 reward from frame 2 to frame 3 means that step did very little.
 
@@ -222,7 +229,8 @@ classifier is trained on them. Then the policy practises, and the classifier sco
 each attempt. π\*0.6, described in the
 [foundation models document](../../../03_frameworks/08_frontier/02_foundation-models.md),
 goes one step further. It trains a network that scores how good each moment is, and
-it uses the change in that score to tell which actions helped.
+it uses the change in that score to tell which actions helped. None of it was
+released, which is why section 7 does not list it.
 
 **Deciding when a task is done.** A robot has to know when to stop and start the next
 step, so a judge answers "Is the mug in the bowl yet?". The
@@ -262,19 +270,22 @@ themselves. Most of the published work in this area is research code, so each
 model below says plainly whether you can run it today, and the first one is the
 one most people should start with.
 
-Read the table one row at a time. The size column says what you have to download
-or train, because that matters more here than a parameter count. A cell that says
-`not stated` means the project does not publish the figure, and every licence was
-read from the project's own licence file or model card.
+Read the table one row at a time. The left column names the judge and says how
+current it is. The right column says whether you can run it today and what that
+would cost you: what the judge is best at, what you have to download or train,
+its licence, and when to pick it. What you download or train is given in place of
+a parameter count, because it matters more here. Where a row says `not stated`,
+the project does not publish that figure, and every licence was read from the
+project's own licence file or model card.
 
-| Judge | What it is best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| The HIL-SERL reward classifier, in LeRobot | one task, on your own arm, with a fast answer | you train it; it starts from a ResNet-10 encoder | Apache-2.0, as part of LeRobot | you are training with reinforcement learning on a real arm |
-| Robometer, in LeRobot | progress and success on a task it has never seen | 8.9 GB checkpoint, on a 4-billion-parameter backbone | Apache-2.0, on its model card | you want a score without collecting or marking anything |
-| TOPReward, in LeRobot | the same, with no reward model to download at all | no weights of its own; it uses an 8-billion-parameter vision-language model | Apache-2.0, as part of LeRobot | you already run a vision-language model and want a score from it |
-| SARM, in LeRobot | long tasks made of several steps | you train it; it starts from CLIP ViT-B/32 features | Apache-2.0, as part of LeRobot | one attempt passes through stages you can name |
-| VIP, and LIV after it | progress from videos of people, which is where the idea started | not stated | VIP is Creative Commons Attribution-NonCommercial 4.0; LIV is MIT | you are reading the research rather than shipping |
-| GAIL, in the `imitation` library | a reward learned from recorded movements | you train it | MIT | you are comparing inverse reinforcement learning for yourself |
+| Judge | What decides it |
+| --- | --- |
+| **The HIL-SERL reward classifier**, most used in 2026 | You can run it, but you train it yourself rather than download it, starting from a ResNet-10 encoder. It ships in LeRobot and is Apache-2.0 as part of it. It is best at one task, on your own arm, with a fast answer. Pick it when you are training with reinforcement learning on a real arm. |
+| **Robometer**, worth betting on | You can run it today, because it is an 8.9 GB checkpoint on a 4-billion-parameter backbone, and it comes through LeRobot and is Apache-2.0 on its model card. It is best at progress and success on a task it has never seen. Pick it when you want a score without collecting or marking anything. |
+| **TOPReward**, worth betting on | You can run it today, and there is no reward model to download at all, because it has no weights of its own and uses an 8-billion-parameter vision-language model instead. It ships in LeRobot and is Apache-2.0 as part of it. It is best at the same job as Robometer. Pick it when you already run a vision-language model and want a score from it. |
+| **SARM**, worth betting on | You can run it, but you train it yourself, starting from CLIP ViT-B/32 features. It ships in LeRobot and is Apache-2.0 as part of it. It is best at long tasks made of several steps. Pick it when one attempt passes through stages you can name. |
+| **VIP and LIV**, historical | These are research repositories rather than packages, so running them is work, and their size is `not stated`. VIP is Creative Commons Attribution-NonCommercial 4.0 and LIV, which came after it, is MIT. They are best at progress from videos of people, which is where the idea started. Pick them when you are reading the research rather than shipping. |
+| **GAIL**, historical | You can run it, and you train it yourself, from the `imitation` library, which is MIT. It is best at a reward learned from recorded movements. Pick it when you are comparing inverse reinforcement learning for yourself. |
 
 ### 7.1 The HIL-SERL reward classifier, which you train on your own pictures
 

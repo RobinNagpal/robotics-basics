@@ -129,6 +129,12 @@ everywhere else. So there is one heatmap for "handle, top", another for "base
 centre", and so on. Then the software picks the brightest pixel in each heatmap,
 and that pixel is the keypoint.
 
+OpenPose, which [section 5.1](#51-openpose) describes, is the plainest example of
+this route, and it is on the shortlist to explain the idea rather than to be used.
+The two keypoint models the shortlist recommends instead, [Ultralytics YOLO
+pose](#52-ultralytics-yolo-pose) and [RTMPose](#53-rtmpose), hand you the same
+thing in the end: one named point for each keypoint, with a confidence number.
+
 ### From keypoints to pose
 
 Once the robot has those keypoints in the photo, it can work out the pose, and the
@@ -149,6 +155,13 @@ steps are these.
 So the neural network does the hard part, which is finding the points in a messy
 photo, while plain geometry does the easy part, which is turning those points into
 six numbers.
+
+[DOPE](#54-dope) is the model on the shortlist that runs these steps end to end,
+and it is there for the same reason as OpenPose: it shows the route clearly. You
+still hand it the object's real dimensions and the camera's numbers, which are
+steps 1 and 3, and it does step 2 and step 4 itself. The two keypoint models above
+stop at step 2, so step 4 is yours to write, and that is what the `cv2.solvePnP`
+call in [section 5.2](#52-ultralytics-yolo-pose) is doing.
 
 ### Render and compare
 
@@ -173,6 +186,14 @@ model stops when the two line up.
 Render and compare is slower than one pass of a network, because it runs the
 network several times. However, it is also more accurate, because every round is
 checked against the real photo.
+
+Two of the three object-pose models on the shortlist work this way, while DOPE
+above uses keypoints and PnP instead.
+[MegaPose](#55-megapose-through-happypose) is the one this page recommends when you
+intend to ship, and [FoundationPose](#56-foundationpose) runs the same loop twice
+over: once with many guesses on the first frame of a video, and then with one guess
+on every frame after it, which [section
+7](#7-following-a-pose-over-time-6d-pose-tracking) describes.
 
 ---
 
@@ -229,23 +250,26 @@ of it, and they return where the object is and how it is turned. They are
 research repositories rather than packaged libraries, their licences are much
 worse, and most of them need an NVIDIA graphics card.
 
-Read the table like this. The second column says which line the model belongs to,
-and that is the column to read first, because a human-pose model will never give
-you an object's rotation on its own. The fourth column gives parameter counts where
-the project publishes them, from the Ultralytics documentation and the RTMPose
-project's own table, and `not stated` where it does not. A **parameter** is one
-number inside the model that training chooses, so more parameters mean a larger
+Read the table like this. The left column names the model and says how current it
+is. The right column is written as sentences, and the first of them says which of
+the two lines the model belongs to, because that is the part to read first: a
+human-pose model will never give you an object's rotation on its own. The sentences
+after it give the model's size, its licence, the job it is best at and when to pick
+it. Parameter counts are given where the project publishes them, from the
+Ultralytics documentation and from the RTMPose project's own table, and a row says
+that the count is not stated where the project publishes none. A **parameter** is
+one number inside the model that training chooses, so more parameters mean a larger
 download and a slower answer. Every licence was read from the project's own licence
 file.
 
-| Model | Line | What it is best at | Parameters | Licence | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| OpenPose | human pose | explaining how heatmap keypoint models work | not stated | Carnegie Mellon University agreement, non-commercial research only | never, for a product; read it to understand the others |
-| Ultralytics YOLO pose | human pose | the easiest route to a keypoint model of your own | 2.9 M to 57.6 M | AGPL-3.0 | you will fine-tune on your own points and can live with AGPL-3.0 |
-| RTMPose | human pose | fast keypoints on a processor with no graphics card | 3.3 M to 27.7 M | Apache-2.0 | the licence has to be permissive, or there is no graphics card |
-| DOPE | object pose | showing keypoints and PnP on a rigid object | not stated | NVIDIA, non-commercial | you are reproducing a paper, not shipping a product |
-| MegaPose, through HappyPose | object pose | a 6D pose of an unseen object from its CAD model | not stated | MegaPose Apache-2.0, HappyPose BSD-2-Clause | you have CAD models and you intend to ship |
-| FoundationPose | object pose | a 6D pose, then tracking it through a video | not stated | NVIDIA, non-commercial | the work is research, and you need tracking as well |
+| Model | What decides it |
+| --- | --- |
+| **OpenPose**, historical | OpenPose belongs to the human-pose line, so it returns points in the picture and never an object's rotation. Its parameter count is not stated, and its licence is a Carnegie Mellon University agreement for non-commercial research only. It is best at explaining how heatmap keypoint models work, so read it to understand the others and never pick it for a product. |
+| **Ultralytics YOLO pose**, most used in 2026 | Ultralytics YOLO pose belongs to the human-pose line. Its sizes run from 2.9 million to 57.6 million parameters, and its licence is AGPL-3.0. It is best at being the easiest route to a keypoint model of your own, so pick it when you will fine-tune on your own points and can live with AGPL-3.0. |
+| **RTMPose**, most used in 2026 | RTMPose belongs to the human-pose line as well. Its sizes run from 3.3 million to 27.7 million parameters, and its licence is Apache-2.0. It is best at fast keypoints on a processor with no graphics card, so pick it when the licence has to be permissive or when there is no graphics card. |
+| **DOPE**, historical | DOPE belongs to the object-pose line, so it gives the six numbers itself. Its parameter count is not stated, and its licence is NVIDIA's, which permits non-commercial use only. It is best at showing keypoints and Perspective-n-Point on a rigid object, so pick it when you are reproducing a paper rather than shipping a product. |
+| **MegaPose, through HappyPose**, most used in 2026 | MegaPose belongs to the object-pose line, and it gives the six numbers for an object it has never seen from that object's CAD model. Its parameter count is not stated. MegaPose is Apache-2.0 and HappyPose is BSD-2-Clause, so pick this pair when you have CAD models and you intend to ship. |
+| **FoundationPose**, worth betting on | FoundationPose belongs to the object-pose line, and it gives the six numbers and then tracks them through a video. Its parameter count is not stated, and its licence is NVIDIA's, which permits non-commercial use only. Pick it when the work is research and you need tracking as well. |
 
 ### 5.1 OpenPose
 

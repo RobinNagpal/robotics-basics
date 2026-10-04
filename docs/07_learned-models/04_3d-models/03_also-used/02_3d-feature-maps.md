@@ -110,6 +110,9 @@ CLIP gives one list for a whole picture, while a map needs one list for every pi
 So the map builder has two choices. It either uses a version of the model made to
 give a list for each small patch of the picture, or it runs the model on many small
 crops of the photo and gives each pixel the lists of the crops it falls in.
+[F3RM](#51-f3rm) takes the first route and [ConceptFusion](#53-conceptfusion) takes the
+second, cutting the crops out with a segmentation model. F3RM can also use DINO's lists
+in place of CLIP's, and section 5.1 says how.
 
 ### Step 2: lift the lists into 3D
 
@@ -131,6 +134,14 @@ point clouds.
 
 Averaging helps because the image model makes small mistakes that differ from photo to
 photo, which means the average over many views is steadier than any single view.
+[ConceptFusion](#53-conceptfusion) in section 5.3 is the plainest example of this route,
+and [OpenScene](#56-openscene) in section 5.6 does the same to a finished room scan.
+
+Fusion does not have to end with one list per point.
+[ConceptGraphs](#54-conceptgraphs), which section 5.4 recommends for anything larger than
+a table, merges the points of each object it finds and keeps a single list for that whole
+object, together with a note of where the object sits relative to the others. A room then
+holds a few hundred lists rather than a few hundred thousand.
 
 The second way is a **feature field**, and it works like a NeRF from the
 [scene reconstruction page](../02_most-used/02_scene-reconstruction.md). A NeRF answers
@@ -138,7 +149,14 @@ what colour any spot is, while a feature field also answers what list of numbers
 spot has. It is fitted in the same way, because the program draws the lists from a
 camera pose, compares them with the image model's lists for the real photo, and then
 adjusts. Copying what one model knows into another model in this way is called
-**distillation**.
+**distillation**. [LERF](#52-lerf) in section 5.2 is where this route became well known,
+and [F3RM](#51-f3rm) in section 5.1 is the version built for a robot arm.
+
+A feature field does not have to be built on a NeRF. The same scene reconstruction page
+describes **3D Gaussians**, which store a scene as many soft coloured blobs and fit much
+faster than a NeRF, and a blob can carry a list of numbers just as a point can.
+[GraspSplats](#55-graspsplats) in section 5.5 builds its map that way, which is why
+section 5.7 points to it for scenes the robot keeps changing.
 
 ### Step 3: ask with words
 
@@ -190,20 +208,25 @@ and it says plainly which of them you can install. Only one is published as a pa
 The rest are repositories that came with a paper, and one of them cannot legally be used
 in a product at all.
 
-Read the "how you get it" and "licence" columns of the table together, because those two
-decide whether a system is a candidate for your work. These systems hold almost no
-numbers of their own, since the meaning comes from an image model somebody else trained,
-so the "size" column names the image model each one uses by default instead of a
-parameter count. Every licence was read from the project's own licence file.
+The table below has two columns. The left column names the system and says how current it
+is. The right column holds everything else about it: how it stores the map, what it is
+best at, which image model it borrows its meaning from, its licence, how you obtain it,
+and when to pick it.
 
-| System | How it stores the map | Best at | Size | Licence | How you get it | Pick it when |
-| --- | --- | --- | --- | --- | --- | --- |
-| [F3RM](#51-f3rm) | a feature field, fitted like a NeRF | grasping a named object or part with a robot arm | CLIP ViT-L/14@336px, no weights of its own | MIT | `pip install f3rm`, or clone the repository | you have an arm, a wrist camera and an NVIDIA graphics card |
-| [LERF](#52-lerf) | a feature field, fitted like a NeRF | looking at a scene and seeing what matches a word | CLIP ViT-B/16, and ViT-L/14 in `lerf-big` | MIT | clone it and install it as a Nerfstudio method | you want to see the idea working, with no robot |
-| [ConceptFusion](#53-conceptfusion) | one feature per point, fused as the camera moves | asking with words, a click or a sound | OpenCLIP, with the Segment Anything Model for the masks | MIT | clone it, plus a branch of another library | you want the fusion route and no fitting |
-| [ConceptGraphs](#54-conceptgraphs) | one feature per object, plus their relations | whole rooms, and questions about which object is where | OpenCLIP, with a detector and the Segment Anything Model | MIT | clone it; the longest install here | the scene is a room and relations matter |
-| [GraspSplats](#55-graspsplats) | 3D Gaussians carrying part-level features | re-fitting a scene fast, and following objects that move | not stated; the features come from the feature splatting code | no licence file, and it needs research-only code | you are doing research, not shipping |
-| [OpenScene](#56-openscene) | one feature per point of a finished room scan | naming every point of a scanned room | OpenSeg or LSeg pixel features | Apache-2.0 | clone it; a pre-trained 3D model downloads itself | you have a room scan and want it labelled |
+Read the licence and the install together in each row, because those two decide whether a
+system is a candidate for your work. These systems hold almost no numbers of their own,
+since the meaning comes from an image model somebody else trained, so each row names that
+image model instead of giving a parameter count. Every licence was read from the project's
+own licence file.
+
+| System | What decides it |
+| --- | --- |
+| [F3RM](#51-f3rm), most used in 2026 for arms | This system stores the map as a feature field, fitted like a NeRF, and it is the best here at grasping a named object or part with a robot arm. It keeps no weights of its own and uses the CLIP ViT-L/14@336px image model, the licence is MIT, and you install it with `pip install f3rm` or clone the repository. Pick it when you have an arm, a wrist camera and an NVIDIA graphics card. |
+| [LERF](#52-lerf), historical | This system stores the map as a feature field as well, fitted like a NeRF, and it is best at looking at a scene and seeing what matches a word. It uses CLIP ViT-B/16, or ViT-L/14 in its `lerf-big` size, the licence is MIT, and you clone it and install it as a Nerfstudio method. Pick it when you want to see the idea working, with no robot. |
+| [ConceptFusion](#53-conceptfusion), historical | This system keeps one feature per point, fused as the camera moves, and it is best at asking with words, a click or a sound. It uses OpenCLIP with the Segment Anything Model for the masks, the licence is MIT, and you clone it along with a branch of another library. Pick it when you want the fusion route and no fitting. |
+| [ConceptGraphs](#54-conceptgraphs), most used in 2026 for rooms | This system keeps one feature per object, plus a record of their relations, and it is best at whole rooms and at questions about which object is where. It uses OpenCLIP with a detector and the Segment Anything Model, the licence is MIT, and you clone it, which is the longest install here. Pick it when the scene is a room and relations matter. |
+| [GraspSplats](#55-graspsplats), worth betting on | This system stores the map as 3D Gaussians carrying part-level features, and it is best at re-fitting a scene fast and at following objects that move. Its size is `not stated`, because the features come from the feature splatting code. It has no licence file and it needs research-only code, so pick it when you are doing research and not shipping. |
+| [OpenScene](#56-openscene), historical | This system keeps one feature per point of a finished room scan, and it is best at naming every point of a scanned room. It uses OpenSeg or LSeg pixel features, the licence is Apache-2.0, and you clone it, after which a pre-trained 3D model downloads itself. Pick it when you have a room scan and want it labelled. |
 
 ### 5.1 F3RM
 

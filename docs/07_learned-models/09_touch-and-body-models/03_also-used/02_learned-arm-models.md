@@ -118,13 +118,26 @@ This has two advantages over learning everything from nothing. The network has a
 small job, so it needs less data. Where the network has seen nothing, the textbook
 model also still gives a sensible answer.
 
+Both halves of this arrangement are in the shortlist below. Step 1, the textbook model
+with its numbers fitted to your own arm, is
+[section 5.1](#51-the-makers-model-with-its-numbers-fitted-to-your-arm), and step 2, the
+network that learns the correction, is
+[section 5.2](#52-a-residual-torque-network-on-top-of-the-makers-model).
+
+The correction can also report how sure it is. Some methods fit many small models
+instead of one network, and each of them returns a prediction together with how far it
+trusts that prediction. Where the recording held nothing like the present movement, the
+correction says so, and the controller can shrink it rather than believe it.
+[Section 5.6](#56-local-learners-with-an-error-bar) covers that family.
+
 ### 3.2 A network that learns the whole thing
 
 Instead, a second kind learns the whole model from data, but it is built so that its
 answers obey the rules of physics. For example, the energy of a moving arm cannot
 appear from nowhere, so a network built this way cannot give an answer that breaks
 that rule. This means it needs less data than a plain network, and its answers are
-more sensible outside the training data.
+more sensible outside the training data. The best-known network of this kind is Deep
+Lagrangian Networks, and [section 5.5](#55-deep-lagrangian-networks) recommends it.
 
 A plain network with no physics inside it can also learn the whole model. However, it
 needs the most data of all, and it can give strange answers for movements it has
@@ -145,6 +158,7 @@ that point. The green dots are the points it says the arm fills.
 
 Once an arm has a self-model, it can plan without being told its own shape. So if a
 part is bent or replaced, the arm can record itself again and learn the new shape.
+[Section 5.7](#57-a-visual-self-model) recommends the published work that does this.
 
 ### 3.4 Calibration
 
@@ -158,6 +172,26 @@ under their own weight, and the gears have a little play. So a small network can
 learn these left-over errors, in the same way as the residual in section 3.1. It
 takes the joint angles as input, and it outputs the correction to the tool's
 position.
+
+### 3.5 The same idea, aimed at a simulator
+
+Everything above learns a model of the real arm for the real robot to use. The same
+recordings can instead be used to make a simulator behave like the real arm, and two of
+the methods in the shortlist below do that.
+
+The first replaces the simulator's motor. A simulated motor is usually an ideal one
+that produces exactly the torque it is asked for, while a real motor lags, saturates
+and loses something to friction in its gearbox. So a small network is trained on the
+real motor's behaviour and put into the simulator in place of the ideal one. That is
+the actuator network of [section 5.3](#53-an-actuator-network), and it matters when a
+policy trained in simulation has to run on your arm.
+
+The second trains no network at all. It fits the numbers already inside the simulator,
+which are the masses, the frictions, the motor gains and the delays. The work is a
+search for the numbers that make the simulated robot move the way the recording says
+the real one moved.
+[Section 5.4](#54-mujocos-system-identification-toolbox) covers the toolbox that does
+this.
 
 ## 4. How it is trained
 
@@ -194,21 +228,23 @@ methods, and the libraries that fit them to your own recordings. So this section
 compares the seven methods a developer meets most often, and section 5.8 says which to
 start with and when a learned model beats the maker's own model.
 
-Read the table one row at a time. The second column says whether a developer starting
-today would reach for that method. "Size and speed" says what the method costs to run,
-which matters because a torque model is asked hundreds of times a second. Each licence
-is the licence of the library named in that sub-section, read from the library's own
-repository, and `not stated` means a fact could not be sourced.
+Read the table one row at a time. The left column names the method and says whether a
+developer starting today would reach for it. The right column holds everything else:
+what the method is best at, what it costs to run, its licence, and the one case that
+should make you choose it. What it costs to run matters, because a torque model is asked
+hundreds of times a second. Each licence is the licence of the library named in that
+sub-section, read from the library's own repository, and `not stated` means a fact could
+not be sourced.
 
-| Method | How current | Best at | Size and speed | Licence | Pick it when |
-|---|---|---|---|---|---|
-| 5.1 The maker's model with its numbers fitted to your arm (Pinocchio) | most used in 2026 | getting the torque roughly right in every pose, with numbers you can read and check | one linear fit; the physics call itself runs inside a control loop | BSD-2-Clause | always, as the first step |
-| 5.2 A residual torque network on top of 5.1 (Pinocchio and PyTorch) | most used in 2026 | friction, cable pull and wear that the equations have no term for | two small layers are usual; fast enough for a control loop | BSD-2-Clause (Pinocchio), three-clause BSD (PyTorch) | error is left over after 5.1 |
-| 5.3 An actuator network (Isaac Lab) | most used in 2026 | making a simulated motor behave like the real motor | network size `not stated`; runs inside the simulator | BSD-3-Clause | you train a policy in simulation to run on your arm |
-| 5.4 MuJoCo's system identification toolbox | worth betting on | fitting the masses, frictions, gains and delays of a whole simulated robot | one simulation run per parameter per optimiser step | Apache-2.0 | your simulator does not move like your arm |
-| 5.5 Deep Lagrangian Networks | worth betting on | one network that cannot break the rules of physics for moving bodies | larger and slower than a residual network of the same accuracy | MIT | you want the physics inside the network rather than beside it |
-| 5.6 Local learners with an error bar (locally weighted projection regression, local Gaussian processes) | historical | a correction that also says how unsure it is | an exact Gaussian process costs time growing with the cube of the number of examples | Lesser General Public License with a linking exception, MIT (GPyTorch) | the controller must know when to distrust the correction |
-| 5.7 A visual self-model | worth betting on | the arm's shape, when no trustworthy description of it exists | trained offline on an NVIDIA graphics card; not a control-loop model | MIT | the arm is new, modified or damaged |
+| Model | What decides it |
+| --- | --- |
+| [**5.1 The maker's model with its numbers fitted to your arm**](#51-the-makers-model-with-its-numbers-fitted-to-your-arm), most used in 2026 | It is best at getting the torque roughly right in every pose, with numbers you can read and check. It is one linear fit, and the physics call itself runs inside a control loop. The library is Pinocchio, under BSD-2-Clause. Pick it always, as the first step. |
+| [**5.2 A residual torque network on top of 5.1**](#52-a-residual-torque-network-on-top-of-the-makers-model), most used in 2026 | It is best at friction, cable pull and wear that the equations have no term for. Two small layers are usual, which is fast enough for a control loop. The libraries are Pinocchio, under BSD-2-Clause, and PyTorch, under the three-clause BSD licence. Pick it when error is left over after 5.1. |
+| [**5.3 An actuator network**](#53-an-actuator-network), most used in 2026 | It is best at making a simulated motor behave like the real motor. Its network size is `not stated`, and it runs inside the simulator. The library is Isaac Lab, under BSD-3-Clause. Pick it when you train a policy in simulation to run on your arm. |
+| [**5.4 MuJoCo's system identification toolbox**](#54-mujocos-system-identification-toolbox), worth betting on | It is best at fitting the masses, frictions, gains and delays of a whole simulated robot. It costs one simulation run per parameter per optimiser step. MuJoCo is under Apache-2.0. Pick it when your simulator does not move like your arm. |
+| [**5.5 Deep Lagrangian Networks**](#55-deep-lagrangian-networks), worth betting on | It is one network that cannot break the rules of physics for moving bodies, and that is what it is best at. It is larger and slower than a residual network of the same accuracy. The code is under MIT. Pick it when you want the physics inside the network rather than beside it. |
+| [**5.6 Local learners with an error bar**](#56-local-learners-with-an-error-bar), historical | This family covers locally weighted projection regression and local Gaussian processes. It is best at a correction that also says how unsure it is. An exact Gaussian process costs time growing with the cube of the number of examples. The LWPR library is under the Lesser General Public License with a linking exception, and GPyTorch is under MIT. Pick it when the controller must know when to distrust the correction. |
+| [**5.7 A visual self-model**](#57-a-visual-self-model), worth betting on | It is best at the arm's shape, when no trustworthy description of it exists. It is trained offline on an NVIDIA graphics card, and it is not a control-loop model. The code is under MIT. Pick it when the arm is new, modified or damaged. |
 
 ### 5.1 The maker's model with its numbers fitted to your arm
 

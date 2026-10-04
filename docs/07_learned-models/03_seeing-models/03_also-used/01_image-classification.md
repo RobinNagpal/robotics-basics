@@ -133,18 +133,42 @@ The drawings in the tiles show the kind of pattern that makes each layer give a
 large number. Researchers have looked inside trained networks, and they found this
 same order again and again.
 
+Both of the convolutional networks on this page's shortlist are built in those
+steps: ResNet-50, in [section 5.1](#51-resnet), and MobileNetV3, in [section
+5.2](#52-mobilenetv3). ResNet added one thing to the list above, and the later
+networks all kept it. In a network of many layers, the output of one layer is also
+added, unchanged, to the output of a layer two or three further on, and that added
+shortcut is called a **skip connection**. It gives the early layers a short path
+back to the score, so a network of fifty layers trains as well as a short one.
+
 A newer kind of classifier is the **vision transformer (ViT)**, which cuts the
 picture into small squares, called **patches**, often 16 pixels by 16 pixels. Then
 it turns each patch into a list of numbers. After that, each patch's numbers are
 updated by looking at all the other patches, and this step is called
 **attention**. After many
 such layers the model gives the scores. A vision transformer needs more training
-pictures than a CNN, but with enough pictures it is often more accurate.
+pictures than a CNN, but with enough pictures it is often more accurate. The two
+large backbones on the shortlist are vision transformers: DINOv2, in [section
+5.3](#53-dinov2-with-a-small-head), and DINOv3, in [section 5.5](#55-dinov3).
 
 The part of the network before the last layer is called the **backbone**, while the
 last layer, which gives the scores, is called the **head**. This split matters,
 because a backbone trained for classification has learned edges, parts and objects,
 so other seeing models can reuse that backbone and change only the head.
+
+The split also decides how you get a classifier of your own, and
+[section 5](#5-well-known-models) sets out three ways of doing that. The first way
+trains a backbone and a head together on your own pictures. The second leaves
+somebody else's backbone exactly as it is and trains only a new head on top of it.
+The third way has no head with one output per class at all, so it takes a word of
+explanation here. A **vision-language model** is two networks: one turns a picture into a list of numbers, and the other turns a
+sentence into a list of numbers of the same length. The two were trained together
+on pictures paired with the sentences that describe them, so that a picture and a
+true description of it come out as nearly the same numbers. You then write each of
+your class names as a sentence, and a class's score is how close its sentence's
+numbers are to the picture's numbers. SigLIP 2, in [section 5.4](#54-siglip-2),
+works this way, and nothing in it is trained by you, which is why that third way
+asks for no pictures of your own.
 
 ---
 
@@ -198,23 +222,27 @@ gave. What people do instead falls into three routes. The first fine-tunes a sma
 network on a few hundred of your own pictures. The second takes a large network
 that somebody else trained, keeps it exactly as it is, and trains only a tiny last
 layer on top, which is called a **frozen backbone** because the backbone's numbers
-never change. The third trains nothing at all: you take a **vision-language
-model**, which is a model trained on pictures paired with the sentences that
-describe them, and you hand it your class names as words.
+never change. The third trains nothing at all: you take a vision-language model,
+which [section 3](#3-how-it-works-inside) explains, and you hand it your class
+names as words.
 
-The table compares five models, one per route plus two more. Read each row as one
-model, with the number of parameters taken from the file Hugging Face serves, the
-licence from that model's own model card, and the last column saying when to pick
-that row. A **parameter** is one of the numbers inside the network, and the count
-tells you roughly how much memory and time the model needs.
+The table has five rows, and between them they cover all three routes. Read it like
+this. The left column names the model and says how current it is. The right column
+is written as sentences, and the first of them says which route the model belongs
+to, because that is the part to read first. The sentences after it give the model's
+size, the licence on its weights, the job it is best at and when to pick it. A size
+is given as a number of parameters, where a **parameter** is one of the numbers
+inside the network, and the count tells you roughly how much memory and time the
+model needs. Every count was taken from the file Hugging Face serves, and every
+licence from that model's own model card.
 
-| Model | What it is best at | Size | Weights licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| ResNet-50 | being the number everyone compares against | 25.6 million | Apache-2.0 | you need a baseline other people recognise |
-| MobileNetV3-Large | running fast on a small computer | 5.5 million | Apache-2.0 | the check runs often and there is no graphics card |
-| DINOv2, base size | giving features a tiny head can classify | 86.6 million | Apache-2.0 | you have tens of pictures per class, not hundreds |
-| SigLIP 2, base size, 224 pixels in | naming classes you can only describe in words | 375 million, both halves together | Apache-2.0 | you have no training pictures at all |
-| DINOv3, base size | the same job as DINOv2, done better | 85.7 million | bespoke DINOv3 licence | you have read the licence and accepted it |
+| Model | What decides it |
+| --- | --- |
+| **ResNet-50**, historical | ResNet-50 is a convolutional network, and it belongs to the fine-tuning route. It has 25.6 million parameters, and its weights are Apache-2.0. It is best at being the number everyone compares against, so pick it when you need a baseline other people recognise. |
+| **MobileNetV3-Large**, most used in 2026 | MobileNetV3-Large is a convolutional network for the fine-tuning route as well. It has 5.5 million parameters, and its weights are Apache-2.0. It is best at running fast on a small computer, so pick it when the check runs often and there is no graphics card. |
+| **DINOv2, base size**, most used in 2026 | DINOv2 is a vision transformer, and it belongs to the frozen-backbone route. Its base size has 86.6 million parameters, and its weights are Apache-2.0. It is best at giving features a tiny head can classify, so pick it when you have tens of pictures per class rather than hundreds. |
+| **SigLIP 2, base size, 224 pixels in**, most used in 2026 | SigLIP 2 is a vision-language model, so it belongs to the route that trains nothing. Its base model at 224 pixels has 375 million parameters for both halves together, and its weights are Apache-2.0. It is best at naming classes you can only describe in words, so pick it when you have no training pictures at all. |
+| **DINOv3, base size**, worth betting on | DINOv3 is a vision transformer for the frozen-backbone route, like DINOv2 above. Its base size has 85.7 million parameters, and its weights come under a bespoke DINOv3 licence rather than a standard one. It does the same job as DINOv2 and does it better, so pick it when you have read that licence and accepted it. |
 
 ### 5.1 ResNet
 

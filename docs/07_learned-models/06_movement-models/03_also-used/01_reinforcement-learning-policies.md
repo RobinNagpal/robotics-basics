@@ -122,16 +122,25 @@ loop around the network during training, and here is that loop.
    that the good actions become more likely.
 7. Back to step 1, with the slightly better policy.
 
+Step 6 leaves one thing open, and that one thing is what separates the two
+algorithms section 5 recommends most. Some methods learn from a batch of attempts
+once and then throw the batch away, which is what PPO in sub-section 5.1 does.
+Others keep every attempt and train on it again and again, which is what SAC in
+sub-section 5.2 does. The rest of the loop is the same either way.
+
 Many methods also train a second network, called a **critic** or a **value
 function**, which learns to guess how much reward is still to come from the
 current moment. This helps, because the real reward often arrives only at the
 very end, so the critic lets the learner tell early on whether things are going
-well.
+well. All three of the methods recommended in sub-sections 5.1 to 5.3 train one.
 
 One difficulty in that loop is important enough to need a name. When the reward
 only arrives at the end, the learner has to work out which of hundreds of small
 actions deserved the credit. This is called the **credit assignment problem**,
-and it is one reason reinforcement learning needs so many tries.
+and it is one reason reinforcement learning needs so many tries. Sub-section 5.4
+describes a method that attacks it directly, by reading the change in the
+critic's score from one moment to the next as the measure of whether the action
+in between helped.
 
 ---
 
@@ -189,20 +198,23 @@ robot, so nobody publishes it for you to pick up. The names worth knowing are
 therefore the learning methods and the libraries that implement them, and the rest of
 this section helps you choose one of each.
 
-Read the table as a shortlist of choices rather than of products. These are methods,
-so the column that would hold a model's size instead holds the amount of practice the
-method needs, which is the cost that decides most projects. The licence column is the
-licence of the code you would actually run, read from that project's own licence
-file, because a method itself has no licence.
+Read the table as a shortlist of choices rather than of products. The left column
+names the method and says how current it is. The right column holds everything you
+need in order to compare them: what the thing is, what it is best at, how much
+practice it needs, the licence of the code you would run, and when to pick it. These
+are methods, so where a model's size would normally go you get the amount of practice
+instead, which is the cost that decides most projects. Each licence is the licence of
+the code you would actually run, read from that project's own licence file, because a
+method itself has no licence.
 
-| Name | What it is | Best at | Practice it needs | Licence of the code you run | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| PPO | an algorithm, 2017 | a simulator running many arms at once | millions of steps | MIT, in Stable-Baselines3 | you can simulate the task and score it |
-| SAC | an algorithm, 2018 | learning from as few attempts as possible | far fewer steps, by replaying a store of past ones | MIT, in Stable-Baselines3 | every attempt costs real time |
-| HIL-SERL | a system you can run, 2024 | improving a half-working policy on the real arm | one to two and a half hours of real practice | Apache-2.0, and it ships inside LeRobot | you have the arm, and a person to watch it |
-| Recap, in π*0.6 | a method, not released, 2025 | polishing a large pretrained policy | not stated | no code or weights released | never today, but follow it |
-| Offline: IQL and CQL | algorithms | learning from recordings without practising | none at all | not checked | almost never now, see 5.5 |
-| The landmark systems | published results, 2018 to 2023 | showing what the method has achieved | weeks of real collection, or none | various | you are reading rather than building |
+| Name | What decides it |
+| --- | --- |
+| **PPO**, most used in 2026 | PPO is an algorithm from 2017, and it is best where a simulator runs many arms at once. It needs millions of steps of practice. The code you would run is Stable-Baselines3, which is MIT. Pick it when you can simulate the task and score it. |
+| **SAC**, most used in 2026 | SAC is an algorithm from 2018, and it learns from as few attempts as possible. It needs far fewer steps than PPO, because it replays a store of past ones. The code you would run is Stable-Baselines3, which is MIT. Pick it when every attempt costs real time. |
+| **HIL-SERL**, most used in 2026 | HIL-SERL is a system you can run, published in 2024, and it improves a half-working policy on the real arm. It needs one to two and a half hours of real practice. Its code is Apache-2.0, and it ships inside LeRobot. Pick it when you have the arm, and a person to watch it. |
+| **Recap**, in π\*0.6, worth betting on | Recap is a method from 2025, and it polishes a large pretrained policy. The practice it needs is `not stated`. No code or weights were released, so you cannot pick it today, but it is worth following. |
+| **Offline: IQL and CQL**, historical | IQL and CQL are algorithms that learn from recordings without practising, so they need no practice at all. Their licence was not checked. Pick them almost never now, and sub-section 5.5 says why. |
+| **The landmark systems**, historical | These are published results from 2018 to 2023, and they show what the method has achieved. They took weeks of real collection, or none at all, and their licences are various. Pick them when you are reading rather than building. |
 
 ### 5.1 PPO, for practising in a simulator
 

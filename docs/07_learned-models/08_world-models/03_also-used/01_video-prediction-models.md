@@ -113,10 +113,26 @@ rollout on the
 [learned dynamics models](../02_most-used/01_learned-dynamics-models.md#many-steps-in-a-row)
 page, and the same problem appears here: errors add up from frame to frame.
 
+The actions do not have to arrive one at a time. You can hand the model a whole
+sequence of actions at once and ask for the video that sequence would cause,
+which is the same "what if?" question the previous page asks of a dynamics
+model. This is the property
+[section 2](#2-what-goes-in-and-what-comes-out) calls action-conditioned, and it
+is what makes such a model a world model rather than a way of making pictures.
+The models that offer it name the mode **forward dynamics**, and
+[section 5.1](#51-cosmos-3) recommends Cosmos 3 for it, because that is the one
+model in the shortlist you can download and ask about your own actions. The
+Cosmos Predict 2.5 model in [section 5.2](#52-cosmos-predict-25) draws robot
+video from a picture and a sentence but takes no actions, so it can show you a
+future and not the future your action would cause.
+
 Some older models do not draw the new frame from nothing. Instead, they predict
 how each pixel moves, as in "this group of red pixels shifts two pixels to the
 right", and then they move the pixels of the last frame. So this works well for
-pushing, where most of the scene stays the same and only a few things move.
+pushing, where most of the scene stays the same and only a few things move. That
+is the work in [section 5.6](#56-action-conditioned-pixel-prediction-and-visual-foresight),
+which is in the shortlist as the clearest explanation of this kind of model
+rather than as something to run.
 
 Most newer models are **diffusion models**, which build the picture in a different
 way. A diffusion model starts from a picture of pure random noise, like the snow on
@@ -125,7 +141,11 @@ until a clear picture is left. At each pass, it uses the recent frames and the a
 to decide what the clean picture should look like. The
 [diffusion and flow policies](../../06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
 page explains the same method used to produce arm movements. So diffusion models draw
-sharp pictures, but the many passes make them slow.
+sharp pictures, but the many passes make them slow. Both Cosmos models in the
+shortlist are run this way, through Hugging Face's `diffusers` library, and the
+`num_inference_steps=30` in the [section 5.1](#51-cosmos-3) code is the number
+of passes it makes for one call. That is where the seconds per call in that
+section come from.
 
 ### Why the future comes out blurry
 
@@ -160,24 +180,42 @@ and robots use video prediction in the four ways listed below.
    for each one, and picks the sequence whose final picture looks most like the
    goal. This is the planning method from the
    [previous page](../02_most-used/01_learned-dynamics-models.md#planning-with-it), with pictures
-   in place of numbers.
+   in place of numbers. The work in
+   [section 5.6](#56-action-conditioned-pixel-prediction-and-visual-foresight)
+   did exactly this on a real arm, and
+   [section 5.8](#58-how-to-choose) explains why no model in the shortlist is
+   fast enough to do it in 2026.
 2. **To draw the task, then copy it.** The model draws a short video of the task
    being done, from a sentence such as "put the red cube in the bowl". A second,
    smaller model then works out the arm moves that turn each picture into the
    next. That second model is called an **inverse dynamics model**. It answers
    the opposite question to a world model: not "what happens if I do this?" but
    "what did I do to make this happen?". The picture below shows these steps.
+   UniPi, in [section 5.7](#57-unipi), is where this pattern comes from, and
+   Cosmos 3 has the reading-off step built in as its `inverse_dynamics` mode.
 3. **To make training data.** The model draws many videos of a task being done
    in new rooms or with new objects. The actions are read off with an inverse
-   dynamics model, and the results are used to train a policy.
+   dynamics model, and the results are used to train a policy. This is what
+   Cosmos Predict 2.5, in [section 5.2](#52-cosmos-predict-25), is recommended
+   for.
 4. **As a training signal.** A policy learns to predict future frames while it
    learns to act, and the predicting part is thrown away afterwards. The
    [overview](../01_overview.md#4-three-ways-a-robot-uses-a-world-model) says more.
+   FastWAM, in [section 5.4](#54-fastwam), is this way of working, and
+   LingBot-VA, in [section 5.3](#53-lingbot-va), is the same idea with the
+   predicting part kept, so that you can see the video the policy expected while
+   the robot runs.
 
 ![A sentence becomes a generated video of the task; an inverse dynamics model reads the arm move from each pair of frames](../../../images/world-models/video-prediction-models/video-then-actions.svg)
 
 The inverse dynamics model turns each pair of frames, such as the one in the
 orange box, into one arm command.
+
+Those four are the uses a robot has today. One more exists and is not yet one of
+them, and it is acting inside the model as if it were a game: somebody makes a
+move, the model draws what that move leads to, and the moves go on for as long as
+you like. That is the direction Genie takes, in [section 5.5](#55-genie), which
+is in the shortlist for the direction alone, because no weights are released.
 
 ---
 
@@ -219,21 +257,23 @@ video generation models arrived and some of them now take robot actions as an
 input. So this section separates the models you can download and run from the
 ones you can only read about, and then helps you pick one.
 
-Read the table one row at a time. Each row names the model, says what it is best
-at, gives its size and its licence, and says when to pick it. The size is the
-number of trainable numbers, where the makers state one, and `not stated` means
-it is not published. The licence column matters more here than anywhere else on
-this page, because these are large downloads with conditions attached.
+Read the table one row at a time. The left column names the model and says how
+much it is used in 2026. The right column holds the rest: what the model is best
+at, how big it is, its licence, and when to pick it. A size is the number of
+trainable numbers, where the makers state one, and `not stated` means no size is
+published. The licence matters more here than anywhere else on this page,
+because these are large downloads with conditions attached, so every row gives
+it.
 
-| Model | Best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| [5.1 Cosmos 3](#51-cosmos-3) | predicting the video that a given sequence of actions would cause | Edge 4 billion, Nano 16 billion, Super 64 billion | OpenMDW 1.1 | you have Linux, an NVIDIA card, and actions in one of its robot shapes |
-| [5.2 Cosmos Predict 2.5](#52-cosmos-predict-25) | making new robot-scene video from one picture and a sentence | 2 billion, from the model's own name | Apache 2.0 for the code, NVIDIA Open Model License for the weights | you want synthetic video to train on, and no action control |
-| [5.3 LingBot-VA](#53-lingbot-va) | predicting video and actions together while the robot runs | about 5 billion trainable, plus about 20 GB of frozen parts | Apache 2.0 for LeRobot; the frozen parts come from another repository | you want to see what the policy expected to happen |
-| [5.4 FastWAM](#54-fastwam) | a policy trained with video prediction that does not predict at run time | initialised from Wan2.2-TI2V-5B | Apache 2.0 for LeRobot and for Wan2.2-TI2V-5B | you want the training benefit without the slowness |
-| [5.5 Genie](#55-genie) | interactive worlds a person can walk around in | not stated | no weights released | never, on a robot; read it for the direction |
-| [5.6 Action-conditioned pixel prediction, and Visual Foresight](#56-action-conditioned-pixel-prediction-and-visual-foresight) | pushing objects on a table, planned with predicted pictures | not stated | research code from papers | you want to understand how all of the above work |
-| [5.7 UniPi](#57-unipi) | drawing the task as a video, then reading the actions off it | not stated | research code from a paper | you want to understand the pattern Cosmos 3 now provides ready-made |
+| Model | What decides it |
+| --- | --- |
+| [**5.1 Cosmos 3**](#51-cosmos-3), most used in 2026 | It is best at predicting the video that a given sequence of actions would cause. The family holds Edge at 4 billion numbers, Nano at 16 billion and Super at 64 billion, all under OpenMDW 1.1. Pick it when you have Linux, an NVIDIA card, and actions in one of its robot shapes. |
+| [**5.2 Cosmos Predict 2.5**](#52-cosmos-predict-25), most used in 2026 for making video | It is best at making new robot-scene video from one picture and a sentence. It holds 2 billion numbers, which is where its own name comes from. The code is Apache 2.0 and the weights are under the NVIDIA Open Model License. Pick it when you want synthetic video to train on and you do not need action control. |
+| [**5.3 LingBot-VA**](#53-lingbot-va), worth betting on | It is best at predicting video and actions together while the robot runs. It has about 5 billion trainable numbers, plus about 20 GB of frozen parts. LeRobot is Apache 2.0, and the frozen parts come from another repository. Pick it when you want to see what the policy expected to happen. |
+| [**5.4 FastWAM**](#54-fastwam), worth betting on | It gives you a policy that was trained with video prediction but does not predict at run time. It is initialised from Wan2.2-TI2V-5B, and both LeRobot and Wan2.2-TI2V-5B are Apache 2.0. Pick it when you want the training benefit without the slowness. |
+| [**5.5 Genie**](#55-genie), worth betting on as a direction | It is best at interactive worlds a person can walk around in. Its size is not stated, and no weights are released. Never pick it on a robot, and read it for the direction instead. |
+| [**5.6 Visual Foresight**](#56-action-conditioned-pixel-prediction-and-visual-foresight), historical | This entry is action-conditioned pixel prediction, and it is best at pushing objects on a table, planned with predicted pictures. Its size is not stated, and what exists is research code from the papers. Pick it when you want to understand how all of the above work. |
+| [**5.7 UniPi**](#57-unipi), historical | It is best at drawing the task as a video and then reading the actions off it. Its size is not stated, and what exists is research code from a paper. Pick it when you want to understand the pattern Cosmos 3 now provides ready-made. |
 
 ### 5.1 Cosmos 3
 

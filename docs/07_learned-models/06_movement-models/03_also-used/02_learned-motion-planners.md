@@ -129,12 +129,19 @@ routes usually look like, but it can be wrong, so the check makes sure a wrong
 route never reaches the arm. And because only one short hop needed repairing,
 the whole job is still fast.
 
+Two of the models in section 7 work in this way, and they are Motion Policy
+Networks in sub-section 7.2 and Neural MP in sub-section 7.3. The ordinary
+planner and the collision checker that step 5 falls back on also have names, and
+sub-section 7.1 recommends them: MoveIt 2 with OMPL.
+
 The second design is a **learned sampler**, which keeps the ordinary planner
 exactly as it is. The only change is where the planner picks its random
 positions. Instead of spreading them evenly everywhere, a network suggests
 positions in the places where routes usually pass, such as the gap between two
 shelves. So the planner finds a route sooner, and it still checks everything
-itself.
+itself. No model in section 7 does this, because a learned sampler is code you
+write against the ordinary planner rather than a file you download, which is
+what sub-section 7.6 says when it comes to choosing.
 
 ---
 
@@ -169,7 +176,9 @@ really touching.
 The network is almost always right far from the edge, and its mistakes are near
 the edge. But that is exactly where a planner spends its time when it squeezes
 through a gap. So a learned checker is used only to guide the search, and the
-exact checker still tests the final route.
+exact checker still tests the final route. The one published model of this kind
+is SceneCollisionNet, in sub-section 7.4, and it is kept there as the clearest
+example rather than as a recommendation.
 
 ---
 
@@ -197,8 +206,9 @@ the gripper positions they produce. The pairs are easy to make, because you pick
 random joint angles and work out where the gripper ends up, using the arm's
 known sizes. That sum, from angles to gripper position, is called **forward
 kinematics**, and it is exact and fast, so the network only has to learn to go
-the other way. Some learned solvers, such as IKFlow, give many different answers
-at once, drawn from all the ways the arm can reach the target. A planner can
+the other way. Some learned solvers, such as IKFlow, which sub-section 7.5
+recommends, give many different answers at once, drawn from all the ways the arm
+can reach the target. A planner can
 then choose the answer that avoids obstacles or stays far from joint limits.
 
 But the learned answer is usually close rather than exact. So people pass it to
@@ -224,8 +234,8 @@ is made by a computer, and not collected by people.
    answer with the saved one, and adjust it a little. Then repeat that many times.
 
 Because a computer makes the data, people can make a great deal of it. Motion
-Policy Networks, for example, learned from millions of planner answers, so the
-cost here is computing time, and not human time.
+Policy Networks, which sub-section 7.2 covers, learned from millions of planner
+answers, so the cost here is computing time, and not human time.
 
 But there is a catch in step 1, because the network only learns scenes like the
 ones the program made. If the program made boxes on tables, then a real kitchen
@@ -241,20 +251,24 @@ written planner rather than with a network, because the written planner is what
 every learned helper here has to beat, and for most moves through open space it
 still wins.
 
-Read the table one row at a time. The size column gives the size of the file you
-have to download, and not a count of the network's parameters, because these
-projects publish a trained file and no parameter count. That file is called a
-**checkpoint**, and it holds the numbers that a training run produced. A cell
-that says `not stated` means the project does not publish the figure.
+Read the table one row at a time. The left column names the tool and says how
+current it is. The right column holds the rest: what the tool is best at, how
+large the download is, its licence, and when to pick it. Where a size is given,
+it is the size of the file you have to download, and not a count of the
+network's parameters, because these projects publish a trained file and no
+parameter count. That file
+is called a **checkpoint**, and it holds the numbers that a training run
+produced. Where a row says `not stated`, the project does not publish that
+figure.
 
-| Tool | What it is best at | Size of the download | Licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| MoveIt 2 with OMPL, written rather than learned | any move through open space, and it checks every move it gives you | no weights | BSD 3-Clause | always try this first |
-| cuRobo, written rather than learned | many plans a second, so the arm can react while obstacles move | no weights | Apache-2.0 | you have an NVIDIA graphics card and the scene keeps changing |
-| Motion Policy Networks | one route straight from a depth camera, on a Franka arm | 229 MB checkpoint | MIT | you want to study how a learned route planner is built and trained |
-| Neural MP | the same job, with weights that download in one line | 86 MB checkpoint | not stated in the code repository, and the weights are tagged MIT | you have a Franka arm, an NVIDIA card and a point cloud of the scene |
-| SceneCollisionNet | guessing quickly whether a moved object hits anything | not stated | NVIDIA Source Code License, which allows non-commercial use only | research on tidying a cluttered table |
-| IKFlow | many different joint-angle answers for one gripper pose | 204 MB for the Franka model | not stated, because the licence file holds only the text `#TODO` | a seven-joint arm needs a choice of inverse kinematics answers |
+| Tool | What decides it |
+| --- | --- |
+| **MoveIt 2 with OMPL**, most used in 2026 | This one is written rather than learned, and it handles any move through open space. It checks every move it gives you against the real shapes. There are no weights to download, and the licence is BSD 3-Clause. Always try this first. |
+| **cuRobo**, most used in 2026 | This one is written rather than learned, and it produces many plans a second, so the arm can react while obstacles move. There are no weights to download, and the licence is Apache-2.0. Pick it when you have an NVIDIA graphics card and the scene keeps changing. |
+| **Motion Policy Networks**, historical | This one gives one route straight from a depth camera, on a Franka arm. Its checkpoint is 229 MB, and its licence is MIT. Pick it when you want to study how a learned route planner is built and trained. |
+| **Neural MP**, worth betting on | This one does the same job as Motion Policy Networks, and its weights download in one line. Its checkpoint is 86 MB. Its licence is `not stated` in the code repository, and the weights are tagged MIT. Pick it when you have a Franka arm, an NVIDIA card and a point cloud of the scene. |
+| **SceneCollisionNet**, historical | This one guesses quickly whether a moved object hits anything. Its download size is `not stated`, and its NVIDIA Source Code License allows non-commercial use only. Pick it for research on tidying a cluttered table. |
+| **IKFlow**, most used in 2026 | This one gives many different joint-angle answers for one gripper pose, and it is the most used of the learned helpers here. The Franka model is 204 MB. Its licence is `not stated`, because the licence file holds only the text `#TODO`. Pick it when a seven-joint arm needs a choice of inverse kinematics answers. |
 
 ### 7.1 MoveIt 2 with OMPL, and cuRobo, which are written and not learned
 

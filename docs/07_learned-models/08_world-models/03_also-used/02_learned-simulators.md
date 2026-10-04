@@ -109,12 +109,24 @@ The red particle is joined only to the orange ones inside the dashed circle, so
 only those influence it.
 
 Because particles move and their neighbours change, the graph is built again at
-every step.
+every step. Which of those two kinds of join a model uses is the first thing to
+decide in the shortlist. GNS, in
+[section 5.3](#53-graph-network-based-simulators-gns), rebuilds the whole graph
+from the connection radius at every step, which is what water, sand and dough
+need. MeshGraphNets, in [section 5.4](#54-meshgraphnets), keeps the mesh's own
+threads, which is what cloth needs. VCD, in [section 5.5](#55-vcd), covers the
+case where nobody can hand you the mesh, because it learns which of the points
+the camera can see are joined.
 
 ### One step: passing messages
 
 Each step has three parts, and they happen to every particle at the same
 time.
+
+This step is the one Interaction Networks introduced in 2016, and
+[section 5.1](#51-interaction-networks) keeps that paper in the shortlist
+because it is the clearest explanation of the step and nothing else. The models
+you would actually run are the later ones in the same list.
 
 1. **Each neighbour sends a message.** A small network looks at a pair of joined
    particles: their positions and their speeds. It gives back a short list of
@@ -135,7 +147,12 @@ next step.
 Parts 1 and 2 are usually repeated several times within one step before part 3.
 Each repeat lets information travel one more join across the graph, so after ten
 repeats a particle is influenced by particles up to ten joins away. This is how
-a pull on one corner of a towel reaches the far corner.
+a pull on one corner of a towel reaches the far corner. The number of repeats is
+a setting, and NVIDIA's defaults for MeshGraphNets, which
+[section 5.4](#54-meshgraphnets) recommends, are 15 message-passing blocks of
+128 numbers. DPI-Net, in [section 5.2](#52-dpi-net), is the step from a few
+objects joined to each other to a cloud of particles that an arm pushes
+around.
 
 The same small networks are used for every particle and every pair, and this is
 the key idea of the whole design. The model learns one rule for "how neighbours
@@ -164,14 +181,18 @@ Engineers already have careful simulators for cloth, fluids and sand, and these
 can take a long time to compute each step, but they give the exact position of
 every particle. So the learned simulator watches thousands of runs and learns to copy
 them: it predicts one step, is compared with the careful simulator's next step,
-and is corrected.
+and is corrected. This is where the published GNS and MeshGraphNets models in
+[section 5.3](#53-graph-network-based-simulators-gns) and
+[section 5.4](#54-meshgraphnets) come from.
 
 The second place to get examples is the **real world** itself. The robot pokes,
 pinches or lifts the material while a depth camera records it, and this teaches the
 model the real material rather than a simulated one. However, it is harder, because a
 camera cannot say which dot in one frame is the same bit of material as which dot in
 the next frame. So the training compares the predicted shape with the real shape as a
-whole: for each predicted dot, how far is the nearest real dot?
+whole: for each predicted dot, how far is the nearest real dot? RoboCraft and
+RoboCook, in [section 5.6](#56-robocraft-and-robocook), are the entries that
+learned this way, and that is the whole reason they are in the shortlist.
 
 Because the data is cheap, training on simulated runs is common. Then a small
 amount of real data is often added, so that the model matches the real
@@ -188,19 +209,22 @@ demonstration and a program you can run is widest. Most of what follows is
 research code, two entries need a graphics-card library compiled from source
 before anything starts, and only one is installed with `pip`.
 
-Read the table one row at a time, and read the Size column carefully. Almost
-nothing in this family publishes a parameter count or a memory requirement, so
-you cannot work out what hardware you need by reading a paper. A cell says `not
+Read the table one row at a time. The left column names the model and says how
+current it is. The right column holds the rest: what the model is best at, how
+big it is, its licence, and when to pick it. Read what each row says about size
+carefully. Almost nothing in this family publishes a parameter count or a memory
+requirement, so you cannot work out what hardware you need by reading a paper,
+and that absence is itself one of the findings of this section. A row says `not
 stated` where the number is not published, rather than giving a guess.
 
-| Model | How current | What it is best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| [Interaction Networks](#51-interaction-networks) | historical | explaining how all the others work | not stated | no code was released | you want to understand the idea, not run it |
-| [DPI-Net](#52-dpi-net) | historical | rigid, soft and liquid objects together | not stated | no licence file in either repository | you are reading a paper that compares itself with it |
-| [GNS](#53-graph-network-based-simulators-gns) | most used in 2026 | water, sand and dough-like material | not stated; its datasets run from 2,000 to 14,000 particles | Apache-2.0 for the code; not stated for the datasets | your material has no fixed set of joins |
-| [MeshGraphNets](#54-meshgraphnets) | most used in 2026 | cloth and anything else with a mesh | 15 message-passing blocks of 128 numbers in NVIDIA's defaults | Apache-2.0 for both implementations | you have a mesh and want maintained code |
-| [VCD](#55-vcd) | historical | smoothing a crumpled cloth from one camera | not stated | MIT | the joins must be guessed from what the camera sees |
-| [RoboCraft and RoboCook](#56-robocraft-and-robocook) | worth betting on | real dough and plasticine on a real arm | not stated | MIT | your material is real and nobody has measured it |
+| Model | What decides it |
+| --- | --- |
+| [**5.1 Interaction Networks**](#51-interaction-networks), historical | It is best at explaining how all the others work. Its size is not stated, and no code was released. Pick it when you want to understand the idea rather than run it. |
+| [**5.2 DPI-Net**](#52-dpi-net), historical | It is best at rigid, soft and liquid objects together. Its size is not stated, and neither repository has a licence file. Pick it when you are reading a paper that compares itself with it. |
+| [**5.3 GNS**](#53-graph-network-based-simulators-gns), most used in 2026 | It is best at water, sand and dough-like material. Its size is not stated, and its datasets run from 2,000 to 14,000 particles. The code is Apache-2.0, and no licence is stated for the datasets. Pick it when your material has no fixed set of joins. |
+| [**5.4 MeshGraphNets**](#54-meshgraphnets), most used in 2026 | It is best at cloth and anything else with a mesh. No parameter count is stated, and NVIDIA's defaults are 15 message-passing blocks of 128 numbers. Both implementations are Apache-2.0. Pick it when you have a mesh and want maintained code. |
+| [**5.5 VCD**](#55-vcd), historical | It is best at smoothing a crumpled cloth from one camera. Its size is not stated, and the licence is MIT. Pick it when the joins must be guessed from what the camera sees. |
+| [**5.6 RoboCraft and RoboCook**](#56-robocraft-and-robocook), worth betting on | They are best at real dough and plasticine on a real arm. Their size is not stated, and the licence is MIT. Pick them when your material is real and nobody has measured it. |
 
 ### 5.1 Interaction Networks
 

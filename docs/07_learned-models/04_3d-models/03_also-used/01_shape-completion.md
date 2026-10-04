@@ -92,7 +92,10 @@ the **decoder**.
     numbers. That list describes the shape only in general, such as "a round thing,
     about this wide, with something sticking out on one side". The encoder is usually
     a point cloud model like PointNet, from the
-    [previous page](../02_most-used/01_point-cloud-models.md).
+    [previous page](../02_most-used/01_point-cloud-models.md). The newest completion
+    models put attention over small groups of points in its place, which is what
+    [AdaPoinTr](#51-adapointr-the-one-people-still-run) does, and section 5.1
+    recommends that model.
 2. The **decoder** takes that short list and grows a whole shape from it. It has never
     seen the back of this object, so it only knows what backs usually look like for
     shapes whose front gives this list.
@@ -103,8 +106,11 @@ general shape in full, including the parts that were missing.
 
 Many decoders work in two passes rather than one. The first pass gives a rough cloud of a few hundred
 points that shows the overall shape, and the second pass adds detail around each of
-those points. This is the same "coarse first, fine later" pattern that PointNet++ uses
-in the other direction.
+those points. This two-pass decoder comes from PCN, and
+[section 5.2](#52-pcn-the-point-completion-network) keeps that model in the list below
+for this reason. It is the clearest place to read the pattern, rather than software to
+install. The pattern itself is the same "coarse first, fine later" idea that
+PointNet++ uses in the other direction.
 
 ### Three ways to write down the whole shape
 
@@ -113,19 +119,29 @@ the whole object.
 
 - **A point cloud.** The decoder gives a fixed number of points, such as 2,048 or
     16,384, spread over the whole surface, and this is the easiest form to use with
-    other point cloud tools.
+    other point cloud tools. Both [AdaPoinTr](#51-adapointr-the-one-people-still-run)
+    and [PCN](#52-pcn-the-point-completion-network) write their answer this way.
 - **A voxel grid.** Space around the object is cut into small cubes, and the decoder
     says for each cube whether it is inside the object. A grid of 40 cubes along each
-    side is already 64,000 cubes, so grids have to stay coarse.
+    side is already 64,000 cubes, so grids have to stay coarse. The 2017 robot work
+    that section 5 opens with fills a grid like this.
 - **A function.** The decoder becomes a small network that answers, for any spot in
     space, whether that spot is inside the object. Some versions answer how far the
     spot is from the surface instead. You can ask about as many spots as you like, so
     the shape has no fixed resolution, and software then finds the surface where the
-    answer changes from inside to outside.
+    answer changes from inside to outside. [DeepSDF](#53-deepsdf) answers how far the
+    surface is and [Occupancy Networks](#54-occupancy-networks) answers inside or
+    outside, and sections 5.3 and 5.4 cover both.
 
 The function form is the most detailed of the three. However, the point cloud form is
 the most common on robots, because the next step, a grasp model, usually wants
 points.
+
+One model in the list below writes the shape in none of these three ways.
+[TRELLIS](#55-trellis) gives a mesh, which is a surface made of flat triangles with a
+picture painted over it. It also invents a believable whole object rather than completing
+the points you measured, and section 5.5 explains when that difference is what you
+want.
 
 ---
 
@@ -178,20 +194,24 @@ their [code](https://github.com/CRLab/pc_object_completion_cnn) is a package for
 Robot Operating System (ROS) of that year with no licence file at all, so read the paper
 and take the idea rather than the software.
 
-Read the "how you get it" column of the table first, because it decides how much work a
-model costs you. A research repository means cloning code, compiling parts of it with a
-C++ compiler, and downloading a trained file by hand. The "size" column is how many
-numbers the model holds, which most of these projects never published, so those cells say
+The table below has two columns. The left column names the model and says how current it
+is. The right column holds everything else about it: what it gives you, what it is best
+at, how many numbers it holds, its licence, how you obtain it, and when to pick it.
+
+Read the part that says how you get a model with most attention, because that decides how
+much work it costs you. A research repository means cloning code, compiling parts of it
+with a C++ compiler, and downloading a trained file by hand. The size is how many numbers
+the model holds, which most of these projects never published, so those rows say
 `not stated` rather than a guess. Every licence was read from the project's own licence
 file.
 
-| Model | What it gives you | Best at | Size | Licence | How you get it | Pick it when |
-| --- | --- | --- | --- | --- | --- | --- |
-| [AdaPoinTr](#51-adapointr-the-one-people-still-run) | a point cloud | filling in one cut-out object seen from one side | not stated | MIT | research repository, with trained files to download | you can clone code and you have an NVIDIA graphics card |
-| [PCN](#52-pcn-the-point-completion-network) | a point cloud | explaining the coarse-then-fine decoder | not stated | MIT | research repository that needs TensorFlow 1.12 and Python 3.5 | you are reading the paper rather than building a robot |
-| [DeepSDF](#53-deepsdf) | a function | a watertight surface at any resolution | not stated | MIT | repository marked read-only, and the completion code was never released | you want to understand the function form |
-| [Occupancy Networks](#54-occupancy-networks) | a function | the same, with a demo that still runs | not stated | MIT | research repository with a working demo | you want to try the function form today |
-| [TRELLIS](#55-trellis) | a mesh with texture | inventing a whole object from one photo | up to 2 billion numbers | MIT for the code and for the weights | clone the repository, weights from Hugging Face | you need a complete object more than a measured one |
+| Model | What decides it |
+| --- | --- |
+| [AdaPoinTr](#51-adapointr-the-one-people-still-run), most used in 2026 | This model gives back a point cloud, and it is the best here at filling in one cut-out object seen from one side. It is a research repository with trained files to download, the licence is MIT, and its size is `not stated`. Pick it when you can clone code and you have an NVIDIA graphics card. |
+| [PCN](#52-pcn-the-point-completion-network), historical | This model gives back a point cloud, and it is best at explaining the coarse-then-fine decoder. Its research repository needs TensorFlow 1.12 and Python 3.5, the licence is MIT, and its size is `not stated`. Pick it when you are reading the paper rather than building a robot. |
+| [DeepSDF](#53-deepsdf), historical | This model writes the shape as a function, which gives a watertight surface at any resolution. The licence is MIT, but the repository is marked read-only and the completion code was never released, and the size is `not stated`. Pick it when you want to understand the function form. |
+| [Occupancy Networks](#54-occupancy-networks), historical | This model writes the shape as a function too, with the same watertight surface at any resolution, and its research repository has a demo that still runs. The licence is MIT and the size is `not stated`. Pick it when you want to try the function form today. |
+| [TRELLIS](#55-trellis), worth betting on | This model gives back a mesh with texture, and it is best at inventing a whole object from one photo. The released models hold up to 2 billion numbers, the code and the weights are both MIT, and you clone the repository and take the weights from Hugging Face. Pick it when you need a complete object more than a measured one. |
 
 ### 5.1 AdaPoinTr, the one people still run
 

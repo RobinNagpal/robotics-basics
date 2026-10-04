@@ -126,9 +126,10 @@ network with three parts, and the data flows through them in order.
 1. **The picture part.** The camera picture goes into a network that is good at
    pictures, which is often a **convolutional neural network (CNN)**, a kind of
    network that looks at small patches of the picture at a time. A common choice is
-   ResNet, which is a well-known CNN. This part turns the picture into a list of a
-   few hundred numbers, and those numbers describe what is in the picture, such as
-   where the mug is.
+   ResNet, which is a well-known CNN. ResNet is a part inside the policies named in
+   section 5 rather than a policy of its own, which is why it is not one of the rows
+   there. This part turns the picture into a list of a few hundred numbers, and those
+   numbers describe what is in the picture, such as where the mug is.
    [Inside a neural network](../../01_what-models-are/03_inside-a-neural-network.md)
    explains how this works.
 2. **Joining.** The list of numbers from the picture is joined onto the joint
@@ -150,7 +151,26 @@ move, and then the network takes the next picture and gives the next action.
 
 Some versions also give the network the last few pictures, and not just the
 current one. This helps it tell whether the arm is moving up or down, which a
-single picture cannot show.
+single picture cannot show. The recurrent policy called BC-RNN, in
+[section 5.2](#52-robomimic-if-you-want-plain-behaviour-cloning), is this idea
+written out: it remembers the last few moments instead of judging each one alone.
+
+These three parts are the shape that every model in
+[section 5](#5-well-known-models-of-this-kind) is built on, and each one there
+changes a part or adds to it. ALVINN, in
+[section 5.1](#51-alvinn-the-method-with-nothing-added), is the shape at its
+simplest, because its three layers take the picture and give back the steering
+direction with nothing added. The plain behaviour cloning in robomimic, in
+[section 5.2](#52-robomimic-if-you-want-plain-behaviour-cloning), is the same shape
+with the surrounding program written for you. ACT, in
+[section 5.3](#53-act-in-lerobot-the-one-to-start-with), replaces the deciding part
+with a transformer that gives back a run of future commands instead of one, and
+[the next page](02_action-chunking-transformers.md) is about that change. SmolVLA,
+in [section 5.5](#55-smolvla-if-fifty-recordings-are-not-enough), adds a further
+input, which is a sentence saying which task to do, and it arrives with its numbers
+already trained. DAgger, in
+[section 5.4](#54-dagger-which-is-now-a-command), changes none of this, because it
+alters where the training pairs come from rather than the network.
 
 ---
 
@@ -198,22 +218,24 @@ Section 4 described how the data is recorded. This section names the behaviour
 cloning models worth knowing about, says which one to reach for first, and gives for
 each one the shortest command or program that does something real with it.
 
-Read the table as a filter rather than as a ranking. Find the row that matches the
-hardware and the recordings you have, read its last column, and then read that
-model's sub-section. The size column holds the number of trainable values the project
-itself states, and `not stated` where no project document gives a figure. The Mac
-column means an Apple Silicon Mac with no separate graphics card, and its answers
-come from LeRobot's own
+Read the table as a filter rather than as a ranking. The left column names the model
+and says how much use it gets. The right column holds everything you need to filter
+on: what it is best at, its size, its licence, whether it trains on an Apple Silicon
+Mac with no separate graphics card, and when to pick it. Find the row that matches
+the hardware and the recordings you have, then read that model's sub-section. A size
+is the number of trainable values the project itself states, and it says `not stated`
+where no project document gives a figure. The answers about the Mac come from
+LeRobot's own
 [compute hardware guide](https://huggingface.co/docs/lerobot/hardware_guide), which
 groups policies by the video memory they need to train at a batch size of eight.
 
-| Model | Best at | Size | Licence | Trains on a Mac | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| ALVINN (1988) | steering from one camera | three layers, `not stated` | no code was released | not applicable | never; read it to see the method with nothing added |
-| robomimic BC and BC-RNN (2021) | plain behaviour cloning with published baselines | `not stated` | MIT | yes, slowly | you want plain behaviour cloning already written, on a recorded dataset |
-| ACT in LeRobot (2023) | one careful task on your own cheap arm | about 80 million | Apache-2.0 | yes, in about 6 to 14 hours | you have an arm, two cameras and an evening to record |
-| DAgger in LeRobot (2011, a command since 2026) | repairing a policy that nearly works | not applicable | Apache-2.0 | yes | your policy fails in the same place every time |
-| SmolVLA (2025) | starting from trained weights, and being told the task in a sentence | 450 million | Apache-2.0 on the code and on the weights | running yes, training marginal | fifty recordings are not enough, or one policy must do several tasks |
+| Model | What decides it |
+| --- | --- |
+| **ALVINN** (1988), historical | It steers a vehicle from one camera, and that is all it is good at. Its network has three layers, and the number of trainable values in them is `not stated`. No code was released with it, so it carries no licence, and the question of training it on a Mac does not arise. Do not pick it for a project. Read it to see the method with nothing added. |
+| **robomimic** BC and BC-RNN (2021), most used in 2026 for one job | It is best at plain behaviour cloning with published baselines to compare against. Its size is `not stated`, and its licence is MIT. It trains on a Mac, although slowly. Pick it when you want plain behaviour cloning already written, on a recorded dataset. |
+| **ACT in LeRobot** (2023), most used in 2026 | It is best at one careful task on your own cheap arm. It has about 80 million trainable values, and it is Apache-2.0. It trains on a Mac in about 6 to 14 hours. Pick it when you have an arm, two cameras and an evening to record. |
+| **DAgger in LeRobot** (2011, a command since 2026), worth betting on | It is best at repairing a policy that nearly works. It is a way of collecting data rather than a network, so a size does not apply to it, and it is Apache-2.0. It runs on a Mac. Pick it when your policy fails in the same place every time. |
+| **SmolVLA** (2025), worth betting on | It is best at starting from trained weights, and at being told the task in a sentence. It has 450 million trainable values, and both its code and its weights are Apache-2.0. Running it on a Mac works, and training it there is marginal. Pick it when fifty recordings are not enough, or when one policy must do several tasks. |
 
 ### 5.1 ALVINN, the method with nothing added
 

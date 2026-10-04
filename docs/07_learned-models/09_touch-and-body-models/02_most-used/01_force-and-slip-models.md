@@ -151,13 +151,28 @@ what it has read so far.
 For a force signal, which is only a few numbers at each moment, a simpler network
 is often enough, because it can read the window as one list of numbers. Some models
 first turn the window into a set of frequencies, which shows the fast shaking of
-slip more clearly.
+slip more clearly. A network of this kind, trained on your own recorded windows,
+is what [section 6.2](#62-a-small-network-of-your-own-on-the-raw-window) recommends.
+
+Two other shapes are common enough that the shortlist later on this page recommends
+both of them. The first is not a network at all. You reduce each window to a few
+summary numbers yourself, such as its average and how much it wobbled, and you give
+those numbers to an ensemble of decision trees, which is what
+[section 6.1](#61-hand-made-features-and-a-tree-ensemble) recommends as the first
+thing to try. The second starts from a model somebody else has already trained on a
+very large number of unlabelled tactile pictures, and trains only a small part on top
+of it to answer the slip question. That is what
+[section 6.4](#64-sparsh-with-a-force-and-slip-head) recommends, with Sparsh as the
+model you start from.
 
 ### 4.3 Joining touch with a camera
 
 Some models also look at a camera picture of the object in the gripper. The camera
 can see the object move a lot, while the tactile sensor can feel it move a little,
-so together they catch more slips than either one alone.
+so together they catch more slips than either one alone. The clearest published
+example of this is Making Sense of Vision and Touch, which learns one set of numbers
+from a camera picture, the six wrist force-torque numbers and the joint readings at
+once, and [section 6.5](#65-making-sense-of-vision-and-touch) describes it.
 
 ## 5. How it is trained
 
@@ -191,18 +206,20 @@ as GelSight Mini or DIGIT, an array of pillars, and a magnetic skin each lead to
 different answer, and for most of them the answer is that you train a small model of
 your own.
 
-Read the table as: the method, the sensor it needs, what it is best at, how big the
-model is, its licence, and the one case that should make you choose it. A cell says
-`not stated` where nobody has published the figure. "Yours" in the licence column
-means the model comes out of your own training run, so no licence restricts it.
+Read the table one row at a time. The left column names the method and says whether a
+developer starting today would reach for it. The right column holds everything else:
+the sensor the method needs, what it is best at, how big the model is, its licence, and
+the one case that should make you choose it. A cell says `not stated` where nobody has
+published the figure. Where the licence is yours, the model comes out of your own
+training run, so no licence restricts it.
 
-| Method | Sensor it needs | Best at | Size | Licence | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| [6.1 Features and a tree ensemble](#61-hand-made-features-and-a-tree-ensemble) | any of them | a few hundred recorded grips | yours to choose | yours | your first attempt, on any sensor |
-| [6.2 A small network on the raw window](#62-a-small-network-of-your-own-on-the-raw-window) | any of them, and tactile pictures too | thousands of recorded grips | yours to choose | yours | the tree ensemble has stopped improving |
-| [6.3 GelSight's marker tracker](#63-gelsights-own-marker-tracker-as-the-shear-signal) | a gel with printed dots | measuring the sideways pull, with no training | not a learned model | GPL-3.0 | you own such a sensor and want the signal today |
-| [6.4 Sparsh with a force-and-slip head](#64-sparsh-with-a-force-and-slip-head) | DIGIT, GelSight'17, GelSight Mini | slip and three-axis force from few labels | a small and a base backbone; counts not stated | CC BY-NC 4.0, no commercial use | you own one of those three, and sell nothing |
-| [6.5 Making Sense of Vision and Touch](#65-making-sense-of-vision-and-touch) | wrist force-torque, a camera, joint readings | a contact job with no slip labels at all | not stated | MIT | you want the idea and will retrain it |
+| Model | What decides it |
+| --- | --- |
+| [**6.1 Features and a tree ensemble**](#61-hand-made-features-and-a-tree-ensemble), most used in 2026 | It works with any of the sensors above. It is best when you have a few hundred recorded grips. The size is yours to choose, and the licence is yours. Pick it for your first attempt, on any sensor. |
+| [**6.2 A small network on the raw window**](#62-a-small-network-of-your-own-on-the-raw-window), most used in 2026 | It works with any of them, and with tactile pictures too. It is best when you have thousands of recorded grips. The size is yours to choose, and the licence is yours. Pick it when the tree ensemble has stopped improving. |
+| [**6.3 GelSight's marker tracker**](#63-gelsights-own-marker-tracker-as-the-shear-signal), most used in 2026 | It needs a gel with printed dots. It is best at measuring the sideways pull, with no training, and it is not a learned model at all. The licence is GPL-3.0. Pick it when you own such a sensor and want the signal today. |
+| [**6.4 Sparsh with a force-and-slip head**](#64-sparsh-with-a-force-and-slip-head), worth betting on | It needs a DIGIT, a GelSight'17 or a GelSight Mini. It is best at slip and three-axis force from few labels. There is a small backbone and a base one, and their parameter counts are `not stated`. The licence is CC BY-NC 4.0, with no commercial use. Pick it when you own one of those three, and sell nothing. |
+| [**6.5 Making Sense of Vision and Touch**](#65-making-sense-of-vision-and-touch), historical | It needs a wrist force-torque sensor, a camera and the joint readings. It is best at a contact job with no slip labels at all. Its size is `not stated`, and its licence is MIT. Pick it when you want the idea and will retrain it. |
 
 ### 6.1 Hand-made features and a tree ensemble
 

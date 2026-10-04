@@ -21,6 +21,7 @@ words without explaining them again.
 3. [How it works inside](#3-how-it-works-inside)
    · [Shrink, then grow back](#shrink-then-grow-back)
    · [A detector with a mask added](#a-detector-with-a-mask-added)
+   · [A prompt instead of a class list](#a-prompt-instead-of-a-class-list)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
    · [SAM 2](#51-sam-2)
@@ -125,9 +126,12 @@ For a robot arm, this matters in three ways.
 
 ## 3. How it works inside
 
-Those two kinds of output are produced in two different ways, so there are two main
-ways to build a segmentation model. The first is usual for semantic segmentation,
-while the second is usual for instance segmentation.
+Those kinds of output are produced in different ways, so there are three main ways
+to build a segmentation model. The first is usual for semantic segmentation, and the
+second is usual for instance segmentation. The third asks the user for the object
+instead of learning a list of classes, and it is how the two models the shortlist in
+[section 5](#5-well-known-models) puts first are built. Each way below names the
+shortlisted models that belong to it.
 
 ### Shrink, then grow back
 
@@ -158,6 +162,11 @@ and decoder's numbers, and the right grid is the mask, where each pixel is eithe
 mug or not mug. The orange arrows are the skip connections. Once the model is drawn
 this way, it looks like a letter U, which is where the U-Net model got its name.
 
+U-Net is in this section to explain the idea rather than to be used. Of the models
+the shortlist recommends, Mask2Former in [section 5.6](#56-mask2former) is the one
+that answers semantic questions, and [section 5.7](#57-how-to-choose) names the
+plainer alternatives to it.
+
 ### A detector with a mask added
 
 For instance segmentation, the most common way is to start from a detector and then
@@ -172,18 +181,46 @@ add a mask to each box.
 4. The small mask is then stretched to the size of the box in the photo.
 
 Because each box gets its own mask, two mugs that touch still get two separate
-masks, and this is exactly how Mask R-CNN works.
+masks, and this is exactly how Mask R-CNN works. [Section 5.5](#55-mask-r-cnn)
+recommends Mask R-CNN for fine-tuning in plain PyTorch, and Ultralytics YOLO26-seg
+in [section 5.3](#53-ultralytics-yolo26-seg) is the same design built on a one-stage
+detector, which is why it keeps up with a live camera.
 
 Newer models use a transformer instead, in the same way as the detection
 transformers on the object detection page. So each query gives one object, and each
 object comes with a mask rather than only a box, which is how Mask2Former works.
 This means one such model can do semantic, instance and panoptic segmentation.
+Mask2Former itself is in [section 5.6](#56-mask2former), and RF-DETR-Seg in
+[section 5.4](#54-rf-detr-seg) is the newer transformer of this kind that the
+shortlist recommends for work on a robot.
+
+### A prompt instead of a class list
+
+Both ways so far need the list of classes before training, because the model learns
+a fixed set of names. The third way drops that list and asks the user for the object
+instead, and a model built this way is called **promptable**.
+
+1. The picture goes through a backbone once, as it does in the other two ways.
+2. The prompt goes through a second, much smaller network. A prompt is a point, a
+   box, a rough region or, in the newest models, a short phrase.
+3. A third small network reads the picture's numbers and the prompt's numbers
+   together, and gives one mask for whatever the prompt pointed at.
+
+Because the backbone runs only once, a second prompt on the same picture costs only
+the two small steps, so clicking around one picture feels immediate. The price is
+that the model gives no name, since a click produces a mask and nothing else, so
+something else has to decide where to click.
+
+SAM 2 in [section 5.1](#51-sam-2) is built this way and takes a point or a box, and
+SAM 3 in [section 5.2](#52-sam-3) takes a phrase and returns every object in the
+picture that matches it. The [open-vocabulary
+models](03_open-vocabulary-models.md) page covers that family in full.
 
 ---
 
 ## 4. How it is trained
 
-Whichever of those two ways a model is built, it learns from pictures where a
+A model built in either of the first two ways learns from pictures where a
 person has marked the exact outline of every object. However, that is much
 slower than drawing boxes. For each object, the person clicks many points around
 its edge to trace a shape, and that shape is called a **polygon**. So a picture
@@ -231,21 +268,23 @@ Three of the models below need a list of classes and give one mask per object in
 that list. Two need no class list at all, and instead outline whatever you point at
 or name in words. One answers all three kinds of question from a single design.
 
-Read the table as a shortlist and not as a ranking. The columns are the model, the
-job it is best at, its size, its licence, and when to pick it. The size is given as
-the number of parameters, which is the count of numbers the network learned during
-training, written in millions. Every number was read from the project's own
-published table or model card, and each sub-section names which. Two projects
-measure on different machines, so treat the sizes as a rough guide to scale.
+Read the table as a shortlist and not as a ranking. The left column names the model
+and says how current it is. The right column holds everything else about it: how it
+is built, the job it is best at, its size, its licence, and when to pick it. A size
+is given as the number of parameters, which is the count of numbers the network
+learned during training, written in millions. Every number was read from the
+project's own published table or model card, and each sub-section names which. Two
+projects measure on different machines, so treat the sizes as a rough guide to
+scale.
 
-| Model | Best at | Size, in millions of parameters | Licence (code / weights) | Pick it when |
-| --- | --- | --- | --- | --- |
-| SAM 2 | the exact outline of anything you click on or draw a box around | 38.9 to 224.4, over four sizes | Apache-2.0 / Apache-2.0 | you cannot list your objects, or you already have a box |
-| SAM 3 | every instance that matches a short phrase | 859.9 | a bespoke "SAM License"; the weights need an approved request | words have to replace the class list, and you have read the licence |
-| Ultralytics YOLO26-seg | masks on every frame of a live camera | 2.7 to 62.8, over five sizes | AGPL-3.0, or a paid Enterprise licence | you can publish your own source code, or you pay for the other licence |
-| RF-DETR-Seg | the best permissive masks available at a given speed | 33.6 to 38.6, over six sizes | Apache-2.0 | the licence must stay permissive and the outlines must be good |
-| Mask R-CNN | fine-tuning in plain PyTorch with no new dependency | 46.4 for `maskrcnn_resnet50_fpn_v2` | BSD-3-Clause | you already use torchvision, and a picture a second is enough |
-| Mask2Former | semantic, instance and panoptic from one design | 216.0 for the Swin-Large COCO instance checkpoint | repository MIT but archived; weights card says "other" | you need all three kinds of answer from one model |
+| Model | What decides it |
+| --- | --- |
+| **SAM 2**, most used in 2026 | It is a promptable model, and its four sizes hold 38.9 to 224.4 million parameters, with Apache-2.0 on both the code and the weights. It gives the exact outline of anything you click on or draw a box around. Pick it when you cannot list your objects, or when you already have a box. |
+| **SAM 3**, worth betting on | It is a promptable model of 859.9 million parameters, under a bespoke licence called the SAM License, and its weights need a request you have had approved. It returns every instance that matches a short phrase. Pick it when words have to replace the class list, and when you have read the licence. |
+| **Ultralytics YOLO26-seg**, most used in 2026 | It is a detector with a mask head, and its five sizes hold 2.7 to 62.8 million parameters under AGPL-3.0 or under a paid Enterprise licence. It gives masks on every frame of a live camera. Pick it when you can publish your own source code, or when you pay for the other licence. |
+| **RF-DETR-Seg**, worth betting on | It is a transformer, and its six sizes hold 33.6 to 38.6 million parameters under Apache-2.0. It gives the best permissive masks available at a given speed. Pick it when the licence must stay permissive and the outlines must be good. |
+| **Mask R-CNN**, most used in 2026 for one job | It is a detector with a mask head, and `maskrcnn_resnet50_fpn_v2` holds 46.4 million parameters under BSD-3-Clause. It is best at fine-tuning in plain PyTorch with no new dependency. Pick it when you already use torchvision, and a picture a second is enough. |
+| **Mask2Former**, historical | It is a transformer, and its Swin-Large COCO instance checkpoint holds 216.0 million parameters. Its repository is MIT but archived, and its weights card says "other". It answers semantic, instance and panoptic questions from one design. Pick it when you need all three kinds of answer from one model. |
 
 ### 5.1 SAM 2
 

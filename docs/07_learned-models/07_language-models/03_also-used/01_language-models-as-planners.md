@@ -90,6 +90,11 @@ A planner does not need a new kind of network, because it uses an ordinary langu
 model, the same kind that answers questions in a chat window. What makes it a planner
 is the text the robot gives it, and what the robot does with the answer.
 
+So this section describes one mechanism, and it works the same whether you call the
+model over the internet or run it on a computer beside the robot. That choice is the
+subject of [section 5](#5-well-known-models-of-this-kind), and it changes what the
+planner costs and when it fails, not how it works.
+
 ### Step 1: the robot writes a prompt
 
 The text given to a language model is called the **prompt**. So the robot's program
@@ -112,7 +117,11 @@ Plan:
 The prompt ends with the word "Plan:" and nothing after it, and it also contains one
 worked example. A worked example shows the model the exact form the answer should
 take, and giving a model a few examples inside the prompt is called **few-shot
-prompting**.
+prompting**. The same idea has been tried with a recording in place of a written
+example, so that the model is shown one video of the task and then does the task.
+[Prompting with a
+demonstration](../../10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md)
+covers that method, and the prompt above is the text version it grew out of.
 
 ### Step 2: the model writes the plan
 
@@ -130,7 +139,8 @@ A language model knows what usually makes sense, but it does not know what this 
 can do right now. So it cannot see that the sponge is out of reach, or that the
 gripper is already full.
 
-So the planner called SayCan solves this with a second score. For each skill, the
+So the planner called SayCan solves this with a second score, and [section
+5.1](#51-saycan) is about that system. For each skill, the
 language model gives a score for "does this step help with the request?" Each skill
 also has its own small model, which looks at the camera picture and gives a score for
 "can this skill work right now, from here?" So the planner multiplies the two scores,
@@ -148,7 +158,8 @@ done.
 ### Another way: the model writes code
 
 The plan can also be a short program instead of a list, and this way is called Code as
-Policies, after the paper that introduced it. So the prompt lists the functions the
+Policies, after the paper that introduced it, which [section
+5.2](#52-code-as-policies) covers. So the prompt lists the functions the
 robot's programmers have written, such as `find` and `pick_and_place`, and the model
 then writes a few lines of Python that call those functions.
 
@@ -174,7 +185,9 @@ write the rest of the plan again. The robot adds a line to the prompt, such as
 "Result: the sponge was dropped." The model then writes "pick up the sponge" again.
 The words about what happened can come from a person, from a sensor, or from a
 [vision-language model](../02_most-used/02_vision-language-models.md) that looks at
-the camera picture. The Inner Monologue paper studied this way of working.
+the camera picture. The Inner Monologue paper studied this way of working. It is not in
+the shortlist below, because it is a method rather than a model you can call, and
+[section 5.1](#51-saycan) has the link to it.
 
 ---
 
@@ -206,20 +219,23 @@ the four models you would actually call today. The decision that matters most co
 the end, because a planner is either a model you call over the internet or a model you
 run on your own machine, and those two options fail in opposite ways.
 
-Read the table one row per model. The first two rows are papers to read; the last four
-are models you can have working this week. The size column gives the number of
-parameters where the maker publishes one, because that number decides whether a model
-fits on the computer you already have, and a cell says `not published` where no figure
-exists.
+The table has two columns, so read a row from left to right as one sentence about one
+model. The left column names the model and says how current it is. The right column
+begins with where the model runs, because that is the decision above, and then gives its
+size, its licence, what it is best at, and the case for choosing it. The first two rows
+are papers to read; the last four are models you can have working this week. The size is
+the number of parameters where the maker publishes one, because that number decides
+whether a model fits on the computer you already have, and a row says `not published`
+where no figure exists.
 
-| Model | Best at | Size | Licence | Where it runs | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| [SayCan](https://say-can.github.io/) | refusing a step the robot cannot do from here | not published | Apache-2.0 on the released sample code | nothing to deploy | you need a second score for "can this work right now" |
-| [Code as Policies](https://code-as-policies.github.io/) | plans that count, repeat and measure | not published | Apache-2.0 on the released sample code | nothing to deploy | the plan needs a loop or a distance in centimetres |
-| [Claude Opus 5.5](https://docs.claude.com/en/api/messages) | the hardest plans, from words alone | not published | paid service, weights not distributed | Anthropic's computers | the planning job is text only, and a network call per plan is acceptable |
-| [Gemini Robotics ER 2](https://ai.google.dev/gemini-api/docs/robotics-overview) | planning from a picture or a video, and calling your own robot functions | not published | preview service, weights not distributed | Google's computers | the planner must look at the camera and check its own steps |
-| [Qwen3.5](https://huggingface.co/Qwen/Qwen3.5-4B) | a usable plan with no network at all | 0.87B, 2.3B, 4.7B, 9.7B and larger | Apache-2.0 on the weights | your own machine | the robot must keep working offline, or nothing may leave the building |
-| [Gemma 4](https://huggingface.co/google/gemma-4-E4B-it) | running on the robot's own small computer | 5.1B and 8.0B at the on-device sizes, up to 31B | Apache-2.0 on the weights | your own machine, down to a phone-class board | the planner sits on the robot, and the request arrives as speech |
+| Model | What decides it |
+| --- | --- |
+| [SayCan](https://say-can.github.io/), historical | There is nothing to deploy, because this is a method to read rather than a model to call: its size is not published, and the released sample code is Apache-2.0. It is the best entry here at refusing a step the robot cannot do from here. Read it when you need a second score for "can this work right now". |
+| [Code as Policies](https://code-as-policies.github.io/), historical | There is nothing to deploy here either, its size is not published, and the released sample code is Apache-2.0. It is the best entry here at plans that count, repeat and measure. Read it when the plan needs a loop or a distance in centimetres. |
+| [Claude Opus 5.5](https://docs.claude.com/en/api/messages), most used in 2026 | It runs on Anthropic's computers as a paid service, so the weights are not distributed and the size is not published. It writes the hardest plans, from words alone. Pick it when the planning job is text only, and a network call per plan is acceptable. |
+| [Gemini Robotics ER 2](https://ai.google.dev/gemini-api/docs/robotics-overview), most used in 2026 | It runs on Google's computers as a preview service, so the weights are not distributed and the size is not published. It is the best model here at planning from a picture or a video, and at calling your own robot functions. Pick it when the planner must look at the camera and check its own steps. |
+| [Qwen3.5](https://huggingface.co/Qwen/Qwen3.5-4B), most used in 2026 | It runs on your own machine, in sizes of 0.87, 2.3, 4.7 and 9.7 billion parameters and larger, with Apache-2.0 on the weights. It is the best model here at giving a usable plan with no network at all. Pick it when the robot must keep working offline, or when nothing may leave the building. |
+| [Gemma 4](https://huggingface.co/google/gemma-4-E4B-it), worth betting on | It also runs on your own machine, down to a phone-class board, at 5.1 and 8.0 billion parameters in its on-device sizes and up to 31 billion, with Apache-2.0 on the weights. It is the best model here at running on the robot's own small computer. Pick it when the planner sits on the robot, and the request arrives as speech. |
 
 ### 5.1 SayCan
 

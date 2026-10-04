@@ -108,12 +108,22 @@ patch. This is what helps it use clues from the whole picture at once, such as
 where the floor meets the wall.
 
 Then the second part is a **decoder**, which turns those numbers back into a
-picture of the original size, with one distance per pixel.
+picture of the original size, with one distance per pixel. Depth Anything V2, which
+section 5.1 recommends, is an encoder and a decoder in exactly this arrangement.
 
 The model works from clues it learned in training. For example, things higher in
 the picture are often further away, a thing that covers another thing is nearer,
 and parallel lines, such as the edges of a table, get closer together as they go
 away. Known objects, such as mugs and doors, also have typical sizes.
+
+The shortlist in section 5 holds two variations on this shape, and both change what
+goes in rather than how the network is built. Prompt Depth Anything, in section
+5.3, takes the coarse depth image from a depth camera as a second input, and those
+real measurements steer the model to an answer in metres instead of an order. Depth
+Anything 3, in section 5.2, passes several photos of the same scene through one
+encoder together, so it gives depth for all of them and also works out where each
+photo was taken from. One photo on its own still works, and the further photos only
+add to what the model has to go on.
 
 ### Two photos
 
@@ -142,6 +152,11 @@ The steps of a stereo model are these four.
 Step 4 is why stereo gives real metres, because the model does not guess the scale
 at all: the scale comes from the measured gap between the cameras.
 
+RAFT-Stereo, which section 5.4 recommends, is built from these four steps, and it
+repeats step 3 in many small rounds rather than doing it once. FoundationStereo, in
+section 5.5, follows the same four steps, and what sets it apart is the breadth of
+its training rather than a different recipe.
+
 ### Filling holes
 
 Instead of guessing or matching, a depth completion model gets two inputs: the
@@ -158,6 +173,11 @@ around the glass, so it fills in the glass as a surface standing on that table.
 
 The depth camera returns nothing on most of the glass (red), and the completion
 model fills that area with a sensible distance.
+
+ReMake, which section 5.6 recommends, is the completion model on this page, and it
+needs one more input than the two described here, because you also give it an
+outline of the object. The transparent variant of Prompt Depth Anything does a
+similar job from the colour photo and the sensor's depth alone.
 
 ---
 
@@ -203,21 +223,22 @@ MiDaS, from Intel in 2019, proved that one network could give relative depth for
 almost any photo, and ZoeDepth was its metric follow-up. Both repositories now
 carry the "Public archive" label on GitHub, so nobody is fixing them.
 
-The table compares the six models below. Read each row as one model: what it is
-for, how large it is, the licence of the weights rather than of the code, and when
-to pick it. A **parameter** is one of the numbers inside the network, and the
+The table compares the six models below. The left column names the model and says
+how current it is. The right column holds everything you weigh up: what the model
+gives you, how large it is, the licence of the weights rather than of the code, and
+when to pick it. A **parameter** is one of the numbers inside the network, and the
 counts come from the files Hugging Face serves and from the Depth Anything 3 model
-card. Where a model ships in several sizes under different licences, the row says
-so, because that is the detail people get wrong most often.
+card. Where a model ships in several sizes under different licences, the right
+column says so, because that is the detail people get wrong most often.
 
-| Model | What it gives you | Size | Weights licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| Depth Anything V2 | relative depth from one photo | 24.8 million small; 97.5 million base | Apache-2.0 small; CC BY-NC 4.0 base and larger | you have one colour camera and need order, not metres |
-| Depth Anything 3 | relative or metric depth, from one photo or several | 0.08 to 1.4 billion by size | Apache-2.0 for Small, Base, `DA3METRIC-LARGE`, `DA3MONO-LARGE`; CC BY-NC 4.0 for Large, Giant, Nested | you need metric depth and you have to ship it |
-| Prompt Depth Anything | metric depth from one photo plus a coarse depth image | 25.1 million | Apache-2.0 | you already have a depth sensor and want its reading sharpened |
-| RAFT-Stereo | metric depth from two photos | not stated | MIT | you can mount two cameras and measure the gap between them |
-| FoundationStereo | metric depth from two photos, on scenes it never saw | not stated | NVIDIA, non-commercial | you are doing research, not shipping |
-| ReMake | depth for clear and shiny objects a sensor cannot see | not stated | MIT | your objects are glass or chrome |
+| Model | What decides it |
+| --- | --- |
+| **Depth Anything V2**, most used in 2026 | Relative depth from one photo, with 24.8 million parameters in the small size and 97.5 million in the base size. The small weights are Apache-2.0, while the base and larger weights are CC BY-NC 4.0. Pick it when you have one colour camera and need order, not metres. |
+| **Depth Anything 3**, worth betting on | Relative or metric depth, from one photo or several, in sizes from 0.08 to 1.4 billion parameters. Small, Base, `DA3METRIC-LARGE` and `DA3MONO-LARGE` are Apache-2.0, while Large, Giant and Nested are CC BY-NC 4.0. Pick it when you need metric depth and you have to ship it. |
+| **Prompt Depth Anything**, worth betting on | Metric depth from one photo plus a coarse depth image, with 25.1 million parameters, under Apache-2.0. Pick it when you already have a depth sensor and want its reading sharpened. |
+| **RAFT-Stereo**, most used in 2026 | Metric depth from two photos, under the MIT licence. Its size is `not stated`. Pick it when you can mount two cameras and measure the gap between them. |
+| **FoundationStereo**, worth betting on | Metric depth from two photos, including scenes it never saw, under an NVIDIA licence that is non-commercial. Its size is `not stated`. Pick it when you are doing research, not shipping. |
+| **ReMake**, worth betting on | Depth for clear and shiny objects a sensor cannot see, under the MIT licence. Its size is `not stated`. Pick it when your objects are glass or chrome. |
 
 ### 5.1 Depth Anything V2
 

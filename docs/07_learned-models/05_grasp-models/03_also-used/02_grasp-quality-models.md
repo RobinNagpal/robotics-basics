@@ -86,6 +86,9 @@ or on all 200 together in one batch.
 Since the last section described the scorer only from the outside, this section
 opens it up. The best-known design is Dex-Net's **grasp quality convolutional
 neural network (GQ-CNN)**, and it works in four steps.
+[Section 5.1](#51-dex-nets-gq-cnn-the-design-everything-else-argues-with) describes
+GQ-CNN as a model and marks it historical, because it is the clearest way to see the
+design and not the one to run today.
 
 1. **Cut out a patch.** Code cuts a small square out of the depth picture, centred
     on the candidate grasp's centre.
@@ -116,7 +119,19 @@ point cloud rather than a depth picture. Code takes the points that lie between 
 gripper's fingers, turns them into the gripper's own frame, and passes them to a
 point cloud network. The
 [point cloud models](../../04_3d-models/02_most-used/01_point-cloud-models.md) page
-explains those networks in detail.
+explains those networks in detail. There are two ways to finish that step, and
+section 5 recommends one model of each. GPD draws those points as a small picture
+first and scores the picture, which
+[section 5.2](#52-gpd-the-scorer-you-are-allowed-to-sell) covers, while PointNetGPD
+passes the points themselves to the network, which
+[section 5.3](#53-pointnetgpd-scoring-the-raw-points-instead-of-a-picture-of-them)
+covers.
+
+One model in section 5 scores something else again. QT-Opt, in
+[section 5.5](#55-qt-opt-what-real-robot-labels-cost), scores a small movement of the
+arm rather than a finished grasp, so its number says how good it would be to move
+the gripper a little in one direction. It is in the list for what its training data
+cost rather than as a design to copy.
 
 ### Where the candidates come from
 
@@ -128,7 +143,9 @@ them can feed the same scorer.
     can pick pairs of points on the object's edge that face each other so that both
     jaws would press straight in. Book 3's
     [antipodal test](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#3-friction-cones-and-the-antipodal-test)
-    explains this check.
+    explains this check. GPD carries a sampler of this kind in the same program as
+    its scorer, which is why section 5 recommends it to anybody who has no sampler
+    of their own.
 - A better sampler refines the best candidates instead of stopping after one round,
     so code samples some candidates and scores them, and then samples new
     candidates near the best ones and scores those as well. After a few rounds the
@@ -136,7 +153,11 @@ them can feed the same scorer.
     **cross-entropy method**.
 - The candidates can also come from another model, so that a
     [6-DoF grasp model](../02_most-used/01_six-dof-grasps.md) proposes the
-    candidates and the quality model then re-scores them.
+    candidates and the quality model then re-scores them. The newest scorers are
+    trained in that arrangement from the start, beside the model that proposes the
+    candidates rather than on their own, and GraspGen's discriminator in
+    [section 5.4](#54-graspgens-discriminator-the-modern-scorer-inside-a-generator)
+    is the example to take apart.
 
 ---
 
@@ -203,21 +224,23 @@ is whether a grasp quality model is something you run or something you understan
 Two of these five are something you run on their own, one is something you run
 inside a bigger model, and two are something you only read about.
 
-Read the table one row at a time. The second column says what the model is given and
-what it gives back, because that differs more here than in any other family. The
-third says how big the model is and what hardware it needs. The licence column is
-the licence on the code, and Book 3's
+Read the table one row at a time. The left column names the model, the year it was
+published and how current it is, and the two rows marked historical are the two you
+only read about. The right column holds everything else: what the model is given and
+what it gives back, how big it is and what hardware it needs, the licence on its
+code, and the one condition that should make you choose that row. What a model is
+given comes first in that column, because it differs more here than in any other
+family. Each licence is the licence on the code, and Book 3's
 [models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md)
-read each one from the project's own licence file in September 2026. The last column
-gives the one condition that should make you choose that row.
+read every one of them from the project's own licence file in September 2026.
 
-| Model | What it scores | Size, and what it needs | Code licence | Pick it when |
-| --- | --- | --- | --- | --- |
-| [GQ-CNN](https://github.com/BerkeleyAutomation/gqcnn), from Dex-Net 2.0 (2017) | one top-down grasp, from a 96 by 96 depth patch | four convolutional layers of 16 filters and two fully connected layers of 128; TensorFlow 1.15 or below | University of California Regents: education, research and not-for-profit use only | you are reproducing Dex-Net, or learning the design it started |
-| [GPD](https://github.com/atenpas/gpd) (2017) | one six-degree-of-freedom candidate, from the points between the jaws | a small network in C++; no graphics card required | BSD-2-Clause | you need a scorer you can sell, on a machine with no NVIDIA card |
-| [PointNetGPD](https://github.com/lianghongzhuo/PointNetGPD) (2019) | one candidate, from 500 raw points between the jaws | a small point cloud network in PyTorch | MIT | your point cloud is sparse, or you want to retrain the scorer yourself |
-| [GraspGen](https://github.com/NVlabs/GraspGen)'s discriminator (2025) | many six-degree-of-freedom grasps against one object's point cloud | not stated; needs an NVIDIA graphics card | NVIDIA License, non-commercial; weights under the NVIDIA Open Model License | you already run GraspGen and want it to rank candidates of your own |
-| QT-Opt (2018) | a small movement of the arm, rather than a finished grasp | not stated; no code or weights were published | not stated | never; read it to see what labels from real robots cost |
+| Model | What decides it |
+| --- | --- |
+| [**GQ-CNN**](https://github.com/BerkeleyAutomation/gqcnn), from Dex-Net 2.0 (2017), historical | It scores one top-down grasp, from a 96 by 96 depth patch. It is four convolutional layers of 16 filters and two fully connected layers of 128, and it needs TensorFlow 1.15 or below. Its code licence is a University of California Regents grant for education, research and not-for-profit use only. Pick it when you are reproducing Dex-Net, or learning the design it started. |
+| [**GPD**](https://github.com/atenpas/gpd) (2017), most used in 2026 | It scores one six-degree-of-freedom candidate, from the points between the jaws. It is a small network in C++, and it requires no graphics card. Its code licence is BSD-2-Clause. Pick it when you need a scorer you can sell, on a machine with no NVIDIA card. |
+| [**PointNetGPD**](https://github.com/lianghongzhuo/PointNetGPD) (2019), worth betting on | It scores one candidate, from 500 raw points between the jaws. It is a small point cloud network in PyTorch. Its code licence is MIT. Pick it when your point cloud is sparse, or when you want to retrain the scorer yourself. |
+| [**GraspGen**](https://github.com/NVlabs/GraspGen)'s discriminator (2025), worth betting on | It scores many six-degree-of-freedom grasps against one object's point cloud. Its size is `not stated`, and it needs an NVIDIA graphics card. The code is under the non-commercial NVIDIA License, and the weights are under the NVIDIA Open Model License. Pick it when you already run GraspGen and want it to rank candidates of your own. |
+| **QT-Opt** (2018), historical | It scores a small movement of the arm, rather than a finished grasp. Its size is `not stated`, and no code or weights were published, so its licence is `not stated` as well. Never pick it, and read it instead to see what labels from real robots cost. |
 
 ### 5.1 Dex-Net's GQ-CNN, the design everything else argues with
 

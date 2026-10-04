@@ -110,7 +110,16 @@ The picture shows the steps, and here they are in order.
 
 A point is written in the same way as any other answer, because the model writes the
 digits of the two pixel numbers as ordinary tokens. It learned to do this from
-training examples that had points written as text.
+training examples that had points written as text. Some models are trained on far more
+of those examples than others, which is why [section 5.4](#54-molmo2-er) singles out one
+whose whole purpose is pointing.
+
+These five steps are the recipe LLaVA published in 2023, and [section 5.6](#56-llava) is
+about that paper. Every open model in [section 5](#5-well-known-models-of-this-kind) is
+built in this shape, with a larger vision encoder, a larger language model and far more
+training data. The one hosted model there, in [section
+5.3](#53-gemini-robotics-er-2), does not publish what is inside it, so the steps above
+describe the models you can download rather than that one.
 
 ---
 
@@ -156,22 +165,23 @@ model is given as its number of **parameters**, which are the adjustable numbers
 the network that training sets, and more parameters usually means a better answer from a
 bigger computer.
 
-Read the table one row at a time: the row names a model, says what it is best at, gives
-its size and its licence, says how current it is, and ends with the case for choosing
-it. The licence column gives the terms on the trained numbers, because those are what
-you download and keep. One model in the table has no such terms, because it is a hosted
+The table has two columns, so read a row from left to right as one sentence about one
+model. The left column names the model and says how current it is. The right column
+holds the size, the licence, what the model is best at, and the case for choosing it.
+The licence given is the terms on the trained numbers, because those are what you
+download and keep. One model in the table has no such terms, because it is a hosted
 service: you send your picture to somebody else's computer and pay for each answer, and
-there is nothing to download. A cell says `not stated` where nobody published the
+there is nothing to download. A row says `not stated` where nobody published the
 number.
 
-| Model | Best at | Size | Licence | How current | Pick it when |
-| --- | --- | --- | --- | --- | --- |
-| [Qwen3-VL](https://github.com/QwenLM/Qwen3-VL) | general questions about a picture | 2, 4, 8 and 32 billion, and larger | Apache-2.0 on the cards checked | most used in 2026 | you want one open model that is good at everything |
-| [SmolVLM2](https://huggingface.co/blog/smolvlm2) | yes-or-no checks on a laptop | 256 and 500 million, and 2.2 billion | Apache-2.0 | most used in 2026 | the robot's own computer has to answer the question |
-| [Gemini Robotics ER 2](https://ai.google.dev/gemini-api/docs/robotics-overview) | pointing, planning and watching video | not stated | hosted service, no weights | most used in 2026 | you want robot-specific answers and will pay per question |
-| [Molmo2-ER](https://huggingface.co/allenai/Molmo2-ER) | pointing at exact places | 4 billion | Apache-2.0 | worth betting on | you need points, from a model you run yourself |
-| [PaliGemma](https://arxiv.org/abs/2407.07726) | being the backbone of a robot policy | 3 billion | Gemma licence, which you must accept | historical | you are fine-tuning something built on it |
-| [LLaVA](https://arxiv.org/abs/2304.08485) | explaining how all of these are built | 7 and 13 billion, in its 1.5 release | Llama 2 licence on those weights | historical | you are reading the paper that started the recipe |
+| Model | What decides it |
+| --- | --- |
+| [Qwen3-VL](https://github.com/QwenLM/Qwen3-VL), most used in 2026 | It comes in sizes of 2, 4, 8 and 32 billion parameters and larger, under Apache-2.0 on the cards checked. It is the best model here at general questions about a picture. Pick it when you want one open model that is good at everything. |
+| [SmolVLM2](https://huggingface.co/blog/smolvlm2), most used in 2026 | It comes in sizes of 256 and 500 million parameters and 2.2 billion, under Apache-2.0. It is the best model here at yes-or-no checks on a laptop. Pick it when the robot's own computer has to answer the question. |
+| [Gemini Robotics ER 2](https://ai.google.dev/gemini-api/docs/robotics-overview), most used in 2026 | It is a hosted service, so there are no weights to licence and its size is not stated. It is the best model here at pointing, planning and watching video. Pick it when you want robot-specific answers and will pay per question. |
+| [Molmo2-ER](https://huggingface.co/allenai/Molmo2-ER), worth betting on | It has 4 billion parameters, under Apache-2.0. It is the best model here at pointing at exact places. Pick it when you need points, from a model you run yourself. |
+| [PaliGemma](https://arxiv.org/abs/2407.07726), historical | It has 3 billion parameters, under the Gemma licence, which you must accept. Its job today is being the backbone of a robot policy. Pick it when you are fine-tuning something built on it. |
+| [LLaVA](https://arxiv.org/abs/2304.08485), historical | Its 1.5 release came as a 7-billion and a 13-billion model, under the Llama 2 licence on those weights. It explains how all of these are built. Pick it when you are reading the paper that started the recipe. |
 
 ### 5.1 Qwen3-VL
 

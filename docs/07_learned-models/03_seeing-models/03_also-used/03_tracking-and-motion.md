@@ -22,11 +22,7 @@ three kinds of model: optical flow, point tracking and object tracking.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [A worked example: picking a box off a moving belt](#6-a-worked-example-picking-a-box-off-a-moving-belt)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -516,8 +512,7 @@ comparison of every patch with every patch is the expensive part rather than the
 weights. It sees two frames, so it reports no identity and no path. The thing that
 most often goes wrong is the picture size: the model needs a height and a width
 that divide by eight, and the second most common fault is using flow from a wrist
-camera without first removing the motion the arm itself caused, which
-[section 7](#7-what-goes-wrong) describes.
+camera without first removing the motion the arm itself caused.
 
 The library is torchvision, and the weights download on first use.
 
@@ -572,114 +567,12 @@ read
 and track positions in the robot's frame instead of boxes in the picture. And if
 what you need is the full position and rotation of a known object over time rather
 than its number,
-[FoundationPose](../02_most-used/04_keypoints-and-object-pose.md#5-well-known-models)
+[FoundationPose](../02_most-used/04_keypoints-and-object-pose.md#6-well-known-models)
 follows an object's six-number pose from frame to frame.
 
 ---
 
-## 6. A worked example: picking a box off a moving belt
-
-Tracking earns its place whenever the robot must act on a moving thing, so here
-is a worked example. A conveyor belt carries boxes past a robot arm, and the arm
-must pick each box as it passes without stopping the belt, while a camera above
-the belt films the boxes.
-
-1. A detector finds each box in each frame.
-2. An object tracker gives each box a number and keeps it the same while the box
-   moves along, which stops the robot from treating one box as a new box in every
-   frame.
-3. From the box's position in several frames, the tracker then works out its speed
-   along the belt.
-4. The robot picks the next box to grab, and predicts where that box will be in,
-   say, one second, when the gripper can get there.
-5. The arm moves to that predicted spot, matches the belt's speed for a moment, and
-   closes the gripper.
-6. The tracker keeps watching, so if the box stopped or slipped and the prediction
-   is wrong, the robot sees this in time and corrects its path, or else lets that
-   box go by.
-
-Point tracking fits other jobs instead, because when the arm folds a towel, a
-point tracker can follow the corners of the towel as they move and fold under
-each other, so the robot can then tell whether a corner ended up where it
-should. Some research systems go further, because they predict where points
-should move in a video of the task, and then move the arm to make them move that
-way. The [movement models chapter](../../06_movement-models/01_overview.md)
-covers how models choose arm motions.
-
----
-
-## 7. What goes wrong
-
-Useful as tracking is, it fails in a few common ways, and the list below gives
-them.
-
-- **Swapped identities.** Two similar objects pass close to each other, and the
-  tracker gives each one the other's number, so the robot then picks the wrong one.
-  People reduce this with a good predictor and by comparing how the objects look.
-- **Objects hidden too long.** A tracker keeps a hidden object for only a few
-  frames, so if the object stays hidden longer, it comes back with a new number.
-- **Fast motion and blur.** If an object moves a long way between frames, or the
-  picture is blurred, the models lose it, although a faster camera helps.
-- **The camera moves too.** On a wrist camera, the whole picture moves every time
-  the arm moves, so optical flow then shows motion everywhere. The robot must remove
-  the motion caused by its own arm, which it knows from its joint readings, before
-  it can see what really moved.
-- **Plain surfaces.** A flat white surface has nothing to follow, so flow and point
-  tracking get confused on it.
-- **Gaps between views.** SAM 2 and most trackers expect a smooth video, so if the
-  arm takes a photo, moves to a new place, and takes another photo, there is no
-  video in between and the tracker cannot bridge that gap. The deeper document
-  [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md#36-mask-propagation-in-video-and-where-sam-2-actually-fits)
-  explains this in detail.
-
----
-
-## 8. Why this kind, and what it costs
-
-Now that you have seen what tracking does and where it fails, this section answers
-four questions: what these models are, what they do for you, why you would choose
-them over the obvious alternative, and what they cost.
-
-Tracking models follow pixels, points or objects from one frame of a video to the
-next. So they give the robot both motion and identity. The robot can then tell how
-fast something is moving, predict where it will be, and know that the mug it sees
-now is the one it saw before.
-
-The obvious alternative is to run a detector on every frame and treat each frame
-alone, which is simpler and often enough when nothing on the table moves. However,
-it fails as soon as there are two similar objects, because the robot cannot tell
-which is which from one frame, and it also cannot see speed, because speed needs at
-least two frames. So tracking is worth adding when things move, when objects look
-alike, or when the robot must act on the same object over time.
-
-The costs are these. Optical flow and point tracking models need a GPU and add
-delay, because they must wait for at least one more frame. Then there is the
-risk that a tracker swaps identities without any warning, and most of them need
-a smooth video rather than a few separate photos. Finally, every tracker needs
-something else, either a detector or a click, to tell it what to follow in the
-first place.
-
----
-
-## 9. The written alternative
-
-Object tracking is already mostly written code, because a [Kalman
-filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
-predicts where each object will be, and [assignment and
-matching](../../../06_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md)
-decides which new box belongs to which object. So a tracker such as SORT needs
-no training beyond its detector. To follow one coloured object with no detector
-at all, the mean shift method on the
-[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
-page moves a window to the matching pixels in each new frame. The written way
-wins for a few objects that move smoothly, such as boxes on a belt, while the
-optical flow and point tracking models win when the robot must follow every
-pixel, or points on something that bends, such as a towel, and keep them through
-hidden spells.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Open-vocabulary models](../02_most-used/03_open-vocabulary-models.md) is the page before this
   one, and it shows where SAM 2 comes from, and how to choose the object to follow.

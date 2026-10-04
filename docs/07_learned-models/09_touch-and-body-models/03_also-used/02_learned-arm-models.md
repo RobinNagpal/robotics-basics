@@ -25,11 +25,7 @@ angle.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [A worked example: a heavier gripper on an old arm](#6-a-worked-example-a-heavier-gripper-on-an-old-arm)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this rather than the obvious alternative, and what it costs](#8-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -354,7 +350,7 @@ You supply the recording, the change in speed worked out from the recorded speed
 the clipping limit, which is a decision rather than a measurement. Keep the units the
 same on both sides of the subtraction, because a current in amperes minus a torque in
 newton metres is a mistake rather than a residual. Without joint torque sensors you
-train on motor current, with the accuracy cost section 7 describes.
+train on motor current, at a cost in accuracy.
 
 ### 5.3 An actuator network
 
@@ -522,9 +518,7 @@ linking.
 
 The obvious alternative is the residual network of 5.2, which is easier to train and
 faster to run on a recording you already have. The reason to read this family anyway is
-the error bar. Section 7 ends by saying that a learned correction gives no guarantee,
-and an error bar answers that directly: where the model has no data it says so, and the
-controller can shrink the correction instead of trusting it. To get that today you use
+the error bar. To get that today you use
 a Gaussian process in [GPyTorch](https://github.com/cornellius-gp/gpytorch) (MIT) or in
 [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html)
 (BSD-3-Clause) rather than the original libraries.
@@ -631,107 +625,7 @@ learned model does not help.
 - An error that really is one unknown number, such as the mass of a new gripper. Measure
   it or fit it, as in 5.1, rather than training a network to hide it.
 
-## 6. A worked example: a heavier gripper on an old arm
-
-Here is one arm and one upgrade, step by step. An arm has worked in a cell for
-several years. Then the team fits a new, heavier gripper with a tactile sensor on
-each finger. Two problems then appear. The arm follows its planned paths less exactly
-than before, and its collision detector gives false alarms during fast moves.
-
-1. The team keeps the maker's physics model, but adds the new gripper's mass.
-2. They run the arm through an hour of varied movements, with the gripper open and
-   empty, and record the joint angles, speeds and motor currents.
-3. They train a small network to predict the residual: the difference between the
-   torque the physics model gives and the torque the motors actually used.
-4. The network learns two things the physics model left out. The first is the
-   friction in each gearbox, which has grown with wear. The second is the pull of
-   the new gripper's cable, which drags on the last two joints.
-5. The controller now sends the physics torque plus the learned correction, so the
-   arm follows its paths more closely.
-6. The collision detector uses the same corrected prediction as its expected
-   torque. Its gap in normal work is now smaller, so the stop line can be set lower
-   without false alarms. Gentle bumps that it used to miss now cross the line.
-
-The model will need retraining when the gripper changes again, or when the wear
-changes the friction further. So the team schedules a short recording run every few
-months, and compares the new residual with the old one.
-
-## 7. What goes wrong
-
-The sections above described this kind of model at its best. This list gives the six
-things that go wrong in practice, and what people do about each one.
-
-- **Movements it has not seen.** A model trained on slow movements gives poor
-  answers for fast ones. So people collect varied data, and they keep a physics
-  model underneath so that the answer is never far off.
-- **Changes over time.** Friction changes as the arm warms up during the day, and
-  as the gearboxes wear over years. So people retrain from time to time, or they use
-  a method that learns while the arm runs.
-- **A payload it does not know about.** The model learned the arm with an empty
-  gripper, so a heavy object in the gripper changes the torques. People give the
-  model the payload's mass as an input, or they weigh the object first with the
-  wrist sensor.
-- **Motor current is not torque.** On arms without joint torque sensors, the model
-  learns from motor current, but current is only roughly proportional to torque,
-  because the friction in the gearbox sits between them. So people accept a coarser
-  model, or they use an arm that measures joint torque directly.
-- **Speed.** The controller needs a torque answer many hundreds of times a second,
-  and a large network may be too slow. So people use small networks for this job.
-  [Running a model on a robot](../../10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
-  explains the trade-off.
-- **No guarantee.** A learned correction can make things worse in an odd pose. A
-  controller that uses one should limit how large the correction may be.
-
-## 8. Why this rather than the obvious alternative, and what it costs
-
-The last section listed what goes wrong, so this section weighs those problems
-against the alternative. The obvious alternative is **a better physics model,
-identified from data**, and that is called **system identification**. You keep the
-textbook equations, and you measure the arm's real masses and friction numbers by
-running it through set movements and fitting the numbers. This is a well-established
-method, because it needs little data, its answers can be checked and it behaves
-sensibly everywhere. So it is the right first step, and it is often enough on its
-own.
-
-A learned model is worth adding when the effects left over do not fit the textbook
-equations. Friction that changes with speed and temperature, a cable that pulls
-differently in each pose, and a link that bends under load are all examples, because
-none of them is a simple number to fit. Instead, a network can learn them from the
-same recordings.
-
-A self-model is worth it in a different case, which is when the arm's shape is not
-known in advance or may change, such as a new or damaged robot. For a standard
-factory arm with an accurate description, it is not needed.
-
-What it costs you:
-
-- Recording time on the arm. It is cheap and safe, but it must be varied.
-- Retraining whenever the arm, its gripper or its wear changes.
-- A model that must run fast enough for the controller.
-- A model that gives no guarantee. Keep the physics model underneath, and limit the
-  size of the learned correction.
-
-## 9. The written alternative
-
-This page has argued for adding a learned correction, so the last question is what
-the written model alone gives you. The written alternative is the textbook model with
-its numbers measured on your own arm, which is the first alternative in section 8.
-Book 6's
-[arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
-explains the model.
-[System identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
-explains how to move the arm so that the data can tell the numbers apart, and how to
-fit them. The geometry calibration in section 3.4 is written code too: a fit of the
-kind that
-[least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
-explains.
-
-Because it needs little data and behaves sensibly everywhere, the written model wins
-as a first step, and it is often enough on its own. A learned correction wins only
-for effects that are not a simple number to fit, such as friction that changes with
-temperature, or a cable that pulls differently in each pose.
-
-## 10. Where to read next
+## 6. Where to read next
 
 In this chapter:
 

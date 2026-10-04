@@ -9,8 +9,8 @@ way and keeps the one with the best number.
 So the page answers these questions, one section at a time. Why would you split
 proposing a grasp from scoring it, and what does a quality model take in and give
 back? How does it work inside, and where do its millions of training examples come
-from? Which real models do this, what goes wrong with them, and what do they cost
-you?
+from? And which real models do this, which of them can you actually run, and which
+should you pick?
 
 It is for a reader who has already read the
 [grasp models overview](../01_overview.md). Because the grasps a quality model
@@ -26,11 +26,7 @@ explains the training loop that this page relies on.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [A worked example: a mug on a table](#6-a-worked-example-a-mug-on-a-table)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -268,8 +264,7 @@ What it costs you is the install and the licence. The code pins TensorFlow at 1.
 or below and names Python 3.5 to 3.7, so it needs an environment of its own, and the
 project has had no commits since January 2022. The licence is a University of
 California Regents grant for education, research and not-for-profit purposes only.
-The thing that most often goes wrong is not the code at all, and section 7 named it:
-the score is calibrated against the way the labels were made, which was a simulation
+The thing that most often goes wrong is not the code at all, and it is this: the score is calibrated against the way the labels were made, which was a simulation
 with an assumed friction and an assumed gripper, so a score of 0.8 does not mean
 that this grasp succeeds eight times in ten on your arm.
 
@@ -540,118 +535,14 @@ Three things change that choice.
     learned scorer at all. Compute the quality metric from the physics formulas in
     Book 3's
     [grasp quality metrics](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute),
-    which is exact and needs no training data. Section 9 below sets out that
-    comparison in full.
+    which is exact and needs no training data. 
 
-Whichever you pick, the sampler decides more than the scorer does, and section 7
-said why: a good scorer cannot choose a grasp nobody proposed. Spend your effort on
+Whichever you pick, the sampler decides more than the scorer does, and the reason is that a good scorer cannot choose a grasp nobody proposed. Spend your effort on
 the candidates before you spend it comparing scorers.
 
 ---
 
-## 6. A worked example: a mug on a table
-
-The sampler and the scorer are easier to follow once they run together. So in this
-example a depth camera looks down on a mug, and the arm has a parallel-jaw gripper.
-
-1. The camera takes one depth picture.
-2. The sampler finds pairs of edge points on the mug that face each other, and from
-    them it makes 100 candidate grasps.
-3. For each candidate, code cuts out a patch, turns it, and passes it together with
-    the gripper depth to the quality model, which gives back 100 scores.
-4. The sampler then makes 100 new candidates near the 10 best, and the model scores
-    those too, and this repeats three times.
-5. Code drops any candidate the arm cannot reach, or that is wider than the gripper
-    opens.
-6. The arm tries the candidate with the highest score that is left, and on the mug
-    in the picture above that is the grasp across the body, not the one on the
-    handle or the rim.
-7. If the grasp fails, the arm tries the next one down the list, and it does not
-    need to run the model again unless the mug moved.
-
----
-
-## 7. What goes wrong
-
-That worked example ran smoothly, but five things go wrong once a quality model
-meets objects it was not trained on.
-
-- It inherits the formula's blind spots, because a model trained on calculated
-    labels has only learned to copy a physics formula, so wherever that formula is
-    wrong the model is wrong in exactly the same way. Book 3's
-    [trap in the epsilon metric](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#92-the-trap-in-the-epsilon-metric)
-    shows one such case.
-- It can only pick from what it is shown, so if the sampler never proposes the best
-    grasp then the model cannot choose it, which means a good scorer with a poor
-    sampler still gives poor grasps.
-- It is slow when there are many candidates, because each candidate needs its own
-    run of the network, so a few hundred candidates is fine while a few hundred
-    thousand is not.
-- It can be sure and wrong, because a score of 0.95 is the model's guess rather
-    than a promise, and on a shape unlike anything in its training it may give a
-    high score to a grasp that fails. The
-    [running a model on a robot](../../10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#5-how-sure-the-model-is-and-why-it-can-be-sure-and-wrong)
-    page explains why.
-- It knows nothing about the task, because like every grasp model it scores only
-    whether the object stays in the gripper and nothing else.
-
-People reduce these problems in three ways, and most systems use all three. They
-use a good sampler, and they mix a few real robot attempts into the calculated
-training data. After that they add their own checks for reach, collisions and task
-rules, once the model has given its scores.
-
----
-
-## 8. Why this kind, and what it costs
-
-Since you have now seen what goes wrong, it is worth saying plainly what you get in
-return. A grasp quality model takes a picture and one candidate grasp, and gives
-back the chance that the grasp holds.
-
-What it does for you is choose well among many options, and it also lets you
-control which options exist at all. This is because you write the sampler yourself,
-rather than taking whatever another model offers. That means you can limit the
-candidates to grasps that suit your arm, your gripper and your task before the
-model ever sees them.
-
-The obvious alternative is to skip the network and compute the quality metric
-directly, using the formulas in Book 3's
-[grasp quality metrics](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute).
-Those formulas need a full 3D model of the object and its exact position. Instead,
-a quality model needs only one noisy depth picture of an object it has never seen,
-and that is the reason to choose it.
-
-The other alternative is a model that generates good grasps directly, such as a
-[top-down detector](01_top-down-grasp-detection.md) or a
-[6-DoF model](../02_most-used/01_six-dof-grasps.md). Those are faster, because they
-do not score candidates one by one. So a separate scorer earns its extra time only
-when you want to control the candidates yourself, or when you want a second opinion
-on another model's grasps.
-
-What it costs you is time and training data, because scoring hundreds of candidates
-takes longer than one pass of a generator. The training data itself needs either
-thousands of 3D object models or weeks of real robot time.
-
----
-
-## 9. The written alternative
-
-This is where Book 3 offers a written scorer in place of a learned one. Its [grasp
-quality
-metrics](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute)
-compute, from physics formulas, how much push or twist a grasp can resist, while
-its [antipodal
-test](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#3-friction-cones-and-the-antipodal-test)
-checks that the two contacts face each other. The sampler is written code in both
-cases, and its better version, the [cross-entropy
-method](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md#the-cross-entropy-method-narrow-the-search),
-is explained in Book 5. The formulas win when you have a full 3D model of the
-object and know exactly where it is. The quality model wins instead when you have
-only one noisy depth picture of an object it has never seen.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Six-degree-of-freedom grasps](../02_most-used/01_six-dof-grasps.md) covers the
     generators that most quality models are paired with today.
@@ -663,4 +554,3 @@ only one noisy depth picture of an object it has never seen.
     explains the physics formulas behind calculated labels.
 - Book 3's [models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md)
     lists the code and licences for Dex-Net and GPD.
-

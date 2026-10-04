@@ -19,24 +19,16 @@ fast enough for a live camera.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Two stages: first guess the places, then check each one](#two-stages-first-guess-the-places-then-check-each-one)
-   · [One stage: look once, answer for every cell](#one-stage-look-once-answer-for-every-cell)
-   · [Cleaning up the extra boxes](#cleaning-up-the-extra-boxes)
-   · [Transformers: a fixed set of answers](#transformers-a-fixed-set-of-answers)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-   · [Ultralytics YOLO26](#51-ultralytics-yolo26)
-   · [RT-DETR](#52-rt-detr)
-   · [RF-DETR](#53-rf-detr)
-   · [D-FINE](#54-d-fine)
-   · [Faster R-CNN](#55-faster-r-cnn)
-   · [DETR](#56-detr)
-   · [How to choose](#57-how-to-choose)
-6. [Where it is used on a robot arm](#6-where-it-is-used-on-a-robot-arm)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why detection, and what it costs](#8-why-detection-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 Ultralytics YOLO26](#51-ultralytics-yolo26)
+   · [5.2 RT-DETR](#52-rt-detr)
+   · [5.3 RF-DETR](#53-rf-detr)
+   · [5.4 D-FINE](#54-d-fine)
+   · [5.5 Faster R-CNN](#55-faster-r-cnn)
+   · [5.6 DETR](#56-detr)
+   · [5.7 How to choose](#57-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -317,8 +309,8 @@ the picture, runs the network, and runs the non-maximum suppression of [section
 3](#3-how-it-works-inside) for you. It can also skip that cleanup step, because the
 documentation describes a second head that you select with `nms=False` and that
 returns at most 300 boxes with no suppression pass. What you still have to write is
-everything after the box, which is [section
-6](#6-where-it-is-used-on-a-robot-arm).
+everything after the box, which is section
+6.
 
 ### 5.2 RT-DETR
 
@@ -594,132 +586,7 @@ lists more detectors, each with the licence read from its own licence file.
 
 ---
 
-## 6. Where it is used on a robot arm
-
-The clearest way to see where a detector fits on a robot arm is a worked example,
-so here is one: picking a cup from a table.
-
-1. A camera above the table takes a picture. The camera is a depth camera, so every
-   pixel also has a distance.
-2. The detector finds three boxes: two with the class "cup", and one with the class
-   "bottle".
-3. The program throws away boxes below its threshold and keeps only the class
-   "cup", and then picks the cup with the highest confidence.
-4. It takes the middle pixel of that box.
-5. It reads the distance at that pixel from the depth picture. With the camera's
-   known lens settings, it turns the pixel and the distance into a point in 3D, in
-   metres. Book 2 explains this step in
-   [adding depth: from a pixel to metres](../../../02_perception/01_camera/02_finding-objects.md#4-adding-depth-from-a-pixel-to-metres).
-6. It turns that point from the camera's frame into the arm's frame, using the
-   camera's known position.
-7. The arm moves its gripper above the point, lowers it, and closes it.
-
-This works well for round cups standing apart, because the middle of the box is
-also the middle of the cup. However, it works less well for a mug with its handle
-to one side, since the middle of the box is then a little off the middle of the
-mug. The [segmentation](02_segmentation.md) page shows how an outline fixes this.
-
-Other common uses on an arm:
-
-- Counting objects, or checking that every part is in its tray.
-- Telling the robot which object to pick first, for example the nearest.
-- Giving a rough box to another model, so that a segmentation model can turn the
-  box into an outline, and a grasp model can look for grasps only inside the box.
-- Following objects on a moving belt, by detecting them in each picture. The page
-  [tracking and motion](../03_also-used/03_tracking-and-motion.md) covers this.
-
----
-
-## 7. What goes wrong
-
-Even a well-trained detector fails in a few common ways, and each one of them has a
-usual fix.
-
-First, it misses objects it was not trained on, so a COCO detector knows "cup"
-but not "brake disc". Instead of merely being worse on unknown objects, it
-usually finds nothing at all. Book 2 shows this in [a model only knows what it
-was trained
-on](../../../02_perception/01_camera/02_finding-objects.md#54-a-model-only-knows-what-it-was-trained-on).
-The fix is fine-tuning on your own objects, or an [open-vocabulary
-model](03_open-vocabulary-models.md) that finds objects from a word.
-
-Second, it misses objects that are partly hidden or that touch each other,
-because when cups stand in a tight group the cleanup step may merge two of them
-into one box. So the fix is to include such crowded scenes in the training
-pictures, or to use a detector without the cleanup step.
-
-Third, it misses small objects, because a screw that covers 10 by 10 pixels gives
-the network very little to work with. The fix is to move the camera closer, or to
-use a higher resolution picture.
-
-Fourth, it struggles with see-through and shiny objects, because a glass or a
-polished metal part looks different from every angle. The fix is more training
-pictures of such objects, taken from many angles and in varied light.
-
-Finally, its boxes do not fit tilted or long objects, so a pen lying at an angle
-gets a large box that is mostly table. That box then says very little about which
-way the pen points. Some detectors can give turned boxes instead, while others use
-[segmentation](02_segmentation.md) or [keypoints](04_keypoints-and-object-pose.md).
-
----
-
-## 8. Why detection, and what it costs
-
-Now that you have seen what a detector does and where it fails, this section
-answers the four questions for it: what it is, what it does for you, why it rather
-than the obvious alternative, and what it costs.
-
-It is a network that gives a box, a name and a confidence for every object it
-knows. So it tells the robot what is on the table, how many of each there are, and
-roughly where each one stands.
-
-The first obvious alternative is a hand-written colour rule, and Book 2 shows
-one in [finding it by
-colour](../../../02_perception/01_camera/02_finding-objects.md#3-finding-it-by-colour).
-A colour rule needs no training and runs very fast. However, it only works when
-each object has one known colour that nothing else shares. A detector, for
-example, can tell a white mug from a white bowl, which a colour rule cannot do
-at all.
-
-The second obvious alternative is [segmentation](02_segmentation.md), which
-gives the exact outline instead of a box. An outline tells the robot more, but
-labelling outlines takes much longer than drawing boxes, and segmentation models
-are usually slower. So choose a detector when a box is enough to pick the
-object, for example round or boxy objects that stand apart, and choose
-segmentation when the shape matters.
-
-The costs are these. You need labelled pictures of your own objects, with a box
-drawn around every one of them. Then you also need a computer that can run the
-network on each camera picture. A small detector runs on an ordinary processor,
-while a large one wants a graphics card. Then you need to choose a threshold, and
-to accept that some objects will be missed and some boxes will be wrong. Finally,
-you need to check the licence of the model and its trained weights before you ship
-your robot.
-
----
-
-## 9. The written alternative
-
-A trained network is not the only way to find an object, because Book 5 finds
-objects with written rules instead. First, [thresholding and colour
-masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
-marks the pixels that have a chosen colour, or the points that stand above the
-table in a depth picture. Then
-[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
-splits those pixels or points into separate objects, and gives each one a box
-and a centre. For one known object with printing on it, such as a boxed product,
-[image features and
-matching](../../../06_programming-techniques/03_searching-and-matching/03_also-used/01_image-features-and-matching.md)
-finds it by matching small spots against a stored picture. The written way wins
-in a cell you control, for example parts in colours nothing else shares,
-standing apart on a plain table, because it needs no labelled pictures and gives
-the same answer every time. The detector wins when there are many kinds of
-object, when colours are shared or the light changes, and when the robot must
-say what each object is, which a threshold cannot do.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - The next page is [segmentation](02_segmentation.md), which replaces the box with
   the exact outline of each object.

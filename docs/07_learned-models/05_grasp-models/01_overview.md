@@ -198,7 +198,7 @@ that gap leaves out.
 So the usual answer is to treat the model's grasps as suggestions rather than
 decisions. Other checks then throw away the ones that are unreachable, that would
 hit something, or that break a rule about the task. The
-[six-degree-of-freedom page](02_most-used/01_six-dof-grasps.md#7-what-goes-wrong)
+six-degree-of-freedom page
 shows this filtering in a picture, while Book 3's
 [models that grasp](../../03_frameworks/02_gripping/04_models-that-grasp.md#9-using-a-model-as-a-candidate-generator)
 gives the checks in order.

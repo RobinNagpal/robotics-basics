@@ -24,11 +24,7 @@ to train a model on examples.
 4. [How it works inside](#4-how-it-works-inside)
 5. [How it is trained](#5-how-it-is-trained)
 6. [Well-known models](#6-well-known-models)
-7. [A worked example: carrying a wet mug](#7-a-worked-example-carrying-a-wet-mug)
-8. [What goes wrong](#8-what-goes-wrong)
-9. [Why this rather than the obvious alternative, and what it costs](#9-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
-10. [The written alternative](#10-the-written-alternative)
-11. [Where to read next](#11-where-to-read-next)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -294,8 +290,7 @@ short list of hand-made numbers that captures it, so when the window holds pictu
 there is nothing to compare against.
 
 What it costs you is data, a graphics card if the window holds pictures, and any
-explanation of why it answered as it did. The failure that matters most is the one in
-section 8: the answer arrives after the mug has gone. A bigger network is slower and a
+explanation of why it answered as it did. The failure that matters most is this: the answer arrives after the mug has gone. A bigger network is slower and a
 longer window delays the answer directly, so both have to be timed on the computer that
 will sit next to the arm.
 
@@ -516,105 +511,7 @@ Its maker publishes neither a price nor a slip-detection delay, and a search of 
 for its name in October 2026 returns two small research repositories, the larger with
 three stars. So even the bought answer leaves you writing the software side yourself.
 
-## 7. A worked example: carrying a wet mug
-
-Here is one grip on a wet mug from start to finish. A two-finger gripper with a gel
-sensor on each pad carries a mug that has just come out of a sink, and the outside
-is wet, so the friction is low.
-
-1. The fingers close, and the tactile model says the contact is centred. The program
-   then reads the weight from the wrist sensor and chooses a gentle squeeze.
-2. The arm lifts, and the slip model sees a jolt in the force. Because it has seen
-   many lift jolts in training, it says "no slip".
-3. The arm starts to move the mug sideways, and that movement adds a sideways push.
-   So the dots at the rim of the contact start to slide, and the slip model gives a
-   high number for slip.
-4. The program responds. It first slows the arm down, because the slip started when
-   the arm sped up. It also squeezes a little harder, after checking that the new
-   force is still below the most the mug can take.
-5. The dots stop sliding, so the slip model's number drops, and the arm carries on
-   more slowly.
-
-Without the model, the first sign of trouble would be the mug hitting the floor. The
-order of the responses in step 4 comes from Book 3's
-[holding on](../../../03_frameworks/02_gripping/05_holding-on.md#52-the-five-responses-in-order-of-cost)
-, which lists the responses from cheapest to most expensive.
-
-## 8. What goes wrong
-
-The sections above described this kind of model at its best. This list gives the
-five things that go wrong in practice, and what people do about each one.
-
-- **Jolts that look like slip.** Closing, lifting and stopping all shake the
-  signal, so a model that has not seen enough of them calls them slip. People
-  therefore add many jolt examples to the training set, all marked "no slip".
-- **Objects unlike the training set.** A slip on soft foam looks different from a
-  slip on glass, so a model trained on hard objects may miss slips on soft ones.
-  People therefore train on as wide a range of surfaces as they can.
-- **Watching the wrong sensor.** A slip model reading the gripper's finger position
-  cannot see an object sliding down between the pads, because the gap between the
-  fingers does not change. It also cannot see an object turning between the pads.
-  [Holding
-  on](../../../03_frameworks/02_gripping/05_holding-on.md#41-the-finger-gap-check-and-what-it-cannot-see)
-  explains why. No amount of training fixes a sensor that cannot observe the event,
-  so people use shear, vibration or a wrist torque reading instead.
-- **Too slow to help.** If the model needs a long window, or runs on a slow
-  computer, the answer may come after the object has gone. So people measure the
-  time from slip to answer on the real robot, and not only the accuracy.
-- **Missing readings.** If the sensor stops sending readings, a careless program
-  treats the silence as "no slip". A missing reading must be treated as unknown,
-  and the program should stop or refuse, as [never fall back
-  silently](../../../03_frameworks/02_gripping/05_holding-on.md#9-never-fall-back-silently)
-  explains.
-
-## 9. Why this rather than the obvious alternative, and what it costs
-
-The last section listed what goes wrong, so this section weighs those problems
-against the alternatives. The obvious alternative is **a fixed rule on the force
-signal**, for example "if the sideways force is more than half the straight-in
-force, call it slip". This rule comes from the simple physics of friction, so it
-needs no data, it is easy to check, and it is right for many rigid objects.
-However, it needs the friction number of the pad and the object together, which you
-rarely know and which changes when the surface is wet or dusty. It also cannot tell
-a jolt from a slip.
-
-A second alternative is **a second look with a camera** after the grip. After the
-lift, a wrist camera takes a picture and checks that the object has not moved, and
-this needs no extra hardware and catches every kind of movement. However, it only
-works after the movement has happened, so it cannot catch a slip in time to stop it.
-
-So a learned slip model is worth it when the rule fails because friction is unknown
-or changing, and when the answer is needed before the object moves far. Wet, oily,
-dusty or unfamiliar objects are the main cases.
-
-What it costs you:
-
-- A sensor that can see slip, which means a tactile sensor, a fast force sensor on
-  the pad, or a vibration sensor, because the gripper's own finger position is not
-  enough.
-- A training set of deliberate slips, which takes many hours of robot time.
-- Your own software, since there is almost none to download.
-- Testing for speed on the real robot, not only for accuracy.
-- No guarantee. The model can miss a slip it has never seen. A program should
-  still confirm, with the wrist sensor, that the object has the expected weight
-  before a long carry.
-
-## 10. The written alternative
-
-This page has argued for learning the model, so the last question is when a written
-rule is enough. The written alternative is the fixed rule in section 9, built with
-the tools in Book 6's
-[sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
-. That page shows how to smooth a force reading, find how fast it is changing, and
-turn it into a flag that does not flicker on and off. Book 3's
-[slip, and the checks that cannot fire](../../../03_frameworks/02_gripping/05_holding-on.md#4-slip-and-the-checks-that-cannot-fire)
-explains which sensors can see slip at all.
-
-The written rule wins for rigid objects with a known, steady friction, because it
-needs no data and is easy to check. The slip model wins when the friction is unknown
-or changing, as with wet, oily or dusty objects.
-
-## 11. Where to read next
+## 7. Where to read next
 
 In this chapter:
 

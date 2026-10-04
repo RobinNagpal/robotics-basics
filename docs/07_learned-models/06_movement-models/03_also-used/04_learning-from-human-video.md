@@ -21,14 +21,10 @@ those commands. Every new word is explained where it first appears.
 1. [What it is](#1-what-it-is)
 2. [What a human video has, and what it lacks](#2-what-a-human-video-has-and-what-it-lacks)
 3. [The four ways to use it](#3-the-four-ways-to-use-it)
-4. [A worked example: one frame of a pinch, turned into a gripper command](#4-a-worked-example-one-frame-of-a-pinch-turned-into-a-gripper-command)
-5. [Latent actions: learning actions without labels](#5-latent-actions-learning-actions-without-labels)
-6. [Where it is used on a robot arm](#6-where-it-is-used-on-a-robot-arm)
-7. [Well-known models and libraries](#7-well-known-models-and-libraries)
-8. [The gap between a hand and a gripper](#8-the-gap-between-a-hand-and-a-gripper)
-9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [The written alternative](#10-the-written-alternative)
-11. [Where to read next](#11-where-to-read-next)
+4. [Latent actions: learning actions without labels](#4-latent-actions-learning-actions-without-labels)
+5. [The gap between a hand and a gripper](#5-the-gap-between-a-hand-and-a-gripper)
+6. [Well-known models and libraries](#6-well-known-models-and-libraries)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -126,64 +122,7 @@ because they are a separate kind of model.
 
 ---
 
-## 4. A worked example: one frame of a pinch, turned into a gripper command
-
-The second of the four ways was retargeting, and this example follows one frame
-of a video through it. A person pinches the handle of a mug between the thumb
-and the first finger. The numbers are made up, but the arithmetic was run in
-Python, so the results below are copied from that run.
-
-1. **Find the hand.** A hand pose estimator such as MediaPipe Hands gives 21 points
-   per hand, where point 0 is the wrist, point 4 is the tip of the thumb, and point 8
-   is the tip of the first finger, called the index finger. A 3D estimator such as
-   HaMeR also gives how far each point is from the camera.
-2. **Read the two fingertips, in the camera's frame.** A **frame** here means a set
-   of directions to measure in, and the camera measures sideways (x), downwards (y)
-   and forwards from the lens (z), in metres. The thumb tip is at (0.020, 0.150,
-   0.520), and the index tip is at (0.075, 0.140, 0.505).
-3. **Move them into the robot's frame.** The robot measures from its own base, which
-   is forwards (x), to its left (y) and up (z). Calibration, the step that measures
-   where the camera is, found that the camera sits at (0.10, 0, 0.60) in the robot's
-   frame, looking forwards. So the camera's forwards is the robot's forwards, the
-   camera's sideways is the robot's right, and the camera's down is the robot's
-   down. The thumb tip therefore becomes (0.620, −0.020, 0.450), and the index tip
-   becomes (0.605, −0.075, 0.460). The
-   [rigid transforms page](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
-   explains this step in full.
-4. **Place the gripper between the two tips.** The gripper's centre goes to the
-   midpoint of the two tips, which is (0.613, −0.048, 0.455) metres, rounded to the
-   nearest millimetre.
-5. **Turn the pinch into an opening.** The distance between the two tips is 57.9 mm,
-   so the gripper is told to open to 57.9 mm. This gripper opens to at most 80 mm, so
-   any wider pinch is cut down to 80 mm.
-6. **Check that the arm can get there.** The gripper's centre is 0.764 m from the
-   robot's base, and the made-up arm here reaches 0.85 m, so this frame is reachable.
-
-![Left: 21 hand points with the thumb tip, index tip and wrist marked. Right: a two-finger gripper opened to 57.9 mm, centred between the two tips](../../../images/movement-models/learning-from-human-video/hand-to-gripper.svg)
-
-The left picture shows the 21 points, numbered in the order MediaPipe Hands
-uses, and the dashed line is the pinch. The right picture shows the gripper
-command that the pinch becomes. So if you repeat this for every frame, the video
-becomes a list of gripper positions and openings, and that list can be used like
-a robot demonstration.
-
-But a real video is not as clean as one frame, because the tracker is noisy and
-fingers get hidden.
-
-![A graph over four seconds: the tracker's pinch distance is noisy, goes above 80 mm and drops to near zero for a moment; the cleaned gripper command follows it smoothly](../../../images/movement-models/learning-from-human-video/pinch-over-time.svg)
-
-The grey line is the pinch distance from the tracker over a made-up four-second
-grasp, and it wobbles from frame to frame. It goes above 80 mm when the hand
-opens wider than the gripper can. Then just after 2 seconds it drops to near
-zero for four frames, because the hand turned and hid the index finger. The blue
-line is the command after two cleaning steps. First, each value is replaced by
-the middle value of the nine frames around it, which removes short jumps.
-Second, the result is cut to between 0 and 80 mm. Without the first step, the
-gripper would squeeze hard on the mug for a moment, for no reason at all.
-
----
-
-## 5. Latent actions: learning actions without labels
+## 4. Latent actions: learning actions without labels
 
 The third of the four ways needs no hand tracker at all. The word **latent**
 means hidden, because the model finds the actions itself, and nobody ever labels
@@ -224,38 +163,59 @@ which is the only openly published one.
 
 ---
 
-## 6. Where it is used on a robot arm
+## 5. The gap between a hand and a gripper
 
-Sections 3 to 5 described the methods, and this section says where each one is
-actually used.
+The tools in section 7 all work, so the hard part is not the models themselves.
+Instead it is that a hand is not a gripper, and a person is not a robot. The
+frontier document names three things that human video still cannot supply, and
+this section explains each of them, then adds two more.
 
-**A better start for any policy.** A policy that starts from an encoder pretrained on
-human video, such as R3M or VC-1, often needs fewer robot demonstrations. It needs
-fewer of them than a policy that starts from nothing. This is the most common use,
-and it costs almost nothing to try.
+**The hand can do things the gripper cannot.** A hand has five fingers and a turning
+wrist. So a person rolls a pen in the fingers, holds two things at once, or pushes
+with the side of the palm, and a two-finger gripper can do none of that. A large part
+of any human video therefore shows movements the robot cannot make, and these have to
+be found and thrown away, or else the policy learns them wrongly. The sign is a
+retargeted
+gripper that closes on nothing, because the person was using three fingers.
 
-**Showing a task by doing it.** A person does the task in front of a camera, and the
-robot copies the retargeted motion. This is best for simple pick-and-place moves,
-where only the gripper's path and its opening matter. The
-[learning path's fourth project](../../../03_frameworks/04_one-arm-training/04_learning-path.md#project-4-copy-it-from-video)
-builds exactly this with MediaPipe, and explains why the first attempt misses.
+**The path may be out of the robot's reach.** A person's arm is a different length
+and moves from a different place. So a path that is easy for a person can be outside
+the robot's reach, and nothing in the video says so.
 
-**Pretraining large policies.** Large
-[vision-language-action models](../../07_language-models/02_most-used/01_vision-language-action-models.md)
-are now pretrained partly on human video. The
-[foundation models document](../../../03_frameworks/08_frontier/02_foundation-models.md#6-nvidia-isaac-gr00t)
-describes one released model pretrained on human video together with robot data. It
-notes that this works partly because its movement commands are relative to where the
-gripper is now, which means the same thing for a hand and a gripper.
+![Top view: the arm's reach as a blue ring around its base. A retargeted hand path starts inside the ring, and its last part, in red, goes outside](../../../images/movement-models/learning-from-human-video/outside-the-reach.svg)
 
-**Judging progress.** The progress estimators on the
-[reward and progress models page](03_reward-and-progress-models.md) are trained on
-human video. They learn what "closer to done" looks like from people, and then they
-score the robot's attempts.
+The picture shows a made-up hand path after it has been moved into the robot's frame,
+where the blue ring is the area the arm can reach. The script checks every point, and
+25 % of the path is outside the ring. So a reach check like step 6 of the worked
+example has to run on every frame. And even a reachable path can need a joint angle
+the arm does not have, which a check with the arm's
+[inverse kinematics](../../../06_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
+catches.
+
+**Force is missing.** A video shows where a hand went, and not how hard it pressed.
+So for tasks that are about contact, such as pushing a plug into a socket, the video
+is missing the part that mattered.
+
+**The camera is in the wrong place.** The person's video was filmed from their head
+or from across the room, whereas the robot's cameras are somewhere else. So a policy
+that learned from one view can fail from another. The sign is a policy that works on
+the human video it trained on, and does badly on the robot's own pictures.
+
+**The hand hides the object.** In many frames the person's hand covers the thing it
+is holding. So the hand tracker loses fingers, as in the pinch graph in section 4,
+and the object tracker loses the object.
+
+So these five gaps are why every method still needs some robot data at the end. The
+frontier document's
+[section on what human video cannot supply](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#84-what-human-video-still-cannot-supply)
+makes the same point. And its
+[section on the 2026 result](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#82-the-result-that-changed-the-argument)
+explains why the robot data may now be a small final step rather than most of the
+work.
 
 ---
 
-## 7. Well-known models and libraries
+## 6. Well-known models and libraries
 
 Section 6 described where each method is used, and this section names the tools
 people actually run, in the order of the four ways in section 3: the two hand
@@ -290,7 +250,7 @@ frontier document records in
 [the three mechanisms people actually use](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#83-the-three-mechanisms-people-actually-use).
 Read those to see where the field is going, and build with the six tools above.
 
-### 7.1 MediaPipe Hand Landmarker
+### 6.1 MediaPipe Hand Landmarker
 
 This is the tool **most used in 2026** for getting hand points out of video,
 because it is the only one here that runs in real time on a laptop with no
@@ -303,7 +263,7 @@ You would pick it rather than HaMeR, the other tracker below, because HaMeR need
 an NVIDIA graphics card and a separate registration before it runs at all.
 MediaPipe runs on the computer you already have, which is what you want while you
 are still finding out whether your task survives the hand-to-gripper gap of
-section 8. Once you know that it does, HaMeR's accuracy starts to matter.
+section 5. Once you know that it does, HaMeR's accuracy starts to matter.
 
 Its cost is not the licence or the hardware, since the model file is 7.8 MB and
 the library is Apache-2.0. The cost is depth, and this is the mistake people make
@@ -348,7 +308,7 @@ base. The cleaning in section 4 is also yours to write, and it is not optional,
 because a tracker that loses the index finger for four frames will otherwise tell
 the gripper to close hard on nothing.
 
-### 7.2 HaMeR
+### 6.2 HaMeR
 
 HaMeR, which stands for hand mesh recovery, is the tracker **most used in 2026**
 for video that is processed after recording rather than live. Pavlakos and
@@ -359,9 +319,7 @@ whole hand model instead of finding points one at a time, it still returns a
 sensible hand when some fingers are behind the object.
 
 You would pick it rather than MediaPipe Hand Landmarker when fingers keep
-disappearing. Section 8 explains that a hand hides the thing it is holding, which
-is exactly the case where a point-finding tracker drops fingers and a model of the
-whole hand does not. The project's own record is the only accuracy claim this page
+disappearing. The project's own record is the only accuracy claim this page
 repeats: it took second place in the Ego-Pose Hands task of the Ego-Exo4D
 Challenge in June 2024.
 
@@ -395,7 +353,7 @@ gripper command: the output holds the hand's parameters, its vertices and one
 camera translation per detected hand, and turning that into the two fingertip
 positions of section 4 is your code.
 
-### 7.3 dex-retargeting
+### 6.3 dex-retargeting
 
 This is the library **most used in 2026** for the retargeting step, which section
 3 described as turning a tracked hand into a motion the robot can make. It comes
@@ -448,7 +406,7 @@ not the position of the wrist in the room. The repository's own example,
 `detect_from_video.py`, puts MediaPipe and this library together over a video
 file, and it is the shortest complete thing to read next.
 
-### 7.4 NVIDIA Isaac GR00T N1.7
+### 6.4 NVIDIA Isaac GR00T N1.7
 
 This model is **worth betting on**, because it is the only released model here
 whose own pretraining used human video at scale, so the transfer this page is
@@ -462,7 +420,7 @@ calls EgoScale, alongside robot demonstrations.
 
 You would pick it rather than building the pipeline of sections 7.1 to 7.3
 yourself. That pipeline gives you a few hundred retargeted demonstrations of one
-task, from one camera, with the error chain of section 9; this gives you a policy
+task, from one camera, with the error chain described above; this gives you a policy
 that has already watched 20,000 hours of people handling objects, which you then
 fine-tune on your own recordings. Its mechanism is also the one you would have to
 copy anyway: its movement commands are relative to where the gripper is now, so
@@ -500,7 +458,7 @@ tag that describes your arm's state and action layout, and a fine-tuning run. Th
 tag above belongs to the DROID dataset's arm, and using it for your own arm
 produces commands of the wrong shape.
 
-### 7.5 LAPA
+### 6.5 LAPA
 
 LAPA, which stands for latent action pretraining from videos, is also **worth
 betting on**, because it is the only openly published implementation of the
@@ -546,7 +504,7 @@ because the fine-tuning step wants real trajectories with their actions and
 gripper states. So the robot recordings this page is trying to avoid are still
 needed at the end, only fewer of them.
 
-### 7.6 R3M
+### 6.6 R3M
 
 R3M is **historical**, and it is kept here because it is the clearest example of
 the cheapest idea on this page. Nair and colleagues of Stanford and Meta released
@@ -597,11 +555,11 @@ numbers, the robot demonstrations to train it on, and the decision whether to ke
 the encoder frozen or let training change it. Nothing here produces a movement
 command on its own.
 
-### 7.7 How to choose
+### 6.7 How to choose
 
 Start with MediaPipe Hand Landmarker and dex-retargeting, because they run on the
 computer you already have and they tell you within a day whether your task
-survives the hand-to-gripper gap of section 8, which is the question that decides
+survives the hand-to-gripper gap of section 5, which is the question that decides
 everything else. Five situations change that answer.
 
 If the video is processed after recording and the hand keeps hiding its own
@@ -631,120 +589,7 @@ terms on the part you actually run.
 
 ---
 
-## 8. The gap between a hand and a gripper
-
-The tools in section 7 all work, so the hard part is not the models themselves.
-Instead it is that a hand is not a gripper, and a person is not a robot. The
-frontier document names three things that human video still cannot supply, and
-this section explains each of them, then adds two more.
-
-**The hand can do things the gripper cannot.** A hand has five fingers and a turning
-wrist. So a person rolls a pen in the fingers, holds two things at once, or pushes
-with the side of the palm, and a two-finger gripper can do none of that. A large part
-of any human video therefore shows movements the robot cannot make, and these have to
-be found and thrown away, or else the policy learns them wrongly. The sign is a
-retargeted
-gripper that closes on nothing, because the person was using three fingers.
-
-**The path may be out of the robot's reach.** A person's arm is a different length
-and moves from a different place. So a path that is easy for a person can be outside
-the robot's reach, and nothing in the video says so.
-
-![Top view: the arm's reach as a blue ring around its base. A retargeted hand path starts inside the ring, and its last part, in red, goes outside](../../../images/movement-models/learning-from-human-video/outside-the-reach.svg)
-
-The picture shows a made-up hand path after it has been moved into the robot's frame,
-where the blue ring is the area the arm can reach. The script checks every point, and
-25 % of the path is outside the ring. So a reach check like step 6 of the worked
-example has to run on every frame. And even a reachable path can need a joint angle
-the arm does not have, which a check with the arm's
-[inverse kinematics](../../../06_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
-catches.
-
-**Force is missing.** A video shows where a hand went, and not how hard it pressed.
-So for tasks that are about contact, such as pushing a plug into a socket, the video
-is missing the part that mattered.
-
-**The camera is in the wrong place.** The person's video was filmed from their head
-or from across the room, whereas the robot's cameras are somewhere else. So a policy
-that learned from one view can fail from another. The sign is a policy that works on
-the human video it trained on, and does badly on the robot's own pictures.
-
-**The hand hides the object.** In many frames the person's hand covers the thing it
-is holding. So the hand tracker loses fingers, as in the pinch graph in section 4,
-and the object tracker loses the object.
-
-So these five gaps are why every method still needs some robot data at the end. The
-frontier document's
-[section on what human video cannot supply](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#84-what-human-video-still-cannot-supply)
-makes the same point. And its
-[section on the 2026 result](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#82-the-result-that-changed-the-argument)
-explains why the robot data may now be a small final step rather than most of the
-work.
-
----
-
-## 9. Why this kind, and what it costs
-
-Section 8 listed the gaps, so this section asks when human video is still worth
-using. Learning from human video is a way to get training data for a movement
-model from videos of people. What it does for you is replace some of the robot
-demonstrations, which are the scarcest thing in robot learning.
-
-The obvious alternative is to record more robot demonstrations, by steering the
-robot while it does the task. That data is exactly right, because it has the
-right body, the right cameras and the real commands. Its problem is cost, since
-each hour needs a robot, a person, and a set-up. So human video is worth it when
-you need variety that you cannot record on a robot, such as many rooms, many
-objects, or many ways of doing a task.
-
-The second alternative is a handheld gripper, where a person holds a gripper with a
-camera on it and does the task. It is described in
-[the frontier document's section on handheld grippers](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#4-handheld-grippers-collecting-without-a-robot).
-This removes the hand-and-gripper gap, because the person uses the same fingers as
-the robot. So human video is worth it over that only when you want to use video that
-already exists, or video of people who were not collecting data at all.
-
-What it costs you is a chain of models, each of which can be wrong: the hand tracker,
-the depth estimate, the camera calibration, the retargeting, and the filtering. Their
-errors add up, as the pinch graph showed. It also costs you robot data in the end,
-because none of these methods removes the need for it. And the claims in this area
-move fast, because the
-[frontier document](../../../03_frameworks/08_frontier/06_what-is-coming.md#73-robots-now-learn-a-new-task-from-a-single-video)
-shows how a claim to learn "from a single video" can mean much less than it sounds.
-
-The table below sums up the usual choice for each case. Read each row as a
-situation, and the right column as what people usually do.
-
-| Situation | Usual choice |
-| --- | --- |
-| You will record robot demonstrations anyway | start from an encoder pretrained on human video, such as R3M or VC-1 |
-| A simple pick-and-place, shown once by a person | hand tracking and retargeting, checked for reach before running |
-| The task needs force, or fingers the gripper does not have | record robot demonstrations; human video will not show it |
-| Lots of varied video, little robot data | latent actions or a large pretrained policy, then fine-tune on robot data |
-| You want the person's motion without the hand-gripper gap | a handheld gripper instead of bare-hand video |
-
----
-
-## 10. The written alternative
-
-Human video is a source of training data, and not a way to move the arm. So its
-written alternative is to program the task instead of teaching it. Book 3's [teach and
-replay](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#1-teach-and-replay)
-records a motion from a person with no model at all. The person moves the arm to each
-position, by buttons or by hand, and then the arm plays the positions back. The
-retargeting steps on this page are written code themselves. [Rigid
-transforms](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
-moves the hand points into the robot's frame, and [sensor
-streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#smoothing-moving-average-exponential-and-median-filters)
-explains the median filter that cleans the pinch.
-
-So the written way is better when one fixed motion is enough. But learning from
-video is better when you need variety that nobody could program, or record on a
-robot.
-
----
-
-## 11. Where to read next
+## 7. Where to read next
 
 This is the last page of the chapter, so the reading below either closes the
 thread that ran through it or opens the chapters that build on it.
@@ -775,4 +620,3 @@ Deeper documents elsewhere in this repository:
   gives the 2026 research, its numbers and its maturity.
 - [Project 4: copy it from video](../../../03_frameworks/04_one-arm-training/04_learning-path.md#project-4-copy-it-from-video)
   is a hands-on project that builds hand tracking and retargeting in simulation.
-

@@ -18,23 +18,16 @@ joins ideas from both of those last two pages.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Squeezing a picture into a code](#squeezing-a-picture-into-a-code)
-   · [Predicting the next code](#predicting-the-next-code)
-   · [Practising inside the model](#practising-inside-the-model)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
-   · [World Models](#51-world-models)
-   · [PlaNet](#52-planet)
-   · [DreamerV3](#53-dreamerv3)
-   · [DayDreamer](#54-daydreamer)
-   · [TD-MPC2](#55-td-mpc2)
-   · [V-JEPA 2 and V-JEPA 2-AC](#56-v-jepa-2-and-v-jepa-2-ac)
-   · [How to choose](#57-how-to-choose)
-6. [A worked example: learning to put a cube in a bowl](#6-a-worked-example-learning-to-put-a-cube-in-a-bowl)
-7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 World Models](#51-world-models)
+   · [5.2 PlaNet](#52-planet)
+   · [5.3 DreamerV3](#53-dreamerv3)
+   · [5.4 DayDreamer](#54-daydreamer)
+   · [5.5 TD-MPC2](#55-td-mpc2)
+   · [5.6 V-JEPA 2 and V-JEPA 2-AC](#56-v-jepa-2-and-v-jepa-2-ac)
+   · [5.7 How to choose](#57-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -326,9 +319,7 @@ in place of measured positions.
 What it costs you is speed at the moment of acting, and an old stack. Its
 setup file pins `tensorflow-gpu==1.13.1` and `tensorflow_probability==0.6.0`, and
 its README says the code was tested under Ubuntu 18, so treat it as a reference
-rather than as a dependency. Its licence file is Apache-2.0. The deeper cost is
-the one [section 7](#7-what-goes-wrong-and-what-people-do-about-it) describes: a
-search that is free to propose any action sequence will find the model's mistakes
+rather than as a dependency. Its licence file is Apache-2.0. The deeper cost is this: a search that is free to propose any action sequence will find the model's mistakes
 faster than a trained policy does.
 
 The library is the repository, and one command trains an agent on one task:
@@ -359,8 +350,7 @@ practising inside the predictions.
 You would choose it over TD-MPC2 in [5.5](#55-td-mpc2) when your robot sees
 through a camera and you have no measured positions. DreamerV3 learns the code
 from pictures and keeps a decoder, so you can draw what it imagines and look at
-it, which is the way of checking one of these models that
-[section 7](#7-what-goes-wrong-and-what-people-do-about-it) describes.
+it.
 
 What it costs you is that it is a research repository rather than a package, and
 JAX. JAX is a numerical library that compiles Python for graphics cards, and you
@@ -453,9 +443,7 @@ code is trained only to be good at predicting the score and the value of a
 state, never at drawing the picture back.
 
 You would choose it over DreamerV3 when nothing in your task needs a picture
-drawn. Dropping the decoder removes the failure that
-[section 7](#7-what-goes-wrong-and-what-people-do-about-it) describes, where the
-model spends its effort on the colour of the table and misses a screw. The
+drawn. Dropping the decoder removes the failure where the model spends its effort on the colour of the table and misses a screw. The
 practical reason is stronger than that one. Its authors publish more than three
 hundred [trained checkpoints](https://www.tdmpc2.com/models) across four task
 collections, including arm tasks from Meta-World and ManiSkill2, and the
@@ -492,8 +480,7 @@ pictures are the setting where DreamerV3 is the better-tested choice.
 ### 5.6 V-JEPA 2 and V-JEPA 2-AC
 
 These models are **worth betting on** because of the constraint this page keeps
-running into. [Section 7](#7-what-goes-wrong-and-what-people-do-about-it) says a
-latent world model still needs hours of real practice for each new task. V-JEPA 2
+running into. V-JEPA 2
 attacks that by learning its codes from a large amount of internet video before
 your robot has moved at all, and that is the direction the field is going, because
 video is the one kind of data that is plentiful. Meta published it in 2025 at
@@ -579,125 +566,9 @@ it is written down.
 
 Finally, a case that sends you off this page. If a few measured numbers describe
 your task, and you can measure them, a learned code is not worth its cost.
-[Section 9](#9-the-written-alternative) sets out that alternative.
-
 ---
 
-## 6. A worked example: learning to put a cube in a bowl
-
-Here is how a Dreamer-style latent world model teaches a real arm to put a cube
-in a bowl, from pictures alone and step by step.
-
-1. **Set up.** A camera looks down at the table. A small program detects
-   whether the cube is inside the bowl. It gives a reward of 1 when it is, and 0
-   when it is not.
-2. **Collect a little.** The arm makes some random moves for a few minutes. The
-   system records the pictures, the moves and the rewards.
-3. **Train the world model.** It learns to squeeze each picture into a code and to
-   predict the next code after each move.
-4. **Practise in imagination.** The policy practises thousands of times inside
-   the model, starting from real recorded moments. At first it only learns to
-   move the gripper towards the cube, because that is where the imagined scores
-   start to rise.
-5. **Try for real.** The arm now tries the task with the improved policy. Most
-   tries fail, but they fail closer to the cube. Every try is recorded.
-6. **Repeat.** Steps 3 to 5 run again and again, often all day, with the real
-   arm collecting while the computer trains. The imagined practice gets more
-   accurate as the recordings grow, and the policy gets better with it.
-
-At no point did anyone measure the cube's position or write down the physics of
-the gripper. Instead, everything the robot knows came from its own camera and
-its own tries.
-
----
-
-## 7. What goes wrong, and what people do about it
-
-The sections above described this kind of model at its best. This section lists
-the five things that go wrong in practice, and what people do about each one.
-
-**Nobody can read the code.** When the model makes a wrong prediction, you
-cannot look at the code to see why. So people use the decoder to draw the
-predicted codes as pictures, which shows what the model imagines, even though
-the planning does not use those pictures.
-
-**The decoder wastes effort.** A model that must draw pictures back spends
-effort on the table's colour and on shadows. It can also miss a small object
-that matters, such as a screw, because a screw is only a few pixels. So models
-such as TD-MPC2 and V-JEPA 2 drop the decoder altogether. They must then use
-other training tricks to stop the codes from becoming useless, for example the
-same code for every picture, which would be trivially easy to predict.
-
-**The policy finds the model's mistakes.** The policy is trained to get high
-predicted scores. So if the model wrongly predicts a high score for some strange
-move, the policy learns that move, and the real arm then fails. People keep the
-imagined stretches short, and they keep collecting real data so that the
-mistakes get corrected.
-
-**The reward is hard to get on a real arm.** In a game the score is given, but
-on a real arm someone has to build a reliable success check, and a wrong check
-teaches the wrong task.
-
-**It still needs data for each task.** Latent world models need far less real
-practice than learning with no model, but usually still hours of it for each new
-task. So pretraining on large amounts of video, as V-JEPA 2 does, is the main
-way people are trying to reduce this.
-
----
-
-## 8. Why this kind, and what it costs
-
-The last section listed what goes wrong, so this section weighs those problems
-against the alternatives. There are two obvious alternatives, one on each side.
-
-The first is a [video prediction model](01_video-prediction-models.md), which
-also learns from pictures. Its predictions are easy for a person to check,
-because they are pictures themselves. However, drawing pictures is slow. A latent world
-model predicts codes instead, which is fast enough to practise thousands of
-times per real move. So when the goal is to *practise* inside the model, speed
-wins.
-
-The second is a
-[reinforcement learning policy](../../06_movement-models/03_also-used/01_reinforcement-learning-policies.md)
-that learns with no world model at all. It is simpler, and it has fewer parts to go
-wrong. However, it learns only from real tries, and on a real arm it needs far more
-of them than the arm can make in a sensible time. Instead, a latent world model
-reuses each real try for many imagined ones.
-
-What it costs you:
-
-- **More parts.** An encoder, a decoder, a dynamics part, a score part, a policy
-  and a critic, all trained together. Each has its own settings, and a problem
-  in one shows up in all the others.
-- **Hard to check.** You cannot read the codes, so mistakes are hard to find.
-- **A reward on the real arm.** You must build a success check you can trust.
-- **Still one task at a time.** A model trained on putting a cube in a bowl does
-  not know how to open a drawer. Training on large amounts of video and many
-  tasks is how the field is trying to change that.
-
----
-
-## 9. The written alternative
-
-This page has assumed that the code is learned, but a person can choose the numbers
-instead. So the written alternative replaces the learned code with a few numbers that
-a person chooses and measures. In the cube-and-bowl example, the camera finds the
-cube with
-[thresholding and colour masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
-, and a
-[Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
-keeps its position steady from frame to frame.
-[Sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
-then plans the moves with a written model of what each move does. PlaNet, in section
-5, plans in the same way, but inside a learned code.
-
-The written way wins when a few measured numbers describe the task and the physics
-is simple. The latent world model wins when nobody can say which numbers matter, or
-measure them from the picture.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - Go back to the [world models overview](../01_overview.md) for how the four kinds
   compare.

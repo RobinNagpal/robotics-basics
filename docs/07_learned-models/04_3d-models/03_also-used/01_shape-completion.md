@@ -17,21 +17,15 @@ that describes its shape.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Squeeze, then grow](#squeeze-then-grow)
-   · [Three ways to write down the whole shape](#three-ways-to-write-down-the-whole-shape)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-   · [AdaPoinTr](#51-adapointr-the-one-people-still-run)
-   · [PCN](#52-pcn-the-point-completion-network)
-   · [DeepSDF](#53-deepsdf)
-   · [Occupancy Networks](#54-occupancy-networks)
-   · [TRELLIS](#55-trellis)
-   · [How to choose](#56-how-to-choose)
-6. [A worked example: grasping a box from the side](#6-a-worked-example-grasping-a-box-from-the-side)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this rather than looking again, and what it costs](#8-why-this-rather-than-looking-again-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 AdaPoinTr, the one people still run](#51-adapointr-the-one-people-still-run)
+   · [5.2 PCN, the point completion network](#52-pcn-the-point-completion-network)
+   · [5.3 DeepSDF](#53-deepsdf)
+   · [5.4 Occupancy Networks](#54-occupancy-networks)
+   · [5.5 TRELLIS](#55-trellis)
+   · [5.6 How to choose](#56-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -465,8 +459,7 @@ Networks, since its demo runs, and read DeepSDF for the signed distance idea.
 If what you want is a complete textured object rather than the measured back of this one,
 use TRELLIS.
 
-If the camera can move, move it, because a measured back always beats a guessed one, and
-section 8 weighs that choice.
+If the camera can move, move it, because a measured back always beats a guessed one.
 
 Whichever you pick, measure it with the chamfer distance from section 4 before you trust
 it, because that is the number every paper above reports and you can compute it on your
@@ -476,137 +469,7 @@ it needs no graphics card for clouds of a few thousand points.
 
 ---
 
-## 6. A worked example: grasping a box from the side
-
-The value of completion is clearest in a case where the hidden part decides the
-grasp. An arm has to pick up a closed box from a shelf. The shelf is shallow, so the
-gripper has to reach in from the front and close its fingers on the left and right
-sides of the box. The camera itself stands in front of the shelf.
-
-The camera therefore sees the front face of the box and a little of each side, and
-nothing further back. The picture below compares two ways of choosing where to close
-the fingers.
-
-![A side grasp placed using only the seen points, and using the completed box](../../../images/3d-models/shape-completion/grasp-with-and-without.svg)
-
-On the left, the grasp is centred on the seen points and holds only the front edge,
-while on the right it is centred on the completed box and holds the box across its
-depth.
-
-Here is what happens on the left, without completion.
-
-1. The software takes the average of the seen points as the middle of the box.
-2. Almost all the seen points are on the front face, so this "middle" sits just
-    behind the front face.
-3. The fingers close there and catch only the front edge of the box, so the box tips
-    and slips out when the arm lifts.
-
-Here is what happens on the right, with completion.
-
-1. The shape completion model adds the back and the back part of both sides.
-2. The middle of the completed box is now in the right place, half way back.
-3. The fingers close across the whole depth of the box, so the grasp holds.
-
-Completion helps with a second job as well, because a motion planner needs to know
-the whole shape of the object in the gripper. Otherwise it may knock the hidden back
-into the shelf on the way out, and the
-[learned motion planners page](../../06_movement-models/03_also-used/02_learned-motion-planners.md)
-covers that kind of planning.
-
----
-
-## 7. What goes wrong
-
-That worked example went well, but the completed shape can be wrong in four ways.
-
-**The guess is only a guess.** The model fills the back with what backs usually look
-like. So if this mug has a second handle on the far side, or a dent, the model will
-not guess it. It draws the most usual shape instead, and it does not tell you where it
-is unsure unless it was built to.
-
-**Unfamiliar kinds of object.** A model trained on mugs, bottles and boxes has no idea
-what the back of a strangely shaped machine part looks like. So it will draw something
-that looks like a shape it already knows.
-
-**Clutter.** If another object hides part of the front too, then the model gets even
-less to work from. It may also mix up the edge of the other object with the edge of
-this one, if the segmentation was not clean.
-
-**Too smooth.** The decoder often gives rounded, blurry shapes, so thin parts such as
-a handle or a rim are the first to get lost.
-
-People deal with these four problems in four matching ways.
-
-- Use the guess only for the hidden part, and keep the real measured points wherever
-    there are any. The picture in section 2 does exactly this.
-- Ask for several guesses and see how much they disagree, because where the guesses
-    differ a lot the arm should be careful.
-- Choose a grasp that does not depend much on the hidden part at all.
-- Check with touch, because when the fingers close the gripper measures how wide the
-    object really is. The
-    [touch and body models chapter](../../09_touch-and-body-models/01_overview.md)
-    covers this.
-
----
-
-## 8. Why this rather than looking again, and what it costs
-
-Since the guess can be wrong, the honest question is why guess at all. A shape
-completion model **is** a network that guesses the whole shape of an object from one
-partial view. It **does** give the arm a full shape to plan a grasp and a path around,
-straight away, from one camera shot.
-
-The obvious alternative is to look again, because the arm can move its wrist camera to
-the side and behind the object, take more depth shots, and merge the point clouds.
-Then there is nothing left for a model to guess at.
-
-So why would anyone guess instead of looking again?
-
-- Looking again takes time, because every extra view means a movement of the arm and
-    another shot. In a factory that picks thousands of objects an hour, those seconds
-    add up.
-- Often the arm cannot look behind at all, since on a shelf, in a bin, or against a
-    wall there is no place for the camera to go.
-- A fixed camera on a stand cannot move in the first place.
-
-A second alternative is to fit a 3D model you already have. If the arm only ever picks
-one known part, then you can store its exact 3D model and match it to the seen points.
-Book 2 describes this in
-[models that measure](../../../02_perception/02_object-perception/05_models-that-measure.md).
-That is more accurate than any guess, but it only works for objects you already have a
-model of. Instead, shape completion works for new objects of familiar kinds.
-
-What it costs you comes in the three parts below.
-
-- The back is invented rather than measured, so any grasp or path that depends on it
-    can be wrong.
-- The model only guesses well for kinds of object that look like its training data.
-- It is one more model to run, which takes time on a small computer, though usually
-    much less time than moving the arm.
-
-So a good rule is to use completion when you cannot look, and to look when you can
-afford it.
-
----
-
-## 9. The written alternative
-
-No written method can guess the back of a new object, because that guess only comes
-from having seen thousands of similar objects. Instead, Book 5 offers three written
-ways around the problem. For one known part, [iterative closest
-point](../../../06_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
-lines up the stored 3D model with the seen points, and the model then gives the whole
-shape, measured rather than guessed. For a simple shape,
-[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md)
-fits a cylinder or a plane to the seen points, and the fitted shape covers the hidden
-side too. To look instead of guess, [visibility and
-next-best-view](../../../06_programming-techniques/06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
-chooses where to move the camera to see most of what is hidden. So shape completion
-wins for new objects of familiar kinds when the camera cannot move.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Scene reconstruction](../02_most-used/02_scene-reconstruction.md) is the next
     page, and it covers the "look again" route in full, by building a whole scene from

@@ -21,25 +21,17 @@ what each laboratory has released or shown, as of September 2026.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [The starting point: a vision-language model](#the-starting-point-a-vision-language-model)
-   · [Way 1: write the movement as tokens](#way-1-write-the-movement-as-tokens)
-   · [Way 2: add a small action expert](#way-2-add-a-small-action-expert)
-   · [Why it outputs a chunk of actions](#why-it-outputs-a-chunk-of-actions)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
-   · [SmolVLA, the one to start with](#51-smolvla-the-one-to-start-with)
-   · [The pi models from Physical Intelligence](#52-the-pi-models-from-physical-intelligence)
-   · [GR00T N1.7 from NVIDIA](#53-gr00t-n17-from-nvidia)
-   · [MolmoAct2 from the Allen Institute for AI](#54-molmoact2-from-the-allen-institute-for-ai)
-   · [X-VLA](#55-x-vla)
-   · [OpenVLA](#56-openvla)
-   · [The ones you will read about but cannot have](#57-the-ones-you-will-read-about-but-cannot-have)
-   · [How to choose](#58-how-to-choose)
-6. [A worked example: teaching a small arm to put a mug in a bowl](#6-a-worked-example-teaching-a-small-arm-to-put-a-mug-in-a-bowl)
-7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
-8. [Why use a vision-language-action model, and what it costs](#8-why-use-a-vision-language-action-model-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 SmolVLA, the one to start with](#51-smolvla-the-one-to-start-with)
+   · [5.2 The pi models from Physical Intelligence](#52-the-pi-models-from-physical-intelligence)
+   · [5.3 GR00T N1.7 from NVIDIA](#53-gr00t-n17-from-nvidia)
+   · [5.4 MolmoAct2 from the Allen Institute for AI](#54-molmoact2-from-the-allen-institute-for-ai)
+   · [5.5 X-VLA](#55-x-vla)
+   · [5.6 OpenVLA](#56-openvla)
+   · [5.7 The ones you will read about but cannot have](#57-the-ones-you-will-read-about-but-cannot-have)
+   · [5.8 How to choose](#58-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -296,8 +288,8 @@ lerobot-rollout \
 ```
 
 LeRobot gives you the training loop, the dataset format, the cameras and the arm driver.
-You supply the dataset, recorded as [section
-6](#6-a-worked-example-teaching-a-small-arm-to-put-a-mug-in-a-bowl) describes, and your
+You supply the dataset, recorded as section
+6 describes, and your
 own serial port and camera index. The sentence after `--task` must be the sentence you
 recorded with, because the model learned to connect those words to that movement.
 
@@ -464,8 +456,8 @@ model then reads the side view as if it were the view from above.
 
 ### 5.5 X-VLA
 
-X-VLA is **worth betting on**, because it attacks the problem that [section
-7](#7-what-goes-wrong-and-what-people-do-about-it) calls the field's worst, which is a
+X-VLA is **worth betting on**, because it attacks the problem that section
+7 calls the field's worst, which is a
 model that works on its builders' robot and not on yours. An academic group published it
 in November 2025, with a paper at [arXiv 2510.10274](https://arxiv.org/abs/2510.10274).
 The released base model has 0.9 billion parameters, as LeRobot's page for it states, and
@@ -609,131 +601,14 @@ Four things change that answer.
   comparison everybody else publishes.
 
 Do not choose on success rates reported by different laboratories. Each number was
-measured by the group that benefits from it, on a robot you do not have, as [section
-7](#7-what-goes-wrong-and-what-people-do-about-it) explains. The honest way to choose
+measured by the group that benefits from it, on a robot you do not have, as section
+7 explains. The honest way to choose
 between two models is to fine-tune both on your own recordings and count the successes
 on your own arm.
 
 ---
 
-## 6. A worked example: teaching a small arm to put a mug in a bowl
-
-Here is SmolVLA on a small learning arm, such as the SO-101. The arm has a camera
-above the table and a camera on the wrist, and the software is
-[LeRobot](https://github.com/huggingface/lerobot), a free library that records
-demonstrations, trains models and runs them.
-
-1. **Record demonstrations.** You move a second, identical arm by hand, and the robot
-   arm copies it. This setup is called a **leader arm** and a **follower arm**. You
-   put a mug in a bowl a few dozen times, and each time you place the mug and the bowl
-   somewhere different. LeRobot records both camera pictures and the joint angles,
-   with the sentence "put the mug in the bowl".
-2. **Fine-tune.** You start from the SmolVLA model that Hugging Face trained on many
-   robots, and train it further on your recordings. SmolVLA's authors say this can be
-   done on a single ordinary graphics card.
-3. **Run it.** Each time the model runs, it reads the two pictures, the joint angles
-   and the sentence, and then outputs a chunk of joint targets. The arm's controller
-   moves through the chunk, and the model runs again with new pictures.
-4. **Check the result.** The model does not report whether it succeeded, because it
-   simply keeps outputting movements. So you add a check, such as a [vision-language
-   model](02_vision-language-models.md#6-a-worked-example-fetching-the-right-mug)
-   asking "Is the mug in the bowl?", or a person watching.
-
-Then try things that you did not record at all. Put a different mug on the table, or
-say "put the cup in the bowl" instead of "mug". A model that started from a
-vision-language model has a better chance with these than a policy trained from
-nothing, because it already knows that a cup and a mug are alike. It is still not
-certain to work, so the only way to know is to try each change several times and count
-the successes.
-
----
-
-## 7. What goes wrong, and what people do about it
-
-VLAs are the newest kind of model in this book, and their limits are important. The
-list below gives the main ones, with what people do about each. The [frontier
-document](../../../03_frameworks/08_frontier/02_foundation-models.md#11-what-none-of-them-can-do-yet)
-gives the evidence for each.
-
-- **They do not control force.** A VLA outputs positions, not forces. So it is good at
-  tasks where the position is what matters, and weak at tasks where pressing gently or
-  firmly matters. Google's own figures for Gemini Robotics 2 show this: 92 per cent
-  success at unscrewing a light bulb, but 36 per cent at screwing one in. People put a
-  force-aware controller underneath the VLA for contact tasks. The [touch and body
-  models](../../09_touch-and-body-models/01_overview.md) chapter covers the models
-  that sense force.
-- **They cannot refuse.** A VLA always outputs a movement, even when it has never seen
-  anything like the scene in front of it, because it has no way to say "I do not
-  know". So the arm's ordinary safety limits must stay switched on, and a separate
-  check decides when to stop.
-- **They are upset by small changes near the gripper.** A 2026 study found that these
-  models cope well with a whole object being hidden, but get much worse when small
-  details at the point of contact change. They are also upset when a camera picture
-  arrives late. So you test with the lighting, objects and cameras you will really
-  use.
-- **They need work on each new robot.** A model that works on its builders' robot may
-  need new demonstrations and fine-tuning before it works on yours. Treat "works with
-  no extra training" as "worked on the authors' robot".
-- **They succeed less often than the videos suggest.** Published success rates for the
-  best models are often between one-half and three-quarters on hard tasks, while a
-  factory needs close to every attempt to succeed. So people add a success check, a
-  retry, and a person who can take over.
-- **You cannot easily tell why they failed.** A pipeline of separate models lets you
-  see which part went wrong. A VLA is one network, so a failure has no obvious cause.
-  Recording every run, with its pictures, is the usual fix.
-- **They need a large computer.** Except for the smallest ones, VLAs need an NVIDIA
-  graphics card with many gigabytes of memory. The [frontier
-  document](../../../03_frameworks/08_frontier/02_foundation-models.md#12-what-runs-on-an-apple-silicon-mac)
-  lists what runs on a Mac.
-
----
-
-## 8. Why use a vision-language-action model, and what it costs
-
-A VLA is one network that turns camera pictures, an instruction and joint angles
-into arm movements. It lets one model handle many tasks and many objects, including
-some it has not been shown on your robot, because it inherits knowledge about
-objects and words from a vision-language model.
-
-There are two obvious alternatives to using a VLA at all. The first is a pipeline of
-separate parts: a [planner](../03_also-used/01_language-models-as-planners.md), a
-[seeing model](../../03_seeing-models/01_overview.md), a [grasp
-model](../../05_grasp-models/01_overview.md) and a motion planner. Each part can be
-tested on its own, and a failure can be traced to one part. The second is a small
-policy trained from nothing on one task, such as an [action chunking
-transformer](../../06_movement-models/02_most-used/02_action-chunking-transformers.md).
-It is much smaller, it can be trained on a Mac, and on one fixed task it often works
-just as well.
-
-So the VLA earns its place when the objects and the instructions keep changing, and
-you cannot write or train a separate part for each case. For one fixed task, the
-small policy or the pipeline is usually the better choice.
-
-It costs you a large graphics card, a pile of demonstrations for fine-tuning, and a
-model whose failures are hard to explain. It also costs certainty: the success rates
-of today's best VLAs are well below what a production line needs.
-
----
-
-## 9. The written alternative
-
-The written alternative is a pipeline made only of ordinary code. A [behaviour
-tree](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
-holds the order of the steps and the retries. [Pose from
-points](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
-finds a known object, and [sampling-based
-planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
-moves the arm to it. Book 3's [programmed
-methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md) shows
-these parts working together on one arm.
-
-The written pipeline wins for one fixed task with known objects, because each part can
-be tested on its own, and it does the same thing every time. But the VLA wins when the
-objects and the instructions keep changing.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Foundation models and generalist
   policies](../../../03_frameworks/08_frontier/02_foundation-models.md) is the record

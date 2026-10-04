@@ -129,7 +129,7 @@ segmentation, open-vocabulary models, and keypoints and object pose. Together
 they answer "which object, exactly where, and which way is it turned", which is
 exactly what a pick needs. The pose page also covers following a pose through a
 video, called [6D pose
-tracking](02_most-used/04_keypoints-and-object-pose.md#7-following-a-pose-over-time-6d-pose-tracking).
+tracking](02_most-used/04_keypoints-and-object-pose.md#5-following-a-pose-over-time-6d-pose-tracking).
 The **also used** group holds the three kinds that are common but needed less
 often: image classification, depth from pictures, and tracking and motion. Those
 three are needed less often because a classifier gives too little detail for
@@ -254,7 +254,7 @@ If you already know what you need, the list below points to the right page.
 - To put a part into a fixture at an exact angle, read
   [keypoints and object pose](02_most-used/04_keypoints-and-object-pose.md).
 - To follow a part's full pose while it moves, read
-  [6D pose tracking](02_most-used/04_keypoints-and-object-pose.md#7-following-a-pose-over-time-6d-pose-tracking).
+  [6D pose tracking](02_most-used/04_keypoints-and-object-pose.md#5-following-a-pose-over-time-6d-pose-tracking).
 - To measure distances with only an ordinary camera, read
   [depth from pictures](03_also-used/02_depth-from-pictures.md).
 - To handle objects that no model was trained on, read

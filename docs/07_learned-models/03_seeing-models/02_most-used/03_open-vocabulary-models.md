@@ -17,24 +17,16 @@ general-purpose picture features.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Turning pictures and words into numbers](#turning-pictures-and-words-into-numbers)
-   · [Finding boxes from words](#finding-boxes-from-words)
-   · [Finding outlines from a click](#finding-outlines-from-a-click)
-   · [General picture features](#general-picture-features)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-   · [CLIP](#51-clip-the-model-the-others-are-built-on)
-   · [OWL-ViT and OWLv2](#52-owl-vit-and-owlv2)
-   · [Grounding DINO](#53-grounding-dino)
-   · [YOLOE](#54-yoloe)
-   · [SAM 2](#55-sam-2)
-   · [SAM 3](#56-sam-3)
-   · [How to choose](#57-how-to-choose)
-6. [A worked example: "pick up the blue mug"](#6-a-worked-example-pick-up-the-blue-mug)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 CLIP, the model the others are built on](#51-clip-the-model-the-others-are-built-on)
+   · [5.2 OWL-ViT and OWLv2](#52-owl-vit-and-owlv2)
+   · [5.3 Grounding DINO](#53-grounding-dino)
+   · [5.4 YOLOE](#54-yoloe)
+   · [5.5 SAM 2](#55-sam-2)
+   · [5.6 SAM 3](#56-sam-3)
+   · [5.7 How to choose](#57-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -618,113 +610,9 @@ Five things change that choice.
   [object detection](01_object-detection.md) trained on your own photos is.
 
 Whatever you choose, the check after the answer is yours to write, because none of
-these models knows when it is wrong. [Section 7](#7-what-goes-wrong) lists the ways
-they fail.
+these models knows when it is wrong. ---
 
----
-
-## 6. A worked example: "pick up the blue mug"
-
-Those models are most easily understood together, so here is a worked example in
-which a person types "pick up the blue mug". The table has a red mug, a blue mug, a
-bowl and a banana, and the robot has never been trained on any of them.
-
-1. The wrist camera takes a colour photo and a depth image.
-2. The software sends the photo and the words "blue mug" to Grounding DINO.
-3. Grounding DINO returns one box, around the blue mug, with a score. The score is
-   above the threshold, so the robot accepts it.
-4. The software then gives that box to SAM as a prompt, and SAM returns the exact
-   outline of the blue mug.
-5. The robot keeps only the depth pixels inside the outline, and turns them into a
-   small point cloud of the blue mug alone.
-6. A [grasp model](../../05_grasp-models/01_overview.md) works out where to close the
-   gripper on that point cloud.
-7. The arm moves, grasps and lifts the mug.
-
-Step 3 is where a wrong answer is most likely, so if Grounding DINO returns two
-boxes, or none, or a low score, the robot should stop and ask rather than guess.
-A good system also checks the result afterwards, for example by asking a
-[vision-language
-model](../../07_language-models/02_most-used/02_vision-language-models.md)
-whether the gripper is now holding a blue mug.
-
-The words in step 2 came straight from the person, but when the instruction is
-longer, such as "tidy the table", a [language
-model](../../07_language-models/03_also-used/01_language-models-as-planners.md)
-can break it into short phrases like "blue mug" first.
-
----
-
-## 7. What goes wrong
-
-Useful as these models are, they fail in ways that a closed-vocabulary detector
-does not, and the list below gives the common ones.
-
-- **Similar words, different answers.** "Mug", "cup" and "coffee mug" can give
-  different boxes on the same photo, so people test several phrasings and keep the
-  one that works best for their objects.
-- **Things with no everyday name.** Two similar metal parts may differ only by a
-  hole, which words cannot describe, so an ordinary detector trained on those two
-  parts does better here.
-- **Colours, positions and counting.** "The mug on the left" or "the second bowl"
-  is harder for these models than a plain name, because they often pick the most
-  mug-like thing and ignore the rest of the phrase. The robot can apply the "left"
-  part itself, using the box positions.
-- **Speed.** These models are large, so on a small computer on the robot they may
-  take much longer than a small closed-vocabulary detector. People often run them
-  once to find the object and then use something faster, such as a tracker, to
-  follow it.
-- **No sense of when they are wrong.** They return a confident box for
-  "screwdriver" even when the object is a pen, and the score helps a little but is
-  not reliable. So safety decisions should never rest on these models alone.
-- **SAM does not know what it outlined.** It will happily outline a shadow or a
-  reflection if that is where the click landed.
-
----
-
-## 8. Why this kind, and what it costs
-
-Now that you have seen what these models do and where they fail, this section
-answers four questions: what they are, what they do for you, why you would choose
-them over the obvious alternative, and what they cost.
-
-Open-vocabulary models find things in a picture from words or clicks given at the
-time, rather than from a fixed list learned in training. So they let a robot handle
-new objects the same day, with no new photos and no training, because a person can
-simply name the object and the robot can then find it.
-
-The obvious alternative is to train an ordinary detector on your own objects,
-and for a factory that handles the same five parts for years that is usually the
-better choice, because such a detector is smaller, faster, more repeatable and
-more accurate on those five parts. The open-vocabulary model wins instead when
-the list of objects is long, changes often, or is not known in advance, such as
-in a home, a laboratory or a warehouse with thousands of items. It is also
-useful for making training labels for a small detector, since you can let
-Grounding DINO and SAM label your photos, check them by eye, and then train the
-small detector on the result.
-
-The costs are these. The models are large and need a GPU to run at a useful
-speed, and the same object can give different answers for slightly different
-words. Then they give no guarantee about any answer, so they need a check
-afterwards. Finally, some newer versions come with licences that must be read
-carefully before commercial use.
-
----
-
-## 9. The written alternative
-
-There is no written alternative for finding things from words, because the link
-between a word and what the thing looks like can only be learned from a very
-large number of pictures with captions. Only the click-to-outline half has a
-partial written stand-in. After the table is removed,
-[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
-splits the depth points that are left into separate objects without knowing what
-they are, as long as those objects stand apart. The robot can then choose an
-object by its place, such as the nearest one, but never by its name.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Tracking and motion](../03_also-used/03_tracking-and-motion.md) is the next page, and it shows
   how SAM 2 and other models follow an object through a video.

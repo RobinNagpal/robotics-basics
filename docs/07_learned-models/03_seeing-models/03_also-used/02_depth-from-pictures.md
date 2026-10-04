@@ -21,11 +21,7 @@ camera leaves on shiny and clear objects.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [A worked example: picking a glass](#6-a-worked-example-picking-a-glass)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -331,7 +327,7 @@ print(prediction.conf.shape)    # how sure the model is, per pixel
 
 What the library gives you is the depth, a confidence number per pixel, and, when
 you pass several photos, the camera positions as well. That confidence is worth
-having, because section 7 points out that most depth models give you no way to
+having, because most depth models give you no way to
 tell a good pixel from a bad one. What you supply is the focal length in pixels,
 from your camera calibration, and the conversion above.
 
@@ -505,7 +501,7 @@ from a model such as the ones on the
 [segmentation](../02_most-used/02_segmentation.md) page. It costs you a graphics
 card, and the project's checkpoint comes from a file-sharing link rather than
 Hugging Face, so your build cannot simply download it. The thing that most often
-goes wrong is the one section 7 names: the filled surface is invented, so a glass
+goes wrong is this: the filled surface is invented, so a glass
 lying on its side can be filled in as a glass standing up.
 
 There is no package and no Python entry point. You clone the repository, place
@@ -527,8 +523,7 @@ transparent variant of Prompt Depth Anything first, because it needs only
 ### 5.7 How to choose
 
 Start from the sensor, not from the model. If the robot has a depth camera and the
-objects are ordinary, use the camera's own depth and add no model at all, because
-section 8 explains that a depth camera is more accurate than any monocular model.
+objects are ordinary, use the camera's own depth and add no model at all, because a depth camera is more accurate than any monocular model.
 
 Six things change that.
 
@@ -549,115 +544,9 @@ Six things change that.
   on this page.
 
 Whichever you choose, do not let a learned depth value be the last word before the
-gripper closes. Section 7 gives the errors, and they are centimetres where a
-gripper needs millimetres.
+gripper closes. ---
 
----
-
-## 6. A worked example: picking a glass
-
-Clear objects are where these models earn their place, so here is a worked example
-in which the robot must pick up an empty drinking glass from a table, using a depth
-camera on its wrist.
-
-1. The camera takes a colour photo and a depth image, but the depth image has a hole
-   where most of the glass is, and the top of the glass reads as the wall behind it.
-2. If the robot used this depth image directly, it would think there was nothing
-   there, so it would reach through the glass and knock it over.
-3. A [segmentation](../02_most-used/02_segmentation.md) model therefore finds the outline of the
-   glass in the colour photo.
-4. The robot deletes all depth readings inside that outline, because it cannot
-   trust any of them.
-5. A depth completion model then fills in the deleted area, using the table depth
-   around the glass and the glass's shape in the colour photo.
-6. The robot turns the repaired depth into a point cloud, so the glass now appears
-   as a solid object standing on the table.
-7. A grasp model chooses where to close the gripper, and the robot closes the
-   gripper slowly and checks the grip force, because the repaired depth is a careful
-   guess rather than a measurement.
-
-A robot without a depth camera could use a stereo pair instead, or a monocular
-model. However, with a monocular model it must fix the scale first, and one common
-way is to measure a few points in another way, for example the known height of the
-table, and then stretch the model's answer to match them.
-
----
-
-## 7. What goes wrong
-
-Useful as these models are, they fail in ways that a depth camera does not, and the
-list below gives the common ones.
-
-- **Monocular depth is a guess, not a measurement.** The errors are often several
-  centimetres at a distance of one metre, which is too large for a gripper that must
-  close around a thin object. So people use monocular depth for rough jobs, such as
-  telling the foreground from the background, and use real sensors for the final
-  measurement.
-- **No scale.** A relative-depth answer has no units, so the robot must pin it to a
-  few real measurements before it can use it.
-- **Confident mistakes.** A depth model gives an answer for every pixel, even where
-  it has no idea, and it does not usually say which pixels it is unsure about.
-  Mirrors are a typical case, because the model sees the room in the mirror and
-  reports it as a room behind the wall.
-- **Stereo on plain surfaces.** A plain white wall looks the same everywhere, so
-  the model cannot find which patch matches which. Some cameras project a pattern
-  of dots onto the scene to give stereo something to match.
-- **Stereo up close.** Very close to the cameras, the two views differ too much, so
-  some parts appear in only one of them.
-- **Filled holes are made up.** A depth completion model draws a sensible surface,
-  but it may be the wrong surface, because a glass lying on its side may be filled
-  in as a glass standing up.
-
----
-
-## 8. Why this kind, and what it costs
-
-Now that you have seen what these models do and where they fail, this section
-answers four questions: what they are, what they do for you, why you would choose
-them over the obvious alternative, and what they cost.
-
-Depth models are networks that give every pixel of a photo a distance, working
-either from one photo, from a stereo pair, or from a depth image with holes in it.
-So they give the arm distances where it would otherwise have none, whether that is
-because the robot has no depth camera, because the depth camera fails on a clear or
-shiny object, or because the scene is outside, where sunlight can swamp a depth
-camera's own light.
-
-The obvious alternative is a depth camera, such as an Intel RealSense, because
-for ordinary objects on a table a depth camera is more accurate than any
-monocular model, needs no training and costs little. So a depth camera should be
-the first choice. A learned stereo model is worth choosing when you want to pick
-your own cameras, or work in bright light or at longer range. However, a depth
-completion model is worth adding when the objects are clear or shiny, because a
-depth camera alone cannot see them. Monocular depth is worth choosing only when
-there is truly no second camera and no depth sensor, or as a rough helper next
-to one.
-
-The costs are these. Most depth models need a GPU to run at a useful speed, and
-monocular depth has errors of centimetres and no reliable scale. Then stereo
-needs two cameras bolted firmly together and measured carefully, and it gets
-worse if they move even slightly. Depth completion invents a surface that may be
-wrong, and several of the best models have research-only licences.
-
----
-
-## 9. The written alternative
-
-A trained network is not the only way to get distances, because [multi-view
-geometry](../../../06_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md)
-in Book 5 measures depth with no model at all. It finds the depth of a point
-from two pictures taken from known places, and from one picture when the point
-is known to lie on the table. Most depth cameras already do this inside the
-camera, with a projected pattern of dots to help the matching. For glass, which
-a depth camera cannot see, the same page measures height from how far the
-outline shifts when a wrist camera slides sideways. So the written way gives
-measured distances in metres, with no training, while the models win on plain
-and shiny surfaces, where written matching finds nothing to match, and when
-there is only one picture and no table to measure from.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Keypoints and object pose](../02_most-used/04_keypoints-and-object-pose.md) is the page before
   this one, and most pose models need good depth.
@@ -672,4 +561,3 @@ there is only one picture and no table to measure from.
   [the sensors, and the software for each](../../../02_perception/02_object-perception/02_sensors.md).
 - For measured accuracy and licences, read
   [models that measure](../../../02_perception/02_object-perception/05_models-that-measure.md).
-

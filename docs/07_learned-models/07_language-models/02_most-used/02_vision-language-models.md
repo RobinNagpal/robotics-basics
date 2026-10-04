@@ -17,18 +17,14 @@ overview](../../03_seeing-models/01_overview.md), because this page compares the
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
-   · [Qwen3-VL](#51-qwen3-vl)
-   · [SmolVLM2](#52-smolvlm2)
-   · [Gemini Robotics ER 2](#53-gemini-robotics-er-2)
-   · [Molmo2-ER](#54-molmo2-er)
-   · [PaliGemma](#55-paligemma)
-   · [LLaVA](#56-llava)
-   · [How to choose](#57-how-to-choose)
-6. [A worked example: fetching the right mug](#6-a-worked-example-fetching-the-right-mug)
-7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
-8. [Why use a vision-language model, and what it costs](#8-why-use-a-vision-language-model-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 Qwen3-VL](#51-qwen3-vl)
+   · [5.2 SmolVLM2](#52-smolvlm2)
+   · [5.3 Gemini Robotics ER 2](#53-gemini-robotics-er-2)
+   · [5.4 Molmo2-ER](#54-molmo2-er)
+   · [5.5 PaliGemma](#55-paligemma)
+   · [5.6 LLaVA](#56-llava)
+   · [5.7 How to choose](#57-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -262,8 +258,7 @@ card.
 It costs you capability, and the drop is real rather than slight. A
 256-million-parameter model is poor at counting, at exact positions and at anything
 needing several steps of reasoning, so use it for yes-or-no questions and send the hard
-ones elsewhere. It will also answer confidently when it is wrong, which is the failure
-that [section 7](#7-what-goes-wrong-and-what-people-do-about-it) warns about, and a
+ones elsewhere. It will also answer confidently when it is wrong, and a
 small model does it more often.
 
 The library is `transformers`, and `pipeline` is its shortest route to a working model:
@@ -483,7 +478,7 @@ running the 2023 original.
 ### 5.7 How to choose
 
 Start with SmolVLM2 on your own computer. It answers yes-or-no questions well enough to
-build the success check in [section 6](#6-a-worked-example-fetching-the-right-mug), it
+build the success check in section 6, it
 costs nothing, and it teaches you how much of the problem is the wording of your
 question rather than the model.
 
@@ -508,114 +503,7 @@ vision-language models.
 
 ---
 
-## 6. A worked example: fetching the right mug
-
-A single arm stands at a table with two mugs, a bowl and an apple, and a camera looks
-at the table from the front. A person then says: "Put my red mug in the bowl."
-
-1. **Find the target.** The robot sends the camera picture to the vision-language
-   model with the question "Point to the handle of the red mug." The model answers
-   with a point, in pixels.
-2. **Turn the point into 3D.** The robot reads the depth camera at that pixel, and
-   with the camera's known position this gives a 3D point on the handle.
-3. **Choose the grasp and move.** A [grasp
-   model](../../05_grasp-models/01_overview.md) chooses how to hold the mug near that
-   point. Ordinary motion planning moves the arm there, closes the gripper, and
-   carries the mug over the bowl. The vision-language model is not used during the
-   movement, because it is too slow.
-4. **Check after each step.** After each step, the robot asks the vision-language
-   model: "Is the red mug in the bowl?" It asks the same question each time, and waits
-   for "yes".
-
-![Four camera frames of the mug being moved into the bowl, with the answer No, No, No, Yes below them](../../../images/language-models/vision-language-models/checking-success.svg)
-
-The picture shows the four checks. The answer stays "no" while the mug is on the
-table, in the air, and on its way, and it turns to "yes" only after the mug is in the
-bowl. Checking whether a step worked is called **success detection**, and it is one of
-the most common uses of a vision-language model on a robot, because it replaces a
-check that someone would otherwise have to program by hand for every task.
-
-If the answer is still "no" after the last step, the robot does not simply stop. It
-tells a [planner](../03_also-used/01_language-models-as-planners.md#feeding-back-what-happened)
-what happened, and the planner writes the next steps.
-
----
-
-## 7. What goes wrong, and what people do about it
-
-A vision-language model is good at "what" and weaker at "exactly where" and "exactly
-how much". The list below gives the common failures, and the usual fix for each one.
-
-- **It is not precise about position.** A point from the model can be several pixels
-  off, which can be enough to miss a small handle. The fix is to use the point only to
-  choose the object, and then measure the object with a depth camera and a [seeing
-  model](../../03_seeing-models/02_most-used/02_segmentation.md) that outlines it
-  exactly.
-- **It miscounts, and mixes up left and right.** Counting many small objects, and
-  telling left from right, are known weak points. Left and right are also ambiguous:
-  the camera's left may be the robot's right. The fix is to ask for points instead of
-  words, and to do the counting and the left-right logic in ordinary code.
-- **It says things that are not there.** Like a language model, a vision-language
-  model can hallucinate, which means it describes an object that is not in the
-  picture. The fix is to ask for a point, and then check with the depth camera that
-  something is really there.
-- **It says "yes" too easily.** For success detection, a wrong "yes" is worse than a
-  wrong "no", because the robot moves on and the mistake is hidden. The fixes are to
-  ask from two camera views, to ask the question in the opposite form as well ("Is the
-  bowl empty?"), and to back the answer with a measurement, such as the weight on a
-  scale or how far the gripper closed.
-- **It misses small details.** The picture is cut into patches, and a detail smaller
-  than a patch, such as a thin crack or a lid that is almost closed, can be lost. The
-  fix is to crop the picture around the object and ask again.
-- **It is slow.** A large model takes from a fraction of a second to a few seconds per
-  answer. That is fine for "which mug?" and "did it work?", but it is far too slow to
-  steer the arm while it moves.
-
----
-
-## 8. Why use a vision-language model, and what it costs
-
-A vision-language model reads a picture and a question, and answers in words or
-points. It lets a robot find an object from a description, and check its own work,
-without anyone writing a special program for each object or each task.
-
-The obvious alternative is an [object
-detector](../../03_seeing-models/02_most-used/01_object-detection.md) trained on a
-fixed list of object names. A detector is much faster, because it answers in
-milliseconds, where a vision-language model takes seconds. It is also more precise
-about position, small enough to run on the robot's own computer, and it always gives
-an answer in the same form. So if your robot only ever handles the same five kinds of
-object, a detector is the better choice. The next step up is an [open-vocabulary
-model](../../03_seeing-models/02_most-used/03_open-vocabulary-models.md), which finds
-objects from any name, but still only answers "where is this?". The vision-language
-model earns its place when the question itself changes, as in "the mug that is upside
-down", "the one with the chipped rim", or "did the lid close?".
-
-But it costs you speed, hardware and certainty in return. A useful model needs a large
-graphics card or a paid online service, and it answers in seconds, not milliseconds.
-Its answers are also not guaranteed, so anything that matters has to be checked with a
-measurement.
-
----
-
-## 9. The written alternative
-
-There is no full written alternative, because no written program can answer a question
-that nobody planned for. But the two jobs a vision-language model does most on an arm
-do have written versions. To pick out an object by a fixed property, such as "the red
-mug", [thresholding and colour
-masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
-is fast and exact, while to check that a step worked, a measurement is more reliable.
-[Sensor
-streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
-turns how far the gripper closed, or the weight on a scale, into a clean yes or no.
-
-The written way wins whenever the question is fixed and a colour or a sensor reading
-answers it. But the vision-language model wins when the question itself changes.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Vision-language-action models](01_vision-language-action-models.md) takes a
   vision-language model and teaches it to output arm movements as well as words.

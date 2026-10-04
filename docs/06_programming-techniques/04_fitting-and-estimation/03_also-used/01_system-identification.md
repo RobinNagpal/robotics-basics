@@ -523,7 +523,7 @@ such as a joint's speed and temperature, Book 7's
 learn that correction from tens to hundreds of samples and say how sure they are,
 and [linear regression](../../../07_learned-models/02_classical-machine-learning/02_most-used/01_linear-and-logistic-regression.md)
 fits it with the same least squares this page uses.
-[Learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#7-learning-only-the-part-physics-gets-wrong-residual-models)
+[Learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#5-learning-only-the-part-physics-gets-wrong-residual-models)
 uses the same idea for objects the arm pushes.
 
 ---

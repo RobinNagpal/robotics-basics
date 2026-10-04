@@ -8,8 +8,8 @@ and it is where most grasp research has gone since about 2019.
 
 So the page answers these questions, one section at a time. What does "six degrees
 of freedom" mean, and what does such a model take in and give back? How does it
-work inside, and what is it trained on? Which real models do this, what goes wrong
-with them, and what do they cost you?
+work inside, and what is it trained on? And which real models do this, which of
+them should you use, and what does each one assume about your gripper?
 
 It is for a reader who has read the [grasp models overview](../01_overview.md) and
 [top-down grasp detection](../03_also-used/01_top-down-grasp-detection.md). Because
@@ -24,11 +24,7 @@ first.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [A worked example: clearing a tote](#6-a-worked-example-clearing-a-tote)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -592,130 +588,7 @@ theirs.
 
 ---
 
-## 6. A worked example: clearing a tote
-
-Those models are easier to judge once you see one running, so here is a full job. A
-**tote** is a plastic box of the kind used in warehouses. This tote holds a mug, a
-small box and a bottle lying on its side, and the arm must lift them out one by
-one.
-
-1. A depth camera above and to one side of the tote takes a picture, and code turns
-    that picture into a point cloud.
-2. Code crops the point cloud to the inside of the tote, so that the model does not
-    waste time on the floor or the arm.
-3. The model gives a few hundred grasps, each with a score.
-4. Code checks each grasp against the things the model does not know about, and
-    throws away the ones that fail.
-5. The arm tries the best grasp that is left, lifts the object and puts it down
-    outside the tote.
-6. The camera takes a new picture, and the whole loop starts again, because the
-    scene has changed and the old grasps are no longer valid.
-
-Step 4 is the one people forget, so the picture below shows it on its own.
-
-![The model proposes seven grips; checks keep three](../../../images/grasp-models/six-dof-grasps/propose-then-filter.svg)
-
-On the left are seven grasps the model proposed for the tote. On the right are the
-three that survive after code checks the tote walls, the gripper's opening and the
-arm's reach.
-
----
-
-## 7. What goes wrong
-
-That filtering step matters because the model learned one thing only, which is
-whether a grasp holds. It learned nothing else, so most failures come from what it
-cannot know.
-
-- The arm may not be able to reach the grasp, because the model knows nothing about
-    your arm. A grasp that comes in from the far side of the tote may need a wrist
-    angle the arm cannot make, so code must check each grasp with the arm's inverse
-    kinematics, which is the maths that turns a gripper pose into joint angles.
-    Book 3's
-    [reaching and reachability](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md)
-    explains that check.
-- The gripper may hit something on the way in, because the model checks for
-    collisions only against the points it saw. It cannot see the back wall of the
-    tote if the wall is hidden, so it may send the gripper straight through it.
-- The model may have learned on a different gripper, since most models learned on
-    one gripper such as a Franka Hand. A grasp that suits that gripper's finger
-    length and opening may not suit yours.
-- Shiny and see-through objects are missed, because glass and polished metal leave
-    holes in the point cloud, and the model cannot grasp what it cannot see.
-- The back of each object is hidden, so the model guesses what is behind each
-    object from its training. When the guess is wrong, the far finger lands on
-    empty air, and
-    [shape completion](../../04_3d-models/03_also-used/01_shape-completion.md)
-    models guess the hidden back, which can help.
-- The model has no sense of the task, so it does not know that a mug of coffee must
-    stay upright, or that a knife should not be held by the blade.
-
-The fix for most of these is the same, which is to treat the model's grasps as
-suggestions and put your own checks after it. Book 3's
-[using a model as a candidate generator](../../../03_frameworks/02_gripping/04_models-that-grasp.md#9-using-a-model-as-a-candidate-generator)
-gives the checks in order, and it also recommends logging which check rejected each
-grasp. Then, when nothing is left, the log tells you whether the problem is the
-model, the gripper or the cell.
-
----
-
-## 8. Why this kind, and what it costs
-
-Since the list above is long, it is worth saying what this kind buys in return. A
-6-DoF grasp model takes a point cloud and gives full gripper poses from any
-direction, each one with a score.
-
-What it does for you is handle the clutter that a real bin holds. Objects in a real
-bin lie at angles, lean on each other and press against walls. So many of them can
-only be held from the side or at a tilt. A 6-DoF model finds those grasps on objects it has never seen.
-
-The obvious alternative is a
-[top-down detector](../03_also-used/01_top-down-grasp-detection.md), which is
-smaller, faster and easier to run but only grasps straight down. So choose the
-6-DoF kind when a real share of your objects cannot be picked from above. If every
-object lies flat on a table, the top-down kind does the same job for less.
-
-The other alternative is a rule you write by hand. Book 3's
-[choosing a grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md) shows
-that a rule is cheaper and easier to trust when you know the objects. So the 6-DoF
-model is for the case where the next object could be anything.
-
-What it costs you is large, and it comes in three parts.
-
-- It needs strong hardware, because nearly every model of this kind needs an NVIDIA
-    graphics card, and many depend on custom code that only builds for NVIDIA's
-    CUDA system. Book 3's
-    [what runs without CUDA](../../../03_frameworks/02_gripping/04_models-that-grasp.md#8-what-runs-without-cuda)
-    gives the details for each model.
-- Its licences are strict, since most of these models may only be used for
-    research. Several have no licence file at all, which means you have no
-    permission to use them, and
-    [the licence picture](../../../03_frameworks/02_gripping/04_models-that-grasp.md#5-the-licence-picture)
-    in Book 3 goes through them one by one.
-- You must still write your own checks, because the model's grasps are not safe to
-    use on their own. You still need reach checks, collision checks and task rules
-    of your own.
-
----
-
-## 9. The written alternative
-
-Instead of a network, the written way to choose a grasp is in Book 3 rather than
-Book 5. [Choosing a
-grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md) finds pairs of
-surface points that face each other, checks that the gripper has room to close, and
-writes rules for known kinds of object. Book 5 prepares the shape those rules work
-on. For example,
-[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
-cuts each object out of the point cloud, and
-[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md)
-fits a plane or a cylinder to it to measure it. The written way wins when the
-objects are known or have a shape you can describe. Instead, the model wins when
-the next object could be anything, lying at any angle in clutter.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Grasp quality models](../03_also-used/02_grasp-quality-models.md) explains the
     scoring half of these models on its own.

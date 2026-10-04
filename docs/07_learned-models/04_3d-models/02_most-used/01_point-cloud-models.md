@@ -18,10 +18,6 @@ numbers.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [The problem of order](#the-problem-of-order)
-   · [One small network for every point, then the largest number](#one-small-network-for-every-point-then-the-largest-number)
-   · [Looking at neighbours](#looking-at-neighbours)
-   · [Two other ways in](#two-other-ways-in)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
    · [5.1 PointNet](#51-pointnet)
@@ -30,11 +26,7 @@ numbers.
    · [5.4 Point Transformer V3](#54-point-transformer-v3)
    · [5.5 Sonata](#55-sonata)
    · [5.6 How to choose](#56-how-to-choose)
-6. [A worked example: picking a mug from a cluttered table](#6-a-worked-example-picking-a-mug-from-a-cluttered-table)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this rather than an image model, and what it costs](#8-why-this-rather-than-an-image-model-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -491,9 +483,7 @@ of them the model assumes a single cloud.
 
 ### 5.5 Sonata
 
-Sonata is **worth betting on**, because it attacks the shortage of labelled 3D data
-that [section 8](#8-why-this-rather-than-an-image-model-and-what-it-costs) names as
-the biggest cost of this whole family. Pointcept and Meta published it at CVPR 2025.
+Sonata is **worth betting on**, because it attacks the shortage of labelled 3D data, which is the biggest cost of this whole family. Pointcept and Meta published it at CVPR 2025.
 It is not a new design: it is a PTv3 that has been trained on unlabelled point clouds
 by giving it a task that needs no labels, and what you download is that trained
 encoder.
@@ -573,124 +563,7 @@ size, before you commit.
 
 ---
 
-## 6. A worked example: picking a mug from a cluttered table
-
-Those models are easier to judge once one of them runs in a real job. An arm has a
-depth camera on its wrist, and a mug, a box and a few other things stand on a table.
-The job is to pick up the mug.
-
-1. The arm moves its camera above the table and takes one depth shot, and the
-    software turns that shot into a point cloud of about 300,000 points.
-2. The software cuts the cloud down to the region over the table and picks about
-    20,000 points spread evenly over it.
-3. A segmentation model gives every point a name, and about 1,500 points come back
-    as "mug".
-4. The software takes only the mug points, whose average position is roughly the
-    middle of the mug, while the highest mug point gives the height of the rim.
-5. A part segmentation model, or a second pass of the same model, marks which mug
-    points are the handle, so the arm now knows which way the handle points.
-6. The mug points go to a grasp model, which picks a place for the fingers, and the
-    [grasp models chapter](../../05_grasp-models/01_overview.md) takes over from
-    there.
-
-The numbers in this example are only there to make the steps concrete, because the
-real counts depend on the camera and on how far away it is.
-
----
-
-## 7. What goes wrong
-
-That example assumed the points were there to be named, and four things go wrong when
-they are not.
-
-**Missing points.** A depth camera often gets no reading on shiny, dark or
-see-through surfaces, so a glass has almost no points and the model has almost
-nothing to name. People fix this in two ways. They predict depth for those pixels with a model from
-[depth from pictures](../../03_seeing-models/03_also-used/02_depth-from-pictures.md),
-or they build the scene from many photos, as on the
-[scene reconstruction page](02_scene-reconstruction.md).
-
-**The back is missing.** The camera only sees one side, so the mug points are a half
-shell rather than a whole mug. That means the average of those points is nearer the
-camera than the real middle of the mug, and the
-[shape completion page](../03_also-used/01_shape-completion.md) is about this problem.
-
-**A different sensor.** A model trained on clean shapes made on a computer can do
-badly on real, noisy clouds. A model trained on one depth camera can also do badly on
-another, because each camera has its own kind of noise. The usual fix is to train
-with added noise and then to fine-tune on a few hundred labelled clouds from the real
-camera. Here **fine-tuning** means training an already trained model a little more on
-new data.
-
-**Objects it has never seen.** A model trained on 40 kinds of object only knows
-those 40 names, so a new kind of object gets one of the old names. The
-[3D feature maps page](../03_also-used/02_3d-feature-maps.md) describes one way around
-this, which is borrowing names from an image model that has learned many thousands of
-words.
-
----
-
-## 8. Why this rather than an image model, and what it costs
-
-Since those limits are real, it is worth saying plainly what this kind buys you. A
-point cloud model **is** a network that names a cloud of 3D points, or names every
-point in it. It **does** give a robot arm the object's points directly in 3D, in the
-same metres the arm moves in.
-
-The obvious alternative is to leave the depth camera's output as a picture. This is
-because a depth camera gives a grid of distances that looks just like a photo with
-one number per pixel. You can feed that grid, together with the colour photo, to an ordinary
-image model such as a
-[segmentation model](../../03_seeing-models/02_most-used/02_segmentation.md), and
-then turn the chosen pixels into points afterwards.
-
-So why choose a point cloud model instead? There are three reasons, and they all
-come from working in metres rather than in pixels.
-
-- A point cloud does not depend on where the camera is in the same way, because a
-    mug seen from close up covers many pixels while the same mug seen from far away
-    covers only a few. In a point cloud it is the same size in metres in both cases.
-- You can merge several point clouds into one, since two cameras, or one camera at
-    two places, give two clouds that fit together in the same room. Two pictures
-    taken from different places cannot simply be added together like that.
-- Many grasp models expect points, so giving them points from a point cloud model
-    saves one conversion step.
-
-What it costs you comes in three parts, and the first of them is the biggest.
-
-- There is far less labelled 3D data than labelled photo data, because image models
-    learn from hundreds of millions of photos while the biggest 3D sets are much
-    smaller. So an image model often knows many more kinds of object.
-- It depends completely on the depth camera, so where the depth camera fails the
-    point cloud model has nothing to work with.
-- It needs a graphics card for large clouds, and a step that cuts the cloud down
-    first.
-
-So in practice many robot systems do both of these. They run an image model on the
-colour photo
-to find and name the object, and then they use the depth points inside its outline.
-So a point cloud model is the better choice when shape matters more than colour or
-printed labels, for example when parts in a bin all look alike.
-
----
-
-## 9. The written alternative
-
-Book 5 finds objects in a point cloud with a written recipe instead, the one that
-Book 2's section 1.6 describes.
-[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md),
-a method that fits a shape when many of the points belong to something else, finds
-the table plane so that it can be removed. Then
-[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
-groups the points that are left into one cluster per object. The recipe needs no
-labelled clouds, and it works on objects the robot has never seen. The point cloud
-model wins when objects touch, as they do in a full bin, because clustering merges
-touching objects and nothing in it can fix that. It also wins when the robot must
-name the parts of an object, such as a handle.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Shape completion](../03_also-used/01_shape-completion.md) is the next page, and it
     deals with the missing back of the object.

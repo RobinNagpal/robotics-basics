@@ -22,11 +22,7 @@ is explained where it first appears.
 4. [Diffusion and flow matching: the difference](#4-diffusion-and-flow-matching-the-difference)
 5. [How it is trained](#5-how-it-is-trained)
 6. [Well-known models of this kind](#6-well-known-models-of-this-kind)
-7. [A worked example: reaching round a box to a mug](#7-a-worked-example-reaching-round-a-box-to-a-mug)
-8. [What goes wrong, and what people do about it](#8-what-goes-wrong-and-what-people-do-about-it)
-9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [The written alternative](#10-the-written-alternative)
-11. [Where to read next](#11-where-to-read-next)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -581,136 +577,11 @@ model built for that case, which is MIT on both its code and its weights. The
 [learned motion document](../../../03_frameworks/03_arm-movement/05_learned-motion.md#2-policies-you-can-download)
 lists it with every other downloadable policy and the licence of each.
 
-If the motion must be identical on every run, none of these is the right answer, and
-section 10 explains what to write instead.
+If the motion must be identical on every run, none of these is the right answer.
 
 ---
 
-## 7. A worked example: reaching round a box to a mug
-
-The models in section 6 are large, so this section follows one small task
-instead, and it compares the two kinds of policy on the same recordings. Suppose
-you want a small arm to pick up a mug and put it on a plate, and a cereal box
-stands between the arm and the mug. You record 100 demonstrations, and in some
-of them you went round the left of the box. In others you went round the right,
-because that is what felt natural each time.
-
-First, you train a plain behaviour-cloning policy on the recordings. On the
-robot it heads for the box, slows down near it, and bumps into it, because it
-learned the middle of the two ways.
-
-Next, you train a diffusion policy on the same recordings. Here is what then
-happens when you run it on the robot.
-
-1. The two cameras send a picture each, and the arm reports its joint angles.
-2. The policy makes a random chunk of sixteen gripper positions and cleans it up in
-   several steps. This time the random start leans left, so the chunk goes round
-   the left of the box.
-3. The arm plays the first eight positions.
-4. The policy looks again. It is already on the left, so the new chunk carries on
-   round the left. It does not switch sides halfway, because a path that switches
-   halfway does not look like any demonstration.
-5. Near the mug, the chunks slow down and bring the gripper round the handle, as the
-   demonstrations did, and then the gripper closes.
-6. The policy carries the mug to the plate in the same way, and opens the gripper.
-
-The next time you run it, the random start may lean right, and then the arm goes
-round the right instead. Both runs are correct, but they are also different, and
-section 8 explains why that can be a problem.
-
----
-
-## 8. What goes wrong, and what people do about it
-
-The worked example ended with two correct runs that took different paths, and
-that is the first of several costs. Each problem below is followed by what
-people do about it.
-
-**It is slower than a plain policy.** Each chunk needs several passes through the
-network, where a plain policy needs only one. So people reduce the number of steps
-with flow matching, or with a faster version such as Consistency Policy. They also
-run the next chunk's clean-up while the arm is still playing the current chunk.
-
-**It does not do the same thing twice.** Two runs from the same start can take
-different paths, and that is by design. But a factory cell that must repeat exactly
-the same motion cannot accept that, so people fix the random start to the same
-numbers each time, or they put a classical check above the policy.
-
-**It only knows the situations it was shown.** Like every copying method, it is
-confused by a scene unlike its demonstrations. For example, a new table colour, a
-camera moved by a few centimetres, or a mug it has never seen will all confuse it.
-The fix is more varied demonstrations, which cost time.
-
-**It has no idea of obstacles it was not shown.** The policy does not check for
-collisions, so if you put a new object in the way, it may drive into it. So a
-separate safety layer under the policy has to stop the arm. The
-[learned motion document](../../../03_frameworks/03_arm-movement/05_learned-motion.md#5-the-four-things-a-policy-does-not-have)
-lists what a policy lacks and what has to sit around it.
-
-**Its advantage is not always proven.** A 2026 study found that on its tests, flow
-matching did no better than plain copying, while running several times more slowly.
-The
-[what is changing document](../../../03_frameworks/04_one-arm-training/05_what-is-changing.md#flow-matching-and-an-honest-doubt-about-it)
-describes it. So try the simpler policy first, and measure whether the diffusion
-version really helps on your task.
-
----
-
-## 9. Why this kind, and what it costs
-
-Section 8 listed what goes wrong, so this section asks when the method is worth
-it anyway. The obvious alternative is plain behaviour cloning, which gives one
-answer for each situation, and which is simpler, faster and easier to
-understand.
-
-You choose a diffusion or flow policy when your demonstrations really contain
-several good ways to do the task, so that averaging them would be wrong. For
-example, reaching round an obstacle is one such task, grasping a mug by the
-handle or by the rim is another, and folding a cloth, where people fold in
-different orders, is a third.
-
-What it gives you is a policy that stays inside one of the real ways of doing
-the task, instead of a blend that nobody ever performed.
-
-What it costs you is speed, and also repeatability. It needs several network
-passes per chunk, and its results vary from run to run. It also needs the same
-amount of careful demonstration data as any copying method, and a graphics card
-to train on.
-
-The table below sums up the choice in four questions. Read each row as a
-question you might ask about your task.
-
-| Question about your task | If the answer is yes |
-| --- | --- |
-| Is there only one sensible way to do it? | plain behaviour cloning or ACT is enough |
-| Did people do it in clearly different ways? | a diffusion or flow policy is worth trying |
-| Must the motion be the same every run? | neither; use a programmed motion |
-| Is the policy too slow on your computer? | use flow matching, fewer steps, or a smaller model |
-
----
-
-## 10. The written alternative
-
-The table above ended with programmed motion, so this section says what that written
-code would be. The written way to reach round an obstacle is a motion planner.
-[Sampling-based
-planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
-is told where the box is, finds one route round it, and checks that route for
-collisions. It returns one route, so it never blends a way round the left with a way
-round the right. [Trajectory
-generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
-then makes that route smooth, and Book 3's [planning a
-path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) explains how
-these planners behave on a real arm.
-
-The written way is better when the obstacles can be measured and the motion must
-be the same on every run. But a diffusion or flow policy is better when the task
-has several good ways that are easy to show and hard to write down, such as
-folding a cloth in different orders.
-
----
-
-## 11. Where to read next
+## 7. Where to read next
 
 This page finishes the three copying policies, so the reading below either goes
 back over them or moves on to the methods that do not copy at all.

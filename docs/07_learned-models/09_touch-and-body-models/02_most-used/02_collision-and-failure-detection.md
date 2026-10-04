@@ -27,11 +27,7 @@ electric current.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known methods and models](#5-well-known-methods-and-models)
-6. [A worked example: a pick-and-place cell next to a person](#6-a-worked-example-a-pick-and-place-cell-next-to-a-person)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this rather than the obvious alternative, and what it costs](#8-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -349,7 +345,7 @@ does not tell you which part of the arm was touched.
 What it costs you is a recording and the discipline to keep it clean. You need ordinary
 motion at the speeds and with the payloads you will really use, because a model trained on
 an empty gripper calls a full one a collision. You have to retrain when the gripper, the
-payload or the arm's wear changes, as section 7 says. The thing that most often goes wrong
+payload or the arm's wear changes. The thing that most often goes wrong
 is that a collision gets into the recording: if somebody leaned on the arm while it was
 being recorded, the correction learns to explain that push away, and the detector then
 ignores exactly the event it exists to catch.
@@ -533,14 +529,14 @@ in a paper that treated success detection as a question asked about a video, cal
 SuccessVQA, and answered it with Flamingo, a vision-language model of the time. What has
 changed since is that such judges now arrive as ordinary downloads. This book covers them
 in one place, the
-[reward and progress models](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#7-well-known-models-and-libraries)
+[reward and progress models](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#5-well-known-models-and-libraries)
 page, which names each one, states its licence and shows how to set it up. Read that page
 for the judges themselves. This section is only about using one as a failure detector.
 
 You would pick a judge rather than the obvious alternative, a small image classifier trained
 on your own pictures of the finished shelf, because of how many tasks your cell does. The
 classifier is faster and more accurate on the one task it knows, and the reward page's
-[section 7.1](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#71-the-hil-serl-reward-classifier-which-you-train-on-your-own-pictures)
+[section 7.1](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#51-the-hil-serl-reward-classifier-which-you-train-on-your-own-pictures)
 recommends it for exactly that reason. However, twenty different tasks need twenty
 classifiers and twenty sets of marked pictures, while one judge answers all twenty from the
 sentence you give it.
@@ -668,113 +664,16 @@ Four things change that.
   expect to cause real collisions to train it.
 - **One cell does many different tasks, or you need the failure described in words.** Then
   section 5.5, with the judges themselves taken from the
-  [reward and progress models](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#7-well-known-models-and-libraries)
+  [reward and progress models](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#5-well-known-models-and-libraries)
   page. Ask after a step rather than during one, because the answer takes seconds.
 - **A generative policy drives the arm.** Then section 5.6 as well as section 5.4, because
   the policy's own output shows the failure before the sensors do.
 
 One thing should not change your choice. None of these six replaces the arm's certified
-safety function, for the reason section 7 gives, and a learned detector that has to be
+safety function, and a learned detector that has to be
 right to keep a person safe is a learned detector in the wrong place.
 
-## 6. A worked example: a pick-and-place cell next to a person
-
-Here is how the three detectors work together in one cell. A collaborative arm
-picks mugs from a tray and puts them on a shelf. While that happens, a person works
-at the next bench and sometimes reaches across.
-
-1. The arm has a built-in safety function, which stops it if a joint torque goes far
-   above what it expects. This function is certified, and the learned models below
-   never replace it.
-2. On top, a learned model predicts the torque each joint needs. It was trained on
-   the arm's own normal movements, so it knows this arm's friction and the weight of
-   its gripper. The gap between its prediction and the measured torque is small in
-   normal work.
-3. The person's elbow brushes the arm's forearm. The gap on joints 1 and 2 rises.
-   It rises much less than a hard hit would make, but it is well above the small
-   normal gap. The program slows the arm and moves it away from the contact.
-4. A few picks later, the wrist weight vanishes halfway through a carry, so the
-   anomaly detector flags the run. The program then stops the cell and reports
-   "object lost during carry", with the time.
-5. At the end of each place, a camera takes one picture of the shelf. A success
-   detector checks that a mug is in the expected spot before the next pick.
-
-In this cell each layer catches something that the others miss. The certified
-function catches hard hits, while the learned residual catches gentle ones. The
-anomaly detector catches the dropped mug, which is not a collision at all, and the
-camera check catches a mug that was placed but fell over afterwards.
-
-## 7. What goes wrong
-
-The sections above described these detectors at their best. This list gives the six
-things that go wrong in practice, and what people do about each one.
-
-- **False alarms.** A detector that stops the arm every few minutes for nothing is
-  soon switched off, and the main cause is a poor prediction of the expected torque.
-  So people improve the prediction, or they allow a larger gap during fast
-  movements.
-- **Missed gentle contacts.** A stop line high enough to avoid false alarms may miss
-  a soft bump, so people improve the prediction until the stop line can be lower.
-- **A new payload.** If the gripper picks up something heavier than usual, the
-  torques change, and the detector may call it a collision. So people tell the model
-  the payload, or they weigh it first with the wrist sensor.
-- **Rare failures.** A failure that never happened during training may look normal
-  to a classifier trained on labelled failures. That is why people use anomaly
-  detection instead, because it flags anything unusual.
-- **Wear.** As the arm's gearboxes wear, friction changes, and the normal gap grows,
-  so people retrain or recalibrate from time to time.
-- **Trusting it for safety.** A learned detector has no guarantee. It must never be
-  the only thing that keeps a person safe, so the certified safety function stays
-  in place. The frameworks book makes the same point in
-  [compliance](../../../03_frameworks/02_gripping/05_holding-on.md#3-compliance-impedance-and-admittance):
-  a safety function is separate, certified equipment.
-
-## 8. Why this rather than the obvious alternative, and what it costs
-
-The last section listed what goes wrong, so this section weighs those problems
-against the alternatives. The obvious alternative is **a fixed torque limit on each
-joint**, with no model of what the torque should be. This is simple and
-predictable, and every arm has it. However, the torque in normal work changes a lot
-with speed and pose, so a fixed limit must be set above the largest normal torque.
-This means a gentle bump during a slow movement never reaches it.
-
-The next alternative is **the momentum observer with a textbook physics model**,
-which is what good collaborative arms already do. It is fast, well understood and
-needs no training data. So a learned model is worth adding only when this is not
-enough: when the textbook model's errors force the stop line so high that gentle
-contacts are missed, or when you want to catch failures that are not collisions at
-all, such as a dropped object.
-
-What it costs you:
-
-- Data. You need many normal runs, and for a collision classifier, some real
-  collisions caused carefully on purpose.
-- Tuning. Someone has to choose the alarm limit, and choose between false alarms
-  and missed contacts.
-- Upkeep. The model must be retrained when the gripper, the payload or the arm's
-  wear changes.
-- No guarantee. It adds to the certified safety function and never replaces it.
-
-## 9. The written alternative
-
-This page has argued for adding a learned model, so the last question is what the
-written version alone gives you. The written alternative is the
-expected-against-measured check with a textbook physics model, which is the second
-alternative in section 8, and Book 5 gives the pieces.
-[Arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
-works out the torque each joint should need, and
-[sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
-turns the gap into an alarm that does not flicker.
-[Safety monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
-covers the software checks that act on such an alarm, and where certified safety
-equipment must take over.
-
-Because it is fast, needs no training data and is well understood, the written
-check wins on most arms. A learned model wins when the textbook model's errors force
-the stop line so high that gentle contacts are missed. It also wins when the failure
-is not a collision at all, such as a dropped mug.
-
-## 10. Where to read next
+## 6. Where to read next
 
 In this chapter:
 

@@ -225,7 +225,7 @@ Because each approach is strong where the other is weak, many robot teams in pra
 use both of them. They train in a hand-written simulator, and they use a learned
 model for the parts the simulator gets wrong. The learned dynamics page shows the
 simplest form of this, a
-[residual model](02_most-used/01_learned-dynamics-models.md#7-learning-only-the-part-physics-gets-wrong-residual-models)
+[residual model](02_most-used/01_learned-dynamics-models.md#5-learning-only-the-part-physics-gets-wrong-residual-models)
 , with a worked example of a pushed block.
 
 ---
@@ -307,7 +307,7 @@ is no pretrained part here at all, so everything the model knows comes from the 
 
 What you write is how those rows are filled, which means measuring the cube from the
 camera before and after every push, and the planning loop that asks the trained model
-what to do. The [learned dynamics models page](02_most-used/01_learned-dynamics-models.md#51-an-ensemble-of-small-networks-the-pets-way)
+what to do. The [learned dynamics models page](02_most-used/01_learned-dynamics-models.md#61-an-ensemble-of-small-networks-the-pets-way)
 shows that loop.
 
 What you decide is which numbers go in the state, and that decision limits everything

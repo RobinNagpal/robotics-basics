@@ -19,23 +19,16 @@ needs from them.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Step 1: a list of numbers for every pixel](#step-1-a-list-of-numbers-for-every-pixel)
-   · [Step 2: lift the lists into 3D](#step-2-lift-the-lists-into-3d)
-   · [Step 3: ask with words](#step-3-ask-with-words)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-   · [F3RM](#51-f3rm)
-   · [LERF](#52-lerf)
-   · [ConceptFusion](#53-conceptfusion)
-   · [ConceptGraphs](#54-conceptgraphs)
-   · [GraspSplats](#55-graspsplats)
-   · [OpenScene](#56-openscene)
-   · [How to choose](#57-how-to-choose)
-6. [A worked example: "pick up the mug by its handle"](#6-a-worked-example-pick-up-the-mug-by-its-handle)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this rather than asking about each photo, and what it costs](#8-why-this-rather-than-asking-about-each-photo-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 F3RM](#51-f3rm)
+   · [5.2 LERF](#52-lerf)
+   · [5.3 ConceptFusion](#53-conceptfusion)
+   · [5.4 ConceptGraphs](#54-conceptgraphs)
+   · [5.5 GraspSplats](#55-graspsplats)
+   · [5.6 OpenScene](#56-openscene)
+   · [5.7 How to choose](#57-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -376,7 +369,7 @@ Anything Model cut each photo into objects, the objects are matched across photo
 merged into one three-dimensional object each, and each object keeps one CLIP feature and
 a note of how it sits relative to the others. A
 [language model](../../07_language-models/01_overview.md) can then read that record and
-answer questions about position, which section 7 explains a dense map cannot.
+answer questions about position.
 
 The obvious alternative is a dense map such as ConceptFusion or OpenScene. ConceptGraphs
 wins on memory and on relations, because a room becomes a few hundred objects rather than
@@ -494,130 +487,13 @@ Two of these are worth skipping unless you are reading rather than building. LER
 the idea and leaves the robot work to you, and ConceptFusion has been overtaken by
 ConceptGraphs from the same authors.
 
-Whatever you choose, remember what section 8 says about dates. The map holds what the
+Whatever you choose, remember that a map records what the camera saw on the day it was built. The map holds what the
 camera saw when you built it, so the first question to answer is how often your scene
 changes.
 
 ---
 
-## 6. A worked example: "pick up the mug by its handle"
-
-Those systems are easier to follow once one of them runs a whole job. An arm stands at
-a kitchen counter with several mugs, a kettle and a sponge on it. A person then types
-"pick up the green mug by its handle".
-
-1. The arm moves its wrist camera over the counter and takes about a dozen colour and
-    depth pictures, saving its joint readings for each one.
-2. The software runs the image model on each picture and builds a 3D feature map by
-    fusion.
-3. The software asks the map about "green mug" and keeps the points that score
-    highest, which are the points of the green mug.
-4. Within those points only, it asks about "handle", so the highest scoring points are
-    now the handle of the green mug.
-5. A grasp model from the [grasp models chapter](../../05_grasp-models/01_overview.md)
-    proposes many grasps on the mug, and the software keeps only the grasps whose
-    fingers close on the handle points.
-6. The arm then makes the best of those grasps.
-
-If the person next says "now wipe the counter with the sponge", the map is still
-there, so the software only has to ask about "sponge". It does not need to look again
-unless something has moved.
-
-F3RM goes one step further than this. Instead of the word "handle", it learns from a
-few demonstrations where a person's grasp sits on a mug, and it stores the lists at
-the points where the fingers were. On a new mug it then looks for points with similar
-lists, and grasps there.
-
----
-
-## 7. What goes wrong
-
-That example worked cleanly, but five things go wrong in less tidy scenes.
-
-**Blurry edges.** The image model looks at patches of pixels rather than single
-pixels, so the lists near an edge are a mix of both sides. A thin handle often gets a
-list that is partly "handle" and partly "table", which means the map finds the right
-area but not the exact border. A
-[segmentation model](../../03_seeing-models/02_most-used/02_segmentation.md) such as
-SAM can sharpen the outline afterwards.
-
-**Words that mean the same.** The map may score "mug" and "cup" quite differently,
-even when a person would use them for the same thing. So people often try a few
-wordings and then combine the scores.
-
-**Where things are relative to each other.** CLIP-style lists are good at saying what
-a thing is and weak at saying which one is on the left. So "the mug to the left of the
-kettle" is hard for a plain feature map. Systems such as ConceptGraphs keep a separate
-record of objects and their positions, and a
-[language model](../../07_language-models/01_overview.md) reads that record to answer
-such questions.
-
-**The map goes out of date.** When the arm moves a mug, the map still shows it in the
-old place. So the software must update the part of the map that changed, or build the
-map again.
-
-**Size.** Every point carries a list of hundreds of numbers, so a map of a whole room
-can take far more memory than a plain point cloud. Many systems therefore shrink the
-lists, or keep one list per object instead of one per point.
-
----
-
-## 8. Why this rather than asking about each photo, and what it costs
-
-Since those problems are real, it is worth setting out what the map buys you. A 3D
-feature map **is** a 3D map where every point carries a list of numbers borrowed from
-an image model. It **does** let the arm find things and parts in 3D by name, including
-names nobody planned for.
-
-The obvious alternative is to skip the map and use the latest photo on its own. You
-ask an
-[open-vocabulary model](../../03_seeing-models/02_most-used/03_open-vocabulary-models.md),
-such as Grounding DINO, to draw a box around "the green mug". Then you read the depth
-picture inside that box to get the 3D points.
-
-So why build a map instead?
-
-- The map remembers what is out of view, so if the green mug is behind the kettle in
-    the latest photo then the map still knows where it is from an earlier photo.
-- Many views are steadier than one, because the average over a dozen photos is less
-    likely to be wrong than any single photo.
-- It gives 3D directly, whereas a box on a photo covers some background too, so the
-    depth inside the box includes points that are not the mug.
-- It answers many questions from one build, and each question is fast because it needs
-    no new photos.
-
-What it costs you comes in four parts.
-
-- Time to build, because the arm has to look from several places first.
-- Memory and a graphics card, since hundreds of numbers per point add up.
-- It goes out of date, so in a scene where things move often the latest photo is more
-    honest than an old map.
-- It is only as good as the image model, because if CLIP does not know the name of a
-    part then the map does not either.
-
-So a 3D feature map suits a scene that stays mostly still while the arm does several
-jobs in it, such as tidying a table. For one quick pick in a scene that keeps
-changing, asking about the latest photo is simpler.
-
----
-
-## 9. The written alternative
-
-There is no written alternative for the meaning itself. This is because the link
-between words and what things look like comes from an image model trained on millions
-of pictures with captions. However, the map underneath does have a written form. [Volumetric
-maps](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
-combine many depth pictures into one 3D map. They merge the many readings of each
-small cube into one answer, just as the fusion step on this page does with lists of
-numbers. Then
-[clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
-groups the points above the table into objects, so that a written program can keep a
-list of where each object is. That is enough when the robot only needs to know where
-things are, and not what they are called.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Open-vocabulary models](../../03_seeing-models/02_most-used/03_open-vocabulary-models.md)
     explains CLIP, Grounding DINO and SAM, which are the image models these maps

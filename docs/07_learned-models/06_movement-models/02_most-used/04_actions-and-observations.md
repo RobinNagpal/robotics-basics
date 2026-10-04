@@ -217,7 +217,7 @@ sometimes −179 for nearly the same picture. The network is trained to be close
 both, so it learns their average, which is 0. That is a turn of 0° instead of 180°,
 which leaves the gripper facing the wrong way. This is the same averaging problem
 that
-[behaviour cloning](01_behaviour-cloning.md#two-good-ways-become-one-bad-way)
+behaviour cloning
 describes, caused here only by how the number is written.
 
 For this reason many policies output the six-number form, while people usually

@@ -18,11 +18,6 @@ page uses only a few lines of Python in one example, and explains each line.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Step 1: the robot writes a prompt](#step-1-the-robot-writes-a-prompt)
-   · [Step 2: the model writes the plan](#step-2-the-model-writes-the-plan)
-   · [Step 3: checking that a step can work](#step-3-checking-that-a-step-can-work)
-   · [Another way: the model writes code](#another-way-the-model-writes-code)
-   · [Feeding back what happened](#feeding-back-what-happened)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
    · [5.1 SayCan](#51-saycan)
@@ -32,11 +27,7 @@ page uses only a few lines of Python in one example, and explains each line.
    · [5.5 Qwen3.5](#55-qwen35)
    · [5.6 Gemma 4](#56-gemma-4)
    · [5.7 How to choose](#57-how-to-choose)
-6. [A worked example: putting the cups away](#6-a-worked-example-putting-the-cups-away)
-7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
-8. [Why use a planner, and what it costs](#8-why-use-a-planner-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -664,118 +655,7 @@ ordinary code goes between the planner and the robot in every case.
 
 ---
 
-## 6. A worked example: putting the cups away
-
-Here is a planner on a single arm beside a kitchen counter. The arm has a camera above
-the counter, and its programmers have written four functions:
-
-- `find(name)` looks for an object with a
-  [seeing model](../../03_seeing-models/01_overview.md), and returns where it is
-- `pick(obj)` picks the object up, using a
-  [grasp model](../../05_grasp-models/01_overview.md) to choose where to hold it
-- `place(obj, on=...)` puts the held object down on a named place
-- `is_empty(obj)` looks at the object and answers yes or no
-
-A person says: "Put the clean cups on the shelf, and leave the full one out."
-
-1. The robot's program builds a prompt, which lists the four functions, gives one
-   short example, and adds the request.
-2. The language model writes a program that finds every cup, and for each cup it calls
-   `is_empty`. If the cup is empty, the program picks the cup up and places it on the
-   shelf, and otherwise it leaves the cup where it is.
-3. A small checker, written in ordinary code, reads the program before it runs, and it
-   makes sure that the program only calls the four functions, and names only places
-   the robot knows. The checker would stop a program that says `place(cup,
-   on="dishwasher")`, because this robot has no dishwasher.
-4. The program then runs, and the language model is not used again unless something
-   fails.
-5. One cup slips during `pick`, so the skill reports the failure. The program then
-   adds "Result: cup 2 was dropped on the counter" to the prompt, and asks the model
-   to continue. The model writes one more `pick` and `place` for cup 2.
-
-So it is worth looking at what each part did. The language model understood "clean"
-and "the full one", and turned them into a loop with a check inside. But it did not
-decide where to hold a cup, or how to move the arm, because those jobs belong to other
-models and to ordinary code. The frameworks book has a case study on [standing a glass
-upside down on a drying
-rack](../../../03_frameworks/04_one-arm-training/07_case-study/01_place-glass.md#version-4-an-instruction-decides-the-goal).
-Its fourth version uses this same split on a real design.
-
----
-
-## 7. What goes wrong, and what people do about it
-
-A planner fails in ways that are different from the other models in this book. So the
-list below gives the common failures, and the usual fix for each one.
-
-- **It writes steps that are impossible.** A language model sometimes writes text that
-  sounds right but is wrong, which people call **hallucination**. For a planner, it
-  means a step that names a skill the robot does not have, or an object that is not
-  there. The fix is a checker in ordinary code, as in the worked example. The checker
-  refuses any step that is not on the list.
-- **It does not know the robot's state.** It cannot see that the gripper is full, or
-  that the drawer is locked, because nothing tells it. The fixes are the "can it work
-  now" score from SayCan, and describing the scene in words inside the prompt.
-- **It is slow.** A large language model takes from under a second to several seconds
-  to write a plan. That is fine once per step, but it is far too slow for
-  moment-to-moment control of the arm, which is why the planner only chooses steps.
-- **It can give a different plan each time.** The same request can produce two
-  slightly different plans. So for a task that must be repeatable, people fix the plan
-  once, check it, and save it.
-- **It trusts the words too much.** If a person says "put the knife in the cup", the
-  model will plan it, even if the cup is full of water. The model has no sense of what
-  is safe unless the prompt or the checker supplies it. So a planner is not allowed to
-  switch off any of the robot's safety limits.
-- **It cannot recover from what it cannot see.** A plain language model only learns
-  about a failure if someone tells it so in words. The fix is to add a
-  [vision-language model](../02_most-used/02_vision-language-models.md) that looks at
-  the camera and reports what happened.
-
----
-
-## 8. Why use a planner, and what it costs
-
-A planner is a language model that chooses the order of the robot's steps, so it lets
-a person give the robot a new task in ordinary words. It also fills in steps that the
-person never said.
-
-So the obvious alternative is a hand-written program, such as a fixed sequence or a
-**behaviour tree**. A behaviour tree is a chart of steps and checks that a programmer
-draws, and the robot follows it exactly. A behaviour tree is free to run, fast, and
-always does the same thing, and you can also prove what it will do. So for a task that
-never changes, such as the same box packed the same way every day, the behaviour tree
-is the better choice. The planner earns its place when the request changes from one
-day to the next, and nobody can list every request in advance. For example, a menu of
-buttons cannot cover "leave the full one out".
-
-So the planner costs you three things in return. It adds seconds of delay for each
-plan, and it needs either a large graphics card or a paid online service. It also adds
-a new kind of failure, which is a plan that is wrong in its goal and that nothing
-downstream will notice. That last cost is why every serious design puts a checker in
-ordinary code between the planner and the robot.
-
----
-
-## 9. The written alternative
-
-Instead, the written alternative is a task program that a person writes in advance.
-[Finite state
-machines](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/01_finite-state-machines.md)
-and [behaviour
-trees](../../../06_programming-techniques/08_decisions-and-task-logic/02_most-used/02_behaviour-trees.md)
-hold the steps, the checks and the retries, and the robot follows them exactly. When
-the order of the steps depends on where things are, Book 3's [task and motion
-planning](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md#5-task-and-motion-planning)
-searches for an order the arm can really carry out.
-
-The written program wins when the task is known in advance, because it is fast, free
-to run and can be checked. But the language model wins when the requests change and
-nobody can list them all. Even then, a checker in ordinary code stays between the
-planner and the robot.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Vision-language models](../02_most-used/02_vision-language-models.md) adds a camera
   picture, so the model can see the table instead of being told about it.

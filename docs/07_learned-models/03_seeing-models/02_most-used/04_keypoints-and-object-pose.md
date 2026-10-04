@@ -24,13 +24,9 @@ page.
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
-5. [Well-known models](#5-well-known-models)
-6. [A worked example: hanging a mug on a rack](#6-a-worked-example-hanging-a-mug-on-a-rack)
-7. [Following a pose over time: 6D pose tracking](#7-following-a-pose-over-time-6d-pose-tracking)
-8. [What goes wrong](#8-what-goes-wrong)
-9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [The written alternative](#10-the-written-alternative)
-11. [Where to read next](#11-where-to-read-next)
+5. [Following a pose over time: 6D pose tracking](#5-following-a-pose-over-time-6d-pose-tracking)
+6. [Well-known models](#6-well-known-models)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -129,10 +125,10 @@ everywhere else. So there is one heatmap for "handle, top", another for "base
 centre", and so on. Then the software picks the brightest pixel in each heatmap,
 and that pixel is the keypoint.
 
-OpenPose, which [section 5.1](#51-openpose) describes, is the plainest example of
+OpenPose, which [section 5.1](#61-openpose) describes, is the plainest example of
 this route, and it is on the shortlist to explain the idea rather than to be used.
 The two keypoint models the shortlist recommends instead, [Ultralytics YOLO
-pose](#52-ultralytics-yolo-pose) and [RTMPose](#53-rtmpose), hand you the same
+pose](#62-ultralytics-yolo-pose) and [RTMPose](#63-rtmpose), hand you the same
 thing in the end: one named point for each keypoint, with a confidence number.
 
 ### From keypoints to pose
@@ -156,12 +152,12 @@ So the neural network does the hard part, which is finding the points in a messy
 photo, while plain geometry does the easy part, which is turning those points into
 six numbers.
 
-[DOPE](#54-dope) is the model on the shortlist that runs these steps end to end,
+[DOPE](#64-dope) is the model on the shortlist that runs these steps end to end,
 and it is there for the same reason as OpenPose: it shows the route clearly. You
 still hand it the object's real dimensions and the camera's numbers, which are
 steps 1 and 3, and it does step 2 and step 4 itself. The two keypoint models above
 stop at step 2, so step 4 is yours to write, and that is what the `cv2.solvePnP`
-call in [section 5.2](#52-ultralytics-yolo-pose) is doing.
+call in [section 5.2](#62-ultralytics-yolo-pose) is doing.
 
 ### Render and compare
 
@@ -189,11 +185,11 @@ checked against the real photo.
 
 Two of the three object-pose models on the shortlist work this way, while DOPE
 above uses keypoints and PnP instead.
-[MegaPose](#55-megapose-through-happypose) is the one this page recommends when you
-intend to ship, and [FoundationPose](#56-foundationpose) runs the same loop twice
+[MegaPose](#65-megapose-through-happypose) is the one this page recommends when you
+intend to ship, and [FoundationPose](#66-foundationpose) runs the same loop twice
 over: once with many guesses on the first frame of a video, and then with one guess
 on every frame after it, which [section
-7](#7-following-a-pose-over-time-6d-pose-tracking) describes.
+7](#5-following-a-pose-over-time-6d-pose-tracking) describes.
 
 ---
 
@@ -230,379 +226,7 @@ photos are often enough to train a keypoint model for one kind of object.
 
 ---
 
-## 5. Well-known models
-
-The models in this area come from two separate lines of work, and people confuse
-them constantly, so this section separates them before it names anything.
-
-The **human-pose line** finds named points on a person: shoulders, elbows, wrists,
-knees. These models are the ones with the large communities, the easy packages and
-the pretrained weights, and they are trained on photographs of people. They return
-points in the picture, in pixels. They do not return a 6D pose of anything, so you
-get the six numbers only by adding depth or Perspective-n-Point (PnP), as
-[section 3](#3-how-it-works-inside) describes. You use this line on your own
-objects by fine-tuning one of these models on your own photographs with your own
-points marked.
-
-The **object-pose line** goes straight to the six numbers. These models expect a
-computer-aided design (CAD) model of the object, or a set of reference photographs
-of it, and they return where the object is and how it is turned. They are
-research repositories rather than packaged libraries, their licences are much
-worse, and most of them need an NVIDIA graphics card.
-
-Read the table like this. The left column names the model and says how current it
-is. The right column is written as sentences, and the first of them says which of
-the two lines the model belongs to, because that is the part to read first: a
-human-pose model will never give you an object's rotation on its own. The sentences
-after it give the model's size, its licence, the job it is best at and when to pick
-it. Parameter counts are given where the project publishes them, from the
-Ultralytics documentation and from the RTMPose project's own table, and a row says
-that the count is not stated where the project publishes none. A **parameter** is
-one number inside the model that training chooses, so more parameters mean a larger
-download and a slower answer. Every licence was read from the project's own licence
-file.
-
-| Model | What decides it |
-| --- | --- |
-| **OpenPose**, historical | OpenPose belongs to the human-pose line, so it returns points in the picture and never an object's rotation. Its parameter count is not stated, and its licence is a Carnegie Mellon University agreement for non-commercial research only. It is best at explaining how heatmap keypoint models work, so read it to understand the others and never pick it for a product. |
-| **Ultralytics YOLO pose**, most used in 2026 | Ultralytics YOLO pose belongs to the human-pose line. Its sizes run from 2.9 million to 57.6 million parameters, and its licence is AGPL-3.0. It is best at being the easiest route to a keypoint model of your own, so pick it when you will fine-tune on your own points and can live with AGPL-3.0. |
-| **RTMPose**, most used in 2026 | RTMPose belongs to the human-pose line as well. Its sizes run from 3.3 million to 27.7 million parameters, and its licence is Apache-2.0. It is best at fast keypoints on a processor with no graphics card, so pick it when the licence has to be permissive or when there is no graphics card. |
-| **DOPE**, historical | DOPE belongs to the object-pose line, so it gives the six numbers itself. Its parameter count is not stated, and its licence is NVIDIA's, which permits non-commercial use only. It is best at showing keypoints and Perspective-n-Point on a rigid object, so pick it when you are reproducing a paper rather than shipping a product. |
-| **MegaPose, through HappyPose**, most used in 2026 | MegaPose belongs to the object-pose line, and it gives the six numbers for an object it has never seen from that object's CAD model. Its parameter count is not stated. MegaPose is Apache-2.0 and HappyPose is BSD-2-Clause, so pick this pair when you have CAD models and you intend to ship. |
-| **FoundationPose**, worth betting on | FoundationPose belongs to the object-pose line, and it gives the six numbers and then tracks them through a video. Its parameter count is not stated, and its licence is NVIDIA's, which permits non-commercial use only. Pick it when the work is research and you need tracking as well. |
-
-### 5.1 OpenPose
-
-**Historical**: nobody should start a project with it, and its ideas are in the
-models below it.
-
-OpenPose came from Carnegie Mellon University in 2017, and it was the first system
-in wide use that found the keypoints of several people in one picture in real
-time. It produces
-one heatmap per keypoint, exactly as [section 3](#3-how-it-works-inside)
-describes, plus a second set of maps that say which limb joins which pair of
-points, which is how it decides whose elbow belongs to whose shoulder. Its output
-order outlived it: the `rtmlib` package of [section 5.3](#53-rtmpose) still has a
-`to_openpose` option that returns points in OpenPose's order.
-
-You would not pick it over RTMPose or Ultralytics YOLO pose, the obvious
-alternatives, for any new work. They do the same job faster, they install with one
-command, and their licences permit a product.
-
-The costs are what rule it out. Its licence is a Carnegie Mellon University
-agreement for academic and non-profit organisations, for non-commercial research
-use only, and a commercial licence has to be bought separately. You build it from
-C++ source with Caffe and CUDA rather than installing it, and the repository has
-had no commit since August 2024.
-
-There is no Python package. The demo is a built binary, and its own documentation
-shows this call:
-
-```bash
-# Writes one JSON file per picture, holding the keypoints it found.
-./build/examples/openpose/openpose.bin --image_dir examples/media/ \
-    --write_json output_jsons/
-```
-
-The JSON files are what you would read. What you supply is the build itself, and
-that is exactly the work the two packages below remove.
-
-### 5.2 Ultralytics YOLO pose
-
-**Most used in 2026**, because it is the shortest path from your own labelled
-photographs to a keypoint model that runs.
-
-Ultralytics publishes a pose version of each of its detectors, named with a
-`-pose` suffix, and the current family is YOLO26. The downloaded weights find 17
-joints on a person, because they were trained on the COCO keypoints dataset. The
-smallest holds 2.9 million parameters and the largest 57.6 million, so the small
-one runs on a robot's own computer.
-
-You would pick it rather than RTMPose, the obvious alternative, because training on
-your own keypoints is one call to `model.train` with one dataset file, and because
-the package is documented for people who have never trained a model. Pick RTMPose
-instead when AGPL-3.0 is not acceptable to you.
-
-The costs are these. The licence is AGPL-3.0, so a product that uses the package
-must publish its own source or buy a commercial licence from Ultralytics. The
-pretrained weights are also worth less here than on the detection pages, because
-they find human joints: for your mug they are only a starting point for
-fine-tuning, so the labelled photographs of [section 4](#4-how-it-is-trained) are
-work you will really do.
-
-The library is `ultralytics`, and the second half of the code is the PnP step from
-[section 3](#3-how-it-works-inside), which OpenCV already provides.
-
-```python
-import cv2
-import numpy as np
-from ultralytics import YOLO
-
-# The checkpoint name follows the family, so yolo11n-pose.pt works with older
-# versions of the package. These weights find 17 human joints; for your own
-# object you fine-tune this model on your own photos with your own points marked.
-model = YOLO("yolo26n-pose.pt")
-result = model("photo.jpg")[0]
-
-# One row per point: its column and its row in the picture, in pixels.
-image_points = result.keypoints.xy[0].cpu().numpy().astype(np.float64)
-
-# Where those same points sit on the object itself, in metres. You measure these
-# once, from the part's drawing, and they never change.
-object_points = np.array([[0.00, 0.00, 0.00],
-                          [0.06, 0.00, 0.00],
-                          [0.06, 0.09, 0.00],
-                          [0.00, 0.09, 0.00]])
-
-# The camera's lens numbers, from calibrating it once.
-camera_matrix = np.array([[615.0,   0.0, 320.0],
-                          [  0.0, 615.0, 240.0],
-                          [  0.0,   0.0,   1.0]])
-
-ok, rvec, tvec = cv2.solvePnP(object_points, image_points[:4], camera_matrix, None)
-rotation = cv2.Rodrigues(rvec)[0]   # the 3 by 3 rotation matrix
-print(ok, tvec.ravel())             # tvec is the object's position, in metres
-```
-
-The library gives you the network, the training loop and the drawing code, and
-`cv2.solvePnP` gives you the geometry. What you supply is the list of points and
-their meanings, because nothing in the library knows that your part has a handle
-top and a base centre: you choose the points, mark them in your training pictures,
-and measure where they sit on the real object in metres. You also write the check
-on the answer, for example by projecting the object points back into the picture
-with `cv2.projectPoints` and refusing the pose when they land far from the points
-the model found.
-
-### 5.3 RTMPose
-
-**Most used in 2026** wherever the licence or the hardware rules out Ultralytics,
-which on a robot happens often.
-
-RTMPose comes from the OpenMMLab project, inside the MMPose library. It is a
-keypoint model designed for speed on ordinary processors, and its own table
-reports the smallest body model at 3.34 million parameters, 68.5 average precision
-on COCO, and 3.20 milliseconds per picture with ONNX Runtime on an Intel i7-11700
-processor. The largest in that table holds 27.66 million parameters.
-
-You would pick it rather than Ultralytics YOLO pose, the obvious alternative, for
-two reasons. MMPose is Apache-2.0, so nothing in the licence reaches into your own
-source, and there is a small package called `rtmlib` that runs the published
-checkpoints through ONNX Runtime with no MMPose installation and no graphics card.
-Pick Ultralytics instead when your main job is training on your own points, which
-is easier there.
-
-The costs are these. MMPose has had no commit since August 2025, so it is drifting
-away from current versions of PyTorch, like the rest of the OpenMMLab libraries.
-Training your own keypoints means learning MMPose's configuration system, which is
-a real piece of study, because `rtmlib` only runs inference. The pretrained weights
-are again human joints, not your object's points.
-
-The library for inference is `rtmlib`, installed with `pip install rtmlib`, and
-this follows its own quick-start example.
-
-```python
-import cv2
-from rtmlib import Body, draw_skeleton
-
-# 'balanced' picks a middle-sized checkpoint; 'lightweight' and 'performance'
-# are the other two. The files download on first use.
-body = Body(mode="balanced", backend="onnxruntime", device="cpu")
-
-img = cv2.imread("photo.jpg")
-keypoints, scores = body(img)        # points in pixels, and a score for each
-
-img = draw_skeleton(img, keypoints, scores, kpt_thr=0.5)
-cv2.imwrite("drawn.jpg", img)
-```
-
-The library downloads the checkpoints, runs them through ONNX Runtime and draws the
-result. What you supply is the same as above: the meaning of the points, the
-training if you need your own, and the PnP step that turns points into a pose.
-
-### 5.4 DOPE
-
-**Historical**: it is the clearest example on this page of keypoints turning into
-a pose, and there are better choices for new work.
-
-DOPE (Deep Object Pose Estimation) came from NVIDIA in 2018. For each object it
-predicts nine keypoints, the eight corners of a box drawn around the object plus
-its centre, and PnP then turns those nine points into the six numbers. It followed
-PoseCNN, which was one of the first networks to predict a 6D pose directly and
-whose authors released the YCB-Video dataset that [section
-4](#4-how-it-is-trained) mentions. DOPE was trained only on pictures made in a
-computer, which showed that a network trained with domain randomisation can work
-on real photographs.
-
-You would pick MegaPose rather than DOPE, the obvious alternative, because DOPE
-needs one network trained for each object, while MegaPose takes any object whose
-CAD model you have. DOPE is worth reading to see the keypoint route done simply.
-
-The costs are these. Its licence file is the NVIDIA Source Code License, which
-permits use for research or evaluation only, and its readme carries a Creative
-Commons non-commercial badge as well; the licence file is the one that counts, and
-both forbid commercial use. Training per object means generating synthetic pictures
-per object. It needs an NVIDIA graphics card, and the authors report testing on
-Ubuntu 20.04 and 22.04 only.
-
-There is no package to install. You clone the repository and run its inference
-script, which is documented in the repository's `inference` folder.
-
-```bash
-# --weights is a trained network for one object; --object names the class
-# whose size is given in config_pose.yaml.
-python inference.py --weights ../weights --data ../sample_data --object cracker
-```
-
-What you supply is the camera's projection matrix in `camera_info.yaml` and the
-object's real dimensions in `config_pose.yaml`, because PnP cannot work without
-both. Weights for the YCB and HOPE objects are published, and weights for your own
-object are weights you train.
-
-### 5.5 MegaPose, through HappyPose
-
-**Most used in 2026** among object-pose models that a product may actually use,
-because it is the only strong one in this list whose licence permits it.
-
-MegaPose, from Inria and NVIDIA in 2022, estimates the 6D pose of an object it has
-never seen in training, as long as you give it the object's CAD model. It works by
-render and compare, which [section 3](#3-how-it-works-inside) describes. HappyPose
-is a separate project that packages MegaPose and the older CosyPose behind one
-interface, with a documented path that does not need an NVIDIA card and a ROS 2
-wrapper of its own.
-
-You would pick it rather than FoundationPose, the obvious alternative, because
-FoundationPose's licence permits research and evaluation only. MegaPose's code is
-Apache-2.0 and HappyPose is BSD-2-Clause, so this is the pair you can put in a
-product. FoundationPose is stronger and it tracks, so pick that one when the work
-is research.
-
-The costs are these. You must have a CAD mesh of each object, with its units in
-millimetres, and the camera's internal numbers. Render and compare runs the network
-several times per answer, so it is slow, and on a processor with no graphics card it
-is slow enough that you would run it once before a grasp rather than continuously.
-You install it from the Git repository with its submodules rather than from the
-Python package index.
-
-The library is `happypose`, and these commands come from its own documentation.
-
-```bash
-# Fetch the MegaPose weights and the worked example that ships with the project.
-python -m happypose.toolbox.utils.download --megapose_models
-python -m happypose.toolbox.utils.download --examples barbecue-sauce
-
-# Estimate the pose and write pictures of the result over the photo.
-python -m happypose.pose_estimators.megapose.scripts.run_inference_on_example \
-    barbecue-sauce --run-inference --vis-poses
-```
-
-The example folder shows exactly what you have to supply for your own object: a
-colour photograph, an optional depth picture in millimetres, a `camera_data.json`
-holding the camera matrix and the picture size, a mesh of the object in
-millimetres, and a detection box for the object in `object_data.json`. The box
-comes from a detector such as the ones on the [object detection
-page](01_object-detection.md), and it only sets the first guess at the object's
-distance, so the documentation says it does not have to be precise. The output is
-one quaternion and one translation per object.
-
-### 5.6 FoundationPose
-
-**Worth betting on**: taking any new object from a CAD model or a handful of
-photographs, and then tracking it, is where this field is going, and the reason it
-is not the default is its licence.
-
-FoundationPose, from NVIDIA, estimates the pose of an object it has never seen and
-then follows that pose through a video. It takes either a CAD model or a few
-photographs of the object from different sides. [Section 7](#7-following-a-pose-over-time-6d-pose-tracking)
-describes how its two modes work and what they cost in time.
-
-You would pick it rather than MegaPose, the obvious alternative, for two
-capabilities: it tracks as well as estimates, and it can work from reference
-photographs when no CAD model exists. Pick MegaPose when you intend to ship
-anything, because of the licence below.
-
-The costs are these. Its licence is the NVIDIA Source Code License, which permits
-use for research or evaluation purposes only. It needs an NVIDIA graphics card and
-two awkward dependencies, `nvdiffrast` and `pytorch3d`, which is why most people run
-it through the Docker image the repository provides. It also needs a mask of the
-object on the first frame, usually from a [segmentation](02_segmentation.md)
-model.
-
-There is no package, so you clone the repository and run its demo, which is the
-call its own readme gives.
-
-```bash
-git clone https://github.com/NVlabs/FoundationPose.git
-cd FoundationPose
-# Estimates the pose on the first frame of the bundled video, then tracks it.
-# The paths are already set as defaults in the script's arguments.
-python run_demo.py
-```
-
-What you supply for your own object is the mesh, the camera's internal numbers, a
-colour and depth video, and the mask of the object on the first frame. NVIDIA's
-Isaac ROS also packages the model for ROS 2, which is the easier route if your
-robot already runs ROS 2.
-
-### 5.7 How to choose
-
-Decide first which of the two lines you are in, because that decides everything
-else. If you have a CAD model of the object and want its rotation, you are in the
-object-pose line, and MegaPose through HappyPose is the default, since it is the
-one you may ship. If you have no CAD model but many slightly different objects of
-one kind, such as mugs, you are in the human-pose line: fine-tune a keypoint model
-on your own points and finish with `cv2.solvePnP`.
-
-Four things change that.
-
-- The licence must be permissive and there is no graphics card. Use RTMPose through
-  `rtmlib` for the points, and HappyPose on the processor for a CAD-based pose.
-- You want the least work to train on your own points. Use Ultralytics YOLO pose,
-  and accept that AGPL-3.0 means publishing your own source or buying a licence.
-- The work is research and you need the pose on every frame of a video. Use
-  FoundationPose, which [section 7](#7-following-a-pose-over-time-6d-pose-tracking)
-  covers in full.
-- You are watching a person rather than an object, for example to learn from a
-  recording of someone working. Stay in the human-pose line, where RTMPose has
-  whole-body models and [MediaPipe](https://github.com/google-ai-edge/mediapipe),
-  which is Apache-2.0, finds hands in ordinary video.
-
-One sentence is worth repeating, because it is the mistake this section exists to
-prevent. A model from the human-pose line gives you points in a picture and
-nothing more, so the six numbers always come from your own geometry afterwards,
-and [pose from
-points](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
-is the page that explains that step.
-
----
-
-## 6. A worked example: hanging a mug on a rack
-
-Those pieces fit together differently for each job, so here is one job in full: the
-robot must pick up a mug from a table and hang it on a hook by its handle.
-
-1. The wrist camera takes a colour photo and a depth image of the table.
-2. An [object detection](01_object-detection.md) model draws a box around the mug.
-3. A keypoint model looks inside that box, and marks the handle top, the handle
-   bottom, the rim and the base centre.
-4. The robot looks up each keypoint's distance in the depth image, so that each
-   point is now a position in 3D rather than only a pixel.
-5. From these 3D points the robot works out the mug's pose, because the line from
-   the base centre to the rim centre gives the direction the mug is standing, and
-   the handle points give the direction the handle faces.
-6. The robot plans a grasp on the side of the mug away from the handle, and the
-   [grasp models chapter](../../05_grasp-models/01_overview.md) covers how.
-7. It lifts the mug, moves the arm so that the handle's opening lines up with the
-   hook, and lowers the mug onto the hook.
-
-Notice that step 5 never needed an exact CAD model of this mug, because the
-keypoints were enough on their own. That is why keypoints are popular for jobs with
-many slightly different objects of one kind, such as mugs, shoes or bottles.
-
-If the job were putting one exact machined part into one exact hole, the robot
-would use a CAD-based pose model instead, because that gives a more precise answer
-for that one part.
-
-## 7. Following a pose over time: 6D pose tracking
+## 5. Following a pose over time: 6D pose tracking
 
 So far this page has worked out a pose from one photo, but a robot arm often needs
 the pose many times a second, because the part may be on a moving conveyor, a
@@ -769,88 +393,352 @@ single grasp, then tracking gives you nothing, because estimation alone is enoug
 
 ---
 
-## 8. What goes wrong
+## 6. Well-known models
 
-Whether the pose is worked out once or tracked, pose models fail in a few common
-ways, and each of them has a usual fix.
+The models in this area come from two separate lines of work, and people confuse
+them constantly, so this section separates them before it names anything.
 
-- **Symmetric objects.** A plain round bowl looks the same after any turn about its
-  centre, so the model cannot tell those turns apart and its answer can jump
-  around. People fix this by telling the model which turns do not matter, so that
-  it stops trying to tell them apart. For a grasp, a bowl's turn about its centre
-  usually does not matter anyway.
-- **Hidden parts.** If a hand or another object covers the handle, the handle
-  keypoints cannot be found, and some models guess them anyway, often wrongly. The
-  fix is to look at the confidence numbers, and to move the camera and look again
-  when they are low.
-- **Shiny and clear objects.** Glass and polished metal look different from every
-  angle, because they show reflections of the room, and their depth readings are
-  also poor. The page [depth from pictures](../03_also-used/02_depth-from-pictures.md)
-  covers ways around this.
-- **The wrong CAD model.** A CAD-based model assumes the real object matches the
-  drawing, which a mug with a chipped handle, or a bag of crisps that has changed
-  shape, does not. The model will still output a confident pose, and it will be
-  wrong.
-- **Small errors in rotation.** A pose that is off by a few degrees can look fine
-  in a picture, but it can still make a peg miss its hole. So people often finish
-  with a second, slower step, such as render and compare, or a touch-based check
-  with the gripper.
+The **human-pose line** finds named points on a person: shoulders, elbows, wrists,
+knees. These models are the ones with the large communities, the easy packages and
+the pretrained weights, and they are trained on photographs of people. They return
+points in the picture, in pixels. They do not return a 6D pose of anything, so you
+get the six numbers only by adding depth or Perspective-n-Point (PnP), as
+[section 3](#3-how-it-works-inside) describes. You use this line on your own
+objects by fine-tuning one of these models on your own photographs with your own
+points marked.
 
----
+The **object-pose line** goes straight to the six numbers. These models expect a
+computer-aided design (CAD) model of the object, or a set of reference photographs
+of it, and they return where the object is and how it is turned. They are
+research repositories rather than packaged libraries, their licences are much
+worse, and most of them need an NVIDIA graphics card.
 
-## 9. Why this kind, and what it costs
+Read the table like this. The left column names the model and says how current it
+is. The right column is written as sentences, and the first of them says which of
+the two lines the model belongs to, because that is the part to read first: a
+human-pose model will never give you an object's rotation on its own. The sentences
+after it give the model's size, its licence, the job it is best at and when to pick
+it. Parameter counts are given where the project publishes them, from the
+Ultralytics documentation and from the RTMPose project's own table, and a row says
+that the count is not stated where the project publishes none. A **parameter** is
+one number inside the model that training chooses, so more parameters mean a larger
+download and a slower answer. Every licence was read from the project's own licence
+file.
 
-Now that you have seen what pose models do and where they fail, this section
-answers four questions about them: what they are, what they do for you, why you
-would choose one over the obvious alternative, and what they cost.
+| Model | What decides it |
+| --- | --- |
+| **OpenPose**, historical | OpenPose belongs to the human-pose line, so it returns points in the picture and never an object's rotation. Its parameter count is not stated, and its licence is a Carnegie Mellon University agreement for non-commercial research only. It is best at explaining how heatmap keypoint models work, so read it to understand the others and never pick it for a product. |
+| **Ultralytics YOLO pose**, most used in 2026 | Ultralytics YOLO pose belongs to the human-pose line. Its sizes run from 2.9 million to 57.6 million parameters, and its licence is AGPL-3.0. It is best at being the easiest route to a keypoint model of your own, so pick it when you will fine-tune on your own points and can live with AGPL-3.0. |
+| **RTMPose**, most used in 2026 | RTMPose belongs to the human-pose line as well. Its sizes run from 3.3 million to 27.7 million parameters, and its licence is Apache-2.0. It is best at fast keypoints on a processor with no graphics card, so pick it when the licence has to be permissive or when there is no graphics card. |
+| **DOPE**, historical | DOPE belongs to the object-pose line, so it gives the six numbers itself. Its parameter count is not stated, and its licence is NVIDIA's, which permits non-commercial use only. It is best at showing keypoints and Perspective-n-Point on a rigid object, so pick it when you are reproducing a paper rather than shipping a product. |
+| **MegaPose, through HappyPose**, most used in 2026 | MegaPose belongs to the object-pose line, and it gives the six numbers for an object it has never seen from that object's CAD model. Its parameter count is not stated. MegaPose is Apache-2.0 and HappyPose is BSD-2-Clause, so pick this pair when you have CAD models and you intend to ship. |
+| **FoundationPose**, worth betting on | FoundationPose belongs to the object-pose line, and it gives the six numbers and then tracks them through a video. Its parameter count is not stated, and its licence is NVIDIA's, which permits non-commercial use only. Pick it when the work is research and you need tracking as well. |
 
-A pose model is a network that turns a photo into named points on an object, or
-into the object's six-number pose. So it tells the arm which way an object is
-turned, which a box or an outline cannot do, and many jobs need exactly that:
-hanging a mug, inserting a part, or putting a box down the right way up.
+### 6.1 OpenPose
 
-The obvious alternative is ordinary geometry on a depth image, with no neural
-network at all, because you can fit a known shape, such as a cylinder or a box,
-to the 3D points. The document [programmed
-methods](../../../02_perception/02_object-perception/03_programmed-methods.md)
-shows how. For simple shapes on a clean table, geometry is often more accurate
-and needs no training. However, it breaks down in clutter, where points from
-several objects mix together, and it also breaks down for shapes that are not
-simple, such as a mug with a handle. A pose model has seen thousands of
-cluttered pictures in training, so it copes with both, and that is the reason to
-choose it.
+**Historical**: nobody should start a project with it, and its ideas are in the
+models below it.
 
-The costs are real ones. You need either a CAD model of each object, or labelled
-photos for a keypoint model, and most good pose models need a graphics
-processing unit (GPU), the chip that also draws pictures in a computer game.
-Render and compare takes several rounds, so it is slower than a single
-detection, and many of the strongest models have research-only licences.
-Finally, a pose model gives no warning when it is wrong, so the robot needs some
-other check before it does anything risky.
+OpenPose came from Carnegie Mellon University in 2017, and it was the first system
+in wide use that found the keypoints of several people in one picture in real
+time. It produces
+one heatmap per keypoint, exactly as [section 3](#3-how-it-works-inside)
+describes, plus a second set of maps that say which limb joins which pair of
+points, which is how it decides whose elbow belongs to whose shoulder. Its output
+order outlived it: the `rtmlib` package of [section 5.3](#63-rtmpose) still has a
+`to_openpose` option that returns points in OpenPose's order.
 
----
+You would not pick it over RTMPose or Ultralytics YOLO pose, the obvious
+alternatives, for any new work. They do the same job faster, they install with one
+command, and their licences permit a product.
 
-## 10. The written alternative
+The costs are what rule it out. Its licence is a Carnegie Mellon University
+agreement for academic and non-profit organisations, for non-commercial research
+use only, and a commercial licence has to be bought separately. You build it from
+C++ source with Caffe and CUDA rather than installing it, and the repository has
+had no commit since August 2024.
 
-Book 5 finds poses with written geometry instead, and section 9 above says when
-that is enough. [Pose from
+There is no Python package. The demo is a built binary, and its own documentation
+shows this call:
+
+```bash
+# Writes one JSON file per picture, holding the keypoints it found.
+./build/examples/openpose/openpose.bin --image_dir examples/media/ \
+    --write_json output_jsons/
+```
+
+The JSON files are what you would read. What you supply is the build itself, and
+that is exactly the work the two packages below remove.
+
+### 6.2 Ultralytics YOLO pose
+
+**Most used in 2026**, because it is the shortest path from your own labelled
+photographs to a keypoint model that runs.
+
+Ultralytics publishes a pose version of each of its detectors, named with a
+`-pose` suffix, and the current family is YOLO26. The downloaded weights find 17
+joints on a person, because they were trained on the COCO keypoints dataset. The
+smallest holds 2.9 million parameters and the largest 57.6 million, so the small
+one runs on a robot's own computer.
+
+You would pick it rather than RTMPose, the obvious alternative, because training on
+your own keypoints is one call to `model.train` with one dataset file, and because
+the package is documented for people who have never trained a model. Pick RTMPose
+instead when AGPL-3.0 is not acceptable to you.
+
+The costs are these. The licence is AGPL-3.0, so a product that uses the package
+must publish its own source or buy a commercial licence from Ultralytics. The
+pretrained weights are also worth less here than on the detection pages, because
+they find human joints: for your mug they are only a starting point for
+fine-tuning, so the labelled photographs of [section 4](#4-how-it-is-trained) are
+work you will really do.
+
+The library is `ultralytics`, and the second half of the code is the PnP step from
+[section 3](#3-how-it-works-inside), which OpenCV already provides.
+
+```python
+import cv2
+import numpy as np
+from ultralytics import YOLO
+
+# The checkpoint name follows the family, so yolo11n-pose.pt works with older
+# versions of the package. These weights find 17 human joints; for your own
+# object you fine-tune this model on your own photos with your own points marked.
+model = YOLO("yolo26n-pose.pt")
+result = model("photo.jpg")[0]
+
+# One row per point: its column and its row in the picture, in pixels.
+image_points = result.keypoints.xy[0].cpu().numpy().astype(np.float64)
+
+# Where those same points sit on the object itself, in metres. You measure these
+# once, from the part's drawing, and they never change.
+object_points = np.array([[0.00, 0.00, 0.00],
+                          [0.06, 0.00, 0.00],
+                          [0.06, 0.09, 0.00],
+                          [0.00, 0.09, 0.00]])
+
+# The camera's lens numbers, from calibrating it once.
+camera_matrix = np.array([[615.0,   0.0, 320.0],
+                          [  0.0, 615.0, 240.0],
+                          [  0.0,   0.0,   1.0]])
+
+ok, rvec, tvec = cv2.solvePnP(object_points, image_points[:4], camera_matrix, None)
+rotation = cv2.Rodrigues(rvec)[0]   # the 3 by 3 rotation matrix
+print(ok, tvec.ravel())             # tvec is the object's position, in metres
+```
+
+The library gives you the network, the training loop and the drawing code, and
+`cv2.solvePnP` gives you the geometry. What you supply is the list of points and
+their meanings, because nothing in the library knows that your part has a handle
+top and a base centre: you choose the points, mark them in your training pictures,
+and measure where they sit on the real object in metres. You also write the check
+on the answer, for example by projecting the object points back into the picture
+with `cv2.projectPoints` and refusing the pose when they land far from the points
+the model found.
+
+### 6.3 RTMPose
+
+**Most used in 2026** wherever the licence or the hardware rules out Ultralytics,
+which on a robot happens often.
+
+RTMPose comes from the OpenMMLab project, inside the MMPose library. It is a
+keypoint model designed for speed on ordinary processors, and its own table
+reports the smallest body model at 3.34 million parameters, 68.5 average precision
+on COCO, and 3.20 milliseconds per picture with ONNX Runtime on an Intel i7-11700
+processor. The largest in that table holds 27.66 million parameters.
+
+You would pick it rather than Ultralytics YOLO pose, the obvious alternative, for
+two reasons. MMPose is Apache-2.0, so nothing in the licence reaches into your own
+source, and there is a small package called `rtmlib` that runs the published
+checkpoints through ONNX Runtime with no MMPose installation and no graphics card.
+Pick Ultralytics instead when your main job is training on your own points, which
+is easier there.
+
+The costs are these. MMPose has had no commit since August 2025, so it is drifting
+away from current versions of PyTorch, like the rest of the OpenMMLab libraries.
+Training your own keypoints means learning MMPose's configuration system, which is
+a real piece of study, because `rtmlib` only runs inference. The pretrained weights
+are again human joints, not your object's points.
+
+The library for inference is `rtmlib`, installed with `pip install rtmlib`, and
+this follows its own quick-start example.
+
+```python
+import cv2
+from rtmlib import Body, draw_skeleton
+
+# 'balanced' picks a middle-sized checkpoint; 'lightweight' and 'performance'
+# are the other two. The files download on first use.
+body = Body(mode="balanced", backend="onnxruntime", device="cpu")
+
+img = cv2.imread("photo.jpg")
+keypoints, scores = body(img)        # points in pixels, and a score for each
+
+img = draw_skeleton(img, keypoints, scores, kpt_thr=0.5)
+cv2.imwrite("drawn.jpg", img)
+```
+
+The library downloads the checkpoints, runs them through ONNX Runtime and draws the
+result. What you supply is the same as above: the meaning of the points, the
+training if you need your own, and the PnP step that turns points into a pose.
+
+### 6.4 DOPE
+
+**Historical**: it is the clearest example on this page of keypoints turning into
+a pose, and there are better choices for new work.
+
+DOPE (Deep Object Pose Estimation) came from NVIDIA in 2018. For each object it
+predicts nine keypoints, the eight corners of a box drawn around the object plus
+its centre, and PnP then turns those nine points into the six numbers. It followed
+PoseCNN, which was one of the first networks to predict a 6D pose directly and
+whose authors released the YCB-Video dataset that [section
+4](#4-how-it-is-trained) mentions. DOPE was trained only on pictures made in a
+computer, which showed that a network trained with domain randomisation can work
+on real photographs.
+
+You would pick MegaPose rather than DOPE, the obvious alternative, because DOPE
+needs one network trained for each object, while MegaPose takes any object whose
+CAD model you have. DOPE is worth reading to see the keypoint route done simply.
+
+The costs are these. Its licence file is the NVIDIA Source Code License, which
+permits use for research or evaluation only, and its readme carries a Creative
+Commons non-commercial badge as well; the licence file is the one that counts, and
+both forbid commercial use. Training per object means generating synthetic pictures
+per object. It needs an NVIDIA graphics card, and the authors report testing on
+Ubuntu 20.04 and 22.04 only.
+
+There is no package to install. You clone the repository and run its inference
+script, which is documented in the repository's `inference` folder.
+
+```bash
+# --weights is a trained network for one object; --object names the class
+# whose size is given in config_pose.yaml.
+python inference.py --weights ../weights --data ../sample_data --object cracker
+```
+
+What you supply is the camera's projection matrix in `camera_info.yaml` and the
+object's real dimensions in `config_pose.yaml`, because PnP cannot work without
+both. Weights for the YCB and HOPE objects are published, and weights for your own
+object are weights you train.
+
+### 6.5 MegaPose, through HappyPose
+
+**Most used in 2026** among object-pose models that a product may actually use,
+because it is the only strong one in this list whose licence permits it.
+
+MegaPose, from Inria and NVIDIA in 2022, estimates the 6D pose of an object it has
+never seen in training, as long as you give it the object's CAD model. It works by
+render and compare, which [section 3](#3-how-it-works-inside) describes. HappyPose
+is a separate project that packages MegaPose and the older CosyPose behind one
+interface, with a documented path that does not need an NVIDIA card and a ROS 2
+wrapper of its own.
+
+You would pick it rather than FoundationPose, the obvious alternative, because
+FoundationPose's licence permits research and evaluation only. MegaPose's code is
+Apache-2.0 and HappyPose is BSD-2-Clause, so this is the pair you can put in a
+product. FoundationPose is stronger and it tracks, so pick that one when the work
+is research.
+
+The costs are these. You must have a CAD mesh of each object, with its units in
+millimetres, and the camera's internal numbers. Render and compare runs the network
+several times per answer, so it is slow, and on a processor with no graphics card it
+is slow enough that you would run it once before a grasp rather than continuously.
+You install it from the Git repository with its submodules rather than from the
+Python package index.
+
+The library is `happypose`, and these commands come from its own documentation.
+
+```bash
+# Fetch the MegaPose weights and the worked example that ships with the project.
+python -m happypose.toolbox.utils.download --megapose_models
+python -m happypose.toolbox.utils.download --examples barbecue-sauce
+
+# Estimate the pose and write pictures of the result over the photo.
+python -m happypose.pose_estimators.megapose.scripts.run_inference_on_example \
+    barbecue-sauce --run-inference --vis-poses
+```
+
+The example folder shows exactly what you have to supply for your own object: a
+colour photograph, an optional depth picture in millimetres, a `camera_data.json`
+holding the camera matrix and the picture size, a mesh of the object in
+millimetres, and a detection box for the object in `object_data.json`. The box
+comes from a detector such as the ones on the [object detection
+page](01_object-detection.md), and it only sets the first guess at the object's
+distance, so the documentation says it does not have to be precise. The output is
+one quaternion and one translation per object.
+
+### 6.6 FoundationPose
+
+**Worth betting on**: taking any new object from a CAD model or a handful of
+photographs, and then tracking it, is where this field is going, and the reason it
+is not the default is its licence.
+
+FoundationPose, from NVIDIA, estimates the pose of an object it has never seen and
+then follows that pose through a video. It takes either a CAD model or a few
+photographs of the object from different sides. [Section 7](#5-following-a-pose-over-time-6d-pose-tracking)
+describes how its two modes work and what they cost in time.
+
+You would pick it rather than MegaPose, the obvious alternative, for two
+capabilities: it tracks as well as estimates, and it can work from reference
+photographs when no CAD model exists. Pick MegaPose when you intend to ship
+anything, because of the licence below.
+
+The costs are these. Its licence is the NVIDIA Source Code License, which permits
+use for research or evaluation purposes only. It needs an NVIDIA graphics card and
+two awkward dependencies, `nvdiffrast` and `pytorch3d`, which is why most people run
+it through the Docker image the repository provides. It also needs a mask of the
+object on the first frame, usually from a [segmentation](02_segmentation.md)
+model.
+
+There is no package, so you clone the repository and run its demo, which is the
+call its own readme gives.
+
+```bash
+git clone https://github.com/NVlabs/FoundationPose.git
+cd FoundationPose
+# Estimates the pose on the first frame of the bundled video, then tracks it.
+# The paths are already set as defaults in the script's arguments.
+python run_demo.py
+```
+
+What you supply for your own object is the mesh, the camera's internal numbers, a
+colour and depth video, and the mask of the object on the first frame. NVIDIA's
+Isaac ROS also packages the model for ROS 2, which is the easier route if your
+robot already runs ROS 2.
+
+### 6.7 How to choose
+
+Decide first which of the two lines you are in, because that decides everything
+else. If you have a CAD model of the object and want its rotation, you are in the
+object-pose line, and MegaPose through HappyPose is the default, since it is the
+one you may ship. If you have no CAD model but many slightly different objects of
+one kind, such as mugs, you are in the human-pose line: fine-tune a keypoint model
+on your own points and finish with `cv2.solvePnP`.
+
+Four things change that.
+
+- The licence must be permissive and there is no graphics card. Use RTMPose through
+  `rtmlib` for the points, and HappyPose on the processor for a CAD-based pose.
+- You want the least work to train on your own points. Use Ultralytics YOLO pose,
+  and accept that AGPL-3.0 means publishing your own source or buying a licence.
+- The work is research and you need the pose on every frame of a video. Use
+  FoundationPose, which [section 7](#5-following-a-pose-over-time-6d-pose-tracking)
+  covers in full.
+- You are watching a person rather than an object, for example to learn from a
+  recording of someone working. Stay in the human-pose line, where RTMPose has
+  whole-body models and [MediaPipe](https://github.com/google-ai-edge/mediapipe),
+  which is Apache-2.0, finds hands in ordinary video.
+
+One sentence is worth repeating, because it is the mistake this section exists to
+prevent. A model from the human-pose line gives you points in a picture and
+nothing more, so the six numbers always come from your own geometry afterwards,
+and [pose from
 points](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/04_pose-from-points.md)
-is the same PnP step that section 3 uses, so when the points come from a printed
-marker, or from spots matched against a stored picture, no network is needed at
-all. [Iterative closest
-point](../../../06_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md),
-or ICP, lines up a CAD model with a depth scan and turns a rough pose into one
-that is often right to within a millimetre, but it needs a good first guess.
-[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md),
-a method that fits a shape when some of the points belong to something else,
-fits a plane, a circle or a cylinder to depth points, which is enough for simple
-shapes. The written way wins for one known part, a fixture with a marker, or a
-simple shape on a clean table, while the model wins in clutter, for shapes that
-are not simple, and for many different objects of one kind.
+is the page that explains that step.
 
 ---
 
-## 11. Where to read next
+## 7. Where to read next
 
 - [Depth from pictures](../03_also-used/02_depth-from-pictures.md) is the next page, and
   most pose methods need good depth, so that page explains where depth comes from.

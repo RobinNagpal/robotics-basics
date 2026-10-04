@@ -23,11 +23,7 @@ an affordance model is a kind of segmentation model.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [A worked example: a tote and a kitchen drawer](#6-a-worked-example-a-tote-and-a-kitchen-drawer)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -505,7 +501,7 @@ to be trained. What you supply is the phrases, the resize from 352 by 352 back t
 your picture's size, and a check that the answer means anything. The cheapest such
 check is to compare the best phrase's score with the next best and refuse when
 they are close. Then you use the mask the way
-[section 6](#6-a-worked-example-a-tote-and-a-kitchen-drawer) uses it, by keeping
+section 6 uses it, by keeping
 only the grasps whose finger contacts land inside it.
 
 ### 5.7 How to choose
@@ -513,9 +509,7 @@ only the grasps whose finger contacts land inside it.
 For suction, do not start with a model at all. Fit flat patches to the depth
 picture, reject the patches that are too curved or too small for your cup, and
 rank what is left by area and by distance from the nearest edge.
-[Section 9](#9-the-written-alternative) names the pages that build this, and Book
-3's
-[suction models](../../../03_frameworks/02_gripping/04_models-that-grasp.md#6-suction-models)
+./../../03_frameworks/02_gripping/04_models-that-grasp.md#6-suction-models)
 section reports that it takes about a dozen lines of code and performs about as
 well as a model. It also runs on a laptop and raises no licence question.
 
@@ -536,139 +530,12 @@ If your objects have moving parts, no model here is ready to install, and
 Where2Act is the paper to read before you build what you need.
 
 If you have a small, known set of tools, write the rule instead of using any model
-here, as [section 8](#8-why-this-kind-and-what-it-costs) argues. "Hold a knife by
+here. "Hold a knife by
 the handle" is cheaper and more reliable written down than learned.
 
 ---
 
-## 6. A worked example: a tote and a kitchen drawer
-
-### Suction: a tote of parcels
-
-Those models are easier to follow once they run in order, so here an arm with a
-suction cup must empty a tote of boxes, cans and soft bags.
-
-1. A camera above the tote takes a colour and a depth picture.
-2. The suction model paints a score on every pixel, so the middles of the flat box
-    tops score high while the edges, the bags and anything round score low.
-3. Code picks the best pixel, measures from the depth picture which way the surface
-    faces there, and sends the cup in along that direction.
-4. The arm presses the cup on and the pump starts, and a pressure sensor checks
-    that the cup sealed before the arm lifts.
-5. If the seal fails, the pixel is marked as bad for this round, and the arm tries
-    the next best one.
-
-### Affordance: a knife in a drawer
-
-The affordance side runs in the same shape, so here a kitchen robot must take a
-knife out of a drawer and hand it to a person.
-
-1. An affordance model colours the knife, marking the handle as "grasp" and the
-    blade as "cut".
-2. A [six-degree-of-freedom grasp model](01_six-dof-grasps.md) proposes many grasps
-    on the knife.
-3. Code keeps only the grasps whose finger contacts land on pixels labelled
-    "grasp", so the blade grasps are thrown away.
-4. The arm takes the knife by the handle, and then it turns so that the handle
-    points at the person before handing it over.
-
----
-
-## 7. What goes wrong
-
-Both examples above went smoothly, but each kind fails in its own way. For suction
-models:
-
-- Some surfaces cannot seal, because porous, textured, ribbed, dusty or oily
-    surfaces leak and the model may not see the difference in a picture. A
-    cardboard box with a mesh window may look flat but leak through the mesh.
-- Heavy objects can tear off when held off centre, so a cup near the edge of a
-    heavy box can seal and still tear off. Models with a wrench score handle this
-    better.
-- Soft bags change shape when the cup presses on them, which means the picture
-    taken before the press does not show the shape after it.
-- Shiny and see-through objects leave holes in the depth picture, so the direction
-    the surface faces is unknown there.
-
-For affordance models:
-
-- Objects it has not seen may be labelled wrongly, because the model learned its
-    jobs from a small set of labelled objects. A tool with an unusual shape is the
-    usual case.
-- Some parts do two jobs, since the rim of a cup is for drinking from and is also a
-    fine place to hold an empty cup. The label map can give only one answer per
-    pixel.
-- The list of jobs is fixed, so each new job needs new labelled pictures. The
-    [open-vocabulary models](../../03_seeing-models/02_most-used/03_open-vocabulary-models.md)
-    page covers models that can be asked about a part in words instead, which
-    removes the fixed list.
-
----
-
-## 8. Why this kind, and what it costs
-
-Since those failures are real, it is worth setting out what each kind buys you. A
-suction model takes a picture and gives a score for every pixel that says where a
-cup would seal. An affordance model instead takes a picture and says what each part
-of an object is for.
-
-### Suction
-
-So what a suction model does for you is pick many kinds of object fast. Boxes, books,
-bottles and bags can all be held by one cup, and the arm does not need to get its
-fingers round anything.
-
-The obvious alternative is not a finger-grasp model but plain geometry. Code can
-fit small flat patches to the depth picture and reject the patches that are too
-curved or too small. It then ranks what is left by size and by distance from the
-edge. Book 3's
-[suction models](../../../03_frameworks/02_gripping/04_models-that-grasp.md#6-suction-models)
-section says this takes a dozen lines of code and is hard to beat, so try it first.
-
-So a suction model is worth its cost only when that geometry keeps choosing badly.
-That happens with lumpy bags, tight clutter where edges are hard to find, and
-objects whose surface looks flat but leaks. The model can learn those cases from
-examples, which is what you are paying for.
-
-What it costs you is labelled data, a graphics card for training, and a model that
-still cannot tell a porous surface from a smooth one in some pictures.
-
-### Affordance
-
-What an affordance model does for you is add the one thing grasp models lack, which
-is knowing which part of the object is meant for holding.
-
-The obvious alternative is to write that down by hand, because "hold a knife by the
-handle" is already a rule. For a small set of known tools a rule is cheaper and
-more reliable, and Book 3's
-[choosing a grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#10-why-a-rule-beats-a-network)
-makes exactly this case. So an affordance model is for many tools at once, or for
-tools you have not listed.
-
-What it costs you is hand-labelled pictures, which are slow to make, and a fixed
-list of jobs.
-
----
-
-## 9. The written alternative
-
-For suction, the plain geometry that section 8 describes is built from Book 5
-pages.
-[RANSAC](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/02_ransac.md)
-fits flat patches to the depth points. Then the [distance
-transform](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md)
-finds the point of a part's mask that is furthest from every edge, and says whether
-the cup fits there. For affordances, the written way is instead a rule for each kind
-of object, such as "hold a knife by the handle", written as Book 3's [rules from a
-measured
-profile](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#6-rules-from-a-measured-profile)
-describes. The written methods win on boxes and on tools you have listed. Instead,
-the models win on lumpy bags, tight clutter, surfaces that look flat but leak, and
-tools nobody has listed.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Grasp quality models](../03_also-used/02_grasp-quality-models.md) scores one
     grasp at a time, including suction grasps.

@@ -319,7 +319,7 @@ arm, and here are the concrete places.
 - **Turning a detection into a grasp target.** A detector gives a box around a mug.
   The program takes the middle pixel, reads its depth, and back-projects it. That
   point, moved into the base frame, is where the gripper goes. Book 7's
-  [object detection](../../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md#6-where-it-is-used-on-a-robot-arm)
+  object detection
   page walks through this.
 - **Making a point cloud for the rest of the pipeline.** Plane removal, clustering,
   nearest-neighbour search and ICP all start from back-projected points. The

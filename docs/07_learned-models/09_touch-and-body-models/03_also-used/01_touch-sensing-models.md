@@ -19,11 +19,7 @@ is: a grid of small squares called pixels, each with a number for its brightness
 4. [How it works inside](#4-how-it-works-inside)
 5. [How it is trained](#5-how-it-is-trained)
 6. [Well-known models and tools](#6-well-known-models-and-tools)
-7. [A worked example: checking the grip on a mug](#7-a-worked-example-checking-the-grip-on-a-mug)
-8. [What goes wrong](#8-what-goes-wrong)
-9. [Why this rather than the obvious alternative, and what it costs](#9-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
-10. [The written alternative](#10-the-written-alternative)
-11. [Where to read next](#11-where-to-read-next)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -536,104 +532,7 @@ model loses almost all of its accuracy on a sensor it was not trained on, and th
 is a labelling job. So decide which model you intend to use before you buy the sensor, and
 not the other way round.
 
-## 7. A worked example: checking the grip on a mug
-
-Here is one grip on a mug from start to finish. A two-finger gripper with a gel
-sensor on each finger picks up the mug by its side.
-
-1. The fingers close, so both tactile pictures change, and the model says "contact"
-   on both fingers.
-2. The model finds where on each pad the contact is. Suppose both contacts are near
-   the lower edge of the pads, which means the fingers closed on the mug too high,
-   so only the lower edge of each pad touches it.
-3. The model finds the shape of the contact, and it is a long, gently curved strip.
-   That matches the side of a round mug rather than the thin handle.
-4. The model estimates the normal force on each pad, and both are similar, which
-   means the mug is centred between the fingers.
-5. The program checks these facts against what it expected. The contact is near the
-   edge, so the grip is less secure than planned. The program opens the fingers,
-   moves down a little, and closes them again.
-
-A camera could not do step 2 at all. Once the fingers are closed, they hide exactly
-the part of the mug that the answer depends on.
-
-## 8. What goes wrong
-
-The sections above described these models at their best. Touch sensing models also
-have problems that camera models do not, and the list below gives the six of them
-that matter most.
-
-- **The gel wears out.** The pad is soft and it rubs against every object, so its
-  surface gets scratched, the paint wears, and the dots fade. This means a model
-  trained on a new pad sees different pictures from an old one, and the frameworks
-  book notes that one maker rates its gel for about a thousand presses. So people
-  replace gels and re-check the model after each change.
-- **Every sensor is a little different.** Two sensors of the same model have
-  slightly different lights, cameras and gels, so a model trained on one often does
-  worse on the next. People calibrate each sensor with a reference press, or use
-  models such as T3 that are built to share across sensors.
-- **The reading drifts with temperature.** The gel's stiffness changes when it warms
-  up, so people take a fresh "nothing touching" picture before each grasp and
-  subtract it from the new one.
-- **It sees only the contact.** A tactile picture shows a patch a couple of
-  centimetres across, and it says nothing about where the object is in the room or
-  what the rest of it looks like. So people combine it with a camera for that.
-- **Simulated pictures are not real pictures.** A model trained only in a simulator
-  usually does worse on a real sensor, so people mix real examples into the
-  training set.
-- **The software is thin.** There is very little maintained open-source code, and
-  some of what exists has licences that forbid commercial use or require you to
-  share your own code. [Holding
-  on](../../../03_frameworks/02_gripping/05_holding-on.md#43-the-state-of-the-open-source-software-which-is-worth-saying-plainly)
-  lists the licences.
-
-## 9. Why this rather than the obvious alternative, and what it costs
-
-The last section listed what goes wrong, so this section weighs those problems
-against the alternatives. There are two obvious alternatives, and each is right in
-some cases.
-
-The first alternative is **not to use a tactile sensor at all**, and to use the
-gripper's own finger position and a wrist force sensor instead. This is cheaper, and
-it is what most working robot cells do. It tells you that the fingers stopped on
-something and how much the held object weighs. However, it does not tell you where on
-the pad the object sits, or what shape the contact has. So a tactile sensor with a
-model is worth it when those things decide success: a small part that must be held
-exactly in the middle, a thin edge, or an object the camera cannot see once it is
-held.
-
-The second alternative is **a tactile sensor without a learned model**, using the
-photometric stereo method from section 4.1. This is a good choice for a height map,
-because it is exact, it needs no training data and it is easy to check. However, a
-learned model is worth it when you want answers that the height map does not give
-directly, such as force, slip, or whether the grasp will hold.
-
-What it costs you:
-
-- Money and upkeep for the sensors and their spare gels.
-- A training set, which means many presses with a reference force sensor, or the
-  licence limits of a pretrained model.
-- Retraining or recalibrating when the gel or the sensor changes.
-- A model that gives no guarantee. It can be confidently wrong on a contact unlike
-  anything in its training set, so a program that uses it should still check the
-  wrist force before trusting a grip.
-
-## 10. The written alternative
-
-Part of the written alternative is already on this page, in section 4.1. Photometric
-stereo, in section 4.1, turns the tactile picture into a height map with no learning.
-For the cheaper choice of no tactile sensor, Book 6's
-[sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
-explains how to turn the finger position and the wrist force into clean yes-or-no
-checks, such as "the fingers stopped on something". Book 3's
-[the finger-gap check, and what it cannot see](../../../03_frameworks/02_gripping/05_holding-on.md#41-the-finger-gap-check-and-what-it-cannot-see)
-explains what those checks miss.
-
-The written way wins when a height map, or the finger position and the weight,
-answers your question. The learned model wins when you need force, slip, or whether
-the grasp will hold.
-
-## 11. Where to read next
+## 7. Where to read next
 
 In this chapter:
 

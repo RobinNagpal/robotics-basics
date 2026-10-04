@@ -24,11 +24,7 @@ explains the convolutional layers that this kind of model is built from.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [A worked example: a mug on a table](#6-a-worked-example-a-mug-on-a-table)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -485,7 +481,7 @@ Four things change that choice.
 - If anything in your scene needs a grasp that is not straight down, no model on
     this page can express it. Read the
     [six-degree-of-freedom grasps](../02_most-used/01_six-dof-grasps.md) page
-    instead, and read section 8 below first, because that choice costs you a
+    instead, and weigh that choice first, because it costs you a
     graphics card and usually a licence.
 
 One thing should not change your choice, and that is the age of these models. The
@@ -495,118 +491,7 @@ flat table has not changed since 2020, and neither has the answer to it.
 
 ---
 
-## 6. A worked example: a mug on a table
-
-Once the pieces above run in order they are easier to follow, so here is how a
-top-down detector picks up a mug, step by step.
-
-1. A depth camera is fixed above the table, looking straight down, and it takes one
-    depth picture.
-2. The picture is cut down to the square the model expects and passed to the
-    network.
-3. The network paints its three maps, and the quality map is brightest in the
-    middle of the mug's body, where the jaws can close across the mug.
-4. Code finds the brightest pixel, and there it reads an angle of 60 degrees and a
-    width a little wider than the mug.
-5. Code turns that pixel into a point on the table, using the camera's position.
-    Book 2's
-    [finding objects](../../../02_perception/01_camera/02_finding-objects.md) page
-    shows how a pixel becomes a point in the room.
-6. The arm moves the open gripper above that point, turns its wrist to 60 degrees,
-    goes straight down to the depth read from the picture, and closes.
-7. The arm lifts, and if the model runs fast enough it keeps looking during step 6
-    and corrects the grasp if the mug moved.
-
-Notice that the model never saw this mug before. It still works, because the mug's
-shape from above, which is a round blob of near pixels, looks like thousands of
-shapes it saw in training.
-
----
-
-## 7. What goes wrong
-
-That example went well, but the biggest limit is built into the answer itself,
-because a rectangle can only describe a gripper that comes straight down.
-
-![A box in a bin, and a box on a shelf](../../../images/grasp-models/top-down-grasp-detection/straight-down-only.svg)
-
-On the left, straight down works and a rectangle describes it. On the right, the
-shelf board is in the way, so the only grasp that fits comes from the front
-instead.
-
-So that limit and four others show up as the problems below.
-
-- Some objects need a side grasp, so a plate leaning on a wall, a box on a shelf or
-    a bottle lying against the side of a bin cannot be held from above. The model
-    has no way to say "from the side", which is why people switch to a
-    [six-degree-of-freedom model](../02_most-used/01_six-dof-grasps.md) for these.
-- Tall objects are hard, because the model sees only the top of a tall object and
-    cannot tell whether the jaws are long enough to reach down its sides.
-- Shiny and see-through objects are often missed, because a depth camera often
-    gives no depth for glass or polished metal, so the model sees a hole where the
-    object is. Book 2's
-    [models that find](../../../02_perception/02_object-perception/04_models-that-find.md#17-transparent-and-shiny-objects)
-    covers ways around this, and the
-    [depth from pictures](../../03_seeing-models/03_also-used/02_depth-from-pictures.md)
-    page covers models that fill in missing depth.
-- Your gripper may differ from the one in training, because the model learned
-    widths for the gripper in its own training data. If your gripper opens less far
-    then some of its grasps will be too wide, and code must throw those away.
-- The model has no sense of the task, so it does not know that a knife should be
-    held by the handle. The
-    [suction and affordance](../02_most-used/02_suction-and-affordance.md) page
-    covers models that do.
-
----
-
-## 8. Why this kind, and what it costs
-
-Since you have now seen the limits, it is worth setting out plainly what this kind
-buys you. A top-down grasp detector takes one depth picture and gives the best place to close
-two jaws, coming straight down.
-
-What it does for you is give a fast, simple answer for objects you have never seen.
-The model is small, so it runs on an ordinary computer without a graphics card, and
-its answer is easy to draw on the picture and check by eye.
-
-The obvious alternative is a
-[six-degree-of-freedom grasp model](../02_most-used/01_six-dof-grasps.md), which
-can grasp from any direction. The reason to choose the top-down kind instead is
-that many real jobs never need another direction. For example, parts on a conveyor,
-parcels on a table and objects spread out on a flat surface can all be picked from
-above. For those jobs the six-degree-of-freedom model adds cost and gives nothing
-back. That is because it needs a point cloud, a strong NVIDIA graphics card and
-usually a licence that forbids selling what you build.
-
-The other alternative is a rule you write yourself, such as "close across the
-narrowest part of the object's outline". Book 3's
-[choosing a grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#10-why-a-rule-beats-a-network)
-argues that a rule is better when the objects are known, while the model is better
-when they are not.
-
-What it costs you is the straight-down limit, and it also costs you the age of the
-code. The best-known models were written around 2018 to 2020, so they need some
-work to run on current software.
-
----
-
-## 9. The written alternative
-
-Instead of a network, a written top-down grasp is built from Book 5's picture
-methods and Book 3's rules. A depth limit from [thresholding and colour
-masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
-marks what stands above the table, and then [edges and
-contours](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md)
-traces each object's outline. The smallest turned rectangle round that outline
-gives the angle for the wrist, while the outline's width checks that the part fits
-between the fingers. Book 3's [choosing a
-grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md) then chooses where
-on the outline to close. The written way wins for known objects spread out on a
-flat surface, and the model wins on objects nobody has listed.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [Six-degree-of-freedom grasps](../02_most-used/01_six-dof-grasps.md) removes the
     straight-down limit.
@@ -619,4 +504,3 @@ flat surface, and the model wins on objects nobody has listed.
     lists the code and the licences.
 - Book 3's [grippers and hardware](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md)
     explains parallel-jaw grippers and how far they open.
-

@@ -488,7 +488,7 @@ the search itself. A policy that learns without a model, such as a
 turns the state straight into the next action in one pass, with no rollouts at
 each step. So it wins when each decision must be fast and the task stays fixed.
 However, Book 6 says it
-[needs far more attempts to learn](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#9-why-this-kind-and-what-it-costs),
+needs far more attempts to learn,
 and it learns only one task, while MPC with a model can push the block to a
 different mark tomorrow just by changing the score. So choose MPC when the goal
 changes, or when the search fits in the time between steps.

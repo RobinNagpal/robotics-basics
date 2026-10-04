@@ -20,23 +20,16 @@ because a learned simulator often starts from a point cloud.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Turning the material into a graph](#turning-the-material-into-a-graph)
-   · [One step: passing messages](#one-step-passing-messages)
-   · [Many steps](#many-steps)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
-   · [Interaction Networks](#51-interaction-networks)
-   · [DPI-Net](#52-dpi-net)
-   · [Graph Network-based Simulators (GNS)](#53-graph-network-based-simulators-gns)
-   · [MeshGraphNets](#54-meshgraphnets)
-   · [VCD](#55-vcd)
-   · [RoboCraft and RoboCook](#56-robocraft-and-robocook)
-   · [How to choose](#57-how-to-choose)
-6. [A worked example: folding a towel in half](#6-a-worked-example-folding-a-towel-in-half)
-7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 Interaction Networks](#51-interaction-networks)
+   · [5.2 DPI-Net](#52-dpi-net)
+   · [5.3 Graph Network-based Simulators (GNS)](#53-graph-network-based-simulators-gns)
+   · [5.4 MeshGraphNets](#54-meshgraphnets)
+   · [5.5 VCD](#55-vcd)
+   · [5.6 RoboCraft and RoboCook](#56-robocraft-and-robocook)
+   · [5.7 How to choose](#57-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -166,7 +159,7 @@ To predict a whole fold or a whole pour, the simulator runs many steps in a row,
 feeding each result back in. This is the rollout from the
 [learned dynamics models](../02_most-used/01_learned-dynamics-models.md#many-steps-in-a-row)
 page. So learned simulators often run hundreds of steps, because each step is short.
-Errors add up here too, and section 7 says what people do about it.
+Errors add up here too.
 
 ---
 
@@ -306,8 +299,7 @@ same research line and is the design other papers now compare themselves with.
 Its own authors replaced it as well, with
 [VGPL-Dynamics-Prior](https://github.com/YunzhuLi/VGPL-Dynamics-Prior), which
 they describe as adding noise to the particle positions during training for more
-stable long rollouts. That is the fix
-[section 7](#7-what-goes-wrong-and-what-people-do-about-it) describes, and here
+stable long rollouts. That is the fix, and here
 you can see the setting that switches it on.
 
 What it costs you is mostly the installation. The original repository needs
@@ -376,9 +368,7 @@ python -m learning_to_simulate.train \
 The download gives you more than particle positions. Each dataset carries a
 `metadata.json` file stating the sequence length, the number of dimensions, the
 box the material sits in, the default connection radius and the statistics used
-to normalise the numbers. Those are the settings
-[section 7](#7-what-goes-wrong-and-what-people-do-about-it) says decide whether
-the model is useful, so that file is the fastest way to see sensible values.
+to normalise the numbers. Those settings decide whether the model is useful, so that file is the fastest way to see sensible values.
 
 What you supply, in practice, is a different implementation. Because TensorFlow 1
 is no longer reasonable to install, people either rewrite the GNS design in
@@ -492,9 +482,7 @@ point cloud with a camera's.
 These models are **worth betting on**, because they are the only entries here that
 learned a real material from a real arm rather than from a hand-written simulator,
 and that is where the argument for this family leads.
-[Section 8](#8-why-this-kind-and-what-it-costs) says a learned simulator is worth
-the trouble because nobody has measured a real towel's stiffness, weight and
-friction. A model trained on a careful simulator has not avoided that problem,
+A model trained on a careful simulator has not avoided that problem,
 because it inherited whatever numbers the simulator was given. A model trained on
 recordings of real dough has.
 
@@ -561,8 +549,7 @@ Interaction Networks paper and the fifteen lines in
 One more case changes the answer completely, and it is the most common one. If
 your objects are rigid, or if the few numbers describing your material can be
 measured, do not use any of these models.
-[Section 9](#9-the-written-alternative) sets out that alternative, and it became
-stronger during 2026 rather than weaker. MuJoCo 3.14.0, released on 22 September
+MuJoCo 3.14.0, released on 22 September
 2026, added an experimental contact mode called `ipc` that guarantees
 penetration-free contact on deformable meshes, which is the failure that made
 hand-written cloth simulation untrustworthy. Book 3's
@@ -575,120 +562,7 @@ grip.
 
 ---
 
-## 6. A worked example: folding a towel in half
-
-Here is how a learned simulator helps an arm fold a small towel, step by
-step.
-
-1. **See the towel.** A depth camera above the table gives a point cloud of the
-   towel. The program picks about 200 of those dots as particles and joins
-   neighbours into a mesh.
-2. **Choose candidate moves.** A fold is a pick and a place: grab a point on the
-   towel, lift it, and put it down somewhere else. The planner makes up many
-   candidates, such as "grab the left corner and put it on the right corner".
-3. **Simulate each one.** For each candidate, the learned simulator runs the
-   gripper particles along the move and predicts the towel's shape at the end.
-4. **Score each one.** The goal is a towel folded neatly in half, so the score
-   compares each predicted shape with that goal shape.
-5. **Do the best move.** The arm grabs the chosen corner and moves it.
-6. **Look again.** The camera takes a new point cloud, and if the fold is not
-   neat, the planner runs again from the real shape.
-
-![A towel lying flat, then predicted with one corner lifted, then predicted folded in half](../../../images/world-models/learned-simulators/cloth-fold-prediction.svg)
-
-These are the simulator's predictions at three moments during one planned fold,
-before the arm has moved at all.
-
-In principle a hand-written simulator could do step 3 too. However, it would
-need the towel's
-stiffness, weight and friction, which nobody has measured. Instead, the learned
-simulator learned how this kind of towel behaves from watching it.
-
----
-
-## 7. What goes wrong, and what people do about it
-
-The sections above described the model when it works. This section lists the
-five things that go wrong in practice, and what people do about each one.
-
-**Errors add up over hundreds of steps.** Water can slowly lose volume, and
-cloth can slowly stretch. So people add small random changes to the particle
-positions during training, and the model then learns to correct small errors
-instead of making them bigger.
-
-**The camera cannot see every part.** When a towel is folded, the bottom layer is
-hidden under the top, and a point cloud shows only the top. So people keep track
-of particles from earlier frames, or they model only what the camera can see, as
-VCD does. The [shape completion](../../04_3d-models/03_also-used/01_shape-completion.md) page
-covers guessing the hidden part of an object.
-
-**Many particles make it slow.** A tray of water with thousands of particles and
-hundreds of steps is a lot of work for every candidate move. So people use
-fewer, larger particles and plan only a few candidate moves.
-
-**Rigid objects need care.** A metal cup made of particles may slowly bend,
-because nothing in the network forces it to stay rigid. So some models treat
-rigid objects separately, and they move all of an object's particles together.
-
-**New materials break it.** A model trained on cotton towels may not know how a
-silk scarf moves. So people train on a range of materials, or they give each
-particle a few numbers describing the material.
-
----
-
-## 8. Why this kind, and what it costs
-
-The last section listed what goes wrong, so this section weighs those problems
-against the alternatives. The obvious alternative is a **hand-written simulator** for
-cloth or fluids, and such simulators do exist and are very accurate, as long as they
-are given the right material numbers. However, for a real towel or real dough nobody
-knows those numbers, and the simulator also cannot easily start from a real point
-cloud. A learned simulator instead starts from the point cloud and learns the real
-material's behaviour, and it is often faster. Because it is a neural network, a
-program can also work out how a small change in the move would change the result.
-This lets a planner improve a move step by step, instead of only trying moves at
-random.
-
-The second alternative is a [video prediction model](01_video-prediction-models.md),
-which also needs no material numbers of any kind. However, it predicts pictures, and a
-picture of a towel does not say where each part of the towel is in 3D. A robot
-needs 3D positions to grab a corner, and the particles of a learned simulator
-give it those positions directly.
-
-What it costs you:
-
-- **A good 3D view.** You need a depth camera and a way to turn its point cloud
-  into particles.
-- **Training data for your material.** Usually a careful simulator and some real
-  recordings.
-- **Computing time.** Many particles and many steps for each candidate move.
-- **Limited reach.** It knows the materials it was trained on, and it struggles
-  with parts it cannot see.
-
----
-
-## 9. The written alternative
-
-This page has argued for learning the simulator, so the last question is when a
-written one is enough. So the written alternative is a hand-written physics
-simulator, given the right material numbers. Book 3's
-[the simulators](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#2-the-simulators)
-describes the ones people run. Book 6's
-[system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
-explains how to measure the numbers inside a physical model from the real thing. It
-works when there are a few numbers, such as a joint's friction or a finger's
-stiffness. That page itself notes that cloth, soft objects and tangled cables have no
-small set of numbers that fits.
-
-So the written simulator wins for rigid objects and for materials whose numbers are
-known, while the learned simulator wins for a real towel or real dough. In both
-cases, the planning in section 6 is written code, of the kind
-[sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
-explains.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - The [next page](03_latent-world-models.md) covers latent world models, which
   predict a short code instead of particles or pictures.

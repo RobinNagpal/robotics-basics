@@ -26,29 +26,16 @@ here.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [One step](#one-step)
-   · [Many steps in a row](#many-steps-in-a-row)
-   · [Planning with it](#planning-with-it)
 4. [How it is trained](#4-how-it-is-trained)
-5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
-   · [5.1 An ensemble of small networks, the PETS way](#51-an-ensemble-of-small-networks-the-pets-way)
-   · [5.2 A physics formula plus a learned correction](#52-a-physics-formula-plus-a-learned-correction)
-   · [5.3 TD-MPC2](#53-td-mpc2)
-   · [5.4 MBPO, the model as extra practice](#54-mbpo-the-model-as-extra-practice)
-   · [5.5 PILCO, a Gaussian process model](#55-pilco-a-gaussian-process-model)
-   · [How to choose](#56-how-to-choose)
-6. [A worked example: pushing a cube to a mark](#6-a-worked-example-pushing-a-cube-to-a-mark)
-7. [Learning only the part physics gets wrong: residual models](#7-learning-only-the-part-physics-gets-wrong-residual-models)
-   · [How it works](#how-it-works)
-   · [A worked example: how far a pushed block slides](#a-worked-example-how-far-a-pushed-block-slides)
-   · [Why it needs less data](#why-it-needs-less-data)
-   · [Why it fails more gracefully](#why-it-fails-more-gracefully)
-   · [Where it is used on a robot arm](#where-it-is-used-on-a-robot-arm)
-   · [Where it does not help](#where-it-does-not-help)
-8. [What goes wrong, and what people do about it](#8-what-goes-wrong-and-what-people-do-about-it)
-9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
-10. [The written alternative](#10-the-written-alternative)
-11. [Where to read next](#11-where-to-read-next)
+5. [Learning only the part physics gets wrong: residual models](#5-learning-only-the-part-physics-gets-wrong-residual-models)
+6. [Well-known models of this kind](#6-well-known-models-of-this-kind)
+   · [6.1 An ensemble of small networks, the PETS way](#61-an-ensemble-of-small-networks-the-pets-way)
+   · [6.2 A physics formula plus a learned correction](#62-a-physics-formula-plus-a-learned-correction)
+   · [6.3 TD-MPC2](#63-td-mpc2)
+   · [6.4 MBPO, the model as extra practice](#64-mbpo-the-model-as-extra-practice)
+   · [6.5 PILCO, a Gaussian process model](#65-pilco-a-gaussian-process-model)
+   · [6.6 How to choose](#66-how-to-choose)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -129,14 +116,14 @@ change is small and it looks similar wherever the cube is on the table.
 
 The shortlist in section 5 recommends three other shapes for this one step, and
 they differ only in what the model is made of.
-[Section 5.2](#52-a-physics-formula-plus-a-learned-correction) keeps a physics
+[Section 5.2](#62-a-physics-formula-plus-a-learned-correction) keeps a physics
 formula and learns only a small correction for what that formula gets wrong, and
-[section 7](#7-learning-only-the-part-physics-gets-wrong-residual-models)
+[section 7](#5-learning-only-the-part-physics-gets-wrong-residual-models)
 explains that shape in full.
-[Section 5.5](#55-pilco-a-gaussian-process-model) uses a **Gaussian process**
+[Section 5.5](#65-pilco-a-gaussian-process-model) uses a **Gaussian process**
 in place of the network, which means it fits a smooth curve through the recorded
 points rather than adjusting the weights of a network. TD-MPC2, in
-[section 5.3](#53-td-mpc2), does not predict the state numbers at all. It
+[section 5.3](#63-td-mpc2), does not predict the state numbers at all. It
 predicts a short code of the state instead, which is what
 [latent world models](../03_also-used/03_latent-world-models.md) are about.
 
@@ -164,7 +151,7 @@ This group of copies is called an **ensemble**, and it is read in a simple way.
 Where the copies agree, the prediction is probably right, and where they
 disagree, the model has not seen enough examples of that situation. An ensemble
 of small networks is the first entry in the shortlist, and
-[section 5.1](#51-an-ensemble-of-small-networks-the-pets-way) recommends it.
+[section 5.1](#61-an-ensemble-of-small-networks-the-pets-way) recommends it.
 A Gaussian process reports the same thing without any copies, because it states
 its own spread at every point.
 
@@ -197,10 +184,10 @@ has a
 that shows how much this helps.
 
 Planning this way is what both
-[section 5.1](#51-an-ensemble-of-small-networks-the-pets-way) and
-[section 5.3](#53-td-mpc2) do. A dynamics model does not have to be planned
+[section 5.1](#61-an-ensemble-of-small-networks-the-pets-way) and
+[section 5.3](#63-td-mpc2) do. A dynamics model does not have to be planned
 with, though. MBPO, in
-[section 5.4](#54-mbpo-the-model-as-extra-practice), rolls the model forward
+[section 5.4](#64-mbpo-the-model-as-extra-practice), rolls the model forward
 only while a policy is being trained, so that the policy gets extra practice,
 and then the model is put aside before the robot runs. The rest of this page
 describes planning, because that is the use which needs the model while the arm
@@ -246,384 +233,7 @@ objects and many tasks needs far more than that.
 
 ---
 
-## 5. Well-known models of this kind
-
-This section is here so that you can choose one. Almost nobody publishes a
-trained dynamics model for your arm, your table and your cube. What people
-publish is a **method**, which means a recipe for the shape of the network, the
-way it is trained and the way it is planned with. You then train the model
-yourself from your own recordings, in minutes or hours rather than the weeks a
-large model takes. So four of the five entries below are methods and one is a
-ready-made program with published weights.
-
-Read the table one row at a time. The left column names the method and says how
-much it is used in 2026. The right column holds the rest: what the method is
-best at, how big the model you end up with is, the licence of the code you would
-start from, and when to pick it. Every size in the right column describes the
-model you train, not a download, except for TD-MPC2, which does publish trained
-models.
-
-| Method or model | What decides it |
-| --- | --- |
-| [**5.1 Ensemble of small networks (PETS)**](#51-an-ensemble-of-small-networks-the-pets-way), most used in 2026 | It is best at planning a few steps ahead on one task, from your own recordings. You choose the size, and it is small enough to train on a laptop processor. The licence is your own code, or MIT if you start from MBRL-Lib. Pick it when you can measure the state and you can record the real arm. |
-| [**5.2 Physics formula plus a correction**](#52-a-physics-formula-plus-a-learned-correction), most used in 2026 | It is best at tasks where a formula is already roughly right. It is one small network, learned on top of your formula, so the licence is that of your own code. Pick it for throwing, for sliding, and for the arm's own motors. |
-| [**5.3 TD-MPC2**](#53-td-mpc2), most used ready-made program in 2026 | It is best at continuous control in a simulator that gives a reward. The published models hold 1, 5, 19, 48 or 317 million numbers, and single-task runs use the 5 million one. The licence is MIT. Pick it when you have a simulator, a reward and an NVIDIA graphics card. |
-| [**5.4 MBPO**](#54-mbpo-the-model-as-extra-practice), worth betting on | It is best at making a learning policy need fewer real attempts. The model is a small ensemble beside the policy, used as extra practice for it, and MBRL-Lib provides the method under MIT. Pick it when you already train a policy and each attempt is expensive. |
-| [**5.5 PILCO**](#55-pilco-a-gaussian-process-model), historical | It is a Gaussian process model rather than a network, and it is best at learning from a few tens of attempts. Its size is not fixed, because it grows with the number of records. The licence is not stated for the original code, and GPyTorch, which is what you would use today, is MIT. Pick it when each attempt is slow or risky, so that you have very little data. |
-
-### 5.1 An ensemble of small networks, the PETS way
-
-This is **most used in 2026**, because it is what a developer starting today
-would build first. PETS is short for "probabilistic ensembles with trajectory
-sampling", and Kurtland Chua, Roberto Calandra, Rowan McAllister and Sergey
-Levine published it in 2018 as
-[Deep Reinforcement Learning in a Handful of Trials using Probabilistic Dynamics Models](https://arxiv.org/abs/1805.12114).
-It trains several small networks on the same recordings, each from a different
-random start, and then plans with the cross-entropy method and model predictive
-control.
-
-The obvious alternative is one single network. The reason to train five is that
-one network answers every question with the same confidence, including questions
-about pushes it has never seen. Five networks that started from different random
-numbers agree where the recordings are dense and disagree where they are thin.
-That disagreement is the only cheap warning you get before the planner picks a
-push that works only in the model, which
-[section 8](#8-what-goes-wrong-and-what-people-do-about-it) describes.
-
-The computing cost is small and the setting-up cost is large. Training five
-networks of this size takes minutes on a laptop processor, so no graphics card
-is needed, but you need a way to measure the state, recordings from the real
-arm, and planning time before every push. The thing that most often goes wrong
-is the score. A planner that is told only to get close to the goal will choose a
-push that sends the cube off the table on the way.
-
-The library is PyTorch, and nothing else is required.
-[MBRL-Lib](https://github.com/facebookresearch/mbrl-lib), from Meta, provides
-PETS and the planners ready-made under the MIT licence: `pip install mbrl` and
-then `python -m mbrl.examples.main algorithm=pets overrides=pets_pusher` runs it
-on a simulated pushing task. Be warned that it released version 0.2.0 in March
-2023 and its last commit on the main branch is from July 2023, so expect to
-spend an afternoon on old dependency versions. Writing the loop yourself is
-about twenty lines, and this is it.
-
-```python
-import torch
-
-# Five small networks, trained earlier on the same recordings from five
-# different random starting points. Each one predicts the change in the state.
-nets = [torch.nn.Sequential(
-            torch.nn.Linear(4, 64), torch.nn.Tanh(),
-            torch.nn.Linear(64, 64), torch.nn.Tanh(),
-            torch.nn.Linear(64, 3)) for _ in range(5)]
-for i, net in enumerate(nets):
-    net.load_state_dict(torch.load(f"pusher_{i}.pt"))
-    net.eval()
-
-state = torch.tensor([0.30, 0.20, 0.0])    # the cube: x, y in metres, and its angle
-goal = torch.tensor([0.60, 0.20, 0.0])
-plans = torch.rand(500, 5, 1) * 0.2 - 0.1  # 500 plans of 5 pushes, each -10 to +10 cm
-
-ends = []
-for net in nets:                           # every plan is rolled through every copy
-    rolled = state.repeat(500, 1)
-    with torch.no_grad():
-        for step in range(5):
-            rolled = rolled + net(torch.cat([rolled, plans[:, step]], dim=1))
-    ends.append(rolled)
-ends = torch.stack(ends)                   # 5 copies, 500 plans, 3 numbers each
-
-distance = (ends.mean(0) - goal).norm(dim=1)   # where the copies expect the cube to end
-disagreement = ends.std(0).norm(dim=1)         # how far apart the five copies are
-first_push = plans[(distance + 2.0 * disagreement).argmin(), 0]
-```
-
-PyTorch runs all 500 plans through a network in one call, and that is what makes
-planning fast enough to do between pushes.
-
-You supply the five trained copies, the measurement that turns a camera picture
-into the three numbers in `state`, and the score. The `2.0` in the last line is
-how much the planner is penalised for disagreement, and it is yours to set. A
-larger number keeps the arm to pushes it has seen before. You also supply
-everything the score needs beyond distance, such as a penalty for pushing the
-cube off the table.
-
-### 5.2 A physics formula plus a learned correction
-
-This is **most used in 2026**, because most working systems do this rather than
-learn the whole motion.
-[Section 7](#7-learning-only-the-part-physics-gets-wrong-residual-models) explains
-the method in full, so this entry says only when to pick it. The best known
-example is
-[TossingBot](https://arxiv.org/abs/1903.11239), by Andy Zeng, Shuran Song,
-Johnny Lee, Alberto Rodriguez and Thomas Funkhouser in 2019: a flight formula
-worked out the release speed, and a small network learned a correction for each
-object's grip and air drag.
-
-The obvious alternative is the ensemble in 5.1, which learns the whole motion
-from nothing. Pick the correction instead whenever a formula already gets the
-answer roughly right, because the correction is a small, smooth curve and a
-small, smooth curve takes very few examples to learn. The measured comparison in
-[why it needs less data](#why-it-needs-less-data) is the argument: with 3
-recorded pushes the whole-motion model is wrong by 1.33 cm and the correction is
-wrong by 0.50 cm.
-
-It costs you the formula, which you must have, and it costs you some care about
-the correction outside the data it was fitted on. A correction that is free to
-grow can turn a sensible physics answer into a wrong one, so people penalise its
-size during training or cap it, as
-[why it fails more gracefully](#why-it-fails-more-gracefully) explains.
-
-There is no library, because you already have the parts. The physics part is
-your formula, or a simulator such as MuJoCo, and the correction is a small
-PyTorch network. The code that joins them is this.
-
-```python
-import torch
-
-G, MU = 9.81, 0.30     # gravity, and wood on wood from a table of materials
-
-def physics(speed):   # the textbook distance a block slides after being let go
-    return speed ** 2 / (2 * MU * G)
-
-# The 12 recorded pushes from section 7: the speed at release, and the distance
-# the block really slid.
-speeds, measured = torch.load("pushes.pt")
-target = measured - physics(speeds)     # all the network ever sees is what is left over
-
-correction = torch.nn.Sequential(
-    torch.nn.Linear(1, 16), torch.nn.Tanh(), torch.nn.Linear(16, 1))
-optimiser = torch.optim.Adam(correction.parameters(), lr=0.01)
-
-for _ in range(2000):
-    loss = ((correction(speeds) - target) ** 2).mean()
-    optimiser.zero_grad()
-    loss.backward()
-    optimiser.step()
-
-prediction = physics(speeds) + correction(speeds)   # the two parts are simply added
-```
-
-The one line that matters is `target = measured - physics(speeds)`. Everything
-else is an ordinary small regression. You supply the formula, the recordings, and
-a decision about how large the correction may grow.
-
-### 5.3 TD-MPC2
-
-This is **most used in 2026** among ready-made programs, because it is the one
-you can install and run on a control task today without inventing anything.
-TD-MPC2 was published by Nicklas Hansen, Hao Su and Xiaolong Wang at the
-University of California San Diego as
-[TD-MPC2: Scalable, Robust World Models for Continuous Control](https://arxiv.org/abs/2310.16828)
-in October 2023. It does not predict the raw state. It learns a compact code of
-the state, predicts how that code changes, and plans with model predictive
-control, which puts it between this page and
-[latent world models](../03_also-used/03_latent-world-models.md).
-
-The obvious alternative is writing the 5.1 loop yourself. Pick TD-MPC2 when you
-want somebody else's tuning. Its
-[repository](https://github.com/nicklashansen/tdmpc2) states that one single set
-of settings covers 104 continuous control tasks, that a single agent of 317
-million numbers was trained to do 80 tasks, and that more than 300 trained
-models are published.
-
-It costs you hardware and a reward. The repository states that single-task
-learning needs a graphics card and at least 12 GB of main memory, and that a
-card with at least 8 GB of its own memory is recommended. The licence is MIT.
-The thing that most often goes wrong is the installation, because the older
-simulators it supports need old versions of MuJoCo and Gym. It also learns by
-trying, many thousands of times, which is why it is used in a simulator and
-rarely on a real arm.
-
-The library is the repository itself, which you clone and run.
-
-```bash
-git clone https://github.com/nicklashansen/tdmpc2.git
-conda env create -f tdmpc2/docker/environment.yaml   # the repository's own environment
-
-# Learn one task from nothing, inside the simulator. pick-cube is an arm task
-# from the list the repository supports.
-python train.py task=pick-cube
-
-# Or run one of the published trained models instead of training.
-python evaluate.py task=mt80 model_size=48 checkpoint=/path/to/mt80-48M.pt
-```
-
-TD-MPC2 gives you the model, the planner and the training loop. You supply the
-task, which means an environment that produces observations, accepts actions and
-returns a reward number at every step. Your own arm task is not in its list, so
-you write it as a simulator environment first, following the examples in the
-repository's `envs` folder. The reward is the part you design, and a reward that
-can be collected without doing the task will be collected that way.
-
-### 5.4 MBPO, the model as extra practice
-
-This is **worth betting on**, because the world models that shipped in 2026 use
-a model the way MBPO does rather than the way 5.1 does. MBPO is short for
-"model-based policy optimization", and Michael Janner, Justin Fu, Marvin Zhang
-and Sergey Levine published it in 2019 as
-[When to Trust Your Model](https://arxiv.org/abs/1906.08253). It never plans. It
-trains a dynamics model, takes short imagined rollouts from it, and hands those
-to a
-[reinforcement learning policy](../../06_movement-models/03_also-used/01_reinforcement-learning-policies.md)
-as extra practice.
-
-The reason to bet on this shape is reported in Book 3's
-[simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies)
-document. The three world-model policies that LeRobot shipped on 6 July 2026 use
-their world model while training and throw it away before the robot runs. MBPO
-is the oldest and simplest version of that idea.
-
-The obvious alternative is planning with the model, as 5.1 does. Planning is
-better when the goal keeps changing, because one model serves every goal. MBPO
-is better when the arm must react immediately, because at run time there is only
-the policy and no search. The price is that the policy is tied to the reward it
-was trained on, so a new goal means training again.
-
-It costs you a reward, a policy, and care about the rollout length. Long imagined
-rollouts drift, and a policy trained on drifted rollouts is worse than one
-trained with no model at all, which is why MBPO keeps them to a few steps.
-
-The library is MBRL-Lib again, which implements MBPO directly.
-
-```bash
-pip install mbrl
-# A simulated arm pushing task. Change `overrides` to pick a different task,
-# and `algorithm` to compare against PETS from 5.1.
-python -m mbrl.examples.main algorithm=mbpo overrides=mbpo_pusher
-```
-
-MBRL-Lib gives you the model, the rollouts and the policy training. You supply
-the environment and the reward, and you choose the rollout length, which is the
-one setting in MBPO that decides whether the method helps or hurts.
-
-### 5.5 PILCO, a Gaussian process model
-
-This is **historical**, kept because it explains where the ensemble in 5.1 came
-from. Marc Deisenroth and Carl Rasmussen published PILCO in 2011, and the longer
-journal version, with Dieter Fox, is
-[Gaussian Processes for Data-Efficient Learning in Robotics and Control](https://arxiv.org/abs/1502.02860).
-It is not a neural network. It uses a **Gaussian process**, which fits a smooth
-curve through the recorded points and states how unsure it is at every other
-point. Its spread is small near the records and grows away from them, without
-any need for five copies.
-
-The obvious alternative is the ensemble in 5.1, and the reason to pick a
-Gaussian process instead is the amount of data. With a few tens of recordings it
-usually predicts better than a small network, it needs almost no tuning, and it
-gives you for free the uncertainty that 5.1 pays for with five copies. PILCO's
-own contribution was carrying that uncertainty through the whole rollout rather
-than only the first step.
-
-It costs you speed as the records pile up. The work of fitting an exact Gaussian
-process grows with the cube of the number of records, so a few thousand pushes is
-already slow, and at that size a network is both faster and better. It also
-handles one output number at a time, so a three-number state needs three of them.
-The original PILCO code is old Matlab and its licence is not stated here.
-
-The library today is [GPyTorch](https://gpytorch.ai/), which is MIT licensed and
-built on PyTorch. The code below is its own exact Gaussian process example, with
-recorded pushes in place of its toy data.
-
-```python
-import gpytorch
-import torch
-
-class Dynamics(gpytorch.models.ExactGP):     # one of these per output number
-    def __init__(self, x, y, likelihood):
-        super().__init__(x, y, likelihood)
-        self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-
-    def forward(self, x):
-        return gpytorch.distributions.MultivariateNormal(
-            self.mean_module(x), self.covar_module(x))
-
-x = torch.load("pushes_in.pt")      # one row per recorded push: the state and the push
-y = torch.load("pushes_dx.pt")      # how far the cube moved left to right, one number
-
-likelihood = gpytorch.likelihoods.GaussianLikelihood()
-model = Dynamics(x, y, likelihood)
-mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
-optimiser = torch.optim.Adam(model.parameters(), lr=0.1)
-
-for _ in range(100):                # this fits a handful of settings, not many weights
-    optimiser.zero_grad()
-    loss = -mll(model(x), y)
-    loss.backward()
-    optimiser.step()
-
-model.eval()                        # switch from fitting to predicting
-likelihood.eval()
-with torch.no_grad():
-    guess = likelihood(model(torch.load("plans.pt")))
-    print(guess.mean, guess.stddev)   # the prediction, and how unsure it is of it
-```
-
-GPyTorch gives you the fitting and the uncertainty. You supply the recordings,
-and two more copies of this model for the other two state numbers. Then
-`guess.stddev` replaces the five-copy disagreement in 5.1, and the rest of the
-planner is unchanged.
-
-### 5.6 How to choose
-
-Train an ensemble of small networks on your own recordings and plan with it, as
-5.1 describes. That is the default, and for pushing, sliding and holding objects
-on a table it is still the right answer in 2026.
-
-Four things change that choice.
-
-If a physics formula or a simulator already predicts the motion roughly, keep it
-and learn only the correction, as in 5.2. Throwing away a formula that was most
-of the way there is the most common mistake on this page.
-
-If each attempt on the arm is slow or risky, so that you have tens of records
-rather than thousands, fit a Gaussian process with GPyTorch instead, as in 5.5,
-and move to the ensemble when the records pass a few thousand.
-
-If you work in a simulator that gives a reward, and you have an NVIDIA graphics
-card, run TD-MPC2 rather than writing your own loop, as in 5.3.
-
-If the arm must react immediately and cannot wait for a search, train a policy
-with the model instead of planning with it, as in 5.4, and expect to retrain
-when the goal changes.
-
-If the state cannot be written as a short list of numbers at all, none of these
-five apply. The rest of this chapter is about that case, and
-[latent world models](../03_also-used/03_latent-world-models.md) is the page that
-stays closest to this one, because it squeezes each picture into a short code and
-then plans exactly as 5.1 does.
-
----
-
-## 6. A worked example: pushing a cube to a mark
-
-Here is how a learned dynamics model helps an arm push a wooden cube to a mark
-on a table. Pushing is a good example, because the cube slides, turns and
-catches on the table in ways that are hard to write as a formula. The same idea
-works for pushing a mug out of the way before grasping it.
-
-1. **Measure.** A camera above the table sees the cube. A seeing model finds
-   its position and how far it is turned. Those three numbers are the state.
-2. **Collect.** For half an hour, the arm makes random pushes. Each push gives a
-   record: state before, push, state after.
-3. **Train.** An ensemble of five small networks learns from those records.
-4. **Plan.** The goal is a mark 30 cm away. The planner makes up 500 sequences of
-   five pushes. It rolls each through the ensemble and keeps the one whose final
-   position is closest to the mark, where the five copies also agree.
-5. **Act.** The arm makes the first push of that sequence only.
-6. **Repeat.** The camera measures the cube again, and the planner plans again
-   from the real position. After a handful of pushes, the cube is on the mark.
-7. **Improve.** Every real push is also a new training record. Overnight, the
-   model is retrained on everything, and it gets better where it was worst.
-
-The arm never needs to know the cube's weight or the friction of the table. For
-example, if someone swaps the wooden cube for a heavier metal one, the first few
-pushes fall short. However, planning again after each push corrects for this,
-and retraining on the new records fixes it for good.
-
----
-
-## 7. Learning only the part physics gets wrong: residual models
+## 5. Learning only the part physics gets wrong: residual models
 
 So far the network on this page has learned everything about how the cube moves,
 starting from nothing. However, there is a cheaper way when a physics formula
@@ -776,108 +386,355 @@ lines.
 
 ---
 
-## 8. What goes wrong, and what people do about it
+## 6. Well-known models of this kind
 
-The sections above described how a learned dynamics model works when it works.
-This section lists the five things that go wrong in practice, and what people do
-about each one.
+This section is here so that you can choose one. Almost nobody publishes a
+trained dynamics model for your arm, your table and your cube. What people
+publish is a **method**, which means a recipe for the shape of the network, the
+way it is trained and the way it is planned with. You then train the model
+yourself from your own recordings, in minutes or hours rather than the weeks a
+large model takes. So four of the five entries below are methods and one is a
+ready-made program with published weights.
 
-**Errors add up over many steps.** This was shown in
-[many steps in a row](#many-steps-in-a-row). Because of that, people plan only a
-few steps ahead and plan again after every action. They also use ensembles to
-see where the prediction stops being trustworthy.
+Read the table one row at a time. The left column names the method and says how
+much it is used in 2026. The right column holds the rest: what the method is
+best at, how big the model you end up with is, the licence of the code you would
+start from, and when to pick it. Every size in the right column describes the
+model you train, not a download, except for TD-MPC2, which does publish trained
+models.
 
-**The planner finds the model's mistakes.** The planner looks for the action
-with the best predicted result, so it is drawn to any action the model is
-hopeful about. For example, if the model wrongly predicts that a strange push
-sends the cube straight to the goal, the planner will choose that push. People
-reduce this by preferring actions where the ensemble copies agree, and by
-retraining on the records from those failed attempts.
+| Method or model | What decides it |
+| --- | --- |
+| [**5.1 Ensemble of small networks (PETS)**](#61-an-ensemble-of-small-networks-the-pets-way), most used in 2026 | It is best at planning a few steps ahead on one task, from your own recordings. You choose the size, and it is small enough to train on a laptop processor. The licence is your own code, or MIT if you start from MBRL-Lib. Pick it when you can measure the state and you can record the real arm. |
+| [**5.2 Physics formula plus a correction**](#62-a-physics-formula-plus-a-learned-correction), most used in 2026 | It is best at tasks where a formula is already roughly right. It is one small network, learned on top of your formula, so the licence is that of your own code. Pick it for throwing, for sliding, and for the arm's own motors. |
+| [**5.3 TD-MPC2**](#63-td-mpc2), most used ready-made program in 2026 | It is best at continuous control in a simulator that gives a reward. The published models hold 1, 5, 19, 48 or 317 million numbers, and single-task runs use the 5 million one. The licence is MIT. Pick it when you have a simulator, a reward and an NVIDIA graphics card. |
+| [**5.4 MBPO**](#64-mbpo-the-model-as-extra-practice), worth betting on | It is best at making a learning policy need fewer real attempts. The model is a small ensemble beside the policy, used as extra practice for it, and MBRL-Lib provides the method under MIT. Pick it when you already train a policy and each attempt is expensive. |
+| [**5.5 PILCO**](#65-pilco-a-gaussian-process-model), historical | It is a Gaussian process model rather than a network, and it is best at learning from a few tens of attempts. Its size is not fixed, because it grows with the number of records. The licence is not stated for the original code, and GPyTorch, which is what you would use today, is MIT. Pick it when each attempt is slow or risky, so that you have very little data. |
 
-**Someone must measure the state.** The model works on numbers such as the
-cube's position, so something must produce those numbers from the camera, and
-that part can be wrong too. For many objects, or for soft objects, there is no
-short list of numbers at all. The other three kinds of world model deal with
-this in their own ways.
-[Video prediction models](../03_also-used/01_video-prediction-models.md) work straight on
-pictures, and [learned simulators](../03_also-used/02_learned-simulators.md) follow many small
-pieces.
+### 6.1 An ensemble of small networks, the PETS way
 
-**Sudden changes are hard.** A network gives smooth outputs, but contact is not
-smooth. For example, a small change in a push can decide whether the gripper
-touches the cube at all. So models predict these sudden changes badly. People
-add more records near contact, or they use a physics formula for the smooth part
-and let the network learn only the correction. This is called a **residual
-model**, and
-[section 7](#7-learning-only-the-part-physics-gets-wrong-residual-models) explains
-it.
+This is **most used in 2026**, because it is what a developer starting today
+would build first. PETS is short for "probabilistic ensembles with trajectory
+sampling", and Kurtland Chua, Roberto Calandra, Rowan McAllister and Sergey
+Levine published it in 2018 as
+[Deep Reinforcement Learning in a Handful of Trials using Probabilistic Dynamics Models](https://arxiv.org/abs/1805.12114).
+It trains several small networks on the same recordings, each from a different
+random start, and then plans with the cross-entropy method and model predictive
+control.
 
-**New objects break it.** A model trained on one cube does not know anything
-about a ball. So people train on many objects, or they give the model a few
-numbers that describe the object, such as its size.
+The obvious alternative is one single network. The reason to train five is that
+one network answers every question with the same confidence, including questions
+about pushes it has never seen. Five networks that started from different random
+numbers agree where the recordings are dense and disagree where they are thin.
+That disagreement is the only cheap warning you get before the planner picks a
+push that works only in the model.
+
+The computing cost is small and the setting-up cost is large. Training five
+networks of this size takes minutes on a laptop processor, so no graphics card
+is needed, but you need a way to measure the state, recordings from the real
+arm, and planning time before every push. The thing that most often goes wrong
+is the score. A planner that is told only to get close to the goal will choose a
+push that sends the cube off the table on the way.
+
+The library is PyTorch, and nothing else is required.
+[MBRL-Lib](https://github.com/facebookresearch/mbrl-lib), from Meta, provides
+PETS and the planners ready-made under the MIT licence: `pip install mbrl` and
+then `python -m mbrl.examples.main algorithm=pets overrides=pets_pusher` runs it
+on a simulated pushing task. Be warned that it released version 0.2.0 in March
+2023 and its last commit on the main branch is from July 2023, so expect to
+spend an afternoon on old dependency versions. Writing the loop yourself is
+about twenty lines, and this is it.
+
+```python
+import torch
+
+# Five small networks, trained earlier on the same recordings from five
+# different random starting points. Each one predicts the change in the state.
+nets = [torch.nn.Sequential(
+            torch.nn.Linear(4, 64), torch.nn.Tanh(),
+            torch.nn.Linear(64, 64), torch.nn.Tanh(),
+            torch.nn.Linear(64, 3)) for _ in range(5)]
+for i, net in enumerate(nets):
+    net.load_state_dict(torch.load(f"pusher_{i}.pt"))
+    net.eval()
+
+state = torch.tensor([0.30, 0.20, 0.0])    # the cube: x, y in metres, and its angle
+goal = torch.tensor([0.60, 0.20, 0.0])
+plans = torch.rand(500, 5, 1) * 0.2 - 0.1  # 500 plans of 5 pushes, each -10 to +10 cm
+
+ends = []
+for net in nets:                           # every plan is rolled through every copy
+    rolled = state.repeat(500, 1)
+    with torch.no_grad():
+        for step in range(5):
+            rolled = rolled + net(torch.cat([rolled, plans[:, step]], dim=1))
+    ends.append(rolled)
+ends = torch.stack(ends)                   # 5 copies, 500 plans, 3 numbers each
+
+distance = (ends.mean(0) - goal).norm(dim=1)   # where the copies expect the cube to end
+disagreement = ends.std(0).norm(dim=1)         # how far apart the five copies are
+first_push = plans[(distance + 2.0 * disagreement).argmin(), 0]
+```
+
+PyTorch runs all 500 plans through a network in one call, and that is what makes
+planning fast enough to do between pushes.
+
+You supply the five trained copies, the measurement that turns a camera picture
+into the three numbers in `state`, and the score. The `2.0` in the last line is
+how much the planner is penalised for disagreement, and it is yours to set. A
+larger number keeps the arm to pushes it has seen before. You also supply
+everything the score needs beyond distance, such as a penalty for pushing the
+cube off the table.
+
+### 6.2 A physics formula plus a learned correction
+
+This is **most used in 2026**, because most working systems do this rather than
+learn the whole motion.
+[Section 7](#5-learning-only-the-part-physics-gets-wrong-residual-models) explains
+the method in full, so this entry says only when to pick it. The best known
+example is
+[TossingBot](https://arxiv.org/abs/1903.11239), by Andy Zeng, Shuran Song,
+Johnny Lee, Alberto Rodriguez and Thomas Funkhouser in 2019: a flight formula
+worked out the release speed, and a small network learned a correction for each
+object's grip and air drag.
+
+The obvious alternative is the ensemble in 5.1, which learns the whole motion
+from nothing. Pick the correction instead whenever a formula already gets the
+answer roughly right, because the correction is a small, smooth curve and a
+small, smooth curve takes very few examples to learn. The measured comparison in
+[why it needs less data](#why-it-needs-less-data) is the argument: with 3
+recorded pushes the whole-motion model is wrong by 1.33 cm and the correction is
+wrong by 0.50 cm.
+
+It costs you the formula, which you must have, and it costs you some care about
+the correction outside the data it was fitted on. A correction that is free to
+grow can turn a sensible physics answer into a wrong one, so people penalise its
+size during training or cap it, as
+[why it fails more gracefully](#why-it-fails-more-gracefully) explains.
+
+There is no library, because you already have the parts. The physics part is
+your formula, or a simulator such as MuJoCo, and the correction is a small
+PyTorch network. The code that joins them is this.
+
+```python
+import torch
+
+G, MU = 9.81, 0.30     # gravity, and wood on wood from a table of materials
+
+def physics(speed):   # the textbook distance a block slides after being let go
+    return speed ** 2 / (2 * MU * G)
+
+# The 12 recorded pushes from section 7: the speed at release, and the distance
+# the block really slid.
+speeds, measured = torch.load("pushes.pt")
+target = measured - physics(speeds)     # all the network ever sees is what is left over
+
+correction = torch.nn.Sequential(
+    torch.nn.Linear(1, 16), torch.nn.Tanh(), torch.nn.Linear(16, 1))
+optimiser = torch.optim.Adam(correction.parameters(), lr=0.01)
+
+for _ in range(2000):
+    loss = ((correction(speeds) - target) ** 2).mean()
+    optimiser.zero_grad()
+    loss.backward()
+    optimiser.step()
+
+prediction = physics(speeds) + correction(speeds)   # the two parts are simply added
+```
+
+The one line that matters is `target = measured - physics(speeds)`. Everything
+else is an ordinary small regression. You supply the formula, the recordings, and
+a decision about how large the correction may grow.
+
+### 6.3 TD-MPC2
+
+This is **most used in 2026** among ready-made programs, because it is the one
+you can install and run on a control task today without inventing anything.
+TD-MPC2 was published by Nicklas Hansen, Hao Su and Xiaolong Wang at the
+University of California San Diego as
+[TD-MPC2: Scalable, Robust World Models for Continuous Control](https://arxiv.org/abs/2310.16828)
+in October 2023. It does not predict the raw state. It learns a compact code of
+the state, predicts how that code changes, and plans with model predictive
+control, which puts it between this page and
+[latent world models](../03_also-used/03_latent-world-models.md).
+
+The obvious alternative is writing the 5.1 loop yourself. Pick TD-MPC2 when you
+want somebody else's tuning. Its
+[repository](https://github.com/nicklashansen/tdmpc2) states that one single set
+of settings covers 104 continuous control tasks, that a single agent of 317
+million numbers was trained to do 80 tasks, and that more than 300 trained
+models are published.
+
+It costs you hardware and a reward. The repository states that single-task
+learning needs a graphics card and at least 12 GB of main memory, and that a
+card with at least 8 GB of its own memory is recommended. The licence is MIT.
+The thing that most often goes wrong is the installation, because the older
+simulators it supports need old versions of MuJoCo and Gym. It also learns by
+trying, many thousands of times, which is why it is used in a simulator and
+rarely on a real arm.
+
+The library is the repository itself, which you clone and run.
+
+```bash
+git clone https://github.com/nicklashansen/tdmpc2.git
+conda env create -f tdmpc2/docker/environment.yaml   # the repository's own environment
+
+# Learn one task from nothing, inside the simulator. pick-cube is an arm task
+# from the list the repository supports.
+python train.py task=pick-cube
+
+# Or run one of the published trained models instead of training.
+python evaluate.py task=mt80 model_size=48 checkpoint=/path/to/mt80-48M.pt
+```
+
+TD-MPC2 gives you the model, the planner and the training loop. You supply the
+task, which means an environment that produces observations, accepts actions and
+returns a reward number at every step. Your own arm task is not in its list, so
+you write it as a simulator environment first, following the examples in the
+repository's `envs` folder. The reward is the part you design, and a reward that
+can be collected without doing the task will be collected that way.
+
+### 6.4 MBPO, the model as extra practice
+
+This is **worth betting on**, because the world models that shipped in 2026 use
+a model the way MBPO does rather than the way 5.1 does. MBPO is short for
+"model-based policy optimization", and Michael Janner, Justin Fu, Marvin Zhang
+and Sergey Levine published it in 2019 as
+[When to Trust Your Model](https://arxiv.org/abs/1906.08253). It never plans. It
+trains a dynamics model, takes short imagined rollouts from it, and hands those
+to a
+[reinforcement learning policy](../../06_movement-models/03_also-used/01_reinforcement-learning-policies.md)
+as extra practice.
+
+The reason to bet on this shape is reported in Book 3's
+[simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies)
+document. The three world-model policies that LeRobot shipped on 6 July 2026 use
+their world model while training and throw it away before the robot runs. MBPO
+is the oldest and simplest version of that idea.
+
+The obvious alternative is planning with the model, as 5.1 does. Planning is
+better when the goal keeps changing, because one model serves every goal. MBPO
+is better when the arm must react immediately, because at run time there is only
+the policy and no search. The price is that the policy is tied to the reward it
+was trained on, so a new goal means training again.
+
+It costs you a reward, a policy, and care about the rollout length. Long imagined
+rollouts drift, and a policy trained on drifted rollouts is worse than one
+trained with no model at all, which is why MBPO keeps them to a few steps.
+
+The library is MBRL-Lib again, which implements MBPO directly.
+
+```bash
+pip install mbrl
+# A simulated arm pushing task. Change `overrides` to pick a different task,
+# and `algorithm` to compare against PETS from 5.1.
+python -m mbrl.examples.main algorithm=mbpo overrides=mbpo_pusher
+```
+
+MBRL-Lib gives you the model, the rollouts and the policy training. You supply
+the environment and the reward, and you choose the rollout length, which is the
+one setting in MBPO that decides whether the method helps or hurts.
+
+### 6.5 PILCO, a Gaussian process model
+
+This is **historical**, kept because it explains where the ensemble in 5.1 came
+from. Marc Deisenroth and Carl Rasmussen published PILCO in 2011, and the longer
+journal version, with Dieter Fox, is
+[Gaussian Processes for Data-Efficient Learning in Robotics and Control](https://arxiv.org/abs/1502.02860).
+It is not a neural network. It uses a **Gaussian process**, which fits a smooth
+curve through the recorded points and states how unsure it is at every other
+point. Its spread is small near the records and grows away from them, without
+any need for five copies.
+
+The obvious alternative is the ensemble in 5.1, and the reason to pick a
+Gaussian process instead is the amount of data. With a few tens of recordings it
+usually predicts better than a small network, it needs almost no tuning, and it
+gives you for free the uncertainty that 5.1 pays for with five copies. PILCO's
+own contribution was carrying that uncertainty through the whole rollout rather
+than only the first step.
+
+It costs you speed as the records pile up. The work of fitting an exact Gaussian
+process grows with the cube of the number of records, so a few thousand pushes is
+already slow, and at that size a network is both faster and better. It also
+handles one output number at a time, so a three-number state needs three of them.
+The original PILCO code is old Matlab and its licence is not stated here.
+
+The library today is [GPyTorch](https://gpytorch.ai/), which is MIT licensed and
+built on PyTorch. The code below is its own exact Gaussian process example, with
+recorded pushes in place of its toy data.
+
+```python
+import gpytorch
+import torch
+
+class Dynamics(gpytorch.models.ExactGP):     # one of these per output number
+    def __init__(self, x, y, likelihood):
+        super().__init__(x, y, likelihood)
+        self.mean_module = gpytorch.means.ConstantMean()
+        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
+
+    def forward(self, x):
+        return gpytorch.distributions.MultivariateNormal(
+            self.mean_module(x), self.covar_module(x))
+
+x = torch.load("pushes_in.pt")      # one row per recorded push: the state and the push
+y = torch.load("pushes_dx.pt")      # how far the cube moved left to right, one number
+
+likelihood = gpytorch.likelihoods.GaussianLikelihood()
+model = Dynamics(x, y, likelihood)
+mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+optimiser = torch.optim.Adam(model.parameters(), lr=0.1)
+
+for _ in range(100):                # this fits a handful of settings, not many weights
+    optimiser.zero_grad()
+    loss = -mll(model(x), y)
+    loss.backward()
+    optimiser.step()
+
+model.eval()                        # switch from fitting to predicting
+likelihood.eval()
+with torch.no_grad():
+    guess = likelihood(model(torch.load("plans.pt")))
+    print(guess.mean, guess.stddev)   # the prediction, and how unsure it is of it
+```
+
+GPyTorch gives you the fitting and the uncertainty. You supply the recordings,
+and two more copies of this model for the other two state numbers. Then
+`guess.stddev` replaces the five-copy disagreement in 5.1, and the rest of the
+planner is unchanged.
+
+### 6.6 How to choose
+
+Train an ensemble of small networks on your own recordings and plan with it, as
+5.1 describes. That is the default, and for pushing, sliding and holding objects
+on a table it is still the right answer in 2026.
+
+Four things change that choice.
+
+If a physics formula or a simulator already predicts the motion roughly, keep it
+and learn only the correction, as in 5.2. Throwing away a formula that was most
+of the way there is the most common mistake on this page.
+
+If each attempt on the arm is slow or risky, so that you have tens of records
+rather than thousands, fit a Gaussian process with GPyTorch instead, as in 5.5,
+and move to the ensemble when the records pass a few thousand.
+
+If you work in a simulator that gives a reward, and you have an NVIDIA graphics
+card, run TD-MPC2 rather than writing your own loop, as in 5.3.
+
+If the arm must react immediately and cannot wait for a search, train a policy
+with the model instead of planning with it, as in 5.4, and expect to retrain
+when the goal changes.
+
+If the state cannot be written as a short list of numbers at all, none of these
+five apply. The rest of this chapter is about that case, and
+[latent world models](../03_also-used/03_latent-world-models.md) is the page that
+stays closest to this one, because it squeezes each picture into a short code and
+then plans exactly as 5.1 does.
 
 ---
 
-## 9. Why this kind, and what it costs
-
-The last section listed what goes wrong, so this section weighs those problems
-against what the model gives you. A learned dynamics model is the right choice
-when the state can be written as a short list of numbers, and when a textbook
-formula for the motion is missing or wrong. Pushing, sliding and holding objects
-on a table are typical cases.
-
-There are two obvious alternatives, and it is worth naming both.
-
-The first is a **hand-written physics simulator**, such as MuJoCo. A simulator
-needs every object's weight, shape and friction, and it is often wrong about
-sliding and catching, which is exactly what matters for pushing. Instead, a
-learned model learns the real behaviour from the real cube. So choose the
-simulator when you can describe the objects well and do not have a real arm to
-collect data on. When
-the simulator is roughly right, you can also keep it and learn only what it gets
-wrong, as
-[section 7](#7-learning-only-the-part-physics-gets-wrong-residual-models) shows.
-
-The second is a policy that learns without any model, which Book 3 calls
-**model-free** learning. It connects the state straight to an action, so it is
-simpler, but it needs far more attempts, because every attempt teaches it only
-one thing. A dynamics model instead learns how the world works from each
-attempt, and the planner can reuse that for any goal. So the same model that
-pushes the cube to one mark can push it to a different mark tomorrow, with no
-new training.
-
-What it costs you:
-
-- You need a way to measure the state, usually a camera and a seeing model.
-- You need recordings from the real arm, which take time.
-- Planning takes computing time at every step. Hundreds of rollouts must finish
-  before the arm moves again.
-- It only knows the objects and situations it was trained on.
-
----
-
-## 10. The written alternative
-
-The sections above assumed that the model is learned, but the planner does not
-require that. The written alternative keeps the planner and replaces the learned
-model with a written one, because the planning loop in section 3 is written code
-either way. Book 6's
-[sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
-explains random shooting, the cross-entropy method and model predictive control in
-full. The model can then be a physics formula for pushing, such as Book 3's
-[quasi-static planar pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing)
-, with its numbers measured by
-[system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
-.
-
-The written model wins when the objects are simple and a formula with a few measured
-numbers predicts them well, because it needs no recordings and can be checked. The
-learned model wins when sliding and catching do not follow the formula, and you can
-record the real arm pushing the real objects.
-
----
-
-## 11. Where to read next
+## 7. Where to read next
 
 - The [next page](../03_also-used/01_video-prediction-models.md) covers video prediction models,
   which predict whole camera pictures instead of a few numbers.

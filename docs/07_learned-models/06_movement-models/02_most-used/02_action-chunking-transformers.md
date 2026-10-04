@@ -24,9 +24,6 @@ small mistakes adding up that is described there.
 1. [What ACT is](#1-what-act-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [The three steps](#the-three-steps)
-   · [The style numbers](#the-style-numbers)
-   · [Blending overlapping chunks](#blending-overlapping-chunks)
 4. [How it is trained](#4-how-it-is-trained)
 5. [ALOHA and LeRobot](#5-aloha-and-lerobot)
 6. [Well-known models of this kind](#6-well-known-models-of-this-kind)
@@ -36,11 +33,7 @@ small mistakes adding up that is described there.
    · [6.4 SmolVLA, a chunk from pretrained weights](#64-smolvla-a-chunk-from-pretrained-weights)
    · [6.5 π0.5 in LeRobot, and what a slow chunk needs](#65-π05-in-lerobot-and-what-a-slow-chunk-needs)
    · [6.6 How to choose](#66-how-to-choose)
-7. [A worked example: a cup into a box with a cheap arm](#7-a-worked-example-a-cup-into-a-box-with-a-cheap-arm)
-8. [What goes wrong](#8-what-goes-wrong)
-9. [Why ACT, and what it costs](#9-why-act-and-what-it-costs)
-10. [The written alternative](#10-the-written-alternative)
-11. [Where to read next](#11-where-to-read-next)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -71,7 +64,7 @@ chances for a small mistake, while with chunks there are only two.
 
 This is why chunking helps with compounding error, which is the adding-up of small
 mistakes from
-[behaviour cloning](01_behaviour-cloning.md#small-mistakes-add-up). Mistakes build on
+behaviour cloning. Mistakes build on
 each other at each new decision, so fewer decisions means fewer chances for them to
 build up.
 
@@ -150,7 +143,7 @@ they read it in the same transformer that reads the pictures.
 The three steps above give one chunk for one situation, but people do the same task
 in slightly different ways. For example, one time the demonstrator moves quickly,
 and another time slowly. As the
-[behaviour cloning page](01_behaviour-cloning.md#two-good-ways-become-one-bad-way)
+behaviour cloning page
 shows, a network that has to give one answer blends these ways together.
 
 But ACT has a partial fix for this problem. During training only, a second small
@@ -616,122 +609,7 @@ to join one to the next.
 
 ---
 
-## 7. A worked example: a cup into a box with a cheap arm
-
-Section 6 named the models and the commands, and this section walks through what
-one person can do at home with the first of them. Say you have one SO-101 follower arm
-with its leader arm, one camera looking down, and one camera on the wrist. The
-task is to pick up a paper cup and drop it into a box.
-
-First you record 50 demonstrations of that with LeRobot. For each one you put
-the cup in a new place, and drive the follower with the leader arm. Then LeRobot
-saves the pictures, the joint positions and the actions in its standard format.
-
-Then you train ACT on those 50 demonstrations with LeRobot's training script, on
-one graphics card.
-
-Then you run the trained policy on the real arm. Every time it is asked, it
-looks at both cameras and the joint angles, and it gives the next chunk of joint
-targets. So the arm reaches down, closes the gripper, lifts, moves over the box,
-and opens.
-
-Watch it closely and you will see the effect of chunking. The motion is smooth,
-because each chunk is a smooth two-second plan. Now move the cup while the arm
-is reaching. If the policy is playing a long chunk, then the arm keeps going to
-the old place for a moment before it reacts. That delay is the price of the
-chunk.
-
----
-
-## 8. What goes wrong
-
-The worked example already showed one fault, which was the delay inside a long
-chunk, and this section lists the rest. ACT shares the problems of every behaviour
-cloning policy. It only works in situations like the ones it was trained on, the
-cameras must stay where they were, it cannot say "I don't know", and it knows
-nothing about collisions. These are explained on the
-[behaviour cloning page](01_behaviour-cloning.md#other-problems), and ACT also has
-some problems of its own.
-
-The first problem of its own is that the chunk length is a trade-off. Longer chunks
-mean fewer decisions and less
-adding-up of mistakes, but they also mean slower reactions. The ACT paper's own
-test, reported in
-[learned methods for one arm](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#11-behaviour-cloning),
-went from 1% success with one move per decision to 44% with 100 moves per chunk, and
-then got worse again with longer chunks. Those numbers are an average over simulated
-tasks, so the best length depends on your task, and you find it by trying.
-
-The style numbers only partly fix the problem of two good ways becoming one bad
-way. If the demonstrations really split into two different paths, then ACT can
-still blend them or switch between them. Recording demonstrations that all use
-the same way helps, and so does moving to a diffusion or flow policy.
-
-Fifty demonstrations is enough for a narrow task, but it is not enough for a
-task that varies a lot. If the cup can be any colour, anywhere on the table, in
-any light, then you need many more demonstrations, recorded across all of that
-variety.
-
-ACT also learns one task at a time, and it does not take a sentence as input. So it
-cannot be told to do a different task, and for that you need the
-[vision-language-action models](../../07_language-models/02_most-used/01_vision-language-action-models.md).
-
----
-
-## 9. Why ACT, and what it costs
-
-Sections 1 to 8 described what ACT does and where it fails, so this section
-weighs it against the alternatives. ACT is a behaviour cloning policy that
-predicts two seconds of joint targets at a time, using a transformer to combine
-pictures from several cameras.
-
-It gives you smooth, fine movement from a small number of demonstrations, and it
-does this on cheap hardware and one graphics card. That is why it is the usual
-first policy for anyone starting out.
-
-The first obvious alternative is plain behaviour cloning, which predicts one
-move at a time. Plain behaviour cloning is a smaller network, and it reacts at
-every step. But on real fine tasks its small mistakes add up quickly, so it
-usually fails where ACT succeeds. Chunking is the main reason ACT works where
-plain copying did not.
-
-The second obvious alternative is a
-[diffusion or flow policy](03_diffusion-and-flow-policies.md). These handle tasks
-with more than one good way of doing them better than ACT does. But they take
-several clean-up steps to produce each chunk, so they are slower to run and usually
-slower to train. When the demonstrations are consistent, ACT is simpler and cheaper,
-so it is the sensible place to start. Move on to a diffusion or flow policy only if
-ACT blends different ways of doing the task.
-
-What ACT costs you is mostly what behaviour cloning costs you: careful
-recording, a policy that only works near its training data, and no way to check
-it in advance. On top of that, you must choose a chunk length and live with the
-slower reactions that a long chunk brings. And like every policy in this
-chapter, it needs ordinary control and safety code underneath it.
-
----
-
-## 10. The written alternative
-
-Section 9 compared ACT with other learned policies, and this section compares it
-with code you write yourself. ACT does the same job as behaviour cloning, so its
-written alternative is the same one: a route from [sampling-based
-planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md),
-turned into smooth joint targets by [trajectory
-generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md).
-A written motion is planned as one whole movement, so it does not have the adding-up
-of small mistakes that chunking was built to fix. Book 3's [programmed
-methods](../../../03_frameworks/04_one-arm-training/02_programmed-methods.md) shows
-the written parts working together on one arm.
-
-The written motion is better when the objects and the task stay the same,
-because you can check it before it runs. But ACT is better when the task is fine
-and easier to show than to write down, and when you can record a few dozen
-demonstrations of it.
-
----
-
-## 11. Where to read next
+## 7. Where to read next
 
 The next page, [diffusion and flow policies](03_diffusion-and-flow-policies.md),
 keeps the chunks and adds a way to choose cleanly between different ways of doing a

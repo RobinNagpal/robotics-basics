@@ -70,7 +70,7 @@ predict the success rate.
 - **The test set checks single steps, whereas a trial is many steps in a row.** A
   movement model decides a new action many times a second, so a tiny mistake on one
   step moves the arm a little off course, which means the next picture is one the
-  model has never seen. The [behaviour cloning](../../06_movement-models/02_most-used/01_behaviour-cloning.md#small-mistakes-add-up)
+  model has never seen. The behaviour cloning
   page calls this compounding error.
 - **The test set measures closeness to a person's answer rather than success.** A
   grasp 1 cm away from the one in the demonstration counts as an error on the test

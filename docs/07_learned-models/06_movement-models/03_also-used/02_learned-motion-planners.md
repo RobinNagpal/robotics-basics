@@ -33,11 +33,7 @@ page describes.
 5. [Learned inverse kinematics](#5-learned-inverse-kinematics)
 6. [How they are trained](#6-how-they-are-trained)
 7. [Well-known models of this kind](#7-well-known-models-of-this-kind)
-8. [A worked example: reaching into a shelf](#8-a-worked-example-reaching-into-a-shelf)
-9. [What goes wrong, and what people do about it](#9-what-goes-wrong-and-what-people-do-about-it)
-10. [Why this kind, and what it costs](#10-why-this-kind-and-what-it-costs)
-11. [The written alternative](#11-the-written-alternative)
-12. [Where to read next](#12-where-to-read-next)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -585,128 +581,11 @@ Policy Networks, because it publishes the pipeline that generated its training
 data. A learned sampler of the kind section 3 described is code you write against
 OMPL, and not a model you download.
 
-One case needs no planner at all. If the part is always in the same place, teach
-the route once and play it back, which section 10's table also says.
+One case needs no planner at all. If the part is always in the same place, teach the route once and play it back.
 
 ---
 
-## 8. A worked example: reaching into a shelf
-
-The models in section 7 are general, so this section shows where one of them
-would actually earn its place. Suppose a warehouse arm picks items from shelves,
-where the shelves are close together and the arm often has to reach into a
-narrow gap. The team uses an ordinary sampling planner, which works, but in the
-narrowest gaps it sometimes takes over a second to find a route, and the whole
-cell waits.
-
-Here is how a learned helper could fit in.
-
-1. The team keeps the ordinary planner and the exact collision checker, so nothing
-   is removed.
-2. They generate many simulated shelf scenes with different gaps and item places,
-   and the ordinary planner solves each one, however long it takes.
-3. They train a learned sampler on these solutions, and it learns that routes into a
-   shelf all pass through the front of the gap.
-4. On the real arm, the planner now picks most of its random positions where the
-   sampler suggests, so it finds a route sooner in the narrow gaps.
-5. The exact collision checker still tests the final route. If the learned sampler
-   is wrong about a strange new shelf, then the planner simply takes longer, as it
-   did before, and it does not crash.
-
-Notice that the team did not replace the planner, because they only helped it
-with the slow cases. That is the pattern that works best in practice.
-
-And if the shelves were open and wide, then the ordinary planner would answer
-quickly every time, so there would be nothing for a network to fix.
-
----
-
-## 9. What goes wrong, and what people do about it
-
-The worked example kept the ordinary planner in place for a reason, and the
-faults below are that reason. Each one is followed by what people do about it.
-
-**It gives no guarantee.** A network can return a route that hits something, or a
-collision guess that is wrong near an edge. So people always check the final route
-with an exact collision checker, and fall back to an ordinary planner when the check
-fails.
-
-**It is confused by unusual scenes.** A scene shaped unlike anything in training can
-give a poor answer. So people make the training scenes as varied as they can, and
-keep the ordinary planner as a fallback.
-
-**It only works for the arm it learned.** A network trained on one arm's joint
-lengths and shape does not work on a different arm. So you have to train again for
-each arm you own.
-
-**It is hard to understand when it fails.** An ordinary planner can at least say that
-it ran out of time, whereas a network just gives a route. So people log the inputs, so
-that they can replay a failure in simulation.
-
-**The ordinary tools keep getting faster.** Planners that run on a graphics card now
-find routes quickly for many everyday scenes. So each gain on the classical side
-shrinks the gap a learned planner was built to fill, and the
-[planning a path document](../../../03_frameworks/03_arm-movement/03_planning-a-path.md#6-planning-on-a-graphics-card-and-replanning-continuously)
-describes this.
-
----
-
-## 10. Why this kind, and what it costs
-
-Section 9 ended with the classical tools getting faster, so this section asks
-when a network is still worth adding. The obvious alternative is the ordinary
-planner with its exact collision checker and its ordinary IK solver. For most
-free-space moves, this is the right choice, because it is free, well tested, and
-it checks every move. It also answers quickly for most scenes, and a learned
-planner copies it, so it cannot do better than the planner it learned from.
-
-You choose a learned helper only when the ordinary tools are too slow in a way
-that matters. Maybe the planning time varies too much for a cell with a strict
-cycle time. Or an optimiser needs a smooth distance to obstacles, or a
-seven-joint arm needs many IK answers to choose from. In those cases the learned
-helper gives a fast first answer, and the ordinary tools then check or finish
-it.
-
-What it gives you is speed that stays the same from run to run, and a good first
-guess.
-
-What it costs you is a training set, a training run for each arm, and extra
-code. On top of that, the ordinary planner and checker have to stay in the
-system as well. So the table below sums up the choice. Read each row as a
-situation, and the right-hand column as the usual choice.
-
-| Situation | Usual choice |
-| --- | --- |
-| Open space, and planning is already fast enough | the ordinary planner, with no learning |
-| Planning is usually fast, but sometimes far too slow | a learned sampler or learned route planner, with the exact check kept |
-| An optimiser needs a smooth distance to obstacles | a learned collision distance, with the exact check on the final route |
-| A redundant arm needs many IK answers quickly | a learned IK solver, finished by the ordinary solver |
-| The part is always in the same place | a taught, fixed route; no planner at all |
-
----
-
-## 11. The written alternative
-
-On this page the written alternative is unusually close at hand, because it is the
-set of ordinary tools these networks learn from. [Sampling-based
-planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md)
-finds the route and checks it for collisions, and [numerical inverse
-kinematics](../../../06_programming-techniques/06_planning-and-search/02_most-used/02_numerical-inverse-kinematics.md)
-finds the joint angles. When an optimiser needs a smooth distance to obstacles, the
-written tool is a distance field, which [volumetric
-maps](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
-explains. Book 3's [planning a
-path](../../../03_frameworks/03_arm-movement/03_planning-a-path.md) explains how
-these planners behave on a real arm.
-
-So the written tools are better for most moves through free space, and they stay
-in the system even when a learned helper is added. A learned helper is better
-only when the written tools are too slow, or too uneven in their speed, for the
-job.
-
----
-
-## 12. Where to read next
+## 8. Where to read next
 
 This page and the previous one both took over one part of an ordinary system. So
 the reading below either compares them, or it moves on to the two methods that

@@ -21,11 +21,7 @@ explained where it first appears.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models and methods](#5-well-known-models-and-methods)
-6. [A worked example: pushing a peg into a hole](#6-a-worked-example-pushing-a-peg-into-a-hole)
-7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -243,8 +239,7 @@ are where large-scale practice happens, and both want an NVIDIA card, so on an A
 Silicon Mac you are limited to plain MuJoCo on the processor and to small tasks. Note
 also that Isaac Gym, the simulator behind a great many older papers, is officially no
 longer supported, and Isaac Lab replaced it, so a tutorial built on Isaac Gym is out
-of date. What most often goes wrong is not the algorithm but the reward, which
-section 7 describes.
+of date. What most often goes wrong is not the algorithm but the reward.
 
 The library for the algorithm itself is
 [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3), which is MIT and
@@ -273,8 +268,7 @@ Stable-Baselines3 gives you the algorithm. `n_steps=2048` and `batch_size=64` ar
 own defaults for PPO, and with sixteen copies of the task each update learns from
 32,768 steps of experience. What panda-gym gives you is the simulated arm, built on
 the PyBullet physics engine, the task and, most importantly, the reward. On your own
-task you write that reward yourself, and section 7 explains why that is where the
-difficulty actually lives. For a wider set of manipulation tasks,
+task you write that reward yourself. For a wider set of manipulation tasks,
 [robosuite](https://github.com/ARISE-Initiative/robosuite) (MIT) provides them on
 MuJoCo instead, and it runs on Apple Silicon because MuJoCo does.
 
@@ -470,8 +464,7 @@ systems ships a policy you can download, which is the point section 5 opened wit
 
 ### 5.7 How to choose
 
-Before choosing anything here, check that you need this method at all, because
-section 8 shows that most arm tasks do not. If a person can demonstrate the task,
+Before choosing anything here, check that you need this method at all, because most arm tasks do not. If a person can demonstrate the task,
 the earlier pages in this chapter are far less work for the same result.
 
 When you do need it, the default is not to train from nothing. Train a copying
@@ -499,144 +492,7 @@ are there to be read.
 
 ---
 
-## 6. A worked example: pushing a peg into a hole
-
-The methods in section 5 all need a task that suits them, and pushing a peg into
-a tight hole is the classic one for reinforcement learning on an arm. The gap
-around the peg can be smaller than a camera can see, so the arm has to feel its
-way in, by reacting to the force it senses. A person finds this hard to
-demonstrate with a joystick, but a program can easily check whether the peg is
-in.
-
-Here is how such a project would go, step by step.
-
-1. **Build the simulation.** Model the arm, the peg and the block with the hole,
-   where the shapes can come from the parts' computer drawings.
-2. **Write the reward.** For example: 1.0 when the peg is all the way in, a smaller
-   amount the closer the peg tip is to the hole, and a small penalty for pushing too
-   hard.
-3. **Add randomness.** Each episode starts the peg in a slightly different place,
-   with slightly different friction and a slightly different hole position.
-4. **Train.** Run thousands of simulated arms at once with PPO. At first the peg
-   lands anywhere, but after many attempts it finds the hole, and then it learns to
-   wiggle in when it catches the edge.
-5. **Move to the real arm.** A classical planner brings the peg to just above the
-   hole, and then the learned policy takes over for the last few millimetres, where
-   contact matters.
-6. **Check and, if needed, fine-tune.** Test it many times on the real arm. If it
-   fails often, then a short period of real-world learning with a person watching can
-   close the gap.
-
-Note step 5, because the learned policy does only the part near the contact. The
-long
-move across the table is done by ordinary planning, which is faster and safer for
-that job, and the
-[learned motion document](../../../03_frameworks/03_arm-movement/05_learned-motion.md#1-which-part-of-the-move-a-policy-stands-in-for)
-explains this split.
-
----
-
-## 7. What goes wrong, and what people do about it
-
-The worked example assumed a reward rule that says what you meant, and that
-assumption is the first thing to fail. Each problem below is followed by what
-people do about it.
-
-**The reward says something you did not mean.** The learner finds any way to get a
-high score, including ways you did not expect. Suppose the reward is "the mug is
-near
-the target spot". Then the policy may learn to knock the mug across the table, so
-that it slides there and falls over, and that scores just as well as carrying it.
-So this is a case of what people call **reward hacking**.
-
-![The person meant carry the mug; the policy learned to knock it over onto the target](../../../images/movement-models/reinforcement-learning-policies/reward-loophole.svg)
-
-The left picture shows what the person meant, while the right picture shows a
-movement that earns the same reward and is not what anyone wanted. So people fix
-this by adding terms to the reward, such as "the mug must be upright", and by
-watching the trained policy carefully before trusting it.
-
-**The simulator is wrong about contact.** Soft, slippery, bendy or breakable things
-are hard to simulate, so a policy trained on a simulated sponge may fail on a real
-one. So people use domain randomisation, measure the real parts to tune the
-simulator, and finish with a short spell of real practice.
-
-**It needs a huge number of tries.** However, training can take hours or days on a
-graphics card, even in simulation. So people start from a policy trained by copying,
-so that the learner does not start from nothing.
-
-**It gives no safety guarantee.** The policy can output any action, and nothing
-inside it stops it pushing too hard or moving too fast. So a separate layer
-under the
-policy has to limit forces and speeds. The
-[collision and failure detection page](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
-covers one part of that layer.
-
-**It does not transfer to a new task or a new arm.** A policy trained to insert one
-peg does not insert a different connector, so usually you train again from the
-start.
-
----
-
-## 8. Why this kind, and what it costs
-
-Section 7 listed the costs of the method, and this section asks when to pay
-them. So there are two obvious alternatives to weigh against it.
-
-The first is to program the movement by hand, where you write a search pattern:
-push down, and if it catches then move in a small spiral, and so on. This is
-often good enough, because it is easy to understand and to check. Reinforcement
-learning is worth it only when the right reaction depends on forces too
-complicated to write rules for.
-
-The second is to copy a person, with
-[behaviour cloning](../02_most-used/01_behaviour-cloning.md) or a
-[diffusion policy](../02_most-used/03_diffusion-and-flow-policies.md). Copying is
-cheaper, and it needs no simulator and no reward. So reinforcement learning is worth
-it when a person cannot demonstrate the task well, or when you need the policy to
-become better than the person was.
-
-What reinforcement learning gives you is a policy that reacts to what it feels,
-and that improves by practice instead of by more recordings.
-
-What it costs you is a great deal more than copying. You need a simulator that
-models the contact well enough, and you need a reward rule you trust. You also
-need a large amount of computing, and the result is hard to explain when it
-fails. So the table below sums up when it is worth the cost. Read each row as a
-situation, and the column on the right as the usual choice.
-
-| Situation | Usual choice |
-| --- | --- |
-| The motion is a free-space move from A to B | a classical planner, not learning |
-| A person can easily show the task | copy them: behaviour cloning or ACT |
-| The task is contact-heavy and easy to score, and can be simulated | reinforcement learning in simulation |
-| A copied policy works most of the time but not reliably | a short burst of real-world reinforcement learning on top of it |
-| The contact cannot be simulated and is hard to score | hand-written force control, or more demonstrations |
-
----
-
-## 9. The written alternative
-
-The table above put hand-written force control in the last row, so this section says
-what that code is. The written way to fit a peg into a hole is force control with a
-search pattern. [Impedance and force
-control](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
-makes the arm give way like a spring, so that when the peg meets the edge of the
-hole, the side force pushes it towards the centre. Then a small written search, such
-as the spiral in section 8, covers the rest when the hole's position is not known
-exactly. For moves through free space, the written choice is [sampling-based
-planning](../../../06_programming-techniques/06_planning-and-search/02_most-used/01_sampling-based-planning.md).
-Book 3's [position, stiffness and
-force](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#4-position-stiffness-and-force)
-explains which contact jobs compliance suits.
-
-The written way is better when the contact is simple enough to describe with a
-spring and a few rules. But reinforcement learning is better when the right
-reaction depends on forces too complicated to write rules for.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 This page covered the first of the also-used methods, and the reading below
 either compares it with copying or moves on to the next one.

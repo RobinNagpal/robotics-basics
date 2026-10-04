@@ -16,26 +16,17 @@ words without explaining them again.
 
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
-   · [Semantic and instance segmentation](#semantic-and-instance-segmentation)
-   · [Why an outline and not a box](#why-an-outline-and-not-a-box)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Shrink, then grow back](#shrink-then-grow-back)
-   · [A detector with a mask added](#a-detector-with-a-mask-added)
-   · [A prompt instead of a class list](#a-prompt-instead-of-a-class-list)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-   · [SAM 2](#51-sam-2)
-   · [SAM 3](#52-sam-3)
-   · [Ultralytics YOLO26-seg](#53-ultralytics-yolo26-seg)
-   · [RF-DETR-Seg](#54-rf-detr-seg)
-   · [Mask R-CNN](#55-mask-r-cnn)
-   · [Mask2Former](#56-mask2former)
-   · [How to choose](#57-how-to-choose)
-6. [Where it is used on a robot arm](#6-where-it-is-used-on-a-robot-arm)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why segmentation, and what it costs](#8-why-segmentation-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.1 SAM 2](#51-sam-2)
+   · [5.2 SAM 3](#52-sam-3)
+   · [5.3 Ultralytics YOLO26-seg](#53-ultralytics-yolo26-seg)
+   · [5.4 RF-DETR-Seg](#54-rf-detr-seg)
+   · [5.5 Mask R-CNN](#55-mask-r-cnn)
+   · [5.6 Mask2Former](#56-mask2former)
+   · [5.7 How to choose](#57-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -341,7 +332,7 @@ print(masks.shape)        # one mask per box, each the height and width of the p
 You supply the box, which means you supply a detector. The library prepares the
 picture, runs the network and stretches the mask back to your photo's size. What you
 still have to write is the step from the mask to a place in the room, which is
-[section 6](#6-where-it-is-used-on-a-robot-arm).
+section 6.
 
 ### 5.2 SAM 3
 
@@ -643,129 +634,7 @@ lists more of these, each with the licence read from its own licence file.
 
 ---
 
-## 6. Where it is used on a robot arm
-
-The clearest way to see what those masks buy you is a worked example, so here is
-one: picking up a mug by its body rather than its handle.
-
-1. A depth camera above the table takes a colour picture and a depth picture.
-2. An instance segmentation model, fine-tuned on the lab's mugs, gives a mask for
-   each mug.
-3. The program chooses one mug, for example the one with the highest confidence.
-4. It takes every depth pixel inside that mug's mask, and turns each one into a
-   point in 3D, in metres. The result is a small cloud of points that belong only
-   to the mug, with no table points mixed in.
-5. It finds the handle, which is the thin part of the mask that sticks out to one
-   side, and it finds the main body, which is the wide round part.
-6. It places the gripper on the side of the body away from the handle, so the
-   fingers close across the body and the handle does not get in the way.
-7. The arm moves to that pose, closes the gripper and lifts.
-
-A box alone could not do steps 4 to 6, because the box's depth pixels would include
-the table, and the box does not show where the handle is.
-
-Other common uses on an arm:
-
-- Picking parts from a bin where they touch and overlap, since instance masks
-  separate parts that a box would merge into one.
-- Finding the free space on a table, to decide where to put an object down, because
-  semantic segmentation marks every "table" pixel.
-- Keeping people safe, since semantic segmentation marks every "person" pixel, and
-  the arm slows down when any of them appear near it.
-- Giving a clean object to the next model, so that a
-  [grasp model](../../05_grasp-models/01_overview.md)
-  or a [3D model](../../04_3d-models/01_overview.md) can work only on the points
-  inside the mask.
-
----
-
-## 7. What goes wrong
-
-However useful those masks are, segmentation models fail in some of the same ways
-as detectors, and in a few ways of their own.
-
-First, the edges are rough, because masks are often a few pixels off at the edges,
-and they can cut off thin parts such as a handle or a cable. A few pixels in the
-picture can be several millimetres on the object. So the fix is a higher resolution
-picture, or a model known for sharp edges. Some projects run SAM on the detector's
-box to get a cleaner edge.
-
-Second, touching objects of the same kind merge, so two identical parts pressed
-side by side may become one mask, or one part may be split into two. The fix is to
-include many such crowded scenes in training.
-
-Third, see-through and shiny objects are hard, because the edge of a glass is hard
-to see even for a person, so its mask is often wrong. The fix is to train on many
-such pictures, or to add a sensor that sees them better.
-
-Fourth, a mask says nothing about depth or turn, since it gives the pixels
-rather than which way the object faces or how far away it is. The fix is to
-combine it with a depth camera, a [depth
-model](../03_also-used/02_depth-from-pictures.md), or a [pose
-model](04_keypoints-and-object-pose.md).
-
-Fifth, unknown objects are missed, just as they are with a detector, because a
-model trained on 80 classes finds nothing for an 81st. The fix is fine-tuning, or a
-promptable model such as SAM that works on any object.
-
-Finally, it is slower than a detector, because giving an answer for every pixel
-costs more work than giving a few boxes. So the fix is a smaller model, a smaller
-picture, or running the segmentation model only when the robot needs a precise
-outline.
-
----
-
-## 8. Why segmentation, and what it costs
-
-Now that you have seen what segmentation gives you and where it fails, this section
-answers the four questions for it: what it is, what it does for you, why it rather
-than the obvious alternative, and what it costs.
-
-It is a network that says, for every pixel, which class or which object that pixel
-belongs to. So it gives the robot the exact shape of each object, and clean 3D
-points for it when it is combined with depth.
-
-The obvious alternative is an [object detector](01_object-detection.md), which is
-faster and whose training pictures are quicker to label. For round or boxy objects
-that stand apart, a box is often enough. So choose segmentation when the shape
-decides the grasp: a mug with a handle, a tool with a long grip, parts that touch
-in a bin, or any object where the box would include a lot of table.
-
-The other alternative is a hand-written rule that finds an area of one colour,
-and Book 2 shows this in [finding it by
-colour](../../../02_perception/01_camera/02_finding-objects.md#3-finding-it-by-colour).
-The colour rule also gives a mask, and it needs no training, but it only works
-when each object has a colour nothing else shares, and when the light stays the
-same.
-
-The costs are these. Labelling outlines takes several times longer than drawing
-boxes, although labelling tools with SAM inside have made this much faster. Then
-the models themselves are larger and slower than detectors, so a live camera may
-need a graphics card. Finally, a mask is still only a flat shape, which means
-the robot still needs depth before it can reach for the object.
-
----
-
-## 9. The written alternative
-
-A trained network is not the only way to get a mask, because Book 5 makes masks
-with written rules instead. [Thresholding and colour
-masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
-makes a mask from a colour, a brightness or a height above the table. Then
-[morphology and the distance
-transform](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/02_morphology-and-distance-transform.md)
-removes specks, fills holes, and can split parts that touch.
-[Clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
-then turns the mask, or the depth points above the table, into one piece per
-object. The written way wins when each object has a colour or a height that
-nothing else shares, because it runs in milliseconds and needs no traced
-outlines. The segmentation model wins when objects touch as a matter of course,
-when they share colours with the background, or when they vary too much for any
-one rule to cover.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - The next page is [keypoints and object pose](04_keypoints-and-object-pose.md),
   which finds named points on an object and which way the object faces.

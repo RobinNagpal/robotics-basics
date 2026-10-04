@@ -18,10 +18,6 @@ means adjusting a model a little at a time until its answers match the examples.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Step 1: know where each photo was taken](#step-1-know-where-each-photo-was-taken)
-   · [Step 2 with NeRF: a network that answers questions about any spot](#step-2-with-nerf-a-network-that-answers-questions-about-any-spot)
-   · [Step 2 with Gaussian splatting: many soft blobs](#step-2-with-gaussian-splatting-many-soft-blobs)
-   · [Step 3: fit it to the photos](#step-3-fit-it-to-the-photos)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
    · [5.1 The NeRF line: the original and Instant-NGP](#51-the-nerf-line-the-original-and-instant-ngp)
@@ -30,11 +26,7 @@ means adjusting a model a little at a time until its answers match the examples.
    · [5.4 NeuS](#54-neus)
    · [5.5 VGGT and the DUSt3R family](#55-vggt-and-the-dust3r-family)
    · [5.6 How to choose](#56-how-to-choose)
-6. [A worked example: grasping a drinking glass](#6-a-worked-example-grasping-a-drinking-glass)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why this rather than a depth camera, and what it costs](#8-why-this-rather-than-a-depth-camera-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -256,7 +248,7 @@ minutes.
 The obvious alternative is 3D Gaussian Splatting in section 5.2, and for a new job
 that is what to choose. A NeRF still wins in one case. It keeps a real radiance field,
 which means a network you can ask about any point in space, and the transparent-object
-trick in [section 6](#6-a-worked-example-grasping-a-drinking-glass) depends on exactly
+trick in section 6 depends on exactly
 that. A splat has no network to ask, so what it gives you is pictures and a depth
 picture worked out from the blobs. The one robot result worth knowing from this
 generation is [Dex-NeRF](https://arxiv.org/abs/2110.14217), by Jeffrey Ichnowski and
@@ -389,8 +381,7 @@ back a surface you can measure and then ship. Peng Wang and colleagues published
 solid a point is, it asks how far that point is from the nearest surface, and a
 surface is then exactly the set of points where that distance is zero.
 
-The obvious alternative is Gaussian splatting, and the reason to leave it is the fault
-named in [section 7](#7-what-goes-wrong). A blob centre is placed to make pictures
+The obvious alternative is Gaussian splatting, and the reason to leave it is that a splat is placed to make pictures look right rather than to sit on the surface. A blob centre is placed to make pictures
 look right, so it is not a point on the object, while NeuS has a surface by
 construction and writes it out as a mesh. Book 2's table measures NeuS at 0.84 mm
 against 1.96 mm for plain Gaussian splatting on the same laboratory objects, and NeuS
@@ -508,123 +499,7 @@ is worth anything until that is done.
 
 ---
 
-## 6. A worked example: grasping a drinking glass
-
-The clearest case for all this is an object a depth camera cannot see, so here an arm
-has to pick up a clear drinking glass from a table with a depth camera on its wrist.
-The depth camera's light passes straight through the glass, so the point cloud shows
-the table where the glass should be. That means a
-[point cloud model](01_point-cloud-models.md) has nothing to work with.
-
-Here are the five steps in which scene reconstruction solves it.
-
-1. The arm moves its wrist camera along an arc round the glass, as in the picture in
-    section 2, and it takes a colour photo at each stop.
-2. At each stop the software saves the joint readings, and from them it works out the
-    camera pose for that photo.
-3. A NeRF is fitted to the photos and poses. The edges of the glass bend and reflect
-    light in a way that changes from photo to photo, so to match all the photos the
-    NeRF has to put something solid where the glass is.
-4. The software asks the NeRF for a depth picture from a camera pose straight above
-    the glass, and now the glass has depth readings.
-5. That depth picture becomes a point cloud, and a grasp model chooses where to put
-    the fingers. The [grasp models chapter](../../05_grasp-models/01_overview.md)
-    takes over from there.
-
-This is the idea behind Dex-NeRF. The whole job takes much longer than one depth
-shot, because the arm has to move and the NeRF has to be fitted. So it is worth it
-only when the depth camera cannot see the object.
-
----
-
-## 7. What goes wrong
-
-That example worked because the glass stayed where it was, and five things go wrong
-when conditions are less kind.
-
-**The scene must stay still.** Fitting assumes every photo shows the same scene, so
-if something moves between photos the fit gets confused and draws blurry or doubled
-objects. Even a person walking past in the background can spoil it.
-
-**Too few views.** With only a few photos, the method can match them all with the
-wrong shape. Small bits of fog or stray blobs then appear floating in the air.
-They look fine from the photo positions and wrong from anywhere else, so more photos
-from more directions is the main fix.
-
-**Bad camera poses.** If the poses are off, the lines of sight from different photos
-do not meet in the right places, and the result is blurry. On an arm this comes from
-poor calibration between the camera and the wrist, and Book 2 covers that calibration
-in [the sensors document](../../../02_perception/02_object-perception/02_sensors.md).
-
-**A splat is not a surface.** The blobs are placed to make the pictures look right,
-so their centres are not points on the real surface. Book 2 measured plain Gaussian
-splatting as the least accurate method in its table. So if you need a surface to
-grasp, use a variant made for surfaces, or ask for a depth picture and check it.
-
-**It is slow.** Even fast methods take seconds to minutes to fit, which is far too
-slow for an arm that has to react to things moving. Scene reconstruction therefore
-suits jobs where the arm can stop, look carefully, and then act.
-
----
-
-## 8. Why this rather than a depth camera, and what it costs
-
-Since the list above is long, it is worth setting out what this buys you. Scene
-reconstruction **is** a way to build one 3D scene from many photos with known camera
-poses. It **does** give the arm a scene it can view from any direction, including
-depth where a depth camera fails.
-
-The obvious alternative is a depth camera, with no fitting at all, because it gives a
-point cloud in one shot, many times a second. If you need more sides, then you take
-depth shots from several places and merge the point clouds.
-
-So why fit a scene instead?
-
-- A depth camera fails on see-through, shiny and very dark surfaces, while scene
-    reconstruction works from colour photos and uses the fact that these surfaces
-    look different from different sides.
-- It fills the gaps between views, because merged point clouds have holes and
-    overlaps while a fitted scene is one smooth whole.
-- It works with a plain colour camera, which is cheaper and smaller than a depth
-    camera on a small arm.
-- It can draw realistic new photos, so teams use it to make extra training pictures
-    for other models from views the camera never took.
-
-What it costs you comes in the four parts below.
-
-- Time, because the arm has to move round the scene and the fit has to run, which is
-    seconds at best and often minutes.
-- A graphics card, since fitting on an ordinary processor is very slow.
-- The scene must not change while you fit it, and the fit is thrown away when it
-    does.
-- Licences, because much of the Gaussian splatting code is for research only, so
-    check before you build a product on it.
-
-So use a depth camera for everyday picking, and use scene reconstruction when the
-depth camera cannot see the object, or when you need a detailed, complete model of a
-scene that will stay still.
-
----
-
-## 9. The written alternative
-
-Instead of fitting a scene, Book 5 builds 3D from many views with written methods.
-[Multi-view geometry](../../../06_programming-techniques/02_geometry-and-cameras/03_also-used/01_multi-view-geometry.md)
-finds points seen from two or more known camera places, and measures the height of
-glass from how far its outline shifts. Then
-[volumetric maps](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/02_volumetric-maps.md)
-combine many depth pictures into one map of small cubes, each marked free, occupied
-or not yet seen, and
-[iterative closest point](../../../06_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
-lines up point clouds taken from several places to remove small errors in the camera
-poses. These need no fitting and no graphics card, and they give measured shapes.
-Instead, scene reconstruction wins when the arm needs new pictures from views it
-never took, or when a clear or shiny object gives neither depth readings nor a sharp
-outline.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - [3D feature maps](../03_also-used/02_3d-feature-maps.md) is the next page, and it
     adds meaning to a reconstructed scene so that the arm can find things in it by

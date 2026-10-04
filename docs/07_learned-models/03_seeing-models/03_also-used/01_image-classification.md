@@ -21,11 +21,7 @@ every later page.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where it is used on a robot arm](#6-where-it-is-used-on-a-robot-arm)
-7. [What goes wrong](#7-what-goes-wrong)
-8. [Why classification, and what it costs](#8-why-classification-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -419,11 +415,7 @@ Pre-Training](https://arxiv.org/abs/2303.15343) paper scores each
 picture-and-sentence pair on its own, where CLIP compares every picture in a batch
 against every sentence at once. That is the reason to prefer it here. SigLIP's
 scores do not add up to 1 across your class names, so all of them can be low at
-once, and "none of these" becomes an answer you can read. Section 7 names that as
-the first thing that goes wrong with a classifier, and this model does not have the
-problem.
-
-What it costs you is size, speed and wording. At 375 million parameters it wants a
+once, and "none of these" becomes an answer you can read. What it costs you is size, speed and wording. At 375 million parameters it wants a
 graphics card to be comfortable, and it is the slowest model on this page. Its
 accuracy depends on the words you choose, so "a scratched metal plate" and "a
 damaged plate" are different questions with different answers. It cannot separate
@@ -536,124 +528,9 @@ Six things change that choice.
 
 One more case sits outside the list. If the scene is fully controlled and the
 answer depends on one thing you can measure, such as a height or a colour, write
-the rule instead and skip the models entirely. Section 9 gives that comparison.
+the rule instead and skip the models entirely. ---
 
----
-
-## 6. Where it is used on a robot arm
-
-A classifier is useful on an arm when the question has one answer for the whole
-picture, so here is a worked example of exactly that.
-
-A robot arm picks cups from a shelf and puts them in a dish rack. However, the
-gripper sometimes closes and misses the cup, and the arm should notice this before
-it moves to the rack.
-
-1. A small camera on the wrist points at the gripper fingers.
-2. After the gripper closes, the program takes one picture.
-3. A classifier with two classes looks at the picture: "holding a cup" and "empty".
-4. If "empty" gets the higher score, the arm opens the gripper and tries again.
-5. If "holding a cup" gets the higher score, the arm moves to the rack.
-
-To build this, a person records a few hundred pictures of each case, including
-different cups, different light and different places on the shelf. Then they
-fine-tune a small network, such as a MobileNet, on those pictures.
-
-Other common uses on an arm:
-
-- Checking whether a task worked, for example by asking "is the drawer open or
-  closed?"
-- Sorting parts into bins by kind, when a camera sees one part at a time.
-- Checking the quality of a part, which means answering "good" or "scratched".
-- Naming an object that another model has already found, because a detector finds a
-  box, and the program can cut out that box and give it to a classifier trained on
-  finer classes, such as ten kinds of screw.
-
----
-
-## 7. What goes wrong
-
-Simple as it is, a classifier can fail in several ways, and each one has a common
-fix.
-
-First, it always picks a class, even when none of them fits, so if you show a "mug
-or bowl" classifier a photo of a shoe, it still says "mug" or "bowl". The fix is to
-add a class such as "something else" and train it on many unrelated pictures.
-Instead, you can refuse any answer whose top score is below a chosen number, such
-as 0.7, and that chosen number is called a **threshold**.
-
-Second, it can learn the background instead of the object. Suppose every "holding a
-cup" picture was taken in the morning and every "empty" picture in the afternoon:
-the network might then learn the light rather than the cup. The fix is to vary the
-light, the background and the place in both classes when you collect the pictures.
-
-Third, it fails on pictures that look different from its training pictures, so a
-classifier trained on clean photos may fail when the camera lens is dirty or the
-light is dim. This problem is called a **domain gap**, and the fix is to include
-such pictures in training. People also change their training pictures on purpose,
-making copies that are darker, blurred or slightly turned, which is called **data
-augmentation**.
-
-Fourth, the score is not an honest chance, because a score of 0.95 does not mean
-the model is right 95 times out of 100, and networks are often too sure of
-themselves. The fix is to test the model on pictures it did not train on, and to
-choose the threshold from what you measure there.
-
-Finally, it cannot say where or how many, so if the picture holds two objects the
-answer is still one name. When where or how many matters, you need
-[object detection](../02_most-used/01_object-detection.md) instead.
-
----
-
-## 8. Why classification, and what it costs
-
-Now that you have seen what a classifier does and where it fails, this section
-answers the four questions for it: what it is, what it does for you, why it rather
-than the obvious alternative, and what it costs.
-
-It is a network that gives one name to one picture. So it gives you a yes-or-no
-check, or a choice among a few states, from a single picture.
-
-The obvious alternative is a hand-written rule, for example "if more than 500
-pixels in the gripper area are white, a cup is there". Rules like this are quick
-to write and need no training pictures, but they break when the cup is a
-different colour, or when the light changes. A classifier trained on varied
-pictures keeps working in those cases. So choose a rule when the scene is
-controlled and simple, and choose a classifier when it varies.
-
-The other alternative is a detector, which also names objects and says where they
-are. However, a detector needs a box drawn around every object in every training
-picture, which takes much longer to label, and it is also bigger and slower. So if
-you only need one answer for the whole picture, a classifier is simpler and
-cheaper.
-
-The costs are these. You need a few hundred labelled pictures per class, taken in
-the conditions the robot will actually meet. Then you also need a computer that can
-run the network, although a small classifier runs well without a graphics card.
-Finally, you must accept that it will sometimes be wrong, so the robot needs a safe
-action for a wrong answer, such as simply trying again.
-
----
-
-## 9. The written alternative
-
-A trained network is not the only way to answer a yes-or-no question about a
-picture, because Book 5 answers some of them with a written rule. [Thresholding
-and colour
-masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
-can check that the gripper holds something, by counting the depth pixels nearer
-than the fingertips. [Edges and
-contours](../../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md)
-can name the shape of a flat part, such as a triangle or a hexagon, by counting
-the corners of its outline. The written rule wins when the scene is controlled
-and the answer depends on one thing you can measure, such as a height, a colour
-or a number of corners. The classifier wins instead when the answer depends on
-how things look in general, such as "scratched" or "good", or when the light and
-the objects vary.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - The next page is [object detection](../02_most-used/01_object-detection.md), which adds boxes,
   so that the robot knows where each object is.
@@ -667,4 +544,3 @@ the objects vary.
   model.
 - Book 2's [models that find objects](../../../02_perception/02_object-perception/04_models-that-find.md)
   lists backbones you can download, with their licences.
-

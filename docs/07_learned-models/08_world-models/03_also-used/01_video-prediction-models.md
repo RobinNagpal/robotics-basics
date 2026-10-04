@@ -18,9 +18,6 @@ explains.
 1. [What it is](#1-what-it-is)
 2. [What goes in and what comes out](#2-what-goes-in-and-what-comes-out)
 3. [How it works inside](#3-how-it-works-inside)
-   · [Drawing the next picture](#drawing-the-next-picture)
-   · [Why the future comes out blurry](#why-the-future-comes-out-blurry)
-   · [Four ways a robot uses the pictures](#four-ways-a-robot-uses-the-pictures)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
    · [5.1 Cosmos 3](#51-cosmos-3)
@@ -30,12 +27,8 @@ explains.
    · [5.5 Genie](#55-genie)
    · [5.6 Action-conditioned pixel prediction, and Visual Foresight](#56-action-conditioned-pixel-prediction-and-visual-foresight)
    · [5.7 UniPi](#57-unipi)
-   · [How to choose](#58-how-to-choose)
-6. [A worked example: sliding a cube to a clicked spot](#6-a-worked-example-sliding-a-cube-to-a-clicked-spot)
-7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
-8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
-9. [The written alternative](#9-the-written-alternative)
-10. [Where to read next](#10-where-to-read-next)
+   · [5.8 How to choose](#58-how-to-choose)
+6. [Where to read next](#6-where-to-read-next)
 
 ---
 
@@ -540,7 +533,7 @@ instead of drawing new pixels it predicted how the existing pixels move, which i
 why it worked so well for pushing. Frederik Ebert, Chelsea Finn and others then
 built [Visual Foresight](https://arxiv.org/abs/1812.00568) on it in 2018, and
 that is the system
-[section 6](#6-a-worked-example-sliding-a-cube-to-a-clicked-spot) of this page
+section 6 of this page
 describes.
 
 Read these rather than skip them, because they are the only line of work on this
@@ -593,115 +586,11 @@ instead, or read
 rather than pixels and are small enough to be practical.
 
 If you need to plan, which means comparing many imagined futures before every
-move, nothing here is fast enough. The timings in 5.1 are seconds for one call,
-and [section 7](#7-what-goes-wrong-and-what-people-do-about-it) lists what people
-do instead.
+move, nothing here is fast enough. The timings in 5.1 are seconds for one call.
 
 ---
 
-## 6. A worked example: sliding a cube to a clicked spot
-
-Here is how Visual Foresight style planning moves a cube to a spot on the table,
-step by step. Notice that no part of it measures the cube's position in
-centimetres.
-
-1. **Set the goal.** A person looks at the camera picture on a screen. They
-   click on the cube, and then click the spot where the cube should end up.
-2. **Imagine.** The planner makes up a few hundred short sequences of pushes.
-   For each one, the video model predicts the next few pictures.
-3. **Score.** In each predicted video, the model also tracks where the clicked
-   pixel goes. The score is how close that pixel ends to the target spot.
-4. **Act.** The arm does the first push of the best sequence.
-5. **Repeat.** The camera takes a new picture, and the planner starts again from
-   step 2.
-
-The same arm can push a mug, a toy or a sponge without any change, as long as
-objects like them appeared in the training videos, and that is the benefit of
-working on pictures. However, the cost is time, because each planning round
-needs hundreds of predicted videos, so the arm pauses between pushes.
-
----
-
-## 7. What goes wrong, and what people do about it
-
-The sections above described this kind of model at its best. This section lists
-the five things that go wrong in practice, and what people do about each one.
-
-**Pictures get blurry or wrong further ahead.** Errors add up from frame to
-frame, and uncertain futures blur. So people predict only a short time ahead,
-replan often, and use models that draw one sharp future at a time.
-
-**Objects change or disappear.** A model may let a cube melt into the table, turn
-a red cube orange, or make the gripper pass through an object. This happens
-because it learned what videos usually look like, not the rules that objects
-must obey. So people check the prediction with other models, keep predictions
-short, and train on more robot video of close contact.
-
-**It looks right but the physics is wrong.** A predicted video can look
-convincing while the cube moves too far or too little, and for a robot the
-distance matters more than the look. The frontier document
-[simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies)
-notes that no published evidence yet shows these models are accurate enough
-about contact to plan with.
-
-**It is slow.** A large diffusion model can take seconds or more to draw a short
-clip on a powerful computer, which is far too slow for an arm that must react
-many times a second. So people use smaller models, predict fewer pixels, or use
-the model only during training and not on the robot.
-
-**The camera moves.** If the camera is on the arm's wrist, the whole picture
-changes with every move. This is harder to predict than a fixed camera above the
-table, so many systems use a fixed camera for that reason.
-
----
-
-## 8. Why this kind, and what it costs
-
-The last section listed what goes wrong, so this section says when this kind of
-model is still worth choosing. The obvious alternative is a
-[learned dynamics model](../02_most-used/01_learned-dynamics-models.md)
-that works on a few measured numbers, and it is small and fast. However, it
-needs a way to measure those numbers, and it cannot describe things that have no
-short list of numbers, such as a crumpled towel or a pile of beans.
-
-A video prediction model needs no measurement at all, so it works for any object
-the camera can see. It can also learn from ordinary video, which is available in
-enormous amounts. That is why the largest companies in the field are building
-very large video world models.
-
-What it costs you:
-
-- **Computing power.** Large video models need powerful graphics cards to train
-  and to run. Book 3 notes that Cosmos needs substantial NVIDIA hardware.
-- **Speed.** Drawing pictures is slow, so planning with them is slow.
-- **Trust.** A picture that looks right can be wrong in the details that matter
-  to the arm, such as a few centimetres of sliding.
-- **Detail you do not need.** The model spends its effort drawing every pixel,
-  including the colour of the table and the shadows, which the robot rarely needs.
-  [Latent world models](03_latent-world-models.md) avoid this by
-  predicting a short code instead of a picture.
-
----
-
-## 9. The written alternative
-
-This page has assumed all along that the model draws pictures, but a robot can avoid
-pictures altogether. So the written alternative measures the object instead of
-drawing it. The camera finds the cube with
-[thresholding and colour masks](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md)
-, and a written model of pushing predicts how it will move. Book 3's
-[quasi-static planar pushing](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md#3-quasi-static-planar-pushing)
-is that model. The planning loop in section 6 is written code either way.
-[Sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
-tries many sequences of moves, does the first move of the best one, and plans again.
-
-The written way wins for rigid objects that the camera can measure, because it is
-fast and its predictions can be checked. The video model wins when the objects have
-no short description, or when one model must handle many kinds of object.
-
----
-
-## 10. Where to read next
+## 6. Where to read next
 
 - The [next page](02_learned-simulators.md) covers learned simulators, which
   follow cloth, liquids and other soft materials piece by piece.

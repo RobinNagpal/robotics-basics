@@ -328,7 +328,7 @@ small, fast and easy to check, they appear in many places on an arm.
   known features built from the joint's angles, speeds and accelerations, where
   the weights are the links' masses and friction numbers. Finding the weights
   from logged motion is linear regression, often weighted, because some recorded
-  motions are more reliable than others. Book 5's
+  motions are more reliable than others. Book 6's
   [arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
   page describes the formula.
 - **Predicting grasp success from a few numbers.** As in this page's example,
@@ -430,10 +430,10 @@ What they cost:
 ## 9. The written alternative
 
 Section 8 compared these methods with a neural network, but the closer
-competitor is a formula that somebody wrote by hand. Book 5's
+competitor is a formula that somebody wrote by hand. Book 6's
 [least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
 is the same maths used for a different purpose, which is fitting a shape whose
-formula is known, such as a plane or a circle, to measured points. Book 5's
+formula is known, such as a plane or a circle, to measured points. Book 6's
 [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
 finds the numbers in a physics formula, such as a motor's gain or a joint's
 friction, from logged motion, which is linear regression with features chosen by

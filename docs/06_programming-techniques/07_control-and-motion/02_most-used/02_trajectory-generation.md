@@ -500,7 +500,7 @@ trajectory generator still sits under it, filling in the ticks between targets a
 section 4 showed, and a programmed check keeps speed within set limits, as Book
 6's [safety checks around a model](../../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
 describes. For a planned move through free space, where only the limits decide
-the timing, the generator alone is the right tool. Between the two sit Book 6's
+the timing, the generator alone is the right tool. Between the two sit Book 7's
 [movement primitives](../../../07_learned-models/02_classical-machine-learning/03_also-used/02_movement-primitives.md), which learn the
 shape of a move from a few demonstrations and replay it smoothly to a new goal,
 but still need the limits on this page checked on what they produce.

@@ -845,7 +845,7 @@ what falls between two checks.
 
 ## 11. The learned alternative
 
-Section 10 weighed sampling against the two written alternatives, and Book 6's
+Section 10 weighed sampling against the two written alternatives, and Book 7's
 [learned motion planners](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md)
 page covers a third one, which is networks that either help this planner or stand
 in for it. A

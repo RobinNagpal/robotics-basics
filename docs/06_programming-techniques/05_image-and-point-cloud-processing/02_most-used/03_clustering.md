@@ -736,7 +736,7 @@ clustering cannot do, and it can also say what each object is. However, a model
 needs labelled training data and a computer that can run it, and it only knows the
 kinds of object it was trained on. So choose clustering when objects stand apart,
 or when the robot can push them apart, and choose a model when touching objects
-are the normal case. Book 6's
+are the normal case. Book 7's
 [Gaussian mixture models](../../../07_learned-models/02_classical-machine-learning/03_also-used/01_mixture-models-and-hidden-markov-models.md)
 are the learned cousin of k-means: each cluster becomes a soft, stretched blob, and
 every point gets a chance of belonging to each cluster instead of one hard answer.

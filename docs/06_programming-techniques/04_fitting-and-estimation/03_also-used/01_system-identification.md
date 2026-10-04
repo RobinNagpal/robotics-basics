@@ -506,7 +506,7 @@ drift or jump when the arm stands still.
 
 ## 8. The learned alternative
 
-Those costs point to an alternative, because Book 6's
+Those costs point to an alternative, because Book 7's
 [learned arm models](../../../07_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 covers networks that learn how the arm's body behaves from its own recordings. A
 network can learn the whole model and capture effects no textbook equation has.
@@ -518,7 +518,7 @@ temperature, or a cable that pulls differently in each pose. Book 6 calls system
 identification the right first step, and often enough on its own, so add the
 learned correction only when the residuals still show a pattern after the missing
 terms are in the model. When the leftover error depends on only a few numbers,
-such as a joint's speed and temperature, Book 6's
+such as a joint's speed and temperature, Book 7's
 [Gaussian processes](../../../07_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
 learn that correction from tens to hundreds of samples and say how sure they are,
 and [linear regression](../../../07_learned-models/02_classical-machine-learning/02_most-used/01_linear-and-logistic-regression.md)

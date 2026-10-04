@@ -514,12 +514,12 @@ hand-written search pattern still wins when it is good enough, which is often,
 because it is easy to understand and check and needs no simulator, reward or
 training; it also wins when the contact cannot be simulated. A policy does not
 replace the force limits either, because nothing inside it stops it pushing too
-hard, so a programmed layer under it still limits forces and speeds. Book 6's
+hard, so a programmed layer under it still limits forces and speeds. Book 7's
 [force and slip models](../../../07_learned-models/09_touch-and-body-models/02_most-used/01_force-and-slip-models.md)
 and [collision and failure detection](../../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
 read the same force signals with learned models, to catch slip and unexpected
 contact. For tuning the stiffness and damping of the impedance controller itself,
-Book 6's
+Book 7's
 [Bayesian optimisation](../../../07_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
 chooses each next setting to try from the scores of the tries so far, so a good
 setting is found in a few tens of real insertions.

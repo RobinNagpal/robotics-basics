@@ -457,7 +457,7 @@ That comparison was with hand-picked points, so the other one a reader will want
 is with machine learning. Fitting a known shape, such as a table plane or a
 cup's rim, has no learned replacement. The shape's formula is known, and least
 squares gives its best fit exactly, in one step. So learning takes over only
-when nobody knows the shape in advance. Book 6's
+when nobody knows the shape in advance. Book 7's
 [linear regression](../../../07_learned-models/02_classical-machine-learning/02_most-used/01_linear-and-logistic-regression.md)
 page shows that linear regression is least squares itself. Its
 [Gaussian processes](../../../07_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)

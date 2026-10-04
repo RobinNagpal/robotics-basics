@@ -306,7 +306,7 @@ on top of those loops rather than in place of them.
   shows these layers in ROS 2, with the settings that ship with them.
 - Book 3's [holding on](../../03_frameworks/02_gripping/05_holding-on.md#3-compliance-impedance-and-admittance)
   covers impedance and admittance from the gripper's point of view.
-- Book 6's [movement models overview](../../07_learned-models/06_movement-models/01_overview.md)
+- Book 7's [movement models overview](../../07_learned-models/06_movement-models/01_overview.md)
   shows what a learned policy takes over, and what it still leaves to these loops.
 
 ---

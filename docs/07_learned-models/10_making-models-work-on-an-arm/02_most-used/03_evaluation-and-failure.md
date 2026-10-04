@@ -307,7 +307,7 @@ section only says how they fit into evaluation.
   variation. [Where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md#domain-randomisation)
   explains it.
 - **System identification.** You measure your real arm, such as its delays and
-  frictions, and set the simulator to match. Book 5's
+  frictions, and set the simulator to match. Book 6's
   [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
   page shows how.
 - **Test in simulation first.** Use the simulator as a filter, because a model that
@@ -467,7 +467,7 @@ how wide the range is.
   are hard to compare.
 - [Collision and failure detection](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
   covers the models that notice a failure while it happens.
-- Book 5's
+- Book 6's
   [safety monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md)
   covers the programmed checks that stop an arm whatever the model says.
 

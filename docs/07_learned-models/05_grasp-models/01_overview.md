@@ -285,7 +285,7 @@ most of the pictures of grasps in papers are made.
 What it does not give you is anything about your robot. You have to produce the
 point cloud or the depth picture in the first place, which means a working depth
 camera. You have to measure `camera_to_base` yourself, by the calibration procedure
-described in Book 5's
+described in Book 6's
 [rigid transforms](../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
 page, and a calibration that is 1 cm out will miss the object by 1 cm no matter how
 good the model is. You have to check that the arm can actually reach the pose and

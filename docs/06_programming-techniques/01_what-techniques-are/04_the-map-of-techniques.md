@@ -363,10 +363,10 @@ a position the arm can reach.
 Most people come to these books with a job in mind rather than a method, so this
 section starts from the job instead of the technique. Read each row across: a
 job the arm must do, the Book 2 or Book 3 page that helps you choose how to do
-it, the written techniques in Book 5 that can do it, and the learned models in
-Book 6 that can do it.
+it, the written techniques in this book that can do it, and the learned models in
+Learned Models that can do it.
 
-| Job on the arm | Book 2 or 3 page that helps choose | Written techniques (Book 5) | Learned models (Book 6) |
+| Job on the arm | Book 2 or 3 page that helps choose | Written technique, in this book | Learned model, in Learned Models |
 | --- | --- | --- | --- |
 | find an object in a picture | [object perception](../../02_perception/02_object-perception/01_overview.md) (Book 2) | [thresholding and colour masks](../05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md), [clustering](../05_image-and-point-cloud-processing/02_most-used/03_clustering.md), [edges and contours](../05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md) | [object detection](../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md), [segmentation](../../07_learned-models/03_seeing-models/02_most-used/02_segmentation.md), [open-vocabulary models](../../07_learned-models/03_seeing-models/02_most-used/03_open-vocabulary-models.md) |
 | turn a pixel into a position the arm can reach | [frames and conventions](../../03_frameworks/03_arm-movement/08_frames-and-conventions.md) | [pinhole camera model](../02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md), [rigid transforms](../02_geometry-and-cameras/02_most-used/02_rigid-transforms.md), [calibration](../02_geometry-and-cameras/02_most-used/03_calibration.md) | [depth from pictures](../../07_learned-models/03_seeing-models/03_also-used/02_depth-from-pictures.md) |
@@ -398,7 +398,7 @@ the same thing in too many ways to list them all. Many real arms therefore mix
 the two sides, so that a learned model finds the object and written techniques
 do the rest.
 
-The learned column also includes the methods of Book 6's
+The learned column also includes the methods of Book 7's
 [classical machine learning](../../07_learned-models/02_classical-machine-learning/01_overview.md)
 chapter, which are not neural networks. They appear in the rows where the input
 is only a few measured numbers: correcting a sensor, tuning a controller's

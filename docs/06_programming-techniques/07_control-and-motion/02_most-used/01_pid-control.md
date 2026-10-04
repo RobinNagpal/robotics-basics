@@ -482,7 +482,7 @@ solid object.
 
 Because the loop must answer every few milliseconds, there is no learned model that
 replaces it, since a network is almost never fast enough to sit inside such a loop.
-Book 6's
+Book 7's
 [running a model on a robot](../../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#2-how-fast-is-fast-enough)
 explains the usual split: a learned policy runs at its own slower speed and gives
 targets, and a fast programmed loop such as PID follows them. A
@@ -492,7 +492,7 @@ including gearbox friction and cable pull that the textbook model leaves out, an
 that torque is added to the PID output as feed-forward. This pays off when wear or
 a new gripper makes plain PID lag, and the size of the learned correction should
 be limited, because a learned model gives no guarantee. Learning can also pick the
-gains themselves: Book 6's
+gains themselves: Book 7's
 [Bayesian optimisation](../../../07_learned-models/02_classical-machine-learning/02_most-used/03_gaussian-processes-and-bayesian-optimisation.md)
 tries a few sets of gains on the real joint, scores each test move, and chooses the
 next set to try, so it finds good gains in tens of trials instead of hand tuning.

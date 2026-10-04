@@ -1,6 +1,6 @@
 # What a model is
 
-This is the first page of Book 6, **Learned Models**, which explains the
+This is the first page of **Learned Models**, which explains the
 learned models that robots, and robot arms in particular, use today. Most of
 them are neural networks, although one chapter covers the older learning
 methods that are not. So this page answers the first question a beginner has:
@@ -271,7 +271,7 @@ grasping and moving around real objects.
 ## 6. What this book covers
 
 Now that you know what a model is and when one is worth the cost, this section
-says what the rest of the book holds. Most of Book 6 is about neural networks,
+says what the rest of the book holds. Most of this book is about neural networks,
 and it sorts the neural network models used on robot arms into seven families.
 This is because each family answers a different question for the robot. Each
 family has its own chapter, and each chapter starts with an overview page.

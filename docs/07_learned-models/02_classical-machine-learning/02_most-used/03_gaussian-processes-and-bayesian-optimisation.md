@@ -395,12 +395,12 @@ batch's settings. The GP's noise setting matters here, because ten grasps give a
 noisy success rate.
 
 **Learning a small correction to the arm's dynamics.** This is the worked
-example above, where Book 5's
+example above, where Book 6's
 [arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
 gives the torque each joint should need. A real arm needs a little more or less,
 because of friction, cables and wear, so a GP learns that difference from logged
 motion. The controller then adds the learned torque as feed-forward, and uses
-the error bar to add less where the GP is unsure. Book 6's
+the error bar to add less where the GP is unsure. This book's
 [learned arm models](../../09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 covers this with networks too.
 
@@ -529,7 +529,7 @@ must be safe.
 ## 9. The written alternative
 
 Section 8 compared these two methods with other learned ones, but Book 5 does
-both of their jobs without learning at all. For tuning, Book 5's
+both of their jobs without learning at all. For tuning, Book 6's
 [PID page](../../../06_programming-techniques/07_control-and-motion/02_most-used/01_pid-control.md#tuning-the-three-gains)
 tunes the gains by hand in a fixed order, or starts from the Ziegler–Nichols
 table. The
@@ -540,7 +540,7 @@ which for one joint is common. Bayesian optimisation wins when several settings
 interact, when the score is something only a real trial can measure, such as
 grasp success, and when a person's time is the scarce thing.
 
-For learning a correction to the arm's motion, Book 5's
+For learning a correction to the arm's motion, Book 6's
 [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
 fits the numbers in a physics formula, such as a friction coefficient, by least
 squares, with error bars of its own. It wins whenever the formula has the right
@@ -549,7 +549,7 @@ data. A GP is for what is left over when the formula is known to miss something.
 So the usual choice is both: the physics formula first, and a GP on what it gets
 wrong.
 
-For search in general, Book 5's
+For search in general, Book 6's
 [sampling-based optimisation](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 tries many settings and narrows the search around the best. It needs no model of
 the score, and wins when a trial is cheap, as in a simulator. So Bayesian
@@ -571,7 +571,7 @@ optimisation wins when each trial is a run of the real arm.
 - [Reinforcement learning policies](../../06_movement-models/03_also-used/01_reinforcement-learning-policies.md)
   learns a whole controller by trial, when there are far too many settings for
   Bayesian optimisation.
-- Book 5's
+- Book 6's
   [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)
   is the physics-first way to learn the arm's numbers.
 

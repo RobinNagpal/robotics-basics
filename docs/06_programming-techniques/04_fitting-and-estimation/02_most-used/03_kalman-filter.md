@@ -618,7 +618,7 @@ or a bug can affect many steps after it.
 ## 9. The learned alternative
 
 Those costs raise the question of a learned alternative, but the learned
-trackers in Book 6's
+trackers in Book 7's
 [tracking and motion](../../../07_learned-models/03_seeing-models/03_also-used/03_tracking-and-motion.md)
 mostly keep the filter rather than replace it. Methods such as SORT and ByteTrack
 take boxes from a trained detector and use a Kalman filter to predict where each

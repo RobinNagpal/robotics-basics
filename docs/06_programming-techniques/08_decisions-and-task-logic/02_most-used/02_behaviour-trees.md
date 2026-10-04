@@ -333,7 +333,7 @@ and the list below gives several concrete places.
   behaviour tree built with BehaviorTree.CPP. An arm on a mobile base often uses one
   tree for driving and another for the arm.
 - **Under a language model.** A language model can choose which subtree to run from
-  a spoken request, while the tree still does the running. Book 6's
+  a spoken request, while the tree still does the running. Book 7's
   [language models as planners](../../../07_learned-models/07_language-models/03_also-used/01_language-models-as-planners.md)
   page describes this.
 

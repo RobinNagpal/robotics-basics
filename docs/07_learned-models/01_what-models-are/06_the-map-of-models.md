@@ -297,10 +297,10 @@ robot](../10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-r
 
 Most people come to these books with a job in mind, not a method, so this section starts
 from the job instead. Read each row across: a job the arm must do, the Book 2 or Book 3
-page that helps you choose how to do it, the written techniques in Book 5 that can do
-it, and the learned models in Book 6 that can do it.
+page that helps you choose how to do it, the written techniques in Programming Techniques that can
+do it, and the learned models in this book that can do it.
 
-| Job on the arm | Book 2 or 3 page that helps choose | Written techniques (Book 5) | Learned models (Book 6) |
+| Job on the arm | Book 2 or 3 page that helps choose | Written technique, in Programming Techniques | Learned model, in this book |
 | --- | --- | --- | --- |
 | find an object in a picture | [object perception](../../02_perception/02_object-perception/01_overview.md) (Book 2) | [thresholding and colour masks](../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/01_thresholding-and-colour-masks.md), [clustering](../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md), [edges and contours](../../06_programming-techniques/05_image-and-point-cloud-processing/03_also-used/01_edges-and-contours.md) | [object detection](../03_seeing-models/02_most-used/01_object-detection.md), [segmentation](../03_seeing-models/02_most-used/02_segmentation.md), [open-vocabulary models](../03_seeing-models/02_most-used/03_open-vocabulary-models.md) |
 | turn a pixel into a position the arm can reach | [frames and conventions](../../03_frameworks/03_arm-movement/08_frames-and-conventions.md) | [pinhole camera model](../../06_programming-techniques/02_geometry-and-cameras/02_most-used/01_pinhole-camera-model.md), [rigid transforms](../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md), [calibration](../../06_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md) | [depth from pictures](../03_seeing-models/03_also-used/02_depth-from-pictures.md) |

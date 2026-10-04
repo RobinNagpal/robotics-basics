@@ -372,7 +372,7 @@ least-squares refit at the end to get the best accuracy.
 
 Section 7 weighed RANSAC against other ways of fitting a shape, but there is also
 an alternative that does not fit a shape at all. A segmentation model, described
-in Book 6's
+in Book 7's
 [point cloud models](../../../07_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md),
 gives every point a name, such as "mug", "box" or "table". So it replaces RANSAC
 when no single shape dominates the scene, such as a cluttered pile of parts. For

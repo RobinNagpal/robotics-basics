@@ -263,7 +263,7 @@ that rough idea in a different way.
   [v5-pick-glasses](https://github.com/RobinNagpal/robot-arm-projects/blob/main/v5-pick-glasses/docs/problem-1/step2-approaches.md)
   lists matching against known glass models with Open3D's ICP as one of its
   approaches.
-- **Finishing a learned pose.** A learned pose model, such as those in Book 6's
+- **Finishing a learned pose.** A learned pose model, such as those in Book 7's
   [keypoints and object pose](../../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md),
   gives a pose that is often a few millimetres or a few degrees off. A few rounds
   of ICP from that pose fix the last part of the error. This is a common pairing:
@@ -579,7 +579,7 @@ poses that a symmetric part makes look the same.
 
 ## 8. The learned alternative
 
-The last alternative to weigh is a learned one, and Book 6's
+The last alternative to weigh is a learned one, and Book 7's
 [keypoints and object pose](../../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 describes networks that give an object's pose directly from a picture. Models
 such as MegaPose and FoundationPose need only the part's CAD model, or for
@@ -588,7 +588,7 @@ first guess, they can take the place of the 3D features and RANSAC in
 [section 5](#5-getting-a-first-guess-3d-features-and-global-registration). Once
 the part has been found, FoundationPose can also follow its pose from frame to
 frame, which is the job ICP does from the last pose. Then there are networks
-that read point clouds, from Book 6's
+that read point clouds, from Book 7's
 [point cloud models](../../../07_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
 , which can learn their own 3D features in place of hand-written ones. But a
 pose model needs a graphics processor, and it gives no warning when it is wrong.
@@ -611,7 +611,7 @@ in a fixed tray.
 - [Least-squares fitting](../../04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md)
   explains "the smallest sum of squared distances", the measure ICP's best-move
   step uses.
-- Book 6's
+- Book 7's
   [scene reconstruction](../../../07_learned-models/04_3d-models/02_most-used/02_scene-reconstruction.md)
   builds a 3D scene from many views with learning.
 - [Image features and matching](../03_also-used/01_image-features-and-matching.md)

@@ -74,7 +74,7 @@ at all, because it simply keeps every example. To answer a new input, called the
 3. combines their labels: a vote for a class, or an average for a number.
 
 k is a number that you choose, such as 5, and step 1 is the slow part when there
-are many examples. So Book 5's
+are many examples. So Book 6's
 [nearest-neighbour search](../../../06_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
 builds a **k-d tree**, a structure that finds the neighbours without measuring
 every distance.
@@ -222,7 +222,7 @@ testing several widths on held-back examples.
 ### LWPR: learning an arm's dynamics online
 
 An arm's **inverse dynamics** is the torque each joint needs to make a given
-motion. Book 5's
+motion. Book 6's
 [arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
 computes it from a physics formula. For a seven-joint arm the input is 21
 numbers, which are the angle, speed and acceleration of each joint, and the
@@ -256,7 +256,7 @@ that is how LWPR avoids the problem of the next section.
 LWPR learned the dynamics of real research arms, such as the seven-joint SARCOS
 arm, in real time, and later work used local Gaussian processes the same way.
 Today a small neural network, trained on logged data, often does this job, as in
-Book 6's
+this book's
 [learned arm models](../../09_touch-and-body-models/03_also-used/02_learned-arm-models.md).
 LWPR's idea of learning online, from local pieces that do not disturb each
 other, is still useful when an arm must adapt while it works.
@@ -484,7 +484,7 @@ check the distance yourself.
 
 ## 11. The written alternative
 
-Book 5's
+Book 6's
 [nearest-neighbour search](../../../06_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
 is the programmed half of kNN, because it finds the closest stored points
 exactly. On its own it is a lookup table, where you store the grasps you have
@@ -493,7 +493,7 @@ cases ahead of time and there are few of them. But kNN adds the learned part,
 which is a vote or a weighted average over several neighbours, so that noise in
 one example does not decide the answer.
 
-For the arm's dynamics, the written alternative is Book 5's
+For the arm's dynamics, the written alternative is Book 6's
 [system identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md),
 which fits the numbers in a physics formula. It wins whenever the formula has
 the right shape, because it needs far fewer examples and it behaves sensibly
@@ -516,7 +516,7 @@ the formula first, and a local learner on what it gets wrong.
   covers other ways to tell when a model should not be trusted.
 - The [chapter overview](../01_overview.md) compares all the methods of this
   chapter in one table.
-- Book 5's
+- Book 6's
   [nearest-neighbour search](../../../06_programming-techniques/03_searching-and-matching/02_most-used/01_nearest-neighbour-search.md)
   explains k-d trees and fast search in detail.
 

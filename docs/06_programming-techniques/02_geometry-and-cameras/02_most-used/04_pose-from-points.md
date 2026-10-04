@@ -335,7 +335,7 @@ can find points on it in a colour picture, and here are the concrete places.
   the camera's frame. Hand-eye calibration then compares those poses with the arm's,
   as the [calibration](03_calibration.md#a-x--x-b-in-plain-words) page shows.
 - **Keypoint models.** A neural network finds named points on an object, such as a
-  mug's handle and rim, and PnP turns them into a pose. Book 6's
+  mug's handle and rim, and PnP turns them into a pose. Book 7's
   [keypoints and object pose](../../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md#from-keypoints-to-pose)
   describes this split: the network finds the points, and geometry does the rest.
 - **Matching against a stored picture.** A program stores a picture of a boxed
@@ -419,7 +419,7 @@ viewing angle, because a face-on marker gives a poor rotation.
 
 ## 9. The learned alternative
 
-Book 6's
+Book 7's
 [keypoints and object pose](../../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 describes two learned ways to get the same six numbers. A keypoint model, such
 as DOPE, finds named points on the object in a messy picture, and PnP from this

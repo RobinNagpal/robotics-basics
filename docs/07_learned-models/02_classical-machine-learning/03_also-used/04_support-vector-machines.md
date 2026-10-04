@@ -7,7 +7,7 @@ line does an SVM choose, and why? What happens when the groups overlap? How can
 it draw a curved boundary? Where were SVMs used on robot arms? And why do trees
 and small networks usually do their job today?
 
-It is for a reader who has read Book 6 chapter 1, in particular
+It is for a reader who has read this book's first chapter, in particular
 [how a model learns](../../01_what-models-are/02_how-a-model-learns.md). So you
 need to know what an example, a label, a feature and overfitting are. It also
 helps to have read

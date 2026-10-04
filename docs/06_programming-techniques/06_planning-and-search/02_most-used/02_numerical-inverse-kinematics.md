@@ -495,7 +495,7 @@ a singularity, at the price of slower progress near one.
 ## 7. The learned alternative
 
 Section 6 weighed this loop against an analytic formula, but there is a third
-option as well. A learned IK solver, described in Book 6's
+option as well. A learned IK solver, described in Book 7's
 [learned motion planners](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md#5-learned-inverse-kinematics),
 is a network trained on many pairs of joint angles and the gripper poses forward
 kinematics gives for them. It answers in one pass, and some, such as IKFlow, give

@@ -586,7 +586,7 @@ What it costs you:
 
 This page has argued for learning the model, so the last question is when a written
 rule is enough. The written alternative is the fixed rule in section 9, built with
-the tools in Book 5's
+the tools in Book 6's
 [sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
 . That page shows how to smooth a force reading, find how fast it is changing, and
 turn it into a flag that does not flicker on and off. Book 3's

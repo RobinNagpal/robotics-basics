@@ -6,7 +6,7 @@ and the sections below take them in turn. How does one tree make a decision? How
 does it choose its questions? Why does a deep tree go wrong on new data? How do
 many trees fix that? And where does a robot arm use them?
 
-It is for a reader who has read Book 6 chapter 1, in particular
+It is for a reader who has read this book's first chapter, in particular
 [how a model learns](../../01_what-models-are/02_how-a-model-learns.md). So you
 need to know what an example, a label, a training set, a test set and
 overfitting are. The [overview of this chapter](../01_overview.md) shows where
@@ -563,7 +563,7 @@ What trees cost:
 Section 10 compared trees with other learned models, but the rules in Book 5 do
 the same jobs without learning at all. For slip, the rule comes from physics,
 because an object slides when the sideways force is more than the friction times
-the squeezing force. Book 5's
+the squeezing force. Book 6's
 [sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md)
 shows how to smooth the force readings, take how fast they change, and turn them
 into a flag with thresholds that do not flicker. For contact, the guarded moves

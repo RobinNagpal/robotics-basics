@@ -555,7 +555,7 @@ choices at work or moves on to the methods that do not copy a person.
   their actions are rescaled to a fixed range.
 - [Learning from human video](../03_also-used/04_learning-from-human-video.md)
   depends on relative gripper-pose actions.
-- Book 5's [rigid transforms](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
+- Book 6's [rigid transforms](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/02_rigid-transforms.md)
   explains rotation matrices, quaternions and three angles in detail, and Book 3's
   [Euler angles, intrinsic and extrinsic](../../../03_frameworks/03_arm-movement/08_frames-and-conventions.md#24-euler-angles-intrinsic-and-extrinsic)
   explains why three angles need a stated convention.

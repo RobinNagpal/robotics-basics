@@ -21,7 +21,7 @@ Every number on this page comes from a real run of the diagram script
 `docs/diagrams/classical_ml_4.py`. The demonstrations are simulated, but the
 methods themselves are real, and they are written in NumPy.
 
-> Before this page, read Book 5's [trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md). It explains what a trajectory is, why a motion must start and stop smoothly, and how a controller follows the targets a movement primitive produces.
+> Before this page, read Book 6's [trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md). It explains what a trajectory is, why a motion must start and stop smoothly, and how a controller follows the targets a movement primitive produces.
 
 ## Contents
 
@@ -358,7 +358,7 @@ particular, a via-point far outside the band forces the model to use shapes that
 it never saw.
 
 Neither kind checks the joints' limits, because a DMP run with a short duration
-or a far goal can ask for more speed than the joints allow. Book 5's
+or a far goal can ask for more speed than the joints allow. Book 6's
 [trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
 limits and a safety check are still needed underneath.
 
@@ -412,7 +412,7 @@ the demonstrated ones.
 
 ## 10. The written alternative
 
-Book 5's
+Book 6's
 [trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md)
 does the same job with no learning at all. Someone writes down a few waypoints,
 such as "lift to 25 cm, move over the bowl, lower to 18 cm", and the generator
@@ -423,7 +423,7 @@ obeys the limits by design and can be read by anyone. The primitive wins when
 the motion is easier to show than to describe, such as the exact curve of a pour
 or the swing of a wiping stroke, and when a ProMP's spread is useful.
 
-When the path must also avoid obstacles, Book 5's
+When the path must also avoid obstacles, Book 6's
 [trajectory optimisation](../../../06_programming-techniques/06_planning-and-search/02_most-used/03_trajectory-optimisation.md)
 finds a smooth path that keeps clear of them. So some methods start that
 optimisation from a primitive's path, and the result then stays close to the
@@ -442,7 +442,7 @@ demonstration.
   into steps.
 - [Where the data comes from](../../01_what-models-are/05_where-the-data-comes-from.md#3-human-demonstrations)
   explains teleoperation, the other common way to record demonstrations.
-- Book 5's
+- Book 6's
   [impedance and force control](../../../06_programming-techniques/07_control-and-motion/03_also-used/01_impedance-and-force-control.md)
   explains the springs and dampers used in the controller that follows a
   primitive, and in hand-guiding itself.

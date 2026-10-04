@@ -386,7 +386,7 @@ places where they appear most often.
   shows.
 - **Recording demonstrations for learning.** A learned policy is trained on
   pictures, joint angles and commands recorded together, so if the streams are
-  paired wrongly, the policy learns that the arm reacts before it sees. Book 6's
+  paired wrongly, the policy learns that the arm reacts before it sees. Book 7's
   [actions and observations](../../../07_learned-models/06_movement-models/02_most-used/04_actions-and-observations.md)
   page covers how those recordings are laid out.
 - **Gripper checks.** "The fingers stopped closing" is a slope near zero on the

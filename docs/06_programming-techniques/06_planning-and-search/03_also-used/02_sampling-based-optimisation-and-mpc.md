@@ -292,7 +292,7 @@ Sometimes nobody can write such a model, and then the model can instead be
 learned from records of the arm pushing the block. The planner itself does not
 change at all when this happens. CEM, the horizon of 5 pushes, the warm start,
 the score and "do only the first push" all stay the same. Instead, only the
-prediction step inside `score_by_simulating` is replaced. Book 6's
+prediction step inside `score_by_simulating` is replaced. Book 7's
 [learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
 page explains how such a model is built and trained.
 
@@ -348,7 +348,7 @@ where it had records, but the planner still chose long pushes, where it was only
 guessing. With the cost for disagreement the planner chose fewer long pushes, and
 the runs that touched the mug fell from 26 to 13 of 60. However, sixty runs is
 only just enough to show this, because the 95% confidence intervals are 30.6% to
-56.8% and 12.1% to 34.2%, which barely overlap. Book 6's
+56.8% and 12.1% to 34.2%, which barely overlap. Book 7's
 [evaluation and failure](../../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md#3-counting-successes-and-how-sure-the-count-is)
 page explains these intervals.
 
@@ -370,7 +370,7 @@ differentiate the result. Here are the concrete places it turns up on an arm.
 - **Pushing and sliding objects.** An arm may push a mug out of the way before a
   grasp, or slide a box against a wall. The contact is hard to model with a clean
   formula, so a sampled plan through a rough model, corrected by MPC, is common.
-- **MPC with a learned model.** Book 6's
+- **MPC with a learned model.** Book 7's
   [learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md#planning-with-it)
   plan with CEM and MPC through a neural network. The network has a gradient,
   but it is often unreliable, and CEM only needs the network's predictions.
@@ -380,7 +380,7 @@ differentiate the result. Here are the concrete places it turns up on an arm.
   can be scored by running a test move and measuring the overshoot and the
   settling time, so CMA-ES can tune a handful of gains this way, in simulation or
   on the real arm.
-- **Choosing a grasp.** Book 6's
+- **Choosing a grasp.** Book 7's
   [grasp quality models](../../../07_learned-models/05_grasp-models/03_also-used/02_grasp-quality-models.md#where-the-candidates-come-from)
   use CEM to refine grasp candidates towards the ones the model scores highest.
 - **Paths with costs that have no gradient.** STOMP, on the
@@ -502,7 +502,7 @@ changes, or when the search fits in the time between steps.
 - Book 3's
   [controlling the move](../../../03_frameworks/03_arm-movement/04_controlling-the-move.md#7-model-predictive-control)
   covers MPC in practice, and the gradient-based MPC libraries.
-- Book 6's
+- Book 7's
   [learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
   explains the learned model that CEM and MPC most often plan through.
 - Book 3's [pushing and sliding](../../../03_frameworks/02_gripping/09_pushing-and-sliding.md)

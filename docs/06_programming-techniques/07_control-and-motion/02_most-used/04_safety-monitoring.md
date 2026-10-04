@@ -138,7 +138,7 @@ ticks a second, that comes to 0.025 rad per tick.
 
 The joint limits above apply to any command source, but one source needs more care
 than the rest. A learned policy is a neural network that turns camera pictures and
-joint angles into commands, and Book 6's
+joint angles into commands, and Book 7's
 [movement models](../../../07_learned-models/06_movement-models/01_overview.md)
 chapter describes them. Unlike a planner, a policy has no built-in idea of the
 arm's limits or of obstacles, and Book 3's
@@ -181,7 +181,7 @@ checks are these.
    forward kinematics.
 6. The expected force is within limits, and the measured force is too.
 
-Book 6's
+Book 7's
 [safety checks around a model](../../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
 gives the same list from the model's side.
 
@@ -303,7 +303,7 @@ and the measured joint torques. It uses a filtered signal, a threshold with
 hysteresis, and a short debounce, as the
 [sensor streams](../../04_fitting-and-estimation/02_most-used/04_sensor-streams.md#thresholds-that-do-not-flicker-hysteresis-and-debouncing)
 page explains. But the debounce must be short, because every millisecond of
-waiting lets the force grow further. Book 6's
+waiting lets the force grow further. Book 7's
 [collision and failure detection](../../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
 page covers the expected-against-measured torque method, and the learned
 versions of it.
@@ -354,7 +354,7 @@ are the common places.
 
 - **Running a learned policy.** Every output is checked for limits, jumps and
   workspace before it reaches the arm. The first runs are made slowly with a
-  person holding the emergency stop, as Book 6's
+  person holding the emergency stop, as Book 7's
   [running a model on a robot](../../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
   page describes.
 - **Teleoperation.** A person steers the arm with a joystick or a second arm. A
@@ -498,7 +498,7 @@ the same thing every time, there is no learned model that replaces it. Book 6 sa
 the same from the model's side: its
 [safety checks around a model](../../../07_learned-models/10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md#7-safety-checks-around-a-model)
 are rules written by people, like the ones on this page. Learned models can add
-to one part of the layer, the contact checks. Book 6's
+to one part of the layer, the contact checks. Book 7's
 [collision and failure detection](../../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
 page covers detectors that learn the normal gap between expected and measured
 torque, or notice a dropped object, and says they are worth adding when the

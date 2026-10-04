@@ -680,7 +680,7 @@ What it costs you:
 This page has argued for adding a learned correction, so the last question is what
 the written model alone gives you. The written alternative is the textbook model with
 its numbers measured on your own arm, which is the first alternative in section 8.
-Book 5's
+Book 6's
 [arm dynamics](../../../06_programming-techniques/07_control-and-motion/02_most-used/03_arm-dynamics.md)
 explains the model.
 [System identification](../../../06_programming-techniques/04_fitting-and-estimation/03_also-used/01_system-identification.md)

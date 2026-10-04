@@ -346,7 +346,7 @@ decoder, which rebuilds the example from the code. Training makes the rebuilt
 example as close to the original as it can. An autoencoder whose two halves are
 each one plain weighted sum, with no simple rule after it, learns to keep the
 same directions as PCA. But with more layers it can follow curved data, and it
-can squeeze a whole camera picture into a few numbers. Book 6 shows this inside
+can squeeze a whole camera picture into a few numbers. This book shows this inside
 a
 [latent world model](../../08_world-models/03_also-used/03_latent-world-models.md#squeezing-a-picture-into-a-code),
 and
@@ -457,13 +457,13 @@ the same ones for every new example.
 
 Section 9 compared PCA with other learned methods, but for some of its jobs
 there is no learning involved at all. For surfaces, PCA is itself the written
-method, and Book 5's
+method, and Book 6's
 [least-squares fitting](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/01_least-squares-fitting.md#planes-the-singular-value-decomposition)
 fits a plane to points with the SVD, where the plane's normal is PCA's last
 direction. So nothing is learned there that a person could not also write down.
 
 For movements, the written alternative is to describe each move by the few
-numbers that made it. Book 5's
+numbers that made it. Book 6's
 [trajectory generation](../../../06_programming-techniques/07_control-and-motion/02_most-used/02_trajectory-generation.md#the-s-curve-profile)
 builds a whole move from its start, its goal and its limits, so the goal posture
 already is a short description of the move. That wins whenever your own program
@@ -471,7 +471,7 @@ made the moves. But PCA wins when the moves were recorded from a person or a
 learned policy, and nobody knows which few numbers made them.
 
 For force and sensor signals, the written alternative is to pick the summary
-numbers by hand, such as the smoothed force and its slope from Book 5's
+numbers by hand, such as the smoothed force and its slope from Book 6's
 [sensor streams](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/04_sensor-streams.md).
 Hand-picked numbers have a clear meaning and need no data. But PCA wins when you
 do not know which features matter, and you have recordings to learn from.

@@ -337,7 +337,7 @@ A robot has three useful things it can do instead of acting.
 - **Look again.** Move the camera to a different angle, turn on a light, or wait for
   the arm to move out of the view, and ask the model again. A picture from a new
   angle often removes the doubt. Choosing the best new viewpoint is its own
-  technique, covered in Book 5's
+  technique, covered in Book 6's
   [visibility and next-best-view](../../../06_programming-techniques/06_planning-and-search/03_also-used/03_visibility-and-next-best-view.md)
   page.
 - **Ask a bigger model.** A **cascade** is a chain of models, from cheap to

@@ -184,7 +184,7 @@ those chapters.
 
 Learned models meet this chapter in two places as well. First, a learned model can
 be one step inside the tree, in the place where a programmed step would otherwise
-sit. A detector from Book 6's
+sit. A detector from Book 7's
 [object detection](../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md)
 page can be the "detect mug" step, and a model from
 [collision and failure detection](../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)

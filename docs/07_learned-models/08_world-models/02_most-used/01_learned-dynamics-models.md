@@ -162,7 +162,7 @@ the **cross-entropy method**, or **CEM**, repeats this a few times and narrows t
 search towards the best sequences. The arm then does only the **first** action,
 measures the real state again and plans again from there, and this loop is called
 **model predictive control**, or **MPC**. Because the plan is thrown away after one
-step, a wrong prediction five steps ahead does little harm. Book 5's
+step, a wrong prediction five steps ahead does little harm. Book 6's
 [sampling-based optimisation and MPC](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 page teaches these methods step by step, with real numbers.
 
@@ -829,7 +829,7 @@ What it costs you:
 The sections above assumed that the model is learned, but the planner does not
 require that. The written alternative keeps the planner and replaces the learned
 model with a written one, because the planning loop in section 3 is written code
-either way. Book 5's
+either way. Book 6's
 [sampling-based optimisation and model predictive control](../../../06_programming-techniques/06_planning-and-search/03_also-used/02_sampling-based-optimisation-and-mpc.md)
 explains random shooting, the cross-entropy method and model predictive control in
 full. The model can then be a physics formula for pushing, such as Book 3's

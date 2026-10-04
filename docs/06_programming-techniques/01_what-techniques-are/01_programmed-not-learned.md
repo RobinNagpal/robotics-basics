@@ -1,6 +1,6 @@
 # Programmed, not learned
 
-This is the first page of Book 5, which explains the programming techniques that
+This is the first page of Programming Techniques, which explains the methods that
 robot arm software is built from. A technique here means a fixed method that a
 person wrote down step by step, rather than something a computer worked out for
 itself. Examples are the pinhole camera model, the Kalman filter, A* search and
@@ -16,8 +16,8 @@ camera, a pixel and a point cloud are, because Books 1 and 2 explain them.
 Beyond that, you do not need to know any programming language well, and you do
 not need any maths past adding, multiplying and square roots.
 
-Book 5 has a partner in Book 6,
-[neural network models](../../07_learned-models/01_what-models-are/01_what-a-model-is.md),
+This book has a partner in
+[Learned Models](../../07_learned-models/01_what-models-are/01_what-a-model-is.md),
 which covers the other way of building robot software: models that are learned
 from examples. This book covers the methods that people write by hand instead. A
 real robot arm uses both, so this page also says how they fit together.

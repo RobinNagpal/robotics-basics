@@ -618,7 +618,7 @@ one exists, or proves that none does.
 ## 9. The learned alternative
 
 Everything above is written by hand, so the last question is what a learned model
-would do in its place. A learned route planner, described in Book 6's
+would do in its place. A learned route planner, described in Book 7's
 [learned motion planners](../../../07_learned-models/06_movement-models/03_also-used/02_learned-motion-planners.md),
 guesses a route for the arm directly from a point cloud, in about the same time
 every run. It is built for large joint spaces where a grid is hopeless. However, in the

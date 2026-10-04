@@ -118,7 +118,7 @@ that weight. We know neither, so EM guesses one and improves both in turn.
 
 For the box weights, EM stopped after 11 rounds of those two steps.
 
-EM is k-means with soft edges. K-means, from Book 5's
+EM is k-means with soft edges. K-means, from Book 6's
 [clustering page](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md#k-means-k-centres-moved-to-the-average),
 gives each point wholly to its nearest centre, while EM gives each point partly
 to every bell. EM also learns each bell's width and tilt, which k-means does
@@ -427,7 +427,7 @@ be a few meaningful numbers.
 ## 10. The written alternative
 
 Section 9 compared these methods with other learned ones, but Book 5 does all
-three of their jobs without learning. For sorting readings into groups, Book 5's
+three of their jobs without learning. For sorting readings into groups, Book 6's
 [clustering](../../../06_programming-techniques/05_image-and-point-cloud-processing/02_most-used/03_clustering.md)
 page does the same job with k-means or mean shift. It wins when the groups are
 well apart, while the mixture wins when they overlap.
@@ -459,7 +459,7 @@ wins when the motion is easier to show than to describe.
   covers neural networks that read force signals, for when an HMM is not enough.
 - [Behaviour cloning](../../06_movement-models/02_most-used/01_behaviour-cloning.md)
   learns movement from many demonstrations with a network.
-- Book 5's
+- Book 6's
   [Kalman filter](../../../06_programming-techniques/04_fitting-and-estimation/02_most-used/03_kalman-filter.md)
   explains predict and update for a continuous number.
 

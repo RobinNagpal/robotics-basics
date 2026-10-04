@@ -460,7 +460,7 @@ this page is where that model comes from.
 actually using with the torque that inverse dynamics says it should need. So a large
 gap means something the model does not know about is pushing on the arm, such as a
 person.
-Book 6's [collision and failure detection](../../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md#31-the-gap-between-expected-and-measured)
+Book 7's [collision and failure detection](../../../07_learned-models/09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md#31-the-gap-between-expected-and-measured)
 page calls this the "expected torque". The better the model, the lower the alarm
 line can be set. The [safety monitoring](04_safety-monitoring.md) page covers the
 checks that act on such alarms.
@@ -564,7 +564,7 @@ torque commands, which many arms do not.
 
 ## 8. The learned alternative
 
-Book 6's
+Book 7's
 [learned arm models](../../../07_learned-models/09_touch-and-body-models/03_also-used/02_learned-arm-models.md)
 are the learned version of this page. Most keep this physics model and add a small
 network that learns only what is left over: the gearbox friction, cable pull and
@@ -575,7 +575,7 @@ the physics model still wins as the base, because it needs only a handful of num
 per link and gives sensible answers everywhere. A learned model, in contrast, needs
 hours of varied data and can give strange answers for moves it has not seen. That is why
 the usual practice is to keep the physics model and let a learned model correct
-it. Book 6's
+it. Book 7's
 [learned dynamics models](../../../07_learned-models/08_world-models/02_most-used/01_learned-dynamics-models.md)
 do a wider job: they predict how the whole scene moves when the arm acts, not just
 the arm.

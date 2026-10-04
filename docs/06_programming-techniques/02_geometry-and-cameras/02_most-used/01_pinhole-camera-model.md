@@ -318,7 +318,7 @@ arm, and here are the concrete places.
 
 - **Turning a detection into a grasp target.** A detector gives a box around a mug.
   The program takes the middle pixel, reads its depth, and back-projects it. That
-  point, moved into the base frame, is where the gripper goes. Book 6's
+  point, moved into the base frame, is where the gripper goes. Book 7's
   [object detection](../../../07_learned-models/03_seeing-models/02_most-used/01_object-detection.md#6-where-it-is-used-on-a-robot-arm)
   page walks through this.
 - **Making a point cloud for the rest of the pipeline.** Plane removal, clustering,
@@ -422,14 +422,14 @@ one model per lens, plus the transform between them.
 ## 7. The learned alternative
 
 No learned model replaces the pinhole model itself, because learned models that
-measure need the same rule. Book 6's
+measure need the same rule. Book 7's
 [depth from pictures](../../../07_learned-models/03_seeing-models/03_also-used/02_depth-from-pictures.md)
 guesses a depth for each pixel from colour alone, and
 [keypoints and object pose](../../../07_learned-models/03_seeing-models/02_most-used/04_keypoints-and-object-pose.md)
 finds named points on an object in the picture. Both answers still go through
 the projection or back-projection formula on this page. The real alternative is
 to skip the camera model and train a **policy**, a network that turns pictures
-straight into arm movements, as Book 6's
+straight into arm movements, as Book 7's
 [movement models](../../../07_learned-models/06_movement-models/01_overview.md)
 do. Such a policy absorbs distortion and odd lenses without anyone describing
 them. But it needs tens to hundreds of demonstrations for each task, and a

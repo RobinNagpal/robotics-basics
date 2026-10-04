@@ -396,7 +396,7 @@ sometimes return the second-nearest point.
 Since this whole page describes a hand-written method, the obvious question is
 whether a learned model could take it over. No learned model does, because the
 search gives the exact answer to a plain question, and a network could only guess
-that answer. Instead, learned models use the search themselves, as Book 6's
+that answer. Instead, learned models use the search themselves, as Book 7's
 [point cloud models](../../../07_learned-models/04_3d-models/02_most-used/01_point-cloud-models.md)
 shows. It describes PointNet++, which collects the points within a small distance
 of each centre, and DGCNN, which links each point to its nearest neighbours. So

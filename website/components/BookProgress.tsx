@@ -1,10 +1,10 @@
 'use client';
 
-import { useVisited } from '@/lib/useProgress';
+import { useRead } from '@/lib/useProgress';
 
 export default function BookProgress({ urls, compact = false }: { urls: string[]; compact?: boolean }) {
-  const visited = useVisited();
-  const done = urls.filter((u) => visited[u]).length;
+  const read = useRead();
+  const done = urls.filter((u) => read[u]).length;
   const pct = urls.length ? Math.round((done / urls.length) * 100) : 0;
   return (
     <div className={`progress${compact ? ' progress-compact' : ''}`} title={`${done} of ${urls.length} sections read`}>

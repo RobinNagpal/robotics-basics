@@ -694,6 +694,21 @@ kbd {
   color: #0e1014;
 }
 
+/* A page that was started but not finished. The outer border goes, because the ring
+   inside is drawn at the same size and two circles would sit on top of each other. */
+.check.is-part {
+  border-color: transparent;
+}
+
+.check-ring-rest {
+  stroke: var(--border-strong);
+}
+
+.check-ring-done {
+  stroke: var(--accent);
+  transition: stroke-dasharray 0.25s linear;
+}
+
 /* -------------------------------------------------------------------- home */
 
 .home {
@@ -1237,6 +1252,66 @@ kbd {
   background: var(--accent);
   transform-origin: left;
   transition: transform 0.08s linear;
+}
+
+/* How much of the page has been read, as against where the scroll bar is. It sits
+   in the corner out of the way of the words, and it is the figure that decides
+   whether the page is marked read. */
+.read-dial {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 38;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: 0 1px 8px rgb(0 0 0 / 14%);
+}
+
+.read-dial svg {
+  position: absolute;
+  inset: 0;
+}
+
+.read-dial-rest {
+  stroke: var(--border);
+}
+
+.read-dial-done {
+  stroke: var(--accent);
+  transition: stroke-dasharray 0.25s linear;
+}
+
+.read-dial-label {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.read-dial.is-done .read-dial-label {
+  color: var(--accent);
+}
+
+/* The floating player already owns the bottom of a narrow screen, and the dial is
+   the less important of the two, so it steps aside rather than covering it. */
+@media (max-width: 720px) {
+  .read-dial {
+    right: 12px;
+    bottom: 12px;
+    width: 30px;
+    height: 30px;
+  }
+  .read-dial-label {
+    font-size: 9px;
+  }
+}
+
+html[data-audio-following] .read-dial {
+  display: none;
 }
 
 .reader {

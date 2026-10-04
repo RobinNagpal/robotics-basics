@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { useVisited } from '@/lib/useProgress';
+import { useRead } from '@/lib/useProgress';
 
 export type SidebarChapter = {
   slug: string;
@@ -18,7 +18,7 @@ type Props = {
 };
 
 export default function BookSidebar({ book, chapters, currentUrl }: Props) {
-  const visited = useVisited();
+  const read = useRead();
   const currentChapter = chapters.find((c) => c.sections.some((s) => s.url === currentUrl))?.slug;
   const [open, setOpen] = useState<Record<string, boolean>>(() => (currentChapter ? { [currentChapter]: true } : {}));
   const activeRef = useRef<HTMLAnchorElement>(null);
@@ -31,7 +31,7 @@ export default function BookSidebar({ book, chapters, currentUrl }: Props) {
   }, [currentUrl, currentChapter]);
 
   const total = chapters.reduce((n, c) => n + c.sections.length, 0);
-  const done = chapters.reduce((n, c) => n + c.sections.filter((s) => visited[s.url]).length, 0);
+  const done = chapters.reduce((n, c) => n + c.sections.filter((s) => read[s.url]).length, 0);
 
   return (
     <div className="sidebar">
@@ -51,7 +51,7 @@ export default function BookSidebar({ book, chapters, currentUrl }: Props) {
       <ol className="sidebar-chapters">
         {chapters.map((c) => {
           const isOpen = Boolean(open[c.slug]);
-          const chapterDone = c.sections.every((s) => visited[s.url]);
+          const chapterDone = c.sections.every((s) => read[s.url]);
           let lastGroup: string | undefined;
           return (
             <li key={c.slug} className={c.slug === currentChapter ? 'is-current' : undefined}>
@@ -79,7 +79,7 @@ export default function BookSidebar({ book, chapters, currentUrl }: Props) {
                         <Link
                           href={s.url}
                           ref={active ? activeRef : undefined}
-                          className={`sidebar-section${active ? ' is-active' : ''}${visited[s.url] ? ' is-read' : ''}${s.group ? ' is-nested' : ''}`}
+                          className={`sidebar-section${active ? ' is-active' : ''}${read[s.url] ? ' is-read' : ''}${s.group ? ' is-nested' : ''}`}
                           aria-current={active ? 'page' : undefined}
                         >
                           <span className="dot" aria-hidden />

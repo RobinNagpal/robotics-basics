@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { markVisited } from '@/lib/progress';
+import { READ_AT } from '@/lib/progress';
+import { markOpened } from '@/lib/progress';
+import { useReadingDepth } from '@/lib/useReadingDepth';
 
 type Props = { url: string; title: string; book: string; chapter: string };
 
@@ -13,9 +15,16 @@ export default function ReaderEffects({ url, title, book, chapter }: Props) {
   const [scrolled, setScrolled] = useState(0);
   const [zoom, setZoom] = useState<{ src: string; alt: string } | null>(null);
 
+  // Opening a page is only worth remembering so that "continue reading" can offer
+  // it again. Whether it was read is decided by how long its parts stayed on screen,
+  // which is what the hook below measures.
   useEffect(() => {
-    markVisited({ url, title, book, chapter });
+    markOpened({ url, title, book, chapter });
   }, [url, title, book, chapter]);
+
+  const depth = useReadingDepth(url);
+  const done = depth >= READ_AT;
+  const percent = Math.round(depth * 100);
 
   useEffect(() => {
     let frame = 0;
@@ -84,8 +93,45 @@ export default function ReaderEffects({ url, title, book, chapter }: Props) {
 
   return (
     <>
+      {/* Two different things, deliberately. The thin bar is where the scroll bar is,
+          which answers "where am I". The dial answers "how much of this have I
+          actually read", which is a smaller number whenever you skim, and the one
+          that decides whether the page is marked read. */}
       <div className="read-progress" aria-hidden>
         <span style={{ transform: `scaleX(${scrolled})` }} />
+      </div>
+      <div
+        className={`read-dial${done ? ' is-done' : ''}`}
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="How much of this page you have read"
+        title={done ? 'Read' : `${percent}% read, and ${Math.round(READ_AT * 100)}% counts as read`}
+      >
+        <svg viewBox="0 0 36 36" width="36" height="36" aria-hidden>
+          <circle className="read-dial-rest" cx="18" cy="18" r="15" fill="none" strokeWidth="3" />
+          <circle
+            className="read-dial-done"
+            cx="18"
+            cy="18"
+            r="15"
+            fill="none"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={`${2 * Math.PI * 15 * Math.min(1, depth)} ${2 * Math.PI * 15}`}
+            transform="rotate(-90 18 18)"
+          />
+        </svg>
+        <span className="read-dial-label">
+          {done ? (
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+            </svg>
+          ) : (
+            `${percent}%`
+          )}
+        </span>
       </div>
       {zoom && (
         <div className="lightbox" role="dialog" aria-modal="true" aria-label={zoom.alt || 'Image'} onClick={() => setZoom(null)}>

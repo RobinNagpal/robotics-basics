@@ -38,7 +38,6 @@ page describes.
 10. [Why this kind, and what it costs](#10-why-this-kind-and-what-it-costs)
 11. [The written alternative](#11-the-written-alternative)
 12. [Where to read next](#12-where-to-read-next)
-13. [Using it in Python](#13-using-it-in-python)
 
 ---
 
@@ -236,28 +235,344 @@ with a hanging lamp may confuse it.
 
 ## 7. Well-known models of this kind
 
-Section 6 described how all of these are trained, and the list below gives the
-published models themselves. Each line says what one model is in plain words.
+Section 6 described how these networks are trained, and this section names the
+tools you can download and says which one to reach for. It starts with the
+written planner rather than with a network, because the written planner is what
+every learned helper here has to beat, and for most moves through open space it
+still wins.
 
-- **MPNet, short for Motion Planning Networks** (University of California, San
-  Diego, 2019). This is one of the first learned route planners, and it proposes the
-  next point over and over. It then falls back to an ordinary planner when a hop
-  fails its collision check.
-- **Learned sampling distributions** (Stanford University, 2018). This is a method
-  that trains a network to suggest where a sampling planner should try its random
-  positions, and the planner itself stays unchanged.
-- **Motion Policy Networks** (NVIDIA, 2022). This is a network for a Franka arm that
-  takes a point cloud from a depth camera and produces a collision-free route
-  directly. It was trained on millions of routes from an ordinary planner in
-  generated scenes, and it answers in a fixed time.
-- **SceneCollisionNet** (NVIDIA and University of California, Berkeley, 2021). This
-  is a network that takes a point cloud and an object's position, and quickly says
-  whether the object would hit anything. It was used to plan where to move objects
-  when tidying a cluttered table.
-- **Fastron** (University of California, San Diego). This is a learning method that
-  builds a quick collision guesser for one arm, and updates it as obstacles move.
-- **IKFlow** (2022). This is a learned IK solver that gives many different
-  joint-angle answers at once, all for the same gripper target.
+Read the table one row at a time. The size column gives the size of the file you
+have to download, and not a count of the network's parameters, because these
+projects publish a trained file and no parameter count. That file is called a
+**checkpoint**, and it holds the numbers that a training run produced. A cell
+that says `not stated` means the project does not publish the figure.
+
+| Tool | What it is best at | Size of the download | Licence | Pick it when |
+| --- | --- | --- | --- | --- |
+| MoveIt 2 with OMPL, written rather than learned | any move through open space, and it checks every move it gives you | no weights | BSD 3-Clause | always try this first |
+| cuRobo, written rather than learned | many plans a second, so the arm can react while obstacles move | no weights | Apache-2.0 | you have an NVIDIA graphics card and the scene keeps changing |
+| Motion Policy Networks | one route straight from a depth camera, on a Franka arm | 229 MB checkpoint | MIT | you want to study how a learned route planner is built and trained |
+| Neural MP | the same job, with weights that download in one line | 86 MB checkpoint | not stated in the code repository, and the weights are tagged MIT | you have a Franka arm, an NVIDIA card and a point cloud of the scene |
+| SceneCollisionNet | guessing quickly whether a moved object hits anything | not stated | NVIDIA Source Code License, which allows non-commercial use only | research on tidying a cluttered table |
+| IKFlow | many different joint-angle answers for one gripper pose | 204 MB for the Franka model | not stated, because the licence file holds only the text `#TODO` | a seven-joint arm needs a choice of inverse kinematics answers |
+
+### 7.1 MoveIt 2 with OMPL, and cuRobo, which are written and not learned
+
+These two are **most used in 2026**, because a developer who has to move an arm
+across a table today installs one of them and not a network.
+
+[MoveIt 2](https://github.com/moveit/moveit2) is the motion planning framework
+for ROS 2, and it is the one this repository uses. It does not plan by itself. It
+calls [OMPL](https://github.com/ompl/ompl), a library from Rice University that
+holds the sampling-based planners section 1 described, and RRT-Connect is the
+planner it uses when nothing else is configured. Both are BSD 3-Clause, read from
+their own licence files.
+[cuRobo](https://github.com/NVlabs/curobo) is a different written planner, from
+NVIDIA. It tries thousands of candidate trajectories at the same time on a
+graphics card, which makes it fast enough to plan again every control cycle
+rather than once per move. Its licence is Apache-2.0, read from its licence
+file.
+
+Why pick these rather than any network on this page? Because they check every
+move they give you against the real shapes of the arm and the obstacles, so a
+route that comes back has been tested rather than guessed. Every learned planner
+below is trained on routes that one of these produced, so at best it copies them,
+and speed is the only thing it can beat them at. You add a network when these two
+are too slow in a way that costs you money, and not before.
+
+They cost you different things. OMPL's planning time is not bounded, so a planner
+that usually answers in 50 milliseconds will sometimes take a second, and that is
+the fault that sends people looking at learned planners in the first place. cuRobo
+removes most of that unevenness, but it needs CUDA, which means an NVIDIA
+graphics card, so it does not run on an Apple Silicon Mac at all. Neither is
+small to install, because MoveIt brings the whole of ROS 2 and cuRobo brings
+PyTorch and a CUDA toolchain.
+
+The library for the written planner on a graphics card is cuRobo itself, and the
+code below is shortened from the motion generation example in
+[its documentation](https://curobo.org/get_started/2a_python_examples.html).
+
+```python
+import torch
+from curobo.types.math import Pose
+from curobo.types.robot import JointState
+from curobo.wrap.reacher.motion_gen import MotionGen, MotionGenConfig, MotionGenPlanConfig
+
+# the world here is one box, 5 m across and 0.2 m thick, standing for the table
+world = {"cuboid": {"table": {"dims": [5.0, 5.0, 0.2], "pose": [0, 0, -0.1, 1, 0, 0, 0]}}}
+
+# "ur5e.yml" is an arm description that ships inside cuRobo
+config = MotionGenConfig.load_from_robot_config("ur5e.yml", world, interpolation_dt=0.01)
+motion_gen = MotionGen(config)
+motion_gen.warmup()  # compiles the GPU work once, so later plans are fast
+
+goal = Pose.from_list([-0.4, 0.0, 0.4, 1.0, 0.0, 0.0, 0.0])  # x, y, z then w, x, y, z
+start = JointState.from_position(
+    torch.zeros(1, 6).cuda(),  # all six joints at zero
+    joint_names=["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
+                 "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"],
+)
+result = motion_gen.plan_single(start, goal, MotionGenPlanConfig(max_attempts=1))
+print(result.success)
+trajectory = result.get_interpolated_plan()
+```
+
+What cuRobo supplies is the collision checking, the inverse kinematics and the
+optimisation, all on the graphics card, and descriptions of several arms. What
+you supply is the world: the box above stands for a table, and on a real cell you
+replace it with the obstacles your depth camera reports, which is the part that
+takes the time. You also have to check `result.success`, because the planner can
+fail and the answer is then not a trajectory.
+
+### 7.2 Motion Policy Networks, which showed that the idea works
+
+This one is **historical**, kept because it is the clearest example of how a
+learned route planner is built, and because the model after it is built the same
+way.
+
+[Motion Policy Networks](https://github.com/NVlabs/motion-policy-networks), often
+written MPiNets, is NVIDIA's learned route planner from 2022, published at the
+Conference on Robot Learning. It takes a point cloud and a goal pose for a Franka
+arm, and it proposes the next arm position over and over, which is the first
+design from section 3. Its predecessor was MPNet, from the University of
+California, San Diego, in 2019, which had the same idea and has not been changed
+since 2020.
+
+Why pick it rather than Neural MP, which is newer and comes next? Only for
+reading and reproducing. MPiNets publishes the whole pipeline that generated its
+training data, which is the part of the work that a team building its own learned
+planner actually needs, and its code is MIT. Its code was last changed in 2023,
+so for running an arm the newer model is the better choice.
+
+What it costs you is the installation. The recommended way to install it is a
+Docker container of about 30 GB, built on top of NVIDIA Isaac Sim, and building
+that container needs an NVIDIA developer account. There is nothing to `pip
+install`, and the thing that most often goes wrong is the installation rather
+than the model.
+
+The library is the repository's own `mpinets` package. The lines below are
+shortened from `rollout_until_success` in
+[its inference script](https://github.com/NVlabs/motion-policy-networks/blob/main/mpinets/run_inference.py),
+and they are the whole of what the network does.
+
+```python
+import torch
+from mpinets.model import MotionPolicyNetwork
+from mpinets.utils import normalize_franka_joints, unnormalize_franka_joints
+
+model = MotionPolicyNetwork.load_from_checkpoint("mpinets_hybrid_expert.ckpt").cuda()
+model.eval()
+
+trajectory = []
+q_norm = normalize_franka_joints(q)  # the seven joint angles, rescaled to -1 to 1
+for _ in range(150):  # the script's own limit, after which it gives up
+    # the network returns a step to add to the current position, not the position itself
+    q_norm = torch.clamp(q_norm + model(point_cloud, q_norm), min=-1, max=1)
+    trajectory.append(unnormalize_franka_joints(q_norm))
+    # the script stops here once the gripper is within 1 cm and 15 degrees of the
+    # target, and the point cloud's robot points are redrawn for the new position
+```
+
+The repository supplies the trained network, the point cloud handling and a
+measurement script. What you supply is the checkpoint, a 229 MB download from
+[Zenodo](https://zenodo.org/record/8319949), and the point cloud in the exact
+form the network expects, which is 2048 points sampled on the arm's own surface
+followed by the obstacle points and the target points. You also supply the
+collision check on the result, because nothing in the loop above tests whether a
+step hits anything.
+
+### 7.3 Neural MP, the same idea with weights on Hugging Face
+
+This one is **worth betting on**, because it is where the published work is
+going: it ships its weights in the ordinary Hugging Face way rather than as a
+file beside a paper, and its own authors have already published a follow-up aimed
+at obstacles that move.
+
+[Neural MP](https://github.com/mihdalal/neuralmotionplanner) comes from Carnegie
+Mellon University and was published at the 2025 conference on intelligent robots
+and systems. It is the same kind of network as MPiNets, taking a point cloud and
+proposing joint positions, and it adds a short optimisation at the end to repair
+the route it proposed. Its own follow-up is
+[Deep Reactive Policy](https://deep-reactive-policy.com/), from 2025, which aims
+at scenes where obstacles move while the arm is moving.
+
+Why pick it rather than MPiNets? Because the weights come down in one line, with
+`from_pretrained`, from [a Hugging Face
+repository](https://huggingface.co/mihdalal/NeuralMP) where the checkpoint is a
+single 86 MB file tagged MIT, and because its code was last changed in 2026 where
+MPiNets was last changed in 2023. Why pick it rather than cuRobo, which also runs
+on a graphics card? Because it answers in a fixed number of network calls, where
+cuRobo's optimiser can need more attempts on a hard scene. If neither reason
+applies, cuRobo is less work.
+
+What it costs you is a Linux machine with an NVIDIA card, and its tested
+configuration is Python 3.8 with CUDA 12.1. The code repository has no licence
+file at all, which is not the same as being free to use, even though the weights
+on Hugging Face carry an MIT tag. The thing that most often goes wrong is the
+point cloud, because the model expects 2048 points on the arm and 4096 on the
+obstacles, and badly calibrated cameras plan a route around obstacles that are
+not where the model thinks they are.
+
+The library is the repository's own `neural_mp` package, and the planner is one
+method call.
+
+```python
+from neural_mp.real_utils.neural_motion_planner import NeuralMP
+
+planner = NeuralMP(env=env, model_url="mihdalal/NeuralMP", train_mode=False, in_hand=False)
+
+# points and colors are the combined point cloud from your calibrated cameras
+trajectory, success, mean_time = planner.motion_plan(
+    start_config=start_joint_angles,   # seven joint angles
+    goal_config=goal_joint_angles,     # seven joint angles, not a gripper pose
+    points=points,
+    colors=colors,
+)
+```
+
+What the library supplies is the trained network, the point cloud preparation and
+the rollout, and `motion_plan_with_tto` runs the repair step as well, more slowly.
+What you supply is `env`, a wrapper around your own Franka control code, and the
+cameras behind `points`. The important detail is `goal_config`: Neural MP plans
+from joint angles to joint angles, so a gripper pose has to be turned into joint
+angles first, which is what section 7.5 is for.
+
+### 7.4 SceneCollisionNet, which learns the collision check
+
+This one is **historical**. It is the clearest published example of a learned
+collision checker, and it has not been changed since 2021.
+
+[SceneCollisionNet](https://github.com/NVlabs/SceneCollisionNet) came from NVIDIA
+and the University of California, Berkeley, in 2021. It takes a point cloud of a
+scene and a pose for an object, and it says quickly whether the object in that
+pose would hit anything, which is the second row of section 2's table. It was
+built to plan where to put objects down when tidying a cluttered table. The other
+well-known approach is Fastron, from the University of California, San Diego,
+which is C++ code that builds a quick collision guesser for one arm and updates
+it as obstacles move.
+
+Why pick it rather than the exact collision checker inside MoveIt? Only when you
+have to test very many poses and that test is what is holding you up, as when you
+score hundreds of candidate places to put an object down. For the ordinary
+question of whether one arm position collides, the exact check is correct and
+quicker to set up, and section 4 explained that a learned checker is wrong
+exactly at the edge of an obstacle, where a planner spends its time.
+
+What it costs you is the licence. The repository carries the NVIDIA Source Code
+License for SceneCollisionNet as a PDF rather than as a standard licence file,
+and section 3.3 of that licence limits the work and anything derived from it to
+non-commercial use. So you can study it and you cannot ship it. The code is also
+from 2021 and expects CUDA 10.2.
+
+The library is the repository's own `scenecollisionnet` package, and the useful
+thing to run is its own comparison of the learned checker against the exact one.
+Both commands come from its README.
+
+```bash
+bash scripts/download_weights.sh                     # the trained networks
+
+# the learned checker, then the exact checks it is compared against, which are
+# FCL, the Flexible Collision Library, and a signed distance field
+PYOPENGL_PLATFORM=egl python tools/benchmark_scenecollisionnet.py
+PYOPENGL_PLATFORM=egl python tools/benchmark_baseline.py
+```
+
+What the repository supplies is the trained networks and that comparison, so you
+can see the trade for yourself. What you supply is the mesh dataset, which its
+README builds from ShapeNetSem meshes and the ACRONYM grasp set.
+
+### 7.5 IKFlow, which gives many inverse kinematics answers at once
+
+Of the learned helpers on this page, this is the one that is **most used in
+2026**, because it is the only one that installs on an ordinary Linux machine and
+ships trained weights for several named arms.
+
+[IKFlow](https://github.com/jstmn/ikflow) is a learned inverse kinematics solver
+from the paper [IKFlow: Generating Diverse Inverse Kinematics
+Solutions](https://arxiv.org/abs/2111.08933), published in 2022. It is the
+model section 5 described: you give it a gripper pose, and it returns many
+different sets of joint angles that all reach that pose. The repository publishes
+trained models for the Franka Panda, the Fetch arm and the Rizon 4.
+
+Why pick it rather than the numerical solver that MoveIt already calls? Because
+the numerical solver returns one answer, and which one depends on the guess it
+started from. An arm with seven joints can reach almost any pose in many ways,
+and you often want to choose among them, taking the answer furthest from the
+joint limits or nearest to where the arm already is. IKFlow gives you a spread of
+answers in one pass, and the written solver cannot do that at all. If one answer
+is enough, use the written solver.
+
+What it costs you is a careful installation and an unclear licence. The README
+says the only supported operating system is Ubuntu, and it installs from a clone
+of the repository with `uv sync` rather than from the package index, where the
+latest `ikflow` release is version 0.0.8 from February 2023 and far behind the
+repository. The licence file contains only the text `#TODO`, so no licence has
+been granted, and that is a question to settle before you put it in a product.
+The thing that most often goes wrong is forgetting that the answers are
+approximate, and the next is the quaternion order, which is `w, x, y, z` here and
+the other way round in several other libraries.
+
+The library is `ikflow`, and the code below asks for five answers to one pose.
+
+```python
+import torch
+from ikflow.model_loading import get_ik_solver
+
+# the name must match an entry in ikflow/model_descriptions.yaml; this one
+# downloads a 204 MB trained model for the Franka Panda
+ik_solver, _ = get_ik_solver("panda__full__lp191_5.25m")
+
+# x, y, z in metres, then a rotation as a quaternion in the order w, x, y, z
+target_pose = torch.tensor([0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 0.0])
+
+# five different sets of joint angles, all reaching about the same pose
+solutions = ik_solver.generate_ik_solutions(target_pose, n=5)
+
+# the same five, finished off by an ordinary numerical solver
+exact, _ = ik_solver.generate_exact_ik_solutions(target_pose.expand((5, 7)))
+```
+
+What the library supplies is the trained models, the sampling, and the polishing
+step in the last line, which runs ordinary numerical steps on the network's
+answers. The repository's own benchmark calls those polished answers exact to
+within 1 mm and 0.572 degrees, and the answers from `generate_ik_solutions` are
+not. Passing `return_detailed=True` also tells you which answers break a joint
+limit or make the arm touch itself. What you supply is your arm, if it is not one
+of the published ones, which means its description file and a training run of
+your own. You also supply the rule for choosing among the answers, because the
+model has no opinion about that: the answer nearest the current joint angles
+avoids a large sudden movement, while the answer furthest from the limits leaves
+more room for the move after it.
+
+### 7.6 How to choose
+
+Start with MoveIt 2 and OMPL, and add nothing learned. That is the right answer
+for almost every arm that moves through open space, because the written planner
+checks what it gives you and costs nothing to train.
+
+Four things change that answer.
+
+If the planning time is usually fine but sometimes far too long, and a cell is
+waiting on it, then look at the speed first and the learning second. cuRobo on an
+NVIDIA card removes most of that unevenness with no training at all, and it is
+less work than any model on this page. Try it before you train anything.
+
+If you need a route in a fixed number of steps on a Franka arm, and cuRobo's
+optimiser still takes a varying number of attempts, then Neural MP is the learned
+planner to try, because its weights download in one line. Keep the exact
+collision check on its answer.
+
+If a seven-joint arm needs several inverse kinematics answers to choose from,
+then IKFlow is the one tool here that does something the written solver cannot
+do at all. Settle its licence first.
+
+If you are building your own learned helper rather than using one, read Motion
+Policy Networks, because it publishes the pipeline that generated its training
+data. A learned sampler of the kind section 3 described is code you write against
+OMPL, and not a model you download.
+
+One case needs no planner at all. If the part is always in the same place, teach
+the route once and play it back, which section 10's table also says.
 
 ---
 
@@ -411,70 +726,3 @@ Deeper documents elsewhere in this repository:
   explains the exact check that stays in the system.
 - [Redundancy, and the seventh joint](../../../03_frameworks/03_arm-movement/02_reaching-and-reachability.md#6-redundancy-and-the-seventh-joint)
   explains why one gripper target can have many joint answers.
-
----
-
-## 13. Using it in Python
-
-Sections 3, 4 and 5 described three different learned helpers: a route planner, a
-collision checker and an inverse kinematics solver. This section shows the third of
-them running in Python, and explains why it is the only one of the three you can
-realistically try. After reading it you will know what is downloadable in this area
-and what is not.
-
-Learned inverse kinematics is the most packaged of the three, because the problem is
-small and self-contained. [IKFlow](https://github.com/jstmn/ikflow) publishes trained
-models for several arms, including the Franka Panda. There is an `ikflow` package on
-the Python package index, but the README installs it from a clone of the repository
-instead, with `uv sync` followed by `uv pip install -e .`, and the only operating
-system the authors say they support is Ubuntu.
-
-```python
-import torch
-from ikflow.model_loading import get_ik_solver
-
-# the model name must match an entry in ikflow/model_descriptions.yaml
-ik_solver, _ = get_ik_solver("panda__full__lp191_5.25m")
-
-# x, y, z in metres, then a rotation as a quaternion in the order w, x, y, z
-target_pose = torch.tensor([0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 0.0])
-# five different sets of joint angles, all reaching the same pose
-solutions = ik_solver.generate_ik_solutions(target_pose, n=5)
-```
-
-Those five answers are the point of the method, and section 5 explained why: the
-Franka has seven joints and only six are needed to reach a pose, so there are
-infinitely many correct answers, and an ordinary solver returns one of them. IKFlow
-returns a spread of different ones in a single pass, so you can then choose the one
-that is furthest from the joint limits, or nearest to where the arm already is. The
-library also has `generate_exact_ik_solutions`, which polishes the network's answers
-with a few ordinary numerical steps, because the network on its own is approximate and
-the polishing is what brings the error down to about a millimetre.
-
-What the library gives you is the trained models, the sampling and the checking, and it
-will also tell you which answers break the joint limits or collide with the arm itself
-if you pass `return_detailed=True`. What you have to supply is your arm. The published
-models are for the arms the authors trained, so if yours is not among them you train
-your own, which needs your arm's description file and the training script in the same
-repository. You also have to decide which of the answers to use, because the model has
-no opinion about that, and this is a genuine choice rather than a detail: picking the
-solution nearest the current joint angles avoids large sudden motions, while picking
-the one furthest from the limits leaves more room for the next move.
-
-The other two helpers are harder to try, and it is worth saying so plainly rather than
-pretending otherwise. Motion Policy Networks, the learned route planner from section 7,
-is published as a repository whose recommended installation is a Docker container of
-about 30 GB, built on top of NVIDIA Isaac Sim, for which you need an NVIDIA developer
-account and an API key. You then download a checkpoint and run
-`mpinets/run_inference.py` on planning problems in the repository's own
-`PlanningProblem` format, which holds a target pose, a starting configuration and the
-obstacles. There is no package to install and no simple call to make. SceneCollisionNet
-and Fastron are research code of the same kind. MPNet has no maintained release at all.
-
-So the honest summary of this page in practice is that the learned parts of motion
-planning are mostly still papers with code attached, and the one you can actually use
-tomorrow is learned inverse kinematics. Section 10 said that you choose a learned
-helper only when the ordinary tools are too slow in a way that matters, and the state
-of the software is a second reason to reach for the ordinary planner first. It is also
-why the one row of section 10's table that is easy to act on today is the redundant
-arm needing many inverse kinematics answers quickly.

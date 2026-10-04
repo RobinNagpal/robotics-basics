@@ -29,7 +29,6 @@ those commands. Every new word is explained where it first appears.
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
-12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -248,59 +247,377 @@ score the robot's attempts.
 
 ## 7. Well-known models and libraries
 
-Section 6 described the uses, and the tools below are what people actually run,
-grouped by the four ways in section 3.
+Section 6 described where each method is used, and this section names the tools
+people actually run, in the order of the four ways in section 3: the two hand
+trackers, then the library that turns a tracked hand into robot commands, then two
+models whose own pretraining used human video, and last the camera encoder that
+started the pretraining route.
 
-Hand pose estimators:
+Each tool carries one mark: **most used in 2026** means a developer starting today
+would reach for it, **worth betting on** means it is not the default yet but the
+field is moving that way, and **historical** means it is kept because it explains
+how the current tools work.
 
-- **MediaPipe Hands** (Google). It finds 21 points on each hand in ordinary video,
-  and it runs in real time on a laptop and needs no graphics card. It is part of
-  [MediaPipe](https://github.com/google-ai-edge/mediapipe).
-- **HaMeR** (Pavlakos and colleagues, 2024). It rebuilds a full 3D model of the hand
-  from one picture, including fingers that are partly hidden. It is slower and more
-  accurate than MediaPipe Hands, so it is often used when the video is processed
-  after recording.
+The table is the short answer. Read each row as one tool. The second column says
+what it is best at, the third says how big it is and what hardware it needs, the
+fourth gives its licence, and the last says when to pick it. A cell says `not
+stated` where the figure is not published.
 
-Retargeting:
+| Tool | Best at | Size and hardware | Licence | Pick it when |
+| --- | --- | --- | --- | --- |
+| MediaPipe Hand Landmarker | 21 hand points per frame, while the camera runs | 7.8 MB model file; a laptop processor | Apache-2.0 for the library | you want hand tracking on your own video today |
+| HaMeR | a full 3D hand from one picture, including hidden fingers | not stated; its install instructions target an NVIDIA graphics card | MIT for the code; the MANO hand model has its own registration | the video is processed after recording and MediaPipe loses fingers |
+| dex-retargeting | turning tracked hand points into robot joint commands | a solver, not a network; runs on the processor | MIT | you have hand points and need gripper commands out of them |
+| NVIDIA Isaac GR00T N1.7 | a policy whose pretraining already included 20,000 hours of human video | 3 billion parameters; about 6 GB to download; 16 GB or more of video memory | Apache-2.0 for the code; NVIDIA Open Model License for the weights | you have an NVIDIA graphics card and want that pretraining done for you |
+| LAPA | learning actions from video that has no action labels at all | 7 billion parameters; its fine-tuning ran on four 80 GB graphics cards | MIT for the code and the published weights | you have a lot of video, little robot data, and a cluster |
+| R3M | a camera encoder trained on human video, to start a small policy from | a ResNet-50 encoder; runs on a laptop | MIT | you will train your own policy and want the cheapest gain there is |
 
-- [dex-retargeting](https://github.com/dexsuite/dex-retargeting). This is a library
-  that maps a tracked hand onto a robot hand or gripper, by solving for the robot
-  joint angles that best match the hand's fingertip positions. The learning path
-  points to it as the place to see retargeting done properly.
-
-Camera encoders pretrained on human video:
-
-- **R3M** (Nair and colleagues, Stanford and Meta, 2022). This is an encoder trained
-  on Ego4D, a large collection of first-person video of people doing everyday tasks.
-  It was trained so that its embeddings follow how a task unfolds over time, and so
-  that they match the words that describe the video.
-- **VC-1** (Majumdar and colleagues, Meta, 2023). This is an encoder trained on a mix
-  of first-person video and ordinary pictures, and tested on many robot tasks at
-  once.
-- **MVP**, masked visual pretraining (Xiao, Radosavovic and colleagues, University of
-  California, Berkeley, 2022). This is an encoder that learns by filling in hidden
-  patches of pictures from human video.
-
-Latent-action models:
-
-- **Genie** (Google DeepMind, 2024). It learned a small set of latent actions from
-  videos of games, with no action labels, and it could then be steered with those
-  actions. The
-  [frontier document](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#42-genie-the-closed-frontier)
-  covers the later Genie models.
-- **LAPA**, latent action pretraining (Ye and colleagues, 2024). It pretrains a robot
-  policy on latent actions learned from video, and then fine-tunes it on a little
-  robot data.
-
-Systems that combine these:
-
-- **MimicPlay** (2023) learns the plan of a task from human video, and the fine
-  movement from robot data.
-- **EgoMimic** (2024) records people with head-mounted cameras, and trains one policy
-  on human and robot data together.
-
-For the 2026 results, such as HumanScale, HuRo and UMI-Bridge, see
+Three much-discussed 2026 results are deliberately absent, because you cannot
+download any of them. They are Skild's S1, explained in
+[prompting with a demonstration](../../10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md),
+and the large retargeting and video-editing corpora HuRo and RoboEdit, which the
+frontier document records in
 [the three mechanisms people actually use](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#83-the-three-mechanisms-people-actually-use).
+Read those to see where the field is going, and build with the six tools above.
+
+### 7.1 MediaPipe Hand Landmarker
+
+This is the tool **most used in 2026** for getting hand points out of video,
+because it is the only one here that runs in real time on a laptop with no
+graphics card. MediaPipe Hand Landmarker is Google's hand tracking task, part of
+the MediaPipe library. For each hand it finds, it returns the 21 points of section
+4 in the same numbering, so point 4 is the thumb tip and point 8 is the index
+fingertip.
+
+You would pick it rather than HaMeR, the other tracker below, because HaMeR needs
+an NVIDIA graphics card and a separate registration before it runs at all.
+MediaPipe runs on the computer you already have, which is what you want while you
+are still finding out whether your task survives the hand-to-gripper gap of
+section 8. Once you know that it does, HaMeR's accuracy starts to matter.
+
+Its cost is not the licence or the hardware, since the model file is 7.8 MB and
+the library is Apache-2.0. The cost is depth, and this is the mistake people make
+most often with it. The library returns two versions of each point:
+`hand_landmarks` holds them in picture coordinates, scaled from 0 to 1 across the
+width and the height, and `hand_world_landmarks` holds them in metres. Those
+metres are measured from the middle of the hand, and not from the camera.
+
+The library is `mediapipe`, installed with `pip install mediapipe`. You also
+download the model file, `hand_landmarker.task`, from
+[Google's own page for the task](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/python).
+
+```python
+import mediapipe as mp
+
+options = mp.tasks.vision.HandLandmarkerOptions(
+    base_options=mp.tasks.BaseOptions(model_asset_path="hand_landmarker.task"),
+    running_mode=mp.tasks.vision.RunningMode.IMAGE,
+    num_hands=1,
+)
+with mp.tasks.vision.HandLandmarker.create_from_options(options) as landmarker:
+    image = mp.Image.create_from_file("frame_0001.jpg")
+    result = landmarker.detect(image)
+
+points = result.hand_world_landmarks[0]      # 21 points, in metres
+thumb_tip, index_tip = points[4], points[8]  # the two points section 4 used
+pinch = ((thumb_tip.x - index_tip.x) ** 2
+         + (thumb_tip.y - index_tip.y) ** 2
+         + (thumb_tip.z - index_tip.z) ** 2) ** 0.5
+```
+
+The library gives you the palm detector, the landmark model, the fixed numbering
+of the 21 points, and, in `handedness`, whether it saw a left or a right hand. For
+video you pass `RunningMode.VIDEO` and call `detect_for_video` with a timestamp,
+which lets the model follow the hand between frames.
+
+What you supply yourself is everything that places the hand in the room. The pinch
+above is real, in metres, which is why step 5 of section 4 could turn it into a
+gripper opening, but steps 2, 3 and 4 need a depth camera, two cameras or HaMeR,
+and then the calibration that says where the camera sits relative to the robot's
+base. The cleaning in section 4 is also yours to write, and it is not optional,
+because a tracker that loses the index finger for four frames will otherwise tell
+the gripper to close hard on nothing.
+
+### 7.2 HaMeR
+
+HaMeR, which stands for hand mesh recovery, is the tracker **most used in 2026**
+for video that is processed after recording rather than live. Pavlakos and
+colleagues released it in December 2023 with the paper
+[Reconstructing Hands in 3D with Transformers](https://arxiv.org/abs/2312.05251),
+and it rebuilds a complete 3D hand surface from one picture. Because it fits a
+whole hand model instead of finding points one at a time, it still returns a
+sensible hand when some fingers are behind the object.
+
+You would pick it rather than MediaPipe Hand Landmarker when fingers keep
+disappearing. Section 8 explains that a hand hides the thing it is holding, which
+is exactly the case where a point-finding tracker drops fingers and a model of the
+whole hand does not. The project's own record is the only accuracy claim this page
+repeats: it took second place in the Ego-Pose Hands task of the Ego-Exo4D
+Challenge in June 2024.
+
+It costs you set-up and a graphics card, since the install instructions target
+NVIDIA hardware and extra packages are needed for person detection and pose
+estimation. The code is MIT, but the model will not run without `MANO_RIGHT.pkl`,
+the MANO hand model, and you get that only by registering on
+[the MANO website](https://mano.is.tue.mpg.de) and accepting its own licence. So
+the code licence and the licence on the thing you need in order to run the code
+are different documents, and a commercial project has to read the second one. The
+distance from the lens is also computed with a focal length taken from the model's
+configuration, which makes it an estimate rather than a measurement.
+
+The project is run as a program rather than imported.
+
+```bash
+git clone --recursive https://github.com/geopavlakos/hamer.git
+cd hamer
+pip install -e ".[all]"
+pip install -v -e third-party/ViTPose   # the pose estimator it depends on
+bash fetch_demo_data.sh                 # downloads the trained weights
+# Now put MANO_RIGHT.pkl in _DATA/data/mano yourself, after registering.
+python demo.py \
+    --img_folder example_data --out_folder demo_out \
+    --batch_size=48 --side_view --save_mesh --full_frame
+```
+
+The project gives you the detector, the hand model and the rendering, so you can
+judge the fit by eye. What you supply yourself is the step from a hand surface to a
+gripper command: the output holds the hand's parameters, its vertices and one
+camera translation per detected hand, and turning that into the two fingertip
+positions of section 4 is your code.
+
+### 7.3 dex-retargeting
+
+This is the library **most used in 2026** for the retargeting step, which section
+3 described as turning a tracked hand into a motion the robot can make. It comes
+from the AnyTeleop project of Qin and colleagues, published in 2023, and it holds
+several optimisers rather than one. Each solves the same problem: find the robot
+joint angles whose fingertips best match the measured human ones.
+
+You would use it rather than writing the midpoint arithmetic of section 4
+yourself, and the reason is the robot rather than the hand. Section 4 works
+because a two-finger gripper has one number to set. As soon as the robot has a
+multi-finger hand, or you want the wrist oriented as well, that arithmetic becomes
+a small optimisation problem with joint limits, and this library has already
+solved it for real hands, including Allegro, Shadow, LEAP, Inspire, Ability,
+Schunk SVH and the two-finger Panda gripper.
+
+It costs you little, since it installs with `pip install dex_retargeting`, it is
+MIT, and it runs on the processor. Two things catch people. The library returns
+joint positions in its own order, so you must map them to your simulator or driver
+by joint name, which the project's notes warn about. It also needs the robot's URDF
+file, the file that describes a robot's links and joints, and the ones for the
+supported hands come with the repository rather than with the installed package.
+
+```python
+from dex_retargeting.constants import (
+    RobotName, RetargetingType, HandType, get_default_config_path,
+)
+from dex_retargeting.retargeting_config import RetargetingConfig
+
+# panda here is Franka's two-finger gripper, so the whole hand becomes one number.
+config = get_default_config_path(RobotName.panda, RetargetingType.vector, HandType.right)
+RetargetingConfig.set_default_urdf_dir("assets/robots/hands")  # from the repository
+retargeting = RetargetingConfig.load_from_file(config).build()
+
+# joint_pos holds the 21 hand points of section 7.1 as metres, one row per point.
+indices = retargeting.optimizer.target_link_human_indices      # [[4], [8]]
+ref_value = joint_pos[indices[1, :], :] - joint_pos[indices[0, :], :]
+qpos = retargeting.retarget(ref_value)   # one angle, for panda_finger_joint1
+```
+
+The two numbers in `target_link_human_indices` are worth noticing, because they
+are 4 and 8: the configuration that ships for the Panda gripper reads the thumb
+tip and the index fingertip, the pair section 4 used by hand. The value it is
+given is the direction and distance from one tip to the other, and the
+configuration scales that by 1.5 before matching it, because a human pinch and a
+gripper opening are not the same size.
+
+What you supply yourself is the hand points, from section 7.1 or 7.2, and
+everything about where the gripper goes, because this library sets the fingers and
+not the position of the wrist in the room. The repository's own example,
+`detect_from_video.py`, puts MediaPipe and this library together over a video
+file, and it is the shortest complete thing to read next.
+
+### 7.4 NVIDIA Isaac GR00T N1.7
+
+This model is **worth betting on**, because it is the only released model here
+whose own pretraining used human video at scale, so the transfer this page is
+about has already been paid for by somebody else. GR00T is NVIDIA's open
+vision-language-action model, meaning one network that takes pictures and a
+sentence and produces movement commands. The frontier document's
+[section on it](../../../03_frameworks/08_frontier/02_foundation-models.md#6-nvidia-isaac-gr00t)
+records that N1.7 was tagged as a general-availability release on 18 April 2026,
+and that it was pretrained on 20,000 hours of human video from a corpus NVIDIA
+calls EgoScale, alongside robot demonstrations.
+
+You would pick it rather than building the pipeline of sections 7.1 to 7.3
+yourself. That pipeline gives you a few hundred retargeted demonstrations of one
+task, from one camera, with the error chain of section 9; this gives you a policy
+that has already watched 20,000 hours of people handling objects, which you then
+fine-tune on your own recordings. Its mechanism is also the one you would have to
+copy anyway: its movement commands are relative to where the gripper is now, so
+three centimetres to the left means the same thing for a hand and for a gripper,
+while a target coordinate does not.
+
+It costs you an NVIDIA graphics card, and there is no way round that. Inference
+wants 16 GB or more of video memory, fine-tuning wants 40 GB or more, and nothing
+about it runs on a Mac. The code is Apache-2.0, but the weights are under the
+[NVIDIA Open Model License Agreement](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/),
+which permits commercial use while adding conditions Apache-2.0 does not. The
+thing that most often goes wrong on a first run is not the hardware: the base
+model loads a gated backbone, `nvidia/Cosmos-Reason2-2B`, so without Hugging Face
+access to it the run stops with a `GatedRepoError`.
+
+The code is [the Isaac-GR00T repository](https://github.com/NVIDIA/Isaac-GR00T),
+and the shortest real thing you can do is run the base model on the sample data it
+ships with.
+
+```bash
+uv run python scripts/deployment/standalone_inference_script.py \
+    --model-path nvidia/GR00T-N1.7-3B \
+    --dataset-path demo_data/droid_sample \
+    --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
+    --traj-ids 1 2 \
+    --inference-mode pytorch \
+    --execution-horizon 8
+```
+
+That runs the model over two recorded episodes and compares its predicted
+movements with the recorded ones, which proves the installation works before any
+robot is involved, and the weights download on the first run. What you supply
+yourself is your own robot: a dataset in the GR00T LeRobot format, an embodiment
+tag that describes your arm's state and action layout, and a fine-tuning run. The
+tag above belongs to the DROID dataset's arm, and using it for your own arm
+produces commands of the wrong shape.
+
+### 7.5 LAPA
+
+LAPA, which stands for latent action pretraining from videos, is also **worth
+betting on**, because it is the only openly published implementation of the
+latent-action route that section 5 explained. Ye and colleagues published it in
+October 2024, and it was accepted at ICLR 2025. The released model, LAPA-7B-openx,
+learned its codes from video and was then pretrained on the pooled Open
+X-Embodiment data without using its action labels at all.
+
+You would pick it rather than the retargeting route of sections 7.1 to 7.3 when
+the video has no usable hand in it. Retargeting needs a visible hand, a depth
+estimate and a calibrated camera, and it fails on video that has none of them.
+LAPA needs only pairs of frames, so it can use video where the hand is out of
+shot, where the camera moved, or where the person did something a gripper could
+never copy. The price is the one section 5 named: nothing makes the learned codes
+match what your robot can do.
+
+It costs you a cluster and a second training stage. The model has 7 billion
+parameters, it is written in JAX rather than PyTorch, and the project's
+fine-tuning scripts were run on four 80 GB A100 graphics cards. The code and the
+published weights are both MIT, which is unusually clean for a model this size.
+The misunderstanding to avoid concerns the output, and the project states it
+plainly: inference gives you a latent action, one of 4,096 possible codes, and not
+a robot command.
+
+There is no installable package, so the model is run from the repository.
+
+```bash
+git clone https://github.com/LatentActionPretraining/LAPA.git
+cd LAPA && pip install -r requirements.txt
+mkdir lapa_checkpoints && cd lapa_checkpoints
+# The three parts of the checkpoint: text tokeniser, image tokeniser, weights.
+wget https://huggingface.co/latent-action-pretraining/LAPA-7B-openx/resolve/main/tokenizer.model
+wget https://huggingface.co/latent-action-pretraining/LAPA-7B-openx/resolve/main/vqgan
+wget https://huggingface.co/latent-action-pretraining/LAPA-7B-openx/resolve/main/params
+cd ..
+python -m latent_pretraining.inference   # prints a latent action, not a command
+```
+
+The project gives you both halves of section 5 already built: the code book
+learned from video, and a policy that predicts a code from a picture and a
+sentence. What you supply yourself is the robot data that gives the codes meaning,
+because the fine-tuning step wants real trajectories with their actions and
+gripper states. So the robot recordings this page is trying to avoid are still
+needed at the end, only fewer of them.
+
+### 7.6 R3M
+
+R3M is **historical**, and it is kept here because it is the clearest example of
+the cheapest idea on this page. Nair and colleagues of Stanford and Meta released
+it in March 2022 and published it at the Conference on Robot Learning that year.
+It is a camera encoder trained on Ego4D, a large collection of first-person video
+of people doing everyday tasks, and it was trained so that its output follows how
+a task unfolds over time and matches the words that describe the video. The models of sections 7.4 and
+7.5 now do that for a whole policy rather than for the encoder alone, which is why
+this one is historical and not current.
+
+You would still pick it over VC-1, the obvious alternative, for a reason that has
+nothing to do with accuracy. VC-1, from Meta in 2023, was trained on a wider mix
+of first-person video and ordinary pictures and tested on more robot tasks, and
+MVP, from the University of California, Berkeley, in 2022, learns by filling in
+hidden patches of the same kind of video. But the repository that holds VC-1 carries a
+Creative Commons Attribution-NonCommercial 4.0 licence, and so does MVP's, so
+neither can go into a product. R3M's repository is MIT. This is the kind of detail
+this book exists for, because the model you can measure is not always the model
+you can ship.
+
+It costs you almost nothing to try, which is its point: it is a ResNet-50, it runs
+on a laptop processor, and the embedding is 2048 numbers. Its real cost is age,
+because the repository has not changed since March 2023, so you are on your own
+with new versions of PyTorch. And since the encoder is normally frozen, whatever it
+throws away is gone, so a task that turns on a thin wire or a small printed mark
+may not be represented at all.
+
+```python
+import torch
+import torchvision.transforms as T
+from PIL import Image
+from r3m import load_r3m
+
+r3m = load_r3m("resnet50")   # resnet18 and resnet34 are also published
+r3m.eval()
+
+transforms = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
+image = transforms(Image.open("frame_0001.jpg")).reshape(-1, 3, 224, 224)
+with torch.no_grad():
+    embedding = r3m(image * 255.0)   # R3M expects values from 0 to 255
+print(embedding.shape)               # torch.Size([1, 2048])
+```
+
+The library is `r3m`, installed from its repository, and the multiplication by 255
+is not a mistake, because `ToTensor` divides by 255 and R3M wants the original
+range back. What you supply yourself is the policy that sits on top of those 2048
+numbers, the robot demonstrations to train it on, and the decision whether to keep
+the encoder frozen or let training change it. Nothing here produces a movement
+command on its own.
+
+### 7.7 How to choose
+
+Start with MediaPipe Hand Landmarker and dex-retargeting, because they run on the
+computer you already have and they tell you within a day whether your task
+survives the hand-to-gripper gap of section 8, which is the question that decides
+everything else. Five situations change that answer.
+
+If the video is processed after recording and the hand keeps hiding its own
+fingers, replace MediaPipe with HaMeR, and accept the graphics card and the MANO
+registration as the price.
+
+If you have an NVIDIA graphics card with 16 GB or more of video memory, start from
+GR00T N1.7 instead of building a pipeline, because its pretraining already
+included 20,000 hours of human video and yours will not.
+
+If you have a large amount of video in which no usable hand is visible, and a
+cluster to train on, LAPA is the route that needs no hand tracker.
+
+If you will train a small policy on your own robot demonstrations anyway, add R3M
+as the encoder and keep the rest of your plan. Do not reach for VC-1 or MVP in a
+commercial project, because both repositories are Attribution-NonCommercial.
+
+If you can still choose how the data is recorded, do not use bare-hand video at
+all. A person holding an instrumented gripper removes the hand-to-gripper gap
+completely, and the frontier document's
+[section on handheld grippers](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#4-handheld-grippers-collecting-without-a-robot)
+says what you can print and what you can buy.
+
+One rule cuts across all five. Read the licence on the weights and not the one on
+the code, because GR00T, HaMeR and VC-1 each pair permissive code with different
+terms on the part you actually run.
 
 ---
 
@@ -449,74 +766,3 @@ Deeper documents elsewhere in this repository:
 - [Project 4: copy it from video](../../../03_frameworks/04_one-arm-training/04_learning-path.md#project-4-copy-it-from-video)
   is a hands-on project that builds hand tracking and retargeting in simulation.
 
----
-
-## 12. Using it in Python
-
-Section 4 walked through one frame of a pinch by hand, starting from the 21 points that
-a hand pose estimator gives. This section shows the code that produces those 21 points,
-which is the first step of that worked example and the only step you get for free. After
-reading it you will know exactly where the free part stops.
-
-The estimator is MediaPipe Hand Landmarker, from Google, installed with
-`pip install mediapipe`. You also download the model file, `hand_landmarker.task`, from
-Google's own page for the task. It runs on an ordinary laptop with no graphics card.
-
-```python
-import mediapipe as mp
-
-options = mp.tasks.vision.HandLandmarkerOptions(
-    base_options=mp.tasks.BaseOptions(model_asset_path="hand_landmarker.task"),
-    running_mode=mp.tasks.vision.RunningMode.IMAGE,
-    num_hands=1,
-)
-with mp.tasks.vision.HandLandmarker.create_from_options(options) as landmarker:
-    image = mp.Image.create_from_file("frame_0001.jpg")
-    result = landmarker.detect(image)
-
-points = result.hand_world_landmarks[0]      # 21 points, in metres
-thumb_tip, index_tip = points[4], points[8]  # the two points section 4 used
-pinch = ((thumb_tip.x - index_tip.x) ** 2
-         + (thumb_tip.y - index_tip.y) ** 2
-         + (thumb_tip.z - index_tip.z) ** 2) ** 0.5
-```
-
-MediaPipe gives you the palm detector, the landmark model and the numbering of the 21
-points, and that numbering is what makes point 4 the thumb tip and point 8 the index
-fingertip in every frame. It gives you two versions of each point. `hand_landmarks`
-holds them in picture coordinates, scaled from 0 to 1 across the width and height, and
-`hand_world_landmarks` holds them in metres. It also tells you, in `handedness`, whether
-it saw a left or a right hand. For video you would pass `RunningMode.VIDEO` and call
-`detect_for_video` with a timestamp instead, which lets the model track the hand between
-frames rather than searching the whole picture again.
-
-Now the part that matters, because it is the usual misunderstanding about this method.
-The metres in `hand_world_landmarks` are measured from the middle of the hand, not from
-the camera. So the pinch distance computed above is real, in metres, and that is why
-step 5 of section 4 could turn a pinch into a gripper opening. But the position of the
-hand in the room is not there at all. MediaPipe does not know how far the hand is from
-the lens, so steps 2, 3 and 4 of section 4, which place the gripper somewhere in the
-robot's frame, cannot be done from this output alone. You need a depth camera, or two
-cameras, or a 3D hand model such as HaMeR, and then you need the calibration that says
-where the camera sits relative to the robot's base.
-
-What you have to write yourself is everything after these lines. The cleaning that
-section 4 showed, which is a median over nine frames and then a clip to the gripper's
-range, is a few lines of your own code, and it is not optional, because a tracker that
-loses the index finger for four frames will otherwise tell the gripper to close hard on
-nothing. The mapping from the hand to your gripper is yours, unless you use
-[dex-retargeting](https://github.com/dexsuite/dex-retargeting) from section 7. And the
-whole of section 8 is work that no library does: a human hand has a wrist that rotates
-differently from your arm's, fingers that bend, and grips that a two-finger gripper
-cannot make at all, so some fraction of any video simply cannot become a robot
-demonstration.
-
-What you have to decide is whether this route is worth it for you, and section 9 is
-direct about that. Human video is abundant and cheap to record, which is the attraction.
-But the output of this whole pipeline is a guess at what the robot should have done,
-made by a chain of estimates each of which adds error, and it is not a recorded
-demonstration. Section 9 puts the alternative plainly: robot demonstrations are exactly
-right, because they have the right body, the right cameras and the real commands, and
-their only problem is what they cost per hour. So human video earns its place when you
-need variety you cannot record on your own robot, and not when you are simply trying to
-avoid an afternoon with a leader arm.

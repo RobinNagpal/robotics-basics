@@ -24,7 +24,6 @@ general-purpose picture features.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -192,32 +191,394 @@ kinds of data in general.
 
 ## 5. Well-known models
 
-It helps to see the models named so far side by side, and all of these are real
-models that are widely used in robot research.
+This section names the models you would actually download, and says which of them
+answers "find the thing I described in words" well enough to put on a robot.
 
-- **CLIP** (Contrastive Language-Image Pre-training), from OpenAI, scores how well a
-  picture matches a sentence, and it does not draw boxes. It is often used inside
-  other models, and for choosing the right object from a few candidates.
-- **OWL-ViT** and **OWLv2**, from Google, are detectors that take words, and OWLv2
-  trained itself further by labelling a very large number of internet pictures with
-  its own boxes.
-- **Grounding DINO** takes a picture and a phrase and returns boxes, so it is the
-  most common choice for "find this object by name".
-- **Segment Anything (SAM)**, from Meta, takes a click or a box and returns an
-  outline, but it does not name anything.
-- **SAM 2** is the next version, and it also works on video, keeping the outline of
-  the same object from frame to frame.
-- **DINOv2**, from Meta, gives general features for every patch of a picture, so it
-  is used as the base of many other models, and for matching the same part across
-  two photos.
+Read the table like this. The first column is the model, the second says what it
+is best at, the third says how large it is, the fourth gives the licence of the
+code and the licence of the weights separately, and the last says when to pick
+it. A **parameter** is one number inside the model that training chooses, so a
+model with more parameters is a larger download and a slower answer. The counts
+come
+from each model's own page on Hugging Face, except for YOLOE, whose counts come
+from the Ultralytics documentation. The two licences are apart because they often
+differ, and it is the one on the weights that decides whether you may ship the
+robot.
 
-Grounding DINO and SAM are often used together, in a pairing called
-Grounded-SAM, because Grounding DINO turns words into a box and SAM then turns
-that box into an exact outline. Newer versions of SAM can take a short phrase
-directly and outline every object that matches it. The deeper document [models
-that
-find](../../../02_perception/02_object-perception/04_models-that-find.md#14-open-vocabulary-models)
-lists these models with their licences and says which ones you can download.
+| Model | What it is best at | Parameters | Licence (code / weights) | Pick it when |
+| --- | --- | --- | --- | --- |
+| CLIP | scoring one picture against several sentences | 428 M (`openai/clip-vit-large-patch14`) | MIT / the model card states no licence | you already have a cropped picture and only have to choose between words |
+| OWLv2 | boxes from short names, with the least setup | 155 M (`google/owlv2-base-patch16-ensemble`) | Apache-2.0 / Apache-2.0 | your objects have ordinary names and you want one install and one call |
+| Grounding DINO | boxes from a longer phrase | 172 M (tiny), 233 M (base) | Apache-2.0 / Apache-2.0 | the prompt is a description, such as "the blue mug on the left" |
+| YOLOE | open-vocabulary boxes and outlines at camera speed | 3.9 M to 55.2 M | AGPL-3.0 / AGPL-3.0 | the model has to keep up with a live camera on the robot |
+| SAM 2 | exact outlines from a click or a box | 39 M (tiny), 224 M (large) | Apache-2.0 / Apache-2.0 | something else has already decided where the object is |
+| SAM 3 | every object matching a phrase, with outlines | 860 M | bespoke SAM License / same licence, and the download is gated | you want words to outlines in one model and can accept that licence |
+
+DINOv2, from section 3, is not in the table. It answers no prompt, so it cannot be
+compared with the models here, and [3D feature
+maps](../../04_3d-models/03_also-used/02_3d-feature-maps.md) is the page that uses
+it.
+
+### 5.1 CLIP, the model the others are built on
+
+**Historical**: you rarely call it yourself now, but the open-vocabulary idea comes
+from it, and OWLv2 below has CLIP inside it.
+
+CLIP (Contrastive Language-Image Pre-training) was published by OpenAI in 2021. It
+has one network for pictures and one for sentences, and it scores how well a
+picture and a sentence go together. It draws no boxes and finds nothing, because
+it looks at the whole picture at once.
+
+You would pick CLIP rather than OWLv2, the obvious alternative, only when the
+picture is already cropped to one object and the question is which of several
+words fits it best. A detector has returned three candidate boxes, and you want to
+know which one is the blue mug. For "where is the blue mug on this table", OWLv2
+or Grounding DINO is the right model, because CLIP cannot point at anything.
+
+The large checkpoint holds 428 million parameters, which is slow without a
+graphics card but usable, because you run it once per crop rather than once per
+frame. OpenAI's code is MIT, while the model card for the weights states no
+licence at all, and weights published with no licence grant you no rights by
+default. The
+thing that goes wrong most often is that CLIP always picks a winner, because the
+scores are scaled to add up to one across the sentences you gave it.
+
+The library is Hugging Face `transformers`, and this follows its [CLIP
+documentation page](https://huggingface.co/docs/transformers/en/model_doc/clip).
+
+```python
+from PIL import Image
+from transformers import AutoModel, AutoProcessor
+
+model = AutoModel.from_pretrained("openai/clip-vit-base-patch32")
+processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+image = Image.open("mug_crop.jpg")      # one object, already cut out of the photo
+labels = ["a photo of a blue mug", "a photo of a red mug", "a photo of a bowl"]
+
+inputs = processor(text=labels, images=image, return_tensors="pt", padding=True)
+outputs = model(**inputs)
+
+# One number per sentence. They are scaled so that they add up to one.
+probs = outputs.logits_per_image.softmax(dim=1)
+print(labels[probs.argmax().item()], round(probs.max().item(), 3))
+```
+
+The library resizes the picture, turns the sentences into numbers and runs both
+networks. You supply the crop, the sentences, and a rule for refusing an answer:
+refuse when the best two probabilities are close, because the model is then
+choosing between words rather than recognising the object.
+
+### 5.2 OWL-ViT and OWLv2
+
+**Most used in 2026**, because it is the shortest path from a name to a box, and
+its code and its weights are both Apache-2.0.
+
+OWL-ViT came from Google Research in 2022 and OWLv2 followed in 2023. OWL-ViT
+takes CLIP, removes the layer that pools the picture into one embedding, and
+attaches a small box head to each patch, so the CLIP idea is applied to parts of
+the picture. OWLv2 is the same design trained on far more data that it labelled
+itself, by letting an existing detector draw boxes on picture-and-text pairs from
+the internet.
+
+You would pick OWLv2 rather than Grounding DINO, the obvious alternative, when
+your objects have ordinary one-word or two-word names. It is smaller, 155 million
+parameters against 233 million, and you pass your names as a plain list. Grounding
+DINO is better when the prompt is a description rather than a name, because it
+reads the phrase as a phrase.
+
+It expects one query per kind of object, written in the style "a photo of a blue
+mug", and short names work better than long sentences. It is not fast enough for a
+live camera on a small computer, so you run it once and then track. The mistake
+that catches people is reading the raw box numbers out of the model: the processor
+pads the picture to a square, so those numbers belong to the padded picture, and
+`post_process_grounded_object_detection` with `target_sizes` is what brings them
+back to your photo.
+
+The library is Hugging Face `transformers`, and this follows its [OWLv2
+documentation page](https://huggingface.co/docs/transformers/en/model_doc/owlv2).
+
+```python
+import torch
+from PIL import Image
+from transformers import Owlv2ForObjectDetection, Owlv2Processor
+
+model_id = "google/owlv2-base-patch16-ensemble"
+processor = Owlv2Processor.from_pretrained(model_id)
+model = Owlv2ForObjectDetection.from_pretrained(model_id)
+
+image = Image.open("table.jpg")
+text_labels = [["a photo of a blue mug", "a photo of a bottle"]]  # one list per picture
+
+inputs = processor(text=text_labels, images=image, return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs)
+
+results = processor.post_process_grounded_object_detection(
+    outputs=outputs,
+    target_sizes=torch.tensor([(image.height, image.width)]),  # back to your own pixels
+    threshold=0.1,            # how sure the model must be to report a box
+    text_labels=text_labels,
+)[0]
+
+for box, score, label in zip(results["boxes"], results["scores"],
+                             results["text_labels"]):
+    print(label, round(score.item(), 3), [round(v, 1) for v in box.tolist()])
+```
+
+The library does the padding, the scaling back, and the matching of each box to
+the query it came from. You supply the wording of the queries, the threshold, and
+the rule for the case where two boxes come back for one query. When their scores
+are close, the safe answer on a robot is to stop and ask.
+
+### 5.3 Grounding DINO
+
+**Most used in 2026**, because it is the model people reach for when the prompt is
+a phrase rather than a name.
+
+Grounding DINO was published by IDEA Research in 2023. It takes a picture and a
+text prompt, and returns a box for each thing the prompt describes, together with
+the words that matched that box. Its code and its weights are both Apache-2.0,
+which is why it appears in so many robot projects.
+
+You would pick it rather than OWLv2, the obvious alternative, because it handles a
+prompt with extra words in it, such as "the blue mug on the left" or "a screw with
+a flat head". It also has a second threshold, for how well the words matched,
+which lets you tune the two kinds of mistake apart. Pick OWLv2 instead when your
+prompts are plain names, since it is smaller and simpler.
+
+The base checkpoint holds 233 million parameters and needs a graphics card to
+answer quickly. The original repository has had no commit since August 2024, so
+install the model from `transformers`, whose implementation is maintained. One
+trap is worth knowing before you plan around it: **Grounding DINO 1.5, 1.6 and
+DINO-X have no downloadable weights.** Those repositories hold client code for a
+paid hosted service, and only the original Grounding DINO runs on your own
+machine. The answers also move with the wording, so "mug", "cup" and "coffee mug"
+can give three different results on one photo.
+
+The library is Hugging Face `transformers`, and this follows its [Grounding DINO
+documentation
+page](https://huggingface.co/docs/transformers/en/model_doc/grounding-dino).
+
+```python
+import torch
+from PIL import Image
+from transformers import AutoModelForZeroShotObjectDetection, AutoProcessor
+
+model_id = "IDEA-Research/grounding-dino-tiny"
+processor = AutoProcessor.from_pretrained(model_id)
+model = AutoModelForZeroShotObjectDetection.from_pretrained(model_id)
+
+image = Image.open("table.jpg")
+text_labels = [["a blue mug", "a bottle"]]   # one list of phrases per picture
+
+inputs = processor(images=image, text=text_labels, return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs)
+
+result = processor.post_process_grounded_object_detection(
+    outputs,
+    inputs.input_ids,
+    threshold=0.4,          # how sure the model must be that an object is there
+    text_threshold=0.3,     # how well the words must match
+    target_sizes=[image.size[::-1]],   # (height, width) of your photo
+)[0]
+
+for box, score, label in zip(result["boxes"], result["scores"], result["labels"]):
+    print(label, round(score.item(), 3), [round(v, 1) for v in box.tolist()])
+```
+
+The library joins the phrases into the one text string the model wants and maps
+each box back to the words it matched. You supply the phrase and the two
+thresholds, which you tune separately: `threshold` controls how sure the model must
+be that an object is there, and `text_threshold` how well the words have to match.
+Something in your program also has to turn the instruction "pick up the blue mug"
+into the prompt "a blue mug".
+
+### 5.4 YOLOE
+
+**Worth betting on**, because it puts open-vocabulary detection inside a fast
+detector instead of a large transformer, which is how this kind of model will run
+at camera speed on a robot. Its licence is why it is not the default.
+
+YOLOE, from Ultralytics, is an open-vocabulary detector that also returns outlines.
+You give it the names you want when you run it, or an example picture of the
+object, or no prompt at all, in which case it reports names from a built-in list of
+4,585 words. It was inspired by YOLO-World, which did the same job earlier and
+whose repository has had no commit since February 2025.
+
+You would pick YOLOE rather than Grounding DINO, the obvious alternative, when
+speed decides the design. Grounding DINO runs a vision-language transformer for
+every picture, while YOLOE turns your prompts into numbers once and then compares
+those numbers against regions inside an ordinary convolutional head. It is less
+accurate: the Ultralytics documentation reports YOLOE-26s at 30.8 mean average
+precision on LVIS with no training on it, at 10.7 million parameters, against 27.4
+for Grounding DINO's tiny model, in a group of transformer detectors the same
+table says carry 155 to 232 million parameters.
+
+The licence is AGPL-3.0 for the Ultralytics package and for the original YOLOE
+repository, so a product built on it must publish its own source or buy a
+commercial licence from Ultralytics. Text prompting needs a text encoder that is
+fetched on first use rather than at install time, about 254 MB for the YOLOE-26
+checkpoints, into the directory you ran from. The time one prediction takes also
+grows with the number of names you prompt with, by about 19 % going from 80 names
+to 1,203 and about 89 % at the full 4,585-name list, as Ultralytics measured, and
+the reported arithmetic cost does not move at all, so a profile will not warn you.
+
+The library is `ultralytics`, and this follows its [YOLOE documentation
+page](https://docs.ultralytics.com/models/yoloe/).
+
+```python
+from ultralytics import YOLOE
+
+model = YOLOE("yoloe-26s-seg.pt")      # boxes and outlines in one checkpoint
+
+# The first call downloads a text encoder into the current directory.
+model.set_classes(["blue mug", "bottle"])
+
+result = model.predict("table.jpg")[0]
+print(result.boxes.xyxy)               # one row per object: left, top, right, bottom
+print(result.boxes.conf)               # one confidence number per object
+print(result.masks.xy[0].shape)        # the first object's outline, as points
+```
+
+The library downloads the checkpoint, installs and runs the text encoder, and
+gives you boxes and outlines together. You supply the list of names, and the
+knowledge that a freshly loaded checkpoint reports numeric class names until
+`set_classes` has been called.
+
+### 5.5 SAM 2
+
+**Most used in 2026** for turning a box into an exact outline, and the newest
+member of the Segment Anything family whose code and weights are both plainly
+Apache-2.0.
+
+Segment Anything (SAM) came from Meta in 2023 and SAM 2 followed in 2024. You give
+it a click, a box or a rough region, and it returns the outline of the thing you
+pointed at. SAM 2 adds a memory for video, so it can keep the same outline from
+frame to frame.
+
+You would pick SAM 2 rather than the original SAM, the obvious alternative,
+because it is faster, it works on video, and it carries the same permissive
+licence. You would pick it rather than SAM 3 when you need a standard open licence
+and a download nobody has to approve.
+
+The large checkpoint holds 224 million parameters and the tiny one 39 million, so
+there is a version small enough for a robot with no graphics card. The real cost is
+that SAM 2 decides nothing by itself, so one of the detectors above has to say
+where to point. The failure people meet first is that it outlines whatever is under
+the prompt, including a shadow or a reflection.
+
+The library is Hugging Face `transformers`, and this follows its [SAM 2
+documentation page](https://huggingface.co/docs/transformers/en/model_doc/sam2).
+The box in the example is the one Grounding DINO returned in
+[section 5.3](#53-grounding-dino), which is the Grounded-SAM pairing in full.
+
+```python
+import torch
+from transformers import Sam2Model, Sam2Processor
+
+model_id = "facebook/sam2.1-hiera-large"
+model = Sam2Model.from_pretrained(model_id)
+processor = Sam2Processor.from_pretrained(model_id)
+
+box = result["boxes"][0].tolist()      # left, top, right, bottom, from Grounding DINO
+inputs = processor(images=image, input_boxes=[[box]], return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs)
+
+masks = processor.post_process_masks(outputs.pred_masks.cpu(),
+                                     inputs["original_sizes"])[0]
+best = outputs.iou_scores.squeeze().argmax()   # the model offers several outlines
+outline = masks[0, best] > 0        # one true-or-false value per pixel of the photo
+```
+
+The library encodes the picture, prompts the model with your box, and scales the
+outlines back to your photo's size. You supply the box and the choice between the
+candidate outlines, and then the step after the outline, which is reading the depth
+pixels inside it and turning them into a point cloud.
+
+### 5.6 SAM 3
+
+**Worth betting on**, because it does in one model what the Grounding DINO and SAM
+pairing does in two, and returns every object matching the phrase rather than the
+best one. Its licence is why it is not yet the default.
+
+SAM 3 came from Meta, with an updated set of checkpoints called SAM 3.1. You give
+it a short phrase, and it returns an outline, a box and a score for every object in
+the picture that matches the phrase. Meta calls this promptable concept
+segmentation, and its repository reports that the model reaches 75 to 80 % of human
+performance on a benchmark of its own, SA-CO, which contains 270,000 concepts.
+
+You would pick it rather than the Grounding DINO and SAM 2 pairing, the obvious
+alternative, when one model is simpler than two, or when you need every matching
+object rather than one. Counting the screws on a tray is the clearest case, because
+the pairing gives you the best box while SAM 3 gives you every screw. Stay with the
+pairing when a standard open licence matters.
+
+The model holds 860 million parameters, so it needs a graphics card. The licence is
+not a standard open licence but Meta's own SAM License, which has to be read rather
+than assumed. The weights are also gated: you request access on Hugging Face, wait
+for it to be granted, and sign in from the machine that downloads them, so a build
+machine with no credentials cannot fetch them at all.
+
+The library is Hugging Face `transformers`, and this follows its [SAM 3
+documentation page](https://huggingface.co/docs/transformers/en/model_doc/sam3).
+
+```python
+import torch
+from PIL import Image
+from transformers import Sam3Model, Sam3Processor
+
+# Works once your access request on huggingface.co/facebook/sam3 is granted
+# and you have signed in on this machine with `hf auth login`.
+model = Sam3Model.from_pretrained("facebook/sam3")
+processor = Sam3Processor.from_pretrained("facebook/sam3")
+
+image = Image.open("table.jpg")
+inputs = processor(images=image, text="blue mug", return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs)
+
+results = processor.post_process_instance_segmentation(
+    outputs,
+    threshold=0.5,        # how sure the model must be about an object
+    mask_threshold=0.5,   # where the edge of the outline is drawn
+    target_sizes=inputs.get("original_sizes").tolist(),
+)[0]
+
+print(len(results["masks"]))   # one outline for every blue mug on the table
+```
+
+The library handles the access token, the phrase and the scaling of the outlines.
+You supply the phrase, the two thresholds, and a decision about how many objects
+your robot will accept, because a phrase that is slightly too broad now returns
+several outlines rather than one wrong box.
+
+### 5.7 How to choose
+
+Start with Grounding DINO for the box and SAM 2 for the outline, both run from
+`transformers`. That pair answers "find the thing I described in words" accurately,
+and the code and weights of both are Apache-2.0, so no licence stops you shipping
+it.
+
+Five things change that choice.
+
+- Your objects have plain names and you want the smallest setup. Use OWLv2, which
+  is one model, one call and a shorter download.
+- The model has to keep up with a live camera on the robot. Use YOLOE, and accept
+  that AGPL-3.0 means publishing your source or buying a licence from Ultralytics.
+- You need every object that matches the words, not the best one. Use SAM 3, and
+  accept its bespoke licence and the gated download.
+- You already have crops and only need to choose between words. Use CLIP, and
+  refuse the answer when the best two scores are close.
+- Your objects have no name a person would use, such as two valve bodies that
+  differ by one hole. None of these models is the answer, and
+  [object detection](01_object-detection.md) trained on your own photos is.
+
+Whatever you choose, the check after the answer is yours to write, because none of
+these models knows when it is wrong. [Section 7](#7-what-goes-wrong) lists the ways
+they fail.
 
 ---
 
@@ -337,88 +698,3 @@ object by its place, such as the nearest one, but never by its name.
   [models that find](../../../02_perception/02_object-perception/04_models-that-find.md).
 - For how these models fit with larger robot models, read
   [foundation models](../../../03_frameworks/08_frontier/02_foundation-models.md).
-
----
-
-## 11. Using it in Python
-
-The page has explained that these models take a phrase instead of a fixed list of
-classes, and that Grounding DINO turns words into boxes while SAM turns a box into
-an outline. This section runs both of them. After reading it you will be able to
-find an object by typing its name, with no training and no class list at all.
-
-Grounding DINO is in Hugging Face `transformers`, which is the package that holds
-most published research models behind one set of class names.
-
-```python
-import torch
-from PIL import Image
-from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
-
-model_id = "IDEA-Research/grounding-dino-tiny"
-processor = AutoProcessor.from_pretrained(model_id)
-model = AutoModelForZeroShotObjectDetection.from_pretrained(model_id)
-
-image = Image.open("table.jpg")
-text_labels = [["a blue mug", "a bottle"]]   # one list of phrases per picture
-
-inputs = processor(images=image, text=text_labels, return_tensors="pt")
-with torch.no_grad():
-    outputs = model(**inputs)
-
-result = processor.post_process_grounded_object_detection(
-    outputs,
-    threshold=0.4,          # how sure the model must be about the box
-    text_threshold=0.3,     # how well the words must match
-    target_sizes=[(image.height, image.width)],
-)[0]
-
-for box, score, text_label in zip(result["boxes"], result["scores"],
-                                  result["text_labels"]):
-    print(text_label, round(score.item(), 3), [round(x, 1) for x in box.tolist()])
-```
-
-To turn one of those boxes into an exact outline, which is the Grounded-SAM pairing
-of [section 5](#5-well-known-models), you pass the box to SAM. Meta releases SAM as
-the `segment_anything` package, and you download the checkpoint file yourself.
-
-```python
-import numpy as np
-from segment_anything import SamPredictor, sam_model_registry
-
-build_sam = sam_model_registry["vit_b"]        # "vit_b" is the smallest of the three
-sam = build_sam(checkpoint="sam_vit_b_01ec64.pth")
-predictor = SamPredictor(sam)
-predictor.set_image(np.array(image))      # an RGB picture as a NumPy array
-
-masks, scores, _ = predictor.predict(
-    box=np.array(result["boxes"][0].tolist()),   # the box as left, top, right, bottom
-    multimask_output=False,
-)
-outline = masks[0]                        # one true-or-false value per pixel
-```
-
-What the pretrained models give you out of the box is the thing this page is about,
-because neither model was trained on your objects and neither needs to be. You type
-"a blue mug" and you get a box, and you pass that box on and get the mug's exact
-outline. There is no class list to edit and no labelling to do, and for a robot
-that must handle objects nobody planned for, that is a large amount of work you
-never do.
-
-What you still have to write yourself is the same step as always, from pixels to
-metres to the arm's frame, and one extra piece that is particular to this kind of
-model: the phrase. Something in your program has to decide that the instruction
-"pick up the blue mug" becomes the phrase "a blue mug", and something has to check
-the answer, because these models return a confident box for a phrase that matches
-nothing well. A rough check is to compare the best score with the second best, and
-to refuse when they are close.
-
-What you have to decide is the two thresholds above, and they do different jobs, so
-you tune them separately. `threshold` controls how sure the model must be that
-there is an object there, while `text_threshold` controls how well the words must
-match. You also decide whether you can afford the speed, because Grounding DINO is
-far slower than YOLO and does not keep up with a live camera on an ordinary
-processor, so a common pattern is to run it once to find the object and then track
-that object with something faster. Finally you decide on the licence, because as
-[section 5](#5-well-known-models) says these models do not all allow commercial
-use.

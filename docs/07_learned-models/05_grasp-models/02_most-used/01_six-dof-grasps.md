@@ -29,7 +29,6 @@ first.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -191,29 +190,378 @@ page explains this gap between simulation and the real world.
 
 ## 5. Well-known models
 
-All three designs above appear in models you can download, and these are the real
-ones. Book 3's
-[models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md#4-six-degree-of-freedom-models)
-lists their code, their licences and what hardware each one needs. Read it before
-you choose one, because the licences in this area are unusually strict.
+Sections 1 to 4 explained the kind of model. This section names the ones you can
+download today, says what each one assumes about your gripper, and shows the
+shortest real code for each.
 
-- **GPD**, Grasp Pose Detection, is the classic sample-then-check design, so it
-    samples poses on the point cloud, checks them with geometry, and scores the
-    survivors with a small network. It is the one model here that runs without a
-    graphics card.
-- **6-DOF GraspNet**, from NVIDIA, was an early model that generated grasps
-    directly, using a variational autoencoder and a separate scoring network.
-- **Contact-GraspNet**, also from NVIDIA, introduced the idea that each point
-    proposes a grasp in which it is a finger contact, and most later models build
-    on this.
-- **AnyGrasp**, from the GraspNet-1Billion team, is one of the strongest models of
-    this kind, and it can also follow grasps on an object that is moving. It is
-    shipped as a closed library that needs a licence key tied to one computer.
-- **GraspGen**, from NVIDIA in 2025, generates grasps with a diffusion model and
-    then scores them. A **diffusion model** starts from random numbers and cleans
-    them up, step by step, into a good answer, and the
-    [diffusion and flow policies](../../06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
-    page explains the idea.
+Every licence below was read from the project's own licence file, and Book 3's
+[models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md#4-six-degree-of-freedom-models)
+explains each one in more detail. Read the table as one row per model, in the
+order the sub-sections cover them. The "how big it is" column gives the
+download size of the weights and the graphics memory the project's own
+instructions ask for, because none of these projects publishes a parameter count.
+`not stated` means the project does not say and the file is not published where
+its size can be read.
+
+| Model | How current | Best at | How big it is | Licence of the code | Pick it when |
+| --- | --- | --- | --- | --- | --- |
+| GPD | historical | grasps you can explain, on any processor | weights 14.5 megabytes, in the repository; no graphics card needed | BSD-2-Clause | you have no NVIDIA card, or you must sell the product |
+| Contact-GraspNet | most used in 2026 | a first working 6-DoF model on a cluttered scene | weights 27 megabytes; 8 gigabytes of graphics memory to run, 24 to train | a PDF file; no machine-readable licence | you want the design the rest of the field assumes |
+| graspnet-baseline | most used in 2026 | comparing your work against the standard benchmark | not stated | Shanghai Jiao Tong University, non-commercial research only | you are measuring against GraspNet-1Billion |
+| AnyGrasp | most used in 2026 | the best grasps, including on moving objects | not stated | no licence file; a machine-locked key | accuracy matters more than freedom to ship |
+| EconomicGrasp | worth betting on | training your own model cheaply | weights 189 megabytes each; 5.81 gigabytes of graphics memory to train | MIT | you must train on your own data and own the result |
+| GraspGen and GraspGenX | worth betting on | a gripper that is not a Franka or a Robotiq | GraspGenX weights 1.7 gigabytes; 20 grasp predictions per second | GraspGen non-commercial; GraspGenX Apache-2.0 | your gripper is unusual, or you want a clean licence |
+
+One warning before the sub-sections. A grasp pose only means something for the
+gripper it was predicted for, so a model trained on a gripper that opens 80
+millimetres will propose grasps a gripper that opens 38 millimetres cannot make.
+Each sub-section below therefore names the gripper its model assumes.
+
+### 5.1 GPD, the one you can read and the one you can sell
+
+**[GPD](https://github.com/atenpas/gpd), or Grasp Pose Detection, is
+historical**, because it was last changed in January 2022 and has had none of the
+research since. It comes from Andreas ten Pas and Robert Platt at Northeastern
+University, and it is the sample-then-check
+design from [section 3](#3-how-it-works-inside): C++ code draws candidate gripper
+poses on the point cloud, geometry throws away the ones that would not close on
+anything, and a small network scores what is left.
+
+You would pick it rather than Contact-GraspNet for two reasons, and neither is
+accuracy. The first is that GPD is BSD-2-Clause, which lets you put it in
+something you sell, while almost every model below allows research use only. The
+second is that GPD asks you for your gripper's measurements instead of assuming
+somebody else's. Its `cfg/hand_geometry.cfg` file holds `finger_width`,
+`hand_outer_diameter`, `hand_depth` and `hand_height` in metres, and you edit
+them. No other model on this page lets you do that.
+
+What it costs you is accuracy, and the gap on cluttered scenes is large rather
+than small. It also costs you a day of dependency work, because it is C++ against
+Point Cloud Library 1.9, Eigen 3 and OpenCV 3.4, and OpenCV 3.4 is from 2018. The
+thing that most often goes wrong is the `camera_position` line in the
+configuration file, because GPD uses it to decide which way each surface faces. If
+it is wrong, every surface faces inwards and the grasps are nonsense.
+
+GPD is not a Python library. You build it with CMake and run the program it
+produces, which is how its own README demonstrates it:
+
+```bash
+# Run GPD on one saved point cloud file. The first argument is the
+# configuration, which points at the gripper file; the second is the cloud.
+./detect_grasps ../cfg/eigen_params.cfg ../tutorials/krylon.pcd
+```
+
+The program prints the grasps it found and opens a viewer window. What you supply
+is the point cloud as a `.pcd` or `.ply` file, your gripper's measurements, and
+the camera's position in the cloud's own frame.
+[PointNetGPD](https://github.com/lianghongzhuo/PointNetGPD) is an MIT-licensed
+successor that replaces the small network with a point cloud network.
+
+### 5.2 Contact-GraspNet, the design everything else copies
+
+**Contact-GraspNet is the most used of these models in 2026**, because it is the
+one every later paper compares itself against and the one most robot code expects
+to find. Martin Sundermeyer and others published it from NVIDIA in 2021, in the
+[Contact-GraspNet paper](https://arxiv.org/abs/2103.14127), and its idea is the
+one [section 3](#3-how-it-works-inside) describes: each point the camera saw is
+treated as a place where one finger could touch, and the network says how the
+gripper should come in if it touches there.
+
+The obvious alternative is the model it replaced,
+[6-DOF GraspNet](https://arxiv.org/abs/1905.10520), from the same group two years
+earlier. That one generated grasps with a variational autoencoder and then pushed
+each grasp around to raise its score, which meant searching all of space. You
+pick Contact-GraspNet instead because tying every grasp to a point that was
+actually seen removes that search, so one pass of the network gives the whole
+answer.
+
+What it costs you is an NVIDIA card. The original
+[NVlabs/contact_graspnet](https://github.com/NVlabs/contact_graspnet) is
+TensorFlow and pins CUDA 10.1, and the maintained
+[PyTorch version](https://github.com/elchun/contact_graspnet_pytorch) asks for 8
+gigabytes of graphics memory to run and 24 to train. The licence costs you more
+than the hardware does. Both repositories carry a file called `License.pdf`, so
+there is no machine-readable licence at all and every dependency scanner reports
+the project as unlicensed. You have to open the PDF and read it before you build
+anything on it. The thing that most often goes wrong is handing it a whole scene
+with no segmentation, because the grasps then land on the table and the bin
+walls.
+
+The PyTorch version installs as a package, and its weights are already inside the
+repository rather than downloaded separately.
+
+```python
+from contact_graspnet_pytorch import config_utils
+from contact_graspnet_pytorch.checkpoints import CheckpointIO
+from contact_graspnet_pytorch.contact_grasp_estimator import GraspEstimator
+
+ckpt_dir = "checkpoints/contact_graspnet"
+estimator = GraspEstimator(config_utils.load_config(ckpt_dir))
+CheckpointIO(checkpoint_dir=f"{ckpt_dir}/checkpoints",
+             model=estimator.model).load("model.pt")
+
+# depth is in metres, cam_K is the 3 by 3 camera matrix, and segmap gives each
+# pixel an object number. z_range drops points nearer than 0.2 m or past 1.8 m.
+pc_full, pc_segments, _ = estimator.extract_point_clouds(
+    depth, cam_K, segmap=segmap, z_range=[0.2, 1.8])
+
+grasps, scores, contacts, _ = estimator.predict_scene_grasps(
+    pc_full, pc_segments=pc_segments,
+    local_regions=True,    # look at each object's own region, not the whole scene
+    filter_grasps=True)    # drop grasps whose contact is on another object
+```
+
+The library turns your depth picture into point clouds, runs the network and
+gives you `grasps`, a dictionary from object number to an array of four-by-four
+pose matrices in the camera's frame. What you supply is the depth picture in
+metres, the camera matrix, and the segmentation that says which pixel belongs to
+which object. Those poses are in the camera's frame, so moving them into the
+robot's frame with your own calibration is still your work.
+
+### 5.3 graspnet-baseline, the reference for the standard benchmark
+
+**[graspnet-baseline](https://github.com/graspnet/graspnet-baseline) is the most
+used of these models in 2026 for measurement rather than for shipping.** It comes
+from Hao-Shu Fang and others at Shanghai
+Jiao Tong University and is the reference implementation for the
+[GraspNet-1Billion](https://graspnet.net/) dataset that
+[section 4](#4-how-it-is-trained) described. Almost every published score for a
+6-DoF grasp model is a score on that benchmark, produced by code descended from
+this repository.
+
+You would pick it rather than Contact-GraspNet when you need a number you can
+compare with the literature. Contact-GraspNet was trained on NVIDIA's simulated
+ACRONYM grasps and reports no GraspNet-1Billion score, so a measurement against
+it says nothing about how your change compares with everybody else's. If you are
+not measuring, pick something else, because this repository is older than the work
+built on it.
+
+What it costs you is the licence and the install. The licence is a Shanghai Jiao
+Tong University agreement for academic and non-profit research only, so you cannot
+sell anything built on it. The install is worse than it looks: the
+`requirements.txt` file is ordinary, and then the README tells you to compile a
+`pointnet2` extension and a CUDA `knn` operator by hand, which no dependency
+scanner will warn you about. Of the two published sets of weights the authors
+recommend `checkpoint-rs.tar`, trained on Intel RealSense pictures, over
+`checkpoint-kn.tar`, trained on Microsoft Kinect pictures, because it transfers
+better.
+
+The imports below are files inside the clone rather than installed packages, so
+this runs only from inside the repository. `graspnetAPI` is a real package and
+holds the grasp data type.
+
+```python
+import torch
+from graspnetAPI import GraspGroup
+from graspnet import GraspNet, pred_decode              # files in the clone
+from collision_detector import ModelFreeCollisionDetector
+
+net = GraspNet(input_feature_dim=0, num_view=300, num_angle=12, num_depth=4,
+               cylinder_radius=0.05, hmin=-0.02,
+               hmax_list=[0.01, 0.02, 0.03, 0.04], is_training=False)
+net.load_state_dict(torch.load("checkpoint-rs.tar")["model_state_dict"])
+net.eval().to("cuda")
+
+with torch.no_grad():
+    # points has shape (1, 20000, 3): one batch of 20,000 points, in metres
+    gg = GraspGroup(pred_decode(net({"point_clouds": points}))[0]
+                    .detach().cpu().numpy())
+
+# Put a box the shape of the gripper at each grasp and count the cloud points
+# inside it, which catches a gripper that would push through a neighbour.
+hits = ModelFreeCollisionDetector(cloud, voxel_size=0.01).detect(
+    gg, approach_dist=0.05, collision_thresh=0.01)
+gg = gg[~hits].nms().sort_by_score()
+```
+
+`pred_decode` is the step that turns the network's raw numbers into grasps you
+can read, and the answer means nothing without it. What you supply is `points`,
+sampled or padded to exactly 20,000 points with the floor and the bin walls
+masked out first, and `cloud`, every point rather than the sample, for the
+collision check. The `width` on every grasp is the opening of the two-finger
+gripper used to build GraspNet-1Billion, so a narrower gripper of your own means
+throwing those grasps away yourself.
+
+### 5.4 AnyGrasp, the strongest and the least free
+
+**[AnyGrasp](https://github.com/graspnet/anygrasp_sdk) is the most used of these
+models in 2026 wherever accuracy decides the job.** It comes from the same
+Shanghai Jiao Tong University group and was built on GraspNet-1Billion, it was
+still being updated in July 2026, and it is the only model on this page that can
+follow a grasp on an object that is moving rather than starting again from a new
+picture.
+
+You would pick it rather than graspnet-baseline because it is better at the same
+task and because it ships as a working detector rather than as training code you
+have to finish. You would not pick it if anything in your project needs certainty,
+and that is the whole trade. It is a compiled library with **no licence file at
+all**, which means default copyright and no permission to use it, and it will not
+start without a licence key that you apply for through a form and that is tied to
+one machine. The thing that most often goes wrong is that key, because the machine
+it was issued for changes and the detector then stops starting.
+
+The library is called `gsnet`, and this is the shape of its own demo program:
+
+```python
+import numpy as np
+from gsnet import create_detector
+
+# cfgs carries checkpoint_path, gripper_height and max_gripper_width.
+# AnyGrasp clamps max_gripper_width to 0.1 m, because that is the widest
+# gripper its weights were trained on.
+detector = create_detector(cfgs)
+
+gg = detector.get_grasp(points, {              # points: (N, 3) float32, in metres
+    "collision_detection": True,
+    "dense_grasp": False,
+    "region_steering": object_mask,            # only grasp this object
+    "approach_steering": [0, 0, 1],            # prefer this approach direction
+    "approach_thresh": np.pi / 6,              # allow 30 degrees either side of it
+})
+gg = gg.nms().sort_by_score()
+```
+
+The detector gives you a `GraspGroup` from `graspnetAPI`, already collision
+checked against the cloud. The two steering arguments are the part worth knowing,
+because they push the model towards the grasps your cell can reach instead of
+making you filter its answers afterwards. What you supply is the point cloud in
+metres, a mask for the object you want, and the licence key. Note the clamp in the
+comment: ask for a gripper wider than 0.1 metres and AnyGrasp quietly reduces it,
+because no wider gripper was in its training.
+
+### 5.5 EconomicGrasp, the one you can train yourself
+
+**[EconomicGrasp](https://github.com/iSEE-Laboratory/EconomicGrasp) is worth
+betting on**, because it is the only model in the GraspNet-1Billion family with a
+real open-source licence and it is the cheapest
+to train by a wide margin. Xiao-Ming Wu and others at Sun Yat-sen University
+published it at the European Conference on Computer Vision in 2024, and the
+repository was last changed in April 2026.
+
+You would pick it rather than graspnet-baseline for two reasons. It is MIT
+licensed, so a model you train with it is yours. And its own README reports
+training in 8.3 hours using 4.2 gigabytes of main memory and 5.81 gigabytes of
+graphics memory on one RTX 3090 card, which is a machine you can rent by the hour,
+while training the older models in this family is a much larger job. The README
+also reports 68.21, 61.19 and 25.48 average precision on the seen, similar and
+novel object splits of GraspNet-1Billion with RealSense pictures, and 62.59, 51.73
+and 19.54 with Kinect pictures. Those are the authors' own numbers on their own
+benchmark, so read them as a claim rather than as an independent measurement.
+
+What it costs you is the install, and the blocker is specific. It imports
+[MinkowskiEngine](https://github.com/NVIDIA/MinkowskiEngine), NVIDIA's sparse
+convolution library, which was last changed in March 2024 and compiles with
+`nvcc`. It also compiles `pointnet2` and a `knn` operator, and wants CUDA 12. The
+thing that most often goes wrong is the preparation before any training starts,
+because you must download GraspNet-1Billion and then run two label generation
+passes over it.
+
+There is no packaged inference call. You run its own scripts, and this is the test
+command from its README.
+
+```bash
+# --test_mode picks the split: seen, similar or novel objects.
+# --inference runs the model; without it the script only scores saved results.
+python test.py --model economicgrasp --camera kinect \
+  --checkpoint_path results/economicgrasp/economicgrasp_epoch10.tar \
+  --dataset_root /path/to/graspnet --save_dir results/test_seen \
+  --test_mode seen --inference
+```
+
+The repository publishes trained weights for both cameras as release files, so
+you can test without training first. What you supply is the dataset, the compiled
+extensions, and your own program if you want to run the model on a live camera,
+because these scripts read the benchmark's files from disk.
+
+### 5.6 GraspGen and GraspGenX, the models that ask which gripper you have
+
+**GraspGen and GraspGenX are worth betting on**, because they are the first
+models here to treat the gripper as an input rather than as a fact fixed in the
+weights, which is the problem every sub-section above ran into.
+[GraspGen](https://github.com/NVlabs/GraspGen) is NVIDIA's 2025 generator,
+published in the [GraspGen paper](https://arxiv.org/abs/2507.13097): a diffusion
+model proposes grasps and a second network scores them. A **diffusion model**
+starts from random numbers and cleans them up step by step into a good answer, and
+the
+[diffusion and flow policies](../../06_movement-models/02_most-used/03_diffusion-and-flow-policies.md)
+page explains the idea.
+[GraspGenX](https://github.com/NVlabs/GraspGenX), released on 1 June 2026, is the
+same group's follow-up.
+
+You would pick GraspGenX rather than Contact-GraspNet or AnyGrasp because of what
+it does about grippers. GraspGen trains one model per gripper and publishes three:
+a Franka Panda, a Robotiq 2F-140 and a single suction cup of 30 millimetre radius.
+GraspGenX instead trains one model that is given a description of the gripper,
+worked out from the volume the gripper sweeps as it closes, and its README reports
+training on over 2 billion grasps across 32 generated grippers in 6 kinematic
+families and more than 8,000 objects. Its checkpoints name grippers including
+`franka_panda`, `robotiq_2f_85`, `robotiq_2f_140`, `unitree_g1`, `inspire_hand`,
+`barrett_hand` and `ezgripper`, and `scripts/gripper_config_wizard.py` adds one
+that is not on the list. No other model on this page offers that.
+
+The licences are split, and the split runs the opposite way to the usual one.
+GraspGen's code is under NVIDIA's own licence, whose section 3.3 limits use to
+research or evaluation and then permits NVIDIA itself to use the work
+commercially. GraspGenX's code is plain Apache-2.0, with no use limit added. The
+published weights of both are under the NVIDIA Open Model License rather than
+Apache-2.0, so the Apache badge does not make what you deploy Apache. Besides
+that, GraspGen needs `spconv-cu120`, for which no processor-only build exists, and
+its README reports 20 grasp predictions per second before any further speed work.
+The thing that most often goes wrong is forgetting that both models expect one
+object's points rather than a whole scene, so you segment first.
+
+GraspGenX installs as a package, and it fetches its own weights and gripper
+descriptions from Hugging Face the first time you import it. That download is
+about 1.2 gigabytes for the diffusion model and 484 megabytes for the scorer.
+
+```python
+from graspgenx import get_checkpoints_version_dir
+from graspgenx.grasp_server import GraspGenXSampler
+from graspgenx.samplers import run_planner_on_object
+from graspgenx.utils.checkpoint_io import load_model_cfg
+
+ckpt = get_checkpoints_version_dir()      # downloaded on first import
+cfg = load_model_cfg(f"{ckpt}/gen", f"{ckpt}/dis")   # generator, then scorer
+sampler = GraspGenXSampler(cfg, "robotiq_2f_85", assets_dir="assets")
+
+# obj_pc is one object's points as (N, 3), with its own mean subtracted.
+grasps, scores, _, _ = run_planner_on_object(
+    obj_pc, sampler, num_grasps=200, topk_num_grasps=100)
+# grasps is (K, 4, 4); scores is (K,), the scorer's confidence from 0 to 1
+```
+
+The library gives you the download, the gripper description, the diffusion
+sampler and the scorer. What you supply is the gripper name and one object's point
+cloud with its mean subtracted, which means you segment the scene yourself. For a
+gripper that is not on the published list, the configuration wizard asks you for
+its measurements and its URDF file, which is the format that describes a robot's
+links and joints.
+
+### 5.7 How to choose
+
+Start with GraspGenX. It installs with one command, its code licence is plain
+Apache-2.0, and it is the only model here that was trained for more than one
+gripper, so it is the only one whose scores still mean something for a gripper
+that is not a Franka or a Robotiq.
+
+Four things change that answer.
+
+If you have no NVIDIA graphics card, your only real option here is GPD, and the
+comparison that matters is then GPD against the written rules in Book 3's
+[choosing a grip](../../../03_frameworks/02_gripping/03_choosing-a-grip.md)
+rather than GPD against these models.
+
+If you are going to sell the product, your shortlist is GPD under BSD-2-Clause and
+EconomicGrasp under MIT, and even then you check the weights' licence separately
+from the code's. Everything else here needs a negotiation, in two cases with a
+university.
+
+If accuracy on a hard bin decides whether the project works at all, and research
+terms are acceptable, use AnyGrasp and accept the machine-locked key.
+
+If you are writing a paper, use graspnet-baseline or EconomicGrasp, because a
+score on GraspNet-1Billion is the only score other people can compare with
+theirs.
 
 ---
 
@@ -352,78 +700,3 @@ the next object could be anything, lying at any angle in clutter.
     covers what moves the arm to the grasp once it is chosen.
 - Book 3's [models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md)
     has the full list of models, licences and hardware needs.
-
----
-
-## 11. Using it in Python
-
-Sections 1 to 4 explained what a 6-DoF grasp model takes in and how it is trained,
-and section 5 named the real models. This section shows how one of them is actually
-run, so that after reading it you will know what the download contains, what it
-expects from you, and why the five lines of model code are the easy part.
-
-There is no `pip install graspnet` that gives you a working 6-DoF grasp model.
-Every model in section 5 is a research repository that you clone, and the code below
-is the shape of the demo program in
-[graspnet-baseline](https://github.com/graspnet/graspnet-baseline), the reference
-model for the GraspNet-1Billion dataset. The imports `graspnet` and
-`collision_detector` are files inside that repository, not installed packages, so
-this code only runs from inside the clone.
-
-```python
-import torch
-from graspnetAPI import GraspGroup
-from graspnet import GraspNet, pred_decode              # files in the cloned repository
-from collision_detector import ModelFreeCollisionDetector
-
-net = GraspNet(input_feature_dim=0, num_view=300, num_angle=12, num_depth=4,
-               cylinder_radius=0.05, hmin=-0.02, hmax_list=[0.01, 0.02, 0.03, 0.04],
-               is_training=False)
-net.load_state_dict(torch.load("checkpoint-rs.tar")["model_state_dict"])
-net.eval().to("cuda")
-
-with torch.no_grad():
-    # points has shape (1, 20000, 3): one batch of 20,000 sampled points, in metres
-    end_points = net({"point_clouds": points})
-    gg = GraspGroup(pred_decode(end_points)[0].detach().cpu().numpy())
-
-hits = ModelFreeCollisionDetector(cloud, voxel_size=0.01).detect(
-    gg, approach_dist=0.05, collision_thresh=0.01)
-gg = gg[~hits].nms().sort_by_score()
-```
-
-The repository gives you the network, the trained weights and the decoding step.
-`pred_decode` is what turns the network's raw numbers into grasps you can read, and
-without it the output means nothing. The collision detector is also included, and it
-is worth understanding what it checks: it puts a box the shape of the gripper at
-each grasp and counts how many points of the cloud fall inside it, so it catches a
-gripper that would push through a neighbouring object. Two sets of weights are
-published, `checkpoint-rs.tar` trained on RealSense pictures and
-`checkpoint-kn.tar` trained on Kinect pictures, and the authors recommend the
-RealSense one because it transfers better.
-
-What you have to supply is everything before and after those lines. You need the
-point cloud in `points`, which means a depth camera, its intrinsic parameters, and
-the few lines that turn each depth pixel into a 3D point. You need to sample or pad
-the cloud to exactly the number of points the network was built for, which is 20,000
-here, and to mask out the floor and the walls of the bin first, or the model will
-propose grasps on them. You need `cloud` for the collision check, as a plain array
-of every point rather than the sampled subset. After the model answers, you still
-have to move the grasps into the robot's base frame with your own calibration, check
-that the arm can reach them, and write the approach, close and lift motion.
-
-The environment is itself a cost you have to accept. The repository needs an NVIDIA
-graphics card, because it compiles two CUDA extensions, `pointnet2` and `knn`,
-before anything runs. AnyGrasp, the strongest model of this kind, is stricter again:
-it ships as a compiled library that you call as
-`detector.get_grasp(points, optional_params)` after
-`from gsnet import create_detector`, and it will not start without a licence key
-tied to the machine it runs on. Neither of these runs on an Apple Silicon Mac.
-
-The decision that matters most is whether the gripper the model learned is close
-enough to yours. These weights were trained on the two-finger gripper of the
-GraspNet-1Billion dataset, so the `width` on every grasp is that gripper's opening,
-in metres. If your gripper opens less far, you throw those grasps away and keep
-fewer candidates; if your fingers are longer or thicker than the ones the collision
-detector assumes, a grasp it passed may still collide. Nothing in the download knows
-your gripper, and correcting for it is your work, not the model's.

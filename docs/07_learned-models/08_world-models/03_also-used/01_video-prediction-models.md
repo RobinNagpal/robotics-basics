@@ -23,12 +23,19 @@ explains.
    · [Four ways a robot uses the pictures](#four-ways-a-robot-uses-the-pictures)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
+   · [5.1 Cosmos 3](#51-cosmos-3)
+   · [5.2 Cosmos Predict 2.5](#52-cosmos-predict-25)
+   · [5.3 LingBot-VA](#53-lingbot-va)
+   · [5.4 FastWAM](#54-fastwam)
+   · [5.5 Genie](#55-genie)
+   · [5.6 Action-conditioned pixel prediction, and Visual Foresight](#56-action-conditioned-pixel-prediction-and-visual-foresight)
+   · [5.7 UniPi](#57-unipi)
+   · [How to choose](#58-how-to-choose)
 6. [A worked example: sliding a cube to a clicked spot](#6-a-worked-example-sliding-a-cube-to-a-clicked-spot)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -207,30 +214,348 @@ own video.
 
 ## 5. Well-known models of this kind
 
-The models below are all real, published models rather than examples invented
-for this page.
+This is the kind of world model that changed most in 2026, because the large
+video generation models arrived and some of them now take robot actions as an
+input. So this section separates the models you can download and run from the
+ones you can only read about, and then helps you pick one.
 
-- **Finn, Goodfellow and Levine (2016)** trained an action-conditioned model on
-  a large set of videos of robot arms pushing objects. It predicts how pixels
-  move instead of drawing new ones. It is the starting point for most later work
-  on video prediction for robot arms.
-- **Visual Foresight** (Finn and Levine, 2017, then Ebert and others, 2018)
-  planned pushes with such a model. A person clicks on an object in the picture
-  and clicks where it should go. The robot searches for pushes whose predicted
-  pictures move the clicked pixel there.
-- **SV2P** (Babaeizadeh and others, 2018) added the random input described in
-  [why the future comes out blurry](#why-the-future-comes-out-blurry), so that it
-  can predict several different sharp futures.
-- **UniPi** (Du and others, 2023) draws a video of the task from a sentence, and
-  then reads the arm moves off it with an inverse dynamics model.
-- **SuSIE** (Black and others, 2023) predicts only one future picture, the next
-  subgoal, by editing the current camera picture. A policy then drives the arm
-  towards that picture.
-- **NVIDIA Cosmos** includes openly downloadable models that predict future
-  video. Book 3's
-  [simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#43-cosmos)
-  document lists them with their licences. NVIDIA's GR00T-Dreams project uses a
-  video world model to make synthetic robot training data.
+Read the table one row at a time. Each row names the model, says what it is best
+at, gives its size and its licence, and says when to pick it. The size is the
+number of trainable numbers, where the makers state one, and `not stated` means
+it is not published. The licence column matters more here than anywhere else on
+this page, because these are large downloads with conditions attached.
+
+| Model | Best at | Size | Licence | Pick it when |
+| --- | --- | --- | --- | --- |
+| [5.1 Cosmos 3](#51-cosmos-3) | predicting the video that a given sequence of actions would cause | Edge 4 billion, Nano 16 billion, Super 64 billion | OpenMDW 1.1 | you have Linux, an NVIDIA card, and actions in one of its robot shapes |
+| [5.2 Cosmos Predict 2.5](#52-cosmos-predict-25) | making new robot-scene video from one picture and a sentence | 2 billion, from the model's own name | Apache 2.0 for the code, NVIDIA Open Model License for the weights | you want synthetic video to train on, and no action control |
+| [5.3 LingBot-VA](#53-lingbot-va) | predicting video and actions together while the robot runs | about 5 billion trainable, plus about 20 GB of frozen parts | Apache 2.0 for LeRobot; the frozen parts come from another repository | you want to see what the policy expected to happen |
+| [5.4 FastWAM](#54-fastwam) | a policy trained with video prediction that does not predict at run time | initialised from Wan2.2-TI2V-5B | Apache 2.0 for LeRobot and for Wan2.2-TI2V-5B | you want the training benefit without the slowness |
+| [5.5 Genie](#55-genie) | interactive worlds a person can walk around in | not stated | no weights released | never, on a robot; read it for the direction |
+| [5.6 Action-conditioned pixel prediction, and Visual Foresight](#56-action-conditioned-pixel-prediction-and-visual-foresight) | pushing objects on a table, planned with predicted pictures | not stated | research code from papers | you want to understand how all of the above work |
+| [5.7 UniPi](#57-unipi) | drawing the task as a video, then reading the actions off it | not stated | research code from a paper | you want to understand the pattern Cosmos 3 now provides ready-made |
+
+### 5.1 Cosmos 3
+
+This is **most used in 2026** for this kind of work, because it is the only
+openly downloadable video world model that takes your actual actions as numbers.
+NVIDIA published the Cosmos 3 family on Hugging Face on 31 May 2026, with
+[Cosmos3-Nano](https://huggingface.co/nvidia/Cosmos3-Nano) of 16 billion numbers
+and Cosmos3-Super of 64 billion, and added the smaller
+[Cosmos3-Edge](https://huggingface.co/nvidia/Cosmos3-Edge) of 4 billion numbers
+on 20 July 2026. Its model card says that text, pictures, video and action
+trajectories go in, and text, pictures, video and actions come out. The licence is
+[OpenMDW 1.1](https://openmdw.ai/license/1-1/), and the card states that the
+model is ready for commercial and non-commercial use.
+
+The obvious alternative is Cosmos Predict 2.5 in 5.2, which is from the same
+company and easier to install. Pick Cosmos 3 when you want the thing
+[section 2](#2-what-goes-in-and-what-comes-out) calls action-conditioned. Its
+action modes are named exactly after the ideas on this page: `forward_dynamics`
+rolls out future video from one frame and a sequence of actions you supply,
+`inverse_dynamics` reads the actions that connect frames you already have, and
+`policy` produces future video and actions together. Nothing else you can
+download does the first of those for a robot arm.
+
+It costs you hardware, speed and a matching robot. The card lists Linux, NVIDIA
+Ampere, Hopper or Blackwell cards, and tested support for BF16 precision only.
+Its performance table gives one forward-dynamics call as 3.69 seconds on an H100
+SXM 80 GB card and 24.59 seconds on a DGX Spark, while an arm's control loop
+needs an answer in a few milliseconds. The third cost is the one people trip
+over: the action numbers must be in the layout of one of its listed robots,
+which include a single Franka Panda arm with a Robotiq gripper at 10 numbers, a
+WidowX 250 at 10 and a dual Franka at 20. If your robot is not on that list,
+your numbers mean nothing to the model.
+
+The library is `diffusers` from Hugging Face, through
+[`Cosmos3OmniPipeline`](https://huggingface.co/docs/diffusers/main/en/api/pipelines/cosmos3),
+which at the time of writing needs `diffusers` installed from its git repository
+rather than from a release. The code below is the model card's own
+forward-dynamics example, shortened to one chunk.
+
+```python
+import torch
+from diffusers import Cosmos3OmniPipeline, CosmosActionCondition
+from diffusers.utils import export_to_video, load_image
+
+pipe = Cosmos3OmniPipeline.from_pretrained(
+    "nvidia/Cosmos3-Edge", torch_dtype=torch.bfloat16, enable_safety_checker=True)
+pipe.to("cuda")
+
+result = pipe(
+    prompt="the gripper pushes the cube to the right",
+    action=CosmosActionCondition(
+        mode="forward_dynamics",   # future video from one frame plus these actions
+        chunk_size=16,             # 16 action steps, so 17 frames with the first one
+        domain_name="umi",         # which robot the 10 numbers in each row describe
+        resolution_tier=256,
+        raw_actions=torch.tensor(my_plan, dtype=torch.float32),   # 16 rows of 10
+        image=load_image("table.png"),   # the one real picture it starts from
+    ),
+    fps=20,
+    num_inference_steps=30,
+    guidance_scale=1.0,
+    generator=torch.Generator(device="cuda").manual_seed(0),
+    use_system_prompt=False,
+)
+export_to_video(result.video, "predicted.mp4", fps=20, macro_block_size=1)
+```
+
+The pipeline gives you the prediction. You supply `my_plan`, which is the 16
+actions you are asking about, in the exact layout of the robot you named, and
+the loop that goes further than 16 steps by passing the last generated frame in
+as the next call's `image`. You also supply everything that decides anything,
+because this code shows one future for one plan, and comparing two plans means
+running it twice at seconds each time.
+
+### 5.2 Cosmos Predict 2.5
+
+This is **most used in 2026** for making video rather than for choosing actions,
+because it is the easiest Cosmos model to get running. Book 3's
+[simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#43-cosmos)
+document covers it with its sources. `cosmos-predict2.5` predicts future video,
+and its sibling `cosmos-transfer2.5` takes a crude simulated render with depth
+and segmentation maps and produces a photorealistic video of the same scene.
+That sibling is the one most teams use, because it makes simulated training
+pictures look like real ones.
+
+The obvious alternative is Cosmos 3 in 5.1. Pick Predict 2.5 when the action
+does not need to be a number, for example when you are generating video to train
+a policy on, because it is smaller, it is in the released `diffusers`, and its
+documented example is a dozen lines.
+
+The cost to understand before you start is that the action goes in as a
+sentence, so the model shows you *a* future that matches your words rather than
+the future *your action would cause*. The frontier document also records the
+licence split, which is easy to get wrong: the Cosmos source code is Apache 2.0
+while the models are under the NVIDIA Open Model License, so check the model
+licence before shipping. The weights are gated as well, so you must sign in to
+Hugging Face and accept the terms before downloading, and it needs substantial
+NVIDIA hardware, which puts it out of reach on a Mac.
+
+The library is `diffusers`. The code below is the example from its own
+[Cosmos documentation page](https://github.com/huggingface/diffusers/blob/main/docs/source/en/api/pipelines/cosmos.md),
+with the prompt changed to a robot scene and the long negative prompt left out.
+
+```python
+import torch
+from diffusers import Cosmos2_5_PredictBasePipeline
+from diffusers.utils import export_to_video, load_image
+
+pipe = Cosmos2_5_PredictBasePipeline.from_pretrained(
+    "nvidia/Cosmos-Predict2.5-2B",
+    revision="diffusers/base/post-trained",
+    dtype=torch.bfloat16,
+)
+pipe.to("cuda")   # not optional: this model needs a large NVIDIA card
+
+frames = pipe(
+    image=load_image("table.jpg"),   # the one real picture the prediction starts from
+    video=None,
+    prompt="A robot arm pushes the red cube to the right across the table.",
+    num_frames=93,
+    generator=torch.Generator().manual_seed(1),
+).frames[0]
+
+export_to_video(frames, "prediction.mp4", fps=16)
+```
+
+The pretrained model gives you everything about how objects fall, slide, bend and
+cast shadows, learned from more video than you could record. You supply the
+sentence, the starting picture, and anything that reads the predicted frames.
+That last part is a model of its own, because turning predicted pictures into arm
+commands needs the inverse dynamics model from
+[section 3](#four-ways-a-robot-uses-the-pictures).
+
+### 5.3 LingBot-VA
+
+This is **worth betting on**, because predicting video and actions in one
+sequence is the direction this kind of model is going, and it is not yet the
+default. LingBot-VA arrived in LeRobot version 0.6.0 on 6 July 2026, which Book 3's
+frontier chapter dates and sources. Its
+[documentation page](https://huggingface.co/docs/lerobot/lingbot_va) describes two
+streams inside one transformer of about 5 billion trainable numbers, built on the
+Wan2.2 video stack. One stream predicts future video, the other predicts actions,
+and they share the same blocks. As each chunk of actions is carried out, the real
+frames that arrive are fed back in, which the page calls closed-loop world
+modelling.
+
+The obvious alternative is FastWAM in 5.4, which throws the video away before the
+robot runs. Pick LingBot-VA when you want to see what the policy expected. Its
+`--policy.save_predicted_video=true` option writes the video it imagined next to
+the video of what really happened, and comparing those two is the most useful
+debugging tool on this page.
+
+What it costs you is memory and speed. The documentation says that only the 5
+billion trainable numbers are stored in the LeRobot checkpoint, and that the
+frozen parts, about 20 GB of them, are pulled from another repository when the
+model loads, so those parts carry that repository's licence rather than
+LeRobot's Apache 2.0. It says the text encoder runs on the processor by default
+so that the rest fits on a single card of 24 to 32 GB, that evaluation runs one
+environment at a time, and that fine-tuning the whole model does not fit such a
+card. It also predicts end-effector poses in a fixed 30-channel layout rather
+than joint angles, so your arm's actions must be mapped into those channels.
+
+The library is LeRobot, and the checkpoints are published in its own format.
+
+```bash
+pip install -e ".[lingbot_va]"     # from a LeRobot source checkout
+
+# Run the published checkpoint for LIBERO, a benchmark of simulated table tasks,
+# and save the video the policy imagined as well as the video of what happened.
+lerobot-eval \
+  --policy.path=lerobot/lingbot_va_libero_long \
+  --policy.device=cuda \
+  --policy.save_predicted_video=true \
+  --env.type=libero --env.task=libero_10 \
+  --eval.n_episodes=50 --eval.batch_size=1
+```
+
+LeRobot gives you the policy, the checkpoint and the evaluation loop. You supply
+the robot or the simulated task, and the mapping from your arm's action numbers
+into the 30 channels. If you want to fine-tune it on your own recordings, you
+also supply a dataset in LeRobot format with camera clips, which the
+documentation page describes in detail.
+
+### 5.4 FastWAM
+
+This is **worth betting on**, because it is the shape of world model that
+actually shipped, and Book 3's
+[simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies)
+document explains why that matters. FastWAM also arrived in LeRobot 0.6.0. Its
+[documentation page](https://huggingface.co/docs/lerobot/fastwam) says that it
+"keeps video modeling during training, but uses direct action prediction at
+inference time instead of iteratively generating future observations", and that
+its visual parts are initialised from the Wan2.2-TI2V-5B video model, which is
+licensed under Apache 2.0.
+
+The obvious alternative is LingBot-VA in 5.3. Pick FastWAM when the robot has to
+be quick, because predicting video at run time is what makes this kind of model
+too slow to control an arm. Here the prediction is used only while training, as a
+way of forcing the network to learn what actions do to the scene. The honest
+warning comes from the same frontier document: no published head-to-head result
+shows that these policies beat a policy trained without that extra training
+signal, so the benefit is believable rather than established.
+
+What it costs you is an NVIDIA card, the Wan2.2-TI2V-5B download, and a dataset
+in LeRobot format. The documentation's example expects one camera image of 3 by
+224 by 448, or two cameras whose widths add up to 448, and its training command
+runs for 300,000 steps, which is a large amount of computing. You also lose what
+5.3 gives you, because a policy that does not predict at run time cannot show
+you what it expected.
+
+The library is LeRobot again.
+
+```bash
+pip install -e ".[fastwam]"        # from a LeRobot source checkout
+
+# Train the policy on your own recordings. The video world model is used here,
+# during training, and not when the robot runs.
+lerobot-train \
+  --dataset.repo_id=your-org/your-dataset \
+  --policy.type=fastwam \
+  --policy.action_dim=7 --policy.proprio_dim=8 \
+  --policy.action_horizon=32 --policy.n_action_steps=10 \
+  --policy.image_size='[224,448]' \
+  --steps=300000 --batch_size=8 \
+  --policy.device=cuda \
+  --output_dir=./outputs/fastwam_training --job_name=fastwam_training
+```
+
+LeRobot gives you the policy, the world model and the training loop. You supply
+the recordings, which need a camera, the arm's own position numbers, the actions
+and a sentence for each episode, and you supply the numbers in that command that
+describe your arm, such as the 7 action numbers and the 8 position numbers.
+
+### 5.5 Genie
+
+This is **worth betting on** as a direction rather than as a tool, and the
+honest summary is that you cannot use it. Genie is Google DeepMind's line of
+models that produce interactive worlds which respond to a person's input in real
+time. Book 3's frontier chapter quotes
+[the Genie model page](https://deepmind.google/models/genie/), which offers
+access through "Project Genie", described there as "an experimental research
+prototype that lets you create and explore infinitely diverse worlds".
+
+There is no alternative to compare it with, because there is nothing to install.
+The frontier chapter records what is missing for a robot: no weights, no
+interface a robot could act through, no contact model you can read, no forces,
+no way to attach a gripper, and no published evaluation on any manipulation
+benchmark. So its cost is that you cannot plan any work around it, and the
+frontier chapter names that as the pattern of this field in 2026, where the
+newest results are announced rather than released.
+
+Genie is in this list for one reason. It shows that real-time, controllable,
+visually coherent world generation is possible, which was not obvious two years
+ago, and every row above it in the table exists because that turned out to be
+true.
+
+### 5.6 Action-conditioned pixel prediction, and Visual Foresight
+
+This is **historical**, and it is the work that everything above is built on.
+Chelsea Finn, Ian Goodfellow and Sergey Levine published
+[Unsupervised Learning for Physical Interaction through Video Prediction](https://arxiv.org/abs/1605.07157)
+in 2016. It trained on a large set of videos of robot arms pushing objects, and
+instead of drawing new pixels it predicted how the existing pixels move, which is
+why it worked so well for pushing. Frederik Ebert, Chelsea Finn and others then
+built [Visual Foresight](https://arxiv.org/abs/1812.00568) on it in 2018, and
+that is the system
+[section 6](#6-a-worked-example-sliding-a-cube-to-a-clicked-spot) of this page
+describes.
+
+Read these rather than skip them, because they are the only line of work on this
+page that planned real pushes by comparing predicted pictures. Everything newer
+either generates video from a sentence, as 5.2 does, or uses prediction as a
+training signal, as 5.4 does.
+
+What they cost you is that there is nothing to install. They are research
+programs attached to individual papers, written for versions of TensorFlow that
+are now many years old. Reproducing them means rewriting them, and 5.1 is the
+first model you can download that will answer the question they asked.
+
+### 5.7 UniPi
+
+This is **historical** in the same way, and it is the origin of the second
+pattern in [section 3](#four-ways-a-robot-uses-the-pictures). Yilun Du and others
+published it in 2023 as
+[Learning Universal Policies via Text-Guided Video Generation](https://arxiv.org/abs/2302.00111).
+It draws a video of the task from a sentence, and then recovers the arm moves
+from that video with an inverse dynamics model. SuSIE, by Kevin Black and others
+in [the same year](https://arxiv.org/abs/2310.10639), cut the video down to a
+single next picture, which a policy then drives the arm towards.
+
+The reason to know UniPi is that Cosmos 3 now provides both halves of it as modes
+of one model, so the pattern is no longer something you assemble from two
+research programs. What it costs you is again that there is nothing to install:
+the value is the idea, not the code.
+
+### 5.8 How to choose
+
+If you want video prediction for a robot arm today, and you have Linux and an
+NVIDIA card, start with Cosmos3-Edge in `forward_dynamics` mode, as 5.1
+describes, because it is the only downloadable model that answers a question
+about your own actions.
+
+Four things change that choice.
+
+If you want pictures rather than answers about actions, for example to train a
+seeing model or a policy on, use Cosmos Predict 2.5, or `cosmos-transfer2.5` if
+what you have is simulated renders that look wrong.
+
+If what you actually want is a policy that moves the arm, use FastWAM, as in 5.4,
+or LingBot-VA, as in 5.3, when you would rather be able to see what the policy
+expected to happen.
+
+If you have no NVIDIA card, nothing on this page runs. Measure the state and use
+a [learned dynamics model](../02_most-used/01_learned-dynamics-models.md)
+instead, or read
+[latent world models](03_latent-world-models.md), which predict a short code
+rather than pixels and are small enough to be practical.
+
+If you need to plan, which means comparing many imagined futures before every
+move, nothing here is fast enough. The timings in 5.1 are seconds for one call,
+and [section 7](#7-what-goes-wrong-and-what-people-do-about-it) lists what people
+do instead.
 
 ---
 
@@ -350,62 +675,3 @@ no short description, or when one model must handle many kinds of object.
   prediction models.
 - For the current state of the field, read Book 3's
   [simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#4-learned-world-models).
----
-
-## 11. Using it in Python
-
-This page has described models that draw the next camera pictures. Of the four kinds in
-this chapter, this is the only one you can download ready-made and run today, so this
-section shows how. After it you will know how to get a predicted video out of a model,
-and, just as importantly, what that video will not tell you.
-
-The model is NVIDIA's Cosmos, from [section 5](#5-well-known-models-of-this-kind), and
-the library is `diffusers`, from Hugging Face, which is the same library people use for
-picture-drawing models in general. You install it with `pip install diffusers
-transformers accelerate torch`. The code below is the Image2World example from the
-library's own documentation, with the prompt changed to a robot scene.
-
-```python
-import torch
-from diffusers import Cosmos2_5_PredictBasePipeline
-from diffusers.utils import export_to_video, load_image
-
-pipe = Cosmos2_5_PredictBasePipeline.from_pretrained(
-    "nvidia/Cosmos-Predict2.5-2B",
-    revision="diffusers/base/post-trained",
-    torch_dtype=torch.bfloat16,
-)
-pipe = pipe.to("cuda")
-
-frames = pipe(
-    image=load_image("table.jpg"),   # the one real picture the prediction starts from
-    video=None,
-    prompt="A robot arm pushes the red cube to the right across the table.",
-    num_frames=93,
-    generator=torch.Generator().manual_seed(1),
-).frames[0]
-
-export_to_video(frames, "prediction.mp4", fps=16)
-```
-
-Now read that code against [section 2](#2-what-goes-in-and-what-comes-out), because the
-difference matters. The action goes in as a sentence, not as numbers, so this model is
-not action-conditioned in the sense that section described. It shows you *a* future that
-matches your words, and it cannot show you the future that a particular 3 cm push would
-cause. Every openly downloadable video world model in 2026 works this way, and the
-action-conditioned models that Visual Foresight planned with are research code from
-individual papers, with no package to install. So you can generate video today, and you
-cannot plan pushes with it today.
-
-The pretrained model gives you an enormous amount: everything about how objects fall,
-slide, bend and cast shadows, learned from more video than you could ever record.
-
-What you write is the sentence, the loop that calls the model, and anything that reads
-the predicted frames. That last part is a whole model of its own, because turning
-predicted pictures into arm commands needs the inverse dynamics model from
-[section 3](#four-ways-a-robot-uses-the-pictures), and nothing above provides one.
-
-What you decide is whether the cost is worth it. The `"cuda"` in the code is not
-optional, because this model needs a large NVIDIA graphics card, and one call takes
-a long time compared with an arm's control loop. So people use these models to make
-training data overnight, not to decide the next push.

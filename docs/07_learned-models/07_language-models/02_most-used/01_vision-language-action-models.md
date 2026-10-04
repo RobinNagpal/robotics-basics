@@ -27,12 +27,19 @@ what each laboratory has released or shown, as of September 2026.
    · [Why it outputs a chunk of actions](#why-it-outputs-a-chunk-of-actions)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
+   · [SmolVLA, the one to start with](#51-smolvla-the-one-to-start-with)
+   · [The pi models from Physical Intelligence](#52-the-pi-models-from-physical-intelligence)
+   · [GR00T N1.7 from NVIDIA](#53-gr00t-n17-from-nvidia)
+   · [MolmoAct2 from the Allen Institute for AI](#54-molmoact2-from-the-allen-institute-for-ai)
+   · [X-VLA](#55-x-vla)
+   · [OpenVLA](#56-openvla)
+   · [The ones you will read about but cannot have](#57-the-ones-you-will-read-about-but-cannot-have)
+   · [How to choose](#58-how-to-choose)
 6. [A worked example: teaching a small arm to put a mug in a bowl](#6-a-worked-example-teaching-a-small-arm-to-put-a-mug-in-a-bowl)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why use a vision-language-action model, and what it costs](#8-why-use-a-vision-language-action-model-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -203,65 +210,397 @@ in depth.
 
 ## 5. Well-known models of this kind
 
-These are the VLAs you will meet most often. The size of a model is given as its
-number of **parameters**, and a parameter is one of the adjustable numbers inside the
-network that training sets. More parameters usually means a more capable model, and
-one that needs a bigger computer.
+This section names the models you will actually meet, says what each one is for, and
+ends with one recommendation you can follow. The size of a model is given as its number
+of **parameters**, and a parameter is one of the adjustable numbers inside the network
+that training sets.
 
-- [RT-2](https://robotics-transformer2.github.io/), from Google in 2023, was the first
-  well-known VLA. It introduced the trick of writing movements as tokens, but it was
-  never released, so nobody outside Google can run it.
-- [OpenVLA](https://arxiv.org/abs/2406.09246), from Stanford and others in June 2024,
-  was the first VLA that anyone could download. It has 7 billion parameters and was
-  trained on 970,000 robot demonstrations, and it writes movements as tokens, one
-  movement at a time. It is under the MIT licence.
-- [π0 and π0.5](https://github.com/Physical-Intelligence/openpi), from Physical
-  Intelligence, add a flow-matching action expert to a vision-language model. π0 was
-  announced in October 2024 and released in February 2025, and they are among the
-  strongest models that you can download. But they need an NVIDIA graphics card to
-  run.
-- [GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T), from NVIDIA in April 2026, has
-  3 billion parameters and a flow-matching action expert. It was trained on robot
-  demonstrations and on human video, and it also needs an NVIDIA graphics card.
-- [SmolVLA](https://huggingface.co/blog/smolvla), from Hugging Face in June 2025, has
-  450 million parameters. It is small enough to run on an ordinary computer, including
-  a Mac, so it is the usual starting point for a beginner with a small arm.
+Read the table one row at a time: the row names a model, says what it is best at, gives
+its size and its two licences, says how current it is, and ends with the case for
+choosing it. A model has two licences because the programs and the trained numbers are
+published separately and often on different terms, so the column gives the code first
+and the weights second. Every licence here was read from the project's own files in
+September 2026 by the [frontier
+document](../../../03_frameworks/08_frontier/02_foundation-models.md#10-the-open-shelf-what-you-can-download-today),
+which is the page to check when you want to know what is current.
 
-Three more are worth knowing by name, because they can be downloaded and they fill
-gaps the five above leave.
+| Model | Best at | Size | Licence: code / weights | How current | Pick it when |
+| --- | --- | --- | --- | --- | --- |
+| [SmolVLA](https://huggingface.co/lerobot/smolvla_base) | running on hardware you already own | 450 million | Apache-2.0 / Apache-2.0 | most used in 2026 | you are learning, with a small arm and one computer |
+| [π0, π0-FAST and π0.5](https://github.com/Physical-Intelligence/openpi) | smooth two-armed tasks such as folding cloth | not stated | Apache-2.0 / served from the project's own storage | most used in 2026 | you have an NVIDIA card, and a robot like ALOHA or DROID |
+| [GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T) | working on a robot it was not trained on | 3 billion | Apache-2.0 / NVIDIA Open Model License | most used in 2026 | you want the most capable open model, and you have NVIDIA hardware |
+| [MolmoAct2](https://huggingface.co/allenai/MolmoAct2) | published evidence you can check | 5 billion | Apache-2.0 / none declared on the model card | worth betting on | you have to justify the choice with numbers, or you own an SO-100 |
+| [X-VLA](https://huggingface.co/2toINF/X-VLA-Pt) | being adapted to an unusual robot | 0.9 billion | not checked / Apache-2.0 | worth betting on | you need a permissive licence on the weights themselves |
+| [OpenVLA](https://huggingface.co/openvla/openvla-7b) | being the number everyone compares against | 7 billion | MIT / MIT | historical | you want the baseline, or one whole model you can read |
 
-- [X-VLA](https://huggingface.co/2toINF/X-VLA-Pt), from an academic group in November
-  2025, is released under Apache-2.0 including its weights, which few models are.
-- [MolmoAct2](https://huggingface.co/allenai/MolmoAct2), from the Allen Institute for
-  AI in May 2026, has 5 billion parameters and is the most thoroughly evaluated open
-  model, although its model card declares no licence on the weights, so read that
-  before relying on it.
-- [GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T) above is the most capable open
-  model that its own vendor supports.
+### 5.1 SmolVLA, the one to start with
 
-### The ones you will read about but cannot have
+SmolVLA is **most used in 2026** by people learning on a small arm, because it is the
+only model in the table that runs without an NVIDIA graphics card. Hugging Face released
+it on 3 June 2025. It has 450 million parameters: a SmolVLM2 vision-language backbone
+and a flow-matching action expert of roughly 100 million, the arrangement of [way
+2](#way-2-add-a-small-action-expert). Its authors trained it on about 10 million frames
+from 487 public datasets and report about 78 per cent success on real tasks with an
+SO-100 arm.
+
+The obvious alternative is π0.5, which is the stronger model. You pick SmolVLA anyway
+when you lack the hardware for π0.5, and that is most people: the π0 repository asks for
+an NVIDIA card with more than 8 GB of video memory, while SmolVLA's
+[announcement](https://huggingface.co/blog/smolvla) says the model runs on a central
+processing unit and on a MacBook.
+
+It costs you accuracy, because it is the smallest model here and the weakest on a task
+far from its training data, and it must be fine-tuned on your own recordings first.
+LeRobot's [guide](https://huggingface.co/docs/lerobot/smolvla) recommends about 50
+recorded episodes and puts 20,000 training steps at roughly four hours on one A100
+graphics card, while its [hardware
+guide](https://huggingface.co/docs/lerobot/hardware_guide) puts that training at 10 to
+16 GB of video memory, so a Mac is slow rather than useless. The usual mistake is too
+few recordings of each variation: the authors found 25 episodes of their task not enough
+and 50 enough.
+
+The library is [LeRobot](https://github.com/huggingface/lerobot), and SmolVLA is driven
+from the command line rather than from Python. Two commands do the whole job.
+
+```bash
+pip install -e ".[smolvla]"   # the SmolVLA extras, inside a LeRobot checkout
+
+# Fine-tune the public base model on your own recordings.
+lerobot-train \
+  --policy.path=lerobot/smolvla_base \
+  --dataset.repo_id=${HF_USER}/mydataset \
+  --batch_size=64 \
+  --steps=20000 \
+  --output_dir=outputs/train/my_smolvla \
+  --policy.device=cuda
+
+# Run the fine-tuned model on the real arm.
+lerobot-rollout \
+  --policy.path=${HF_USER}/my_smolvla \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM0 \
+  --robot.cameras="{ front: {type: opencv, index_or_path: 8, width: 640, height: 480, fps: 30}}" \
+  --task="Grasp a lego block and put it in the bin."
+```
+
+LeRobot gives you the training loop, the dataset format, the cameras and the arm driver.
+You supply the dataset, recorded as [section
+6](#6-a-worked-example-teaching-a-small-arm-to-put-a-mug-in-a-bowl) describes, and your
+own serial port and camera index. The sentence after `--task` must be the sentence you
+recorded with, because the model learned to connect those words to that movement.
+
+### 5.2 The pi models from Physical Intelligence
+
+These are **most used in 2026** by people who have an NVIDIA graphics card, because they
+are the only weights from a frontier laboratory that anyone can download. Physical
+Intelligence announced π0 on 31 October 2024 and published it on 4 February 2025, then
+announced π0.5 on 22 April 2025. π0 attaches a flow-matching action expert to a
+pretrained vision-language model, π0.5 adds training that stops robot fine-tuning from
+damaging what the language model already knew, and π0-FAST writes movements as tokens
+instead, as in [way 1](#way-1-write-the-movement-as-tokens). The [openpi
+repository](https://github.com/Physical-Intelligence/openpi) puts their training data at
+10,000 hours or more.
+
+The obvious alternative is GR00T N1.7, which is also open and also uses an action
+expert. You pick a pi model when your robot resembles ALOHA or DROID, because fine-tuned
+checkpoints exist for those two platforms, and when you read research, because π0.5 is
+what most 2026 papers measure themselves against.
+
+It costs you an NVIDIA card and a Linux machine. The repository asks for more than 8 GB
+of video memory to run a model, more than 22.5 GB to fine-tune part of it and more than
+70 GB to fine-tune all of it, and says only Ubuntu 22.04 has been tested. The code is
+Apache-2.0, but the weights come from the project's own storage with no separate
+licence, so read the repository before shipping a product. The first failure is usually
+a licence prompt, not a crash: the π0.5 recipe in LeRobot uses Google's gated
+`google/paligemma-3b-pt-224` tokenizer, which you must accept on the Hugging Face
+website first.
+
+The library is openpi, written in JAX, and the same models are in
+[LeRobot](https://huggingface.co/docs/lerobot/pi05) for people who prefer PyTorch. This
+is openpi's own example, with a checkpoint fine-tuned on the DROID robot.
+
+```python
+from openpi.training import config as _config
+from openpi.policies import policy_config
+from openpi.shared import download
+
+config = _config.get_config("pi05_droid")
+checkpoint_dir = download.maybe_download("gs://openpi-assets/checkpoints/pi05_droid")
+
+policy = policy_config.create_trained_policy(config, checkpoint_dir)
+
+example = {
+    "observation/exterior_image_1_left": ...,   # the camera looking at the table
+    "observation/wrist_image_left": ...,        # the camera on the wrist
+    "prompt": "pick up the fork",
+}
+action_chunk = policy.infer(example)["actions"]
+```
+
+The library downloads the checkpoint, runs both networks, and hands back a chunk of
+movements. You supply the contents of `example`: real pictures, the arm's joint angles,
+and the key names this checkpoint expects, which is why they say `exterior` and `left`.
+You also write the loop that reads the cameras and sends the chunk to the arm.
+
+### 5.3 GR00T N1.7 from NVIDIA
+
+GR00T N1.7 is **most used in 2026** where capability matters more than the price of the
+graphics card, and it is the most capable open model on the shelf. NVIDIA tagged it on
+18 April 2026 as a general-availability release, which for NVIDIA means a supported
+product rather than an experiment. It has 3 billion parameters, a Cosmos-Reason2-2B
+backbone built on the Qwen3-VL architecture, and a flow-matching action head, and it was
+pretrained on 20,000 hours of human video alongside robot demonstrations.
+
+The obvious alternative is π0.5. You pick GR00T when the robot you own is not the robot
+the model was trained on. Its movements are distances from the gripper's current pose
+rather than absolute positions, and NVIDIA names that one choice as the key factor in
+its cross-robot performance, because three centimetres to the left means the same thing
+on every arm while a coordinate does not. The same choice is what let NVIDIA train on
+human video, since a hand and a gripper move in the same relative terms.
+
+It costs you NVIDIA hardware, with no way round it: 16 GB or more of video memory to run
+the model, 40 GB or more to fine-tune it, and a supported platform, which means a
+desktop card on CUDA 12.8, a Jetson Thor or Orin, or a DGX Spark. The licence needs
+care. The code is Apache-2.0, while the weights are under the [NVIDIA Open Model
+License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/),
+which allows commercial use but adds conditions Apache-2.0 does not, such as attribution
+when you redistribute and the loss of the licence if you switch off a safety check
+without putting a similar one in its place. The repository's own sentence about being
+"fully commercially licensable under Apache 2.0" describes the code. The first run
+usually fails for a smaller reason: the backbone is a gated download, so without Hugging
+Face access the model refuses to load.
+
+The library is the [Isaac-GR00T](https://github.com/NVIDIA/Isaac-GR00T) repository, and
+the model is also in [LeRobot](https://huggingface.co/docs/lerobot/groot). NVIDIA runs
+the model as a server and the robot as a client, so the graphics card does not have to
+sit on the robot.
+
+```bash
+# On the machine with the graphics card.
+uv run python gr00t/eval/run_gr00t_server.py \
+    --model-path nvidia/GR00T-N1.7-3B \
+    --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
+    --device cuda:0
+```
+
+```python
+from gr00t.policy.server_client import PolicyClient
+
+policy = PolicyClient(host="localhost", port=5555)
+
+obs, info = env.reset()                  # your robot, or your simulator
+action, info = policy.get_action(obs)    # one chunk of movements
+obs, reward, done, truncated, info = env.step(action)
+```
+
+The server loads the model and does the thinking. You supply `env`, your own code around
+the real arm or the simulator, which must produce the picture and joint-angle names
+GR00T expects and accept the movements it returns. You also choose the embodiment tag,
+which tells the model which robot it is driving and so decides how its numbers are read.
+
+### 5.4 MolmoAct2 from the Allen Institute for AI
+
+MolmoAct2 is **worth betting on**, because no other open model publishes as much
+evidence about itself, and because the field is moving towards models that reason about
+the scene before they move. The Allen Institute for AI published it on 4 May 2026, with
+a paper at [arXiv 2605.02881](https://arxiv.org/abs/2605.02881). It has 5 billion
+parameters and attaches a flow-matching action expert to a vision-language model that
+writes words, so one model both reasons and moves. It ships with its training data,
+including 720 hours of two-armed teleoperation, and with fine-tuned versions for the
+DROID Franka arm, a two-armed YAM robot, and the SO-100 and SO-101 learning arms.
+
+The obvious alternative is again π0.5. You pick MolmoAct2 when you have to defend the
+choice to somebody, because its authors claim the widest evaluation of any open
+vision-language-action model, across seven simulated and real benchmarks, and publish
+the datasets with it. They report beating π0.5, and report that the vision-language
+model underneath beats GPT-5 and Gemini Robotics ER 1.5 across 13 tests of reasoning
+about the physical world. The second reason is narrower: it has a ready checkpoint for
+the SO-100 and SO-101, the arms a beginner is likely to own, and neither π0.5 nor GR00T
+has one.
+
+It costs you memory and legal certainty. Each checkpoint is about 22 GB to download, and
+the project's inference server fits under 16 GB of video memory at reduced precision
+while its full-precision setting wants around 96 GB free. The code is Apache-2.0, read
+from its licence file, but the model card on Hugging Face declares no licence at all in
+its metadata, even though the repository's README says Apache 2.0, so ask the authors
+before building a product on the weights. The project also warns that it has been
+checked only on the SO-100 and the Franka DROID setup, and only for simple tasks of the
+kind it was trained on.
+
+The library is [LeRobot](https://huggingface.co/docs/lerobot/molmoact2), which carries
+MolmoAct2 as a policy, and the original training code is in
+[allenai/molmoact2](https://github.com/allenai/molmoact2). This is LeRobot's own command
+for the SO-100 checkpoint.
+
+```bash
+lerobot-rollout \
+  --policy.path=lerobot/MolmoAct2-SO100_101-LeRobot \
+  --rename_map='{"observation.images.top": "observation.images.cam0", "observation.images.side": "observation.images.cam1"}' \
+  --robot.type=so100_follower \
+  --robot.port=/dev/ttyACM0 \
+  --robot.cameras='{
+      top: {type: opencv, index_or_path: 0, width: 640, height: 480, fps: 30},
+      side: {type: opencv, index_or_path: 2, width: 640, height: 480, fps: 30}
+  }' \
+  --task="pick up the red cube" --duration=30
+```
+
+LeRobot supplies the model, the cameras and the arm driver. You supply two cameras in
+the positions the checkpoint expects, a primary view and a second view, and the
+`--rename_map` that says which of yours is which. People leave that mapping out, and the
+model then reads the side view as if it were the view from above.
+
+### 5.5 X-VLA
+
+X-VLA is **worth betting on**, because it attacks the problem that [section
+7](#7-what-goes-wrong-and-what-people-do-about-it) calls the field's worst, which is a
+model that works on its builders' robot and not on yours. An academic group published it
+in November 2025, with a paper at [arXiv 2510.10274](https://arxiv.org/abs/2510.10274).
+The released base model has 0.9 billion parameters, as LeRobot's page for it states, and
+was trained on 290,000 recorded episodes from seven robot platforms. Each robot and each
+dataset is described by a small set of learned numbers, called a **soft prompt**, which
+goes into the model with the pictures and the instruction, so adapting to a new robot
+means learning a new soft prompt.
+
+The obvious alternative at this size is SmolVLA. You pick X-VLA when the licence
+matters, because Apache-2.0 covers the weights themselves, and when your robot differs
+from everything in the training data, because its authors report nearly reaching π0's
+scores on two benchmarks while adjusting 1 per cent of the model, or 9 million numbers.
+Treat that as the best case, not the recipe: LeRobot's own guidance for a new robot is
+to train the vision and language parts as well.
+
+It costs you a graphics card, because LeRobot's hardware guide places X-VLA with the
+large models at about 24 to 40 GB of video memory for training, so it is not a Mac model
+despite its size. The frontier document records its code licence as not checked, which
+is worth checking yourself. Its checkpoints are uneven too: the simulation one reports
+93 per cent on the LIBERO benchmark, while each real-robot one is tied to one platform,
+so you will probably fine-tune.
+
+The library is [LeRobot](https://huggingface.co/docs/lerobot/xvla), which carries X-VLA
+as a policy type.
+
+```bash
+pip install -e .[xvla]
+
+lerobot-train \
+  --dataset.repo_id=YOUR_DATASET \
+  --policy.path=lerobot/xvla-base \
+  --policy.repo_id=HF_USER/xvla-your-robot \
+  --policy.dtype=bfloat16 \
+  --policy.action_mode=auto \
+  --steps=20000 \
+  --policy.device=cuda \
+  --policy.train_soft_prompts=true
+```
+
+LeRobot holds the pretrained model and the training loop. You supply the dataset,
+recorded on your own robot, and the decision about what to train: the last flag trains
+the soft prompt, and the guidance is to let the vision and language parts train too.
+
+### 5.6 OpenVLA
+
+OpenVLA is **historical**, and it is here because it explains how the others work and
+because every paper you read compares against it. A group from Stanford, UC Berkeley,
+Google DeepMind and the Toyota Research Institute published it in June 2024, with a
+paper at [arXiv 2406.09246](https://arxiv.org/abs/2406.09246). It has 7 billion
+parameters, it was trained on 970,000 real robot demonstrations from the pooled Open
+X-Embodiment dataset, and it writes movements as tokens exactly as [way
+1](#way-1-write-the-movement-as-tokens) describes. That method came from Google's
+[RT-2](https://robotics-transformer2.github.io/) in 2023, which was never released, so
+OpenVLA was the first such model anybody could download, and in September 2026 it was
+still the most downloaded robotics model on Hugging Face.
+
+You would not pick it to drive a robot today, because SmolVLA and π0.5 are maintained
+while the OpenVLA repository has had no commit since March 2025. You would pick it for
+two other reasons. It is the baseline that published results are measured against, so
+you may have to run it to compare. And its code and its weights are both MIT, the most
+permissive pair in the table, so you can read, change and publish it without asking
+anybody.
+
+It costs you speed above all. It writes one movement at a time, which is slow in the way
+the [chunking section](#why-it-outputs-a-chunk-of-actions) explains, and its own
+successor recipe, [OpenVLA-OFT](https://openvla-oft.github.io/), exists to fix that. Its
+7 billion parameters also need an NVIDIA graphics card, so it does not run on a Mac.
+
+The library is `transformers` from Hugging Face, because OpenVLA is published as an
+ordinary Hugging Face model. This is the example from its own [model
+card](https://huggingface.co/openvla/openvla-7b), with the instruction changed.
+
+```python
+import torch
+from PIL import Image
+from transformers import AutoModelForVision2Seq, AutoProcessor
+
+processor = AutoProcessor.from_pretrained("openvla/openvla-7b", trust_remote_code=True)
+vla = AutoModelForVision2Seq.from_pretrained(
+    "openvla/openvla-7b",
+    torch_dtype=torch.bfloat16,
+    low_cpu_mem_usage=True,
+    trust_remote_code=True,
+).to("cuda:0")
+
+image = Image.open("table.jpg")
+# The wording is fixed: OpenVLA was trained with "In:" before the instruction
+# and "Out:" at the end, and other wordings give worse movements.
+prompt = "In: What action should the robot take to put the mug in the bowl?\nOut:"
+
+inputs = processor(prompt, image).to("cuda:0", dtype=torch.bfloat16)
+# unnorm_key names the recorded dataset whose ranges turn the model's
+# 0-to-255 steps back into real distances.
+action = vla.predict_action(**inputs, unnorm_key="bridge_orig", do_sample=False)
+```
+
+The library gives you the seeing, the reading of the instruction and the choice of
+movement in one call, and `predict_action` turns the tokens back into numbers. You
+supply everything that touches the robot. The numbers say how far to move and turn the
+gripper and whether to open or close it, so your program turns them into joint commands,
+and you write the loop and the success check, because the model never stops by itself.
+
+### 5.7 The ones you will read about but cannot have
 
 The strongest models of 2026 are not downloadable, and knowing their names matters
 anyway, because every claim you read about what robots can now do comes from one of
-them. π0.7 from Physical Intelligence, Gemini Robotics 2 from Google DeepMind, Helix
-2.5 from Figure and Dyna-2 from Dyna Robotics were all demonstrated rather than
-released.
+them. π0.7 from Physical Intelligence, Gemini Robotics 2 from Google DeepMind, Helix 2.5
+from Figure and Dyna-2 from Dyna Robotics were all demonstrated rather than released.
 
-One of them is different in kind rather than in strength, and it is the reason this
-book has a page on the idea. [Skild S1](https://www.skild.ai/blogs/s1), announced in
-August 2026, is not told what to do in words at all. It is shown one video of the task
-and then does the task, with no fine-tuning. Everything else on this page learns a task
-by having that task trained into its weights, so a model that takes the task as an
-input instead is a different arrangement rather than a better model of the same
-arrangement. [Prompting with a
+One of them is different in kind rather than in strength, and it is the reason this book
+has a page on the idea. [Skild S1](https://www.skild.ai/blogs/s1), announced in August
+2026, is not told what to do in words at all. It is shown one video of the task and then
+does the task, with no fine-tuning. Everything else on this page learns a task by having
+that task trained into its weights, so a model that takes the task as an input instead
+is a different arrangement rather than a better model of the same arrangement.
+[Prompting with a
 demonstration](../../10_making-models-work-on-an-arm/03_also-used/02_prompting-with-a-demonstration.md)
-explains how that works and what it costs, and it is honest about how thin the
-published evidence still is.
+explains how that works and what it costs, and it is honest about how thin the published
+evidence still is.
 
-The [frontier
-document](../../../03_frameworks/08_frontier/02_foundation-models.md#10-the-open-shelf-what-you-can-download-today)
-lists what you can download today, with the licence of each one, and it is the page to
-check rather than this one when you want to know what is current.
+### 5.8 How to choose
+
+Start with SmolVLA. On a small arm, with one computer and no NVIDIA graphics card, it is
+the only model here you can actually run, and the loop of recording demonstrations,
+fine-tuning and watching the arm fail teaches you more than the choice of model does.
+
+Four things change that answer.
+
+- **You have an NVIDIA graphics card with 16 GB or more.** Then use π0.5 if your robot
+  resembles ALOHA or DROID, and GR00T N1.7 if it does not, because GR00T's relative
+  movements transfer between robot bodies better.
+- **You own an SO-100 or SO-101 and SmolVLA is not accurate enough.** Then try the
+  MolmoAct2 checkpoint for those arms, which is the only frontier-style open model with
+  a checkpoint for that hardware.
+- **Somebody has to approve the licence.** Then choose from the models that are
+  permissive on the weights themselves, which here are X-VLA and OpenVLA, or
+  [GigaBrain-0.7](https://huggingface.co/open-gigaai/GigaBrain-0.7-3.5B-Base), a
+  3.5-billion-parameter model from August 2026 that is Apache-2.0 on both and sits on
+  the frontier document's shelf.
+- **You need a number to compare against.** Then run OpenVLA, because that is the
+  comparison everybody else publishes.
+
+Do not choose on success rates reported by different laboratories. Each number was
+measured by the group that benefits from it, on a robot you do not have, as [section
+7](#7-what-goes-wrong-and-what-people-do-about-it) explains. The honest way to choose
+between two models is to fine-tune both on your own recordings and count the successes
+on your own arm.
 
 ---
 
@@ -398,67 +737,3 @@ objects and the instructions keep changing.
   movement.
 - [Learned methods](../../../03_frameworks/04_one-arm-training/03_learned-methods.md)
   in the frameworks book compares VLAs with the other ways of training one arm.
----
-
-## 11. Using it in Python
-
-This page has described a model that turns a picture and a sentence into the movement
-of an arm. This section shows what that looks like in Python, and after it you will
-know how few lines stand between a camera picture and a movement, and how much sits
-behind those lines.
-
-The model is [OpenVLA](https://huggingface.co/openvla/openvla-7b), from
-[section 5](#5-well-known-models-of-this-kind). It is used here because it is published
-as an ordinary Hugging Face model, so `transformers` loads it in the same way as the
-vision-language model on the previous page. The code below is the example from
-OpenVLA's own documentation, with the instruction changed.
-
-```python
-import torch
-from PIL import Image
-from transformers import AutoModelForVision2Seq, AutoProcessor
-
-processor = AutoProcessor.from_pretrained("openvla/openvla-7b", trust_remote_code=True)
-vla = AutoModelForVision2Seq.from_pretrained(
-    "openvla/openvla-7b",
-    torch_dtype=torch.bfloat16,
-    low_cpu_mem_usage=True,
-    trust_remote_code=True,
-).to("cuda:0")
-
-image = Image.open("table.jpg")
-prompt = "In: What action should the robot take to put the mug in the bowl?\nOut:"
-
-inputs = processor(prompt, image).to("cuda:0", dtype=torch.bfloat16)
-action = vla.predict_action(**inputs, unnorm_key="bridge_orig", do_sample=False)
-```
-
-Three details in those lines are worth explaining. The prompt has a fixed shape, with
-"In:" before the instruction and "Out:" at the end, because that is the shape OpenVLA
-was trained on, and a different wording gives worse movements. Then `predict_action`
-does the work of [way 1](#way-1-write-the-movement-as-tokens): the model writes the
-movement as tokens, and this method turns those tokens back into numbers for you.
-Finally `unnorm_key` names the recorded dataset whose ranges are used to turn those
-numbers back into real distances, because the model itself only ever works in the range
-0 to 255.
-
-The pretrained model therefore gives you the seeing, the understanding of the words and
-the choice of movement, all in one. That is a great deal, and it is the whole argument
-of this page.
-
-What you still write is a loop and a driver. You take the picture from the camera, you
-run the two lines above, you send `action` to the arm's controller, and then you do it
-all again with a new picture. Nothing above talks to a robot, because `action` is only
-an array of numbers, and turning those numbers into joint commands is your program's
-job. You also write the success check, because, as
-[section 7](#7-what-goes-wrong-and-what-people-do-about-it) said, the model never stops
-by itself.
-
-What you decide is harder than any of that. You decide whether to fine-tune, and on how
-many demonstrations, because a model that works on its builders' robot often does not
-work on yours. You decide the hardware, since `"cuda:0"` in the code is not a detail:
-OpenVLA has 7 billion parameters and needs an NVIDIA graphics card, so it does not run
-on a Mac. For a small arm on ordinary hardware, the usual route is SmolVLA through
-[LeRobot](https://github.com/huggingface/lerobot), which is driven from the command
-line with `lerobot-train` and `lerobot-eval` rather than from Python, and which records
-the demonstrations for you as well.

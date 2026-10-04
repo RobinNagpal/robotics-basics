@@ -24,7 +24,6 @@ is: a grid of small squares called pixels, each with a number for its brightness
 9. [Why this rather than the obvious alternative, and what it costs](#9-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
-12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -198,28 +197,321 @@ needs some real ones too.
 
 ## 6. Well-known models and tools
 
-This area has far fewer models than the camera side of robotics, and the ones below
-are all real and published.
+This area has far fewer models than the camera side of robotics, and the sensor you own
+decides which of the few you can use at all. So this section is organised by hardware. A
+camera-behind-gel sensor such as GelSight Mini or DIGIT, a magnetic skin such as
+AnySkin, and an array of pressure elements inside a bought hand each lead to a different
+answer. For the arrays, and for any sensor nobody has published a model for, the answer
+is that you train a small model of your own on a few hundred presses, and here that is
+the usual case rather than the exception.
 
-- **GelSight's own shape and force methods.** The MIT group that made GelSight
-  published how to get a height map from the shading, and how to estimate force
-  from the moving dots. Much later work starts here.
-- **"The Feeling of Success"** (Calandra and colleagues, 2017). A network looks at
-  GelSight pictures from both fingers, plus a camera picture, and predicts whether
-  a grasp will hold once the object is lifted.
-- **Sparsh** (Meta, 2024). A self-supervised model trained on a large set of
-  tactile pictures from several sensor types. It is meant as a starting point that
-  other tactile models build on. Its licence forbids commercial use.
-- **Transferable Tactile Transformers (T3)** (2024). One model shared across many
-  different tactile sensors, with a small separate part for each sensor. The idea
-  is to stop training from scratch every time the sensor changes.
-- **NeuralFeels** (Meta, 2024, MIT licence). It joins touch with a camera to
-  rebuild the shape and position of an object while a robot hand turns it. The
+Read the table as: the model, the sensor it needs, what it is best at, how big it is,
+its licence, and the one case that should make you choose it. A cell says `not stated`
+where nobody has published the figure. "Yours" in the licence column means the model
+comes out of your own training run, so no licence restricts it.
+
+| Model | Sensor it needs | Best at | Size | Licence | Pick it when |
+| --- | --- | --- | --- | --- | --- |
+| [6.1 GelSight's depth network](#61-gelsights-own-depth-network-inside-gsrobotics) | a camera behind a gel | a height map of the dent, pixel by pixel | 8,834 numbers, counted from its own source | GPL-3.0 | you want shape from a gel sensor |
+| [6.2 An image backbone of your own](#62-an-image-backbone-of-your-own-fine-tuned) | any sensor that gives a picture | contact place, shape and force from a few thousand presses | 11,689,512 numbers for ResNet-18, published by torchvision | yours | the answer you need is not one anybody published |
+| [6.3 A small model on a magnetic skin](#63-a-small-model-on-a-magnetic-skin) | AnySkin, eFlesh, or any taxel array | force and shear from fifteen numbers | smaller than a photograph | yours | your sensor is a skin or an array |
+| [6.4 Sparsh](#64-sparsh-from-meta) | DIGIT, GelSight'17, GelSight Mini | starting from few labels on those three | a small and a base backbone; counts not stated | CC BY-NC 4.0, no commercial use | you own one of those three, and sell nothing |
+| [6.5 Transferable Tactile Transformers (T3)](#65-transferable-tactile-transformers-t3) | thirteen camera-based sensors | not training from scratch when the sensor changes | not stated | MIT | the same as 6.4, but commercially |
+
+### 6.1 GelSight's own depth network, inside gsrobotics
+
+This is **most used in 2026** by anyone with a GelSight sensor, because it ships with the
+sensor and answers the question people buy the sensor for. It turns one tactile picture
+into a height map, and it is the part of
+[gsrobotics](https://github.com/gelsightinc/gsrobotics), GelSight's own software
+development kit, called `Reconstruction3D`. It is not quite the method in
+[section 4.1](#41-without-learning-the-shape-from-the-shading). A very small network
+takes five numbers for each pixel, its red, green and blue values and its position
+across and down the picture, and gives back the slope of the surface there in each
+direction. A classical step then integrates all those slopes into a height by solving
+Poisson's equation, so the learning replaced the calibration rather than the physics.
+
+You would pick this rather than fine-tuning an image backbone of your own, which is
+section 6.2, because the shape is already solved and the trained numbers come in the box.
+The network holds 8,834 numbers, counted from the four layer sizes in the repository's
+own source, so it runs on an ordinary processor, and nothing you could train on a few
+thousand presses would do this job better.
+
+What it costs you is the licence and the sensor. The repository is GPL-3.0, read from its
+own licence file and recorded in the frameworks book's
+[licence table](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#9-drivers-ros-2-packages-and-licences),
+so linking it into a product obliges you to publish the source of the result. The trained
+numbers were learned on GelSight's own gel and lights, so another maker's sensor needs
+its own training set. What most often goes wrong is the zero: the first fifty pictures
+record what the untouched pad looks like, so if anything is touching it then, every later
+height map is measured from the wrong surface.
+
+```python
+from utilities.gelsightmini import GelSightMini
+from utilities.reconstruction import Reconstruction3D
+
+camera = GelSightMini(target_width=320, target_height=240)  # the size in default_config.json
+camera.select_device(0)
+camera.start()
+
+depth = Reconstruction3D(image_width=320, image_height=240, use_gpu=False)
+depth.load_nn('./models/nnmini.pt')      # the trained numbers that ship with the kit
+
+# The first fifty pictures record the untouched pad. Do not touch it during these.
+for _ in range(50):
+    depth.get_depthmap(image=camera.update(dt=1 / 25), markers_threshold=(0, 70))
+
+# markers_threshold hides the printed dots, whose darkness is not a dent in the gel.
+height_map, contact_mask, slope_x, slope_y = depth.get_depthmap(
+    image=camera.update(dt=1 / 25), markers_threshold=(0, 70))
+print('height map size and range:', height_map.shape, height_map.min(), height_map.max())
+```
+
+gsrobotics opens the sensor, which the computer sees as an ordinary camera, loads the
+trained numbers, runs the network over every pixel, integrates the slopes, and masks out
+the printed dots. What you supply is the meaning. The height map is in the repository's
+own units, so if you need millimetres you press something of a known thickness and work
+out the scale, and deciding how many touched pixels count as "touching something" is
+yours. GelSight publishes 25 frames per second for the Mini, which makes one picture 40
+milliseconds and sets how fast you can act.
+
+### 6.2 An image backbone of your own, fine-tuned
+
+This is also **most used in 2026**, and it is where most people end up, because the
+answer they need is rarely one somebody has published. You take a network already trained
+on ordinary photographs, replace its last layer with one that gives the numbers you want,
+and train that last layer on your own presses. The
+[fine-tuning](../../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md#2-three-ways-to-fine-tune)
+page explains the three ways to do this, and keeping the backbone fixed is the cheapest.
+
+You would pick this rather than Sparsh in section 6.4 for two reasons that have nothing
+to do with accuracy. Sparsh forbids commercial use and a torchvision backbone does not.
+And Sparsh works with three named sensors, while this works with any sensor that produces
+a picture, including a pressure array, which is a small picture of numbers. What you give
+up is that the backbone learned from photographs, so it has never seen a tactile picture
+and needs more of your presses to make up for that.
+
+What it costs you is a labelled set of presses, which section 5 describes how to make.
+What most often goes wrong is that the blank picture is taken once at startup and the gel
+then warms up, so every later subtraction is measured from a pad that no longer looks
+like that.
+
+```python
+import numpy as np
+import torch
+from digit_interface import Digit
+from torchvision.models import ResNet18_Weights, resnet18
+
+sensor = Digit('D20001')                        # the serial number on the sensor
+sensor.connect()
+blank = sensor.get_frame().astype(np.float32)   # the pad with nothing touching it
+
+# A backbone pretrained on ordinary photos, with a new head of three numbers: where
+# on the pad the contact sits, across and down, and how hard it presses.
+net = resnet18(weights=ResNet18_Weights.DEFAULT)
+net.fc = torch.nn.Linear(net.fc.in_features, 3)
+net.eval()
+
+frame = sensor.get_frame().astype(np.float32)
+change = (frame - blank) / 255.0                # step 2 of section 4.2
+x = torch.from_numpy(change).permute(2, 0, 1).unsqueeze(0)   # colour first, then one batch
+with torch.inference_mode():
+    across, down, force = net(x)[0].tolist()
+```
+
+`digit-interface` gives you the frames, named by the serial number printed on the
+sensor's back, so the camera, the lights and the video stream are not your problem. Two
+warnings come with it: its licence is Creative Commons Attribution-NonCommercial 4.0,
+read from the repository's own licence file, and the repository is a public archive that
+nobody will fix. A GelSight needs no such library, because it appears as an ordinary
+camera and OpenCV's `cv2.VideoCapture` reads it. Torchvision hands you the backbone with
+its trained numbers downloaded, and replacing `net.fc` is the whole of "train a new
+head".
+
+What you supply is the training, because the code above only runs the network. Section 5
+says how to get the right answers, and you also have to take `blank` again before each
+grasp rather than once at startup. What you decide is which three numbers the head gives,
+and when a worn gel means the model must be checked again.
+
+### 6.3 A small model on a magnetic skin
+
+This is **most used in 2026** on any sensor that is not a camera, and it is the cheapest
+route into touch that exists. A magnetic skin is a rubber sheet with tiny magnets in it
+over a board of magnetometers, which are the chips a phone uses to find north. Five of
+them give fifteen numbers, three per chip. The open designs are
+[AnySkin](https://github.com/raunaqbhirangi/anyskin) and its successor
+[eFlesh](https://github.com/notvenky/eFlesh), both MIT, read from their own licence
+files, and the frontier chapter's
+[section on touch sensing](../../../03_frameworks/08_frontier/05_hardware.md#62-touch-sensing-became-something-you-buy-for-tens-of-dollars)
+records the manufactured versions and their prices.
+
+With fifteen numbers there is no backbone to reuse, so the model is a small one you fit
+yourself. You would pick this rather than a gel sensor and section 6.1 when you want
+force and shear at many places on a hand, and when a replaceable part matters: the
+electronics stay on the robot and the skin slips over them, so the part that wears out is
+the cheap part.
+
+What it costs you is shape. Fifteen numbers tell you how hard and in which direction
+something presses, and not whether it is an edge or a corner. The reading also moves as
+the skin warms up, so you have to take a fresh untouched reading often, and every skin is
+a little different, so a model fitted on one is not safe on the next without a reference
+press.
+
+```python
+import numpy as np
+from anyskin import AnySkinBase
+from sklearn.linear_model import Ridge
+
+# Five magnetometer boards, three numbers each, over the port the skin is plugged in on.
+skin = AnySkinBase(num_mags=5, port='/dev/ttyACM0', temp_filtered=True)
+
+# The untouched reading, averaged over 100 samples. Retake this often, not once.
+baseline = np.mean([skin.get_sample()[1] for _ in range(100)], axis=0)
+
+# Your own recording: for each press, the fifteen numbers and where it was pressed.
+presses = np.load('skin_presses.npy') - baseline   # shape (number of presses, 15)
+places = np.load('skin_places.npy')                # shape (number of presses, 2), in mm
+
+model = Ridge().fit(presses, places)   # fifteen numbers in, a place on the skin out
+
+_, reading = skin.get_sample()         # get_sample gives a timestamp and the numbers
+print('pressed at, in mm:', model.predict((reading - baseline).reshape(1, -1)))
+```
+
+The library does the serial port and the message framing, and with `temp_filtered=True`
+it drops each chip's temperature reading, so the fifteen numbers are the ones you want
+and nothing else. `Ridge` is ordinary linear regression with a penalty that keeps the
+fitted numbers small, which is the right first model for fifteen inputs and a few hundred
+presses.
+
+What you supply is the two recordings, and that means a rig: you have to press the skin
+at places you know, which in practice means mounting it under the robot and letting the
+arm's own position be the answer. What you decide is how often to retake the baseline,
+and whether a straight line is enough, because a press near the edge of the skin behaves
+differently from one in the middle.
+
+### 6.4 Sparsh, from Meta
+
+Sparsh is **worth betting on** rather than most used, because one model that works across
+many sensors is the direction the field is going, and this one is held back by its licence
+and by a measured failure rather than by its idea. It is a family of self-supervised touch
+models from Meta's Fundamental AI Research group with Carnegie Mellon University and the
+University of Washington, published in [October 2024](https://arxiv.org/abs/2410.24090).
+It was trained on more than 460,000 unlabelled tactile pictures by hiding parts of a
+picture and asking the model to fill them in, which is the idea section 5 describes. It
+supports DIGIT, GelSight'17 and GelSight Mini, and the repository also carries TacBench,
+six tasks that include force, slip, object pose, grasp stability and recognising
+textiles. The grasp stability task runs on the recordings of
+[Calandra and colleagues, 2017](https://arxiv.org/abs/1710.05512), who put a GelSight on
+each finger of a gripper, collected more than 9,000 grasping trials, and showed that
+camera and touch together predict a grasp better than either alone. That 2017 result is
+the one everything else on this page assumes, and its recordings are still the way to
+measure a model of your own without collecting anything.
+
+You would pick this rather than the backbone of your own in section 6.2 to save labels,
+because it starts from numbers learned on tactile pictures instead of on photographs. Its
+paper reports that the self-supervised start beat training end to end for one task and
+one sensor by 95.1 per cent on average across TacBench.
+
+What it costs you is checkable, and worth checking. The licence in the repository's own
+`LICENSE.md` is Creative Commons Attribution-NonCommercial 4.0, which forbids commercial
+use and covers the weights as well as the code. The repository is a public archive, read
+only since February 2025. Its own pretraining used eight A100 80GB graphics cards, so
+only the head on top is realistically yours to train. And it does not travel between
+sensors yet: a study in [September 2026](https://arxiv.org/abs/2609.08673) reports a
+frozen classifier on Sparsh scoring 6.86 per cent on a sensor it was not trained on,
+rising to 87.09 per cent once a tenth of the new sensor's recordings are labelled. That is
+the number to remember before buying a sensor, and it is why section 6.5 exists.
+
+```bash
+# The normal and shear field, live, on one GelSight Mini. The video id comes from
+# `ls -l /dev/video*`, because the sensor appears to the computer as a webcam.
+python demo_forcefield.py +experiment=downstream_task/forcefield/gelsight_dino \
+    paths=${YOUR_PATHS} paths.output_dir=${YOUR_PATH}/checkpoints/ \
+    test.demo.gelsight_device_id=0
+
+# Train a head of your own on your own labelled presses, backbone frozen.
+python train_task.py --config-name=experiment/downstream_task/${EXPERIMENT} \
+    paths=${YOUR_PATHS} wandb=${YOUR_WANDB}
+```
+
+The repository gives you the backbone, the training loop, and readers for its own
+recordings, which it releases for the force, slip and pose tasks. What you supply is a
+`paths` file saying where your data and checkpoints live, the downloaded weights, and,
+past the demo, your own labelled presses in the layout its readers expect.
+
+### 6.5 Transferable Tactile Transformers (T3)
+
+This is also **worth betting on**, and it is the better bet of the two for most readers,
+because its licence does not stop you using it. T3 comes from MIT's Computer Science and
+Artificial Intelligence Laboratory, published in
+[June 2024](https://arxiv.org/abs/2406.13640). Its arrangement is the interesting part:
+one shared middle section, a small separate part at the front for each sensor, and a small
+separate part at the back for each task. So the middle learns from every sensor at once,
+while the front absorbs the difference between one gel and another. It was trained on a
+dataset the authors published, Foundation Tactile, which gathers over 3 million tactile
+pictures from 13 sensors and 11 tasks into one format.
+
+You would pick this rather than Sparsh in section 6.4 for three reasons. Its
+[licence is MIT](https://github.com/alanzjl/t3), read from the repository's own licence
+file, so you may use it in a product. It covers thirteen sensors rather than three, so an
+unusual sensor has a better chance of being one of them. And its paper reports zero-shot
+transfer working for some sensor and task pairings, which is the problem the September
+2026 study measured on Sparsh.
+
+What it costs you is maturity. It is one research group's repository rather than a
+maintained library, the weights and the dataset are hosted away from the code, and the
+size of the shared middle is not published. Its strongest published result is a task
+success rate 25 per cent higher than a tactile encoder trained from scratch, on inserting
+multi-pin electronics, so treat it as evidence that the idea works rather than as a
+number for your own job.
+
+```bash
+git clone https://github.com/alanzjl/t3 && cd t3 && pip install -e .
+
+# Fine-tune on your own sensor and task, with the shared middle section frozen so
+# only the small sensor and task parts learn.
+python scripts/train_nn.py network=finetune_exp_cls datasets=[your_dataset] \
+    train.finetune_from=/path/to/checkpoint.pth train.freeze_trunk=true
+```
+
+The repository gives you the arrangement, the training loop and the readers for Foundation
+Tactile. What you supply is a file in its `configs/datasets/` folder describing your own
+recordings, and the downloaded checkpoint. What you decide is which existing sensor part
+your sensor is closest to, because starting from a part trained on a similar gel is the
+whole reason to use this rather than section 6.2.
+
+### 6.6 How to choose
+
+Start from the sensor, not from the model. If you own a gel sensor with a camera behind
+it, use section 6.1 for shape, because nothing you train will beat it at that job. If you
+own anything else, or need an answer that is not a height map, fine-tune a backbone of
+your own with section 6.2 on a few thousand presses. Those two cover most readers.
+
+Four things change that.
+
+- **You want force or slip rather than shape, and you own a DIGIT, a GelSight'17 or a
+  GelSight Mini.** Then section 6.4 reaches a usable answer from far fewer labelled
+  presses, as long as you sell nothing.
+- **The same, but you sell something, or your sensor is an unusual one.** Then section
+  6.5, which is MIT and was trained across thirteen sensors.
+- **Your sensor is a skin or an array of elements rather than a camera.** Then section
+  6.3, and expect force and shear rather than shape.
+- **You want the object's whole shape and position while a hand turns it, rather than
+  facts about one contact.** Then
+  [NeuralFeels](https://github.com/facebookresearch/neuralfeels) (Meta, 2024, MIT), which
+  joins touch with a camera to rebuild the object as the hand moves it, and which the
   [perception book](../../../02_perception/02_object-perception/02_sensors.md#25-models)
-  describes it.
-- **TACTO** and **Taxim**. These are not models but simulators. They make
-  realistic tactile pictures, so you can build and test the rest of a pipeline
-  without a sensor on the desk.
+  describes.
+
+Two tools are worth knowing although they are not models. TACTO and Taxim, both MIT, draw
+the picture a sensor would take for a given contact, so you can build and test everything
+around the model before a sensor arrives, as section 5 explains.
+
+One thing should not change your choice, and it is the number in section 6.4. A tactile
+model loses almost all of its accuracy on a sensor it was not trained on, and the recovery
+is a labelling job. So decide which model you intend to use before you buy the sensor, and
+not the other way round.
 
 ## 7. A worked example: checking the grip on a mug
 
@@ -343,64 +635,3 @@ In the other books:
 - [Tactile sensing at the
   contact](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#82-tactile-sensing-at-the-contact)
   covers the sensors you can buy.
-
-## 12. Using it in Python
-
-Section 4.2 described a network that reads a tactile picture, and section 6 said the
-software around these sensors is thin. So this section shows the shortest honest
-version: read one frame from the sensor, subtract the blank pad, and pass the
-difference through a pretrained backbone with a head of your own. After reading it you
-will know which of those four steps somebody has already written for you.
-
-```python
-import numpy as np
-import torch
-from digit_interface import Digit
-from torchvision.models import ResNet18_Weights, resnet18
-
-sensor = Digit('D20001')                        # the serial number on the sensor
-sensor.connect()
-blank = sensor.get_frame().astype(np.float32)   # the pad with nothing touching it
-
-# A backbone pretrained on ordinary photos, with a new head of three numbers: where
-# on the pad the contact sits, across and down, and how hard it presses.
-net = resnet18(weights=ResNet18_Weights.DEFAULT)
-net.fc = torch.nn.Linear(net.fc.in_features, 3)
-net.eval()
-
-frame = sensor.get_frame().astype(np.float32)
-change = (frame - blank) / 255.0                # step 2 of section 4.2
-x = torch.from_numpy(change).permute(2, 0, 1).unsqueeze(0)   # colour first, then one batch
-with torch.inference_mode():
-    across, down, force = net(x)[0].tolist()
-```
-
-The `digit-interface` library gives you the frames. You name the sensor by the serial
-number printed on its back, and `get_frame` hands back a plain NumPy picture, so
-nothing about the camera, the lights or the video stream is your problem. Its licence
-is Creative Commons Attribution-NonCommercial 4.0, which forbids commercial use, and
-that is exactly the licence trouble the last point of section 8 warns about. For a
-GelSight or any other camera-behind-gel sensor there is no such library, however you do
-not need one, because the sensor appears to the computer as an ordinary camera and
-OpenCV's `cv2.VideoCapture` reads it.
-
-Torchvision gives you the backbone with its pretrained numbers already downloaded, and
-replacing `net.fc` is the whole of "freeze the backbone and train a new head" from the
-[fine-tuning](../../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md#2-three-ways-to-fine-tune)
-page. The numbers it produces were learned from photographs rather than from tactile
-pictures, so they are not ideal, but they are a much better starting point than random
-numbers when you have only a few thousand presses.
-
-What you have to collect yourself is the training data, because the code above only
-runs the network and the network has to be trained first, with the same loop as the
-[chapter overview](../01_overview.md#9-using-it-in-python). Section 5 describes how to
-get the right answers: you mount the tactile sensor on top of a force sensor and press
-many objects into it, and the force sensor's reading is the answer for each picture.
-You also have to take `blank` again before each grasp rather than once at startup,
-because the gel's stiffness drifts as it warms up, which is the third point of section
-8.
-
-What you have to decide is which answers the head gives, how often you retake the
-blank frame, and when a worn gel means the model must be checked again. Because every
-sensor differs a little, a model trained on one pad is not safe to move to another
-without at least a reference press, and that is what T3 in section 6 exists to avoid.

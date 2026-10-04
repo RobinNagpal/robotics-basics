@@ -26,7 +26,6 @@ every later page.
 8. [Why classification, and what it costs](#8-why-classification-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -190,25 +189,326 @@ enough](../../../02_perception/01_camera/02_finding-objects.md#64-fine-tuning-wh
 
 ## 5. Well-known models
 
-It helps to see those ideas in real classifiers, and these are ones that people use
-or build on. Each of them is also used as a backbone inside other seeing models.
+This section names the models a developer actually reaches for in 2026, and it
+helps you decide which one to use. It also helps you decide whether you need a
+classifier of your own at all.
 
-- **AlexNet** was a CNN that won the ImageNet contest in 2012 by a wide margin,
-  because it showed that neural networks trained on graphics cards beat
-  hand-written methods for pictures. Few people use it today, but it started the
-  change.
-- **ResNet** is a CNN from Microsoft Research, from 2015, and it added "skip
-  connections", which pass a layer's input straight on to a later layer. These made
-  it possible to train much deeper networks, so ResNet is still a common backbone.
-- **MobileNet** is a family of small CNNs from Google, and they are built to run
-  fast on phones and small computers, so they suit a robot with no graphics card.
-- **EfficientNet** is a family of CNNs from Google that comes in many sizes, from
-  small and fast to large and accurate, so you can pick one that fits your
-  computer.
-- **ViT**, the vision transformer, came from Google in 2020, and it showed that a
-  transformer, first built for text, also works well on pictures.
-- **ConvNeXt** is a CNN from Meta that copied design ideas from transformers, and
-  it showed that a CNN built in the modern way can match them.
+Almost nobody trains a classifier from nothing any more, for the reason section 4
+gave. What people do instead falls into three routes. The first fine-tunes a small
+network on a few hundred of your own pictures. The second takes a large network
+that somebody else trained, keeps it exactly as it is, and trains only a tiny last
+layer on top, which is called a **frozen backbone** because the backbone's numbers
+never change. The third trains nothing at all: you take a **vision-language
+model**, which is a model trained on pictures paired with the sentences that
+describe them, and you hand it your class names as words.
+
+The table compares five models, one per route plus two more. Read each row as one
+model, with the number of parameters taken from the file Hugging Face serves, the
+licence from that model's own model card, and the last column saying when to pick
+that row. A **parameter** is one of the numbers inside the network, and the count
+tells you roughly how much memory and time the model needs.
+
+| Model | What it is best at | Size | Weights licence | Pick it when |
+| --- | --- | --- | --- | --- |
+| ResNet-50 | being the number everyone compares against | 25.6 million | Apache-2.0 | you need a baseline other people recognise |
+| MobileNetV3-Large | running fast on a small computer | 5.5 million | Apache-2.0 | the check runs often and there is no graphics card |
+| DINOv2, base size | giving features a tiny head can classify | 86.6 million | Apache-2.0 | you have tens of pictures per class, not hundreds |
+| SigLIP 2, base size, 224 pixels in | naming classes you can only describe in words | 375 million, both halves together | Apache-2.0 | you have no training pictures at all |
+| DINOv3, base size | the same job as DINOv2, done better | 85.7 million | bespoke DINOv3 licence | you have read the licence and accepted it |
+
+### 5.1 ResNet
+
+ResNet is **historical** here, and it is kept because the later models borrow from
+it and because every accuracy table still starts with it. Microsoft Research
+published it in December 2015, in the paper [Deep Residual Learning for Image
+Recognition](https://arxiv.org/abs/1512.03385), and its idea was the skip
+connection from section 3. ResNet-50 is the 50-layer member of the family and has
+about 25.6 million parameters.
+
+You would not pick it for a new robot classifier. The obvious alternative is a
+frozen DINOv2 with a small head, from section 5.3, which needs fewer of your own
+pictures and usually gives better accuracy. Pick ResNet-50 instead when you want a
+number that other developers recognise without explanation. What it costs you is
+accuracy for its size, because it was trained with labels on ImageNet and its
+features are weaker than those of the self-supervised backbones below.
+
+The library is Hugging Face `transformers`, whose `pipeline` helper puts the
+preparation of the picture, the network and the reading of the scores behind one
+call.
+
+```python
+from transformers import pipeline
+
+# "microsoft/resnet-50" is the Apache-2.0 checkpoint trained on ImageNet.
+classifier = pipeline("image-classification", model="microsoft/resnet-50")
+
+# The answers come back sorted, with the most likely first.
+for guess in classifier("part.jpg")[:3]:
+    print(guess["label"], round(guess["score"], 3))
+```
+
+The pipeline shrinks the picture to 224 by 224 pixels, normalises it the way this
+model was trained, turns the scores into numbers that add up to 1, and sorts them.
+What you still have to supply is your own class list, which means fine-tuning. The
+thing that most often goes wrong is running it as it comes and being surprised by
+the answers, because its 1,000 ImageNet classes are mostly animals and household
+objects and contain nothing from a factory.
+
+### 5.2 MobileNetV3
+
+MobileNetV3 is **most used in 2026** when the classifier has to run on the robot
+itself with no graphics card. Google published it in May 2019, in the paper
+[Searching for MobileNetV3](https://arxiv.org/abs/1905.02244), and part of its
+layer arrangement was found by a search program rather than chosen by a person.
+The `mobilenetv3_large_100` weights have about 5.5 million parameters.
+
+The obvious alternative is EfficientNet-B0, which reaches similar accuracy at a
+similar size. MobileNetV3 is the one to pick because it is the most widely
+converted: ready versions exist for the phone and microcontroller runtimes, so
+the step from your trained file to the robot's processor is one that many people
+have already made. Against the frozen backbone of section 5.3, MobileNetV3 wins
+on cost per picture at run time, and that is what matters when the check runs
+every time the gripper closes.
+
+What it costs you is that you must train it, which the frozen-backbone route
+largely avoids. Plan on a few hundred labelled pictures per class, and accept
+accuracy below that of a large backbone on hard classes. The licence is
+Apache-2.0 and gives you no trouble. The thing that most often goes wrong is the
+preparation of the picture: resize or normalise differently from the way the
+weights were trained and accuracy falls with no error message. That is why the
+code below asks the library for the right transform instead of writing one.
+
+The library is `timm`, which holds pretrained picture models and their matching
+preparation settings. Its [quickstart
+page](https://huggingface.co/docs/timm/quickstart) documents these calls.
+
+```python
+import timm
+
+# num_classes=2 throws away the 1,000-class head and puts an untrained
+# two-class head in its place: "holding a cup" and "empty".
+model = timm.create_model("mobilenetv3_large_100", pretrained=True, num_classes=2)
+
+# Ask the checkpoint itself how its pictures were prepared, then build
+# exactly that transform.
+data_cfg = timm.data.resolve_data_config(model.pretrained_cfg)
+transform = timm.data.create_transform(**data_cfg)
+
+print(sum(p.numel() for p in model.parameters()))   # the parameter count
+```
+
+What the library gives you is the trained backbone and the correct transform. What
+you still have to supply is the training itself, because `timm` ships no training
+loop for your own data: its documentation tells you to write a PyTorch loop or
+adapt its [training script](https://huggingface.co/docs/timm/training_script). You
+also supply the pictures, the split between training and testing, and the score
+threshold below which the robot treats the answer as unknown.
+
+### 5.3 DINOv2 with a small head
+
+DINOv2 is **most used in 2026** for a custom class list, because it is the
+cheapest way to get a good classifier from a small number of pictures. Meta
+published it in April 2023, in the paper [DINOv2: Learning Robust Visual Features
+without Supervision](https://arxiv.org/abs/2304.07193), and both the
+[code](https://github.com/facebookresearch/dinov2) and the weights are
+Apache-2.0. It is a vision transformer trained **self-supervised**, which means
+nobody labelled its training pictures: it learned by being asked to give two
+different crops of the same picture the same numbers. Its base size has about 86.6
+million parameters.
+
+The obvious alternative is to fine-tune a ResNet or a MobileNetV3, which trains
+the whole network. This repository's own survey of backbones reports that a simple
+classifier placed on DINOv2's features matches networks trained end to end, in
+[backbones and
+features](../../../02_perception/02_object-perception/04_models-that-find.md#15-backbones-and-features).
+That is why the frozen route wins when pictures are scarce. You train one small
+layer on a processor in seconds, and tens of pictures per class are often enough,
+where fine-tuning wants hundreds.
+
+What it costs you is run-time speed. All 86.6 million parameters run for every
+picture even though you train almost none of them, so it is much slower per
+picture than a fine-tuned MobileNetV3. The features are frozen, so if two of your
+classes differ in a way this backbone never learned to separate, a small head
+cannot repair that, and your only move is to fine-tune after all. The thing that
+most often goes wrong is that your head is a second file, separate from the
+backbone, and people ship the backbone without it.
+
+The libraries are `transformers` for the backbone and `scikit-learn` for the head.
+The head here is logistic regression, which this book explains in [linear and
+logistic
+regression](../../02_classical-machine-learning/02_most-used/01_linear-and-logistic-regression.md).
+
+```python
+import numpy as np
+import torch
+from PIL import Image
+from sklearn.linear_model import LogisticRegression
+from transformers import AutoImageProcessor, AutoModel
+
+processor = AutoImageProcessor.from_pretrained("facebook/dinov2-base")
+backbone = AutoModel.from_pretrained("facebook/dinov2-base").eval()
+
+def features(paths):
+    batch = processor(images=[Image.open(p) for p in paths], return_tensors="pt")
+    with torch.inference_mode():
+        # pooler_output is the first token of the last layer: 768 numbers
+        # that describe the whole picture.
+        return backbone(**batch).pooler_output.numpy()
+
+train_paths = ["held_01.jpg", "held_02.jpg", "empty_01.jpg", "empty_02.jpg"]
+labels = np.array([1, 1, 0, 0])
+
+head = LogisticRegression(max_iter=1000).fit(features(train_paths), labels)
+print(head.predict_proba(features(["test.jpg"])))
+```
+
+What the library gives you is the 768 numbers per picture and the preparation that
+goes with them. What you still have to supply is a real set of pictures, because
+four is only enough to show the shape of the code, and a second set the head never
+saw, so that you can measure the accuracy and choose the threshold. You also save
+the fitted head yourself, with `joblib` or `pickle`, because `transformers` knows
+nothing about it.
+
+### 5.4 SigLIP 2
+
+SigLIP 2 is **most used in 2026** when you have no training pictures, because it
+needs none. Google published it in February 2025, in the paper [SigLIP 2:
+Multilingual Vision-Language Encoders with Improved Semantic Understanding,
+Localization, and Dense Features](https://arxiv.org/abs/2502.14786). It has two
+halves, one that turns a picture into numbers and one that turns a sentence into
+numbers, trained so that a picture and its true description land close together.
+You give it your class names as sentences, and it scores each sentence against the
+picture. The base model at 224 pixels has about 375 million parameters for both
+halves together, and the weights are Apache-2.0.
+
+The obvious alternative is CLIP, which stands for contrastive language-image
+pre-training, published by OpenAI in February 2021 as [Learning Transferable
+Visual Models From Natural Language
+Supervision](https://arxiv.org/abs/2103.00020). It does the same job and it is the
+model whose name everybody knows. SigLIP changed how the two halves are trained,
+and its name says how: the [Sigmoid Loss for Language Image
+Pre-Training](https://arxiv.org/abs/2303.15343) paper scores each
+picture-and-sentence pair on its own, where CLIP compares every picture in a batch
+against every sentence at once. That is the reason to prefer it here. SigLIP's
+scores do not add up to 1 across your class names, so all of them can be low at
+once, and "none of these" becomes an answer you can read. Section 7 names that as
+the first thing that goes wrong with a classifier, and this model does not have the
+problem.
+
+What it costs you is size, speed and wording. At 375 million parameters it wants a
+graphics card to be comfortable, and it is the slowest model on this page. Its
+accuracy depends on the words you choose, so "a scratched metal plate" and "a
+damaged plate" are different questions with different answers. It cannot separate
+two parts whose difference has no ordinary name, such as two similar valve bodies,
+and [models that
+find](../../../02_perception/02_object-perception/04_models-that-find.md) sets out
+that limit. The thing that most often goes wrong is the text padding: the Hugging
+Face [SigLIP 2
+documentation](https://huggingface.co/docs/transformers/en/model_doc/siglip2) says
+to pass `padding="max_length"` with `max_length=64` when you call the processor
+yourself, because the model was trained that way.
+
+The library is `transformers`, with a different pipeline task from the one in
+section 5.1.
+
+```python
+from transformers import pipeline
+
+classify = pipeline("zero-shot-image-classification",
+                    model="google/siglip2-base-patch16-224")
+
+# These are not fixed classes in the model. They are sentences you choose,
+# and you can change them without retraining anything.
+labels = ["a gripper holding a cup", "an empty gripper"]
+
+for guess in classify("wrist.jpg", candidate_labels=labels):
+    print(guess["label"], round(guess["score"], 3))
+```
+
+What the library gives you is the whole classifier without a training step, the
+right text padding, and the freedom to change the class list by editing a line.
+For a SigLIP model the pipeline also scores each label on its own rather than
+against the others, so the scores you print will not add up to 1. What you still
+have to supply is the wording, which you should test on real pictures before you
+trust it, the threshold below which you treat every score as "none of these", and
+the crop, because this model names the whole picture just as a classifier does.
+
+### 5.5 DINOv3
+
+DINOv3 is **worth betting on**, because the direction of the field is a single
+large frozen backbone with a tiny trained head, and DINOv3 is that idea done
+better than DINOv2. Meta published it in August 2025, as
+[DINOv3](https://arxiv.org/abs/2508.10104), and the Hugging Face
+[documentation](https://huggingface.co/docs/transformers/en/model_doc/dinov3)
+describes it as giving strong dense features without fine-tuning. Its base model
+has about 85.7 million parameters, almost exactly the size of DINOv2's base model,
+so the gain is not paid for in size.
+
+The obvious alternative is DINOv2, from section 5.3, and the one real reason to
+stay there is the licence. That is also why DINOv3 is not yet the default. DINOv2
+is Apache-2.0 and you can forget about it, while DINOv3 ships Meta's own [DINOv3
+licence](https://github.com/facebookresearch/dinov3/blob/main/LICENSE.md). That
+licence does permit commercial use, and it attaches conditions: you pass the
+agreement on to anyone you give the weights to, you acknowledge the model in
+anything you publish, and you must not use it for military purposes or for
+weapons. Open weights are not the same thing as open source, and this repository's
+[licences and
+platforms](../../../02_perception/02_object-perception/06_licences-and-platforms.md)
+page lists the other models in the same position.
+
+What it costs you, beyond reading that licence, is a step in your build. The
+weights are gated on Hugging Face, so a download without a signed-in account that
+has accepted the terms fails with the message that access to the model is
+restricted. A one-line download becomes a login and an access token on every
+machine that builds your project, including your build server.
+
+The library is `transformers`, and the code is the code of section 5.3 with the
+checkpoint name changed.
+
+```python
+from transformers import AutoImageProcessor, AutoModel
+
+name = "facebook/dinov3-vitb16-pretrain-lvd1689m"
+
+# This fails until you accept the DINOv3 terms on the model page and
+# log in, for example with: huggingface-cli login
+processor = AutoImageProcessor.from_pretrained(name)
+backbone = AutoModel.from_pretrained(name).eval()
+```
+
+From there the rest of section 5.3 is unchanged, because this model also returns
+its description of the picture in `pooler_output`. What you still have to supply is
+the same small head and the same measured threshold, plus the account step above.
+
+### 5.6 How to choose
+
+Start with a frozen DINOv2 and a logistic-regression head, from section 5.3,
+because it gives you a usable classifier from tens of pictures per class and
+nothing more than an ordinary processor.
+
+Six things change that choice.
+
+- You have no training pictures, and your classes can be said in ordinary words.
+  Then use SigLIP 2 from section 5.4 and write the class names as sentences.
+- The classifier runs on the robot, on every gripper close, with no graphics card.
+  Then collect a few hundred pictures per class and fine-tune a MobileNetV3 from
+  section 5.2.
+- You are shipping a product and you want the strongest frozen features. Then
+  read the DINOv3 licence from section 5.5, and stay with DINOv2 if the
+  conditions do not suit you.
+- You need a baseline number that other developers will recognise. Then use
+  ResNet-50 from section 5.1, and do not ship it.
+- You need to know where the object is, or how many there are. Then you do not
+  want a classifier at all, and [object
+  detection](../02_most-used/01_object-detection.md) is the page to read.
+- You need an answer in words rather than one name from a fixed list, such as what
+  is wrong with a part. Then read [open-vocabulary
+  models](../02_most-used/03_open-vocabulary-models.md), which covers the models
+  that answer questions about a picture.
+
+One more case sits outside the list. If the scene is fully controlled and the
+answer depends on one thing you can measure, such as a height or a colour, write
+the rule instead and skip the models entirely. Section 9 gives that comparison.
 
 ---
 
@@ -340,49 +640,3 @@ the objects vary.
 - Book 2's [models that find objects](../../../02_perception/02_object-perception/04_models-that-find.md)
   lists backbones you can download, with their licences.
 
----
-
-## 11. Using it in Python
-
-The page has explained the backbone, the scores and the fine-tuning that every
-other seeing model reuses. This section runs a real classifier, because it is the
-shortest piece of model code in the whole book. After reading it you will be able
-to get names and scores for a picture in three lines, and you will see why a
-classifier alone is rarely enough for a robot arm.
-
-Hugging Face `transformers` has a helper called a pipeline, which puts the
-preparation of the picture, the network and the reading of the scores behind one
-call.
-
-```python
-from transformers import pipeline
-
-classifier = pipeline("image-classification", model="microsoft/resnet-50")
-
-# The answers come back sorted, with the most likely first.
-for guess in classifier("part.jpg")[:3]:
-    print(guess["label"], round(guess["score"], 3))
-```
-
-What the pretrained model gives you out of the box is the 1,000 classes of
-ImageNet, which are mostly animals, plants and everyday things. The pipeline also
-does the small steps that are easy to get wrong, because it resizes the picture to
-224 by 224 pixels, subtracts the mean and divides by the standard deviation that
-this model was trained with, turns the scores into numbers that add up to 1, and
-sorts them. Those steps are why a wrong answer is so often a preparation mistake
-rather than a model mistake, and here you cannot make it.
-
-What you still have to write yourself begins with the fact that a classifier says
-nothing about where. It gives one name for the whole picture, so on a robot arm it
-is useful only when you have already cut out one object, for example from a box a
-detector gave you, or when the camera always sees exactly one part in a fixture.
-Cropping the picture to that one object is your code, and so is everything the name
-is then used for.
-
-What you have to decide is how many of the sorted guesses to trust and how low a
-score you will accept. A classifier always names something, because it must choose
-one of its classes, so a picture of a brake disc gets a confident wrong answer
-rather than no answer. So you set a score below which you treat the answer as
-"unknown". You also decide whether to fine-tune, and for a robot the answer is
-almost always yes, because your classes are your own parts and not the 1,000
-classes of ImageNet.

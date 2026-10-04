@@ -24,12 +24,18 @@ needs from them.
    · [Step 3: ask with words](#step-3-ask-with-words)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
+   · [F3RM](#51-f3rm)
+   · [LERF](#52-lerf)
+   · [ConceptFusion](#53-conceptfusion)
+   · [ConceptGraphs](#54-conceptgraphs)
+   · [GraspSplats](#55-graspsplats)
+   · [OpenScene](#56-openscene)
+   · [How to choose](#57-how-to-choose)
 6. [A worked example: "pick up the mug by its handle"](#6-a-worked-example-pick-up-the-mug-by-its-handle)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this rather than asking about each photo, and what it costs](#8-why-this-rather-than-asking-about-each-photo-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -179,25 +185,295 @@ So there are three stages in all, and only the first is training in the usual se
 
 ## 5. Well-known models
 
-Both ways of building a map above appear in real systems, and these are the ones to
-know.
+This section names the systems that build a 3D feature map and let you ask it questions,
+and it says plainly which of them you can install. Only one is published as a package.
+The rest are repositories that came with a paper, and one of them cannot legally be used
+in a product at all.
 
-- **CLIP-Fields** (2022) fitted a small network that gives a CLIP-style list for any
-    spot in a room, so that a robot could find objects in the room by name.
-- **LERF**, short for language embedded radiance fields (2023), adds CLIP lists to a
-    NeRF, so you can type a word and see the matching part of the scene light up in
-    3D.
-- **F3RM**, from the paper "Distilled Feature Fields Enable Few-Shot Language-Guided
-    Manipulation" (2023), used a feature field on a robot arm. After a few
-    demonstrations of a grasp, the arm could make the same kind of grasp on new
-    objects, and it could be told in words which object to pick.
-- **ConceptFusion** (2023) builds a 3D feature map by fusion as the camera moves,
-    without any fitting, and you can ask it with words, with a click on a picture, or
-    with a sound.
-- **OpenScene** (2023) gives every point of a scanned room a CLIP-style list, so it
-    can then find and outline objects by any name.
-- **ConceptGraphs** (2023) groups the points into separate objects instead, keeping one
-    list for each object and noting how the objects sit relative to each other.
+Read the "how you get it" and "licence" columns of the table together, because those two
+decide whether a system is a candidate for your work. These systems hold almost no
+numbers of their own, since the meaning comes from an image model somebody else trained,
+so the "size" column names the image model each one uses by default instead of a
+parameter count. Every licence was read from the project's own licence file.
+
+| System | How it stores the map | Best at | Size | Licence | How you get it | Pick it when |
+| --- | --- | --- | --- | --- | --- | --- |
+| [F3RM](#51-f3rm) | a feature field, fitted like a NeRF | grasping a named object or part with a robot arm | CLIP ViT-L/14@336px, no weights of its own | MIT | `pip install f3rm`, or clone the repository | you have an arm, a wrist camera and an NVIDIA graphics card |
+| [LERF](#52-lerf) | a feature field, fitted like a NeRF | looking at a scene and seeing what matches a word | CLIP ViT-B/16, and ViT-L/14 in `lerf-big` | MIT | clone it and install it as a Nerfstudio method | you want to see the idea working, with no robot |
+| [ConceptFusion](#53-conceptfusion) | one feature per point, fused as the camera moves | asking with words, a click or a sound | OpenCLIP, with the Segment Anything Model for the masks | MIT | clone it, plus a branch of another library | you want the fusion route and no fitting |
+| [ConceptGraphs](#54-conceptgraphs) | one feature per object, plus their relations | whole rooms, and questions about which object is where | OpenCLIP, with a detector and the Segment Anything Model | MIT | clone it; the longest install here | the scene is a room and relations matter |
+| [GraspSplats](#55-graspsplats) | 3D Gaussians carrying part-level features | re-fitting a scene fast, and following objects that move | not stated; the features come from the feature splatting code | no licence file, and it needs research-only code | you are doing research, not shipping |
+| [OpenScene](#56-openscene) | one feature per point of a finished room scan | naming every point of a scanned room | OpenSeg or LSeg pixel features | Apache-2.0 | clone it; a pre-trained 3D model downloads itself | you have a room scan and want it labelled |
+
+### 5.1 F3RM
+
+F3RM is **most used in 2026** for robot arms, because it is the only system here that is
+published as an installable package and comes with the robot side of the problem already
+written.
+
+F3RM stands for Feature Fields for Robotic Manipulation. William Shen, Ge Yang and four
+colleagues at MIT published it at the Conference on Robot Learning in 2023
+([paper](https://arxiv.org/abs/2308.07931), [code](https://github.com/f3rm/f3rm),
+[package](https://pypi.org/project/f3rm/)). It fits a feature field, as section 3
+described, and then adds the part a robot needs. From a few demonstrated grasps it
+searches for the gripper position and rotation whose surroundings carry the features the
+demonstrations had, and you can also ask in words which object to pick.
+
+The obvious alternative is LERF, which F3RM is built on and which is better known. You
+would pick F3RM because of that pose search, as LERF stops at showing you a heat map and
+leaves every robot question to you. F3RM also distils DINO features as an alternative to
+CLIP with one command-line flag, and DINO is the better of the two at telling parts
+apart.
+
+What it costs you is a pinned software stack. The README requires an NVIDIA card with
+CUDA 11.7 or newer, states that the code is tested on Nerfstudio 0.3.3 and 0.3.4 only,
+and reports peak memory of about 6 GB while training without the viewer and about 12 GB
+with it, on a 24 GB card. That version pin is what most often goes wrong, so follow the
+repository's own conda recipe rather than installing on top of an environment you
+already have. The licence is MIT, and the CLIP weights it downloads are OpenAI's.
+
+Fitting a field is one command, and the package also exposes the per-patch feature step
+on its own, which is what you need to build your own map.
+
+```bash
+# Install the CUDA steps from the README first; this then adds Nerfstudio and F3RM.
+pip install f3rm
+ns-train f3rm --data <folder of photos with known camera poses>
+```
+
+```python
+import torch
+
+from f3rm.features import clip
+from f3rm.features.clip import tokenize
+from f3rm.features.clip_extract import CLIPArgs, extract_clip_features
+
+device = torch.device("cuda")
+
+# One list of numbers per patch of each photo, not one per photo.
+patches = extract_clip_features(["frame_1.png", "frame_2.png"], device)
+patches /= patches.norm(dim=-1, keepdim=True)
+
+model, _ = clip.load(CLIPArgs.model_name, device=device)   # ViT-L/14@336px
+words = model.encode_text(tokenize("the handle of a mug").to(device))
+words /= words.norm(dim=-1, keepdim=True)
+
+scores = patches @ words.T        # one score for every patch of every photo
+print(scores.shape)
+```
+
+The library gives you dense patch features, and it skips CLIP's usual centre crop so that
+the whole photo is covered. What you still supply is the camera poses, the depth, and the
+step that turns patch scores into a place in 3D, unless you let `ns-train f3rm` fit the
+field and do that for you.
+
+### 5.2 LERF
+
+LERF is **historical**. It is the system the feature field idea became well known through,
+and the one to read before F3RM.
+
+LERF stands for Language Embedded Radiance Fields. Justin Kerr, Chung Min Kim, Ken
+Goldberg, Angjoo Kanazawa and Matthew Tancik at the University of California, Berkeley
+published it at the International Conference on Computer Vision in 2023
+([paper](https://arxiv.org/abs/2303.09553), [code](https://github.com/kerrj/lerf)). It
+adds a language field beside the colour field of a NeRF, so you type a word in the viewer
+and the matching part of the scene lights up. An earlier system,
+[CLIP-Fields](https://github.com/notmahi/clip-fields), had already fitted a CLIP-style
+field as a robot's memory of a room ([paper](https://arxiv.org/abs/2210.05663)), and its
+licence is MIT as well.
+
+You would run LERF rather than F3RM when there is no robot in the picture, because it is
+the simpler of the two to install and it ships three sizes: `lerf`, `lerf-lite` for small
+graphics cards, and `lerf-big`, which uses the larger CLIP image model.
+
+What it costs you is the same Nerfstudio stack as F3RM, and one surprise that wastes an
+afternoon. The viewer shows raw match scores, and the README says values below 0.5 are
+already irrelevant, so you must set the range to -1 to 1 or turn normalisation on before
+the pictures mean anything. The licence is MIT.
+
+```bash
+git clone https://github.com/kerrj/lerf && cd lerf
+python -m pip install -e . && ns-install-cli
+ns-train lerf --data <folder of photos with known camera poses>
+```
+
+You supply the photos and their poses, which Nerfstudio can work out from the photos
+themselves. LERF gives back a fitted scene and a viewer, and nothing that a robot can act
+on.
+
+### 5.3 ConceptFusion
+
+ConceptFusion is **historical**, and it is the clearest example of the fusion route from
+section 3.
+
+Krishna Murthy Jatavallabhula and sixteen colleagues published it at Robotics: Science
+and Systems in 2023 ([paper](https://arxiv.org/abs/2302.07241),
+[code](https://github.com/concept-fusion/concept-fusion)). It cuts each photo into
+regions, gives each region a CLIP feature, spreads those features back over the pixels,
+and fuses them into one point cloud as the camera moves. Because the question and the map
+meet in CLIP's numbers, you can ask with words, by clicking a point, or with a sound.
+
+The obvious alternative is a feature field such as F3RM. Fusion wins when you cannot wait
+for a fit, because the map is ready as the camera moves and every point in it was
+measured rather than interpolated. The reason it is marked historical is that its own
+authors moved on: ConceptGraphs, below, is by many of the same people and is the one
+still being maintained.
+
+What it costs you is an install made of other people's branches, and a repository that
+says so. The README states that the released code departs from the paper, since it uses
+the Segment Anything Model instead of Mask2Former for the regions and drops the
+uniqueness term the paper describes. It needs a specific branch of the gradslam library,
+and your data has to be in that library's dataset format, which is the real work. The
+licence is MIT.
+
+```bash
+# This branch of gradslam fuses features; the main branch cannot.
+git clone https://github.com/gradslam/gradslam
+cd gradslam && git checkout conceptfusion && pip install -e . && cd ..
+
+git clone https://github.com/concept-fusion/concept-fusion
+cd concept-fusion/examples
+python extract_conceptfusion_features.py     # regions from SAM, then CLIP per region
+python run_feature_fusion_and_save_map.py    # fuses them into saved-map/
+```
+
+You supply the photos, the poses, the depth, and a dataset class if your recording is not
+one the library already reads. The two scripts give back a point cloud where every point
+carries a feature.
+
+### 5.4 ConceptGraphs
+
+ConceptGraphs is **most used in 2026** for anything larger than a table, because keeping
+one feature per object instead of one per point is what makes a whole room affordable.
+
+Qiao Gu, Ali Kuwajerwala, Sacha Morin and thirteen colleagues published it in 2023
+([paper](https://arxiv.org/abs/2309.16650),
+[code](https://github.com/concept-graphs/concept-graphs)). A detector and the Segment
+Anything Model cut each photo into objects, the objects are matched across photos and
+merged into one three-dimensional object each, and each object keeps one CLIP feature and
+a note of how it sits relative to the others. A
+[language model](../../07_language-models/01_overview.md) can then read that record and
+answer questions about position, which section 7 explains a dense map cannot.
+
+The obvious alternative is a dense map such as ConceptFusion or OpenScene. ConceptGraphs
+wins on memory and on relations, because a room becomes a few hundred objects rather than
+a few hundred thousand points carrying a few hundred numbers each. It loses where parts
+matter, since a mug is one object in the graph and its handle is not in it at all, which
+is what F3RM is for.
+
+What it costs you is the longest install on this page: a detector, the Segment Anything
+Model, a pinned gradslam, PyTorch3D and the faiss search library, on Python 3.10. The
+deeper cost is that the map holds only what the detector found, so an object it missed is
+not in the graph and no wording of the question will find it. The licence is MIT, and the
+repository's `ali-dev` branch holds a newer real-time version that reads recordings from
+an iPhone.
+
+```bash
+# First, detect and segment the objects in every frame of one scene.
+python scripts/generate_gsa_results.py --dataset_root $REPLICA_ROOT \
+    --dataset_config $REPLICA_CONFIG_PATH --scene_id room0 --class_set none --stride 5
+
+# Then build the object map from those detections.
+python slam/cfslam_pipeline_batch.py dataset_root=$REPLICA_ROOT \
+    dataset_config=$REPLICA_CONFIG_PATH scene_id=room0 stride=5 \
+    gsa_variant=none class_agnostic=True skip_bg=True sim_threshold=1.2 dbscan_eps=0.1
+```
+
+You supply a recording in one of the dataset formats it reads, and the thresholds, which
+decide whether two views of a mug become one object or two. It gives back a file of
+objects with their features, their point clouds and their relations.
+
+### 5.5 GraspSplats
+
+GraspSplats is **worth betting on**, because fitting a scene as 3D Gaussians is far
+faster than fitting a NeRF, and speed is what a map needs when the robot keeps moving
+things. The
+[simulation chapter](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md)
+in Book 3 describes the same shift for reconstruction in general.
+
+Mazeyu Ji, Ri-Zhao Qiu, Xueyan Zou and Xiaolong Wang at the University of California, San
+Diego published it in 2024 ([paper](https://arxiv.org/abs/2409.02084)). It fits a scene as
+3D Gaussians that carry features, so it can answer questions about parts and not only
+about whole objects, and it then follows the Gaussians of an object as that object moves,
+so the map does not go out of date the moment the arm touches something.
+
+The obvious alternative is F3RM, which is easier to install. You would choose this line of
+work for the two things F3RM cannot do: re-fit a changed scene quickly, and keep up with
+objects that move.
+
+What it costs you is a licence problem that no amount of engineering fixes.
+[The repository](https://github.com/jimazeyu/GraspSplats) contains no licence file at all,
+so no rights are granted to anyone, and it builds on a fork of Inria's Gaussian-splatting
+code, whose
+[licence](https://github.com/graphdeco-inria/gaussian-splatting/blob/main/LICENSE.md)
+allows research and evaluation only and requires Inria's written consent for commercial
+use. [LangSplat](https://github.com/minghanqin/LangSplat), the best-known general-purpose
+version of the same idea, carries that same Inria licence. Treat all of this as reading
+and experiment, and check the licence of every submodule before anything ships.
+
+```bash
+# The feature splatting it depends on, at the branch GraspSplats needs.
+git clone --recursive https://github.com/vuer-ai/feature-splatting-inria.git
+cd feature-splatting-inria && git checkout roger/graspsplats_part
+pip install -e submodules/diff-gaussian-rasterization    # compiled against CUDA 11.8
+pip install -e submodules/simple-knn
+```
+
+You supply photos of the scene, a graphics card with CUDA 11.8, and the calibration
+between the camera and the arm. The GraspSplats repository itself holds the robot side,
+including the tracking of objects that move.
+
+### 5.6 OpenScene
+
+OpenScene is **historical** on this page, but it is still the easiest way to see
+open-vocabulary 3D labelling without owning a robot.
+
+Songyou Peng, Kyle Genova and four colleagues published it in 2022
+([paper](https://arxiv.org/abs/2211.15654),
+[code](https://github.com/pengsongyou/openscene)). It takes a finished room scan, gives
+every point of it a feature copied from a pixel-level image model, and then trains a 3D
+network to predict those features from geometry alone, so at question time no photos are
+needed.
+
+The obvious alternative is ConceptFusion, which fuses features as the camera moves.
+OpenScene is the better choice when you already have a room scan and want every point
+labelled, and it is the worse choice on a robot, because it expects whole-building
+datasets rather than a wrist camera's view of a table.
+
+What it costs you is the shape of its data. The evaluation runs on room-scan datasets, so
+putting your own recording through it is a day of conversion, and its pixel features come
+from OpenSeg or LSeg rather than plain CLIP, which is one more model to obtain. The
+licence is Apache-2.0, and the repository has an interactive demo that the README says
+needs no graphics card at all.
+
+```bash
+# Downloads a pre-trained 3D model and labels every point of a scanned scene.
+sh run/eval.sh out/replica_openseg config/replica/ours_openseg_pretrained.yaml ensemble
+```
+
+You supply the processed scan and the fused 2D features, both of which the repository
+documents how to obtain. It gives back a labelled point cloud and, with one option
+changed, the per-point features as a NumPy file you can query yourself.
+
+### 5.7 How to choose
+
+For a robot arm on a table, start with F3RM, because it is installable, it was built for
+exactly that case, and it answers questions about parts of objects as well as whole ones.
+
+Three things change that choice. If the scene is a whole room and the questions are about
+which object is where, use ConceptGraphs, and accept that it knows objects rather than
+parts. If the arm keeps moving things and you are doing research rather than shipping a
+product, follow the feature splatting line that GraspSplats belongs to, after reading the
+Inria licence. If you already have a finished room scan and only want every point
+labelled, use OpenScene.
+
+Two of these are worth skipping unless you are reading rather than building. LERF teaches
+the idea and leaves the robot work to you, and ConceptFusion has been overtaken by
+ConceptGraphs from the same authors.
+
+Whatever you choose, remember what section 8 says about dates. The map holds what the
+camera saw when you built it, so the first question to answer is how often your scene
+changes.
 
 ---
 
@@ -333,65 +609,3 @@ things are, and not what they are called.
     network.
 - Go back to the [chapter overview](../01_overview.md) to see how this page fits with
     the other three.
-
----
-
-## 11. Using it in Python
-
-The page has explained that a 3D feature map is built once and then asked many
-times, and that asking means comparing a phrase against the list of numbers held at
-every point. This section shows the asking half in Python, because that is the half
-you can run today with installed libraries. After reading it you will know where the
-line falls between what is packaged and what is research code.
-
-CLIP is in Hugging Face `transformers`, and it turns a phrase into the same 512
-numbers that the map's points are described with.
-
-```python
-import numpy as np
-import open3d as o3d
-import torch
-from transformers import AutoTokenizer, CLIPModel
-
-model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-tokenizer = AutoTokenizer.from_pretrained("openai/clip-vit-base-patch32")
-
-inputs = tokenizer(["the handle of a mug"], padding=True, return_tensors="pt")
-with torch.inference_mode():
-    text_feature = model.get_text_features(**inputs)      # (1, 512)
-text_feature = torch.nn.functional.normalize(text_feature, dim=-1)
-
-# The map: a cloud, and one list of 512 numbers for each of its points.
-cloud = o3d.io.read_point_cloud("scene.ply")
-point_features = torch.from_numpy(np.load("point_features.npy")).float()
-
-scores = torch.nn.functional.normalize(point_features, dim=-1) @ text_feature.T
-best = np.asarray(cloud.points)[int(scores.argmax())]
-print(float(scores.max()), best)    # the best-matching point, in metres
-```
-
-What is packaged for you out of the box is CLIP itself, and that is the part that
-carries the meaning. You get a text side and an image side that were trained to land
-in the same 512 numbers, so comparing a phrase with a picture is a dot product and
-nothing more. Open3D handles the cloud. Together those cover the last two lines of
-the code above, which is the whole of the asking.
-
-What you still have to write yourself is the building, and that is where the work
-is. The `point_features.npy` above has to come from somewhere, and getting it
-involves a step CLIP does not do: CLIP gives one list of numbers for a whole
-picture, not one per pixel, so the systems in
-[section 5](#5-well-known-models) use a changed version of CLIP, or the per-patch
-outputs of DINOv2, to get a list for each part of each picture. Then they lift those
-lists into 3D with the camera poses and the depth, as
-[step 2](#step-2-lift-the-lists-into-3d) describes. F3RM, ConceptFusion, OpenScene
-and LERF are the code that does this, and all four are research repositories rather
-than installable packages, so you clone one and adapt it rather than importing it.
-
-What you have to decide is which image model to borrow the meaning from, because the
-map can only be as good at telling parts apart as that model is, and CLIP is
-noticeably weaker on parts of objects than on whole objects. You also decide how
-much memory to spend, since 512 numbers for each of 200,000 points is about 400 MB
-in single precision, so real systems either reduce the length of each list or keep
-one list per object rather than per point, as ConceptGraphs does. Finally you decide
-what score counts as a match, because the dot product always returns a best point
-even when nothing in the scene matches your words at all.

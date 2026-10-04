@@ -24,12 +24,17 @@ means adjusting a model a little at a time until its answers match the examples.
    · [Step 3: fit it to the photos](#step-3-fit-it-to-the-photos)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
+   · [5.1 The NeRF line: the original and Instant-NGP](#51-the-nerf-line-the-original-and-instant-ngp)
+   · [5.2 3D Gaussian Splatting](#52-3d-gaussian-splatting)
+   · [5.3 Nerfstudio](#53-nerfstudio)
+   · [5.4 NeuS](#54-neus)
+   · [5.5 VGGT and the DUSt3R family](#55-vggt-and-the-dust3r-family)
+   · [5.6 How to choose](#56-how-to-choose)
 6. [A worked example: grasping a drinking glass](#6-a-worked-example-grasping-a-drinking-glass)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this rather than a depth camera, and what it costs](#8-why-this-rather-than-a-depth-camera-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -191,25 +196,291 @@ these.
 
 ## 5. Well-known models
 
-Both methods above appear in tools you can download, and these are the real ones that
-robot teams use.
+Both methods above exist as code you can download, and this section is the shortlist.
+It says what each one is best at, what it costs you, and what to type to run it, and
+it answers the question the two methods raise: which of them is ready for a work cell
+and which is still a research result.
 
-- **NeRF** (2020) was the first neural radiance field, and it showed that one network,
-    fitted to photos, can draw new views of a scene with fine detail.
-- **Instant-NGP** (2022), from NVIDIA, stores most of what the network knows in a
-    fast lookup table, which made fitting a NeRF far faster.
-- **3D Gaussian Splatting** (2023), from the Inria research institute in France,
-    introduced the soft blobs described above, and it can draw new views in real time
-    on a good graphics card. Its code has a research-only licence, and Book 2 lists
-    the licences of this whole family in
-    [models that measure](../../../02_perception/02_object-perception/05_models-that-measure.md#4-reconstruction-when-you-do-not).
-- **Nerfstudio** is an open-source toolkit, with an Apache-2.0 licence, that fits
-    both NeRFs and splats with the same commands.
-- **Dex-NeRF** (2021) used a NeRF to find and grasp transparent objects with a robot
-    arm, where a depth camera gives no usable points.
-- **DUSt3R** (2024) is instead trained once on many scenes, so that from two or more
-    photos of a new scene it gives 3D points for every pixel, even when the camera
-    poses are unknown.
+Read the table as a first pass, then read the sub-section for the one or two you are
+considering. The "size you download" column means different things in different rows,
+because a fitted scene is not a trained model: most of these projects ship code and
+no weights, so what you download is a program that then needs a graphics card and
+hours of your time, while the last row ships a trained model in the ordinary sense.
+Every licence below was read from the project's own licence file.
+
+| Model | Best at | Size you download | Licence | Pick it when |
+| --- | --- | --- | --- | --- |
+| [NeRF](https://github.com/bmild/nerf) and [Instant-NGP](https://github.com/NVlabs/instant-ngp) | a field you can ask about any point in space | code only, no weights | MIT, and NVIDIA research-and-evaluation-only for Instant-NGP | the scene is transparent or shiny and pictures are not enough |
+| [3D Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting) | new views of a still scene, drawn fast | code only; the authors' set of fitted scenes is a 14 GB download | Inria and Max Planck, research only | you are reproducing the paper's results |
+| [Nerfstudio](https://github.com/nerfstudio-project/nerfstudio) | running either method on your own photos | `pip install`; about 6 GB of graphics memory to fit, or 12 GB for the larger setting | Apache-2.0 | this is a real job in a real work cell |
+| [NeuS](https://github.com/Totoro97/NeuS) | a measured surface you can ship | code only, no weights | MIT | you need a surface in millimetres, not a picture |
+| [VGGT](https://github.com/facebookresearch/vggt) | 3D from a few photos with no fitting at all | 5.0 GB, about 1.26 billion learned numbers | code allows commercial use, the open checkpoint does not | you cannot wait minutes for a fit |
+
+### 5.1 The NeRF line: the original and Instant-NGP
+
+Both of these are **historical**. They are here because the original is the design
+that [section 3](#step-2-with-nerf-a-network-that-answers-questions-about-any-spot)
+explains, and because together they show why the field then moved on. Ben Mildenhall
+and five colleagues published NeRF at the 2020 European Conference on Computer Vision:
+one small network, asked about points along each line of sight. NVIDIA's Instant-NGP
+followed in the ACM Transactions on Graphics in July 2022. It keeps that design but
+moves most of what the network knows into a lookup table indexed by position, so the
+network itself becomes small and quick to ask, and that is what cut fitting from the
+original's hours or days per scene, as [section 4](#4-how-it-is-trained) says, down to
+minutes.
+
+The obvious alternative is 3D Gaussian Splatting in section 5.2, and for a new job
+that is what to choose. A NeRF still wins in one case. It keeps a real radiance field,
+which means a network you can ask about any point in space, and the transparent-object
+trick in [section 6](#6-a-worked-example-grasping-a-drinking-glass) depends on exactly
+that. A splat has no network to ask, so what it gives you is pictures and a depth
+picture worked out from the blobs. The one robot result worth knowing from this
+generation is [Dex-NeRF](https://arxiv.org/abs/2110.14217), by Jeffrey Ichnowski and
+colleagues at the 2021 Conference on Robot Learning, which is the method section 6
+describes.
+
+What they cost you is time, and for Instant-NGP a licence as well. The original is MIT
+licensed and asks for TensorFlow 1.15, so you will use somebody's reimplementation
+rather than the authors' code. It is still the one worth reading, because at about
+1,100 lines across two files it is the only version of this idea you can read end to
+end in an afternoon. Instant-NGP has the opposite problem. Its code is fast, but the
+NVIDIA Source Code License allows use for research and evaluation only, in its own
+words non-commercially, so you cannot put it in a product, and because it is CUDA it
+needs an NVIDIA card. Book 2 records the same restriction for Neuralangelo, which is
+the most accurate radiance-field method in
+[its table](../../../02_perception/02_object-perception/05_models-that-measure.md#4-reconstruction-when-you-do-not)
+and also NVIDIA's. That pattern is the thing to notice about this corner of the
+field.
+
+There is no short Python call for either of them, because fitting is the run. If you
+want this design without the licence problem, nerfstudio reimplements it, so the
+command is `ns-train instant-ngp` and section 5.3 covers that toolkit. Its
+[Instant-NGP page](https://docs.nerf.studio/nerfology/methods/instant_ngp.html) is
+honest that the reimplementation covers the main ideas rather than every detail.
+
+### 5.2 3D Gaussian Splatting
+
+Three-dimensional Gaussian splatting is **most used in 2026**, and when people say
+"splatting" today they mean this paper. Bernhard Kerbl, Georgios Kopanas, Thomas
+Leimkühler and George Drettakis published it in 2023, at Inria in France and the Max
+Planck Institute for Informatics in Germany. It is the soft blobs described in
+[section 3](#step-2-with-gaussian-splatting-many-soft-blobs), with no network
+anywhere in the drawing step.
+
+The obvious alternative is a NeRF, and this is the comparison the whole page turns on.
+The paper's own claim is the reason splatting won: 30 frames a second or more at
+1080p picture size, which no NeRF method reached for whole scenes, while also matching
+the best NeRF quality. Drawing a blob is rasterisation, the same operation a graphics
+card does for triangles in a game, so it is not a saving of a few percent: it is a
+different kind of work from asking a network about points along a line.
+
+What it costs you is the licence first of all. The Inria and Max Planck licence is
+research only, and
+[Book 2's reconstruction table](../../../02_perception/02_object-perception/05_models-that-measure.md#4-reconstruction-when-you-do-not)
+shows that almost the whole family of surface-oriented variants inherits it. Then the
+hardware: the repository asks for a graphics card of compute capability 7.0 or higher
+and 24 GB of graphics memory to reach the quality in the paper, which is more than a
+laptop has. Then the accuracy, which is the fault people miss. The same table
+measures plain Gaussian splatting at 1.96 mm of error on a laboratory object about
+25 cm across, the worst of every method in it, because a blob centre is not a point on
+the surface.
+
+There is no Python call, because fitting is the run, and these are the repository's
+own commands.
+
+```bash
+# Work out where each photo was taken, with COLMAP, and undistort the photos.
+# Your photos go in <scene>/input/ first.
+python convert.py -s <scene>
+
+# Fit the blobs to the photos. This is the long step.
+python train.py -s <scene>
+
+# Draw the scene again from every photo's pose, into images on disk.
+python render.py -m <path to the trained model>
+```
+
+The repository gives you the fitting, the fast drawing and a viewer. You supply the
+photos and the 24 GB graphics card. You also supply the real size, because COLMAP
+recovers the camera poses only up to an unknown scale, and
+[section 4.2 of Book 2's page](../../../02_perception/02_object-perception/05_models-that-measure.md#42-and-none-of-it-has-a-scale)
+explains the fix: give the fitting your arm's own camera poses, which are already in
+metres. For a real job, use section 5.3 rather than these commands, because the
+licence there is one you can keep.
+
+### 5.3 Nerfstudio
+
+Nerfstudio is **most used in 2026** for actual work, and it is the answer to "which of
+these is practical in a work cell". It is an open-source toolkit that fits both NeRFs
+and splats behind one set of commands, under the Apache-2.0 licence. Its splatting
+model is called splatfacto and its NeRF model is called nerfacto, and the drawing is
+done by [gsplat](https://github.com/nerfstudio-project/gsplat), a separate Apache-2.0
+library that reimplements the splatting rasteriser.
+
+The obvious alternative is the original code in section 5.2. Nerfstudio wins for one
+reason that outranks every technical argument: its licence permits commercial use and
+the Inria licence does not, so this is the version you can put in a product. Two
+practical reasons follow. Switching between a NeRF and a splat becomes one word on the
+command line, and the toolkit does the whole preparation step, including running
+COLMAP for you.
+
+What it costs you is that splatfacto is not the paper. Nerfstudio's own documentation
+says it is a blend of several splatting methods and that it will drift away from the
+original as features are added, so published numbers are not what you will get. The
+memory it needs is documented:
+about 6 GB of graphics memory for splatfacto and about 12 GB for splatfacto-big, which
+keeps more blobs and runs slower. The most common failure is upstream of nerfstudio
+entirely: COLMAP fails on blurry photos or photos that barely overlap, and then
+nothing after it works.
+
+The toolkit is driven from the command line, and these are its
+[documented commands](https://docs.nerf.studio/quickstart/first_nerf.html).
+
+```bash
+# Recover the camera poses from the photos, and write a dataset nerfstudio reads.
+ns-process-data images --data photos/ --output-dir processed/
+
+# Fit a splat. Use `ns-train nerfacto` here instead to fit a NeRF.
+ns-train splatfacto --data processed/
+
+# Write the result out as a point cloud that Open3D and PCL can read.
+ns-export pointcloud --load-config outputs/processed/splatfacto/<run>/config.yml \
+    --output-dir exports/pcd/
+```
+
+The toolkit gives you the pose recovery, the fitting, a viewer in the browser and the
+export. You supply the photos, which means a program of your own that moves the arm to
+tens of viewpoints and saves a picture at each one, and you supply everything after
+the export, where the result is an ordinary point cloud and the
+[point cloud models page](01_point-cloud-models.md) applies. One detail decides
+whether the numbers mean anything: a splat fitted from COLMAP poses is in the scene's
+own units, so feed nerfstudio the poses from your arm's joint readings, or measure one
+known distance in the export and scale by what you find.
+
+### 5.4 NeuS
+
+NeuS is **most used in 2026** for the one job that splats are bad at, which is giving
+back a surface you can measure and then ship. Peng Wang and colleagues published it in
+2021. It is a NeRF-shaped method with one change: instead of asking the network how
+solid a point is, it asks how far that point is from the nearest surface, and a
+surface is then exactly the set of points where that distance is zero.
+
+The obvious alternative is Gaussian splatting, and the reason to leave it is the fault
+named in [section 7](#7-what-goes-wrong). A blob centre is placed to make pictures
+look right, so it is not a point on the object, while NeuS has a surface by
+construction and writes it out as a mesh. Book 2's table measures NeuS at 0.84 mm
+against 1.96 mm for plain Gaussian splatting on the same laboratory objects, and NeuS
+is MIT licensed while that whole splatting family is not. Accuracy together with a
+licence you can keep is an unusual combination in this field, and it is why this
+sub-section exists.
+
+What it costs you is fitting time. NeuS is a NeRF underneath with none of
+Instant-NGP's acceleration, so expect the hours that
+[section 4](#4-how-it-is-trained) describes rather than splatting's minutes. It also
+wants more of you before it starts: the camera poses have to be supplied in a specific
+file format, and the quality improves if you also supply a mask marking the object in
+each photo. The repository was written for PyTorch 1.8, so expect to pin old versions
+or to port it.
+
+NeuS is run from the command line, and these are the repository's own commands.
+
+```bash
+# Fit the scene. womask.conf is the setting for photos with no object masks.
+python exp_runner.py --mode train --conf ./confs/womask.conf --case <case_name>
+
+# Pull the surface out of the fitted network, as a mesh file.
+python exp_runner.py --mode validate_mesh --conf ./confs/womask.conf \
+    --case <case_name> --is_continue
+```
+
+The repository gives you the fitting and the step that turns the fitted network into a
+mesh in `exp/<case_name>/<exp_name>/meshes/`. You supply the photos, the camera poses
+in the file format its README describes, and the masks if you want the better result.
+You also supply the scale, for the same reason as every other row here.
+
+### 5.5 VGGT and the DUSt3R family
+
+VGGT is **worth betting on**, because it removes the step that makes everything above
+awkward for a robot: there is no fitting. It is a model trained once, in the ordinary
+way, on many scenes, so you hand it photos and it answers. The Visual Geometry Group
+at the University of Oxford and Meta published it at CVPR 2025, where it won the best
+paper award. It follows DUSt3R and MASt3R, from Naver, which did the same thing for
+two photos at a time; VGGT takes one photo, a few, or hundreds, and returns the camera
+poses, a depth picture per photo and 3D points, all at once.
+
+The obvious alternative is everything above, and the comparison is not about quality.
+It is that fitting a scene costs minutes while this answers, in the paper's own words,
+in under a second, and that it needs no camera poses as input, because it works them
+out itself. For an arm that must look and then act, that difference decides whether
+the method can be used at all. Against DUSt3R and MASt3R specifically, pick VGGT
+because it takes many photos in one pass rather than pairs that then have to be
+stitched together, and because its licence is better, as the next paragraph
+explains.
+
+What it costs you is the licence, read carefully, and this is exactly the trap this
+book exists to point out. Since July 2025 the repository's code licence permits
+commercial use, excluding military use. The weights are a separate matter: the open
+`VGGT-1B` checkpoint stays non-commercial, and there is a second checkpoint,
+`VGGT-1B-Commercial`, which you may use commercially but which is handed out through
+an application form. DUSt3R and MASt3R are simpler and stricter, because both are
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0, so neither is shippable in
+any form. The other
+costs are size and accuracy. The checkpoint is 5.0 GB with about 1.26 billion learned
+numbers, so it needs a serious graphics card, and a model that answers in one pass is
+less accurate than minutes of fitting against your own photos.
+
+The package downloads the checkpoint from Hugging Face.
+
+```python
+import torch
+from vggt.models.vggt import VGGT
+from vggt.utils.load_fn import load_and_preprocess_images
+
+model = VGGT.from_pretrained("facebook/VGGT-1B").cuda()   # 5.0 GB on first run
+
+images = load_and_preprocess_images(["view0.png", "view1.png", "view2.png"]).cuda()
+
+with torch.no_grad():
+    # bfloat16 halves the memory on recent cards and costs little accuracy.
+    with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+        out = model(images)   # camera poses, depth per photo and 3D point maps
+```
+
+The model gives you the poses, the depth and the points, so it replaces both
+[step 1](#step-1-know-where-each-photo-was-taken) and the fitting of
+[step 3](#step-3-fit-it-to-the-photos). You supply the photos and the scale, which is
+unknown here as everywhere else on this page. One route is worth knowing: the
+repository ships a script that writes VGGT's answer in COLMAP's format, which
+nerfstudio and gsplat read directly, so you can use VGGT to skip COLMAP and still fit
+a splat afterwards.
+
+### 5.6 How to choose
+
+For a real job, fit a splat with nerfstudio. Its licence lets you ship, it runs both
+methods, and it does the pose recovery for you.
+
+Four things change that choice.
+
+- **You need a measurement rather than a picture.** Use NeuS, and expect hours
+  instead of minutes. A splat is accurate enough to look at and not accurate enough
+  to grasp from, which is the 0.84 mm against 1.96 mm in Book 2's table.
+- **The arm cannot wait.** Use VGGT, which answers in under a second instead of
+  fitting for minutes, and check the checkpoint licence before it reaches a product.
+- **You are reproducing a published result.** Use the original code of whichever
+  paper it is, and accept its licence, because a reimplementation drifts away from
+  the paper it started from, which is what nerfstudio's documentation says about
+  splatfacto.
+- **You want a splat with a clean licence and no CUDA.**
+  [Brush](https://github.com/ArthurBrussee/brush) is an Apache-2.0 splat trainer that
+  runs on other makes of graphics card, and Book 2 lists it among the few shippable
+  options in this family.
+
+One point about all of them, because it is the mistake that wastes the most time.
+None of these methods knows the real size of anything, since photographs measure
+directions and not distances. On an arm you already have the answer, because the
+joint readings say where the camera was in metres for each photo, so feed those poses
+in rather than letting COLMAP guess them. Nothing you build on top of a reconstruction
+is worth anything until that is done.
 
 ---
 
@@ -341,75 +612,3 @@ outline.
     in Book 2 compares the accuracy and licences of many reconstruction methods.
 - [Simulation and evaluation, section 5.3](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#53-real-to-sim-rebuilding-the-room-instead-of-modelling-it)
     in Book 3 uses Gaussian splats to rebuild a real room inside a simulator.
-
----
-
-## 11. Using it in Python
-
-The page has explained that a reconstruction is fitted to the photos of one scene
-rather than trained once and reused, and [section 4](#4-how-it-is-trained) said that
-this fitting is the run. That shapes how you use it, because what you run is not a
-Python call on one input but a fitting job over a folder of photos. This section
-shows the real shape of that, and after reading it you will know what you type, what
-comes out, and which part of the work is still yours.
-
-Nerfstudio is the toolkit [section 5](#5-well-known-models) recommends, and it is
-driven from the command line. There is no short documented Python call that fits a
-scene, so the honest version is three commands. The first works out where each photo
-was taken, the second fits the scene, and the third writes the result out as a point
-cloud.
-
-```bash
-ns-process-data images --data photos/ --output-dir processed/
-ns-train splatfacto --data processed/
-ns-export pointcloud --load-config outputs/processed/splatfacto/<run>/config.yml \
-    --output-dir exports/pcd/
-```
-
-Your Python then starts where that export lands, and it is ordinary Open3D work
-from there.
-
-```python
-import numpy as np
-import open3d as o3d
-
-cloud = o3d.io.read_point_cloud("exports/pcd/point_cloud.ply")
-
-# Find the table as a flat plane, then keep everything that is not the table.
-plane, on_table = cloud.segment_plane(distance_threshold=0.005, ransac_n=3,
-                                      num_iterations=1000)
-objects = cloud.select_by_index(on_table, invert=True)
-
-labels = np.array(objects.cluster_dbscan(eps=0.02, min_points=20))
-for k in range(labels.max() + 1):
-    clump = objects.select_by_index(np.flatnonzero(labels == k).tolist())
-    print(k, len(clump.points), clump.get_axis_aligned_bounding_box().get_center())
-```
-
-What the toolkit gives you out of the box is a great deal, because
-`ns-process-data` runs COLMAP to recover the camera poses of
-[step 1](#step-1-know-where-each-photo-was-taken), `ns-train` does the whole fitting
-described in [step 3](#step-3-fit-it-to-the-photos), and `ns-export` gives you a
-file in a format Open3D reads. You write none of the rendering and none of the
-optimisation, and switching between a NeRF and a splat is the difference between
-`ns-train nerfacto` and `ns-train splatfacto`.
-
-What you still have to write yourself is the photo capture and everything after the
-export. Something has to move the arm to tens of viewpoints and record a picture at
-each one, and that is your program. Then the exported cloud is a cloud like any
-other, so finding the object in it, as the Python above does, and turning that into
-a grasp is the same work as on the other pages of this chapter. One detail there
-matters more than it looks, because when COLMAP recovers the poses by itself it has
-no way of knowing the real size of anything, so the exported cloud is in the scene's
-own units rather than in metres. You fix that either by giving nerfstudio the poses
-from the arm's joint readings, which are already in metres, or by measuring one known
-distance in the cloud and scaling everything by what you find.
-
-What you have to decide first is whether the minutes of fitting fit into your task
-at all, because the same fitting has to run again for every new scene. So this is a
-sensible choice for a shelf that is scanned once, and a poor one for objects
-arriving on a belt. You also decide how many photos to take and how much they
-overlap, since COLMAP fails on blurry or barely overlapping pictures and then
-nothing downstream works. Finally you decide on the licence, because as
-[section 5](#5-well-known-models) says nerfstudio itself is Apache-2.0 while the
-original 3D Gaussian Splatting code is for research only.

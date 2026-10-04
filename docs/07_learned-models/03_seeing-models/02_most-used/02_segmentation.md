@@ -23,12 +23,18 @@ words without explaining them again.
    · [A detector with a mask added](#a-detector-with-a-mask-added)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
+   · [SAM 2](#51-sam-2)
+   · [SAM 3](#52-sam-3)
+   · [Ultralytics YOLO26-seg](#53-ultralytics-yolo26-seg)
+   · [RF-DETR-Seg](#54-rf-detr-seg)
+   · [Mask R-CNN](#55-mask-r-cnn)
+   · [Mask2Former](#56-mask2former)
+   · [How to choose](#57-how-to-choose)
 6. [Where it is used on a robot arm](#6-where-it-is-used-on-a-robot-arm)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why segmentation, and what it costs](#8-why-segmentation-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -216,32 +222,385 @@ produces perfect masks for free.
 
 ## 5. Well-known models
 
-It helps to see the models named so far side by side, and these are all real
-segmentation models. The first two are the ones this page has already described.
+This section is the shortlist a real project chooses from. For each model it says
+what the model is, why you would pick it rather than the obvious alternative, what
+it costs you, and what to type to run it.
 
-- **U-Net** came out in 2015 for pictures of cells under a microscope, and it gave
-  good masks from very few training pictures. Its shrink-then-grow shape, with skip
-  connections, is now used in many other models.
-- **Mask R-CNN** is an instance segmentation model from Facebook AI Research, from
-  2017, and it adds a mask head to the Faster R-CNN detector. It is well understood
-  and easy to fine-tune, and it is part of the PyTorch library.
-- **DeepLab** is a family of semantic segmentation models from Google, and it looks
-  at the picture at several scales at once, which helps it get both large areas and
-  small objects right.
-- **Mask2Former** is a transformer model from Meta, and one design of it does
-  semantic, instance and panoptic segmentation.
-- **YOLO segmentation models** are versions of the YOLO detectors that also give a
-  mask for each box. They are fast, so they are the easiest way to get masks from a
-  live camera.
-- **SAM**, the Segment Anything Model from Meta, from 2023, is a different kind,
-  because it does not have a list of classes at all. You click on an object, or draw
-  a rough box, and it gives the object's exact outline. It was trained on over one
-  billion masks, and it is covered fully on the
-  [open-vocabulary models](03_open-vocabulary-models.md) page.
+The first thing to decide is not which model but which question you are asking.
+Three of the models below need a list of classes and give one mask per object in
+that list. Two need no class list at all, and instead outline whatever you point at
+or name in words. One answers all three kinds of question from a single design.
 
-Book 2's [models that find
-objects](../../../02_perception/02_object-perception/04_models-that-find.md#12-mask-models)
-lists mask models with their licences.
+Read the table as a shortlist and not as a ranking. The columns are the model, the
+job it is best at, its size, its licence, and when to pick it. The size is given as
+the number of parameters, which is the count of numbers the network learned during
+training, written in millions. Every number was read from the project's own
+published table or model card, and each sub-section names which. Two projects
+measure on different machines, so treat the sizes as a rough guide to scale.
+
+| Model | Best at | Size, in millions of parameters | Licence (code / weights) | Pick it when |
+| --- | --- | --- | --- | --- |
+| SAM 2 | the exact outline of anything you click on or draw a box around | 38.9 to 224.4, over four sizes | Apache-2.0 / Apache-2.0 | you cannot list your objects, or you already have a box |
+| SAM 3 | every instance that matches a short phrase | 859.9 | a bespoke "SAM License"; the weights need an approved request | words have to replace the class list, and you have read the licence |
+| Ultralytics YOLO26-seg | masks on every frame of a live camera | 2.7 to 62.8, over five sizes | AGPL-3.0, or a paid Enterprise licence | you can publish your own source code, or you pay for the other licence |
+| RF-DETR-Seg | the best permissive masks available at a given speed | 33.6 to 38.6, over six sizes | Apache-2.0 | the licence must stay permissive and the outlines must be good |
+| Mask R-CNN | fine-tuning in plain PyTorch with no new dependency | 46.4 for `maskrcnn_resnet50_fpn_v2` | BSD-3-Clause | you already use torchvision, and a picture a second is enough |
+| Mask2Former | semantic, instance and panoptic from one design | 216.0 for the Swin-Large COCO instance checkpoint | repository MIT but archived; weights card says "other" | you need all three kinds of answer from one model |
+
+### 5.1 SAM 2
+
+**Most used in 2026**, because it gives a better outline than any class-trained
+model and it works on objects nobody trained it on.
+
+SAM 2 is the second version of Meta's Segment Anything Model, released in 2024, and
+the page [open-vocabulary models](03_open-vocabulary-models.md) covers the family in
+full. You give it a point, a box or a rough region, and it returns the exact mask
+that contains what you pointed at. It does not name anything. SAM 2 also added
+video, so it can keep the same outline across the frames of a recording, and the
+Hugging Face [SAM 2 page](https://huggingface.co/docs/transformers/en/model_doc/sam2)
+quotes its paper as more accurate and six times faster than the first SAM on images.
+
+The obvious alternative is an instance segmentation model such as Mask R-CNN or
+YOLO26-seg. Pick SAM 2 when you cannot write down the list of objects in advance,
+which in a robot cell is the difference between handling your own five parts and
+handling whatever a customer puts on the table. Pick it also when a detector already
+gives you a box, because turning that box into a clean outline is the standard
+pairing, and SAM 2's edges are better than a detector's own mask head.
+
+The costs are speed and a missing name. Its
+[repository](https://github.com/facebookresearch/sam2) publishes four sizes, from
+38.9 to 224.4 million parameters, which its own table measures at 91.2 down to 39.5
+frames a second on video on an NVIDIA A100 graphics card, so the large one is a
+graphics card model. The real cost is that SAM 2 decides nothing: something else
+must choose where to point, and it will outline a shadow as happily as an object.
+Both the code and the weights are Apache-2.0, read from the repository and the
+[model card](https://huggingface.co/facebook/sam2.1-hiera-large), which makes it the
+safest licence in this section.
+
+The library is `transformers`, and the code below gives a mask for one box.
+
+```python
+import torch
+from PIL import Image
+from transformers import Sam2Model, Sam2Processor
+
+processor = Sam2Processor.from_pretrained("facebook/sam2.1-hiera-large")
+model = Sam2Model.from_pretrained("facebook/sam2.1-hiera-large")
+
+image = Image.open("table.jpg").convert("RGB")
+# One box per object, as left, top, right, bottom in pixels. A detector gives you this.
+input_boxes = [[[75, 275, 1725, 850]]]
+inputs = processor(images=image, input_boxes=input_boxes, return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs)
+
+# post_process_masks stretches the model's small mask back to the photo's size.
+masks = processor.post_process_masks(outputs.pred_masks, inputs["original_sizes"])[0]
+print(masks.shape)        # one mask per box, each the height and width of the photo
+```
+
+You supply the box, which means you supply a detector. The library prepares the
+picture, runs the network and stretches the mask back to your photo's size. What you
+still have to write is the step from the mask to a place in the room, which is
+[section 6](#6-where-it-is-used-on-a-robot-arm).
+
+### 5.2 SAM 3
+
+**Worth betting on**, because it removes the step that SAM 2 cannot do: it takes a
+short phrase instead of a click, and it returns every object in the picture that
+matches the phrase.
+
+SAM 3 came from Meta in November 2025, in the paper "SAM 3: Segment Anything with
+Concepts" ([arXiv:2511.16719](https://arxiv.org/abs/2511.16719)). Its
+[repository](https://github.com/facebookresearch/sam3) calls the new ability
+promptable concept segmentation, and reports 75 to 80 per cent of human performance
+on SA-CO, a new benchmark of 270,000 different concepts. Improved checkpoints called
+[SAM 3.1](https://huggingface.co/facebook/sam3.1) followed.
+
+The obvious alternative is Grounding DINO followed by SAM 2, which is the usual way
+to turn words into masks and which the [open-vocabulary
+models](03_open-vocabulary-models.md) page describes. Pick SAM 3 when you want one
+model instead of two, and when you need every matching object rather than the one
+best match, for example every bolt on a tray rather than the clearest bolt. Pick the
+older pairing when the licence matters, which is the next paragraph.
+
+The costs are size and licence. The checkpoint holds 859.9 million parameters, read
+from its [model card](https://huggingface.co/facebook/sam3), so it needs a graphics
+card and is no candidate for a small computer on the robot. The licence is a bespoke
+agreement called the SAM License, stated in the repository's
+[licence file](https://github.com/facebookresearch/sam3/blob/main/LICENSE), and the
+Hugging Face card gives the weights' licence as "other" and gates them behind a
+request you have to make and have approved. Open weights are not the same thing as
+open source: read this agreement rather than assuming Apache-2.0 because SAM 2 was.
+
+The library is `transformers`, which has the model from version 5.0.0 with no
+compiled parts, so it runs on an ordinary Mac as well as on a graphics card.
+
+```python
+from PIL import Image
+from transformers import AutoModel, AutoProcessor
+
+# Both lines need an approved access request and a Hugging Face login.
+model = AutoModel.from_pretrained("facebook/sam3")
+processor = AutoProcessor.from_pretrained("facebook/sam3")
+
+image = Image.open("table.jpg").convert("RGB")
+inputs = processor(images=image, text="mug", return_tensors="pt")
+outputs = model(**inputs)
+
+# One mask and one box per matching object, rather than one answer for the picture.
+print(outputs.pred_masks.shape, outputs.pred_boxes.shape)
+```
+
+You supply the picture and the phrase. The model supplies a mask, a box and a score
+for each matching object, and the library's own page explains how to combine its
+`pred_logits` and `presence_logits` into that score. What you still have to find is
+the phrase that works, because two wordings of one request can give different
+answers, and that is the part a factory cannot easily make repeatable.
+
+### 5.3 Ultralytics YOLO26-seg
+
+**Most used in 2026**, because it is the fastest way to get one mask per object on
+every frame of a live camera, and because the same package also trains it on your
+own pictures.
+
+Ultralytics publishes a segmentation version of each of its detection models, and
+the file name carries a `-seg` ending, so `yolo26n-seg.pt` is the smallest of five
+sizes. It is the detector of [section 3](#3-how-it-works-inside) with a mask head
+added, so each box comes back with an outline, and the
+[instance segmentation documentation](https://docs.ultralytics.com/tasks/segment/)
+describes the whole family.
+
+The obvious alternative is Mask R-CNN in torchvision. Pick Ultralytics when the
+camera runs at speed and the computer is small, because its own table gives
+`yolo26n-seg` 2.7 million parameters and 2.1 milliseconds on an NVIDIA T4 graphics
+card with TensorRT, against 46.4 million parameters and no stated speed for
+`maskrcnn_resnet50_fpn_v2`. Pick Mask R-CNN when the AGPL licence is a problem.
+
+The costs are the licence and the edges. Ultralytics is AGPL-3.0, which obliges you
+to publish the source of anything you combine it with, including software you only
+run as a service, and the weights carry the same terms. A paid Enterprise licence
+removes that obligation, and Book 2 explains the trap in [licences, and the one that
+will catch you
+out](../../../02_perception/02_object-perception/06_licences-and-platforms.md#1-licences-and-the-one-that-will-catch-you-out).
+The accuracy cost is real as well. The same table gives `yolo26n-seg` 33.9 mask mAP
+on COCO, where mAP is short for mean average precision and a higher number is
+better, against 47.0 for the largest `yolo26x-seg` at 12.9 milliseconds. Thin parts
+such as a handle or a cable are where a small model loses pixels first.
+
+The library is `ultralytics`, which you install with `pip install ultralytics`.
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolo26n-seg.pt")           # the "-seg" file adds the mask head
+result = model("table.jpg", conf=0.25)[0]
+
+# masks.xy holds one outline per object, as an array of points in picture pixels.
+for box, outline in zip(result.boxes, result.masks.xy):
+    name = result.names[int(box.cls)]
+    centre_u, centre_v = outline.mean(axis=0)
+    print(f"{name}: {len(outline)} outline points, "
+          f"centre of the outline at ({centre_u:.0f}, {centre_v:.0f})")
+```
+
+The same result also holds `result.masks.data`, which is the mask as a grid of true
+and false values, one grid per object. That is the form you want for picking out the
+depth pixels of one object, because you can select from the depth picture with it
+directly. What you supply is the picture, the threshold, and everything after the
+mask.
+
+### 5.4 RF-DETR-Seg
+
+**Worth betting on**, because it is the direction the field is going: a transformer
+with a permissive licence that reports better masks than the YOLO family at the same
+latency.
+
+RF-DETR comes from Roboflow, with co-authors at Carnegie Mellon University, and its
+paper is from November 2025
+([arXiv:2511.09554](https://arxiv.org/abs/2511.09554)). Segmentation is one of three
+jobs the one package does, and its
+[repository](https://github.com/roboflow/rf-detr) publishes six segmentation sizes,
+from Nano to 2XLarge.
+
+The obvious alternative is YOLO26-seg, which is about equally easy to install. Pick
+RF-DETR-Seg when you want the permissive licence and the better outlines together.
+Its README reports every row measured in one harness on the 5,000 pictures of the
+COCO validation split, with latency on an NVIDIA T4 graphics card using TensorRT:
+RF-DETR-Seg-Nano reaches 40.3 average precision at 3.4 milliseconds, where
+YOLO26-N-Seg reaches 34.7 at 2.31 milliseconds. Those are the authors' own
+measurements of their model against a competitor, so read them as a claim with a
+method attached.
+
+The costs are size and youth. RF-DETR-Seg-Nano holds 33.6 million parameters against
+2.7 million for the smallest YOLO26-seg, because its backbone is a DINOv2 vision
+transformer, so there is no very small version for a tiny computer. The project is
+also young, so its API still changes between releases.
+
+The library is `rfdetr`, which you install with `pip install rfdetr`. It returns a
+`Detections` object from the `supervision` library.
+
+```python
+from rfdetr import RFDETRSegMedium
+from rfdetr.assets.coco_classes import COCO_CLASSES
+
+model = RFDETRSegMedium()                 # replace with RFDETRSegNano for the small one
+detections = model.predict("table.jpg", threshold=0.5)
+
+# detections.mask holds one true-or-false grid per object, the size of the photo.
+for class_id, mask in zip(detections.class_id, detections.mask):
+    print(COCO_CLASSES[class_id], "covers", int(mask.sum()), "pixels")
+```
+
+You supply the picture and the threshold. The package downloads the weights and
+gives you masks in your photo's pixels. The `COCO_CLASSES` list applies only to the
+COCO-trained weights, and the README says to read `detections.data["class_name"]`
+once you have fine-tuned the model on your own classes.
+
+### 5.5 Mask R-CNN
+
+**Most used in 2026** for one particular job, which is fine-tuning an instance
+segmentation model on your own objects without adding a dependency to a PyTorch
+project.
+
+Mask R-CNN came from Facebook AI Research in 2017, and it is the design [section
+3](#3-how-it-works-inside) describes as a detector with a mask head added. It ships
+inside torchvision, the image half of PyTorch, and the newer of its two versions is
+`maskrcnn_resnet50_fpn_v2`.
+
+The obvious alternative is YOLO26-seg, which is faster and easier to train. Pick
+Mask R-CNN when the licence has to be permissive, when you want to read every line
+of the training code, and when the camera gives you a picture a second rather than
+thirty. Its BSD-3-Clause licence covers the code and the weights together, which is
+not true of every model here.
+
+The costs are speed and age. The torchvision
+[model page](https://pytorch.org/vision/stable/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html)
+gives this version 46.4 million parameters, 47.4 box mAP and 41.8 mask mAP on the
+COCO validation split. It states no speed, and the mask head runs once per box, so a
+crowded picture is slower than an empty one. The mask is predicted small and then
+stretched, so its edges are softer than SAM 2's. What goes wrong most often is the
+preparation of the picture, because the weights expect exactly what
+`weights.transforms()` applies.
+
+The library is `torchvision`, which arrives with PyTorch.
+
+```python
+import torch
+from torchvision.io import decode_image
+from torchvision.models.detection import (maskrcnn_resnet50_fpn_v2,
+                                          MaskRCNN_ResNet50_FPN_V2_Weights)
+
+weights = MaskRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+model = maskrcnn_resnet50_fpn_v2(weights=weights).eval()
+
+image = decode_image("table.jpg")
+batch = [weights.transforms()(image)]     # the preparation these weights were trained with
+with torch.no_grad():
+    prediction = model(batch)[0]
+
+for label, score, mask in zip(prediction["labels"], prediction["scores"],
+                              prediction["masks"]):
+    if score > 0.5:                       # torchvision applies no threshold for you
+        # Each mask holds one number per pixel, between 0 and 1, so choose a cut.
+        print(weights.meta["categories"][label], int((mask[0] > 0.5).sum()), "pixels")
+```
+
+You supply the picture, the threshold on the score, and the cut that turns the soft
+mask into a true-or-false mask. The two comparisons in the code are those two
+choices. Torchvision gives you the network and the matching preparation, and nothing
+else.
+
+### 5.6 Mask2Former
+
+**Historical**, kept because it explains how one transformer answers all three
+segmentation questions, and because its successors use the same idea.
+
+Mask2Former came from Meta in December 2021, in the paper "Masked-attention Mask
+Transformer for Universal Image Segmentation". Each of its queries gives one mask
+and one class, exactly as a detection transformer's queries give one box, which is
+why one trained model can give semantic, instance or panoptic answers depending on
+how you read its output. Its paper reports 57.8 panoptic quality on COCO, 50.1
+average precision for instance segmentation on COCO and 57.7 mean intersection over
+union on ADE20K, quoted on the Hugging Face
+[Mask2Former page](https://huggingface.co/docs/transformers/en/model_doc/mask2former).
+
+The obvious alternative today is RF-DETR-Seg or YOLO26-seg, both of which are faster
+at instance masks. Pick Mask2Former only when you need more than instance masks from
+one model, for example instance masks of the parts and a semantic mask of the table
+in the same pass. If that is your case, compare it with
+[OneFormer](https://github.com/SHI-Labs/OneFormer), which is MIT licensed and trains
+once for all three tasks.
+
+The costs start with maintenance. The original
+[repository](https://github.com/facebookresearch/Mask2Former) is archived, which
+means no fixes and no support for newer dependencies, although the `transformers`
+port is maintained and is the version to use. The licence is also split in the way
+this book keeps warning about: the repository's licence file is MIT, while the
+weights card for `facebook/mask2former-swin-large-coco-instance` gives its licence
+as "other". The code licence does not tell you the weights licence. That checkpoint
+holds 216.0 million parameters, read from the same card.
+
+The library is `transformers`, and the post-processing call is what selects the kind
+of answer you want.
+
+```python
+from PIL import Image
+from transformers import AutoImageProcessor, Mask2FormerForUniversalSegmentation
+
+name = "facebook/mask2former-swin-large-coco-instance"
+processor = AutoImageProcessor.from_pretrained(name)
+model = Mask2FormerForUniversalSegmentation.from_pretrained(name)
+
+inputs = processor(images=Image.open("table.jpg"), return_tensors="pt")
+outputs = model(**inputs)
+
+# The same outputs also feed post_process_semantic_segmentation and
+# post_process_panoptic_segmentation, which is the point of this model.
+result = processor.post_process_instance_segmentation(outputs, target_sizes=[(480, 640)])[0]
+print(result["segmentation"].shape, len(result["segments_info"]))
+```
+
+You supply the picture and the size you want the answer at. The library gives back
+one grid of object numbers plus a list saying which class each number is. That is a
+different shape of answer from the one-mask-per-object list the models above return,
+and the code after it has to expect that.
+
+### 5.7 How to choose
+
+Start with SAM 2 if you have a detector already, and with YOLO26-seg if you do not,
+because between them those two cover almost every robot cell: one turns a box into
+a good outline, and the other gives boxes and outlines together at camera speed.
+
+Five things change that answer.
+
+- **You are selling a product, or running a service, and will not publish your
+  source.** Then the AGPL licence rules Ultralytics out, and you take RF-DETR-Seg for
+  the best permissive masks or Mask R-CNN for the plainest permissive code. SAM 2
+  stays available either way, because it is Apache-2.0.
+- **You cannot write down your list of objects.** Then no closed-set model will do,
+  and the choice is SAM 2 driven by a detector or a click, or SAM 3 driven by a
+  phrase. Read SAM 3's licence first, and read [open-vocabulary
+  models](03_open-vocabulary-models.md) for the whole family.
+- **You want to know which pixels are table, floor or person, not which object is
+  which.** That is semantic segmentation, and none of the instance models above is
+  the right tool. Torchvision's
+  [DeepLabV3](https://pytorch.org/vision/stable/models/deeplabv3.html) is the
+  permissive and easy answer, and Mask2Former or OneFormer the stronger one. Do not
+  reach for SegFormer in a commercial product, because Book 2 records its licence as
+  the NVIDIA Source Code License, which is non-commercial.
+- **The masks have to run on the robot's own small computer.** Then take the
+  smallest Ultralytics size, or one of the small SAM variants such as MobileSAM or
+  EdgeTAM, and measure before you promise anything. [Running a model on a
+  robot](../../10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
+  explains what the numbers have to be.
+- **Your objects are not among the 80 COCO classes.** Then the model matters less
+  than the labelling, because you will fine-tune whichever one you pick. Let SAM 2
+  trace the outlines in your labelling tool, as [section 4](#4-how-it-is-trained)
+  describes, because that is what makes outline labelling affordable.
+
+Book 2's [mask models](../../../02_perception/02_object-perception/04_models-that-find.md#12-mask-models)
+lists more of these, each with the licence read from its own licence file.
 
 ---
 
@@ -384,55 +743,3 @@ one rule to cover.
   which covers mask models and the SAM family with their licences, and in
   [finding an object in a picture](../../../02_perception/01_camera/02_finding-objects.md),
   which builds a colour mask by hand.
-
----
-
-## 11. Using it in Python
-
-The page has argued that an exact outline tells a robot more than a box, because
-the outline follows the object and the box does not. This section shows the Python
-that produces such an outline. After reading it you will be able to get one mask
-per object from a photo, and you will know which part of turning that mask into a
-grasp is still yours to write.
-
-The quickest way is a YOLO segmentation model, because Ultralytics ships one that
-gives a box and an outline together in a single pass.
-
-```python
-from ultralytics import YOLO
-
-model = YOLO("yolo11n-seg.pt")           # the "-seg" file adds the mask head
-result = model("table.jpg", conf=0.25)[0]
-
-# masks.xy holds one outline per object, as an array of points in picture pixels.
-for box, outline in zip(result.boxes, result.masks.xy):
-    name = result.names[int(box.cls)]
-    centre_u, centre_v = outline.mean(axis=0)
-    print(f"{name}: {len(outline)} outline points, "
-          f"centre of the outline at ({centre_u:.0f}, {centre_v:.0f})")
-```
-
-The same result also holds `result.masks.data`, which is the mask as a grid of true
-and false values, one grid per object. That form is the one you want when you need
-to pick out the depth pixels that belong to a single object, because you can use it
-directly to select from the depth image.
-
-What the pretrained model gives you out of the box is an outline for each of the 80
-COCO classes, so a mug on a table is outlined without any training from you. That
-saves you the whole of [section 4](#4-how-it-is-trained), and it matters more here
-than for a detector, because tracing outlines by hand is the slowest kind of
-labelling there is.
-
-What you still have to write yourself is the step from a mask to a place in the
-room. You select the depth pixels inside the mask, throw away the ones with no
-reading, average the rest into a point in metres, and then work out a direction for
-the gripper, for example by fitting a line through the mask to find which way a
-long object points. The library gives you the shape in the picture, never the pose
-on the table.
-
-What you have to decide is first whether you need an outline at all, because a
-detector is faster and simpler when a box is enough. Then you decide the confidence
-threshold, as you would for a detector. Finally you decide whether to fine-tune. If
-your parts are not among the 80 classes you have to, and the cost of that is real,
-because every training picture needs an outline traced round every object rather
-than a box drawn round it.

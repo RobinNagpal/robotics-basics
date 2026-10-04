@@ -24,12 +24,17 @@ numbers.
    · [Two other ways in](#two-other-ways-in)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
+   · [5.1 PointNet](#51-pointnet)
+   · [5.2 PointNet++](#52-pointnet)
+   · [5.3 MinkowskiEngine and spconv](#53-minkowskiengine-and-spconv)
+   · [5.4 Point Transformer V3](#54-point-transformer-v3)
+   · [5.5 Sonata](#55-sonata)
+   · [5.6 How to choose](#56-how-to-choose)
 6. [A worked example: picking a mug from a cluttered table](#6-a-worked-example-picking-a-mug-from-a-cluttered-table)
 7. [What goes wrong](#7-what-goes-wrong)
 8. [Why this rather than an image model, and what it costs](#8-why-this-rather-than-an-image-model-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -217,23 +222,339 @@ prepares the model for the noise a real depth camera adds.
 
 ## 5. Well-known models
 
-All of those designs appear in real models, and these are the ones you will see
-named in robot papers and code.
+The designs above appear in real code under real names, and this section is the
+shortlist. It says what each one is best at, what it costs you, and what to type to
+run it.
 
-- **PointNet** (2017) was the first widely used network that reads points directly,
-    and it uses one shared small network and max pooling, as described above.
-- **PointNet++** (2017) adds groups of neighbouring points at several sizes, so it is
-    still a common part inside robot grasp models. Contact-GraspNet, from the
-    [six-DOF grasps page](../../05_grasp-models/02_most-used/01_six-dof-grasps.md),
-    is built on it.
-- **DGCNN**, short for dynamic graph convolutional neural network (2019), links each
-    point to its nearest neighbours and learns from the differences between them, and
-    it finds new neighbours at each layer based on what that layer has learned.
-- **MinkowskiEngine** (2019) is a library for sparse convolution on voxels, and many
-    models for large indoor scenes are built with it.
-- **Point Transformer** (2021) and **Point Transformer V3** (2024) use attention on
-    groups of nearby points, which makes them among the strongest models on scans of
-    rooms.
+Read the table as a first pass, then read the sub-section for the one or two you are
+considering. The "size you download" column answers how big each model is, and it
+matters that several of these ship code with no trained weights at all, because a
+model with no weights is a model you have to train yourself. Every licence below was
+read from the project's own licence file.
+
+| Model | Best at | Size you download | Licence | Pick it when |
+| --- | --- | --- | --- | --- |
+| [PointNet](https://github.com/charlesq34/pointnet) | one name for one object, already cut out | code only, no weights released | MIT | you are learning how these models work |
+| [PointNet++](https://github.com/charlesq34/pointnet2) | one object and its parts, a few thousand points | code only, no weights released | MIT | the grasp model you want already contains it |
+| [MinkowskiEngine](https://github.com/NVIDIA/MinkowskiEngine) and [spconv](https://github.com/traveller59/spconv) | whole rooms and full bins, hundreds of thousands of points | libraries rather than models | MIT, and Apache-2.0 for spconv | speed on a large cloud decides the job |
+| [Point Transformer V3](https://github.com/Pointcept/PointTransformerV3) | a name on every point of a room scan | 554 MB for the ScanNet checkpoint | MIT for the code | accuracy on a whole scene matters most |
+| [Sonata](https://github.com/facebookresearch/sonata) | the same job with far fewer labels of your own | 434 MB, about 108 million learned numbers | Apache-2.0 code, CC BY-NC 4.0 weights | you have few labelled clouds and no product to ship |
+
+### 5.1 PointNet
+
+PointNet is **historical**, and it is on this list because every later model here
+reuses the two ideas in
+[section 3](#one-small-network-for-every-point-then-the-largest-number). Charles Qi
+and colleagues at Stanford University published it at the 2017 Computer Vision and
+Pattern Recognition conference, usually written CVPR. It is the one shared small
+network per point, followed by max pooling.
+
+The obvious alternative is its own successor, PointNet++, and you should normally use
+that instead. There is one case for plain PointNet: it does no neighbour search at
+all, so it is the only model here that runs at a sensible speed on an ordinary
+processor with no graphics card, and on a single object already cut out of the scene
+it is often accurate enough.
+
+What it costs you is detail. Because no point ever sees its neighbours, PointNet
+cannot tell a thin handle from the side of a mug, and that is the fault you will meet
+first. The code is MIT licensed, but no weights for everyday objects were released, so
+you have to train it. The original repository will not run on a current install, since
+its own instructions say it was tested with Python 2.7, TensorFlow 1.0.1 and CUDA 8.0.
+
+PyTorch Geometric supplies the pieces, as `MLP` for the small network and
+`global_max_pool` for the pooling step.
+
+```python
+import torch
+from torch_geometric.nn import MLP, global_max_pool
+
+pos = torch.rand(1024, 3)                      # one cloud of 1,024 points
+batch = torch.zeros(1024, dtype=torch.long)    # every point belongs to cloud 0
+
+# The same small network runs on every point on its own, turning each point's
+# three numbers into 1,024 numbers.
+per_point = MLP([3, 64, 64, 1024])(pos)
+
+# Keep the largest number in each of those 1,024 columns. This is the step that
+# makes the answer the same whatever order the points arrive in.
+cloud = global_max_pool(per_point, batch)      # one row of 1,024 numbers
+
+# A last small network turns that row into one score per object kind.
+scores = MLP([1024, 512, 40], norm=None)(cloud)
+```
+
+The library gives you the layers and the pooling. You supply everything else: the
+labelled clouds, the training loop, and the step that cuts each object out of the
+scene before it reaches this code. The `batch` vector is not an optional detail,
+because it is how PyTorch Geometric tells one cloud from another when you pass
+several at once.
+
+### 5.2 PointNet++
+
+PointNet++ is **most used in 2026**, although usually not by you directly, because it
+sits inside grasp models that you call instead. The same Stanford group posted it in
+June 2017. It adds the rounds of neighbour grouping described in
+[section 3](#looking-at-neighbours), and each round picks centre points, collects the
+points near each centre, and runs a small PointNet on each group.
+
+The obvious alternative is Point Transformer V3 in section 5.4, which is more accurate
+on scenes. Pick PointNet++ for two reasons. The first is that your input is one object
+rather than a room, and with a few thousand points grouping is cheap while the extra
+machinery of a transformer buys little. The second is practical: Contact-GraspNet and
+several other grasp models were built on PointNet++, so if you use one of them, as the
+[six-DOF grasps page](../../05_grasp-models/02_most-used/01_six-dof-grasps.md)
+describes, you are already running it and the choice is made.
+
+One other design from those years is worth recognising by name.
+[DGCNN](https://github.com/WangYueFt/dgcnn) finds each point's neighbours again at
+every layer, in the space of learned features rather than in metres, which makes it
+good at naming the parts of a single object. Its repository last changed in 2022, so
+read about it rather than build on it.
+
+What it costs you is time that grows faster than the number of points. The two slow
+steps are picking spread-out centres, which is called farthest point sampling, and
+collecting the points within a distance of each centre. Both compare points against
+other points, so doubling the cloud more than doubles the work, and that is why people
+cut the cloud down first and why section 5.3 exists. The code is MIT licensed. There
+is no `pip install pointnet2`, no released weights for your objects, and the original
+repository needs TensorFlow 1.
+
+PyTorch Geometric supplies the one round, which the PointNet++ paper calls set
+abstraction, out of `fps`, `radius` and `PointNetConv`.
+
+```python
+import torch
+from torch_geometric.nn import MLP, PointNetConv, fps, radius
+
+class SetAbstraction(torch.nn.Module):
+    """One PointNet++ round: pick centres, group neighbours, run a PointNet."""
+
+    def __init__(self, ratio, r, nn):
+        super().__init__()
+        self.ratio, self.r = ratio, r
+        self.conv = PointNetConv(nn, add_self_loops=False)
+
+    def forward(self, x, pos, batch):
+        idx = fps(pos, batch, ratio=self.ratio)        # keep a fraction of the
+                                                       # points, spread out
+        row, col = radius(pos, pos[idx], self.r, batch, batch[idx],
+                          max_num_neighbors=64)        # neighbours within r metres
+        edge_index = torch.stack([col, row], dim=0)
+        x_dst = None if x is None else x[idx]
+        x = self.conv((x, x_dst), (pos, pos[idx]), edge_index)
+        return x, pos[idx], batch[idx]                 # fewer points, richer features
+
+# A first round over 20 cm neighbourhoods, keeping half the points.
+layer = SetAbstraction(0.5, 0.2, MLP([3, 64, 64, 128]))
+```
+
+The library gives you the sampling, the neighbour search and the grouping. You supply
+the stack of rounds, the head that produces names, the training data, and the radius
+for each round. That radius is in metres, so it is the one number you must set from
+the real size of your objects.
+
+### 5.3 MinkowskiEngine and spconv
+
+Sparse convolution is **most used in 2026** whenever the cloud is a whole room or a
+full bin, and these two libraries are how people run it. Both do the same thing: they
+cut space into small cubes, called voxels, and do convolution only on the cubes that
+contain points. MinkowskiEngine comes from Chris Choy and NVIDIA, with its paper at
+CVPR 2019, and spconv is a separate library that installs from `pip` in a build that
+matches your CUDA version. These are libraries rather than single models, so you pick
+a network, such as the MinkUNet family, and run it on top.
+
+The obvious alternative is the neighbour grouping of PointNet++. Voxels win on large
+clouds because they make the neighbour question free: a cube knows which cubes are
+next to it from their addresses alone, so there is no distance search at all, while
+PointNet++ must search every time. That one difference is why sparse convolution
+carries scans of whole rooms and grouping does not.
+
+What it costs you starts with the voxel size, which you choose and which sets the
+finest detail the network can ever see: anything thinner than one cube disappears
+before the network starts. Then there is the install, which is the usual place this
+goes wrong. Both libraries compile CUDA code against your exact PyTorch version.
+MinkowskiEngine's repository last changed in March 2024, so building it against a
+current PyTorch and CUDA is now the common failure, and the host that its own example
+downloads pretrained weights from no longer answers. spconv is the better-maintained
+of the two, it is Apache-2.0 rather than MIT, and Point Transformer V3 in the next
+sub-section is built on it, so you may end up installing it anyway.
+
+MinkowskiEngine's own `examples/indoor.py` names every point of an indoor scan with a
+MinkUNet34C trained on ScanNet.
+
+```python
+import numpy as np, open3d as o3d, torch
+import MinkowskiEngine as ME
+from examples.minkunet import MinkUNet34C
+
+model = MinkUNet34C(3, 20).cuda().eval()      # 3 colour channels in, 20 names out
+model.load_state_dict(torch.load("weights.pth"))
+
+cloud = o3d.io.read_point_cloud("room.ply")
+coords = np.asarray(cloud.points)
+colors = torch.from_numpy(np.asarray(cloud.colors)).float() - 0.5
+
+voxel_size = 0.02                             # 2 cm cubes, so 2 cm is the limit
+field = ME.TensorField(
+    features=colors,
+    # Dividing by the voxel size turns metres into cube numbers.
+    coordinates=ME.utils.batched_coordinates([coords / voxel_size],
+                                             dtype=torch.float32),
+    quantization_mode=ME.SparseTensorQuantizationMode.UNWEIGHTED_AVERAGE,
+    device="cuda")
+
+with torch.no_grad():
+    out = model(field.sparse())               # one row per occupied cube
+    names = out.slice(field).F.argmax(dim=1)  # back to one name per point
+```
+
+The library gives you the grouping of points into cubes, the convolution that skips
+empty space, and the `slice` call that maps each cube's answer back onto the original
+points. You supply the network and its weights, and because of the broken download
+above you should expect to train on your own labelled scans. You also supply the 20
+names, because this network was trained on ScanNet's furniture classes, such as wall,
+floor, chair and table, which are not the objects on a workbench.
+
+### 5.4 Point Transformer V3
+
+Point Transformer V3, written PTv3, is **most used in 2026** when the job is to put a
+name on every point of a scene and accuracy decides the job. The Pointcept group
+posted it in December 2023 and presented it at CVPR 2024. Its idea is to stop
+searching for neighbours. Instead it sorts the points along a path that visits space
+in a fixed order, so that a run of points in the sorted list is a patch of space, and
+then it applies attention within each run.
+
+The obvious alternative is sparse convolution from section 5.3, and PTv3 itself uses
+spconv internally for its first layer, so this is not a choice between two worlds. The
+reason to go further is that attention lets each point weigh its neighbours
+differently, while a convolution applies the same fixed pattern everywhere. The
+numbers the authors report are the argument. Against their own earlier Point
+Transformer V2, PTv3 reports three times the processing speed and ten times the
+memory efficiency, while the area each point can draw from grows from 16 points to
+1,024. On the ScanNet validation set the Pointcept model zoo reports 77.6 for PTv3,
+measured as mean intersection over union, which is a score out of 100 for how well
+the named points overlap the right answer.
+
+What it costs you is set-up work. There is no `pip install`, because the authors ship
+PTv3 as files you copy into your project. It needs spconv, and for its full speed it
+needs the FlashAttention package, which needs CUDA 11.6 or newer; without it you must
+turn attention's fast path off and reduce the patch size, and it gets slower. The code
+is MIT licensed. The weights are the catch: the repository's own model zoo carries a
+note that the released weights are temporarily invalid because the model structure
+was changed, so if you want working weights today, use Sonata in section 5.5.
+
+There is no package to install, so you copy two things into your project.
+
+```bash
+git clone https://github.com/Pointcept/PointTransformerV3.git
+cp PointTransformerV3/model.py my_project/
+cp -r PointTransformerV3/serialization my_project/
+```
+
+Then the model takes a plain dictionary rather than a tensor.
+
+```python
+import torch
+from model import PointTransformerV3
+
+model = PointTransformerV3(in_channels=6).cuda().eval()   # x, y, z plus r, g, b
+
+point = {
+    "coord": coord,          # (N, 3) positions in metres, on the GPU
+    "feat": feat,            # (N, 6) the six numbers per point
+    "grid_size": 0.02,       # the voxel size, as in section 5.3
+}
+with torch.inference_mode():
+    out = model(point)       # out.feat holds one feature vector per point
+```
+
+The code gives you the sorting, the attention and the encoder and decoder around them.
+What comes back is a feature vector per point, not a name, so you supply the last small
+layer that turns features into your own names and the labelled scans to train it. You
+also supply `offset` or `batch` when you pass more than one cloud, since with neither
+of them the model assumes a single cloud.
+
+### 5.5 Sonata
+
+Sonata is **worth betting on**, because it attacks the shortage of labelled 3D data
+that [section 8](#8-why-this-rather-than-an-image-model-and-what-it-costs) names as
+the biggest cost of this whole family. Pointcept and Meta published it at CVPR 2025.
+It is not a new design: it is a PTv3 that has been trained on unlabelled point clouds
+by giving it a task that needs no labels, and what you download is that trained
+encoder.
+
+The obvious alternative is to train PTv3 yourself on your own labelled clouds.
+Sonata wins when you do not have many, which is the normal situation. Its repository
+ships a demo in which a single extra layer on top of the frozen model names the points
+of a ScanNet scan, and that is the shape of the work you would do: train one small
+layer instead of a whole network. It is also, today, the easiest way to get working
+PTv3 weights at all.
+
+What it costs you is the licence, and this is the detail to read twice. The code is
+Apache-2.0 from Meta, so the code is not the problem. The weights are released under
+Creative Commons Attribution-NonCommercial 4.0, because the data sets they were
+trained on forbid commercial use. So Sonata is for research and for deciding whether
+this approach works for you, and not for a product you sell. The checkpoint is 434 MB
+with about 108 million learned numbers, and a smaller one of 155 MB is published as
+well. Like PTv3 it prefers FlashAttention, and without it you pass
+`enable_flash=False` and a smaller patch size.
+
+The `sonata` package downloads the weights for you from Hugging Face.
+
+```python
+import torch
+import sonata
+
+model = sonata.model.load("sonata", repo_id="facebook/sonata").cuda().eval()
+transform = sonata.transform.default()   # the same preparation used in training
+
+# Each value is a NumPy array with one row per point.
+point = {"coord": coord, "color": color, "normal": normal}
+
+point = transform(point)                 # thins onto a grid and scales the colours
+for key, value in point.items():
+    if isinstance(value, torch.Tensor):
+        point[key] = value.cuda(non_blocking=True)
+
+with torch.inference_mode():
+    out = model(point)                   # one feature vector per surviving point
+```
+
+The package gives you the download, the preparation pipeline and the encoder. You
+supply the normals, which Open3D can estimate with `estimate_normals`, and the layer
+on top. One detail will confuse you otherwise: `transform` thins the cloud onto a 2 cm
+grid, so the features come back for the surviving points rather than for every point
+you passed in, and the pipeline keeps an `inverse` entry so that you can map them
+back.
+
+### 5.6 How to choose
+
+Start with Sonata, which gives you a trained Point Transformer V3 and the only
+working weights in this list, and put a small layer of your own on top of it.
+
+Four things change that choice.
+
+- **You are shipping a product.** Sonata's weights forbid commercial use. Then take
+  PTv3 or a MinkUNet on spconv, both of which have permissive code licences, and
+  train the weights yourself on your own labelled scans.
+- **You want grasps, not names.** Do not choose a point cloud model at all. Use a
+  grasp model from the
+  [grasp models chapter](../../05_grasp-models/01_overview.md); it contains a
+  PointNet++ and you never touch it.
+- **The cloud is large and the time budget is tight.** Sparse convolution on voxels
+  is the safest answer, because its cost follows the number of occupied cubes rather
+  than the number of points, and you control that with the voxel size.
+- **You are learning, or you have no graphics card.** Read PointNet, run it on single
+  objects on an ordinary processor, then read PointNet++. You will understand every
+  other model on this list afterwards.
+
+One warning about speed, because it is the question everybody asks first. This page
+gives no frames-per-second figures, because such a number depends on the graphics
+card, the number of points and the voxel size together, so a figure measured on
+someone else's machine will mislead you. The only safe comparison is a relative one
+measured by the same people on the same hardware, which is why the PTv3 figures above
+are given against PTv2 and nothing else. Measure on your own card, with your own cloud
+size, before you commit.
 
 ---
 
@@ -365,60 +686,3 @@ name the parts of an object, such as a handle.
     what a point cloud model has to beat.
 - [The one-box project](../../../02_perception/01_camera/03_one-box-intro.md) makes a
     real point cloud from a depth camera.
-
----
-
-## 11. Using it in Python
-
-The page has explained that these models read points directly, and that the
-software usually cuts the cloud down to a fixed number of points spread evenly over
-it before the network sees it. This section shows that preparation in Python, and
-then it says plainly what you will find when you look for the network itself.
-After reading it you will know which half of this pipeline is a download and which
-half is a research repository you have to clone.
-
-Open3D loads and thins the cloud, and PyTorch3D does the even spreading, which is
-called farthest point sampling.
-
-```python
-import numpy as np
-import open3d as o3d
-import torch
-from pytorch3d.ops import sample_farthest_points
-
-cloud = o3d.io.read_point_cloud("table_scene.ply")
-cloud = cloud.voxel_down_sample(voxel_size=0.005)
-
-# A batch of one cloud, shaped (1, N, 3), which is what the model expects.
-batch = torch.from_numpy(np.asarray(cloud.points)).float().unsqueeze(0)
-
-# K points spread evenly over the cloud, rather than the first K in the file.
-sampled, indices = sample_farthest_points(batch, K=1024)
-print(sampled.shape)        # (1, 1024, 3)
-```
-
-What is packaged for you out of the box is exactly what you see above, and nothing
-past it. Open3D and PyTorch3D are proper installable libraries, so the reading,
-thinning and sampling are solved. The networks themselves are not packaged in the
-same way. PointNet++, DGCNN and Point Transformer are released as research
-repositories, so there is no `pip install pointnet2` and no import you can write,
-and there are no widely shared trained weights for the objects on your table
-either. If you want to build one of these networks rather than clone it, PyTorch
-Geometric supplies the layer as `torch_geometric.nn.PointNetConv`, and you assemble
-and train the network around it yourself.
-
-What you still have to write yourself, or rather what you usually avoid writing, is
-worth saying clearly. Most robot projects never call a point cloud network
-directly, because they use one inside something else: a grasp model such as
-Contact-GraspNet takes your point cloud and gives back grasps, with a PointNet++
-hidden inside it that you never touch. That is the realistic route, and the code
-above is still the code you write, because a grasp model expects the cloud prepared
-in just this way.
-
-What you have to decide is the number of points and the voxel size, and they trade
-against each other. A model trained on 1,024 points will not read 20,000, and the
-points you throw away are gone, so a thin mug handle can disappear before the
-network ever sees it. You also decide whether you need a point cloud model at all,
-which [section 8](#8-why-this-rather-than-an-image-model-and-what-it-costs)
-discusses, because a detector on the colour picture plus the depth at those pixels
-is easier to get working and often enough.

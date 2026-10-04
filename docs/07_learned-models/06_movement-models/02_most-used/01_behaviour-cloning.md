@@ -25,6 +25,12 @@ told the right answer, and adjusting.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
+   · [5.1 ALVINN, the method with nothing added](#51-alvinn-the-method-with-nothing-added)
+   · [5.2 robomimic, if you want plain behaviour cloning](#52-robomimic-if-you-want-plain-behaviour-cloning)
+   · [5.3 ACT in LeRobot, the one to start with](#53-act-in-lerobot-the-one-to-start-with)
+   · [5.4 DAgger, which is now a command](#54-dagger-which-is-now-a-command)
+   · [5.5 SmolVLA, if fifty recordings are not enough](#55-smolvla-if-fifty-recordings-are-not-enough)
+   · [5.6 How to choose](#56-how-to-choose)
 6. [A worked example: picking up a mug](#6-a-worked-example-picking-up-a-mug)
 7. [What goes wrong](#7-what-goes-wrong)
    · [Small mistakes add up](#small-mistakes-add-up)
@@ -39,7 +45,6 @@ told the right answer, and adjusting.
 9. [Why behaviour cloning, and what it costs](#9-why-behaviour-cloning-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
-12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -189,44 +194,343 @@ skilled demonstrators.
 
 ## 5. Well-known models of this kind
 
-Section 4 described how the data is recorded, and people have been recording
-data like this for a long time, because behaviour cloning is an old idea. These
-are some well-known examples, from oldest to newest.
+Section 4 described how the data is recorded. This section names the behaviour
+cloning models worth knowing about, says which one to reach for first, and gives for
+each one the shortest command or program that does something real with it.
 
-- **ALVINN** (Autonomous Land Vehicle In a Neural Network) was built at Carnegie
-  Mellon University at the end of the 1980s. It watched a person drive a van, and
-  learned to choose the steering direction from a camera picture of the road, which
-  makes it one of the first examples of behaviour cloning with a neural network.
-- **DAgger** (Dataset Aggregation), from 2011, is not a network but a way of
-  collecting data. The trained policy drives, and a person says what they would have
-  done in the places the policy reaches, and section 7 shows why this helps.
-- **robomimic**, from 2021, is a careful study of behaviour cloning on robot arms.
-  It compared many versions on the same tasks and data, and it showed which details
-  matter most, such as the quality of the demonstrations and whether the network
-  sees past moments.
-- **BC-Z**, from Google in 2021, trained one behaviour cloning policy on about a
-  hundred tasks, and it was told which task to do with a sentence or a video of a
-  person doing it.
-- **RT-1** (Robotics Transformer 1), from Google in 2022, trained one policy on
-  about 130,000 demonstrations of more than 700 tasks, collected with a fleet of
-  robots. So it showed that behaviour cloning can cover many tasks if the data is
-  large enough.
-- **Implicit Behavioural Cloning** (2021) and **Behavior Transformers** (2022) are
-  two ways to fix the averaging problem described in section 7. The first of them
-  scores many possible actions and picks the best, while the second sorts the
-  actions into groups and picks a group first.
+Read the table as a filter rather than as a ranking. Find the row that matches the
+hardware and the recordings you have, read its last column, and then read that
+model's sub-section. The size column holds the number of trainable values the project
+itself states, and `not stated` where no project document gives a figure. The Mac
+column means an Apple Silicon Mac with no separate graphics card, and its answers
+come from LeRobot's own
+[compute hardware guide](https://huggingface.co/docs/lerobot/hardware_guide), which
+groups policies by the video memory they need to train at a batch size of eight.
 
-The newer policies on the next two pages are also behaviour cloning, because
-they copy demonstrations in the same way. They differ only in what they give
-back, and those differences are what fix the problems described below.
+| Model | Best at | Size | Licence | Trains on a Mac | Pick it when |
+| --- | --- | --- | --- | --- | --- |
+| ALVINN (1988) | steering from one camera | three layers, `not stated` | no code was released | not applicable | never; read it to see the method with nothing added |
+| robomimic BC and BC-RNN (2021) | plain behaviour cloning with published baselines | `not stated` | MIT | yes, slowly | you want plain behaviour cloning already written, on a recorded dataset |
+| ACT in LeRobot (2023) | one careful task on your own cheap arm | about 80 million | Apache-2.0 | yes, in about 6 to 14 hours | you have an arm, two cameras and an evening to record |
+| DAgger in LeRobot (2011, a command since 2026) | repairing a policy that nearly works | not applicable | Apache-2.0 | yes | your policy fails in the same place every time |
+| SmolVLA (2025) | starting from trained weights, and being told the task in a sentence | 450 million | Apache-2.0 on the code and on the weights | running yes, training marginal | fifty recordings are not enough, or one policy must do several tasks |
+
+### 5.1 ALVINN, the method with nothing added
+
+**Historical.** ALVINN stands for Autonomous Land Vehicle In a Neural Network, and
+Dean Pomerleau published it at Carnegie Mellon University in
+[1988](https://proceedings.neurips.cc/paper/1988/hash/812b4ba287f5ee0bc9d43bbf5bbe87fb-Abstract.html).
+Its own abstract describes a three-layer network that takes pictures from a camera
+and a laser range finder and produces the direction the vehicle should steer. One
+observation goes in, one action comes out, and the training signal is the recorded
+answer.
+
+You would not pick ALVINN, and there is nothing to pick, because no code was released
+with it. What you would use instead is robomimic in section 5.2, which is the same
+method with the parts a modern project needs already written. The reason to read
+about ALVINN is that every policy further down this page is this network with pieces
+added, so when section 5.3 tells you that ACT has about 80 million trainable values
+and a transformer inside, you can still see the picture going in and the command
+coming out. What it cost the field is in section 7: a network of this shape drifts
+away from its recordings within a second or two.
+
+There is no library for ALVINN, so the shortest honest code is ALVINN written again
+in PyTorch over a modern recording. The data comes from
+[LeRobot](https://github.com/huggingface/lerobot), whose `LeRobotDataset` class reads
+a recording and behaves like an ordinary PyTorch dataset.
+
+```python
+import torch
+from torch import nn
+from lerobot.datasets import LeRobotDataset
+
+# A real recording on the Hugging Face Hub: one SO-101 arm picking objects up.
+dataset = LeRobotDataset("lerobot/svla_so101_pickplace")
+loader = torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
+
+# The recording states the shape of every field, so the network is sized from it.
+state_dim = dataset.features["observation.state"]["shape"][0]
+action_dim = dataset.features["action"]["shape"][0]
+net = nn.Sequential(nn.Linear(state_dim, 256), nn.ReLU(), nn.Linear(256, action_dim))
+optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
+
+for batch in loader:
+    # One behaviour cloning step: guess, compare with the person's action, adjust.
+    loss = nn.functional.mse_loss(net(batch["observation.state"]), batch["action"])
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()
+```
+
+Those four lines in the loop are the whole method, which shows that the difficulty of
+such a project is not in the training step. The library gave you the file format, the
+loading and the field shapes. What this network lacks is what the sub-sections below
+supply: it reads only `observation.state`, the arm's own joint positions, and never
+looks at the pictures, so it learns the average path of the recordings instead of
+reacting to where the object is. To match even ALVINN you would add an encoder that
+turns a picture into numbers, and the rescaling of every input and output into the
+range a network expects.
+
+### 5.2 robomimic, if you want plain behaviour cloning
+
+**Most used in 2026**, for the one job of running plain behaviour cloning and
+comparing against a published number.
+[robomimic](https://github.com/ARISE-Initiative/robomimic) came out of the Stanford
+Vision and Learning Lab in 2021 with a [study](https://arxiv.org/abs/2108.03298) of
+six offline learning methods on five simulated and three real manipulation tasks,
+using recordings of deliberately different quality. The library is still maintained,
+and its behaviour cloning file holds eight variants, including the plain one, a
+recurrent one called BC-RNN that lets the policy remember the last few moments, and a
+transformer one.
+
+You would pick robomimic over LeRobot for this one job because LeRobot ships no plain
+behaviour cloning policy at all. Its list of policies, read from its source on 3
+October 2026, is `act`, `diffusion`, `vqbet`, `tdmpc`, `smolvla`, `pi0`, `pi0_fast`,
+`pi05`, `groot`, `eo1`, `evo1`, `xvla`, `wall_x`, `molmoact2`, `multi_task_dit`,
+`flux3`, `lawam`, `lingbot_va`, `vla_jepa`, `fastwam` and `gaussian_actor`. Every one
+of those is behaviour cloning with something added.
+
+What it costs you is the shape of the project rather than the computing. It expects
+its recordings as HDF5 files in its own layout, which is not the LeRobot format, so
+your own recordings need converting, and it is driven by a configuration file rather
+than by flags. The thing that most often goes wrong is the installation, because it
+expects a particular pairing of robosuite and MuJoCo, which is why Book 3's
+[glossary](../../../03_frameworks/04_one-arm-training/06_glossary.md) says to install
+it from GitHub rather than from the Python package index. The licence is MIT, read
+from the repository's own licence file on 3 October 2026.
+
+The commands below are from robomimic's own
+[getting started page](https://robomimic.github.io/docs/introduction/getting_started.html),
+and they need no robot.
+
+```bash
+# Install from the repository rather than from the package index.
+git clone https://github.com/ARISE-Initiative/robomimic
+pip install -e robomimic
+
+# One of the study's own datasets: lifting a block, recorded by one skilled person.
+python robomimic/robomimic/scripts/download_datasets.py --tasks lift --dataset_types ph
+
+# Train plain behaviour cloning. The template is the whole configuration.
+python robomimic/robomimic/scripts/train.py \
+  --config robomimic/robomimic/exps/templates/bc.json \
+  --dataset datasets/lift/ph/low_dim_v141.hdf5
+```
+
+The library gives you the network, the picture encoder, the rescaling, the training
+loop and a published success rate to compare against. You supply the configuration
+file, and the setting in it to change first is `algo.rnn.enabled`, from false to
+true, which switches the same file to BC-RNN, because whether the network sees past
+moments is one of the details the study found to matter. What you cannot get from
+robomimic is a policy for your own arm, because its recordings are of a simulated arm
+in a simulated room.
+
+### 5.3 ACT in LeRobot, the one to start with
+
+**Most used in 2026.** ACT stands for Action Chunking with Transformers, published in
+2023 with the [ALOHA paper](https://arxiv.org/abs/2304.13705). It is behaviour
+cloning that predicts a short run of future commands at each decision instead of one
+command, and [the next page](02_action-chunking-transformers.md) is about how it does
+that. LeRobot's [own page for it](https://huggingface.co/docs/lerobot/act) calls it
+"the first model we recommend when you're starting out", states that it has about 80
+million trainable values, and says it often reaches a high success rate with 50
+demonstrations.
+
+You would pick ACT over plain behaviour cloning from robomimic because of the fault
+described in section 7. A policy that chooses one command at a time drifts, and
+predicting a run of commands at once cuts the number of decisions and therefore the
+drift. Book 3's page on
+[learned methods](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#11-behaviour-cloning)
+quotes the ACT paper's own comparison, which goes from 1 per cent success when
+predicting one command at a time to 44 per cent when predicting a hundred, averaged
+over simulated tasks. The paper's real-robot claim is 80 to 90 per cent on six fine
+manipulation tasks from ten minutes of demonstrations.
+
+What it costs you is a recording session and nothing else. It is in the base LeRobot
+installation, so there is no extra dependency. LeRobot's hardware guide puts it in
+the lightest group at about 2 to 6 GB of video memory, and gives one Apple Silicon
+figure: five passes over a 45,000-frame recording at a batch size of four takes about
+6 to 14 hours on an M1, M2 or M3 Max, against about 30 to 60 minutes on an RTX 4090.
+The licence is Apache-2.0 for LeRobot's version and MIT for the original code. The
+thing that most often goes wrong is expecting somebody else's trained ACT policy to
+work for you. There is no transferable one, because the output layer has one number
+per joint of the arm it was trained on, so a policy trained on a seven-joint arm
+cannot even be loaded for a six-joint one.
+
+Training is a command rather than a program, because LeRobot reads the number of
+joints and the number of cameras from your recording and sizes the network to fit.
+
+```bash
+# Train. The network is sized from the dataset, so nothing here mentions joints.
+lerobot-train \
+  --policy.type=act \
+  --dataset.repo_id=${HF_USER}/my_dataset \
+  --output_dir=outputs/train/act_my_dataset \
+  --job_name=act_my_dataset \
+  --policy.device=cuda          # use mps on an Apple Silicon Mac
+
+# Run the trained policy on the real arm for sixty seconds, recording nothing.
+lerobot-rollout \
+  --strategy.type=base \
+  --policy.path=outputs/train/act_my_dataset/checkpoints/last/pretrained_model \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM0 \
+  --robot.cameras="{ front: {type: opencv, index_or_path: 0, width: 640, height: 480, fps: 30}}" \
+  --duration=60
+```
+
+LeRobot gives you the network from the paper, the training loop, the rescaling, the
+checkpoints and the control loop that runs the policy on the arm at a fixed rate. You
+supply the recording, and that is the whole of the work. The decision inside it that
+costs the most later is what you vary while recording, because the range of object
+positions, the lighting and the camera placement in your recordings become the limits
+of the finished policy.
+
+### 5.4 DAgger, which is now a command
+
+**Worth betting on**, because the step it describes stopped being a research project
+and became one flag on a command. DAgger stands for Dataset Aggregation, and Ross,
+Gordon and Bagnell published it in [2011](https://arxiv.org/abs/1011.0686). It is a
+way of collecting data rather than a network. You let the trained policy drive, you
+take over when it goes wrong, and you add your corrections to the training set.
+
+You would do this rather than record more demonstrations because corrections cover
+the places the policy itself reaches, which are not the places a skilled person would
+have reached. Book 3's page on
+[interactive imitation](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes)
+states that a few dozen corrections gathered this way are often worth several hundred
+fresh demonstrations. The reason to bet on it now rather than in 2011 is that LeRobot
+ships it: its [deployment page](https://huggingface.co/docs/lerobot/inference) lists
+`dagger` as one of the strategies of the `lerobot-rollout` command, it alternates
+between the policy driving and you driving, and it marks every frame you drove with
+`intervention=True`.
+
+What it costs you is your attendance. You have to be at the robot with the leader arm
+in your hands, so the strategy requires a teleoperator to be configured, and the
+collecting cannot be left running overnight the way training can. It is part of
+LeRobot and therefore Apache-2.0. The thing that most often goes wrong is taking over
+too early: correct the policy before it has made its mistake and the recording holds
+your plan rather than its repair.
+
+```bash
+# Let the trained policy drive, take over with Tab, and record twenty corrections.
+lerobot-rollout \
+  --strategy.type=dagger \
+  --strategy.num_episodes=20 \
+  --policy.path=outputs/train/act_my_dataset/checkpoints/last/pretrained_model \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM0 \
+  --teleop.type=so101_leader \
+  --teleop.port=/dev/ttyACM1 \
+  --dataset.repo_id=${HF_USER}/my_corrections \
+  --dataset.single_task="Put the cup in the box"
+```
+
+LeRobot gives you the switching between the two drivers, the tagging of the frames
+you drove, and a new dataset in the same format as your original recordings. You
+supply the judgement about when to take over, and then a second training run, because
+the corrections are a dataset and not an update. By default only your correction
+windows are kept, each as one episode, and `--strategy.record_autonomous=true` keeps
+the policy's own frames as well.
+
+### 5.5 SmolVLA, if fifty recordings are not enough
+
+**Worth betting on**, because it is the cheapest way to stop training from nothing.
+SmolVLA is a policy with about 450 million trainable values, released by Hugging Face
+in June 2025. Book 3's
+[page on foundation models](../../../03_frameworks/08_frontier/02_foundation-models.md#10-the-open-shelf-what-you-can-download-today)
+records that it combines a vision-language backbone with a smaller action-producing
+part, was trained on about 10 million frames from 487 datasets contributed by the
+community, and reports about 78 per cent success on real SO-100 arm tasks. It is
+behaviour cloning, and what makes it different from ACT is that the weights already
+exist and that the policy also reads a sentence saying which task to do.
+
+You would pick it over ACT in two cases. The first is that you start from trained
+weights rather than from nothing, which is the difference between fifty recordings
+being too few and being enough. The second is the sentence: one SmolVLA policy can be
+told at run time which of several tasks to perform, where an ACT policy trained on
+several tasks has no way to be told which one you want. Section 8 is about that
+input.
+
+What it costs you is memory and an extra install. LeRobot's hardware guide puts it at
+about 10 to 16 GB of video memory to train, a group above ACT, and the frontier
+chapter calls training it on a Mac marginal for that reason. Its
+[announcement](https://huggingface.co/blog/smolvla) states that it is small enough to
+run on a central processing unit or on a MacBook, so running it on a Mac is
+reasonable and training it there is not. Its
+[LeRobot page](https://huggingface.co/docs/lerobot/smolvla) says fine-tuning for
+20,000 steps takes roughly four hours on one A100 card. The licence is the most
+permissive on this page: Apache-2.0 on the code, and the
+[weights card](https://huggingface.co/lerobot/smolvla_base) declares Apache-2.0 as
+well, checked on 3 October 2026. The thing that most often goes wrong is the
+sentence, because the task text you pass when running must match the task text in
+your recordings. That text is an input to the network and not a label for you.
+
+```bash
+# SmolVLA is not in the base install.
+pip install 'lerobot[smolvla]'
+
+# Fine-tune the pretrained 450M policy on your own recording.
+lerobot-train \
+  --policy.path=lerobot/smolvla_base \
+  --dataset.repo_id=${HF_USER}/my_dataset \
+  --batch_size=64 \
+  --steps=20000 \
+  --output_dir=outputs/train/my_smolvla \
+  --job_name=my_smolvla \
+  --policy.device=cuda
+
+# Run it, and tell it the task in the same words the recording used.
+lerobot-rollout \
+  --strategy.type=base \
+  --policy.path=outputs/train/my_smolvla/checkpoints/last/pretrained_model \
+  --robot.type=so101_follower \
+  --robot.port=/dev/ttyACM0 \
+  --task="Put the cup in the box" \
+  --duration=60
+```
+
+Hugging Face gives you a policy that has already seen 487 people's robots, so your
+recordings only have to teach it your room. You still supply the recordings, and its
+own documentation recommends about 50 episodes and reports that 25 was not enough. If
+training runs out of memory, check `freeze_vision_encoder`: it defaults to true, it
+holds the picture-reading part of the network fixed, and leaving it on is what keeps
+the memory figure above within reach.
+
+### 5.6 How to choose
+
+The default is ACT in LeRobot. Record about 50 demonstrations on a cheap
+leader-and-follower arm, train ACT, run it, and watch where it fails, because going
+once around that loop teaches more than any further reading.
+
+Four things change that choice. If you have no arm and want to compare plain
+behaviour cloning against a published number, use robomimic and its downloadable
+recordings, because LeRobot ships no plain behaviour cloning policy. If fifty
+recordings turn out not to be enough, or if one policy has to be told which of
+several tasks to do, fine-tune SmolVLA rather than recording hundreds more. If your
+ACT policy almost works and fails in the same place every time, do not record more
+demonstrations; run it with the DAgger strategy and correct it where it fails. And if
+your only machine is an Apple Silicon Mac, ACT is the one policy here that will
+finish, in about 6 to 14 hours rather than the hour a graphics card takes, with
+`--policy.device=mps` as the flag, which LeRobot's
+[accelerator page](https://huggingface.co/docs/lerobot/torch_accelerators) documents.
+Training on the central processing unit alone is something its hardware guide tells
+you not to do.
+
+ALVINN is on this page to be read and not to be run.
+
+The two pages that follow this one are behaviour cloning as well. ACT and the
+diffusion policies copy demonstrations in exactly the way section 4 described, and
+they differ only in what they give back, which is what fixes the faults described
+below.
 
 ---
 
 ## 6. A worked example: picking up a mug
 
-The models in section 5 are large ones, so this section walks through a small
-example instead, from recording to failure. Say you want an arm to pick up a mug
-from a table and put it on a shelf, where the mug can be anywhere in a square
+Section 5 named the models and the commands, and this section walks through one
+small project instead, from recording to failure. Say you want an arm to pick up a
+mug from a table and put it on a shelf, where the mug can be anywhere in a square
 about 30 cm wide. There is one camera above the table and one camera on the
 arm's wrist.
 
@@ -435,8 +739,7 @@ that task alone. The usual answer to that is more data, and a larger network.
 
 BC-Z, from 2021, trained one policy on about a hundred tasks, and gave it the goal
 as a sentence or as a video of a person doing the task. RT-1, from 2022, went
-further, to more than 700 tasks, and both of them are listed in
-[section 5](#5-well-known-models-of-this-kind).
+further, to 700 tasks.
 
 ### Hindsight relabelling
 
@@ -581,74 +884,3 @@ For a more critical account of behaviour cloning, with published numbers, read
 Its section on
 [interactive imitation](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes)
 explains DAgger and its modern versions.
-
----
-
-## 12. Using it in Python
-
-Section 4 said that training a behaviour cloning policy is the plainest kind of
-supervised learning: show the network an observation, compare its action with the
-person's, adjust. This section writes that out in Python, because behaviour cloning
-is short enough to see all of at once. After reading it you will know how little code
-the method is, and therefore where the real work of a behaviour cloning project
-goes.
-
-The data comes from [LeRobot](https://github.com/huggingface/lerobot), whose
-`LeRobotDataset` class reads a recorded dataset and behaves like an ordinary PyTorch
-dataset, so a standard training loop works on it. Everything below except the two
-import lines is code you would write yourself.
-
-```python
-import torch
-from torch import nn
-from lerobot.datasets import LeRobotDataset
-
-dataset = LeRobotDataset("lerobot/svla_so101_pickplace")
-loader = torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=True)
-
-state_dim = dataset.features["observation.state"]["shape"][0]
-action_dim = dataset.features["action"]["shape"][0]
-net = nn.Sequential(nn.Linear(state_dim, 256), nn.ReLU(), nn.Linear(256, action_dim))
-optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
-
-for batch in loader:
-    loss = nn.functional.mse_loss(net(batch["observation.state"]), batch["action"])
-    loss.backward()
-    optimizer.step()
-    optimizer.zero_grad()
-```
-
-Those four lines in the loop are the whole of behaviour cloning. That is worth
-seeing, because it shows that the method is not where the difficulty lies.
-
-It is also worth being honest about what this particular network cannot do. It reads
-only `observation.state`, the arm's own joint positions, and it never looks at the
-camera pictures, so it will learn to repeat the average path of the demonstrations
-and it will not react to where the mug actually is. A policy that works needs the
-pictures too, which means a convolutional or transformer encoder in front of those
-linear layers, and it needs the rescaling of every input and output into the range
-the network expects. LeRobot does not ship a plain behaviour cloning policy for this
-reason: its packaged imitation policies are ACT, diffusion and VQ-BeT, which are the
-next two pages, and each of them is a fuller behaviour cloning model rather than a
-different method. If you want plain behaviour cloning already built, with the camera
-encoder and the recurrent version included,
-[robomimic](https://github.com/ARISE-Initiative/robomimic) is the library for it, and
-it is driven by a configuration file, as in
-`python robomimic/scripts/train.py --config robomimic/exps/templates/bc.json
---dataset <my-file>.hdf5`.
-
-So what the library gives you is the data format, the loading, and the statistics of
-the dataset. What you have to write is the network, the encoder for the pictures, the
-rescaling and the evaluation. And what you have to collect is the demonstrations,
-which cannot be downloaded for your task. `lerobot/svla_so101_pickplace` above is a
-real dataset, but it is a real dataset of somebody else's arm, in somebody else's
-room, with their cameras in their positions. A policy trained on it will not work on
-your arm, and section 7 explained why: the pictures your cameras produce are unlike
-anything in those recordings, so the policy is guessing outside what it knows from
-the first frame onwards. Recording your own fifty or hundred demonstrations, with a
-leader arm, over an evening, is the job. The five lines above are not.
-
-The decision that costs the most later is what you vary while recording. The policy
-works where you showed it and nowhere else, so the range of object positions, the
-lighting and the camera placement in your recordings become the limits of the
-finished policy. Widening them afterwards means recording again.

@@ -29,7 +29,6 @@ explains the convolutional layers that this kind of model is built from.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -171,27 +170,303 @@ augmentation**.
 
 ## 5. Well-known models
 
-So far this page has described the method, and these four models show how it
-developed over five years. Book 3's
+So far this page has described the method. This section names the models that
+implement it, so that you can choose one and start work instead of reading five
+papers first. The last sub-section is a short rule for choosing, and a reader in a
+hurry can read only that.
+
+Read the table one row at a time. The size column counts the weights in the network,
+because that number decides whether the model runs on a computer with no graphics
+card. The licence column is the licence on the code, and Book 3's
 [models that grasp](../../../03_frameworks/02_gripping/04_models-that-grasp.md#2-planar-models-a-grasp-is-a-rectangle)
-lists their code, their licences and how old they are.
+read each one from the project's own licence file in September 2026. The last column
+gives the one condition that should make you choose that row rather than another.
 
-- **Lenz, Lee and Saxena's detector (2015)** was one of the first to use deep
-    learning for grasp rectangles, and it checked many small patches of the picture
-    one by one.
-- **Redmon and Angelova's detector (2015)** looked at the whole picture once and
-    gave back one rectangle directly, so it was much faster than checking patches.
-- **GG-CNN**, the generative grasping convolutional neural network (2018), paints
-    the quality, angle and width maps described above. It is very small, which lets
-    it run again and again while the arm moves.
-- **GR-ConvNet**, the generative residual convolutional neural network (2020), does
-    the same job with a larger network, and it can take a colour picture as well as
-    depth.
+| Model | What it is best at | Size, in weights | Code licence | Pick it when |
+| --- | --- | --- | --- | --- |
+| [GG-CNN](https://github.com/dougsm/ggcnn) (2018) | running many times a second on a small computer | 62,420 | BSD-3-Clause | the arm has to keep looking while it reaches |
+| [GR-ConvNet](https://github.com/skumra/robotic-grasping) (2020) | reading colour and depth together | 1,900,900 | BSD-3-Clause | a depth camera alone sees your objects badly |
+| [FC-GQ-CNN](https://github.com/BerkeleyAutomation/gqcnn) (2019) | choosing the gripper's height as well as the pixel | not stated | University of California Regents: education, research and not-for-profit use only | you are doing research and want the sampler and the search as well as the network |
+| Redmon and Angelova's detector (2015) | nothing you would use today | not stated | not stated | never; read the paper to see where the single-pass idea came from |
+| Lenz, Lee and Saxena's detector (2015) | nothing you would use today | not stated | not stated | never; read the paper to see what the first deep version cost |
 
-All four draw rectangles for a gripper that comes straight down. The
-[grasp quality models](02_grasp-quality-models.md) page covers Dex-Net, which also
-works on top-down grasps but in a different way. Instead of painting maps, it
-scores grasps one at a time.
+The two 2015 rows are in the table because this page would be dishonest without
+them, not because you should install them.
+
+### 5.1 GG-CNN, the small network that can run on every frame
+
+**Most used in 2026** of the models on this page, because it is the smallest of
+them, its licence lets you sell what you build, and it installs from ordinary Python
+packages with no compiled extensions.
+
+GG-CNN is the generative grasping convolutional neural network. Douglas Morrison,
+Peter Corke and Jürgen Leitner published it at the Robotics: Science and Systems
+conference in 2018, in a paper called
+[Closing the Loop for Robotic Grasping](https://arxiv.org/abs/1804.05172). It takes
+one 300 by 300 depth picture and paints the quality, the angle and the width maps
+that section 3 described. The [repository](https://github.com/dougsm/ggcnn) also
+holds a second and slightly larger version called GG-CNN2.
+
+The obvious alternative is GR-ConvNet in the next sub-section, which paints the same
+three maps with a much larger network. Choose GG-CNN instead when the arm has to
+keep looking while it reaches. GG-CNN has 62,420 weights and GR-ConvNet has
+1,900,900, counted from the layer sizes the two projects publish, so GG-CNN is about
+thirty times smaller. Running the model again during the reach was the problem the
+paper set out to solve, and the small network is how it solved it, because a small
+network finishes in time for the next camera frame.
+
+What it costs you is mostly age. The repository was written for Python 3.6 on Ubuntu
+16.04 and was last pushed in July 2020, so the install takes more work than the model
+does. It needs no graphics card and no compiled extensions, so that install is still
+possible on a current machine. The thing that most often goes wrong is the depth
+picture itself,
+because the network wants one channel of 300 by 300 pixels holding metres, and if
+you hand it millimetres or a 480 by 640 picture it still answers and the answer
+means nothing.
+
+GG-CNN is not on the Python package index. You clone the repository and download
+the released weights, which hold the whole saved model, so no code rebuilds the
+network. The two imports below name folders inside the clone.
+
+```python
+import torch
+from models.common import post_process_output              # in the cloned repository
+from utils.dataset_processing.grasp import detect_grasps
+
+net = torch.load("ggcnn_weights_cornell/ggcnn_epoch_23_cornell")
+net.eval()
+
+with torch.no_grad():
+    # depth has shape (1, 1, 300, 300): one 300 by 300 depth picture, in metres
+    pos, cos, sin, width = net(depth)
+
+# The network does not output an angle. It outputs the cosine and the sine of twice
+# the angle, and this call turns that pair back into an angle. It also smooths all
+# three maps, which stops the peak jumping between neighbouring pixels.
+q_img, ang_img, width_img = post_process_output(pos, cos, sin, width)
+
+# Finds the peaks of the quality map and reads the angle and the width at each peak.
+grasp = detect_grasps(q_img, ang_img, width_img=width_img, no_grasps=1)[0]
+print(grasp.center, grasp.angle, grasp.length)   # pixel, radians, opening in pixels
+```
+
+The library gives you the network and the two steps around it that you would
+otherwise get wrong, which are the angle arithmetic and the peak finding. What you
+have to supply is the cropping and resizing to that exact shape, the conversion from
+the winning pixel to a gripper pose that section 6 sets out, and the cut-off on the
+quality map. That last one is a real decision, because `detect_grasps` accepts peaks
+above 0.2 by default, and a low cut-off means the model always answers even when
+nothing in the picture can be grasped.
+
+### 5.2 GR-ConvNet, the same three maps from a larger network
+
+**Most used in 2026** when depth alone is not enough, because it is the only model
+on this page that reads the colour picture as well and still carries a licence you
+can ship.
+
+GR-ConvNet is the generative residual convolutional neural network. Sulabh Kumra,
+Shirin Joshi and Ferat Sahin published it in 2020, from the Multi-Agent Bio-Robotics
+Laboratory at the Rochester Institute of Technology, in a paper called
+[Antipodal Robotic Grasping using Generative Residual Convolutional Neural
+Network](https://arxiv.org/abs/1909.04810). It paints the same quality, angle and
+width maps as GG-CNN, from a 224 by 224 input with four channels, which are red,
+green, blue and depth. Between its downward and upward halves sit five residual
+blocks, which are pairs of convolutional layers that add their input back to their
+output so that a deeper network still trains.
+
+The obvious alternative is GG-CNN. Choose GR-ConvNet instead when a depth camera
+sees your objects badly, because a flat object lying on a flat table is almost
+invisible in depth and obvious in colour. Its
+[repository](https://github.com/skumra/robotic-grasping) also commits its trained
+weights into Git rather than attaching them to a release, so they are there as soon
+as you clone it. Those two differences are the whole case for it.
+
+What it costs you is thirty times as many weights as GG-CNN, so it is the wrong
+choice if you wanted the model to run on every camera frame without a graphics card.
+It was last pushed in November 2021, so it has the same ageing install, although its
+requirements file pins nothing and names no compiled extension. The thing that most
+often goes wrong is the width map, because the library divides the training widths
+by 150 and multiplies them back afterwards, so the widths that come out are in
+pixels of a 224 by 224 crop and not in millimetres of your gripper.
+
+The code below is the shortest path through the repository's own `run_offline.py`.
+
+```python
+import numpy as np
+import torch
+from PIL import Image
+
+from inference.post_process import post_process_output
+from utils.data.camera_data import CameraData
+from utils.dataset_processing.grasp import detect_grasps
+
+# The weights are committed in the clone, so there is nothing to download.
+net = torch.load("trained-models/cornell-randsplit-rgbd-grconvnet3-drop1-ch32/epoch_19_iou_0.98")
+net.eval()
+
+rgb = np.array(Image.open("scene_rgb.png"))
+depth = np.expand_dims(np.array(Image.open("scene_depth.tiff")), axis=2)
+
+# CameraData crops both pictures to the centred 224 by 224 square the network
+# expects, normalises them, and stacks them into the four channels.
+img_data = CameraData(include_depth=True, include_rgb=True)
+x, depth_img, rgb_img = img_data.get_data(rgb=rgb, depth=depth)
+
+with torch.no_grad():
+    pred = net.predict(x)       # a dict with the keys pos, cos, sin and width
+
+q_img, ang_img, width_img = post_process_output(
+    pred["pos"], pred["cos"], pred["sin"], pred["width"])
+grasp = detect_grasps(q_img, ang_img, width_img=width_img, no_grasps=1)[0]
+```
+
+The library does the cropping and the normalising for you, which is the part GG-CNN
+leaves to you, and `CameraData` is where you say what size your camera gives. What
+you have to supply is a colour picture and a depth picture of the same scene, taken
+at the same moment and already lined up pixel for pixel, which a depth camera will
+do only if you ask it to align its two streams. Everything after the grasp is the
+same work as in the previous sub-section.
+
+### 5.3 FC-GQ-CNN, the Dex-Net top-down policy
+
+**Historical.** It is kept here because it explains how the current models work and
+because it is the top-down model people ask about most, but its licence forbids
+commercial use and its code needs TensorFlow 1.
+
+FC-GQ-CNN is the fully convolutional grasp quality convolutional neural network,
+published in 2019 by the AUTOLAB group at the University of California, Berkeley, as
+part of Dex-Net 4.0. It started as a scorer rather than a detector. Dex-Net 2.0 cut
+a 96 by 96 patch around one proposed grasp and gave that grasp a single number,
+which the [grasp quality models](02_grasp-quality-models.md) page describes in full.
+The fully convolutional version runs that same small network as a convolution over
+the whole depth picture, so one pass scores a grasp at every fourth pixel and at
+each of 16 different gripper heights.
+
+The obvious alternative is GG-CNN, which also answers for every pixel in one pass.
+Choose FC-GQ-CNN instead for one reason: it chooses the gripper's height as well as
+the pixel and the angle. GG-CNN reads the height out of the depth picture at the
+winning pixel, which is wrong whenever the best place to close the jaws is not at
+the surface the camera can see, such as around the body of a mug below its rim.
+
+What it costs you is everything else. The code pins TensorFlow at 1.15 or below and
+its own packaging names Python 3.5 to 3.7, so it needs an environment of its own.
+The licence is a University of California Regents grant for education, research and
+not-for-profit purposes only, with a Berkeley technology licensing contact for
+anything else, so you cannot ship it. The thing that most often goes wrong is the
+picture size, because the fully convolutional network is built for one fixed height
+and width, and you have to write your own picture's size into the configuration
+before the policy is created.
+
+The library is [gqcnn](https://github.com/BerkeleyAutomation/gqcnn), which you clone
+rather than install, and the code below is the shortest path through its own
+`examples/policy.py`.
+
+```python
+import numpy as np
+from autolab_core import (CameraIntrinsics, ColorImage, DepthImage, RgbdImage,
+                          YamlConfig)
+from gqcnn.grasping import FullyConvolutionalGraspingPolicyParallelJaw, RgbdImageState
+
+config = YamlConfig("cfg/examples/fc_gqcnn_pj.yaml")   # names the weights folder
+camera_intr = CameraIntrinsics.load("data/calib/primesense/primesense.intr")
+
+depth_im = DepthImage(np.load("data/examples/clutter/primesense/depth_0.npy"),
+                      frame=camera_intr.frame)
+depth_im = depth_im.inpaint(rescale_factor=0.5)        # fills the holes in the depth
+color_im = ColorImage(np.zeros([depth_im.height, depth_im.width, 3], np.uint8),
+                      frame=camera_intr.frame)         # this model ignores colour
+
+# The network is built for one picture size, so tell it yours before it is created.
+config["policy"]["metric"]["fully_conv_gqcnn_config"]["im_height"] = depth_im.height
+config["policy"]["metric"]["fully_conv_gqcnn_config"]["im_width"] = depth_im.width
+
+state = RgbdImageState(RgbdImage.from_color_and_depth(color_im, depth_im),
+                       camera_intr,
+                       segmask=depth_im.invalid_pixel_mask().inverse())
+
+action = FullyConvolutionalGraspingPolicyParallelJaw(config["policy"])(state)
+print(action.grasp.center, action.grasp.angle, action.grasp.depth, action.q_value)
+```
+
+The library gives you a finished answer rather than three maps, which is the real
+difference from the two models above. `action.grasp` already carries a centre, an
+angle and a depth in metres, and `action.q_value` is the score the network gave it.
+What you have to supply is the camera's intrinsic parameters in Berkeley's own
+`.intr` file format, a depth picture in metres, and a mask saying which pixels are
+objects. The code above uses the pixels with valid depth as that mask, which works
+on a clean table and not in a bin. You also have to set `gripper_width` in the
+configuration to your gripper's opening in metres, because the shipped value is
+0.05.
+
+### 5.4 Redmon and Angelova's single-pass detector
+
+**Historical.** It is the ancestor of the three models above, and reading it shows
+you the one idea they all kept.
+
+Joseph Redmon and Anelia Angelova published
+[Real-Time Grasp Detection Using Convolutional Neural Networks](https://arxiv.org/abs/1412.3128)
+in 2015. Their network looked at the whole picture once and gave back the four
+numbers of one grasp rectangle directly, instead of testing candidate patches one at
+a time. It replaced the patch classifier in the next sub-section because looking
+once is far cheaper than looking at every patch.
+
+The reason not to use it today is that it gives one rectangle for the whole picture.
+If two objects are on the table, the network chooses between them before you do, and
+you cannot ask it for the second-best grasp or for a grasp on a particular object.
+GG-CNN's three maps give you every grasp in the picture for the same cost, which is
+why nobody went back. There is no maintained implementation to install, so read the
+paper for the idea rather than the code.
+
+### 5.5 Lenz, Lee and Saxena's patch classifier
+
+**Historical.** It is here because it is the first deep learning grasp detector, and
+because knowing what it cost explains why the maps in section 3 exist at all.
+
+Ian Lenz, Honglak Lee and Ashutosh Saxena published
+[Deep Learning for Detecting Robotic Grasps](https://arxiv.org/abs/1301.3592) in
+2015, from Cornell University. Their system cut many small rectangles out of the
+picture, asked a small network of each one whether a grasp there would hold, and
+kept the best answer. The Cornell grasping dataset that section 4 described was
+built for this work.
+
+The three usable models above exist because of this model's cost. Asking a network
+about every candidate rectangle separately means thousands of network runs for one
+picture, and everything since has been an argument about how to get all of those
+answers from one run. Its own answer to the cost, which was a cheap first network
+that threw most candidates away and an expensive second network on the survivors,
+survives today in the samplers that the
+[grasp quality models](02_grasp-quality-models.md) page describes. There is nothing
+to install: read the paper, and use the dataset.
+
+### 5.6 How to choose
+
+Start with GG-CNN. It is the smallest, its BSD-3-Clause licence lets you sell what
+you build, it needs no compiled extensions, and it will put a grasp rectangle on
+your screen the same day.
+
+Four things change that choice.
+
+- If a depth camera sees your objects badly, which happens with flat, thin, shiny or
+    see-through things, use GR-ConvNet, because it reads the colour picture as well.
+    You pay for that with thirty times as many weights.
+- If the right place to close the jaws is not at the surface the camera sees, such
+    as below the rim of a mug or inside a recess, use FC-GQ-CNN, because it chooses
+    the gripper's height itself. Use it only for research, because its licence
+    forbids anything else.
+- If your gripper's opening is far from the one in the training data, no released
+    set of weights is right for you, and the width map will be wrong rather than
+    approximate. Both GG-CNN and GR-ConvNet ship a training script and both read the
+    Jacquard dataset, so retraining is the answer and not a workaround.
+- If anything in your scene needs a grasp that is not straight down, no model on
+    this page can express it. Read the
+    [six-degree-of-freedom grasps](../02_most-used/01_six-dof-grasps.md) page
+    instead, and read section 8 below first, because that choice costs you a
+    graphics card and usually a licence.
+
+One thing should not change your choice, and that is the age of these models. The
+newest usable one was published in 2020. That is because research attention moved to
+six-degree-of-freedom grasps, and not because the planar models stopped working. A
+flat table has not changed since 2020, and neither has the answer to it.
 
 ---
 
@@ -320,66 +595,3 @@ flat surface, and the model wins on objects nobody has listed.
 - Book 3's [grippers and hardware](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md)
     explains parallel-jaw grippers and how far they open.
 
----
-
-## 11. Using it in Python
-
-Section 3 said that GG-CNN paints three maps over the depth picture, a quality map,
-an angle map and a width map, and that the best rectangle is read off the peak of
-the quality map. This section shows that reading happening in Python, so that after
-reading it you will know how small this model really is and where the work goes
-instead.
-
-GG-CNN is not a package on the Python package index. You clone
-[the repository](https://github.com/dougsm/ggcnn) and download the released weights,
-which include the whole saved model, so no code is needed to rebuild the network.
-The imports `models.common` and `utils.dataset_processing.grasp` are folders inside
-the clone.
-
-```python
-import torch
-from models.common import post_process_output              # in the cloned repository
-from utils.dataset_processing.grasp import detect_grasps
-
-net = torch.load("ggcnn_weights_cornell/ggcnn_epoch_23_cornell")
-net.eval()
-
-with torch.no_grad():
-    # depth has shape (1, 1, 300, 300): one 300 by 300 depth picture, in metres
-    pos, cos, sin, width = net(depth)
-
-q_img, ang_img, width_img = post_process_output(pos, cos, sin, width)
-grasp = detect_grasps(q_img, ang_img, width_img=width_img, no_grasps=1)[0]
-print(grasp.center, grasp.angle, grasp.length)
-```
-
-The repository gives you a network small enough to run many times a second on a
-laptop, and it gives you the two steps around it that you would otherwise get wrong.
-`post_process_output` is one of them: the network does not output an angle, it
-outputs the cosine and the sine of twice the angle, and this function turns that pair
-back into an angle and then smooths all three maps, which stops the peak jumping
-between neighbouring pixels from frame to frame. `detect_grasps` is the other: it
-finds the peaks of the quality map and reads the angle and the width at each peak,
-and it returns a `Grasp` whose `center` is the pixel as a row and a column, whose
-`angle` is in radians, and whose `length` is the gripper opening in pixels.
-
-What you have to supply is the depth picture in the exact shape the network was
-trained on, which is 300 by 300 pixels of depth in metres, centred on the part of the
-table you care about. Cropping and resizing to that shape is your code. Turning the
-answer back into something the arm can use is also your code, and there is more of it
-than the model: the pixel has to become a point in the camera's frame using the
-camera's intrinsic parameters and the depth at that pixel, then a point in the
-robot's frame using your calibration, then a full gripper pose by combining that
-point with the angle and a straight-down approach. The opening in pixels has to
-become an opening in millimetres, which depends on how far away the object is.
-
-The decision that is yours is the cut-off on the quality map. `detect_grasps` asks
-for peaks above 0.2 by default, which is low, and a low cut-off means the model
-always answers even when there is nothing graspable in the picture. Raising it makes
-the arm refuse more often and succeed more often when it does try. The other
-decision is whether to retrain. These weights were trained on the Cornell grasping
-dataset, whose rectangles were drawn for a two-finger gripper of one size, so the
-width map is in that gripper's units, and the whole model assumes the gripper comes
-straight down. If your gripper is a different size, the width map is simply wrong for
-you, and the training script `train_ggcnn.py` in the same repository is how you fix
-it, on either the Cornell or the Jacquard dataset.

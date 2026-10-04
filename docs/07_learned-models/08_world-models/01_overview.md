@@ -307,7 +307,7 @@ is no pretrained part here at all, so everything the model knows comes from the 
 
 What you write is how those rows are filled, which means measuring the cube from the
 camera before and after every push, and the planning loop that asks the trained model
-what to do. The [learned dynamics models page](02_most-used/01_learned-dynamics-models.md#12-using-it-in-python)
+what to do. The [learned dynamics models page](02_most-used/01_learned-dynamics-models.md#51-an-ensemble-of-small-networks-the-pets-way)
 shows that loop.
 
 What you decide is which numbers go in the state, and that decision limits everything

@@ -29,7 +29,6 @@ to train a model on examples.
 9. [Why this rather than the obvious alternative, and what it costs](#9-why-this-rather-than-the-obvious-alternative-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
-12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -185,30 +184,320 @@ on.
 
 ## 6. Well-known models
 
-This area is mostly research papers rather than products, so the list below is of
-papers. All of them are real and often cited.
+Touch has fewer models you can download than any other area in this book, and the
+sensor on your robot decides which of the few you can use at all. So this section is
+organised by hardware. A force-torque sensor at the wrist, an optical gel sensor such
+as GelSight Mini or DIGIT, an array of pillars, and a magnetic skin each lead to a
+different answer, and for most of them the answer is that you train a small model of
+your own.
 
-- **Veiga and colleagues (2015)** trained a model to predict slip from a BioTac, a
-  fingertip-shaped sensor filled with fluid that measures pressure and vibration.
-  The robot then adjusted its grip to keep new objects from sliding.
-- **Li and colleagues (2018)** joined GelSight tactile pictures with an ordinary
-  camera picture. A CNN read each picture and an LSTM read how they changed over
-  time. The model said whether the object was slipping.
-- **"Making Sense of Vision and Touch"** (Lee and colleagues, 2019). This model
-  joins a camera picture, a wrist force-torque signal and the arm's joint readings
-  into one set of numbers. It was trained partly without labels, by asking the
-  model to predict things such as "will the gripper touch something in the next
-  step". A robot used it to learn to fit a peg into a hole.
-- **Contactile's PapillArray** controller works out when slip starts from its
-  pillar sensors, as the [frameworks
-  book](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#82-tactile-sensing-at-the-contact)
-  describes. It is a product, not an open model, and the maker does not publish how
-  fast it reacts.
+Read the table as: the method, the sensor it needs, what it is best at, how big the
+model is, its licence, and the one case that should make you choose it. A cell says
+`not stated` where nobody has published the figure. "Yours" in the licence column
+means the model comes out of your own training run, so no licence restricts it.
 
-The frameworks book states the practical point plainly. In September 2026 there was
-essentially no maintained open-source slip-detection software, and what exists is
-research code, mostly unlicensed and mostly written for one paper. So if you want
-slip detection on your robot, plan to train or write it yourself.
+| Method | Sensor it needs | Best at | Size | Licence | Pick it when |
+| --- | --- | --- | --- | --- | --- |
+| [6.1 Features and a tree ensemble](#61-hand-made-features-and-a-tree-ensemble) | any of them | a few hundred recorded grips | yours to choose | yours | your first attempt, on any sensor |
+| [6.2 A small network on the raw window](#62-a-small-network-of-your-own-on-the-raw-window) | any of them, and tactile pictures too | thousands of recorded grips | yours to choose | yours | the tree ensemble has stopped improving |
+| [6.3 GelSight's marker tracker](#63-gelsights-own-marker-tracker-as-the-shear-signal) | a gel with printed dots | measuring the sideways pull, with no training | not a learned model | GPL-3.0 | you own such a sensor and want the signal today |
+| [6.4 Sparsh with a force-and-slip head](#64-sparsh-with-a-force-and-slip-head) | DIGIT, GelSight'17, GelSight Mini | slip and three-axis force from few labels | a small and a base backbone; counts not stated | CC BY-NC 4.0, no commercial use | you own one of those three, and sell nothing |
+| [6.5 Making Sense of Vision and Touch](#65-making-sense-of-vision-and-touch) | wrist force-torque, a camera, joint readings | a contact job with no slip labels at all | not stated | MIT | you want the idea and will retrain it |
+
+### 6.1 Hand-made features and a tree ensemble
+
+This is the method **most used in 2026**, and it is not a published model at all. You
+turn each window into a short list of summary numbers, and you give that list to an
+ensemble of decision trees built one after another, each correcting the mistakes of
+the ones before it. The summary numbers are ones you can say out loud: the average of
+each axis, how much each axis wobbled, the largest change between two neighbouring
+readings, and how much of the signal sits in the fast part. Veiga and colleagues
+(2015) did this with random forests on a BioTac, a fingertip-shaped sensor filled with
+fluid, and the shape of the answer has not changed since.
+
+You would pick this rather than the obvious alternative, the neural network on the raw
+window in section 6.2, because of how much data you have. A day of robot time buys a
+few hundred deliberate slips, and with a few hundred examples a tree ensemble is
+usually more accurate, because it has far fewer numbers to fit. It also trains in
+seconds on a laptop with no graphics card, and it reports which feature it leaned on,
+so a failure teaches you something about your sensor.
+
+What it costs you is the features. You have to invent them, and a signal you did not
+think to compute is one the model cannot see. The model itself runs on the ordinary
+processor in well under a millisecond. The thing that most often goes wrong is not the
+model but the test: if you split the windows at random, two windows one reading apart
+land on opposite sides of the split, and the high score that follows means nothing.
+
+The library is scikit-learn, whose own `COPYING` file is the BSD 3-Clause licence. The
+class is
+[HistGradientBoostingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html).
+
+```python
+import numpy as np
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.model_selection import GroupKFold, cross_val_score
+
+# Your own recording, already cut into windows: 20 readings of six wrist numbers
+# each, one answer per window, and the number of the grip each window was cut from.
+windows = np.load('slip_windows.npy')         # shape (number of windows, 20, 6)
+answers = np.load('slip_answers.npy')         # shape (number of windows,), 0 or 1
+grips = np.load('slip_grip_numbers.npy')      # shape (number of windows,)
+
+def features(window):                         # one window: 20 readings by 6 axes
+    step = np.diff(window, axis=0)            # how much each axis changed each reading
+    return np.concatenate([window.mean(0), window.std(0),
+                           np.abs(step).max(0), (step ** 2).sum(0)])
+
+x = np.array([features(w) for w in windows])
+model = HistGradientBoostingClassifier(max_iter=200)
+# GroupKFold splits by grip, not by window, which is the correct split described above.
+scores = cross_val_score(model, x, answers, groups=grips, cv=GroupKFold(5))
+print('score on each held-back fifth of the grips:', scores)
+model.fit(x, answers)                         # then train on everything and save it
+```
+
+scikit-learn builds the trees and scores the model five times over, so `max_iter` is
+the only choice you make. What you supply is the three files, which means causing slips
+on purpose and writing down what happened, as section 5 describes. The grip number is
+the part people forget to record, and without it the split above is impossible.
+
+### 6.2 A small network of your own on the raw window
+
+This is also **most used in 2026**, by people who have collected thousands of grips,
+and it is the only choice when the window holds pictures instead of numbers. The
+network reads the window itself, with no features in between. For six wrist numbers,
+two layers with a few dozen numbers in the middle is enough; for tactile pictures, the
+arrangement is the one in section 4.2, which Li and colleagues introduced in
+[February 2018](https://arxiv.org/abs/1802.10153) and released no code for.
+
+You would pick this rather than the tree ensemble in section 6.1 for two reasons, and
+only the second is certain. Once the training set runs into the thousands, the network
+tends to find patterns you would not have thought to compute. And a gel picture has no
+short list of hand-made numbers that captures it, so when the window holds pictures
+there is nothing to compare against.
+
+What it costs you is data, a graphics card if the window holds pictures, and any
+explanation of why it answered as it did. The failure that matters most is the one in
+section 8: the answer arrives after the mug has gone. A bigger network is slower and a
+longer window delays the answer directly, so both have to be timed on the computer that
+will sit next to the arm.
+
+The library is PyTorch. This is the half that runs while the arm carries the mug.
+
+```python
+import collections
+
+import numpy as np
+import torch
+from torch import nn
+
+# The network you trained, rebuilt so the saved numbers fit into it.
+net = nn.Sequential(nn.Linear(6 * 20, 32), nn.ReLU(), nn.Linear(32, 1))
+net.load_state_dict(torch.load('slip_model.pt'))
+net.eval()                               # switch off the parts that only train
+
+window = collections.deque(maxlen=20)    # keeps only the last 20 readings
+slipping = False
+
+while carrying:
+    window.append(read_wrist_force())    # your own driver, giving six numbers
+    if len(window) < window.maxlen:
+        continue
+    # Transposed, because training laid each window out one sensor at a time, and
+    # the same numbers in a different order are a different input to the network.
+    x = torch.tensor(np.array(window).T.reshape(1, -1), dtype=torch.float32)
+    with torch.inference_mode():         # nothing is learned here, so keep no gradients
+        chance = torch.sigmoid(net(x)).item()
+    # Two limits rather than one: the flag turns on above 0.8 and only turns off
+    # again below 0.4, so it does not flicker while the number sits near a limit.
+    slipping = chance > 0.4 if slipping else chance > 0.8
+    if slipping:
+        slow_down_and_squeeze_a_little_harder()
+```
+
+`net.eval()` and `torch.inference_mode()` between them switch off everything that
+belongs to training, and the second also makes each answer faster. `torch.sigmoid` turns
+the raw output into the number between 0 and 1 that section 2 described, and
+`collections.deque` with a `maxlen` throws the oldest reading away by itself.
+
+What you write yourself is `read_wrist_force`, which talks to your sensor, and
+`slow_down_and_squeeze_a_little_harder`, which is the response that Book 3's
+[holding on](../../../03_frameworks/02_gripping/05_holding-on.md#52-the-five-responses-in-order-of-cost)
+page puts in order of cost. You also have to produce `slip_model.pt`, since there is no
+slip model to download. What you decide is the two limits and the window length.
+
+### 6.3 GelSight's own marker tracker, as the shear signal
+
+This is **most used in 2026** by anyone who owns a gel sensor with printed dots, and
+it contains no learning at all. GelSight's own software development kit,
+[gsrobotics](https://github.com/gelsightinc/gsrobotics), finds the printed dots in the
+first picture, fits them to a grid, and then follows each dot from one picture to the
+next with the Lucas-Kanade method from OpenCV, which is a standard way of following a
+small patch of picture as it moves. Section 4.3 of
+[the touch sensing page](../03_also-used/01_touch-sensing-models.md#43-seeing-the-sideways-push)
+describes what the dots do, and this is the code that measures it.
+
+You would pick this rather than training a slip model on gel pictures, which is
+section 6.4, because the dot movement is the slip signal itself. It is a measurement
+rather than a prediction, so it cannot be confidently wrong about an object it has
+never seen, and it needs no training set. The best arrangement is usually not either
+alone: measure the dot movement here, then feed those numbers into section 6.1 as
+features.
+
+What it costs you starts with the licence. The repository is GPL-3.0, read from its own
+licence file and recorded in the frameworks book's
+[licence table](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#9-drivers-ros-2-packages-and-licences),
+so linking it into a product obliges you to publish the source of the result. It needs
+the dots, so a plain gel has nothing to track. It is limited by the camera, because
+GelSight publishes 25 frames per second for the Mini, which makes one frame 40
+milliseconds and that the soonest any movement can be seen. And the gel is a
+consumable, rated by its maker for 1,000 coin presses.
+
+```python
+import cv2
+import numpy as np
+from utilities.gelsightmini import GelSightMini
+from utilities.marker_tracker import MarkerTracker
+
+camera = GelSightMini(target_width=320, target_height=240)  # the size in default_config.json
+camera.select_device(0)
+camera.start()
+
+first = camera.update(dt=0.0)
+tracker = MarkerTracker(np.float32(first) / 255.0)   # finds the dots, fits them to a grid
+# The tracker reports each dot as (row, column); OpenCV wants (column, row).
+start = tracker.initial_marker_center[:, ::-1].astype(np.float32).reshape(-1, 1, 2)
+current, previous_grey = start.copy(), cv2.cvtColor(first, cv2.COLOR_RGB2GRAY)
+
+while carrying:
+    frame = camera.update(dt=1 / 25)
+    grey = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    moved, found, _ = cv2.calcOpticalFlowPyrLK(previous_grey, grey, current, None,
+                                               winSize=(15, 15), maxLevel=2)
+    shift = (moved - start)[found[:, 0] == 1]        # each dot's move since the first picture
+    print('average dot movement in pixels:', np.linalg.norm(shift, axis=1).mean())
+    current, previous_grey = moved, grey
+```
+
+gsrobotics gives you the two hard parts: `GelSightMini` opens the sensor as a camera
+and hands back plain pictures, and `MarkerTracker` finds the dots and sorts them into
+their grid. OpenCV does the following, and `found` tells you which dots it lost.
+
+What you supply is the meaning, because nothing in the library says which average
+movement means "slipping" for your gel, your objects and your squeeze. Finding that
+limit is another set of deliberate slips, and section 3 is the reason to watch the dots
+at the rim of the contact separately from the ones in the middle.
+
+### 6.4 Sparsh, with a force-and-slip head
+
+This one is **worth betting on** rather than most used, because one model that works
+across sensors is the direction the field is going, and this one is held back by its
+licence and by a measured failure rather than by its idea. Sparsh is a family of
+self-supervised touch models from Meta's Fundamental AI Research group with Carnegie
+Mellon University and the University of Washington, published in
+[October 2024](https://arxiv.org/abs/2410.24090). It was trained on more than 460,000
+unlabelled tactile pictures by hiding parts of a picture and asking the model to fill
+them in. The repository also carries TacBench, six tasks of which two are exactly this
+page's job, estimating three-axis force and detecting slip, and the labelled recordings
+for both are released.
+
+You would pick this rather than training your own network from scratch, which is
+section 6.2, to save labels. Every slip label costs a real grip on a real robot, and
+the paper reports that its self-supervised start beat training end to end for one task
+and one sensor by 95.1 per cent on average across TacBench.
+
+What it costs you is unusually specific, and all of it is checkable. The licence in the
+repository's own `LICENSE.md` is Creative Commons Attribution-NonCommercial 4.0, which
+forbids commercial use and covers the weights as well as the code. The repository is a
+public archive, read only since February 2025. It works with three sensors, so any
+other sends you back to section 6.1. Its own pretraining used eight A100 80GB graphics
+cards, so only the head on top is realistically yours to train. And the failure has a
+number: a study in [September 2026](https://arxiv.org/abs/2609.08673) reports a frozen
+classifier on Sparsh scoring 6.86 per cent on a sensor it was not trained on, rising to
+87.09 per cent once a tenth of the new sensor's recordings are labelled.
+
+The repository is driven by configuration files rather than by Python you write.
+
+```bash
+# Train a head on your own labelled recordings, with the Sparsh backbone frozen.
+python train_task.py --config-name=experiment/downstream_task/${EXPERIMENT} \
+    paths=${YOUR_PATHS} wandb=${YOUR_WANDB}
+
+# Or run the released normal-and-shear head live on one DIGIT, to see the signal.
+python demo_forcefield.py +experiment=downstream_task/forcefield/digit_dino \
+    paths=${YOUR_PATHS} paths.output_dir=${YOUR_PATH}/checkpoints/ \
+    test.demo.digit_serial=D20001
+```
+
+The repository gives you the backbone, the training loop and the readers for its own
+recordings. What you supply is a `paths` file saying where your data and checkpoints
+live, the downloaded weights, and, past the demo, your own labelled grips in the layout
+its readers expect. The serial number in the last line is printed on the back of the
+DIGIT.
+
+### 6.5 Making Sense of Vision and Touch
+
+This is **historical**, and it is kept because it is the clearest small example of the
+trick section 6.4 scales up. Lee and colleagues at Stanford's Interactive Perception
+and Robot Learning lab published it in
+[October 2018](https://arxiv.org/abs/1810.10191). It learns one set of numbers from
+three inputs at once: a camera picture, the six wrist force-torque numbers, and the
+arm's joint readings. It is trained with no labels, on made-up questions such as
+whether the gripper will touch something in the next step. A controller then learned to
+fit a peg into a hole from those numbers.
+
+You would read this rather than section 6.4 for two reasons. Its
+[code](https://github.com/stanford-iprl-lab/multimodal_representation) is MIT, read
+from the repository's own licence file, so unlike Sparsh you may use it commercially.
+And it works from a wrist force-torque sensor, which most arms already have, rather
+than from a gel sensor you would have to buy.
+
+What it costs you is everything except the idea. There are no weights for your robot,
+the released recordings are one robot doing one task, and training needs a graphics
+card. The part that most often goes wrong is the made-up question, because "will the
+gripper touch something next" teaches nothing unless your recordings contain attempts
+that miss.
+
+```bash
+cd multimodal/dataset && ./download_data.sh      # their own recordings, not yours
+python mini_main.py --config configs/training_default.yaml
+```
+
+Those recordings are worth looking at even if you train nothing, because they show the
+shape this page describes: each step carries a window of 50 readings of the six wrist
+numbers, a camera picture, the joint readings, and whether there was contact. To use
+this on your own robot you have to produce a recording in that same shape, which is the
+work in section 5.
+
+### 6.6 How to choose
+
+Start with section 6.1, hand-made features and a tree ensemble, on whatever sensor you
+already own. It costs a day of robot time, and it answers the question that comes
+before every other one: is the slip visible in my signal at all?
+
+Five things change that choice.
+
+- **You own a gel sensor with printed dots.** Measure the dot movement with section
+  6.3, then put those numbers into section 6.1 as features rather than choosing one.
+- **Your window holds pictures, or you have thousands of grips.** Then section 6.2.
+- **You own a DIGIT, a GelSight'17 or a GelSight Mini, and sell nothing.** Then section
+  6.4, which reaches a usable answer from far fewer labelled grips.
+- **You sell something, and your sensor is camera-based.** Then use T3 instead of
+  Sparsh, because it is MIT rather than non-commercial and was trained across thirteen
+  sensors.
+  [The touch sensing page](../03_also-used/01_touch-sensing-models.md#65-transferable-tactile-transformers-t3)
+  describes it.
+- **You own a magnetic skin**, such as AnySkin or eFlesh, both MIT. Five magnetometers
+  give fifteen numbers, which is force and shear rather than shape, and those fifteen
+  numbers go straight into section 6.1 with no change.
+
+One thing should not change it. If you would rather buy the answer than train it, there
+is exactly one sensor that works out slip onset in its own controller, Contactile's
+PapillArray, described in the frameworks book's
+[tactile sensing at the contact](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#82-tactile-sensing-at-the-contact).
+Its maker publishes neither a price nor a slip-detection delay, and a search of GitHub
+for its name in October 2026 returns two small research repositories, the larger with
+three stars. So even the bought answer leaves you writing the software side yourself.
 
 ## 7. A worked example: carrying a wet mug
 
@@ -335,66 +624,3 @@ In the other books:
   reading](../../../02_perception/02_object-perception/02_sensors.md#26-conditioning-a-force-or-contact-reading)
   in the perception book explains how to clean up a noisy force signal before
   anything reads it.
-
-## 12. Using it in Python
-
-Sections 5 and 6 said that you will almost certainly train this model yourself, and
-the [chapter overview](../01_overview.md#9-using-it-in-python) shows that training
-loop, because it is the same one for every kind in this chapter. So this section shows
-the other half, which is the part that runs while the arm carries the mug. After
-reading it you will be able to turn a stream of force readings into the flag that
-section 7 acts on.
-
-```python
-import collections
-
-import numpy as np
-import torch
-from torch import nn
-
-# The same network the overview trained, rebuilt so the saved numbers fit into it.
-net = nn.Sequential(nn.Linear(6 * 20, 32), nn.ReLU(), nn.Linear(32, 1))
-net.load_state_dict(torch.load('slip_model.pt'))
-net.eval()                               # switch off the parts that only train
-
-window = collections.deque(maxlen=20)    # keeps only the last 20 readings
-slipping = False
-
-while carrying:
-    window.append(read_wrist_force())    # your own driver, giving six numbers
-    if len(window) < window.maxlen:
-        continue
-    # Transposed, because training laid each window out one sensor at a time, and
-    # the same numbers in a different order are a different input to the network.
-    x = torch.tensor(np.array(window).T.reshape(1, -1), dtype=torch.float32)
-    with torch.inference_mode():         # nothing is learned here, so keep no gradients
-        chance = torch.sigmoid(net(x)).item()
-    # Two limits rather than one: the flag turns on above 0.8 and only turns off
-    # again below 0.4, so it does not flicker while the number sits near a limit.
-    slipping = chance > 0.4 if slipping else chance > 0.8
-    if slipping:
-        slow_down_and_squeeze_a_little_harder()
-```
-
-PyTorch gives you three things here that are easy to miss. `net.eval()` and
-`torch.inference_mode()` between them switch off everything that belongs to training,
-and the second one also makes each answer faster, because the network no longer keeps
-the extra numbers it would need in order to learn. `torch.sigmoid` turns the network's
-raw output into the number between 0 and 1 that section 2 described. Python's own
-`collections.deque` with a `maxlen` is the window: it throws the oldest reading away
-by itself, so you never have to trim a list.
-
-What you have to write yourself is `read_wrist_force` and
-`slow_down_and_squeeze_a_little_harder`, and both of them are specific to your
-hardware. The first talks to your force sensor or your tactile sensor, and the second
-is the response that Book 3's
-[holding on](../../../03_frameworks/02_gripping/05_holding-on.md#52-the-five-responses-in-order-of-cost)
-page puts in order of cost. You also have to produce `slip_model.pt`, because there is
-no slip model to download.
-
-What you have to decide is the two limits and the window length, and section 8 says
-why you cannot choose them from accuracy alone. Measure how long the whole loop takes
-on the computer that will sit next to the arm, from the reading arriving to the flag
-turning on, because a model that is right but answers after the mug has gone is no
-use. If the loop is too slow, shorten the window before you shrink the network, since
-a shorter window cuts the delay directly.

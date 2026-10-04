@@ -27,7 +27,6 @@ three kinds of model: optical flow, point tracking and object tracking.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -184,30 +183,378 @@ numbered the objects in every frame.
 
 ## 5. Well-known models
 
-It helps to see those ideas in real models, and the list below gives them in
-order: the first two do optical flow, the next three follow points, and the last
-two follow objects.
+This section names the trackers a developer would install today, and it keeps the
+three kinds of this page apart, because picking the wrong kind costs much more than
+picking the wrong model inside a kind. Two of the best known names below are not
+learned models at all.
 
-- **FlowNet** was one of the first convolutional neural networks (CNNs) for optical
-  flow, and its authors made the Flying Chairs dataset to train it.
-- **RAFT** (Recurrent All-Pairs Field Transforms) improves its flow arrows in many
-  small rounds, as section 3 describes, and many later flow and stereo models build
-  on its design.
-- **PIPs** (Persistent Independent Particles) follows points through a window of
-  frames, and it keeps going through short hidden spells.
-- **TAPIR**, from Google DeepMind, follows any point you choose through a video,
-  because it first finds a rough match in each frame and then refines it.
-- **CoTracker**, from Meta, follows many points together, so each point helps place
-  the others, and it does well when points are hidden.
-- **SORT** and **ByteTrack** are tracking-by-detection methods, so they take boxes
-  from any detector and link them over time with a predictor and matching.
-- **SAM 2**, from Meta, follows the outline of an object you clicked on, through a
-  video, as described on the
-  [open-vocabulary models](../02_most-used/03_open-vocabulary-models.md) page.
+The table compares them. Read each row as: which of the three kinds the model
+belongs to, what it is best at, how big it is, what licence it carries, and the
+case that should make you pick it. A cell says `not stated` where the project
+that made the model publishes no number.
 
-Pose models can track too, because
+| Model | Kind | Best at | Size | Licence | Pick it when |
+| --- | --- | --- | --- | --- | --- |
+| ByteTrack | object tracking, many at once | keeping one number on each of several objects that your detector already finds | no weights of its own | MIT | a detector already works, and several objects move at once |
+| SORT | object tracking, many at once | showing in a few hundred lines what tracking by detection is | no weights of its own | GPL-3.0 for the original code | you want to read the method rather than ship it |
+| SAM 2 | object tracking, one object at a time | following the outline of one object somebody pointed at, through hidden spells and changes of shape | 38.9M to 224.4M parameters | Apache-2.0 for both code and weights | something can point at the object once, and the camera films without a break |
+| SAM 3 | object tracking, from a written phrase | finding and then following every object that matches a short phrase, with no detector of your own | 848M parameters | bespoke SAM License, and the weights need an access request | you cannot train a detector, and you can say in words what to follow |
+| CoTracker3 | point tracking | following points you chose on something that bends, such as cloth | not stated | CC-BY-NC for most of the code | the thing you follow has no fixed shape |
+| RAFT | optical flow | measuring how far every pixel moved between two frames | 5.3M parameters for `raft_large`, 1.0M for `raft_small` | BSD-3-Clause | you need motion everywhere and no identity |
+
+Every size above is the number its own project publishes. ByteTrack and SORT have
+no size because they hold no learned weights at all, as the next two sub-sections
+explain.
+
+### 5.1 ByteTrack, for several objects at once
+
+ByteTrack is the box tracker **most used in 2026**, because nearly every tracking
+library ships it and it needs nothing from you except detections. Yifu Zhang and
+eight colleagues published it in October 2021, and its one idea is in the title of
+the paper, [Multi-Object Tracking by Associating Every Detection
+Box](https://arxiv.org/abs/2110.06864). Earlier trackers threw away the boxes a
+detector was unsure about. ByteTrack instead matches the confident boxes to its
+existing tracks first, and then offers the unsure boxes a second chance against
+the tracks that found no match. A partly hidden object usually produces exactly
+such an unsure box, so that second pass is what keeps its number.
+
+It is worth being plain about what ByteTrack is. It is not a learned model. It is
+one Kalman filter per track, a measure of overlap between two boxes, and an
+assignment step, which is the tracking-by-detection recipe of
+[section 3](#3-how-it-works-inside) written out in a few hundred lines of ordinary
+code. All of the learning happens in the detector you hand to it.
+
+The obvious alternative is BoT-SORT, which adds two things to the same recipe: it
+corrects for a camera that moves, and it compares an appearance embedding for each
+box so that two similar objects crossing are less likely to swap numbers.
+Ultralytics ships both, and also TrackTrack, which became its
+[default tracker](https://docs.ultralytics.com/modes/track/) in version 8.4.63.
+Pick ByteTrack when the camera is fixed in place and the scene holds a handful of
+objects, which is the usual table or conveyor belt. It runs no extra network, so
+it adds almost no time to a frame, and it has fewer settings to get wrong. Move to
+BoT-SORT or TrackTrack when objects crowd together and swap numbers anyway, or
+when the camera itself moves.
+
+ByteTrack costs almost no computing time, and its costs appear as behaviour
+instead. It adds no GPU work of its own, so it runs on a small computer next to the
+arm. It inherits every mistake the detector makes, because a frame with no
+detection is a frame with no track. It tracks boxes that line up with the edges of
+the picture, and that is the thing which most often goes wrong on an arm: on a
+wrist camera every box moves when the arm moves, so the overlap between one frame
+and the next falls to nothing even though the objects stood still, as
+[tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md#72-why-most-of-that-table-does-not-fit-a-robot-arm)
+explains. The original code is MIT, which places no condition on your own program,
+but the easiest route to it, Ultralytics, is AGPL-3.0, and that licence applies
+even to a program you only offer over a network.
+
+The library to use is [trackers](https://github.com/roboflow/trackers), which is
+Apache-2.0, installs with `pip install trackers`, and takes detections from any
+detector in the `supervision` format.
+
+```python
+from trackers import ByteTrackTracker, frames_from_source
+
+# lost_track_buffer is how many frames a vanished object keeps its number.
+tracker = ByteTrackTracker(frame_rate=30.0, lost_track_buffer=15)
+
+for frame_index, frame in frames_from_source("belt.mp4"):
+    detections = detect(frame)                 # your detector, as an sv.Detections
+    tracked = tracker.update(detections)
+    for box, track_id in zip(tracked.xyxy, tracked.tracker_id):
+        if track_id == -1:                     # seen, but not a confirmed track yet
+            continue
+        print(frame_index, int(track_id), [round(v) for v in box])
+```
+
+The library gives you the filter, the two-pass matching, the numbering and the
+buffer that holds a number for a few frames after the object disappears. You still
+have to supply `detect`, which is any detector from the
+[object detection](../02_most-used/01_object-detection.md) page wrapped so that it
+returns an `sv.Detections`, the detection format of the `supervision` package. You
+also have to turn pixel movement into metres per second with your camera
+calibration, and to write the rule for what happens when a number disappears,
+because an arm that reaches for an object that has left the picture will hit the
+belt.
+
+### 5.2 SORT, the one that explains the others
+
+SORT is **historical**, and it is here because reading it is the fastest way to
+understand every tracker above. Alex Bewley and four colleagues published
+[Simple Online and Realtime Tracking](https://arxiv.org/abs/1602.00763) in 2016,
+and it is a Kalman filter for each track, overlap as the cost between a predicted
+box and a new one, and the Hungarian algorithm to choose the assignment. That is
+the whole method, and it holds no learned weights either.
+
+You would not pick SORT over ByteTrack for a working robot, because ByteTrack is
+the same program with the second pass added and it keeps numbers through brief
+hiding, where SORT deletes a track almost as soon as the detector misses it. Pick SORT
+when you are learning, or when you want the smallest amount of tracking code you
+can read in one sitting.
+
+The cost that matters here is not speed but the licence. The original repository,
+[abewley/sort](https://github.com/abewley/sort), is GPL-3.0, and much of the tracking
+code copied from it no longer carries that notice. The same `trackers` package
+holds an Apache-2.0 rewrite of the algorithm, so you can use the method without
+accepting the copyleft licence.
+
+```python
+from trackers import SORTTracker
+
+# minimum_iou_threshold is the overlap below which a box is not the same object.
+tracker = SORTTracker(minimum_iou_threshold=0.3, lost_track_buffer=15)
+tracked = tracker.update(detections)           # one frame of sv.Detections
+```
+
+The call has the same shape as ByteTrack's, which is the point: both are matching
+layers over your detector, so one changed line compares them on your own
+recording. What you supply is the detector and the thresholds, because an overlap
+threshold that suits boxes the size of a mug does not suit boxes the size of a
+screw.
+
+### 5.3 SAM 2, for following one object you pointed at
+
+SAM 2 is **most used in 2026** whenever a person or a program can point at the
+object once instead of training a detector for it. Meta released it in July 2024,
+with the paper [SAM 2: Segment Anything in Images and
+Videos](https://arxiv.org/abs/2408.00714). You give it a click, a box or a mask on
+one frame, and it carries a memory of that object through the rest of the video,
+returning the outline in every later frame, through partial hiding and through
+changes of shape.
+
+The obvious alternative is a detector with ByteTrack on top. SAM 2 wins in two
+cases. The first is an object your detector was never trained on, because a single
+click replaces the training. The second is an object with no fixed shape, such as a
+cloth or a piece of food, where a box has nothing steady to follow and an outline
+does. Choose the detector and ByteTrack instead when many objects come and go on
+their own, because something still has to tell SAM 2 which objects exist.
+
+What it costs you is a GPU and a continuous recording. The
+[repository](https://github.com/facebookresearch/sam2) publishes four sizes, from
+38.9M parameters at 91.2 frames per second to 224.4M parameters at 39.5 frames per
+second, with the speeds measured on an NVIDIA A100, so a small computer on a robot
+will be much slower than that. Its memory grows as the video runs. The thing that
+most often goes wrong is feeding it pictures that are not a video: an arm that
+photographs a shelf, travels 200 mm and photographs again has given SAM 2 no frames
+for the part in between, and its memory has nothing to follow, which
+[tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md#36-mask-propagation-in-video-and-where-sam-2-actually-fits)
+sets out in full. The licence is the easy part, because the code and the weights are
+both Apache-2.0.
+
+The library is `sam2`, from that repository, and the `transformers` library carries
+the same model for a machine with no NVIDIA card.
+
+```python
+import numpy as np
+import torch
+from sam2.build_sam import build_sam2_video_predictor
+
+predictor = build_sam2_video_predictor(
+    "configs/sam2.1/sam2.1_hiera_l.yaml", "./checkpoints/sam2.1_hiera_large.pt")
+
+with torch.inference_mode():
+    state = predictor.init_state("frames/")        # a folder of frames, or an MP4 file
+    predictor.add_new_points_or_box(
+        state, frame_idx=0, obj_id=1,              # obj_id is the number you choose
+        points=np.array([[420, 300]], dtype=np.float32),
+        labels=np.array([1], dtype=np.int32))      # 1 means "the object is here"
+    for frame_idx, obj_ids, masks in predictor.propagate_in_video(state):
+        outline = (masks[0] > 0).cpu().numpy()[0]  # True for every pixel of object 1
+```
+
+The library gives you the memory, the propagation and the outline at the
+resolution of your video. What you have to supply is the click. In a real cell that
+click comes from somewhere else: a detector on the first frame, a point a person
+touched on a screen, or the place the arm is about to grasp. You also have to turn
+the outline into something the arm can use, because SAM 2 returns pixels and not a
+position in the robot's frame, and it attaches no confidence to the outline, so
+there is nothing in its output to refuse a bad frame with.
+
+### 5.4 SAM 3, one model that detects and follows what you name
+
+SAM 3 is **worth betting on**, because it does detection, segmentation and
+tracking in one model that you prompt with a short phrase, so you need no detector
+of your own at all. Meta released it in November 2025, and the
+[repository](https://github.com/facebookresearch/sam3) states that it is a detector
+and a tracker sharing one vision encoder, 848M parameters in total, where the
+tracker is the SAM 2 design. You give it a phrase such as `cardboard box`, and it
+returns an outline, a box and a number for every object in every frame that matches
+the phrase, keeping each number as the object moves. A newer set of weights, SAM
+3.1, arrived on 27 March 2026 with a faster way of tracking several objects
+together.
+
+The obvious alternative is SAM 2 with a detector in front of it. SAM 3 replaces
+both with a phrase, so nothing has to be trained and nobody has to click, and
+objects that enter the picture later are found without a new prompt. Keep SAM 2
+when the object you want cannot be named in words, or when the licence described
+below is not acceptable.
+
+What it costs you is the largest model on this page and the most conditions. The
+weights sit behind an access request on Hugging Face, so a build cannot simply
+download them. The licence is not Apache-2.0 but a bespoke SAM License dated 19
+November 2025, and you have to read it before you ship anything. People get this
+wrong because SAM 2, in the same family, is permissive. The repository's own
+install instructions ask for PyTorch built for CUDA, although the `transformers`
+version of the model avoids the parts that must be compiled.
+
+The shortest route is `transformers`, which has the video model built in.
+
+```python
+from transformers import Sam3VideoModel, Sam3VideoProcessor
+
+model = Sam3VideoModel.from_pretrained("facebook/sam3", device_map="auto")
+processor = Sam3VideoProcessor.from_pretrained("facebook/sam3")
+
+session = processor.init_video_session(video=video_frames, inference_device="cuda")
+processor.add_text_prompt(session, "cardboard box")   # the whole instruction
+
+for outputs in model.propagate_in_video_iterator(session):
+    result = processor.postprocess_outputs(session, outputs)
+    # object_ids stay the same from frame to frame; boxes are in pixels.
+    print(outputs.frame_idx, result["object_ids"].tolist(), result["boxes"].shape)
+```
+
+The library gives you the frames, the text encoding, the detection, the matching
+and the numbering, which is every step this page has described, in one loop. What
+you supply is the phrase, and choosing it is now the work: `box` and `cardboard
+box` do not return the same objects, and a phrase that matches too much gives
+numbers to things you never wanted. You also have to decide what to do with the
+score on each object, because a phrase model answers even when nothing in the
+picture matches.
+
+### 5.5 CoTracker3, for points on something that bends
+
+CoTracker3 is **worth betting on** for point tracking, because it reached the
+accuracy of the earlier point trackers with much less training data, which is the
+direction that makes these models practical to retrain. Meta published it in
+October 2024 as
+[CoTracker3: Simpler and Better Point Tracking by Pseudo-Labelling Real
+Videos](https://arxiv.org/abs/2410.11831). You give it a video and the points you
+care about, and it returns each point's position in every frame together with a
+yes or no for whether that point can be seen. It tracks the points jointly, so a
+point that goes behind a finger is placed from the points around it.
+
+The obvious alternative is to run optical flow between every pair of frames and
+add the arrows up. That drifts, because each step adds its own small error, and it
+loses a point permanently once the point is hidden for a frame. CoTracker3 keeps the
+identity of each point over many frames and tells you when it cannot see one, which
+is exactly what folding a towel needs. Use flow instead when you want motion
+everywhere rather than a few points you chose.
+
+What it costs you is a GPU, and a licence that stops many projects. Most of
+CoTracker is CC-BY-NC, which forbids commercial use, and the
+[repository](https://github.com/facebookresearch/co-tracker) says so plainly. If
+your work is commercial, use TAPIR instead, from the Apache-2.0
+[tapnet](https://github.com/google-deepmind/tapnet) repository. The project states
+no parameter count, which is why the table above leaves that cell empty. The
+offline mode reads the whole video at once and is the more accurate one, and it
+needs the most memory; the online mode works through a stream in windows.
+
+The model loads straight from `torch.hub`, with no repository to clone.
+
+```python
+import torch
+
+# The video is (batch, frames, 3, height, width), with values from 0 to 255.
+video = torch.from_numpy(frames).permute(0, 3, 1, 2)[None].float().cuda()
+# Each query is (t, x, y): the frame to start on, then the pixel in that frame.
+queries = torch.tensor([[[0, 412.0, 215.0], [0, 455.0, 260.0]]]).cuda()
+
+cotracker = torch.hub.load("facebookresearch/co-tracker", "cotracker3_offline").cuda()
+tracks, visible = cotracker(video, queries=queries)   # (B,T,N,2) and (B,T,N,1)
+print(tracks[0, :, 0])            # where the first point was in every frame
+```
+
+The library gives you the weights, the joint tracking and the visibility flag.
+What you supply is the points, and choosing them is the part that decides whether
+this works: a point on a printed logo is followed well, and a point on a plain
+white fold is not. You also have to decide what to do with a point marked as not
+visible, because the model still reports a position for it, and that position is a
+guess.
+
+### 5.6 RAFT, for motion at every pixel
+
+RAFT is the optical flow model **most used in 2026**, mostly because it is the one
+you can install without cloning anything: torchvision ships it with trained
+weights. Zachary Teed and Jia Deng published it at ECCV 2020 as
+[RAFT: Recurrent All-Pairs Field Transforms for Optical
+Flow](https://arxiv.org/abs/2003.12039), and
+[section 3](#3-how-it-works-inside) describes how it refines its arrows in many
+small rounds. It takes two frames and returns, for every pixel, how far that pixel
+moved and in which direction.
+
+The obvious alternative is a point tracker such as CoTracker3. RAFT answers a
+different question: it tells you about every pixel without you choosing anything,
+which is what you want for "did something move in this picture at all", and for
+subtracting the movement the arm's own camera caused. Pick the point tracker when
+you care about particular places on an object over a long time.
+[SEA-RAFT](https://github.com/princeton-vl/SEA-RAFT), from 2024 and also
+BSD-3-Clause, is the faster and more accurate successor from the same laboratory,
+and it is the one to try if you are willing to install a repository rather than
+use torchvision.
+
+What it costs you is a GPU for a model of only 5.3M parameters, because the
+comparison of every patch with every patch is the expensive part rather than the
+weights. It sees two frames, so it reports no identity and no path. The thing that
+most often goes wrong is the picture size: the model needs a height and a width
+that divide by eight, and the second most common fault is using flow from a wrist
+camera without first removing the motion the arm itself caused, which
+[section 7](#7-what-goes-wrong) describes.
+
+The library is torchvision, and the weights download on first use.
+
+```python
+import torch
+from torchvision.models.optical_flow import raft_large, Raft_Large_Weights
+
+weights = Raft_Large_Weights.DEFAULT
+model = raft_large(weights=weights).eval().cuda()
+
+# The transform only rescales the pixel values; you resize the frames yourself.
+img1, img2 = weights.transforms()(frame1_batch, frame2_batch)
+with torch.no_grad():
+    flows = model(img1.cuda(), img2.cuda())
+
+flow = flows[-1]        # the model returns one field per round; the last is the best
+sideways, up_down = flow[0, 0], flow[0, 1]      # movement in pixels, per pixel
+```
+
+The library gives you the architecture, the trained weights and the rescaling. What
+you supply is the pair of frames, as `(N, 3, H, W)` batches whose height and width
+divide by eight, and a way to summarise the field, because a field of arrows is not
+an answer on its own. Two summaries cover most robot uses: the average arrow inside
+a detection box, which is that object's movement, and the number of pixels whose
+arrow is longer than a threshold, which tells you that something entered the
+scene.
+
+### 5.7 How to choose
+
+Start with a detector and ByteTrack through the `trackers` package. It covers the
+common robot job, which is several objects moving in front of a camera that stays
+still, it needs no GPU of its own, and its licence puts no condition on your
+program.
+
+Four things change that choice.
+
+If nothing in the scene has to be told apart from anything else, and you only want
+to know whether something moved, use RAFT and ignore identity. If you
+cannot train a detector for your objects, point at them once and use SAM 2, or name
+them in a phrase and use SAM 3, accepting its bespoke licence and its access
+request. If the thing you follow bends or folds, so that neither a box nor an
+outline describes it for long, follow chosen points with CoTracker3, and use TAPIR
+instead if your work is commercial. If you have exactly one object, no detector and no GPU,
+`cv2.TrackerCSRT_create()` in OpenCV follows a box you draw once, using no neural
+network at all, and it is enough for a single object that moves smoothly in front
+of a fixed camera.
+
+Two cases need something other than a model from this page. A wrist camera moving
+with the arm breaks the box trackers, because every box moves when the arm does, so
+read
+[tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md)
+and track positions in the robot's frame instead of boxes in the picture. And if
+what you need is the full position and rotation of a known object over time rather
+than its number,
 [FoundationPose](../02_most-used/04_keypoints-and-object-pose.md#5-well-known-models)
-can follow an object's full six-number pose from frame to frame in a video.
+follows an object's six-number pose from frame to frame.
 
 ---
 
@@ -326,68 +673,3 @@ hidden spells.
   choose what the arm does next.
 - For the matching problem in full detail, read
   [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md).
-
----
-
-## 11. Using it in Python
-
-The page has separated two jobs: following an object, which needs one number that
-stays with it, and measuring motion pixel by pixel with optical flow. This section
-shows the Python for both. After reading it you will be able to give each object on
-a moving belt a number that stays the same from frame to frame, which is the thing
-a robot arm actually needs.
-
-Ultralytics does tracking by detection, which [section 3](#3-how-it-works-inside)
-described, by running a detector on each frame and matching the boxes.
-
-```python
-import cv2
-from ultralytics import YOLO
-
-model = YOLO("yolo11n.pt")
-camera = cv2.VideoCapture(0)
-
-while True:
-    ok, frame = camera.read()
-    if not ok:
-        break
-
-    # persist=True tells the tracker that this frame follows the last one.
-    result = model.track(frame, persist=True, tracker="bytetrack.yaml",
-                         verbose=False)[0]
-
-    # There are no ids on a frame where nothing was detected.
-    if result.boxes.id is None:
-        continue
-    for box in result.boxes:
-        middle_u, middle_v, width, height = box.xywh[0].tolist()
-        print(int(box.id), result.names[int(box.cls)], round(middle_u), round(middle_v))
-```
-
-For optical flow rather than boxes, torchvision has RAFT with pretrained weights:
-`from torchvision.models.optical_flow import raft_large, Raft_Large_Weights`, then
-`model = raft_large(weights=Raft_Large_Weights.DEFAULT)`. Calling it on two frames
-returns a list of flow fields, one per round of refinement, and the last one in the
-list is the best.
-
-What the pretrained parts give you out of the box is both halves of the pipeline
-without training anything. The detector is the COCO detector from the
-[object detection](../02_most-used/01_object-detection.md) page, and the matching
-step is ByteTrack, which is plain code with a motion predictor rather than a
-learned model, so it needs no training data at all. Swapping `bytetrack.yaml` for
-`botsort.yaml` changes the matching rules without changing a line of your program.
-
-What you still have to write yourself is everything that depends on your belt. The
-tracker gives you a number and a box per frame, so you keep a short history of each
-number, fit a speed to it in pixels per second, convert that to metres per second
-with the camera's calibration, and work out where the object will be when the arm
-arrives. You also write the rule for what to do when an id disappears, because a
-robot that reaches for a vanished id will hit the belt.
-
-What you have to decide is which tracker configuration to use and how long to keep
-an id alive after the object is no longer seen. Keeping it too long invents objects
-that have left the view, and dropping it too soon gives one box a new number every
-few frames, which breaks any speed you measured. You also have to accept that ids
-are not guaranteed, because two objects that pass each other can swap numbers, so
-anything that must not be confused needs a second check, such as comparing colour
-or size before the arm commits to a pick.

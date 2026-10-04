@@ -30,7 +30,6 @@ explained where it first appears.
 9. [Why this kind, and what it costs](#9-why-this-kind-and-what-it-costs)
 10. [The written alternative](#10-the-written-alternative)
 11. [Where to read next](#11-where-to-read-next)
-12. [Using it in Python](#12-using-it-in-python)
 
 ---
 
@@ -258,63 +257,350 @@ and night.
 
 ## 7. Well-known models and libraries
 
-Section 6 described the four jobs, and the models below are the real tools that
-do them, grouped by the kind of judge from section 3.
+Section 6 described the four jobs a judge does, and this section names the judges
+themselves. Most of the published work in this area is research code, so each
+model below says plainly whether you can run it today, and the first one is the
+one most people should start with.
 
-Success classifiers:
+Read the table one row at a time. The size column says what you have to download
+or train, because that matters more here than a parameter count. A cell that says
+`not stated` means the project does not publish the figure, and every licence was
+read from the project's own licence file or model card.
 
-- **HIL-SERL** (University of California, Berkeley, 2024). This is a system for
-  learning on a real arm, and its reward is a small image classifier trained on the
-  person's own success and failure pictures. It ships inside
-  [LeRobot](https://github.com/huggingface/lerobot), Hugging Face's robot learning
-  library, and LeRobot's HIL-SERL guide covers training the classifier.
-- **SuccessVQA** (Du and colleagues, 2023). It turns "did the task succeed?" into a
-  question a vision-language model answers about a video, and then fine-tunes the
-  model on marked examples. The
-  [collision and failure detection page](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md#5-well-known-methods-and-models)
-  also lists it.
+| Judge | What it is best at | Size | Licence | Pick it when |
+| --- | --- | --- | --- | --- |
+| The HIL-SERL reward classifier, in LeRobot | one task, on your own arm, with a fast answer | you train it; it starts from a ResNet-10 encoder | Apache-2.0, as part of LeRobot | you are training with reinforcement learning on a real arm |
+| Robometer, in LeRobot | progress and success on a task it has never seen | 8.9 GB checkpoint, on a 4-billion-parameter backbone | Apache-2.0, on its model card | you want a score without collecting or marking anything |
+| TOPReward, in LeRobot | the same, with no reward model to download at all | no weights of its own; it uses an 8-billion-parameter vision-language model | Apache-2.0, as part of LeRobot | you already run a vision-language model and want a score from it |
+| SARM, in LeRobot | long tasks made of several steps | you train it; it starts from CLIP ViT-B/32 features | Apache-2.0, as part of LeRobot | one attempt passes through stages you can name |
+| VIP, and LIV after it | progress from videos of people, which is where the idea started | not stated | VIP is Creative Commons Attribution-NonCommercial 4.0; LIV is MIT | you are reading the research rather than shipping |
+| GAIL, in the `imitation` library | a reward learned from recorded movements | you train it | MIT | you are comparing inverse reinforcement learning for yourself |
 
-Progress estimators:
+### 7.1 The HIL-SERL reward classifier, which you train on your own pictures
 
-- **VIP**, Value-Implicit Pre-training (Ma and colleagues, University of Pennsylvania
-  and Meta, 2022). It learns embeddings from videos of people doing everyday tasks,
-  so that distance to the goal embedding works as a progress score, and section 4
-  used its method.
-- **LIV**, Language-Image Value learning (Ma and colleagues, 2023). It extends the
-  VIP idea, so that the goal can be a sentence as well as a picture.
-- **Robometer** (2026). This is a pretrained reward model that scores progress and
-  success from a video and a written instruction, and it became downloadable in
-  LeRobot 0.6.0. The
-  [frontier document](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#9-what-is-being-done-about-evaluation)
-  notes that nobody has yet shown how often it agrees with a careful person on a task
-  it was not trained for.
+This is the judge **most used in 2026** for work on a real arm, because it is
+small, it is fast enough to answer at every step, and you know exactly what is in
+its training data.
 
-Vision-language models as judges:
+HIL-SERL is the real-arm learning system from the University of California,
+Berkeley, published in 2024, and its reward is a small image classifier rather
+than a written rule. The classifier ships inside
+[LeRobot](https://github.com/huggingface/lerobot), Hugging Face's robot learning
+library, which is Apache-2.0. It is a classifier head on top of a pretrained
+picture encoder, and the encoder the configuration names by default is a
+ResNet-10, which is a small network already trained on ordinary photographs.
 
-- **VLM-RMs** (Rocamonde and colleagues, 2023). They showed that CLIP, a model that
-  scores how well a picture matches a sentence, can serve as a reward with no extra
-  training, for simple tasks in simulation.
-- **RoboCLIP** (Sontakke and colleagues, 2023). It scores a whole attempt by how
-  closely its video matches one demonstration video or one sentence.
-- **Generative Value Learning, or GVL** (Google DeepMind, 2024). It asks a large
-  vision-language model to guess the progress of every frame of a video. It shuffles
-  the frames first, so that the model cannot just guess that later frames are further
-  along.
-- **Eureka** (NVIDIA, 2023) is a relative of these, because it does not judge
-  pictures at all. Instead a large language model writes the reward as code for a
-  simulator, and then improves the code from the training results.
+Why pick it rather than Robometer or a vision-language model, which need no
+training at all? Because of speed first: a large model takes from a fraction of a
+second to a few seconds for one answer, which is far too slow for a reward at
+every control step, and this classifier keeps up. Because it judges your task, in
+your room, under your light, rather than a general idea of success. And because
+you can see every picture it learned from, so when it is wrong you know where to
+look. The reason not to pick it is that it knows one task and nothing else.
 
-Rewards learned from demonstrations:
+What it costs you is the recordings. You collect pictures of your own attempts
+and mark each one as a success or a failure, and the failures are the part people
+forget. A classifier trained only on successes has nothing to contrast them with,
+and one trained on failures that all fail the same way learns only that way, so
+you have to make the arm fail in several different ways on purpose. The thing
+that most often goes wrong afterwards is the cut-off, which section 5 was a whole
+worked example about.
 
-- **Maximum entropy inverse reinforcement learning** (Ziebart and colleagues, 2008)
-  is the classic method.
-- **GAIL**, generative adversarial imitation learning (Ho and Ermon, 2016), trains a
-  judge that tells the person's movements from the policy's, and uses it as the
-  reward.
-- The [imitation](https://github.com/HumanCompatibleAI/imitation) library holds
-  open versions of these. The
-  [learned methods document](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#13-learning-the-goal-instead-of-the-motion)
-  notes that it has had no new work since January 2025.
+The library is LeRobot. Training runs from a configuration file, as
+[its HIL-SERL guide](https://huggingface.co/docs/lerobot/hilserl) describes, and
+the command is one line.
+
+```bash
+# the configuration names the dataset you recorded, the encoder to start from,
+# your camera keys and the number of training steps
+lerobot-train --config_path path/to/reward_classifier_train_config.json
+```
+
+Using the trained classifier is a few lines of Python.
+
+```python
+from lerobot.rewards import RewardClassifierConfig, make_reward_model
+
+config = RewardClassifierConfig(
+    pretrained_path="your-name/mug-in-bowl-reward",  # the classifier you trained
+    num_cameras=2,
+    device="cuda",
+)
+reward_model = make_reward_model(config)
+
+# batch holds one or more camera images under keys that start with
+# "observation.image"; the threshold is the cut-off from section 5
+reward = reward_model.predict_reward(batch, threshold=0.7)
+```
+
+What LeRobot supplies is the encoder download, the rescaling of the pictures, a
+set of optimiser settings that work, and the accuracy printed beside the loss
+during training, which is the number you actually watch. What you supply is the
+marked recordings, the camera keys, and the threshold. Note that
+`compute_reward` uses a fixed cut-off of 0.5, so if you want a different one, as
+section 5 argues you often should, call `predict_reward` with your own
+`threshold`.
+
+### 7.2 Robometer, a reward model you download rather than train
+
+This one is **worth betting on**, because it is the first general-purpose reward
+model that arrives as an ordinary download, and a general success detector is the
+missing piece in every scheme that practises without a person watching.
+
+Robometer is a video-and-language reward model from the paper
+[Robometer: Scaling General-Purpose Robotic Reward Models via Trajectory
+Comparisons](https://arxiv.org/abs/2603.02115), and it became downloadable in
+LeRobot version 0.6.0 on 6 July 2026. You give it frames from an attempt and the
+written instruction for the task, and it predicts how far along each frame is and
+how likely that frame is to be a success. It is a Qwen3-VL-4B-Instruct
+vision-language model with three small heads added, which
+[its LeRobot page](https://huggingface.co/docs/lerobot/robometer) describes.
+
+Why pick it rather than the classifier in section 7.1? Because you collect and
+mark nothing. It scores a task it was not trained on, which is exactly what the
+classifier cannot do, so it suits sorting a pile of recordings or scoring an
+evaluation that runs overnight. Why not pick it? Because nobody has yet published
+how often it agrees with a careful person on a task it was not trained for, which
+the repository's
+[frontier document](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#9-what-is-being-done-about-evaluation)
+states, and because a model judging a model is a mistake with a long history.
+
+What it costs you is a graphics card and patience. The published checkpoint,
+[lerobot/Robometer-4B](https://huggingface.co/lerobot/Robometer-4B), is a single
+file of about 8.9 GB, licensed Apache-2.0 on its model card. Its LeRobot page
+says a graphics card is strongly recommended, and the integration is
+inference-only, so you cannot train it further there. By default it reads at most
+eight frames of an attempt, which is a detail worth knowing, because eight frames
+of a one-minute attempt can miss the moment things went wrong.
+
+The library is LeRobot again.
+
+```python
+from lerobot.rewards.robometer import RobometerConfig, RobometerRewardModel
+
+cfg = RobometerConfig(
+    pretrained_path="lerobot/Robometer-4B",
+    device="cuda",
+    reward_output="progress",   # or "success" for a 0 or 1 answer
+)
+reward_model = RobometerRewardModel.from_pretrained(cfg.pretrained_path, config=cfg)
+```
+
+What LeRobot supplies is the download, the frame and text preparation for the
+Qwen backbone, and one `compute_reward` call that returns the last frame's
+progress clamped between 0 and 1. What you supply is the frames, as whole numbers
+in an array shaped time by height by width by colour, and the task instruction as
+a sentence. The instruction is not a formality: it is the only thing telling the
+model what success means, so "put the red mug in the bowl" and "tidy the table"
+will be scored differently.
+
+### 7.3 TOPReward, which asks a vision-language model how likely success is
+
+This one is also **worth betting on**, for a different reason: it needs no reward
+model at all, so it improves whenever the vision-language model you already use
+improves.
+
+TOPReward comes from the paper
+[TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for
+Robotics](https://arxiv.org/abs/2602.19313) and ships in LeRobot. It builds a
+prompt that shows the video, states that the robot completed the task, and ends
+with "The answer is: True". Then it reads how likely the model thought that last
+word was. That likelihood is the reward. Nothing is fine-tuned, which is what
+**zero-shot** means: the model is used as it comes.
+
+The idea has a history, and these are the papers people cite for it. VLM-RMs,
+from [Vision-Language Models are Zero-Shot Reward Models for Reinforcement
+Learning](https://arxiv.org/abs/2310.12921), showed in 2023 that CLIP, a model
+that scores how well a picture matches a sentence, works as a reward with no
+training for simple tasks in simulation. RoboCLIP scored a whole attempt against
+one demonstration video. SuccessVQA fine-tuned a vision-language model on marked
+examples of the question. Generative Value Learning asked a large model to rate
+every frame, shuffling the frames first so that it could not simply assume later
+frames are further along. TOPReward is the same family, and it is the packaged
+one.
+
+Why pick it rather than Robometer? Because there is no checkpoint to download and
+nothing to keep up to date, and because you can swap the backing model for a
+better one later. Why pick Robometer instead? Because its heads were trained on
+robot videos for this exact job, where TOPReward borrows a general model's
+opinion. Which of the two is more accurate on your task is something you have to
+measure, and neither paper settles it for you.
+
+What it costs you is the vision-language model. The default backbone is
+Qwen3-VL-8B-Instruct, which is larger than Robometer's, so this is not the cheap
+option even though nothing is trained, and the LeRobot port supports the Qwen
+backbone only. The answer is also a log-probability rather than a score from 0 to
+1, which is useful for ranking attempts and awkward as an absolute cut-off.
+
+```python
+from lerobot.rewards.topreward import TOPRewardConfig, TOPRewardModel
+
+cfg = TOPRewardConfig(
+    vlm_name="Qwen/Qwen3-VL-8B-Instruct",   # any model you can run locally
+    device="cuda",
+)
+reward_model = TOPRewardModel(cfg)
+```
+
+What LeRobot supplies is the prompt building, the masking that isolates the last
+word, and the reading of its probability, which is the whole trick and is fiddly
+to write yourself. What you supply is a machine that can hold the model, the
+frames, and the instruction. There is also a script that labels a whole dataset
+offline and writes the scores to a file, which is the sensible way to use a slow
+judge.
+
+### 7.4 SARM, which judges a long task one stage at a time
+
+This one is **worth betting on** for long tasks, because a single progress number
+for a task with four steps in it is a weak signal, and this is the packaged model
+that fixes that.
+
+SARM, which stands for stage-aware reward modelling, comes from the paper
+[SARM: Stage-Aware Reward Modeling for Long Horizon Robot
+Manipulation](https://arxiv.org/abs/2509.25358), and it ships in LeRobot. It
+predicts which stage of the task the arm is in and how far through that stage it
+is, and combines the two into one progress score between 0 and 1. You name the
+stages in words, such as grabbing the near side of a towel and making the first
+fold.
+
+Why pick it rather than Robometer, which also gives progress? Because Robometer
+scores the whole task, so a long attempt that finished three of four steps and
+then stopped looks much the same as one that drifted. SARM knows the steps are
+there, and because it normalises each stage by how long that stage usually takes,
+the same point in two recordings of different lengths gets the same score. Why
+not pick it? Because it has no published general checkpoint to download: you
+train it on your own dataset, which is the cost section 7.1 described all over
+again.
+
+What it costs you is annotation. You name the stages, and a vision-language model
+then marks where each stage starts and ends in each recording, which is a model
+call for every episode. There is a `single_stage` mode that needs no annotation
+at all and treats progress as a straight line from the start to the end of the
+episode, and that mode is the honest starting point, because it tells you whether
+stages are worth the work.
+
+```bash
+# mark the stages in each episode, using a vision-language model
+python src/lerobot/data_processing/sarm_annotations/subtask_annotation.py \
+  --repo-id your-name/towel-folding \
+  --dense-only \
+  --dense-subtasks "Lift the arms,First fold,Second fold,Third fold" \
+  --video-key observation.images.base
+
+# then train the judge on those stages
+lerobot-train --dataset.repo_id=your-name/towel-folding \
+  --policy.type=sarm --policy.annotation_mode=dense_only \
+  --policy.image_key=observation.images.base --steps=5000
+```
+
+What LeRobot supplies is the annotation script, the stage arithmetic, the
+training, and a way to use the score to weight imitation learning, so that frames
+where the arm was making real progress count for more. What you supply is the
+list of stages and the judgement of whether your task really has any. A task that
+is one continuous motion does not.
+
+### 7.5 VIP and LIV, where the progress estimator came from
+
+These are **historical**. They are where the method in section 4 comes from, and
+they are research repositories rather than packages.
+
+VIP, short for Value-Implicit Pre-training, came from the University of
+Pennsylvania and Meta in 2022 and was published at the 2023 International
+Conference on Learning Representations. It learns from videos of people doing
+everyday tasks to turn a picture into an embedding, and the distance to the goal
+embedding then works as a progress score, which is the arithmetic section 4
+worked through. LIV, short for Language-Image Value learning, came from the same
+group in 2023 and lets the goal be a sentence instead of a picture.
+
+Why read these rather than use Robometer? Because they explain what every progress
+estimator is doing, and because VIP gives you the embedding itself, which is
+useful for other things, such as finding the nearest frame in a dataset. Why not
+use them in a product? Because
+[VIP's repository](https://github.com/facebookresearch/vip) is licensed Creative
+Commons Attribution-NonCommercial 4.0, read from its licence file, which rules
+out commercial use. [LIV's repository](https://github.com/penn-pal-lab/LIV) is
+MIT and was last changed in 2023.
+
+What it costs you is the fitting together, because there is no reward model in
+these repositories, only the encoder. You write the distance and the progress
+arithmetic yourself, which is five lines, and you decide what the goal picture
+is.
+
+```python
+import torch
+from vip import load_vip
+
+vip = load_vip()   # the model pretrained on Ego4D, a large set of videos of people
+vip.eval()
+
+# images are 224 by 224 and the model expects values from 0 to 255
+with torch.no_grad():
+    embedding = vip(preprocessed_image * 255.0)   # shape [1, 1024]
+```
+
+What the library supplies is that encoder, and its README also points at a
+ready-made version inside TorchRL. What you supply is the preprocessing, which
+the repository's `encoder_example.py` shows as a resize to 256, a centre crop to
+224 and a scaling back to the range 0 to 255, and then the whole of the reward:
+the goal embedding, the distance, and the step-to-step difference.
+
+### 7.6 GAIL and the `imitation` library, for a reward learned from movements
+
+This one is **historical** too, and it is the fourth kind of judge from section 3,
+kept because the idea keeps coming back.
+
+Generative adversarial imitation learning, written GAIL, is from 2016. It trains
+a judge whose job is to tell the person's recorded movements apart from the
+policy's, and the policy is rewarded for being hard to tell apart. Maximum
+entropy inverse reinforcement learning, from 2008, is the older classic in the
+same family, and open versions of both are in
+[the `imitation` library](https://github.com/HumanCompatibleAI/imitation), which
+is MIT.
+
+Why pick this rather than a classifier or a progress model? Only when the thing
+you cannot write down is the goal itself rather than the finish line, and you
+believe a learned reward carries over to new situations better than copied
+movements do. Why not? Because the library's last change was in January 2025, as
+the repository's
+[learned methods document](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#13-learning-the-goal-instead-of-the-motion)
+notes, and because two models now train against each other, so when the result is
+bad it is hard to say which one was at fault.
+
+What it costs you is a simulator, because the library is built around Gymnasium
+environments rather than real arms. It is the right place to try inverse
+reinforcement learning and the wrong place to run a reward in production, and its
+own documentation is a better guide than anything shortened here, because the
+training loop has several parts.
+
+### 7.7 How to choose
+
+Train the HIL-SERL classifier on your own pictures. That is the default for one
+task on one real arm, and it is the only judge here whose training data you can
+look at.
+
+Four things change that answer.
+
+If you have nothing marked and want a score tonight, download Robometer, and read
+its answers against your own eyes on a handful of attempts before you trust it on
+hundreds. If you already run a large vision-language model, TOPReward gets the
+same kind of answer out of it without a second model.
+
+If the task has named steps and you care where an attempt stopped, use SARM, and
+start in its `single_stage` mode so that you find out whether the stages were
+worth annotating.
+
+If the reward is needed many times a second during learning, none of the large
+models will do, and you are back to the small classifier. Section 8 explains why.
+
+If a sensor or a measurement can answer "is it done?", use that instead of
+everything on this page. Section 10 shows how to write one, and a rule you can
+read is worth more than a model you cannot.
+
+One more case sits beside all of these. If you work in a simulator, where the
+program knows where every object is, then Eureka, from NVIDIA in 2023, has a
+large language model write the reward as code and improve it from the training
+results. It judges no pictures, and the reward it writes is a rule you can read,
+so it belongs with the written alternatives rather than with the judges.
 
 ---
 
@@ -454,75 +740,3 @@ Deeper documents elsewhere in this repository:
   explains why reward models arriving as downloads matters.
 - [Interactive imitation](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes)
   gives the evidence for HIL-SERL.
-
----
-
-## 12. Using it in Python
-
-Section 3 named four kinds of judge, and section 7 said that the first of them, a
-success classifier, ships inside LeRobot as part of HIL-SERL. This section trains one,
-because it is the kind of reward model you are most likely to need and the only one in
-this chapter that you can sensibly train in an afternoon. After reading it you will
-know what the library does and what the afternoon is actually spent on.
-
-The reward model is a small network that looks at the camera pictures and says whether
-the task has succeeded. LeRobot builds it on top of a pretrained picture encoder, which
-you name in the configuration, so you are not training a vision model from nothing.
-
-```python
-import torch
-from lerobot.datasets import LeRobotDataset
-from lerobot.rewards import (RewardClassifierConfig, make_reward_model,
-                             make_reward_pre_post_processors)
-
-dataset = LeRobotDataset("lerobot/example_hil_serl_dataset")
-
-config = RewardClassifierConfig(
-    num_cameras=len(dataset.meta.camera_keys),
-    model_name="microsoft/resnet-18",   # the pretrained encoder it starts from
-    device="cpu",
-)
-reward_model = make_reward_model(config, dataset_stats=dataset.meta.stats)
-preprocessor, _ = make_reward_pre_post_processors(config,
-                                                 dataset_stats=dataset.meta.stats)
-optimizer = config.get_optimizer_preset().build(reward_model.parameters())
-
-for batch in torch.utils.data.DataLoader(dataset, batch_size=16, shuffle=True):
-    loss, output = reward_model.forward(preprocessor(batch))
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-    print(loss.item(), output["accuracy"])
-```
-
-LeRobot gives you four useful things here. It gives you the network, which is a small
-classifier on top of a picture encoder downloaded from the Hugging Face hub, so
-`model_name="microsoft/resnet-18"` means the encoder has already learned what edges and
-textures look like. It gives you the rescaling of the pictures through the
-preprocessor. It gives you a set of optimiser settings that are known to work, through
-`config.get_optimizer_preset()`, which saves you from guessing a learning rate. And it
-reports the accuracy alongside the loss, which is the number you actually watch, because
-a loss going down tells you less than the fraction of frames it gets right.
-
-What you have to collect is the labelled successes and failures, and this is where the
-afternoon goes. `lerobot/example_hil_serl_dataset` above is a real dataset that lets
-you check the code runs, but the judge you need is a judge of your task, and nobody
-else has recorded it. So you record attempts on your own arm, both the ones that worked
-and the ones that did not, and you mark them. The failures are the part people forget.
-A classifier trained only on successes learns nothing, because it has nothing to
-contrast them with, and a classifier trained on failures that all fail in the same way
-learns only that one way. So you have to make the arm fail in several different ways on
-purpose, which is slower and less pleasant than recording successes.
-
-What you have to decide is the cut-off, and section 5 was a whole worked example about
-it. The classifier gives a number between 0 and 1, and you choose the point above which
-you call the attempt a success. Putting it high means you rarely claim a success that
-was not one, and you miss real ones. Putting it low means the opposite. Which mistake
-costs you more depends on what the number is for, and section 6 lists the four uses.
-
-The progress estimators and the vision-language judges from section 7 are a different
-matter. VIP and LIV are research repositories rather than packages, and Robometer is
-downloadable through LeRobot but, as section 7 says, nobody has yet shown how often it
-agrees with a careful person on a task it was not trained for. So a small classifier
-you trained on your own pictures is, today, the reward model you can actually trust
-most, precisely because you know what is in its training data.

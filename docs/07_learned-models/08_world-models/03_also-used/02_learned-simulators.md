@@ -25,12 +25,18 @@ because a learned simulator often starts from a point cloud.
    · [Many steps](#many-steps)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models of this kind](#5-well-known-models-of-this-kind)
+   · [Interaction Networks](#51-interaction-networks)
+   · [DPI-Net](#52-dpi-net)
+   · [Graph Network-based Simulators (GNS)](#53-graph-network-based-simulators-gns)
+   · [MeshGraphNets](#54-meshgraphnets)
+   · [VCD](#55-vcd)
+   · [RoboCraft and RoboCook](#56-robocraft-and-robocook)
+   · [How to choose](#57-how-to-choose)
 6. [A worked example: folding a towel in half](#6-a-worked-example-folding-a-towel-in-half)
 7. [What goes wrong, and what people do about it](#7-what-goes-wrong-and-what-people-do-about-it)
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -175,27 +181,373 @@ material.
 
 ## 5. Well-known models of this kind
 
-The models below are all real, published models rather than examples invented
-for this page.
+The models below are all real, published models, and this section is here so that
+you can pick one. It has to be plain about one thing first. Of all the model
+families in this book, this is the one where the distance between a published
+demonstration and a program you can run is widest. Most of what follows is
+research code, two entries need a graphics-card library compiled from source
+before anything starts, and only one is installed with `pip`.
 
-- **Interaction Networks** (Battaglia and others, 2016) introduced the idea of
-  predicting how objects move from messages between pairs of objects. Most later
-  learned simulators build on it.
-- **DPI-Net** (Li and others, 2019) applied the idea to particles of rigid
-  objects, soft objects and fluids, and used it to plan how to manipulate soft
-  objects.
-- **Graph Network-based Simulators**, or **GNS** (Sanchez-Gonzalez and others,
-  2020), learned to simulate water, sand and a sticky, goo-like material from a
-  careful simulator. It showed that one simple design works for very different
-  materials.
-- **MeshGraphNets** (Pfaff and others, 2021) works on meshes, such as cloth
-  flapping in wind. Its authors reported that it ran faster than the careful
-  simulator it learned from.
-- **RoboCraft** (Shi and others, 2022) and **RoboCook** (Shi and others, 2023)
-  used learned particle simulators on real robot arms to shape plasticine and
-  dough. RoboCook used several tools to make dumplings.
-- **VCD** (Lin and others, 2021) learned a graph model of the visible part of a
-  cloth and used it to plan how to smooth a crumpled cloth.
+Read the table one row at a time, and read the Size column carefully. Almost
+nothing in this family publishes a parameter count or a memory requirement, so
+you cannot work out what hardware you need by reading a paper. A cell says `not
+stated` where the number is not published, rather than giving a guess.
+
+| Model | How current | What it is best at | Size | Licence | Pick it when |
+| --- | --- | --- | --- | --- | --- |
+| [Interaction Networks](#51-interaction-networks) | historical | explaining how all the others work | not stated | no code was released | you want to understand the idea, not run it |
+| [DPI-Net](#52-dpi-net) | historical | rigid, soft and liquid objects together | not stated | no licence file in either repository | you are reading a paper that compares itself with it |
+| [GNS](#53-graph-network-based-simulators-gns) | most used in 2026 | water, sand and dough-like material | not stated; its datasets run from 2,000 to 14,000 particles | Apache-2.0 for the code; not stated for the datasets | your material has no fixed set of joins |
+| [MeshGraphNets](#54-meshgraphnets) | most used in 2026 | cloth and anything else with a mesh | 15 message-passing blocks of 128 numbers in NVIDIA's defaults | Apache-2.0 for both implementations | you have a mesh and want maintained code |
+| [VCD](#55-vcd) | historical | smoothing a crumpled cloth from one camera | not stated | MIT | the joins must be guessed from what the camera sees |
+| [RoboCraft and RoboCook](#56-robocraft-and-robocook) | worth betting on | real dough and plasticine on a real arm | not stated | MIT | your material is real and nobody has measured it |
+
+### 5.1 Interaction Networks
+
+This model is **historical**, and it is here because every other model on this
+page is a variation on it. Peter Battaglia and others at DeepMind published
+[Interaction Networks for Learning about Objects, Relations and
+Physics](https://arxiv.org/abs/1612.00222) in 2016. It predicts how a few objects
+move by sending one message along each connection between a pair of them and then
+adding up the messages each object received, which is the step that
+[section 3](#one-step-passing-messages) described.
+
+You would not choose it over GNS in [5.3](#53-graph-network-based-simulators-gns)
+for real work, because GNS is the same idea with the extra parts that keep it
+stable over hundreds of steps. The reason to read this paper first is that it has
+only two small networks and nothing else, so every later model then reads as a
+small change to something you already understand.
+
+What it costs you is that no code was released with the paper, and DeepMind's
+research repository lists its later graph simulators but not this one. You write
+it yourself, which is reasonable, because the whole model is about fifteen lines.
+
+The library that makes those fifteen lines possible is PyTorch Geometric, which
+adds graphs to PyTorch, and you install it with
+`pip install torch torch_geometric`:
+
+```python
+import torch
+from torch_geometric.nn import MessagePassing, radius_graph
+
+
+class ClothStep(MessagePassing):
+    def __init__(self):
+        super().__init__(aggr="add")            # each particle adds its messages up
+        self.message_net = torch.nn.Sequential(
+            torch.nn.Linear(12, 64), torch.nn.ReLU(), torch.nn.Linear(64, 32))
+        self.update_net = torch.nn.Sequential(
+            torch.nn.Linear(38, 64), torch.nn.ReLU(), torch.nn.Linear(64, 3))
+
+    def message(self, x_i, x_j):                # x_i receives, x_j sends
+        return self.message_net(torch.cat([x_i, x_j - x_i], dim=1))
+
+    def forward(self, particles, edge_index):
+        summed = self.propagate(edge_index, x=particles)
+        return self.update_net(torch.cat([particles, summed], dim=1))
+
+
+# 200 points spread over 20 cm of towel, each with 3 positions and 3 speeds
+particles = torch.rand(200, 6) * 0.2
+edge_index = radius_graph(particles[:, :3], r=0.03)   # joined if closer than 3 cm
+change_in_speed = ClothStep()(particles, edge_index)
+```
+
+The library gave you two things.
+[`radius_graph`](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.nn.pool.radius_graph.html)
+rebuilds the graph from the current positions, and `aggr="add"` collects each
+particle's messages. Notice that `message` is given the difference between the two
+positions rather than the two positions themselves, so that the same rule works
+anywhere on the table.
+
+Everything else is yours to write. The two small networks start from random
+numbers and know nothing until they are trained, as
+[section 4](#4-how-it-is-trained) describes, and you still have to turn a point
+cloud into `particles`, add gravity and the gripper, repeat the message step
+several times before anything moves, and run many steps in a row for a whole
+fold.
+
+### 5.2 DPI-Net
+
+This model is **historical**, and it is here because it is the step from
+predicting a few objects to predicting a cloud of particles that a robot arm
+pushes. Yunzhu Li and others published [Learning Particle Dynamics for
+Manipulating Rigid Bodies, Deformable Objects, and
+Fluids](https://arxiv.org/abs/1810.01566) at the International Conference on
+Learning Representations in 2019. It handles rigid blocks, soft objects and water
+in one framework and uses the learned model to plan how to manipulate them.
+
+You would not choose it over GNS for new work, because GNS came later from the
+same research line and is the design other papers now compare themselves with.
+Its own authors replaced it as well, with
+[VGPL-Dynamics-Prior](https://github.com/YunzhuLi/VGPL-Dynamics-Prior), which
+they describe as adding noise to the particle positions during training for more
+stable long rollouts. That is the fix
+[section 7](#7-what-goes-wrong-and-what-people-do-about-it) describes, and here
+you can see the setting that switches it on.
+
+What it costs you is mostly the installation. The original repository needs
+PyFleX, a particle simulator that has to be compiled against CUDA, so you need an
+NVIDIA card. The successor can draw its predictions with VisPy instead, which is
+an ordinary Python package. Neither repository has a licence file, so you cannot
+tell what you are allowed to do with the code. The training data is two downloads
+from Dropbox, of 1.14 GB and 2.9 GB.
+
+The library is plain PyTorch, and the successor repository is the one to run,
+because it ships a trained model and a small amount of validation data:
+
+```sh
+git clone https://github.com/YunzhuLi/VGPL-Dynamics-Prior.git
+cd VGPL-Dynamics-Prior
+# Rolls the shipped model forward on the demo data for a falling pile of rigid blocks
+bash scripts/dynamics/eval_RigidFall_dy.sh
+```
+
+What you get is a working particle predictor and two scenes, which are falling
+rigid blocks and a rope with a mass on the end. What you supply is your material,
+your camera, and a way of turning a point cloud into the format its loader
+expects. The settings are passed on the command line inside those shell scripts:
+`--n_his 4` is how many earlier frames the model sees, `--augment 0.05` is the
+size of the training noise described above, and `--vispy 1` turns on the drawing.
+
+### 5.3 Graph Network-based Simulators (GNS)
+
+This model is **most used in 2026** in the sense that matters when you read
+papers, because it is the design new particle simulators compare themselves with.
+Alvaro Sanchez-Gonzalez, Jonathan Godwin, Tobias Pfaff, Rex Ying, Jure Leskovec
+and Peter Battaglia published [Learning to Simulate Complex Physics with Graph
+Networks](https://arxiv.org/abs/2002.09405) at the International Conference on
+Machine Learning in 2020. It learned water, sand and a sticky goo-like material
+from a careful hand-written simulator, with one design and one set of settings for
+all three.
+
+You would choose it over MeshGraphNets in [5.4](#54-meshgraphnets) when your
+material has no fixed set of joins. GNS takes a bag of particles and rebuilds the
+graph from distances at every step, which is what water, sand and dough need,
+because a grain of sand's neighbours change constantly. MeshGraphNets expects a
+mesh whose joins stay the same. Cloth has one and a pile of sand does not.
+
+What it costs you is a dead software stack. The reference code pins
+`tensorflow>=1.15,<2`, which is TensorFlow 1, and lists the retired `sklearn`
+package name, so you build a Python environment nothing else you own will share.
+The datasets are TFRecord files. The repository's licence file is Apache-2.0, but
+no licence is stated for the datasets, which are served from a Google Cloud
+Storage bucket. The deeper cost is that the published model learned from a
+hand-written simulator, so it knows a simulated material rather than a real one.
+
+The library is not a library. It is a folder called
+[learning_to_simulate](https://github.com/google-deepmind/deepmind-research/tree/master/learning_to_simulate)
+inside DeepMind's research repository, which you clone and read:
+
+```sh
+git clone https://github.com/google-deepmind/deepmind-research.git
+cd deepmind-research
+pip install -r learning_to_simulate/requirements.txt   # pins TensorFlow 1.15
+# WaterRamps is water poured over fixed ramps
+bash ./learning_to_simulate/download_dataset.sh WaterRamps /tmp/datasets
+python -m learning_to_simulate.train \
+    --data_path=/tmp/datasets/WaterRamps --model_path=/tmp/models/WaterRamps
+```
+
+The download gives you more than particle positions. Each dataset carries a
+`metadata.json` file stating the sequence length, the number of dimensions, the
+box the material sits in, the default connection radius and the statistics used
+to normalise the numbers. Those are the settings
+[section 7](#7-what-goes-wrong-and-what-people-do-about-it) says decide whether
+the model is useful, so that file is the fastest way to see sensible values.
+
+What you supply, in practice, is a different implementation. Because TensorFlow 1
+is no longer reasonable to install, people either rewrite the GNS design in
+PyTorch using the step from [5.1](#51-interaction-networks), or take NVIDIA's
+version described next, which trains on these same datasets. Use the DeepMind
+folder as the specification and the datasets as training data.
+
+### 5.4 MeshGraphNets
+
+This model is **most used in 2026** and it is the one to start from, because it is
+the only model on this page with a maintained implementation inside a library you
+install with `pip`. Tobias Pfaff, Meire Fortunato, Alvaro Sanchez-Gonzalez and
+Peter Battaglia published [Learning Mesh-Based Simulation with Graph
+Networks](https://arxiv.org/abs/2010.03409) at the International Conference on
+Learning Representations in 2021. It keeps the mesh's own edges as joins, so a
+pull on one corner of a flag travels along the threads of the cloth rather than
+through whatever happens to be nearby in space.
+
+You would choose it over GNS whenever your material has a mesh, and cloth is the
+case that matters for a robot arm. There is also a reason that has nothing to do
+with physics. NVIDIA maintains a PyTorch implementation inside
+[PhysicsNeMo](https://github.com/NVIDIA/physicsnemo) under Apache-2.0, with
+current dependencies, while every other entry here is a research repository you
+keep alive yourself.
+
+What it costs you starts with the mesh, which has to exist, and a depth camera
+does not give you one. DeepMind's own release is in GNS's state: it asks for
+`tensorflow-gpu>=1.15,<2` and Python 3.6, and ships a complete pipeline for only
+two scenes, `cylinder_flow` and `flag_simple`. NVIDIA's version is current but
+assumes an NVIDIA card in several places. Its particle example sets the test
+device to `cuda`, and its graph dependencies install as an extra, with
+`pip install "nvidia-physicsnemo[cu13,gnns]"`.
+
+The model is one class. This builds the network for one step of a towel and runs
+it once:
+
+```python
+import torch
+from torch_geometric.data import Data
+from torch_geometric.nn import radius_graph
+from physicsnemo.models.meshgraphnet import MeshGraphNet
+
+# 200 points over 20 cm of towel, each with 3 positions and 3 speeds
+particles = torch.rand(200, 6) * 0.2
+edge_index = radius_graph(particles[:, :3], r=0.03)    # joined if closer than 3 cm
+graph = Data(edge_index=edge_index, num_nodes=particles.shape[0])
+
+# One feature per join: the offset from the sending particle to the receiving one
+sender, receiver = edge_index
+edge_features = particles[sender, :3] - particles[receiver, :3]
+
+# The defaults are 15 message-passing blocks of 128 numbers, summed at each particle
+model = MeshGraphNet(input_dim_nodes=6, input_dim_edges=3, output_dim=3)
+change_in_speed = model(particles, edge_features, graph)   # one row per particle
+```
+
+Compare this with the code in [5.1](#51-interaction-networks) to see what the
+library did. The fifteen repeats of the message step, the small networks that
+encode the particles and the joins first, and the network that turns the result
+back into three numbers are all inside `MeshGraphNet`, and the three sizes you
+passed are the only shapes you had to get right.
+
+What you still supply is the mesh and the training, because this network is
+untrained and the numbers above are meaningless. NVIDIA ships a worked example for
+this family at
+[examples/cfd/lagrangian_mgn](https://github.com/NVIDIA/physicsnemo/tree/main/examples/cfd/lagrangian_mgn),
+which trains it on the GNS datasets, and its configuration file holds real values:
+five frames of movement history per particle, six kinds of particle, and twenty
+training passes over the data.
+
+### 5.5 VCD
+
+This model is **historical**, and it is here because its one idea is reused by
+every cloth system that came after it: model only the part of the cloth the camera
+can see. Xingyu Lin, Yufei Wang, Zixuan Huang and David Held published [Learning
+Visible Connectivity Dynamics for Cloth
+Smoothing](https://arxiv.org/abs/2105.10389) at the Conference on Robot Learning
+in 2021. It trains two networks. The first guesses which visible points are
+joined, and the second predicts how the joined points move. Then it plans
+pick-and-place moves that smooth a crumpled cloth.
+
+You would choose this idea over MeshGraphNets when nobody can hand you the mesh.
+MeshGraphNets needs the joins, including the ones under a fold, and a depth camera
+cannot see under a fold. VCD builds its graph from the visible points and learns
+the joins from training examples, which is the situation a real arm with one
+overhead camera is always in.
+
+What it costs you is the installation, and this is the step at which people stop.
+VCD is a cut-down copy of a larger research framework and needs SoftGym, which
+needs PyFleX compiled from source against CUDA. The licence is MIT, read from its
+licence file, and the authors publish trained weights, so you can see it work
+without training it.
+
+The library is plain PyTorch, and the published planner runs from the command
+line. The two paths are the two networks:
+
+```sh
+# vsbl is short for "visible": both networks work on visible points only
+python VCD/main_plan.py --edge_model_path ./data/vcd_edge/vsbl_edge_120.pth \
+                        --partial_dyn_path ./data/vcd_dyn/vsbl_dyn_120.pth
+```
+
+What you get is the whole published pipeline: the join-guessing network, the
+movement network, the planner and the cloth scenes. What you supply is a real
+camera and a real cloth, because all of the above runs inside the simulator the
+paper used, and the authors did not publish the part that replaces the simulator's
+point cloud with a camera's.
+
+### 5.6 RoboCraft and RoboCook
+
+These models are **worth betting on**, because they are the only entries here that
+learned a real material from a real arm rather than from a hand-written simulator,
+and that is where the argument for this family leads.
+[Section 8](#8-why-this-kind-and-what-it-costs) says a learned simulator is worth
+the trouble because nobody has measured a real towel's stiffness, weight and
+friction. A model trained on a careful simulator has not avoided that problem,
+because it inherited whatever numbers the simulator was given. A model trained on
+recordings of real dough has.
+
+Haochen Shi and others published [RoboCraft](https://arxiv.org/abs/2205.02909) in
+2022 and [RoboCook](https://arxiv.org/abs/2306.14447) in 2023. Both learn a
+particle model of elastic and plastic material from depth-camera recordings of a
+real arm squeezing it. The RoboCraft paper states the figure that makes the case:
+ten minutes of real interaction data was enough to learn a model that could shape
+the material into target shapes it had not seen before. RoboCook uses several
+tools in sequence and also learns to choose the tool, and its published
+demonstration makes dumplings.
+
+You would choose this over GNS when your material is real and unmeasured. GNS
+learned from a simulator, so it knows a simulated material well. RoboCook learned
+from a real gripper pressing real dough, and it is the only published recipe that
+matches the situation of somebody with a real arm, a real soft material and no
+measurements of it.
+
+What it costs you is a different computer. The repository states its prerequisites
+as Ubuntu 18.04 or 20.04, so a Mac will not do. The recorded data is on Google
+Drive and downloaded by hand, and it is split per tool: there are seven dynamics
+datasets, one per tool, and fifteen tools for the part that chooses between them.
+That tells you the real cost, which is that you train one model per tool rather
+than one model for the task. The licence is MIT, read from its licence file.
+
+The library is plain PyTorch, driven by shell scripts:
+
+```sh
+git clone https://github.com/hshi74/robocook.git
+cd robocook
+git submodule update --init --recursive
+conda env create -f robocook.yml && conda activate robocook
+# Trains the particle model on the recorded real dough for one tool
+bash scripts/dynamics/run_train.sh
+```
+
+What you get is the recorded real material, which is the expensive part you
+cannot reproduce quickly, together with the model, the tool classifier and the
+planner. What you supply is your own tool, your own camera and the calibration
+between them. Read the top of `scripts/dynamics/run_train.sh` first, because every
+setting is there and each one names the section of the paper it comes from. The
+one to look at is `neighbor_radius=0.01`, which its own comment describes as the
+radius used to connect edges in the graph, so for real dough the published value
+is one centimetre.
+
+### 5.7 How to choose
+
+Start with MeshGraphNets through NVIDIA's PhysicsNeMo, because it is the only
+model here that installs as a package and the only one somebody else is
+maintaining.
+
+Four things change that choice. If your material has no mesh, because it is water,
+sand or dough, follow the GNS design instead: download the GNS datasets for their
+metadata and their recorded positions, but build the model with PhysicsNeMo's
+particle example rather than with DeepMind's TensorFlow 1 code. If your cloth is
+crumpled and you have one overhead camera, take VCD's idea of guessing the joins
+between visible points, which you will probably rewrite rather than install. If
+your material is real, nobody has measured it, and you have a Linux machine with
+an NVIDIA card, start from RoboCook, because it is the only entry whose training
+data came from a real arm. If you only need to understand the family, read the
+Interaction Networks paper and the fifteen lines in
+[5.1](#51-interaction-networks), and stop there.
+
+One more case changes the answer completely, and it is the most common one. If
+your objects are rigid, or if the few numbers describing your material can be
+measured, do not use any of these models.
+[Section 9](#9-the-written-alternative) sets out that alternative, and it became
+stronger during 2026 rather than weaker. MuJoCo 3.14.0, released on 22 September
+2026, added an experimental contact mode called `ipc` that guarantees
+penetration-free contact on deformable meshes, which is the failure that made
+hand-written cloth simulation untrustworthy. Book 3's
+[MuJoCo section](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#21-mujoco)
+also records the limits of that mode, and they are severe: those contacts are
+frictionless, which rules out most grasping, and exact replay of a run is not
+supported. So a written simulator is now the better choice for more cloth problems
+than it was a year ago, and it is still the wrong choice for a towel you have to
+grip.
 
 ---
 
@@ -325,69 +677,3 @@ explains.
 - For the hand-written simulators that learned simulators are compared with,
   read Book 3's
   [simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#2-the-simulators).
----
-
-## 11. Using it in Python
-
-[Section 3](#3-how-it-works-inside) described joining particles into a graph and passing
-messages between neighbours. This section writes one such step in Python. After it you
-will know what a learned simulator actually is as code, which is smaller than the idea
-suggests.
-
-There is no pretrained cloth or water model to download, so this is a model you build
-and train yourself. The library that makes that reasonable is PyTorch Geometric, which
-adds graphs to PyTorch, and which you install with `pip install torch torch_geometric`.
-It gives you the two parts that are tedious to write by hand: finding which particles
-are close enough to be joined, and collecting every particle's messages.
-
-```python
-import torch
-from torch_geometric.nn import MessagePassing, radius_graph
-
-
-class ClothStep(MessagePassing):
-    def __init__(self):
-        super().__init__(aggr="add")            # each particle adds its messages up
-        self.message_net = torch.nn.Sequential(
-            torch.nn.Linear(12, 64), torch.nn.ReLU(), torch.nn.Linear(64, 32))
-        self.update_net = torch.nn.Sequential(
-            torch.nn.Linear(38, 64), torch.nn.ReLU(), torch.nn.Linear(64, 3))
-
-    def message(self, x_i, x_j):                # x_i receives, x_j sends
-        return self.message_net(torch.cat([x_i, x_j - x_i], dim=1))
-
-    def forward(self, particles, edge_index):
-        summed = self.propagate(edge_index, x=particles)
-        return self.update_net(torch.cat([particles, summed], dim=1))
-
-
-# 200 points spread over 20 cm of towel, each with 3 positions and 3 speeds
-particles = torch.rand(200, 6) * 0.2
-edge_index = radius_graph(particles[:, :3], r=0.03)   # joined if closer than 3 cm
-change_in_speed = ClothStep()(particles, edge_index)
-```
-
-The three parts of a step are all there. `radius_graph` builds the graph from the
-current positions, which is the rebuilding that section 3 said happens at every step.
-Then `message` is the small network that decides what one neighbour tells another, and
-it is given the difference between the two positions rather than the two positions
-themselves, so that the same rule works anywhere on the table. Finally `aggr="add"` is
-the summing, and `update_net` turns the sum into a change of speed.
-
-PyTorch Geometric gives you the graph building and the message collecting, and nothing
-about cloth. The two small networks start from random numbers and know nothing until
-they are trained, as [section 4](#4-how-it-is-trained) describes.
-
-What you write is the rest of the simulator. You turn the depth camera's point cloud
-into `particles`, you add gravity and the gripper, you repeat the message step several
-times before moving anything, and you run many steps in a row for a whole fold. You also
-write the training, which compares your predicted shape against a recorded one.
-
-What you decide is the connection radius and the number of particles, and these two
-numbers decide whether the model is useful. A radius that is too small lets a towel tear
-apart, while one that is too large makes every step slow. The published code for these
-models, such as DeepMind's
-[learning to simulate](https://github.com/google-deepmind/deepmind-research/tree/master/learning_to_simulate),
-is a folder inside a research repository that you clone and read, rather than a package
-you install, so those numbers are read off a paper rather than given to you by a
-library.

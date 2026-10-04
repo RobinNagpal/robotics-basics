@@ -26,7 +26,6 @@ explained where it first appears.
 8. [Why this kind, and what it costs](#8-why-this-kind-and-what-it-costs)
 9. [The written alternative](#9-the-written-alternative)
 10. [Where to read next](#10-where-to-read-next)
-11. [Using it in Python](#11-using-it-in-python)
 
 ---
 
@@ -182,34 +181,309 @@ describes the evidence.
 
 ## 5. Well-known models and methods
 
-The pages before this one listed famous models, but in reinforcement learning
-the famous names are mostly learning methods rather than finished models,
-because each task trains its own policy. The methods below are all real, and all
-widely used.
+The pages before this one each end with a shelf of models you can download. This
+page cannot, and saying so plainly is the most useful thing in it. Reinforcement
+learning is the one method in this chapter where you train rather than download,
+because a finished policy belongs to one reward rule, one simulated world and one
+robot, so nobody publishes it for you to pick up. The names worth knowing are
+therefore the learning methods and the libraries that implement them, and the rest of
+this section helps you choose one of each.
 
-- **Proximal Policy Optimization, or PPO** (OpenAI, 2017). This is a learning method
-  that changes the policy in small, safe steps, and it is the most common choice for
-  training in a fast simulator with many arms at once.
-- **Soft Actor-Critic, or SAC** (University of California, Berkeley, 2018). This is a
-  learning method that reuses old attempts many times, so it needs fewer tries, which
-  makes it popular for learning on real robots.
-- **QT-Opt** (Google, 2018). This is a system that learned to grasp objects from a
-  bin using reinforcement learning on several real robot arms at once, collecting
-  attempts over several weeks. So it showed that learning on real hardware was
-  possible, and also how costly it was.
-- **Dactyl** (OpenAI, 2018 and 2019). This is a robot hand that learned to turn a
-  block, and later a Rubik's Cube, in its fingers. It trained only in simulation with
-  heavy domain randomisation, and then worked on the real hand.
-- **IndustReal** (NVIDIA, 2023). These are policies for fitting pegs and gears into
-  holes, trained only in simulation and then used on a real Franka arm without any
-  real practice.
-- **HIL-SERL** (University of California, Berkeley, 2024). This is a system that
-  fine-tunes a policy on the real arm with a person watching and correcting. It
-  learned precise tasks, such as inserting computer parts, in one to two and a half
-  hours of real practice.
+Read the table as a shortlist of choices rather than of products. These are methods,
+so the column that would hold a model's size instead holds the amount of practice the
+method needs, which is the cost that decides most projects. The licence column is the
+licence of the code you would actually run, read from that project's own licence
+file, because a method itself has no licence.
 
-The tools for running these are listed, with their licences, in the
-[learned motion document](../../../03_frameworks/03_arm-movement/05_learned-motion.md#4-reinforcement-learning-for-contact).
+| Name | What it is | Best at | Practice it needs | Licence of the code you run | Pick it when |
+| --- | --- | --- | --- | --- | --- |
+| PPO | an algorithm, 2017 | a simulator running many arms at once | millions of steps | MIT, in Stable-Baselines3 | you can simulate the task and score it |
+| SAC | an algorithm, 2018 | learning from as few attempts as possible | far fewer steps, by replaying a store of past ones | MIT, in Stable-Baselines3 | every attempt costs real time |
+| HIL-SERL | a system you can run, 2024 | improving a half-working policy on the real arm | one to two and a half hours of real practice | Apache-2.0, and it ships inside LeRobot | you have the arm, and a person to watch it |
+| Recap, in π*0.6 | a method, not released, 2025 | polishing a large pretrained policy | not stated | no code or weights released | never today, but follow it |
+| Offline: IQL and CQL | algorithms | learning from recordings without practising | none at all | not checked | almost never now, see 5.5 |
+| The landmark systems | published results, 2018 to 2023 | showing what the method has achieved | weeks of real collection, or none | various | you are reading rather than building |
+
+### 5.1 PPO, for practising in a simulator
+
+**Most used in 2026** when the practice happens in a simulator, because it stays
+stable while thousands of simulated arms practise at once.
+
+PPO stands for Proximal Policy Optimization, and OpenAI published it in July 2017 in
+[Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347). It
+collects a batch of attempts with the current policy, works out which actions did
+better than the policy expected, and then moves the policy towards those actions.
+The part that gives it its name is a limit on how far the policy may move in one
+update. That limit is why a PPO run of many hours rarely falls apart.
+
+Pick PPO rather than SAC in the next sub-section when attempts are cheap. PPO throws
+each batch of experience away once it has learned from it, which sounds wasteful and
+is the right trade in a simulator that runs a thousand arms side by side on a
+graphics card. There, attempts cost almost nothing and what you want is a run that
+does not collapse overnight.
+
+What it costs you is practice, and more of it than anything else on this page.
+Millions of steps is normal, so PPO is only sensible where a simulator can produce
+them. The hardware question is which simulator you can run.
+[Isaac Lab](https://github.com/isaac-sim/IsaacLab) (BSD-3) and
+[MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground) (Apache-2.0)
+are where large-scale practice happens, and both want an NVIDIA card, so on an Apple
+Silicon Mac you are limited to plain MuJoCo on the processor and to small tasks. Note
+also that Isaac Gym, the simulator behind a great many older papers, is officially no
+longer supported, and Isaac Lab replaced it, so a tutorial built on Isaac Gym is out
+of date. What most often goes wrong is not the algorithm but the reward, which
+section 7 describes.
+
+The library for the algorithm itself is
+[Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3), which is MIT and
+installs with `pip install "stable-baselines3[extra]"`. The code below trains on
+sixteen copies of a simulated pushing task from
+[panda-gym](https://github.com/qgallouedec/panda-gym) (MIT,
+`pip install panda-gym`).
+
+```python
+import panda_gym                       # registers the Panda tasks with gymnasium
+from stable_baselines3 import PPO
+from stable_baselines3.common.env_util import make_vec_env
+
+# Sixteen copies of the task in one process. PPO learns from all of them together,
+# which is the whole reason it suits a simulator.
+env = make_vec_env("PandaPush-v3", n_envs=16)
+
+# MultiInputPolicy because this task's observation is a dictionary, holding the
+# arm's state, the object's position and the goal separately.
+model = PPO("MultiInputPolicy", env, n_steps=2048, batch_size=64, verbose=1)
+model.learn(total_timesteps=2_000_000)
+model.save("ppo_panda_push")
+```
+
+Stable-Baselines3 gives you the algorithm. `n_steps=2048` and `batch_size=64` are its
+own defaults for PPO, and with sixteen copies of the task each update learns from
+32,768 steps of experience. What panda-gym gives you is the simulated arm, built on
+the PyBullet physics engine, the task and, most importantly, the reward. On your own
+task you write that reward yourself, and section 7 explains why that is where the
+difficulty actually lives. For a wider set of manipulation tasks,
+[robosuite](https://github.com/ARISE-Initiative/robosuite) (MIT) provides them on
+MuJoCo instead, and it runs on Apple Silicon because MuJoCo does.
+
+### 5.2 SAC, for when every attempt is expensive
+
+**Most used in 2026** when attempts are expensive, because it reuses old attempts
+instead of throwing them away.
+
+SAC stands for Soft Actor-Critic, and researchers at the University of California,
+Berkeley published it in January 2018 in [Soft Actor-Critic: Off-Policy Maximum
+Entropy Deep Reinforcement Learning with a Stochastic
+Actor](https://arxiv.org/abs/1801.01290). It keeps the attempts it has made in a
+store called a **replay buffer** and trains on random samples drawn from that store,
+so one real movement teaches the policy many times over. It also adds a term that
+pays the policy for keeping some randomness, which stops it settling early on the
+first thing that half worked.
+
+Pick SAC rather than PPO when you count your attempts. The numbers in
+Stable-Baselines3 say the difference plainly: SAC's replay buffer holds 1,000,000
+past steps by default and it trains on a batch of 256 of them after every single step
+the robot takes, where PPO waits for 2,048 fresh steps and then discards them. That
+is why SAC is the usual choice on a real arm, or in a simulator too slow to run many
+copies.
+
+What it costs you is complexity and memory. SAC trains two networks that score
+actions, a third that chooses them, a slowly updated copy for stability, and the
+randomness term, and each of those has details that quietly ruin a run when they are
+wrong. Getting a tested implementation is the real value of the library here. The
+buffer costs memory too, and a million camera pictures will not fit in a laptop's
+memory, which is one reason these policies often take plain numbers as input rather
+than pictures, as section 2 said.
+
+The library is Stable-Baselines3 again, and the simulated arm below is panda-gym.
+
+```python
+import gymnasium as gym
+import panda_gym
+from stable_baselines3 import SAC
+
+env = gym.make("PandaPickAndPlace-v3")
+model = SAC("MultiInputPolicy", env, buffer_size=1_000_000, batch_size=256, verbose=1)
+model.learn(total_timesteps=500_000)
+model.save("sac_panda_pick_and_place")
+
+observation, info = env.reset()
+# deterministic=True switches off the exploring randomness, so the trained
+# policy does its best instead of trying something new.
+action, _ = model.predict(observation, deterministic=True)
+observation, reward, terminated, truncated, info = env.step(action)
+```
+
+Look at `total_timesteps=500_000` before you believe this is cheap. If the arm
+decides twenty times a second, half a million steps is about seven hours of
+continuous motion, and on a real arm it is far more, because somebody has to put the
+object back after every attempt. What you have to supply for your own robot is a
+simulator of that arm, accurate enough to train against, plus the randomisation of
+section 4 and usually a short spell of real practice at the end. That last step is
+the subject of the next sub-section.
+
+### 5.3 HIL-SERL, for learning on the real arm
+
+**Most used in 2026** for work on a real arm, and the one entry on this page whose
+published numbers are strong enough to plan around.
+
+HIL-SERL stands for Human-in-the-Loop Sample-Efficient Robot Learning, and it came
+from the University of California, Berkeley in 2024
+([project page](https://hil-serl.github.io/),
+[repository](https://github.com/rail-berkeley/hil-serl)). It starts from a small set
+of human demonstrations, trains a classifier from them so that the robot can score
+its own attempts, and then runs SAC on the real arm while a person watches with a
+gamepad and takes over when things go wrong. Those take-overs are the learning
+signal rather than merely extra data.
+
+Pick it rather than training in simulation with PPO because it removes the simulator,
+which section 4 named as the hardest part to get right. The published result is the
+reason to take it seriously. HIL-SERL reached 100 per cent success on every task it
+was tried on, after between one and two and a half hours of training on the real
+robot, on tasks including seating memory in a motherboard, inserting an SSD and a USB
+connector, clipping a cable, fitting a timing belt and assembling IKEA panels, where
+the strongest copying baseline on the same tasks averaged under 50 per cent. That was
+peer-reviewed in *Science Robotics*, which is worth saying in a field where most
+strong numbers are published by the company that produced them.
+
+What it costs you is several hours of a person's time and a prepared robot. Somebody
+has to sit with the arm throughout, holding the gamepad. You also need force and
+speed limits underneath the policy, a way to put the task back to its starting state
+between attempts, and a reward classifier you trust, and the
+[learned methods document](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes)
+gives the evidence and the practical requirements. One other thing to know: its
+predecessor SERL is formally deprecated in favour of it, so ignore any tutorial built
+on SERL.
+
+The original repository is Apache-2.0, read from its licence file, but the version to
+use is the one inside [LeRobot](https://github.com/huggingface/lerobot), documented
+as [its reinforcement learning
+workflow](https://huggingface.co/docs/lerobot/hilserl). It runs as two processes.
+
+```bash
+# The learner holds the policy and does the SAC updates.
+python -m lerobot.rl.learner --config_path train_config_hilserl_so100.json
+
+# The actor, in a second terminal, drives the arm and sends its experience back.
+python -m lerobot.rl.actor --config_path train_config_hilserl_so100.json
+```
+
+LeRobot gives you the actor-and-learner split, the SAC implementation underneath it
+and the gamepad handling. What you supply is that JSON file and the robot. The file
+names your arm, your cameras, the reward classifier and an `algorithm` block whose
+`type` is `sac`. Before either command runs you record the demonstrations and train
+the classifier, which LeRobot does with its own commands. To walk through the whole
+workflow without any hardware, the [gym_hil](https://github.com/huggingface/gym-hil)
+package gives you a simulated Franka arm with gamepad take-overs, in tasks such as
+`PandaPickCubeGamepad-v0`.
+
+### 5.4 Practice on top of a pretrained policy
+
+**Worth betting on**, because the field has largely stopped training policies from
+nothing, and this is what it does with reinforcement learning instead.
+
+The idea is to train a large policy by copying demonstrations, and then let it
+practise and be corrected rather than collecting more demonstrations. The clearest
+published instance is π*0.6 from Physical Intelligence, published on 17 November
+2025. Its method is called Recap, and it has three stages: ordinary demonstrations
+first, then a person taking over when the robot starts to go wrong, then the robot
+practising alone. The technical difficulty is knowing which earlier action caused a
+failure that only showed up much later, which is the credit assignment problem from
+section 3, and Recap handles it by training a value function that scores how good
+each situation is. The change in that score from one moment to the next says whether
+the action in between helped.
+
+Bet on this rather than on training from scratch because it fixes the thing that
+copying cannot fix. Demonstrations show what success looks like and never show how to
+recover from the particular mistakes that your policy makes. It is also where the
+field's attention has gone, since training a reinforcement learning policy from
+scratch is now the exception rather than the rule, and this repository's frontier
+chapter calls demonstrate-then-polish the most important arrival of the year.
+
+What it costs you today is that you cannot have it, because none of it is released,
+neither the code nor the weights. The figures that exist come from the company
+itself, and its per-task numbers appear only as bar charts rather than in the text,
+so read them as a direction and not as a measurement. Its authors also name the limit
+themselves, which is that the corrections are only as good as a person's judgement
+about when to step in, and that works for obvious mistakes and not for subtle ones. So there is no code to show here,
+and the nearest thing you can actually run is HIL-SERL in 5.3, which is the open
+version of the human-take-over stage. The
+[frontier chapter on foundation models](../../../03_frameworks/08_frontier/02_foundation-models.md)
+records what was claimed, with its sources.
+
+### 5.5 Offline reinforcement learning: IQL and CQL
+
+**Historical**, kept because it explains a part of the methods above rather than
+because you should start a project with it.
+
+Offline reinforcement learning learns from a fixed pile of recorded attempts and
+never practises at all, which section 4 listed as one of the three ways to get the
+practice. IQL and CQL are the two algorithms people name. Both exist to stop the
+critic becoming over-confident about actions that nobody in the recordings ever
+tried, which is the central difficulty when you cannot test an idea.
+
+The reason it is historical is not that it stopped working. Its benchmark suite, D4RL,
+was formally deprecated, with [Minari](https://github.com/Farama-Foundation/Minari)
+as its replacement for datasets, and its algorithms were absorbed into the
+post-training of copied policies, which is sub-section 5.4. So read this branch to
+understand how a critic can be trained without new attempts, and take its datasets
+from Minari rather than from a tutorial built on D4RL. Stable-Baselines3 does not
+implement either algorithm, which is itself a fair guide to how much demand there
+is.
+
+### 5.6 The landmark systems
+
+**Historical**, and listed because people cite these as the proof that the method
+works on real hardware, so it is worth knowing what each one actually showed.
+
+[QT-Opt](https://arxiv.org/abs/1806.10293) (Google, 2018) learned to grasp objects
+from a bin using several real robot arms at once, collecting attempts over weeks. It
+showed that learning on real hardware was possible, and how costly it was.
+[Dactyl](https://arxiv.org/abs/1808.00177) (OpenAI, 2018, with a
+[Rubik's Cube follow-up](https://arxiv.org/abs/1910.07113) in 2019) learned to turn a
+block in a robot hand's fingers, trained only in simulation with heavy domain
+randomisation. [IndustReal](https://github.com/NVLabs/industrealkit) (NVIDIA, 2023)
+is the most useful one for an arm, because it fitted pegs and gears into holes after
+training only in simulation, transferring to a real Franka arm with no real practice
+at all, and reaching between 83 and 99 per cent across 600 trials on parts modelled
+on a standard assembly test board. Its successor FORGE improved gear meshing to 98
+per cent and nut threading to 69 per cent while halving the contact forces.
+
+Read IndustReal's caveats rather than its headline, because they say what the method
+cannot yet do. Its authors deliberately used no force sensor at all, working from
+vision and joint positions, on the grounds that such sensors are costly, noisy and
+fragile. The clearances were half a millimetre, which is much looser than a real
+electrical connector. And none of it is deployed in a factory. None of these four
+systems ships a policy you can download, which is the point section 5 opened with.
+
+### 5.7 How to choose
+
+Before choosing anything here, check that you need this method at all, because
+section 8 shows that most arm tasks do not. If a person can demonstrate the task,
+the earlier pages in this chapter are far less work for the same result.
+
+When you do need it, the default is not to train from nothing. Train a copying
+policy first, then improve it on the real arm with HIL-SERL, which is sub-section
+5.3. That is the one recipe here with published numbers strong enough to plan
+around, and it needs no simulator.
+
+Three things change that answer.
+
+If nobody can demonstrate the task at all, you have nothing to improve, so you train
+in simulation. Use PPO from 5.1 with a simulator that runs many arms at once, and
+expect the simulator and the reward to take more of your time than the learning does.
+
+If attempts are expensive, because the simulator is slow or the practice is on the
+real arm, use SAC from 5.2 instead of PPO, because replaying old attempts is the
+whole point of it.
+
+If you are learning the subject rather than shipping a robot, install
+Stable-Baselines3 with panda-gym and read the SAC implementation. It is MIT, it runs
+on an Apple Silicon Mac, and watching a simulated arm fail for an afternoon will
+teach you more about reward design than reading does.
+
+Leave 5.4, 5.5 and 5.6 out of the decision. One is not released, and the other two
+are there to be read.
 
 ---
 
@@ -380,69 +654,3 @@ Deeper documents elsewhere in this repository:
   gives the evidence, the branches of the method and where it stands in 2026.
 - [Sim-to-real: what actually closed the gap](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#5-sim-to-real-what-actually-closed-the-gap)
   goes deeper into moving from simulation to a real arm.
-
----
-
-## 11. Using it in Python
-
-Section 4 said that a reinforcement learning policy is trained by trying the task
-thousands of times in a simulator, and section 5 named PPO and SAC as the two learning
-methods people reach for. This section shows one of them being started in Python, so
-that after reading it you will know how little of the work is the learning method and
-how much is the simulator and the reward.
-
-The library is [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3),
-installed with `pip install "stable-baselines3[extra]"`, and it contains PPO, SAC and
-several others behind the same three methods. The simulated arm below is
-[panda-gym](https://github.com/qgallouedec/panda-gym), installed with
-`pip install panda-gym`, which provides a Franka Panda in six tasks.
-
-```python
-import gymnasium as gym
-import panda_gym                       # registers the Panda environments with gymnasium
-from stable_baselines3 import SAC
-
-env = gym.make("PandaPickAndPlace-v3")
-# MultiInputPolicy because this environment's observation is a dictionary,
-# holding the arm's state, the object's position and the goal separately
-model = SAC("MultiInputPolicy", env, verbose=1)
-model.learn(total_timesteps=500_000)
-model.save("sac_panda_pick_and_place")
-
-observation, info = env.reset()
-action, _ = model.predict(observation, deterministic=True)
-observation, reward, terminated, truncated, info = env.step(action)
-```
-
-Stable-Baselines3 gives you the learning method itself, which is the part that is
-genuinely hard to write correctly. SAC involves two networks that score actions, a
-third that chooses them, a store of past attempts that are replayed, and a term that
-keeps the policy from becoming too certain too early, and every one of those has
-details that quietly ruin training if they are wrong. Getting a tested version for one
-line of code is the real value here. `deterministic=True` in `predict` is worth
-noticing: during training the policy deliberately adds randomness so that it explores,
-and this switches that off so it does its best instead.
-
-What panda-gym gives you is the simulator, the arm model and, most importantly, the
-reward. That last one is where almost all of the difficulty of reinforcement learning
-actually sits, and a packaged environment hides it. On your own task you would have to
-write that reward yourself: a number, computed every step, that says how well things
-are going. Section 7 called what happens next reward hacking, because the policy will
-find any way to collect reward, including the ways you did not intend.
-
-What you have to supply for a real arm is a simulator of that arm, and this is the
-honest cost of the method. Look at `total_timesteps=500_000`. If the arm decides
-twenty times a second, then half a million steps is about seven hours of continuous
-motion, and on a real arm it is much more than that, because somebody has to put the
-object back after every attempt. Section 7 lists this as needing a huge number of
-tries. So the policy is trained in simulation, and then it has to cross to the real
-robot, which needs a model of your arm accurate enough to train against,
-randomisation of the things you could not measure, and usually a short spell of real
-practice at the end. HIL-SERL, from section 5, is the packaged version of that last
-step, and it lives in LeRobot rather than in Stable-Baselines3.
-
-What you have to decide first is whether you need this method at all. It is the only
-method in this chapter that can improve past its demonstrations, and it is the only one
-that needs a reward and a simulator. If you can demonstrate the task, the earlier pages
-in this chapter are far less work for the same result, and section 8 makes that
-comparison directly.

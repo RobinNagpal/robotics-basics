@@ -730,12 +730,22 @@ paper says.
 | --- | --- | --- | --- | --- |
 | [SmolVLA](https://huggingface.co/lerobot/smolvla_base) | 450M | Apache-2.0 | Apache-2.0 | the only one that runs on consumer hardware and a Mac |
 | [GR00T N1.7](https://huggingface.co/nvidia/GR00T-N1.7-3B) | 3B | Apache-2.0 | NVIDIA Open Model License | the most capable open model, supported by its vendor |
-| [π0 / π0-FAST / π0.5](https://github.com/Physical-Intelligence/openpi) | not stated | Apache-2.0 | served from the project bucket | the only frontier-laboratory weights in existence |
+| [π0 / π0-FAST / π0.5](https://github.com/Physical-Intelligence/openpi) | not stated | Apache-2.0 | served from the project bucket, and see below | the only frontier-laboratory weights in existence |
 | [MolmoAct2](https://huggingface.co/allenai/MolmoAct2) | 5B | Apache-2.0 | none declared on the card | the most thoroughly evaluated open model |
 | [OpenVLA](https://huggingface.co/openvla/openvla-7b) | 7B | MIT | MIT | the baseline everything is compared against |
 | [X-VLA](https://huggingface.co/2toINF/X-VLA-Pt) | not stated | not checked | Apache-2.0 | a cross-embodiment alternative, in LeRobot |
 | [GigaBrain-0.7](https://huggingface.co/open-gigaai/GigaBrain-0.7-3.5B-Base) | 3.5B | Apache-2.0 | Apache-2.0 | the newest open frontier-style model |
 | [OpenWAM-α](https://github.com/OpenWAM-Official/OpenWAM) | 5B backbone | Apache-2.0 | Apache-2.0 | the only open world-action model |
+
+One row needs reading twice before you rely on it. The pi weights are also mirrored
+into LeRobot, which is how most people actually fetch them, and the two copies do not
+carry the same terms: [lerobot/pi0](https://huggingface.co/lerobot/pi0) declares
+Apache-2.0 on its model card, while
+[lerobot/pi05_base](https://huggingface.co/lerobot/pi05_base) declares the Gemma
+licence, which is not an open-source licence and carries use restrictions. Both were
+read from the cards. So "the pi models are Apache-2.0" is true of the code and of one
+checkpoint, and false of the other, and which one you downloaded decides what you may
+ship.
 
 Four of those deserve a paragraph each.
 

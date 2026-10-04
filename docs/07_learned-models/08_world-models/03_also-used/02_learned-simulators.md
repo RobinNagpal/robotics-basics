@@ -111,6 +111,29 @@ threads, which is what cloth needs. VCD, in [section 5.5](#55-vcd), covers the
 case where nobody can hand you the mesh, because it learns which of the points
 the camera can see are joined.
 
+The difference between those two ways of joining is worth spelling out, because
+it decides what the model can and cannot know.
+
+When the graph is built from particles, a join means only "these two were close
+just now". The joins are thrown away and made again at every step, so a join
+appears the moment two particles come near each other and disappears when they
+move apart. That is right for water and sand, where the neighbours really do
+change. It also has one consequence that is easy to miss. The model cannot tell
+"this is the same piece of material" from "this is a different thing that happens
+to be touching". Two separate lumps of dough pressed together become one
+connected body, with no extra work from anybody, which is what you want for
+dough and wrong for a towel folded onto itself.
+
+When the graph is built from a mesh, a join means "these two points are held
+together by the material itself". Those joins are given once and never change,
+however the cloth moves. So two points stay joined when the towel is bunched up,
+and two parts of the towel that are pressed against each other stay unjoined.
+The price is that something has to hand you the mesh, and a depth camera does
+not. A mesh model then adds a second, smaller set of distance-based joins on top
+of the mesh's own, for the places where the material touches the gripper or
+itself, and [section 5.4](#54-meshgraphnets) describes how MeshGraphNets keeps
+the two kinds apart.
+
 ### One step: passing messages
 
 Each step has three parts, and they happen to every particle at the same
@@ -136,6 +159,23 @@ you would actually run are the later ones in the same list.
 
 So every particle does this at once, and then the whole process repeats for the
 next step.
+
+Two things about that step are worth saying plainly, because everything else on
+this page rests on them. The first is what a message actually is. It is a short
+list of numbers and nothing else. Calling it "a push or a pull" is a convenience
+for the reader, because nothing in the model labels those numbers, and if you
+printed them they would mean nothing to you. What makes them useful is only that
+the two small networks were trained together, so whatever the first network
+writes is what the second network has learned to read.
+
+The second is why the messages are added up rather than combined in some cleverer
+way. A particle has however many neighbours it happens to have, and that count
+changes from particle to particle and from step to step. Adding is one of the few
+ways of combining a list whose length keeps changing, and it has the property the
+whole design depends on: the answer does not depend on the order the messages
+arrived in, and it does not depend on how many of them there were. That is why
+one trained model copes with a particle that has three neighbours and a particle
+that has thirty.
 
 Parts 1 and 2 are usually repeated several times within one step before part 3.
 Each repeat lets information travel one more join across the graph, so after ten
@@ -222,12 +262,48 @@ stated` where the number is not published, rather than giving a guess.
 ### 5.1 Interaction Networks
 
 This model is **historical**, and it is here because every other model on this
-page is a variation on it. Peter Battaglia and others at DeepMind published
+page is a variation on it.
+
+Size not stated, a laptop for the fifteen lines below, and no licence at all,
+because no code was released.
+
+Peter Battaglia and others at DeepMind published
 [Interaction Networks for Learning about Objects, Relations and
 Physics](https://arxiv.org/abs/1612.00222) in 2016. It predicts how a few objects
 move by sending one message along each connection between a pair of them and then
 adding up the messages each object received, which is the step that
 [section 3](#one-step-passing-messages) described.
+
+The one idea it is built on is that a physical scene can be written down twice
+over: once as a list of objects, and once as a list of the pairs that affect each
+other. The network then learns one rule for each list. One small network says
+what happens between a pair, and one small network says how an object moves given
+everything that happened to it. All the physics the model knows lives in those
+two networks, and there is nothing else in it.
+
+What that changes inside the model, compared with every later entry here, is
+where the list of pairs comes from. In Interaction Networks it is written down by
+hand and stays the same for the whole prediction. There is no connection radius
+and no rebuilding. The graph that [section 3](#turning-the-material-into-a-graph)
+describes is given to this model rather than worked out by it, so two objects
+that were not listed as a pair cannot affect each other, no matter how close
+together they end up.
+
+That buys you a model small enough to hold in your head, and a rule that does
+not care how many objects there are, because the same two networks are used for
+every pair and every object. What it costs is that somebody has to know the pairs in advance.
+Contact is exactly the case where nobody does, since a contact exists for a few
+steps and then stops existing. DPI-Net in [5.2](#52-dpi-net) is the entry that
+fixes this, and the fix is the first thing it is named after.
+
+On a robot arm the difference shows up as soon as the material can touch itself.
+A rope described as ten beads in a line is a scene it handles well, because
+the pairs are the links of the chain and they never change: you write the list
+once. Then the rope folds over and one bead presses down on another twenty beads
+away along the chain. Nothing in the hand-written list says those two beads
+interact, so the model predicts the rope passing through itself, and the
+prediction is useless from that step onward. That single failure is why the rest
+of this page rebuilds the list from distances instead.
 
 You would not choose it over GNS in [5.3](#53-graph-network-based-simulators-gns)
 for real work, because GNS is the same idea with the extra parts that keep it
@@ -235,9 +311,10 @@ stable over hundreds of steps. The reason to read this paper first is that it ha
 only two small networks and nothing else, so every later model then reads as a
 small change to something you already understand.
 
-What it costs you is that no code was released with the paper, and DeepMind's
-research repository lists its later graph simulators but not this one. You write
-it yourself, which is reasonable, because the whole model is about fifteen lines.
+The one cost worth recording is that no code was released with the paper, and
+DeepMind's research repository lists its later graph simulators but not this one.
+You write it yourself, which is reasonable, because the whole model is about
+fifteen lines.
 
 The library that makes those fifteen lines possible is PyTorch Geometric, which
 adds graphs to PyTorch, and you install it with
@@ -288,11 +365,57 @@ fold.
 
 This model is **historical**, and it is here because it is the step from
 predicting a few objects to predicting a cloud of particles that a robot arm
-pushes. Yunzhu Li and others published [Learning Particle Dynamics for
+pushes.
+
+Size not stated, an NVIDIA card whose memory nobody states, and no licence file
+in either repository.
+
+Yunzhu Li and others published [Learning Particle Dynamics for
 Manipulating Rigid Bodies, Deformable Objects, and
 Fluids](https://arxiv.org/abs/1810.01566) at the International Conference on
 Learning Representations in 2019. It handles rigid blocks, soft objects and water
 in one framework and uses the learned model to plan how to manipulate them.
+
+The one idea it is built on is in the first word of its name, which stands for
+dynamic particle interaction networks. The list of pairs is made again from the
+particles' current positions at every step, so a pair starts interacting when it
+comes close and stops when it moves apart. The paper's reason for this is worth
+quoting, because it says what Interaction Networks got wrong: a fixed list of
+pairs assumes the forces between things change smoothly, and "many physical
+interactions involve discontinuous functions (e.g. contact)". A contact is not a
+smooth thing. It is either there or it is not.
+
+Two more parts follow from that, and both are about distance. The first is that
+the message step is repeated several times inside one prediction step, which
+[section 3](#one-step-passing-messages) described, so that a push can travel
+several joins before anything moves. The second is a hierarchy, and it is the
+part that is unique to this entry. The particles of an object are sorted into
+groups, and each group gets an extra particle of its own, which the paper calls a
+root. Messages then travel in four stages: between ordinary particles, from
+ordinary particles up to their root, between the roots, and back down from the
+roots to the particles. A root is a shortcut, so one end of a long rigid block
+hears about the other end in a few hops rather than in as many hops as there are
+particles between them. For a rigid object the model goes further still: the
+signals on an object's particles are averaged into a single rotation and
+translation for the whole object, and every particle is then moved by that one
+transform.
+
+What that buys is rigid, soft and liquid material in a single framework, and
+rigid objects that stay the shape they are, which a flat graph cannot promise.
+What it costs is that the grouping is yours to supply. You have to say which
+particles belong to which object and how they are grouped, and a wrong answer is
+visible: a block that is split into two groups the model treats as two
+independent rigid bodies will hinge in the middle. The rebuilt list also makes
+each step more expensive than Interaction Networks', because the neighbour search
+runs every time.
+
+On a robot arm the case where this matters is an arm pushing into a stack of
+blocks. With Interaction Networks you would have to list every pair of blocks
+that might ever touch before the push starts, and the stack's whole point is that
+you do not know. DPI-Net finds the pairs as the stack collapses. Then, because
+each block has a root and a rigid transform, the blocks are still cubes a hundred
+steps later, where a model that predicts each particle on its own leaves you with
+blocks that have slowly sagged into pillows.
 
 You would not choose it over GNS for new work, because GNS came later from the
 same research line and is the design other papers now compare themselves with.
@@ -303,11 +426,10 @@ stable long rollouts. That is the fix, and here
 you can see the setting that switches it on.
 
 What it costs you is mostly the installation. The original repository needs
-PyFleX, a particle simulator that has to be compiled against CUDA, so you need an
-NVIDIA card. The successor can draw its predictions with VisPy instead, which is
-an ordinary Python package. Neither repository has a licence file, so you cannot
-tell what you are allowed to do with the code. The training data is two downloads
-from Dropbox, of 1.14 GB and 2.9 GB.
+PyFleX, a particle simulator that has to be compiled against CUDA, so an NVIDIA
+card is not optional. The successor can draw its predictions with VisPy instead,
+which is an ordinary Python package. The training data is two downloads from
+Dropbox, of 1.14 GB and 2.9 GB, fetched by hand.
 
 The library is plain PyTorch, and the successor repository is the one to run,
 because it ships a trained model and a small amount of validation data:
@@ -330,12 +452,64 @@ size of the training noise described above, and `--vispy 1` turns on the drawing
 
 This model is **most used in 2026** in the sense that matters when you read
 papers, because it is the design new particle simulators compare themselves with.
+
+Size not stated, a graphics card whose memory nobody states, Apache-2.0 for the
+code and nothing stated for the datasets.
+
 Alvaro Sanchez-Gonzalez, Jonathan Godwin, Tobias Pfaff, Rex Ying, Jure Leskovec
 and Peter Battaglia published [Learning to Simulate Complex Physics with Graph
 Networks](https://arxiv.org/abs/2002.09405) at the International Conference on
 Machine Learning in 2020. It learned water, sand and a sticky goo-like material
 from a careful hand-written simulator, with one design and one set of settings for
 all three.
+
+The one idea it is built on is that the material should not be part of the
+design. In DPI-Net you tell the model how the particles are grouped and which
+object is rigid. In GNS you tell it nothing of the sort. Each particle simply
+carries a label saying what it is made of, and water, sand, goo and the walls of
+the container are four values of that one label. One set of small networks then
+learns how water affects water, how sand affects sand and how either affects a
+wall, all inside the same weights, and it learns that from the label rather than
+from a separate model per material.
+
+Inside, that leaves a flat graph and three stages. The first stage builds the
+graph from the connection radius and turns each particle and each join into a
+list of numbers. A particle's numbers are its position, its last five speeds, and
+that material label. A join's numbers are the offset from one particle to the
+other and how far apart they are, which is what makes the rule work anywhere on
+the table rather than only where it was trained. The second stage is the message
+step of [section 3](#one-step-passing-messages), repeated a fixed number of
+times. The third stage reads the result off each particle as one acceleration,
+which is added to the particle's speed. Nothing here is grouped, nothing is
+rigid, and no root particles exist.
+
+One further part is what makes GNS usable over hundreds of steps, and it is not
+in the architecture at all. During training, random noise is added to the speeds
+the model is given, so it is trained on slightly wrong inputs. The reason is the
+rollout. In training the model is handed the simulator's exact state, but in a
+rollout it is handed its own previous prediction, which is slightly wrong, and a
+model that has only ever seen exact inputs does not know what to do with a wrong
+one. The errors then grow until the water explodes. Noise during training makes
+the two situations look alike. DPI-Net's successor repository added the same fix
+afterwards, which is the `--augment` setting [5.2](#52-dpi-net) points at.
+
+What the flat graph buys you is that the material can change its shape and its
+connections completely and the model does not care. What it costs is twofold.
+Nothing enforces a rigid shape, so a solid object in a GNS scene holds together
+only as well as the network learned to hold it together. And the material label
+is a short fixed list, so a material that was not among the training values has
+no label to be given, and you retrain. There is also a practical catch in those five
+previous speeds: you cannot start a prediction from one camera frame, because the
+model wants a short run-up of frames before it will say anything.
+
+On a robot arm the difference from MeshGraphNets shows up when two separate
+pieces of material become one. The arm presses two lumps of dough together. In
+GNS the joins are rebuilt from distance, so at the step where the lumps touch
+they are one connected body and the pressure travels through both, with nobody
+having edited anything. A mesh model cannot do that, because its joins were fixed
+before the run and no join exists between the two lumps. The same property is
+what makes GNS wrong for the towel in [5.4](#54-meshgraphnets), where two layers
+touching must not become one piece of cloth.
 
 You would choose it over MeshGraphNets in [5.4](#54-meshgraphnets) when your
 material has no fixed set of joins. GNS takes a bag of particles and rebuilds the
@@ -346,10 +520,10 @@ mesh whose joins stay the same. Cloth has one and a pile of sand does not.
 What it costs you is a dead software stack. The reference code pins
 `tensorflow>=1.15,<2`, which is TensorFlow 1, and lists the retired `sklearn`
 package name, so you build a Python environment nothing else you own will share.
-The datasets are TFRecord files. The repository's licence file is Apache-2.0, but
-no licence is stated for the datasets, which are served from a Google Cloud
-Storage bucket. The deeper cost is that the published model learned from a
-hand-written simulator, so it knows a simulated material rather than a real one.
+The datasets are TFRecord files served from a Google Cloud Storage bucket, and
+nothing states what you may do with them. The deeper cost is that the published
+model learned from a hand-written simulator, so it knows a simulated material
+rather than a real one.
 
 The library is not a library. It is a folder called
 [learning_to_simulate](https://github.com/google-deepmind/deepmind-research/tree/master/learning_to_simulate)
@@ -380,26 +554,70 @@ folder as the specification and the datasets as training data.
 
 This model is **most used in 2026** and it is the one to start from, because it is
 the only model on this page with a maintained implementation inside a library you
-install with `pip`. Tobias Pfaff, Meire Fortunato, Alvaro Sanchez-Gonzalez and
+install with `pip`.
+
+Size not stated, a graphics card, Apache-2.0 for both implementations.
+
+Tobias Pfaff, Meire Fortunato, Alvaro Sanchez-Gonzalez and
 Peter Battaglia published [Learning Mesh-Based Simulation with Graph
 Networks](https://arxiv.org/abs/2010.03409) at the International Conference on
 Learning Representations in 2021. It keeps the mesh's own edges as joins, so a
 pull on one corner of a flag travels along the threads of the cloth rather than
 through whatever happens to be nearby in space.
 
+The one idea it is built on is that "connected by the material" and "close in
+space" are two different relationships, and a model that has only one kind of
+join is forced to confuse them. GNS has one kind, built from distance. A towel
+folded in half has two layers almost touching, and in GNS a pair of facing points
+across that fold is joined exactly like a pair of neighbours along the same
+thread. MeshGraphNets refuses to merge the two.
+
+So inside, each particle has two sets of joins instead of one, and each set has
+its own small network. The mesh joins come from the mesh and never change; the
+numbers on a mesh join are measured in the cloth's own flat, unstretched
+coordinates, so the join says how far apart the two points are along the fabric,
+whatever the towel is doing in the air. The second set is called world
+joins in the paper, and they are added at every step between points that are
+closer than a small distance in space but not joined on the mesh. The paper is
+direct about the division of labour: mesh joins let the network work out the
+material's internal behaviour, and world joins "can estimate external dynamics,
+not captured by the mesh-space interactions, such as contact and collision". The
+three stages are the same as GNS's, and the number of repeats of the message step
+is the setting NVIDIA's default of fifteen blocks refers to.
+
+One more part has no equivalent in GNS. The model can also predict how fine the
+mesh should be at each point, which the paper calls a sizing field, and an
+ordinary remeshing program then splits or merges triangles while the prediction
+runs. So the mesh is not frozen at the resolution it was trained on: it can get
+finer where the cloth is bending sharply. This is the part that keeps a
+mesh-based model from being stuck with whatever shape its training data had.
+
+What two kinds of join buy you is that cloth touching cloth stays two pieces of
+cloth. What they cost is the mesh itself, and this is where the whole entry
+becomes awkward on a real arm. A mesh is not just a set of joins. The flat
+coordinates mean you have to know which point of the fabric is which, and a depth
+camera gives you a heap of unlabelled dots with no idea which one used to be the
+top left corner. So on a robot arm, this is the model to use when the cloth is
+held in a known way or when a separate step has fitted a mesh to it, and
+[5.5](#55-vcd) is the entry for when nobody can do that. The concrete case is an
+arm holding a towel by two corners so that it hangs in a U, with the two halves
+facing each other a centimetre apart: GNS joins those facing points with the same
+network that handles threads, and the towel it predicts sticks to itself,
+whereas MeshGraphNets hands them to the network that learned contact.
+
 You would choose it over GNS whenever your material has a mesh, and cloth is the
 case that matters for a robot arm. There is also a reason that has nothing to do
 with physics. NVIDIA maintains a PyTorch implementation inside
-[PhysicsNeMo](https://github.com/NVIDIA/physicsnemo) under Apache-2.0, with
+[PhysicsNeMo](https://github.com/NVIDIA/physicsnemo), with
 current dependencies, while every other entry here is a research repository you
 keep alive yourself.
 
-What it costs you starts with the mesh, which has to exist, and a depth camera
-does not give you one. DeepMind's own release is in GNS's state: it asks for
-`tensorflow-gpu>=1.15,<2` and Python 3.6, and ships a complete pipeline for only
-two scenes, `cylinder_flow` and `flag_simple`. NVIDIA's version is current but
-assumes an NVIDIA card in several places. Its particle example sets the test
-device to `cuda`, and its graph dependencies install as an extra, with
+What it costs you, beyond the mesh, is which implementation you take. DeepMind's
+own release is in GNS's state: it asks for `tensorflow-gpu>=1.15,<2` and Python
+3.6, and ships a complete pipeline for only two scenes, `cylinder_flow` and
+`flag_simple`. NVIDIA's version is current but assumes an NVIDIA card in several
+places. Its particle example sets the test device to `cuda`, and its graph
+dependencies install as an extra, with
 `pip install "nvidia-physicsnemo[cu13,gnns]"`.
 
 The model is one class. This builds the network for one step of a towel and runs
@@ -443,12 +661,54 @@ training passes over the data.
 
 This model is **historical**, and it is here because its one idea is reused by
 every cloth system that came after it: model only the part of the cloth the camera
-can see. Xingyu Lin, Yufei Wang, Zixuan Huang and David Held published [Learning
+can see.
+
+Size not stated, an NVIDIA card, MIT.
+
+Xingyu Lin, Yufei Wang, Zixuan Huang and David Held published [Learning
 Visible Connectivity Dynamics for Cloth
 Smoothing](https://arxiv.org/abs/2105.10389) at the Conference on Robot Learning
 in 2021. It trains two networks. The first guesses which visible points are
 joined, and the second predicts how the joined points move. Then it plans
 pick-and-place moves that smooth a crumpled cloth.
+
+The one idea it is built on is that if the mesh is what MeshGraphNets needs and
+no camera can supply it, then the mesh is something to predict rather than
+something to be given. VCD treats "are these two points joined by fabric?" as
+one more question for a neural network to answer.
+
+Inside, that puts a whole extra network in front of the one this page has been
+describing. The point cloud is first thinned onto a grid so the points are spread
+out evenly. Then every pair of points closer than a chosen distance becomes a
+candidate, exactly as in GNS, but a candidate is not yet a join. A graph network
+looks at each candidate and answers yes or no: is this pair also joined on the
+real cloth? That classifier was trained inside a simulator, where the answer was
+known, because the simulator can say whether the two particles behind those two
+points share a spring. Only the candidates it says yes to are passed on. The
+second network is then the ordinary dynamics network of
+[section 3](#3-how-it-works-inside), running on the graph the first one produced
+together with the collision joins, and predicting an acceleration for each point.
+
+The way it acts is also different from everything else here, and it is worth
+knowing before you borrow the idea. VCD does not roll a long prediction forward.
+It considers one pick-and-place at a time: it samples where to pick and where to
+place, predicts the shape of the cloth after that single move, and keeps the move
+whose predicted shape covers the most table. Then the camera looks again. So the
+planning is greedy, one move deep, and the model is never asked to be right a
+hundred steps later, which is part of why the approach works at all from input
+this poor.
+
+What the guessed mesh buys you is that one overhead camera is enough, and that is
+a large thing. What it costs is that the joins are now a prediction, and a wrong
+prediction is wrong physics with no warning attached. Worse, the part of the
+cloth the camera cannot see is not modelled at all, so a fold tucked under the
+top layer does not exist for the model, and the model cannot know it will unroll
+when the corner is pulled. The classifier also learned what cloth joins look like
+from one simulator's cloth. On a robot arm this is the entry for a towel dumped
+in a heap under a fixed overhead camera, where MeshGraphNets cannot even start,
+because there is no mesh and no way to say which dot was the top left corner. Ask
+VCD instead to predict a two-handed fold several steps ahead and it has nothing
+to offer, because the layer doing the work is the hidden one.
 
 You would choose this idea over MeshGraphNets when nobody can hand you the mesh.
 MeshGraphNets needs the joins, including the ones under a fold, and a depth camera
@@ -458,9 +718,8 @@ overhead camera is always in.
 
 What it costs you is the installation, and this is the step at which people stop.
 VCD is a cut-down copy of a larger research framework and needs SoftGym, which
-needs PyFleX compiled from source against CUDA. The licence is MIT, read from its
-licence file, and the authors publish trained weights, so you can see it work
-without training it.
+needs PyFleX compiled from source against CUDA. The authors do publish trained
+weights, so you can see it work without training it.
 
 The library is plain PyTorch, and the published planner runs from the command
 line. The two paths are the two networks:
@@ -486,6 +745,8 @@ A model trained on a careful simulator has not avoided that problem,
 because it inherited whatever numbers the simulator was given. A model trained on
 recordings of real dough has.
 
+Size not stated, an NVIDIA card on Ubuntu 18.04 or 20.04, MIT.
+
 Haochen Shi and others published [RoboCraft](https://arxiv.org/abs/2205.02909) in
 2022 and [RoboCook](https://arxiv.org/abs/2306.14447) in 2023. Both learn a
 particle model of elastic and plastic material from depth-camera recordings of a
@@ -495,6 +756,42 @@ the material into target shapes it had not seen before. RoboCook uses several
 tools in sequence and also learns to choose the tool, and its published
 demonstration makes dumplings.
 
+The one idea these two are built on is that the particles should come from the
+cameras rather than from a simulator. Everything else on this page starts from a
+state somebody already has: a simulator's particles, or a mesh. These start from
+four calibrated depth cameras pointed at a lump of real dough.
+
+What that changes is the front of the pipeline, not the graph network. RoboCook
+merges the four point clouds, cuts the dough out of the scene by its colour,
+builds a closed surface around the remaining points, and then draws particles
+both inside that surface and spread evenly over it. The important consequence is
+that a particle is a fresh sample every time, not a piece of dough that keeps its
+identity from frame to frame. So the training cannot compare particle number
+seven with particle number seven, which is why it uses the whole-shape distances
+[section 4](#4-how-it-is-trained) described, and the paper names two of them:
+Chamfer distance, which asks how far each predicted point is from the nearest
+real point, and Earth Mover's distance, which asks how much work it would take to
+move the predicted shape onto the real one.
+
+RoboCook then adds a part that no other entry here has, which is choosing the
+tool. A separate point-cloud network reads the dough's shape now together with
+the shape you want, and gives a probability for each of fifteen tools. The three
+most likely tools are rolled forward through their own dynamics models, and the
+tool whose predicted result lands closest to the target is the one that gets
+used. Notice "their own": the dynamics model is per tool, which is why the
+repository ships one dynamics dataset per tool rather than one for the task.
+
+What this buys you is a model of the material in front of you, including the
+stiffness and the spring-back that nobody wrote down. What it costs is that
+nothing transfers. Add a tool and you record real data again, train again, and
+extend the classifier, where in GNS a new material is at worst a retraining on
+data somebody else generated for free. On a robot arm the difference is simple
+and sharp: an arm pressing a roller into real dough, where GNS trained on
+simulated goo gets how far the dough spreads and how much it springs back wrong,
+because it learned a simulator's goo and nobody measured this dough. RoboCook's
+model watched this dough. Ask it instead about a tool it has never held, and it
+has no answer at all, while GNS at least has a material label to put it under.
+
 You would choose this over GNS when your material is real and unmeasured. GNS
 learned from a simulator, so it knows a simulated material well. RoboCook learned
 from a real gripper pressing real dough, and it is the only published recipe that
@@ -503,10 +800,9 @@ measurements of it.
 
 What it costs you is a different computer. The repository states its prerequisites
 as Ubuntu 18.04 or 20.04, so a Mac will not do. The recorded data is on Google
-Drive and downloaded by hand, and it is split per tool: there are seven dynamics
-datasets, one per tool, and fifteen tools for the part that chooses between them.
-That tells you the real cost, which is that you train one model per tool rather
-than one model for the task. The licence is MIT, read from its licence file.
+Drive and downloaded by hand, and it arrives split per tool: seven dynamics
+datasets, one per tool, and fifteen tools for the part that chooses between
+them.
 
 The library is plain PyTorch, driven by shell scripts:
 

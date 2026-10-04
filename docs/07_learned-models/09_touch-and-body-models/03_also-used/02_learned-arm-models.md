@@ -245,23 +245,47 @@ not be sourced.
 ### 5.1 The maker's model with its numbers fitted to your arm
 
 **Most used in 2026**, because it removes the largest part of the error for the least
-work, and it is not a learned model at all. You keep the textbook equations, read the
-arm's shape from its description file, written in the Unified Robot Description Format
-(URDF), and fit the ten numbers that describe each link: its mass, three for where its
-weight is centred, and six for how it resists turning. The library is
-[Pinocchio](https://github.com/stack-of-tasks/pinocchio), published by the
-Stack-of-Tasks project under BSD-2-Clause.
+work, and it is not a learned model at all. Size xs, which here means ten numbers per link
+and no network anywhere, a laptop, and BSD-2-Clause for
+[Pinocchio](https://github.com/stack-of-tasks/pinocchio), published by the Stack-of-Tasks
+project, which supplies the physics. You keep the textbook equations, read the arm's shape
+from its description file, written in the Unified Robot Description Format (URDF), and fit
+the ten numbers that describe each link: its mass, three for where its weight is centred,
+and six for how it resists turning.
 
-The obvious alternative is to trust the numbers the maker wrote into the URDF. Fitting
-them costs one recording, and it gives you numbers you can print, compare with the
-maker's and argue about, which no network does. It also tells you how much error is
-left for a network to learn.
+The one idea is that the equations are already right and only the numbers in them are
+wrong. The maker measured those numbers once, on a drawing or on a different unit, and your
+arm has a gripper on it and some years of wear. So nothing about the physics needs
+replacing.
 
-What it costs you is care. The fit is rank deficient, meaning several different sets of
-numbers explain the same recording equally well, so an individual mass can come out
-physically impossible even when the predicted torque is good. The regressor has no term
-for friction either, so you add two columns per joint yourself: one for friction that
-grows with speed, and one for friction that only depends on the direction of travel.
+Inside, the whole method rests on one property of the textbook torque equation: it is
+linear in those ten numbers per link. Double a link's mass and every torque that mass
+contributes doubles. That is why Pinocchio's `computeJointTorqueRegressor` can hand back a
+matrix whose columns stand for the ten numbers of every link, such that the matrix times
+the numbers equals the torque. Stacking a whole recording turns the question "which numbers
+explain these torques?" into one large linear system, and a linear system has an exact
+best answer that `lstsq` computes in one go. There is no training loop, no learning rate
+and no stopping point to choose.
+
+Compare section 5.2, where a network is fitted by stepping downhill a few thousand times
+and what comes out is a pile of weights that mean nothing to anybody. What comes out here
+is a mass in kilograms and a centre of mass in metres. You can print them, compare them
+with the maker's, and argue about them, and the error the fit leaves over is the honest
+measurement of how much there is left for a network to learn.
+
+On an arm the difference shows up as soon as you bolt a gripper on. That is one unknown
+mass at a known place, and this fit recovers it as a number you can check against the
+gripper's data sheet. A network asked to absorb the same gripper learns a correction that
+cannot be read, cannot be checked, and silently stops being right on the day somebody
+fits a different gripper.
+
+So you would fit these numbers rather than trust the ones the maker wrote into the URDF,
+and it costs one recording. What it costs you besides that is care. The fit is rank
+deficient, meaning several different sets of numbers explain the same recording equally
+well, so an individual mass can come out physically impossible even when the predicted
+torque is good. The regressor has no term for friction either, so you add two columns per
+joint yourself: one for friction that grows with speed, and one for friction that only
+depends on the direction of travel.
 
 ```python
 import numpy as np
@@ -294,22 +318,51 @@ the movements that excite them, and also does the geometric calibration of secti
 
 ### 5.2 A residual torque network on top of the maker's model
 
-**Most used in 2026** for learned arm dynamics, and the method of section 3.1. The
-physics model from 5.1 gives a torque, a small network predicts what the physics
-missed, and the controller sends the sum. The libraries are Pinocchio for the physics
-and [PyTorch](https://pytorch.org/) for the network, and the split is visible in the
-code: one call does the physics, and a handful of lines do the learning.
+**Most used in 2026** for learned arm dynamics, and the method of section 3.1. Size xs,
+two small layers being usual, a laptop, and the licence is yours, because the network comes
+out of your own training run; Pinocchio is BSD-2-Clause and
+[PyTorch](https://pytorch.org/) is the three-clause BSD licence.
 
-The obvious alternative is one plain network that learns the whole torque. The residual
-wins twice over. It has a much smaller job, so an hour of recording is enough, and
-where it has seen nothing its output is a small correction to a sensible answer rather
-than a guess.
+The one idea is the one the word residual names, and it is worth saying slowly. You do not
+ask the network to predict the torque. You ask the textbook formula of section 5.1 to
+predict the torque, you subtract that prediction from what the motors really used, and the
+network learns only the difference. A **residual** is what is left over, and the leftovers
+are this network's entire job.
 
-What it costs you is a retraining whenever the gripper, the payload or the wear
-changes, and a correction that carries no guarantee, which is why the code clips it. It
-also needs a way to send torques. Many industrial controllers accept only positions,
-and on those arms this model can only be used off the control loop, for example as the
-expected torque of a collision detector.
+Inside, that changes what the network is trained on rather than what it is made of. Look at
+the code below: `physics` is computed with `rnea` for every recorded moment, and the
+network is then fitted to `tau - physics`. So the numbers it has to reproduce are small
+ones. Everything that makes up the bulk of a torque never reaches the network at all,
+because the formula already produced it: that holding the arm out sideways costs more than
+holding it hanging down, that a heavier acceleration needs a bigger push, that a fast joint
+drags on its neighbours. The network is given exactly the same inputs the formula reads,
+the angles, the speeds and the acceleration you want, so it has no extra information. It
+has a smaller question.
+
+Compare one plain network trained to predict the whole torque. That network has to
+rediscover gravity from your recording, which costs most of its examples, and in a pose
+your recording did not visit it has nothing to fall back on, so it answers with a guess
+that could be any size. A residual network in that same pose outputs a small correction on
+top of an answer the formula got mostly right, and the code below clips the correction so
+that even a strange one cannot do much harm. That is the difference between a wrong answer
+and a slightly wrong answer.
+
+On an arm the place this earns its keep is a joint reversing direction. Friction in a
+gearbox depends on which way the joint is turning and not only on how fast, and the
+textbook equations have no term for that at all, so the formula's error jumps as the joint
+passes through zero speed. That jump is the step in the picture in section 3.1. An hour of
+ordinary motion teaches a residual network that step. Section 5.1 cannot learn it, because
+it has no column for it until you write one by hand, and Deep Lagrangian Networks in
+section 5.5 cannot learn it either, because friction is not something the equations of
+motion can express.
+
+So you would pick this rather than one plain network that learns the whole torque, and the
+residual wins twice over, on how much recording it needs and on how it fails. What it costs
+you is a retraining whenever the gripper, the payload or the wear changes, and a correction
+that carries no guarantee, which is why the code clips it. It also needs a way to send
+torques. Many industrial controllers accept only positions, and on those arms this model
+can only be used off the control loop, for example as the expected torque of a collision
+detector.
 
 ```python
 import numpy as np
@@ -354,29 +407,45 @@ train on motor current, at a cost in accuracy.
 
 ### 5.3 An actuator network
 
-**Most used in 2026** wherever a policy is trained in simulation for a real machine.
-Hwangbo and colleagues introduced it in [Learning agile and dynamic motor skills for
-legged robots](https://arxiv.org/abs/1901.08652) in 2019. Instead of modelling the
-whole arm you model one motor: a network reads the recent joint position errors and
-speeds, and outputs the torque the real motor actually produced. It then replaces the
-simulator's ideal motor, so a policy trained in simulation meets a motor that lags and
-saturates like the real one. The library is
-[Isaac Lab](https://github.com/isaac-sim/IsaacLab), BSD-3-Clause, whose
-`isaaclab.actuators` package offers `ActuatorNetMLPCfg` and `ActuatorNetLSTMCfg`. MLP
-stands for multi-layer perceptron, which is a plain stack of layers, and LSTM is a
-network that carries its own memory of the recent past.
+**Most used in 2026** wherever a policy is trained in simulation for a real machine. Size
+not stated, a big card with an NVIDIA chip, because the frontier chapter records that Isaac
+Lab needs one and lists no macOS support, and BSD-3-Clause for
+[Isaac Lab](https://github.com/isaac-sim/IsaacLab). Hwangbo and colleagues introduced the
+idea in [Learning agile and dynamic motor skills for legged
+robots](https://arxiv.org/abs/1901.08652) in 2019.
 
-The obvious alternative is the simulator's ideal motor with a stiffness and a damping
-number, randomised during training. The network wins because gearbox friction,
-communication delay and torque saturation arrive together and in the right proportions,
-instead of being covered by a random range wide enough to include machines that do not
-exist.
+The one idea is that what is wrong with the simulator is not the arm but the motor, as
+section 3.5 said. So you model one motor rather than a whole arm, and you put the model
+where the simulator's ideal motor used to be.
 
-What it costs you is a recording from the real motor with its torque measured, which
-without joint torque sensors means a test rig. The network is saved as a TorchScript
-file, which is a PyTorch network stored so that it loads without its original Python
-code, so somebody else's file does not fit your motor. The frontier chapter also
-records that Isaac Lab needs an NVIDIA graphics card and lists no macOS support.
+Inside, that puts the learned part in a different place from every other entry on this
+page. Sections 5.1, 5.2, 5.5 and 5.6 all sit between a controller and a real arm. This one
+sits inside a simulated arm, in the spot where the line "the torque is what was asked for"
+used to be. Its input is a short history of one joint's position errors and speeds, and the
+history is the whole point: a real motor's torque now depends on what the controller asked
+for a few milliseconds ago, which an ideal motor's does not, so a network given only this
+moment could not reproduce a lag. Its output is the torque the real motor actually
+produced. Isaac Lab's `isaaclab.actuators` package offers two shapes for it,
+`ActuatorNetMLPCfg` and `ActuatorNetLSTMCfg`. MLP stands for multi-layer perceptron, which
+is a plain stack of layers and is given the history explicitly as `input_idx`, while LSTM
+is a network that carries its own memory of the recent past and so builds that history
+itself.
+
+What the idea buys is that gearbox friction, communication delay and torque saturation
+arrive together and in the right proportions. The obvious alternative is the simulator's
+ideal motor with a stiffness and a damping number, randomised during training, which covers
+the same ground with a range wide enough to include machines that do not exist. What it
+costs you is a recording from the real motor with its torque measured, which without joint
+torque sensors means a test rig. The network is saved as a TorchScript file, which is a
+PyTorch network stored so that it loads without its original Python code, so somebody
+else's file does not fit your motor.
+
+On an arm the difference shows up as a policy that works beautifully in simulation and
+shakes on the real machine. The shake is usually the delay the ideal motor did not have:
+the policy learned to react as though its commands took effect at once, and on the real arm
+they do not. No amount of section 5.1 or section 5.2 fixes that, because both of those
+improve what a real controller computes, and the fault is in what the simulated motor
+did.
 
 ```python
 from isaaclab.actuators import ActuatorNetLSTMCfg
@@ -403,26 +472,40 @@ reads, where `0` is now and `n` is n steps ago.
 ### 5.4 MuJoCo's system identification toolbox
 
 **Worth betting on**, because it turned fitting a simulator to a real machine from a
-research exercise into a feature of a standard install. MuJoCo 3.5.0, on 12 February
-2026, added a system identification toolbox in Python under Apache-2.0, as the frontier
-chapter records in [its simulation
+research exercise into a feature of a standard install. Size not stated, because nothing is
+trained: what comes out is the handful of numbers you asked it to fit. A laptop, and
+Apache-2.0 for MuJoCo. MuJoCo 3.5.0, on 12 February 2026, added a system identification
+toolbox in Python, as the frontier chapter records in [its simulation
 section](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#52-measuring-the-robot-instead-of-randomising-over-it).
-You give it a model, your recorded controls and your recorded sensor readings, and it
-fits the parameters you choose by nonlinear least squares with bounds, using batched
-simulation runs. The same release made delays a property of actuators and sensors, so a
-control loop's latency became something to fit rather than something to write yourself.
 
-The obvious alternative is domain randomisation: randomise the simulator's physical
-numbers over a wide range so that the policy copes with all of them. The frontier
-chapter puts the difference as moving from randomising over your ignorance to measuring
-first and randomising over what is left. Against 5.1, pick this toolbox when the thing
-to fix is a simulator rather than a controller, because it fits contact friction and
-motor gains, which the torque regressor of 5.1 has no column for.
+The one idea is that the simulator already has the right terms in it, so you fit its
+numbers rather than adding a network beside them. The masses, the frictions, the motor
+gains and the delays are all parameters of the model you already have.
 
-What it costs you is simulation time. The optimiser works out its gradients by small
-changes, so every parameter needs its own simulation run at every step. It fits only
-parameters your model has a term for, and its README says the measurement part of the
-interface is "not yet final".
+Inside, there is no network anywhere, which is what separates this from section 5.3. You
+name each parameter and give it a callback, which is a small function whose only job is to
+write a fitted value into the right place in the model. The optimiser then runs the
+simulation forward over your recorded controls, compares the sensor readings the simulation
+produced with the ones you recorded, and changes the numbers to make the difference
+smaller, by nonlinear least squares with bounds. It works out which way to change each
+number by trying a small change and seeing what happens, so every parameter costs its own
+simulation run at every step, which is why the runs are batched.
+
+So section 5.3 and this one fix the same simulator from opposite sides. Section 5.3 adds a
+learned part where the simulator had no term at all, namely a real motor's lag. This one
+changes numbers inside terms the simulator already had. What this buys is measured numbers
+rather than randomised ranges, which the frontier chapter puts as moving from randomising
+over your ignorance to measuring first and randomising over what is left. What it costs is
+simulation time, and the fact that it can only fit parameters your model has a term for, so
+a contact behaviour your model does not represent cannot be fitted into existence. Its
+README also says the measurement part of the interface is "not yet final".
+
+On an arm the clearest case is a simulated arm that lags behind the real one by a fixed
+amount. The same 3.5.0 release made delays a property of actuators and sensors, so that lag
+is now a number with a term of its own, and one fitting run measures it. A residual network
+from section 5.2 would absorb the same lag into a torque correction, which works at the
+speeds in the recording and quietly stops working at others, because a delay and a torque
+are not the same quantity.
 
 ```python
 import mujoco
@@ -456,25 +539,51 @@ lists helpers for the awkward parameters.
 ### 5.5 Deep Lagrangian Networks
 
 **Worth betting on**, because it is the cleanest answer to the complaint that a learned
-correction can do anything it likes. Michael Lutter, Christian Ritter and Jan Peters
-published [Deep Lagrangian Networks](https://arxiv.org/abs/1907.04490) in 2019. The
-network does not output a torque directly. It outputs the quantities that the equations
-of motion are built from, so every torque it can produce obeys those equations, which
-is the second kind of model in section 3.2. The code is at
+correction can do anything it likes. Size xs, two layers of width 64 in the repository's own
+example, a laptop, and MIT for the code, which is at
 [milutter/deep_lagrangian_networks](https://github.com/milutter/deep_lagrangian_networks)
-under MIT, in a PyTorch and a JAX version.
+in a PyTorch and a JAX version. Michael Lutter, Christian Ritter and Jan Peters published
+[Deep Lagrangian Networks](https://arxiv.org/abs/1907.04490) in 2019.
 
-The obvious alternative is the residual network of 5.2. Pick Deep Lagrangian Networks
-when you want one model whose answers stay sensible far outside the recording, and when
-you have no trustworthy URDF, because this network learns the arm's inertia from the
-recording instead of reading it. Pick 5.2 when the URDF is good, because then the
-physics is free and the network only has to learn the leftovers.
+The one idea is that the network should not be allowed to output a torque. It outputs the
+pieces that the equations of motion are built from, and the torque is then computed from
+those pieces by the textbook formula, which is the second kind of model in section 3.2.
 
-What it costs you is speed and fiddliness. The network differentiates itself to build
-the equations of motion, so one prediction does more work than a plain stack of layers
-of the same width, and the activation has to be smooth, which is why the repository
-ships its own derivative of each activation. It learns only what the equations of
-motion can express, so friction has to be added separately.
+Inside, the repository's own source shows three heads coming off one shared body, and the
+body reads only the joint angles. Two of the heads give the entries of a lower triangular
+matrix, which means a square table of numbers with nothing above its diagonal: one head
+gives the diagonal and the other gives the entries below it. The mass matrix is then formed
+by multiplying that table by its own mirror image, and that is the guarantee. A matrix built
+that way is always symmetric and can never imply a negative kinetic energy, whatever
+numbers the network puts in it, so the arm it describes is always a possible arm. The third
+head gives one number, the arm's potential energy, and the gravity torque is the slope of
+that number as the joints turn, which the code obtains by differentiating the network. From
+the mass matrix and its own rates of change the code then builds the Coriolis and
+centrifugal terms, and the torque is the textbook sum: the mass matrix times the
+acceleration you want, plus those terms, plus gravity. So compare section 5.2, where the
+network outputs the correction to the torque directly, and
+nothing whatever stops it outputting a torque that no mechanical system could ever need,
+which is why the code there clips it. Here no clipping is possible, because no torque is
+output. A second difference is worth noticing in the two pieces of code: in section 5.2 the
+angles, the speeds and the acceleration are all fed to the network, while here only the
+angles are. The speeds and the acceleration go into the formula instead, because an arm's
+inertia and potential energy depend on where it is, not on how fast it is moving.
+
+What that buys is answers that stay sensible far outside the recording, and a model that
+needs no trustworthy URDF, because it learns the inertia from the recording rather than
+reading it from a file. The second part of its training loss helps as well: it asks the
+model to account for where the energy went, which is what stops two wrong answers
+cancelling each other out. What it costs is speed and fiddliness. The network differentiates
+itself to build the equations of motion, so one prediction does more work than a plain stack
+of layers of the same width, and the activation has to be smooth, which is why the
+repository ships its own derivative of each activation.
+
+On an arm the difference decides itself on one question: do you have a description file you
+trust? Sections 5.1 and 5.2 both begin by reading masses and lengths out of a URDF, so on a
+hand-built or heavily modified arm they have nothing to start from and this one does. If the
+URDF is good and the error that is left is friction, the choice goes the other way, because
+the formula was free and friction is exactly what the equations of motion cannot express, so
+it has to be added separately here while section 5.2 learns it as a matter of course.
 
 ```python
 import torch
@@ -499,35 +608,59 @@ torque = net.inv_dyn(q, qd, qdd_wanted)  # what the controller asks for at run t
 ```
 
 You supply the recording, and the network supplies the physics structure. The second
-part of the loss is worth keeping: it asks the model to account for where the energy
-went, which is what stops two wrong answers cancelling each other out.
+part of the loss, the energy term described above, is worth keeping for the reason given
+there.
 
 ### 5.6 Local learners with an error bar
 
 **Historical** as code, and kept here because one of its properties is still missing
-from the methods above. Sethu Vijayakumar and Stefan Schaal's locally weighted
-projection regression (LWPR) fits many small simple models, each good for one region of
-movement, and updates them while the robot runs. Duy Nguyen-Tuong, Jan Peters and
-Matthias Seeger did the same with Gaussian processes in [Local Gaussian Process
-Regression for Real Time Online Model
-Learning](https://proceedings.neurips.cc/paper/2008/hash/01161aaa0b6d1345dd8fe4e481144d84-Abstract.html)
-in 2008. A Gaussian process is a method that returns a prediction together with how
-unsure it is. The [LWPR library](https://informatics.ed.ac.uk/slmc/lwpr) is ANSI C with
-a Python wrapper, under the Lesser General Public License with an exception for static
-linking.
-
-The obvious alternative is the residual network of 5.2, which is easier to train and
-faster to run on a recording you already have. The reason to read this family anyway is
-the error bar. To get that today you use
-a Gaussian process in [GPyTorch](https://github.com/cornellius-gp/gpytorch) (MIT) or in
+from the methods above. Size not stated, because an exact Gaussian process stores training
+points rather than weights, a laptop for a sample of a recording, and the
+[LWPR library](https://informatics.ed.ac.uk/slmc/lwpr) is under the Lesser General Public
+License with an exception for static linking, while
+[GPyTorch](https://github.com/cornellius-gp/gpytorch) is MIT and
 [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html)
-(BSD-3-Clause) rather than the original libraries.
+is BSD-3-Clause. Sethu Vijayakumar and Stefan Schaal's locally weighted projection
+regression (LWPR) fits many small simple models, each good for one region of movement, and
+updates them while the robot runs. Duy Nguyen-Tuong, Jan Peters and Matthias Seeger did the
+same with Gaussian processes in [Local Gaussian Process Regression for Real Time Online
+Model
+Learning](https://proceedings.neurips.cc/paper/2008/hash/01161aaa0b6d1345dd8fe4e481144d84-Abstract.html)
+in 2008.
 
-What it costs you is scale. An exact Gaussian process inverts a matrix with one row and
-column per training point, so the training time grows with the cube of the number of
-points, and an hour of recording has far too many. You sample the recording, or use one
-of the approximate methods in GPyTorch. Prediction is slower than a small network too,
-which is why the original work made its models local.
+The one idea is that a correction should say when it is guessing. Every other method here
+answers every question with equal confidence, including questions about movements nothing in
+the recording resembles.
+
+Inside, a Gaussian process gets that honesty from an unusual arrangement: it keeps the
+training examples instead of squeezing them into weights. To answer about this moment, it
+works out how similar this moment is to every stored example, using a measure of similarity
+called a kernel, and its prediction is a weighted average of the leftover torques it saw at
+the similar ones. Because the answer is assembled out of similarity, the method also knows
+when nothing stored is similar, and that is where the spread it returns comes from. The
+network in section 5.2 can give you no such number, because once it is trained the examples
+are gone and only the weights remain. The "local" in the original work is the same idea made
+affordable: many small models, each covering one region of movement, each kept up to date
+while the robot runs.
+
+What that buys is the `std` in the code below, and the controller uses it by scaling the
+correction down as it grows. What it costs is scale. An exact Gaussian process inverts a
+matrix with one row and column per training point, so the training time grows with the cube
+of the number of points, and an hour of recording has far too many. You sample the
+recording, or use one of the approximate methods in GPyTorch. Prediction is slower than a
+small network too, which is why the original work made its models local in the first place.
+
+On an arm the difference is a pose the recording never visited. Section 5.2's network
+produces a confident correction there, and the clipping in its code is a blunt stand-in for
+not knowing: it limits the damage without ever noticing the problem. Here the spread grows,
+the controller shrinks the correction towards nothing, and the arm falls back on the physics
+by itself, in the one pose where falling back is the right thing to do. That is why this
+family is still worth reading although its original code is historical.
+
+So you would pick section 5.2 for a recording you already have, because it is easier to
+train and faster to run. You would come here for the error bar, and today you would get it
+from a Gaussian process in GPyTorch or scikit-learn rather than from the original
+libraries.
 
 ```python
 import numpy as np
@@ -547,33 +680,46 @@ mean, std = gp.predict(x_now, return_std=True)   # the correction, and how unsur
 ```
 
 You supply the sample size, and one model per joint, because this fit predicts one
-number. The `std` that comes back is what the network in 5.2 cannot give you, and the
-controller uses it by scaling the correction down as `std` grows.
+number. The `std` that comes back is the spread described above, and it is what the
+network in 5.2 cannot give you.
 
 ### 5.7 A visual self-model
 
 **Worth betting on** for arms that change, because it is the only method here that
-needs no description of the arm at all. Boyuan Chen, Robert Kwiatkowski, Carl Vondrick
-and Hod Lipson published [Full-Body Visual Self-Modeling of Robot
-Morphologies](https://arxiv.org/abs/2111.06389) at Columbia University in 2021. The arm
-moves while cameras watch it, and the trained model answers one question for any joint
-angles: is this point in space filled by the robot? That is the model of section 3.3,
-and the paper reports one "accurate to about one percent of the workspace". Robert
-Kwiatkowski and Hod Lipson's earlier task-agnostic self-modeling learned the same kind
-of model and relearned it after damage. The code is at
-[BoyuanChen/visual-selfmodeling](https://github.com/BoyuanChen/visual-selfmodeling)
-under MIT.
+needs no description of the arm at all. Size not stated, an NVIDIA graphics card to train
+it, and MIT for the code, which is at
+[BoyuanChen/visual-selfmodeling](https://github.com/BoyuanChen/visual-selfmodeling). Boyuan
+Chen, Robert Kwiatkowski, Carl Vondrick and Hod Lipson published [Full-Body Visual
+Self-Modeling of Robot Morphologies](https://arxiv.org/abs/2111.06389) at Columbia
+University in 2021, and the paper reports a model "accurate to about one percent of the
+workspace". Robert Kwiatkowski and Hod Lipson's earlier task-agnostic self-modeling learned
+the same kind of model and relearned it after damage.
 
-The obvious alternative is forward kinematics from the URDF, which is exact, free and
-instant when the description is right. So this method earns its cost only when the
-description is wrong or missing: a hand-built arm, a modified one, or one that has been
-damaged and no longer matches its drawing.
+The one idea is to store the arm's shape as a question you can ask rather than as a drawing.
+Nothing in the trained model is a link length or a mesh.
 
-What it costs you is a camera rig, a long random-motion recording and research code.
-The README was tested on Ubuntu 18.04 with CUDA 11.0 and Python 3.6, and it asks you to
-uncomment particular lines of `models.py` before one of the training steps, which tells
-you what kind of software this is. The model predicts shape and not torque, so it feeds
-a planner rather than a controller.
+Inside, the model is a network whose input is a point in space together with the joint
+angles, and whose output is whether the robot fills that point. So there is no shape
+anywhere in it that you could look at. You get a shape out by asking about many points and
+collecting the answers, which is what the green dots in the picture in section 3.3 are. The
+training examples are joint angles paired with what the cameras saw, so the recording
+itself is cheap: the arm moves at random and nobody labels anything.
+
+Compare every other entry in this section: all six of them predict a torque or where the
+arm will be, and all six read the arm's shape out of a description file as a given. This one
+has the shape as its output and no description file among its inputs, which is why it is the
+only method here that can be used on an arm nobody has described. So what it buys is an arm
+that can remeasure itself. What it costs is a camera rig, a long
+random-motion recording and research code. The README was tested on Ubuntu 18.04 with CUDA
+11.0 and Python 3.6, and it asks you to uncomment particular lines of `models.py` before one
+of the training steps, which tells you what kind of software this is. The model predicts
+shape and not torque, so it feeds a planner rather than a controller.
+
+On an arm the case is a link bent in a crash. Forward kinematics from the URDF is exact,
+free and instant when the description is right, so it is the obvious alternative and usually
+the better one. After the crash it is still confidently reporting the shape the arm had
+before, and nothing else on this page can notice, because every other method reads that same
+file. A self-model recorded again reports the shape the arm now has.
 
 ```bash
 git clone https://github.com/BoyuanChen/visual-selfmodeling

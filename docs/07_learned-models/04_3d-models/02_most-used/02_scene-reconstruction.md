@@ -236,34 +236,74 @@ project's own licence file.
 
 Both of these are **historical**. They are here because the original is the design
 that [section 3](#step-2-with-nerf-a-network-that-answers-questions-about-any-spot)
-explains, and because together they show why the field then moved on. Ben Mildenhall
-and five colleagues published NeRF at the 2020 European Conference on Computer Vision:
-one small network, asked about points along each line of sight. NVIDIA's Instant-NGP
-followed in the ACM Transactions on Graphics in July 2022. It keeps that design but
-moves most of what the network knows into a lookup table indexed by position, so the
-network itself becomes small and quick to ask, and that is what cut fitting from the
-original's hours or days per scene, as [section 4](#4-how-it-is-trained) says, down to
-minutes.
+explains, and because together they show why the field then moved on.
+
+Size xs for the network in both, a big card, MIT for NeRF and NVIDIA's
+research-and-evaluation-only terms for Instant-NGP.
+
+Ben Mildenhall and five colleagues published NeRF at the 2020 European Conference on
+Computer Vision. NVIDIA's Instant-NGP followed in the ACM Transactions on Graphics in
+July 2022.
+
+The one idea NeRF is built on is that the scene can live in the weights of one small
+network, and that the picture need not be drawn at all: it can be worked out from a
+rule about light. Walk along the line of sight for one pixel, ask the network how
+solid and what colour each spot along it is, and add those up in the order a ray of
+light would meet them. Every step of that rule is ordinary arithmetic, so the
+difference between the pixel it produces and the pixel in the photograph can be traced
+back through the rule to the weights, and the weights can be nudged. The scene is
+never built. It is the leftover of making that rule agree with every photograph.
+
+Inside, the consequence is that the network is tiny and has nothing picture-shaped in
+it. It is a plain stack of about eight fully connected layers, a few hundred numbers
+wide, and it is asked about one spot at a time; a scene of a room and a scene of a mug
+use the same network with different weights in it. Two parts that
+[section 3](#step-2-with-nerf-a-network-that-answers-questions-about-any-spot) left
+out are what make it work in practice. The first is that the three coordinates are not
+handed to the network raw. They are turned into a long list of sine and cosine values
+at many different frequencies first, because a small network fed three plain numbers
+can only produce something smooth, and the high frequencies in that list are what let
+it hold a sharp edge. The second is that the points along the line are chosen in two
+passes: a first, thin pass finds roughly where the line stops being empty air, and a
+second pass spends most of its points there, because almost all of any line of sight
+is nothing at all. The viewing direction also enters late, after the solidity has been
+decided, so that how solid a spot is cannot change with where you happen to stand,
+while its colour can.
+
+Instant-NGP keeps all of that and changes where the scene is kept. Most of what the
+network knew moves out of its weights and into tables of learned numbers that are
+looked up by position, at several grid resolutions at once, and the network shrinks to
+a few layers whose only job is to turn the looked-up numbers into a colour and a
+solidity. Looking a number up is far cheaper than pushing a position through eight
+layers, which is the whole saving. Two distant places can land on the same table slot,
+which the authors call a collision, and the several resolutions together are what let
+the model tell the two apart, since places that collide at one resolution do not
+collide at the next. The authors also wrote the whole thing as one fused program on
+the graphics card. Together that is what cut fitting from the original's hours or days
+per scene, as [section 4](#4-how-it-is-trained) says, down to minutes or less.
+
+On a robot arm the difference between the two is whether this method can be used at
+all in a working cell. A fit that takes a day happens once, for a demonstration; a fit
+that takes a minute can happen after the cell is reloaded. And the difference between
+either of them and the splat of the next sub-section is what they leave behind. A
+fitted NeRF is still a network you can ask about a spot nobody photographed, which is
+what [Dex-NeRF](https://arxiv.org/abs/2110.14217), by Jeffrey Ichnowski and colleagues
+at the 2021 Conference on Robot Learning, uses to find a glass object that a depth
+camera cannot see, as section 6 describes.
 
 The obvious alternative is 3D Gaussian Splatting in section 5.2, and for a new job
 that is what to choose. A NeRF still wins in one case. It keeps a real radiance field,
 which means a network you can ask about any point in space, and the transparent-object
-trick in section 6 depends on exactly
-that. A splat has no network to ask, so what it gives you is pictures and a depth
-picture worked out from the blobs. The one robot result worth knowing from this
-generation is [Dex-NeRF](https://arxiv.org/abs/2110.14217), by Jeffrey Ichnowski and
-colleagues at the 2021 Conference on Robot Learning, which is the method section 6
-describes.
+trick in section 6 depends on exactly that. A splat has no network to ask, so what it
+gives you is pictures and a depth picture worked out from the blobs.
 
-What they cost you is time, and for Instant-NGP a licence as well. The original is MIT
-licensed and asks for TensorFlow 1.15, so you will use somebody's reimplementation
-rather than the authors' code. It is still the one worth reading, because at about
-1,100 lines across two files it is the only version of this idea you can read end to
-end in an afternoon. Instant-NGP has the opposite problem. Its code is fast, but the
-NVIDIA Source Code License allows use for research and evaluation only, in its own
-words non-commercially, so you cannot put it in a product, and because it is CUDA it
-needs an NVIDIA card. Book 2 records the same restriction for Neuralangelo, which is
-the most accurate radiance-field method in
+What they cost you is time, and the code. The original asks for TensorFlow 1.15, so
+you will use somebody's reimplementation rather than the authors' code, and it is
+still the one worth reading, because at about 1,100 lines across two files it is the
+only version of this idea you can read end to end in an afternoon. Instant-NGP has the
+opposite problem: its code is fast, but you cannot put it in a product, and because it
+is CUDA it needs an NVIDIA card. Book 2 records the same restriction for Neuralangelo,
+which is the most accurate radiance-field method in
 [its table](../../../02_perception/02_object-perception/05_models-that-measure.md#4-reconstruction-when-you-do-not)
 and also NVIDIA's. That pattern is the thing to notice about this corner of the
 field.
@@ -277,11 +317,61 @@ honest that the reimplementation covers the main ideas rather than every detail.
 ### 5.2 3D Gaussian Splatting
 
 Three-dimensional Gaussian splatting is **most used in 2026**, and when people say
-"splatting" today they mean this paper. Bernhard Kerbl, Georgios Kopanas, Thomas
-Leimkühler and George Drettakis published it in 2023, at Inria in France and the Max
-Planck Institute for Informatics in Germany. It is the soft blobs described in
+"splatting" today they mean this paper.
+
+Size not stated, because a splat has no learned network at all and what you keep is
+the blobs themselves, a workstation, and the Inria and Max Planck licence, which is
+research only.
+
+Bernhard Kerbl, Georgios Kopanas, Thomas Leimkühler and George Drettakis published it
+in 2023, at Inria in France and the Max Planck Institute for Informatics in Germany.
+It is the soft blobs described in
 [section 3](#step-2-with-gaussian-splatting-many-soft-blobs), with no network
 anywhere in the drawing step.
+
+The one idea is that a picture should be made by drawing things, rather than by asking
+questions about empty space. So the queried field of section 5.1 is replaced by a long
+list of small things that a graphics card already knows how to draw, and each of them
+is given a soft, fading edge rather than a hard one. The soft edge is not for looks.
+It is what makes the drawing step ordinary arithmetic again, so that comparing the
+drawing with the photograph still tells you which way to nudge each blob, exactly as
+it told a NeRF which way to nudge its weights.
+
+Inside, that means the scene is a table of numbers you could print out. Each blob
+holds where it is, how big it is in each of three directions and which way those
+directions point, how see-through it is, and a handful of colour numbers that are
+combined differently depending on the direction you look from, which is this method's
+answer to the viewing direction that NeRF fed into its network, and the reason a splat
+can still show a highlight moving across a shiny surface. Because the size has a
+direction, one blob can be a flat disc lying on a table top or a thin needle along a
+cable, which is how a few blobs can cover a smooth surface that would otherwise need
+many round ones. Drawing is then three steps with no network in them: turn every blob
+into an ellipse on the picture, sort the ellipses from near to far, and paint them in
+that order, each one letting through as much of what is behind it as its opacity
+allows. Nothing is ever evaluated in empty air, which is where a NeRF spends most of
+its effort. And unlike a NeRF, whose scene is spread across the weights of a network
+and cannot be pointed at, this scene is a list: you can delete the blobs of one object
+from it, or move them, because they are the object.
+
+The fitting has one part that a NeRF's fitting does not need, which is that the number
+of blobs is not decided in advance. It starts from the sparse points COLMAP already
+produced while working out the camera poses, and then, as the fit goes on, the program
+adds blobs where the picture is still wrong, by splitting a blob that has grown too
+large and by copying one that sits in an area with too little, and it deletes blobs
+that have faded to almost transparent. The authors call this density control, and it
+is why you cannot say in advance how large a finished scene will be: the size is a
+result of the fit rather than a setting. That is also where the method's weaknesses
+come from. A blob is placed to make the pictures come out right, so it is under no
+obligation to sit on the surface of anything, and there is no network left to ask
+about a spot nobody photographed.
+
+On a robot arm the gain shows up when something wants many views in a hurry. A planner
+that checks what the wrist camera would see from each of fifty candidate positions
+gets fifty pictures at video rate from a splat, where the original NeRF would take
+the better part of an hour. The
+loss shows up in the two jobs the rest of this page is about: measuring a part to the
+millimetre, which section 5.4 does instead, and seeing a glass bottle, which needs the
+field that section 5.1 keeps and this method threw away.
 
 The obvious alternative is a NeRF, and this is the comparison the whole page turns on.
 The paper's own claim is the reason splatting won: 30 frames a second or more at
@@ -290,16 +380,11 @@ the best NeRF quality. Drawing a blob is rasterisation, the same operation a gra
 card does for triangles in a game, so it is not a saving of a few percent: it is a
 different kind of work from asking a network about points along a line.
 
-What it costs you is the licence first of all. The Inria and Max Planck licence is
-research only, and
+What it costs you is accuracy, and that is the fault people miss.
 [Book 2's reconstruction table](../../../02_perception/02_object-perception/05_models-that-measure.md#4-reconstruction-when-you-do-not)
-shows that almost the whole family of surface-oriented variants inherits it. Then the
-hardware: the repository asks for a graphics card of compute capability 7.0 or higher
-and 24 GB of graphics memory to reach the quality in the paper, which is more than a
-laptop has. Then the accuracy, which is the fault people miss. The same table
 measures plain Gaussian splatting at 1.96 mm of error on a laboratory object about
-25 cm across, the worst of every method in it, because a blob centre is not a point on
-the surface.
+25 cm across, the worst of every method in it. The licence is the other cost, and the
+same table shows almost the whole family of surface-oriented variants inheriting it.
 
 There is no Python call, because fitting is the run, and these are the repository's
 own commands.
@@ -327,11 +412,54 @@ licence there is one you can keep.
 ### 5.3 Nerfstudio
 
 Nerfstudio is **most used in 2026** for actual work, and it is the answer to "which of
-these is practical in a work cell". It is an open-source toolkit that fits both NeRFs
-and splats behind one set of commands, under the Apache-2.0 licence. Its splatting
-model is called splatfacto and its NeRF model is called nerfacto, and the drawing is
-done by [gsplat](https://github.com/nerfstudio-project/gsplat), a separate Apache-2.0
-library that reimplements the splatting rasteriser.
+these is practical in a work cell".
+
+Size not stated, because this is a toolkit and not a model, a small card for
+splatfacto and a big card for splatfacto-big, Apache-2.0.
+
+It is an open-source toolkit that fits both NeRFs and splats behind one set of
+commands. Its splatting model is called splatfacto and its NeRF model is called
+nerfacto, and the drawing is done by
+[gsplat](https://github.com/nerfstudio-project/gsplat), a separate Apache-2.0 library
+that reimplements the splatting rasteriser.
+
+The one idea is that the methods above differ in fewer places than they appear to.
+Reading a folder of photos, working out what each pixel can see, comparing the drawing
+with the photograph and writing the result out are the same jobs whether the scene is
+a network or a pile of blobs. Only the middle part differs. So nerfstudio is written as
+a set of interchangeable parts with one pipeline running through them, and a method is
+not a program here: it is a name for one arrangement of those parts.
+
+Inside, that is why the two names exist. A data parser turns your folder, or COLMAP's
+output, into photos with a pose each. A data manager decides which pixels are
+compared on each step of the fit. A model holds whatever the scene is kept in, and for
+splatfacto the
+drawing inside that model is gsplat's. An exporter turns the finished scene into a
+point cloud or a mesh. Because arrangements are cheap and programs are not, each name
+is a mixture rather than one paper: nerfacto's own documentation lists its parts as a
+hash encoding, proposal sampling, scene contraction, camera pose refinement and
+per-image appearance conditioning, which come from several different papers, and
+splatfacto's documentation says in as many words that it "will be a blend of different
+gaussian splatting methodologies" and will drift away from the original as features
+are added. That is the real difference from section 5.2, where the program is one
+paper and the paper is the program.
+
+What the arrangement buys is that two of the hardest things on this page become easy.
+Trying a NeRF and a splat on the same photographs is one word on the command line,
+rather than two installs with different licences. And the awkward step in front, which
+is working out where each photo was taken, is run for you. What it costs is that you
+are no longer running what was measured. A published figure belongs to the paper, and
+you are running an arrangement that has drifted from it, so a number from the paper is
+a hope rather than a specification. You also gain a layer between you and whatever
+breaks, and the common break is in the part nerfstudio did not write.
+
+On a robot arm the difference from the code in section 5.2 shows up in two places. The
+first is the day the cell belongs to a customer, because that code does the same job
+and cannot be shipped, so the choice is not between two qualities of reconstruction
+but between having one and having none. The second is the arm's own advantage: because
+the data parser takes poses as its input, you can hand it the poses from the joint
+readings and skip COLMAP altogether, and COLMAP is both the step that fails most often
+and the step that loses the real size.
 
 The obvious alternative is the original code in section 5.2. Nerfstudio wins for one
 reason that outranks every technical argument: its licence permits commercial use and
@@ -340,14 +468,9 @@ practical reasons follow. Switching between a NeRF and a splat becomes one word 
 command line, and the toolkit does the whole preparation step, including running
 COLMAP for you.
 
-What it costs you is that splatfacto is not the paper. Nerfstudio's own documentation
-says it is a blend of several splatting methods and that it will drift away from the
-original as features are added, so published numbers are not what you will get. The
-memory it needs is documented:
-about 6 GB of graphics memory for splatfacto and about 12 GB for splatfacto-big, which
-keeps more blobs and runs slower. The most common failure is upstream of nerfstudio
-entirely: COLMAP fails on blurry photos or photos that barely overlap, and then
-nothing after it works.
+What it costs you, apart from splatfacto not being the paper, is the step in front of
+it. The most common failure is upstream of nerfstudio entirely: COLMAP fails on blurry
+photos or photos that barely overlap, and then nothing after it works.
 
 The toolkit is driven from the command line, and these are its
 [documented commands](https://docs.nerf.studio/quickstart/first_nerf.html).
@@ -376,26 +499,65 @@ known distance in the export and scale by what you find.
 ### 5.4 NeuS
 
 NeuS is **most used in 2026** for the one job that splats are bad at, which is giving
-back a surface you can measure and then ship. Peng Wang and colleagues published it in
-2021. It is a NeRF-shaped method with one change: instead of asking the network how
-solid a point is, it asks how far that point is from the nearest surface, and a
-surface is then exactly the set of points where that distance is zero.
+back a surface you can measure and then ship.
 
-The obvious alternative is Gaussian splatting, and the reason to leave it is that a splat is placed to make pictures look right rather than to sit on the surface. A blob centre is placed to make pictures
-look right, so it is not a point on the object, while NeuS has a surface by
-construction and writes it out as a mesh. Book 2's table measures NeuS at 0.84 mm
-against 1.96 mm for plain Gaussian splatting on the same laboratory objects, and NeuS
-is MIT licensed while that whole splatting family is not. Accuracy together with a
-licence you can keep is an unusual combination in this field, and it is why this
-sub-section exists.
+Size xs for the network, a big card, MIT for the code, and there are no weights to
+license because every scene is fitted from scratch.
 
-What it costs you is fitting time. NeuS is a NeRF underneath with none of
-Instant-NGP's acceleration, so expect the hours that
-[section 4](#4-how-it-is-trained) describes rather than splatting's minutes. It also
-wants more of you before it starts: the camera poses have to be supplied in a specific
-file format, and the quality improves if you also supply a mask marking the object in
-each photo. The repository was written for PyTorch 1.8, so expect to pin old versions
-or to port it.
+Peng Wang and colleagues published it in 2021.
+
+The one idea is to change the question the network is asked. A NeRF is asked how solid
+a spot is, which is a useful thing to know for drawing a picture and a poor thing to
+know for finding a surface, because a middling solidity is neither inside nor outside
+anything in particular. NeuS asks instead how far the spot is from the nearest
+surface, with a minus sign when the spot is inside the object. The surface is then
+not something you look for: it is exactly the set of spots where that number is zero.
+
+Inside, the walk along the line of sight is the same walk as in section 5.1, and one
+step in the middle of it is different. A NeRF's network produces the solidity that the
+walk needs directly. NeuS's network produces a distance, and a fixed formula turns
+that distance into the solidity the walk needs, so the network never sees how its
+answers will be drawn. That formula is the paper's real contribution, and it is more
+delicate than it sounds. The obvious way of converting a distance into a solidity puts
+the heaviest weight of the walk slightly off the true surface, a bias which leaves the
+reconstructed surface bent away from the object, and the paper gives a conversion that
+has no such bias to the first order of approximation. Having a distance rather than a
+solidity also changes how the surface comes out at the end. From a solidity field you
+have to choose a cut-off, and the surface moves when you choose a different one. From
+a distance field you walk a grid and look for where the sign flips, and there is
+nothing to choose.
+
+What the idea buys is a surface with no arbitrary decisions in it, which is what makes
+a measurement possible at all, and one awkward requirement disappears with it: the
+earlier surface-fitting methods the paper compares against, named DVR and IDR, needed
+a mask drawn round the object in every photograph to keep their fit from collapsing,
+and NeuS, the paper shows, does not. What
+it costs is the field's usual price for a network you query: NeuS is a NeRF underneath
+with none of Instant-NGP's lookup tables, so it is back to the hours that
+[section 4](#4-how-it-is-trained) describes. A signed distance also assumes there is an
+inside and an outside, and the paper's results are on single objects photographed from
+all round, so a scene the camera can only see one face of is a harder case than the
+one the method was measured on.
+
+On a robot arm the difference shows up when the arm has to act on a number rather than
+on a picture. Closing a two-finger gripper on the two parallel faces of a bracket
+means knowing where those faces are to tighter than the clearance the gripper has, and
+a splat's surface is out by more than that, as the comparison below shows. The difference also
+runs the other way, and it is worth saying: if nobody is going to measure the result,
+NeuS has cost you hours of fitting for an accuracy nothing in the cell uses.
+
+The obvious alternative is Gaussian splatting, and the reason to leave it is that a
+blob centre is placed to make pictures look right, so it is not a point on the object,
+while NeuS has a surface by construction and writes it out as a mesh. Book 2's table
+measures NeuS at 0.84 mm against 1.96 mm for plain Gaussian splatting on the same
+laboratory objects, and NeuS is MIT licensed while that whole splatting family is not.
+Accuracy together with a licence you can keep is an unusual combination in this field,
+and it is why this sub-section exists.
+
+What it costs you besides the fitting time is the preparation. The camera poses have
+to be supplied in a specific file format, and the quality improves if you also supply
+a mask marking the object in each photo. The repository was written for PyTorch 1.8,
+so expect to pin old versions or to port it.
 
 NeuS is run from the command line, and these are the repository's own commands.
 
@@ -416,12 +578,59 @@ You also supply the scale, for the same reason as every other row here.
 ### 5.5 VGGT and the DUSt3R family
 
 VGGT is **worth betting on**, because it removes the step that makes everything above
-awkward for a robot: there is no fitting. It is a model trained once, in the ordinary
-way, on many scenes, so you hand it photos and it answers. The Visual Geometry Group
-at the University of Oxford and Meta published it at CVPR 2025, where it won the best
-paper award. It follows DUSt3R and MASt3R, from Naver, which did the same thing for
-two photos at a time; VGGT takes one photo, a few, or hundreds, and returns the camera
-poses, a depth picture per photo and 3D points, all at once.
+awkward for a robot: there is no fitting.
+
+Size l, a big card, and a licence in two halves: the code permits commercial use apart
+from military use, while the open checkpoint does not, and the commercial checkpoint is
+handed out through an application form.
+
+The Visual Geometry Group at the University of Oxford and Meta published it at CVPR
+2025, where it won the best paper award. It follows DUSt3R and MASt3R, from Naver,
+which did the same thing for two photos at a time; VGGT takes one photo, a few, or
+hundreds, and returns the camera poses, a depth picture per photo and 3D points, all
+at once.
+
+The one idea is to treat 3D as something a network can be taught to produce, in the
+same ordinary way that a network is taught to name an object in a photograph, rather
+than as something you solve again for each new scene. Everything else on this page
+learns one scene from your photographs. VGGT learned, once and in advance, what scenes
+look like, from many thousands of them whose 3D was already known, and your
+photographs are then only its input.
+
+Inside, there is no geometry program anywhere. Each photo is cut into small squares
+and each square becomes a short list of numbers, called a token, by an existing image
+model. Then the tokens pass through twenty-four pairs of attention layers which take
+turns at two jobs: in one, a photo's tokens may look only at the tokens of their own
+photo, and in the other, every token may look at every token of every photo at once.
+That alternation is where the matching happens. The square covering the mug's handle
+in the third photo finds the square covering the same handle in the twentieth photo
+because the second kind of layer lets it look there, and the weights that decide what
+is worth looking at were learned rather than written. A few extra tokens are attached
+to each photo to carry the per-photo answers out, one for the camera and four spare
+ones, and small heads at the end read the tokens: a handful of attention layers and
+one plain layer produce the camera numbers, while another head folds the tokens back
+into picture shape and produces the depth picture, the 3D points and the features used
+for tracking. Nothing in that description repeats, and nothing in it is a camera pose
+you supplied.
+
+What the idea buys is that two whole steps of
+[section 3](#3-how-it-works-inside) disappear: there is no pose recovery in front and
+no fitting loop behind. What it costs comes from the same place. The layers that let
+every token see every other token grow expensive as photos are added, because the
+number of pairs of tokens grows faster than the number of photos, so the practical
+limit is memory rather than patience. And a single pass answers out of what the model
+learned about scenes in general, while a fit answers out of your photographs in
+particular, which is why a reconstruction fitted for minutes is still the more
+accurate of the two.
+
+On a robot arm the difference shows up whenever looking and acting are the same
+movement. An arm that takes three pictures while travelling to the bin and must grasp
+when it arrives has under a second, not minutes, so every other method on this page is
+simply unavailable and the question is only whether VGGT's answer is good enough.
+Against DUSt3R the difference is narrower but still practical: DUSt3R reads two photos
+at a time and a separate program afterwards has to line all the pairs up with each
+other, so thirty wrist photographs become hundreds of pairs and a stitching step that
+can fail, while VGGT reads the thirty in one pass.
 
 The obvious alternative is everything above, and the comparison is not about quality.
 It is that fitting a scene costs minutes while this answers, in the paper's own words,
@@ -433,16 +642,11 @@ stitched together, and because its licence is better, as the next paragraph
 explains.
 
 What it costs you is the licence, read carefully, and this is exactly the trap this
-book exists to point out. Since July 2025 the repository's code licence permits
-commercial use, excluding military use. The weights are a separate matter: the open
-`VGGT-1B` checkpoint stays non-commercial, and there is a second checkpoint,
-`VGGT-1B-Commercial`, which you may use commercially but which is handed out through
-an application form. DUSt3R and MASt3R are simpler and stricter, because both are
-Creative Commons Attribution-NonCommercial-ShareAlike 4.0, so neither is shippable in
-any form. The other
-costs are size and accuracy. The checkpoint is 5.0 GB with about 1.26 billion learned
-numbers, so it needs a serious graphics card, and a model that answers in one pass is
-less accurate than minutes of fitting against your own photos.
+book exists to point out. The code licence has permitted commercial use since July
+2025, and the two checkpoints are the trap: the open `VGGT-1B` one is
+non-commercial, and `VGGT-1B-Commercial`, which you may use commercially, has to be
+asked for. DUSt3R and MASt3R are simpler and stricter, because both are Creative
+Commons Attribution-NonCommercial-ShareAlike 4.0, so neither is shippable in any form.
 
 The package downloads the checkpoint from Hugging Face.
 

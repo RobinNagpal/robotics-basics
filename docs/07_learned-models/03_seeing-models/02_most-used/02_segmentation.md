@@ -173,9 +173,10 @@ add a mask to each box.
 
 Because each box gets its own mask, two mugs that touch still get two separate
 masks, and this is exactly how Mask R-CNN works. [Section 5.5](#55-mask-r-cnn)
-recommends Mask R-CNN for fine-tuning in plain PyTorch, and Ultralytics YOLO26-seg
-in [section 5.3](#53-ultralytics-yolo26-seg) is the same design built on a one-stage
-detector, which is why it keeps up with a live camera.
+recommends Mask R-CNN for fine-tuning in plain PyTorch. Ultralytics YOLO26-seg in
+[section 5.3](#53-ultralytics-yolo26-seg) gives the same kind of answer from a
+one-stage detector, but it reaches it in a different order, which is why it keeps up
+with a live camera and which section 5.3 explains.
 
 Newer models use a transformer instead, in the same way as the detection
 transformers on the object detection page. So each query gives one object, and each
@@ -251,8 +252,11 @@ produces perfect masks for free.
 ## 5. Well-known models
 
 This section is the shortlist a real project chooses from. For each model it says
-what the model is, why you would pick it rather than the obvious alternative, what
-it costs you, and what to type to run it.
+what the model is, how it works differently from its neighbours, why you would pick
+it rather than the obvious alternative, what it costs you, and what to type to run
+it. The cost is one short line near the top of each sub-section, written in the three
+scales that the chapter overview defines in [how this chapter writes size, machine
+and licence](../01_overview.md#8-how-this-chapter-writes-size-machine-and-licence).
 
 The first thing to decide is not which model but which question you are asking.
 Three of the models below need a list of classes and give one mask per object in
@@ -282,6 +286,8 @@ scale.
 **Most used in 2026**, because it gives a better outline than any class-trained
 model and it works on objects nobody trained it on.
 
+Size s to m, a small card, Apache-2.0 for the code and the weights.
+
 SAM 2 is the second version of Meta's Segment Anything Model, released in 2024, and
 the page [open-vocabulary models](03_open-vocabulary-models.md) covers the family in
 full. You give it a point, a box or a rough region, and it returns the exact mask
@@ -290,20 +296,53 @@ video, so it can keep the same outline across the frames of a recording, and the
 Hugging Face [SAM 2 page](https://huggingface.co/docs/transformers/en/model_doc/sam2)
 quotes its paper as more accurate and six times faster than the first SAM on images.
 
+The one idea SAM 2 is built on is that the object to be outlined should be an input to
+the model rather than an entry in a list it was trained on. That sounds like a small
+change and it is not, because it makes SAM 2 answer a different question from
+Mask R-CNN and YOLO26-seg below. Those models answer "where is every mug in this
+picture". SAM 2 answers "draw the outline of the thing at this pixel", and it has no
+opinion about what that thing is called. Both answers are masks, which is why the two
+problems get confused, but a class-trained model cannot answer the second question and
+SAM 2 cannot answer the first.
+
+Inside, that question splits the model into one heavy part and two light ones. A
+vision transformer called Hiera reads the picture and turns it into grids of numbers,
+and this is where nearly all the computing happens. A small prompt encoder turns your
+click or your box into a handful of numbers. A small mask decoder then attends
+between the picture's numbers and the prompt's numbers and prints one mask. The split
+is the point: the heavy part runs once per picture, so a second click on the same
+picture costs only the two light parts, which is why clicking around one photo in a
+labelling tool feels immediate. A click is also ambiguous, because clicking a mug's
+handle might mean the handle or the whole mug, so the decoder is built to return three
+masks at once together with its own guess at how good each of them is, and the caller
+picks. For video there are two more parts, a memory encoder and a memory attention
+step, which carry the masks of earlier frames forward so that the same object keeps
+its outline as it moves.
+
+What this buys is edges that no class list limits and that no small in-box grid
+flattens, which is why SAM 2's outlines are better than the mask head of any detector
+in this section. What it costs is that SAM 2 decides nothing. There is no name, no
+confidence in a class, and no choice of what matters: it will outline a shadow, a
+reflection or the grain of the table as happily as a part, because you pointed there.
+The three masks are not a bonus either, they are a question handed back to you, and
+your program has to answer it.
+
+The difference shows up on a robot arm the first time something arrives that nobody
+trained for. A customer puts an unfamiliar moulded part on the table, and a
+class-trained model returns nothing at all, while SAM 2 given one click returns a
+clean outline whose depth pixels really do belong to that part. The same difference
+runs the other way on the day the cell has to work with no person clicking, because
+SAM 2 alone cannot choose which object to outline, and you then need a detector in
+front of it or the phrase prompt of section 5.2.
+
 The obvious alternative is an instance segmentation model such as Mask R-CNN or
 YOLO26-seg. Pick SAM 2 when you cannot write down the list of objects in advance,
 which in a robot cell is the difference between handling your own five parts and
 handling whatever a customer puts on the table. Pick it also when a detector already
 gives you a box, because turning that box into a clean outline is the standard
-pairing, and SAM 2's edges are better than a detector's own mask head.
-
-The costs are speed and a missing name. Its
-[repository](https://github.com/facebookresearch/sam2) publishes four sizes, from
-38.9 to 224.4 million parameters, which its own table measures at 91.2 down to 39.5
-frames a second on video on an NVIDIA A100 graphics card, so the large one is a
-graphics card model. The real cost is that SAM 2 decides nothing: something else
-must choose where to point, and it will outline a shadow as happily as an object.
-Both the code and the weights are Apache-2.0, read from the repository and the
+pairing, and SAM 2's edges are better than a detector's own mask head. Its
+[repository](https://github.com/facebookresearch/sam2) publishes four sizes, and both
+the code and the weights are Apache-2.0, read from the repository and the
 [model card](https://huggingface.co/facebook/sam2.1-hiera-large), which makes it the
 safest licence in this section.
 
@@ -330,15 +369,19 @@ print(masks.shape)        # one mask per box, each the height and width of the p
 ```
 
 You supply the box, which means you supply a detector. The library prepares the
-picture, runs the network and stretches the mask back to your photo's size. What you
-still have to write is the step from the mask to a place in the room, which is
-section 6.
+picture, runs the network and stretches the mask back to your photo's size. It also
+takes a `multimask_output` argument, which is where the three masks of the paragraphs
+above are turned on or off. What you still have to write is the step from the mask to
+a place in the room, which is section 6.
 
 ### 5.2 SAM 3
 
 **Worth betting on**, because it removes the step that SAM 2 cannot do: it takes a
 short phrase instead of a click, and it returns every object in the picture that
 matches the phrase.
+
+Size m, a big card, a bespoke SAM License on the code, and weights whose card says
+"other" and which are released only on an approved request.
 
 SAM 3 came from Meta in November 2025, in the paper "SAM 3: Segment Anything with
 Concepts" ([arXiv:2511.16719](https://arxiv.org/abs/2511.16719)). Its
@@ -347,21 +390,52 @@ promptable concept segmentation, and reports 75 to 80 per cent of human performa
 on SA-CO, a new benchmark of 270,000 different concepts. Improved checkpoints called
 [SAM 3.1](https://huggingface.co/facebook/sam3.1) followed.
 
+The one idea SAM 3 is built on is that the prompt can name a kind of thing instead of
+pointing at one thing. SAM 2's prompt is a place, so its answer is one mask. SAM 3's
+prompt is what the paper calls a concept, which is a short noun phrase such as "yellow
+school bus", or an example picture of the thing, or both, and its answer is a set: one
+mask for every object in the picture that matches, each with its own identity.
+
+That change forces a different machine from SAM 2's three parts in section 5.1. A
+prompt encoder and a mask decoder cannot answer "every mug", because a click has only
+one location, so the paper puts a whole image-level detector and a memory-based video
+tracker on top of one shared backbone. The detector finds all the matching instances
+in one picture, and the tracker carries their identities from frame to frame in a
+video. The part most worth naming is smaller than either. The paper separates deciding
+*whether* the named thing is present from deciding *where* it is, and gives the first
+decision its own output, which it calls a presence head. In SAM 2 there was nothing
+like it, because by clicking you had already asserted that something was there. In
+SAM 3 the model has to be able to say "there is no bolt in this picture", and the
+paper reports that giving that judgement an output of its own raised detection
+accuracy, because the outputs that say where things are no longer have to carry the
+decision about whether anything is there at all.
+
+What the idea buys is that words replace the class list, in one model rather than two,
+and that you get every match rather than the best match. What it costs is a new kind of
+fragility. The phrase is now part of your program, and two reasonable wordings of the
+same request can return different sets of objects, which is a hard thing to make
+repeatable in a factory. The model is also much larger than SAM 2, so it is no
+candidate for a small computer on the robot, and the licence is not the Apache-2.0
+that SAM 2 taught people to expect.
+
+The difference shows up on a robot arm when the job is "pick every one of these". To
+clear a tray of bolts, SAM 2 needs one click per bolt or a detector trained on bolts,
+while SAM 3 given the phrase "bolt" returns all of them from one call. The presence
+head shows up in the opposite case, which matters just as much in a cell: when the
+tray is empty, SAM 3 has an output that can say so, whereas a SAM 2 click on an empty
+tray still returns a confident outline of whatever happened to be under that pixel.
+
 The obvious alternative is Grounding DINO followed by SAM 2, which is the usual way
 to turn words into masks and which the [open-vocabulary
 models](03_open-vocabulary-models.md) page describes. Pick SAM 3 when you want one
 model instead of two, and when you need every matching object rather than the one
-best match, for example every bolt on a tray rather than the clearest bolt. Pick the
-older pairing when the licence matters, which is the next paragraph.
-
-The costs are size and licence. The checkpoint holds 859.9 million parameters, read
-from its [model card](https://huggingface.co/facebook/sam3), so it needs a graphics
-card and is no candidate for a small computer on the robot. The licence is a bespoke
-agreement called the SAM License, stated in the repository's
+best match. Pick the older pairing when the licence matters. The licence is a bespoke
+agreement stated in the repository's
 [licence file](https://github.com/facebookresearch/sam3/blob/main/LICENSE), and the
-Hugging Face card gives the weights' licence as "other" and gates them behind a
-request you have to make and have approved. Open weights are not the same thing as
-open source: read this agreement rather than assuming Apache-2.0 because SAM 2 was.
+Hugging Face [model card](https://huggingface.co/facebook/sam3) gives the weights'
+licence as "other" and gates them behind a request you have to make and have
+approved. Open weights are not the same thing as open source: read this agreement
+rather than assuming Apache-2.0 because SAM 2 was.
 
 The library is `transformers`, which has the model from version 5.0.0 with no
 compiled parts, so it runs on an ordinary Mac as well as on a graphics card.
@@ -384,9 +458,10 @@ print(outputs.pred_masks.shape, outputs.pred_boxes.shape)
 
 You supply the picture and the phrase. The model supplies a mask, a box and a score
 for each matching object, and the library's own page explains how to combine its
-`pred_logits` and `presence_logits` into that score. What you still have to find is
-the phrase that works, because two wordings of one request can give different
-answers, and that is the part a factory cannot easily make repeatable.
+`pred_logits` and `presence_logits` into that score, where the second of those two is
+the presence head described above. What you still have to find is the phrase that
+works, because two wordings of one request can give different answers, and that is
+the part a factory cannot easily make repeatable.
 
 ### 5.3 Ultralytics YOLO26-seg
 
@@ -394,29 +469,64 @@ answers, and that is the part a factory cannot easily make repeatable.
 every frame of a live camera, and because the same package also trains it on your
 own pictures.
 
+Size xs to s, a laptop for the smallest of its five sizes and a small card for the
+largest, AGPL-3.0 or a paid Enterprise licence on both the code and the weights.
+
 Ultralytics publishes a segmentation version of each of its detection models, and
 the file name carries a `-seg` ending, so `yolo26n-seg.pt` is the smallest of five
-sizes. It is the detector of [section 3](#3-how-it-works-inside) with a mask head
-added, so each box comes back with an outline, and the
+sizes. The
 [instance segmentation documentation](https://docs.ultralytics.com/tasks/segment/)
 describes the whole family.
 
-The obvious alternative is Mask R-CNN in torchvision. Pick Ultralytics when the
-camera runs at speed and the computer is small, because its own table gives
-`yolo26n-seg` 2.7 million parameters and 2.1 milliseconds on an NVIDIA T4 graphics
-card with TensorRT, against 46.4 million parameters and no stated speed for
-`maskrcnn_resnet50_fpn_v2`. Pick Mask R-CNN when the AGPL licence is a problem.
+The one idea YOLO26-seg is built on is that an object's mask can be mixed from a few
+pictures of its own. Rather than draw a separate mask for each object, the network
+draws a small fixed number of mask layers for the whole picture at once, at a lower
+resolution than the photo. Each layer is a pattern, not an object. Then, for each
+object the detector found, the head also gives a short list of numbers, one for each
+layer, saying how much of that layer belongs in this object's mask. The object's mask
+is those layers multiplied by its own numbers and added together.
 
-The costs are the licence and the edges. Ultralytics is AGPL-3.0, which obliges you
-to publish the source of anything you combine it with, including software you only
-run as a service, and the weights carry the same terms. A paid Enterprise licence
-removes that obligation, and Book 2 explains the trap in [licences, and the one that
-will catch you
+In the source the two pieces are called the proto module, which makes the layers, and
+the mask coefficients, which are the per-object numbers, and the step that combines
+them multiplies the coefficients by the layers and then cuts the result down to the
+object's box. That last cut is the part to remember. It differs from Mask R-CNN in
+[section 5.5](#55-mask-r-cnn) in the order the work is done: Mask R-CNN cuts the
+picture's grids down to the box first and then predicts a mask inside the cut, while
+YOLO26-seg predicts over the whole picture first and cuts afterwards. YOLO26 also
+changed this head from the version before it, and the documentation describes a proto
+module that reads several scales of grid instead of one, together with a new training
+error term borrowed from semantic segmentation, both of which it credits for better
+mask quality.
+
+What the design buys is a cost that barely moves with the number of objects, because
+the expensive half, the layers, is drawn once per picture whether there are three
+objects or thirty, and only a short multiplication is added per object. That is why
+this is the model that keeps up with a live camera. What it costs is detail and
+independence. Every object's mask is mixed from the same few layers, so masks cannot
+be fully independent of each other, and the final cut to the box exists partly to stop
+one object's mask spilling onto another. The layers are at reduced resolution, so a
+thin feature such as a handle or a cable is the first thing to disappear, and because
+the mask is cut to the box, a box that is slightly too small cuts the mask off along a
+straight line.
+
+The difference shows up on a robot arm in two opposite situations. Clearing a full
+tray at camera speed is the case this design wins, because Mask R-CNN's cost climbs
+with the number of objects on the tray and YOLO26-seg's does not. Finding where to put
+the fingers on a thin handle is the case it loses, because the handle is a few pixels
+wide in a mask drawn at reduced resolution, and the mask either misses it or fattens
+it. In that second case the usual answer is to keep YOLO26-seg for the boxes and pay
+for one SAM 2 call on the box that matters.
+
+The obvious alternative is Mask R-CNN in torchvision. Pick Ultralytics when the
+camera runs at speed and the computer is small. Pick Mask R-CNN when the AGPL-3.0
+licence is a problem, because it obliges you to publish the source of anything you
+combine Ultralytics with, including software you only run as a service, and the
+weights carry the same terms. A paid Enterprise licence removes that obligation, and
+Book 2 explains the trap in [licences, and the one that will catch you
 out](../../../02_perception/02_object-perception/06_licences-and-platforms.md#1-licences-and-the-one-that-will-catch-you-out).
-The accuracy cost is real as well. The same table gives `yolo26n-seg` 33.9 mask mAP
-on COCO, where mAP is short for mean average precision and a higher number is
-better, against 47.0 for the largest `yolo26x-seg` at 12.9 milliseconds. Thin parts
-such as a handle or a cable are where a small model loses pixels first.
+The accuracy cost between the sizes is real as well: the documentation's own table
+gives `yolo26n-seg` 33.9 mask mAP on COCO, where mAP is short for mean average
+precision and a higher number is better, against 47.0 for the largest `yolo26x-seg`.
 
 The library is `ultralytics`, which you install with `pip install ultralytics`.
 
@@ -446,12 +556,50 @@ mask.
 with a permissive licence that reports better masks than the YOLO family at the same
 latency.
 
+Size s, a small card, Apache-2.0 for the code and the weights.
+
 RF-DETR comes from Roboflow, with co-authors at Carnegie Mellon University, and its
 paper is from November 2025
 ([arXiv:2511.09554](https://arxiv.org/abs/2511.09554)). Segmentation is one of three
 jobs the one package does, and its
 [repository](https://github.com/roboflow/rf-detr) publishes six segmentation sizes,
 from Nano to 2XLarge.
+
+The one idea RF-DETR-Seg is built on is that a query already describes one object, so
+that query should be allowed to draw its own mask directly onto the picture. The
+detector it comes from, described in [object
+detection](01_object-detection.md#53-rf-detr), carries a set of queries, and each one
+has gathered everything the model knows about one object into a single list of
+numbers. The segmentation head takes that list and compares it with every pixel of a
+feature map covering the whole picture. Where the two agree, the pixel belongs to that
+object. The result is one full-picture mask per query, at a quarter of the input's
+width and height.
+
+That is a different choice from either neighbour. YOLO26-seg in section 5.3
+mixes a small fixed set of shared layers and then cuts the result to the box, so no
+pixel outside the box can ever belong to the object. Mask R-CNN in section 5.5 cuts
+first and predicts inside the cut. RF-DETR-Seg does neither: there are no shared
+layers to mix and no box to cut to, only a per-object comparison carried out across
+the whole picture. The head also repeats that comparison once for every layer of the
+decoder, so the mask is drawn again each time the query's description of the object
+improves, rather than once at the end.
+
+What this buys is a mask that nothing flattens. It is not limited to combinations of a
+few patterns, it is not clipped by a rectangle, and it is drawn at a quarter of the
+picture's size rather than stretched up from a small square. What it costs is work
+that grows with the number of queries, because every query is compared against every
+pixel, so a model configured for many objects pays for them whether they are there or
+not. Its backbone is a DINOv2 vision transformer, so there is no very small version
+for a tiny computer, and the project is young enough that its API still changes
+between releases.
+
+The difference shows up on a robot arm when you measure a long thin part lying at an
+angle. Its box is large and mostly empty, and the box's edges are the hardest thing
+for a detector to get exactly right on such a shape. With YOLO26-seg a box that is a
+few pixels too tight shears the mask off along a dead straight line, and a straight
+cut through a part looks like a real edge to whatever reads the mask next, so the
+measured length comes out short. RF-DETR-Seg's mask is not cut to the box, so the part
+keeps its own ends.
 
 The obvious alternative is YOLO26-seg, which is about equally easy to install. Pick
 RF-DETR-Seg when you want the permissive licence and the better outlines together.
@@ -461,11 +609,6 @@ RF-DETR-Seg-Nano reaches 40.3 average precision at 3.4 milliseconds, where
 YOLO26-N-Seg reaches 34.7 at 2.31 milliseconds. Those are the authors' own
 measurements of their model against a competitor, so read them as a claim with a
 method attached.
-
-The costs are size and youth. RF-DETR-Seg-Nano holds 33.6 million parameters against
-2.7 million for the smallest YOLO26-seg, because its backbone is a DINOv2 vision
-transformer, so there is no very small version for a tiny computer. The project is
-also young, so its API still changes between releases.
 
 The library is `rfdetr`, which you install with `pip install rfdetr`. It returns a
 `Detections` object from the `supervision` library.
@@ -493,23 +636,60 @@ once you have fine-tuned the model on your own classes.
 segmentation model on your own objects without adding a dependency to a PyTorch
 project.
 
+Size s, a small card, BSD-3-Clause for the code and the weights together.
+
 Mask R-CNN came from Facebook AI Research in 2017, and it is the design [section
 3](#3-how-it-works-inside) describes as a detector with a mask head added. It ships
 inside torchvision, the image half of PyTorch, and the newer of its two versions is
 `maskrcnn_resnet50_fpn_v2`.
 
+The one idea Mask R-CNN is built on is that a mask is one more branch on a detector
+that already cuts each object's region out of the picture. Its paper describes exactly
+that: take Faster R-CNN, which already produces a class and a box for each proposed
+region, and add a third branch beside those two that produces a mask for the same
+region. Nothing about the detector changes. The mask comes free of the work the
+detector was already doing.
+
+Inside, the mask branch works on the patch of the backbone's grids that belongs to
+one box, resized to a fixed small square, and the small mask it predicts is then
+stretched to the size of that box in the photo. Two details are worth knowing. The
+cut-out is done by an operation torchvision calls RoIAlign, which reads the grid at
+positions that fall between cells by blending the neighbouring cells rather than
+rounding to the nearest one, and the "align" in its name is the point: half a cell of
+rounding is several pixels in the photo, which a class never notices and a mask
+always does. The other detail is that the branch predicts one mask for every class it
+knows, and the class branch then chooses which of those masks to keep, so the decision
+about what the object is and the drawing of its outline are made separately. Compared
+with RF-DETR-Seg in section 5.4, the order is reversed: there, a query draws over the
+whole picture and nothing is cut; here, the cut comes first and the mask exists only
+inside it.
+
+What the design buys is a careful, independent look at each object and a training
+path short enough to read line by line, which is the real reason it is still
+recommended. What it costs is two kinds of coarseness. The mask branch runs once per
+surviving box, so a crowded picture is slower than an empty one. And because the mask
+is predicted on a fixed small square and then stretched, how precise its edge is
+depends on how large the object is on screen: a small object's mask is barely
+stretched, while a large object's mask has each of its cells blown up into a block
+many pixels across.
+
+The difference shows up on a robot arm when the object fills a lot of the frame. A bin
+or a large box photographed close up gets a visibly stepped outline from Mask R-CNN,
+because the fixed square was stretched over hundreds of pixels, and if your program
+then follows that outline to decide where on the rim the fingers go, the steps are
+what it follows. Small parts on a tray do not show the problem at all, and that is
+why a demonstration on small parts does not tell you how the same model will behave
+on a large one. SAM 2 given the same box has no fixed square and no stretch, which is
+the standard fix.
+
 The obvious alternative is YOLO26-seg, which is faster and easier to train. Pick
 Mask R-CNN when the licence has to be permissive, when you want to read every line
 of the training code, and when the camera gives you a picture a second rather than
 thirty. Its BSD-3-Clause licence covers the code and the weights together, which is
-not true of every model here.
-
-The costs are speed and age. The torchvision
+not true of every model here. The torchvision
 [model page](https://pytorch.org/vision/stable/models/generated/torchvision.models.detection.maskrcnn_resnet50_fpn_v2.html)
-gives this version 46.4 million parameters, 47.4 box mAP and 41.8 mask mAP on the
-COCO validation split. It states no speed, and the mask head runs once per box, so a
-crowded picture is slower than an empty one. The mask is predicted small and then
-stretched, so its edges are softer than SAM 2's. What goes wrong most often is the
+gives this version 47.4 box mAP and 41.8 mask mAP on the COCO validation split and
+states no speed at all, so measure it yourself. What goes wrong most often is the
 preparation of the picture, because the weights expect exactly what
 `weights.transforms()` applies.
 
@@ -546,30 +726,65 @@ else.
 **Historical**, kept because it explains how one transformer answers all three
 segmentation questions, and because its successors use the same idea.
 
+Size m, a small card, MIT on an archived repository, and weights whose card says
+"other".
+
 Mask2Former came from Meta in December 2021, in the paper "Masked-attention Mask
-Transformer for Universal Image Segmentation". Each of its queries gives one mask
-and one class, exactly as a detection transformer's queries give one box, which is
-why one trained model can give semantic, instance or panoptic answers depending on
-how you read its output. Its paper reports 57.8 panoptic quality on COCO, 50.1
-average precision for instance segmentation on COCO and 57.7 mean intersection over
-union on ADE20K, quoted on the Hugging Face
+Transformer for Universal Image Segmentation". Its paper reports 57.8 panoptic
+quality on COCO, 50.1 average precision for instance segmentation on COCO and 57.7
+mean intersection over union on ADE20K, quoted on the Hugging Face
 [Mask2Former page](https://huggingface.co/docs/transformers/en/model_doc/mask2former).
+
+The one idea Mask2Former is built on is that semantic, instance and panoptic
+segmentation are not three problems. Its paper opens by saying that segmentation
+means grouping pixels, and that each choice of what the groups mean defines one of
+the three tasks, while the work itself does not change. So the model predicts the
+same thing in every case: a set of masks, each with a label. Which of the three
+answers you get out depends only on how that set is read afterwards, which is why the
+library offers three different post-processing calls over one model's output.
+
+To make that work without boxes, the model needs some way for a query to concentrate
+on one region, since Mask R-CNN in section 5.5 got that for free by cutting the
+picture to a box. Mask2Former's answer is the component its title is named after,
+masked attention. In an ordinary transformer decoder, a query attends to every pixel
+of the picture at every layer. Here, a query's attention at each layer is restricted
+to the pixels inside the mask that same query predicted at the layer before. In plain
+words, the query looks only where it already believes its object is, and then revises
+that belief. That is what replaces the region cut: the query is never handed a
+rectangle, it narrows its own attention instead, and because the restriction is a mask
+rather than a rectangle it can follow an awkward shape. The segmentation head of
+RF-DETR-Seg in section 5.4, where a query's numbers are compared against every pixel,
+is a descendant of the same query-and-pixel idea.
+
+What this buys is one design for all three questions, and panoptic output in
+particular, where every pixel is assigned to exactly one thing so that nothing is
+counted twice and no pixel is left over. What it costs is speed and currency. Masked
+attention has to be recomputed at every layer, which makes the model slower than a
+single-purpose instance model, and the published checkpoints are still trained one per
+task, so "one architecture" is not the same as one file of weights that answers
+everything well.
+
+The difference shows up on a robot arm when one picture has to answer two questions
+that are usually two models. A cell that must both locate the parts and know which
+pixels are the floor, the table and the person who has walked in can run one
+Mask2Former pass and read the panoptic answer, instead of running an instance model
+and a semantic model and keeping both sets of weights in the robot computer's memory.
+The panoptic answer also removes an argument you would otherwise have to settle
+yourself, because the parts and the floor cannot overlap or leave a gap between them
+when every pixel is assigned exactly once.
 
 The obvious alternative today is RF-DETR-Seg or YOLO26-seg, both of which are faster
 at instance masks. Pick Mask2Former only when you need more than instance masks from
-one model, for example instance masks of the parts and a semantic mask of the table
-in the same pass. If that is your case, compare it with
+one model, for example instance masks of the parts and a semantic mask of the table in
+the same pass. If that is your case, compare it with
 [OneFormer](https://github.com/SHI-Labs/OneFormer), which is MIT licensed and trains
-once for all three tasks.
-
-The costs start with maintenance. The original
-[repository](https://github.com/facebookresearch/Mask2Former) is archived, which
-means no fixes and no support for newer dependencies, although the `transformers`
-port is maintained and is the version to use. The licence is also split in the way
-this book keeps warning about: the repository's licence file is MIT, while the
-weights card for `facebook/mask2former-swin-large-coco-instance` gives its licence
-as "other". The code licence does not tell you the weights licence. That checkpoint
-holds 216.0 million parameters, read from the same card.
+once for all three tasks. The maintenance cost is real: the original
+[repository](https://github.com/facebookresearch/Mask2Former) is archived, which means
+no fixes and no support for newer dependencies, although the `transformers` port is
+maintained and is the version to use. The licence is also split in the way this book
+keeps warning about, because the repository's licence file is MIT while the weights
+card for `facebook/mask2former-swin-large-coco-instance` gives its licence as "other".
+The code licence does not tell you the weights licence.
 
 The library is `transformers`, and the post-processing call is what selects the kind
 of answer you want.

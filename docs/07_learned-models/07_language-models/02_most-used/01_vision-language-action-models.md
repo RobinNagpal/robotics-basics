@@ -105,15 +105,31 @@ So the model does not need to write an exact distance, and it only needs to name
 step, such as step 128, which is near the middle and means "almost no movement". A
 whole movement therefore becomes eight numbers, such as `1 128 91 241 5 101 127 217`.
 
-The benefit is that no new part is needed, because the model already writes numbers as
-tokens. So the training simply adds examples in which the right answer to a picture
-and an instruction is a string of eight numbers. OpenVLA, the first open VLA, uses the
-same idea, and [section 5.6](#56-openvla) is about it. Of the models in section 5, only
-OpenVLA and π0-FAST write movements this way.
+It is worth being exact about what that last step means, because it is the whole
+method. A token is one entry in the model's fixed list of tokens, and the [chapter
+overview](../01_overview.md#3-how-words-become-numbers) describes that list: tens of
+thousands of entries, each with its own list of numbers learned during training. So to
+write step 128, the model needs an entry that means step 128. The method therefore adds
+256 new entries to a list that was built for words, and the layer at the end of the
+model, which gives a score to every entry in the list, now scores joint angles
+alongside words. Turning a joint angle into a token means those two things at once:
+the angle is rounded to one of 256 steps, and that step is given a place in the
+vocabulary beside "the" and "mug".
 
-The drawback is that 256 steps is coarse, and the model writes the numbers one token
-at a time. Writing one token takes about as long as writing one word in a chat
-window. So a model that writes eight tokens for every movement is slow.
+What makes this clever is that nothing else in the model has to change. The model
+already writes numbers as tokens, so the training simply adds examples in which the
+right answer to a picture and an instruction is a string of eight numbers, and the
+output layer, the training method and the whole machinery of writing text are reused
+untouched. OpenVLA, the first open VLA, uses the same idea, and [section
+5.6](#56-openvla) is about it, including the awkward question of where its 256 new
+entries came from. Of the models in section 5, only OpenVLA and π0-FAST write movements
+this way.
+
+What makes it clumsy is that 256 steps is coarse, and that the model writes the numbers
+one token at a time. Writing one token takes about as long as writing one word in a
+chat window. So a model that writes eight tokens for every movement is slow. A written
+movement also means nothing on its own, because the same step number stands for a
+different distance as soon as the range it was cut from changes.
 
 ### Way 2: add a small action expert
 
@@ -213,9 +229,11 @@ in depth.
 ## 5. Well-known models of this kind
 
 This section names the models you will actually meet, says what each one is for, and
-ends with one recommendation you can follow. The size of a model is given as its number
-of **parameters**, and a parameter is one of the adjustable numbers inside the network
-that training sets.
+ends with one recommendation you can follow. Each sub-section opens with one short line
+giving the model's size, the machine it needs and its licence, in the bands that
+[section 7 of the chapter
+overview](../01_overview.md#7-how-this-chapter-writes-size-machine-and-licence)
+defines. So read that line for the band and the table below for the exact figure.
 
 The table has two columns, so read a row from left to right as one sentence about one
 model. The left column names the model and says how current it is. The right column
@@ -240,12 +258,48 @@ which is the page to check when you want to know what is current.
 ### 5.1 SmolVLA, the one to start with
 
 SmolVLA is **most used in 2026** by people learning on a small arm, because it is the
-only model in the table that runs without an NVIDIA graphics card. Hugging Face released
-it on 3 June 2025. It has 450 million parameters: a SmolVLM2 vision-language backbone
-and a flow-matching action expert of roughly 100 million, the arrangement of [way
+only model in the table that runs without an NVIDIA graphics card.
+
+Size m, a laptop to run it and a big card to train it, Apache-2.0 for the code and the
+weights.
+
+Hugging Face released it on 3 June 2025. It pairs a SmolVLM2 vision-language backbone
+with a flow-matching action expert, the arrangement of [way
 2](#way-2-add-a-small-action-expert). Its authors trained it on about 10 million frames
 from 487 public datasets and report about 78 per cent success on real tasks with an
 SO-100 arm.
+
+The one idea it is built on is that a working vision-language model can be cut down
+rather than replaced. The cuts are what make this the only model in the section that
+runs on a laptop, and there are three of them.
+
+The first cut is in the backbone. The action expert does not read the backbone's final
+answer, because SmolVLA stops the backbone at half its layers and reads the numbers
+from there. The second cut is in the picture. Each camera frame reaches the language
+model as only sixty-four tokens, because the grid of patches the vision encoder
+produces is folded, so that every small square of neighbouring patches becomes one
+longer list of numbers; the trick is called pixel shuffle, and a frame that would
+arrive as about a thousand tokens arrives as sixty-four. The third cut is in the expert
+itself, whose layers alternate between looking at the backbone's numbers and looking at
+each other, instead of doing both in every layer. A fourth change is a rearrangement
+rather than a cut: the program that runs the model is split in two, so one half works
+out the next chunk while the other half is still feeding the current chunk to the arm,
+and the arm never waits for a decision.
+
+π0.5, in the next sub-section, does none of this. It runs its whole backbone and lets
+the action tokens attend to all of it, which is much of why it understands more and why
+it needs the card. SmolVLA's first cut is where its loss of understanding
+comes from, because the upper layers of a language model are where the subtlest reading
+of a sentence is assembled, and SmolVLA never runs them. The squeezed picture costs the
+same way: sixty-four lists of numbers cannot hold what a thousand hold, so a small
+difference between two objects can be gone before the language model sees anything at
+all.
+
+On an arm, that difference shows up twice and in opposite directions. It shows up in
+your favour the moment you have no NVIDIA card, because then SmolVLA is the only one of
+the two that runs. It shows up against you when the task turns on a fine detail, such
+as picking the one cube with a mark on it out of four identical cubes, which is exactly
+what sixty-four tokens throws away.
 
 The obvious alternative is π0.5, which is the stronger model. You pick SmolVLA anyway
 when you lack the hardware for π0.5, and that is most people: the π0 repository asks for
@@ -258,10 +312,10 @@ far from its training data, and it must be fine-tuned on your own recordings fir
 LeRobot's [guide](https://huggingface.co/docs/lerobot/smolvla) recommends about 50
 recorded episodes and puts 20,000 training steps at roughly four hours on one A100
 graphics card, while its [hardware
-guide](https://huggingface.co/docs/lerobot/hardware_guide) puts that training at 10 to
-16 GB of video memory, so a Mac is slow rather than useless. The usual mistake is too
-few recordings of each variation: the authors found 25 episodes of their task not enough
-and 50 enough.
+guide](https://huggingface.co/docs/lerobot/hardware_guide) puts that training on a big
+card, so a Mac is slow rather than useless. The usual mistake is
+too few recordings of each variation: the authors found 25 episodes of their task not
+enough and 50 enough.
 
 The library is [LeRobot](https://github.com/huggingface/lerobot), and SmolVLA is driven
 from the command line rather than from Python. Two commands do the whole job.
@@ -288,34 +342,72 @@ lerobot-rollout \
 ```
 
 LeRobot gives you the training loop, the dataset format, the cameras and the arm driver.
-You supply the dataset, recorded as section
-6 describes, and your
-own serial port and camera index. The sentence after `--task` must be the sentence you
-recorded with, because the model learned to connect those words to that movement.
+You supply the dataset, recorded as [section 4](#4-how-it-is-trained) describes, and
+your own serial port and camera index. The sentence after `--task` must be the sentence
+you recorded with, because the model learned to connect those words to that movement.
 
 ### 5.2 The pi models from Physical Intelligence
 
 These are **most used in 2026** by people who have an NVIDIA graphics card, because they
-are the only weights from a frontier laboratory that anyone can download. Physical
-Intelligence announced π0 on 31 October 2024 and published it on 4 February 2025, then
-announced π0.5 on 22 April 2025. π0 attaches a flow-matching action expert to a
-pretrained vision-language model, π0.5 adds training that stops robot fine-tuning from
-damaging what the language model already knew, and π0-FAST writes movements as tokens
-instead, as in [way 1](#way-1-write-the-movement-as-tokens). The [openpi
+are the only weights from a frontier laboratory that anyone can download.
+
+Size not stated, a big card, Apache-2.0 for the code and no licence at all on the
+weights.
+
+Physical Intelligence announced π0 on 31 October 2024 and published it on 4 February
+2025, then announced π0.5 on 22 April 2025. The [openpi
 repository](https://github.com/Physical-Intelligence/openpi) puts their training data at
 10,000 hours or more.
+
+The one idea π0 is built on is that the understanding and the moving should live in the
+same transformer without sharing the same weights. Its base is PaliGemma, the
+vision-language model in [section 5.5 of the previous
+page](02_vision-language-models.md#55-paligemma). The pictures and the instruction pass
+through PaliGemma's own weights, exactly as they always did, while the two inputs
+PaliGemma never saw in its own training, which are the arm's joint readings and the
+half-finished movement the expert is refining, pass through a second and smaller set of
+weights. The paper calls the arrangement analogous to a mixture of experts, meaning one
+network that holds several sets of weights and sends each kind of input to the set that
+suits it. The two sets meet in one place only: in the layers where every token may look
+at every other token, so the action tokens can see the picture and the words.
+
+SmolVLA, above, has the same two parts, and the difference is how much of the backbone
+the expert is allowed to see. SmolVLA reads the backbone halfway up and squeezes the
+picture first, whereas π0 runs PaliGemma whole.
+
+π0.5 adds a second idea, and it is the most interesting thing on this page, because it
+uses both of [section 3](#3-how-it-works-inside)'s ways at the same time. The problem it
+solves is that an action expert starts out as random numbers, and training a random part
+that is attached to a trained part damages the trained part, because the corrections
+that teach the expert are passed back into the language model as well. Physical
+Intelligence calls the fix knowledge insulation. The corrections are cut at the join, so
+nothing the expert learns flows back into the language model. The language model is then
+given a job of its own on the same recordings, which is to write the movement as
+discrete tokens in the manner of [way 1](#way-1-write-the-movement-as-tokens). So it
+still learns what a movement has to do with a picture and a sentence, from a signal that
+does not depend on the untrained expert, while the expert learns the smooth numbers
+separately. π0-FAST is the model that keeps way 1 and nothing else, and it compresses a
+whole chunk of movement in frequency space before writing it as tokens, rather than
+writing every number of every step on its own, which is how it gets round the coarseness
+that section 3 describes.
+
+On an arm, the difference shows up on long tasks that need both hands, such as folding a
+piece of cloth. A model whose language understanding survived its robot training can be
+told "fold the towel in half, then in half again" and still have the second half of that
+sentence mean something, and the smooth output of a flow-matching expert is what lets
+two grippers move together without steps in the path.
 
 The obvious alternative is GR00T N1.7, which is also open and also uses an action
 expert. You pick a pi model when your robot resembles ALOHA or DROID, because fine-tuned
 checkpoints exist for those two platforms, and when you read research, because π0.5 is
 what most 2026 papers measure themselves against.
 
-It costs you an NVIDIA card and a Linux machine. The repository asks for more than 8 GB
-of video memory to run a model, more than 22.5 GB to fine-tune part of it and more than
-70 GB to fine-tune all of it, and says only Ubuntu 22.04 has been tested. The code is
-Apache-2.0, but the weights come from the project's own storage with no separate
-licence, so read the repository before shipping a product. The first failure is usually
-a licence prompt, not a crash: the π0.5 recipe in LeRobot uses Google's gated
+It costs you an NVIDIA card and one particular Linux machine, because the repository
+says only Ubuntu 22.04 has been tested. Fine-tuning needs far more memory than running:
+part of the model wants a workstation and all of it wants the largest single card you
+can get. The weights also arrive from the project's own storage with no licence of their
+own, so settle that before you ship. The first failure is usually a licence prompt
+rather than a crash: the π0.5 recipe in LeRobot uses Google's gated
 `google/paligemma-3b-pt-224` tokenizer, which you must accept on the Hugging Face
 website first.
 
@@ -349,30 +441,66 @@ You also write the loop that reads the cameras and sends the chunk to the arm.
 ### 5.3 GR00T N1.7 from NVIDIA
 
 GR00T N1.7 is **most used in 2026** where capability matters more than the price of the
-graphics card, and it is the most capable open model on the shelf. NVIDIA tagged it on
-18 April 2026 as a general-availability release, which for NVIDIA means a supported
-product rather than an experiment. It has 3 billion parameters, a Cosmos-Reason2-2B
-backbone built on the Qwen3-VL architecture, and a flow-matching action head, and it was
-pretrained on 20,000 hours of human video alongside robot demonstrations.
+graphics card, and it is the most capable open model on the shelf.
 
-The obvious alternative is π0.5. You pick GR00T when the robot you own is not the robot
-the model was trained on. Its movements are distances from the gripper's current pose
-rather than absolute positions, and NVIDIA names that one choice as the key factor in
-its cross-robot performance, because three centimetres to the left means the same thing
-on every arm while a coordinate does not. The same choice is what let NVIDIA train on
-human video, since a hand and a gripper move in the same relative terms.
+Size l, a big card to run it and a workstation to fine-tune it, Apache-2.0 for the code
+and the NVIDIA Open Model License for the weights.
 
-It costs you NVIDIA hardware, with no way round it: 16 GB or more of video memory to run
-the model, 40 GB or more to fine-tune it, and a supported platform, which means a
-desktop card on CUDA 12.8, a Jetson Thor or Orin, or a DGX Spark. The licence needs
-care. The code is Apache-2.0, while the weights are under the [NVIDIA Open Model
-License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/),
-which allows commercial use but adds conditions Apache-2.0 does not, such as attribution
-when you redistribute and the loss of the licence if you switch off a safety check
-without putting a similar one in its place. The repository's own sentence about being
-"fully commercially licensable under Apache 2.0" describes the code. The first run
-usually fails for a smaller reason: the backbone is a gated download, so without Hugging
-Face access the model refuses to load.
+NVIDIA tagged it on 18 April 2026 as a general-availability release, which for NVIDIA
+means a supported product rather than an experiment. It has a Cosmos-Reason2-2B backbone
+built on the Qwen3-VL architecture and a flow-matching action head, and it was pretrained
+on 20,000 hours of human video alongside robot demonstrations.
+
+The one idea it is built on is that a movement should be described in a way that means
+the same thing on every body. The models before it mostly learn where to put the
+gripper, as a target in the robot's own coordinates, and that is what NVIDIA says it
+changed: GR00T's movements are distances from where the gripper is now. Three
+centimetres to the left is three centimetres to the left on an SO-100, on a Franka and
+on a human hand holding a sponge, while the coordinates of a point on a table mean
+nothing to a robot standing somewhere else. NVIDIA names that one choice as the key
+factor in its cross-robot performance.
+
+That choice then decides the rest of the model. It is what lets human video be training
+data at all, because a video of a hand has no joint readings and no robot coordinates,
+but it does show the hand moving a certain distance. It also forces the model to carry
+every body at once instead of one, so the slot where the state and the movement go is
+wide enough for many robots' joints, and an **embodiment tag** tells the model which
+part of that wide slot this robot is using. That tag is why the server command below has
+one. The change of backbone fits the same purpose: Cosmos-Reason2-2B takes a picture at
+its own shape rather than padding it into a square, so a wide view of a long table is
+not squashed before the model reads it.
+
+What the idea costs is accumulated error and a setting you can get wrong. A relative
+movement has to be added to where the arm actually is, so the model's answer is only as
+good as the arm's own reading of its current pose, and an error in that reading goes
+into the next command instead of being corrected by it. A model that names a destination
+does not have that problem, because each command says where to end up rather than how
+far to go. The embodiment tag is the second cost, because it is a label you choose rather
+than something the model works out, and the wrong tag has the model reading the numbers
+in the wrong slots, which looks like a badly trained model rather than a configuration
+mistake.
+
+On an arm, the difference from π0.5 is simply whether you own the robot the model was
+trained on. If your arm is an ALOHA or a DROID, π0.5 has a fine-tuned checkpoint for
+that exact platform and you should use it. If your arm is a cheap one you assembled
+yourself, no checkpoint on this page was recorded on it, and then the question is which
+model's way of describing a movement still carries over, which is the argument above.
+
+The obvious alternative is π0.5, and you pick GR00T for the reason above when the robot
+you own is not the robot the model was trained on. The second reason is support: NVIDIA
+ships this as a product with a version number, while the openpi repository's own update
+log has recorded no new model since September 2025.
+
+It costs you NVIDIA hardware, with no way round it, and not just any NVIDIA hardware:
+the supported platforms are a desktop card on CUDA 12.8, a Jetson Thor or Orin, or a DGX
+Spark. The [NVIDIA Open Model
+License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/)
+on the weights allows commercial use, but it adds conditions Apache-2.0 does not, such
+as attribution when you redistribute and the loss of the licence if you switch off a
+safety check without putting a similar one in its place. The repository's own sentence
+about being "fully commercially licensable under Apache 2.0" describes the code only.
+The first run usually fails for a smaller reason: the backbone is a gated download, so
+without Hugging Face access the model refuses to load.
 
 The library is the [Isaac-GR00T](https://github.com/NVIDIA/Isaac-GR00T) repository, and
 the model is also in [LeRobot](https://huggingface.co/docs/lerobot/groot). NVIDIA runs
@@ -406,12 +534,48 @@ which tells the model which robot it is driving and so decides how its numbers a
 
 MolmoAct2 is **worth betting on**, because no other open model publishes as much
 evidence about itself, and because the field is moving towards models that reason about
-the scene before they move. The Allen Institute for AI published it on 4 May 2026, with
-a paper at [arXiv 2605.02881](https://arxiv.org/abs/2605.02881). It has 5 billion
-parameters and attaches a flow-matching action expert to a vision-language model that
-writes words, so one model both reasons and moves. It ships with its training data,
-including 720 hours of two-armed teleoperation, and with fine-tuned versions for the
-DROID Franka arm, a two-armed YAM robot, and the SO-100 and SO-101 learning arms.
+the scene before they move.
+
+Size l, a big card at reduced precision, Apache-2.0 for the code and no licence declared
+for the weights.
+
+The Allen Institute for AI published it on 4 May 2026, with a paper at [arXiv
+2605.02881](https://arxiv.org/abs/2605.02881). It attaches a flow-matching action expert
+to a vision-language model that writes words, so one model both reasons and moves. It
+ships with its training data, including 720 hours of two-armed teleoperation, and with
+fine-tuned versions for the DROID Franka arm, a two-armed YAM robot, and the SO-100 and
+SO-101 learning arms.
+
+The one idea it is built on is that the action expert should not be handed a conclusion.
+In GR00T and in π0, the vision-language model reads the pictures and the instruction and
+produces one set of numbers, and the expert works from that set alone. MolmoAct2 joins
+the two layer by layer instead. Each layer of the action expert looks at the matching
+layer of the vision-language model and reads the numbers that layer produced, rather
+than the numbers the whole backbone finished with. Its authors call this per-layer
+key-value conditioning, where the keys and the values are the two sets of numbers that
+each layer of a transformer offers up for other tokens to look at.
+
+What that changes is which part of the backbone's reading reaches the movement. The
+early layers of a vision-language model hold plain things, such as where an edge or a
+surface is, and the late layers hold conclusions, such as what the object is called. A
+model that reads only the last layer has the conclusion and has lost the edge. Reading
+every layer gives the expert both, which is the same argument that DeepStack makes about
+pictures on the [previous page](02_vision-language-models.md#51-qwen3-vl), applied to
+movement instead.
+
+A second thing follows from the arrangement, which is that the backbone goes on writing
+words while it drives the arm. So the model can be asked what it thinks it is doing, and
+the project ships a variant called MolmoThink that can be told to reason for longer or
+for less time, depending on how much delay you can accept. What the arrangement costs is
+time. Reading every layer is more work than reading the last one, and reasoning before
+moving adds a pause you can see.
+
+On an arm, the difference shows up when a grasp has to be exact on an object the model
+knows by name. "Pick up the red mug by its handle" needs the conclusion that this mug is
+the red one and the edge detail of where the handle's rim is, and the layer-by-layer join
+is the arrangement that keeps hold of both. It shows up again when you have to explain a
+failure to somebody, because words are an output you can read and a chunk of joint
+targets is not.
 
 The obvious alternative is again π0.5. You pick MolmoAct2 when you have to defend the
 choice to somebody, because its authors claim the widest evaluation of any open
@@ -422,14 +586,11 @@ about the physical world. The second reason is narrower: it has a ready checkpoi
 the SO-100 and SO-101, the arms a beginner is likely to own, and neither π0.5 nor GR00T
 has one.
 
-It costs you memory and legal certainty. Each checkpoint is about 22 GB to download, and
-the project's inference server fits under 16 GB of video memory at reduced precision
-while its full-precision setting wants around 96 GB free. The code is Apache-2.0, read
-from its licence file, but the model card on Hugging Face declares no licence at all in
-its metadata, even though the repository's README says Apache 2.0, so ask the authors
-before building a product on the weights. The project also warns that it has been
-checked only on the SO-100 and the Franka DROID setup, and only for simple tasks of the
-kind it was trained on.
+It costs you legal certainty above all. The code's licence file says Apache-2.0 and the
+repository's README says Apache 2.0, while the model card on Hugging Face declares no
+licence at all in its metadata, so ask the authors before building a product on the
+weights. The project also warns that it has been checked only on the SO-100 and the
+Franka DROID setup, and only for simple tasks of the kind it was trained on.
 
 The library is [LeRobot](https://huggingface.co/docs/lerobot/molmoact2), which carries
 MolmoAct2 as a policy, and the original training code is in
@@ -456,15 +617,44 @@ model then reads the side view as if it were the view from above.
 
 ### 5.5 X-VLA
 
-X-VLA is **worth betting on**, because it attacks the problem that section
-7 calls the field's worst, which is a
-model that works on its builders' robot and not on yours. An academic group published it
-in November 2025, with a paper at [arXiv 2510.10274](https://arxiv.org/abs/2510.10274).
-The released base model has 0.9 billion parameters, as LeRobot's page for it states, and
-was trained on 290,000 recorded episodes from seven robot platforms. Each robot and each
-dataset is described by a small set of learned numbers, called a **soft prompt**, which
-goes into the model with the pictures and the instruction, so adapting to a new robot
-means learning a new soft prompt.
+X-VLA is **worth betting on**, because it attacks the problem that matters most in
+practice, which is a model that works on its builders' robot and not on yours.
+
+Size m, a workstation to train it, Apache-2.0 for the weights and no licence checked on
+the code.
+
+An academic group published it in November 2025, with a paper at [arXiv
+2510.10274](https://arxiv.org/abs/2510.10274). The released base model was trained on
+290,000 recorded episodes from seven robot platforms.
+
+The one idea it is built on is that the robot's body should be an input to the model
+rather than a change to the model. Each robot and each dataset it was trained on is
+described by a small set of learned numbers, called a **soft prompt**, and that set goes
+into the model alongside the picture tokens and the word tokens. So the model is told
+which body it is driving in the same way it is told what to pick up.
+
+Compare that with GR00T, two sub-sections above, which has the same problem to solve.
+GR00T widens the model: the slot for the state and the movement is wide enough for many
+robots' joints, and a tag selects the part of the slot in use. X-VLA leaves the network
+alone and puts the difference in the input. Its authors describe the result as plain
+transformer encoders with soft prompts, and the plainness is the point, because there is
+no per-robot head, no per-robot output layer and nothing to write when a new robot
+arrives except a new prompt. Its movements still come out by flow matching, as GR00T's
+and π0's do.
+
+What that buys is a small training job where the others have a large one. Adapting to a
+robot that resembles nothing in the training data means learning one new soft prompt,
+which is a small fraction of the model's numbers. What it costs is that a prompt can
+only pick among the ways of moving the model already has. A soft prompt tells the model
+which of the bodies it has seen this one is like; it cannot teach it a gripper that
+works in a way no training robot's gripper did.
+
+On an arm, the difference shows up on a robot nobody sells. If you built the arm, with
+five joints and a gripper of your own design, SmolVLA's answer is to fine-tune the whole
+model on your recordings, and GR00T's is to find an embodiment tag that is close enough.
+X-VLA's answer is to train a short new prompt and leave the rest alone, which is the
+cheapest of the three to try and the one most likely to stall if your arm is genuinely
+unlike everything it has seen.
 
 The obvious alternative at this size is SmolVLA. You pick X-VLA when the licence
 matters, because Apache-2.0 covers the weights themselves, and when your robot differs
@@ -473,12 +663,11 @@ scores on two benchmarks while adjusting 1 per cent of the model, or 9 million n
 Treat that as the best case, not the recipe: LeRobot's own guidance for a new robot is
 to train the vision and language parts as well.
 
-It costs you a graphics card, because LeRobot's hardware guide places X-VLA with the
-large models at about 24 to 40 GB of video memory for training, so it is not a Mac model
-despite its size. The frontier document records its code licence as not checked, which
-is worth checking yourself. Its checkpoints are uneven too: the simulation one reports
-93 per cent on the LIBERO benchmark, while each real-robot one is tied to one platform,
-so you will probably fine-tune.
+It costs you a graphics card for training, so it is not a Mac model despite its size,
+and the frontier document records its code licence as not checked, which is worth
+checking yourself. Its checkpoints are uneven too: the simulation one reports 93 per
+cent on the LIBERO benchmark, while each real-robot one is tied to one platform, so you
+will probably fine-tune.
 
 The library is [LeRobot](https://huggingface.co/docs/lerobot/xvla), which carries X-VLA
 as a policy type.
@@ -504,15 +693,55 @@ the soft prompt, and the guidance is to let the vision and language parts train 
 ### 5.6 OpenVLA
 
 OpenVLA is **historical**, and it is here because it explains how the others work and
-because every paper you read compares against it. A group from Stanford, UC Berkeley,
-Google DeepMind and the Toyota Research Institute published it in June 2024, with a
-paper at [arXiv 2406.09246](https://arxiv.org/abs/2406.09246). It has 7 billion
-parameters, it was trained on 970,000 real robot demonstrations from the pooled Open
-X-Embodiment dataset, and it writes movements as tokens exactly as [way
-1](#way-1-write-the-movement-as-tokens) describes. That method came from Google's
-[RT-2](https://robotics-transformer2.github.io/) in 2023, which was never released, so
-OpenVLA was the first such model anybody could download, and in September 2026 it was
-still the most downloaded robotics model on Hugging Face.
+because every paper you read compares against it.
+
+Size l, a big card, MIT for the code and the weights.
+
+A group from Stanford, UC Berkeley, Google DeepMind and the Toyota Research Institute
+published it in June 2024, with a paper at [arXiv
+2406.09246](https://arxiv.org/abs/2406.09246). It was trained on 970,000 real robot
+demonstrations from the pooled Open X-Embodiment dataset, and it writes movements as
+tokens exactly as [way 1](#way-1-write-the-movement-as-tokens) describes. That method
+came from Google's [RT-2](https://robotics-transformer2.github.io/) in 2023, which was
+never released, so OpenVLA was the first such model anybody could download, and in
+September 2026 it was still the most downloaded robotics model on Hugging Face.
+
+The one idea it is built on is that a movement is text, so no part of the model needs to
+be added. Every model above it has two pieces that were trained in different ways.
+OpenVLA has one piece. Its vision side joins the output of two encoders, DINOv2 and
+SigLIP, so that one of them supplies where things are and the other supplies what they
+are, and that output goes into a Llama 2 language model which writes tokens. The tokens
+it writes for a movement come out of the same layer, are scored in the same way and are
+trained by the same method as the tokens it writes for a word.
+
+Making that work needs one trick, and the trick is the clearest answer to the question
+of what turning a joint angle into a token actually involves. Each number in a movement
+is cut into 256 steps, and the edges of those steps are spread evenly between the 1st
+and the 99th percentile of the training recordings, so that one unusually large
+movement in the data does not stretch every step. Then those 256 steps need 256 entries
+in the model's list of tokens, and Llama 2 had no room for them, because its tokenizer
+keeps only a hundred spare entries for this kind of use. So OpenVLA wrote its action
+tokens over the 256 least used tokens in Llama's vocabulary. Those entries used to be
+the rarest fragments of text the model knew, and in OpenVLA they mean step 0 to step 255
+of a joint movement. Overwriting them is safe only because they were the rarest things
+the tokenizer had.
+
+That is clever, because it costs nothing to build. There is no action expert, no second
+training recipe and no new output layer, and the model that writes "the red mug is on
+the left" is the model that writes `1 128 91 241 5 101 127 217`, which is why this is
+the one to read if you want to read a whole model. It is also clumsy in two ways that
+every model above it was built to avoid. The numbers mean nothing on their own, because
+the step edges came from the percentiles of one recorded dataset, so you have to tell
+the library which dataset's ranges to undo them with; that is the `unnorm_key` in the
+code below, and getting it wrong gives movements of the right shape and the wrong size.
+And the model spells the movement out one token at a time, so one movement costs as many
+passes through the whole network as it has numbers in it.
+
+On an arm, that second point is the whole difference. With an action expert the arm gets
+a chunk of movements from one pass and keeps moving while the next chunk is worked out.
+With OpenVLA the arm waits while the model writes the movement out one number at a
+time, and the gap is long enough to see. Its own successor recipe,
+[OpenVLA-OFT](https://openvla-oft.github.io/), exists to remove exactly that gap.
 
 You would not pick it to drive a robot today, because SmolVLA and π0.5 are maintained
 while the OpenVLA repository has had no commit since March 2025. You would pick it for
@@ -521,10 +750,9 @@ you may have to run it to compare. And its code and its weights are both MIT, th
 permissive pair in the table, so you can read, change and publish it without asking
 anybody.
 
-It costs you speed above all. It writes one movement at a time, which is slow in the way
-the [chunking section](#why-it-outputs-a-chunk-of-actions) explains, and its own
-successor recipe, [OpenVLA-OFT](https://openvla-oft.github.io/), exists to fix that. Its
-7 billion parameters also need an NVIDIA graphics card, so it does not run on a Mac.
+It costs you speed above all, for the reason just given and in the way the [chunking
+section](#why-it-outputs-a-chunk-of-actions) explains. It also needs an NVIDIA graphics
+card, so it does not run on a Mac.
 
 The library is `transformers` from Hugging Face, because OpenVLA is published as an
 ordinary Hugging Face model. This is the example from its own [model
@@ -601,10 +829,9 @@ Four things change that answer.
   comparison everybody else publishes.
 
 Do not choose on success rates reported by different laboratories. Each number was
-measured by the group that benefits from it, on a robot you do not have, as section
-7 explains. The honest way to choose
-between two models is to fine-tune both on your own recordings and count the successes
-on your own arm.
+measured by the group that benefits from it, on a robot you do not have. The honest way
+to choose between two models is to fine-tune both on your own recordings and count the
+successes on your own arm.
 
 ---
 

@@ -116,6 +116,28 @@ Once again, the drawing uses a tiny picture and a tiny code so that you can see
 each part. Real codes are larger, as the last section said, but the idea behind
 them is the same.
 
+Whether a model keeps the decoder after training is the biggest single choice in
+this family, so here is what each answer costs. Keeping it gives you two things.
+The code is forced to hold enough about the picture to redraw it, which is a
+strong and simple instruction that works before anybody knows what the task is.
+And you can look: you can draw the rollout the model imagined and watch it, which
+is the only honest way of finding out whether a policy learned something strange
+because the model predicted something impossible. What keeping it costs is where
+the code's room goes. Drawing a picture back rewards the model for whatever
+covers the most pixels, so a patterned tablecloth takes up room that a small
+screw needed.
+
+Dropping the decoder reverses both. The code now holds only what the rest of the
+model needs, which is usually the score and the value, so a small detail that
+decides the task is no longer competing with the background for space. But you
+can no longer draw anything, so when the predictions are bad you have the score
+curves and nothing to look at. And something else now has to stop the encoder
+from collapsing: with no picture to redraw, a code of all zeros would be
+perfectly easy to predict and completely useless, so a model with no decoder
+always carries an extra arrangement whose only job is to prevent that. The two
+entries below that drop the decoder each do it in their own way, and both are
+described in their own sections.
+
 Two entries in the shortlist change this part. TD-MPC2, in
 [section 5.5](#55-td-mpc2), has no decoder at all, so its code is trained only to
 be good at predicting the score and the value of a state and never at drawing the
@@ -257,7 +279,11 @@ row says `not stated` rather than giving a guess.
 ### 5.1 World Models
 
 This model is **historical**, and it is here because it is the clearest
-description of the design that every later entry rearranges. David Ha and Jürgen
+description of the design that every later entry rearranges.
+
+Size xs, machine not stated, and no licence file.
+
+David Ha and Jürgen
 Schmidhuber published [World Models](https://arxiv.org/abs/1803.10122) in 2018,
 at the Neural Information Processing Systems conference, under the title
 "Recurrent World Models Facilitate Policy Evolution". It has exactly three parts:
@@ -265,20 +291,54 @@ a network that squeezes a game picture into a code, a network that predicts the
 next code, and a policy that reads the code and acts. The policy was trained
 entirely inside the model's own predictions, for a car racing game.
 
-You would not run this instead of DreamerV3. The reason to read it anyway is the
-parameter table on its
-[project page](https://worldmodels.github.io/). The picture squeezer has
-4,348,547 parameters, the predictor has 422,368, and the policy has 867. That
-last number is the point of the whole paper. Because the code already contains
-what matters about the picture, the part that chooses actions can be a few
-hundred numbers, small enough to train with an evolutionary algorithm rather than
-with gradients. No later entry on this page makes the case for a learned code as
-plainly as that table does.
+The one idea it is built on is that the part choosing the actions should be as
+small as it can possibly be, so that almost everything the agent knows sits in
+the world model instead. The paper names its three parts V for the picture
+squeezer, M for the predictor and C for the policy, and the project page states
+the point in those terms: C is kept "as simple and small as possible, and trained
+separately from V and M, so that most of our agent's complexity resides in the
+world model".
+
+What that changes, compared with every later entry here, is the order of
+training. The three parts are trained one after another and never together. The
+picture squeezer is trained first, on frames collected by a policy that moves at
+random, until it can squeeze a frame into a few dozen numbers and draw it back.
+Then the predictor is trained on the codes that squeezer produces, and the
+squeezer does not change while this happens. Then the policy is trained inside
+the predictor's dream, and neither of the first two changes. PlaNet and DreamerV3
+do the opposite: their encoder and their predictor are trained together against
+one objective, so the code ends up shaped by what the predictor finds hard as
+well as by what the picture needs. Here the code is shaped by the picture alone,
+and it is frozen before anything knows what the task is.
+
+The second thing to understand is what the predictor gives back, because it is
+not one next code. It is a recurrent network whose output is a set of
+possibilities with weights, which the project page describes as training the
+network "to output a probability density function p(z) instead of a deterministic
+prediction of z". In ordinary words it says "the next code is probably around
+here, or possibly around there", and the next code is then drawn at random from
+that. A setting called the temperature widens or narrows the spread. That dial
+matters because the policy is trained inside the dream, and a dream that is too
+confident can be cheated: the policy finds a sequence of actions that works
+beautifully in the model and not at all in the game. Widening the spread makes
+the dream less sure of itself and makes it harder to cheat. No later entry on
+this page exposes that trade so plainly.
+
+What the idea buys is the figure that makes the paper famous. The policy is 867
+numbers, which is small enough to train by an evolutionary algorithm, which here
+means trying many slightly different policies and keeping what scores best,
+rather than by gradients. What it costs is the frozen code. If the thing that
+decides your task is something the picture squeezer judged unimportant, it is
+gone from the code, and no amount of later training recovers it, because the
+later training never touches the squeezer. On a robot arm that is not a
+hypothetical: a thin screw on a patterned table is a few pixels, a redrawn
+picture barely suffers from losing it, and the arm then cannot find it. The two
+entries with no decoder, [5.5](#55-td-mpc2) and
+[5.6](#56-v-jepa-2-and-v-jepa-2-ac), are both answers to that failure.
 
 What it costs you is that the published code no longer runs. Its own notes pin
 `gym 0.9.x`, say the experiments do not work on `gym 0.10.x`, and ask for
-`numpy==1.13.3`. The repository has no licence file, so you have no stated
-permission to reuse it. The original repository links to a later reimplementation
+`numpy==1.13.3`. The original repository links to a later reimplementation
 in TensorFlow 2.2 by Zac Wellmer at
 [zacwellmer/WorldModels](https://github.com/zacwellmer/WorldModels), which runs in
 a Docker container.
@@ -294,12 +354,16 @@ pip install gym==0.9.4 numpy==1.13.3
 
 What you get is a record of an experiment rather than a tool. What you supply, if
 you want the design, is an hour with the project page, which is an interactive
-article holding the diagrams and that parameter table.
+article holding the diagrams and the parameter counts.
 
 ### 5.2 PlaNet
 
 This model is **historical**, and it is here because it is the version of the
-design with no policy in it, which makes one thing easy to see. Danijar Hafner,
+design with no policy in it, which makes one thing easy to see.
+
+Size not stated, a graphics card, Apache-2.0.
+
+Danijar Hafner,
 Timothy Lillicrap, Ian Fischer, Ruben Villegas, David Ha, Honglak Lee and James
 Davidson published [Learning Latent Dynamics for Planning from
 Pixels](https://arxiv.org/abs/1811.04551) at the International Conference on
@@ -307,20 +371,55 @@ Machine Learning in 2019. PlaNet encodes the pictures it has seen into a code,
 then searches over sequences of actions inside the code, executes the first
 action of the best sequence it found, and plans again after the next picture.
 
+The one idea it is built on is that the thing carried from step to step should be
+two things at once: a part worked out exactly, and a part drawn at random. The
+paper calls the combination a recurrent state space model, and that name is used
+by DreamerV3 and DayDreamer as well, so it is worth knowing.
+
+What that changes inside, compared with the World Models design above, is that
+there is one loop rather than three trained programs. The exact part is a
+recurrent network that carries information forward unchanged for as many steps as
+it needs to. The random part is a small set of numbers drawn from a distribution
+the network itself produced. The paper's finding is that neither alone is enough,
+and the reasons are different. An only-random state "makes it difficult for the
+transition model to reliably remember information for multiple time steps", so
+the model forgets the cube it can no longer see. An only-exact state cannot hold
+two different futures at the same time, so when the future genuinely could go two
+ways the model averages them, and what you get is a faint cube in two places
+rather than a cube in one place or the other.
+
+The second change is how it is trained to be right far ahead rather than one step
+ahead. A model trained only to predict the next step is right one step at a time
+and badly wrong by step twenty, and a planner searching twelve steps ahead
+depends entirely on step twelve. PlaNet's answer, which it calls latent
+overshooting, trains the model on predictions of many different lengths at once,
+and checks each against what the model believes after it has actually seen those
+pictures. All of that comparison happens between codes, so no picture is drawn
+for the far-ahead steps, which is what makes training on them affordable.
+
+What having no policy buys is that nothing has to be retrained when the goal
+changes. The score is a function you write, so an arm that was stacking cubes can
+be told to spread them out instead, and the next search does it with no gradient
+steps at all. What it costs is time at the moment of acting, because the search
+runs before every single move while the arm waits, and something subtler. The
+search is free to propose any action sequence and it keeps the one with the
+highest predicted score, and the highest predicted score is very often found
+exactly where the model is most wrong. A trained policy only ever proposes
+actions resembling the ones it practised, so it stumbles into the model's bad
+regions far less. On a robot arm this is the choice between an arm that pauses a
+few seconds before each move but obeys a new goal immediately, and DreamerV3's
+arm, which moves without pausing and has to be retrained to want something else.
+
 You would choose PlaNet's approach over DreamerV3's when you do not want a
-trained policy at all. Searching for actions at every step costs computing time
-on the robot, but there is no policy to train and nothing that has to be
-retrained when the task changes: you change the score and search again. The
-search method is the cross-entropy method from the
+trained policy at all. The search method is the cross-entropy method from the
 [learned dynamics models](../02_most-used/01_learned-dynamics-models.md#planning-with-it)
 page, so if you have read that page, PlaNet is that planner with a learned code
 in place of measured positions.
 
-What it costs you is speed at the moment of acting, and an old stack. Its
+What it costs you is an old stack. Its
 setup file pins `tensorflow-gpu==1.13.1` and `tensorflow_probability==0.6.0`, and
 its README says the code was tested under Ubuntu 18, so treat it as a reference
-rather than as a dependency. Its licence file is Apache-2.0. The deeper cost is this: a search that is free to propose any action sequence will find the model's mistakes
-faster than a trained policy does.
+rather than as a dependency.
 
 The library is the repository, and one command trains an agent on one task:
 
@@ -339,7 +438,12 @@ looks like a broken training run and is not one.
 
 This model is **most used in 2026**, because it is the one complete agent in this
 family that somebody else keeps running, and because the same settings work on
-tasks that have nothing in common. Danijar Hafner, Jurgis Pasukonis, Jimmy Ba and
+tasks that have nothing in common.
+
+Size xs to m, depending on which of its named sizes you pick, a graphics card,
+MIT.
+
+Danijar Hafner, Jurgis Pasukonis, Jimmy Ba and
 Timothy Lillicrap published it as [Mastering Diverse Domains through World
 Models](https://arxiv.org/abs/2301.04104), and the
 [repository](https://github.com/danijar/dreamerv3) cites the journal version as
@@ -347,18 +451,56 @@ having appeared in Nature in 2025. It is the model this page has been describing
 an encoder, a predictor, a score part, a policy and a critic, with the policy
 practising inside the predictions.
 
+The one idea it is built on is not a new part. It is that nobody should have to
+tune it. Every quantity DreamerV3 learns from is first put on a scale it can
+safely learn from, whatever that quantity happens to be in your task, so that
+nothing needs retuning when the task changes. The abstract says it in one
+sentence: "robustness techniques based on normalization, balancing, and
+transformations enable stable learning across domains", with a single
+configuration.
+
+The first change from PlaNet is the shape of the code. The repository's own words
+are that DreamerV3 "encodes sensory inputs into categorical representations". In
+ordinary words, the code is not a list of dials that can take any value. It is a
+set of multiple-choice answers: several small groups, with exactly one option
+chosen in each group, like describing the scene by ticking one box in each of
+many short lists. Two things follow. A tick cannot drift to an absurd value the
+way a dial can, which is a large part of why the training is stable. And when the
+model is unsure between two futures, it says so by splitting the probability
+between two boxes, rather than by settling on a value halfway between them. That
+is the same averaging problem PlaNet's random part exists to solve, solved a
+different way.
+
+The second change is on the acting side. PlaNet searches over action sequences
+before every move. DreamerV3 trains a policy and a critic inside the imagined
+rollouts instead, so at the moment of acting there is no search at all: one pass
+through a small network gives the action, which is why the same agent can drive
+something that has to respond quickly. The rescaling the abstract mentions is
+what lets one policy survive across tasks, because it means a task whose reward
+is 0 or 1 and a task whose reward runs into the thousands reach the policy
+looking alike.
+
+The third thing to know is that DreamerV3 keeps the decoder, and part of training
+the world model is drawing the picture back. This is the choice
+[section 3](#squeezing-a-picture-into-a-code) weighed. It is why you can draw a
+rollout the model imagined and watch it, which on a robot arm is the difference
+between knowing that the policy is bad and knowing why: you can see whether the
+model imagined a cube that behaved impossibly. It is also why a visually busy
+scene costs you, because the code's room goes where the pixels are. The concrete
+situation where DreamerV3 rather than TD-MPC2 changes the result is a camera-only
+arm whose task is going wrong for reasons nobody can name. With TD-MPC2 there is
+nothing to look at. Here you watch the dream and usually find the answer in it.
+
 You would choose it over TD-MPC2 in [5.5](#55-td-mpc2) when your robot sees
-through a camera and you have no measured positions. DreamerV3 learns the code
-from pictures and keeps a decoder, so you can draw what it imagines and look at
-it.
+through a camera and you have no measured positions.
 
 What it costs you is that it is a research repository rather than a package, and
 JAX. JAX is a numerical library that compiles Python for graphics cards, and you
 install it before the requirements file. The repository says the code is tested on
 Linux and macOS and needs Python 3.11 or newer, and `--jax.platform cpu` forces it
 onto the central processor, so it will start on a Mac even though training it
-there is not sensible. Its licence file holds the MIT licence text. What most
-often goes wrong is the first item in its own tips: reusing an old log directory
+there is not sensible. What most often goes wrong is the first item in its own
+tips: reusing an old log directory
 with a changed configuration, which fails with a message about `PyTreeDef` that
 says nothing about the cause.
 
@@ -389,26 +531,60 @@ describes.
 
 This model is **historical**, and it is here because it is the proof that this
 whole approach works on a real robot, with no simulator anywhere: that claim is
-what you are relying on when you read the rest of this page. Philipp Wu,
+what you are relying on when you read the rest of this page.
+
+Size not stated, a graphics card for the learner and a processor for the actor as
+its arm commands are written, and no licence file.
+
+Philipp Wu,
 Alejandro Escontrela, Danijar Hafner, Ken Goldberg and Pieter Abbeel published
 [DayDreamer: World Models for Physical Robot
 Learning](https://arxiv.org/abs/2206.14176) at the Conference on Robot Learning
 in 2022. The published code ships commands for three machines: a four-legged A1
 robot, an xArm and a UR5 arm.
 
-You would read it rather than DreamerV3's own repository for one specific reason.
-DreamerV3 assumes it can step an environment as fast as it likes, and a real arm
-cannot be stepped faster than it moves. DayDreamer splits the agent into two
-programs that run at the same time, an actor that moves the robot and stores what
-happened, and a learner that trains from the stored data. That split is the piece
-of engineering a real arm needs, and this repository is where it is written down.
+The one idea here is not a new model at all. It is the same model arranged
+differently in time. Everything [section 3](#3-how-it-works-inside) describes is
+unchanged; what changes is who waits for whom.
+
+In a simulator the loop is simple, because the simulator waits. The agent takes
+one step, does some training, takes the next step, and the simulator sits still
+for as long as the training takes. A real arm cannot do either half of that. It
+cannot be paused halfway through a movement, and it cannot be hurried; it takes
+the time it takes. DayDreamer's answer is two programs running at the same time.
+The paper describes them plainly: "a learner thread continuously trains the world
+model and actor critic behavior, while an actor thread in parallel computes
+actions for environment interaction". The actor moves the robot and writes what
+happened into a store; the learner reads from that store and trains without ever
+touching the robot.
+
+The consequence the authors point out is the interesting one, because it is a
+setting that disappears. In DreamerV3 you choose how often to train relative to
+how often you act. In DayDreamer that choice is gone: the paper says "there is no
+training frequency hyperparameter because the decoupled learner optimizes the
+neural networks in parallel with data collection, without rate limiting". How
+much training each real movement gets is now decided by how fast your computer
+is.
+
+What this buys is that neither the arm nor the learner is ever idle, which on
+hardware is the difference between an experiment that finishes in an afternoon
+and one that does not finish. What it costs is exactly what it removed. A ratio
+you set in a file is a number you can write down and reproduce; a ratio decided
+by your hardware is not, so the same code and the same recorded movements on a
+slower machine produce a different agent, and two people cannot compare runs
+without comparing computers. The policy moving the arm is also always slightly
+behind the policy being trained. On a robot arm the symptom you avoid is easy to
+recognise: with the simulator arrangement the arm stands still between moves
+while the learner catches up, and most of the wall-clock hours of the day are
+spent collecting nothing.
+
+You would read it rather than DreamerV3's own repository for that split alone. It
+is the piece of engineering a real arm needs, and this repository is where it is
+written down.
 
 What it costs you is that it is built on the previous generation. Its code is
 TensorFlow 2 on top of DreamerV2, which the authors say to consult for anything
-their README does not cover. It has no licence file, so you have no stated
-permission to use it. Its commands assign the learner and the actor to different
-graphics cards, although the arm commands put the actor on the central
-processor.
+their README does not cover.
 
 The library is the repository, and an arm is run as two programs in two
 terminals:
@@ -436,29 +612,79 @@ the repository holds three worked examples of exactly that.
 
 This model is **most used in 2026** for control from measured positions, because
 it is the only entry here that publishes trained agents, so you can run one
-before you have trained anything. Nicklas Hansen, Hao Su and Xiaolong Wang
+before you have trained anything.
+
+Size xs to m across its published checkpoints, a big card for one task and a
+workstation for the largest, MIT.
+
+Nicklas Hansen, Hao Su and Xiaolong Wang
 published [TD-MPC2: Scalable, Robust World Models for Continuous
 Control](https://arxiv.org/abs/2310.16828). It has no decoder at all. Its learned
 code is trained only to be good at predicting the score and the value of a
 state, never at drawing the picture back.
 
+The one idea it is built on is that the code only has to be good enough to
+predict what you will get, not good enough to draw. The paper states it directly:
+"rather than explicitly modeling dynamics using reconstruction, TD-MPC2 aims to
+learn a maximally useful model: a model that accurately predicts outcomes
+(returns) conditioned on a sequence of actions". The word "outcomes" is doing the
+work. A picture is not an outcome. The score is.
+
+What that changes inside is that something has to replace the job the decoder was
+doing, which was stopping the encoder from giving a useless answer. With no
+picture to draw back, an encoder that returned all zeros would make every
+prediction perfectly correct and tell you nothing, so three pulls hold the code
+in place instead. The code must predict the step's reward. It must predict the
+value, meaning the total score still to come, which is learned by the
+temporal-difference method the "TD" in the name refers to: each guess is
+corrected towards the reward just received plus the next guess. And the predicted
+next code must match the code the encoder itself produces for the picture that
+actually arrived, with the encoder's answer held fixed during that comparison so
+that the two sides cannot agree by both going blank. On top of those three, the
+code is pushed through a step the paper calls SimNorm, which squeezes it in small
+groups so that its size stays bounded, and the paper says this "naturally biases
+the representation towards sparsity" and stops the growing values that broke the
+first version of TD-MPC.
+
+On the acting side it plans before every move, like PlaNet, but with two
+differences that matter. The search only looks a short stretch of steps ahead,
+and the learned value is then used to score whatever state the stretch ended in,
+so a short search can still prefer an action that only pays off much later. And
+some of the candidate action sequences are proposed by a learned policy rather
+than drawn at random, so the search starts from plausible actions. That is a
+deliberate middle position between PlaNet, which has no policy and searches from
+nothing, and DreamerV3, which has a policy and does not search: here there is a
+policy and it is not trusted to act by itself.
+
+What dropping the decoder buys is that none of the code is spent on how things
+look, so a small detail that decides the task is not competing with the
+tablecloth. What it costs is twofold. You cannot look at anything, so when the
+plans come out wrong you have reward curves and no imagined video, and in
+practice this is the difference from DreamerV3 you notice first. And the code is
+now defined relative to this task's reward, so changing what you reward changes
+what the code ought to contain, which is why the reusable thing here is a
+checkpoint for a task they trained on and not a general description of your
+table. On a robot arm the case where picking this rather than DreamerV3 changes
+the result is a measured one: joint angles and object poses, a reward you can
+compute, a task like picking a cube in ManiSkill2. There is a published
+checkpoint, so you watch the arm do it on the first day. Point a camera at a
+cluttered table instead, and the decoder you gave up was doing work you would
+miss.
+
 You would choose it over DreamerV3 when nothing in your task needs a picture
-drawn. Dropping the decoder removes the failure where the model spends its effort on the colour of the table and misses a screw. The
-practical reason is stronger than that one. Its authors publish more than three
-hundred [trained checkpoints](https://www.tdmpc2.com/models) across four task
+drawn, and the practical reason is stronger than the architectural one. Its
+authors publish more than three hundred
+[trained checkpoints](https://www.tdmpc2.com/models) across four task
 collections, including arm tasks from Meta-World and ManiSkill2, and the
 repository states that one set of settings covers all 104 of its continuous
 control tasks.
 
-What it costs you is memory, and the decoder you no longer have. Its README is
-specific: a graphics card and at least 12 GB of system memory for single-task
-training, at least 8 GB of graphics memory recommended, 24 GB of graphics memory
-to train the largest model, and 128 GB of system memory to train on the published
-80-task dataset. The checkpoints come in sizes of 1, 5, 19, 48 and 317 million
-parameters, where every single-task checkpoint is the 5 million one. Its licence
-is MIT. What most often goes wrong is the installation of the task collections
-rather than of TD-MPC2 itself, and the README says so about Meta-World, which
-needs MuJoCo 2.1.0 and an old version of `gym`.
+What it costs you beyond that is the installation of the task collections rather
+than of TD-MPC2 itself, and the README says so about Meta-World, which
+needs MuJoCo 2.1.0 and an old version of `gym`. One number in that README is not
+covered by the bands above and will catch you: training on the published 80-task
+dataset asks for 128 GB of ordinary system memory, which is a different machine
+rather than a bigger graphics card.
 
 The library is the repository, and a downloaded checkpoint is evaluated in one
 command:
@@ -483,7 +709,13 @@ These models are **worth betting on** because of the constraint this page keeps
 running into. V-JEPA 2
 attacks that by learning its codes from a large amount of internet video before
 your robot has moved at all, and that is the direction the field is going, because
-video is the one kind of data that is plentiful. Meta published it in 2025 at
+video is the one kind of data that is plentiful.
+
+Size m for the published ViT-L encoder and larger for the ViT-g the
+action-conditioned model is built on, a laptop for the published planning
+notebook, MIT.
+
+Meta published it in 2025 at
 [facebookresearch/vjepa2](https://github.com/facebookresearch/vjepa2) under the
 MIT licence, read from its licence file.
 
@@ -493,21 +725,59 @@ V-JEPA 2-AC is the action-conditioned version, post-trained from the larger
 V-JEPA 2 encoder on robot recordings, and its predictor takes the code, the action
 and the arm's own pose.
 
+The one idea these are built on is in the four letters JEPA, which stand for
+joint-embedding predictive architecture. It means the prediction is made and
+judged entirely between codes, and never against pixels. Training hides part of a
+video and asks the model to predict the hidden part, which sounds like the video
+prediction models of the [previous page](01_video-prediction-models.md), except
+that what it has to produce is not the missing pixels. It is the code that the
+model's own encoder gives for those missing pixels. A second copy of the encoder
+looks at the hidden piece and reports a code, and the predictor's job is to
+produce that code without having seen the piece. There is no decoder anywhere in
+the design, not even during training.
+
+That is a bolder version of the problem TD-MPC2 faced. If the thing being
+predicted is produced by the thing being trained, then both halves can agree to
+report nothing and the training looks perfect. V-JEPA 2 holds the target copy of
+the encoder fixed while the predictor is trained against it, which is the same
+defence as TD-MPC2's held-fixed next code. The payoff for accepting that risk is
+that nothing in this training needs a label, a reward or an action. It needs
+video, and video exists in a quantity no robot can approach.
+
+The second stage is where it becomes a world model for an arm, and what it does
+is narrow. The video encoder is frozen, and a new predictor is trained on
+unlabelled robot video from the Droid dataset. That predictor reads the code, the
+action and the gripper's own pose, and its attention is block-causal, which means
+every patch of a step may look at that step's action and pose and at everything
+from earlier steps, and at nothing later. So a code and an action go in and the
+next code comes out, exactly as this page describes, but the part that decided
+what a code means never saw your robot and was never told what your task is.
+
+What that buys is a model that already knows objects fall, shapes persist and
+hands push things, before your arm has moved once, and a planner you can run
+without a graphics card. What it costs is the missing half of the agent. The
+repository publishes the encoders and the predictor and no reward model, critic
+or policy, so the practising described in
+[section 3](#practising-inside-the-model) is not available here at all. Planning
+is instead done by goal picture: you photograph what you want, the planner
+searches for actions whose predicted code lands closest to the goal's code, and
+anything a photograph cannot express cannot be asked for. "Press until it
+resists" has no goal picture. On a robot arm the situation where this rather than
+DreamerV3 changes the result is a week with no dataset: V-JEPA 2-AC can move a
+cube between two photographed places on the first day, while DreamerV3 is still
+collecting. Give it instead a task defined by a force or by a rule rather than by
+how the table should look, and there is no way to tell it.
+
 You would choose it over DreamerV3 when you cannot record enough data yourself.
 DreamerV3 starts from nothing and learns your task from your robot's own tries,
 which is why it needs hours of them. V-JEPA 2-AC arrives already knowing how
 objects move, and Meta's own description is that it solves manipulation tasks
 without collecting data in your environment and without calibration.
 
-What it costs you is size and the missing pieces. The published V-JEPA 2 encoder
-on Hugging Face, [facebook/vjepa2-vitl-fpc64-256](https://huggingface.co/facebook/vjepa2-vitl-fpc64-256),
-holds about 326 million parameters according to the file metadata Hugging Face
-reports for it, and the action-conditioned checkpoint was trained from the larger
-ViT-g encoder. The repository publishes the encoders and the predictor, and no
-reward model, critic or policy for control, so the practising described in
-[section 3](#practising-inside-the-model) is not available here at all. What this
-model supports is planning, in the PlaNet sense of searching over action
-sequences at every step.
+The encoder is published on Hugging Face as
+[facebook/vjepa2-vitl-fpc64-256](https://huggingface.co/facebook/vjepa2-vitl-fpc64-256),
+and the action-conditioned checkpoint was trained from the larger ViT-g encoder,
+which is the one the code sample below downloads.
 
 The library is PyTorch Hub for the weights, and the repository for everything
 else. Two lines fetch the action-conditioned world model:
@@ -566,6 +836,7 @@ it is written down.
 
 Finally, a case that sends you off this page. If a few measured numbers describe
 your task, and you can measure them, a learned code is not worth its cost.
+
 ---
 
 ## 6. Where to read next

@@ -239,10 +239,54 @@ column says so, because that is the detail people get wrong most often.
 ### 5.1 Depth Anything V2
 
 Depth Anything V2 is **most used in 2026** for relative depth from one photo, and
-it is where most robot projects start. It was published in June 2024 as [Depth
-Anything V2](https://arxiv.org/abs/2406.09414), and section 4 described how it was
-trained. Its small size has about 24.8 million parameters, little enough to run
-without a graphics card.
+it is where most robot projects start.
+
+Size s in the small checkpoint, a laptop, Apache-2.0 for the code, Apache-2.0 for
+the small weights and CC BY-NC 4.0 for the base and larger ones.
+
+It was published in June 2024 as [Depth Anything
+V2](https://arxiv.org/abs/2406.09414), and section 4 described how it was trained.
+
+The one idea is that the model measures nothing at all. It has learned what the
+world usually looks like, and it returns the depth that best fits the picture in
+front of it. What V2 added to that idea is about where the learning comes from.
+Real photos paired with measured depth are noisy, and a measuring device misses
+exactly the surfaces that matter to an arm, such as thin edges, shiny metal and
+glass. So the authors trained their teacher model only on computer-made pictures,
+whose depth is exact in every pixel, then had that teacher label millions of
+ordinary unlabelled photos, and trained the model you download on those
+teacher-labelled photos. The computer-made pictures supply exactness and the real
+photos carry it over to real scenes.
+
+Inside, it is the encoder and decoder of [section 3](#3-how-it-works-inside), and
+its encoder is a DINOv2 vision transformer, the same backbone the [image
+classification](01_image-classification.md#53-dinov2-with-a-small-head) page
+recommends for frozen features. The part worth understanding is what the decoder
+is asked to produce. It is not a distance. It is a number that rises as the
+distance falls, and the training treats any multiplication and addition of that
+number as the same answer, so the model is never told what the units are. That
+freedom is what lets one model learn from many datasets whose units disagree, and
+it is the whole reason a value of 8 means "nearer than 4" and nothing more.
+Nothing in this network produces metres, and no amount of further training would,
+because the quantity it was asked for has no units.
+
+What this buys is depth from any photo, with no calibration, no second camera, no
+sensor and no light of its own, and a value in every pixel, including on surfaces
+where a depth camera returns nothing. What it costs is that the answer is a guess,
+and a guess fails in ways a measurement never does. Appearance is all this model
+has, so a photograph of a scene is given the depth of the scene depicted rather
+than of the flat paper, which means a poster, a screen or a printed label in the
+workspace is read as the space it shows. A surface the model has no clues about
+gets whatever usually fits a surface in that position.
+
+On an arm the difference from the stereo model of section 5.4 is not that one is
+more accurate. The two fail in different places. A blank white panel or a plain
+plastic tray gets a smooth, confident surface from this model, while the stereo
+matcher has nothing to match there and returns an unusable patch. A printed box
+lid is the reverse: this model follows the picture printed on the lid, and the
+stereo pair measures the flat lid correctly. That is why a cell that must not drop
+anything measures the distance and uses a monocular model only for the places the
+measurement missed.
 
 The obvious alternative among the monocular models is Marigold, which starts from
 an image-generating model. Depth Anything V2 is the one to pick because it is far
@@ -250,13 +294,11 @@ smaller, far faster, and carried by `transformers`, so one line loads it. Pick i
 when you have one colour camera and you need to know which thing is in front, not
 how many millimetres away it is.
 
-What it costs you is the units. The output is relative, so a value of 8 means
-"nearer than 4" and nothing more. The licence costs you something too: the small
-weights are Apache-2.0, but the base and larger weights are CC BY-NC 4.0, a
-Creative Commons licence that forbids commercial use, and the Apache-2.0 badge on
-the GitHub repository covers the code rather than those weights. The other thing
-that goes wrong often is trusting the depth at the edge of an object, which is
-where a gripper closes and where these models are least accurate.
+What it costs you is the units, and the one thing to watch in the licence is that
+the Apache-2.0 badge on the GitHub repository covers the code rather than the
+base and larger weights. The other thing that goes wrong often is trusting the
+depth at the edge of an object, which is where a gripper closes and where these
+models are least accurate.
 
 The library is `transformers`, which has a pipeline for depth.
 
@@ -284,11 +326,53 @@ the known height of the table, or use one of the metric models below.
 
 Depth Anything 3 is **worth betting on**, because it is where this family is
 going: one network that handles one photo or many, and that comes in a metric size
-whose weights you are allowed to ship. ByteDance published it in November 2025, as
-[Depth Anything 3: Recovering the Visual Space from Any
-Views](https://arxiv.org/abs/2511.10647). The checkpoint to know about is
-`DA3METRIC-LARGE`, which is about 0.35 billion parameters, gives metric depth, and
-is Apache-2.0 according to the project's own model card.
+whose weights you are allowed to ship.
+
+Size m for `DA3METRIC-LARGE`, a small card, Apache-2.0 for the code and for the
+Small, Base, `DA3METRIC-LARGE` and `DA3MONO-LARGE` weights, CC BY-NC 4.0 for the
+Large, Giant and Nested ones.
+
+ByteDance published it in November 2025, as [Depth Anything 3: Recovering the
+Visual Space from Any Views](https://arxiv.org/abs/2511.10647). The checkpoint to
+know about is `DA3METRIC-LARGE`, which gives metric depth and is Apache-2.0
+according to the project's own model card.
+
+The one idea is to answer with one shape of prediction, whatever number of
+pictures you hand over, and to use as little special machinery as possible to do
+it. The report states two findings behind that. A plain transformer encoder of the
+DINO kind is enough as the backbone, with nothing added for depth in particular.
+And a single prediction target removes the need to train several heads for several
+different tasks.
+
+What changes inside, compared with Depth Anything V2 above, is that the pictures
+are not processed one at a time. V2 takes one photo and returns one depth map, and
+if you give it two photos of the same bin you get two maps whose scales have
+nothing to do with one another. Depth Anything 3 passes every picture you hand it
+through the same encoder together, and the attention step runs across the patches
+of all the pictures at once, so each picture's answer can use what the others show.
+The single target is the second change. For each pixel the model predicts how far
+along a ray the surface lies, together with the direction of that ray, which the
+report calls a depth-ray target. That is enough to place the pixel in space, and
+because the rays from several pictures have to agree on one scene, where each
+camera stood falls out of the same prediction rather than being computed by a
+separate network.
+
+What this buys is one geometry that several views agree on, the camera positions
+for free, and checkpoints that give metres and may be shipped. What it costs is
+more than V2 in every direction: a graphics card, the project's own package rather
+than `transformers`, memory that grows with the number of pictures you pass at
+once, and a scale that is still not in metres until you apply the conversion
+below.
+
+On an arm the difference shows up as soon as there are two cameras that are not a
+stereo pair, which is the usual arrangement: one fixed above the cell and one on
+the wrist. V2 gives you two depth maps with two unknown scales, and no arithmetic
+turns them into one point cloud. Depth Anything 3 given both pictures returns
+depth for both in one frame, plus where the two cameras were, which is exactly what
+merging needs. Against Prompt Depth Anything in the next sub-section, the trade is
+the other way: if you already own a depth camera, that model takes its metres from
+the sensor, where this one has learned its metres and can be wrong about them on a
+scene unlike its training.
 
 The obvious alternative for permissive metric depth is MoGe-2, from Microsoft,
 which is MIT for both code and weights. This repository's survey in [models that
@@ -297,12 +381,9 @@ names those two as the strongest metric models with genuinely permissive weights
 Pick Depth Anything 3 when you also want the multi-view ability, because the same
 model estimates camera positions from several photos.
 
-What it costs you starts with the split licence, which is the trap in this family.
-Small, Base, `DA3METRIC-LARGE` and `DA3MONO-LARGE` are Apache-2.0, while Large,
-Giant and the Nested models are CC BY-NC 4.0 and therefore not shippable. It also
-costs you a graphics card, since the metric model is about thirteen times the size
-of Depth Anything V2 Small, and it is not in `transformers`, so you install the
-project's own package. The thing that most often goes wrong is the metric output
+The split licence is the trap in this family, because the largest checkpoints are
+the ones you may not ship, and people reach for the largest by habit. The thing
+that most often goes wrong is the metric output
 itself, because it is not in metres until you scale it. The project's own answers
 page gives the conversion, `metric_depth = focal * net_output / 300`, where
 `focal` is the focal length in pixels.
@@ -338,9 +419,43 @@ between a learned model and a depth sensor by using both, and that is the shape
 the problem has on a real arm. The paper is [Prompting Depth Anything for 4K
 Resolution Accurate Metric Depth Estimation](https://arxiv.org/abs/2412.14015),
 from December 2024, and its abstract reports that the result helps "generalized
-robotic grasping". You give the model a colour photo and a coarse depth image, and
-the sensor's reading steers the model to a sharp depth map in metres. The small
-checkpoint has about 25.1 million parameters and is Apache-2.0.
+robotic grasping".
+
+Size s, a small card, Apache-2.0 for the code and the weights.
+
+You give the model a colour photo and a coarse depth image, and the sensor's
+reading steers the model to a sharp depth map in metres.
+
+The one idea is in the name. The sensor's coarse depth is handed to the model as a
+**prompt**, which here means an extra input that steers an existing model rather
+than a new model trained for a new job. The abstract puts it as using a low-cost
+laser depth sensor as the prompt that guides the Depth Anything model towards an
+accurate answer in metres.
+
+What changes inside, compared with section 5.1, is only where that extra input
+enters. It is not pasted over the answer at the end, and it is not used to scale
+the answer afterwards. The abstract describes a prompt fusion design that brings
+the sensor's depth into the depth decoder at several scales, so the measured
+metres influence the answer at every level of detail, from the coarse layout of
+the scene down to the fine edges. Compare that with the alternative of fitting a
+section 5.1 output to a few measured points: that fit is one multiplication and
+one addition applied to the whole picture, so an error that varies from one part
+of the scene to another survives it untouched.
+
+What this buys is the sensor's scale together with the model's sharpness, at a
+resolution far above what the sensor itself produces. What it costs is that the
+model is now only as metric as the sensor. With no depth image to hand it falls
+back to relative monocular depth, and you are back in section 5.1 with its units
+problem.
+
+On an arm the difference shows up at the rim of a thin-walled mug. The sensor
+measures the table and the body of the mug in metres but smears the rim across a
+wide band, and the monocular model of section 5.1 draws the rim sharply with no
+idea how far away it is. The gripper closes on the rim, so neither answer is
+enough, and fitting the monocular output to a few measured points does not help,
+because one correction for the whole picture cannot fix a rim whose error differs
+from the table's. This model's answer at the rim is steered by the measurements
+around it, which is the case it was built for.
 
 The obvious alternative is the monocular route of section 5.1, followed by fitting
 the result to a few measured points. That fitting is one correction for the whole
@@ -349,12 +464,9 @@ Anything uses the sensor's measurements everywhere at once, so pick it whenever 
 already own a depth camera. Against the camera alone, it gives you the camera's
 metres with the model's sharp object edges.
 
-What it costs you is the sensor, because with no depth image to hand the model
-falls back to relative monocular depth and you are back in section 5.1. It also
-costs you a graphics card to run at a useful frame rate. The thing that most often
-goes wrong is the units in your own code, because the model returns metres and
-depth cameras usually report millimetres, so a factor of a thousand is easy to
-lose.
+The thing that most often goes wrong is the units in your own code, because the
+model returns metres and depth cameras usually report millimetres, so a factor of
+a thousand is easy to lose.
 
 The library is `transformers`, and the call differs from section 5.1 by one
 argument.
@@ -391,11 +503,55 @@ reach for section 5.6.
 ### 5.4 RAFT-Stereo
 
 RAFT-Stereo is **most used in 2026** as the first stereo model to try, and this
-repository's survey calls it the sensible default. It came from Princeton
-University in September 2021, as [RAFT-Stereo: Multilevel Recurrent Field
-Transforms for Stereo Matching](https://arxiv.org/abs/2109.07547), and it works
-the way section 3 described, improving its guess of the shift for every pixel over
-many small rounds. Its licence is MIT.
+repository's survey calls it the sensible default.
+
+Size not stated, a small card, MIT for the code and the weights.
+
+It came from Princeton University in September 2021, as [RAFT-Stereo: Multilevel
+Recurrent Field Transforms for Stereo
+Matching](https://arxiv.org/abs/2109.07547), and it works the way section 3
+described, improving its guess of the shift for every pixel over many small
+rounds.
+
+The one idea is the opposite of section 5.1's. This model measures instead of
+guessing, and the only things it learned are how to compare two patches and how to
+improve a guess. Nothing inside it has any opinion about how big a mug usually is
+or where the floor meets the wall, and that is deliberate: everything that
+determines the distance comes from the two pictures and from the gap you measured
+between the cameras.
+
+Inside, the two pictures are first lined up, so that whatever appears in a row of
+the left picture appears in the same row of the right one. One encoder then
+describes the patches of both pictures, and the model builds a large table of how
+well each left patch matches the right patches along its row. Because of the
+lining up, that search runs in one direction only, which is the difference between
+this model and RAFT, the motion model on the [tracking and
+motion](03_tracking-and-motion.md#56-raft-for-motion-at-every-pixel) page, where
+the same machinery has to search in two. A small network with a memory of its own
+previous answer then updates the whole field of shifts many times over, and in
+each round it reads the match scores near where the current guess points and
+nudges every shift a little. "Multilevel" in the title means those readings happen
+at several coarsenesses of the table at once, so a large shift is found on the
+coarse version and sharpened on the fine one. Where the monocular model of section
+5.1 ends with a number that has no units, this one ends with a shift in pixels,
+and step 4 of section 3 turns that shift into metres using the measured gap and
+the focal length.
+
+What this buys is metres with no scale to fit, and an accuracy you can improve by
+mounting the cameras further apart. What it costs is that it can only measure what
+both cameras can see and what carries distinguishing texture. A blank surface
+gives the matcher nothing to compare, and the learned cleanup step then fills that
+area by smoothing inwards from its edges, which looks plausible and is not a
+measurement. A pixel visible to one camera only has no match at all. And since the
+distance is a fixed number divided by the shift, one pixel of uncertainty in the
+shift is a small error on a near object and a large one on a far one.
+
+On an arm this is the model to pick when the grasp point is on a textured surface
+and the number has to be right: a printed cardboard box gives millimetres here and
+only an ordering from section 5.1. It is the model to avoid when the surfaces are
+blank or clear, because the region the matcher cannot measure is filled in by the
+cleanup step and looks no different from a measured region, whereas the monocular
+model at least fails smoothly and in a way you can test against a known height.
 
 The obvious alternative is OpenCV's `StereoSGBM`, which matches the two pictures
 with a written algorithm and needs no model and no graphics card. That function is
@@ -441,8 +597,44 @@ unlike anything in its training set, with no retraining from you. NVIDIA publish
 it in January 2025, as [FoundationStereo: Zero-Shot Stereo
 Matching](https://arxiv.org/abs/2501.09898), and its repository records a best
 paper nomination at the 2025 Computer Vision and Pattern Recognition conference
-and first place on the Middlebury and ETH3D leaderboards. It was trained on the
-project's own computer-made scenes, about a million of them.
+and first place on the Middlebury and ETH3D leaderboards.
+
+Size not stated, a big card from NVIDIA, a non-commercial NVIDIA research licence
+on the weights.
+
+The one idea is to give a stereo matcher what the monocular models know. Matching
+fails exactly where there is nothing distinctive to match, and that is the hole in
+section 5.4. A monocular model has an opinion about a blank surface anyway,
+because it learned what such surfaces usually are, so this model feeds that
+opinion into the matching rather than choosing between the two routes.
+
+Inside, it follows the same four steps as RAFT-Stereo, with two changes. The
+abstract calls the first a side-tuning feature backbone. A vision model trained on
+single pictures is kept as it is, and a smaller network trained alongside it turns
+that model's output into the patch descriptions that go into the match table, so a
+patch is already described in terms of what a monocular model knows about that
+kind of surface before any matching happens. The second change is in the cleanup:
+the abstract describes long-range context reasoning for filtering the match table,
+meaning the cleanup considers the table as a whole rather than each small
+neighbourhood on its own. The training set is its own, about a million
+computer-made stereo pairs, passed through an automatic filter that drops the
+ambiguous ones.
+
+What this buys is a stereo model that works on scenes unlike its training with no
+retraining from you, and it buys it precisely in the places where RAFT-Stereo's
+pure matching has nothing to go on. What it costs is work per frame, because the
+model now carries a monocular backbone as well as a matcher, and it costs the
+licence and the hardware described below.
+
+On an arm the difference shows up over a bin of matte black parts under flat
+light. RAFT-Stereo can barely tell one patch of that bin from the next, so its
+cleanup smooths the whole area inwards from the edges, while FoundationStereo's
+patch descriptions carry a monocular model's view of the surface and the parts
+keep their shape. Its repository also reports that it runs on the monochrome and
+infrared pair an Intel RealSense D4-series camera produces, so a depth camera you
+already own becomes the stereo rig for a better model. If the cell is going to be
+sold, none of that is available to you, and the answer is RAFT-Stereo with more
+light or a projected pattern to add texture.
 
 The obvious alternative is RAFT-Stereo from section 5.4. FoundationStereo is
 stronger on scenes it has never seen, and its repository reports that it works on
@@ -478,13 +670,53 @@ distance between the two cameras in metres.
 ### 5.6 ReMake
 
 ReMake is **worth betting on** for clear and shiny objects, because it is the
-first recent depth completion model with a licence you can use, and because it
-follows the same recipe as the worked example in section 6. It accompanies a 2026
-paper in *IEEE Robotics and Automation Letters*, "Rethinking Transparent Object
-Grasping: Depth Completion With Monocular Depth Estimation and Instance Mask", and
-its [repository](https://github.com/ChengYaofeng/ReMake) carries an MIT licence
-file. It takes a monocular depth estimate and a mask of the object, and fills the
+first recent depth completion model with a licence you can use.
+
+Size not stated, a big card, MIT for the code; the checkpoint comes from a
+file-sharing link rather than a model hub.
+
+It accompanies a 2026 paper in *IEEE Robotics and Automation Letters*,
+"Rethinking Transparent Object Grasping: Depth Completion With Monocular Depth
+Estimation and Instance Mask", and its
+[repository](https://github.com/ChengYaofeng/ReMake) carries an MIT licence file.
+It takes a monocular depth estimate and a mask of the object, and fills the
 camera's missing depth inside that mask.
+
+The one idea is to tell the network which pixels are the problem instead of making
+it work that out. The project's own page makes the argument: earlier completion
+models were handed the colour photo and the broken depth together and had to learn
+by themselves which depth values to trust, and because the mixture of missing,
+wrong and valid values changes completely with the light and the surface, a model
+that learned that mixture on one dataset does badly on a real cell. The instance
+mask marks the transparent object explicitly, so training only ever asks the model
+to produce depth where the depth is genuinely unreliable.
+
+Inside, three inputs are encoded separately and then fused, which is the part that
+differs from every other model on this page. The colour picture with the mask
+attached to it goes through a transformer. The relative depth map from a monocular
+model, which is the kind of output section 5.1 produces, is encoded on its own.
+The camera's own depth image is encoded on its own as well. The three sets of
+features are fused and decoded into one complete depth map, and the mask is used a
+second time afterwards to cut the object's points out of the cloud. Each input has
+a clear job: the camera's depth carries the metres of everything around the hole,
+the relative map carries how the object sits against its surroundings, and the
+mask says where to replace rather than trust.
+
+What this buys is a filled surface in the sensor's own metres, and the authors'
+claim for it is generalisation to real scenes rather than a better score on a
+benchmark. What it costs is a second model in front of this one, because the mask
+has to come from somewhere, and that model's mistakes become depth mistakes with
+nothing downstream to catch them. The filled surface is still produced by a
+network, so it is a plausible surface and not a measured one.
+
+On an arm the choice is between this and Prompt Depth Anything from section 5.3,
+and it turns on how your sensor fails. Where the sensor returns nothing on the
+glass, section 5.3 needs no mask, needs no segmentation model and sharpens the
+whole picture at once, which is less work for the same result. Where the sensor
+returns a confident wrong value on the glass, because light bounced off it into
+the camera, section 5.3 has nothing that marks that value as untrustworthy and
+takes it as a measurement, and that is exactly the failure ReMake's mask was
+introduced to prevent.
 
 The obvious alternative is ClearGrasp, which is still the paper everyone cites for
 this problem and which was built from computer-made pictures of glass, in the way
@@ -496,13 +728,12 @@ shiny
 objects](../../../02_perception/02_object-perception/04_models-that-find.md#17-transparent-and-shiny-objects)
 reaches the same conclusion.
 
-What it costs you is the segmentation step, because you supply the mask yourself
-from a model such as the ones on the
-[segmentation](../02_most-used/02_segmentation.md) page. It costs you a graphics
-card, and the project's checkpoint comes from a file-sharing link rather than
-Hugging Face, so your build cannot simply download it. The thing that most often
-goes wrong is this: the filled surface is invented, so a glass
-lying on its side can be filled in as a glass standing up.
+You supply the mask yourself, from a model such as the ones on the
+[segmentation](../02_most-used/02_segmentation.md) page, and the project's
+checkpoint comes from a file-sharing link rather than Hugging Face, so your build
+cannot simply download it. The thing that most often goes wrong is that the filled
+surface is invented, so a glass lying on its side can be filled in as a glass
+standing up.
 
 There is no package and no Python entry point. You clone the repository, place
 its checkpoint, and run its scripts.
@@ -544,7 +775,9 @@ Six things change that.
   on this page.
 
 Whichever you choose, do not let a learned depth value be the last word before the
-gripper closes. ---
+gripper closes.
+
+---
 
 ## 6. Where to read next
 

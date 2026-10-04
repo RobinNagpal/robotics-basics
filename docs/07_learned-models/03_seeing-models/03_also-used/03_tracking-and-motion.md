@@ -224,9 +224,12 @@ explain.
 ### 5.1 ByteTrack, for several objects at once
 
 ByteTrack is the box tracker **most used in 2026**, because nearly every tracking
-library ships it and it needs nothing from you except detections. Yifu Zhang and
-eight colleagues published it in October 2021, and its one idea is in the title of
-the paper, [Multi-Object Tracking by Associating Every Detection
+library ships it and it needs nothing from you except detections.
+
+No weights and therefore no size, a laptop, MIT for the original code.
+
+Yifu Zhang and eight colleagues published it in October 2021, and its one idea is
+in the title of the paper, [Multi-Object Tracking by Associating Every Detection
 Box](https://arxiv.org/abs/2110.06864). Earlier trackers threw away the boxes a
 detector was unsure about. ByteTrack instead matches the confident boxes to its
 existing tracks first, and then offers the unsure boxes a second chance against
@@ -238,6 +241,45 @@ one Kalman filter per track, a measure of overlap between two boxes, and an
 assignment step, which is the tracking-by-detection recipe of
 [section 3](#3-how-it-works-inside) written out in a few hundred lines of ordinary
 code. All of the learning happens in the detector you hand to it.
+
+The prediction step is worth spelling out, because it is the part people assume
+must be learned. Each track carries a handful of numbers: where its box is, how
+large it is, and how fast each of those is changing. To predict, the tracker adds
+the speed to the position, which assumes the object carries on as it was. When a
+box is then matched to that track, the filter does not throw its prediction away
+and take the measurement instead. It settles somewhere between the two, and how
+far it leans towards the measurement depends on how uncertain each of them is.
+That weighing of a prediction against a measurement is the whole of the Kalman
+filter, and it is arithmetic on a few numbers per object, with no network, no
+training and no pixels.
+
+The assignment step is the other half. Once every track has a predicted box, the
+tracker holds two lists, the predicted boxes and this frame's detections, and it
+has to pair them up. It builds a table of the cost of every possible pair, where
+the cost is simply how little the two boxes overlap, and then it picks the set of
+pairs whose total cost is smallest. Taking the best single pair first and working
+downwards is not the same thing and gives worse answers, so the usual method
+solves the whole table at once, as [assignment and
+matching](../../../06_programming-techniques/03_searching-and-matching/02_most-used/03_assignment-and-matching.md)
+explains. ByteTrack's own contribution is to run that entire step twice: once with
+the confident detections, and then once more with the unsure ones against whatever
+tracks are still unmatched.
+
+Set that against SAM 2 and SAM 3 below, which do hold weights and do look at
+pixels. ByteTrack never sees the picture at all. Its input is four numbers and a
+score for each box, so it costs almost nothing to run, and it fails in one
+specific way: when two objects' boxes overlap each other more than each overlaps
+its own prediction, nothing in the method can tell the two objects apart and the
+numbers swap. Closing that gap means adding a learned description of what is
+inside each box, which is what BoT-SORT does, and that is the point at which this
+route stops being free.
+
+On an arm the difference from SAM 2 runs in both directions. ByteTrack numbers
+every object its detector finds without anybody telling it that those objects
+exist, which SAM 2 cannot do, so a belt carrying a dozen mixed parts is a
+ByteTrack job. But an object that leaves the picture and comes back is lost here
+after a few frames, because a prediction of position is all the tracker has to
+hold on to, while SAM 2 recognises the object again from how it looks.
 
 The obvious alternative is BoT-SORT, which adds two things to the same recipe: it
 corrects for a camera that moves, and it compares an appearance embedding for each
@@ -294,11 +336,43 @@ belt.
 ### 5.2 SORT, the one that explains the others
 
 SORT is **historical**, and it is here because reading it is the fastest way to
-understand every tracker above. Alex Bewley and four colleagues published
+understand every tracker above.
+
+No weights and therefore no size, a laptop, GPL-3.0 for the original code and
+Apache-2.0 for the rewrite in the `trackers` package.
+
+Alex Bewley and four colleagues published
 [Simple Online and Realtime Tracking](https://arxiv.org/abs/1602.00763) in 2016,
 and it is a Kalman filter for each track, overlap as the cost between a predicted
 box and a new one, and the Hungarian algorithm to choose the assignment. That is
 the whole method, and it holds no learned weights either.
+
+The numbers its filter keeps are worth knowing, because they are an assumption
+about the world. SORT tracks the centre of the box, the area of the box and the
+ratio of its width to its height, together with the rate at which the first three
+of those are changing, and it treats the ratio as fixed. So the object it expects
+is one that moves smoothly and whose apparent size changes smoothly, which
+describes a part sliding along a belt and does not describe a part tumbling out of
+a chute. ByteTrack inherits this model unchanged, so the assumption is not
+something ByteTrack fixed.
+
+The one real difference from ByteTrack is the number of assignment passes. SORT
+runs the matching once, over the detections the detector was confident about, and
+a track that receives no box is deleted almost at once. A partly hidden object
+produces exactly the unsure detection that this single pass ignores, so its track
+dies and the object comes back as a new object with a new number. That difference,
+rather than the filter or the matching, is nearly all there is between the two
+programs.
+
+What SORT buys is a method you can read in one sitting, and what it costs is every
+case where boxes are missed or uncertain. The learned relative, DeepSORT, adds a
+network that describes the contents of each box, so two objects that cross are
+less likely to exchange numbers; that is the step from this route into one that
+holds weights, and BoT-SORT in section 5.1 is where that step leads. On an arm the
+practical test is simple. If nothing in your scene ever passes in front of
+anything else, SORT and ByteTrack agree and SORT is the one you can read. The
+first time one part passes behind another, SORT renumbers it, and any count of
+parts you built on those numbers is wrong.
 
 You would not pick SORT over ByteTrack for a working robot, because ByteTrack is
 the same program with the second pass added and it keeps numbers through brief
@@ -329,12 +403,47 @@ screw.
 ### 5.3 SAM 2, for following one object you pointed at
 
 SAM 2 is **most used in 2026** whenever a person or a program can point at the
-object once instead of training a detector for it. Meta released it in July 2024,
-with the paper [SAM 2: Segment Anything in Images and
-Videos](https://arxiv.org/abs/2408.00714). You give it a click, a box or a mask on
-one frame, and it carries a memory of that object through the rest of the video,
-returning the outline in every later frame, through partial hiding and through
-changes of shape.
+object once instead of training a detector for it.
+
+Size s to m across its four checkpoints, a small card, Apache-2.0 for the code and
+the weights.
+
+Meta released it in July 2024, with the paper [SAM 2: Segment Anything in Images
+and Videos](https://arxiv.org/abs/2408.00714). You give it a click, a box or a
+mask on one frame, and it carries a memory of that object through the rest of the
+video, returning the outline in every later frame, through partial hiding and
+through changes of shape.
+
+The one idea is a memory. The first SAM segmented a single picture from a prompt,
+which is a click, a box or a rough mask saying which thing you mean. SAM 2 keeps
+what it has already seen, so a prompt given once on one frame goes on working on
+every frame after it. What carries the object's identity forward is therefore a
+record of how the object looked, and not a prediction of where it was going.
+
+Inside, each frame is described once by an image encoder. A second network, the
+memory encoder, takes the outline the model produced for a frame and turns it into
+features, which are stored in a memory holding the recent frames together with the
+frames you prompted. Before the decoder draws this frame's outline, a memory
+attention step lets the current frame's description look at everything in that
+memory. Put that beside ByteTrack in section 5.1 and the two are opposites.
+ByteTrack holds a position and a speed and never looks at the picture, while SAM 2
+holds appearance and never predicts motion. One consequence follows immediately:
+SAM 2 does not care whether the object moves predictably, and ByteTrack does,
+while SAM 2 needs every frame in between and ByteTrack does not.
+
+What this buys is an outline that survives changes of shape and brief hiding, from
+one click, with nothing trained. What it costs is a recording with no gaps, a
+memory that grows as the video runs, and an output with no confidence number in
+it, so nothing in the model's answer lets you refuse a bad frame. It also costs
+you one prompt per object, and there is nothing in SAM 2 that notices an object
+arriving later.
+
+On an arm the difference shows up in who or what decides that an object exists. A
+person who puts an unfamiliar part into the cell and touches it on a screen gets a
+tracked outline for the rest of the operation with no training at all, and no
+detector could have been trained for a part nobody had seen. A belt delivering a
+dozen mixed parts a minute is the opposite case, because somebody would have to
+click a dozen times a minute.
 
 The obvious alternative is a detector with ByteTrack on top. SAM 2 wins in two
 cases. The first is an object your detector was never trained on, because a single
@@ -343,17 +452,14 @@ cloth or a piece of food, where a box has nothing steady to follow and an outlin
 does. Choose the detector and ByteTrack instead when many objects come and go on
 their own, because something still has to tell SAM 2 which objects exist.
 
-What it costs you is a GPU and a continuous recording. The
-[repository](https://github.com/facebookresearch/sam2) publishes four sizes, from
-38.9M parameters at 91.2 frames per second to 224.4M parameters at 39.5 frames per
-second, with the speeds measured on an NVIDIA A100, so a small computer on a robot
-will be much slower than that. Its memory grows as the video runs. The thing that
-most often goes wrong is feeding it pictures that are not a video: an arm that
-photographs a shelf, travels 200 mm and photographs again has given SAM 2 no frames
-for the part in between, and its memory has nothing to follow, which
+The [repository](https://github.com/facebookresearch/sam2) measured its own frame
+rates on a data-centre graphics card, so a small computer beside the arm will be
+much slower than those figures suggest. The thing that most often goes wrong is
+feeding it pictures that are not a video: an arm that photographs a shelf, travels
+200 mm and photographs again has given SAM 2 no frames for the part in between,
+and its memory has nothing to follow, which
 [tracking and association](../../../02_perception/02_object-perception/10_tracking-and-association.md#36-mask-propagation-in-video-and-where-sam-2-actually-fits)
-sets out in full. The licence is the easy part, because the code and the weights are
-both Apache-2.0.
+sets out in full.
 
 The library is `sam2`, from that repository, and the `transformers` library carries
 the same model for a machine with no NVIDIA card.
@@ -388,14 +494,50 @@ there is nothing in its output to refuse a bad frame with.
 
 SAM 3 is **worth betting on**, because it does detection, segmentation and
 tracking in one model that you prompt with a short phrase, so you need no detector
-of your own at all. Meta released it in November 2025, and the
-[repository](https://github.com/facebookresearch/sam3) states that it is a detector
-and a tracker sharing one vision encoder, 848M parameters in total, where the
-tracker is the SAM 2 design. You give it a phrase such as `cardboard box`, and it
-returns an outline, a box and a number for every object in every frame that matches
-the phrase, keeping each number as the object moves. A newer set of weights, SAM
-3.1, arrived on 27 March 2026 with a faster way of tracking several objects
-together.
+of your own at all.
+
+Size m, a big card, a bespoke SAM License on the weights, and the download needs
+an access request.
+
+Meta released it in November 2025. You give it a phrase such as `cardboard box`,
+and it returns an outline, a box and a number for every object in every frame that
+matches the phrase, keeping each number as the object moves. A newer set of
+weights, SAM 3.1, arrived on 27 March 2026 with a faster way of tracking several
+objects together.
+
+The one idea is a prompt that names a kind of thing rather than pointing at one
+thing. SAM 2 asks you which object you mean, by a click or a box. SAM 3 asks you
+what kind of object you mean, as a short phrase or as a few example pictures, and
+it then returns every instance of that kind in the frame. Its
+[repository](https://github.com/facebookresearch/sam3) describes this as
+segmenting all instances of an open-vocabulary concept, where open-vocabulary
+means the phrase is not drawn from a fixed list the model was trained on.
+
+Inside, the repository states that a detector and a tracker share one vision
+encoder, and that the two are kept deliberately separate so that the two jobs do
+not interfere with each other. The tracker is the SAM 2 design of section 5.3,
+memory and all, so the following of an object is the same machinery as before and
+the new part is what decides which objects exist. The repository names one piece
+of that new part: a **presence token**, a separate output that answers whether the
+concept is in the picture at all, kept apart from the outputs that say where its
+instances are. The repository's reason for separating the two is that it improves
+telling closely related phrases apart, such as a player in white against a player
+in red. Notice that SAM 2 has no way to answer the first question at all, because
+being pointed at an object is already the claim that the object is there.
+
+What this buys is detection, numbering and following in one model, with nothing
+trained and nobody clicking, and objects that enter the picture later are found
+without a new prompt. What it costs is that the phrase becomes the thing you tune,
+and that a phrase model gives an answer even when nothing in the picture matches,
+so its score needs a threshold that you choose and test.
+
+On an arm this changes what happens when the product changes. With a detector and
+ByteTrack you collect pictures of the new part and retrain. With SAM 2 somebody
+clicks on each new part as it arrives. With SAM 3 you edit a phrase and restart
+the program. The limit is the same as for every model that works from words: two
+brackets that differ only in a hole nobody has a word for are both found, both
+numbered, and no phrase separates them, which is where a trained detector is still
+the only answer.
 
 The obvious alternative is SAM 2 with a detector in front of it. SAM 3 replaces
 both with a phrase, so nothing has to be trained and nobody has to click, and
@@ -403,11 +545,11 @@ objects that enter the picture later are found without a new prompt. Keep SAM 2
 when the object you want cannot be named in words, or when the licence described
 below is not acceptable.
 
-What it costs you is the largest model on this page and the most conditions. The
-weights sit behind an access request on Hugging Face, so a build cannot simply
-download them. The licence is not Apache-2.0 but a bespoke SAM License dated 19
-November 2025, and you have to read it before you ship anything. People get this
-wrong because SAM 2, in the same family, is permissive. The repository's own
+The conditions are the real cost. The weights sit behind an access request on
+Hugging Face, so a build cannot simply download them, and the licence is a bespoke
+SAM License dated 19 November 2025, which you have to read before you ship
+anything. People get this wrong because SAM 2, in the same family, is
+permissive. The repository's own
 install instructions ask for PyTorch built for CUDA, although the `transformers`
 version of the model avoids the parts that must be compiled.
 
@@ -440,29 +582,56 @@ picture matches.
 
 CoTracker3 is **worth betting on** for point tracking, because it reached the
 accuracy of the earlier point trackers with much less training data, which is the
-direction that makes these models practical to retrain. Meta published it in
-October 2024 as
-[CoTracker3: Simpler and Better Point Tracking by Pseudo-Labelling Real
-Videos](https://arxiv.org/abs/2410.11831). You give it a video and the points you
-care about, and it returns each point's position in every frame together with a
-yes or no for whether that point can be seen. It tracks the points jointly, so a
-point that goes behind a finger is placed from the points around it.
+direction that makes these models practical to retrain.
+
+Size not stated, a big card for the offline mode, most of the code CC-BY-NC.
+
+Meta published it in October 2024 as [CoTracker3: Simpler and Better Point
+Tracking by Pseudo-Labelling Real Videos](https://arxiv.org/abs/2410.11831). You
+give it a video and the points you care about, and it returns each point's
+position in every frame together with a yes or no for whether that point can be
+seen.
+
+The one idea is that the points should be tracked together rather than one at a
+time. A point on its own is lost as soon as something covers it. A set of points on
+the same object constrains one another, because they moved together in the past, so
+a hidden point can be placed from the visible ones. The paper's second idea is
+about the training rather than the model: existing trackers were used to label
+ordinary videos, and the new model learned from those labels, which is why it
+needed far less hand-made training data than the trackers before it.
+
+Inside, the model is a transformer that takes a window of frames and the current
+estimate of every tracked point, and updates all of them together. Its attention
+runs in two directions: along time, over the frames in the window, and across the
+tracked points, and that second direction is what lets a visible point place a
+hidden one. The paper reports that CoTracker3 removed or simplified parts of the
+earlier CoTracker design, so the model is simpler and often smaller than the one
+it replaces. Compare this with RAFT in section 5.6: RAFT produces one field of
+arrows between two frames and has no notion of a point keeping its identity over
+time, while here every point has a path and a visible-or-not flag beside it.
+
+What this buys is identity for places you chose, through long videos and through
+spells of hiding, on objects whose shape does not stay still. What it costs,
+besides the licence, is memory in the offline mode, which reads the whole video at
+once and is the more accurate of the two; the online mode works through a stream
+in windows instead. It also costs you the choice of points, and that choice decides
+everything, because a point on a printed logo is followed well and a point in the
+middle of a plain white fold is not.
 
 The obvious alternative is to run optical flow between every pair of frames and
 add the arrows up. That drifts, because each step adds its own small error, and it
 loses a point permanently once the point is hidden for a frame. CoTracker3 keeps the
 identity of each point over many frames and tells you when it cannot see one, which
 is exactly what folding a towel needs. Use flow instead when you want motion
-everywhere rather than a few points you chose.
+everywhere rather than a few points you chose. SAM 2 is no substitute either: its
+outline says where the towel is, and folding it needs to know which part of the
+towel went where, which only a point does.
 
-What it costs you is a GPU, and a licence that stops many projects. Most of
-CoTracker is CC-BY-NC, which forbids commercial use, and the
+The licence is what stops many projects. Most of CoTracker is CC-BY-NC, which
+forbids commercial use, and the
 [repository](https://github.com/facebookresearch/co-tracker) says so plainly. If
 your work is commercial, use TAPIR instead, from the Apache-2.0
-[tapnet](https://github.com/google-deepmind/tapnet) repository. The project states
-no parameter count, which is why the table above leaves that cell empty. The
-offline mode reads the whole video at once and is the more accurate one, and it
-needs the most memory; the online mode works through a stream in windows.
+[tapnet](https://github.com/google-deepmind/tapnet) repository.
 
 The model loads straight from `torch.hub`, with no repository to clone.
 
@@ -490,12 +659,50 @@ guess.
 
 RAFT is the optical flow model **most used in 2026**, mostly because it is the one
 you can install without cloning anything: torchvision ships it with trained
-weights. Zachary Teed and Jia Deng published it at ECCV 2020 as
-[RAFT: Recurrent All-Pairs Field Transforms for Optical
-Flow](https://arxiv.org/abs/2003.12039), and
-[section 3](#3-how-it-works-inside) describes how it refines its arrows in many
-small rounds. It takes two frames and returns, for every pixel, how far that pixel
-moved and in which direction.
+weights.
+
+Size xs, a small card, BSD-3-Clause for the code and the weights.
+
+Zachary Teed and Jia Deng published it at ECCV 2020 as [RAFT: Recurrent All-Pairs
+Field Transforms for Optical Flow](https://arxiv.org/abs/2003.12039), and [section
+3](#3-how-it-works-inside) describes how it refines its arrows in many small
+rounds. It takes two frames and returns, for every pixel, how far that pixel moved
+and in which direction.
+
+The one idea is to keep one field of arrows at one size and improve it in many
+small identical steps, instead of producing the answer in a single pass. The
+networks before it worked from coarse to fine: they estimated the motion on a
+shrunken version of the picture and then refined it upwards. A small object moving
+fast disappears from the shrunken version, so its motion was never found and the
+refinement had nothing to refine. Updating one full-size field repeatedly removes
+that stage altogether.
+
+Inside, an encoder describes the patches of both frames, and the model then builds
+the table of all pairs that gives the method its name: how well every patch of the
+first frame matches every patch of the second. That table is kept at several
+coarsenesses. A small network with a memory of its previous answer then runs many
+rounds with the same weights each time, and in each round it reads the table
+around where the current arrows point and nudges every arrow a little. This is the
+same machinery as RAFT-Stereo on the [depth from
+pictures](02_depth-from-pictures.md#54-raft-stereo) page, with two differences
+there: the search is restricted to one row of the picture, and a measured gap
+between two cameras turns the result into metres. Here nothing turns it into
+metres, because the shift being measured is motion and not parallax.
+
+What this buys is an answer in every pixel with nothing chosen by you, which is
+what "has anything moved" needs. What it costs is that the table of all pairs is
+the expensive part, so the model is slow out of proportion to how few weights it
+has, and that two frames carry no identity: the output says a pixel moved, not
+which object moved, and not where it was three frames ago.
+
+On an arm the difference from CoTracker3 in section 5.5 is about what you can name
+in advance. A hand entering the cell cannot be given tracked points, because
+nobody can choose points on something that is not in the picture yet, and flow
+needs no points: a patch of long arrows where the scene was still is the whole
+detection. Once you know which object you care about and want to follow a
+particular place on it over a minute, flow gives you nothing, because adding its
+arrows up over many frames accumulates its errors and loses the point the first
+time it is hidden.
 
 The obvious alternative is a point tracker such as CoTracker3. RAFT answers a
 different question: it tells you about every pixel without you choosing anything,
@@ -507,10 +714,7 @@ BSD-3-Clause, is the faster and more accurate successor from the same laboratory
 and it is the one to try if you are willing to install a repository rather than
 use torchvision.
 
-What it costs you is a GPU for a model of only 5.3M parameters, because the
-comparison of every patch with every patch is the expensive part rather than the
-weights. It sees two frames, so it reports no identity and no path. The thing that
-most often goes wrong is the picture size: the model needs a height and a width
+The thing that most often goes wrong is the picture size: the model needs a height and a width
 that divide by eight, and the second most common fault is using flow from a wrist
 camera without first removing the motion the arm itself caused.
 

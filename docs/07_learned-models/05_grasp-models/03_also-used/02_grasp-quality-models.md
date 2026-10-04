@@ -123,6 +123,16 @@ passes the points themselves to the network, which
 [section 5.3](#53-pointnetgpd-scoring-the-raw-points-instead-of-a-picture-of-them)
 covers.
 
+The newest scorers cut nothing out at all. GraspGen's discriminator, in
+[section 5.4](#54-graspgens-discriminator-the-modern-scorer-inside-a-generator),
+reads the whole point cloud of one object and is told the grasp separately, as the
+gripper's own shape moved into position. So the question that separates the models in
+section 5 is not how clever their networks are. It is what each one is allowed to
+look at: a small depth patch cut out around the grasp, the points that lie inside the
+gripper's closing region, or the whole object with the grasp drawn into it. A scorer
+can only judge what it was shown, and whatever was cut away is something it cannot
+notice.
+
 One model in section 5 scores something else again. QT-Opt, in
 [section 5.5](#55-qt-opt-what-real-robot-labels-cost), scores a small movement of the
 arm rather than a finished grasp, so its number says how good it would be to move
@@ -236,13 +246,16 @@ read every one of them from the project's own licence file in September 2026.
 | [**GPD**](https://github.com/atenpas/gpd) (2017), most used in 2026 | It scores one six-degree-of-freedom candidate, from the points between the jaws. It is a small network in C++, and it requires no graphics card. Its code licence is BSD-2-Clause. Pick it when you need a scorer you can sell, on a machine with no NVIDIA card. |
 | [**PointNetGPD**](https://github.com/lianghongzhuo/PointNetGPD) (2019), worth betting on | It scores one candidate, from 500 raw points between the jaws. It is a small point cloud network in PyTorch. Its code licence is MIT. Pick it when your point cloud is sparse, or when you want to retrain the scorer yourself. |
 | [**GraspGen**](https://github.com/NVlabs/GraspGen)'s discriminator (2025), worth betting on | It scores many six-degree-of-freedom grasps against one object's point cloud. Its size is `not stated`, and it needs an NVIDIA graphics card. The code is under the non-commercial NVIDIA License, and the weights are under the NVIDIA Open Model License. Pick it when you already run GraspGen and want it to rank candidates of your own. |
-| **QT-Opt** (2018), historical | It scores a small movement of the arm, rather than a finished grasp. Its size is `not stated`, and no code or weights were published, so its licence is `not stated` as well. Never pick it, and read it instead to see what labels from real robots cost. |
+| **QT-Opt** (2018), historical | It scores a small movement of the arm, rather than a finished grasp. Its size is `xs`, and no code or weights were published, so its licence is `not stated` as well. Never pick it, and read it instead to see what labels from real robots cost. |
 
 ### 5.1 Dex-Net's GQ-CNN, the design everything else argues with
 
 **Historical.** It is the model this whole page is describing, and it is the one to
 understand, but its code needs TensorFlow 1 and its licence forbids commercial use,
 so it is not the one to run.
+
+Size xs, a laptop, and a University of California Regents licence for education,
+research and not-for-profit use only.
 
 GQ-CNN is the grasp quality convolutional neural network, published in 2017 by Jeff
 Mahler and others in the AUTOLAB group at the University of California, Berkeley, in
@@ -252,6 +265,39 @@ patch together with the gripper's height, and give one number out. Its configura
 file shows how small that network is. It takes a 96 by 96 patch, and it has four
 convolutional layers of 16 filters each, then two fully connected layers of 128.
 
+The one idea GQ-CNN is built on is that a grasp can be judged from a small window
+around it, once that window has been turned so that every grasp looks the same way
+up. Nothing outside the window reaches the network, and nothing about the object's
+name, its full shape or the rest of the scene reaches it either.
+
+Inside, the network has two inputs rather than one, and the project's own
+configuration calls them streams. The patch goes through the convolutional layers,
+which is the picture stream. The gripper's height, which is one number saying how
+far down the jaws would go, goes through a very small stream of its own. The two
+streams are joined late, in a fully connected layer near the end, and the layer
+after the join gives the score. The height needs an input of its own because it is
+not something the patch can show: the same cut-out patch of a mug
+means "holds" at one height and "closes on nothing" at another, so without the
+height beside the picture the question has no answer.
+
+What the turning buys is the angle. Because code rotates every patch so that the
+jaws lie at its left and right edges, the network never meets a grasp at thirty
+degrees as a different case from a grasp at zero, so it learns one question about
+shape instead of many. What the window costs is everything around it. The patch is
+cut at a fixed size, so an object wider than the patch is judged on the part that
+fitted inside, and whatever the gripper's body would collide with on the way in was
+cropped away before the network looked. A score of 0.9 therefore means that the
+shape between the jaws can be held, and not that the grasp can be reached.
+
+On a robot arm the difference from GPD in the next sub-section shows up as soon as
+the grasp is not straight down. GQ-CNN's patch is a window on a depth picture, so
+the grasp it scores is a pixel, an angle in the plane of that picture and a height,
+and nothing in that description can say that the gripper comes in from the side. GPD
+scores the points between its jaws in three dimensions, so a sideways grasp is an
+ordinary case for it. If your camera looks straight down into a shallow tray, the
+patch is enough and GPD's extra machinery buys you nothing; if anything has to come
+off a shelf, the patch cannot describe the grasp at all.
+
 The obvious alternative is to compute the quality metric from physics instead, with
 the formulas in Book 3's
 [grasp quality metrics](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute).
@@ -260,13 +306,15 @@ where it is, which is the whole point of it. Dex-Net 2.0 used those formulas onc
 simulation, to make 6.7 million training examples, and the network then reproduces
 their judgement from a single noisy depth picture of an object it has never seen.
 
-What it costs you is the install and the licence. The code pins TensorFlow at 1.15
-or below and names Python 3.5 to 3.7, so it needs an environment of its own, and the
-project has had no commits since January 2022. The licence is a University of
-California Regents grant for education, research and not-for-profit purposes only.
-The thing that most often goes wrong is not the code at all, and it is this: the score is calibrated against the way the labels were made, which was a simulation
-with an assumed friction and an assumed gripper, so a score of 0.8 does not mean
-that this grasp succeeds eight times in ten on your arm.
+What it costs you is the install and the meaning of the number. The code pins
+TensorFlow at 1.15 or below and names Python 3.5 to 3.7, so it needs an environment
+of its own, and the project has had no commits since January 2022. Its own installer
+looks for an NVIDIA card and falls back to the processor-only TensorFlow when it
+finds none, which is why a laptop is enough to run it. The thing that most often
+goes wrong is not the code at all, and it is this: the score is calibrated against
+the way the labels were made, which was a simulation with an assumed friction and an
+assumed gripper, so a score of 0.8 does not mean that this grasp succeeds eight
+times in ten on your arm.
 
 The library is [gqcnn](https://github.com/BerkeleyAutomation/gqcnn), which you clone
 rather than install. The class below is the scorer alone, without the sampling and
@@ -308,6 +356,8 @@ number and not the model's. If you have no sampler,
 one with a licence that permits commercial use and no NVIDIA graphics card in its
 requirements.
 
+Size xs, a laptop, BSD-2-Clause.
+
 GPD stands for grasp pose detection. Andreas ten Pas, Marcus Gualtieri, Kate Saenko
 and Robert Platt published it in 2017, from Northeastern University, in a paper
 called [Grasp Pose Detection in Point Clouds](https://arxiv.org/abs/1706.09911). It
@@ -317,12 +367,43 @@ cloud, keeps the ones that pass the geometric test in Book 3's
 turns the points between the jaws into a small picture, and scores that picture with
 a small network.
 
-The obvious alternative is Dex-Net's GQ-CNN. Choose GPD instead for two reasons
-that have nothing to do with accuracy. Its licence is BSD-2-Clause, so you may put
-it in a product, and its stated requirements are PCL, Eigen and OpenCV with no CUDA,
-so it is the only model on this page with a plausible path to running on a machine
-without an NVIDIA card. It also scores grasps from any direction rather than only
-from above.
+The one idea GPD is built on is that the only thing worth looking at is the volume
+the jaws are about to close on, which it calls the closing region. Everything
+outside that volume is dropped, and everything inside it is described in three
+dimensions rather than as a window on a picture, which is what lets one scorer judge
+a grasp coming in from any direction.
+
+Inside, the points of the closing region are turned into a small picture before the
+network sees them, and that picture is not a photograph of anything. The points are
+flattened onto flat planes, and each plane contributes several layers of numbers:
+how high the surface stood, which way it faced, and which part of the volume was
+hidden behind the surface from where the camera stood. The shipped weights read
+fifteen such layers. A three-layer version is shipped as well, and the project says
+it runs faster and grasps worse. There are separate weights for two depth cameras,
+because a second viewpoint fills in surfaces the first could not see. The network
+reading this stack is a small classifier of the LeNet kind, and the project builds
+it against several frameworks so that it can run on a processor alone.
+
+What drawing the points as a picture buys is the network. A small convolutional
+classifier was, in 2017, the thing that trained reliably and ran fast, and
+flattening the points is what allowed a three-dimensional question to be asked of
+one. What it costs is emptiness. A plane with few points on it is mostly blank, and
+a blank cell cannot be told apart from a flat surface, so a thin object, or one the
+camera sees edge on, gives the network a picture with almost nothing in it.
+PointNetGPD in the next sub-section exists because of exactly this.
+
+On a robot arm the difference from GQ-CNN is the direction the gripper may come
+from, and the difference from the models on the
+[top-down page](01_top-down-grasp-detection.md) is how much you have to build. GPD
+samples its own candidates, tests them against the gripper geometry you wrote into
+its configuration file, and scores the survivors, so a bottle lying on its side on a
+shelf gets grasps that come in horizontally without you writing anything about
+shelves or bottles.
+
+The obvious alternative is Dex-Net's GQ-CNN. Choose GPD instead because it answers
+in three dimensions and brings its own sampler, and because of the two it is the one
+you may put in a product and the one that does not ask for an NVIDIA card. Its
+stated requirements are PCL, Eigen and OpenCV, with no CUDA among them.
 
 What it costs you is its age and its language. It was last pushed in January 2022,
 so treat it as finished rather than maintained, and the obstacle is the dependencies
@@ -378,6 +459,8 @@ choose, which is how you make GPD answer the top-down question that the
 what the newest models do as well, and this is the smallest and most permissive
 example of it.
 
+Size xs, a laptop, MIT.
+
 PointNetGPD was published in 2019 by Hongzhuo Liang and others at the University of
 Hamburg, in a paper called
 [PointNetGPD: Detecting Grasp Configurations from Point Sets](https://arxiv.org/abs/1809.06267).
@@ -387,12 +470,43 @@ cloud network, which the
 [point cloud models](../../04_3d-models/02_most-used/01_point-cloud-models.md) page
 explains. The released model reads 500 points.
 
+The one idea PointNetGPD is built on is that the points inside the closing region
+should be handed to the network as points. GPD's flattening throws away which point
+sat behind which, and it fills a grid of cells whether or not there is anything to
+put in them. A network that reads points as points has no grid to fill.
+
+Inside, the points go to a network of the PointNet family, which the
+[point cloud models](../../04_3d-models/02_most-used/01_point-cloud-models.md) page
+describes. Such a network looks at every point on its own, with the same small set
+of weights for all of them, and then combines all those per-point results in a way
+that does not depend on the order the points arrived in. That last property is what
+makes a list of points readable at all, because a list of points has no natural
+order and a convolution needs one. The released model is handed 500 points,
+expressed in the gripper's own frame, and it ends in three outputs rather than one,
+so its answer is a choice between bad, fair and good rather than a single
+probability.
+
+What the points buy is sparse data. A handful of points scattered through the
+closing region is a handful of inputs to this network, while the same handful drawn
+on flat planes is a picture that is almost entirely blank, and that is the case its
+own paper puts forward. What it costs is everything GPD was doing around its scorer.
+It keeps GPD's sampler, so the candidates are no better than they were, and cutting
+out the points inside the jaws and moving them into the gripper's frame become your
+code's job as soon as you are not running GPD itself.
+
+On a robot arm the difference shows up on thin and edge-on things: a spatula flat on
+a table, a plate standing in a rack, a cable. The camera returns a thin band of
+points between the jaws, and GPD's flattened picture of that band is a few marks in
+a blank field, while this network reads the band as what it is. For a mug or a box
+in a bin, where the closing region is full of points, the two scorers are asking the
+same question of the same data, and the flattening costs nothing.
+
 The obvious alternative is GPD, whose sampler it borrows. Choose PointNetGPD instead
 when the points between the jaws are few, because drawing a sparse set of points as
 a picture leaves most of that picture empty, and a point cloud network does not care
-how many points there are. Its licence is MIT and it was last pushed in May 2025, so
-of the two it is the one that still installs, with its own instructions setting up a
-Python 3.10 environment.
+how many points there are. It was also last pushed in May 2025, so of the two it is
+the one that still installs, with its own instructions setting up a Python 3.10
+environment.
 
 What it costs you is the rest of the repository. The clone carries modified copies of
 Berkeley's `meshpy` and `dex-net` packages, which you install from source, and the
@@ -435,6 +549,10 @@ into one ordering, and taking the "good" class on its own is the usual choice.
 started shipping a generator with its own scorer attached, and this is the clearest
 example you can take apart.
 
+Size not stated, a graphics card to run it and a cluster to train it, with the code
+under NVIDIA's own non-commercial licence and the weights under the NVIDIA Open
+Model License.
+
 GraspGen is NVIDIA's 2025 grasp generator, published in a paper called
 [GraspGen](https://arxiv.org/abs/2507.13097). A diffusion model proposes
 six-degree-of-freedom grasps and a second network, which the project calls the
@@ -444,24 +562,60 @@ its own. The project names as its own contribution a training recipe in which th
 discriminator learns on the generator's output rather than on a fixed set of
 candidates.
 
-The obvious alternative is to keep the scorer separate, as GQ-CNN and GPD do. That
-training recipe is the reason to prefer this shape. A separate scorer learns on
-candidates from a sampler and is then asked, at run time, about candidates from a
-generator, which are different candidates, so some of its confidence is misplaced.
-The scorer here sees in training the mistakes it will be asked about later. You can
-still use it on its own, because the function that runs the discriminator alone is a
-public part of the code.
+The one idea this discriminator is built on is that nothing needs to be cut out. It
+is given the whole point cloud of one object and the grasp, and it works out for
+itself which part of the object the grasp concerns.
 
-What it costs you is hardware and licence. Book 3's
+Inside, there are two encoders and a small stack of layers that joins them. One
+encoder reads the object's point cloud and turns it into a single list of numbers
+summarising that object, and the code offers either a PointNet-style encoder for
+this or a point transformer, which is a network in which points read one another
+rather than only being pooled together. The other encoder reads the grasp, and in
+the version the project recommends the grasp is not given as six numbers at all. The
+gripper's own outline is stored as a handful of points, those points are moved by
+the grasp's pose so that they sit where the gripper would sit, and that small cloud
+is what the second encoder reads. The two summaries are then joined end to end, and
+three narrowing layers turn them into one number. A further variant drops the second
+encoder and puts the gripper's points into the object's own cloud, with one extra
+number on every point saying whether it belongs to the object or to the gripper, so
+that a single encoder reads the object with the grasp drawn into it.
+
+What that shape buys is a low price for each extra candidate. The object's summary
+depends on the object alone, so it is computed once and reused for every grasp being
+scored, and each extra grasp costs only its own small encoder and the three joining
+layers.
+GQ-CNN and GPD have to cut out and prepare a fresh input for every candidate, so
+their work grows with the number of candidates in a way this does not. What it costs
+is a harder input. The cloud has to be one object and not a scene, so a segmentation
+model must run first, and the cloud has to be moved so that its own average sits at
+the origin, because that is how the model was trained.
+
+The other difference is in the training, and it is the one the project puts forward
+as its contribution. A scorer is normally trained on candidates from a sampler and
+then asked, when it runs, about candidates from something else, so the grasps it
+meets in service are not the grasps it was taught on, and some of its confidence is
+misplaced. Here the candidates it trains on come from the generator it will be
+paired with, while that generator is itself being trained, so it spends its training
+looking at exactly the mistakes it will later be asked to catch. Two things follow
+for you. The scores you get from the released weights are the scores of a model
+matched to that generator, and if you retrain the discriminator yourself you will
+not reproduce them, because the repository says plainly that on-generator training
+is not released yet and that it is what the best scoring depends on.
+
+The obvious alternative is to keep the scorer separate, as GQ-CNN and GPD do. Prefer
+this shape when you are already running the generator, because the scorer inside it
+was trained against that generator's candidates. You can still use it on its own,
+because the function that runs the discriminator alone is a public part of the code.
+
+What it costs you, beyond the line at the top of this sub-section, is one dependency
+and one trap in the licensing. Book 3's
 [what runs without CUDA](../../../03_frameworks/02_gripping/04_models-that-grasp.md#8-what-runs-without-cuda)
 section records that it depends on `spconv-cu120`, for which no processor-only build
 exists, so it needs an NVIDIA card and will not run on an Apple Silicon Mac. The
-licence splits four ways: the [GraspGen](https://github.com/NVlabs/GraspGen) code is
-under NVIDIA's own non-commercial licence, the successor repository
-[GraspGenX](https://github.com/NVlabs/GraspGenX) is Apache-2.0, the weights are
-under the NVIDIA Open Model License and the training dataset is CC BY 4.0. That
-Apache licence does not make a deployment permissive, because the weights you would
-run carry their own terms.
+trap is that the successor repository
+[GraspGenX](https://github.com/NVlabs/GraspGenX) is Apache-2.0, which does not make
+a deployment permissive, because the weights you would actually run carry their own
+terms and the training dataset carries a third set again.
 
 The library is `grasp_gen`, inside the cloned repository and its Docker image. The
 whole pipeline is one call, and so is the scorer on its own.
@@ -500,6 +654,10 @@ returns the best 100 whatever their scores.
 **Historical.** No code or weights were published, so this is a result to know
 rather than a model to use, and the result is about the price of training data.
 
+Size xs, nothing to run, and no licence, because neither the code nor the weights
+were published. The size comes from the paper's own description of the network, since
+nothing was released for anybody else to measure.
+
 QT-Opt was published in 2018 by Dmitry Kalashnikov and others at Google, in a paper
 called [QT-Opt](https://arxiv.org/abs/1806.10293). It scored a small movement of the
 arm rather than a finished grasp, so the robot asks how good it would be to move the
@@ -507,6 +665,32 @@ gripper a centimetre in some direction, and then makes the best movement, over a
 over. It learned by trial and error, which the
 [reinforcement learning policies](../../06_movement-models/03_also-used/01_reinforcement-learning-policies.md)
 page covers, from more than 580,000 real grasp attempts.
+
+The one idea QT-Opt is built on is that there is no such thing as a finished grasp to
+score. The robot is somewhere, the object is somewhere, and the only question is
+which small movement to make next. So the thing being scored is a movement, and the
+number is not the chance that this movement holds the object. It is the chance that
+the attempt ends with the object held, supposing the robot carries on sensibly after
+this movement.
+
+Inside, the network is given the camera's picture of the whole scene and one
+proposed movement of the gripper, and it gives one number back. Nothing is cut out
+and nothing is turned: the picture is the ordinary colour view from over the robot's
+shoulder, and the movement is a few numbers saying where to go next and whether to
+close the fingers. Because a movement is not a grasp, no geometry can be checked in
+advance, so the search for the best movement is done by pushing many movements
+through the network at every step and keeping the best one. That search runs again
+on every step of every attempt, which is why this design needs a scorer that can be
+run very many times.
+
+What looking ahead buys is behaviour that no other model on this page can produce.
+Because the number refers to the end of the attempt rather than to this grasp, the
+robot is free to do things that are not grasps at all: nudge an object into a better
+position, push two apart, or let go and try again. GQ-CNN and GPD cannot, because
+each of them scores one finished grasp and the arm then carries it out blind. What it
+costs is the labels. A label saying how good a movement was can only be found out by
+carrying on to the end of the attempt and seeing, which is why the figure above is
+more than half a million real attempts rather than a simulator run.
 
 The obvious alternative is Dex-Net's route, which bought its labels from a physics
 simulation. QT-Opt measures what the other route costs: it removes the gap between
@@ -537,8 +721,9 @@ Three things change that choice.
     [grasp quality metrics](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute),
     which is exact and needs no training data. 
 
-Whichever you pick, the sampler decides more than the scorer does, and the reason is that a good scorer cannot choose a grasp nobody proposed. Spend your effort on
-the candidates before you spend it comparing scorers.
+Whichever you pick, the sampler decides more than the scorer does, and the reason is
+that a good scorer cannot choose a grasp nobody proposed. Spend your effort on the
+candidates before you spend it comparing scorers.
 
 ---
 

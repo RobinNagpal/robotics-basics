@@ -243,18 +243,63 @@ licence from that model's own model card.
 ### 5.1 ResNet
 
 ResNet is **historical** here, and it is kept because the later models borrow from
-it and because every accuracy table still starts with it. Microsoft Research
-published it in December 2015, in the paper [Deep Residual Learning for Image
-Recognition](https://arxiv.org/abs/1512.03385), and its idea was the skip
-connection from section 3. ResNet-50 is the 50-layer member of the family and has
-about 25.6 million parameters.
+it and because every accuracy table still starts with it.
+
+Size s, a laptop, Apache-2.0 for the code and the weights.
+
+Microsoft Research published it in December 2015, in the paper [Deep Residual
+Learning for Image Recognition](https://arxiv.org/abs/1512.03385). ResNet-50 is
+the 50-layer member of the family, and it is the member every table uses.
+
+The one idea ResNet is built on is that a group of layers should learn only the
+change to make to what it was given. Three convolution layers in a row form a
+**block**, and at the end of the block the block's own input is added to its
+output unchanged, so those three layers only have to produce the difference
+between the two. That added path is the skip connection of [section
+3](#3-how-it-works-inside). Before ResNet, every layer had to produce the whole
+of its output by itself, and networks deeper than about twenty layers became
+worse rather than better, because the correction that travels backwards through
+the network during training grew weaker at every layer it passed through. The
+added path gives that correction a short way back, and it also lets a block learn
+to change nothing at all, so extra depth can no longer make the network worse.
+
+Inside one ResNet-50 block, the work is arranged to keep that depth affordable. A
+convolution layer gives out not one grid of numbers but many, one per filter, and
+each of those grids is called a **channel**. The block first reduces the number of
+channels with a convolution whose sliding square is a single pixel, then runs the
+3-pixel by 3-pixel convolution of section 3 on that reduced set, then widens the
+channels again with another single-pixel convolution. Four stages of such blocks
+follow one another, and between stages the grid is halved while the channel count
+doubles. At the end, every channel's grid is averaged down to one number, and a
+last layer of sums turns those numbers into one score per class. Notice what never
+happens: no step compares a pixel with a distant pixel directly, so the network
+only sees the picture as a whole once enough halvings have brought two distant
+places into the same 3 by 3 square. DINOv2, in section 5.3, is built the other way
+round.
+
+What the design buys is depth that trains reliably, which is why every later
+convolutional network kept the skip connection. What it costs is arithmetic. The
+3 by 3 convolution in the middle of each block mixes every input channel with
+every output channel, so its number of multiplications rises with the two channel
+counts multiplied together, and nothing in ResNet tries to reduce that.
+MobileNetV3, in the next sub-section, exists because of exactly this cost. The
+second cost is the shape of its features. ResNet-50 learned from ImageNet labels,
+so its last layers describe a picture in terms of the 1,000 classes it was asked
+about, and your own classes are described well only in so far as they resemble
+those.
+
+On an arm, the difference shows up in a check that runs on every gripper close, on
+the small computer bolted to the robot. ResNet-50 and MobileNetV3 can reach
+similar accuracy on a two-class check such as "holding" against "empty", and
+MobileNetV3 gets there with a small fraction of ResNet-50's multiplications, so a
+check that fits in the pause between two moves with MobileNetV3 may not fit with
+ResNet-50. So the reason to keep ResNet-50 off the robot is its arithmetic, and
+not its accuracy.
 
 You would not pick it for a new robot classifier. The obvious alternative is a
 frozen DINOv2 with a small head, from section 5.3, which needs fewer of your own
 pictures and usually gives better accuracy. Pick ResNet-50 instead when you want a
-number that other developers recognise without explanation. What it costs you is
-accuracy for its size, because it was trained with labels on ImageNet and its
-features are weaker than those of the self-supervised backbones below.
+number that other developers recognise without explanation.
 
 The library is Hugging Face `transformers`, whose `pipeline` helper puts the
 preparation of the picture, the network and the reading of the scores behind one
@@ -281,10 +326,61 @@ objects and contain nothing from a factory.
 ### 5.2 MobileNetV3
 
 MobileNetV3 is **most used in 2026** when the classifier has to run on the robot
-itself with no graphics card. Google published it in May 2019, in the paper
-[Searching for MobileNetV3](https://arxiv.org/abs/1905.02244), and part of its
-layer arrangement was found by a search program rather than chosen by a person.
-The `mobilenetv3_large_100` weights have about 5.5 million parameters.
+itself with no graphics card.
+
+Size xs, a laptop, Apache-2.0 for the code and the weights.
+
+Google published it in May 2019, in the paper [Searching for
+MobileNetV3](https://arxiv.org/abs/1905.02244).
+
+The one idea is that one convolution can be split into two cheaper ones that
+together do nearly the same job. The first of the two is a **depthwise**
+convolution: it slides a 3 by 3 square over each channel on its own, so it mixes a
+pixel with its neighbours but never mixes one channel with another. The second is
+a **pointwise** convolution, whose sliding square is a single pixel: it mixes all
+the channels at one place but looks at no neighbours. ResNet's 3 by 3 convolution
+does both of those things in one step, and that is what makes it expensive,
+because its cost rises with the input channels multiplied by the output channels
+multiplied by nine. Done as two steps, the cost becomes nine multiplications per
+channel, plus the input channels multiplied by the output channels, which is
+several times less work for the same reach across the picture.
+
+That split changes the shape of a block, and MobileNetV3 turns ResNet's block
+inside out. ResNet reduces the channels, does its 3 by 3 convolution in the narrow
+middle, and widens again. MobileNetV3 widens first with a pointwise convolution,
+does the depthwise 3 by 3 in the wide middle, which is affordable there precisely
+because depthwise work does not grow with the channel count, and then reduces
+again, with the skip connection joining the two narrow ends. Two further parts sit
+inside its blocks. The first averages each channel's grid down to a single number,
+passes those numbers through a tiny network of two layers, and multiplies each
+channel by what comes back, so a channel can be turned up or down according to
+what is elsewhere in the picture. The second, in the later blocks, replaces the
+usual activation step with a cheaper approximation of it, chosen because it costs
+less on a processor with no graphics card. The arrangement itself was not designed
+by hand either: as the paper's title says, it was searched for, by a program that
+built candidate networks and scored them both on accuracy and on the time they
+really took on a phone processor, after which a second program trimmed the width
+of each layer and the authors redesigned the first and last stages themselves.
+
+What all of that buys is a small amount of work per picture, which is the only
+thing that matters when the model runs beside the arm. What it costs is capacity.
+Fewer multiplications mean fewer learned interactions between channels, so on
+classes that are hard to tell apart its accuracy settles below that of a large
+backbone, and more training pictures do not buy the difference back. There is a
+second, less obvious cost. A depthwise convolution does very little arithmetic for
+each number it reads out of memory, so on a desktop graphics card, where memory
+speed is the limit rather than arithmetic, the saving is much smaller than the
+multiplication counts suggest. This network was tuned for phone processors, and
+that is where it wins.
+
+On an arm the difference shows up as soon as the check becomes part of the motion.
+A classifier that answers every time the gripper closes, on the robot's own
+processor, is a MobileNetV3 job, and the frozen DINOv2 of section 5.3 cannot do it
+at the same rate however few pictures you had to collect. The trade runs the other
+way too. If you have twenty pictures per class rather than hundreds, training
+MobileNetV3 on them gives a network that is right about those twenty pictures and
+wrong about the twenty-first, and the frozen route is then the only one of the two
+that works at all.
 
 The obvious alternative is EfficientNet-B0, which reaches similar accuracy at a
 similar size. MobileNetV3 is the one to pick because it is the most widely
@@ -295,9 +391,8 @@ on cost per picture at run time, and that is what matters when the check runs
 every time the gripper closes.
 
 What it costs you is that you must train it, which the frozen-backbone route
-largely avoids. Plan on a few hundred labelled pictures per class, and accept
-accuracy below that of a large backbone on hard classes. The licence is
-Apache-2.0 and gives you no trouble. The thing that most often goes wrong is the
+largely avoids, so plan on a few hundred labelled pictures per class. The thing
+that most often goes wrong is the
 preparation of the picture: resize or normalise differently from the way the
 weights were trained and accuracy falls with no error message. That is why the
 code below asks the library for the right transform instead of writing one.
@@ -331,14 +426,63 @@ threshold below which the robot treats the answer as unknown.
 ### 5.3 DINOv2 with a small head
 
 DINOv2 is **most used in 2026** for a custom class list, because it is the
-cheapest way to get a good classifier from a small number of pictures. Meta
-published it in April 2023, in the paper [DINOv2: Learning Robust Visual Features
-without Supervision](https://arxiv.org/abs/2304.07193), and both the
-[code](https://github.com/facebookresearch/dinov2) and the weights are
-Apache-2.0. It is a vision transformer trained **self-supervised**, which means
-nobody labelled its training pictures: it learned by being asked to give two
-different crops of the same picture the same numbers. Its base size has about 86.6
-million parameters.
+cheapest way to get a good classifier from a small number of pictures.
+
+Size s, a laptop, Apache-2.0 for the code and the weights.
+
+Meta published it in April 2023, in the paper [DINOv2: Learning Robust Visual
+Features without Supervision](https://arxiv.org/abs/2304.07193), and its
+[code](https://github.com/facebookresearch/dinov2) is on GitHub. It is a vision
+transformer trained **self-supervised**, which means nobody labelled its training
+pictures.
+
+The one idea is that a network can learn to describe pictures with nobody
+labelling anything, so long as it is made to describe two different views of the
+same picture in the same way. The training runs two copies of the network at once.
+One copy, the **student**, is the one being trained, and it is shown a small crop.
+The other copy, the **teacher**, is shown a large crop, and the student is trained
+to produce the numbers the teacher produced for it. The teacher is never trained
+directly: its numbers are a running average of the student's numbers from earlier
+in training, which keeps the target it sets moving slowly instead of jumping
+about. A second part of the training hides some of the picture from the student
+and asks it for the teacher's numbers for the hidden parts, which forces the
+description of each part of a picture to depend on the rest of the picture.
+
+Inside, DINOv2 is a vision transformer, and that is the real difference from
+ResNet-50 and MobileNetV3 above. The picture is cut into small square patches,
+each patch becomes a list of numbers, and then in every layer each patch's numbers
+are rebuilt as a weighted mixture of all the other patches' numbers, with the
+weights worked out from the patches themselves. This is the attention step of
+[section 3](#3-how-it-works-inside). The consequence is that a patch in one corner
+can be influenced by a patch in the opposite corner in the very first layer, where
+the two convolutional networks above can only ever combine neighbours and need
+many halvings of the grid before distant places meet. There is also no pyramid:
+the grid of patches keeps its size from the first layer to the last, and what
+comes out is one list of numbers for the whole picture together with one list for
+each patch. One more thing is worth knowing about the file you download. The paper
+trained a very large transformer and then taught smaller ones to copy it, so the
+base size is a small network taught by a big one rather than a small network
+trained from nothing.
+
+What this buys is features that no class list has shaped. Nothing in the training
+mentioned mugs, screws or grippers, so the numbers describe a picture in general
+terms, and that is why one layer of sums trained on tens of your own pictures can
+separate classes nobody anticipated, where ResNet-50's last layers are already
+committed to describing ImageNet's 1,000 classes. What it costs is work and
+rigidity. Attention compares every patch with every patch, so the work grows with
+the square of the number of patches, and the whole backbone runs for every picture
+even though you train almost none of it. The features are also fixed, so if two of
+your classes differ in a way this backbone never learned to represent, a small
+head on top cannot repair that, and your only remaining move is to fine-tune after
+all.
+
+On an arm the difference shows up when a bin holds thirty part numbers and you can
+photograph each part twenty times. The frozen route gives you a working classifier
+that afternoon on an ordinary laptop, because only the small head is trained, while
+fine-tuning MobileNetV3 on twenty pictures per class would mostly memorise those
+twenty pictures. The opposite case is the gripper-close check of section 5.2,
+where the answer is needed many times a second on the robot's own processor, and
+there this backbone is the wrong choice however little data you have.
 
 The obvious alternative is to fine-tune a ResNet or a MobileNetV3, which trains
 the whole network. This repository's own survey of backbones reports that a simple
@@ -349,13 +493,8 @@ That is why the frozen route wins when pictures are scarce. You train one small
 layer on a processor in seconds, and tens of pictures per class are often enough,
 where fine-tuning wants hundreds.
 
-What it costs you is run-time speed. All 86.6 million parameters run for every
-picture even though you train almost none of them, so it is much slower per
-picture than a fine-tuned MobileNetV3. The features are frozen, so if two of your
-classes differ in a way this backbone never learned to separate, a small head
-cannot repair that, and your only move is to fine-tune after all. The thing that
-most often goes wrong is that your head is a second file, separate from the
-backbone, and people ship the backbone without it.
+The thing that most often goes wrong is that your head is a second file, separate
+from the backbone, and people ship the backbone without it.
 
 The libraries are `transformers` for the backbone and `scikit-learn` for the head.
 The head here is logistic regression, which this book explains in [linear and
@@ -396,33 +535,70 @@ nothing about it.
 ### 5.4 SigLIP 2
 
 SigLIP 2 is **most used in 2026** when you have no training pictures, because it
-needs none. Google published it in February 2025, in the paper [SigLIP 2:
-Multilingual Vision-Language Encoders with Improved Semantic Understanding,
-Localization, and Dense Features](https://arxiv.org/abs/2502.14786). It has two
-halves, one that turns a picture into numbers and one that turns a sentence into
-numbers, trained so that a picture and its true description land close together.
-You give it your class names as sentences, and it scores each sentence against the
-picture. The base model at 224 pixels has about 375 million parameters for both
-halves together, and the weights are Apache-2.0.
+needs none.
+
+Size m, a small card, Apache-2.0 for the code and the weights.
+
+Google published it in February 2025, in the paper [SigLIP 2: Multilingual
+Vision-Language Encoders with Improved Semantic Understanding, Localization, and
+Dense Features](https://arxiv.org/abs/2502.14786).
+
+The one idea is that this model does not classify at all. There is no list of
+classes inside it and no layer with one output per class. There are two separate
+networks instead: one turns a picture into a list of numbers, and one turns a
+sentence into a list of numbers of the same length. The only thing the model
+works out is how close two such lists are. You get a classifier out of it by
+writing each of your class names as a sentence, turning those sentences into
+numbers once, and asking which of them comes closest to the picture.
+
+What changes inside, compared with DINOv2 just above, is where the training signal
+comes from. Both are transformers over patches and neither was trained on class
+labels, but DINOv2's signal came from the picture alone, by making two crops of it
+agree. SigLIP's signal comes from pictures paired with sentences that people had
+already written about them, and the question asked during training is about one
+pair at a time: does this sentence describe this picture, yes or no. The name says
+so, because a **sigmoid** is the function that turns a single score into a single
+yes-or-no probability. CLIP, the model everybody knows, asks a different question.
+It takes a batch of pictures and a batch of sentences and asks which sentence in
+the batch belongs to each picture, so a pair's score depends on what else happened
+to be in the batch, and the batch has to be large for the question to be hard
+enough. SigLIP 2 keeps the one-pair-at-a-time question and adds training borrowed
+from elsewhere, including a part trained to write a caption for the picture and
+the same teacher-and-student agreement and hidden-patch prediction that DINOv2
+uses, which is what improved its description of individual patches.
+
+What the pairwise question buys you is readable scores. Because each class
+sentence is scored on its own, the scores do not add up to 1, so they can all be
+low at once and "none of these" becomes an answer you can detect with a threshold.
+The three models above cannot say that, because their last step forces their
+scores to add up to 1 and so some class always wins. The wider idea buys you a
+class list that you change by editing a line of text. What it costs you is that
+the answer now depends on your wording, so "a scratched metal plate" and "a
+damaged plate" are two different questions, and that it cannot separate two things
+whose difference has no ordinary name at all.
+
+On an arm this decides what happens when a new part arrives. With the DINOv2 route
+of section 5.3 you photograph the new part, add its pictures to your set and fit
+the head again before the cell can recognise it. With SigLIP 2 you add one
+sentence and restart the program, which is why it suits a line whose product
+changes often. The comparison runs the other way for two valve bodies that differ
+only in a thread nobody has a word for: no wording will separate those, and twenty
+pictures per class with a trained head will.
 
 The obvious alternative is CLIP, which stands for contrastive language-image
 pre-training, published by OpenAI in February 2021 as [Learning Transferable
 Visual Models From Natural Language
-Supervision](https://arxiv.org/abs/2103.00020). It does the same job and it is the
-model whose name everybody knows. SigLIP changed how the two halves are trained,
-and its name says how: the [Sigmoid Loss for Language Image
-Pre-Training](https://arxiv.org/abs/2303.15343) paper scores each
-picture-and-sentence pair on its own, where CLIP compares every picture in a batch
-against every sentence at once. That is the reason to prefer it here. SigLIP's
-scores do not add up to 1 across your class names, so all of them can be low at
-once, and "none of these" becomes an answer you can read. What it costs you is size, speed and wording. At 375 million parameters it wants a
-graphics card to be comfortable, and it is the slowest model on this page. Its
-accuracy depends on the words you choose, so "a scratched metal plate" and "a
-damaged plate" are different questions with different answers. It cannot separate
-two parts whose difference has no ordinary name, such as two similar valve bodies,
-and [models that
-find](../../../02_perception/02_object-perception/04_models-that-find.md) sets out
-that limit. The thing that most often goes wrong is the text padding: the Hugging
+Supervision](https://arxiv.org/abs/2103.00020). It does the same job and its name
+is the one everybody knows. Prefer SigLIP 2 here for the training change described
+above, which first appeared in the [Sigmoid Loss for Language Image
+Pre-Training](https://arxiv.org/abs/2303.15343) paper, because scores that can all
+be low at once are what let you answer "none of these".
+
+What it costs you, beyond the wording, is speed, because it is the slowest model
+on this page. The limit on parts whose difference has no ordinary name is set out
+in [models that
+find](../../../02_perception/02_object-perception/04_models-that-find.md). The
+thing that most often goes wrong is the text padding: the Hugging
 Face [SigLIP 2
 documentation](https://huggingface.co/docs/transformers/en/model_doc/siglip2) says
 to pass `padding="max_length"` with `max_length=64` when you call the processor
@@ -457,21 +633,58 @@ the crop, because this model names the whole picture just as a classifier does.
 
 DINOv3 is **worth betting on**, because the direction of the field is a single
 large frozen backbone with a tiny trained head, and DINOv3 is that idea done
-better than DINOv2. Meta published it in August 2025, as
+better than DINOv2.
+
+Size s, a laptop, Apache-2.0 for the library code but Meta's own DINOv3 licence
+for the weights, which are also gated behind an account.
+
+Meta published it in August 2025, as
 [DINOv3](https://arxiv.org/abs/2508.10104), and the Hugging Face
 [documentation](https://huggingface.co/docs/transformers/en/model_doc/dinov3)
 describes it as giving strong dense features without fine-tuning. Its base model
-has about 85.7 million parameters, almost exactly the size of DINOv2's base model,
-so the gain is not paid for in size.
+is almost exactly the size of DINOv2's base model, so what it gains is not paid
+for in size.
+
+The one idea is not a new arrangement of layers. It is the DINOv2 training of
+section 5.3 run far larger, with one new ingredient that repairs a fault which
+only appears when such training runs for a long time. The report states the fault
+plainly: the descriptions of individual patches get worse as training goes on,
+even while the description of the whole picture keeps improving. Since the
+per-patch numbers are what segmentation and part-finding read, that fault was a
+real limit on what the DINOv2 recipe could reach.
+
+The repair is the part worth knowing, and the report calls it **Gram anchoring**.
+The training keeps an earlier copy of the teacher, and it adds a requirement that
+the pattern of similarity between patches inside the student should match the
+pattern of similarity between the same patches in that earlier copy. It therefore
+constrains how alike the patches are to one another rather than what any single
+patch's numbers are, which leaves the student free to keep improving while the
+structure that was already good is held in place. Everything else is as DINOv2:
+patches, attention across all patches, a teacher that is a running average, hidden
+patches to predict. After training, further steps adapt the model to other picture
+sizes, align it with text and teach smaller models to copy the large one, so the
+base file you download is again a small network taught by a very large one.
+
+What this buys is sharper per-patch numbers at the same size as DINOv2, with no
+fine-tuning from you. What it costs, besides the licence conditions below, is that
+the gain lands mostly where you use those per-patch numbers. A classifier head of
+the kind section 5.3 builds reads only the single list of numbers for the whole
+picture, so swapping DINOv2 for DINOv3 underneath such a head changes less than
+the headline results suggest.
+
+On an arm the difference shows up when one backbone has to serve two jobs. If all
+you need is "is the gripper holding something", stay on DINOv2 and avoid the
+licence entirely. If the same features also have to mark which pixels belong to
+the part, so that the arm can find its edge, then the sharper patch descriptions
+are the whole point and the licence step is worth taking.
 
 The obvious alternative is DINOv2, from section 5.3, and the one real reason to
-stay there is the licence. That is also why DINOv3 is not yet the default. DINOv2
-is Apache-2.0 and you can forget about it, while DINOv3 ships Meta's own [DINOv3
-licence](https://github.com/facebookresearch/dinov3/blob/main/LICENSE.md). That
-licence does permit commercial use, and it attaches conditions: you pass the
-agreement on to anyone you give the weights to, you acknowledge the model in
-anything you publish, and you must not use it for military purposes or for
-weapons. Open weights are not the same thing as open source, and this repository's
+stay there is the licence, which is also why DINOv3 is not yet the default. The
+[DINOv3 licence](https://github.com/facebookresearch/dinov3/blob/main/LICENSE.md)
+permits commercial use and attaches conditions: you pass the agreement on to
+anyone you give the weights to, you acknowledge the model in anything you publish,
+and you must not use it for military purposes or for weapons. Open weights are not
+the same thing as open source, and this repository's
 [licences and
 platforms](../../../02_perception/02_object-perception/06_licences-and-platforms.md)
 page lists the other models in the same position.
@@ -528,7 +741,9 @@ Six things change that choice.
 
 One more case sits outside the list. If the scene is fully controlled and the
 answer depends on one thing you can measure, such as a height or a colour, write
-the rule instead and skip the models entirely. ---
+the rule instead and skip the models entirely.
+
+---
 
 ## 6. Where to read next
 

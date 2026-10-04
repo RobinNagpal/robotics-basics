@@ -279,14 +279,62 @@ than none.
 **Most used in 2026** for a single task, because it is the only model on this page
 that one person can train from nothing on one consumer graphics card.
 
+Size not stated, a big card to train it on, MIT for the code, and the weights are
+yours because you are the one who makes them.
+
 Diffusion Policy was published in 2023 by researchers at Columbia University, the
 Toyota Research Institute and the Massachusetts Institute of Technology, in the paper
 [Diffusion Policy: Visuomotor Policy Learning via Action
 Diffusion](https://arxiv.org/abs/2303.04137). It is the model that made the method
 popular for robot arms, and it works exactly as section 3 described: camera pictures
 and arm state go in, and a chunk of actions comes out of the clean-up procedure.
-There are no general pretrained weights to download. You train it on your own
-recordings, which is why the licence column above says that the weights are yours.
+There are no general pretrained weights to download, so you train it on your own
+recordings.
+
+The one idea it is built on is that the network never gives you a movement. It gives
+you a correction. You hand it a messy chunk, and it tells you which way every number
+in that chunk should move to look a little more like something a person really did,
+and then you hand it the result and ask again. The action chunking transformer on the
+page before this one does the opposite, because its pictures go in, its chunk comes
+out of a single pass, and it never sees its own answer.
+
+That changes which parts sit inside the model and how often each one runs. There are
+two. A picture encoder reads the cameras and the joint angles and turns them into a
+short description of the scene, and it runs once for each decision. A correction
+network then runs over the chunk once for every clean-up step, and each time it is
+given three things, which are that scene description, the chunk as it stands, and how
+many steps are left. The paper is deliberate about keeping the pictures out of the
+clean-up. They are something the correction network is told about, and they are never
+made messy and cleaned up alongside the actions. That is why the cameras are read
+once for a decision rather than once for every step. The correction network itself
+comes in two shapes. One is a convolution that slides along the chunk from its first
+position to its last, so each correction is worked out from its neighbours in time.
+The other is a transformer that treats each messy position as a token. Its authors
+report that the convolution is easier to get working but smooths over sharp
+movements, while the transformer handles a sudden change of direction better and is
+fussier about its settings. LeRobot uses the convolution by default.
+
+What the idea buys is the thing section 1 promised, plus one more. Two good routes
+stay two routes, because the start is random and the corrections only push towards
+places where real movements were. And the whole chunk is corrected together, so the
+positions inside it agree with each other instead of being produced one at a time.
+What it costs is that one decision is many runs of the network instead of one, and
+that the clean-up schedule becomes another thing to set. You can buy most of that time
+back in one line, by setting `num_inference_steps` lower and the scheduler to DDIM,
+which is the noise schedule built to be skipped through, and you pay for it with a
+slightly rougher path. Do not read the step counts in the table as a speed ratio,
+though, because a step here runs a small network, while a step of π0 runs its action
+expert over all the tokens its large pretrained half produced. Only a measurement on
+your own machine settles which is quicker.
+
+On a real arm the difference shows up in the recordings rather than in the code. The
+whole advantage of this policy over an action chunking transformer is that it keeps
+two ways of doing a task apart instead of averaging them, and it can only do that if
+both ways are in your data. If you always reach round the box on the left, you have
+paid for a hundred network passes and learned one route, and the transformer would
+have given you that same route in one pass. So recording for a diffusion policy means
+deliberately showing the alternatives, which is the opposite of what people do when
+they want tidy data.
 
 The obvious alternative is π0 in the next sub-section, and the choice between them is
 the main decision on this page. Pick Diffusion Policy when your robot does one job.
@@ -294,25 +342,6 @@ It is small, it needs no pretraining, nothing in it has to be fine-tuned, and yo
 look at every setting it has. Pick a pi model instead when you need the policy to
 follow an instruction in words, or when you have too few demonstrations to train from
 nothing.
-
-What it costs you is run-time speed, and here the number is concrete. LeRobot's
-`DiffusionConfig` sets `num_train_timesteps` to 100 and leaves `num_inference_steps`
-unset, and an unset value becomes equal to the training value. So the default runs
-the network 100 times for every chunk of 64 actions. The flow policies below run
-theirs 10 times, or 4 times. You can close most of that gap in one line, by setting
-`num_inference_steps` to 10 and the scheduler to DDIM, which is the noise schedule
-built to be skipped through, and you pay for it with a slightly rougher path. Be
-careful about reading the step counts as a speed ratio, though, because each step of
-Diffusion Policy runs a small network while each step of π0 runs a very large one.
-The step count is the part you control; the size of the network is the other half of
-the sum, and only a measurement on your own machine settles it.
-
-What most often goes wrong is in the recordings rather than the code. The whole
-advantage of this policy is that it keeps two good ways of doing a task apart instead
-of averaging them, and it can only do that if both ways are in your data. If you
-always reach round the box on the left, you have paid for 100 network passes and
-learned one way. So recording for a diffusion policy means deliberately showing the
-alternatives, which is the opposite of what people do when they want tidy data.
 
 The library is LeRobot, and it needs the `diffusers` package as well, because it
 borrows the noise schedules from there. Install both with
@@ -361,15 +390,56 @@ explains that input.
 **Most used in 2026** among flow policies, because they are the only weights from a
 frontier laboratory that anybody outside the company can download.
 
+Size not stated, a big card to run and a workstation to fine-tune, Apache-2.0 for the
+code, and a weights licence that depends on which copy you download.
+
 [π0](https://arxiv.org/abs/2410.24164), said "pi zero", was announced by Physical
 Intelligence on 31 October 2024 and opened on 4 February 2025.
 [π0.5](https://arxiv.org/abs/2504.16054) followed on 22 April 2025 and added what its
 authors call open-world generalisation, meaning it also works in rooms it has never
-seen. Both are a pretrained vision-language model with a separate small
-flow-matching network attached, which the papers call the action expert, and the base
-checkpoints were trained on what the
+seen. The base checkpoints were trained on what the
 [openpi repository](https://github.com/Physical-Intelligence/openpi) calls 10,000 or
 more hours of robot data.
+
+The one idea both are built on is that the hard part of a robot policy is
+understanding the scene and the instruction, and that somebody has already paid for
+that. So the part of a pi model that reads the pictures is not a small encoder trained
+on your own recordings, as Diffusion Policy's is. It is a pretrained vision-language
+model, PaliGemma in π0's case, which learned about pictures and words from the
+internet rather than from robots. The
+word "plate" in your instruction means something to it before it has ever seen a
+robot.
+
+The clean-up is then done by a second, much smaller network, which the papers call
+the **action expert**, and the two are kept apart on purpose. The picture and word
+tokens go through the large pretrained half, the arm's state and the messy actions go
+through the action expert, and the only place the two meet is a shared attention step
+in which the action tokens may look at the picture and word tokens but not the other
+way round. The papers call this arrangement a mixture of two experts. One consequence
+matters every time the arm asks for a chunk: because the picture and word tokens never
+look back at the action tokens, their share of the work is done once for a decision,
+and only the small half repeats for each clean-up step.
+
+That arrangement is also why the clean-up here is flow matching rather than the noise
+removal of Diffusion Policy. A clean-up step in a pi model is cheaper than running the
+whole model, but it is still far more work than a step of Diffusion Policy, because the
+action expert looks across every token the pretrained half produced. A hundred such
+steps for one decision would not be practical. The straight path from noise to the
+answer, which section 4 described and which needs only a handful of steps, is what
+makes bolting a clean-up network onto a large pretrained model usable at all.
+
+π0.5 keeps both halves and adds a step above them. Before it moves, it writes the
+next subtask down in words, such as picking up the plate, and the action expert then
+produces the movements for that subtask rather than for the whole instruction. Its
+training ran in two stages too: in the first, the actions were turned into discrete
+tokens, like words, so that the whole model could be trained as plain next-word
+prediction, and the flow-matching half was added only in the second. The difference
+shows on a long job. Told to clear a table, π0 has to carry the decision about what
+comes next inside the same numbers that produce the movement, while π0.5 says "pick up
+the plate" first and then has only that movement to make. Its authors credit the
+breadth of π0.5 to training on many kinds of data together, which is web pictures and
+text, other robots, and those written-down subtasks, rather than to the extra step
+alone.
 
 Pick one of these rather than Diffusion Policy when you want the pretraining. You can
 tell a pi model what to do in words, and because it has already seen a great deal of
@@ -380,13 +450,11 @@ regression, meaning a policy that predicts the actions directly instead of clean
 up noise, while running several times more slowly. So the pretraining is the reason
 to choose a pi model, and the flow matching inside it is not by itself a reason.
 
-What it costs you is a graphics card and some care over the licence. The openpi
-repository states that it needs an NVIDIA card with more than 8 GB of video memory
-for inference and more than 70 GB for full fine-tuning, and that it has only been
-tested on Ubuntu 22.04. It does not run on a Mac, and that is the thing people most
-often find out too late. The licences differ from file to file: openpi's code is
-Apache-2.0, its own checkpoints are served from the project's storage bucket with no
-separate terms named for them, the LeRobot copy at
+Two of their costs have nothing to do with size, and both catch people. The openpi
+repository says it has only been tested on Ubuntu 22.04 and needs an NVIDIA card, so
+there is no usable path on a Mac. And the licence follows the exact file you download.
+openpi's code is Apache-2.0, its own checkpoints are served from the project's storage
+bucket with no separate terms named for them, the LeRobot copy at
 [lerobot/pi0](https://huggingface.co/lerobot/pi0) declares Apache-2.0 on its model
 card, and the LeRobot copy at
 [lerobot/pi05_base](https://huggingface.co/lerobot/pi05_base) declares the Gemma
@@ -432,24 +500,54 @@ explains how much data and memory that takes.
 **Most used in 2026** by people learning on cheap hardware, because its authors say
 it runs on a MacBook and no other model here does.
 
-[SmolVLA](https://huggingface.co/lerobot/smolvla_base) is a 450-million-parameter
-model released on 3 June 2025 by Hugging Face. It joins a SmolVLM2
-vision-language backbone to a flow-matching action expert of roughly 100 million
-parameters, and it was trained on about 10 million frames from 487 datasets
-contributed by the LeRobot community. Its authors report about 78 per cent success on
-real tasks with the SO-100 arm.
+Size m, a laptop to run it and a big card to train it, Apache-2.0 for the code and
+for the weights.
+
+[SmolVLA](https://huggingface.co/lerobot/smolvla_base) was released on 3 June 2025 by
+Hugging Face. It joins a SmolVLM2 vision-language backbone to a flow-matching action
+expert, and it was trained on about 10 million frames from 487 datasets contributed
+by the LeRobot community. Its authors report about 78 per cent success on real tasks
+with the SO-100 arm.
+
+The one idea is not a new mechanism. SmolVLA has the same two halves as π0, a
+pretrained vision-language model and a small flow-matching action expert, and its
+authors set out to find how much of each half could be cut away before the policy
+stopped working. So the interesting part of this model is the list of corners it
+decided could be cut.
+
+There are three, and all of them are about how much work one decision is. The first
+is that only the first half of the language model's layers are used at all, and the
+rest are never run, which its authors report as a good trade between speed and
+accuracy. The second is that each camera frame becomes only a few dozen tokens
+instead of a few hundred, by passing one whole picture rather than cutting it into
+tiles and by folding neighbouring pixels together. Fewer tokens is the cut that
+matters most for the action expert, because, as section 6.2 explained, the expert
+looks across all of those tokens on every clean-up step. The third is that the action
+expert alternates two kinds of layer, one that reads the vision-language half and one
+that only looks at the chunk itself. Its authors report that alternating the two did
+better than using either kind alone, both on success and on speed.
+
+One more part of the release matters, and it is not a change to the model at all. It
+comes with an asynchronous runner, which lets the arm keep playing
+the actions it already holds while the next chunk is being computed, instead of
+standing still until the policy answers. That runner is part of LeRobot, so other
+policies can use it, but it is presented as part of this model's recipe, because a
+small model on a laptop is exactly the case where the wait is long enough to see.
+
+Where the difference shows on a real arm is in what the model has already seen. The
+pi models were trained on a fleet of research robots that you do not own. SmolVLA's
+training frames were contributed by the LeRobot community, so much of that data was
+recorded on the same cheap arms a reader of this page is likely to have, which is why
+its reported numbers are on an SO-100 rather than on a laboratory platform. If your
+arm is an SO-100 and your computer is a MacBook, π0.5 will not run for you at all,
+and the model that has already seen arms like yours starts closer to your task.
 
 Pick it rather than π0.5 for two reasons. It runs where π0.5 does not, including on a
 processor alone, and its code and its weights are both Apache-2.0, so there is no
-licence question to resolve before you ship. Against that, it is about ten times
-smaller than a frontier model, so expect less of it, and its training data came from
-volunteers and is of uneven quality.
-
-What it costs you is modest. LeRobot's hardware guide puts training it at about 10 to
-16 GB of video memory at batch size 8, which it calls marginal on a Mac, and its
-default is 10 flow-matching steps for a chunk of 50 actions. What most often goes
-wrong is expecting frontier behaviour from a small model, and then blaming the
-recordings for it.
+licence question to resolve before you ship. Against that, it is much smaller than a
+frontier model, so expect less of it, and its training data came from volunteers and
+is of uneven quality. What most often goes wrong is expecting frontier behaviour from
+a small model, and then blaming the recordings for it.
 
 The library is LeRobot, installed with `pip install "lerobot[smolvla]"`. The code
 below is the pattern from the model's own card.
@@ -484,15 +582,49 @@ fine-tuning, because this is a base model rather than a finished one.
 the field is taking, which is pretraining on ordinary human video, and because NVIDIA
 publishes it as a supported release rather than as a research drop.
 
+Size l, a big card to run it and a workstation to fine-tune it, Apache-2.0 for the
+code and the NVIDIA Open Model License for the weights.
+
 [GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T) was tagged on 18 April 2026 as a
 general-availability release, which NVIDIA defines as carrying support and stability
-guarantees. It has 3 billion parameters, a Cosmos-Reason2-2B vision-language
-backbone, and an action head that is a flow-matching diffusion transformer, halved
-from 32 layers to 16, producing chunks of 40 actions. It was pretrained on 20,000
-hours of human video alongside robot demonstrations, which works because its actions
-are expressed relative to where the gripper is now rather than as absolute positions.
-Three centimetres to the left means the same thing on a human hand and on a gripper,
-while a target coordinate does not.
+guarantees.
+
+The one idea it is built on is a change to what an action means. In Diffusion Policy
+and in the pi models, an action is normally an absolute target, which is where the
+gripper should be or what angle each joint should hold. In GR00T an action is a change
+from where the gripper is now, so "three centimetres to the left" is the action rather
+than a target coordinate. That sounds like a detail, and it is
+the whole reason the model exists in this form, because three centimetres to the left
+means the same thing on a human hand as on a gripper, while a target coordinate does
+not. So ordinary video of people doing things with their hands becomes training data,
+and the project says it pretrained on 20,000 hours of it alongside robot
+demonstrations.
+
+Inside, it is the same two halves one more time, with two differences from π0.5. The
+vision-language half is Cosmos-Reason2-2B, a model built to reason about physical
+scenes rather than to describe pictures. The action half is a flow-matching diffusion
+transformer whose depth was halved, from 32 layers to 16, so the part that repeats on
+every clean-up step is cheaper than it would otherwise be. The table gives the other
+half of that saving, which is that GR00T asks for the fewest steps per chunk of
+anything on this page. One more thing follows from a single
+checkpoint driving several different bodies: it has to be told which body it is
+driving, through what the code calls an embodiment tag, and an arm it has never met is
+declared as a new one.
+
+What the idea buys is pretraining data that nobody had to collect with a robot, which
+is a different bet from π0.5. π0.5 got its breadth from the web pictures and text its
+backbone had already read, plus a large fleet of real robots. GR00T is betting that
+human video, of which there is far more than there will ever be robot data, can carry
+the same weight. What it costs you is that the relative action space has to be
+switched on and configured, and that not every part of the arm can use it. The
+gripper stays absolute in the command below, because open and closed are not relative
+to anything.
+
+The difference shows up on an arm that is not mounted where the demonstrated one was.
+An action that names a coordinate is only correct for one arrangement of arm, table
+and base, so moving the arm or putting it on a mobile base invalidates it. An action
+that says how far to move does not depend on that arrangement, which is why NVIDIA
+aims this model at humanoids, where the arm's own base moves as the robot walks.
 
 Pick it rather than π0.5 when you want software somebody supports and a licence
 somebody has written down, since Physical Intelligence serves its checkpoints with no
@@ -500,20 +632,18 @@ separate terms named for them. Pick π0.5 instead if you cannot accept NVIDIA's 
 or if your work is two-armed tabletop manipulation rather than the humanoid work
 GR00T targets.
 
-What it costs you is NVIDIA hardware and attention to the licence. Inference wants
-16 GB of video memory or more and fine-tuning wants 40 GB or more, and the supported
-platforms are CUDA 12.8 desktop cards, Jetson Thor and Orin, and DGX Spark. Nothing
-about it runs on a Mac. The code is Apache-2.0, and the weights are under the
+Two more costs have nothing to do with size. The supported platforms are CUDA 12.8
+desktop cards, Jetson Thor and Orin, and DGX Spark, so nothing about it runs on a Mac.
+And one sentence in the repository's README calls the model "fully commercially
+licensable under Apache 2.0", which is wrong about the weights: those are under the
 [NVIDIA Open Model License
 Agreement](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/),
-which does allow commercial use but adds conditions that Apache-2.0 does not: an
-attribution notice when you redistribute, a clause that ends the licence if you
-disable a safety guardrail without putting a similar one in its place, and a
-requirement to stay within NVIDIA's separately published terms. One sentence in the
-repository's README calls the model "fully commercially licensable under Apache 2.0",
-and that sentence is wrong about the weights; the licence section below it and the
-[model card](https://huggingface.co/nvidia/GR00T-N1.7-3B) both say the narrower
-thing, and that is what misleads people here most often.
+which allows commercial use but adds an attribution notice when you redistribute, a
+clause that ends the licence if you disable a safety guardrail without putting a
+similar one in its place, and a requirement to stay within NVIDIA's separately
+published terms. The licence section further down the README and the [model
+card](https://huggingface.co/nvidia/GR00T-N1.7-3B) both say the narrower thing, and
+that is what misleads people here most often.
 
 LeRobot carries it as the `groot` policy type, installed with
 `pip install "lerobot[groot]"`. Fine-tuning it on your own recordings is one command.
@@ -535,18 +665,41 @@ LeRobot downloads the base model, converts your dataset into what GR00T expects 
 runs the training. What you supply is `$YOUR_DATASET`, your own recordings in
 LeRobot's format. `new_embodiment` tells it that your arm is not one of the bodies
 the checkpoint already knows, and `use_relative_actions` turns on the relative action
-space described above, while the gripper stays absolute because open and closed are
-not relative to anything.
+space described above, while the gripper stays absolute.
 
 ### 6.5 Octo, kept for what it explains
 
-**Historical.** [Octo](https://github.com/octo-models/octo) (2024) was an early open
-general policy trained on many robots' recordings, and it produced its actions with a
-small diffusion part at the end of a large transformer. That arrangement, a big model
-that understands the scene with a small generative head that makes the numbers, is
-the arrangement every model above still uses, so Octo is worth reading to see where
-the design came from. It is MIT on both code and weights, which is the cleanest
-licence on this page.
+**Historical.** Size not stated, and the machine it needs is not stated either. MIT
+for the code and for the weights, which is the cleanest licence on this page.
+
+[Octo](https://github.com/octo-models/octo) (2024) was an early open general policy
+trained on many robots' recordings, and it produced its actions with a small diffusion
+part at the end of a large transformer.
+
+The one idea it is built on is that nothing should be built in. Everything that goes
+into the model becomes a token, the middle is a plain transformer, and every piece
+that belongs to one particular robot lives at the edges, so a new camera, a new
+instruction or a new arm is attached without re-initialising the trained middle. That is the opposite of a pi
+model, where the middle is one particular pretrained vision-language model and the
+shape of what you may feed it is settled by that choice.
+
+Two parts of the arrangement are worth knowing because they are what makes the edges
+detachable. Pictures are cut into small patches and each patch becomes a token, an
+instruction goes through its own pretrained text encoder and becomes more tokens, and
+the transformer mixes whichever tokens are present, so a missing camera is simply
+missing tokens rather than a changed network. Then there is the readout token, which
+is an extra token allowed to look at everything before it while nothing is allowed to
+look at it. The small diffusion part reads the transformer through that token, so
+attaching a second head changes nothing about what the transformer computes.
+
+The contrast with every model above it is where the understanding came from. Octo's
+transformer learned from robot recordings and nothing else, apart from the text
+encoder that reads the instruction, so whatever it knows about mugs and plates it
+learned from robots. π0, SmolVLA and GR00T all start from a model
+that read the internet first, and that single step is what the field did after Octo.
+The shape, which is a big model that understands the scene with a small generative
+head that produces the numbers, is still the shape every model above uses, and that is
+why Octo is worth reading.
 
 Do not start new work on it. Its repository has had no commits since the middle of
 2024, and LeRobot does not carry it, so you would be maintaining it yourself. Use

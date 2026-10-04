@@ -210,6 +210,11 @@ the four models you would actually call today. The decision that matters most co
 the end, because a planner is either a model you call over the internet or a model you
 run on your own machine, and those two options fail in opposite ways.
 
+Each sub-section opens with one short line giving the model's size, the machine it
+needs and its licence, in the bands that [section 7 of the chapter
+overview](../01_overview.md#7-how-this-chapter-writes-size-machine-and-licence) defines.
+So read that line for the band and the table below for the exact figure.
+
 The table has two columns, so read a row from left to right as one sentence about one
 model. The left column names the model and says how current it is. The right column
 begins with where the model runs, because that is the decision above, and then gives its
@@ -231,11 +236,44 @@ where no figure exists.
 ### 5.1 SayCan
 
 SayCan is **historical**: you read it to understand where the method came from, and you
-would not build a planner this way today. It came from Robotics at Google and Everyday
-Robots, and [its own page](https://say-can.github.io/) dates the first release to 4
-April 2022 and an update to 16 August 2022, which swapped in Google's Pathways Language
-Model, called PaLM. It paired that language model with a set of learned skills on a
-mobile robot with one arm.
+would not build a planner this way today.
+
+Size not published, and nothing to run, because this is a method rather than a model;
+Apache-2.0 on the released sample code.
+
+It came from Robotics at Google and Everyday Robots, and [its own
+page](https://say-can.github.io/) dates the first release to 4 April 2022 and an update
+to 16 August 2022, which swapped in Google's Pathways Language Model, called PaLM. It
+paired that language model with a set of learned skills on a mobile robot with one arm.
+
+The one idea it is built on is that the language model should not be allowed to write
+the plan. It is asked to score it instead. The robot's skills are fixed phrases, and
+for each phrase the model is asked how likely that phrase is as the next line of the
+plan. A language model can give that number for any piece of text without being asked
+to produce anything, because scoring the next words is what it does underneath in order
+to write at all. Then a second model, one for each skill and trained on that robot's own
+attempts at that skill, gives the chance that the skill will succeed from the current
+camera picture. The two numbers are multiplied, the winning skill is run, its phrase is
+added to the text, and the model is asked again.
+
+What that assumes about the robot is a closed world. There must be a fixed list of
+skills, each one a phrase, and each one with its own trained success model. Nothing in
+the plan can be a number, a count or a repetition, because the only things the plan can
+contain are the phrases on the list.
+
+What the assumption buys is that two whole classes of failure cannot happen. The model
+cannot name a skill the robot has not got, because it never writes a skill name, it only
+ranks the ones it was given, so the checker that most sub-sections on this page need is
+unnecessary here. And the model cannot ask for something that is impossible from
+where the robot is standing, because the second score is exactly a measurement of that.
+What it costs is the second score itself, which needs a trained model per skill, on that
+robot, from that robot's own attempts, and that is the part nobody wants to build.
+
+On an arm, the difference shows up when the gripper is already full. A planner that
+writes a list writes "wipe the table", the runner calls it, and the arm tries to wipe
+with nothing in its hand. SayCan's second score for wiping is near zero while the hand
+is empty, so picking up the sponge wins first, even though wiping is the more obviously
+useful step.
 
 The obvious alternative is the plain method in [section 3](#3-how-it-works-inside):
 prompt a hosted model, read back a numbered list, and refuse any line that is not a
@@ -243,13 +281,11 @@ skill. That alternative cannot tell whether a step can be carried out from where
 robot is standing right now. SayCan is worth reading because it answers exactly that
 question, and every later planner either copies the answer or does without one.
 
-The cost is the second score, because every skill needs its own small model trained on
-that robot's own attempts at that skill. SayCan's page reports that PaLM-SayCan chooses
-the correct sequence of skills 84 per cent of the time and carries the sequence out
-successfully 74 per cent of the time, measured by the team that built it on a robot
-nobody outside could obtain. The mistake people make when copying it is to write the
-second score as a hand-written rule, which puts back the hand-written program the
-planner was meant to remove.
+SayCan's page reports that PaLM-SayCan chooses the correct sequence of skills 84 per
+cent of the time and carries the sequence out successfully 74 per cent of the time,
+measured by the team that built it on a robot nobody outside could obtain. The mistake
+people make when copying it is to write the second score as a hand-written rule, which
+puts back the hand-written program the planner was meant to remove.
 
 There is no library. Google released a version of the method for a simulated tabletop
 inside the
@@ -296,19 +332,49 @@ happened](#feeding-back-what-happened).
 ### 5.2 Code as Policies
 
 Code as Policies is **historical** as a system, although the pattern it introduced is
-not: people still build planners in this shape every week. It came from Robotics at
-Google, appeared at the 2023 International Conference on Robotics and Automation, and
-its [paper](https://arxiv.org/abs/2209.07753) and
-[page](https://code-as-policies.github.io/) describe the method. The prompt lists the
-robot's own functions as comments followed by example code, and the model then writes a
-few lines of Python that call those functions. The page also publishes every prompt the
-authors used as plain text files, which is the most useful thing on it.
+not: people still build planners in this shape every week.
 
-The obvious alternative is SayCan's numbered list. Choose code when the plan has to
-count, repeat a step for every object on the table, or work out a number, such as putting
-a block 10 cm to the left of a bowl; a list of fixed skill phrases cannot express any of
-those three. The second reason is that a person can read the program before the robot
-runs it.
+Size not published, and nothing to run here either; Apache-2.0 on the released sample
+code.
+
+It came from Robotics at Google, appeared at the 2023 International Conference on
+Robotics and Automation, and its [paper](https://arxiv.org/abs/2209.07753) and
+[page](https://code-as-policies.github.io/) describe the method. The page also publishes
+every prompt the authors used as plain text files, which is the most useful thing on it.
+
+The one idea it is built on is that the plan should be a program, so the robot's
+abilities are described as functions rather than as sentences. The prompt lists the
+robot's own functions, written as comments followed by example code, and the model
+continues the text with a few more lines of Python that call them.
+
+That changes what the model is choosing from. SayCan, above, hands the model a closed
+list of phrases and asks it to rank them, so the plan can only ever be a sequence drawn
+from that list. Code as Policies hands the model a set of function names and lets it
+write anything those names can express, which is a much larger set of plans than the
+list contains. The answer then has to be parsed rather than matched, and it is run
+against a dictionary that maps each permitted name to one of your own functions.
+
+What that assumes about the robot is the interesting part, because it is a stronger
+assumption than SayCan's. It assumes the robot's abilities take arguments.
+`pick_and_place(red, blue)` only means something if the robot can be told which object
+and which destination, as values rather than as part of a fixed phrase; "pick up the
+sponge" has no slot for either. It also assumes somebody has written a safe runner,
+because a program can express things nobody wanted as easily as things they did, and the
+model has been given a general-purpose language in which to do it.
+
+What the assumption buys is three kinds of plan that a list cannot hold: a count, a
+repetition over every object on the table, and a number worked out on the spot, such as
+putting a block ten centimetres to the left of a bowl. There is one more benefit, and it
+is for the person rather than the robot, because a program can be read before it is
+run.
+
+On an arm, the difference shows up the moment a request contains a quantity. "Put each
+block ten centimetres to the left of the bowl" cannot be said at all in SayCan's
+vocabulary of phrases, and there is no score to give it. In six lines of Python it is a
+loop and an addition.
+
+The obvious alternative is SayCan's numbered list, and the paragraphs above are the case
+for code instead.
 
 The cost is that you now run code a model wrote. The failure people hit first is calling
 `exec` on the plan with the ordinary Python built-in functions still in scope, because a
@@ -355,12 +421,45 @@ places in 3D space as good or bad for an ordinary motion planner; its
 
 A hosted general-purpose model is the one **most used in 2026**, because a developer
 starting a planner today writes a prompt against a service rather than buying hardware.
+
+Size not published, nothing to run on your side because it is a hosted service, and no
+licence because the weights are not distributed.
+
 Claude Opus 5.5 is such a model, from Anthropic, reached over the internet through its
 Messages application programming interface, usually shortened to API. It was not trained
 on robots at all. Its name is also the string you put in the request, `claude-opus-5-5`,
 and Anthropic's [model
 list](https://docs.claude.com/en/docs/about-claude/models/overview) names the current
 ones.
+
+The idea this model is built on cannot be named, because Anthropic publishes nothing
+about the inside of it. There is no parameter count, no description of the network and
+no account of the training data. That is not an oversight you can work
+around; it is the normal position for every frontier hosted model, and the two hosted
+entries on this page are both in it.
+
+What is published is the behaviour, and for a planner the published behaviour that
+matters is this: the model reasons before it answers, and that reasoning cannot be
+switched off. The only control is how much effort it spends, chosen per request. You pay
+for the reasoning whether or not it is shown to you. So a plan from this model is not
+one pass through a network that produces a numbered list; it is an unknown amount of
+thinking followed by the list, and the time a plan takes varies with the request in a
+way you cannot predict from the request's length.
+
+Because the model is closed, the mechanism you actually design is outside it, and that
+is the real content of this sub-section. It has three parts, all of them visible in the
+code below: a system instruction that fixes the form of the answer, a user message that
+carries the skill list and the request, and your own checker afterwards that refuses any
+line naming a skill the robot has not got. Compare that with [5.5](#55-qwen35), where
+the weights are on your disk: there you can turn the reasoning off with a flag, pick a
+smaller size, store the numbers in fewer bits, and read the model's own files to see
+what it is. Here the three parts above are the whole of your influence over it.
+
+On an arm, the closedness shows up as the difference between tuning and waiting. If the
+plans are wrong, you can improve the wording, add a worked example, and raise the
+effort. If they are still wrong, or if the same request repeats a thousand times a day
+and the bill is the problem, there is nothing inside the model you can change, and the
+next move is to another model rather than to a better setting.
 
 The obvious alternative is Gemini Robotics ER 2 in [5.4](#54-gemini-robotics-er-2), which
 was built for robots. Choose the general model when the planning job is text only: a
@@ -399,7 +498,7 @@ response = client.messages.create(
 )
 plan = [block.text for block in response.content if block.type == "text"][0]
 
-for line in plan.splitlines():                      # the checker from section 6
+for line in plan.splitlines():                      # refuse an invented skill
     step = line.split(".", 1)[-1].strip()
     if step and step not in SKILLS:
         raise ValueError(f"the model invented a skill: {step}")
@@ -416,7 +515,12 @@ the sponge was dropped" and asking again.
 ### 5.4 Gemini Robotics ER 2
 
 Gemini Robotics ER 2 is also **most used in 2026**, among developers whose planner has
-to look at the camera. It comes from Google DeepMind, which
+to look at the camera.
+
+Size not published, nothing to run on your side because it is a hosted preview service,
+and no licence because the weights are not distributed.
+
+It comes from Google DeepMind, which
 [announced](https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-robotics-er-2/)
 it on 30 July 2026, and the
 [frontier document](../../../03_frameworks/08_frontier/02_foundation-models.md#5-google-deepmind-gemini-robotics-2-and-er-2)
@@ -426,6 +530,39 @@ real physical scene rather than about text. Google's
 you can call: `gemini-robotics-er-2-preview`, which it says is built on Gemini 3.5 Flash,
 and `gemini-robotics-er-2-streaming-preview` for low-delay streaming. Both are marked as
 preview.
+
+Its insides are unpublished in the same way as [5.3](#53-claude-opus-55)'s, and the
+sentence above is the whole of what Google says: one endpoint is built on Gemini 3.5
+Flash, and nothing about the shape of Gemini 3.5 Flash is published either. So the idea
+this sub-section can describe is not an idea about the network. It is an idea about where
+the plan lives.
+
+In [5.3](#53-claude-opus-55) and in [5.5](#55-qwen35), the plan is a piece of text that
+you own. You build the prompt, you get a list back, you parse it, and if you want the
+model to carry on after a step you rebuild the prompt with a line about what happened.
+Here the plan is a conversation the service keeps. You create an interaction, and what
+comes back is not a finished list but a request for one function call. You run it and
+send a result back carrying that step's identifier, and the next interaction is tied to
+the last one by its identifier rather than by a prompt you reassembled. So the state of
+the half-finished plan sits on Google's side between your calls.
+
+What that assumes about the robot is what [5.2](#52-code-as-policies) assumed: that
+every skill is a function with named arguments, because that is the only form the model
+is offered. The assumption buys two things. There is nothing to parse and no invented
+skill name to catch, since the model is choosing among definitions you supplied rather
+than writing words that have to be matched against a list. And judging whether a step
+worked is a job this model was trained for, where with a general model you build that
+step yourself out of a second service and a second prompt.
+
+What the arrangement costs, beyond being closed, follows from the state living on the
+far side. An outage in the middle of a task loses the half-finished plan, which in
+[5.5](#55-qwen35) would be a local variable you still had, and there is no way to inspect
+or edit the plan between steps, because you never hold the whole of it.
+
+On an arm, this is the model to pick when the plan cannot be written in advance. "Put
+the clean cups on the shelf" cannot be turned into a list before the robot looks, because
+which cups are clean is only in the picture, and the loop of look, call one function,
+look again is the shape of the answer rather than a workaround.
 
 The obvious alternative is the general hosted model in [5.3](#53-claude-opus-55). ER 2
 earns the choice when the planner has to look. It points at objects in the picture and
@@ -481,11 +618,50 @@ example stops at fifteen steps.
 
 Qwen3.5 is **most used in 2026** among the models you can download, because its weights
 are published under the Apache-2.0 licence with no sign-in, and because it is the family
-whose small sizes a computer on a robot can actually hold. It comes from Alibaba's Qwen
-team, and the [project's own news list](https://github.com/QwenLM/Qwen3.5) dates the
-first Qwen3.5 release to 16 February 2026 and the small sizes to 2 March 2026. Open
-weights means the model files themselves are published, so you download them and run
-them, and no request leaves your machine. Every size reads pictures as well as text.
+whose small sizes a computer on a robot can actually hold.
+
+Size m at 0.87 billion parameters and l above that, a laptop for the small sizes and a
+big card for the large ones, Apache-2.0 on the weights.
+
+It comes from Alibaba's Qwen team, and the [project's own news
+list](https://github.com/QwenLM/Qwen3.5) dates the first Qwen3.5 release to 16 February
+2026 and the small sizes to 2 March 2026. Open weights means the model files themselves
+are published, so you download them and run them, and no request leaves your machine.
+Every size reads pictures as well as text.
+
+The one idea it is built on is that most of a transformer's attention does not have to
+be the expensive kind. The expensive kind is what the [chapter
+overview](../01_overview.md#3-how-words-become-numbers) describes: every token compares
+itself against every other token in the row, so the work grows with the square of the
+length. Qwen3.5 keeps that in one block out of every four. The other three use a block
+its model card calls Gated DeltaNet, a linear-attention block that carries a running
+summary of what it has read forward instead of comparing each new token against
+everything behind it, so its work grows with the length rather than with the square of
+it. The pattern of three cheap blocks and one expensive one repeats up the model.
+
+Two other choices on the card matter for a planner. The model is a sparse mixture of
+experts, which means a layer holds many small sub-networks and each token is routed to
+only a few of them, so the work done per token is far smaller than the number of weights
+on the disk. And its vision was not added afterwards: the card describes early fusion
+training on multimodal tokens, meaning pictures were in the training mixture from the
+beginning, rather than being projected into a finished language model later on, as
+[section 3 of the vision-language models
+page](../02_most-used/02_vision-language-models.md#3-how-it-works-inside) describes.
+
+What the three-to-one pattern buys a planner is exactly the shape of a planner's input.
+A planner's prompt is long and mostly unchanging: the whole skill list, a description of
+the scene, one or two worked examples, and then a short request at the end. A long
+prompt is the case where cheap attention saves the most, and the card claims a context
+measured in hundreds of thousands of tokens. What the mixture of experts costs is
+memory, because every expert has to be in memory even though each token uses few of
+them, so the download is larger than the work per token would suggest.
+
+On an arm, the difference from [5.3](#53-claude-opus-55) is not the quality of one plan,
+it is how many plans you can afford. A robot that replans after every step asks for a
+plan every few seconds all day, and on your own machine that costs nothing after the
+hardware. The second difference is one line in the code below: here you can switch the
+reasoning off with a flag when a plan has to be quick, which in
+[5.3](#53-claude-opus-55) you cannot do at all.
 
 The obvious alternative is the hosted model in [5.3](#53-claude-opus-55). Qwen3.5 earns
 the choice in two situations and no others: the robot has to keep working when the
@@ -498,14 +674,11 @@ parameters](https://huggingface.co/Qwen/Qwen3.8-27B) and above, so the sizes tha
 beside an arm are still Qwen3.5's.
 
 The plans are worse than a hosted frontier model's, which makes the checker from
-[5.3](#53-claude-opus-55) matter more rather than less, and the hardware is yours.
-Hugging Face reports Qwen3.5-0.8B at 873 million parameters, Qwen3.5-2B at 2.27 billion,
-Qwen3.5-4B at 4.66 billion and Qwen3.5-9B at 9.65 billion, and the matching downloads on
-[Ollama](https://ollama.com/library/qwen3.5) are 1.0 GB, 2.7 GB, 3.4 GB and 6.6 GB, while
-`qwen3.8:27b` is 18 GB. A small single-board computer next to an arm will hold the first
-three; the last two need a workstation. The thing that goes wrong most often is thinking:
-these models reason at length before answering unless you tell them not to, which adds
-seconds nobody planned for.
+[5.3](#53-claude-opus-55) matter more rather than less, and the hardware is yours. A
+small single-board computer next to an arm will hold the three smallest sizes, while the
+larger ones want a desktop machine with a card in it. The thing that goes wrong most
+often is thinking: these models reason at length before answering unless you tell them
+not to, which adds seconds nobody planned for.
 
 The library is `ollama`, installed with `pip install ollama`, and it talks to the Ollama
 program running on the same machine.
@@ -540,8 +713,12 @@ call.
 ### 5.6 Gemma 4
 
 Gemma 4 is **worth betting on**, because the models that decide what a robot does are
-moving onto the robot's own computer, and this is the open family built for that. The
-evidence for the direction is in the [frontier
+moving onto the robot's own computer, and this is the open family built for that.
+
+Size l for the on-device sizes and xl at the top, a laptop or a phone-class board for
+the on-device sizes, Apache-2.0 on the weights.
+
+The evidence for the direction is in the [frontier
 document](../../../03_frameworks/08_frontier/02_foundation-models.md#5-google-deepmind-gemini-robotics-2-and-er-2):
 alongside Gemini Robotics ER 2, Google published Gemini Robotics On-Device 2, a smaller
 model meant to run on the robot's own computer rather than in a data centre. That one
@@ -557,27 +734,50 @@ and mobile devices, and says every size reads text and images while E2B, E4B and
 read video and audio. Function calling is built in, and the context window is 128,000
 tokens on the small models and 256,000 on the medium ones.
 
-Read the "E" sizes as the work done per token rather than as the download, because
-Hugging Face reports `google/gemma-4-E2B-it` at 5.12 billion parameters and the matching
-[Ollama](https://ollama.com/library/gemma4) download for `gemma4:e2b` is 4.6 GB to
-7.5 GB.
+The one idea the small sizes are built on is that a model can keep most of its memory
+in lookup tables, where memory is cheap, instead of in layers, where it is expensive.
+An ordinary model looks a token up once, in one table at the bottom, and the numbers it
+finds pass up through every layer. Gemma 4's small sizes give each layer a small table
+of its own, so every layer looks the token up again and reads its own numbers for it.
+The model card calls these Per-Layer Embeddings. A lookup is cheap, because it is a
+table read rather than a multiplication, so the tables add a great deal of weight on
+disk while adding almost nothing to the work done per token. That is what the "E" in
+E2B and E4B means: the name is the effective size, the work per token, and it is well
+under the number of parameters the model stores.
 
-The obvious alternative is Qwen3.5 at a similar size, and there are two reasons to take
-Gemma 4 instead. The small sizes are the ones Google designed for a phone-class computer,
-and a phone-class computer is what is usually bolted to a robot. And E2B, E4B and 12B
-read audio directly, so a spoken request can reach the planner as sound, which removes a
-separate speech-to-text step and the mistakes that step makes.
+The attention is arranged for the same end. Most layers look only at a sliding window of
+the last few hundred tokens, and occasional layers look at the whole prompt, so the
+expensive comparison happens in a few places rather than everywhere. Each small size
+also carries vision and audio encoders of its own, which is why a spoken request can
+reach it without a separate speech-to-text program.
 
-Two things cost you. The first is the download: at the smallest useful size Gemma 4 is
-larger than Qwen3.5, 4.6 GB against 2.7 GB, so the cheapest robot computer may take the
-Qwen and not the Gemma. The second is the licence, which is worth checking rather than
-remembering. Gemma 3 was under Google's own Gemma Terms of Use, and its Hugging Face
-download still refuses a request that is not signed in. For Gemma 4 the page the model
-card points at prints the [Apache License
-2.0](https://ai.google.dev/gemma/docs/gemma_4_license) in full, and the Hugging Face
-repositories answer a request with no sign-in. So the restriction people remember from
-Gemma 3 is not the position for Gemma 4, and it could move again, which is why you read
-the licence page yourself before you ship.
+So Qwen3.5 and Gemma 4 solve the same problem in different places, and the two are worth
+holding in mind together. Qwen3.5 makes most of its attention blocks the cheap
+linear kind and routes each token to a few of many experts. Gemma 4 keeps ordinary
+attention but makes it mostly local, and moves weight out of the layers and into
+per-layer lookup tables. Both arrive at a model whose work per token is far smaller than
+its size on disk, and both therefore download larger than they run.
+
+On an arm, the difference from Qwen3.5 comes down to two things, and neither is plan
+quality. The first is what the computer bolted to the robot actually is: Google designed
+these sizes for a phone-class board, which is usually what is bolted to a robot. The
+second is how the request arrives. If somebody speaks to the robot, Gemma 4 can take the
+sound itself, and a separate speech-to-text step and the mistakes it makes disappear from
+your program.
+
+The obvious alternative is Qwen3.5 at a similar size, and the paragraphs above are the
+case for Gemma 4 instead.
+
+Two things cost you. The first is the download: at the smallest useful size the
+[Gemma 4](https://ollama.com/library/gemma4) files are 4.6 GB against
+[Qwen3.5](https://ollama.com/library/qwen3.5)'s 2.7 GB, so the cheapest robot computer
+may take the Qwen and not the Gemma. The second is the licence, not because it restricts you but
+because people remember the wrong one. Gemma 3 was under Google's own Gemma Terms of
+Use, and its Hugging Face download still refuses a request that is not signed in, while
+for Gemma 4 the page the model card points at prints the [Apache License
+2.0](https://ai.google.dev/gemma/docs/gemma_4_license) in full and the repositories
+answer a request with no sign-in. That could move again, so read the licence page
+yourself before you ship.
 
 The thing that goes wrong most often at the small sizes is that the answer arrives as
 prose instead of as the list you asked for.

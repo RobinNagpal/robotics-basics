@@ -257,10 +257,43 @@ it.
 **Historical**: you rarely call it yourself now, but the open-vocabulary idea comes
 from it, and OWLv2 below has CLIP inside it.
 
+Size m, a laptop, MIT for the code and no licence stated for the weights.
+
 CLIP (Contrastive Language-Image Pre-training) was published by OpenAI in 2021. It
 has one network for pictures and one for sentences, and it scores how well a
 picture and a sentence go together. It draws no boxes and finds nothing, because
 it looks at the whole picture at once.
+
+The one idea CLIP is built on is that a picture and the words written under it
+should come out as nearly the same list of numbers. Both networks write into one
+shared space of a few hundred numbers, and training pulls a picture and its own
+caption together in that space while pushing it away from the other captions it was
+shown alongside.
+
+That idea changes what the end of the model is. An ordinary classifier finishes with
+a layer that has one output per class, and the number of outputs is decided before
+training starts, so the list of classes is built into the shape of the model. CLIP
+has no such layer. Comparing a picture with a sentence is one piece of arithmetic:
+the sentence goes through the text encoder and comes out as a list of numbers, the
+picture goes through the image encoder and comes out as a list of the same length,
+and the two lists are multiplied together one position at a time and the products
+are added up. The single number that falls out is the score. Nothing in that
+arithmetic depends on which words you chose, so the class list is no longer part of
+the model. It is an argument you pass when you call it, and that is the whole of
+what "open vocabulary" means.
+
+What the idea buys is any words you can type. What it costs is place. The image
+encoder pools the whole picture into one list, so the output keeps no record of
+which part of the picture produced which number, and no rewording will make CLIP
+point at anything. Every model below it keeps the picture in pieces for exactly
+this reason.
+
+On a robot arm the difference shows up after a grasp rather than before it. The
+wrist camera looks at what the gripper is holding, the crop contains one object and
+nothing else, and the question is only whether it is the part the program asked
+for. CLIP answers that from two sentences and one pass. Ask it instead where the
+part is on the table and it has nothing to say, because the answer it gives has no
+place in it.
 
 You would pick CLIP rather than OWLv2, the obvious alternative, only when the
 picture is already cropped to one object and the question is which of several
@@ -268,13 +301,12 @@ words fits it best. A detector has returned three candidate boxes, and you want 
 know which one is the blue mug. For "where is the blue mug on this table", OWLv2
 or Grounding DINO is the right model, because CLIP cannot point at anything.
 
-The large checkpoint holds 428 million parameters, which is slow without a
-graphics card but usable, because you run it once per crop rather than once per
-frame. OpenAI's code is MIT, while the model card for the weights states no
-licence at all, and weights published with no licence grant you no rights by
-default. The
-thing that goes wrong most often is that CLIP always picks a winner, because the
-scores are scaled to add up to one across the sentences you gave it.
+Two costs here are about this model rather than about its size. Weights published
+with no licence grant you no rights by default, so read the model card before you
+ship anything that contains them. And CLIP always picks a winner, because the
+scores are scaled to add up to one across the sentences you gave it, so it will
+report a sponge as a blue mug with some confidence if mug and bowl were the only
+words you offered.
 
 The library is Hugging Face `transformers`, and this follows its [CLIP
 documentation page](https://huggingface.co/docs/transformers/en/model_doc/clip).
@@ -307,6 +339,8 @@ choosing between words rather than recognising the object.
 **Most used in 2026**, because it is the shortest path from a name to a box, and
 its code and its weights are both Apache-2.0.
 
+Size m, a small card, Apache-2.0 for the code and the weights.
+
 OWL-ViT came from Google Research in 2022 and OWLv2 followed in 2023. OWL-ViT
 takes CLIP, removes the layer that pools the picture into one embedding, and
 attaches a small box head to each patch, so the CLIP idea is applied to parts of
@@ -314,11 +348,47 @@ the picture. OWLv2 is the same design trained on far more data that it labelled
 itself, by letting an existing detector draw boxes on picture-and-text pairs from
 the internet.
 
+The one idea is to run CLIP's comparison on every patch of the picture instead of
+on the picture as a whole, and to change as little else as possible.
+
+Inside, that is one deletion and two additions. The paper removes the final token
+pooling layer, which was the step that squashed all the patches into the single
+list CLIP compares, and it attaches a lightweight classification head and a box
+head to each transformer output token instead. A token is what the network has to
+say about one patch of the picture, so every patch now carries its own list of
+numbers and its own box. The classification head is where your words arrive,
+because the paper replaces that layer's fixed weights with the embeddings of the
+class names, worked out by the text model. The comparison is therefore the same
+multiply-and-add as in CLIP, run once for each patch against each of your queries,
+and the thing that moved is where in the model it happens. Training uses a
+bipartite matching loss, which means that each of the model's guesses is paired
+one-to-one with one real box in the training picture, so the model is taught not to
+report the same object twice and needs no cleanup step afterwards. A query may also
+be a patch of another picture rather than words, which the paper calls one-shot
+detection, and it is the way to look for a part that has no name.
+
+What the idea buys, besides the short path from a name to a box, is that the
+picture and the words never meet until that final multiplication. The numbers for
+your names therefore depend on the words alone, so they can be worked out once when
+the program starts and reused on every frame, and the way the picture is read never
+changes with what you typed. That last part is also the cost. The words cannot
+reach into the picture network, so they cannot be used to decide where to look, and
+a prompt is in practice a list of names, with extra words such as "on the left"
+mostly wasted. Grounding DINO below spends a great deal of arithmetic undoing
+exactly this.
+
+On a robot arm the choice shows up in where the prompt comes from. A cell with a
+fixed set of five part names, written into the program, is OWLv2's case: one
+install, one call, and the name embeddings never have to change. A cell where a
+person types or speaks the instruction, so that the prompt arrives as "the blue mug
+on the left", is Grounding DINO's case, because OWLv2 will box both mugs with
+similar confidence and leave your program to guess which one was meant.
+
 You would pick OWLv2 rather than Grounding DINO, the obvious alternative, when
-your objects have ordinary one-word or two-word names. It is smaller, 155 million
-parameters against 233 million, and you pass your names as a plain list. Grounding
-DINO is better when the prompt is a description rather than a name, because it
-reads the phrase as a phrase.
+your objects have ordinary one-word or two-word names. It is the smaller of the
+two, and you pass your names as a plain list. Grounding DINO is better when the
+prompt is a description rather than a name, because it reads the phrase as a
+phrase.
 
 It expects one query per kind of object, written in the style "a photo of a blue
 mug", and short names work better than long sentences. It is not fast enough for a
@@ -369,10 +439,46 @@ are close, the safe answer on a robot is to stop and ask.
 **Most used in 2026**, because it is the model people reach for when the prompt is
 a phrase rather than a name.
 
+Size m, a big card, Apache-2.0 for the code and the weights.
+
 Grounding DINO was published by IDEA Research in 2023. It takes a picture and a
 text prompt, and returns a box for each thing the prompt describes, together with
-the words that matched that box. Its code and its weights are both Apache-2.0,
-which is why it appears in so many robot projects.
+the words that matched that box.
+
+The one idea is the opposite of OWLv2's. Rather than compare the picture with the
+words at the end, Grounding DINO mixes the words into the picture early and keeps
+mixing them in, so that what you typed changes where the model looks.
+
+The authors describe a plain detector as having three phases, and they add that
+mixing to all three. First comes a feature enhancer, in which the picture's
+features and the words' features attend to each other in both directions, so each
+word is rewritten in the light of the picture and each part of the picture is
+rewritten in the light of the words. Then comes language-guided query selection,
+which picks the regions of the picture that look most like the words and hands them
+to the next stage as its starting guesses, so the words have already chosen where
+the search begins. Last comes a cross-modality decoder, in which each guess looks
+at the picture and at the words again before it becomes a box. Underneath all three
+sits a transformer detector called DINO, which carries a fixed number of guesses and
+refines them into boxes, and every finished box keeps a score against each word of
+the prompt. Those per-word scores are why this model has two thresholds where OWLv2
+has one.
+
+What the mixing buys is a prompt that can be a phrase rather than a name. Words
+such as "blue" or "on the left" have somewhere to act, because they can change the
+features of the picture before any box exists. The costs follow from the same
+design. Nothing about the words can be prepared in advance, since the words are
+read again with each new picture, so a new prompt or a new frame means another run
+of the whole network, and one answer costs more than OWLv2's and far more than
+YOLOE's. And the answers move with the wording, which is the trap described further
+down, because here the wording is genuinely part of how the picture is read.
+
+On a robot arm the difference shows up the moment the instruction contains a word
+that is not a name. Two identical mugs stand on the table, one to the left and one
+to the right, and the operator asks for the left one. OWLv2 returns two boxes of
+similar confidence, and your program has to work out what "left" means in pixels.
+Grounding DINO can take the phrase whole. What you pay for that is the frame rate:
+you run it once, start a tracker, and accept that the model is not watching every
+frame.
 
 You would pick it rather than OWLv2, the obvious alternative, because it handles a
 prompt with extra words in it, such as "the blue mug on the left" or "a screw with
@@ -380,10 +486,9 @@ a flat head". It also has a second threshold, for how well the words matched,
 which lets you tune the two kinds of mistake apart. Pick OWLv2 instead when your
 prompts are plain names, since it is smaller and simpler.
 
-The base checkpoint holds 233 million parameters and needs a graphics card to
-answer quickly. The original repository has had no commit since August 2024, so
-install the model from `transformers`, whose implementation is maintained. One
-trap is worth knowing before you plan around it: **Grounding DINO 1.5, 1.6 and
+The original repository has had no commit since August 2024, so install the model
+from `transformers`, whose implementation is maintained. One trap is worth knowing
+before you plan around it: **Grounding DINO 1.5, 1.6 and
 DINO-X have no downloadable weights.** Those repositories hold client code for a
 paid hosted service, and only the original Grounding DINO runs on your own
 machine. The answers also move with the wording, so "mug", "cup" and "coffee mug"
@@ -434,29 +539,70 @@ into the prompt "a blue mug".
 detector instead of a large transformer, which is how this kind of model will run
 at camera speed on a robot. Its licence is why it is not the default.
 
+Size xs for the smallest checkpoint and s for the largest, a laptop, AGPL-3.0 for
+the code and the weights.
+
 YOLOE, from Ultralytics, is an open-vocabulary detector that also returns outlines.
 You give it the names you want when you run it, or an example picture of the
 object, or no prompt at all, in which case it reports names from a built-in list of
 4,585 words. It was inspired by YOLO-World, which did the same job earlier and
 whose repository has had no commit since February 2025.
 
+The one idea is to do the picture-and-words comparison while the model is being
+trained, so that none of it is left by the time you ask a question. What runs when
+you call YOLOE is an ordinary fast detector whose last layer happens to hold your
+words.
+
+The part that makes this possible is called re-parameterizable region-text
+alignment. While the model trains, a small extra network sharpens the published
+text embeddings so that they line up better with the picture features, and
+afterwards that network is re-parameterized, which means its layers are multiplied
+together into the weights they sit next to, once their numbers have stopped
+changing. The sharpening survives and the extra work disappears. So `set_classes`
+runs a text encoder over your names once, and the lists of numbers that come out
+are installed as the weights of the detector's classification layer, exactly as the
+text embeddings are installed in OWLv2, except that here it happens before any
+picture is seen. Two further parts cover the other two prompts. A separate visual
+prompt encoder, with one branch for what a region means and one for where it is,
+turns an example region of a picture into the same kind of numbers. And for no
+prompt at all there is lazy region-prompt contrast, which carries a built-in
+vocabulary and looks a name up only for the regions that appear to hold an object,
+which is where the word lazy comes from.
+
+What the idea buys is an answer on every frame, from a download small enough for
+the robot's own computer, and Ultralytics' own table puts it above Grounding DINO's
+tiny model on a benchmark of rare classes while being a fraction of the size. What
+it costs is that the picture pass knows nothing about language. Grounding DINO lets
+your words change how the picture is read, and YOLOE cannot, because by then the
+words are frozen into a layer of weights, so a description buys you nothing here
+and the prompt has to be a name. The frozen layer also explains the timing
+measurement reported below: your names are the weights of the classification layer,
+so prompting with thousands of names means every region is compared against
+thousands of lists, and the time grows with the length of the list you prompted
+with.
+
+On a robot arm the difference shows up when the object is moving. A part travels
+down a conveyor, and the arm has to see it, decide and reach while the part is
+still in the picture. YOLOE answers each frame as it arrives. Grounding DINO forces
+the other design, in which you detect once, start a tracker, and hope the part has
+not turned over since, and that is a second piece of software to get right.
+
 You would pick YOLOE rather than Grounding DINO, the obvious alternative, when
 speed decides the design. Grounding DINO runs a vision-language transformer for
 every picture, while YOLOE turns your prompts into numbers once and then compares
-those numbers against regions inside an ordinary convolutional head. It is less
-accurate: the Ultralytics documentation reports YOLOE-26s at 30.8 mean average
-precision on LVIS with no training on it, at 10.7 million parameters, against 27.4
-for Grounding DINO's tiny model, in a group of transformer detectors the same
-table says carry 155 to 232 million parameters.
+those numbers against regions inside an ordinary convolutional head. Pick Grounding
+DINO instead when the prompt is a phrase rather than a name, because that is the
+one thing this design gives up.
 
-The licence is AGPL-3.0 for the Ultralytics package and for the original YOLOE
-repository, so a product built on it must publish its own source or buy a
-commercial licence from Ultralytics. Text prompting needs a text encoder that is
-fetched on first use rather than at install time, about 254 MB for the YOLOE-26
-checkpoints, into the directory you ran from. The time one prediction takes also
-grows with the number of names you prompt with, by about 19 % going from 80 names
-to 1,203 and about 89 % at the full 4,585-name list, as Ultralytics measured, and
-the reported arithmetic cost does not move at all, so a profile will not warn you.
+AGPL-3.0 covers both the Ultralytics package and the original YOLOE repository, so
+a product built on it must publish its own source or buy a commercial licence from
+Ultralytics. Text prompting needs a text encoder that is fetched on first use
+rather than at install time, about 254 MB for the YOLOE-26 checkpoints, into the
+directory you ran from, so a machine with no network cannot start. The time one
+prediction takes also grows with the number of names you prompt with, by about 19 %
+going from 80 names to 1,203 and about 89 % at the full 4,585-name list, as
+Ultralytics measured, and the reported arithmetic cost does not move at all, so a
+profile will not warn you.
 
 The library is `ultralytics`, and this follows its [YOLOE documentation
 page](https://docs.ultralytics.com/models/yoloe/).
@@ -486,21 +632,53 @@ knowledge that a freshly loaded checkpoint reports numeric class names until
 member of the Segment Anything family whose code and weights are both plainly
 Apache-2.0.
 
+Size s for the tiny checkpoint and m for the large one, a laptop for the tiny one
+and a small card for the large one, Apache-2.0 for the code and the weights.
+
 Segment Anything (SAM) came from Meta in 2023 and SAM 2 followed in 2024. You give
 it a click, a box or a rough region, and it returns the outline of the thing you
 pointed at. SAM 2 adds a memory for video, so it can keep the same outline from
 frame to frame.
+
+The one idea is to put all the expensive work in the part that looks at the
+picture, and to make the part that answers a prompt as small as possible.
+
+So the model is split into three pieces of very unequal size. A large picture
+encoder runs over the photo and leaves behind a grid of embeddings, and the library
+lets you fetch that grid once and hand it back for every later prompt. A small
+prompt encoder turns a click, a box or a rough outline into a few numbers. A mask
+decoder of two layers then attends between those few numbers and the grid, and
+produces three candidate outlines with a score for each, which is the three answers
+[section 2](#2-what-goes-in-and-what-comes-out) describes. SAM 2 adds two more
+pieces for video, a memory encoder and a memory attention step, so that the current
+frame is read in the light of a bank of earlier frames. The piece to notice is the
+one that is absent. There is no text encoder anywhere in SAM 2, and no comparison
+against a sentence, so the openness here is openness about which thing you point
+at, not about what you can call it.
+
+What that buys is speed per prompt rather than speed per picture, because ten boxes
+from one detector pass cost one encoding of the photo and ten runs of a very small
+decoder. It also buys exact edges, which is what the depth step after it needs. The
+cost is that the model recognises nothing at all. It outlines whatever lies under
+the prompt, and a shadow or a reflection has edges like anything else, so SAM 2
+will outline those too and never tell you it has. Something else must decide where
+to point.
+
+On a robot arm the difference shows up in a bin of parts lying across one another.
+A detector gives a box for each part, but a box of a flat part seen at an angle is
+mostly other parts, so reading depth inside the box gives you a cloud belonging to
+three objects. SAM 2 turns each box into the pixels of one part, and it does it for
+every box in the bin from a single reading of the photo. SAM 3 below would answer
+the same question from a word instead, but its work for each new prompt is a whole
+fusion stage and a decoder, not the two layers SAM 2 runs.
 
 You would pick SAM 2 rather than the original SAM, the obvious alternative,
 because it is faster, it works on video, and it carries the same permissive
 licence. You would pick it rather than SAM 3 when you need a standard open licence
 and a download nobody has to approve.
 
-The large checkpoint holds 224 million parameters and the tiny one 39 million, so
-there is a version small enough for a robot with no graphics card. The real cost is
-that SAM 2 decides nothing by itself, so one of the detectors above has to say
-where to point. The failure people meet first is that it outlines whatever is under
-the prompt, including a shadow or a reflection.
+The real cost in a system is that SAM 2 decides nothing by itself, so one of the
+detectors above has to say where to point.
 
 The library is Hugging Face `transformers`, and this follows its [SAM 2
 documentation page](https://huggingface.co/docs/transformers/en/model_doc/sam2).
@@ -537,11 +715,48 @@ pixels inside it and turning them into a point cloud.
 pairing does in two, and returns every object matching the phrase rather than the
 best one. Its licence is why it is not yet the default.
 
+Size m, a big card, and one bespoke licence, the SAM License, for both the code and
+the weights.
+
 SAM 3 came from Meta, with an updated set of checkpoints called SAM 3.1. You give
 it a short phrase, and it returns an outline, a box and a score for every object in
 the picture that matches the phrase. Meta calls this promptable concept
 segmentation, and its repository reports that the model reaches 75 to 80 % of human
 performance on a benchmark of its own, SA-CO, which contains 270,000 concepts.
+
+The one idea is that the prompt should be a concept rather than a place, so the
+answer is every instance of that concept and not the one thing you pointed at.
+
+Inside, SAM 3 is a detector and a tracker that share one picture encoder. The
+detector follows the pattern set by the Detection Transformer, or DETR: the picture
+and the phrase are each encoded, a fusion encoder then conditions the picture's
+embeddings on the phrase by attending to it, and a decoder's learned queries read
+those conditioned embeddings, each query turning into one outline, one box and one
+score. That conditioning is the same move Grounding DINO makes, so SAM 3 is nearer
+to Grounding DINO than to SAM 2 in how it treats words. The tracker is SAM 2's
+memory machinery carried over unchanged, which is why one model covers pictures and
+video. The genuinely new part is a presence head, which Meta describes as
+separating recognition from localisation: one output says whether the concept is in
+the picture at all, and the queries are then left to answer only where it is. Meta
+gives "a player in white" against "a player in red" as the case it helps with, and
+those are the prompts a single score has most trouble with, because one number has
+to express both whether a player is there and whether the colour is right.
+
+What that buys is every match rather than the best one, outlines and boxes from the
+same call, and a model that can be asked a question to which the honest answer is
+none. What it costs is a model larger than the two it replaces put together, and
+two things that no amount of hardware fixes: the licence is Meta's own, and the
+weights are gated. It also moves a decision to you, because a phrase
+slightly broader than you meant now returns several outlines rather than one wrong
+box.
+
+On a robot arm the difference shows up on a tray that holds two things a short
+phrase can barely separate, say blue caps and black caps under warm light, and the
+job is to clear only the blue ones. Grounding DINO and SAM 2 give you the
+best-scoring cap, and that one score mixes up "a cap is there" with "the cap is
+blue". SAM 3 answers those two questions in different places and returns every blue
+cap it believes in, which is also what lets your program notice that the tray is
+empty.
 
 You would pick it rather than the Grounding DINO and SAM 2 pairing, the obvious
 alternative, when one model is simpler than two, or when you need every matching
@@ -549,10 +764,9 @@ object rather than one. Counting the screws on a tray is the clearest case, beca
 the pairing gives you the best box while SAM 3 gives you every screw. Stay with the
 pairing when a standard open licence matters.
 
-The model holds 860 million parameters, so it needs a graphics card. The licence is
-not a standard open licence but Meta's own SAM License, which has to be read rather
-than assumed. The weights are also gated: you request access on Hugging Face, wait
-for it to be granted, and sign in from the machine that downloads them, so a build
+The SAM License is not a standard open licence, so it has to be read rather than
+assumed. The weights are also gated: you request access on Hugging Face, wait for
+it to be granted, and sign in from the machine that downloads them, so a build
 machine with no credentials cannot fetch them at all.
 
 The library is Hugging Face `transformers`, and this follows its [SAM 3
@@ -610,7 +824,9 @@ Five things change that choice.
   [object detection](01_object-detection.md) trained on your own photos is.
 
 Whatever you choose, the check after the answer is yours to write, because none of
-these models knows when it is wrong. ---
+these models knows when it is wrong.
+
+---
 
 ## 6. Where to read next
 

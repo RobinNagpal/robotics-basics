@@ -156,10 +156,11 @@ the questions and the correct answers.
 ## 5. Well-known models of this kind
 
 Many vision-language models exist, and this section covers the six you will meet in
-robot work, with the code for each one and a recommendation at the end. The size of a
-model is given as its number of **parameters**, which are the adjustable numbers inside
-the network that training sets, and more parameters usually means a better answer from a
-bigger computer.
+robot work, with the code for each one and a recommendation at the end. Each sub-section
+opens with one short line giving the model's size, the machine it needs and its licence,
+in the bands that [section 7 of the chapter
+overview](../01_overview.md#7-how-this-chapter-writes-size-machine-and-licence) defines.
+So read that line for the band and the table below for the exact figure.
 
 The table has two columns, so read a row from left to right as one sentence about one
 model. The left column names the model and says how current it is. The right column
@@ -182,12 +183,45 @@ number.
 ### 5.1 Qwen3-VL
 
 Qwen3-VL is **most used in 2026** as the general open vision-language model, and it is
-the one the case study in the frameworks book uses. Alibaba's Qwen team released the
-family from September 2025 onwards, in sizes of 2, 4, 8 and 32 billion parameters plus
-two larger models that activate only part of themselves per question. Each size comes in
-an Instruct edition, which answers directly, and a Thinking edition, which writes out
-its reasoning first. It reads pictures and video, and it answers with boxes or with
-points.
+the one the case study in the frameworks book uses.
+
+Size l at 2 to 8 billion parameters and xl above that, a big card for the smallest size
+and more for every size up, Apache-2.0 on the cards checked.
+
+Alibaba's Qwen team released the family from September 2025 onwards, in sizes of 2, 4, 8
+and 32 billion parameters plus two larger models that activate only part of themselves
+per question. Each size comes in an Instruct edition, which answers directly, and a
+Thinking edition, which writes out its reasoning first. It reads pictures and video, and
+it answers with boxes or with points.
+
+The one idea it is built on is that a picture should not be flattened on the way in. The
+five steps in [section 3](#3-how-it-works-inside) throw two things away without saying
+so. They take only the last layer of the vision encoder, and they describe where a patch
+sat using position numbers meant for a line of words. Qwen3-VL changes both, and its
+repository gives its changes names.
+
+The first is called DeepStack, and it fuses several levels of the vision encoder rather
+than only the top one. A vision encoder's early levels hold fine detail, such as the
+exact edge of a rim, and its later levels hold conclusions, such as that the object is a
+mug. Taking only the last level means handing the language model the conclusion and
+throwing the detail away, so DeepStack hands it both. The second is called
+interleaved-MRoPE, and it is about position. A patch has a place across the picture, a
+place down the picture and, in video, a place in time, and this scheme spreads the
+position numbers over all three at full detail instead of giving each one its own block
+of the number. There is a third change for video alone, which ties frames to real
+timestamps, so the model can say when something happened rather than in which frame.
+
+What those changes buy is the things a flattened picture cannot do: counting, exact
+positions, and reading the small text on a label. What they cost is tokens. SmolVLM2 in
+the next sub-section gets its speed by cutting a frame down to sixty-four tokens;
+Qwen3-VL goes the other way and keeps the picture's own shape and several levels of
+detail, so the work grows with the size of the picture and the smallest model still
+wants a graphics card.
+
+On an arm, the difference shows up when the answer depends on detail rather than on
+identity. Asked "which of these mugs is mine?" of two mugs that differ by a printed
+name, Qwen3-VL can read the name, and that is a DeepStack-and-resolution question rather
+than a question about how big the language model is.
 
 The obvious alternative is a hosted service such as Gemini Robotics ER 2. You pick
 Qwen3-VL when the pictures must not leave your building, when you need the same answer
@@ -195,13 +229,11 @@ next year, or when the robot asks enough questions that paying for each one adds
 also pick it when you want one model for several jobs, because the same checkpoint reads
 the instruction, finds the object and reads the label on a box.
 
-It costs you hardware and setup. The larger sizes need a graphics card of their own, and
-the way people fit them on smaller cards is to run the FP8 versions that the Qwen team
-publishes alongside the ordinary ones, which store each number in fewer bits. The
-licence is Apache-2.0 on the 2, 8, 32 and 235 billion sizes, read from their model cards
-in October 2026. The choice that most often goes wrong is the size: the 2-billion model
-is quick and noticeably worse at counting and at exact positions, and people blame the
-wording of their question instead.
+It costs you hardware and setup. The way people fit the larger sizes on smaller cards is
+to run the FP8 versions that the Qwen team publishes alongside the ordinary ones, which
+store each number in fewer bits. The choice that most often goes wrong is the size: the
+2-billion model is quick and noticeably worse at counting and at exact positions, and
+people blame the wording of their question instead.
 
 The library is `transformers` from Hugging Face. This is the shape its own
 [documentation](https://huggingface.co/docs/transformers/en/model_doc/qwen3_vl) gives,
@@ -242,12 +274,47 @@ possible.
 
 SmolVLM2 is **most used in 2026** for the small, constant checks a robot makes while it
 works, because it is the only model here that runs on an ordinary computer with no
-graphics card. Hugging Face published it on 20 February 2025, in three sizes of 256
-million, 500 million and 2.2 billion parameters, and it reads video as well as still
-pictures. The code below uses the 256-million one, and the larger two are run by
-changing the name. This family is also the vision-language backbone inside the SmolVLA
-policy on the [next
+graphics card.
+
+Size m at 256 and 500 million parameters and l at 2.2 billion, a laptop, Apache-2.0.
+
+Hugging Face published it on 20 February 2025, in three sizes of 256 million, 500
+million and 2.2 billion parameters, and it reads video as well as still pictures. The
+code below uses the 256-million one, and the larger two are run by changing the name.
+This family is also the vision-language backbone inside the SmolVLA policy on the [next
 page](01_vision-language-action-models.md#51-smolvla-the-one-to-start-with).
+
+The one idea it is built on is that the expensive part of a vision-language model is the
+number of picture tokens, not the size of the language model. So the compression of the
+picture, which is step 3 of [section 3](#3-how-it-works-inside), is where its designers
+did their work.
+
+Inside, it is a SigLIP vision encoder and a SmolLM2 language model, which is the
+ordinary arrangement. What is not ordinary is how hard the patches are squeezed. The
+method is called pixel shuffle, and it folds the encoder's grid of patch lists so that
+a square of neighbouring patches becomes a single token, whose list of numbers is as
+long as all of theirs put together. SmolVLM's authors fold a four-by-four square, so
+sixteen tokens become one, where larger models fold a two-by-two square and four become
+one. A picture of 512 pixels a side therefore reaches the language model as about
+sixty-four tokens instead of a thousand. Two further details go with it. A high-resolution picture is cut into
+sub-images, with a shrunken copy of the whole picture sent alongside them, and each
+piece carries a position token that was learned during training rather than a written
+label such as "row 1, column 2", which the authors found trains more steadily.
+
+What the squeeze buys is the thing the sub-section opens with: a frame that costs only
+sixty-four tokens is cheap enough for an ordinary processor, which is why this is the
+only model here with no graphics card in its requirements. What it costs is detail, and
+this is the part people get wrong. The weakness of the 256-million model is usually
+blamed on the language model being small, but the compression is doing much of the
+damage: whatever distinguished two similar objects may have been folded away before the
+language model received anything. Qwen3-VL, above, makes the opposite choice on exactly
+this point.
+
+On an arm, the split is clean. "Is the mug in the bowl?", asked after every step on the
+robot's own board, is a question about one large, obvious relationship, and sixty-four
+tokens hold that easily. "Which of these three identical mugs is chipped?" is a question
+about a few pixels, and those pixels were folded together with their neighbours before
+the language model received them.
 
 The obvious alternative is Qwen3-VL. You pick SmolVLM2 when the question is simple and
 the answer is needed often: "is the mug in the bowl?" asked after every step, on the
@@ -255,11 +322,10 @@ robot's own computer, with no network and no bill. It is also MLX-ready, which m
 runs with Apple's own machine-learning library, so it works on a Mac without a graphics
 card.
 
-It costs you capability, and the drop is real rather than slight. A
-256-million-parameter model is poor at counting, at exact positions and at anything
-needing several steps of reasoning, so use it for yes-or-no questions and send the hard
-ones elsewhere. It will also answer confidently when it is wrong, and a
-small model does it more often.
+It costs you capability, and the drop is real rather than slight. The smallest model is
+poor at counting, at exact positions and at anything needing several steps of reasoning,
+so use it for yes-or-no questions and send the hard ones elsewhere. It will also answer
+confidently when it is wrong, and a small model does it more often.
 
 The library is `transformers`, and `pipeline` is its shortest route to a working model:
 a **pipeline** is one object holding the processor and the model together, so you hand
@@ -294,7 +360,12 @@ are both possible answers to the same question, and your code has to accept both
 ### 5.3 Gemini Robotics ER 2
 
 Gemini Robotics ER 2 is **most used in 2026** when you want a model that was built for
-robot questions rather than adapted to them. Google DeepMind [published
+robot questions rather than adapted to them.
+
+Size not stated, nothing to run on your side because it is a hosted service, and no
+licence because there are no weights to license.
+
+Google DeepMind [published
 it](https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-robotics-er-2/)
 on 30 July 2026, and "ER" stands for embodied reasoning, which means reasoning about a
 physical scene and a body in it. It points at objects, draws boxes, plans the steps of a
@@ -302,6 +373,36 @@ long task, calls your own robot functions as tools, and watches a video feed to 
 whether a step worked. Google reports 91.3 per cent accuracy at finding the moment in a
 video when something happened, and 57.4 per cent at classifying how far through a task a
 robot is.
+
+This is the one model on the page whose central idea cannot be named, because Google
+publishes nothing about the inside of it. There is no parameter count, no description of
+the vision encoder, and no account of how a point is produced.
+The single published fact about its insides is in Google's own documentation, which says
+the `gemini-robotics-er-2-preview` endpoint is built on Gemini 3.5 Flash, and nothing
+about the shape of Gemini 3.5 Flash is published either. So the five steps in [section
+3](#3-how-it-works-inside) describe the models you can download, and whether they
+describe this one is not known.
+
+What you can see from outside is the interface, and the interface is not the mechanism.
+You can set how long the model reasons before answering, with a thinking level. You can
+send a stream of video and audio rather than one still picture. You get a point back as
+two numbers in the order y then x, scaled to a range of 0 to 1000 rather than given in
+pixels. And you can hand it the names of your own robot's functions and have it ask for
+them. Each of those is a fact about what the service accepts and returns, and none of
+them tells you what happens in between.
+
+What that costs you is the ability to work out why it was wrong. With a model you can
+download, in the way [section 5.6](#56-llava) describes, a wrong answer can be traced to
+one half of the model: an object misidentified points at the vision encoder, and an
+object seen correctly but described badly points at the language model. Here a wrong
+point is just a wrong point. The two levers you have are the wording of your question and the thinking
+level, and when neither helps there is nothing further to try.
+
+On an arm, that shows up the first time the points come back consistently wrong in the
+same direction, which is a common way for a pointing model to fail. With an open model
+you can look at how the picture was cut up and at what resolution it arrived. Here you
+measure the error, add a correction in your own code, and hope the next preview of the
+service does not change it.
 
 The obvious alternative is Qwen3-VL, which you can download. You pick Gemini Robotics ER
 2 when the robot-specific jobs are what you need, because no open model publishes
@@ -356,13 +457,44 @@ pair the wrong way round is the most common mistake with this model.
 ### 5.4 Molmo2-ER
 
 Molmo2-ER is **worth betting on**, because pointing is the answer a robot can use most
-directly, and this is the strongest open model whose whole purpose is pointing. The
-Allen Institute for AI published it on 4 May 2026. It has 4 billion parameters, built on
-a Qwen3-4B language model and a SigLIP2 vision encoder, and it is the vision-language
-model inside the MolmoAct2 policy on the [next
+directly, and this is the strongest open model whose whole purpose is pointing.
+
+Size l, a big card, Apache-2.0 for the code and the weights.
+
+The Allen Institute for AI published it on 4 May 2026. It is built on a Qwen3-4B language
+model and a SigLIP2 vision encoder, and it is the vision-language model inside the
+MolmoAct2 policy on the [next
 page](01_vision-language-action-models.md#54-molmoact2-from-the-allen-institute-for-ai).
 It continues [Molmo](https://arxiv.org/abs/2409.17146), from 2024, which was the first
 open model trained to answer by pointing.
+
+The one idea this family is built on is that the data is the mechanism. Its architecture
+is deliberately ordinary, the five steps of [section 3](#3-how-it-works-inside) with a
+good encoder and a good language model, and nothing in the network explains why it
+points better than Qwen3-VL does. What explains it is what people were paid to produce,
+and the Molmo paper is mostly about that.
+
+Two pieces of that collection matter. For the descriptions, people were asked to look at
+a picture and talk about it out loud for at least sixty seconds, and the recording was
+then transcribed, because it is hard to write a long description and easy to say one.
+For the pointing, people were asked to point at something in a picture, say what it was,
+and then point at every other instance of the same thing, so that nothing was left out.
+Neither step asked a closed model for its answers, which is the claim the project makes
+about itself and the reason it can publish the data with the weights. Gemini Robotics ER
+2, above, publishes neither the data nor the architecture.
+
+What that buys is two things. A point lands on the object rather than near it, because
+the training answers were people's own points rather than the centre of a box. And the
+model counts by pointing at each instance in turn rather than by producing a number,
+which is a different and more reliable way to count than asking a language model for a
+total. What it costs is breadth, because a model trained on scenes and pointing is not
+the one to ask about the text on a label.
+
+On an arm, the difference shows up the moment the grasp has to be somewhere particular.
+A box around a mug tells you the mug is there; a point on the handle tells the arm where
+to close the gripper, and the [camera basics
+document](../../../02_perception/01_camera/01_basics.md) turns that point and a depth
+reading into a place in the world.
 
 The obvious alternative is Gemini Robotics ER 2, which also points. You pick Molmo2-ER
 when you want those answers from a model you run yourself, under Apache-2.0 on the
@@ -372,9 +504,7 @@ scenes, with an average score of 63.8 per cent. Those numbers come from the peop
 built it, on benchmarks rather than on your robot, so treat them as a reason to try it
 rather than as proof.
 
-It costs you a graphics card for its 4 billion parameters, and it costs you breadth,
-because a model specialised for scenes and pointing is not the one to ask about the text
-on a label. The practical cost is tooling: the model is run through the project's own
+The practical cost is tooling. The model is run through the project's own
 [molmo2](https://github.com/allenai/molmo2) code rather than through a one-line
 `transformers` pipeline, so there is more to install.
 
@@ -415,12 +545,47 @@ instead of publishing a snippet of its own.
 ### 5.5 PaliGemma
 
 PaliGemma is **historical** on this page, and it is here for one practical reason: robot
-policies are built on it, so its licence becomes your licence. Google published it in
-2024 as a small open vision-language model of about 3 billion parameters, meant to be
+policies are built on it, so its licence becomes your licence.
+
+Size l, a big card, the Gemma licence on the weights, and a download gated behind an
+account.
+
+Google published it in 2024 as a small open vision-language model, meant to be
 fine-tuned for one job rather than chatted with. π0 and π0.5, the two
 vision-language-action models on the [next
 page](01_vision-language-action-models.md#52-the-pi-models-from-physical-intelligence),
 are built on top of it.
+
+The one idea it is built on is that a model which will always be fine-tuned should be
+trained differently from a model that will be talked to. Its parts are a SigLIP-So400m
+vision encoder and a Gemma-2B language model, which is the ordinary arrangement again.
+The difference is in the attention, and it is the only structural difference from
+LLaVA's recipe in this whole section.
+
+In the shape [section 3](#3-how-it-works-inside) describes, every token is read in one
+direction: each token may look at the tokens before it and not at the tokens after it,
+because that is how a model that writes text one token at a time has to work. PaliGemma
+splits the row in two. The picture tokens and the question get full attention in both
+directions, so every one of them may look at every other, forwards as well as
+backwards, and only the answer is written one token at a time with each token seeing
+only what came before it. Letting the question look at itself and at the whole picture
+at once gives the model a better reading of a short instruction before it starts to
+answer, and a short instruction of a fixed shape is exactly what a fine-tuned model
+gets.
+
+The second deliberate choice is what the project left out. PaliGemma was published
+without instruction tuning, which is stage 4 of [section 4](#4-how-it-is-trained), on
+the stated grounds that it is a base model to transfer from. That is the whole trade. It
+transfers with small amounts of fine-tuning, which is why π0 and π0.5 start from it, and
+asked a question cold it answers poorly, because nobody taught it to follow
+instructions.
+
+On an arm, the two choices show up as the difference between a model you prompt and a
+model you train. With Qwen3-VL you change the wording of your question until the answers
+improve. With PaliGemma there is little point, because it was never taught to follow an
+instruction of a kind it had not been trained on, so the only way to make it do your job
+is to fine-tune it on examples of your job. That is why it appears on this page as a
+part of something else rather than as a tool of its own.
 
 You would not pick PaliGemma to answer questions today, because Qwen3-VL and SmolVLM2
 are newer, better at conversation and easier to run. You meet it anyway when you
@@ -430,9 +595,8 @@ accept the licence on the Hugging Face website with an account. LeRobot's π0.5 
 fails at the first step until you do, which is the single most common error people hit
 when training that model.
 
-It costs you a licence to read. The Gemma terms are not Apache-2.0, and a model you
-fine-tune from PaliGemma inherits them, so check them before a commercial plan depends
-on the result.
+It costs you a licence that travels. A model you fine-tune from PaliGemma inherits the
+Gemma terms, so check them before a commercial plan depends on the result.
 
 There is no code of its own to show here, because you will almost never call PaliGemma
 directly. What you do instead is accept its licence and log in, once, before training
@@ -450,15 +614,51 @@ acceptance, and you read the terms, because nobody else in your project will.
 ### 5.6 LLaVA
 
 LLaVA is **historical**, and it is on this page because it is the recipe every model
-above follows. A university group published it in 2023, and its 1.5 release came as a
-7-billion and a 13-billion model whose weights carry the Llama 2 licence rather than a
-permissive one. It showed that you do not need to train a vision-language model from
+above follows.
+
+Size l, a big card for the 7-billion model and a workstation for the 13-billion one, the
+Llama 2 licence on the weights.
+
+A university group published it in 2023, and its 1.5 release came as a 7-billion and a
+13-billion model. It showed that you do not need to train a vision-language model from
 nothing: take an existing vision encoder, take an existing language model, join them
 with a small **projector** network, and train on pictures with questions and answers.
 [Section 3](#3-how-it-works-inside) is a description of that recipe.
 [PaLM-E](https://arxiv.org/abs/2303.03378), from Google in the same year, did the robot
 version of the same move, feeding robot camera pictures into a large language model and
 using the answers to plan tasks.
+
+The one idea it is built on is that the join can be tiny. Two large models already
+existed, a CLIP vision encoder that had learned what pictures contain and a language
+model that had learned to write, and LLaVA's contribution was the small piece between
+them. In the first release that piece was a single layer, and in 1.5 it became two.
+Everything else in the model was already trained by somebody else.
+
+That smallness decides the training, which runs in two stages. In the first stage only
+the join is trained, so the encoder and the language model are left exactly as they
+were, and all the training does is teach the join to write a patch's numbers in a form
+the language model can read. In the second stage the language model is allowed to change
+too, and it is trained on questions and answers. The questions and answers themselves
+are the other half of the idea: a text-only GPT-4 wrote them, from captions and box
+coordinates for each picture rather than from the picture, so a model that had never
+seen an image invented the conversations used to teach one.
+
+What that buys is the reason every model above it exists. The 13-billion model's whole
+training fits on one machine of eight cards in about a day, on publicly available data,
+so a university group rather than a laboratory can do it. What it costs is set by the
+same two choices. A frozen encoder puts a ceiling on what the model can see, which is
+what Qwen3-VL's DeepStack later went back and changed. And the instruction data came out
+of another model, which is precisely the practice Molmo2-ER refused, three sub-sections
+above, and spent its own budget on people instead.
+
+On an arm, LLaVA's two choices come back as your own the first time you fine-tune a
+vision-language model on your robot's pictures. You have to decide whether to leave the
+vision encoder frozen, which is cheap and keeps the ceiling, or to train it as well,
+which is expensive and the only way the model will learn to see your workshop's
+lighting. And you have to decide where your questions and answers come from, which is
+the choice between an afternoon of asking a larger model for them and a week of writing
+them yourself. LLaVA answered both questions one way and Molmo2-ER answered the second
+one the other way, and reading the two is how you see what each answer bought.
 
 You would not pick LLaVA for a robot now. Qwen3-VL is the obvious alternative and is
 better at every part of the job. You read LLaVA to understand why the newer models have
@@ -478,9 +678,8 @@ running the 2023 original.
 ### 5.7 How to choose
 
 Start with SmolVLM2 on your own computer. It answers yes-or-no questions well enough to
-build the success check in section 6, it
-costs nothing, and it teaches you how much of the problem is the wording of your
-question rather than the model.
+build the check that says whether a step worked, it costs nothing, and it teaches you how
+much of the problem is the wording of your question rather than the model.
 
 Three things change that answer.
 

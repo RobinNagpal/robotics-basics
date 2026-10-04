@@ -132,6 +132,25 @@ once, and it works in three steps.
 The network fills in a quality, an angle and a width for every pixel in one pass,
 and the red cross marks the best pixel, which is in the middle of the mug.
 
+It is worth being exact about what an answer for every pixel means, because it is
+the idea this whole family turns on. A 300 by 300 depth picture has 90,000 pixels.
+The quality map is a picture of the same size, so it holds 90,000 numbers, one for
+every pixel of the input, and the number at a pixel answers one question: how well
+would a grasp centred on this pixel hold? The angle map and the width map hold
+90,000 numbers each, in the same way. Nothing inside the network chooses a grasp.
+The network fills in the whole table of answers, and ordinary code reads the largest
+one afterwards.
+
+That is also why the search disappeared. The patch classifier searched because it
+could answer only one question per run, so covering 90,000 possible centres meant
+running it 90,000 times, and the patches it cut out overlapped almost completely, so
+nearly all of that work was the same work done again. A convolutional network does
+the overlapping work once. Its small pattern detectors slide across the whole
+picture, and what they compute at one place is reused by every answer that needs it,
+so one pass fills every cell of all three maps. The search was not replaced by a
+cleverer search. It was removed by arranging for every candidate's answer to come
+out of the same pass.
+
 Because the network generates a grasp for every pixel rather than checking grasps
 one at a time, this design is called **generative**. Its big advantage is speed,
 since one pass through a small network gives every possible grasp in the picture. A
@@ -220,6 +239,8 @@ them, not because you should install them.
 them, its licence lets you sell what you build, and it installs from ordinary Python
 packages with no compiled extensions.
 
+Size xs, a laptop, BSD-3-Clause.
+
 GG-CNN is the generative grasping convolutional neural network. Douglas Morrison,
 Peter Corke and Jürgen Leitner published it at the Robotics: Science and Systems
 conference in 2018, in a paper called
@@ -228,19 +249,57 @@ one 300 by 300 depth picture and paints the quality, the angle and the width map
 that section 3 described. The [repository](https://github.com/dougsm/ggcnn) also
 holds a second and slightly larger version called GG-CNN2.
 
+The one idea GG-CNN is built on is that a grasp should be read off the picture
+rather than searched for. The paper calls it a one-to-one mapping from the depth
+picture to the grasp: every pixel of the input has its own cell in each output map,
+and no candidate grasp is ever proposed, scored or thrown away.
+
+Inside, the network is six layers and nothing else. Three convolutions shrink the
+picture, with strides of 3, 2 and 2, so by the middle of the network the picture is
+twelve times smaller in each direction. Three transposed convolutions then grow it
+back to the size it came in at, a transposed convolution being the growing twin of a
+convolution: where one turns several neighbouring pixels into one, the other turns
+one pixel into several. Four small output layers read the last grown picture. One
+gives the quality map, one the width map, and the other two give the angle, because
+the network does not output an angle at all. It outputs the cosine and the sine of
+twice the angle. A parallel-jaw grasp looks the same if you turn it by half a turn,
+so a single angle runs out of range and jumps back to the other end as the jaws turn
+past that limit, and a network cannot learn a value that jumps, while a cosine and a
+sine move smoothly all the way round. The code after the network turns the pair back
+into an angle, and GR-ConvNet in the next sub-section uses the same pair for the
+same reason. The rest of GG-CNN is as plain as a network gets: the widest layer
+carries 32 channels, nothing skips from the shrinking half to the growing half, and
+there is no normalisation anywhere.
+
+What that buys is one pass over a tiny network, which finishes in time for the next
+camera frame, and that was the problem the paper set out to solve. What it costs is
+detail. Because the picture in the middle of the network is twelve times smaller
+and nothing skips past that middle, the maps come back blurred, which is why the
+library smooths all three maps
+before it looks for the peak. The deeper cost is that each pixel gets one angle and
+one width. Where two different grasps would both work at the same centre, the
+network cannot hold both, and a value trained towards two good angles settles
+somewhere between them, which is not a good angle at all.
+
+On a robot arm the difference shows up when the object moves. If the gripper nudges
+the mug on the way in, or the part is on a belt that creeps, GG-CNN can look again
+on every camera frame and move its target with the object. FC-GQ-CNN in
+[section 5.3](#53-fc-gq-cnn-the-dex-net-top-down-policy) answers a richer question,
+but it pushes sixteen copies of the picture through its network for one answer, so
+by the time it replies the mug has moved.
+
 The obvious alternative is GR-ConvNet in the next sub-section, which paints the same
-three maps with a much larger network. Choose GG-CNN instead when the arm has to
-keep looking while it reaches. GG-CNN has 62,420 weights and GR-ConvNet has
-1,900,900, counted from the layer sizes the two projects publish, so GG-CNN is about
-thirty times smaller. Running the model again during the reach was the problem the
-paper set out to solve, and the small network is how it solved it, because a small
-network finishes in time for the next camera frame.
+three maps from a much larger network. Choose GG-CNN instead when the arm has to
+keep looking while it reaches. The two models answer the same question in the same
+form, so the whole of the choice is how much machinery sits between the picture and
+the answer, and GG-CNN's is small enough to answer again before the camera sends the
+next frame. The table above gives both weight counts if you want to see how far
+apart they are.
 
 What it costs you is mostly age. The repository was written for Python 3.6 on Ubuntu
 16.04 and was last pushed in July 2020, so the install takes more work than the model
-does. It needs no graphics card and no compiled extensions, so that install is still
-possible on a current machine. The thing that most often goes wrong is the depth
-picture itself,
+does. Nothing in it is a compiled extension, so that install is still possible on a
+current machine. The thing that most often goes wrong is the depth picture itself,
 because the network wants one channel of 300 by 300 pixels holding metres, and if
 you hand it millimetres or a 480 by 640 picture it still answers and the answer
 means nothing.
@@ -285,15 +344,51 @@ nothing in the picture can be grasped.
 on this page that reads the colour picture as well and still carries a licence you
 can ship.
 
+Size xs, a laptop, BSD-3-Clause.
+
 GR-ConvNet is the generative residual convolutional neural network. Sulabh Kumra,
 Shirin Joshi and Ferat Sahin published it in 2020, from the Multi-Agent Bio-Robotics
 Laboratory at the Rochester Institute of Technology, in a paper called
 [Antipodal Robotic Grasping using Generative Residual Convolutional Neural
 Network](https://arxiv.org/abs/1909.04810). It paints the same quality, angle and
 width maps as GG-CNN, from a 224 by 224 input with four channels, which are red,
-green, blue and depth. Between its downward and upward halves sit five residual
-blocks, which are pairs of convolutional layers that add their input back to their
-output so that a deeper network still trains.
+green, blue and depth.
+
+The one idea GR-ConvNet is built on is that the three maps do not have to come from a
+small network, and that the picture they are painted from does not have to be depth
+alone. Its paper describes the input as an n-channel picture, which means that
+the first layer is written to take as many channels as you give it, and the released
+weights take four.
+
+Inside, it keeps GG-CNN's shape and changes every proportion of it. Its three
+shrinking convolutions use strides of 1, 2 and 2, so the picture in the middle is
+four times smaller in each direction rather than twelve. Between the shrinking and
+the growing halves sit five residual blocks of 128 channels. A residual block is a
+pair of convolutional layers that adds its own input back to its output, and the
+addition is what lets a stack this deep train at all, because it gives each block an
+easy path to pass its input straight through, so the block only has to learn the
+change it wants to make. Every layer is followed by batch normalisation, which
+rescales the numbers passing through so that they stay in a useful range, and
+dropout sits in front of the outputs. Those outputs are the same four maps as
+GG-CNN's, with the angle arriving as the same cosine and sine pair.
+
+What that buys is detail and colour. Shrinking by four instead of twelve, and
+putting most of the weights into a middle that never loses more resolution, means
+the peak of the quality map lands where the grasp is rather than near it. Reading
+colour means the model can see what depth cannot. What it costs is that the colour
+has to be there and has to be right. You must give it a colour picture and a depth
+picture of the same moment, lined up pixel for pixel, which a depth camera does only
+if you ask it to align its two streams, and a model that learned on one dataset's
+colours has one more thing about your scene that can be unfamiliar. It is also no
+longer the model you run on every camera frame without a graphics card.
+
+On a robot arm the difference shows up on anything a depth camera cannot see. A
+paper label, a plastic lid, a knife or a clear bottle lying on a flat table is, in
+depth, the table: the distance is the same everywhere, so GG-CNN's quality map has
+no peak to find. GR-ConvNet also has the colour picture, where the edges of those
+objects are plain, and it puts a rectangle across them. Turn the scene around, into
+a bin of identical parts all of one colour, and the colour channels say nothing that
+depth has not already said, and GG-CNN's speed is the only difference left.
 
 The obvious alternative is GG-CNN. Choose GR-ConvNet instead when a depth camera
 sees your objects badly, because a flat object lying on a flat table is almost
@@ -302,9 +397,8 @@ invisible in depth and obvious in colour. Its
 weights into Git rather than attaching them to a release, so they are there as soon
 as you clone it. Those two differences are the whole case for it.
 
-What it costs you is thirty times as many weights as GG-CNN, so it is the wrong
-choice if you wanted the model to run on every camera frame without a graphics card.
-It was last pushed in November 2021, so it has the same ageing install, although its
+What it costs you is the install and one mistake about units. It was last pushed in
+November 2021, so it has the same ageing install as GG-CNN, although its
 requirements file pins nothing and names no compiled extension. The thing that most
 often goes wrong is the width map, because the library divides the training widths
 by 150 and multiplies them back afterwards, so the widths that come out are in
@@ -354,6 +448,9 @@ same work as in the previous sub-section.
 because it is the top-down model people ask about most, but its licence forbids
 commercial use and its code needs TensorFlow 1.
 
+Size not stated, a laptop, and a University of California Regents licence for
+education, research and not-for-profit use only.
+
 FC-GQ-CNN is the fully convolutional grasp quality convolutional neural network,
 published in 2019 by the AUTOLAB group at the University of California, Berkeley, as
 part of Dex-Net 4.0. It started as a scorer rather than a detector. Dex-Net 2.0 cut
@@ -363,18 +460,57 @@ The fully convolutional version runs that same small network as a convolution ov
 the whole depth picture, so one pass scores a grasp at every fourth pixel and at
 each of 16 different gripper heights.
 
+The one idea it is built on is that you can keep the scorer and delete the search.
+The scorer answered one question: given this patch and this gripper height, does the
+grasp hold? Running it over a scene meant proposing patches and searching through
+them. FC-GQ-CNN rewrites the scorer so that one pass over the whole picture answers
+that question everywhere at once, and the search becomes a lookup in a table the
+network has filled in.
+
+The rewrite is the part worth understanding, because it is not the design GG-CNN
+uses. A patch scorer ends in fully connected layers, which accept an input of one
+fixed size only, and that fixed size is what forces the patch. Those layers can be
+rewritten as convolutions that compute exactly the same thing, and a network made
+only of convolutions does not care how large the picture is, so the same weights now
+turn a whole depth picture into a grid of scores. That grid is coarser than a pixel,
+because the shrinking inside the network leaves one answer for every fourth pixel in
+each direction. The angle is not a number this network predicts either. Its last
+layer has one output channel for each slice of a half turn, so the angle is whichever
+channel scored highest, and the number of channels is the finest angle it can say.
+
+The gripper's height is handled outside the network, and this is the part nothing
+else on the page does. The code looks at the depth picture, takes the nearest point
+on an object and the furthest point in the scene, and cuts the range between them
+into sixteen heights. It then copies the depth picture sixteen times, once per
+height, and sends all sixteen copies through the network together. What comes back
+is one score for every combination of a row, a column, an angle slice and a height.
+The grasp is the combination that scored best, so the height was chosen by a score
+rather than read off the surface the camera happened to see.
+
+What that buys is the height and an honest number. The score was trained against
+Dex-Net's labels, so it estimates the chance that the grasp holds, rather than
+reproducing a quality that somebody drew on a picture. What it costs is sixteen
+passes instead of one, a grid that answers every fourth pixel instead of every
+pixel, an angle no finer than the output channels allow, and a network built for one
+picture size. On a robot arm the case where all that pays is a grasp below the
+surface: a mug held around its body under the rim, or a part sitting in a recess.
+GG-CNN reads the height at the winning pixel, which is the height of the rim, so its
+jaws close in the air above the body. FC-GQ-CNN has a height slice down at the body
+and a score for it, so it can choose it.
+
 The obvious alternative is GG-CNN, which also answers for every pixel in one pass.
-Choose FC-GQ-CNN instead for one reason: it chooses the gripper's height as well as
-the pixel and the angle. GG-CNN reads the height out of the depth picture at the
-winning pixel, which is wrong whenever the best place to close the jaws is not at
-the surface the camera can see, such as around the body of a mug below its rim.
+Choose FC-GQ-CNN instead for one reason, which is the height. Everything else about
+it is harder than GG-CNN, so the height has to be worth the trouble, and it is worth
+the trouble only when the surface the camera sees is not where you want the jaws.
 
 What it costs you is everything else. The code pins TensorFlow at 1.15 or below and
 its own packaging names Python 3.5 to 3.7, so it needs an environment of its own.
-The licence is a University of California Regents grant for education, research and
-not-for-profit purposes only, with a Berkeley technology licensing contact for
-anything else, so you cannot ship it. The thing that most often goes wrong is the
-picture size, because the fully convolutional network is built for one fixed height
+Its own installer looks for an NVIDIA card and falls back to the processor-only
+TensorFlow when it finds none, which is why a laptop is enough to run it, though
+sixteen passes on a laptop are sixteen times the wait. Commercial use needs a
+separate agreement from Berkeley's technology licensing office, whose contact the
+licence names. The thing that most often goes wrong is the picture size, because
+the fully convolutional network is built for one fixed height
 and width, and you have to write your own picture's size into the configuration
 before the policy is created.
 
@@ -424,6 +560,9 @@ configuration to your gripper's opening in metres, because the shipped value is
 **Historical.** It is the ancestor of the three models above, and reading it shows
 you the one idea they all kept.
 
+Size not stated, nothing to run, and no licence, because neither the code nor the
+weights were released.
+
 Joseph Redmon and Anelia Angelova published
 [Real-Time Grasp Detection Using Convolutional Neural Networks](https://arxiv.org/abs/1412.3128)
 in 2015. Their network looked at the whole picture once and gave back the four
@@ -431,17 +570,48 @@ numbers of one grasp rectangle directly, instead of testing candidate patches on
 a time. It replaced the patch classifier in the next sub-section because looking
 once is far cheaper than looking at every patch.
 
-The reason not to use it today is that it gives one rectangle for the whole picture.
-If two objects are on the table, the network chooses between them before you do, and
-you cannot ask it for the second-best grasp or for a grasp on a particular object.
-GG-CNN's three maps give you every grasp in the picture for the same cost, which is
-why nobody went back. There is no maintained implementation to install, so read the
-paper for the idea rather than the code.
+The one idea is to ask the question once. Their own description of the network is a
+single-stage regression to a graspable rectangle, with no sliding window and no
+region proposals. A sliding window is the patch search of the next sub-section, and
+a region proposal is a cheap first pass whose job is to suggest the few places worth
+looking at properly. This network does neither. The whole picture goes in, and the
+rectangle's four numbers come out.
+
+Inside, it is a picture-classification network of its day with its last layer
+changed. A classifier ends in a layer that gives one number per object class, and
+those numbers are read as a list of guesses. Here that final layer gives the numbers
+of a grasp rectangle instead, and training pushes those numbers towards the
+rectangle a person drew on that picture. The paper reports a second version as well,
+which cuts the picture into a grid of cells and predicts one rectangle inside each
+cell, and it says the grid version did significantly better, especially on objects
+that can be held in several different ways.
+
+What asking once buys is the speed that the rest of this page inherited. What the
+first version costs is choice. One rectangle per picture means the network decides
+which object to grasp before you ever see its answer, so you cannot ask it for the
+second-best grasp and you cannot ask it about one particular object, because a
+single rectangle is the only sentence it can say. The grid version is the first step
+away from that, and GG-CNN's maps are where that step ends up, with a cell for every
+pixel instead of a cell for every grid square.
+
+On a robot arm the limit bites as soon as two objects are on the table. With GG-CNN
+you can take the outline of the object you want from a
+[seeing model](../../03_seeing-models/01_overview.md), keep only the part of the
+quality map that lies inside that outline, and take the peak there, which is how a
+top-down detector is pointed at a chosen object. With one rectangle per picture
+there is nothing to mask, and cropping the picture before the network sees it is the
+only control you have left.
+
+The reason not to use it today is that there is nothing to install. No maintained
+implementation exists, so read the paper for the idea rather than the code.
 
 ### 5.5 Lenz, Lee and Saxena's patch classifier
 
 **Historical.** It is here because it is the first deep learning grasp detector, and
 because knowing what it cost explains why the maps in section 3 exist at all.
+
+Size not stated, nothing to run, and no licence, because neither the code nor the
+weights were released.
 
 Ian Lenz, Honglak Lee and Ashutosh Saxena published
 [Deep Learning for Detecting Robotic Grasps](https://arxiv.org/abs/1301.3592) in
@@ -450,14 +620,38 @@ picture, asked a small network of each one whether a grasp there would hold, and
 kept the best answer. The Cornell grasping dataset that section 4 described was
 built for this work.
 
-The three usable models above exist because of this model's cost. Asking a network
-about every candidate rectangle separately means thousands of network runs for one
-picture, and everything since has been an argument about how to get all of those
-answers from one run. Its own answer to the cost, which was a cheap first network
-that threw most candidates away and an expensive second network on the survivors,
-survives today in the samplers that the
-[grasp quality models](02_grasp-quality-models.md) page describes. There is nothing
-to install: read the paper, and use the dataset.
+The one idea is that grasping can be treated as a question asked about one candidate
+at a time, and that the measurements for answering it should be learned rather than
+thought up by a person. That second half was the new part in 2015. The systems
+before it described each patch with quantities somebody had designed, such as edges
+or gradients, and this work let the network decide what to measure.
+
+Inside, there are two networks in a row rather than one, and the paper calls the
+arrangement a cascade. The first network is small, so it is cheap to run, and its
+job is to throw away the candidates that are obviously bad. The few survivors go to
+a second and larger network, which gives the answer that counts. The other piece of
+the paper is about the input, which carries colour and depth channels together.
+During training the weights were penalised in groups, grouped by which input channel
+they read, so that the network could not lean on the colour channels and leave the
+depth ones unused.
+
+What the cascade buys is a separate, honest answer for every candidate, and the
+freedom to ask about any candidate at all, including one your own code invented for
+reasons of its own. What it costs is the running. Asking about every rectangle in a
+picture means thousands of network runs, and because neighbouring rectangles overlap
+almost completely, nearly all of that work is the same work repeated. The cascade
+reduces the bill rather than removing it, and it adds a weakness of its own, because
+anything the cheap first network discards is gone before the good network ever sees
+it. Everything on this page since has been an argument about how to get all of those
+answers out of one run instead.
+
+On a robot arm this shape is still the right one whenever the candidates have to
+come from you. If your gripper is an unusual shape, or a rule in your task says the
+jaws must come down on one named part of the object, a model that paints its own
+maps has no way to be told, while a scorer that answers about the candidates you
+hand it does. That is the arrangement the
+[grasp quality models](02_grasp-quality-models.md) page is about, and this is where
+it started. There is nothing to install: read the paper, and use the dataset.
 
 ### 5.6 How to choose
 
@@ -469,7 +663,8 @@ Four things change that choice.
 
 - If a depth camera sees your objects badly, which happens with flat, thin, shiny or
     see-through things, use GR-ConvNet, because it reads the colour picture as well.
-    You pay for that with thirty times as many weights.
+    You pay for that with a much larger network, and with a colour picture that has
+    to be lined up with the depth one.
 - If the right place to close the jaws is not at the surface the camera sees, such
     as below the rim of a mug or inside a recess, use FC-GQ-CNN, because it chooses
     the gripper's height itself. Use it only for research, because its licence

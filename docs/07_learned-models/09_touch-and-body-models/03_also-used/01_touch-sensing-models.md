@@ -240,30 +240,53 @@ training run, so no licence restricts it.
 ### 6.1 GelSight's own depth network, inside gsrobotics
 
 This is **most used in 2026** by anyone with a GelSight sensor, because it ships with the
-sensor and answers the question people buy the sensor for. It turns one tactile picture
-into a height map, and it is the part of
+sensor and answers the question people buy the sensor for. Size xs, with 8,834 numbers
+counted from the four layer sizes in the repository's own source, a laptop, and GPL-3.0 for
+the code and for the trained numbers that come with it. It turns one tactile picture into a
+height map, and it is the part of
 [gsrobotics](https://github.com/gelsightinc/gsrobotics), GelSight's own software
-development kit, called `Reconstruction3D`. It is not quite the method in
-[section 4.1](#41-without-learning-the-shape-from-the-shading). A very small network
-takes five numbers for each pixel, its red, green and blue values and its position
-across and down the picture, and gives back the slope of the surface there in each
-direction. A classical step then integrates all those slopes into a height by solving
-Poisson's equation, so the learning replaced the calibration rather than the physics.
+development kit, called `Reconstruction3D`.
 
-You would pick this rather than fine-tuning an image backbone of your own, which is
-section 6.2, because the shape is already solved and the trained numbers come in the box.
-The network holds 8,834 numbers, counted from the four layer sizes in the repository's
-own source, so it runs on an ordinary processor, and nothing you could train on a few
-thousand presses would do this job better.
+The one idea is that the learning replaced the calibration and not the physics. Section
+4.1's method stands: work out the slope of the gel at each place from the colours, then add
+the slopes up across the picture to get the depth. What used to be done by pressing a ball
+of known size into the pad and recording how each slope looked is now done by a very small
+network, and the adding up is still arithmetic.
 
-What it costs you is the licence and the sensor. The repository is GPL-3.0, read from its
-own licence file and recorded in the frameworks book's
+Inside, the network's input is not a picture. It is five numbers describing one pixel: that
+pixel's red, green and blue values, and how far across and how far down the picture it
+sits. Its position is in there because the coloured lights are not equally bright
+everywhere on the pad, so the same shade of red means a different slope at the rim than in
+the middle. The output is two numbers, the slope across and the slope down. Those five
+numbers pass through three small layers of sixty-four and out, and the whole thing is run
+once for every pixel that the kit has decided is inside the contact. Then a classical step
+integrates all those slopes into a height by solving Poisson's equation, which is the
+standard way of finding the one surface whose slopes are the slopes you measured.
+
+Compare section 6.2, where a convolutional network reads the whole picture and each of its
+filters looks at a patch of neighbouring pixels. Here nothing ever looks at a neighbour.
+Each pixel is judged entirely on its own colour and place, and the only thing that joins
+the pixels together is the Poisson step at the end. That is why the network can be so small
+and why it still produces a smooth surface: a pixel the network gets wrong is outvoted by
+the pixels around it when the slopes are added up, because the only height map that comes
+out of that step is a real surface.
+
+On an arm this choice decides one thing and no more. If you want shape, nothing you train
+on a few thousand presses will beat this, because it is solving a problem about light,
+which has an exact answer, rather than a problem about touch, which does not. The moment
+you want a different answer, the force, the place on the pad, or whether the object is
+starting to slide, this has nothing to say, and you are in section 6.2 or section 6.4.
+
+So you would pick this rather than fine-tuning a backbone of your own, which is section
+6.2, because the shape is already solved and the trained numbers come in the box. Two costs
+are about this tool and not about its size. Its GPL-3.0 licence, read from its own licence
+file and recorded in the frameworks book's
 [licence table](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#9-drivers-ros-2-packages-and-licences),
-so linking it into a product obliges you to publish the source of the result. The trained
-numbers were learned on GelSight's own gel and lights, so another maker's sensor needs
-its own training set. What most often goes wrong is the zero: the first fifty pictures
-record what the untouched pad looks like, so if anything is touching it then, every later
-height map is measured from the wrong surface.
+obliges you to publish the source of anything you link it into. And the trained numbers
+were learned on GelSight's own gel and lights, so another maker's sensor needs its own
+training set. What most often goes wrong is the zero: the first fifty pictures record what
+the untouched pad looks like, so if anything is touching it then, every later height map is
+measured from the wrong surface.
 
 ```python
 from utilities.gelsightmini import GelSightMini
@@ -297,23 +320,48 @@ milliseconds and sets how fast you can act.
 ### 6.2 An image backbone of your own, fine-tuned
 
 This is also **most used in 2026**, and it is where most people end up, because the
-answer they need is rarely one somebody has published. You take a network already trained
-on ordinary photographs, replace its last layer with one that gives the numbers you want,
-and train that last layer on your own presses. The
+answer they need is rarely one somebody has published. Size s, ResNet-18 having 11,689,512
+numbers as torchvision publishes, a laptop to run it and a small card to train the head,
+and the licence is yours, because the trained model comes out of your own run. The
 [fine-tuning](../../10_making-models-work-on-an-arm/02_most-used/01_fine-tuning.md#2-three-ways-to-fine-tune)
 page explains the three ways to do this, and keeping the backbone fixed is the cheapest.
 
-You would pick this rather than Sparsh in section 6.4 for two reasons that have nothing
-to do with accuracy. Sparsh forbids commercial use and a torchvision backbone does not.
-And Sparsh works with three named sensors, while this works with any sensor that produces
-a picture, including a pressure array, which is a small picture of numbers. What you give
-up is that the backbone learned from photographs, so it has never seen a tactile picture
-and needs more of your presses to make up for that.
+The one idea is that a network which has looked at a million photographs has already
+learned what edges, corners and shading look like, and a dent in a gel is made of edges,
+corners and shading. So you keep that network and only teach it the last step.
 
-What it costs you is a labelled set of presses, which section 5 describes how to make.
-What most often goes wrong is that the blank picture is taken once at startup and the gel
-then warms up, so every later subtraction is measured from a pad that no longer looks
-like that.
+Inside, the model is in two parts with a clear seam. The backbone is every layer except the
+last, a convolutional stack whose numbers were fitted to photographs by somebody else, and
+you keep those numbers exactly as they came. The head is the last layer, and you throw the
+original one away, because it was built to name a thousand kinds of object. In its place
+goes a layer that gives the numbers you actually want, such as where on the pad the contact
+sits and how hard it presses, and that layer is the only thing your presses train. The
+input is not the raw camera picture either: step 2 of section 4.2 subtracts a picture of
+the untouched pad first, so what the backbone reads is a picture of the change.
+
+Compare section 6.1, whose network reads five numbers about one pixel and knows nothing
+about that pixel's neighbours. Every filter in this backbone looks at a patch of
+neighbouring pixels, and the layers stack those patches up from edges into corners and from
+corners into larger shapes. That is exactly what lets this answer "where on the pad" and
+"how hard altogether", which are properties of the whole contact. Section 6.1 can only
+answer "how deep, here", one pixel at a time, with the Poisson step gluing the answers
+together afterwards.
+
+On an arm the difference shows up when you want an answer nobody has published. Take a
+screw resting on the pad, and the question of whether it is sitting straight or
+cross-threaded. No published touch model answers that, and section 6.1's height map does
+not either, because a height map is not a judgement. Here you press a hundred good screws
+and a hundred crooked ones, label them, and train the last layer, and the sensor now
+answers the question your cell actually asks.
+
+So you would pick this rather than Sparsh in section 6.4 for two reasons that have nothing
+to do with accuracy. Sparsh forbids commercial use and a torchvision backbone does not. And
+Sparsh works with three named sensors, while this works with any sensor that produces a
+picture, including a pressure array, which is a small picture of numbers. What you give up
+is that the backbone learned from photographs, so it has never seen a tactile picture and
+needs more of your presses to make up for that. What most often goes wrong is that the
+blank picture is taken once at startup and the gel then warms up, so every later
+subtraction is measured from a pad that no longer looks like that.
 
 ```python
 import numpy as np
@@ -355,26 +403,51 @@ and when a worn gel means the model must be checked again.
 ### 6.3 A small model on a magnetic skin
 
 This is **most used in 2026** on any sensor that is not a camera, and it is the cheapest
-route into touch that exists. A magnetic skin is a rubber sheet with tiny magnets in it
-over a board of magnetometers, which are the chips a phone uses to find north. Five of
-them give fifteen numbers, three per chip. The open designs are
+route into touch that exists. Size xs, a laptop, and the licence is yours, because the
+model comes out of your own fit; the two open skin designs,
 [AnySkin](https://github.com/raunaqbhirangi/anyskin) and its successor
-[eFlesh](https://github.com/notvenky/eFlesh), both MIT, read from their own licence
-files, and the frontier chapter's
+[eFlesh](https://github.com/notvenky/eFlesh), are both MIT, read from their own licence
+files. A magnetic skin is a rubber sheet with tiny magnets in it over a board of
+magnetometers, which are the chips a phone uses to find north. Five of them give fifteen
+numbers, three per chip. The frontier chapter's
 [section on touch sensing](../../../03_frameworks/08_frontier/05_hardware.md#62-touch-sensing-became-something-you-buy-for-tens-of-dollars)
 records the manufactured versions and their prices.
 
-With fifteen numbers there is no backbone to reuse, so the model is a small one you fit
-yourself. You would pick this rather than a gel sensor and section 6.1 when you want
-force and shear at many places on a hand, and when a replaceable part matters: the
-electronics stay on the robot and the skin slips over them, so the part that wears out is
-the cheap part.
+The one idea is that the hard part has already been done by the hardware. The sensor hands
+you fifteen numbers rather than a picture, so there is nothing left to summarise, and the
+model is only a conversion from those fifteen numbers into the answer you want.
 
-What it costs you is shape. Fifteen numbers tell you how hard and in which direction
-something presses, and not whether it is an edge or a corner. The reading also moves as
-the skin warms up, so you have to take a fresh untouched reading often, and every skin is
-a little different, so a model fitted on one is not safe on the next without a reference
-press.
+Inside, that means there are no layers and no filters at all. The model in the code below
+is ridge regression, which is one matrix: each answer it gives is a weighted sum of the
+fifteen inputs, and fitting it is a single calculation with an exact answer rather than a
+training loop that steps towards one. The penalty in the word "ridge" keeps the fitted
+weights small, so one chip that happens to be noisier than the others cannot come to
+dominate the answer. Compare section 6.2, where the whole purpose of the early layers is
+to boil a picture of tens of thousands of pixels down to a few hundred numbers before
+anything decides anything. Here that boiling down happened in the physics of the sensor,
+because five magnets under a rubber sheet is already a summary, so the only thing left to
+learn is which combination of the fifteen means which force.
+
+What that buys is the cheapest and most inspectable model in this chapter. It fits in
+milliseconds from a few hundred presses, it needs no graphics card ever, and the fitted
+weights are fifteen numbers per answer that you can print and check against what you
+expect a press in that place to do to that chip. What it costs is shape. Fifteen numbers
+tell you how hard and in which direction something presses, and they cannot tell an edge
+from a corner, because the information was thrown away before the model saw anything. The
+reading also moves as the skin warms up, so a fresh untouched reading has to be taken
+often, and every skin is a little different, so a model fitted on one is not safe on the
+next without a reference press.
+
+On an arm, this is the choice when you need coarse touch in many places rather than fine
+touch in one. A gel sensor gives one rich picture behind one fingertip, and section 6.1 can
+tell you the shape of what that one fingertip is on. A skin gives a coarse answer over a
+whole palm. If the question is which of five places on the palm is taking the load as a box
+settles, this answers it and section 6.1 cannot, because section 6.1 only ever sees the pad
+its own camera sits behind.
+
+So you would pick this rather than a gel sensor and section 6.1 when you want force and
+shear at many places on a hand, and when a replaceable part matters: the electronics stay
+on the robot and the skin slips over them, so the part that wears out is the cheap part.
 
 ```python
 import numpy as np
@@ -413,12 +486,12 @@ differently from one in the middle.
 
 Sparsh is **worth betting on** rather than most used, because one model that works across
 many sensors is the direction the field is going, and this one is held back by its licence
-and by a measured failure rather than by its idea. It is a family of self-supervised touch
+and by a measured failure rather than by its idea. Size not stated for both the small and
+the base backbone, a big card to train a head on one, and CC BY-NC 4.0 for the code and the
+weights alike, which forbids commercial use. It is a family of self-supervised touch
 models from Meta's Fundamental AI Research group with Carnegie Mellon University and the
 University of Washington, published in [October 2024](https://arxiv.org/abs/2410.24090).
-It was trained on more than 460,000 unlabelled tactile pictures by hiding parts of a
-picture and asking the model to fill them in, which is the idea section 5 describes. It
-supports DIGIT, GelSight'17 and GelSight Mini, and the repository also carries TacBench,
+It supports DIGIT, GelSight'17 and GelSight Mini, and the repository also carries TacBench,
 six tasks that include force, slip, object pose, grasp stability and recognising
 textiles. The grasp stability task runs on the recordings of
 [Calandra and colleagues, 2017](https://arxiv.org/abs/1710.05512), who put a GelSight on
@@ -427,20 +500,46 @@ camera and touch together predict a grasp better than either alone. That 2017 re
 the one everything else on this page assumes, and its recordings are still the way to
 measure a model of your own without collecting anything.
 
-You would pick this rather than the backbone of your own in section 6.2 to save labels,
-because it starts from numbers learned on tactile pictures instead of on photographs. Its
-paper reports that the self-supervised start beat training end to end for one task and
-one sensor by 95.1 per cent on average across TacBench.
+The one idea is that the front part of the model should be trained on touch rather than on
+photographs, and that this can be done without a single label. You gather a very large
+number of tactile pictures, you hide part of each one, and you train the model to put back
+what you hid. A model that can do that has had to learn what contacts look like in general,
+and nobody had to mark anything.
 
-What it costs you is checkable, and worth checking. The licence in the repository's own
-`LICENSE.md` is Creative Commons Attribution-NonCommercial 4.0, which forbids commercial
-use and covers the weights as well as the code. The repository is a public archive, read
-only since February 2025. Its own pretraining used eight A100 80GB graphics cards, so
-only the head on top is realistically yours to train. And it does not travel between
-sensors yet: a study in [September 2026](https://arxiv.org/abs/2609.08673) reports a
-frozen classifier on Sparsh scoring 6.86 per cent on a sensor it was not trained on,
-rising to 87.09 per cent once a tenth of the new sensor's recordings are labelled. That is
-the number to remember before buying a sensor, and it is why section 6.5 exists.
+Inside, the arrangement is the same two parts as section 6.2, a backbone with a small head
+on top, and the difference is entirely in where the backbone's numbers came from. Section
+6.2's backbone was fitted to photographs, by being asked to name the object in each one.
+This one was fitted to more than 460,000 tactile pictures by the hiding game above, and
+Sparsh is really that game tried with several recipes. The two its paper found best are
+DINO, which trains two copies of the network to agree about a picture that each of them
+sees differently, and I-JEPA, which predicts the hidden part of a picture as internal
+numbers rather than as pixels. What that changes in practice is what the earliest layers
+are tuned to notice: a smooth coloured gradient across a dent, the printed dots, the rim
+where a contact stops, rather than fur, printed text and sky.
+
+What that buys is labels. Your own presses now only have to teach the small head, so the
+difference is a few hundred labelled presses instead of a few thousand, and the paper
+reports its self-supervised start beating training end to end for one task and one sensor
+by 95.1 per cent on average across TacBench. What it costs is that a backbone fitted to
+three sensors' pictures only knows those three. A study in
+[September 2026](https://arxiv.org/abs/2609.08673) reports a frozen classifier on Sparsh
+scoring 6.86 per cent on a sensor it was not trained on, rising to 87.09 per cent once a
+tenth of the new sensor's recordings are labelled. That is the number to remember before
+buying a sensor, and it is why section 6.5 exists.
+
+On an arm the difference appears when you count the presses you can afford to label. With a
+DIGIT and a hundred labelled presses, this reaches a usable answer where section 6.2's
+photograph backbone does not. With any other sensor the advantage is gone, and section 6.2
+is the honest choice again, because a backbone that was fitted to the wrong gel is no better
+a starting point than one fitted to photographs. This is also the one entry on this page
+whose own labelled recordings are released, so you can measure a model before you own a
+sensor at all.
+
+So you would pick this rather than the backbone of your own in section 6.2 to save labels.
+Two costs that remain are about this repository rather than about its size. Its own
+pretraining used eight A100 80GB graphics cards, so only the head on top is realistically
+yours to train. And the repository is a public archive, read only since February 2025, so
+nothing in it will be fixed.
 
 ```bash
 # The normal and shear field, live, on one GelSight Mini. The video id comes from
@@ -462,28 +561,47 @@ past the demo, your own labelled presses in the layout its readers expect.
 ### 6.5 Transferable Tactile Transformers (T3)
 
 This is also **worth betting on**, and it is the better bet of the two for most readers,
-because its licence does not stop you using it. T3 comes from MIT's Computer Science and
-Artificial Intelligence Laboratory, published in
-[June 2024](https://arxiv.org/abs/2406.13640). Its arrangement is the interesting part:
-one shared middle section, a small separate part at the front for each sensor, and a small
-separate part at the back for each task. So the middle learns from every sensor at once,
-while the front absorbs the difference between one gel and another. It was trained on a
-dataset the authors published, Foundation Tactile, which gathers over 3 million tactile
-pictures from 13 sensors and 11 tasks into one format.
+because its licence does not stop you using it. Size not stated, a big card to fine-tune
+it, and MIT for the code, read from the repository's own licence file, with the weights and
+the dataset hosted away from it. T3 comes from MIT's Computer Science and Artificial
+Intelligence Laboratory, published in [June 2024](https://arxiv.org/abs/2406.13640). It was
+trained on a dataset the authors published, Foundation Tactile, which gathers over 3
+million tactile pictures from 13 sensors and 11 tasks into one format.
 
-You would pick this rather than Sparsh in section 6.4 for three reasons. Its
-[licence is MIT](https://github.com/alanzjl/t3), read from the repository's own licence
-file, so you may use it in a product. It covers thirteen sensors rather than three, so an
-unusual sensor has a better chance of being one of them. And its paper reports zero-shot
-transfer working for some sensor and task pairings, which is the problem the September
-2026 study measured on Sparsh.
+The one idea is that what differs between two gel sensors is shallow. The lights are a
+different colour, the gel is a different thickness, the camera sits at a different
+distance; but a dent is a dent. So give each sensor a small piece of its own to absorb its
+quirks, and let everything deeper be shared between all of them.
 
-What it costs you is maturity. It is one research group's repository rather than a
-maintained library, the weights and the dataset are hosted away from the code, and the
-size of the shared middle is not published. Its strongest published result is a task
-success rate 25 per cent higher than a tactile encoder trained from scratch, on inserting
-multi-pin electronics, so treat it as evidence that the idea works rather than as a
-number for your own job.
+Inside, that gives three kinds of part rather than two. At the front there is one small
+encoder per sensor. In the middle there is one shared trunk, which is a transformer,
+meaning a network that cuts its input into pieces and lets every piece look at every other
+piece at every layer. At the back there is one small decoder per task. During training, a
+batch of pictures from any of the thirteen sensors goes through that sensor's own front
+piece and then through the one shared trunk, so the trunk is fitted to all thirteen sensors
+at once while each front piece only ever sees its own. Compare Sparsh in section 6.4,
+which is a single backbone trained per sensor family, with nothing inside it set aside for
+a sensor's quirks. Here those quirks have a named home, and that home is small.
+
+What the idea buys is a sensor change that does not restart the training. Its paper reports
+zero-shot transfer working for some sensor and task pairings, which is exactly the problem
+the September 2026 study measured on Sparsh. What it costs is maturity. It is one research
+group's repository rather than a maintained library, the weights and the dataset are hosted
+away from the code, and the size of the shared trunk is not published. Its strongest
+published result is a task success rate 25 per cent higher than a tactile encoder trained
+from scratch, on inserting multi-pin electronics, so treat it as evidence that the idea
+works rather than as a number for your own job.
+
+On an arm the difference arrives the day you change the sensor, which happens more often
+than people expect, because gels wear out and makers discontinue them. With section 6.2 or
+section 6.4 a new sensor means a new training run on fresh presses of your own. Here you
+start from the front piece belonging to the sensor nearest to yours and keep the trunk, so
+what you retrain is the small part rather than the whole thing.
+
+So you would pick this rather than Sparsh in section 6.4 for three reasons. Its licence is
+MIT, so you may use it in a product. It covers thirteen sensors rather than three, so an
+unusual sensor has a better chance of being one of them. And it was built for the sensor
+change above, which Sparsh was not.
 
 ```bash
 git clone https://github.com/alanzjl/t3 && cd t3 && pip install -e .

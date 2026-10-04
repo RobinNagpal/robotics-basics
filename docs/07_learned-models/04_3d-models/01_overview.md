@@ -21,8 +21,9 @@ point cloud.
 4. [The four kinds in this chapter](#4-the-four-kinds-in-this-chapter)
 5. [Comparing the four kinds](#5-comparing-the-four-kinds)
 6. [How 3D models connect to the other chapters](#6-how-3d-models-connect-to-the-other-chapters)
-7. [Where to read next](#7-where-to-read-next)
-8. [Using it in Python](#8-using-it-in-python)
+7. [How this chapter writes size, machine and licence](#7-how-this-chapter-writes-size-machine-and-licence)
+8. [Where to read next](#8-where-to-read-next)
+9. [Using it in Python](#9-using-it-in-python)
 
 ---
 
@@ -219,7 +220,47 @@ families on one page.
 
 ---
 
-## 7. Where to read next
+## 7. How this chapter writes size, machine and licence
+
+Every model section in this chapter says three things about what a model costs you,
+and it says them in the same short words rather than explaining them again each time.
+This section is where those words are defined. The same three scales are used in
+every chapter of this book, so you only have to learn them once.
+
+**Size** is the number of parameters, which is the count of numbers the network
+learned during training. It is a rough guide to how capable a model is and to how
+much memory it needs, and nothing more: a well-trained small model beats a badly
+trained large one.
+
+| Size | Parameters |
+| --- | --- |
+| xs | under 10 million |
+| s | 10 to 100 million |
+| m | 100 million to 1 billion |
+| l | 1 to 10 billion |
+| xl | more than 10 billion |
+
+**Machine** is what you need to run the model once, not to train it. Training needs
+more, usually several times more, and each model section says so where it matters.
+
+| Machine | What it needs |
+| --- | --- |
+| laptop | an ordinary processor, with no graphics card |
+| small card | a graphics card with less than 8 GB |
+| big card | a graphics card with 8 to 24 GB |
+| workstation | a graphics card with 24 to 80 GB |
+| cluster | more than one card of 80 GB |
+
+**Licence** is given as the name alone, such as Apache-2.0 or MIT. Two things about
+that name matter more than the name itself. The code licence and the weights licence
+are often different, so a model with permissive code can still forbid you from
+selling what you build, and each model section says when the two differ. And a name
+is not legal advice: read the project's own licence file before you ship anything,
+because this book records what those files said on the day they were read.
+
+---
+
+## 8. Where to read next
 
 Start with [point cloud models](02_most-used/01_point-cloud-models.md), because the
 other three pages in this chapter build on its idea of a model that reads points
@@ -237,7 +278,7 @@ If you want the deeper, non-learned side of 3D first, Book 2 covers it:
 
 ---
 
-## 8. Using it in Python
+## 9. Using it in Python
 
 [Section 1](#1-what-a-point-cloud-is) explained the point cloud, and every model in
 this chapter takes one or produces one. So before any of those models can run,

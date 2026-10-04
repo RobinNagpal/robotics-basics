@@ -227,6 +227,10 @@ F3RM is **most used in 2026** for robot arms, because it is the only system here
 published as an installable package and comes with the robot side of the problem already
 written.
 
+Size not stated, because it trains no weights of its own; a big card, or a small one if
+you fit the field without the viewer; MIT for the code, with OpenAI's CLIP weights
+underneath.
+
 F3RM stands for Feature Fields for Robotic Manipulation. William Shen, Ge Yang and four
 colleagues at MIT published it at the Conference on Robot Learning in 2023
 ([paper](https://arxiv.org/abs/2308.07931), [code](https://github.com/f3rm/f3rm),
@@ -235,18 +239,56 @@ described, and then adds the part a robot needs. From a few demonstrated grasps 
 searches for the gripper position and rotation whose surroundings carry the features the
 demonstrations had, and you can also ask in words which object to pick.
 
+The one idea F3RM is built on is that a grasp can be described by what the space around
+the gripper means. The field answers, for any place in the scene, both what colour that
+place is and what list of numbers belongs to it. So a gripper pose can be turned into a
+set of places: a fixed pattern of sample points attached to the gripper's own body, which
+move wherever the gripper moves. Read the field at those places and you have a
+description of what this particular grip would be holding, written in the image model's
+numbers rather than in geometry.
+
+That is what the robot half of the system does. You demonstrate a grasp a few times, and
+for each demonstration the sample points are put where that pose put them, the field's
+lists at those places are read, and they are strung together into one long list. The
+demonstrations' long lists are averaged into a single description of the task. At run
+time the search runs the other way. It first throws away the parts of the scene whose
+lists sit closer to words you said you did not want than to the words you asked for, then
+tries many rotations at the places that survived, and then adjusts position and rotation
+with an optimiser until the lists read at the sample points match the task description as
+closely as they can. What comes out is a full pose, three numbers of position and three
+of rotation.
+
+The difference from LERF, which section 5.2 covers and which F3RM is built on, is almost
+entirely in that second half. LERF keeps the same kind of meaning in the same kind of
+field and stops: you type a word and the matching part of the scene lights up. Nothing in
+it turns a lit-up region into a place to put fingers, because a region has no direction,
+and a gripper that does not know which way to turn its wrist cannot grasp. The two also
+fill their fields differently. F3RM takes dense features from CLIP in one pass, using what
+the paper calls the MaskCLIP reparameterisation, a way of reading a list out of CLIP's
+last layer for each patch of the photo instead of one list for the photo, while keeping
+those lists comparable with words. LERF instead cuts crops at many sizes and learns a
+field whose answer depends on the size you ask about.
+
+What the field costs is that nothing can be asked of it until it has been fitted. The
+scene has to be photographed first, the fit has to run, and the answer describes the
+scene as it was when the photos were taken, which is what GraspSplats in section 5.5
+exists to fix. Where the design pays off on an arm is on parts rather than objects. Asking
+for "the mug" returns a cloud of matching places, and any grasp inside that cloud counts
+as a hit, which is no help when only one approach works, such as a full mug that has to
+be lifted by its handle. Two demonstrations of hooking a finger through a handle give a
+task description that scores one approach direction above all the others, so the search
+returns a wrist angle and not a region.
+
 The obvious alternative is LERF, which F3RM is built on and which is better known. You
 would pick F3RM because of that pose search, as LERF stops at showing you a heat map and
 leaves every robot question to you. F3RM also distils DINO features as an alternative to
 CLIP with one command-line flag, and DINO is the better of the two at telling parts
 apart.
 
-What it costs you is a pinned software stack. The README requires an NVIDIA card with
-CUDA 11.7 or newer, states that the code is tested on Nerfstudio 0.3.3 and 0.3.4 only,
-and reports peak memory of about 6 GB while training without the viewer and about 12 GB
-with it, on a 24 GB card. That version pin is what most often goes wrong, so follow the
-repository's own conda recipe rather than installing on top of an environment you
-already have. The licence is MIT, and the CLIP weights it downloads are OpenAI's.
+What it costs you is a pinned software stack. The README states that the code is tested
+on Nerfstudio 0.3.3 and 0.3.4 only, and that pin is what most often goes wrong, so follow
+the repository's own conda recipe rather than installing on top of an environment you
+already have.
 
 Fitting a field is one command, and the package also exposes the per-patch feature step
 on its own, which is what you need to build your own map.
@@ -288,6 +330,9 @@ field and do that for you.
 LERF is **historical**. It is the system the feature field idea became well known through,
 and the one to read before F3RM.
 
+Size not stated, because it trains no weights of its own; a big card, with a `lerf-lite`
+size for a small one; MIT for the code, with OpenAI's CLIP weights underneath.
+
 LERF stands for Language Embedded Radiance Fields. Justin Kerr, Chung Min Kim, Ken
 Goldberg, Angjoo Kanazawa and Matthew Tancik at the University of California, Berkeley
 published it at the International Conference on Computer Vision in 2023
@@ -298,6 +343,37 @@ and the matching part of the scene lights up. An earlier system,
 field as a robot's memory of a room ([paper](https://arxiv.org/abs/2210.05663)), and its
 licence is MIT as well.
 
+LERF is built on one idea about a mismatch. CLIP describes a whole picture at once, and
+it was never trained to describe a single pixel. So asking CLIP what one point in space
+means is asking it a question it cannot answer. LERF's reply to that is to stop
+asking about points. Its field answers about a volume: you give it a place and also a
+size, and it gives back the list of numbers for a region of that size around that place.
+
+Inside, the size is carried through everything. Before the fit, the program cuts every
+photo into crops at many sizes and stores CLIP's list for each crop, which gives an image
+pyramid. During the fit, a sample taken along a ray through a pixel asks the field at a
+size worked out from how far along the ray that sample sits, and the answer is compared
+with the pyramid's list at the same size, interpolated between the nearest crops. The
+colour side of the NeRF is unchanged and is fitted alongside it. A second borrowed model,
+DINO, is fitted as well, not to answer any question but to steady the language field,
+because the authors found that without it the match maps came out patchy where a part of
+the scene had few views or did not stand out from its background.
+
+What the extra size dimension buys is that one field answers both "the kitchen counter"
+and "the salt grinder on it", and the paper is explicit that this needs no region
+proposals and no masks. That is the contrast with ConceptFusion in section 5.3, which has
+to cut each photo into regions before it can describe anything, and with F3RM in section
+5.1, which reads one list per patch at a single fixed size. What the size dimension costs
+is that every answer now depends on a number most people do not think to set: ask at too
+large a size and a small object is answered by the shelf it is standing on.
+
+On an arm, the honest comparison is at the two ends of that size range. A tray of small
+parts photographed from across the cell is the case where being able to ask at a small
+size matters, and a question about the whole workbench is the case where being able to ask
+at a large one does. Everything after the answer, though, is still yours: the field gives
+a score for each place and no pose, which is why this page sends you to F3RM as soon as
+there is a gripper involved.
+
 You would run LERF rather than F3RM when there is no robot in the picture, because it is
 the simpler of the two to install and it ships three sizes: `lerf`, `lerf-lite` for small
 graphics cards, and `lerf-big`, which uses the larger CLIP image model.
@@ -305,7 +381,7 @@ graphics cards, and `lerf-big`, which uses the larger CLIP image model.
 What it costs you is the same Nerfstudio stack as F3RM, and one surprise that wastes an
 afternoon. The viewer shows raw match scores, and the README says values below 0.5 are
 already irrelevant, so you must set the range to -1 to 1 or turn normalisation on before
-the pictures mean anything. The licence is MIT.
+the pictures mean anything.
 
 ```bash
 git clone https://github.com/kerrj/lerf && cd lerf
@@ -322,12 +398,46 @@ on.
 ConceptFusion is **historical**, and it is the clearest example of the fusion route from
 section 3.
 
+Size not stated, because it trains nothing at all; no memory figure is published, and you
+need a card for CLIP and the Segment Anything Model; MIT for the code.
+
 Krishna Murthy Jatavallabhula and sixteen colleagues published it at Robotics: Science
 and Systems in 2023 ([paper](https://arxiv.org/abs/2302.07241),
 [code](https://github.com/concept-fusion/concept-fusion)). It cuts each photo into
 regions, gives each region a CLIP feature, spreads those features back over the pixels,
 and fuses them into one point cloud as the camera moves. Because the question and the map
 meet in CLIP's numbers, you can ask with words, by clicking a point, or with a sound.
+
+ConceptFusion answers the same mismatch LERF answers, in the opposite way. If CLIP can
+only describe a whole picture, then give it whole pictures. Cut the photo into regions,
+hand each region to CLIP on its own as though that region were a picture of its own, and
+you have one list per region instead of one list per photo. Every pixel then takes the
+list of the region it fell inside.
+
+The regions come from the Segment Anything Model, which proposes masks without being told
+what to look for. A region's own list describes the region in isolation, which throws
+away the rest of the scene, so the system also takes one list for the whole photo and
+mixes the two together, and the paper's claim for that mixing is that it needs no
+training and no fine-tuning of anything. Then comes the step the method is named after.
+Each pixel has a depth, so it is already a 3D point; the point takes the pixel's list;
+and when a later photo sees the same spot, the stored list and the new one are combined,
+in the same pass in which ordinary mapping software combines the geometry. Nothing is
+fitted and nothing learns.
+
+Against a feature field that is a different bargain. F3RM and LERF interpolate, so their
+fields answer at places no camera ever measured, which is useful and is also a guess.
+ConceptFusion holds a list only where a pixel landed, and its map is usable while the
+camera is still moving, because there is no fit to wait for. The cost is that the answer
+is only as fine as the regions. A mug is likely to be one mask, so every point of the mug
+carries nearly the same list and the handle is never described separately, which is
+precisely what a field asked at a small size can do.
+
+Because the question and the map meet inside CLIP's numbers, the question does not have
+to be words, and this is the one entry on the page where that is true. There are versions
+of CLIP that put sounds into lists of the same kind, and a photo was always in the same
+space to begin with. On an arm that is worth having when the thing you want has no good
+name: one particular bracket in a tray of similar brackets is far easier to point at, or
+to show a picture of, than to describe in a sentence.
 
 The obvious alternative is a feature field such as F3RM. Fusion wins when you cannot wait
 for a fit, because the map is ready as the camera moves and every point in it was
@@ -339,8 +449,7 @@ What it costs you is an install made of other people's branches, and a repositor
 says so. The README states that the released code departs from the paper, since it uses
 the Segment Anything Model instead of Mask2Former for the regions and drops the
 uniqueness term the paper describes. It needs a specific branch of the gradslam library,
-and your data has to be in that library's dataset format, which is the real work. The
-licence is MIT.
+and your data has to be in that library's dataset format, which is the real work.
 
 ```bash
 # This branch of gradslam fuses features; the main branch cannot.
@@ -362,6 +471,9 @@ carries a feature.
 ConceptGraphs is **most used in 2026** for anything larger than a table, because keeping
 one feature per object instead of one per point is what makes a whole room affordable.
 
+Size not stated, because it trains nothing of its own; no memory figure is published, and
+you need a card for the detector, the Segment Anything Model and CLIP; MIT for the code.
+
 Qiao Gu, Ali Kuwajerwala, Sacha Morin and thirteen colleagues published it in 2023
 ([paper](https://arxiv.org/abs/2309.16650),
 [code](https://github.com/concept-graphs/concept-graphs)). A detector and the Segment
@@ -370,6 +482,37 @@ merged into one three-dimensional object each, and each object keeps one CLIP fe
 a note of how it sits relative to the others. A
 [language model](../../07_language-models/01_overview.md) can then read that record and
 answer questions about position.
+
+The one idea here is about what to keep. A map with a list of numbers on every point
+stores nearly the same list hundreds of times over, because every point of the mug is on
+the mug. So keep one list per object instead, and keep a note of how the objects sit
+relative to one another. What you get is a graph, which is the word for a set of things
+with connections between them: the objects are its nodes and the relations are its edges.
+
+Building that graph inverts the order of the fusion route. ConceptFusion in the section
+above fuses first and names nothing, so its map is a cloud of points that happen to carry
+meaning. ConceptGraphs cuts each photo into objects first, gives each object its CLIP list
+and its own small cloud of points, and then does the work the other route never has to
+do: deciding whether the object in this photo and the object in that photo are the same
+object, merging the two when they are and starting a new node when they are not. Once the
+nodes exist, a model that writes words describes each one, and a language model reads
+those descriptions together with the nodes' positions and writes the edges, such as one
+object being on top of another.
+
+What the graph buys is a map a language model can read. A few hundred lines of objects
+and relations fit inside a prompt, and a few hundred thousand points carrying a few
+hundred numbers each do not, which is why this is the route taken for a request such as
+"put the thing from the chair onto the table". What it costs is everything below the
+level of the object, as the paragraph after this one puts in terms of the mug's handle.
+The merging step also has thresholds that decide whether two views of a mug become one
+node or two, and those are numbers you have to set against your own recordings rather
+than defaults you can trust.
+
+On an arm the line falls between finding and grasping. If the request is "fetch the bottle
+from the second shelf", the useful work is deciding which blob is a bottle and which shelf
+it is standing on, and a graph answers that in a form a planner can act on directly. If
+the request is "hold the pan by the handle", the graph has nothing to say and F3RM's field
+does.
 
 The obvious alternative is a dense map such as ConceptFusion or OpenScene. ConceptGraphs
 wins on memory and on relations, because a room becomes a few hundred objects rather than
@@ -380,9 +523,8 @@ is what F3RM is for.
 What it costs you is the longest install on this page: a detector, the Segment Anything
 Model, a pinned gradslam, PyTorch3D and the faiss search library, on Python 3.10. The
 deeper cost is that the map holds only what the detector found, so an object it missed is
-not in the graph and no wording of the question will find it. The licence is MIT, and the
-repository's `ali-dev` branch holds a newer real-time version that reads recordings from
-an iPhone.
+not in the graph and no wording of the question will find it. The repository's `ali-dev`
+branch holds a newer real-time version that reads recordings from an iPhone.
 
 ```bash
 # First, detect and segment the objects in every frame of one scene.
@@ -407,11 +549,41 @@ things. The
 [simulation chapter](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md)
 in Book 3 describes the same shift for reconstruction in general.
 
+Size not stated, because the features come from the feature splatting code it builds on;
+CUDA 11.8 and no published memory figure; no licence file at all, over research-only
+code.
+
 Mazeyu Ji, Ri-Zhao Qiu, Xueyan Zou and Xiaolong Wang at the University of California, San
 Diego published it in 2024 ([paper](https://arxiv.org/abs/2409.02084)). It fits a scene as
 3D Gaussians that carry features, so it can answer questions about parts and not only
 about whole objects, and it then follows the Gaussians of an object as that object moves,
 so the map does not go out of date the moment the arm touches something.
+
+The idea GraspSplats is built on is that the features should live on pieces you can
+move. A NeRF is a function fitted to a scene, so the scene exists only as the weights of
+a network, and there is no part of it you can take hold of and call "the mug". 3D Gaussians are the
+opposite. The scene is a pile of soft blobs, each with a position of its own, and a blob
+is a thing you can point at, delete or shift. Give every blob a list of numbers and you
+have the same open-ended meaning a feature field has, kept on movable pieces instead of
+inside a function.
+
+The rest follows from that. The blobs are fitted from photos with the depth camera's
+measurements used to steer the geometry, rather than leaving the geometry to the photos
+alone, which is part of why the fit finishes in a fraction of the time a NeRF takes. The
+features come from a vision-language model and are attached to the blobs finely enough
+that a question can name a part and not only an object. And when something moves, nothing
+is re-fitted: point trackers follow the object and that object's blobs are moved to where
+it went, which also covers an object whose parts move relative to each other, such as a
+drawer or a pair of scissors.
+
+So what this buys over F3RM is the two things F3RM structurally cannot do, a scene cheap
+enough to re-fit and a map that survives the arm touching something, and both come from
+the same property, that the scene is made of pieces with positions rather than a function
+with weights. On an arm the difference shows on the second grasp, not the first. A field
+fitted before the arm moved describes the scene before the arm moved, so once the mug has
+been picked up and put down the map still has it in its old place and the next question
+returns a stale answer. Either you photograph the cell and fit again, which with a NeRF is
+a pause you can feel, or your map carries the mug to where the mug now is.
 
 The obvious alternative is F3RM, which is easier to install. You would choose this line of
 work for the two things F3RM cannot do: re-fit a changed scene quickly, and keep up with
@@ -444,12 +616,47 @@ including the tracking of objects that move.
 OpenScene is **historical** on this page, but it is still the easiest way to see
 open-vocabulary 3D labelling without owning a robot.
 
+Size not stated, although this is the one system here that trains a 3D network of its own;
+a laptop for the interactive demo, and a card with no published figure for the full run;
+Apache-2.0 for the code.
+
 Songyou Peng, Kyle Genova and four colleagues published it in 2022
 ([paper](https://arxiv.org/abs/2211.15654),
 [code](https://github.com/pengsongyou/openscene)). It takes a finished room scan, gives
 every point of it a feature copied from a pixel-level image model, and then trains a 3D
 network to predict those features from geometry alone, so at question time no photos are
 needed.
+
+The idea behind that is one no other system on this page tries: a point's meaning can be
+predicted from its shape alone. Every other entry here needs the photos at question
+time, or needs them to have been present when the map was built and keeps only what they
+said. OpenScene uses the photos once, to teach a 3D network what the lists ought to look
+like, and then has no further use for them.
+
+The first half is the fusion route again with a different image model. A pixel-level
+model, OpenSeg or LSeg rather than plain CLIP, gives a list for every pixel. Each surface
+point of a finished room scan is projected into the frames that saw it, and the lists from
+those frames are averaged into one list for that point. The second half is the new part. A
+3D network is trained on the bare points, with no colour and no photos, to produce the
+list the fusion produced for each point, and the target is only that its list should point
+the same way as the fused one. After training it reads a plain point cloud and outputs
+lists in CLIP's space for it, so a scan with no photos attached can still be asked
+questions.
+
+The two halves then disagree in a useful way, and the repository keeps both. The paper
+found the fused 2D lists better on small objects, because a small thing is clear in a
+photo and ambiguous in geometry, and the 3D network better on objects with a distinctive
+shape, because a shape is unmistakable even where the photo of it was blurred or badly
+lit. The ensemble option takes, for each point, whichever of the two lists responds more
+strongly to the words being asked. No other system here can make that choice, because the
+others have only one source of meaning to begin with.
+
+On an arm this is usually the wrong tool, and it is worth saying why rather than only
+that. It expects a finished scan of a building-sized space, and it labels points instead
+of proposing grasps or following things that move. The situation where it wins is the one
+where the photos are gone: a scan handed to you as bare geometry, or a laser scan with no
+usable colour, is something only a distilled 3D network can answer questions about, and
+F3RM, ConceptFusion and ConceptGraphs would all have nothing to start from.
 
 The obvious alternative is ConceptFusion, which fuses features as the camera moves.
 OpenScene is the better choice when you already have a room scan and want every point
@@ -459,8 +666,7 @@ datasets rather than a wrist camera's view of a table.
 What it costs you is the shape of its data. The evaluation runs on room-scan datasets, so
 putting your own recording through it is a day of conversion, and its pixel features come
 from OpenSeg or LSeg rather than plain CLIP, which is one more model to obtain. The
-licence is Apache-2.0, and the repository has an interactive demo that the README says
-needs no graphics card at all.
+repository has an interactive demo that the README says needs no graphics card at all.
 
 ```bash
 # Downloads a pre-trained 3D model and labels every point of a scanned scene.
@@ -487,9 +693,8 @@ Two of these are worth skipping unless you are reading rather than building. LER
 the idea and leaves the robot work to you, and ConceptFusion has been overtaken by
 ConceptGraphs from the same authors.
 
-Whatever you choose, remember that a map records what the camera saw on the day it was built. The map holds what the
-camera saw when you built it, so the first question to answer is how often your scene
-changes.
+Whatever you choose, remember that a map records what the camera saw on the day it was
+built, so the first question to answer is how often your scene changes.
 
 ---
 

@@ -261,7 +261,7 @@ figure.
 | --- | --- |
 | **MoveIt 2 with OMPL**, most used in 2026 | This one is written rather than learned, and it handles any move through open space. It checks every move it gives you against the real shapes. There are no weights to download, and the licence is BSD 3-Clause. Always try this first. |
 | **cuRobo**, most used in 2026 | This one is written rather than learned, and it produces many plans a second, so the arm can react while obstacles move. There are no weights to download, and the licence is Apache-2.0. Pick it when you have an NVIDIA graphics card and the scene keeps changing. |
-| **Motion Policy Networks**, historical | This one gives one route straight from a depth camera, on a Franka arm. Its checkpoint is 229 MB, and its licence is MIT. Pick it when you want to study how a learned route planner is built and trained. |
+| **Motion Policy Networks**, historical | This one gives one route straight from a depth camera, on a Franka arm. Its checkpoint is 229 MB. Its code is MIT, and the checkpoint on Zenodo is Creative Commons Attribution 4.0. Pick it when you want to study how a learned route planner is built and trained. |
 | **Neural MP**, worth betting on | This one does the same job as Motion Policy Networks, and its weights download in one line. Its checkpoint is 86 MB. Its licence is `not stated` in the code repository, and the weights are tagged MIT. Pick it when you have a Franka arm, an NVIDIA card and a point cloud of the scene. |
 | **SceneCollisionNet**, historical | This one guesses quickly whether a moved object hits anything. Its download size is `not stated`, and its NVIDIA Source Code License allows non-commercial use only. Pick it for research on tidying a cluttered table. |
 | **IKFlow**, most used in 2026 | This one gives many different joint-angle answers for one gripper pose, and it is the most used of the learned helpers here. The Franka model is 204 MB. Its licence is `not stated`, because the licence file holds only the text `#TODO`. Pick it when a seven-joint arm needs a choice of inverse kinematics answers. |
@@ -271,17 +271,64 @@ figure.
 These two are **most used in 2026**, because a developer who has to move an arm
 across a table today installs one of them and not a network.
 
+Neither has a size, because neither is learned and there are no weights to
+download. MoveIt 2 with OMPL runs on a laptop and is BSD 3-Clause, and cuRobo
+needs a small card and is Apache-2.0.
+
 [MoveIt 2](https://github.com/moveit/moveit2) is the motion planning framework
 for ROS 2, and it is the one this repository uses. It does not plan by itself. It
 calls [OMPL](https://github.com/ompl/ompl), a library from Rice University that
 holds the sampling-based planners section 1 described, and RRT-Connect is the
-planner it uses when nothing else is configured. Both are BSD 3-Clause, read from
-their own licence files.
+planner it uses when nothing else is configured.
 [cuRobo](https://github.com/NVlabs/curobo) is a different written planner, from
 NVIDIA. It tries thousands of candidate trajectories at the same time on a
 graphics card, which makes it fast enough to plan again every control cycle
-rather than once per move. Its licence is Apache-2.0, read from its licence
-file.
+rather than once per move.
+
+The one idea these two share is that they refuse to guess. Both look for a route
+in the space of the arm's own joint angles, and both test what they find against
+the real shapes of the arm and the obstacles before they hand it back. What
+separates them is how each one copes with the size of that space. OMPL tries one
+random arm position at a time and keeps the ones that worked. cuRobo never looks
+at single positions at all: its unit of work is a whole route from start to goal,
+and it improves thousands of whole routes at the same time on the graphics card.
+
+Inside OMPL, RRT-Connect grows two trees of arm positions, one from the start and
+one from the goal. Each round picks a random set of joint angles, finds the
+position already in a tree that is nearest to it, takes one short step from there
+towards it, and asks the collision checker whether that step is clear. The trees
+grow until a step from one of them reaches the other, and the route is then the
+path through the joined trees. Nothing in that loop has a fixed length, because
+how many random picks it takes depends on luck and on how narrow the gap is.
+cuRobo's loop has a different shape. It starts from many complete candidate
+routes, which its paper calls seeds, scores all of them against the obstacles
+together on the graphics card, and then improves all of them at once: first with
+a particle-based solver, which carries a cloud of slightly different candidates
+and pulls the whole cloud towards the better ones, and then with L-BFGS, an
+optimiser that reads the slope of the score and takes a well-aimed step down it.
+A separate geometric planner supplies fresh seeds when the candidates it began
+with all end up stuck.
+
+What OMPL's design buys is correctness and generality. It will plan for any arm
+and any set of obstacles, and a route that comes back has been checked step by
+step. What it costs is that the time is not bounded: a run that usually answers
+in 50 milliseconds will sometimes take a second, because a random search has no
+fixed length, and that is the fault that sends people looking at the learned
+planners below. What cuRobo's design buys is steadiness, because the same
+arithmetic runs on every attempt, so the answers arrive in similar times and the
+planner can be called again every control cycle instead of once per move. What it
+costs is that an optimiser can settle into a route that is good nearby and silly
+overall, so it needs several seeds and can still come back with nothing, which is
+why the example below checks `result.success`.
+
+The difference between the two shows up on a cell that has to hold a cycle time.
+If the arm has four seconds to move and OMPL answers in 50 milliseconds nine
+times out of ten and in a second on the tenth, then one part in ten takes longer
+than planned, and nobody can say which one. cuRobo's planning time varies far
+less, so the budget holds. The other case is an obstacle that moves while the arm
+is travelling, such as a person reaching across the table. OMPL planned the route before the person
+arrived and will not notice; cuRobo can plan the whole route again from the
+newest obstacles inside one control cycle.
 
 Why pick these rather than any network on this page? Because they check every
 move they give you against the real shapes of the arm and the obstacles, so a
@@ -290,13 +337,10 @@ below is trained on routes that one of these produced, so at best it copies them
 and speed is the only thing it can beat them at. You add a network when these two
 are too slow in a way that costs you money, and not before.
 
-They cost you different things. OMPL's planning time is not bounded, so a planner
-that usually answers in 50 milliseconds will sometimes take a second, and that is
-the fault that sends people looking at learned planners in the first place. cuRobo
-removes most of that unevenness, but it needs CUDA, which means an NVIDIA
-graphics card, so it does not run on an Apple Silicon Mac at all. Neither is
-small to install, because MoveIt brings the whole of ROS 2 and cuRobo brings
-PyTorch and a CUDA toolchain.
+What they cost you beyond the line above is the installation. cuRobo needs CUDA,
+which means an NVIDIA graphics card, so it does not run on an Apple Silicon Mac
+at all. And neither is a small install, because MoveIt brings the whole of ROS 2
+and cuRobo brings PyTorch and a CUDA toolchain.
 
 The library for the written planner on a graphics card is cuRobo itself, and the
 code below is shortened from the motion generation example in
@@ -340,6 +384,10 @@ This one is **historical**, kept because it is the clearest example of how a
 learned route planner is built, and because the model after it is built the same
 way.
 
+Size not stated, and the checkpoint is a 229 MB download. A small card. MIT for
+the code, and Creative Commons Attribution 4.0 for the checkpoint, which is a
+different licence on the part you actually run.
+
 [Motion Policy Networks](https://github.com/NVlabs/motion-policy-networks), often
 written MPiNets, is NVIDIA's learned route planner from 2022, published at the
 Conference on Robot Learning. It takes a point cloud and a goal pose for a Franka
@@ -347,6 +395,45 @@ arm, and it proposes the next arm position over and over, which is the first
 design from section 3. Its predecessor was MPNet, from the University of
 California, San Diego, in 2019, which had the same idea and has not been changed
 since 2020.
+
+The one idea behind MPiNets is that a route does not have to be searched for. It
+can be a habit. The network is given what the camera sees now, the arm's current
+joint angles and the goal, and it answers with the next small movement in one
+pass. Repeat that pass and you have a route. So where sub-section 7.1 asked a
+question and waited for a search to finish, this asks a question and gets an
+answer in a known amount of arithmetic.
+
+What that changes inside is that the two trees and the random picks are gone, and
+two pieces stand in their place. The first reads the point cloud. The repository's
+loop hands it 2048 points sampled on the arm's own surface, then the points the
+camera saw on the obstacles, then points on the target, with each group marked so
+the network knows which is which, and it turns all of that into a short list of
+numbers. The second piece reads that list together with the seven joint angles,
+rescaled to the range from minus one to one, and returns a step to add to those
+angles rather than a position to travel to. The new angles are then used to redraw
+the arm's own points in the point cloud, and the loop runs again. Notice what is
+not in that loop: the collision checker, which inside OMPL was consulted on every
+single step, is not consulted here at all.
+
+What the idea buys is that the cost of an answer no longer depends on the
+problem, because the loop in the code below runs a fixed number of passes and
+then gives up. What it costs comes in two parts. Nothing inside the loop knows
+whether a step hits anything, so a wrong step reaches the arm unless you test the
+finished route yourself, which is step 5 of section 3. And the network only knows
+the kinds of scene its teacher solved. That teacher was the real contribution of
+the paper: a planner made to answer the same problem the same way every time,
+because a network cannot copy a teacher who gives a different route on each
+asking, and a random planner does exactly that. The checkpoint file is named after
+that teacher, `mpinets_hybrid_expert.ckpt`.
+
+The difference shows up when the scene changes during a move. If a box is set down
+beside the arm after the move has started, MPiNets takes the newest point cloud
+and gives the next step at exactly the cost of the first one, where RRT-Connect
+has to throw away its trees and search again from where the arm now is. The
+difference runs the other way as soon as the scene stops looking like a table with
+boxes on it. Hang a lamp over the table and MPiNets can propose a step straight
+through it, while OMPL, which asks the real shapes rather than remembering, simply
+reports that the step is blocked.
 
 Why pick it rather than Neural MP, which is newer and comes next? Only for
 reading and reproducing. MPiNets publishes the whole pipeline that generated its
@@ -398,6 +485,9 @@ going: it ships its weights in the ordinary Hugging Face way rather than as a
 file beside a paper, and its own authors have already published a follow-up aimed
 at obstacles that move.
 
+Size not stated, and the checkpoint is an 86 MB download. A small card, on
+Linux. No licence at all in the code repository, and an MIT tag on the weights.
+
 [Neural MP](https://github.com/mihdalal/neuralmotionplanner) comes from Carnegie
 Mellon University and was published at the 2025 conference on intelligent robots
 and systems. It is the same kind of network as MPiNets, taking a point cloud and
@@ -405,6 +495,44 @@ proposing joint positions, and it adds a short optimisation at the end to repair
 the route it proposed. Its own follow-up is
 [Deep Reactive Policy](https://deep-reactive-policy.com/), from 2025, which aims
 at scenes where obstacles move while the arm is moving.
+
+Neural MP keeps MPiNets' one idea and changes two things about it. Its paper's
+claim is a large number of complicated scenes built in simulation, which pushes
+back the catch section 6 described without removing it: the more kinds of scene
+the program made, the fewer real rooms are unlike anything the network has seen.
+And the repair of the proposed route is part of the tool instead of being your
+job.
+
+Inside, the first difference you meet is not in the network but in what you are
+asked for. MPiNets takes a goal pose, meaning a place in the room and a direction
+to point in, and works out the joint angles itself. Neural MP takes
+`goal_config`, which is the seven goal joint angles, so the choice of which way to
+hold the elbow has already been made before the model is called, by an inverse
+kinematics solver such as the one in sub-section 7.5. The second difference comes
+after the proposal. `motion_plan_with_tto` takes the whole route the network
+proposed and runs a short optimisation over it, pushing it away from the points
+the cameras reported, which is the step MPiNets leaves to an outside planner. The
+network's own loop is otherwise the same shape: a point cloud, the current joint
+angles, a step, repeat.
+
+What that buys is a route that has already been pushed off the obstacles, from a
+starting point the network believes in. This is also the honest difference from
+cuRobo, which optimises too. cuRobo's optimiser begins from seeds that may be far
+from any sensible route, so on a hard scene it needs more attempts, while Neural
+MP's optimiser begins from a route the network already thinks is good and has less
+to do. What it costs is that the repair is a second, slower pass, so the promise
+of a fixed number of network calls holds for `motion_plan` and not for
+`motion_plan_with_tto`. And asking for joint angles rather than a pose means you
+owe the model an inverse kinematics answer, and a rule for choosing among the
+several answers an arm with seven joints has.
+
+The difference shows up when the route has to hug an obstacle. Reaching into a
+cubby, where the gripper must travel between a shelf and the box above it, MPiNets
+hands you a route near the shelf and leaves you to notice that one hop clips it.
+Neural MP's own optimisation pushes that route off the shelf before you see it.
+The difference runs the other way when the goal is naturally a pose, as in "put
+the gripper here, pointing down": MPiNets takes that directly, and with Neural MP
+you have to solve for the joint angles first.
 
 Why pick it rather than MPiNets? Because the weights come down in one line, with
 `from_pretrained`, from [a Hugging Face
@@ -452,6 +580,10 @@ angles first, which is what section 7.5 is for.
 This one is **historical**. It is the clearest published example of a learned
 collision checker, and it has not been changed since 2021.
 
+Size not stated, and no download size is published either, because the weights
+arrive through a script. A small card. The NVIDIA Source Code License, for the
+code and the weights alike, which allows non-commercial use only.
+
 [SceneCollisionNet](https://github.com/NVlabs/SceneCollisionNet) came from NVIDIA
 and the University of California, Berkeley, in 2021. It takes a point cloud of a
 scene and a pose for an object, and it says quickly whether the object in that
@@ -460,6 +592,45 @@ built to plan where to put objects down when tidying a cluttered table. The othe
 well-known approach is Fastron, from the University of California, San Diego,
 which is C++ code that builds a quick collision guesser for one arm and updates
 it as obstacles move.
+
+The one idea here is easy to miss, because it is not speed. It is that the
+question is asked about things that have no shapes on file. An exact collision
+checker compares one mesh with another, and a mesh is a list of triangles
+describing a surface, so it can only answer about objects somebody has modelled.
+SceneCollisionNet is asked instead about a scene that is a cloud of points from a
+depth camera, and an object that is another cloud of points, neither of which has
+ever been modelled. The exact checker can still be given a crude box drawn around
+those points, but a box is either larger than the object, so it refuses places the
+object would have fitted, or wrong on the side the camera could not see. The paper
+makes that its case: the learned model is for the times when a model of the object
+is not available.
+
+What that changes inside is that the question is split into a part that is asked
+once and a part that is asked many times. One encoder reads the scene's point
+cloud and keeps a description of it. A second encoder reads the points of the
+object now in the gripper. Then, for each pose you are considering putting that
+object in, a small network reads both descriptions and answers "hit" or "clear".
+Because the scene description is computed once and reused, thousands of candidate
+poses are answered together in one go on the graphics card. The learned planners
+above read a point cloud too, but they read it in order to produce a movement;
+this one reads it in order to answer a question about a movement somebody else
+proposed.
+
+What the idea buys is that "where can I put this down?" becomes one batch of
+answers instead of thousands of separate comparisons, and it works on objects you
+have no model of. What it costs is the thing section 4 drew: the guess is wrong
+near the edge of an obstacle, and near the edge is exactly where a good place to
+put something down tends to be. So the paper used it to score and rank many
+candidate placements inside a controller, and not as the last word before the arm
+moved.
+
+The difference shows up on a table of objects nobody has modelled. You pick up an
+unfamiliar jar and want to know which of three hundred free spots it will fit in.
+MoveIt's exact checker has to stand in a box for the jar and another for each
+piece of clutter, and the answer it then gives is exact about the boxes and not
+about the things. Ask the opposite question, "does this arm configuration
+collide?", and MoveIt wins outright, because the arm's own shapes are known
+exactly and the answer is then right rather than probable.
 
 Why pick it rather than the exact collision checker inside MoveIt? Only when you
 have to test very many poses and that test is what is holding you up, as when you
@@ -497,12 +668,52 @@ Of the learned helpers on this page, this is the one that is **most used in
 2026**, because it is the only one that installs on an ordinary Linux machine and
 ships trained weights for several named arms.
 
+Size not stated, and the Franka Panda model is a 204 MB download. A small card,
+and it falls back to the processor when there is none. No licence at all, because
+the licence file holds only the text `#TODO`.
+
 [IKFlow](https://github.com/jstmn/ikflow) is a learned inverse kinematics solver
 from the paper [IKFlow: Generating Diverse Inverse Kinematics
 Solutions](https://arxiv.org/abs/2111.08933), published in 2022. It is the
 model section 5 described: you give it a gripper pose, and it returns many
 different sets of joint angles that all reach that pose. The repository publishes
 trained models for the Franka Panda, the Fetch arm and the Rizon 4.
+
+The one idea here is that the network learns the whole set of answers rather than
+one answer. The repository describes itself in a single line as normalizing flows
+for inverse kinematics, and a **normalizing flow** is a network built so that it
+can be run in both directions with one set of weights. Training teaches it to
+turn real answers into plain random numbers, and using it means running it
+backwards, turning fresh random numbers into real answers.
+
+That is a different shape of network from every other model on this page, and the
+difference matters most in what it avoids. The learned models above are all
+trained to produce one output for one input, which is fine when there is one right
+answer.
+Inverse kinematics is not like that: an arm with seven joints reaches most poses
+with the elbow high or with the elbow low. A network trained to give one answer is
+pushed towards the middle of those two, and the middle of two valid arm poses is
+usually not a valid pose at all. IKFlow is never asked for the middle. You hand it
+the target pose and a fresh set of random numbers, and it runs backwards to one
+set of joint angles. Hand it five different sets of random numbers and the same
+pose, and five different arm poses come back, each a real way of reaching the
+target.
+
+What the idea buys is a choice, which the written solver cannot offer at any
+price, and all of the options in a single pass. What it costs is exactness. The
+answers are near the target rather than on it, so you finish them with the ordinary
+numerical solver, which is the last line of the example below. You also owe the
+model the rule for choosing, because a spread of answers is useless until
+something decides between them. And the arm's own sizes are baked into the trained
+weights, so a new arm means a training run of your own rather than a new
+configuration file.
+
+The difference shows up on a seven-joint arm reaching into a shelf. The ordinary
+solver returns whichever answer its starting guess led to, and if that answer puts
+the elbow through the shelf, your only recourse is to change the guess and hope.
+IKFlow hands you a dozen answers for the same pose, you run the exact collision
+check over all of them, and you keep one that is clear. This is also how a gripper
+pose becomes the `goal_config` that Neural MP in sub-section 7.3 demands.
 
 Why pick it rather than the numerical solver that MoveIt already calls? Because
 the numerical solver returns one answer, and which one depends on the guess it
@@ -512,15 +723,14 @@ joint limits or nearest to where the arm already is. IKFlow gives you a spread o
 answers in one pass, and the written solver cannot do that at all. If one answer
 is enough, use the written solver.
 
-What it costs you is a careful installation and an unclear licence. The README
-says the only supported operating system is Ubuntu, and it installs from a clone
-of the repository with `uv sync` rather than from the package index, where the
-latest `ikflow` release is version 0.0.8 from February 2023 and far behind the
-repository. The licence file contains only the text `#TODO`, so no licence has
-been granted, and that is a question to settle before you put it in a product.
-The thing that most often goes wrong is forgetting that the answers are
-approximate, and the next is the quaternion order, which is `w, x, y, z` here and
-the other way round in several other libraries.
+What it costs you is a careful installation. The README says the only supported
+operating system is Ubuntu, and it installs from a clone of the repository with
+`uv sync` rather than from the package index, where the latest `ikflow` release is
+version 0.0.8 from February 2023 and far behind the repository. Since the licence
+file says only `#TODO`, no licence has been granted, which is a question to settle
+before a product. The thing that most often goes wrong is forgetting that the
+answers are approximate, and the next is the quaternion order, which is
+`w, x, y, z` here and the other way round in several other libraries.
 
 The library is `ikflow`, and the code below asks for five answers to one pose.
 

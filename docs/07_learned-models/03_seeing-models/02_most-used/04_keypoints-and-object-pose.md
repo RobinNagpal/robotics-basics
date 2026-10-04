@@ -125,7 +125,7 @@ everywhere else. So there is one heatmap for "handle, top", another for "base
 centre", and so on. Then the software picks the brightest pixel in each heatmap,
 and that pixel is the keypoint.
 
-OpenPose, which [section 5.1](#61-openpose) describes, is the plainest example of
+OpenPose, which [section 6.1](#61-openpose) describes, is the plainest example of
 this route, and it is on the shortlist to explain the idea rather than to be used.
 The two keypoint models the shortlist recommends instead, [Ultralytics YOLO
 pose](#62-ultralytics-yolo-pose) and [RTMPose](#63-rtmpose), hand you the same
@@ -157,7 +157,7 @@ and it is there for the same reason as OpenPose: it shows the route clearly. You
 still hand it the object's real dimensions and the camera's numbers, which are
 steps 1 and 3, and it does step 2 and step 4 itself. The two keypoint models above
 stop at step 2, so step 4 is yours to write, and that is what the `cv2.solvePnP`
-call in [section 5.2](#62-ultralytics-yolo-pose) is doing.
+call in [section 6.2](#62-ultralytics-yolo-pose) is doing.
 
 ### Render and compare
 
@@ -439,24 +439,55 @@ file.
 **Historical**: nobody should start a project with it, and its ideas are in the
 models below it.
 
+Size not stated, a small card, and a Carnegie Mellon University agreement for
+non-commercial research.
+
 OpenPose came from Carnegie Mellon University in 2017, and it was the first system
 in wide use that found the keypoints of several people in one picture in real
 time. It produces
 one heatmap per keypoint, exactly as [section 3](#3-how-it-works-inside)
 describes, plus a second set of maps that say which limb joins which pair of
 points, which is how it decides whose elbow belongs to whose shoulder. Its output
-order outlived it: the `rtmlib` package of [section 5.3](#63-rtmpose) still has a
+order outlived it: the `rtmlib` package of [section 6.3](#63-rtmpose) still has a
 `to_openpose` option that returns points in OpenPose's order.
+
+The one idea is to find every body part everywhere in the picture first, and to
+work out only afterwards which parts belong to the same person. The paper calls
+this bottom-up, and its point is that the work does not grow when a second person
+walks into the frame.
+
+The second set of maps is what makes that possible, and the paper calls them part
+affinity fields. For each limb there is a picture the size of the photo whose pixels
+hold a direction rather than a brightness, and that direction runs along the limb,
+from the joint at one end towards the joint at the other. To decide whether a
+particular elbow belongs to a particular shoulder, the program walks the straight
+line between the two points and checks whether the directions stored along the way
+agree with the direction it is walking; the pairs that agree best are matched up.
+So OpenPose asks two questions of the picture, where is each kind of part and which
+way does each limb run, and answers both with pictures of numbers. Neither of the
+two models below it keeps that second question. Ultralytics YOLO pose answers it by
+finding the object first, and RTMPose answers it by being handed a box.
+
+What the idea buys is a cost that does not depend on the number of people, which is
+the claim in the paper's own abstract. What it costs is arithmetic spent where
+nobody is standing, because both sets of maps are produced for the whole picture
+whether it is crowded or empty, and a matching step that has to run between the
+network and the answer.
+
+On a robot arm that property is worth knowing even though you should not run this
+model. An arm that shares a workspace with three or four people and must watch all
+of their hands is the one case where bottom-up is the better design, because
+RTMPose below runs its keypoint network once for every person it is given. For one
+object in front of one arm, which is nearly every real cell, the bottom-up design
+buys nothing and the licence rules it out anyway.
 
 You would not pick it over RTMPose or Ultralytics YOLO pose, the obvious
 alternatives, for any new work. They do the same job faster, they install with one
 command, and their licences permit a product.
 
-The costs are what rule it out. Its licence is a Carnegie Mellon University
-agreement for academic and non-profit organisations, for non-commercial research
-use only, and a commercial licence has to be bought separately. You build it from
-C++ source with Caffe and CUDA rather than installing it, and the repository has
-had no commit since August 2024.
+The costs are what rule it out. A commercial licence has to be bought from the
+university separately. You build the software from C++ source with Caffe and CUDA
+rather than installing it, and the repository has had no commit since August 2024.
 
 There is no Python package. The demo is a built binary, and its own documentation
 shows this call:
@@ -475,23 +506,51 @@ that is exactly the work the two packages below remove.
 **Most used in 2026**, because it is the shortest path from your own labelled
 photographs to a keypoint model that runs.
 
+Size xs for the smallest checkpoint and s for the largest, a laptop, AGPL-3.0 for
+the code and the weights.
+
 Ultralytics publishes a pose version of each of its detectors, named with a
 `-pose` suffix, and the current family is YOLO26. The downloaded weights find 17
-joints on a person, because they were trained on the COCO keypoints dataset. The
-smallest holds 2.9 million parameters and the largest 57.6 million, so the small
-one runs on a robot's own computer.
+joints on a person, because they were trained on the COCO keypoints dataset.
+
+The one idea is to ask the detector that has already found the object to say where
+the points are as well, in the same pass, as plain numbers.
+
+So there is no heatmap anywhere in this model. The pose head sits beside the box
+head, and for each object the detector reports it also reports the column and the
+row of each point, and a value saying whether the point is visible. Those numbers
+come out of the network directly, which means there is no brightest pixel to search
+for and no field of directions to walk along, and it also means the points arrive
+already attached to the object they belong to. That grouping is the entire job that
+OpenPose's part affinity fields exist to do, and here it falls out of the design,
+because a point is part of a detection rather than a bright spot somewhere in the
+picture.
+
+What the idea buys is one network, one pass and one package. What it costs is the
+shape of the answer. A heatmap is a picture of where the point might be, so you can
+see that the model is torn between two places; a regressed number cannot show you
+that, and you are given one confidence value in its place. The other cost is that
+the points live inside a detection, so a part the detector misses has no points at
+all, where OpenPose would still have marked the joints it could see.
+
+On a robot arm the difference shows up twice. The first time is when you train on
+your own part, because here that is one dataset file and one call to `model.train`,
+while RTMPose below means learning a configuration system. The second time is on a
+tray holding four of the same part: each detection carries its own set of points,
+so nothing in your program has to work out which handle belongs to which mug, and
+that is work you would be writing yourself with a bottom-up model.
 
 You would pick it rather than RTMPose, the obvious alternative, because training on
 your own keypoints is one call to `model.train` with one dataset file, and because
 the package is documented for people who have never trained a model. Pick RTMPose
 instead when AGPL-3.0 is not acceptable to you.
 
-The costs are these. The licence is AGPL-3.0, so a product that uses the package
-must publish its own source or buy a commercial licence from Ultralytics. The
-pretrained weights are also worth less here than on the detection pages, because
-they find human joints: for your mug they are only a starting point for
-fine-tuning, so the labelled photographs of [section 4](#4-how-it-is-trained) are
-work you will really do.
+The costs are these. AGPL-3.0 means that a product which uses the package must
+publish its own source or buy a commercial licence from Ultralytics. The pretrained
+weights are also worth less here than on the detection pages, because they find
+human joints: for your mug they are only a starting point for fine-tuning, so the
+labelled photographs of [section 4](#4-how-it-is-trained) are work you will really
+do.
 
 The library is `ultralytics`, and the second half of the code is the PnP step from
 [section 3](#3-how-it-works-inside), which OpenCV already provides.
@@ -541,18 +600,49 @@ the model found.
 **Most used in 2026** wherever the licence or the hardware rules out Ultralytics,
 which on a robot happens often.
 
+Size xs for the smallest body model and s for the largest, a laptop, Apache-2.0 for
+the code and the weights.
+
 RTMPose comes from the OpenMMLab project, inside the MMPose library. It is a
-keypoint model designed for speed on ordinary processors, and its own table
-reports the smallest body model at 3.34 million parameters, 68.5 average precision
-on COCO, and 3.20 milliseconds per picture with ONNX Runtime on an Intel i7-11700
-processor. The largest in that table holds 27.66 million parameters.
+keypoint model designed for speed on ordinary processors, and its own table reports
+its smallest body model at 3.20 milliseconds per picture with ONNX Runtime on an
+Intel i7-11700 processor, which is the measurement that puts it on this list.
+
+The one idea is to keep what a heatmap gives you, a score for every position rather
+than a single answer, while paying for two thin lists instead of a whole picture.
+
+The method is called SimCC, and it turns finding a point into choosing from a list.
+The horizontal axis of the crop is divided into equal-width numbered bins and so is
+the vertical axis, and for each keypoint the model scores every bin on each axis and
+picks one from each. So where OpenPose produces one grey picture per point, RTMPose
+produces two rows of scores per point, one along the width and one along the height.
+The backbone is CSPNeXt, taken from object detection, and before the bins are scored
+a gated attention unit refines the representation of each keypoint, which the paper
+chose because it is faster and uses less memory than a plain transformer layer. One
+more difference matters as much as the head. RTMPose is top-down: an off-the-shelf
+detector supplies the boxes first and the model then estimates the pose inside each
+box on its own, where OpenPose looked at the whole picture at once.
+
+What the idea buys is fine positions at a small fraction of the cost of a flat
+heatmap, which is why it answers quickly on a processor with no graphics card, and
+a score per position that lets you refuse a point whose second-best bin is almost as
+good. What it costs is the detector in front of it, so there are two models to
+install and to keep fed, and the time grows with the number of objects, because the
+model runs once per box. The answer is also a bin rather than an exact pixel, so
+how finely you can locate a point is a setting rather than a property of the photo.
+
+On a robot arm this is the model to reach for when the robot's computer has no
+graphics card and the licence has to be clean, which together describe most
+industrial cells. Where it loses to Ultralytics YOLO pose is on a tray of twenty
+identical parts, since RTMPose runs twenty times and YOLO pose runs once. Where it
+wins is one small part in a wide photo, because the crop is enlarged to fill the
+model's input, so the part arrives bigger than it was in the photo.
 
 You would pick it rather than Ultralytics YOLO pose, the obvious alternative, for
-two reasons. MMPose is Apache-2.0, so nothing in the licence reaches into your own
-source, and there is a small package called `rtmlib` that runs the published
-checkpoints through ONNX Runtime with no MMPose installation and no graphics card.
-Pick Ultralytics instead when your main job is training on your own points, which
-is easier there.
+two reasons. Nothing in its licence reaches into your own source, and there is a
+small package called `rtmlib` that runs the published checkpoints through ONNX
+Runtime with no MMPose installation and no graphics card. Pick Ultralytics instead
+when your main job is training on your own points, which is easier there.
 
 The costs are these. MMPose has had no commit since August 2025, so it is drifting
 away from current versions of PyTorch, like the rest of the OpenMMLab libraries.
@@ -587,6 +677,9 @@ training if you need your own, and the PnP step that turns points into a pose.
 **Historical**: it is the clearest example on this page of keypoints turning into
 a pose, and there are better choices for new work.
 
+Size not stated, an NVIDIA graphics card, and the NVIDIA Source Code License, for
+research or evaluation only.
+
 DOPE (Deep Object Pose Estimation) came from NVIDIA in 2018. For each object it
 predicts nine keypoints, the eight corners of a box drawn around the object plus
 its centre, and PnP then turns those nine points into the six numbers. It followed
@@ -596,16 +689,46 @@ whose authors released the YCB-Video dataset that [section
 computer, which showed that a network trained with domain randomisation can work
 on real photographs.
 
+The one idea is that a network never has to understand 3D at all. If it can mark
+the eight corners of the box around the object in the photo, then geometry turns
+those marks into the six numbers, and the network's whole task is marking.
+
+What is inside is OpenPose's design with corners in place of joints. The paper's
+network produces nine belief maps, which is their word for heatmaps, one for each
+projected corner of the box and one for the centroid, and alongside them eight
+vector fields giving the direction from each corner towards the centroid it belongs
+to. Reading the answer out is then the same two steps as OpenPose: find the local
+peaks in the maps that are above a threshold, and assign each corner to a centroid
+by comparing the direction stored at the corner with the direction towards each
+candidate centroid. A corner belongs to the object its arrow points at, which is
+how two of the same part lying side by side get two separate sets of nine points.
+PnP finishes the job with the camera's numbers and the object's measured size.
+
+What this buys is one pass of a flat network per picture, with no rendering, no mesh
+and no depth image, so DOPE is cheaper per frame than either of the two models
+below it. What it costs is that the corners of the box are not visible things. No
+pixel of the photo is the corner of an imaginary box, so the network has to imagine
+where those corners would be, and on a symmetrical object two genuinely different
+rotations put the nine marks in almost the same places, which no amount of geometry
+afterwards can separate. The other cost is one network for each object, trained on
+synthetic pictures you generate for that object.
+
+On a robot arm the difference shows up when the number of part types changes. One
+part, made in quantity, always the same shape, is DOPE's case: you pay for the
+training once and then every frame is cheap. A cell that handles a second part
+needs a second network and a second synthetic dataset, and that is the point at
+which MegaPose below becomes the cheaper answer, because it wants another mesh file
+rather than another training run.
+
 You would pick MegaPose rather than DOPE, the obvious alternative, because DOPE
 needs one network trained for each object, while MegaPose takes any object whose
 CAD model you have. DOPE is worth reading to see the keypoint route done simply.
 
-The costs are these. Its licence file is the NVIDIA Source Code License, which
-permits use for research or evaluation only, and its readme carries a Creative
-Commons non-commercial badge as well; the licence file is the one that counts, and
-both forbid commercial use. Training per object means generating synthetic pictures
-per object. It needs an NVIDIA graphics card, and the authors report testing on
-Ubuntu 20.04 and 22.04 only.
+The costs are these. The readme carries a Creative Commons non-commercial badge
+while the licence file carries NVIDIA's licence, so the two do not agree in wording;
+the licence file is the one that counts, and both forbid commercial use. Training
+per object means generating synthetic pictures per object. The authors report
+testing on Ubuntu 20.04 and 22.04 only.
 
 There is no package to install. You clone the repository and run its inference
 script, which is documented in the repository's `inference` folder.
@@ -626,12 +749,53 @@ object are weights you train.
 **Most used in 2026** among object-pose models that a product may actually use,
 because it is the only strong one in this list whose licence permits it.
 
+Size not stated, a small card, though it also runs on a processor, Apache-2.0 for
+MegaPose's code and BSD-2-Clause for HappyPose's.
+
 MegaPose, from Inria and NVIDIA in 2022, estimates the 6D pose of an object it has
 never seen in training, as long as you give it the object's CAD model. It works by
 render and compare, which [section 3](#3-how-it-works-inside) describes. HappyPose
 is a separate project that packages MegaPose and the older CosyPose behind one
 interface, with a documented path that does not need an NVIDIA card and a ROS 2
 wrapper of its own.
+
+The one idea is the reverse of DOPE's, and the two are worth holding side by side.
+DOPE asks the network where named points are and lets geometry work out the pose
+from them. MegaPose never names a point. It makes a guess at the pose, draws the
+object as it would look if the guess were right, and asks the network only how
+wrong that drawing is. Because the drawing comes from the mesh you supplied, the
+network needs to know nothing about your particular object, which is exactly why an
+object it has never seen is no harder for it than one it has.
+
+There are two networks. The coarse one was trained to judge whether a rendering and
+an observed picture show the same pose, so MegaPose renders the object at many
+candidate orientations and keeps the one that scores best, which is how it gets a
+first guess with no keypoints and no prior pose. The refiner then runs the render
+and compare loop of [section 3](#3-how-it-works-inside): it is shown renderings
+around the current guess together with the observed crop, and it outputs a
+correction. The way the refiner is told what your object looks like is worth stating
+plainly, because it is the heart of the design. The object's shape and coordinate
+system are passed to the network by rendering several synthetic views of it, so the
+knowledge of your object arrives as pictures at the time you ask, rather than
+sitting in the weights as it does in DOPE. The networks themselves were trained
+once, on a large synthetic dataset of photorealistic pictures of thousands of
+objects.
+
+What this buys is a new object for the price of a mesh file and no training at all,
+and an answer that has been checked against the photo at every round rather than
+asserted once. What it costs is time, because each answer means several renderings
+and several passes of a network where DOPE needs one. It also costs you a detection
+box to start from, since the first guess at how far away the object is comes from
+the size of that box, and it costs you a correct mesh: the units are millimetres,
+and a mesh in the wrong units puts the object at the wrong distance without
+complaining.
+
+On a robot arm the difference shows up in a cell that handles many different parts
+that all have engineering drawings. Twenty parts means twenty meshes and one model
+here, against twenty trained networks with DOPE. The cost appears again when the
+part moves, because several renderings per answer is not something you do on every
+frame, so MegaPose is run once before a grasp while the scene is still. That is the
+gap FoundationPose below closes.
 
 You would pick it rather than FoundationPose, the obvious alternative, because
 FoundationPose's licence permits research and evaluation only. MegaPose's code is
@@ -673,22 +837,54 @@ one quaternion and one translation per object.
 photographs, and then tracking it, is where this field is going, and the reason it
 is not the default is its licence.
 
+Size not stated, an NVIDIA graphics card, and the NVIDIA Source Code License, for
+research or evaluation only.
+
 FoundationPose, from NVIDIA, estimates the pose of an object it has never seen and
 then follows that pose through a video. It takes either a CAD model or a few
-photographs of the object from different sides. [Section 7](#5-following-a-pose-over-time-6d-pose-tracking)
+photographs of the object from different sides. [Section 5](#5-following-a-pose-over-time-6d-pose-tracking)
 describes how its two modes work and what they cost in time.
+
+The one idea is to keep MegaPose's render and compare loop and remove the one thing
+it cannot do without, which is a mesh to render.
+
+The way out is a learned stand-in for the mesh. From a handful of photographs the
+model builds what the paper calls a neural implicit representation of the object,
+and the property that matters about it is that new views can be synthesised from
+it. So the loop still has something to render, and the paper's own claim is that
+this keeps the pose estimation modules that come afterwards unchanged, whichever
+kind of object description you started with. The comparison itself is done by a
+transformer, trained with a contrastive formulation, on synthetic data generated at
+scale with the help of a large language model. Tracking then falls out of the same
+machinery: once a pose is known on one frame, the next frame starts from it, so
+there is one guess to correct instead of many to score, which is the difference
+[section 5](#5-following-a-pose-over-time-6d-pose-tracking) measures.
+
+What this buys is the two things MegaPose cannot do: a pose for an object nobody
+ever drew, and a pose on every frame rather than once before a grasp. What it costs
+is a mask of the object on the first frame, because the loop has to be told which
+object it is tracking before it can correct anything, and the install described
+below, because rendering inside the loop is what pulls in the awkward parts. The
+photographs are a cost too, since the stand-in can only render the sides they
+showed it.
+
+On a robot arm the difference shows up with a part that arrived from a supplier with
+no drawing, such as a casting. A set of photographs from around the part gives
+FoundationPose what it needs, while MegaPose has nothing to render and is out of the
+running. The second place it shows is a part held in a gripper and turned: the pose
+stays correct through the motion here, where MegaPose would be started again from
+nothing each time you asked. The licence is what keeps all of this in the
+laboratory.
 
 You would pick it rather than MegaPose, the obvious alternative, for two
 capabilities: it tracks as well as estimates, and it can work from reference
 photographs when no CAD model exists. Pick MegaPose when you intend to ship
-anything, because of the licence below.
+anything, because this licence allows research and evaluation only.
 
-The costs are these. Its licence is the NVIDIA Source Code License, which permits
-use for research or evaluation purposes only. It needs an NVIDIA graphics card and
-two awkward dependencies, `nvdiffrast` and `pytorch3d`, which is why most people run
-it through the Docker image the repository provides. It also needs a mask of the
-object on the first frame, usually from a [segmentation](02_segmentation.md)
-model.
+The costs are these. Most people run it through the Docker image the repository
+provides, because `nvdiffrast` and `pytorch3d` are awkward to install any other
+way. The mask it needs on the first frame usually comes from a
+[segmentation](02_segmentation.md) model, so that is a second model to run.
 
 There is no package, so you clone the repository and run its demo, which is the
 call its own readme gives.
@@ -722,7 +918,7 @@ Four things change that.
 - You want the least work to train on your own points. Use Ultralytics YOLO pose,
   and accept that AGPL-3.0 means publishing your own source or buying a licence.
 - The work is research and you need the pose on every frame of a video. Use
-  FoundationPose, which [section 7](#5-following-a-pose-over-time-6d-pose-tracking)
+  FoundationPose, which [section 5](#5-following-a-pose-over-time-6d-pose-tracking)
   covers in full.
 - You are watching a person rather than an object, for example to learn from a
   recording of someone working. Stay in the human-pose line, where RTMPose has
@@ -743,7 +939,7 @@ is the page that explains that step.
 - [Depth from pictures](../03_also-used/02_depth-from-pictures.md) is the next page, and
   most pose methods need good depth, so that page explains where depth comes from.
 - [Tracking and motion](../03_also-used/03_tracking-and-motion.md) explains how to follow
-  boxes and points from one video frame to the next, while section 7 of this page
+  boxes and points from one video frame to the next, while section 5 of this page
   does the same for a full pose.
 - [Segmentation](02_segmentation.md) is the page before this one, and a mask often
   feeds a pose model.

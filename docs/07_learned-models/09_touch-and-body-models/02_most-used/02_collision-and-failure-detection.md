@@ -246,34 +246,52 @@ your own training run, so no licence restricts it.
 ### 5.1 The momentum observer, with a textbook physics model
 
 This is the method **most used in 2026**, and the most useful thing this section can tell
-you is that it contains no learning at all. Alessandro De Luca and Raffaella Mattone
-introduced it, and Sami Haddadin, De Luca and Alin Albu-Schäffer collected the whole
-family of such methods in a 2017 survey in IEEE Transactions on Robotics called "Robot
-Collisions: A Survey on Detection, Isolation, and Identification". It computes the
-residual of section 3.1 from the arm's **momentum**, which here means the mass matrix of
-the arm multiplied by its joint speeds. The rate of change of that momentum equals the
-torques acting on the arm, so if you subtract the torque you commanded and the torque the
-physics explains, what is left over is the push from outside.
+you is that it contains no learning at all. Size not stated, because nothing here is
+trained, a laptop, and BSD-2 for Pinocchio, which does the physics. Alessandro De Luca and
+Raffaella Mattone introduced it, and Sami Haddadin, De Luca and Alin Albu-Schäffer
+collected the whole family of such methods in a 2017 survey in IEEE Transactions on
+Robotics called "Robot Collisions: A Survey on Detection, Isolation, and Identification".
 
-You would pick this rather than the obvious alternative, which is the direct subtraction
-of the expected torque from the measured torque, because of one missing input. The direct
-version needs the acceleration of every joint, meaning how fast each joint's speed is
-changing. An encoder measures angles, so the acceleration has to be worked out by
-differentiating twice, and the noise in it swamps a gentle contact. The momentum observer
-needs the angles, the speeds and the commanded torques only. It is also the method already
-running on collaborative arms, which is the strongest practical reason: [franka_ros2](https://github.com/frankarobotics/franka_ros2)
-publishes a field called `tau_ext_hat_filtered`, described in its own
-`FrankaRobotState.msg` as the filtered external torque, so on a Franka arm the residual
-arrives on a topic and you write none of this.
+The one idea is to rearrange the subtraction of section 3.1 so that it only asks for
+quantities the arm actually measures. Written out directly, that subtraction wants the
+acceleration of every joint, meaning how fast each joint's speed is changing. No sensor on
+the arm reports it. An encoder reports an angle, so the acceleration has to be worked out
+by differentiating twice, and differentiating a noisy signal twice produces something
+noisier than the gentle contact you were looking for.
 
-What it costs you is the physics model and the limit. You need the arm's own description
-file with honest masses, and every error in that file lands in the residual, so the limit
-has to sit above the worst of those errors. Friction in the gearboxes is the largest such
-error, and it is the reason section 5.2 exists. There is no training and no graphics card,
-and the code below runs inside a control loop on an ordinary processor. What most often
-goes wrong is the measured half rather than the predicted half: an arm without torque
-sensors in its joints reports motor current, and current times a constant is only roughly
-the torque, which puts a floor under how small a contact you can see.
+Inside, the observer avoids that by working with the arm's **momentum** instead, which here
+means the mass matrix of the arm multiplied by its joint speeds. Both of those come
+straight from the encoders, with no differentiating. A law of mechanics says the rate of
+change of that momentum equals the sum of all the torques acting on the arm. So rather
+than differentiating the speeds, the program adds up over time the torque the motors
+commanded and the torque the arm's own gravity and motion explain, and it compares that
+running total with the momentum it can compute from this moment's readings. Where the two
+drift apart, something outside the arm has been pushing. Adding up over time smooths noise,
+where differentiating magnifies it, and that swap is the whole method.
+
+The difference between the running total and the momentum is multiplied by a gain and fed
+back into the total, which is the `gain` in the code below. That feedback makes the
+residual behave like a smoothed copy of the real outside push: it starts at zero, climbs
+towards the true value, and gets there in a time set by one over the gain. So what the
+gain buys is a sooner answer, and what it costs is more of the sensors' noise carried into
+the residual.
+
+On an arm the practical difference from everything else on this page is that this needs no
+examples at all, which is why it is already running on the arms you can buy.
+[franka_ros2](https://github.com/frankarobotics/franka_ros2) publishes a field called
+`tau_ext_hat_filtered`, described in its own `FrankaRobotState.msg` as the filtered
+external torque, so on a Franka arm the residual arrives on a topic and you write none of
+this. Sections 5.2 and 5.3 both want a recording before they detect anything, and this one
+is working on the day the arm is unpacked.
+
+So you would pick this always and first. What it costs you is the physics model and the
+limit. You need the arm's own description file with honest masses, and every error in that
+file lands in the residual, so the limit has to sit above the worst of those errors.
+Friction in the gearboxes is usually the largest such error, and it is the reason section
+5.2 exists. What most often goes wrong is the measured half rather than the predicted half:
+an arm without torque sensors in its joints reports motor current, and current times a
+constant is only roughly the torque, which puts a floor under how small a contact you can
+see.
 
 The library is [Pinocchio](https://github.com/stack-of-tasks/pinocchio), which reads the
 arm's description file and computes its dynamics. It is BSD-2, recorded in the frameworks
@@ -327,28 +345,56 @@ the true push sooner and carries more of the sensors' noise with it.
 ### 5.2 A learned torque model behind the same limit
 
 This is also **most used in 2026** wherever a learned model touches this job at all, and it
-is the smallest change that helps. You keep the whole of section 5.1 and replace only its
-prediction. The physics model predicts the torque, a small learned model predicts what the
-physics got wrong, and the two together leave a much smaller residual when nothing has
-been hit. Because the residual is smaller, the limit can be lower, and a contact you can
-barely feel by hand now crosses it. The
+is the smallest change that helps. Size xs, one small model per joint, a laptop, and the
+licence is yours, because the models come out of your own training run; scikit-learn is BSD
+3-Clause. The
 [learned arm models](../03_also-used/02_learned-arm-models.md#52-a-residual-torque-network-on-top-of-the-makers-model)
 page covers the correction itself, and this section is the detector built on top of it.
 
-You would pick this rather than the obvious alternative, which is the end-to-end classifier
-of section 5.3, for three reasons. The training set is the easy one to collect, because it
-contains ordinary work and no collisions at all. The answer stays in newton metres, so the
-limit is a quantity you can argue about and compare with the force a person can tolerate.
-And you keep the isolation of section 3.2, because a classifier that answers "collision"
-does not tell you which part of the arm was touched.
+The one idea is that the learning is not the detector. The detector is still the
+subtraction and the limit of section 5.1, unchanged. What learns is only the expected half
+of that subtraction, the number section 5.1 was computing from textbook physics alone.
 
-What it costs you is a recording and the discipline to keep it clean. You need ordinary
-motion at the speeds and with the payloads you will really use, because a model trained on
-an empty gripper calls a full one a collision. You have to retrain when the gripper, the
-payload or the arm's wear changes. The thing that most often goes wrong
-is that a collision gets into the recording: if somebody leaned on the arm while it was
-being recorded, the correction learns to explain that push away, and the detector then
-ignores exactly the event it exists to catch.
+Inside, that puts three parts in a line. Pinocchio's `rnea` gives the torque the textbook
+physics says the movement needs. A small tree ensemble, one for each joint, then predicts
+what the textbook got wrong at that moment, and it reads the joint angles, the joint speeds
+and the direction each joint is turning in. The two numbers are added, and that sum is the
+expected torque that gets subtracted from the measured one. Nothing else moves. The
+limit is still in newton metres, the alarm is still a limit crossed, and the reading of
+which link was hit in section 3.2 still works, because the residual is still one number
+per joint. The direction of travel is one of the inputs for a reason worth stating:
+friction in a gearbox depends on which way the joint is turning and not only on how fast,
+so the leftover torque jumps as a joint reverses through zero speed. That jump is the step
+in the picture on the
+[learned arm models](../03_also-used/02_learned-arm-models.md#31-physics-plus-a-learned-correction)
+page, and a model given only the speed would have to represent a cliff, which it does
+badly, while a model given the direction as well has two smooth curves to fit instead of
+one broken one. Compare section 5.3, which deletes the physics and the subtraction together
+and puts one network in their place, so that its output is the word "collision" rather
+than a torque.
+
+What that buys is a smaller residual when nothing has been hit, and therefore a lower
+limit. The limit of section 5.1 has to sit above the largest error the textbook model makes
+anywhere in the recording, and friction is usually that error; the limit here has to sit
+above only what the correction failed to explain. So a contact you can barely feel by hand
+crosses it. What it costs is the recording and the discipline to keep it clean. You need
+ordinary motion at the speeds and with the payloads you will really use, because a model
+trained on an empty gripper calls a full one a collision, and you have to retrain when the
+gripper, the payload or the arm's wear changes.
+
+On an arm the difference shows up as the push you can feel with your hand that the arm
+ignores. That is the one failure of section 5.1 that no amount of tuning fixes, because the
+limit cannot go below the physics model's own error, and this is the only entry on this
+page that makes such a contact catchable while keeping the answer in newton metres.
+
+So you would pick this rather than the end-to-end classifier of section 5.3 for three
+reasons. Its training set is the easy one to collect, because it contains ordinary work and
+no collisions at all. The answer stays in newton metres, so the limit is a quantity you can
+argue about and compare with the force a person can tolerate. And you keep the isolation of
+section 3.2. The thing that most often goes wrong is that a collision gets into the
+recording: if somebody leaned on the arm while it was being recorded, the correction learns
+to explain that push away, and the detector then ignores exactly the event it exists to
+catch.
 
 The library is scikit-learn, whose own `COPYING` file is the BSD 3-Clause licence. The code
 below does not train the detector, because there is nothing to train: it measures the limit.
@@ -396,27 +442,44 @@ page builds.
 ### 5.3 CollisionNet, a classifier that reads the window
 
 This one is **historical**, and it is here because it explains why the methods above keep
-the subtraction. Young Jin Heo, Dayeon Kim, Woongyong Lee, Hyoungkyun Kim, Jonghoon Park
-and Wan Kyun Chung at the Pohang University of Science and Technology published it in IEEE
-Robotics and Automation Letters in April 2019, under the title "Collision Detection for
-Industrial Collaborative Robots: A Deep Learning Approach". It drops the physics model
-altogether. A network reads a short window of joint signals and answers "collision" or "no
-collision", so feature extraction and the decision are learned together, and nothing in it
-has to be told what the arm weighs.
+the subtraction. Size xs, the version written out below holding 8,449 numbers, a laptop,
+and no licence is published, because no implementation is. Young Jin Heo, Dayeon Kim,
+Woongyong Lee, Hyoungkyun Kim, Jonghoon Park and Wan Kyun Chung at the Pohang University of
+Science and Technology published it in IEEE Robotics and Automation Letters in April 2019,
+under the title "Collision Detection for Industrial Collaborative Robots: A Deep Learning
+Approach".
 
-You would read it rather than use it, because section 5.2 beats it on the thing that
-decides this job in practice, which is where the training examples come from. This
-classifier needs real collisions, recorded on purpose, at the speeds and poses where you
-want them caught, and section 4 says what that costs. It also has to be collected again
-when the payload or the gripper changes, while section 5.2 only needs fresh ordinary
-motion. There is one case that still points here: an old arm that reports motor current
-and has no trustworthy description file gives you no expected torque to subtract, and then
-a classifier on the raw window is all that is left.
+The one idea is that nothing has to be told what the arm weighs. The decision is learned
+straight from the raw joint signals, so there is no description file, no mass matrix and no
+expected torque anywhere in it.
 
-What it costs you, besides the collisions, is the explanation. The answer is yes or no with
-no number behind it, so you cannot say how hard the contact was, and section 3.2's reading
-of which link was hit is gone. There is no public implementation to install, so the code
-below is the shape the paper describes, written again.
+Inside, that removes both halves of section 3.1. There is no physics model and there is no
+subtraction. The three signals for each joint at each moment, its angle, its speed and its
+motor current, are laid out as a grid of time against signal, and one-dimensional
+convolutions slide along the time direction. Sliding is the point: a pattern gets recognised
+wherever inside the window it happens, rather than only when it lands at one position. A
+last layer turns what the convolutions found into a single number, and a cut-off turns that
+number into a word. Compare section 5.2, where the learned part sits behind a subtraction
+and its output is a torque in newton metres; here the learned part is the entire detector,
+and its output is a word with nothing behind it.
+
+What that buys is independence from the arm's own description. What it costs is three
+things that section 5.2 keeps. The answer has no magnitude, so you cannot say how hard the
+contact was. Section 3.2's reading of which link was hit is gone, because there is no
+per-joint residual left to look at. And the training set is the expensive one: it needs
+real collisions, caused on purpose, at the speeds and poses where you want them caught,
+which is the slow and careful work section 4 describes, and it has to be collected again
+when the payload or the gripper changes. Section 5.2's recording is ordinary work with
+nothing touching the arm, which the cell produces anyway.
+
+On an arm there is one situation where that trade is the right way round. An old arm that
+reports motor current and has no trustworthy description file gives you no expected torque
+to subtract, so sections 5.1 and 5.2 have nothing to build on, and a classifier reading the
+raw window is all that is left. That situation is rarer than it was, which is why this
+entry is historical rather than most used.
+
+So you would read this rather than use it. There is no public implementation to install,
+so the code below is the shape the paper describes, written again.
 
 ```python
 import torch
@@ -452,9 +515,11 @@ output, which trades false alarms against missed contacts.
 ### 5.4 An anomaly detector trained on good runs only
 
 This is the shape **most used in 2026** for the second job on this page, because it is the
-only one that needs no examples of failure. It is the first way described in section 3.4.
-You describe each finished run with a handful of numbers, you fit a model to the runs that
-went well, and you report any later run that does not look like them.
+only one that needs no examples of failure. Size xs, the version below being 200 small
+trees, a laptop, and the licence is yours, because the model comes out of your own training
+run; scikit-learn is BSD 3-Clause. It is the first way described in section 3.4. You
+describe each finished run with a handful of numbers, you fit a model to the runs that went
+well, and you report any later run that does not look like them.
 
 The published landmark is the multimodal anomaly detector of Daehyung Park, Yuuna Hoshi and
 Charles Kemp, from [November 2017](https://arxiv.org/abs/1711.00614). A robot fed a person
@@ -467,25 +532,49 @@ measure called the area under the curve, which is the chance that the detector g
 failed attempt a worse score than a good one. A score of one would be perfect, and one
 half would be no better than guessing.
 
-You would pick an anomaly detector rather than the obvious alternative, a classifier
-trained on labelled successes and failures, because of which failures you have. A cell that
-works most of the time gives you a few dozen failures a year, all of the same two or three
-kinds, and a classifier trained on those recognises those and nothing else. The anomaly
-detector flags anything unfamiliar, so the failure nobody anticipated is still caught. You
-would pick the classifier instead only when one particular failure matters more than all
-the others and you can produce it on purpose.
+The one idea is that the model is never shown a failure. It learns only what a normal run
+looks like, and it reports anything that does not look like one, so it has no notion of
+"failed" inside it at all.
 
-What it costs you is false alarms and the features. It flags anything unusual, including a
-new and perfectly good way of succeeding, so a cell that changes its task rate or its
-lighting will produce alarms that mean nothing. It also needs a second batch of good runs
-that the model never saw, because the alarm limit measured on the training runs is always
-too generous. The published version above is a sequence model with no code linked from the
-paper, so most people start with the cheap version below instead, which is a few hundred
-small decision trees on summary numbers and trains in seconds.
+Inside, the cheap version is a crowd of trees built almost at random, and the trick is in
+how a tree is built rather than in what it predicts. The program picks one of your summary
+numbers at random, picks a split point at random inside that number's range, and splits the
+runs in two. It repeats that on each half until every run sits alone. A run that ends up
+alone after only a few splits is unusual, because very few random cuts were needed to cut
+it away from the crowd, while an ordinary run sits in the thick of the others and takes
+many. The score for a run is how many cuts it needed on average over all the trees, and the
+alarm limit is a cut-off on that score. The published sequence version above is the same
+idea with a harder inside: instead of your six summary numbers it reads seventeen raw
+signals through a network that must squeeze each run down and rebuild it, and a run it
+rebuilds badly is the odd one. Either way, compare the two detectors above it on this
+page: sections 5.1 and 5.2 compare one moment with an expectation of that moment, which is
+why they answer in milliseconds, while this compares one finished run with a crowd of
+finished runs, which is why it answers after the run. Compare section 5.5 as well, which is
+told in words what the task was and answers a question about it; this one is told nothing
+and knows only what its training rows looked like.
+
+What the idea buys is the failure nobody anticipated. A classifier trained on labelled
+successes and failures only recognises the two or three kinds of failure your cell has
+actually produced, because that is all a year of running gives you. This one flags
+anything unfamiliar. What it costs is false alarms, because it flags anything unusual
+including a new and perfectly good way of succeeding, so a cell that changes its task rate
+or its lighting will produce alarms that mean nothing. It also needs a second batch of good
+runs the model never saw, because the alarm limit measured on the training runs is always
+too generous.
+
+On an arm the whole thing turns on the summary numbers, in exactly the way section 6.1 of
+[the force and slip page](01_force-and-slip-models.md#61-hand-made-features-and-a-tree-ensemble)
+turns on its features. Take the dropped mug of section 3.4. If no number you chose reacts to
+a mug that is no longer there, the dropped mug is invisible, and no quantity of good runs
+will ever make it visible. That is a failure of your feature list rather than of the
+training, and it is the reason the published version above reads seventeen raw signals
+rather than a handful of summaries.
 
 The library is scikit-learn again, and the class is
 [IsolationForest](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html),
-which finds unusual rows by how easily a random split separates them from the rest.
+which finds unusual rows by how easily a random split separates them from the rest, as
+described above. The paper's own version has no code linked from it, so most people start
+with this one, which trains in seconds.
 
 ```python
 import numpy as np
@@ -520,9 +609,13 @@ because a detector whose alarm is ignored is worse than no detector.
 This one is **worth betting on**, because a robot that practises without a person watching
 needs something that can judge its own attempts, and the frontier chapter's
 [section on LeRobot's releases](../../../03_frameworks/08_frontier/06_what-is-coming.md#23-lerobot-which-now-releases-on-a-predictable-rhythm)
-calls such a model the missing piece in every method of that kind. It is the second way described in section 3.4. You give a model the frames
-of a finished attempt and the sentence that describes the task, and it answers whether the
-task succeeded.
+calls such a model the missing piece in every method of that kind. Size l, a backbone of 4
+billion parameters in a checkpoint of about 8.9 GB, a big card, and Apache-2.0 for LeRobot,
+the library that runs it; each judge's own licence is given on the
+[reward and progress models](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#5-well-known-models-and-libraries)
+page. It is the second way described in section 3.4. You give a model the frames of a
+finished attempt and the sentence that describes the task, and it answers whether the task
+succeeded.
 
 The idea was named by Yuqing Du and colleagues in [March 2023](https://arxiv.org/abs/2303.07280),
 in a paper that treated success detection as a question asked about a video, called
@@ -533,23 +626,38 @@ in one place, the
 page, which names each one, states its licence and shows how to set it up. Read that page
 for the judges themselves. This section is only about using one as a failure detector.
 
-You would pick a judge rather than the obvious alternative, a small image classifier trained
-on your own pictures of the finished shelf, because of how many tasks your cell does. The
-classifier is faster and more accurate on the one task it knows, and the reward page's
-[section 7.1](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#51-the-hil-serl-reward-classifier-which-you-train-on-your-own-pictures)
-recommends it for exactly that reason. However, twenty different tasks need twenty
-classifiers and twenty sets of marked pictures, while one judge answers all twenty from the
-sentence you give it.
+The one idea is that judging an attempt is answering a question about a video, and a model
+that already connects pictures to words can answer it without ever having been trained on
+your task.
 
-What it costs you is a graphics card, seconds rather than milliseconds, and an unmeasured
-level of agreement. The downloadable judge named on that page, Robometer, is a checkpoint of
-about 8.9 GB on a 4-billion-parameter backbone, and its
-[LeRobot page](https://huggingface.co/docs/lerobot/robometer) says a graphics card is
-strongly recommended. That page also says it reads at most eight frames of an attempt by
-default, which is the detail people miss: eight frames spread over a one-minute carry can
-miss the moment the mug fell. And nobody has published how often such a judge agrees with
-a careful person on a task it was not trained for, so this belongs after a finished step
-rather than inside a control loop.
+Inside, the attempt is turned into two things the model can read. A handful of frames go
+through an image part that turns each frame into a list of numbers, and the sentence you
+wrote goes through the model's word part the same way. Both lists are then handed to the
+same language backbone, which produces the verdict. The thing to notice is that none of
+those parts was trained on your shelf, your mug or your cell: what tells the model what
+success means here is the sentence, and nothing else. Compare section 5.4, whose detector
+has one fixed input, your six summary numbers, and no way of being told what the task is.
+Changing the task there means a new set of numbers and a new fit. Changing the task here
+means a different sentence.
+
+What that buys is one model for twenty tasks. A small image classifier trained on your own
+pictures of the finished shelf is faster and more accurate on the one task it knows, and
+the reward page's
+[section 5.1](../../06_movement-models/03_also-used/03_reward-and-progress-models.md#51-the-hil-serl-reward-classifier-which-you-train-on-your-own-pictures)
+recommends it for exactly that reason, but twenty tasks need twenty classifiers and twenty
+sets of marked pictures. What it costs is seconds rather than milliseconds, and an
+agreement with a careful person that nobody has measured on a task the judge was not
+trained for. It also costs the frames it does not look at. Robometer's
+[LeRobot page](https://huggingface.co/docs/lerobot/robometer) says it reads at most eight
+frames of an attempt by default, so what it is really judging is eight snapshots.
+
+On an arm, picture a mug dropped halfway through a one-minute carry, after which the
+gripper closes on nothing and places nothing. Eight frames spread over that minute can
+easily miss the fall, and the judge still gets the verdict right, because the last frame
+shows an empty shelf. What it cannot give you is the moment. Section 5.4, watching the
+weight at the wrist, reports the instant the weight vanished, which is while the cell could
+still have stopped and recovered. So a judge belongs after a finished step rather than
+inside a control loop, and it belongs alongside section 5.4 rather than instead of it.
 
 The library is LeRobot, which is Apache-2.0, and the call below is the one its own
 Robometer page documents.
@@ -588,33 +696,52 @@ and suggest a fix.
 ### 5.6 Sentinel, for an arm driven by a learned policy
 
 This one is also **worth betting on**, and it is the entry that did not exist as a category
-a few years ago, because it watches the policy rather than the arm. Christopher Agia,
-Rohan Sinha, Jingyun Yang, Zi-ang Cao, Rika Antonova, Marco Pavone and Jeannette Bohg, at
-Stanford University with NVIDIA Research, published it in
-[October 2024](https://arxiv.org/abs/2410.04640) and presented it at the Conference on
-Robot Learning that year. It joins two detectors. The first measures whether the chunks of
-future actions that a generative policy produces agree with each other from one step to the
-next, which catches the policy behaving erratically. A **generative policy** is one that
-samples its actions from a learned distribution and so gives a different answer each time
-you ask it, which the
+a few years ago, because it watches the policy rather than the arm. Size not stated,
+because it carries no weights of its own, a big card or a key for a hosted model for its
+vision-language half, and MIT for the code. Christopher Agia, Rohan Sinha, Jingyun Yang,
+Zi-ang Cao, Rika Antonova, Marco Pavone and Jeannette Bohg, at Stanford University with
+NVIDIA Research, published it in [October 2024](https://arxiv.org/abs/2410.04640) and
+presented it at the Conference on Robot Learning that year.
+
+The one idea is that a learned policy which has gone wrong shows it in its own output
+before the arm shows it in the forces or the positions.
+
+Inside, there are two detectors with nothing in common, joined. The first needs no extra
+model at all, because it questions your policy. A **generative policy** is one that samples
+its actions from a learned distribution, so it gives a different answer each time you ask
+it, and it answers with a chunk of future actions rather than one action, which the
 [diffusion and flow policies](../../06_movement-models/02_most-used/03_diffusion-and-flow-policies.md#2-what-goes-in-and-what-comes-out)
-page describes. The second shows the video to a vision-language model, which catches the
-opposite case, where the policy keeps acting steadily and makes no progress. The paper
-reports that the two together detect 18 per cent more failures than either one alone.
+page describes. Sentinel asks for that chunk several times at the same moment and measures
+how much the answers scatter, and then how much this moment's chunk disagrees with the
+overlapping part of the previous moment's chunk. A policy that is sure of itself gives
+nearly the same chunk every time and carries on from where it said it would; a policy
+outside what it was trained on gives scattered chunks and changes its mind every step. The
+proper version measures that scatter as a statistical distance between the two sets of
+samples rather than between their averages. The second detector shows the video to a
+vision-language model, which is section 5.5's judge asked during the task instead of after
+it.
 
-You would pick this rather than the obvious alternative, the anomaly detector on sensor
-features in section 5.4, when a learned policy drives the arm. A policy that has drifted
-away from what it was trained on often moves smoothly and safely while making no progress,
-so the forces and the positions all look normal and only the policy's own output gives it
-away. Section 5.4 cannot see that output at all.
+What joining them buys is the pair of opposite failures. The first catches a policy
+behaving erratically, and the second catches the opposite case, where the policy keeps
+acting smoothly and makes no progress at all. The paper reports that the two together
+detect 18 per cent more failures than either one alone. What it costs is applicability.
+The first detector needs a policy you can sample several times at the same moment, so a
+policy that returns one fixed action gives it nothing to compare, and this whole entry
+therefore exists only for an arm a learned model drives.
 
-What it costs you is applicability and upkeep. The first detector requires a policy you can
-sample several times at the same moment, so a policy that returns one fixed action gives it
-nothing to compare. The repository is research code: it is managed with Poetry, tested on
-Ubuntu 20.04 with Python 3.10.13, it does not train policies, and its released evaluation
-datasets need about 319 GB of disk space. Its vision-language half calls a hosted model, so
-its scripts read that model's key from the environment. The licence in the repository's own
-`LICENSE` file is MIT, which is the easy part.
+On an arm, picture a policy that has drifted and now hovers just above the mug, closing on
+nothing, over and over. The forces, the joint positions and the weight at the wrist all
+look like an ordinary reach, so section 5.4 sees nothing wrong and nothing fails loudly
+enough to stop the cell. Sentinel's first detector sees the scattered chunks and its second
+sees a video with no progress in it. That is the case section 5.4 cannot reach, because the
+policy's output is not one of its inputs.
+
+So you would pick this rather than the anomaly detector of section 5.4 when a learned
+policy drives the arm, and in practice alongside it rather than instead of it. The costs
+that remain are those of research code. It is managed with Poetry and tested on Ubuntu
+20.04 with Python 3.10.13, it does not train policies, its released evaluation datasets
+need about 319 GB of disk space, and its vision-language half reads a hosted model's key
+from the environment.
 
 The repository is [agiachris/sentinel](https://github.com/agiachris/sentinel). Its own
 detectors run over recorded attempts, so the few lines below are the first detector's idea
@@ -639,10 +766,9 @@ while running:
 ```
 
 What the repository supplies, and what you should not write yourself, is the proper version
-of that comparison and the calibration behind the limit. It measures the disagreement as a
-statistical distance between the two sets of samples rather than between their averages,
-and it fixes the limit from a set of recorded attempts made in the conditions the policy was
-trained for, which its dataset naming calls the calibration set. What you supply is a
+of that comparison, as described above, and the calibration behind the limit. It fixes that
+limit from a set of recorded attempts made in the conditions the policy was trained for,
+which its dataset naming calls the calibration set. What you supply is a
 policy you can sample repeatedly, those calibration attempts, and the response, because an
 arm that detects its own confusion and carries on has gained nothing.
 

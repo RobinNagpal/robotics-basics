@@ -219,25 +219,49 @@ training run, so no licence restricts it.
 
 ### 6.1 Hand-made features and a tree ensemble
 
-This is the method **most used in 2026**, and it is not a published model at all. You
-turn each window into a short list of summary numbers, and you give that list to an
-ensemble of decision trees built one after another, each correcting the mistakes of
-the ones before it. The summary numbers are ones you can say out loud: the average of
-each axis, how much each axis wobbled, the largest change between two neighbouring
-readings, and how much of the signal sits in the fast part. Veiga and colleagues
-(2015) did this with random forests on a BioTac, a fingertip-shaped sensor filled with
-fluid, and the shape of the answer has not changed since.
+This is the method **most used in 2026**, and it is not a published model at all.
+Size xs, a laptop, and the licence is yours, because the model comes out of your own
+training run. You turn each window into a short list of summary numbers, and you give
+that list to an ensemble of decision trees built one after another, each correcting the
+mistakes of the ones before it. Veiga and colleagues (2015) did this with random forests
+on a BioTac, a fingertip-shaped sensor filled with fluid, and the shape of the answer
+has not changed since.
 
-You would pick this rather than the obvious alternative, the neural network on the raw
-window in section 6.2, because of how much data you have. A day of robot time buys a
-few hundred deliberate slips, and with a few hundred examples a tree ensemble is
-usually more accurate, because it has far fewer numbers to fit. It also trains in
-seconds on a laptop with no graphics card, and it reports which feature it leaned on,
-so a failure teaches you something about your sensor.
+The one idea this method is built on is that the learning never sees the signal. You
+decide beforehand which properties of a window could possibly matter, you compute them
+yourself with arithmetic you wrote, and the trained part only has to work out how to
+combine the handful of numbers you handed it. Those numbers are ones you can say out
+loud: the average of each axis, how much each axis wobbled, the largest change between
+two neighbouring readings, and how much of the signal sits in the fast part.
 
-What it costs you is the features. You have to invent them, and a signal you did not
-think to compute is one the model cannot see. The model itself runs on the ordinary
-processor in well under a millisecond. The thing that most often goes wrong is not the
+Inside, that leaves nothing at all that reads the window. A window of twenty readings on
+six axes is 120 numbers, and your own feature function turns those 120 into about two
+dozen before any learning happens. What learns is a stack of short decision trees. Each
+tree is a chain of yes-or-no questions, one feature at a time, such as "did the sideways
+axis wobble by more than this much?", and each new tree is fitted to the error that the
+trees before it left behind. The network in section 6.2 is wired the other way round.
+Its first layer is connected to all 120 raw numbers at once, and what training changes
+there is how those raw numbers are combined, so nobody has to name what matters.
+
+What the idea buys is accuracy from very little data. The trees only choose among
+features you already computed, so there are far fewer numbers to fit than in a network
+that has to learn its own front end as well as its answer. It trains in seconds on an
+ordinary processor, it answers in well under a millisecond, and it will tell you which
+feature it leaned on, so a failure teaches you something about your sensor rather than
+nothing. What the idea costs is that a property you did not think to compute is one the
+model can never see. Your feature list is a guess about the physics of your own gripper,
+and a wrong guess is invisible, because the model simply stops getting better and does
+not say why.
+
+On a robot arm the difference shows up on your first day of data collection. A day of
+deliberate slips buys a few hundred grips, which is perhaps thirty objects in ten poses.
+Trained on that, this method is usually usable and the network of section 6.2 usually is
+not, because a few hundred examples give the network enough freedom to memorise the
+grips it saw rather than learn what a slip looks like. You find that out when the arm
+grips an object that was not in the set, which is after the mug is already on the floor.
+
+So you would pick this rather than the network in section 6.2 because of how much data
+you have, and for no other reason. The thing that most often goes wrong here is not the
 model but the test: if you split the windows at random, two windows one reading apart
 land on opposite sides of the split, and the high score that follows means nothing.
 
@@ -277,22 +301,48 @@ the part people forget to record, and without it the split above is impossible.
 ### 6.2 A small network of your own on the raw window
 
 This is also **most used in 2026**, by people who have collected thousands of grips,
-and it is the only choice when the window holds pictures instead of numbers. The
-network reads the window itself, with no features in between. For six wrist numbers,
-two layers with a few dozen numbers in the middle is enough; for tactile pictures, the
+and it is the only choice when the window holds pictures instead of numbers. Size xs and
+a laptop for a window of wrist numbers; a window of tactile pictures pushes it to size s
+and wants a big card to train on. The licence is yours, and PyTorch is BSD 3-Clause. The
+network reads the window itself, with no features in between. For six wrist numbers, two
+layers with a few dozen numbers in the middle is enough; for tactile pictures, the
 arrangement is the one in section 4.2, which Li and colleagues introduced in
 [February 2018](https://arxiv.org/abs/1802.10153) and released no code for.
 
-You would pick this rather than the tree ensemble in section 6.1 for two reasons, and
-only the second is certain. Once the training set runs into the thousands, the network
-tends to find patterns you would not have thought to compute. And a gel picture has no
-short list of hand-made numbers that captures it, so when the window holds pictures
-there is nothing to compare against.
+The one idea here is that the model invents its own summary of the window. You hand it
+the readings and nothing else, and the part that decides which of those readings matter
+is itself learned rather than written.
 
-What it costs you is data, a graphics card if the window holds pictures, and any
-explanation of why it answered as it did. The failure that matters most is this: the answer arrives after the mug has gone. A bigger network is slower and a
-longer window delays the answer directly, so both have to be timed on the computer that
-will sit next to the arm.
+Inside, the difference from section 6.1 is where the window gets reduced. In section 6.1
+you reduce it, and the trees never see more than the two dozen numbers you computed.
+Here the reduction is the network's first layer. Each unit in that layer adds up all 120
+numbers of the window, with a weight on each one, and training changes those weights. An
+average is one such weighted sum, with every weight the same, so the network can learn
+section 6.1's features if they are the useful ones, along with thousands of combinations
+nobody would have written down. When the window holds pictures rather than numbers, the
+reducing is done by a convolutional network reading each picture and a long short-term
+memory network reading the run of them, which is the arrangement in section 4.2.
+
+What that buys is patterns that no single hand-made number can hold. A per-axis average
+cannot express "the sideways force rose while the straight-in force stayed flat",
+because it throws away the order of the readings and keeps the axes apart, while a layer
+connected to the whole window can represent exactly that. What it costs is examples. The
+network is fitting its own front end as well as its answer, so it wants thousands of
+grips where the tree ensemble wanted hundreds, and it tells you nothing about which part
+of the signal it leaned on. It also costs time, because a wider network is slower and a
+longer window delays the answer directly, and the answer that arrives after the mug has
+gone is worth nothing.
+
+The place this choice decides the outcome is a gel sensor. A gel picture has no short
+list of hand-made numbers that captures it, so section 6.1 has nothing to compute from
+it, and the early slip signal of section 3, where the rim of the contact slides while
+the centre still sticks, is a pattern spread across the picture rather than one
+quantity. With a gel sensor section 6.1 is not the weaker choice; it is not a choice.
+
+So you would pick this rather than the tree ensemble in section 6.1 once your training
+set runs into the thousands, and you have no choice at all once the window holds
+pictures. Both the network's width and the window's length have to be timed on the
+computer that will sit next to the arm, because neither cost shows up in the score.
 
 The library is PyTorch. This is the half that runs while the arm carries the mug.
 
@@ -341,29 +391,51 @@ slip model to download. What you decide is the two limits and the window length.
 ### 6.3 GelSight's own marker tracker, as the shear signal
 
 This is **most used in 2026** by anyone who owns a gel sensor with printed dots, and
-it contains no learning at all. GelSight's own software development kit,
-[gsrobotics](https://github.com/gelsightinc/gsrobotics), finds the printed dots in the
-first picture, fits them to a grid, and then follows each dot from one picture to the
-next with the Lucas-Kanade method from OpenCV, which is a standard way of following a
-small patch of picture as it moves. Section 4.3 of
+it contains no learning at all. Size not stated, because nothing here is trained, a
+laptop, and GPL-3.0 for the code. It is part of GelSight's own software development kit,
+[gsrobotics](https://github.com/gelsightinc/gsrobotics). Section 4.3 of
 [the touch sensing page](../03_also-used/01_touch-sensing-models.md#43-seeing-the-sideways-push)
 describes what the dots do, and this is the code that measures it.
 
-You would pick this rather than training a slip model on gel pictures, which is
-section 6.4, because the dot movement is the slip signal itself. It is a measurement
-rather than a prediction, so it cannot be confidently wrong about an object it has
-never seen, and it needs no training set. The best arrangement is usually not either
-alone: measure the dot movement here, then feed those numbers into section 6.1 as
-features.
+The one idea is that you can measure the slip rather than predict it. The printed dots
+are a ruler lying on the gel, and working out where each one went is arithmetic.
 
-What it costs you starts with the licence. The repository is GPL-3.0, read from its own
-licence file and recorded in the frameworks book's
+Inside, there are no trained numbers at all, and that is the whole difference from
+sections 6.1 and 6.2. The tracker takes the first picture, finds the dark dots in it and
+fits them to the grid they were printed in, so every dot gets a name and a starting
+place. Then, for each dot in each new picture, the Lucas-Kanade method takes the small
+square of picture around where that dot used to be and searches for the small shift that
+makes this picture's square look most like the last one's. The answer for one dot is two
+numbers, how far it moved across and how far down. So what comes out of the whole thing
+is a field of arrows over the contact, and not the word "slipping". The two learned
+methods above produce the word and keep no arrows; this produces the arrows and knows no
+words.
+
+What that buys is the one property neither learned method has. It cannot be confidently
+wrong about an object it has never gripped, because it is making no claim about objects
+at all, and it needs no training set, no labels and no retraining when you change the
+gripper. What it costs is the meaning. The arrows say how far the gel moved, and nothing
+in them says how far is too far for your gel, your objects and your squeeze, so finding
+that limit is a set of deliberate slips after all. It is also limited by the camera
+rather than by the method, because a dot shift smaller than a pixel does not exist in
+the output.
+
+On an arm, this shows up the first time the gripper holds something that was not in your
+recordings. A model from section 6.1 or 6.2 answers anyway, and its answer about an
+unfamiliar object is a guess that comes out looking exactly like a measurement. The dot
+field has no such failure. That is why the best arrangement is usually not either alone:
+measure the dot movement here, then feed those two numbers per dot into section 6.1 as
+features, so the learned part only has to decide what the movement means.
+
+So you would pick this rather than training a slip model on gel pictures, which is
+section 6.4, whenever you own a gel with dots, because it gives you the signal this
+afternoon rather than after a data collection campaign. Three costs are about this tool
+rather than about its size. Its GPL-3.0 licence, read from its own licence file and
+recorded in the frameworks book's
 [licence table](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#9-drivers-ros-2-packages-and-licences),
-so linking it into a product obliges you to publish the source of the result. It needs
-the dots, so a plain gel has nothing to track. It is limited by the camera, because
-GelSight publishes 25 frames per second for the Mini, which makes one frame 40
-milliseconds and that the soonest any movement can be seen. And the gel is a
-consumable, rated by its maker for 1,000 coin presses.
+obliges you to publish the source of anything you link it into. It needs the dots, so a
+plain gel has nothing to track. And the gel is a consumable, rated by its maker for
+1,000 coin presses.
 
 ```python
 import cv2
@@ -404,29 +476,57 @@ at the rim of the contact separately from the ones in the middle.
 
 This one is **worth betting on** rather than most used, because one model that works
 across sensors is the direction the field is going, and this one is held back by its
-licence and by a measured failure rather than by its idea. Sparsh is a family of
+licence and by a measured failure rather than by its idea. Size not stated for both the
+small and the base backbone, a big card to train a head on one, and CC BY-NC 4.0 for the
+code and the weights alike, which forbids commercial use. Sparsh is a family of
 self-supervised touch models from Meta's Fundamental AI Research group with Carnegie
 Mellon University and the University of Washington, published in
-[October 2024](https://arxiv.org/abs/2410.24090). It was trained on more than 460,000
-unlabelled tactile pictures by hiding parts of a picture and asking the model to fill
-them in. The repository also carries TacBench, six tasks of which two are exactly this
-page's job, estimating three-axis force and detecting slip, and the labelled recordings
-for both are released.
+[October 2024](https://arxiv.org/abs/2410.24090). The repository also carries TacBench,
+six tasks of which two are exactly this page's job, estimating three-axis force and
+detecting slip, and the labelled recordings for both are released.
 
-You would pick this rather than training your own network from scratch, which is
-section 6.2, to save labels. Every slip label costs a real grip on a real robot, and
-the paper reports that its self-supervised start beat training end to end for one task
-and one sensor by 95.1 per cent on average across TacBench.
+The one idea is that almost everything a model needs to know about tactile pictures can
+be learned without a single label. You gather a very large number of pictures of
+contacts, you hide part of each one, and you train the model to fill the hidden part in.
+A model that can do that has had to learn what a contact looks like in general, and it
+learned it from pictures nobody had to mark.
 
-What it costs you is unusually specific, and all of it is checkable. The licence in the
-repository's own `LICENSE.md` is Creative Commons Attribution-NonCommercial 4.0, which
-forbids commercial use and covers the weights as well as the code. The repository is a
-public archive, read only since February 2025. It works with three sensors, so any
-other sends you back to section 6.1. Its own pretraining used eight A100 80GB graphics
-cards, so only the head on top is realistically yours to train. And the failure has a
+Inside, that splits the model into two parts, trained at different times and by
+different people. The front part, called the backbone, is the one trained on the
+unlabelled pictures, and Sparsh is really the same idea tried with several recipes for
+doing that. The two its paper found best are DINO, which trains two copies of the
+network to agree about a picture that each of them sees differently, and I-JEPA, which
+predicts the hidden part of a picture as internal numbers rather than as pixels. The
+back part is a small head of a few layers, and that head is the only part you train, on
+your own labelled grips, with the front part held fixed. Compare section 6.2, where one
+network's front and back are both fitted to your own labelled grips. Here the front was
+fitted to pictures that were never labelled at all, by somebody with eight A100 80GB
+graphics cards.
+
+What that buys is that your own labels now only have to teach the last step. Every slip
+label costs a real grip on a real robot, so this is the difference between a few hundred
+labelled grips and a few thousand, and the paper reports that its self-supervised start
+beat training end to end for one task and one sensor by 95.1 per cent on average across
+TacBench. What it costs is that a fixed front part only knows the sensors its
+pretraining saw. Those were DIGIT, GelSight'17 and GelSight Mini, and the failure has a
 number: a study in [September 2026](https://arxiv.org/abs/2609.08673) reports a frozen
 classifier on Sparsh scoring 6.86 per cent on a sensor it was not trained on, rising to
 87.09 per cent once a tenth of the new sensor's recordings are labelled.
+
+On an arm the difference appears when you count the grips you can afford. If you own a
+DIGIT and can collect one hundred labelled slips rather than three thousand, this reaches
+a usable answer and section 6.2 does not. If you own any other sensor, the backbone's
+advantage over a network of your own is gone, the 6.86 per cent above is what to expect,
+and section 6.1 on features of your own is the honest starting point again.
+
+So you would pick this rather than training your own network from scratch, which is
+section 6.2, to save labels. The costs that remain are not about its size, and all of
+them are checkable. The licence in the repository's own `LICENSE.md` forbids commercial
+use and covers the weights as well as the code, so anything you sell sends you to T3 on
+[the touch sensing page](../03_also-used/01_touch-sensing-models.md#65-transferable-tactile-transformers-t3)
+instead. The repository is a public archive, read only since February 2025, so nothing
+in it will be fixed. And it works with three sensors, so any other sends you back to
+section 6.1.
 
 The repository is driven by configuration files rather than by Python you write.
 
@@ -452,23 +552,50 @@ DIGIT.
 This is **historical**, and it is kept because it is the clearest small example of the
 trick section 6.4 scales up. Lee and colleagues at Stanford's Interactive Perception
 and Robot Learning lab published it in
-[October 2018](https://arxiv.org/abs/1810.10191). It learns one set of numbers from
-three inputs at once: a camera picture, the six wrist force-torque numbers, and the
-arm's joint readings. It is trained with no labels, on made-up questions such as
-whether the gripper will touch something in the next step. A controller then learned to
-fit a peg into a hole from those numbers.
+[October 2018](https://arxiv.org/abs/1810.10191). Size not stated, a big card to train,
+and MIT for the code, with no weights published for your robot. It learns one set of
+numbers from three inputs at once: a camera picture, the six wrist force-torque numbers,
+and the arm's joint readings.
 
-You would read this rather than section 6.4 for two reasons. Its
+The one idea is that sensors which measure different things can be forced into one
+description. A camera, a wrist force sensor and the joint encoders all say something
+about the same moment, and this model learns one short list of numbers that all three of
+them have to agree about.
+
+Inside, the repository's own source shows four front ends feeding one shared list. The
+camera picture and the depth picture each go through a convolutional network. The six
+wrist numbers go through a stack of one-dimensional convolutions that slide along the
+window of readings, which is section 4.1's window again. The joint readings go through a
+plain stack of layers. Each front end gives, for every number in the shared list, not
+one value but an average and a spread, which is how the model says how sure that front
+end is, and the four are then combined into the one list. Four small heads hang off that
+list, and each answers a question whose answer was free to collect: are these inputs
+from the same moment, will the gripper be touching something at the next step, how will
+the gripper move, and how did the picture move between two frames. Sparsh in section 6.4
+makes up its question inside one picture, by hiding part of it. This makes up its
+questions across the sensors and across time instead, so it needs no gel at all.
+
+What that buys is a contact model with no slip labels anywhere. Nobody marked a single
+window, because the four questions above are answered by the recording itself. What it
+costs is that the shared list of numbers means nothing on its own. It is a description
+of a moment, and a controller still has to be trained on top of it, which in the paper
+was how a peg was fitted into a hole. Where it most often fails is the made-up question:
+"will the gripper be touching something next" teaches nothing unless your recordings
+contain attempts that miss, so a recording of successful insertions only trains a model
+that has learned to answer yes.
+
+On an arm, this is the entry to pick when you have a wrist force-torque sensor and no
+gel. Sections 6.1, 6.2 and 6.4 all want the right answer for each window, which means
+causing slips on purpose and writing down when each one started. This one wants a
+recording of the arm attempting the task, with the misses left in. If you cannot get
+labels at all but can get a few hundred attempts, this is the shape that uses them.
+
+So you would read this rather than section 6.4 for two reasons. Its
 [code](https://github.com/stanford-iprl-lab/multimodal_representation) is MIT, read
 from the repository's own licence file, so unlike Sparsh you may use it commercially.
 And it works from a wrist force-torque sensor, which most arms already have, rather
-than from a gel sensor you would have to buy.
-
-What it costs you is everything except the idea. There are no weights for your robot,
-the released recordings are one robot doing one task, and training needs a graphics
-card. The part that most often goes wrong is the made-up question, because "will the
-gripper touch something next" teaches nothing unless your recordings contain attempts
-that miss.
+than from a gel sensor you would have to buy. What it costs you is everything except
+the idea, because the released recordings are one robot doing one task.
 
 ```bash
 cd multimodal/dataset && ./download_data.sh      # their own recordings, not yours

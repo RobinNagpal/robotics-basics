@@ -25,8 +25,9 @@ on its own.
 5. [What they have in common](#5-what-they-have-in-common)
 6. [How seeing models connect to the other kinds](#6-how-seeing-models-connect-to-the-other-kinds)
 7. [Which page to read first](#7-which-page-to-read-first)
-8. [Where to read next](#8-where-to-read-next)
-9. [Using it in Python](#9-using-it-in-python)
+8. [How this chapter writes size, machine and licence](#8-how-this-chapter-writes-size-machine-and-licence)
+9. [Where to read next](#9-where-to-read-next)
+10. [Using it in Python](#10-using-it-in-python)
 
 ---
 
@@ -264,7 +265,47 @@ If you already know what you need, the list below points to the right page.
 
 ---
 
-## 8. Where to read next
+## 8. How this chapter writes size, machine and licence
+
+Every model section in this chapter says three things about what a model costs you,
+and it says them in the same short words rather than explaining them again each time.
+This section is where those words are defined. The same three scales are used in
+every chapter of this book, so you only have to learn them once.
+
+**Size** is the number of parameters, which is the count of numbers the network
+learned during training. It is a rough guide to how capable a model is and to how
+much memory it needs, and nothing more: a well-trained small model beats a badly
+trained large one.
+
+| Size | Parameters |
+| --- | --- |
+| xs | under 10 million |
+| s | 10 to 100 million |
+| m | 100 million to 1 billion |
+| l | 1 to 10 billion |
+| xl | more than 10 billion |
+
+**Machine** is what you need to run the model once, not to train it. Training needs
+more, usually several times more, and each model section says so where it matters.
+
+| Machine | What it needs |
+| --- | --- |
+| laptop | an ordinary processor, with no graphics card |
+| small card | a graphics card with less than 8 GB |
+| big card | a graphics card with 8 to 24 GB |
+| workstation | a graphics card with 24 to 80 GB |
+| cluster | more than one card of 80 GB |
+
+**Licence** is given as the name alone, such as Apache-2.0 or MIT. Two things about
+that name matter more than the name itself. The code licence and the weights licence
+are often different, so a model with permissive code can still forbid you from
+selling what you build, and each model section says when the two differ. And a name
+is not legal advice: read the project's own licence file before you ship anything,
+because this book records what those files said on the day they were read.
+
+---
+
+## 9. Where to read next
 
 The next page is [object detection](02_most-used/01_object-detection.md), the first
 of the most-used group, and it explains how a network draws a box round each object
@@ -280,7 +321,7 @@ measure](../../02_perception/02_object-perception/05_models-that-measure.md).
 
 ---
 
-## 9. Using it in Python
+## 10. Using it in Python
 
 The seven kinds above are described as ideas, and each one of them is also a file
 you can download and call. So this section runs the most used of the seven, an

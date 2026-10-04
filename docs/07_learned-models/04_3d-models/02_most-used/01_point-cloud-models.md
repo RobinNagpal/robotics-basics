@@ -251,10 +251,57 @@ read from the project's own licence file.
 
 PointNet is **historical**, and it is on this list because every later model here
 reuses the two ideas in
-[section 3](#one-small-network-for-every-point-then-the-largest-number). Charles Qi
-and colleagues at Stanford University published it at the 2017 Computer Vision and
-Pattern Recognition conference, usually written CVPR. It is the one shared small
-network per point, followed by max pooling.
+[section 3](#one-small-network-for-every-point-then-the-largest-number).
+
+Size xs, a laptop, MIT for the code, and no weights were released, so there is no
+weights licence to read.
+
+Charles Qi and colleagues at Stanford University published it at the 2017 Computer
+Vision and Pattern Recognition conference, usually written CVPR. It is the one shared
+small network per point, followed by max pooling.
+
+The one idea it is built on is that the answer must not change when somebody shuffles
+the rows of the input, and that the safe way to get that is to build the model out of
+steps which cannot see the order at all. The authors did not train the network to
+ignore the order of the points. They assembled it from parts to which the order is
+not available, so the guarantee comes from the shape of the model rather than from
+what it learned.
+
+Inside, that leaves only two kinds of part. The first is a small network that reads
+one point, as three numbers, and writes a longer list of numbers for that point. The
+same network, with the same learned numbers, runs on every point separately, so it
+has no way of knowing which row it was handed. The second is the max pooling step,
+which reads all those lists and keeps the largest number in each column. What flows
+from the first part to the second is one list per point, and what leaves the second is
+a single list for the whole cloud. The published model has one more part that
+[section 3](#one-small-network-for-every-point-then-the-largest-number) left out: a
+small side network that looks at the cloud and predicts a three-by-three table of
+numbers, which is then multiplied into every point to turn the whole cloud into a
+standard orientation before the main network sees it. Even so, the thing to take away
+is what is absent. Nowhere in PointNet is the distance between two points worked out,
+and no point is ever shown the numbers of another point. Every later model on this
+page adds exactly that, and the three designs that follow add it in three different
+ways.
+
+What the idea buys is that the work is a straight line in the number of points. Each
+point costs one pass through a small network, nothing is compared against anything
+else, so there is no search to do and an ordinary processor keeps up. What it costs is
+that the single max pooling step is the only channel from one point to another. A
+column's largest number says that some point in the cloud had this feature strongly,
+and it cannot say which point, nor whether two features sat two centimetres apart or
+on opposite sides of the table. So PointNet ends up holding a list of the features an
+object has rather than an arrangement of them, and fine shape is exactly the
+information that an arrangement carries.
+
+On a robot arm the difference shows up at the boundary between two parts of one
+object. Give PointNet a mug that has already been cut out of the scene and ask
+whether it is a mug or a bottle, and a list of features is enough, on the arm's own
+processor with no graphics card at all. Ask it instead which points are the handle and
+which are the side, and it has to answer for a point near the join using features
+that were pooled over the whole mug, so the boundary lands roughly in the right area
+rather than on the join. PointNet++ in the next sub-section is the first model here
+that can put it on the join, because there each point's answer is computed from the
+handful of points around it.
 
 The obvious alternative is its own successor, PointNet++, and you should normally use
 that instead. There is one case for plain PointNet: it does no neighbour search at
@@ -262,11 +309,10 @@ all, so it is the only model here that runs at a sensible speed on an ordinary
 processor with no graphics card, and on a single object already cut out of the scene
 it is often accurate enough.
 
-What it costs you is detail. Because no point ever sees its neighbours, PointNet
-cannot tell a thin handle from the side of a mug, and that is the fault you will meet
-first. The code is MIT licensed, but no weights for everyday objects were released, so
-you have to train it. The original repository will not run on a current install, since
-its own instructions say it was tested with Python 2.7, TensorFlow 1.0.1 and CUDA 8.0.
+What it costs you beyond that is the training and the install. No weights for everyday
+objects were released, so the labelled clouds and the training loop are yours, and the
+original repository will not run on a current install, since its own instructions say
+it was tested with Python 2.7, TensorFlow 1.0.1 and CUDA 8.0.
 
 PyTorch Geometric supplies the pieces, as `MLP` for the small network and
 `global_max_pool` for the pooling step.
@@ -299,10 +345,54 @@ several at once.
 ### 5.2 PointNet++
 
 PointNet++ is **most used in 2026**, although usually not by you directly, because it
-sits inside grasp models that you call instead. The same Stanford group posted it in
-June 2017. It adds the rounds of neighbour grouping described in
-[section 3](#looking-at-neighbours), and each round picks centre points, collects the
-points near each centre, and runs a small PointNet on each group.
+sits inside grasp models that you call instead.
+
+Size xs, a small card, MIT for the code, and again no released weights.
+
+The same Stanford group posted it in June 2017. It adds the rounds of neighbour
+grouping described in [section 3](#looking-at-neighbours), and each round picks centre
+points, collects the points near each centre, and runs a small PointNet on each group.
+
+The one idea is to run PointNet many times on small groups of nearby points instead of
+once on the whole cloud, and then to run it again on what comes out. A group of points
+that all sit within a few centimetres of each other is small enough that pooling over
+it loses almost nothing, and the result of one round is a shorter cloud which the next
+round can treat as its input.
+
+Inside, one round has three parts. The first picks the centres, by starting anywhere
+and then repeatedly adding the point that is furthest away from every centre picked so
+far, which spreads them over the cloud; the authors call this farthest point sampling.
+The second collects, for each centre, the points lying within a fixed distance of it
+in metres. The third runs a small PointNet on each group on its own. What comes out is
+a shorter cloud whose points are the centres, and whose features describe the
+neighbourhood around each centre instead of a single position. Two things are
+therefore different from PointNet, which did neither of them. Distances between points
+are now worked out, which is the work PointNet carefully avoided. And max pooling now
+happens many times over small groups rather than once over everything, so where a
+feature was found is no longer thrown away: it survives as the coordinates of the
+centre that found it. The paper adds one further part for the sake of real depth
+cameras, which is that a centre can look at two or three different distances at the
+same time and the results are joined, because a surface close to the camera gives many
+points per square centimetre while a far one gives very few.
+
+What the idea buys is fine shape, and a sense of size measured in metres. A point near
+the join of a handle is now described by the points within a few centimetres of it,
+nearly all of which are also handle, so the boundary lands on the join. What it costs
+is first that same distance, which you have to choose: it is in metres, so a model
+trained on mugs does not transfer to pallets without being trained again, and a
+distance set too large smooths small objects away. The second cost is time that grows
+faster than the cloud does. Both the centre picking and the collecting compare points
+against other points, so doubling the number of points more than doubles the work,
+which is why people thin the cloud down first and why
+[section 5.3](#53-minkowskiengine-and-spconv) exists.
+
+On a robot arm the gain over PointNet shows up in part segmentation, and the limit
+shows up in size. A few thousand points around one object is where PointNet++ is at
+its best, and a few thousand points around one object is exactly what a grasp model
+hands it. A whole work cell seen from two metres away is where it gives up: either the
+distance is small enough to see the objects and the rounds take too long, or it is
+large enough to be quick and the objects are too small to survive it. The next two
+sub-sections are the two ways out of that.
 
 The obvious alternative is Point Transformer V3 in section 5.4, which is more accurate
 on scenes. Pick PointNet++ for two reasons. The first is that your input is one object
@@ -318,13 +408,9 @@ every layer, in the space of learned features rather than in metres, which makes
 good at naming the parts of a single object. Its repository last changed in 2022, so
 read about it rather than build on it.
 
-What it costs you is time that grows faster than the number of points. The two slow
-steps are picking spread-out centres, which is called farthest point sampling, and
-collecting the points within a distance of each centre. Both compare points against
-other points, so doubling the cloud more than doubles the work, and that is why people
-cut the cloud down first and why section 5.3 exists. The code is MIT licensed. There
-is no `pip install pointnet2`, no released weights for your objects, and the original
-repository needs TensorFlow 1.
+What it costs you beyond that is that there is no package to install. There is no
+`pip install pointnet2`, there are no released weights for your objects, and the
+original repository needs TensorFlow 1.
 
 PyTorch Geometric supplies the one round, which the PointNet++ paper calls set
 abstraction, out of `fps`, `radius` and `PointNetConv`.
@@ -363,12 +449,59 @@ the real size of your objects.
 ### 5.3 MinkowskiEngine and spconv
 
 Sparse convolution is **most used in 2026** whenever the cloud is a whole room or a
-full bin, and these two libraries are how people run it. Both do the same thing: they
-cut space into small cubes, called voxels, and do convolution only on the cubes that
-contain points. MinkowskiEngine comes from Chris Choy and NVIDIA, with its paper at
-CVPR 2019, and spconv is a separate library that installs from `pip` in a build that
-matches your CUDA version. These are libraries rather than single models, so you pick
-a network, such as the MinkUNet family, and run it on top.
+full bin, and these two libraries are how people run it.
+
+Size not stated, because what you download is a library and not a model, a big card,
+and MIT for MinkowskiEngine against Apache-2.0 for spconv.
+
+Both do the same thing: they cut space into small cubes, called voxels, and do
+convolution only on the cubes that contain points. MinkowskiEngine comes from Chris
+Choy and NVIDIA, with its paper at CVPR 2019, and spconv is a separate library that
+installs from `pip` in a build that matches your CUDA version. These are libraries
+rather than single models, so you pick a network, such as the MinkUNet family, and
+run it on top.
+
+The one idea is to stop treating the points as a set and to give them a grid address
+instead. Round each point's three numbers to the nearest cube, keep only the cubes
+that caught at least one point, and the question "which cubes are next to this one"
+turns into arithmetic on the address rather than a search through the cloud.
+
+Inside, the cloud is then held as two tables, and that shape is the thing worth
+remembering. One table has a row per occupied cube holding its whole-number address,
+and the other has a row per occupied cube holding that cube's features. A layer does
+what an image convolution does: for each occupied cube it reads the few addresses
+around it, multiplies what it finds there by the learned weights, and writes one row
+of output. So the networks built this way are shaped like image networks, and MinkUNet
+is a U-net, which halves the resolution a few times, climbs back up, and carries links
+across from each level to the matching level on the way up. Against PointNet++, three
+parts have simply disappeared. Farthest point sampling is gone, because halving the
+resolution is division. The search for the points within a distance is gone, because
+the neighbours are computed from the address. And max pooling is no longer what makes
+the answer independent of order, since the rounding step now does that: two points
+that land in the same cube become one row whichever of them arrived first. One choice
+is left, and it decides whether a deep network is affordable: whether a layer may
+write output in cubes that held no points. If it may, the occupied set widens a little
+at every layer until the cloud is no longer sparse. If it may not, the layer copies the
+occupied addresses to its output and computes only there, which spconv's documentation
+sums up as the output keeping the same indices as the input, and spconv offers the two
+as separate layers, `SparseConv3d` and `SubMConv3d`.
+
+What the idea buys is a cost that follows the number of occupied cubes rather than the
+number of points, and that is the whole reason a scan of a room fits on one card. A
+single depth camera frame can hold three hundred thousand points and far fewer
+occupied cubes, and the second number is the one you pay for. What it costs is that
+the rounding happens before the network starts and cannot be undone. Anything thinner
+than one cube is gone, and the answers come back one per cube rather than one per
+point, so something has to carry them back to the points you started with, which is
+what the `slice` call in the code below is for.
+
+On a robot arm, the difference from PointNet++ shows up the first time you point the
+camera at the whole bin instead of at one object. Sparse convolution takes the bin in
+one pass and does not mind that the near surfaces are dense and the far ones thin,
+while PointNet++ would need the cloud thinned to a few thousand points first, and the
+thinning is where the small parts are lost. It goes the other way on a single mug with
+a three-millimetre handle: at two-centimetre cubes that handle is barely one cube
+wide, and PointNet++, which rounds nothing, is the better choice.
 
 The obvious alternative is the neighbour grouping of PointNet++. Voxels win on large
 clouds because they make the neighbour question free: a cube knows which cubes are
@@ -376,15 +509,14 @@ next to it from their addresses alone, so there is no distance search at all, wh
 PointNet++ must search every time. That one difference is why sparse convolution
 carries scans of whole rooms and grouping does not.
 
-What it costs you starts with the voxel size, which you choose and which sets the
-finest detail the network can ever see: anything thinner than one cube disappears
-before the network starts. Then there is the install, which is the usual place this
-goes wrong. Both libraries compile CUDA code against your exact PyTorch version.
-MinkowskiEngine's repository last changed in March 2024, so building it against a
-current PyTorch and CUDA is now the common failure, and the host that its own example
-downloads pretrained weights from no longer answers. spconv is the better-maintained
-of the two, it is Apache-2.0 rather than MIT, and Point Transformer V3 in the next
-sub-section is built on it, so you may end up installing it anyway.
+What it costs you is the voxel size and the install. The voxel size is yours to choose
+and it sets the finest detail the network can ever see. The install is the usual place
+this goes wrong, because both libraries compile CUDA code against your exact PyTorch
+version. MinkowskiEngine's repository last changed in March 2024, so building it
+against a current PyTorch and CUDA is now the common failure, and the host that its
+own example downloads pretrained weights from no longer answers. spconv is the
+better-maintained of the two, and Point Transformer V3 in the next sub-section is
+built on it, so you may end up installing it anyway.
 
 MinkowskiEngine's own `examples/indoor.py` names every point of an indoor scan with a
 MinkUNet34C trained on ScanNet.
@@ -425,11 +557,53 @@ floor, chair and table, which are not the objects on a workbench.
 ### 5.4 Point Transformer V3
 
 Point Transformer V3, written PTv3, is **most used in 2026** when the job is to put a
-name on every point of a scene and accuracy decides the job. The Pointcept group
-posted it in December 2023 and presented it at CVPR 2024. Its idea is to stop
-searching for neighbours. Instead it sorts the points along a path that visits space
-in a fixed order, so that a run of points in the sorted list is a patch of space, and
-then it applies attention within each run.
+name on every point of a scene and accuracy decides the job.
+
+Size s, a big card, MIT for the code, with no separate licence stated for the weights.
+
+The Pointcept group posted it in December 2023 and presented it at CVPR 2024.
+
+The one idea is to give the points an order on purpose. If the points are sorted along
+a path that winds through space without ever jumping far, then a stretch of the sorted
+list is a patch of space, so a point's neighbours are simply the entries lying next to
+it in the list and finding them costs nothing. The paper says this plainly: the
+precise neighbour search is replaced by a mapping read straight off that order.
+
+Inside, the path is a space-filling curve, which is a single line that visits every
+cube of a grid in a fixed order chosen so that each cube it visits touches the one
+before. Each point is given one whole number, its position along that line, worked out
+from its cube address, and sorting the points by that number is the entire neighbour
+step. The sorted list is then cut into patches of a fixed number of points, and
+attention runs inside each patch, which means that every point in the patch works out
+a weight for every other point in it and takes a weighted average of their features.
+So a point can lean on the few points that matter to it and ignore the rest. That is
+the difference from the sparse convolution of section 5.3, where the same learned
+weights are applied to the same relative positions everywhere in the scene: here the
+weights are computed from the features in front of the layer, so one layer can behave
+one way on a flat table top and another way on a cable. PTv3 keeps one sparse
+convolution all the same, as the step that tells each point where it is, which is why
+its install needs spconv. And because any single winding of the curve must sometimes
+place two genuinely close points far apart in the list, the model changes the ordering
+between layers, with a different curve or with the patch boundaries shifted, so that a
+pair one layer could not see another layer can.
+
+What the idea buys is reach, measured as how many other points one point may draw
+from, and the patch is a fixed size, so the work stays proportional to the number of
+points rather than to its square. What it costs is that the neighbourhood is now a
+guess. Points next to each other in the sorted list are usually but not always next to
+each other in space, so a patch can hold a point on the far side of a thin partition,
+and the model can mix across a gap that a distance search would have respected.
+Changing the ordering between layers is what keeps that from mattering much, and it
+is a repair rather than a guarantee: PointNet++ and sparse convolution both know
+exactly which points are near, and PTv3 trades that certainty for the reach.
+
+On a robot arm the difference shows up when the answer for one point depends on
+something a metre away. A flat horizontal surface is a table, a shelf or the top of a
+closed box depending on what surrounds it, and PTv3 can see that much in a single
+layer, while a sparse convolution reaches the same distance only by stacking many
+layers and loses detail at each step down. The difference disappears once the object
+has been cut out of the scene: on a few thousand points of one mug, PointNet++ out of
+PyTorch Geometric gives much the same answer for far less set-up.
 
 The obvious alternative is sparse convolution from section 5.3, and PTv3 itself uses
 spconv internally for its first layer, so this is not a choice between two worlds. The
@@ -445,10 +619,10 @@ the named points overlap the right answer.
 What it costs you is set-up work. There is no `pip install`, because the authors ship
 PTv3 as files you copy into your project. It needs spconv, and for its full speed it
 needs the FlashAttention package, which needs CUDA 11.6 or newer; without it you must
-turn attention's fast path off and reduce the patch size, and it gets slower. The code
-is MIT licensed. The weights are the catch: the repository's own model zoo carries a
-note that the released weights are temporarily invalid because the model structure
-was changed, so if you want working weights today, use Sonata in section 5.5.
+turn attention's fast path off and reduce the patch size, and it gets slower. The
+weights are the catch: the repository's own model zoo carries a note that the released
+weights are temporarily invalid because the model structure was changed, so if you
+want working weights today, use Sonata in section 5.5.
 
 There is no package to install, so you copy two things into your project.
 
@@ -483,10 +657,54 @@ of them the model assumes a single cloud.
 
 ### 5.5 Sonata
 
-Sonata is **worth betting on**, because it attacks the shortage of labelled 3D data, which is the biggest cost of this whole family. Pointcept and Meta published it at CVPR 2025.
-It is not a new design: it is a PTv3 that has been trained on unlabelled point clouds
-by giving it a task that needs no labels, and what you download is that trained
-encoder.
+Sonata is **worth betting on**, because it attacks the shortage of labelled 3D data,
+which is the biggest cost of this whole family.
+
+Size m, a big card, Apache-2.0 for the code and Creative Commons
+Attribution-NonCommercial 4.0 for the weights.
+
+Pointcept and Meta published it at CVPR 2025. It is not a new design: it is a PTv3
+that has been trained on unlabelled point clouds by giving it a task that needs no
+labels, and what you download is that trained encoder.
+
+The one idea is that a network can be taught what shapes look like with nobody
+labelling a single point, by making it agree with itself. Show it a full view of a
+cloud, and also a harder view of the same cloud, which is either a small crop of it or
+a view with patches of points hidden. Then train it so that the harder view comes out
+with the features the full view came out with. No label is needed anywhere, because
+the right answer is the other view's answer.
+
+Inside, that is two copies of the same PTv3 encoder. One copy, the student, is given
+the cropped and masked views and is the one being trained. The other copy, the
+teacher, is given the full views, and it is never trained directly: its numbers are a
+slowly moving average of the student's, which keeps the target steady while the
+student chases it. The paper's real finding is why this recipe, which was already
+working on photographs, had not worked on point clouds. A point cloud hands the
+network the coordinates themselves, so the network can satisfy the agreement by
+reading off something it is given for free, such as how high a point is or which way
+its surface faces, and the features then describe bare geometry and say nothing about
+what the object is. The authors call that the geometric shortcut, and they close it in
+two ways: the points of the masked view are shaken by a larger random amount than
+ordinary training noise, so their exact positions cannot be trusted, and the masking
+starts gentle and is made harsher as training goes on. One structural difference from
+PTv3 follows. Sonata keeps the encoder and drops PTv3's decoder, so the features come
+back at the coarse resolution of the deepest level and are carried back to the points
+by joining the saved features of each level together, with no learned layer in that
+step at all.
+
+What the idea buys is that the features already separate furniture from floor before
+you have labelled anything, which is why one layer on top is enough where PTv3 from
+scratch needs a whole network's worth of training. What it costs is the weights
+licence, and a loss of freedom: you are taking somebody's trained encoder, so its
+architecture and the grid it was trained on are now fixed for you, and the features
+arrive for the points that survived that grid rather than for every point you sent in.
+
+On a robot arm the difference shows up when you count your own labelled scans. With
+twenty labelled bin scans, PTv3 trained from scratch mostly learns those twenty
+scans, while a frozen Sonata with one layer on top gives a usable answer, and the
+labelling you did not have to do is the real saving. The moment the cell becomes a
+product the comparison reverses completely, because the non-commercial weights put
+this route out of reach and PTv3's own code, trained on your data, is the one left.
 
 The obvious alternative is to train PTv3 yourself on your own labelled clouds.
 Sonata wins when you do not have many, which is the normal situation. Its repository
@@ -495,14 +713,12 @@ of a ScanNet scan, and that is the shape of the work you would do: train one sma
 layer instead of a whole network. It is also, today, the easiest way to get working
 PTv3 weights at all.
 
-What it costs you is the licence, and this is the detail to read twice. The code is
-Apache-2.0 from Meta, so the code is not the problem. The weights are released under
-Creative Commons Attribution-NonCommercial 4.0, because the data sets they were
-trained on forbid commercial use. So Sonata is for research and for deciding whether
-this approach works for you, and not for a product you sell. The checkpoint is 434 MB
-with about 108 million learned numbers, and a smaller one of 155 MB is published as
-well. Like PTv3 it prefers FlashAttention, and without it you pass
-`enable_flash=False` and a smaller patch size.
+What it costs you is the licence, and this is the detail to read twice. The weights
+are non-commercial because the data sets they were trained on forbid commercial use,
+so Sonata is for research and for deciding whether this approach works for you, and
+not for a product you sell. A smaller checkpoint of 155 MB is published as well. Like
+PTv3 it prefers FlashAttention, and without it you pass `enable_flash=False` and a
+smaller patch size.
 
 The `sonata` package downloads the weights for you from Hugging Face.
 

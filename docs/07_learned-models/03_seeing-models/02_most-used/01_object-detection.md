@@ -234,8 +234,11 @@ this.
 ## 5. Well-known models
 
 This section is the shortlist a real project chooses from. For each model it says
-what the model is, why you would pick it rather than the obvious alternative, what
-it costs you, and what to type to run it.
+what the model is, how it works differently from its neighbours, why you would pick
+it rather than the obvious alternative, what it costs you, and what to type to run
+it. The cost is one short line near the top of each sub-section, written in the three
+scales that the chapter overview defines in [how this chapter writes size, machine
+and licence](../01_overview.md#8-how-this-chapter-writes-size-machine-and-licence).
 
 Read the table as a shortlist and not as a ranking. The left column names the model
 and says how current it is. The right column holds everything else about it: the job
@@ -259,6 +262,9 @@ measure on different machines, so treat the sizes as a rough guide to scale.
 **Most used in 2026**, because a developer who has never trained a model can
 install one package and have boxes on their own photo within minutes.
 
+Size xs to s, a laptop for the smallest of its five sizes and a small card for the
+largest, AGPL-3.0 or a paid Enterprise licence on both the code and the weights.
+
 Ultralytics is the company that publishes the YOLO family as a Python package, and
 YOLO26 is its current release. Its
 [documentation page](https://docs.ultralytics.com/models/yolo26/) describes it as
@@ -267,27 +273,58 @@ End-to-End Vision Models" ([arXiv:2606.03748](https://arxiv.org/abs/2606.03748))
 The letter in the file name is the size, so `yolo26n.pt` is the smallest of the five
 and `yolo26x.pt` is the largest.
 
-The obvious alternative is RT-DETR in section 5.2, which has a permissive licence.
-Pick Ultralytics when you are short of time, because it downloads its own weights,
-it trains on your own pictures with a single call, and almost every tutorial you
-will find online uses it. Pick RT-DETR instead when your product cannot carry the
-AGPL licence, which the next paragraph explains.
+The one idea YOLO26 is built on is that everything a detector does after the network
+should be optional. It is still the one-stage design of [section
+3](#3-how-it-works-inside), so it still answers for every cell of several grids in a
+single pass. What is new is that its documentation describes two heads trained side
+by side on one backbone, and you choose which of them answers. The first head is the
+familiar one, where many cells report the same object and the cleanup step of section
+3 picks one of them. The second head is trained so that only one prediction survives
+per object, so there is nothing left to clean up, and you select it by passing
+`nms=False`.
 
-The cost is mostly the licence. Ultralytics is published under AGPL-3.0, which
-obliges you to publish the source of anything you combine it with, including
-software you never hand out but only run as a service for other people. The weights
-carry the same terms. A paid Enterprise licence removes that obligation and is
-[priced by negotiation](https://www.ultralytics.com/license). Book 2 explains the
-trap in [licences, and the one that will catch you
+Those two heads give answers of different shapes. The first head produces one row for
+every cell of every grid, which is several thousand rows for an ordinary picture, and
+the suppression step then throws nearly all of them away. The second head produces at
+most 300 rows, and each row is already meant to be a separate object. YOLO26 also
+changed how the model describes a box edge. Older YOLO heads described each edge as a
+spread of weights over a row of candidate positions and then took the weighted
+average, a step named Distribution Focal Loss, and YOLO26 removes it and predicts the
+distance to each edge as one plain number instead. That makes the head smaller and
+the export to other formats simpler. It is also the exact opposite of the choice
+D-FINE makes in [section 5.4](#54-d-fine), which keeps that spread of weights and
+sharpens it step by step, so the two models disagree about whether an edge is better
+described by one number or by many.
+
+What the two heads buy you is a choice rather than a compromise, because both are
+trained whichever one you then use. The second head removes a step whose cost grows
+with the number of boxes, so a crowded tray no longer slows the program down more
+than an empty one, and it removes the suppression code from whatever runs on the
+robot. What it costs is a little accuracy, because the documentation's own table
+gives the second head a lower score than the first at every size, which is why
+prediction still uses the first head unless you ask for the other. Describing an edge
+with one number instead of a spread also gives up some of the precision that the
+spread bought.
+
+The difference shows up on a robot arm when two copies of the same part lie against
+each other in a bin. With the first head their boxes overlap so much that the cleanup
+step deletes one of them, so the arm sees one part where there are two, picks it, and
+only discovers the second on the next picture. With `nms=False` both parts keep their
+boxes, and the arm can plan two picks from one picture. That is a different answer
+from the same file of weights, decided by one argument.
+
+The obvious alternative is RT-DETR in section 5.2, which has a permissive licence.
+Pick Ultralytics when you are short of time, because it downloads its own weights, it
+trains on your own pictures with a single call, and almost every tutorial you will
+find online uses it. Pick RT-DETR instead when your product cannot carry the AGPL-3.0
+licence, which obliges you to publish the source of anything you combine Ultralytics
+with, including software you never hand out but only run as a service for other
+people. The weights carry the same terms. A paid Enterprise licence removes that
+obligation and is [priced by negotiation](https://www.ultralytics.com/license), and
+Book 2 explains the trap in [licences, and the one that will catch you
 out](../../../02_perception/02_object-perception/06_licences-and-platforms.md#1-licences-and-the-one-that-will-catch-you-out).
-The other costs are small. The documentation's own table gives `yolo26n` 2.4
-million parameters, 40.9 mAP on COCO and 1.7 milliseconds on an NVIDIA T4 graphics
-card with TensorRT, against 55.7 million parameters, 57.5 mAP and 11.8 milliseconds
-for `yolo26x`. Here mAP is short for mean average precision, which is the standard
-score for a detector, and a higher number is better. The same table gives `yolo26n`
-38.9 milliseconds on a processor, so the smallest size runs without a graphics card.
-What goes wrong most often is the class list, because people assume the 80 COCO
-classes include their own parts.
+What goes wrong most often after the licence is the class list, because people assume
+the 80 COCO classes include their own parts.
 
 The library is `ultralytics`, which you install with `pip install ultralytics`.
 
@@ -306,10 +343,8 @@ for box in result.boxes:
 
 You supply the picture and the threshold. The library downloads the weights, resizes
 the picture, runs the network, and runs the non-maximum suppression of [section
-3](#3-how-it-works-inside) for you. It can also skip that cleanup step, because the
-documentation describes a second head that you select with `nms=False` and that
-returns at most 300 boxes with no suppression pass. What you still have to write is
-everything after the box, which is section
+3](#3-how-it-works-inside) for you, or skips it when you pass `nms=False`. What you
+still have to write is everything after the box, which is section
 6.
 
 ### 5.2 RT-DETR
@@ -318,6 +353,8 @@ everything after the box, which is section
 permissive detector with an API that anyone who has used Hugging Face already
 knows.
 
+Size s, a small card, Apache-2.0 for the code and the weights.
+
 RT-DETR is short for "real-time detection transformer". Its paper, "DETRs Beat YOLOs
 on Real-time Object Detection"
 ([arXiv:2304.08069](https://arxiv.org/abs/2304.08069)), appeared in April 2023, and
@@ -325,24 +362,56 @@ it is the model that made the transformer design of section 3 fast enough for a 
 camera. The weights are published as
 [PekingU/rtdetr_r50vd](https://huggingface.co/PekingU/rtdetr_r50vd).
 
+The one idea RT-DETR is built on is that a transformer detector was never slow
+because of its queries, but because of the attention step that runs over the
+picture before the queries do. The paper sets out the problem in those terms: YOLO
+detectors pay for the cleanup step, transformer detectors have no cleanup step but
+cost too much to compute, so the way forward is to make the expensive part cheap and
+keep the queries. Everything in the model follows from that one decision.
+
+Inside, the difference from Ultralytics YOLO26 in section 5.1 is not a switch but the
+whole shape of the answer. YOLO26 must choose between a head that reports from every
+cell and then suppresses, and a head trained to report once; RT-DETR has no such
+choice, because the queries of section 3 give one box per object by construction.
+What RT-DETR changed from DETR is where the attention runs. The paper calls its
+encoder a hybrid encoder, and the hybrid is that attention between positions runs
+only inside the smallest of the backbone's grids, the one with the fewest cells and
+the most meaning in each cell, while the larger grids are joined to it by ordinary
+convolution-style mixing instead of by attention. The paper describes this as
+decoupling interaction within one scale from fusion across scales. It then changed
+where the queries start. In DETR the queries begin as learned vectors that know
+nothing about the picture in front of them, whereas RT-DETR scores the encoder's own
+outputs and hands the most promising of them to the decoder as the queries' first
+guesses, which the paper calls uncertainty-minimal query selection.
+
+What that buys is a detector with no cleanup step at all, and the paper adds a second
+gain that is unusual: because every decoder layer already produces a complete answer,
+you can run fewer of them and get a faster, slightly worse detector out of the same
+file of weights, with no retraining. What it costs is rigidity in the input and in
+the output. The library's own page states the model expects 640 by 640 and that other
+sizes usually make it worse, so you cannot trade picture size for speed the way you
+can with a YOLO model. The number of answer slots is fixed as well, so a picture with
+more objects than slots loses some of them. Fine-tuning means writing a training loop
+rather than calling one method.
+
+The difference shows up on a robot arm with two cups standing against each other.
+With YOLO26's default head one of those two boxes is deleted by the suppression step,
+and with RT-DETR there is no suppression step to delete it, so both cups are reported
+every time rather than only when they happen to stand apart. The decoder-layer gain
+shows up in a second place: one checkpoint can run shallow and fast while the arm is
+moving and deep and careful for the single picture taken before the grasp, where
+matching that with a YOLO model would mean shipping two different sizes of weights.
+
 The obvious alternative is Ultralytics YOLO26. Pick RT-DETR when you are building
 something you will sell or run as a service without publishing its source, because
 both the code and the weights are Apache-2.0, which puts no such condition on you.
-You also get the transformer's own advantage, which is that the model gives one box
-per object and needs no cleanup step, so two cups standing against each other do
-not lose a box to the suppression step.
-
-The costs are a bigger model and a slower start. The published checkpoint holds 43.0
-million parameters, read from the model card's file listing, against 2.4 million for
-the smallest YOLO26. The paper reports 53.1 mAP and 108 frames a second for this
-size on a T4 graphics card, which is quoted on the library's
-[RT-DETR page](https://huggingface.co/docs/transformers/en/model_doc/rt_detr).
-Fine-tuning means writing a training loop rather than calling one method. The thing
-that goes wrong most often is the picture size, because that page states the model
-expects 640 by 640 and that other sizes usually make it worse.
+Pick Ultralytics when the input size has to vary, or when you want a one-line
+training call.
 
 The library is `transformers`, which you install with `pip install transformers`.
-The code below is the example from that page, shortened.
+The code below is the example from the library's
+[RT-DETR page](https://huggingface.co/docs/transformers/en/model_doc/rt_detr),
+shortened.
 
 ```python
 import torch
@@ -378,12 +447,52 @@ detector with a permissive licence that beats the YOLO family on accuracy at the
 same latency, measured by its authors in one harness rather than quoted from
 separate papers.
 
+Size s for Nano to Large and m for XL and 2XL, a small card, Apache-2.0 for Nano to
+Large and a licence called PML 1.0 for XL and 2XL.
+
 RF-DETR comes from Roboflow, a company that sells computer vision tooling, with
 co-authors at Carnegie Mellon University. Its paper "RF-DETR: Neural Architecture
 Search for Real-Time Detection Transformers"
 ([arXiv:2511.09554](https://arxiv.org/abs/2511.09554)) is from November 2025, and
 its [repository](https://github.com/roboflow/rf-detr) publishes six sizes, from Nano
 to 2XLarge.
+
+The one idea RF-DETR is built on is that the shape of the network should be measured
+rather than chosen. The paper's method is neural architecture search, usually
+shortened to NAS, which means letting a program try very many network shapes and keep
+the ones that measure best. Every other model in this section is a shape somebody
+designed and then trained. RF-DETR's six published sizes are shapes a search found.
+
+Two things differ from RT-DETR in section 5.2, which is the transformer detector just
+above. The first is the backbone. RT-DETR's backbone is a ResNet trained to put a
+name on a whole picture, whereas RF-DETR's backbone is DINOv2, a vision transformer
+trained on a large collection of pictures with no labels at all, which the paper
+credits for carrying over to objects that its training never named. The second is the
+search itself. The authors train one network whose parts share their weights, so that
+its width, its depth and the size of picture it takes can all be varied after
+training without any part being retrained. They then measure thousands of those
+settings on the dataset they care about and keep the ones that sit on the best
+accuracy-against-latency curve. The repository says the same search now runs on the
+company's platform for your own dataset. The queries, the decoder and the absence of
+a cleanup step are inherited rather than invented, and the repository credits LW-DETR,
+DINOv2 and Deformable DETR as the work it is built on.
+
+What the search buys is that you choose a point on a curve that was measured, instead
+of hoping that a hand-designed size happens to land where your robot needs it. The
+unlabelled pre-training buys the other half: the paper's headline comparison is not
+only on COCO but on RF100-VL, a collection of real-world datasets whose classes were
+not in any of these models' pre-training. What it costs is that the model cannot be
+made very small, because a DINOv2 backbone is not a tiny network, so there is no very
+small RF-DETR for a very small computer. The search for your own data belongs to the
+company's platform rather than to the package, and the package is young enough that
+its API still changes between releases.
+
+The difference shows up on a robot arm when your parts look nothing like anything in
+COCO, for example dark brushed-metal fittings on a dark tray. That is the case
+RF100-VL is built to measure, so the gap the paper reports there is the gap you are
+likely to see, and it changes how many of your own pictures you have to label before
+the boxes are good enough to pick from. On a tray of cups and bottles the two models
+are much closer, and the choice goes back to the licence and the tooling.
 
 The obvious alternative is again Ultralytics YOLO26, because the two packages are
 about equally easy to use. Pick RF-DETR when you want the permissive licence and the
@@ -392,15 +501,10 @@ better boxes at once. Its README reports every row measured in one harness on th
 card using TensorRT: RF-DETR-Nano reaches 48.4 average precision at 2.3
 milliseconds, where YOLO26-N reaches 40.3 at 1.7 milliseconds. Those are the
 authors' measurements of their own model against a competitor, so read them as a
-claim with a method attached rather than as a neutral result.
-
-The costs are size and a licence detail. RF-DETR-Nano holds 30.5 million parameters,
-more than ten times the smallest YOLO26, because its backbone is a DINOv2 vision
-transformer, so there is no very small version for a tiny computer. The two largest
-sizes are not Apache-2.0 at all: the README states that XL and 2XL live in a
-separate `rfdetr_plus` package under a licence called PML 1.0, so the permissive
-promise covers Nano, Small, Medium and Large only. The project is also young, so its
-API still changes between releases.
+claim with a method attached rather than as a neutral result. The licence split is
+the thing to check before you commit: the README states that XL and 2XL live in a
+separate `rfdetr_plus` package under PML 1.0, so the permissive promise covers Nano,
+Small, Medium and Large only.
 
 The library is `rfdetr`, which you install with `pip install rfdetr`. It returns
 its answers as a `Detections` object from the `supervision` library, which is the
@@ -429,27 +533,65 @@ instead once you have fine-tuned the model on your own classes.
 **Worth betting on** for work where the edges of the box have to be right, because
 it changes how the network predicts those edges rather than how fast it runs.
 
-D-FINE is a detection transformer that predicts each edge of the box as a
-probability distribution over where that edge lies, sharpened step by step, instead
-of one guess at four numbers. The Hugging Face
+Size s, a small card, Apache-2.0 for the code and the weights.
+
+D-FINE is a detection transformer from the paper "D-FINE: Redefine Regression Task in
+DETRs as Fine-grained Distribution Refinement"
+([arXiv:2410.13842](https://arxiv.org/abs/2410.13842)), its code is at
+[Peterande/D-FINE](https://github.com/Peterande/D-FINE), and its largest weights are
+published as
+[ustc-community/dfine_x_coco](https://huggingface.co/ustc-community/dfine_x_coco).
+The Hugging Face
 [D-FINE page](https://huggingface.co/docs/transformers/en/model_doc/d_fine)
 summarises the paper's results as 54.0 and 55.8 average precision on COCO for the
 Large and XLarge sizes, at 124 and 78 frames a second on an NVIDIA T4 graphics card.
-The code is at [Peterande/D-FINE](https://github.com/Peterande/D-FINE).
+
+The one idea D-FINE is built on is that the position of a box edge should be given as
+a set of possibilities rather than as a single number. Every other detector in this
+section finishes by printing four numbers for a box. D-FINE instead keeps, for each
+of the four edges, a row of candidate positions near the current guess together with
+a weight for each candidate, meaning "the edge is most likely here, a little less
+likely one step to the left, a little less one step to the right". The paper calls
+this fine-grained distribution refinement, and refinement is the second half of the
+idea: each layer of the decoder sharpens that row of weights instead of starting a
+new guess from nothing.
+
+Everything else is RT-DETR from section 5.2, which D-FINE is built from, so the
+queries, the decoder and the absence of a cleanup step are unchanged. Two things in
+the last part of the model are not. The first is the one just described: where
+RT-DETR's layers each predict a correction to four numbers and the last layer's
+answer is the one used, D-FINE's layers each update the weights over candidate
+positions and the final edge is the weighted average of them. The second is how the
+layers teach each other. The paper's second component is self-distillation, which
+means that the model's own later output is used as the training target for its
+earlier output: the sharp set of weights the deepest layer arrives at becomes what
+the shallow layers are trained to aim for, so a shallow layer has a precise target
+instead of a vague one. It is worth putting this next to Ultralytics YOLO26 in
+section 5.1, because YOLO26 deleted exactly this kind of spread of weights from its
+own head to make it smaller and simpler to export. The two projects made opposite
+decisions about the same part of a detector, and each decision follows from what the
+project cares about: YOLO26 wants a cheap head, D-FINE wants an exact edge.
+
+What the idea buys is localisation, which is the word for how close a predicted edge
+is to the real one, and the paper reports that bolting these two components onto
+other detection transformers raised their accuracy for almost no extra parameters.
+What it costs is understanding and company. The last part of the model is harder to
+follow and harder to debug than four numbers, and the model is far less written about
+than RT-DETR, so fewer people have published training settings that work. If your
+program only ever uses the middle of the box, the idea buys you nothing at all.
+
+The difference shows up on a robot arm when you read something off the box other than
+its middle. Two examples: measuring an object's width in pixels to tell a 40
+millimetre fitting from a 45 millimetre one, and cutting the box out of the picture to
+hand to a segmentation model. In both cases an edge that is three pixels out changes
+the answer, and in the second case a box that is slightly too tight cuts a piece off
+the object before the next model ever sees it. If you are only pointing the gripper at
+the middle of the box, pick RT-DETR and spend the attention somewhere else.
 
 The obvious alternative is RT-DETR, which D-FINE is built from. Pick D-FINE when you
-do something with the box edges other than point at the middle, for example measuring
-an object's width in pixels or cutting the object out to pass to another model,
-because that is the part it improves. Pick RT-DETR when you want the older and more
-widely used model, which has more tutorials and more people who have met your
-problem already.
-
-The costs are the usual ones for this family. The largest checkpoint holds 62.9
-million parameters, read from its
-[model card](https://huggingface.co/ustc-community/dfine_x_coco), so it wants a
-graphics card. The model is also less written about than RT-DETR, so fewer people
-have published training settings for it. The licence is Apache-2.0, read from the
-repository.
+do something with the box edges other than point at the middle, because that is the
+part it improves. Pick RT-DETR when you want the older and more widely used model,
+which has more tutorials and more people who have met your problem already.
 
 The library is `transformers` again, and the code differs from section 5.2 in two
 lines only, which is the practical reason to prefer Hugging Face over each
@@ -474,23 +616,61 @@ your own photos in an afternoon.
 you already have, and because it is still the shortest way to fine-tune a detector
 without adding a dependency.
 
+Size s, a small card, BSD-3-Clause for the code and the weights together, which is
+the most permissive licence in this section.
+
 Faster R-CNN was published in 2015, and its name comes from "region-based
 convolutional neural network". It established the two-step shape: suggest a few
 hundred places, then classify each one. It ships inside torchvision, the image half
 of PyTorch, and the newer of its two versions is `fasterrcnn_resnet50_fpn_v2`.
 
+The one idea Faster R-CNN is built on is that the places worth looking at should be
+suggested by the same network that then classifies them. The two-stage detectors
+before it got their region proposals from a separate hand-written program, and the
+paper says plainly that this program had become the slow part. So Faster R-CNN adds a
+small network, the region proposal network, that reads the backbone's grids directly.
+Because it shares those grids with the classifying step, the proposals cost almost
+nothing extra, and the paper describes the proposal network as telling the rest of
+the model where to look.
+
+Inside, that proposal network slides over the shared grid and, at every position,
+considers a small fixed set of candidate rectangles of different shapes and sizes.
+Those candidates are called **anchors**. For each anchor it answers two questions:
+does this rectangle contain an object at all, and how should its edges move to fit
+the object better. The few hundred best-scoring anchors become the proposals, and the
+second step then cuts each proposal's patch out of the shared grid, resizes that patch
+to a fixed small square, and classifies it. This is where it differs from every model
+above it: the class decision is made separately for each cut-out patch, rather than
+for a grid cell as in Ultralytics YOLO26, or by a query that looked at the whole
+picture as in RT-DETR, RF-DETR and D-FINE. A proposal sees only its own patch, so two
+proposals that both found the same mug cannot know about each other, and that is
+exactly why the suppression step of section 3 is unavoidable here rather than
+optional.
+
+What the design buys is a careful second look at each candidate, and a training path
+short enough to read end to end, which is why it survives as the model people
+fine-tune when they want to understand every line. What it costs is time that depends
+on the picture. The second step runs once per proposal, so a tray holding thirty
+objects takes longer than an empty table, where a one-stage detector costs the same
+either way. It is the slowest model in this section, and it still needs the cleanup
+step together with its weakness for objects that touch.
+
+The difference shows up on a robot arm as a surprise about speed rather than about
+accuracy. A team measures Faster R-CNN on a test photo of one mug, sees a frame rate
+they can live with, and then puts a full tray in front of the camera and finds the
+loop much slower, because the amount of work grew with the number of objects. A
+one-stage detector measured on the same two pictures gives almost the same time for
+both. So Faster R-CNN is the right choice when the camera takes one careful picture
+and the program has a second to think, and the wrong one when the number of objects
+in view is unpredictable.
+
 The obvious alternative is any of the four models above, all of which are faster.
 Pick Faster R-CNN anyway when your project is already a PyTorch project, when you
 want to fine-tune with code you can read end to end, and when the camera gives you a
-picture every second rather than thirty times a second. Its BSD-3-Clause licence is
-the most permissive in this table.
-
-The costs are speed and age. The torchvision
+picture every second rather than thirty times a second. The torchvision
 [model page](https://pytorch.org/vision/stable/models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn_v2.html)
-gives this version 43.7 million parameters and 46.7 box mAP on the COCO validation
-split. It states no speed, and the second step runs once per proposal, so this is the
-slowest model here. It also needs the cleanup step of section 3, with its weakness
-for objects that touch.
+gives this version 46.7 box mAP on the COCO validation split and states no speed at
+all, so measure it on your own pictures before you promise anyone a frame rate.
 
 The library is `torchvision`, which arrives with PyTorch.
 
@@ -525,17 +705,54 @@ torchvision model gives poor answers.
 **Historical**, kept because it explains the query idea that RT-DETR, RF-DETR and
 D-FINE are all built on.
 
+Size s, a small card, Apache-2.0 for the code and the weights.
+
 DETR, short for "detection transformer", came from Facebook AI Research in 2020, and
 it is the model section 3 describes under "a fixed set of answers". Each of its 100
-queries gives one box or the answer "no object", and training matches one query to
-each real object, which removes the need for a cleanup step.
+queries gives one box or the answer "no object", and the paper's title for what it
+does is direct set prediction.
 
-The obvious alternative is RT-DETR, which is the same idea made fast, and there is no
-case today for putting DETR on a robot instead. Pick DETR only to read, because its
-weakness explains why the later models exist: it took far longer to train than a
-one-stage detector of its day, and it was poor on small objects. If you do run it,
-the ResNet-50 checkpoint holds 41.6 million parameters and no real-time speed, and
-its licence is Apache-2.0 for both code and weights, read from the
+The one idea DETR is built on is that a detector should output a set, and should be
+trained as if it output a set. Training is where that idea lives. For each picture, a
+program pairs up the model's predictions with the real objects, one prediction to one
+object, choosing whichever pairing costs least over the whole picture. The paper calls
+this bipartite matching, and bipartite matching means nothing more than matching the
+members of two lists one to one, with no member used twice. Every prediction left
+unpaired is trained to say "no object". That single rule is what removes the cleanup
+step, because a prediction is rewarded only when it is the one chosen for an object,
+so producing a second box for an object that another prediction already took is
+punished rather than tolerated.
+
+Inside, that means DETR throws away almost everything Faster R-CNN in section 5.5
+uses. There are no anchors, no region proposals, and no suppression. The backbone's
+grid goes through a transformer encoder, and a fixed set of learned query vectors
+goes through a decoder in which each query attends both to the whole encoded picture
+and to the other queries. That second part is the piece worth holding on to: the
+queries can take each other into account, which is how they divide the objects
+between themselves without being told to. Faster R-CNN's anchors and YOLO's grid
+cells have no way to do this, because each one is scored on its own, and that is why
+those designs need a step afterwards to decide who wins.
+
+What the idea buys is simplicity and reach, and the paper shows it extending to
+panoptic segmentation, where every pixel is labelled, without a new design. What it
+cost DETR itself was training time and small objects. Its published training schedule
+is far longer than a one-stage detector's of the same year, and it was poor at finding
+small objects, because its attention ran over a single coarse grid with no fine grid
+to place a small thing on. Each of the three models above repairs one of those
+faults: RT-DETR gives the encoder several scales cheaply and starts the queries from
+the picture rather than from nothing, D-FINE replaces the four numbers with sharpened
+distributions, and RF-DETR searches for the shape instead of designing it.
+
+The difference does not show up on a robot arm, because there is no case for putting
+DETR on one. Where it shows up is on your screen: run the code below, print all 100
+answers without a threshold, and watch most of them say "no object". Reading that
+list once makes the three recommended transformer detectors above understandable in a
+way no description does, because you can see that the model produced a fixed-size set
+and filled only as much of it as the picture needed.
+
+The obvious alternative is RT-DETR, which is the same idea made fast. Pick DETR only
+to read, and its weakness is the reason the later models exist. Its licence is
+Apache-2.0 for both code and weights, read from the
 [model card](https://huggingface.co/facebook/detr-resnet-50).
 
 The library is `transformers`, and the code is the RT-DETR code of section 5.2 with

@@ -85,7 +85,7 @@ gives a score from 0 to 1 for any new picture. It is small and fast, but it only
 knows your one task. HIL-SERL, the real-arm learning system in the
 [reinforcement learning page](01_reinforcement-learning-policies.md#5-well-known-models-and-methods),
 uses one of these as its reward, and its classifier is the judge that sub-section
-7.1 recommends.
+5.1 recommends.
 
 **A progress estimator.** This gives a score for every frame of the video, and not
 just for the last one. The score then rises as the task gets closer to done. The
@@ -94,9 +94,9 @@ tasks.
 They turn each picture into a short list of numbers, called an **embedding**, and an
 embedding is made so that similar pictures get similar lists. The progress is then
 read from how close the current embedding is to the embedding of the goal picture,
-and section 4 works through this with real numbers. VIP, in sub-section 7.5, is
-where that method comes from, and Robometer in sub-section 7.2 is the one you can
-download and use today. SARM in sub-section 7.4 is the same idea with the task
+and section 4 works through this with real numbers. VIP, in sub-section 5.5, is
+where that method comes from, and Robometer in sub-section 5.2 is the one you can
+download and use today. SARM in sub-section 5.4 is the same idea with the task
 split into named stages, so that the score says which stage the arm is in as well
 as how far through it is.
 
@@ -105,7 +105,7 @@ as how far through it is.
 is a large model that takes pictures and a question in words, and answers in words.
 So you ask it "Is the red mug in the bowl?" and it answers, and you can also ask it
 to rate progress. It needs no training on your task, but it is slow, and it can be
-wrong in ways that are hard to predict. TOPReward, in sub-section 7.3, is the
+wrong in ways that are hard to predict. TOPReward, in sub-section 5.3, is the
 packaged version of this kind, and it reads the reward out of how likely the
 model thought one word was rather than out of the sentence it wrote.
 
@@ -118,7 +118,7 @@ person
 moved that way. The idea is that the reward carries over to new situations better
 than the copied movement does. But it is rarely used on real arms today, and the
 [learned methods document](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#13-learning-the-goal-instead-of-the-motion)
-explains why. GAIL, in sub-section 7.6, is the version of it you can run.
+explains why. GAIL, in sub-section 5.6, is the version of it you can run.
 
 ---
 
@@ -194,13 +194,48 @@ This is the judge **most used in 2026** for work on a real arm, because it is
 small, it is fast enough to answer at every step, and you know exactly what is in
 its training data.
 
+Size xs, a small card, Apache-2.0 for the code as part of LeRobot, and the
+weights are yours, because you train them.
+
 HIL-SERL is the real-arm learning system from the University of California,
 Berkeley, published in 2024, and its reward is a small image classifier rather
 than a written rule. The classifier ships inside
 [LeRobot](https://github.com/huggingface/lerobot), Hugging Face's robot learning
-library, which is Apache-2.0. It is a classifier head on top of a pretrained
-picture encoder, and the encoder the configuration names by default is a
-ResNet-10, which is a small network already trained on ordinary photographs.
+library. It is a classifier head on top of a pretrained picture encoder, and the
+encoder the configuration names by default is a ResNet-10, which is a small
+network already trained on ordinary photographs.
+
+The one idea here is that the judge is a single yes-or-no question, learned from
+your own examples and nothing else. It is shown one picture and it answers how
+much that picture looks like a finished task. It does not know what the task is,
+what came before the picture, or how a half-done attempt differs from a hopeless
+one.
+
+What that means inside is that almost all of the model was trained by somebody
+else. The ResNet-10 already turns a picture into a list of numbers that tells one
+kind of photograph from another, and your own training is mostly a matter of
+drawing a line through that list, with your successes on one side and your
+failures on the other. Nothing in the model represents time or order, so the
+tenth frame of an attempt and the three hundredth are judged separately and could
+easily come out the other way round. And the labelling is all yours: every
+picture is marked success or failure by a person, by hand.
+
+What the idea buys is speed and certainty about what the judge knows. A small
+head on a small encoder answers fast enough to be asked at every control step,
+which is what reinforcement learning on a real arm needs, and every picture it
+learned from is a file you can open. What it costs is that a yes-or-no judge has
+nothing to say about how close an unfinished attempt came. A learner therefore
+gets nothing at all until it stumbles on a success, which is the problem the
+progress models below exist to solve. The line it draws is also only as good as
+the failures you showed it, so a new way of failing can land on the success side.
+
+The difference shows up the moment the reward is needed inside a learning loop.
+On a peg insertion that practises for an hour, this classifier answers at every
+step and never holds the loop up, where Robometer in sub-section 5.2 takes a
+sizeable fraction of a second for one answer and cannot be asked that often. The
+difference runs the other way when you want to know how far an attempt got. Ask
+this classifier about an attempt that lifted the towel and then dropped it, and
+the only answer it has is "not done".
 
 Why pick it rather than Robometer or a vision-language model, which need no
 training at all? Because of speed first: a large model takes from a fraction of a
@@ -259,6 +294,8 @@ This one is **worth betting on**, because it is the first general-purpose reward
 model that arrives as an ordinary download, and a general success detector is the
 missing piece in every scheme that practises without a person watching.
 
+Size l, a big card, Apache-2.0 for the code and the weights.
+
 Robometer is a video-and-language reward model from the paper
 [Robometer: Scaling General-Purpose Robotic Reward Models via Trajectory
 Comparisons](https://arxiv.org/abs/2603.02115), and it became downloadable in
@@ -268,7 +305,45 @@ how likely that frame is to be a success. It is a Qwen3-VL-4B-Instruct
 vision-language model with three small heads added, which
 [its LeRobot page](https://huggingface.co/docs/lerobot/robometer) describes.
 
-Why pick it rather than the classifier in section 7.1? Because you collect and
+The one idea is in the paper's title, and it is about the training signal rather
+than the network. Asking people to mark an attempt as a success means asking them
+where the line is, and they disagree. Asking which of two attempts got further is
+a much easier question, and the same question works on any task, so answers to it
+can be gathered across many datasets at once. Robometer's third head exists to
+learn from exactly that.
+
+Inside, the three heads sit on the same backbone and are trained together, with
+their three errors added into one. A progress head predicts how far along each
+frame is, a success head predicts whether each frame is a success, and a
+preference head predicts which of two attempts completed the task better. The
+frames are not handed in as a block: a special token is inserted after each
+frame, and the numbers the model is holding at those token positions are what the
+progress and success heads read, which is how one answer per frame comes out
+rather than one answer per attempt. Progress is also not predicted as a number at
+all. The head gives a score to each of ten evenly spaced values between 0 and 1,
+and LeRobot turns those scores into one value by taking their weighted average.
+Compare that with sub-section 5.1: the classifier takes one picture and gives one
+number, while this takes a run of frames and a sentence and gives a pair of
+numbers for every frame. The preference head is kept in the checkpoint so it
+loads, and LeRobot never calls it.
+
+What the design buys is that the labelling has already been done, by somebody
+else, on tasks that are not yours, and that the written instruction is what lets
+the result be pointed at a task nobody labelled. What the design costs is that
+frames are expensive, because each one adds both a picture and a token to what the
+backbone has to hold, and the default reads at most eight frames of an attempt.
+Eight frames of a one-minute attempt can step straight over the moment things went
+wrong.
+
+The difference shows up when you have five hundred recorded attempts and no
+labels. Give Robometer the instruction and it ranks all five hundred overnight,
+where the classifier of sub-section 5.1 cannot start until you have marked
+pictures from each of those tasks by hand. The difference runs the other way
+inside a control loop, where eight frames and a large backbone are simply the
+wrong tool, and in the worry below, because a judge that was never checked
+against a careful person on your task is still a guess.
+
+Why pick it rather than the classifier in section 5.1? Because you collect and
 mark nothing. It scores a task it was not trained on, which is exactly what the
 classifier cannot do, so it suits sorting a pile of recordings or scoring an
 evaluation that runs overnight. Why not pick it? Because nobody has yet published
@@ -277,13 +352,11 @@ the repository's
 [frontier document](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#9-what-is-being-done-about-evaluation)
 states, and because a model judging a model is a mistake with a long history.
 
-What it costs you is a graphics card and patience. The published checkpoint,
-[lerobot/Robometer-4B](https://huggingface.co/lerobot/Robometer-4B), is a single
-file of about 8.9 GB, licensed Apache-2.0 on its model card. Its LeRobot page
-says a graphics card is strongly recommended, and the integration is
-inference-only, so you cannot train it further there. By default it reads at most
-eight frames of an attempt, which is a detail worth knowing, because eight frames
-of a one-minute attempt can miss the moment things went wrong.
+What it costs you beyond the line above is that the LeRobot integration is
+inference-only, so you cannot train the model further there, and the published
+checkpoint is a single file,
+[lerobot/Robometer-4B](https://huggingface.co/lerobot/Robometer-4B), that has to
+come down before anything runs.
 
 The library is LeRobot again.
 
@@ -312,6 +385,10 @@ This one is also **worth betting on**, for a different reason: it needs no rewar
 model at all, so it improves whenever the vision-language model you already use
 improves.
 
+No weights of its own, and the Qwen3-VL-8B-Instruct model it reads by default is
+size l and wants a big card. Apache-2.0 for the LeRobot code, and the licence on
+the weights is whichever model you point it at.
+
 TOPReward comes from the paper
 [TOPReward: Token Probabilities as Hidden Zero-Shot Rewards for
 Robotics](https://arxiv.org/abs/2602.19313) and ships in LeRobot. It builds a
@@ -319,6 +396,40 @@ prompt that shows the video, states that the robot completed the task, and ends
 with "The answer is: True". Then it reads how likely the model thought that last
 word was. That likelihood is the reward. Nothing is fine-tuned, which is what
 **zero-shot** means: the model is used as it comes.
+
+The one idea is that the judge already exists and nobody has to build it. A large
+model that has read a great deal about the world already has an opinion about
+whether a mug is in a bowl. You do not need a head trained to report that
+opinion; you need a way of asking that gives you a number instead of a sentence.
+
+What that changes inside is that there is nothing new inside. A language model
+works out a probability for every word that could come next, and then picks one;
+the sentence it writes is the part people read, and the probabilities are thrown
+away. TOPReward writes the claim itself, ending the prompt with "The answer is:
+True", and then reads the probability of that last word rather than letting the
+model choose it. So the measurement is taken from machinery that was already
+running. Compare that with sub-section 5.2, where three heads were added and
+trained on robot video so that the numbers come from parts built for this one
+job. Here, nothing in the system was ever trained to referee a robot.
+
+What the design buys is that there is nothing to download, nothing to keep up to
+date, and nothing to retrain: swap in a better vision-language model next year
+and the judge gets better by itself. What it costs is three things. The answer
+comes out as a log-probability, which is a convenient way to rank attempts
+against each other and an awkward thing to put a fixed cut-off on, unlike the
+0-to-1 score of the two judges above. The wording of the prompt is now part of
+your system, so a different sentence gives a different reward, and nothing warns
+you that it has changed. And the opinion you are reading was formed by a model
+trained to describe pictures, not to referee robots.
+
+The difference shows up when a vision-language model is already loaded on the
+machine, because you are using it to turn instructions into tasks. Then this
+reward is one more call to a model that is already resident, where Robometer
+would be a second multi-gigabyte model competing for the same card. The
+difference runs the other way when the two disagree on your task. Robometer's
+heads were trained on robot video for this exact question while this one borrows
+a general opinion, and only a measurement against your own eyes tells you which
+to believe.
 
 The idea has a history, and these are the papers people cite for it. VLM-RMs,
 from [Vision-Language Models are Zero-Shot Reward Models for Reinforcement
@@ -338,11 +449,9 @@ robot videos for this exact job, where TOPReward borrows a general model's
 opinion. Which of the two is more accurate on your task is something you have to
 measure, and neither paper settles it for you.
 
-What it costs you is the vision-language model. The default backbone is
-Qwen3-VL-8B-Instruct, which is larger than Robometer's, so this is not the cheap
-option even though nothing is trained, and the LeRobot port supports the Qwen
-backbone only. The answer is also a log-probability rather than a score from 0 to
-1, which is useful for ranking attempts and awkward as an absolute cut-off.
+What it costs you beyond the line above is that its default backbone is larger
+than Robometer's, so this is not the cheap option even though nothing is trained,
+and the LeRobot port supports the Qwen backbone only.
 
 ```python
 from lerobot.rewards.topreward import TOPRewardConfig, TOPRewardModel
@@ -367,6 +476,9 @@ This one is **worth betting on** for long tasks, because a single progress numbe
 for a task with four steps in it is a weak signal, and this is the packaged model
 that fixes that.
 
+Size not stated, a small card, Apache-2.0 as part of LeRobot, and you train the
+weights yourself on a CLIP ViT-B/32 encoder.
+
 SARM, which stands for stage-aware reward modelling, comes from the paper
 [SARM: Stage-Aware Reward Modeling for Long Horizon Robot
 Manipulation](https://arxiv.org/abs/2509.25358), and it ships in LeRobot. It
@@ -375,13 +487,48 @@ is, and combines the two into one progress score between 0 and 1. You name the
 stages in words, such as grabbing the near side of a towel and making the first
 fold.
 
+The one idea is not a new network. It is a better answer to the question "how far
+along is this frame?", which somebody has to answer before a progress model can
+be trained at all. The obvious answer is the frame number: frame 50 of 200 is a
+quarter of the way through. That answer is wrong whenever two recordings of the
+same task take different lengths, which they always do, because then the same
+moment of the same task is labelled a quarter in one recording and a third in
+another, and the model is trained on the disagreement.
+
+What that changes inside is that one network makes two predictions instead of
+one. It predicts which of your named stages the frame belongs to, and how far
+through that stage the frame is, and the two are combined into a single score
+between 0 and 1. The labels come from the stage names rather than from frame
+numbers: a vision-language model reads each recording and marks where each named
+stage starts and ends, and progress is then measured inside each stage, so the
+first fold being half done means the same thing in a slow recording and a quick
+one. Compare what the judges above ask you to supply. Sub-section 5.1 needed one
+mark per picture, success or failure. Sub-section 5.2 needed comparisons between
+whole attempts, collected by somebody else. This needs a list of stage names from
+you, and then one model call per recording to find where they are.
+
+What the design buys is a score that still means something in the middle of a
+long task, and one that survives demonstrations of uneven quality, which is what
+its paper claims and tests on folding a shirt. The same score can then be turned
+back on your training data, reweighting the recordings so that frames where the
+arm was really making progress count for more. What it costs is that pass of
+annotation, a model call for every recording, and the judgement of whether the
+task has stages at all.
+
+The difference shows up on a four-step task that stopped after three. SARM says
+which stage the arm reached and how far into it, so you know it made both folds
+and then dropped the corner. Robometer gives one middling number, and a middling
+number cannot tell you whether the attempt drifted from the start or nearly
+finished. The difference runs the other way on a single continuous reach, which
+has no stages to name, and there the annotation pass buys nothing at all.
+
 Why pick it rather than Robometer, which also gives progress? Because Robometer
 scores the whole task, so a long attempt that finished three of four steps and
 then stopped looks much the same as one that drifted. SARM knows the steps are
 there, and because it normalises each stage by how long that stage usually takes,
 the same point in two recordings of different lengths gets the same score. Why
 not pick it? Because it has no published general checkpoint to download: you
-train it on your own dataset, which is the cost section 7.1 described all over
+train it on your own dataset, which is the cost section 5.1 described all over
 again.
 
 What it costs you is annotation. You name the stages, and a vision-language model
@@ -416,6 +563,9 @@ is one continuous motion does not.
 These are **historical**. They are where the method in section 4 comes from, and
 they are research repositories rather than packages.
 
+Size not stated by either project, a laptop, Creative Commons
+Attribution-NonCommercial 4.0 for VIP and MIT for LIV.
+
 VIP, short for Value-Implicit Pre-training, came from the University of
 Pennsylvania and Meta in 2022 and was published at the 2023 International
 Conference on Learning Representations. It learns from videos of people doing
@@ -424,14 +574,40 @@ embedding then works as a progress score, which is the arithmetic section 4
 worked through. LIV, short for Language-Image Value learning, came from the same
 group in 2023 and lets the goal be a sentence instead of a picture.
 
-Why read these rather than use Robometer? Because they explain what every progress
-estimator is doing, and because VIP gives you the embedding itself, which is
-useful for other things, such as finding the nearest frame in a dataset. Why not
-use them in a product? Because
-[VIP's repository](https://github.com/facebookresearch/vip) is licensed Creative
-Commons Attribution-NonCommercial 4.0, read from its licence file, which rules
-out commercial use. [LIV's repository](https://github.com/penn-pal-lab/LIV) is
-MIT and was last changed in 2023.
+The one idea is that you can get a progress score without training anything that
+produces a score. Instead you train a way of turning pictures into numbers such
+that the distance between two pictures already means something, and then progress
+is a subtraction you do yourself.
+
+What that changes inside is the training objective, which comes from
+reinforcement learning rather than from marking examples. VIP takes a video of a
+person, treats its first frame as a start and its last as a goal, and trains the
+embedding to obey the arithmetic a value function obeys, which is the rule that
+the distance still to go shrinks by one step for every step taken. A second part
+of the objective pulls frames that are next to each other in time together and
+pushes distant frames apart, which is what keeps the embedding changing smoothly
+as the video runs. Nothing in that needs an action, a success label or a stage
+name: only the videos, and the paper's were Ego4D, a large collection of
+first-person video of people. Compare sub-sections 5.1, 5.2 and 5.4, each of
+which ends in a head that produces the score. There is no such head here at all,
+and the last line of the example below gives you the embedding, not a reward.
+
+What the design buys is a judge that asks you to label nothing whatsoever, and an
+embedding you can use for other things, such as finding the frame in a dataset
+that looks most like the one in front of you. What it costs is that the reward
+now rests entirely on the goal picture you choose, and a distance is a blunt
+instrument: a picture taken under a different light can sit far from the goal
+even when the task is done. LIV's addition is to let the goal be a sentence
+instead, which removes the need for a photograph of the finished task.
+
+The difference shows up when you have one photograph of the finished task,
+nothing marked, and no wish to load a model of several gigabytes. VIP turns that
+one photograph into a score for every frame of every attempt, where the
+classifier of sub-section 5.1 would need a few hundred marked pictures first and
+would then return nothing but "not done" until the very end. The difference runs the other
+way as soon as the task has to be told apart from a near miss, because a mug
+beside the bowl and a mug in the bowl are two pictures that sit close together,
+and a distance will not separate them.
 
 What it costs you is the fitting together, because there is no reward model in
 these repositories, only the encoder. You write the distance and the progress
@@ -461,6 +637,9 @@ the goal embedding, the distance, and the step-to-step difference.
 This one is **historical** too, and it is the fourth kind of judge from section 3,
 kept because the idea keeps coming back.
 
+Size xs, because the judge you train is small, a laptop, and MIT for the
+`imitation` library.
+
 Generative adversarial imitation learning, written GAIL, is from 2016. It trains
 a judge whose job is to tell the person's recorded movements apart from the
 policy's, and the policy is rewarded for being hard to tell apart. Maximum
@@ -468,6 +647,36 @@ entropy inverse reinforcement learning, from 2008, is the older classic in the
 same family, and open versions of both are in
 [the `imitation` library](https://github.com/HumanCompatibleAI/imitation), which
 is MIT.
+
+The one idea is that nobody ever says what success is. The reward is "look more
+like the person", and it is measured by a second network that is trying to catch
+the robot out.
+
+That gives the judge a shape nothing else on this page has, in two ways. First,
+what it reads is not a picture of a finished task but a movement: the arm's state
+and the command given at that moment, which is the same pairing a demonstration
+already holds. So the labelling it asks of you is none at all about success, and
+instead a set of recordings with their actions in them, which is a different kind
+of data from the marked pictures of sub-section 5.1 or the stage names of
+sub-section 5.4. Second, the judge does not stay still. It is retrained as the
+policy improves, because a judge that has been beaten has to find a new
+difference to point at. Every other judge on this page is a fixed function once
+it has been trained, and this one is a moving one by design.
+
+What the idea buys is a reward where nothing can be written down and no finish
+line exists, and a dense one, since every step either looks like the person or
+does not. What it costs is that two models are now learning against each other,
+so a bad result does not tell you which of the two was at fault, and that there
+is no number you can read off and trust, because the judge's score says only how
+this policy compares with the policy of a few thousand training steps ago.
+
+The difference shows up when the goal is the manner of the movement rather than
+its end state. Pouring without splashing, or wiping with even pressure, look the
+same in a photograph of the finished table, so the classifier of sub-section 5.1
+has nothing to learn from, while a judge watching the movements can tell a smooth
+pour from a jerky one. The difference runs the other way whenever you can
+photograph success, which is most tasks, and then the classifier is a small
+fraction of the work.
 
 Why pick this rather than a classifier or a progress model? Only when the thing
 you cannot write down is the goal itself rather than the finish line, and you

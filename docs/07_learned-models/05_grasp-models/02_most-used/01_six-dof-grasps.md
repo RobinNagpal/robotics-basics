@@ -244,11 +244,53 @@ assumes.
 
 **[GPD](https://github.com/atenpas/gpd), or Grasp Pose Detection, is
 historical**, because it was last changed in January 2022 and has had none of the
-research since. It comes from Andreas ten Pas and Robert Platt at Northeastern
-University, and it is the sample-then-check
-design from [section 3](#3-how-it-works-inside): C++ code draws candidate gripper
-poses on the point cloud, geometry throws away the ones that would not close on
-anything, and a small network scores what is left.
+research since.
+
+Size not stated, the weights in the repository are 14.5 megabytes, a laptop, and
+BSD-2-Clause for the code and for the weights that sit beside it.
+
+It comes from Andreas ten Pas and Robert Platt at Northeastern University, and it
+is the sample-then-check design from [section 3](#3-how-it-works-inside): C++ code
+draws candidate gripper poses on the point cloud, geometry throws away the ones
+that would not close on anything, and a small network scores what is left.
+
+The one idea GPD is built on is that almost nothing about a grasp has to be
+learned. Where to try a hand, and which way to face it, are worked out from the
+surface the camera saw, with ordinary geometry. The only thing left for a network
+is the last yes-or-no: given the points that would end up between the fingers,
+will this hand hold. Every model below learns a great deal more than that.
+
+That decides what the network reads. GPD takes each surviving candidate, moves the
+points that fall between its fingers into the hand's own frame, and draws them as
+a small picture. Its README calls that picture the grasp image and ships a
+three-channel and a fifteen-channel version of it, and the classifier that reads
+it is a LeNet, which is the small convolutional network from the 1990s; the
+weights live in the clone under `models/lenet/15channels/`. So the network never
+sees the scene. It sees one hand's worth of points at a time, already turned into
+that hand's frame, which is why the `camera_position` line in the configuration
+file matters so much: the geometry has to know which way each surface faces before
+it can line a hand up with it. Contact-GraspNet, in the next sub-section, does the
+opposite. One network reads the whole cloud once, and every grasp it offers comes
+out of that single pass.
+
+What the idea buys is an answer you can read. A candidate was dropped because the
+fingers would have gone through a point, or because nothing would have been
+between them, and both reasons are in code you can step through. It also means
+your hand is a setting rather than a learned fact, and that the whole thing runs
+on an ordinary processor, because plain geometry and a LeNet on a small picture
+are cheap. What it costs is that the sampler decides what is possible. The
+classifier can only judge hands the sampler drew, most of the hands it draws are
+bad, and so most of the running time goes into making candidates and throwing
+them away. Nothing in GPD learns where to look.
+
+On an arm, the difference shows up when the only good grasp is a narrow one.
+Picture two cartons leaning against each other with a slim bottle wedged in the
+gap between them. A grasp exists, in at a steep tilt down that gap, but GPD will
+find it only if one of its random hands happens to land there at close to the
+right angle. The usual fix is to raise the number of samples, which costs time in
+direct proportion. Contact-GraspNet answers once for each point it was given,
+including the points on the bottle's shoulder, so it either proposes that grasp or
+it does not, and it takes the same time either way.
 
 You would pick it rather than Contact-GraspNet for two reasons, and neither is
 accuracy. The first is that GPD is BSD-2-Clause, which lets you put it in
@@ -284,11 +326,52 @@ successor that replaces the small network with a point cloud network.
 
 **Contact-GraspNet is the most used of these models in 2026**, because it is the
 one every later paper compares itself against and the one most robot code expects
-to find. Martin Sundermeyer and others published it from NVIDIA in 2021, in the
+to find.
+
+Size not stated, the weights are 27 megabytes, a big card, and a licence that
+exists only as a PDF file, for the code and the weights alike.
+
+Martin Sundermeyer and others published it from NVIDIA in 2021, in the
 [Contact-GraspNet paper](https://arxiv.org/abs/2103.14127), and its idea is the
 one [section 3](#3-how-it-works-inside) describes: each point the camera saw is
 treated as a place where one finger could touch, and the network says how the
 gripper should come in if it touches there.
+
+The one idea is that a grasp's position does not have to be invented. A full grasp
+is seven numbers: three for where the fingertips go, three for which way the hand
+faces, and one for how wide it opens. Contact-GraspNet fixes the first three to a
+point the camera actually saw, which leaves four numbers for the network to
+produce, and its paper names this as the point of the design: rooting the pose in
+the observed cloud cuts what has to be learned from seven numbers to four.
+
+Inside, that leaves one network where the sample-then-check design needed a
+sampler and a classifier. A point cloud network reads the whole scene and gives
+every sampled point a feature vector, and small heads on top of that vector give
+the approach direction, the closing direction, the width and a confidence for that
+point. GPD, above, also judges one candidate at a time, but there the candidates
+come from geometry and the network only grades them, while here one pass proposes
+the grasp and scores it together. There is no search, no random start and no
+repeated pass either, so the same cloud gives the same grasps every time.
+
+What the design buys is the whole answer in one pass, which is fast enough to
+repeat on each new camera picture rather than planning once and hoping nothing
+moves, and that is the reason the paper gives for building it. It also gives a
+dense answer, hundreds of grasps per object, with no sampling budget to tune. What
+it costs is that the model cannot say anything the cloud does not contain. Every
+grasp's contact is a point that was seen, so a grip on the hidden back of an
+object is not scored low, it cannot be expressed at all. Noise in the depth
+picture moves the grasps, because the position is a measured point. And the width
+head was trained for one hand, so the openings it returns are that hand's.
+
+On an arm, the difference shows up when the bin is being refilled while the robot
+works. With GPD you draw and reject thousands of hands again for every new cloud,
+and that drawing is the slow part, so the arm waits. With Contact-GraspNet one
+pass per picture gives a fresh dense answer, and the arm can pick from the cloud
+it is looking at rather than from the one it saw ten seconds ago. The same
+situation turns against it if your gripper opens 38 millimetres, because then much
+of that dense answer is useless to you and there is no way to ask for narrower
+grasps, while GPD would have been given your own measurements before it drew its
+first candidate.
 
 The obvious alternative is the model it replaced,
 [6-DOF GraspNet](https://arxiv.org/abs/1905.10520), from the same group two years
@@ -298,15 +381,14 @@ pick Contact-GraspNet instead because tying every grasp to a point that was
 actually seen removes that search, so one pass of the network gives the whole
 answer.
 
-What it costs you is an NVIDIA card. The original
+Two of its costs are decisions rather than arithmetic. The original
 [NVlabs/contact_graspnet](https://github.com/NVlabs/contact_graspnet) is
-TensorFlow and pins CUDA 10.1, and the maintained
-[PyTorch version](https://github.com/elchun/contact_graspnet_pytorch) asks for 8
-gigabytes of graphics memory to run and 24 to train. The licence costs you more
-than the hardware does. Both repositories carry a file called `License.pdf`, so
-there is no machine-readable licence at all and every dependency scanner reports
-the project as unlicensed. You have to open the PDF and read it before you build
-anything on it. The thing that most often goes wrong is handing it a whole scene
+TensorFlow and pins CUDA 10.1, so the maintained
+[PyTorch version](https://github.com/elchun/contact_graspnet_pytorch) is the one
+to install. And both repositories carry a file called `License.pdf`, so there is
+no machine-readable licence at all, every dependency scanner reports the project
+as unlicensed, and you have to open the PDF and read it before you build anything
+on it. The thing that most often goes wrong is handing it a whole scene
 with no segmentation, because the grasps then land on the table and the bin
 walls.
 
@@ -344,13 +426,60 @@ robot's frame with your own calibration is still your work.
 ### 5.3 graspnet-baseline, the reference for the standard benchmark
 
 **[graspnet-baseline](https://github.com/graspnet/graspnet-baseline) is the most
-used of these models in 2026 for measurement rather than for shipping.** It comes
-from Hao-Shu Fang and others at Shanghai
-Jiao Tong University and is the reference implementation for the
+used of these models in 2026 for measurement rather than for shipping.**
+
+Size not stated, the size of the weights not stated, an NVIDIA card whose memory
+the project never names, and a Shanghai Jiao Tong University research-only
+agreement covering the code and the weights.
+
+It comes from Hao-Shu Fang and others at Shanghai Jiao Tong University and is the
+reference implementation for the
 [GraspNet-1Billion](https://graspnet.net/) dataset that
 [section 4](#4-how-it-is-trained) described. Almost every published score for a
 6-DoF grasp model is a score on that benchmark, produced by code descended from
 this repository.
+
+The one idea here is that a direction is easier to choose than to guess. Rather
+than asking the network for the approach direction as three free numbers, the
+model hands it 300 fixed directions spread over a sphere and asks which one is
+best. The turn of the hand about that direction is then one of twelve fixed
+angles, and how deep to close is one of four fixed depths. Those three lists are
+the `num_view=300`, `num_angle=12` and `num_depth=4` arguments in the code below.
+Picking the best item out of a list is the easiest thing a network does, and that
+is the whole bargain on offer.
+
+What that changes inside is that the model works in two stages with a cut in
+between, and the repository's own files are named after them: `ApproachNet`,
+`CloudCrop`, `OperationNet` and `ToleranceNet`. The first stage scores all 300
+directions at every point and keeps the best one. The second stage then cuts a
+cylinder of points out of the cloud around that chosen direction, which is what
+the `cylinder_radius`, `hmin` and `hmax_list` arguments describe, turns those
+points into the gripper's own frame, and lets a second network pick the angle
+and the depth and give a score. A third network, `ToleranceNet`, predicts how
+far the grasp can drift and still work, which the repository calls its
+tolerance. Contact-GraspNet has no second look at all: everything it says about
+a point comes from the one feature vector it computed for that point, with no
+crop and no list.
+
+What the cut buys is that the angle and the depth are decided from the points that
+will actually lie between the fingers, rather than from a summary of the whole
+scene, and the tolerance output gives you a reason to prefer a grasp with room
+around it, which no other model on this page reports. What the lists cost is
+precision. The answer can only ever be one of twelve turns, so a grip that wanted
+to sit between two of them comes out slightly rotated and your own code has to
+make up the difference. The arithmetic is also wasteful, because all 300 directions
+are scored at every point, including the points on the table and in the gaps, and
+that waste is exactly what EconomicGrasp in
+[section 5.5](#55-economicgrasp-the-one-you-can-train-yourself) goes after.
+
+On an arm, the lists show up on a flat part lying on a table, where the useful
+approach comes in at a few degrees off every direction in the list. This model
+rounds the answer to the nearest one it has, and the fingertip then arrives a
+little rotated and clips the table, while Contact-GraspNet, which produces the
+direction outright, has no grid to round to. Against that, when the question is
+whether a change you made to a model helped, this is the model whose number means
+something, because almost every published score was produced by code descended
+from this repository.
 
 You would pick it rather than Contact-GraspNet when you need a number you can
 compare with the literature. Contact-GraspNet was trained on NVIDIA's simulated
@@ -359,9 +488,7 @@ it says nothing about how your change compares with everybody else's. If you are
 not measuring, pick something else, because this repository is older than the work
 built on it.
 
-What it costs you is the licence and the install. The licence is a Shanghai Jiao
-Tong University agreement for academic and non-profit research only, so you cannot
-sell anything built on it. The install is worse than it looks: the
+What it costs you is the install, and it is worse than it looks: the
 `requirements.txt` file is ordinary, and then the README tells you to compile a
 `pointnet2` extension and a CUDA `knn` operator by hand, which no dependency
 scanner will warn you about. Of the two published sets of weights the authors
@@ -408,19 +535,53 @@ throwing those grasps away yourself.
 ### 5.4 AnyGrasp, the strongest and the least free
 
 **[AnyGrasp](https://github.com/graspnet/anygrasp_sdk) is the most used of these
-models in 2026 wherever accuracy decides the job.** It comes from the same
-Shanghai Jiao Tong University group and was built on GraspNet-1Billion, it was
-still being updated in July 2026, and it is the only model on this page that can
-follow a grasp on an object that is moving rather than starting again from a new
-picture.
+models in 2026 wherever accuracy decides the job.**
+
+Size not stated, the size of the weights not stated, an NVIDIA card whose memory
+the project never names, no licence file at all, and a key tied to one machine.
+
+It comes from the same Shanghai Jiao Tong University group and was built on
+GraspNet-1Billion, it was still being updated in July 2026, and it is the only
+model on this page that can follow a grasp on an object that is moving rather than
+starting again from a new picture.
+
+The one idea is that a grasp should outlast one picture. Every other model here
+answers a question about a cloud, and when the next cloud arrives it answers again
+from nothing. AnyGrasp's paper describes matching the grasps found in one picture
+to the grasps found in the next, so a grasp stays attached to the object it was
+computed for while that object moves.
+
+Beside that, the paper describes three more things about it, and this is as far
+as what is published goes. Its labels are dense and computed by formula, as
+GraspNet-1Billion's were, but they are attached to real camera pictures and to
+sequences of them rather than to simulated single frames. The object's centre of
+mass is brought into the training, which the paper says is to make the grasps
+more stable; a grasp far from the centre of mass has to resist more twist when
+the arm lifts, and a model that knows nothing about mass cannot see that coming.
+And each grasp comes out as seven numbers, six for the pose and one for the
+width.
+
+Past that point the insides are not published, and it is worth being plain about
+it. What you install is a compiled library called `gsnet` together with a set of
+weights, so there is no model file to read and nothing to check the paper against.
+What you can read is the demo's arguments, and `region_steering` and
+`approach_steering` are the informative ones, because they act before the
+prediction is made rather than on its results.
+
+On an arm, the difference shows up on anything that moves. Re-running
+graspnet-baseline on each new cloud gives a fresh set of grasps each time, and the
+best one jumps from picture to picture, so the arm chases a target that keeps
+sliding sideways and the approach never settles. AnyGrasp's matching keeps the same
+grasp on the same part of the object, which is what lets the arm steer towards it
+while it moves. If your objects sit still in a tote, that advantage is worth
+nothing, and the machine-locked key is then pure cost.
 
 You would pick it rather than graspnet-baseline because it is better at the same
 task and because it ships as a working detector rather than as training code you
 have to finish. You would not pick it if anything in your project needs certainty,
-and that is the whole trade. It is a compiled library with **no licence file at
-all**, which means default copyright and no permission to use it, and it will not
-start without a licence key that you apply for through a form and that is tied to
-one machine. The thing that most often goes wrong is that key, because the machine
+and that is the whole trade: **no licence file at all** means default copyright and
+no permission to use it, and the key you apply for through a form is tied to one
+machine. The thing that most often goes wrong is that key, because the machine
 it was issued for changes and the detector then stops starting.
 
 The library is called `gsnet`, and this is the shape of its own demo program:
@@ -456,19 +617,63 @@ because no wider gripper was in its training.
 
 **[EconomicGrasp](https://github.com/iSEE-Laboratory/EconomicGrasp) is worth
 betting on**, because it is the only model in the GraspNet-1Billion family with a
-real open-source licence and it is the cheapest
-to train by a wide margin. Xiao-Ming Wu and others at Sun Yat-sen University
-published it at the European Conference on Computer Vision in 2024, and the
-repository was last changed in April 2026.
+real open-source licence and it is the cheapest to train by a wide margin.
+
+Size not stated, the weights are 189 megabytes for each camera, a small card even
+for training, and MIT for the code and for the weights it publishes as release
+files.
+
+Xiao-Ming Wu and others at Sun Yat-sen University published it at the European
+Conference on Computer Vision in 2024, and the repository was last changed in
+April 2026.
+
+The one idea is that the labels, not the network, are what makes training
+expensive. GraspNet-1Billion gives a label to every point crossed with every one of
+the 300 directions, and the paper's finding is that this dense supervision is the
+bottleneck. Most of those labels are also ambiguous, because a point usually has
+several directions that are all about as good, and a network told to match all of
+them at once learns slowly. So EconomicGrasp picks out a small set of labels that
+are clear and trains on those.
+
+That one decision changes the pipeline in three places, and the repository's file
+names show where. The skeleton is graspnet-baseline's, with the same stages:
+`GraspableNet`, `ViewNet`, a cylinder grouping step and a grasp head. First, a gate
+is added. `GraspableNet` gives every point two scores, one for whether the point is
+on an object at all and one the paper calls graspness, which means how likely it is
+that a good grasp exists near that point. Only the points above both thresholds go
+any further, so the table and the empty gaps never reach the expensive part.
+Second, `ViewNet` settles on one direction for each surviving point, and only that
+one direction is supervised, instead of all 300. Third, the two later stages pass
+information between their own inputs: the cylinder step shares it among the points
+that survived the gate, and the grasp head shares it among the angles and depths of
+one grasp, which is what the paper means by its interactive grasp head. The score
+also comes out as a choice among a few fixed score levels that are then combined,
+rather than as one number guessed outright. The backbone differs as well: a sparse
+voxel network built on MinkowskiEngine, where graspnet-baseline samples points
+directly, and that choice is the reason the install needs `nvcc`.
+
+What all of that buys is less to store, less to compute on every training step, and
+a model that settles quickly, which together are why one rented card is enough.
+What it costs is the preparation described below, because neither the selected
+labels nor the graspness labels are in GraspNet-1Billion as published. There is a
+subtler cost too: the gate is itself learned, so a kind of surface your data never
+showed it can be gated out before any grasp head ever looks at it.
+
+On an arm, the difference shows up when the objects are yours. Say you have a few
+thousand captures of your own parts and one card rented by the hour. With
+graspnet-baseline the training run is itself the obstacle, so in practice you use
+its published weights and accept that they were learned on somebody else's 88
+objects. With EconomicGrasp the run fits a night, the result is yours under MIT,
+and the model has seen your parts. Pick the other way round only when your number
+has to be comparable with the published ones.
 
 You would pick it rather than graspnet-baseline for two reasons. It is MIT
 licensed, so a model you train with it is yours. And its own README reports
-training in 8.3 hours using 4.2 gigabytes of main memory and 5.81 gigabytes of
-graphics memory on one RTX 3090 card, which is a machine you can rent by the hour,
-while training the older models in this family is a much larger job. The README
-also reports 68.21, 61.19 and 25.48 average precision on the seen, similar and
-novel object splits of GraspNet-1Billion with RealSense pictures, and 62.59, 51.73
-and 19.54 with Kinect pictures. Those are the authors' own numbers on their own
+training overnight on a single card you can rent by the hour, which is the band
+above, while training the older models in this family is a much larger job. The
+README also reports 68.21, 61.19 and 25.48 average precision on the seen, similar
+and novel object splits of GraspNet-1Billion with RealSense pictures, and 62.59,
+51.73 and 19.54 with Kinect pictures. Those are the authors' own numbers on their own
 benchmark, so read them as a claim rather than as an independent measurement.
 
 What it costs you is the install, and the blocker is specific. It imports
@@ -501,6 +706,12 @@ because these scripts read the benchmark's files from disk.
 **GraspGen and GraspGenX are worth betting on**, because they are the first
 models here to treat the gripper as an input rather than as a fact fixed in the
 weights, which is the problem every sub-section above ran into.
+
+Size not stated for either, GraspGenX's weights are 1.7 gigabytes, an NVIDIA card
+whose memory neither project names, and two different code licences: NVIDIA's own
+for GraspGen and Apache-2.0 for GraspGenX, with the NVIDIA Open Model License on
+both sets of weights.
+
 [GraspGen](https://github.com/NVlabs/GraspGen) is NVIDIA's 2025 generator,
 published in the [GraspGen paper](https://arxiv.org/abs/2507.13097): a diffusion
 model proposes grasps and a second network scores them. A **diffusion model**
@@ -510,6 +721,45 @@ the
 page explains the idea.
 [GraspGenX](https://github.com/NVlabs/GraspGenX), released on 1 June 2026, is the
 same group's follow-up.
+
+The one idea is to make grasps the way a picture generator makes pictures. The
+model starts from a set of poses that are pure noise, floating anywhere around the
+object, and nudges each of them a little at a time towards something that looks
+like a grasp it saw in training. Nothing in the object's points says where a pose
+starts. Contact-GraspNet's answers are tied to points the camera saw, and
+graspnet-baseline's are tied to a point and a direction out of a list; GraspGen's
+are tied to nothing.
+
+Inside there are three parts. An encoder reads one segmented object's points, and
+the project ships two kinds of encoder for that job, PointNet++ and
+PointTransformerV3. A transformer then takes a noisy pose together with that
+encoding and predicts the correction to apply to the pose, and the correction is
+applied over and over. A second network, the discriminator, scores the finished
+poses, and its training is the part the authors single out: it is trained on the
+generator's own output, which they call on-generator training, so the scorer learns
+to recognise the mistakes this particular generator makes rather than a fixed
+collection of bad grasps. 6-DOF GraspNet, from
+[section 3](#3-how-it-works-inside), also had a generator and a scorer, but its
+generator produced a pose in one shot from random numbers, where this one reaches
+the pose in many small steps.
+
+What that buys is poses that are free in space, so the model can offer a grasp
+that wraps round a side the camera only glimpsed, and a varied set of them rather
+than one answer per point. What it costs is passes of the network: many of them for
+one answer, where Contact-GraspNet needs one. It also costs you a segmentation
+step first, because the model is built around one object, and it costs you
+repeatability, because the random start means two runs on the same cloud give
+different grasps and a failure is harder to reproduce.
+
+On an arm, the difference from the models above is the difference between asking
+and filtering. With Contact-GraspNet or AnyGrasp the widths come back for somebody
+else's hand, so a dense answer has to be thinned down to the grasps your own hand
+can make, and a hand that is not a parallel jaw at all gets nothing useful out of
+them. GraspGenX takes the gripper as part of the question, in the way the next
+paragraph describes, so the grasps are computed for your hand from the start. The
+cost of that sits in the paragraph before this one: a cell that has to answer on
+every camera picture, and to explain afterwards why it failed, is better served by
+the single repeatable pass of Contact-GraspNet.
 
 You would pick GraspGenX rather than Contact-GraspNet or AnyGrasp because of what
 it does about grippers. GraspGen trains one model per gripper and publishes three:
@@ -522,20 +772,17 @@ families and more than 8,000 objects. Its checkpoints name grippers including
 `barrett_hand` and `ezgripper`, and `scripts/gripper_config_wizard.py` adds one
 that is not on the list. No other model on this page offers that.
 
-The licences are split, and the split runs the opposite way to the usual one.
-GraspGen's code is under NVIDIA's own licence, whose section 3.3 limits use to
-research or evaluation and then permits NVIDIA itself to use the work
-commercially. GraspGenX's code is plain Apache-2.0, with no use limit added. The
-published weights of both are under the NVIDIA Open Model License rather than
-Apache-2.0, so the Apache badge does not make what you deploy Apache. Besides
-that, GraspGen needs `spconv-cu120`, for which no processor-only build exists, and
-its README reports 20 grasp predictions per second before any further speed work.
-The thing that most often goes wrong is forgetting that both models expect one
-object's points rather than a whole scene, so you segment first.
+Two of those costs are decisions rather than arithmetic. GraspGen's licence limits
+use to research or evaluation in its section 3.3, and then permits NVIDIA itself to
+use the work commercially. And the Apache badge on GraspGenX covers its code only,
+so the weights you deploy are under the NVIDIA Open Model License either way.
+Besides that, GraspGen needs `spconv-cu120`, for which no processor-only build
+exists. The thing that most often goes wrong is forgetting that both models expect
+one object's points rather than a whole scene, so you segment first.
 
 GraspGenX installs as a package, and it fetches its own weights and gripper
-descriptions from Hugging Face the first time you import it. That download is
-about 1.2 gigabytes for the diffusion model and 484 megabytes for the scorer.
+descriptions from Hugging Face the first time you import it, which is where the
+1.7 gigabytes in the line above goes.
 
 ```python
 from graspgenx import get_checkpoints_version_dir

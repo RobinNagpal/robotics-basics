@@ -115,7 +115,7 @@ network with three parts, and the data flows through them in order.
    pictures, which is often a **convolutional neural network (CNN)**, a kind of
    network that looks at small patches of the picture at a time. A common choice is
    ResNet, which is a well-known CNN. ResNet is a part inside the policies named in
-   section 5 rather than a policy of its own, which is why it is not one of the rows
+   section 6 rather than a policy of its own, which is why it is not one of the rows
    there. This part turns the picture into a list of a few hundred numbers, and those
    numbers describe what is in the picture, such as where the mug is.
    [Inside a neural network](../../01_what-models-are/03_inside-a-neural-network.md)
@@ -140,24 +140,24 @@ move, and then the network takes the next picture and gives the next action.
 Some versions also give the network the last few pictures, and not just the
 current one. This helps it tell whether the arm is moving up or down, which a
 single picture cannot show. The recurrent policy called BC-RNN, in
-[section 5.2](#62-robomimic-if-you-want-plain-behaviour-cloning), is this idea
+[section 6.2](#62-robomimic-if-you-want-plain-behaviour-cloning), is this idea
 written out: it remembers the last few moments instead of judging each one alone.
 
 These three parts are the shape that every model in
-[section 5](#6-well-known-models-of-this-kind) is built on, and each one there
+[section 6](#6-well-known-models-of-this-kind) is built on, and each one there
 changes a part or adds to it. ALVINN, in
-[section 5.1](#61-alvinn-the-method-with-nothing-added), is the shape at its
+[section 6.1](#61-alvinn-the-method-with-nothing-added), is the shape at its
 simplest, because its three layers take the picture and give back the steering
 direction with nothing added. The plain behaviour cloning in robomimic, in
-[section 5.2](#62-robomimic-if-you-want-plain-behaviour-cloning), is the same shape
+[section 6.2](#62-robomimic-if-you-want-plain-behaviour-cloning), is the same shape
 with the surrounding program written for you. ACT, in
-[section 5.3](#63-act-in-lerobot-the-one-to-start-with), replaces the deciding part
+[section 6.3](#63-act-in-lerobot-the-one-to-start-with), replaces the deciding part
 with a transformer that gives back a run of future commands instead of one, and
 [the next page](02_action-chunking-transformers.md) is about that change. SmolVLA,
-in [section 5.5](#65-smolvla-if-fifty-recordings-are-not-enough), adds a further
+in [section 6.5](#65-smolvla-if-fifty-recordings-are-not-enough), adds a further
 input, which is a sentence saying which task to do, and it arrives with its numbers
 already trained. DAgger, in
-[section 5.4](#64-dagger-which-is-now-a-command), changes none of this, because it
+[section 6.4](#64-dagger-which-is-now-a-command), changes none of this, because it
 alters where the training pairs come from rather than the network.
 
 ---
@@ -380,22 +380,70 @@ groups policies by the video memory they need to train at a batch size of eight.
 
 ### 6.1 ALVINN, the method with nothing added
 
-**Historical.** ALVINN stands for Autonomous Land Vehicle In a Neural Network, and
-Dean Pomerleau published it at Carnegie Mellon University in
+**Historical.** Size not stated, a laptop, and no licence at all, because no code was
+released with the paper.
+
+ALVINN stands for Autonomous Land Vehicle In a Neural Network, and Dean Pomerleau
+published it at Carnegie Mellon University in
 [1988](https://proceedings.neurips.cc/paper/1988/hash/812b4ba287f5ee0bc9d43bbf5bbe87fb-Abstract.html).
 Its own abstract describes a three-layer network that takes pictures from a camera
 and a laser range finder and produces the direction the vehicle should steer. One
 observation goes in, one action comes out, and the training signal is the recorded
 answer.
 
+The one idea in ALVINN is that the network is the whole program. The paper's
+introduction says why that was worth trying. Road-following systems of the time were
+built as a chain of hand-written image processing steps, and they worked under some
+conditions and failed under others, because the processing they did never changed from
+one situation to the next. ALVINN replaced the whole chain with a single network
+trained on recorded pairs. Nothing inside it names a road edge or a lane, and that
+decision is the one every model further down this page inherited.
+
+Inside, the network is as plain as the idea. Its input is a grid of 30 by 32 numbers
+taken from the blue part of the camera picture, a grid of 8 by 32 numbers from the
+laser range finder, and one further number saying whether the road was lighter or
+darker than its surroundings in the previous picture. Each of those numbers has its own
+connection to each of the 29 units in the single middle layer. There is no convolution
+and no sharing of weights, which is the difference from the picture part described in
+section 3. A convolutional network looks for the same small pattern everywhere in the
+picture, while ALVINN learns separately what belongs at each position of its grid.
+
+The output side is the part worth carrying away, because it is not a number. ALVINN has
+45 output units in a row. The middle one means drive straight ahead, and the units to
+either side mean progressively sharper left and right turns. Training does not ask one
+unit to fire. It asks for a hill of activation centred on the correct turn and falling
+away on both sides. When the vehicle drives, the steering is read from whichever unit
+is most active. So ALVINN chooses an answer instead of computing one, and that
+distinction is what the rest of this page turns on. The paper does not make the
+following argument, but it follows from the shape of the output. A network that gives
+back a number is pulled towards the average of the recordings it was shown, so two
+recordings that disagree produce a third answer between them that nobody demonstrated.
+A network that reads off the highest of 45 positions grows two hills instead and takes
+the taller one. The spread of bell curves in
+[section 6.2](#62-robomimic-if-you-want-plain-behaviour-cloning) and
+[the diffusion policy two pages on](03_diffusion-and-flow-policies.md) arrive at the
+same place by other routes.
+
+What that design bought was a system that could be trained rather than programmed, and
+what it cost is written into the paper's own training section. ALVINN was trained on
+pictures from a road generator rather than on real roads, because collecting enough
+real pictures was difficult, and because changing something such as the camera's
+orientation would have meant collecting the whole set again. That sentence from 1988 is
+the oldest statement of the cost every reader of this book meets, which the chapter
+overview puts as a policy learning the view and not the world. The one feedback
+number is also all the memory the network has, so it cannot tell whether it is moving
+towards the road or away from it, and that is the limit
+[section 6.2](#62-robomimic-if-you-want-plain-behaviour-cloning) fixes properly.
+
 You would not pick ALVINN, and there is nothing to pick, because no code was released
-with it. What you would use instead is robomimic in section 5.2, which is the same
-method with the parts a modern project needs already written. The reason to read
-about ALVINN is that every policy further down this page is this network with pieces
-added, so when section 5.3 tells you that ACT has about 80 million trainable values
-and a transformer inside, you can still see the picture going in and the command
-coming out. What it cost the field is in section 7: a network of this shape drifts
-away from its recordings within a second or two.
+with it. What you would use instead is robomimic in
+[section 6.2](#62-robomimic-if-you-want-plain-behaviour-cloning), which is the same
+method with the parts a modern project needs already written. The reason to read about
+ALVINN is that every policy further down this page is this network with pieces added,
+so once [section 6.3](#63-act-in-lerobot-the-one-to-start-with) puts a transformer in
+the middle of it, you can still see the picture going in and the command coming out.
+What the shape cost the field is the fault the next page exists to repair: a policy
+that chooses one move at a time drifts away from its recordings within a second or two.
 
 There is no library for ALVINN, so the shortest honest code is ALVINN written again
 in PyTorch over a modern recording. The data comes from
@@ -437,7 +485,8 @@ range a network expects.
 ### 6.2 robomimic, if you want plain behaviour cloning
 
 **Most used in 2026**, for the one job of running plain behaviour cloning and
-comparing against a published number.
+comparing against a published number. Size not stated, a laptop, MIT.
+
 [robomimic](https://github.com/ARISE-Initiative/robomimic) came out of the Stanford
 Vision and Learning Lab in 2021 with a [study](https://arxiv.org/abs/2108.03298) of
 six offline learning methods on five simulated and three real manipulation tasks,
@@ -445,6 +494,49 @@ using recordings of deliberately different quality. The library is still maintai
 and its behaviour cloning file holds eight variants, including the plain one, a
 recurrent one called BC-RNN that lets the policy remember the last few moments, and a
 transformer one.
+
+The one idea in robomimic is that the design choices are the subject. The study asked
+which of them decide whether a policy works, so the library does not ship one network.
+It ships one training program whose behaviour cloning file builds those eight policies
+by answering two questions in different ways, and you answer them with settings in a
+configuration file rather than by writing code. The first question is whether the policy
+sees only the present moment or also the recent past, and the recent past can be held
+either by a recurrent network or by a transformer. The second question is whether its
+answer is one action or a description of several possible actions. Nothing else about
+the run changes when you change one answer, which is what makes a comparison between two
+settings mean something.
+
+Turn the first switch, `algo.rnn.enabled`, and the deciding part described in section 3
+is replaced by a recurrent network, which is a network that keeps a few numbers from one
+moment and reads them back at the next one. Those numbers are its memory, so its answer
+now depends on what it saw a moment ago and not only on what it sees now. That is the
+fix for the limit section 3 named, where a single picture cannot show whether the arm is
+moving up or down. The variant is called BC-RNN, and robomimic's default unrolls that
+memory over ten steps while training.
+
+The second switch, `algo.gmm.enabled`, is the one that matters most on this page. With
+it off, the network gives back a set of action numbers, and training shrinks the
+distance between those numbers and the recorded ones. With it on, the network gives
+back the shape of a spread of actions instead: the centre and the width of each of a
+few bell curves, five of them by default, together with how likely each one is.
+Training then raises the probability that this spread gives to the action the person
+actually took, rather than shrinking a distance to it. The consequence is the single
+most useful idea about models that copy a person. If half the demonstrations go left
+round an obstacle and half go right, a network that must give back one set of numbers
+is pushed towards the point between them, which is the obstacle, while a spread of five
+curves can put one curve on the left route and another on the right and keep both. At
+run time robomimic draws an action from that spread, and its `low_noise_eval` setting
+narrows the curves first, so the draw lands near one centre instead of between two
+centres.
+
+What the switches buy you is the chance to test one of these ideas instead of believing
+it, and the cost is that you test it on somebody else's robot. Nothing here predicts a
+chunk, so every one of the eight variants still chooses one move at a time and still
+drifts, which is what the next page is about. On a robot arm the difference shows up
+when your own policy wavers or stalls at the same point of the task every attempt.
+Before you record another hundred demonstrations, robomimic lets you check on its
+recordings, in an afternoon, whether memory or a spread of answers is the piece you
+were missing, and then look for the same option in the policy you actually run.
 
 You would pick robomimic over LeRobot for this one job because LeRobot ships no plain
 behaviour cloning policy at all. Its list of policies, read from its source on 3
@@ -459,8 +551,7 @@ your own recordings need converting, and it is driven by a configuration file ra
 than by flags. The thing that most often goes wrong is the installation, because it
 expects a particular pairing of robosuite and MuJoCo, which is why Book 3's
 [glossary](../../../03_frameworks/04_one-arm-training/06_glossary.md) says to install
-it from GitHub rather than from the Python package index. The licence is MIT, read
-from the repository's own licence file on 3 October 2026.
+it from GitHub rather than from the Python package index.
 
 The commands below are from robomimic's own
 [getting started page](https://robomimic.github.io/docs/introduction/getting_started.html),
@@ -490,35 +581,76 @@ in a simulated room.
 
 ### 6.3 ACT in LeRobot, the one to start with
 
-**Most used in 2026.** ACT stands for Action Chunking with Transformers, published in
-2023 with the [ALOHA paper](https://arxiv.org/abs/2304.13705). It is behaviour
-cloning that predicts a short run of future commands at each decision instead of one
-command, and [the next page](02_action-chunking-transformers.md) is about how it does
-that. LeRobot's [own page for it](https://huggingface.co/docs/lerobot/act) calls it
-"the first model we recommend when you're starting out", states that it has about 80
-million trainable values, and says it often reaches a high success rate with 50
-demonstrations.
+**Most used in 2026.** Size s, a small card, Apache-2.0 for LeRobot's code and MIT for
+the original, and no weights to download, because the policy you run is one you trained
+yourself.
 
-You would pick ACT over plain behaviour cloning from robomimic because of the fault
-described in section 7. A policy that chooses one command at a time drifts, and
-predicting a run of commands at once cuts the number of decisions and therefore the
-drift. Book 3's page on
+ACT stands for Action Chunking with Transformers, published in 2023 with the
+[ALOHA paper](https://arxiv.org/abs/2304.13705). It is behaviour cloning that predicts
+a short run of future commands at each decision instead of one command, and
+[the next page](02_action-chunking-transformers.md) is about how it does that.
+LeRobot's [own page for it](https://huggingface.co/docs/lerobot/act) calls it "the
+first model we recommend when you're starting out", and says it often reaches a high
+success rate with 50 demonstrations.
+
+The one idea in ACT is that the answer is a stretch of time rather than a moment. All
+eight robomimic variants in section 6.2 answer the question "what should the arm do
+now", and BC-RNN answers that question better by remembering the last few moments. ACT
+changes the question to "what should the arm do for the next two seconds", and gives
+back about a hundred commands in one pass.
+
+Inside, the picture part and the joining stay as section 3 described them, and the
+deciding part is what changes. A transformer takes the place of the last few layers,
+and its output side holds one empty slot for each future moment, where each slot knows
+only which moment it stands for. Attention fills those slots in. Every slot may look at
+every patch of every camera picture, at the joint positions, and at the other slots, so
+the hundredth command is produced in the same pass as the first. One small layer then
+turns each filled slot into a full set of joint targets. The number of decisions taken
+during the task therefore falls by roughly the length of the chunk, and that is the
+whole of the repair, because the drift this page keeps mentioning comes from the
+policy's own small errors carrying it into situations nobody recorded, and most of the
+steps where that could happen have gone.
+
+ACT also does something about demonstrations that disagree, and it is worth comparing
+with the spread of bell curves in section 6.2. While ACT trains, a second transformer
+reads the chunk the person actually made, together with the joint positions, and
+squeezes how it was done this time into 32 numbers. The main network is handed those 32
+numbers as an extra input during training, so it is not forced to explain the difference
+between two demonstrations from the picture alone. When the trained policy runs there is
+no person and no recorded chunk, so the 32 numbers are all set to zero, which stands for
+the typical way of doing the task. So robomimic keeps several routes and draws one of
+them at run time, while ACT keeps the variation out of the way during training and then
+asks for the middle of it afterwards. LeRobot lets you see what that is worth on your
+own data, because `--policy.use_vae=false` sets those numbers to zero during training as
+well, which turns ACT into plain prediction of one chunk.
+
+What the chunk buys is smooth motion on a careful task from about fifty
+demonstrations, and what it costs is reaction time, because an arm carrying out a chunk
+is not looking at the pictures. The zeroing at run time costs you the rest. A single
+typical chunk is one answer, so recordings that disagree about the route are still
+averaged into one route that may go straight through the obstacle. On a robot arm the
+difference from plain behaviour cloning shows up on a slow careful approach, such as
+easing a plug into a socket, where a policy choosing one command at a time hesitates
+and corrects itself into the side of the socket, while ACT commits to the whole
+approach. The difference in the other direction shows up if two people recorded your
+demonstrations and went about the task differently, and that is the case
+[the diffusion policy two pages on](03_diffusion-and-flow-policies.md) was built for.
+
+You would pick ACT over plain behaviour cloning from robomimic for the reason just
+given: a policy that chooses one command at a time drifts, and predicting a run of
+commands at once cuts the number of decisions and therefore the drift. Book 3's page on
 [learned methods](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#11-behaviour-cloning)
 quotes the ACT paper's own comparison, which goes from 1 per cent success when
 predicting one command at a time to 44 per cent when predicting a hundred, averaged
 over simulated tasks. The paper's real-robot claim is 80 to 90 per cent on six fine
 manipulation tasks from ten minutes of demonstrations.
 
-What it costs you is a recording session and nothing else. It is in the base LeRobot
-installation, so there is no extra dependency. LeRobot's hardware guide puts it in
-the lightest group at about 2 to 6 GB of video memory, and gives one Apple Silicon
-figure: five passes over a 45,000-frame recording at a batch size of four takes about
-6 to 14 hours on an M1, M2 or M3 Max, against about 30 to 60 minutes on an RTX 4090.
-The licence is Apache-2.0 for LeRobot's version and MIT for the original code. The
-thing that most often goes wrong is expecting somebody else's trained ACT policy to
-work for you. There is no transferable one, because the output layer has one number
-per joint of the arm it was trained on, so a policy trained on a seven-joint arm
-cannot even be loaded for a six-joint one.
+What it costs you is a recording session and nothing else, because ACT is in the base
+LeRobot installation and needs no extra dependency. The thing that most often goes
+wrong is expecting somebody else's trained ACT policy to work for you. There is no
+transferable one, because the output layer has one number per joint of the arm it was
+trained on, so a policy trained on a seven-joint arm cannot even be loaded for a
+six-joint one.
 
 Training is a command rather than a program, because LeRobot reads the number of
 joints and the number of cameras from your recording and sizes the network to fit.
@@ -552,14 +684,42 @@ of the finished policy.
 ### 6.4 DAgger, which is now a command
 
 **Worth betting on**, because the step it describes stopped being a research project
-and became one flag on a command. DAgger stands for Dataset Aggregation, and Ross,
-Gordon and Bagnell published it in [2011](https://arxiv.org/abs/1011.0686). It is a
-way of collecting data rather than a network. You let the trained policy drive, you
-take over when it goes wrong, and you add your corrections to the training set.
+and became one flag on a command. No size and no machine of its own, because DAgger is
+a way of collecting data rather than a network, and Apache-2.0 as part of LeRobot.
 
-You would do this rather than record more demonstrations because corrections cover
-the places the policy itself reaches, which are not the places a skilled person would
-have reached. Book 3's page on
+DAgger stands for Dataset Aggregation, and Ross, Gordon and Bagnell published it in
+[2011](https://arxiv.org/abs/1011.0686). You let the trained policy drive, you take
+over when it goes wrong, and you add your corrections to the training set.
+
+The one idea in DAgger is that the fault in behaviour cloning is in the data and not in
+the network. Every model above this one is trained on pairs that were recorded while a
+person was driving, so every situation in the training set is a situation a person got
+into. A trained policy drives itself into slightly different situations, because its
+own small errors take it a little off the recorded path, and nobody ever showed it what
+to do there. Changing the network does not change that, which is why DAgger sits
+alongside ACT and SmolVLA rather than competing with them.
+
+What changes is a loop around the training rather than anything inside it. You train a
+policy on the recordings you have, you run it, and the pairs you add are the situations
+it reached together with the action you would have taken in them. Those new pairs are
+added to the set you already had, which is where the word aggregation in the name comes
+from, and the next policy is trained on the whole grown set. The paper's own claim is
+about this loop and not about any network: repeated this way, it finds a policy that
+performs well in the situations that the policy itself produces, which is exactly the
+thing plain behaviour cloning promises nothing about.
+
+What the loop buys is coverage in the one place where it was missing, and its own limit
+is that it repairs only one of the two faults this page keeps returning to. A
+correction tells the policy what to do somewhere it had never been, so
+it works against drift. It does nothing against disagreement, because if your
+recordings already disagreed about the route then your corrections will disagree in the
+same way, and the averaging stays. On a robot arm the difference shows up with a policy
+that reaches for the drawer handle and stops two centimetres short every attempt. More
+demonstrations of the same kind give the policy more of what it already had, because a
+person never stops two centimetres short. Twenty corrections taken from where it does
+stop give it the one thing it lacks.
+
+Book 3's page on
 [interactive imitation](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes)
 states that a few dozen corrections gathered this way are often worth several hundred
 fresh demonstrations. The reason to bet on it now rather than in 2011 is that LeRobot
@@ -570,10 +730,9 @@ between the policy driving and you driving, and it marks every frame you drove w
 
 What it costs you is your attendance. You have to be at the robot with the leader arm
 in your hands, so the strategy requires a teleoperator to be configured, and the
-collecting cannot be left running overnight the way training can. It is part of
-LeRobot and therefore Apache-2.0. The thing that most often goes wrong is taking over
-too early: correct the policy before it has made its mistake and the recording holds
-your plan rather than its repair.
+collecting cannot be left running overnight the way training can. The thing that most
+often goes wrong is taking over too early: correct the policy before it has made its
+mistake and the recording holds your plan rather than its repair.
 
 ```bash
 # Let the trained policy drive, take over with Tab, and record twenty corrections.
@@ -599,8 +758,10 @@ the policy's own frames as well.
 ### 6.5 SmolVLA, if fifty recordings are not enough
 
 **Worth betting on**, because it is the cheapest way to stop training from nothing.
-SmolVLA is a policy with about 450 million trainable values, released by Hugging Face
-in June 2025. Book 3's
+Size m, a laptop to run it and a big card to train it, Apache-2.0 for the code and for
+the weights.
+
+SmolVLA was released by Hugging Face in June 2025. Book 3's
 [page on foundation models](../../../03_frameworks/08_frontier/02_foundation-models.md#10-the-open-shelf-what-you-can-download-today)
 records that it combines a vision-language backbone with a smaller action-producing
 part, was trained on about 10 million frames from 487 datasets contributed by the
@@ -608,25 +769,55 @@ community, and reports about 78 per cent success on real SO-100 arm tasks. It is
 behaviour cloning, and what makes it different from ACT is that the weights already
 exist and that the policy also reads a sentence saying which task to do.
 
+The one idea in SmolVLA is that nothing about reading a picture should be learned from
+your fifty recordings. ACT starts its picture part from a ResNet trained to name the
+objects in ordinary photographs, and everything else it knows comes from your
+recordings. SmolVLA starts from a vision-language model, which is a network trained on
+pictures paired with text, so it already connects what a cup looks like with the word
+cup. That network is kept, and a much smaller part called the action expert is attached
+to it to turn its output into moves.
+
+Inside, the pictures, the sentence and the arm's own joint positions all become one
+sequence for that big network to read, where each picture is compressed into a small
+number of pieces and the joint positions become a single piece. The action expert is a
+transformer about three quarters as wide as the big one, and its layers alternate
+between looking at what the big network produced and looking at the other moves in the
+chunk it is building. Two published choices keep it affordable. The expert reads the
+big network only up to the middle of its layers rather than waiting for the last one,
+and at run time only the whole picture is used rather than several cropped tiles of it.
+
+The chunk itself is produced in a way ACT does not use, and this is the part that
+matters for the problem of demonstrations that disagree. During training, noise is
+added to the recorded chunk, and the expert is asked for the correction that points
+from the noisy chunk back to the recorded one. At run time the chunk starts as pure
+noise, and that correction is applied in ten small steps until a chunk is left. This is
+called flow matching. Because the starting noise is drawn fresh each time, the network
+describes a whole spread of chunks that fit the picture and each run takes one of them,
+where ACT sets its 32 style numbers to zero and gives back the middle of the spread. So
+SmolVLA answers the averaging problem the way the diffusion policy two pages on does,
+and not the way ACT does. The pictures and the sentence pass through the big network
+once and the result is kept, so only the small expert runs the ten steps, which is what
+makes a model of this size usable on an arm at all.
+
+What the pretrained weights buy is that your recordings adjust a policy instead of
+creating one, and what the sentence buys is one policy for several tasks. What the
+design costs is the size of that big network, which has to be loaded and run at every
+step even though only the small expert produces the moves. That is why this is the one
+row of the table that a laptop can run and should not train.
+On a robot arm the difference shows up when you have recorded thirty episodes rather
+than a hundred, and the ACT policy you trained on them does the right motion in the
+wrong place.
+
 You would pick it over ACT in two cases. The first is that you start from trained
 weights rather than from nothing, which is the difference between fifty recordings
 being too few and being enough. The second is the sentence: one SmolVLA policy can be
 told at run time which of several tasks to perform, where an ACT policy trained on
 several tasks has no way to be told which one you want. Section 5 is about that input.
 
-What it costs you is memory and an extra install. LeRobot's hardware guide puts it at
-about 10 to 16 GB of video memory to train, a group above ACT, and the frontier
-chapter calls training it on a Mac marginal for that reason. Its
-[announcement](https://huggingface.co/blog/smolvla) states that it is small enough to
-run on a central processing unit or on a MacBook, so running it on a Mac is
-reasonable and training it there is not. Its
-[LeRobot page](https://huggingface.co/docs/lerobot/smolvla) says fine-tuning for
-20,000 steps takes roughly four hours on one A100 card. The licence is the most
-permissive on this page: Apache-2.0 on the code, and the
-[weights card](https://huggingface.co/lerobot/smolvla_base) declares Apache-2.0 as
-well, checked on 3 October 2026. The thing that most often goes wrong is the
-sentence, because the task text you pass when running must match the task text in
-your recordings. That text is an input to the network and not a label for you.
+What it costs you is an extra install, because SmolVLA is not in the base LeRobot
+package, and attention to the sentence. The thing that most often goes wrong is that
+sentence, because the task text you pass when running must match the task text in your
+recordings. That text is an input to the network and not a label for you.
 
 ```bash
 # SmolVLA is not in the base install.

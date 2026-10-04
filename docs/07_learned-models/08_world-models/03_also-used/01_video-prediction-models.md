@@ -273,32 +273,67 @@ it.
 This is **most used in 2026** for this kind of work, because it is the only
 openly downloadable video world model that takes your actual actions as numbers.
 NVIDIA published the Cosmos 3 family on Hugging Face on 31 May 2026, with
-[Cosmos3-Nano](https://huggingface.co/nvidia/Cosmos3-Nano) of 16 billion numbers
-and Cosmos3-Super of 64 billion, and added the smaller
-[Cosmos3-Edge](https://huggingface.co/nvidia/Cosmos3-Edge) of 4 billion numbers
-on 20 July 2026. Its model card says that text, pictures, video and action
-trajectories go in, and text, pictures, video and actions come out. The licence is
-[OpenMDW 1.1](https://openmdw.ai/license/1-1/), and the card states that the
-model is ready for commercial and non-commercial use.
+[Cosmos3-Nano](https://huggingface.co/nvidia/Cosmos3-Nano) and Cosmos3-Super,
+and added the smaller
+[Cosmos3-Edge](https://huggingface.co/nvidia/Cosmos3-Edge) on 20 July 2026. Its
+model card says that text, pictures, video and action trajectories go in, that
+text, pictures, video and actions come out, and that the model is ready for
+commercial and non-commercial use.
+
+Size l for Edge and xl for Nano and Super, a workstation, and
+[OpenMDW 1.1](https://openmdw.ai/license/1-1/) for both the code and the
+weights.
+
+The one idea is that an action is an input like any other. The model card lists
+what goes in as text, pictures, video and action trajectories, and what comes
+out as text, pictures, video and actions. So the question you are asking is
+decided by which of those you fill in and which you leave blank, and that is
+all the mode names mean. `forward_dynamics` is given one frame and a table of
+actions, and it produces the video. `inverse_dynamics` is given the frames, and
+it produces the table of actions. `policy` is given neither, and it produces
+both.
+
+Inside, the card describes two transformer towers working together, which it
+calls a mixture of transformers. One tower produces text one token at a time,
+in the way a language model does. The other produces everything that is not
+text, including the video and the action numbers, by starting from noise and
+removing it over many passes, which is the diffusion method that
+[section 3](#3-how-it-works-inside) describes. So an action table is not a
+command given to the model from outside. It is another kind of content, sitting in the same
+model as the pixels, which is why the same weights can fill in the actions when
+you hand them the frames instead.
+
+The action table is the part people trip over, and the card says exactly what
+it is: one row per frame, holding that robot's own state or control values,
+such as joint positions, the gripper and the camera pose. The number of values
+in a row is fixed for each robot the model was trained on, and the card lists
+them, with a single Franka Panda and a Robotiq gripper at ten values and a dual
+Franka at twenty. Nothing converts your arm's numbers into one of those layouts
+for you. If you send ten numbers that mean something other than the ten it
+learned, you get no error at all. You get a confident video of a different
+robot.
+
+One call covers one chunk of actions, and the card's own example shows what to
+do for a longer horizon: take the last generated frame of the chunk and use it
+as the starting picture for the next call. So the rollout accumulates its own
+errors in the same way as the numeric rollout on the previous page, except that
+each step here is a whole generated video. The difference from 5.2 shows up on
+an arm the moment you want to compare two plans instead of watching one future.
+You can run this model twice, once per plan, and see which video ends with the
+mug still on the table. You cannot do that with a model that only takes a
+sentence, because both plans are described by the same sentence.
 
 The obvious alternative is Cosmos Predict 2.5 in 5.2, which is from the same
 company and easier to install. Pick Cosmos 3 when you want the thing
-[section 2](#2-what-goes-in-and-what-comes-out) calls action-conditioned. Its
-action modes are named exactly after the ideas on this page: `forward_dynamics`
-rolls out future video from one frame and a sequence of actions you supply,
-`inverse_dynamics` reads the actions that connect frames you already have, and
-`policy` produces future video and actions together. Nothing else you can
-download does the first of those for a robot arm.
+[section 2](#2-what-goes-in-and-what-comes-out) calls action-conditioned,
+because nothing else you can download will answer a question about a robot
+arm's own actions.
 
-It costs you hardware, speed and a matching robot. The card lists Linux, NVIDIA
-Ampere, Hopper or Blackwell cards, and tested support for BF16 precision only.
-Its performance table gives one forward-dynamics call as 3.69 seconds on an H100
-SXM 80 GB card and 24.59 seconds on a DGX Spark, while an arm's control loop
-needs an answer in a few milliseconds. The third cost is the one people trip
-over: the action numbers must be in the layout of one of its listed robots,
-which include a single Franka Panda arm with a Robotiq gripper at 10 numbers, a
-WidowX 250 at 10 and a dual Franka at 20. If your robot is not on that list,
-your numbers mean nothing to the model.
+It costs you speed, and it ties you to one operating system. The card lists
+Linux only, with NVIDIA Ampere, Hopper or Blackwell cards and tested support for BF16
+precision alone. Its performance table gives one forward-dynamics call as 3.69
+seconds on an H100 SXM 80 GB card and 24.59 seconds on a DGX Spark, while an
+arm's control loop needs an answer in a few milliseconds.
 
 The library is `diffusers` from Hugging Face, through
 [`Cosmos3OmniPipeline`](https://huggingface.co/docs/diffusers/main/en/api/pipelines/cosmos3),
@@ -352,19 +387,53 @@ and segmentation maps and produces a photorealistic video of the same scene.
 That sibling is the one most teams use, because it makes simulated training
 pictures look like real ones.
 
+Size l, a workstation, Apache 2.0 for the code and the NVIDIA Open Model
+License for the weights.
+
+The one idea is that one model should cover every way of starting a video. Its
+paper names those ways Text2World, Image2World and Video2World, which is to say
+the prediction can begin from a sentence alone, from a sentence and one
+picture, or from a sentence and a piece of video you already have. There is no
+fourth way that begins from a sentence and a table of actions, and that missing
+way is the whole difference from 5.1.
+
+Inside, the frames are produced by the same kind of gradual denoising as 5.1,
+and the sentence does not reach the model raw. The paper states that it uses
+Cosmos-Reason1, which is a vision-language model of the kind the
+[language models chapter](../../07_language-models/01_overview.md) describes,
+to ground the text and give finer control over the world it generates. So the control you
+have is as fine as words can be. You can ask for the arm to push the red cube
+to the right and get it. You cannot ask for 3.4 cm, and no sentence you write
+will distinguish two pushes that differ only in how hard they are.
+
+Its sibling `cosmos-transfer2.5` is where the control does get finer, and it is
+worth seeing how, because it is not by accepting actions. The paper calls it a
+control-net style model, which means a second input runs alongside the
+generation and holds it to a shape. That input is a crude render of your own
+scene, with the distance to each surface and a label for each object, so the
+structure of the video comes from your simulator and the model supplies only
+the appearance. You therefore say what should happen by rendering it rather
+than by asking for it, which works when you already have a simulator and not
+when the question is what your next action would do.
+
+What this buys is the shortest path to a large amount of realistic robot video.
+What it costs is the thing a world model is for. This model answers "what would
+a video matching these words look like?", and a planner needs "what would this
+action do?". The difference decides which one you want on an arm. To train a
+seeing model that has to work in a kitchen you never recorded, this is the
+right model and 5.1 is not. To choose between two pushes in the next second,
+this one cannot help at all, and 5.1 cannot do it quickly enough either.
+
 The obvious alternative is Cosmos 3 in 5.1. Pick Predict 2.5 when the action
 does not need to be a number, for example when you are generating video to train
 a policy on, because it is smaller, it is in the released `diffusers`, and its
 documented example is a dozen lines.
 
-The cost to understand before you start is that the action goes in as a
-sentence, so the model shows you *a* future that matches your words rather than
-the future *your action would cause*. The frontier document also records the
-licence split, which is easy to get wrong: the Cosmos source code is Apache 2.0
-while the models are under the NVIDIA Open Model License, so check the model
-licence before shipping. The weights are gated as well, so you must sign in to
-Hugging Face and accept the terms before downloading, and it needs substantial
-NVIDIA hardware, which puts it out of reach on a Mac.
+The cost to understand before you start is that the weights are gated, so you
+must sign in to Hugging Face and accept the terms before you can download
+anything. Book 3's frontier document also records the licence split, which is
+easy to get wrong, because the code licence is the permissive one and the model
+licence is not.
 
 The library is `diffusers`. The code below is the example from its own
 [Cosmos documentation page](https://github.com/huggingface/diffusers/blob/main/docs/source/en/api/pipelines/cosmos.md),
@@ -406,28 +475,62 @@ This is **worth betting on**, because predicting video and actions in one
 sequence is the direction this kind of model is going, and it is not yet the
 default. LingBot-VA arrived in LeRobot version 0.6.0 on 6 July 2026, which Book 3's
 frontier chapter dates and sources. Its
-[documentation page](https://huggingface.co/docs/lerobot/lingbot_va) describes two
-streams inside one transformer of about 5 billion trainable numbers, built on the
-Wan2.2 video stack. One stream predicts future video, the other predicts actions,
+[documentation page](https://huggingface.co/docs/lerobot/lingbot_va) describes
+two streams inside one transformer built on the Wan2.2 video stack. One stream predicts future video, the other predicts actions,
 and they share the same blocks. As each chunk of actions is carried out, the real
 frames that arrive are fed back in, which the page calls closed-loop world
 modelling.
 
-The obvious alternative is FastWAM in 5.4, which throws the video away before the
-robot runs. Pick LingBot-VA when you want to see what the policy expected. Its
-`--policy.save_predicted_video=true` option writes the video it imagined next to
-the video of what really happened, and comparing those two is the most useful
-debugging tool on this page.
+Size l for the trainable part, with about 20 GB of frozen parts beside it, a
+big card, and Apache 2.0 for LeRobot with the frozen parts carrying their own
+repository's licence.
 
-What it costs you is memory and speed. The documentation says that only the 5
-billion trainable numbers are stored in the LeRobot checkpoint, and that the
-frozen parts, about 20 GB of them, are pulled from another repository when the
-model loads, so those parts carry that repository's licence rather than
-LeRobot's Apache 2.0. It says the text encoder runs on the processor by default
-so that the rest fits on a single card of 24 to 32 GB, that evaluation runs one
-environment at a time, and that fine-tuning the whole model does not fit such a
-card. It also predicts end-effector poses in a fixed 30-channel layout rather
-than joint angles, so your arm's actions must be mapped into those channels.
+The one idea is that predicting the video and choosing the action should be the
+same piece of work rather than two models in a row. The documentation calls it
+a video-action model, and the two things are produced together in one sequence,
+taking turns.
+
+What that means inside is two streams of numbers passing through the same
+blocks. One stream carries the video and the other carries the actions, and the
+documentation says they share the same thirty transformer blocks and the same
+text conditioning. The sharing is the point. Whatever lets the model guess the
+next frames is the same thing it uses to choose the action, so it cannot choose
+an action without also holding a picture of what the scene would then look
+like. It does not predict pixels directly either. The video stream predicts the
+compressed form that a frozen autoencoder uses, and that autoencoder turns the
+result back into pictures, which is why the frozen parts are so much larger
+than the trainable ones.
+
+At run time it works a chunk at a time, denoising the video stream and the
+action stream on separate schedules and keeping what it has already worked out
+in memory between chunks. The important part is what happens between those
+chunks. The real frames that arrive while the chunk is being carried out are
+fed back in, which is what closed-loop world modelling means here, so the model
+is never left running for long on its own predictions. Compare that with 5.1,
+where every chunk after the first starts from a picture the model itself drew
+and nothing arrives to correct it.
+
+What this buys is the one debugging tool on the page. The video the model
+imagined is a by-product you can look at, rather than an input to a search, so
+`--policy.save_predicted_video=true` lets you watch what the policy expected
+next to what really happened. What it costs is speed, because the frames are
+still being generated while the robot is running, and the honest limit is that
+the imagined video is not a check on the action: the two streams can agree with
+each other and both be wrong. The difference shows on an arm when a task fails
+and you cannot tell whether the policy misread the scene or chose badly. This
+is the only model here that shows you which.
+
+The obvious alternative is FastWAM in 5.4, which throws the video away before
+the robot runs. Pick LingBot-VA when you would rather be able to see what the
+policy expected.
+
+What it costs you besides the speed is a fixed action layout and an awkward
+fine-tune. The documentation says that evaluation runs one environment at a
+time, and that the full model does not fit for fine-tuning on the same card
+that is enough to run it, so adapting it means a LoRA rather than training the
+whole thing. It also predicts end-effector poses in a fixed 30-channel layout
+rather than joint angles, so your arm's actions must be mapped into those
+channels.
 
 The library is LeRobot, and the checkpoints are published in its own format.
 
@@ -459,23 +562,47 @@ document explains why that matters. FastWAM also arrived in LeRobot 0.6.0. Its
 [documentation page](https://huggingface.co/docs/lerobot/fastwam) says that it
 "keeps video modeling during training, but uses direct action prediction at
 inference time instead of iteratively generating future observations", and that
-its visual parts are initialised from the Wan2.2-TI2V-5B video model, which is
-licensed under Apache 2.0.
+its visual parts are initialised from the Wan2.2-TI2V-5B video model.
 
-The obvious alternative is LingBot-VA in 5.3. Pick FastWAM when the robot has to
-be quick, because predicting video at run time is what makes this kind of model
-too slow to control an arm. Here the prediction is used only while training, as a
-way of forcing the network to learn what actions do to the scene. The honest
-warning comes from the same frontier document: no published head-to-head result
-shows that these policies beat a policy trained without that extra training
-signal, so the benefit is believable rather than established.
+Size l, a big card, and Apache 2.0 for both LeRobot and the Wan2.2-TI2V-5B
+weights it starts from.
 
-What it costs you is an NVIDIA card, the Wan2.2-TI2V-5B download, and a dataset
-in LeRobot format. The documentation's example expects one camera image of 3 by
-224 by 448, or two cameras whose widths add up to 448, and its training command
-runs for 300,000 steps, which is a large amount of computing. You also lose what
-5.3 gives you, because a policy that does not predict at run time cannot show
-you what it expected.
+The one idea is that the useful part of video prediction may be what it does to
+the weights while they are being trained, and not the pictures it draws
+afterwards. If that is true, then a policy should learn to predict video and
+then stop doing it.
+
+Inside, it is built on the same Wan2.2 video stack as 5.3, and it starts from
+the released Wan2.2-TI2V-5B weights. So the policy does not begin as random
+numbers. It begins as a network that was already trained to produce video,
+which means it already holds something about how objects move before it has
+seen your robot at all. Training then asks it for two things at once from the
+camera pictures, the arm's own position numbers and a sentence for the task:
+the future, and a chunk of actions.
+
+At run time only the second of those is produced. Generating frames is the
+expensive part, and the whole gain is in not doing it, which is why this is the
+quickest model on the page to ask for an action. The cost is the
+exact mirror of 5.3's benefit. Nothing at run time can be inspected, because
+nothing at run time is drawn, so when the policy does the wrong thing you have
+its actions and no picture of what it thought it was doing.
+
+The difference shows on an arm wherever the cycle time is part of the job. A
+pick-and-place loop that has to keep moving cannot stop to generate a video,
+even a short one, so 5.3 and 5.1 are both out and this is what remains. The
+honest warning comes from the same frontier document as above: no published
+head-to-head result shows that a policy trained this way beats the same policy
+trained without the video prediction, so the training signal is believable
+rather than established.
+
+The obvious alternative is LingBot-VA in 5.3. Pick FastWAM when the robot has
+to be quick, and pick 5.3 when you would rather be able to see what the policy
+expected.
+
+What it costs you besides the training signal being unproven is a dataset in
+LeRobot format and a long run. The documentation's example expects one camera
+image of 3 by 224 by 448, or two cameras whose widths add up to 448, and its
+training command runs for 300,000 steps, which is a large amount of computing.
 
 The library is LeRobot again.
 
@@ -510,6 +637,39 @@ time. Book 3's frontier chapter quotes
 access through "Project Genie", described there as "an experimental research
 prototype that lets you create and explore infinitely diverse worlds".
 
+Size not stated and no weights released, so there is no machine to size and no
+licence to read.
+
+The insides of the current model are not published. There is no paper, no code
+and no weights, so nothing in this section is a description of how the model
+you read about on that page works. Two things can honestly be said instead. The
+first is what the model page claims the model does, which is above. The second
+is how the one model in this line whose insides were published worked, and that
+is worth knowing because it explains why a robot could not use this family even
+if the weights arrived tomorrow.
+
+That published model is
+[Genie: Generative Interactive Environments](https://arxiv.org/abs/2402.15391),
+from 2024. Its paper describes
+three parts. A tokeniser turns video into tokens over space and time, in the
+way a language model turns text into tokens. A dynamics model predicts the next
+tokens from the tokens so far. And a latent action model works out, from each
+pair of neighbouring frames, a short code for what changed between them. That
+third part is the one that matters here. The training videos had no actions
+recorded alongside them, so the model was left to invent its own small set of
+codes, and a person acting in the generated world picks one of those codes
+rather than naming a movement.
+
+So the reason Genie is a direction and not a tool is sharper than the lack of
+weights. Its actions are not your arm's actions and could not be made into
+them. 5.1 accepts a row of ten numbers because somebody trained it on
+recordings of that exact robot, as its list of embodiments shows. Genie's
+actions mean whatever the model found in the video it watched, and there is no
+code in that set for closing a gripper by 2 cm. What the line does show is that
+generating a world which responds to input, in real time, and stays visually
+consistent while it does, is possible at all. Every row above it in the table
+exists because that turned out to be true.
+
 There is no alternative to compare it with, because there is nothing to install.
 The frontier chapter records what is missing for a robot: no weights, no
 interface a robot could act through, no contact model you can read, no forces,
@@ -517,11 +677,6 @@ no way to attach a gripper, and no published evaluation on any manipulation
 benchmark. So its cost is that you cannot plan any work around it, and the
 frontier chapter names that as the pattern of this field in 2026, where the
 newest results are announced rather than released.
-
-Genie is in this list for one reason. It shows that real-time, controllable,
-visually coherent world generation is possible, which was not obvious two years
-ago, and every row above it in the table exists because that turned out to be
-true.
 
 ### 5.6 Action-conditioned pixel prediction, and Visual Foresight
 
@@ -533,13 +688,49 @@ instead of drawing new pixels it predicted how the existing pixels move, which i
 why it worked so well for pushing. Frederik Ebert, Chelsea Finn and others then
 built [Visual Foresight](https://arxiv.org/abs/1812.00568) on it in 2018, and
 that is the system
-section 6 of this page
-describes.
+[section 3](#four-ways-a-robot-uses-the-pictures) of this page describes.
 
-Read these rather than skip them, because they are the only line of work on this
-page that planned real pushes by comparing predicted pictures. Everything newer
-either generates video from a sentence, as 5.2 does, or uses prediction as a
-training signal, as 5.4 does.
+Size not stated, nothing to install, and no licence recorded here for the
+research code.
+
+The one idea is that you do not have to draw the next picture in order to
+predict it. You can predict where the pixels you already have will move to, and
+then move them. The 2016 paper's own words are that it models pixel motion
+explicitly, by predicting a distribution over pixel motion from the previous
+frames.
+
+So what comes out of that network is not a picture. It is a set of small
+movements, which are then applied to the last real frame, together with a
+choice of which movement applies where. The consequence the paper draws from
+this is the part worth remembering: because the model predicts motion rather
+than appearance, it is partly indifferent to what the object looks like, so it
+keeps working on objects that were never in its training videos. The diffusion
+models in 5.1 and 5.2 have no such property to fall back on, because they draw
+every pixel of every frame from noise, and what they draw for an unfamiliar
+object is whatever their training made likely.
+
+Visual Foresight then put that model inside a planner, and the way it scored a
+plan is the part nobody has repeated. A person marks one pixel on the object in
+the camera picture and marks where that pixel should end up. The planner makes
+up many action sequences, predicts for each one where the marked pixel travels,
+and keeps the sequence that lands it nearest the mark. Nothing compares whole
+pictures, because a whole picture is mostly background and comparing whole
+pictures mostly measures the background. The paper offers a goal picture and a
+goal classifier as alternatives, and it needs no reward from outside at all,
+because the camera already holds the answer.
+
+That is why this entry is still here, and
+[section 5.8](#58-how-to-choose) is the rest of the reason. This is the only
+work on the page that planned real pushes by comparing predicted pictures, and
+it managed it because its model was small enough to run many times and its
+score was one pixel rather than a whole frame. Everything above it predicts
+better and plans worse. So if you ever want to plan with pictures on your own
+arm, this is the design to copy: a small model, run many times, scored on one
+marked pixel.
+
+Read these rather than skip them. Everything newer either generates video from
+a sentence, as 5.2 does, or uses prediction as a training signal, as 5.4 does,
+and neither of those answers the question this work asked.
 
 What they cost you is that there is nothing to install. They are research
 programs attached to individual papers, written for versions of TensorFlow that
@@ -556,6 +747,37 @@ It draws a video of the task from a sentence, and then recovers the arm moves
 from that video with an inverse dynamics model. SuSIE, by Kevin Black and others
 in [the same year](https://arxiv.org/abs/2310.10639), cut the video down to a
 single next picture, which a policy then drives the arm towards.
+
+Size not stated, nothing to install, and no licence recorded here for the
+research code.
+
+The one idea is that a plan can be a video. The paper treats deciding what to
+do as a video generation problem: given a sentence describing the goal, the
+planner produces the frames that show the task being done, and the arm's actual
+commands are worked out from those frames afterwards.
+
+The reason for splitting the work in two is that the two halves can be trained
+on different things. The first half is a text-conditioned video generator, and
+it can learn from video from anywhere, including video with no robot and no
+actions recorded. The second half is the inverse dynamics model, which looks at
+two neighbouring frames and says what command would turn the first into the
+second, and only that half needs recordings of your own robot's commands. The
+paper's argument is that the half needing robot data is the small and easy one.
+
+The consequence is the claim in the paper's title. Because the plan is a
+picture, it never mentions joints or grippers, so the paper can describe
+environments with different states and different commands in one shared space
+of images. Compare that with 5.1, where the action table has to be in one of
+the layouts the model was trained on and nothing translates between them. UniPi
+pushes the robot-specific part to the very last step, where it is cheapest to
+redo.
+
+What it costs is two models and two ways to fail. A video plan can look
+convincing and be physically impossible, and the inverse dynamics model will
+then read commands off a pair of frames that no real arm could have produced,
+without anything in either model noticing. SuSIE's answer to that cost is to
+generate only the next picture rather than a whole video, so the arm is never
+asked to follow a long imagined sequence.
 
 The reason to know UniPi is that Cosmos 3 now provides both halves of it as modes
 of one model, so the pattern is no longer something you assemble from two

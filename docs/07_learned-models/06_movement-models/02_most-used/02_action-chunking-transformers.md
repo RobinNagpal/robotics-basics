@@ -293,34 +293,69 @@ groups policies by the video memory they need to train at a batch size of eight.
 
 ### 6.1 ACT in LeRobot, the one to start with
 
-**Most used in 2026.** This is the version of ACT that nearly everybody runs. LeRobot
-implements the network from the paper
+**Most used in 2026.** Size s, a small card, Apache-2.0, and no weights to download,
+because the ACT policy you run is always one you trained yourself.
+
+This is the version of ACT that nearly everybody runs. LeRobot implements the network
+from the paper
 [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware](https://arxiv.org/abs/2304.13705),
 and its
 [page for the policy](https://huggingface.co/docs/lerobot/act) calls it "the first
-model we recommend when you're starting out", states that it has about 80 million
-trainable values, and says it often reaches a high success rate with 50
-demonstrations. It is in the base LeRobot installation, so there is no extra
-dependency to install for it.
+model we recommend when you're starting out", and says it often reaches a high success
+rate with 50 demonstrations. It is in the base LeRobot installation, so there is no
+extra dependency to install for it.
+
+The one idea that separates ACT from every other row of the table is that it produces
+its chunk in a single pass of a single network. The three steps of section 3 run once,
+and the hundred commands are there. The original ACT code in section 6.2 is the same
+network, but every other policy in the table builds its chunk the other way, by
+starting from a chunk of random numbers and improving it over several passes. The
+sub-sections below describe each of those in turn, and almost everything else in the
+table follows from this one difference.
+
+What that changes inside is the training target and what comes back at run time.
+Training compares the predicted chunk with the recorded one and adds up the plain
+distance between the two, number by number, without squaring it. That choice matters in
+a way that is easy to see with one number instead of fourteen hundred. If you have to
+pick a single number to stand for many, the one with the smallest total distance to all
+of them is the middle number of the list, while the one with the smallest total squared
+distance is their average. ACT is trained on plain distance, so the chunk it settles on
+leans towards the middle of the chunks it was shown rather than their average, and one
+unusual demonstration drags it less far. It is still a single chunk, though. The style
+numbers of section 3 are set to zero when the policy runs, so the chunk is decided
+entirely by the pictures and the joint positions: the same observation gives the same
+chunk, every time.
+
+What the single pass buys is cost and repeatability. ACT is the cheapest row of the
+table to train and the quickest to answer, which is why it is the only one you can
+train overnight on a laptop, and why it never needs the real-time chunking that
+section 6.5 has to describe for the large policies. Because its answer is decided by
+the observation alone, a failure repeats: you can run the same attempt again, see the
+arm do the same wrong thing, change one setting and compare. You cannot do that with
+the diffusion policy of section 6.3 or with SmolVLA in section 6.4, where the chunk
+starts from fresh random numbers and two attempts from the same picture differ. What
+the single pass costs is that one chunk is one answer, and the style numbers do nothing
+about that at run time, because they are asked for the typical way of doing the task.
+
+On a robot arm the choice shows up as soon as you look at who recorded your
+demonstrations. Fifty recordings of one careful motion, made by one person who did it
+the same way each time, are what ACT was built for, and the diffusion policy would cost
+you a bigger card and a longer training run for a result you could not tell apart. Two
+people who approached the object from different sides, or one person who changed their
+mind
+halfway through the session, give you recordings that disagree, and ACT's one chunk
+then lands between the two approaches. Section 6.3 is the row for that case.
 
 You would pick ACT over the diffusion policy in section 6.3, which is the obvious
 alternative and the other chunk-predicting policy in the same library, because it is
-the cheaper of the two by a clear margin. LeRobot's hardware guide puts ACT in its
-lightest group at about 2 to 6 GB of video memory, and diffusion a group above at
-about 8 to 14 GB. The same guide's own timings for five passes over a 45,000-frame
-recording on one RTX 4090 are about 30 to 60 minutes for ACT and about 2 to 4 hours
-for diffusion. Both choose a chunk, so you lose nothing about the subject of this
+the cheaper of the two by a clear margin, as the size and machine lines of the two
+sub-sections show. Both choose a chunk, so you lose nothing about the subject of this
 page by starting with the cheaper one.
 
 What it costs you is a recording session and the pair of numbers below. There is no
 pretrained ACT policy that transfers to you, because the output layer has one number
-per joint of the arm it was trained on, so a policy trained on a seven-joint Franka
-arm cannot even be loaded for a six-joint SO-101. On an Apple Silicon Mac the
-hardware guide gives one figure: five passes over that same 45,000-frame recording at
-a batch size of four takes about 6 to 14 hours on an M1, M2 or M3 Max, and the flag
-for it is `--policy.device=mps`, which LeRobot's
-[accelerator page](https://huggingface.co/docs/lerobot/torch_accelerators) documents.
-The guide also says plainly not to train on the central processing unit alone.
+per joint of the arm it was trained on, so a policy trained on a seven-joint Franka arm
+cannot even be loaded for a six-joint SO-101.
 
 Training is a command rather than a program, because LeRobot reads the number of
 joints and the number of cameras from your recording and sizes the network to fit.
@@ -389,30 +424,48 @@ step.
 
 ### 6.2 The original ACT code, and one number it left behind
 
-**Historical.** The [code the paper was written from](https://github.com/tonyzhaozh/act)
-is still online under the MIT licence, and reading it is the only reason to open it.
-Checked on 3 October 2026, its last change was in July 2024 and it has not been
-archived, so it is dormant rather than withdrawn.
+**Historical.** Size s, a small card, MIT.
 
-You would not pick it over LeRobot's version, and the reason is not the network,
-which is the same network. It is everything round the network. LeRobot gives you one
-recording format, drivers for cheap arms, a training script that sizes the network
-from your recording, and a control loop that runs the result at a fixed rate. The
-original code supplies none of that. Its own installation instructions pin Python
-3.8.10, MuJoCo 2.3.7 and dm_control 1.0.14, and they install `rospkg`, because the
-real-robot side of it runs through ROS and through a second repository for the
-ALOHA rig described in section 5.
+The [code the paper was written from](https://github.com/tonyzhaozh/act) is still
+online, and reading it is the only reason to open it. Checked on 3 October 2026, its
+last change was in July 2024 and it has not been archived, so it is dormant rather than
+withdrawn.
 
-What it costs you, if you use it anyway, is all of the work LeRobot does for you,
-on top of a set of pinned versions from 2023 that an environment built today has to
-be made to accept.
+The network inside it is the network of section 3, so this sub-section is the one place
+on the page where the answer to "how is this one different inside" is "it is not". The
+one idea here is that research code is written to produce one paper's results on one
+rig, and everything about it follows from that. The recording format is the authors'
+own, the robot side talks to the ALOHA arms of section 5 through ROS and a second
+repository, and the versions are the versions that worked in 2023.
 
-There is one thing in it worth carrying away, and it is a number. LeRobot's ACT
+There is, though, one real difference inside, and it is worth knowing because it is
+about the chunk. The transformer that produces the chunk has a second half, called the
+decoder, which is the part holding one slot per future moment. Stacking several decoder
+layers lets those slots be revised several times before they are read out. LeRobot's ACT
 configuration sets `n_decoder_layers` to 1, and its own comment explains why: the
-original implementation has 7, but a bug in that code means only the first layer is
-ever used, so LeRobot sets 1 to match what the original actually did. The comment
-links to the issue in the original repository where this was found. The rest of LeRobot's defaults are the paper's: a ResNet-18 picture
-encoder, a model width of 512, four encoder layers and a chunk of 100.
+original implementation asks for 7, but a bug in that code means only the first of the
+seven is ever used, so LeRobot sets 1 to match what the original actually did. The
+comment links to the issue in the original repository where this was found. Everything
+else in LeRobot's defaults is the paper's: a ResNet-18 picture encoder, a model width of
+512, four encoder layers and a chunk of 100.
+
+What the difference buys you is nothing, and what it costs is the risk of a comparison
+that means nothing. If you read the paper, built its 7-layer decoder yourself, and
+measured it against LeRobot's single layer, you would be comparing two different
+networks and attributing the gap to the library. The general lesson is worth more than
+the setting, and it is the reason this row is in the table at all. When a paper's number
+and a maintained library's number disagree, the library has usually read the paper's
+code, and the code is what produced the result.
+
+You would not pick this repository over LeRobot's version, and the reason is not the
+network. It is everything around the network. LeRobot gives you one recording format,
+drivers for cheap arms, a training script that sizes the network from your recording,
+and a control loop that runs the result at a fixed rate. The original code supplies
+none of that. Its own installation instructions pin Python 3.8.10, MuJoCo 2.3.7 and
+dm_control 1.0.14, and they install `rospkg`, because its real-robot side runs through
+ROS. What it costs you, if you use it anyway, is all of the work LeRobot does for you,
+on top of a set of pinned versions from 2023 that an environment built today has to be
+made to accept.
 
 ```bash
 # The paper's settings written out, although these are LeRobot's defaults already.
@@ -427,32 +480,66 @@ lerobot-train \
   --policy.chunk_size=100
 ```
 
-The general lesson is worth more than the setting. When a paper's number and a
-maintained library's number disagree, the library has usually read the paper's code,
-and the code is what produced the result.
+Whichever one you run, the chunk is the same chunk, which is why this row changes
+nothing about the subject of the page.
 
 ### 6.3 The diffusion policy in LeRobot, when the routes disagree
 
 **Most used in 2026**, alongside ACT, and it is the other policy a beginner is likely
-to train. A diffusion policy also predicts a chunk, so everything on this page about
-chunk length still applies to it. What it changes is how the chunk is produced: it
-builds the chunk the way an image model builds a picture, by starting from noise and
-improving it, which lets it represent "either this route or that one" instead of
-averaging the two.
-[The next page](03_diffusion-and-flow-policies.md) is about how that works.
+to train. Size not stated, a big card, Apache-2.0 in LeRobot and MIT for the original
+[Stanford code](https://github.com/real-stanford/diffusion_policy).
 
-You would pick it over ACT when your demonstrations disagree about the route. Section
-8 describes the fault: if some recordings go left round an obstacle and others go
-right, a policy trained to produce one answer close to every recording learns to go
-through the obstacle. ACT only reduces that problem, because its style number,
-described in section 3, gives it a limited way to represent several routes. A
-diffusion policy addresses it directly.
+A diffusion policy also predicts a chunk, so everything on this page about chunk length
+still applies to it. What it changes is how the chunk is produced.
+[The next page](03_diffusion-and-flow-policies.md) is about that in full, and the four
+paragraphs here say only how it differs from ACT.
 
-What it costs you is roughly double in memory and in time, by the two figures
-section 6.1 compared, which moves training on an Apple Silicon Mac from slow to
-doubtful. It needs one extra install, because the policy depends on the diffusers
-library. The licence is Apache-2.0 for LeRobot's implementation and MIT for the
-original [Stanford code](https://github.com/real-stanford/diffusion_policy).
+The one idea is to stop asking the network for the right chunk and ask it instead to
+improve a wrong one. The network then has a much easier question to answer, which is
+"this chunk is slightly wrong, in which direction", and a network that answers that
+question can be run again on its own answer. Run it enough times, starting from a chunk
+of random numbers, and what you end up holding is one of the chunks the recordings
+contained, rather than something between them.
+
+Inside, this is a different machine from ACT's and not a changed setting. ACT turns
+each camera picture into many pieces and lets each future moment of the chunk look at
+each piece. LeRobot's diffusion policy instead flattens everything it knows about the
+situation, which is the picture features from the two most recent observations together
+with the joint positions, into one long list of numbers. That list then steers a
+convolutional network which runs along the time axis of the chunk, squeezing its moments
+down into fewer and longer ones, mixing them, and expanding them back out. Which
+round of the cleanup it is doing is also an input, so one network serves every round.
+Training adds a random amount of noise to a recorded chunk and asks the network to name
+the noise that was added. Running starts from pure noise and takes off what the network
+names, round after round. The whole network therefore runs once per round, where ACT's
+runs once per chunk, and that is where the memory and the time in the line above go.
+
+What the design buys is that the policy describes a spread of good chunks instead of one
+chunk. If some of your recordings go left round an obstacle and others go right, each
+round of the cleanup pulls the chunk towards whichever of the two it is already nearer,
+so a run comes out as a whole left chunk or a whole right chunk and never as half of
+each. ACT cannot do that at run time. Its style numbers hold the variation between
+demonstrations aside while it trains and are then set to the typical value, so the one
+chunk it gives back sits between the two routes, which on a table with an obstacle means
+through the obstacle. What the design costs, besides the training, is the repeatability
+that section 6.1 counted as ACT's advantage: the noise is drawn fresh for every chunk,
+so the same picture gives a different motion each time, and a failure you want to
+investigate may not happen again.
+
+On a robot arm the difference decides the result when more than one person recorded your
+demonstrations, or when one person changed their approach during the session. Train ACT
+on those recordings and the arm drives into the obstacle both people went around. Train
+the
+diffusion policy on the same file and it picks a side. The difference costs you when the
+opposite is true: fifty recordings of one route by one person give the diffusion policy
+nothing to choose between, and you have paid a bigger card and a longer training run for
+a spread with one thing in it.
+
+You would therefore pick it over ACT when your demonstrations disagree about the route,
+and ACT over it when they do not.
+
+What it costs you is one extra install, because the policy depends on the diffusers
+library.
 
 ```bash
 pip install 'lerobot[diffusion]'
@@ -473,33 +560,60 @@ than a project.
 ### 6.4 SmolVLA, a chunk from pretrained weights
 
 **Worth betting on**, because starting from trained weights is where the field has
-gone, and this is the one example of it that a small machine can run. SmolVLA is a
-policy with about 450 million trainable values, released by Hugging Face in June
-2025. Book 3's
+gone, and this is the one example of it that a small machine can run. Size m, a laptop
+to run it and a big card to train it, Apache-2.0 for the code and for the weights.
+
+SmolVLA was released by Hugging Face in June 2025. Book 3's
 [page on foundation models](../../../03_frameworks/08_frontier/02_foundation-models.md#10-the-open-shelf-what-you-can-download-today)
 records that it pairs a vision-language backbone with a smaller action-producing part
-and reports about 78 per cent success on real SO-100 arm tasks. It predicts a chunk
-exactly as ACT does, and its configuration in LeRobot sets that chunk to 50 commands
-rather than ACT's 100.
+and reports about 78 per cent success on real SO-100 arm tasks. It predicts a chunk,
+and its configuration in LeRobot sets that chunk to 50 commands rather than ACT's 100.
 
-You would pick it over ACT for two reasons, and both are things ACT cannot do. Its
-weights already exist, so your recordings adjust a policy that has seen many people's
-robots instead of creating one from nothing. And it reads a sentence saying which task
-to do, so one policy can be told at run time which of several jobs you want, where an
-ACT policy trained on several tasks has no input to tell it.
+The one idea is that the hard part of reading a scene has already been paid for by
+somebody else. ACT's picture part is a ResNet that was trained to name the objects in
+ordinary photographs, and it knows nothing about words. SmolVLA keeps a whole
+vision-language model instead, which is a network trained on pictures paired with text,
+and attaches a smaller network called the action expert to produce the moves. So the
+pictures, the sentence naming the task, and the arm's own joint positions all enter the
+same stream of pieces for the big network to read, where each picture is compressed to a
+small number of pieces and the joint positions are turned into a single piece by one
+layer.
 
-What it costs you is memory, an extra install and attention to that sentence.
-LeRobot's hardware guide puts it at about 10 to 16 GB of video memory to train, a
-group above ACT, so Book 3 calls training it on a Mac marginal, while its
-[announcement](https://huggingface.co/blog/smolvla) states that it is small enough to
-run on a central processing unit or on a MacBook. Its
-[LeRobot page](https://huggingface.co/docs/lerobot/smolvla) says fine-tuning for
-20,000 steps takes roughly four hours on one A100 card. The licence is the most
-permissive in the table: Apache-2.0 on the code, and the
-[weights card](https://huggingface.co/lerobot/smolvla_base) declares Apache-2.0 as
-well, checked on 3 October 2026. The thing that most often goes wrong is the task
-text, which must match the words used when recording, because it is an input to the
-network rather than a label for you.
+The action expert is about three quarters as wide as the big network, and inside it the
+layers alternate between looking at what the big network produced and looking at the
+other moves of the chunk being built. Two choices in its
+[announcement](https://huggingface.co/blog/smolvla) are what make a model of this size
+run on a small machine at all. The expert reads the big network only up to the middle of
+its layers, rather than waiting for its last one, which halves the work of both parts.
+And at run time only the whole picture is used, rather than the several cropped tiles
+the vision-language model was pretrained with.
+
+The chunk itself is produced by a third method, which is neither ACT's single pass nor
+the rounds of cleanup in section 6.3. It is called flow matching. During training, noise
+is mixed into the recorded chunk, and the expert is asked for the correction that points
+from the noisy chunk straight back to the recorded one. Because that correction points
+straight at the finished chunk rather than along a winding path, following it at run
+time takes only a few steps, and LeRobot's configuration uses ten of them, where the
+diffusion policy's default cleanup runs many times more. The pictures and the sentence
+go through the big network once and the result is held, so only the small expert
+repeats, which is why ten steps are
+affordable here and a hundred would not be. Like the diffusion policy and unlike ACT,
+the chunk starts from fresh random numbers, so SmolVLA can give one of several good
+chunks instead of the middle of them.
+
+This buys the two things ACT cannot do. Its weights already exist, so your
+recordings adjust a policy that has seen many people's robots instead of creating one
+from nothing. And it reads a sentence, so one policy can be told at run time which of
+several jobs you want, where an ACT policy trained on several tasks has no input to tell
+it. What it costs is that the big network has to be loaded and run even though only the
+expert produces the moves, which is the whole of the difference in the machine line
+above. On a robot arm the difference shows up when one arm has to do two jobs. With ACT
+you would train one policy for each and choose between them in your own code, and with
+SmolVLA you train once and change the sentence you pass in.
+
+What it costs you besides that is an extra install and attention to the task text. That
+text must match the words used when recording, because it is an input to the network
+rather than a label for you.
 
 ```bash
 pip install 'lerobot[smolvla]'
@@ -530,34 +644,50 @@ recordings, the sentence, and a card to train on.
 
 ### 6.5 π0.5 in LeRobot, and what a slow chunk needs
 
-**Worth betting on**, as the direction rather than as this weekend's work. π0.5,
-which this page also spells π0.5, is a vision-language-action policy from Physical
-Intelligence. LeRobot's [page for it](https://huggingface.co/docs/lerobot/pi05)
-describes its aim as working in places it was never trained in, and says the LeRobot
-version is adapted from the company's open
+**Worth betting on**, as the direction rather than as this weekend's work. Size not
+stated, a workstation, Apache-2.0 for the openpi code and the Gemma terms of use for
+the weights LeRobot serves at
+[lerobot/pi05_base](https://huggingface.co/lerobot/pi05_base), read on 3 October 2026.
+
+π0.5 is a vision-language-action policy from Physical Intelligence. LeRobot's
+[page for it](https://huggingface.co/docs/lerobot/pi05) describes its aim as working in
+places it was never trained in, and says the LeRobot version is adapted from the
+company's open
 [openpi](https://github.com/Physical-Intelligence/openpi) repository. Like everything
 else on this page it produces a chunk, and LeRobot's own quickstart for it carries 10
 commands out of each chunk.
 
-You would pick it over ACT only when the thing you need is generalisation, and you
-would know that from a specific failure: an ACT policy that works on your table and
-stops working when the table is moved or the light changes. ACT has no answer to that
-other than more recordings of more rooms, and that is what a policy pretrained on many
-rooms is for.
+The one idea is that generalisation comes from the training mixture rather than from the
+network. The chunk is produced much as SmolVLA's is, by a vision-language model with a
+flow-matching action expert attached, so this row is not here for its architecture. It
+is here for what it was trained on. Its
+[paper](https://arxiv.org/abs/2504.16054) describes co-training on tasks of different
+kinds at once: pictures from the web with captions, questions and answers about those
+pictures, where objects are in them, people telling a robot the next step in words, the
+names of the subtasks a long job breaks into, recordings from several different robots,
+and recordings from many different homes.
 
-What it costs you is more than most readers of this page have. LeRobot's hardware
-guide puts π0.5 in the group needing about 24 to 40 GB of video memory, and its own
-quickstart command is described as sized for a single 80 GB card. That is well past
-the Apple Silicon row of the same guide, and Book 3's frontier chapter lists the
-large policies as out of reach on a Mac. Two further things go wrong often. The first
-is the licence, and it is worth stating exactly: the openpi code is
-Apache-2.0, while the weights LeRobot serves at
-[lerobot/pi05_base](https://huggingface.co/lerobot/pi05_base) declare the Gemma terms
-of use on their model card, read on 3 October 2026, because the policy is built on a
-Gemma-based backbone. Apache-2.0 code with non-Apache weights is the normal shape of
-this field, and the shape that surprises people building a product. The second is
-access: the backbone's tokenizer is a gated model on the Hugging Face Hub, so you
-must accept its licence and sign in before training will start.
+What that changes inside is what counts as an answer. ACT has one kind of output, which
+is a chunk of joint targets, so every training example must be a chunk. π0.5 is trained
+on examples whose answer is sometimes a chunk and sometimes a piece of text, such as the
+name of the next subtask, and the same network produces both. The arm's own posture
+enters the same way. LeRobot's page says the joint positions are put on a scale of 256
+whole numbers and written into the prompt as text, where ACT feeds them in as numbers
+and SmolVLA
+turns them into one piece by a single layer. So to π0.5 the robot's state, the task and
+the next subtask are all words in one stream, and that is what lets web pictures and
+robot recordings train one network.
+
+What this buys is the one thing no other row of the table promises, which is working in
+a place it was never trained in, because a model that has read captions of kitchens it
+never worked in has somewhere to start when it sees a new one. What it costs is a rented
+card rather than anything on your desk, and one thing that stops the first training run
+before it begins: the backbone's
+tokenizer is a gated model on the Hugging Face Hub, so you must accept its licence and
+sign in before training will begin. On a robot arm the difference shows up in exactly
+one situation. Your ACT policy works on your table, and then somebody moves the table
+or opens the blind, and it stops working. ACT has no answer to that other than
+recordings of more rooms, which is what a policy pretrained on many rooms already has.
 
 ```bash
 pip install 'lerobot[pi]'

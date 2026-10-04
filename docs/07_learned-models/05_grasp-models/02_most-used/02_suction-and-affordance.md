@@ -237,14 +237,63 @@ does not. Each sub-section below says more about the cup its model assumes.
 ### 5.1 The Dex-Net suction models, 3.0 and 4.0
 
 **Both are historical**, because they were published in 2018 and 2019 and the
-library that runs them has not followed the rest of Python. They come from Ken
-Goldberg's laboratory at the University of California, Berkeley.
-[Dex-Net 3.0](https://arxiv.org/abs/1709.06670) learned suction grasps from
+library that runs them has not followed the rest of Python.
+
+Size not stated, the size of the weights not stated, a laptop, and a University of
+California grant for education, research and not-for-profit use only.
+
+They come from Ken Goldberg's laboratory at the University of California,
+Berkeley. [Dex-Net 3.0](https://arxiv.org/abs/1709.06670) learned suction grasps from
 millions of simulated depth pictures labelled by a physics model of how a rubber
 cup bends and seals. Dex-Net 4.0 then trained one system for a suction cup and a
 two-finger gripper together, so that for each object it chooses which of the two
 to use; the [Dex-Net project page](https://berkeleyautomation.github.io/dex-net/)
 collects both.
+
+The one idea Dex-Net is built on is that "will this cup hold here" is a local
+question. Whether the rim seals depends on the shape of the surface under the rim
+and on nothing else in the picture. So the network never has to see the whole
+scene: a small patch of the depth picture around the candidate point, lined up with
+the direction the cup would come in, is enough to answer with. Everything else
+follows from that, including how the training data was made, because a physics
+model of a rubber cup bending onto a surface can label millions of such patches
+with no robot in the room.
+
+Inside, the model is one small convolutional network, called a GQ-CNN for grasp
+quality convolutional network, and it answers with a single number: the estimated
+chance that this grasp holds. The first version was run once for each candidate
+patch. The version the code below uses, the fully convolutional one, does the same
+arithmetic in a single pass over the whole picture, because a network built only of
+convolutions can be slid across a large picture instead of being re-run on crops,
+and what comes back is then a score for every pixel. Dex-Net 4.0 adds a second
+network of the same kind for the two-finger gripper, and the policy runs both and
+keeps whichever score is higher, which is how one system chooses between a cup and
+fingers.
+
+That last step is where suction and fingers part company, and the repository's own
+configuration files show it plainly. For the cup, the answer at a pixel is one
+number. The cup is round, so there is no angle to choose, and the direction it
+comes in is the direction the surface faces, which code reads straight off the
+depth picture: the suction policy takes the surface normal at the chosen pixel
+rather than asking the network for it. A finger grasp at the same pixel is not one
+number. It also needs an angle for the jaws and a height at which to close, and
+neither of those is settled by the surface. So the parallel-jaw policy gives its
+network one output channel per jaw angle and runs it again on a copy of the picture
+for each of sixteen heights, which is what the `num_depth_bins: 16` line in its
+configuration file means, while the suction policy has one channel and one copy of
+the picture. That is the general rule: a suction model can be a plain
+picture-to-picture network because its answer is one number per pixel, and a finger
+model becomes one only by stacking channels and copies, at a cost multiplied by
+every angle and height you want to consider.
+
+On an arm, the difference from SuctionNet-1Billion below is what you are handed
+back. Dex-Net's policy returns a cup pose, which is a pixel, the axis to come in
+along and how far away that pixel is, and that is almost what the robot needs.
+SuctionNet's repository returns a map and a benchmark score, and the normal
+estimation, the pose and the live camera loop are yours to write. So if the job
+this week is to get a cup onto flat-topped cartons, Dex-Net is the shorter path.
+The moment those cartons become a tight tote of mixed items, its single-object
+simulated training is what starts to cost you.
 
 You would pick Dex-Net rather than SuctionNet-1Billion for one reason, which is
 that Dex-Net is the only suction model in this section that ships as a library
@@ -252,14 +301,14 @@ with a policy object you can call. SuctionNet publishes training and benchmark
 scripts and expects you to write the rest. If what you want is a suction score on
 your own depth picture this afternoon, Dex-Net is the shortest path there.
 
-What it costs you is the age of the code and a licence you cannot sell under. The
+What it costs you is the age of the code. The
 [gqcnn](https://github.com/BerkeleyAutomation/gqcnn) repository was last changed
 in April 2024 and pins TensorFlow to version 1.15 or below, so it will not install
 beside a current PyTorch or TensorFlow, and people run it in a container with an
-old Python. Its licence is a University of California grant for education,
-research and not-for-profit use only, with a named contact for anything else. The
-thing that most often goes wrong is the segmentation mask, because the fully
-convolutional policy refuses to run without one and the repository does not
+old Python. That old TensorFlow is also the reason a laptop is enough: the
+installer looks for an NVIDIA device and installs the processor-only build when it
+finds none. The thing that most often goes wrong is the segmentation mask, because
+the fully convolutional policy refuses to run without one and the repository does not
 provide a way to make it.
 
 ```python
@@ -297,6 +346,10 @@ own cup differs from it.
 ### 5.2 SuctionNet-1Billion, the current suction benchmark
 
 **SuctionNet-1Billion is the most used of these models in 2026 for measurement.**
+
+Size not stated, the size of the weights not stated, an NVIDIA card whose memory
+the project never names, and no licence file at all.
+
 Hanwen Cao and others at Shanghai Jiao Tong University published it in 2021, in
 the [SuctionNet-1Billion paper](https://arxiv.org/abs/2103.12311), with a
 [baseline repository](https://github.com/graspnet/suctionnet-baseline) of code. It
@@ -307,26 +360,56 @@ Its physics model scores two things separately, which are whether the cup seals
 and whether the seal resists the twisting force the object's weight applies, and
 the [dataset page](https://graspnet.net/suction) publishes the labels.
 
+The one idea is to change nothing about the network and everything about what its
+channels mean. The model is DeepLabV3+, an ordinary semantic segmentation network
+of the encoder and decoder shape described in
+[section 3](#3-how-it-works-inside), taken as it comes. Nothing inside it knows
+what suction is. The suction is entirely in the labels it was trained on and in
+how its two output channels are read, which is what `--num_classes 2` in the
+command below is saying: those are not two kinds of object, they are the seal
+score and the wrench score.
+
+Next to Dex-Net, what that changes is that the two halves of the physics stay
+apart. Dex-Net's physics model also works out a seal and a resistance to twisting,
+but it folds them into one label before training, so its network learns one number.
+SuctionNet trains the network to predict both, and the inference script multiplies
+them to get the final map, then blurs the product with a 15 by 15 box filter before
+taking the highest pixels. So a pixel has to pass both tests, and a lone high pixel
+surrounded by low ones is averaged away. The labels differ as well: Dex-Net's come
+from simulated depth pictures of objects standing alone, while SuctionNet's physics
+was applied to real camera pictures of real cluttered scenes.
+
+What the split buys is a model that can tell the two failures apart. The flat top
+of a heavy box seals wherever you press on it, and yet a spot near one edge will
+still tear off as the weight twists the cup. One score cannot say both of those
+things at once, and a product of two can, which also means you can look at the two
+maps separately when the model picks badly and see which half was wrong. The blur
+buys something smaller but real: a cup is wide, so a flat spot one pixel across is
+no use to it, and averaging over a window is a cheap way of saying so. What it
+costs is that nothing in the network is about suction, so nothing comes back except
+the map. There is no cup pose, no cup radius and no notion of which object a pixel
+belongs to, and every step after "which pixel" is yours to write.
+
+On an arm, the difference from Dex-Net is the camera. SuctionNet's labels were
+computed on pictures from real depth cameras of real clutter, so its map over a
+tote of mixed bags and boxes fails in the ways its training data already failed,
+while Dex-Net saw clean simulated depth of single objects and meets the noise for
+the first time on your bench. Set against that, Dex-Net hands you a pose and
+SuctionNet hands you a map. Pick SuctionNet when your number has to be comparable
+with published ones, and set aside the afternoon it takes to turn its best pixel
+into something the robot can reach for.
+
 You would pick it rather than Dex-Net because its scenes are real camera pictures
 of real clutter, while Dex-Net's are simulated pictures. That is the difference
 that shows up when a cup has to find a flat patch among other objects rather than
 on an object standing by itself.
 
-Its baseline model is worth understanding because it makes the two-score split
-from [section 3](#3-how-it-works-inside) concrete. The network is DeepLabV3+, an
-ordinary segmentation network of the encoder and decoder shape described above,
-with exactly two output channels, and the inference script
-multiplies them to get the final heatmap, then blurs the product with a 15 by 15
-box filter before picking the highest pixels. So a pixel needs a good seal score
-and a good wrench score together, and a single high pixel surrounded by low ones
-is averaged away.
-
-What it costs you is the licence and the environment. The repository has **no
-licence file at all**, which means default copyright and no permission to use it,
-and its README states it was tested with CUDA 10.1 and PyTorch 1.4.0 on Ubuntu
-16.04. The thing that most often goes wrong is the preparation, because training
-needs extra labels that you generate yourself with two of its scripts before you
-can start.
+What it costs you is the environment and the preparation. Its README states it was
+tested with CUDA 10.1 and PyTorch 1.4.0 on Ubuntu 16.04, which is old enough that
+people build a container for it, and the **absent licence file** means default
+copyright and no permission to use it. The thing that most often goes wrong is the
+preparation, because training needs extra labels that you generate yourself with
+two of its scripts before you can start.
 
 ```bash
 # Run the published suction model over the benchmark's test scenes.
@@ -346,11 +429,50 @@ model used, and the repository does not offer a way to change it.
 **GraspGen's suction model is worth betting on**, because it is the only suction
 model here that states the radius of the cup it was trained for and then tells you
 what to do about a different one.
+
+Size not stated, the weights are 907 megabytes plus 166 megabytes, an NVIDIA card
+because `spconv-cu120` has no processor-only build, NVIDIA's own non-commercial
+licence for the code and the NVIDIA Open Model License for the weights.
+
 [GraspGen](https://github.com/NVlabs/GraspGen) is NVIDIA's 2025 grasp generator,
 and alongside its two finger grippers it publishes a checkpoint for a
 single-contact suction gripper with a 30 millimetre radius, trained on part of the
 57 million grasps it released for 8,515 objects from the Objaverse XL object
 collection.
+
+The one idea is that a suction grasp is a pose, not a pixel. GraspGen treats the
+cup as one more gripper: it produces full 3D cup poses from an object's points and
+then scores them, and the same code path serves its Franka hand and its Robotiq
+hand.
+
+That makes it different from both models above in the place that matters most.
+Dex-Net and SuctionNet paint a score onto a picture, and turning the chosen pixel
+into a pose is your work. GraspGen never makes a picture. It encodes one segmented
+object's points, starts from poses that are pure noise floating around the object,
+nudges each of them towards something that looks like a real grasp over many small
+steps, and then has a second network score what came out. That is a diffusion
+model, and the
+[six-degree-of-freedom page](01_six-dof-grasps.md#56-graspgen-and-graspgenx-the-models-that-ask-which-gripper-you-have)
+describes the same machinery for finger grippers. Because no step is per-pixel,
+the answer is not limited to the camera's grid, and a cup pose can be offered for
+a face the camera only saw at a glancing angle.
+
+Where the cup itself lives is in the labels, and the repository shows it. The code
+that made the suction data models the rim as a ring of points pressed onto the
+object's surface and checks whether all of them touch, which is the same kind of
+compliant model Dex-Net 3.0 introduced, and the radius of that ring is the 30
+millimetres in the checkpoint's file name. Nothing in a trained model can be
+adjusted to fit a different cup afterwards, which is why the correction two
+paragraphs below works on the object rather than on the model.
+
+What the design buys is one answer form for cups and fingers, so a cell that might
+use either can call one library and compare the two scores, and a cup you can name.
+What it costs is many passes of the network for one answer, where a map costs one,
+plus the segmentation step before any of it. On an arm, that pays off in a cell
+that sometimes wants fingers instead of the cup. Dex-Net 4.0 is the only other
+model here that will make that choice for you, and it makes it for a cup you cannot
+identify, under terms from a different university; GraspGen makes it for a cup
+whose radius is written on the file.
 
 You would pick it rather than SuctionNet-1Billion because of the cup. SuctionNet
 and Dex-Net both hide their cup inside the weights, so you cannot tell whether
@@ -359,19 +481,17 @@ a correction: scale the object's points by your radius divided by 0.030 before
 running inference, so a 45 millimetre cup means scaling by 1.5. That is a rough
 correction rather than a retrained model, but it is the only one on offer.
 
-What it costs you is the licence, the hardware and an admission in the README.
-The code is under NVIDIA's own licence, whose section 3.3 limits use to research
-or evaluation while permitting NVIDIA itself to use the work commercially, and the
-weights are under the NVIDIA Open Model License. It needs `spconv-cu120`, for
-which no processor-only build exists, so an NVIDIA card is required. The README
-also says the suction checkpoint was released without the on-generator training
-the finger models received, so its scores may be worse than its own method allows.
-The thing that most often goes wrong is giving it a whole scene, because these
+What it costs you beyond the line above is an admission in the README. It says the
+suction checkpoint was released without the on-generator training the finger models
+received, so its scores may be worse than its own method allows; on-generator
+training means the scorer was trained on the generator's own output, and without it
+the scorer has not seen the mistakes this generator makes. The licence's section
+3.3 is the other decision worth reading, because it limits use to research or
+evaluation while permitting NVIDIA itself to use the work commercially. The
+thing that most often goes wrong is giving it a whole scene, because these
 models expect one segmented object's points.
 
-The published suction checkpoint is about 907 megabytes for the diffusion model
-and 166 megabytes for the scorer. GraspGen runs from its own scripts rather than
-from an importable function.
+GraspGen runs from its own scripts rather than from an importable function.
 
 ```bash
 # GraspGen runs from its own demo scripts, inside its container.
@@ -391,12 +511,46 @@ answer was computed for.
 
 ### 5.4 AffordanceNet, the one the affordance papers measure against
 
-**AffordanceNet is historical.** Thanh-Toan Do, Anh Nguyen and Ian Reid published
-it in 2017, in the
+**AffordanceNet is historical.**
+
+Size not stated, the size of the weights not stated, a graphics card old enough to
+build Caffe against, and no licence from the authors at all.
+
+Thanh-Toan Do, Anh Nguyen and Ian Reid published it in 2017, in the
 [AffordanceNet paper](https://arxiv.org/abs/1709.07326). It has two branches that
 run together: one finds each object and draws a box around it, and the other gives
 every pixel inside that box its most likely affordance label. The paper reports
 150 milliseconds per picture, which was fast enough for a robot at the time.
+
+The one idea is to find the object first and label its parts inside it. The
+affordance question is asked once per object rather than once per picture, and
+that ordering is the whole design.
+
+Inside, it is Faster R-CNN with a different mask on the end. A proposal step offers
+boxes, a detection branch says what each box contains, and in place of the usual
+single mask per object an affordance branch gives every pixel inside the box its
+most likely job out of the list it was trained on. The paper names three parts that
+make that multi-class mask work: a sequence of deconvolution layers, which grow the
+mask back to size in several steps rather than one jump, a resizing strategy it
+calls robust, and a loss that trains both branches together.
+
+What asking per object buys is that a label belongs to something. Two mugs touching
+each other give two boxes and two handles, so the arm can be told to take the left
+one. A plain per-pixel painter such as CLIPSeg in
+[section 5.6](#56-clipseg-asking-for-a-part-in-words) returns one blob of
+handle-coloured pixels, and nothing in that answer says which mug each pixel came
+from. What it costs, besides the fixed list of jobs that the paragraph after next
+is about, is the box itself. Every label lives inside a box the detector drew, so
+an object the detector missed has no affordances at all, and a part that sticks out
+past the edge of its box is cut off there.
+
+On an arm, that shows up on a tray of tools lying across each other. Two
+screwdrivers crossing give AffordanceNet two boxes and two handles, while CLIPSeg
+gives one mask that covers both handles, and a grasp filtered with it may close on
+the wrong tool. The way people fix that today is to run a current instance
+segmenter first and keep only the pixels where its mask and CLIPSeg's agree, which
+is AffordanceNet's idea rebuilt out of parts that still install. That is the reason
+to read this paper rather than to run it.
 
 You would read it rather than install it, and the alternative that explains why is
 CLIPSeg in [section 5.6](#56-clipseg-asking-for-a-part-in-words). AffordanceNet can
@@ -410,11 +564,10 @@ What it costs you is unrunnable code and an empty licence. It is built on Caffe
 and on the 2015 Faster R-CNN code, and its
 [repository](https://github.com/nqanh/affordance-net) was last changed in
 September 2021. Its `LICENSE` file is worth opening, because it contains
-Microsoft's MIT grant for Faster R-CNN and Berkeley's BSD grant for Caffe, and
-nothing at all from the AffordanceNet authors. GitHub therefore reports the
-repository as unclassified. You have permission to use the code it was built from
-and no stated permission for the part that does the affordances, which is the only
-part you wanted.
+Microsoft's MIT grant for Faster R-CNN and Berkeley's BSD grant for Caffe and
+nothing at all from the AffordanceNet authors, so you have permission to use the
+code it was built from and no stated permission for the part that does the
+affordances, which is the only part you wanted.
 
 There is no code example here, because there is no call to show. The repository
 offers a Caffe build and a demo script, and getting Caffe to compile in 2026 is a
@@ -425,12 +578,48 @@ it.
 ### 5.5 Where2Act, affordances for things that move
 
 **Where2Act is historical**, in the useful sense that it defined the problem
-rather than that it has been replaced. Kaichun Mo and others published it in 2021,
-in the [Where2Act paper](https://arxiv.org/abs/2101.02692). It asks a different
+rather than that it has been replaced.
+
+Size not stated, no packaged weights to download, an NVIDIA card and the SAPIEN
+simulator, and no licence file at all.
+
+Kaichun Mo and others published it in 2021, in the
+[Where2Act paper](https://arxiv.org/abs/2101.02692). It asks a different
 question from every other model on this page: not "will a grip hold" and not "what
 is this part for", but "if I push or pull here, will anything move". It learned
 the answer by poking simulated doors, drawers, lids and switches and recording
 which pokes moved something.
+
+The one idea is that the label is the result of an action rather than a name.
+Nobody tells this network what a part is for. The robot pushes and pulls in a
+simulator, records whether anything moved, and that recording is the label. An
+affordance, here, is simply whatever made something move.
+
+Inside, the repository's network has a point cloud backbone from the PointNet++
+family and three heads, and its own code names them. `ActionScore` gives each
+point one number for how likely any action is to work there. `Actor` turns
+random numbers into a gripper orientation for that point, so it proposes
+directions instead of choosing from a list. `Critic` takes a point together with
+a proposed orientation and predicts whether the action would succeed. One
+network is trained for each kind of action, such as pushing or pulling. Next to
+AffordanceNet, where the output is a label out of a fixed list, there is no list
+of part names anywhere in this model; the output is a score attached to an
+action and to a direction.
+
+What that buys is an answer the arm can act on, which is where to push, which way
+to push, and how likely it is to work, and labels that cost no human time, so more
+data means more simulator hours rather than more hand labelling. What it costs is
+that the simulator is part of the training loop rather than the source of a
+dataset, because the paper's sampling strategy chooses what to try next from what
+the model currently believes, so you cannot train this from a folder of pictures.
+Everything it learned is also about the simulator's articulated objects.
+
+On an arm, the difference from AffordanceNet is a cupboard door. AffordanceNet
+labels the door "grasp", and the robot still does not know which way it swings.
+Where2Act answers "pull here, in this direction", which is the whole of what the
+arm needs. But the published work answers for the simulator's doors, and a real
+drawer has friction, a catch and a handle the simulated one does not, so what you
+take from this project is the design and the training loop rather than a model.
 
 You would pick it rather than an affordance model such as AffordanceNet when your
 objects have moving parts. AffordanceNet labels a cupboard door "grasp" and stops
@@ -453,11 +642,48 @@ objects, which is what the work building on it does.
 ### 5.6 CLIPSeg, asking for a part in words
 
 **CLIPSeg is the most used in 2026 of the models in this section that will give
-you part labels.** Timo Lüddecke and Alexander Ecker published it in 2021, in
+you part labels.**
+
+Size m, a laptop, and Apache-2.0 for the code and the weights. It is the only
+model in this section whose parameter count is published at all.
+
+Timo Lüddecke and Alexander Ecker published it in 2021, in
 [Image Segmentation Using Text and Image Prompts](https://arxiv.org/abs/2112.10003).
 It is not an affordance model and it was not trained on affordances. You give it a
 picture and a phrase, and it paints the pixels that match the phrase, so "the
 handle of the knife" is a question you can simply ask.
+
+The one idea is to replace the fixed list of output channels with a sentence. In an
+affordance network the last layer has one channel for each job, and that layer is
+the list. CLIPSeg has a single output channel whose meaning is set by the phrase
+you type.
+
+Inside, the picture goes through CLIP's image encoder and the phrase goes through
+CLIP's text encoder, which turns the phrase into one vector. A small transformer
+decoder then reads the image encoder's activations from a few of its layers and
+grows them back into a map, and the phrase's vector enters by multiplying and then
+adding to the decoder's numbers at each step. In the published code those two
+operations are layers called `film_mul` and `film_add`, and the trick is called
+feature-wise modulation, which means one vector is used to scale and shift another
+layer's numbers. So the phrase does not choose a channel. It changes what the
+decoder is looking for. The last layer gives one channel, which is why the answer
+is one map per phrase, and why the code below repeats the same picture once for
+every phrase.
+
+What that buys is a new part for the price of a sentence instead of a dataset.
+What it costs comes from the same place. There is no list, so there is nothing for
+a phrase to fail to match against, and the model has no way of reporting that your
+words described nothing in the picture. And because the decoder grows the image
+encoder's patch grid by a fixed factor, rather than up to the size of the picture
+you handed in, the answer always comes back the same size; the costs paragraph
+below says what that means in practice.
+
+On an arm, this is the difference on the day a new tool arrives. With AffordanceNet
+you would be labelling pictures of your own knives before the robot could hold one
+by the handle. With CLIPSeg you type "the handle of the knife", get a mask, and keep
+only the grasps whose finger contacts land inside it, and when the next tool arrives
+you type its name instead. What you give up is any guarantee that the mask means
+something, which is the cost the rest of this sub-section is about.
 
 You would pick it rather than AffordanceNet because the list of jobs stops being
 fixed. AffordanceNet's list of affordances was decided in 2017, and extending it
@@ -500,16 +726,15 @@ The library gives you the model, the weights and the text encoder, and nothing h
 to be trained. What you supply is the phrases, the resize from 352 by 352 back to
 your picture's size, and a check that the answer means anything. The cheapest such
 check is to compare the best phrase's score with the next best and refuse when
-they are close. Then you use the mask the way
-section 6 uses it, by keeping
-only the grasps whose finger contacts land inside it.
+they are close. Then you use the mask by keeping only the grasps whose finger
+contacts land inside it.
 
 ### 5.7 How to choose
 
 For suction, do not start with a model at all. Fit flat patches to the depth
 picture, reject the patches that are too curved or too small for your cup, and
-rank what is left by area and by distance from the nearest edge.
-./../../03_frameworks/02_gripping/04_models-that-grasp.md#6-suction-models)
+rank what is left by area and by distance from the nearest edge. Book 3's
+[suction models](../../../03_frameworks/02_gripping/04_models-that-grasp.md#6-suction-models)
 section reports that it takes about a dozen lines of code and performs about as
 well as a model. It also runs on a laptop and raises no licence question.
 

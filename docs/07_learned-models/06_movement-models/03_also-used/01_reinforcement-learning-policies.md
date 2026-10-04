@@ -217,22 +217,48 @@ method itself has no licence.
 **Most used in 2026** when the practice happens in a simulator, because it stays
 stable while thousands of simulated arms practise at once.
 
+Millions of steps of practice, an NVIDIA card to run a simulator fast enough to
+produce them, and MIT for the Stable-Baselines3 code you would run.
+
 PPO stands for Proximal Policy Optimization, and OpenAI published it in July 2017 in
-[Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347). It
-collects a batch of attempts with the current policy, works out which actions did
-better than the policy expected, and then moves the policy towards those actions.
-The part that gives it its name is a limit on how far the policy may move in one
-update. That limit is why a PPO run of many hours rarely falls apart.
+[Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347).
 
-Pick PPO rather than SAC in the next sub-section when attempts are cheap. PPO throws
-each batch of experience away once it has learned from it, which sounds wasteful and
-is the right trade in a simulator that runs a thousand arms side by side on a
-graphics card. There, attempts cost almost nothing and what you want is a run that
-does not collapse overnight.
+The one idea PPO is built on is that the policy may only be changed a little at a
+time. The reason is the one section 3 mentioned: the attempts PPO learns from were
+made by the policy as it stood a moment ago, so the further the policy moves away from
+that, the less those attempts say about it. PPO's answer is to put a hard limit on how
+far one update may move the policy. That limit is the "proximal" in its name, and it
+is why a PPO run of many hours rarely falls apart.
 
-What it costs you is practice, and more of it than anything else on this page.
-Millions of steps is normal, so PPO is only sensible where a simulator can produce
-them. The hardware question is which simulator you can run.
+What that changes inside is small but it decides everything else. PPO trains a critic,
+which is the second network section 3 described, and uses it to work out the
+**advantage** of each action, meaning how much better the attempt turned out than the
+policy expected at that moment. The update then takes the chance that the new policy
+would choose that action, divides it by the chance that the collecting policy would
+have chosen it, and multiplies the result by the advantage. The limit is applied to
+that division: once the ratio leaves a narrow band around one, the update stops
+rewarding any further movement in that direction. So the batch is worth a few passes
+of learning, and then the policy has moved as far as it is allowed and the batch is
+thrown away.
+
+What that buys is stability and scale. The limit does not care how many arms filled
+the batch, so a thousand simulated arms can all pour into one update and the run
+behaves the same, which is why most large-scale simulation results in this field are
+PPO results. What it costs is everything the throwing away costs. Each step of practice
+teaches the policy once, inside those few passes, and is then gone, so the only way to
+learn a hard task is to produce an enormous number of steps.
+
+On a robot arm that cost is the whole decision. In a simulator running a thousand
+arms on a graphics card, a discarded step costs almost nothing, so the stability is
+free. On a real arm, a step is a second of real movement with somebody standing by to
+put the block back, so discarding it is the most wasteful thing you could do with it.
+That is why nobody runs plain PPO on real hardware, and why the two sub-sections after
+this one both keep their attempts instead.
+
+So pick PPO rather than SAC in the next sub-section when attempts are cheap, because
+what you want in a simulator is a run that does not collapse overnight.
+
+The simulator, not the algorithm, is what you have to choose carefully.
 [Isaac Lab](https://github.com/isaac-sim/IsaacLab) (BSD-3) and
 [MuJoCo Playground](https://github.com/google-deepmind/mujoco_playground) (Apache-2.0)
 are where large-scale practice happens, and both want an NVIDIA card, so on an Apple
@@ -277,29 +303,55 @@ MuJoCo instead, and it runs on Apple Silicon because MuJoCo does.
 **Most used in 2026** when attempts are expensive, because it reuses old attempts
 instead of throwing them away.
 
+Far fewer steps of practice than PPO, a laptop if the observations are plain numbers,
+and MIT for the Stable-Baselines3 code you would run. The store of past attempts needs
+memory of its own, and that is the part that grows.
+
 SAC stands for Soft Actor-Critic, and researchers at the University of California,
 Berkeley published it in January 2018 in [Soft Actor-Critic: Off-Policy Maximum
 Entropy Deep Reinforcement Learning with a Stochastic
-Actor](https://arxiv.org/abs/1801.01290). It keeps the attempts it has made in a
-store called a **replay buffer** and trains on random samples drawn from that store,
-so one real movement teaches the policy many times over. It also adds a term that
-pays the policy for keeping some randomness, which stops it settling early on the
-first thing that half worked.
+Actor](https://arxiv.org/abs/1801.01290).
 
-Pick SAC rather than PPO when you count your attempts. The numbers in
-Stable-Baselines3 say the difference plainly: SAC's replay buffer holds 1,000,000
-past steps by default and it trains on a batch of 256 of them after every single step
-the robot takes, where PPO waits for 2,048 fresh steps and then discards them. That
-is why SAC is the usual choice on a real arm, or in a simulator too slow to run many
-copies.
+The one idea SAC is built on is that you can learn something that does not belong to
+the current policy. What SAC's critic learns is the value of a situation together with
+a movement: if you are here and you do this, how much reward follows. That statement
+is about the world, not about the policy, so it stays true no matter which policy made
+the attempt. PPO's limit exists because its update is a statement about the policy that
+collected the batch. SAC has no such tie, so an attempt made an hour ago by a much
+worse policy is still perfectly good data.
 
-What it costs you is complexity and memory. SAC trains two networks that score
-actions, a third that chooses them, a slowly updated copy for stability, and the
-randomness term, and each of those has details that quietly ruin a run when they are
-wrong. Getting a tested implementation is the real value of the library here. The
-buffer costs memory too, and a million camera pictures will not fit in a laptop's
-memory, which is one reason these policies often take plain numbers as input rather
-than pictures, as section 2 said.
+What that changes inside is that the attempts are kept. Every step the robot takes
+goes into a store called a **replay buffer**, and each update draws a random handful
+out of the store rather than using what just happened. The same movement is therefore
+learned from many times, in different combinations, which is the saving in attempts
+the table credits it with. The numbers in Stable-Baselines3 say the difference
+plainly: SAC's buffer holds 1,000,000 past steps by default and it trains on a batch
+of 256 of them after every single step the robot takes, where PPO waits for 2,048
+fresh steps and then discards them.
+
+Keeping the attempts brings its own problem, and most of SAC's parts exist to handle
+it. A critic that is asked to score movements nobody has tried lately drifts towards
+being over-confident about them, and the actor then goes and performs them. So SAC
+trains two critics and believes the lower of their two scores, which means a score
+has to be over-confident in both of them before it is acted on. It keeps a slowly updated copy
+of them, so the target a critic is trained towards does not move as fast as the critic
+does. And it pays the policy a little for keeping some randomness, with the size of
+that payment tuned automatically, which stops the policy settling early on the first
+thing that half worked. Where PPO's correctness came from one limit, SAC's comes from
+this stack, and each piece of it quietly ruins a run when it is wrong.
+
+On a real arm the difference is exactly the number of attempts you have to pay for.
+Suppose you can afford two hundred attempts before the hardware or your patience runs
+out. SAC will have learned from each of those attempts many times over by the end,
+while PPO will have learned from each of them once and discarded it. That is the whole
+reason a real arm gets SAC and a simulator gets PPO. The same property has a limit
+worth knowing: a million camera pictures will not fit in a laptop's memory, which is
+one reason these policies often take plain numbers as input rather than pictures, as
+section 2 said.
+
+Pick SAC rather than PPO when you count your attempts, which means on a real arm, or
+in a simulator too slow to run many copies. What it costs you is the complexity above,
+and getting a tested implementation is the real value of the library here.
 
 The library is Stable-Baselines3 again, and the simulated arm below is panda-gym.
 
@@ -333,14 +385,41 @@ the subject of the next sub-section.
 **Most used in 2026** for work on a real arm, and the one entry on this page whose
 published numbers are strong enough to plan around.
 
+One to two and a half hours of real practice, a real arm with a person sitting beside
+it, and Apache-2.0 for the code, which ships inside LeRobot.
+
 HIL-SERL stands for Human-in-the-Loop Sample-Efficient Robot Learning, and it came
 from the University of California, Berkeley in 2024
 ([project page](https://hil-serl.github.io/),
-[repository](https://github.com/rail-berkeley/hil-serl)). It starts from a small set
-of human demonstrations, trains a classifier from them so that the robot can score
-its own attempts, and then runs SAC on the real arm while a person watches with a
-gamepad and takes over when things go wrong. Those take-overs are the learning
-signal rather than merely extra data.
+[repository](https://github.com/rail-berkeley/hil-serl)).
+
+The one idea it is built on is that a person watching a robot is worth more as an
+interrupter than as a demonstrator. A demonstration shows the policy a situation the
+person chose. A take-over, where the person grabs the controller the moment the arm is
+about to fail, shows the policy the one situation it actually gets wrong, together
+with the way out of it. Those are the most valuable steps in the whole run, and they
+are the ones no amount of demonstrating in advance will produce, because nobody knows
+in advance where this policy will go wrong.
+
+That idea only works because of SAC's property from the sub-section above. The
+take-overs were not produced by the policy, so a method that needed its own attempts
+could not learn from them at all. HIL-SERL therefore runs SAC underneath, and keeps
+two stores rather than one: a store of prior data, holding the demonstrations and the
+person's corrective movements, and a store of what the robot has done by itself. Every
+update draws half its batch from each, which is a published recipe called RLPD, short
+for reinforcement learning with prior data. The policy's own movements from either
+side of a take-over go only into the robot's store, so the person's corrections are
+never confused with the mistakes that provoked them.
+
+Two more parts make it work on real hardware. The reward is not a rule somebody wrote
+but a classifier trained on the demonstration images beforehand, which looks at the
+scene and makes a yes-or-no judgement about success, and that is how a task like
+"the connector is seated" gets a reward at all. And the system runs as two processes:
+one drives the arm and takes the person's input, the other does the updates and sends
+new weights over, so the arm keeps moving while the learning happens instead of
+pausing for every gradient step. The gripper gets its own separate critic, because
+open and closed is a choice between two things rather than a number to nudge, and
+treating it as a number works badly.
 
 Pick it rather than training in simulation with PPO because it removes the simulator,
 which section 4 named as the hardest part to get right. The published result is the
@@ -353,7 +432,7 @@ peer-reviewed in *Science Robotics*, which is worth saying in a field where most
 strong numbers are published by the company that produced them.
 
 What it costs you is several hours of a person's time and a prepared robot. Somebody
-has to sit with the arm throughout, holding the gamepad. You also need force and
+has to sit with the arm throughout, holding the controller. You also need force and
 speed limits underneath the policy, a way to put the task back to its starting state
 between attempts, and a reward classifier you trust, and the
 [learned methods document](../../../03_frameworks/04_one-arm-training/03_learned-methods.md#12-interactive-imitation-correcting-it-as-it-goes)
@@ -388,16 +467,45 @@ package gives you a simulated Franka arm with gamepad take-overs, in tasks such 
 **Worth betting on**, because the field has largely stopped training policies from
 nothing, and this is what it does with reinforcement learning instead.
 
-The idea is to train a large policy by copying demonstrations, and then let it
-practise and be corrected rather than collecting more demonstrations. The clearest
-published instance is π*0.6 from Physical Intelligence, published on 17 November
-2025. Its method is called Recap, and it has three stages: ordinary demonstrations
-first, then a person taking over when the robot starts to go wrong, then the robot
-practising alone. The technical difficulty is knowing which earlier action caused a
-failure that only showed up much later, which is the credit assignment problem from
-section 3, and Recap handles it by training a value function that scores how good
-each situation is. The change in that score from one moment to the next says whether
-the action in between helped.
+The practice it needs is not stated, there is no machine to put it on and no licence
+to read, because nothing was released.
+
+The idea is to train a large policy by copying demonstrations, and then let it practise
+and be corrected rather than collecting more demonstrations. The clearest published
+instance is π*0.6 from Physical Intelligence, published on 17 November 2025, and its
+method is called Recap.
+
+The one idea Recap is built on is that you can keep the simple training of a copying
+policy and hand it the scoring as one more input. Recap first trains a value
+function, which is the critic of section 3, to say how close a situation is to
+success. It then uses that value function to work out, for every action already in its
+pile of data, whether that action moved the situation forwards or backwards, and it
+reduces the answer to a single yes-or-no flag. The policy is then trained to copy the
+data as usual, but with the flag given to it alongside the pictures and the
+instruction. At run time you set the flag to yes, and you get the version of the
+behaviour that worked. Its name says so: Recap is short for reinforcement learning
+with experience and corrections via advantage-conditioned policies, and an
+**advantage** here is the same quantity PPO used, meaning how much better an action
+turned out than expected.
+
+That is a different shape from everything above it. PPO and SAC both push gradients
+through a critic to change the policy, and the policy has one job, which is to produce
+the best action it can. Recap's policy has two inputs instead, and the hard
+reinforcement learning work has moved into the labelling of the data. Because of that,
+three very different kinds of data can go into one pile: the original demonstrations,
+a person's take-overs in the style of HIL-SERL, and the robot's own autonomous
+attempts, good and bad. The flag is what tells the policy which parts of that pile to
+imitate, so bad attempts are useful rather than harmful, which is not true of plain
+copying.
+
+The problem that shape solves is the one section 3 named. When a long job fails, the
+mistake that caused it usually happened much earlier than the failure, and working
+out which action to blame is the credit assignment problem. The value function is
+Recap's answer to it, because the change in its score from one moment to the next
+says whether the action in between helped, whatever happened later. On an arm that is
+the difference between a job of one movement and a job of twenty. A policy that folds
+a shirt can fail at the last fold because of the way it picked the shirt up, and
+neither plain copying nor a single score at the end will ever tell it so.
 
 Bet on this rather than on training from scratch because it fixes the thing that
 copying cannot fix. Demonstrations show what success looks like and never show how to
@@ -411,9 +519,9 @@ neither the code nor the weights. The figures that exist come from the company
 itself, and its per-task numbers appear only as bar charts rather than in the text,
 so read them as a direction and not as a measurement. Its authors also name the limit
 themselves, which is that the corrections are only as good as a person's judgement
-about when to step in, and that works for obvious mistakes and not for subtle ones. So there is no code to show here,
-and the nearest thing you can actually run is HIL-SERL in 5.3, which is the open
-version of the human-take-over stage. The
+about when to step in, and that works for obvious mistakes and not for subtle ones.
+So there is no code to show here, and the nearest thing you can actually run is
+HIL-SERL in 5.3, which is the open version of the human-take-over stage. The
 [frontier chapter on foundation models](../../../03_frameworks/08_frontier/02_foundation-models.md)
 records what was claimed, with its sources.
 
@@ -422,25 +530,50 @@ records what was claimed, with its sources.
 **Historical**, kept because it explains a part of the methods above rather than
 because you should start a project with it.
 
+No practice at all, because it learns from recordings, a laptop if those recordings
+are plain numbers, and a licence you have to check yourself, since there is no one
+implementation to point at.
+
 Offline reinforcement learning learns from a fixed pile of recorded attempts and
 never practises at all, which section 4 listed as one of the three ways to get the
-practice. IQL and CQL are the two algorithms people name. Both exist to stop the
-critic becoming over-confident about actions that nobody in the recordings ever
-tried, which is the central difficulty when you cannot test an idea.
+practice. IQL and CQL are the two algorithms people name.
+
+Both are built on one idea, which is the far end of the question this page keeps
+coming back to. SAC kept its attempts and still made new ones, while an offline method
+keeps the attempts and makes none. That removes the one thing that was keeping the
+critic truthful. Section 5.2 said that a critic drifts towards being over-confident
+about movements nobody has tried lately, and SAC caught that drift because the actor
+eventually tried the movement and the reward came back low. With no new attempts,
+nothing ever contradicts the critic, so one invented movement with a high score can
+ruin the whole policy.
+
+The two algorithms attack that from opposite ends, and the difference is worth knowing
+because it is the same choice every offline method faces. CQL, short for conservative
+Q-learning, lets the critic score anything but adds a penalty that pushes down the
+scores of movements the recordings do not contain, so the critic is deliberately
+pessimistic about the unknown. IQL, short for implicit Q-learning, never asks the
+question at all: it fits the value of a situation from the outcomes actually recorded
+there, leaning towards the better ones, and then trains the policy to copy the
+recorded actions in proportion to how good they looked. So CQL corrects the critic,
+and IQL never asks it a question it cannot answer.
 
 The reason it is historical is not that it stopped working. Its benchmark suite, D4RL,
 was formally deprecated, with [Minari](https://github.com/Farama-Foundation/Minari)
 as its replacement for datasets, and its algorithms were absorbed into the
-post-training of copied policies, which is sub-section 5.4. So read this branch to
-understand how a critic can be trained without new attempts, and take its datasets
-from Minari rather than from a tutorial built on D4RL. Stable-Baselines3 does not
-implement either algorithm, which is itself a fair guide to how much demand there
-is.
+post-training of copied policies, which is sub-section 5.4. Recap's value function is
+trained exactly this way, from a fixed pile, which is why this sub-section is here at
+all. So read this branch to understand how a critic can be trained without new
+attempts, and take its datasets from Minari rather than from a tutorial built on D4RL.
+Stable-Baselines3 does not implement either algorithm, which is itself a fair guide to
+how much demand there is.
 
 ### 5.6 The landmark systems
 
 **Historical**, and listed because people cite these as the proof that the method
 works on real hardware, so it is worth knowing what each one actually showed.
+
+Weeks of real collection or none at all, hardware that almost nobody reading this
+has, and various licences. None of them ships a policy you can download.
 
 [QT-Opt](https://arxiv.org/abs/1806.10293) (Google, 2018) learned to grasp objects
 from a bin using several real robot arms at once, collecting attempts over weeks. It
@@ -449,11 +582,42 @@ showed that learning on real hardware was possible, and how costly it was.
 [Rubik's Cube follow-up](https://arxiv.org/abs/1910.07113) in 2019) learned to turn a
 block in a robot hand's fingers, trained only in simulation with heavy domain
 randomisation. [IndustReal](https://github.com/NVLabs/industrealkit) (NVIDIA, 2023)
-is the most useful one for an arm, because it fitted pegs and gears into holes after
-training only in simulation, transferring to a real Franka arm with no real practice
-at all, and reaching between 83 and 99 per cent across 600 trials on parts modelled
-on a standard assembly test board. Its successor FORGE improved gear meshing to 98
-per cent and nut threading to 69 per cent while halving the contact forces.
+fitted pegs and gears into holes after training only in simulation, transferring to a
+real Franka arm with no real practice at all, and reaching between 83 and 99 per cent
+across 600 trials on parts modelled on a standard assembly test board. Its successor
+FORGE improved gear meshing to 98 per cent and nut threading to 69 per cent while
+halving the contact forces.
+
+The three sit at three different points on the one question this page keeps coming
+back to, which is what you do with an attempt once it is made, and that is the most
+useful thing about reading them together. QT-Opt is the far end of keeping them. It
+has no network that outputs a movement at all. It learned only a scoring function,
+which rates a candidate movement given the camera picture, and it chooses what to do
+by proposing many random candidate movements, keeping the best-scored of them,
+proposing more near those, and keeping the best again. Because nothing in that depends
+on which policy made an attempt, every grasp any robot had ever tried stayed useful,
+which is the only reason a pile collected over weeks was worth having.
+
+Dactyl is the opposite choice. It is PPO, so it discards each batch, and it could
+afford to because every one of its attempts was simulated. What it added was memory:
+its policy carries an internal state from one moment to the next, so it can work out
+from the first part of an attempt what this particular world's friction and weight
+feel like and adjust inside the same attempt. Its authors report that a policy
+without that memory, trained on the same randomised worlds, did markedly worse on the
+real hand. So where domain randomisation alone asks for
+one policy that is adequate everywhere, memory asks for a policy that works out where
+it is.
+
+IndustReal is PPO as well, and it is the most useful one to read if you work with an
+arm, because its three contributions are all about making a simulated reward tell the
+truth. Its reward is built from a precomputed field of distances to the part's target
+pose, so the policy is told how far off it is in position and orientation together,
+rather than from hand-weighted scores for each. Its curriculum lets the peg start
+anywhere in the full range from the beginning but raises the minimum starting height
+as the policy improves, which stopped the policy overfitting to easy, nearly finished
+insertions. And its policy update checks how far the simulated parts passed through
+each other and discounts the attempts where they passed through a lot, because a
+policy will happily learn to push a peg through solid metal if the simulator lets it.
 
 Read IndustReal's caveats rather than its headline, because they say what the method
 cannot yet do. Its authors deliberately used no force sensor at all, working from
@@ -464,8 +628,9 @@ systems ships a policy you can download, which is the point section 5 opened wit
 
 ### 5.7 How to choose
 
-Before choosing anything here, check that you need this method at all, because most arm tasks do not. If a person can demonstrate the task,
-the earlier pages in this chapter are far less work for the same result.
+Before choosing anything here, check that you need this method at all, because most
+arm tasks do not. If a person can demonstrate the task, the earlier pages in this
+chapter are far less work for the same result.
 
 When you do need it, the default is not to train from nothing. Train a copying
 policy first, then improve it on the real arm with HIL-SERL, which is sub-section

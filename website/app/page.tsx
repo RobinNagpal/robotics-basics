@@ -5,6 +5,9 @@ import BookProgress from '@/components/BookProgress';
 import BookGlyph from '@/components/BookGlyph';
 import { formatMinutes } from '@/lib/format';
 
+/** How many chapters a card lists before it stops and gives a count instead. */
+const CHAPTERS_ON_A_CARD = 5;
+
 export default function Home() {
   const { books, parts } = getLibrary();
   const sections = books.reduce((n, b) => n + b.sectionCount, 0);
@@ -57,12 +60,22 @@ export default function Home() {
               <h2>{book.title}</h2>
               <p className="book-card-sub">{book.subtitle}</p>
               <p className="book-card-desc">{book.description}</p>
+              {/* Only the first few chapters. A book with fourteen of them made a card
+                  twice the height of its neighbours, and because the grid stretches a row
+                  to its tallest card, one long book added that height to two short ones as
+                  well. The rest are one click away on the book's own page, and the count
+                  below says how many there are. */}
               <ol className="book-card-chapters">
-                {book.chapters.map((c) => (
+                {book.chapters.slice(0, CHAPTERS_ON_A_CARD).map((c) => (
                   <li key={c.slug}>
                     <Link href={c.sections[0].url}>{c.title}</Link>
                   </li>
                 ))}
+                {book.chapters.length > CHAPTERS_ON_A_CARD && (
+                  <li className="book-card-more">
+                    and {book.chapters.length - CHAPTERS_ON_A_CARD} more
+                  </li>
+                )}
               </ol>
               <div className="book-card-foot">
                 <span>

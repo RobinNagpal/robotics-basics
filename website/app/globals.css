@@ -804,7 +804,7 @@ kbd {
   position: relative;
   display: grid;
   place-items: center;
-  height: 168px;
+  height: 120px;
   color: var(--accent);
   background:
     radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
@@ -869,6 +869,18 @@ kbd {
   margin: 14px 0 0;
   font-size: 14.5px;
   color: var(--text-soft);
+  /* Three lines, because the descriptions differ in length by a factor of three and
+     the longest ones were setting the height of a whole row of cards. The book's own
+     page carries the description in full. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.book-card-more {
+  color: var(--muted);
+  font-style: italic;
 }
 
 .book-card-chapters {

@@ -383,4 +383,4 @@ the counts.
 - [The six solutions](03_the-six-solutions.md) — what each method puts between
   the input and the output.
 
-[The six solutions — same table, six ways to push](03_the-six-solutions.md) →
+← [Pushing without toppling](01_the-problem/03_pushing-without-toppling.md) · [The six solutions — same table, six ways to push](03_the-six-solutions.md) →

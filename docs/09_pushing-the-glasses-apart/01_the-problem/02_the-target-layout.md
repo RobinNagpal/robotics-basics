@@ -390,3 +390,5 @@ six solutions, say how.
   to be, why that is a property of the glass, and the refusal path.
 - [The six solutions](../03_the-six-solutions.md) — what each one puts between the
   measurements and the pushes.
+
+← [Push the glasses apart — what is asked for](01_what-is-asked-for.md) · [Pushing without toppling](03_pushing-without-toppling.md) →

@@ -363,4 +363,4 @@ Two useful numbers are **derived**, not stored, and are recomputed every run:
   — the other book that works in this cell, where glasses stand too close
   together for the gripper and the arm has to make room.
 
-[The test bench — the same question for every answer](03_the-test-bench.md) →
+[What is asked for — segment the glasses](02_the-problem/01_what-is-asked-for.md) →

@@ -166,4 +166,4 @@ what its absence costs.
   [4](07_a-world-model-then-plan-with-it/01_what-it-is.md), [5](08_a-foundation-model-as-it-downloads/01_what-it-is.md),
   [6](09_the-same-model-fine-tuned-here/01_what-it-is.md).
 
-← [The six solutions — same table, six ways to push](03_the-six-solutions.md) · [One fixed nudge — what it is](04_one-fixed-nudge/01_what-it-is.md) →
+← [The test bench — the same question for every answer](02_the-test-bench.md) · [One fixed nudge — what it is](04_one-fixed-nudge/01_what-it-is.md) →

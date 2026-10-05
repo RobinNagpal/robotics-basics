@@ -197,7 +197,7 @@ bench](../02_the-test-bench.md) is for.
 
 ## 3. Where it sits among the other five
 
-[The overview of the six](../03_the-six-solutions.md) states the question this solution
+[The overview of the six](../03_the-six-solutions/01_how-the-six-compare.md) states the question this solution
 answers in one line: **does any learning beat a fixed nudge?** It is answered
 by comparing this solution against all five of the others, and that is the only
 comparison in the set with this shape, because every other comparison is

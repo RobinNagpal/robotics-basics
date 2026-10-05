@@ -150,7 +150,7 @@ whose numbers came entirely from **somewhere else**, and [solution
 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is the same numbers with this cell's own pushes
 added on top.
 
-Read in that order, [the six solutions](../03_the-six-solutions.md) measure what each kind of
+Read in that order, [the six solutions](../03_the-six-solutions/01_how-the-six-compare.md) measure what each kind of
 fitting buys, and this one is the borrowed extreme they are read against.
 
 One of those comparisons is sharper than the rest, and it is the reason this

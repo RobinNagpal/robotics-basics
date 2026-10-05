@@ -200,7 +200,7 @@ anything that reads those pictures.
 
 - [The problem](01_what-is-asked-for.md) — what is asked for, and the three difficulties.
 - [The test bench](../03_the-test-bench.md) — the shared input, output and marking.
-- [The six solutions](../04_the-six-solutions.md) — what each one puts between the
+- [The six solutions](../04_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
   pictures and the masks.
 
 ← [What is asked for — segment the glasses](01_what-is-asked-for.md) · [The test bench — the same question for every answer](../03_the-test-bench.md) →

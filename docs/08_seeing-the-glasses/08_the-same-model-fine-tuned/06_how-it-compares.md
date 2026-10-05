@@ -164,7 +164,7 @@ that difficulty.
 
 ## 3. Where it sits among the other five
 
-[The six solutions](../04_the-six-solutions.md) form a ladder, ordered by how much of them was
+[The six solutions](../04_the-six-solutions/01_how-the-six-compare.md) form a ladder, ordered by how much of them was
 fitted in this cell, and this one stands near the top of it.
 
 Against [solution 3](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md), there is nothing to compare except

@@ -172,7 +172,7 @@ One more point about the gain, and it is about honesty rather than about
 control. The gain could be chosen by trying many values over the training
 tables and keeping the best, and that would be **fitting a number to data**,
 which this solution is not allowed to do: [the overview of the
-six](../03_the-six-solutions.md) records that this solution fits nothing, and a baseline
+six](../03_the-six-solutions/01_how-the-six-compare.md) records that this solution fits nothing, and a baseline
 that is quietly tuned until it is competitive has stopped being a baseline. So
 the gain is argued instead. It is chosen small enough that the convergence
 condition holds across the whole plausible friction range, and then frozen, and

@@ -196,4 +196,4 @@ one at a time, in the order the work happens: turning a pixel into a point,
 keeping only what stands above the table, throwing the height away, grouping the
 dots by distance, and checking each group against the widths the kind allows.
 
-← [The six solutions — one question, six ways to see](../04_the-six-solutions.md) · [How it works](02_how-it-works.md) →
+← [A transformer segmenter, fine-tuned](../04_the-six-solutions/07_a-transformer-segmenter-fine-tuned.md) · [How it works](02_how-it-works.md) →

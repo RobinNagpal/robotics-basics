@@ -27,7 +27,7 @@ arrangements. Every number here comes from a solution's own `results.json`.
 ## 2. The results
 
 Each solution's own README explains its numbers; this page only sets them side
-by side. [The six solutions](04_the-six-solutions.md) says what each
+by side. [The six solutions](04_the-six-solutions/01_how-the-six-compare.md) says what each
 of the six methods is.
 
 ### Spawned layouts — 100 glasses, the spacing the cell's own layout rule gives
@@ -153,5 +153,7 @@ pixi run python 01-rules-on-the-table/run.py --scenes 20 --crowded
 
 The same two lines run each of the other five, from that same folder. The fitted
 ones need their training step first, and each solution's own README says which.
+
+← [RF-DETR-Seg, fine-tuned here — how it compares](10_a-transformer-segmenter-fine-tuned/06_how-it-compares.md)
 
 ← [RF-DETR-Seg, fine-tuned here — how it compares](10_a-transformer-segmenter-fine-tuned/06_how-it-compares.md)

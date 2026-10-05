@@ -3,13 +3,21 @@
 ## 1. Introduction
 
 This book asks for one record per glass: which pixels are that glass, and where
-it stands on the table. [What is asked for](02_the-problem/01_what-is-asked-for.md)
+it stands on the table. [What is asked for](../02_the-problem/01_what-is-asked-for.md)
 sets out that question in full. This chapter answers it six times over, with six
 quite different methods, and the point of having six is **not** that one of them
 is the answer. The point is to be able to compare them, and then to choose one
 knowing what the choice costs. By the end of this document you will understand
 what all six have in common, what single thing each one changes, and which pair
 of them you should look at first if you only have time for one comparison.
+
+**This chapter holds a short page for each of the six, after this one.** Each of
+those pages takes about eight minutes and says what one solution is, how it
+works, what it needs, what it scored and when to choose it. Six separate
+chapters later in the book then treat the same six solutions in full, at
+roughly an hour each, for a reader who wants one of them derived step by step.
+So the order to read in is this page, then the short page for any solution that
+interests you, and only then its chapter.
 
 The comparison works because only one thing changes between any two of the six.
 They are asked the same question, shown the same arrangements of glasses and
@@ -30,7 +38,7 @@ rather than about the conditions it was tested under.
 ## 2. What all six share
 
 Three things are held still for every solution, and they are described in full
-by [the test bench](03_the-test-bench.md). In short:
+by [the test bench](../03_the-test-bench.md). In short:
 
 **The same input.** One fixed set of arrangements, in the same order. For each
 picture, a solution may read the grey picture shaded from depth, the depth
@@ -63,7 +71,7 @@ its pose is simply a position.
 One more thing is shared and is deliberately not any solution's business.
 Recovering a glass that appeared in no picture at all needs geometry rather than
 pixels, so it lives once in [looking again at what was
-hidden](02_the-problem/02_looking-again-at-what-was-hidden.md) and all six point at it.
+hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) and all six point at it.
 
 ## 3. The six, in one table
 
@@ -73,12 +81,12 @@ table reads downwards from nothing fitted to everything fitted.
 
 | # | Solution | What is fitted, and where | Libraries and models | Licence |
 |---|---|---|---|---|
-| 1 | [Rules on the table](05_rules-on-the-table/01_what-it-is.md) | nothing at all | NumPy, OpenCV | — |
-| 2 | [A network trained from scratch](06_a-network-trained-from-scratch/01_what-it-is.md) | everything, in this cell | PyTorch, a small convolutional network | — |
-| 3 | [A borrowed model, as it downloads](07_a-borrowed-model-as-it-downloads/01_what-it-is.md) | nothing | Ultralytics YOLO26-seg | AGPL-3.0 |
-| 4 | [The same model, fine-tuned](08_the-same-model-fine-tuned/01_what-it-is.md) | all of it, in this cell | Ultralytics YOLO26-seg | AGPL-3.0 |
-| 5 | [A foundation model with a keeper](09_a-foundation-model-with-a-keeper/01_what-it-is.md) | only the keeper | SAM 2 via `transformers`, scikit-learn | permissive |
-| 6 | [A transformer segmenter, fine-tuned](10_a-transformer-segmenter-fine-tuned/01_what-it-is.md) | all of it, in this cell | RF-DETR-Seg | Apache 2.0 |
+| 1 | [Rules on the table](02_rules-on-the-table.md) | nothing at all | NumPy, OpenCV | — |
+| 2 | [A network trained from scratch](03_a-network-trained-from-scratch.md) | everything, in this cell | PyTorch, a small convolutional network | — |
+| 3 | [A borrowed model, as it downloads](04_a-borrowed-model-as-it-downloads.md) | nothing | Ultralytics YOLO26-seg | AGPL-3.0 |
+| 4 | [The same model, fine-tuned](05_the-same-model-fine-tuned.md) | all of it, in this cell | Ultralytics YOLO26-seg | AGPL-3.0 |
+| 5 | [A foundation model with a keeper](06_a-foundation-model-with-a-keeper.md) | only the keeper | SAM 2 via `transformers`, scikit-learn | permissive |
+| 6 | [A transformer segmenter, fine-tuned](07_a-transformer-segmenter-fine-tuned.md) | all of it, in this cell | RF-DETR-Seg | Apache 2.0 |
 
 Three of them carry a **second rung** inside themselves, which keeps a real idea
 without spending a whole document on it:
@@ -164,7 +172,7 @@ conveniently.
 
 **All six are built and all six have been run on the bench.** Each has code in
 a folder named after the document you are reading about it, and the numbers the
-six produced are set side by side in [the results](11_the-results.md). No
+six produced are set side by side in [the results](../11_the-results.md). No
 number in this project is an estimate: where something could not be run, the
 result is absent and the reason is written down instead.
 
@@ -184,17 +192,19 @@ amodal target of solution 6 is the third.
 
 ## 7. Where to go next
 
-- [The problem](02_the-problem/01_what-is-asked-for.md) — what is asked for, and the three difficulties.
-- [The test bench](03_the-test-bench.md) — the shared input, output and marking.
+- [The problem](../02_the-problem/01_what-is-asked-for.md) — what is asked for, and the three difficulties.
+- [The test bench](../03_the-test-bench.md) — the shared input, output and marking.
   **Read this before any solution document.**
-- [Looking again at what was hidden](02_the-problem/02_looking-again-at-what-was-hidden.md) — the part all six
+- [Looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) — the part all six
   share.
-- Then the six, in order: [rules on the table](05_rules-on-the-table/01_what-it-is.md), [a
-  network trained here from scratch](06_a-network-trained-from-scratch/01_what-it-is.md), [a
-  borrowed model as it downloads](07_a-borrowed-model-as-it-downloads/01_what-it-is.md), [the
-  same model fine-tuned here](08_the-same-model-fine-tuned/01_what-it-is.md), [SAM 2 with a
-  keeper](09_a-foundation-model-with-a-keeper/01_what-it-is.md), and [RF-DETR-Seg fine-tuned
-  here](10_a-transformer-segmenter-fine-tuned/01_what-it-is.md).
-- [The results](11_the-results.md) — what the six scored on the bench.
+- Then the six short pages of this chapter, in order: [rules on the
+  table](02_rules-on-the-table.md), [a network trained from
+  scratch](03_a-network-trained-from-scratch.md), [a borrowed model as it
+  downloads](04_a-borrowed-model-as-it-downloads.md), [the same model
+  fine-tuned](05_the-same-model-fine-tuned.md), [a foundation model with a
+  keeper](06_a-foundation-model-with-a-keeper.md), and [a transformer segmenter,
+  fine-tuned](07_a-transformer-segmenter-fine-tuned.md). Each one ends with a
+  link to the chapter that treats it in full.
+- [The results](../11_the-results.md) — what the six scored on the bench.
 
-← [The test bench — the same question for every answer](03_the-test-bench.md) · [Rules on the table — what it is](05_rules-on-the-table/01_what-it-is.md) →
+← [The test bench — the same question for every answer](../03_the-test-bench.md) · [Rules on the table](02_rules-on-the-table.md) →

@@ -177,4 +177,4 @@ serve both ends of that range. What is fixed is the **fraction**: one constant,
 the same for every glass on every table, chosen once by argument and never
 changed. That single constant is the only free number in the entire method.
 
-← [The six solutions — same table, six ways to push](../03_the-six-solutions.md) · [How it works](02_how-it-works.md) →
+← [The same model, fine-tuned here](../03_the-six-solutions/07_the-same-model-fine-tuned-here.md) · [How it works](02_how-it-works.md) →

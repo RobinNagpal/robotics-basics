@@ -46,7 +46,7 @@ back.
 A table is **done** when every glass on it was picked up, and **wrong** when
 the run ended in a state the cell should never reach. Solutions 3, 5 and 6 are
 run several times and the figure shown is the middle one; [each solution's own
-document](03_the-six-solutions.md) gives the spread between runs.
+document](03_the-six-solutions/01_how-the-six-compare.md) gives the spread between runs.
 
 The thinking column is deliberately coarse. Every time on this page was
 measured while the machine was busy with other work, and the same solution
@@ -118,5 +118,7 @@ The same line works for each of the other five, run from
 `code/src/09_pushing-the-glasses-apart/`. The ones that fit something need
 their training step first, and each solution folder's own README says which
 step that is and what it costs.
+
+← [The same foundation model, fine-tuned here — how it compares](09_the-same-model-fine-tuned-here/06_how-it-compares.md)
 
 ← [The same foundation model, fine-tuned here — how it compares](09_the-same-model-fine-tuned-here/06_how-it-compares.md)

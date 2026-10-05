@@ -221,7 +221,7 @@ measured — the friction, and the way the weight is distributed under the foot.
 
 ## 3. Where it sits among the other five
 
-[The six solutions](../03_the-six-solutions.md) form a ladder ordered by how much of each one
+[The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) form a ladder ordered by how much of each one
 was fitted in this cell, and this one stands on the lowest rung that has
 anything fitted at all.
 

@@ -9,7 +9,7 @@ document is about that half. It is deliberately separate from the six
 solutions, for the same reason [looking again at what was
 hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md)
 is separate from the [six answers of the camera
-work](../../08_seeing-the-glasses/04_the-six-solutions.md): **every
+work](../../08_seeing-the-glasses/04_the-six-solutions/01_how-the-six-compare.md): **every
 one of them needs it and none of them differs in it.** By the end of this
 document you will understand why choosing where a glass should end up
 is not a learning problem at all but plain geometry, four methods that solve
@@ -388,7 +388,7 @@ six solutions, say how.
   where the floor sits on the scorecard.
 - [Pushing without toppling](03_pushing-without-toppling.md) — how low a push has
   to be, why that is a property of the glass, and the refusal path.
-- [The six solutions](../03_the-six-solutions.md) — what each one puts between the
+- [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
   measurements and the pushes.
 
 ← [Push the glasses apart — what is asked for](01_what-is-asked-for.md) · [Pushing without toppling](03_pushing-without-toppling.md) →

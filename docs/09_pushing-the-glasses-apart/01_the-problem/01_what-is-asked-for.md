@@ -247,6 +247,6 @@ before any of the six.
 
 Then the six answers themselves:
 
-→ [The six solutions](../03_the-six-solutions.md)
+→ [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md)
 
 [The target layout — where the glasses should end up](02_the-target-layout.md) →

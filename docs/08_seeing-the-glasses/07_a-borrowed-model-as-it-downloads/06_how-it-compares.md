@@ -129,7 +129,7 @@ far end, [solution 2](../06_a-network-trained-from-scratch/01_what-it-is.md) fit
 nothing, and [solution 1](../05_rules-on-the-table/01_what-it-is.md) sits outside the line
 altogether, with no model and no fitting of any kind.
 
-Read in that order, [the six solutions](../04_the-six-solutions.md) measure what each increment
+Read in that order, [the six solutions](../04_the-six-solutions/01_how-the-six-compare.md) measure what each increment
 of fitting buys, and this one is the baseline the others are read against.
 
 One of those comparisons is sharper than the rest, and it is the reason this

@@ -253,6 +253,6 @@ That is answered by geometry rather than by appearance, in [looking again at
 what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md), which all six point at. This solution
 moves the boundary at which hiding becomes complete further out than the other
 five, and it does not remove it. The whole comparison, with all six side by
-side, is in [the overview](../04_the-six-solutions.md).
+side, is in [the overview](../04_the-six-solutions/01_how-the-six-compare.md).
 
 ← [What it needs](05_what-it-needs.md) · [The six solutions side by side](../11_the-results.md) →

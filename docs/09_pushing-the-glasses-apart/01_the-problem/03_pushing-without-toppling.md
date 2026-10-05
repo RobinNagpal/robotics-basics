@@ -345,7 +345,7 @@ said yes on the strength of a number nobody had.
 - [The test bench](../02_the-test-bench.md) — the shared input, output and marking.
 - [The target layout](02_the-target-layout.md) — where the glasses should end up,
   and the least movement the task needs.
-- [The six solutions](../03_the-six-solutions.md) — what each one puts between the
+- [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
   measurements and the pushes.
 
 ← [The target layout — where the glasses should end up](02_the-target-layout.md) · [The test bench — the same question for every answer](../02_the-test-bench.md) →

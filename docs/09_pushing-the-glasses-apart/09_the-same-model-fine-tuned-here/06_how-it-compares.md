@@ -195,7 +195,7 @@ than the method.
 
 ## 3. Where it sits among the other five
 
-[The six solutions](../03_the-six-solutions.md) form a ladder, ordered by how much of each one
+[The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) form a ladder, ordered by how much of each one
 was fitted in this cell, and this one stands at the top of it, because all of
 its fitting happens on a borrowed model.
 

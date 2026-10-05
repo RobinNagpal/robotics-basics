@@ -215,7 +215,7 @@ is what shows the difference.
   marked. Read this before any solution.
 - [Looking again at what was hidden](02_looking-again-at-what-was-hidden.md) — the part every
   solution shares.
-- [The six solutions](../04_the-six-solutions.md) — the six answers, and what
+- [The six solutions](../04_the-six-solutions/01_how-the-six-compare.md) — the six answers, and what
   separates them.
 
 ← [The cell — the layout, the sensors, and the words](../01_the-cell.md) · [Looking again at what was hidden](02_looking-again-at-what-was-hidden.md) →

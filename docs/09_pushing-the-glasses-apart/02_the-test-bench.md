@@ -380,7 +380,7 @@ the counts.
 - [Pushing without toppling](01_the-problem/03_pushing-without-toppling.md) — how low the push
   has to be, why that is a property of the glass, the refusal path, and the
   loop of plan, feel and look again.
-- [The six solutions](03_the-six-solutions.md) — what each method puts between
+- [The six solutions](03_the-six-solutions/01_how-the-six-compare.md) — what each method puts between
   the input and the output.
 
-← [Pushing without toppling](01_the-problem/03_pushing-without-toppling.md) · [The six solutions — same table, six ways to push](03_the-six-solutions.md) →
+← [Pushing without toppling](01_the-problem/03_pushing-without-toppling.md) · [The six solutions — same table, six ways to push](03_the-six-solutions/01_how-the-six-compare.md) →

@@ -32,7 +32,8 @@ docs/03_frameworks/07_stone-stacking.md
 
 - A top-level folder is a **book**: `01_robotics-intro`, `02_perception`,
   `03_frameworks`, `04_ros-and-rviz`, `05_neural-networks`,
-  `06_programming-techniques`, `07_learned-models`, `08_robotics-by-example`.
+  `06_programming-techniques`, `07_learned-models`, `08_seeing-the-glasses`,
+  `09_pushing-the-glasses-apart`.
 - A folder inside a book is a **chapter**, and each `.md` file in it is a
   **section**. A `.md` file directly inside a book is a chapter with one section.
 - A folder inside a chapter, such as `07_case-study/`, shows as a labelled group of
@@ -100,7 +101,7 @@ Inside the docs, link to the file and let the site work out the address.
 ```
 docs/02_perception/              code/src/02_perception/
 docs/06_programming-techniques/  code/src/06_programming-techniques/
-docs/08_robotics-by-example/     code/src/08_robotics-by-example/
+docs/08_seeing-the-glasses/      code/src/08_seeing-the-glasses/
 ```
 
 Inside that folder the code keeps its own areas, such as
@@ -160,7 +161,7 @@ the words writes `"version": "v1-draft"` instead, and the player treats that pag
 as v0 until the audio is made.
 
 In those paths, `<url>` is the page's address on the site with the reading-order
-numbers stripped, such as `robotics-by-example/the-cell/the-cell`. The transcript,
+numbers stripped, such as `seeing-the-glasses/the-cell/the-cell`. The transcript,
 the state file and the audio all use that one name.
 
 A v0 page does not become a v1 page on its own. The flag `--v1` asks for the
@@ -245,16 +246,16 @@ until somebody asks for it by number.
 
 ```bash
 # one page
-python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md
+python narration/narrate.py --doc docs/08_seeing-the-glasses/01_the-cell.md
 
 # one chapter
 python narration/narrate.py --book 08 --chapter 02
 
 # after editing a page: the same command, which remakes only the changed sections
-python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md
+python narration/narrate.py --doc docs/08_seeing-the-glasses/01_the-cell.md
 
 # convert a page that is still v0 into the sectioned shape
-python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md --v1
+python narration/narrate.py --doc docs/08_seeing-the-glasses/01_the-cell.md --v1
 
 # make the recordings and put them in the bucket
 python narration/narrate.py --book 08 --upload

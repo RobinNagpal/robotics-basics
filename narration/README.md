@@ -71,7 +71,7 @@ recordings live in the S3 bucket the site is served from instead.
 
 In the table below, `<url>` is the page's address on the site with the
 reading-order number prefixes stripped, for example
-`robotics-by-example/the-cell/the-cell`. The same name is used for a page's
+`seeing-the-glasses/the-cell/the-cell`. The same name is used for a page's
 transcript, its state file and its audio, which is how the three are matched to
 each other and to the page.
 
@@ -106,7 +106,7 @@ Run these from the repository root. The API key comes from `.env` there.
 
 ```bash
 # one page
-python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md
+python narration/narrate.py --doc docs/08_seeing-the-glasses/01_the-cell.md
 
 # one chapter
 python narration/narrate.py --book 08 --chapter 02
@@ -118,7 +118,7 @@ python narration/narrate.py --book 08
 python narration/narrate.py --book 08 --stage transcript
 
 # convert a page recorded as one piece into the section by section shape
-python narration/narrate.py --doc docs/08_robotics-by-example/01_the-cell.md --v1
+python narration/narrate.py --doc docs/08_seeing-the-glasses/01_the-cell.md --v1
 
 # make the recordings, then put them in the bucket
 python narration/narrate.py --book 08 --upload

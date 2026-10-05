@@ -16,7 +16,7 @@
 > collection and no fitted parameter anywhere in the design.
 > **How the output is produced** — the view from the top, the instruction and
 > the joint readings go into the model; the model returns a run of actions;
-> those actions are read as waypoints for the jaw and handed to the bench,
+> those actions are read as waypoints for the jaw and handed to the examiner,
 > which carries them out directly rather than through the push macro it owns.
 > So the chain is short: picture and words in, waypoints out, table changed,
 > look again.
@@ -54,7 +54,7 @@ the other five, and
 [its README](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/README.md)
 carries the numbers. What follows was written before it ran, so where this
 document says what would probably happen, that is an
-argument from what the model was fitted on and what this bench offers it, and
+argument from what the model was fitted on and what this examiner offers it, and
 not a measurement. The measurements are in the README, and the one thing the
 design did not foresee is how much weight the reading between the model's
 action space and this jaw would have to carry.
@@ -75,7 +75,7 @@ By the end of this document you will understand what kind of model this is and
 what goes into it, where its competence comes from and why that competence is
 general rather than local, exactly what is borrowed and exactly what is not,
 why the difference between the pictures it learned from and the pictures this
-bench would show it is the central risk, why the instruction it is given
+examiner would show it is the central risk, why the instruction it is given
 carries almost no information in this problem, why the one channel that
 observes friction cannot reach it, and why a poor result here would still be
 the most useful thing in this book.
@@ -113,9 +113,9 @@ The idea has three steps, and the first two are the whole of the solution.
 
 **First, download the model and run it on the table from the top.** The input
 is a picture of the table looking straight down, which [the test
-bench](../02_the-test-bench.md) specifies so that the solutions which read pictures get
+examiner](../02_the-examiner.md) specifies so that the solutions which read pictures get
 the same information as the solutions which read numbers. That picture is the
-model's view of the world. The bench renders it: a fixed camera 750 mm above
+model's view of the world. The examiner renders it: a fixed camera 750 mm above
 the middle of the glass zone, looking straight down, 384 by 384 pixels of
 red-green-blue, the same frame on every table.
 
@@ -127,7 +127,7 @@ exactly from its encoders.
 
 **Third, carry out what comes back.** The model returns actions. Read as
 waypoints for the jaw, those actions are already the shared output the contract
-asks for, so they go straight to the bench. The bench moves the jaw along them,
+asks for, so they go straight to the examiner. The examiner moves the jaw along them,
 the table changes, fresh measurements are taken, and the model is asked again
 from the new arrangement.
 

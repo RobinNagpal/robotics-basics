@@ -77,7 +77,7 @@ cannot.
 
 ## 2. A worked example
 
-The clearest way to see the whole arrangement run is on one of the bench's
+The clearest way to see the whole arrangement run is on one of the examiner's
 held-out tables, and rung one can be traced step by step on any of them.
 
 Take a table of six glasses of one kind. The first look reports six readings.

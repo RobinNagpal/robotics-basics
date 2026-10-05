@@ -5,7 +5,7 @@ Six diagrams, each carrying one point from ``03_the-test-bench.md``:
     03-two-families.png             spaced as the spawner spaces it, and crowded
     03-three-stations.png           three pictures rather than one, and why they overlap
     03-what-a-solution-is-given.png the grey picture, the depth, the pose, and nothing else
-    03-what-the-bench-keeps.png     the id picture, and its two separate jobs
+    03-what-the-examiner-keeps.png     the id picture, and its two separate jobs
     03-matching-by-pixels.png       which real glass a report is talking about
     03-the-two-mask-numbers.png     covered, and not the glass
 
@@ -25,7 +25,7 @@ typed in by hand twice.
 
 Run from code/:
 
-    pixi run python ../docs/diagrams/seeing-the-glasses/make_bench_pictures.py
+    pixi run python ../docs/diagrams/seeing-the-glasses/make_examiner_pictures.py
 
 Needs matplotlib, numpy and opencv.
 """
@@ -855,7 +855,7 @@ def what_the_bench_keeps() -> None:
             "The id picture is the same arrangement from the same station: at each pixel, which glass that pixel "
             "shows, or nothing.\nIt is the bench's whole power, because knowing who owns each pixel is what lets it "
             "decide what a returned mask\nis really a picture of.")
-    save(figure, "03-what-the-bench-keeps.png")
+    save(figure, "03-what-the-examiner-keeps.png")
 
 
 # --------------------------------------------------------------------------- #

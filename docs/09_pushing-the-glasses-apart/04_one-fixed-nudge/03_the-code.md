@@ -84,15 +84,15 @@ commits to.
 ## 2. The pushes are what this contributes
 
 With the method, its loop and its honest extent all stated, what remains is the
-thing it actually hands over, and the bench is strict about the shape of that.
+thing it actually hands over, and the examiner is strict about the shape of that.
 
-**The shared output is a jaw trajectory**, as [the bench](../02_the-test-bench.md)
+**The shared output is a jaw trajectory**, as [the examiner](../02_the-examiner.md)
 explains, and a solution that thinks in whole pushes does not have to produce
 one itself. This solution thinks in whole pushes. What it emits is a
 **parameterised push**: which glass is meant to move, where the fingertips come
 down, which way the jaw points and travels, how far forward to feel before
 giving up on finding the glass, how far to push once it is touching, and where
-the glass is expected to arrive. The bench owns the macro that turns those
+the glass is expected to arrive. The examiner owns the macro that turns those
 numbers into the descent, the feel, the push, the retreat and the lift, and
 every parameterised push from every solution is expanded by that same macro. So
 the simplicity of this solution costs it nothing in the comparison and gains it
@@ -100,7 +100,7 @@ nothing either.
 
 The field that names where the glass is expected to arrive deserves a word,
 because it looks like a prediction and this document has insisted there is
-none. The bench asks for it so that it can measure how far each glass ended
+none. The examiner asks for it so that it can measure how far each glass ended
 from where it was sent, which is a reading on every solution's own model of
 pushing. This solution fills it with the place its fingertips are carried to,
 on the assumption that the glass travels with the jaw and no further. That is a
@@ -125,7 +125,7 @@ jammed, the most force it felt, and how far it moved after touching. **This
 solution reads almost none of that report.** It uses only whether the jaw
 touched anything at all. That is a deliberate omission rather than an
 oversight, and it is the deepest reason this solution is the floor of the set:
-[the bench](../02_the-test-bench.md) points out that the force reading is the only
+[the examiner](../02_the-examiner.md) points out that the force reading is the only
 channel through which the friction is observable at all, and every solution
 that does better than a blind nudge does so by reading that channel, either by
 reasoning about it or by learning from it. This one throws it away and relies on

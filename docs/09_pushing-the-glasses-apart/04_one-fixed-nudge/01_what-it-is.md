@@ -2,7 +2,7 @@
 
 > **What it uses** — NumPy for the arithmetic over a handful of positions and
 > widths, and nothing else. Carrying the jaw to the places the arithmetic names
-> belongs to the cell rather than to this solution: on the test bench the
+> belongs to the cell rather than to this solution: on the examiner's tables the
 > physics engine does it, and in the real cell MoveIt does.
 > There is no model, no weights file, no training set and no licence
 > condition, because not one number in this solution was fitted to anything.
@@ -24,7 +24,7 @@
 > point the jaw along the line that runs from the neighbour's middle through
 > the glass's middle; set the travel to a fixed fraction of the shortfall; put
 > the start point on that same line, a little outside the glass's widest part;
-> and hand the result over as one parameterised push, which the bench's own
+> and hand the result over as one parameterised push, which the examiner's own
 > macro expands into a jaw trajectory. Then look again and start over.
 > **What it costs** — no data, because nothing learns; no training time, for
 > the same reason; no accelerator to rent, so nothing to pay a cloud provider,
@@ -81,7 +81,7 @@ should be read.
 
 **Part of this solution is built and part of it is a design**, and the two are
 separated plainly in [what is built and what is a
-design](02_how-it-works.md#5-what-is-built-and-what-is-a-design). The bench, the room test, the
+design](02_how-it-works.md#5-what-is-built-and-what-is-a-design). The examiner, the room test, the
 tipping rule and the loop all exist in this repository and have been run. The
 particular rule for choosing a direction and a distance that this document
 describes is a design that would sit inside them.

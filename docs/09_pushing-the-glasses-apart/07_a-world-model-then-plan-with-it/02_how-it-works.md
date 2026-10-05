@@ -26,7 +26,7 @@ exists.
 
 **Rung one is built.** It lives in
 `code/src/09_pushing-the-glasses-apart/04-a-world-model/`, it trains on data it
-collects itself, and it has been run on the bench's held-out tables with its
+collects itself, and it has been run by the examiner's held-out tables with its
 results recorded in that folder's own `results.json`, and set beside the other
 five in `code/src/09_pushing-the-glasses-apart/results/README.md`. The model is
 `model.py`, what it is shown is `features.py`, and the search and the loop
@@ -42,14 +42,14 @@ explains how that extension works and what it would buy. But the horizon in the
 built planner is one push, and the reason it is one push is given below under
 compounding error.
 
-**Rung two is a design, and it claims nothing.** It is not wired to this bench
+**Rung two is a design, and it claims nothing.** It is not wired to this examiner
 and it has not been trained or run here, so every number in this document
 belongs to rung one. One thing about it is worth settling before anybody
 starts: the library this project uses elsewhere ships **TD-MPC**, the earlier
 method, and not TD-MPC2. So rung two means fetching TD-MPC2 from its own
 project, and the convenience of everything living in one library, which
 [imitation from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md) and the
-two SmolVLA solutions enjoy, does not apply here. The two bench pieces an
+two SmolVLA solutions enjoy, does not apply here. The two examiner pieces an
 off-the-shelf policy needs are no longer the obstacle: the straight-down
 rendered view and the path that accepts waypoints were built for [imitation
 from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md), as
@@ -104,7 +104,7 @@ of [telling the glasses apart](../../08_seeing-the-glasses/11_the-results.md).
 The push itself as two numbers: how far across the glass the jaw meets it, and
 how far it pushes. And then up to five other glasses, nearest first, each as
 where it stands relative to the pushed glass, how wide it is and how tall it
-is. Six glasses on a table is the most the bench ever draws, so five others is
+is. Six glasses on a table is the most the examiner ever draws, so five others is
 everyone.
 
 **Out come fourteen numbers.** A displacement for the pushed glass. A
@@ -423,7 +423,7 @@ how far a rollout can be trusted, and for rung one's model that limit is low.
 Two pushes is defensible, three is optimistic, and anything deeper is planning
 against a story rather than a prediction.
 
-**On this bench a sequence saves pushes rather than rescuing runs.** The cases
+**On this examiner a sequence saves pushes rather than rescuing runs.** The cases
 where a sequence wins outright — where a one-at-a-time planner has to refuse and
 a two-deep planner succeeds — are real but uncommon on four to six glasses, and
 the more usual gain is finishing the same table in fewer pushes. That is worth

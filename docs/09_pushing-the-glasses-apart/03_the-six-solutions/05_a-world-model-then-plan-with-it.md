@@ -6,7 +6,7 @@ do: it fits a model that answers "if I make this push, what will the table look
 like afterwards?", and then finds a good push by trying candidates against that
 model instead of against the real table. By the end of this page you will know
 what a forward model is, how the search uses it, what it scored on the shared
-test bench, and why its result is the most interesting one in the book. The full
+examiner, and why its result is the most interesting one in the book. The full
 treatment is in [the chapter on this
 solution](../07_a-world-model-then-plan-with-it/01_what-it-is.md), which is
 about an hour of reading.
@@ -16,7 +16,7 @@ about an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -44,7 +44,7 @@ already computes exactly from the destination. This solution fits a model of
 *what a push will actually do*, which is the quantity the geometry gets wrong,
 because predicting where a pushed glass stops needs the friction and the weight
 distribution that nobody in this cell has measured. Those are two different
-bets about which question deserved a model, and the bench settles it.
+bets about which question deserved a model, and the examiner settles it.
 
 Rung one is five copies of a small network written for this cell and trained
 here, with no downloaded weights of any kind. Rung two would be TD-MPC2, the
@@ -79,7 +79,7 @@ evaluates them all against the model, keeps the best, draws again near those,
 and repeats — the method known as the cross-entropy method. About fifteen
 hundred candidates are evaluated before every push the arm makes.
 
-**The best push is handed to the bench** as three numbers, and the bench's macro
+**The best push is handed to the examiner** as three numbers, and the examiner's macro
 expands it into the jaw trajectory every solution here is judged on.
 
 Two honest gaps are worth knowing before the scores. The shared topple rule that
@@ -119,7 +119,7 @@ column.
 **A file of weights kept in step with the cell**, and **no borrowed model**, so
 there is no model licence to meet in either rung.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 All six solutions are given the same 50 tables holding 251 glasses, of which 193
 have no room at the start. The geometry's row is shown beside this one, because
@@ -186,7 +186,7 @@ arithmetic.
 
 Choose this when the thing you cannot write down is *what your actions do*, and
 when a simulator can produce the examples. Those two conditions together are
-what make it work here: friction is unknown, and the bench will make thirty-eight
+what make it work here: friction is unknown, and the examiner will make thirty-eight
 thousand pushes in under an hour for nothing. In that position learning the
 forward model is the highest-value thing to learn, because everything else — the
 choosing, the scoring, the goal — can stay as arithmetic a person wrote and can
@@ -199,7 +199,7 @@ Do not choose it when a rule already predicts your actions well enough, because
 then you are fitting a model of something you already know, which is what the
 ranked geometry did and why it lost. Do not choose it where a confidently wrong
 prediction is unacceptable unless something outside the model can veto it: on
-this bench the missing arithmetic gate in front of the planner is exactly what
+this examiner the missing arithmetic gate in front of the planner is exactly what
 the one toppled glass cost. And do not choose it when the run-time budget is
 tight, because searching is hundreds of times more expensive than answering.
 

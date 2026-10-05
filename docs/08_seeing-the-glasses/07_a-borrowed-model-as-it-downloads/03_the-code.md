@@ -92,14 +92,14 @@ of it came from this cell's data.
 It is worth stating plainly where this solution stops, because the boundary is
 the same for all six and is what makes them comparable.
 
-The input is fixed by the bench: for each survey picture, the grey picture
+The input is fixed by the examiner: for each survey picture, the grey picture
 shaded from depth, the depth reading at every pixel, and the camera's own pose,
 and nothing else. In particular no solution may read the simulator's record of
 what it spawned. The output is fixed too: one record per glass, holding its mask
 pixels, its place on the table and a rough width.
 
 The step between the mask and the place belongs to [the test
-bench](../03_the-test-bench.md) rather than to the solution. So **this solution
+examiner](../03_the-examiner.md) rather than to the solution. So **this solution
 contributes only the masks**, and any difference in its score belongs to the
 mask. It cannot win by measuring more cleverly and it cannot lose by measuring
 worse. One consequence is worth repeating because it removes a question that
@@ -110,10 +110,10 @@ to find.
 
 Two further points follow from that boundary. A single glass can be named twice,
 under two neighbouring drinking-vessel categories, and arrive as two outlines
-covering nearly the same pixels; the bench counts a real glass that collected
+covering nearly the same pixels; the examiner counts a real glass that collected
 two reports as a split, so the design should merge outlines that cover
 substantially the same pixels before it hands anything over, rather than leaving
-the bench to count one glass twice. And a mask that asserts pixels the camera
+the examiner to count one glass twice. And a mask that asserts pixels the camera
 never saw the glass at must say which ones, because the depth reading at such a
 pixel belongs to whatever stood in front; that case does not arise here, since
 the outlines this model returns mark only pixels where the object was actually

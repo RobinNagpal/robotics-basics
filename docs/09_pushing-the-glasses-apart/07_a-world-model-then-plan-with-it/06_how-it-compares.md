@@ -171,7 +171,7 @@ the camera work that [tells the glasses
 apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) has
 already measured the positions and widths, so a learned encoding is being asked
 to rediscover information the cell already supplies. That is the honest prior
-expectation for rung two on this bench, and it is exactly the expectation the
+expectation for rung two here, and it is exactly the expectation the
 comparison exists to test.
 
 ### Where the push data of record comes from
@@ -182,7 +182,7 @@ Pushed*](https://arxiv.org/abs/1604.04038) (2016) recorded a robot pushing
 objects across several different surfaces with the pusher's path, the object's
 motion and the contact forces all logged. What it buys is pushes on *more than
 one surface*, which is the only way to ask whether a fitted push model transfers
-at all — the question this solution cannot ask, because its bench has one table
+at all — the question this solution cannot ask, because its examiner has one table
 with one friction. What it costs is a robot, a motion-capture rig and months.
 
 ## 3. Where it sits among the other five

@@ -32,7 +32,7 @@ which of its inputs mattered. When this solution is wrong, a person can find
 out why by reading a list.
 
 **It is cheap in every currency.** No accelerator, no licence condition, no
-human labelling, minutes of bench time, and a run-time cost that is arithmetic.
+human labelling, minutes of examiner time, and a run-time cost that is arithmetic.
 
 **And it is the teacher**, which is the contribution that survives even if its
 own score is unremarkable.
@@ -84,7 +84,7 @@ without occasionally taking the second-ranked candidate locks in an early
 mistake.
 Change the sweep or change the way tables are drawn, and the fitted model is
 out of date silently. And every label in the training set was decided by the
-bench's private friction, which was never measured against anything real.
+examiner's private friction, which was never measured against anything real.
 
 **How it fails, when it fails, is quietly.** A badly fitted ranker orders the
 candidates roughly at random. Nothing errors, nothing topples, and the run
@@ -134,7 +134,7 @@ produces. Pairwise and listwise match the real objective more closely, because
 the real objective is an order and not a set of values, and they are the usual
 choice where the groups are large and the differences within them are subtle.
 Pointwise is chosen here because it is the simplest thing that can work, because
-the label it needs is exactly the label the bench produces anyway, and because
+the label it needs is exactly the label the examiner produces anyway, and because
 nothing in the measured shape of these candidate sets suggests the extra
 machinery would be repaid. If the within-group spread of the label turned out to
 be large, pairwise fitting would be the next thing to try.

@@ -8,7 +8,7 @@ pair is the cleanest comparison in the book, because nothing else varies between
 them, so whatever separates their scores is what training bought. By the end of
 this page you will know what fine-tuning is, why the list of categories is cut
 to a single class, what the training costs, what it scored on the shared test
-bench, and why the licence is the one weakness no amount of engineering removes.
+examiner, and why the licence is the one weakness no amount of engineering removes.
 The full treatment is in [the chapter on this
 solution](../08_the-same-model-fine-tuned/01_what-it-is.md), which is about
 three quarters of an hour of reading.
@@ -18,7 +18,7 @@ three quarters of an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -46,7 +46,7 @@ whether that repair works.
 The method is solution 3's method with a training step in front of it, so this
 section is mostly about the training.
 
-**The training set costs nothing.** The bench renders each arrangement together
+**The training set costs nothing.** The examiner renders each arrangement together
 with an answer key recording which glass owns each pixel, and a mask is a
 selection over that key, so an exact label for every glass is produced for free.
 This matters more than it sounds: the usual reason not to fine-tune a model is
@@ -67,7 +67,7 @@ clean measurement.
 fitted model returns a rectangle, a confidence number and an outline of the
 pixels inside that rectangle. Candidates that overlap a better-scoring candidate
 too heavily are discarded, the outlines scoring above a bar are kept, and [the
-test bench](../03_the-test-bench.md) turns each kept mask into a place on the
+examiner](../03_the-examiner.md) turns each kept mask into a place on the
 table and a rough width with the same shared arithmetic it uses for all six.
 
 What training closes is the gap between the pictures: the model stops looking
@@ -88,11 +88,11 @@ graphics card here, and memory is shared between the graphics processor and the
 main processor, which is what lets a model this size be trained at all on this
 machine.
 
-It needs **a training set**, which the bench renders and labels for nothing, and
+It needs **a training set**, which the examiner renders and labels for nothing, and
 **time on the machine** for the training run, far less than a start from random
 numbers would need but not nothing. It needs **a held-out half** of the
 arrangements, both for setting the bar on the confidence number and for checking
-that the model learned the glasses rather than the arrangements, and the bench
+that the model learned the glasses rather than the arrangements, and the examiner
 provides exactly that.
 
 Once fitted it needs **a file of weights kept in step with the cell**. Change
@@ -111,7 +111,7 @@ the training of those weights, and a file derived from an AGPL work is bound by
 the same terms. So the output of the training run is not a clean asset the
 project owns outright, and it cannot be relicensed by having been trained here.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 The two sets of arrangements are the ones every solution is given: spawned
 layouts at the cell's own spacing, and crowded layouts closer than that.
@@ -181,7 +181,7 @@ drawn by hand in quantity, because then [a foundation model with a
 keeper](06_a-foundation-model-with-a-keeper.md) needs far fewer of them.
 
 If you read this page for one reason, read it for the pair. Same library, same
-model, same starting weights, same bench, and the only difference is the
+model, same starting weights, same examiner, and the only difference is the
 training. **Whatever separates the two scores is what fine-tuning bought, and
 nothing else can be blamed for it.**
 

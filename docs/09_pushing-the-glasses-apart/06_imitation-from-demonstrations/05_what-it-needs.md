@@ -23,10 +23,10 @@ program that chooses pushes well, there are no demonstrations, and with a
 teacher that chooses badly the student has nothing worth copying. That is why
 the two are built in that order.
 
-It needed **two things the bench did not have**, and that was the third of the
-honest costs. Both were missing from the bench's own `bench.py` when this
+It needed **two things the examiner did not have**, and that was the third of the
+honest costs. Both were missing from the examiner's own `bench.py` when this
 solution was designed. The first was a **rendered view of the table from the
-top**: the bench returned numeric readings, and it did render the world, but
+top**: the examiner returned numeric readings, and it did render the world, but
 from the arm's side rather than straight down, and only for the films used to
 check a run by eye. The second was a **path that accepts a chunk of
 waypoints**: `push()` takes a parameterised push and *is* the macro that
@@ -36,14 +36,14 @@ off the shelf, because every LeRobot policy expects pictures and a control-rate
 action space. [One fixed nudge](../04_one-fixed-nudge/01_what-it-is.md) and the teacher need
 neither, which is one more reason to build them first.
 
-It needs **demonstrations**, which cost arm time on the bench and nothing else,
+It needs **demonstrations**, which cost arm time on the examiner's tables and nothing else,
 drawn only from table numbers below the dividing line. The prescription here
 is to over-represent the crowded corner cases deliberately, so that the edge
 of what the policy will face sits somewhere in the middle of what it was
 trained on. **That part is not done**: the demonstration set is drawn from
-consecutive table numbers, which is whatever mixture the bench's own table
+consecutive table numbers, which is whatever mixture the examiner's own table
 generator produces, and the crowded corners are therefore as rare in the
-training set as they are on the bench.
+training set as they are on the examiner's tables.
 
 It needs **compute**, and this is the cheapest entry among the six. **Training
 runs in hours.** The reason it is so modest is worth stating, because it is
@@ -71,7 +71,7 @@ several passes per chunk for the denoising rung, against a push that takes the
 arm seconds to carry out. The compute column on the scorecard is where that
 difference between the two rungs becomes visible.
 
-And once fitted, it needs **a weights file kept in step with the bench**.
+And once fitted, it needs **a weights file kept in step with the examiner**.
 Change how the view from the top is rendered, or the macro whose waypoints
 became the labels, or the error the readings carry, and the file is quietly out
 of date in a way no test of the code would notice.

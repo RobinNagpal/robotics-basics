@@ -157,7 +157,7 @@ was fitted on somebody else's photographs for somebody else's purpose, so
 nobody using it can say what the rule is. **This solution's rule is one
 sentence, and that is the difference.**
 
-That is what makes it the baseline. The test bench holds the input, the output
+That is what makes it the baseline. The examiner holds the input, the output
 and the marking fixed, so a model's score can be compared with this one's
 directly, and the comparison has a plain reading: **if a model cannot beat a
 written rule, it has earned nothing.**

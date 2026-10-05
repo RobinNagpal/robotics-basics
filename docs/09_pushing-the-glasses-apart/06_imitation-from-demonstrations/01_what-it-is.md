@@ -14,20 +14,20 @@
 > over, and a network is trained to copy it. The demonstrations come from
 > [geometry generates, a model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md),
 > which generates legal candidate pushes and ranks them, so they cost nothing
-> but arm time on the bench. The trained policy then maps what the camera sees
+> but arm time on the examiner's tables. The trained policy then maps what the camera sees
 > straight to a short run of jaw waypoints, with no geometry, no friction model
 > and no candidate list anywhere inside it. Nobody writes down how to push a
 > glass; the examples carry that, and the fitting extracts it.
 > **How the output is produced** — a view of the table from the top goes in.
 > The policy returns an **action chunk**: a short run of consecutive jaw
-> waypoints, predicted together in one pass. The bench carries those waypoints
+> waypoints, predicted together in one pass. The examiner carries those waypoints
 > out directly, because there is nothing to expand — a chunk is already a jaw
 > trajectory. The arm then looks again, and the fresh picture is the next
 > input. One push is one chunk, and the loop runs until every glass has room,
 > or the glasses that are left have been refused, or the push budget is spent.
 > **What it costs** — the demonstrations are free in money and cheap in time,
 > because the teacher is a program and the tables are simulated, so the whole
-> dataset is arm time on the bench rather than human hours at a teleoperation
+> dataset is arm time on the examiner's tables rather than human hours at a teleoperation
 > rig. Training runs in hours — on this machine's own graphics processor, as it
 > turned out, so the rental this document first budgeted for was not needed.
 > The licence position is as simple as it gets here: LeRobot is Apache-2.0,
@@ -35,7 +35,7 @@
 > depends on, and because no borrowed weights are used, the weights file this
 > solution produces inherits no terms from anybody. The real price is paid
 > elsewhere, in two parts named plainly below: the policy cannot be much better
-> than its teacher, and the bench has to grow two things it does not have.
+> than its teacher, and the examiner has to grow two things it does not have.
 
 > **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
 > layout, the two places the camera works from, from the top and from the
@@ -61,11 +61,11 @@ with Diffusion Policy, which arrives at the same kind of answer by a different
 route.
 
 **This is built, and it is worth being exact about which parts.** [The test
-bench](../02_the-test-bench.md) is built, the programmed geometry that picks a
+examiner](../02_the-examiner.md) is built, the programmed geometry that picks a
 landing spot for one glass at a time is built, and so is the ranker that turns
 that geometry into [geometry generates, a model
 ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), which is this solution's
-teacher. The two things the bench was missing are built as well: the
+teacher. The two things the examiner was missing are built as well: the
 straight-down rendered view this policy reads, as `bench/top_view.py`, and the
 path that carries out a chunk of waypoints, as `Bench.follow`. ACT has been
 fitted here, from random numbers, on demonstrations recorded off that
@@ -109,7 +109,7 @@ That function is hard to write down, and [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md) says exactly why. The relation
 between a push and the slide it produces runs through the friction coefficient
 between the glass and the table, **nothing in this cell measures friction**,
-and the bench never tells any solution what it is. On top of that, the contact
+and the examiner never tells any solution what it is. On top of that, the contact
 between a flat jaw and a curved glass is a small patch rather than a point, and
 a pushed glass turns as well as travels. Planar pushing is a well studied
 problem and the honest summary is that predicting an outcome precisely needs
@@ -125,8 +125,8 @@ the method, and a person's model of pushing is the thing that is known to be
 incomplete.
 
 **This solution attacks the same difficulty from the other end.** Nobody can
-write the function from a crowded table to a good push. But a bench can tell
-afterwards whether a push was good, because [the test bench](../02_the-test-bench.md)
+write the function from a crowded table to a good push. But an examiner can tell
+afterwards whether a push was good, because [the examiner](../02_the-examiner.md)
 marks the outcome and not the action. So good pushes can be collected even
 though they cannot be derived, and a network can be fitted to the collection.
 The function is not written; it is measured into existence.
@@ -137,7 +137,7 @@ solution different in kind from its teacher rather than merely cheaper.
 **The policy learns the motion, not only the choice.** The teacher emits a
 parameterised push — which glass, where to put the jaw down, which way to
 point, how far to feel, how far to push — and [the test
-bench](../02_the-test-bench.md) owns the macro that expands those numbers into
+examiner](../02_the-examiner.md) owns the macro that expands those numbers into
 a descent, a feel, a slide, a back-off and a lift. Every parameterised push is
 expanded the same way. A policy that emits waypoints is not limited to motions
 that macro can express. It can slow where a neighbour is close, lean the slide
@@ -146,7 +146,7 @@ cover. Whether any of that helps is exactly the sort of thing this book exists
 to measure, but the freedom is real and only the trajectory solutions have it.
 
 **The policy reads the picture.** The teacher works from the numeric readings
-`look()` returns. A policy of this family takes an image, and the bench hands
+`look()` returns. A policy of this family takes an image, and the examiner hands
 one over for that reason. An image holds things the readings do not: the shape
 of the gap between two glasses, how a third glass sits behind them, where the
 edge of the glass zone is relative to all of it. None of that is in a list of
@@ -165,7 +165,7 @@ three things.
 
 **The teacher is a program.** The demonstrations are not recorded from a person
 driving the arm. They are produced by another one of the six, which generates
-candidate pushes and ranks them, running on the same bench, on tables drawn
+candidate pushes and ranks them, running on the same examiner, on tables drawn
 from numbers below the dividing line that separates training from testing. That
 single fact changes almost everything about the economics of this method, and
 the next section is about it.

@@ -86,9 +86,9 @@ happens to it.
 
 This solution contributes **only the masks**: which pixels in which picture are
 which glass. Turning a mask into a place on the table and a rough width is the
-bench's job, done by one shared piece of arithmetic that every one of the six
+examiner's job, done by one shared piece of arithmetic that every one of the six
 solutions goes through, and it is described in the [test
-bench](../03_the-test-bench.md). So a difference in the score belongs to the mask. This
+examiner](../03_the-examiner.md). So a difference in the score belongs to the mask. This
 solution cannot win by measuring more cleverly and it cannot lose by measuring
 worse.
 
@@ -113,7 +113,7 @@ its own position and casts a **vote**. The votes pile up, one pile per glass,
 and the piles are counted without anything having been told how many to expect.
 A pile with too few votes is doubted; a pile whose fitted width is not one this
 kind of glass could have would be turned down by the check prescribed above.
-What survives is one mask per glass, handed to the bench's shared arithmetic.
+What survives is one mask per glass, handed to the examiner's shared arithmetic.
 
 Three things in that chain are worth holding on to.
 

@@ -94,7 +94,7 @@ not change from one glass to the next. What changes is `a`, because every glass
 has its own foot, so **the limit is computed for each glass from its measured
 foot width** rather than agreed once for the whole kind.
 
-The term nobody has is `μ`. Nothing in the cell measures friction and the bench
+The term nobody has is `μ`. Nothing in the cell measures friction and the examiner
 never tells any solution the coefficients it runs the physics with, so the
 limit a solution computes is only as good as a guessed number. The geometry
 already in this repository handles that by carrying the whole range it is
@@ -232,15 +232,15 @@ scene, or a property of the glass being moved, or a comparison against a limit.
 Not one of them is "this push happens at x = 430, y = −290".
 
 **That exclusion is deliberate, and the reason is what a position would teach
-the model.** The bench's crowded tables are drawn by standing most glasses
+the model.** The examiner's crowded tables are drawn by standing most glasses
 deliberately close to a glass already down and the rest anywhere they fit, as
-[the test bench](../02_the-test-bench.md) describes. Over many tables that produces a
+[the examiner](../02_the-examiner.md) describes. Over many tables that produces a
 distribution: crowds form more often in some parts of the zone than others,
 purely because of where the arm reaches, where the rack sits and how the
 placement rule happens to work. Give the model the position and it will find
 that distribution, because it is real and it predicts the training labels. The
 model would then be scoring a push by **where on this cell's table it happens
-to be**, which is a fact about this bench's placement rule and not a fact about
+to be**, which is a fact about this examiner's placement rule and not a fact about
 pushing. Change the rack, move the zone, or draw the tables by another rule,
 and the model is quietly describing a cell that no longer exists, while nothing
 errors and nothing looks suspicious.
@@ -269,17 +269,17 @@ the table's origin was put.
 The training set follows from the two halves above, and the pleasant part is
 that collecting it needs no extra work.
 
-**Generate the candidates geometrically, on the training tables.** The bench
+**Generate the candidates geometrically, on the training tables.** The examiner
 numbers its tables and splits those numbers, with everything above a fixed
 dividing line reserved for testing, so training draws only from below it and no
 solution is ever marked on a table it was fitted on. For each crowded table the
 enumerator produces its candidate set exactly as it would at run time.
 
-**Execute every candidate on the bench.** Reset the table, make the push,
+**Execute every candidate on the examiner's tables.** Reset the table, make the push,
 measure the result. This is the step that would be unaffordable on a real arm
-and costs almost nothing here, because a push in MuJoCo is cheap and the bench
+and costs almost nothing here, because a push in MuJoCo is cheap and the examiner
 runs faster than real time. **A few thousand candidate-and-outcome pairs is
-minutes of bench time**, which is the single reason this solution's data cost is
+minutes of examiner time**, which is the single reason this solution's data cost is
 near zero.
 
 **Label each one with what happened.** The label has two parts. The first is
@@ -306,11 +306,11 @@ pushes the arithmetic called safe. So the ratio of push height to topple limit
 earns its place in the input list: it is the input through which the model can
 express caution about a number nobody measured.
 
-**The label is only as honest as the bench**, and the honest part of that
-sentence is the friction. The bench's coefficients decide every topple in the
+**The label is only as honest as the examiner**, and the honest part of that
+sentence is the friction. The examiner's coefficients decide every topple in the
 training set, and they are three fixed numbers rather than a measurement of
 anything real. A model fitted on these labels has learned what topples on this
-bench, and carrying it to a different table would mean carrying an assumption
+examiner, and carrying it to a different table would mean carrying an assumption
 about friction that was never checked.
 
 One guard belongs on retraining, and it is the ordinary failure of every
@@ -387,11 +387,11 @@ expense is why imitation learning is often judged on how few demonstrations it
 needs.
 
 **Here they cost nothing.** This solution generates safe pushes geometrically
-and ranks them, so it can be run over as many training tables as the bench can
+and ranks them, so it can be run over as many training tables as the examiner can
 draw, and each run records a complete demonstration without a person present.
 The pushes in it are safe by construction, because the same filter that
 protects a real run protects a recorded one. So the cost of the demonstration
-set is bench time, which is minutes, and nothing else.
+set is examiner time, which is minutes, and nothing else.
 
 That is a real contribution and it has to be stated with its cost, because the
 cost is not obvious and it reaches both of the solutions that learn from it.

@@ -15,7 +15,7 @@ beside the other five.
 The strengths all come from the same source, which is that nothing is fitted.
 
 There is nothing to collect, nothing to train and nothing to keep in step with
-the cell, so this solution could be tried in an afternoon once the bench's two
+the cell, so this solution could be tried in an afternoon once the examiner's two
 missing parts exist. It needs no accelerator. It gives this book a reading on
 what a borrowed robot model is worth before anybody spends a week recording
 pushes, which is a decision several of the other solutions depend on. It is a
@@ -105,7 +105,7 @@ Policies in this family emit a short run of future actions together rather than
 one action at a time, which [solution
 3](../06_imitation-from-demonstrations/01_what-it-is.md) explains properly, since ACT is named
 for it. The reason it matters here is the contract: because these architectures
-produce movement in runs, [the test bench](../02_the-test-bench.md) accepts a run of
+produce movement in runs, [the examiner](../02_the-examiner.md) accepts a run of
 waypoints directly instead of demanding three numbers describing a push.
 
 Predicting a run is right when the motion is a smooth committed thing, as a
@@ -155,7 +155,7 @@ One of those comparisons is sharper than the rest, and it is the reason this
 document and the next one should be read together. **Solution 6 is this same
 model, from this same library, starting from these same downloaded weights,
 with its training continued on this cell's own pushes, running on this same
-bench.** The input is held still, the output is held still, the marking is held
+examiner.** The input is held still, the output is held still, the marking is held
 still, the interpretation that turns the model's actions into jaw waypoints is
 held still, and the topple refusal runs first in both. Nothing varies between
 the pair except the training. So the gap between their scores is a measurement

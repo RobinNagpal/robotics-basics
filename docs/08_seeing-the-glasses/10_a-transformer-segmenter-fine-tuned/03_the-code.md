@@ -85,8 +85,8 @@ Everything above is about producing masks, and this section says plainly where
 this solution stops, because it is the same place all six stop and it is what
 makes the six comparable at all.
 
-Turning a mask into a place on the table and a rough width is **the bench's job,
-not this solution's**. [The test bench](../03_the-test-bench.md) describes that step in
+Turning a mask into a place on the table and a rough width is **the examiner's job,
+not this solution's**. [The examiner](../03_the-examiner.md) describes that step in
 full: each mask pixel carries a depth reading, so it becomes a point in the
 room, the axis comes from the points at the top of the glass, and the width
 comes from how far the cloud reaches out from that axis. The same function does

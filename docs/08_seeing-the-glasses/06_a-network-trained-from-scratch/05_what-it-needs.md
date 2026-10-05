@@ -14,7 +14,7 @@ this machine's integrated graphics through the MPS backend. No dedicated
 graphics card is needed, and nothing is downloaded, so there is no licence
 condition on anything this solution uses.
 
-**A training set.** For rung one, arrangements rendered by the bench with their
+**A training set.** For rung one, arrangements rendered by the examiner with their
 id images, which costs render time and nothing else. For rung two, pairs of
 pictures with the camera's movement logged beside each one, which costs arm
 time.

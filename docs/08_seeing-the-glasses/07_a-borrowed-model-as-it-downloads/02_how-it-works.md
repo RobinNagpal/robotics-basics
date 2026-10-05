@@ -108,7 +108,7 @@ Two things follow for this cell.
 **A thin part of a glass is the first thing lost.** A stem is narrow compared
 with the bowl above it, so it is exactly the sort of detail a coarse pattern
 cannot hold, and the outline would tend either to thicken it into a stub or to
-drop it. The bench measures how much of each real glass a mask covered and
+drop it. The examiner measures how much of each real glass a mask covered and
 breaks that number down by kind for precisely this reason, and the expectation
 here is the one [the problem
 statement](../02_the-problem/01_what-is-asked-for.md) already sets out from the
@@ -146,7 +146,7 @@ whose scores are badly calibrated may still rank a clear glass above a doubtful
 one, because ranking only needs the scores to move in the right direction, not
 to be honest about their size. So this design may use the number to sort the
 outlines and to set a bar below which an outline is ignored, but it must treat
-that bar as a **knob set by hand and checked on arrangements from the bench's
+that bar as a **knob set by hand and checked on arrangements from the examiner's
 training half**, not as a probability threshold with a meaning. Calling it a
 probability would be claiming a property nobody has measured.
 

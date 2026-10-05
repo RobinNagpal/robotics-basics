@@ -5,7 +5,7 @@ reading. It is the one solution that holds no fitted numbers at all: it answers
 the question this book asks by stating a rule in words and applying it, and
 there is no model, no training set and no file of weights anywhere in it. By
 the end of this page you will know the one idea it rests on, the five steps it
-takes, what it costs to set up, what it scored on the shared test bench, and
+takes, what it costs to set up, what it scored on the shared examiner, and
 the one condition it needs that a real table of real glassware would not meet.
 If you then want the method in full, with every step derived and every setting
 justified, [the chapter on this solution](../05_rules-on-the-table/01_what-it-is.md)
@@ -16,7 +16,7 @@ is about an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -111,10 +111,10 @@ three the rule could not be stated at all.
 And it needs **depth readings**. That is the one requirement that is not free,
 and section 5 is mostly about it.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 Every solution is given the same arrangements and marked the same way by [the
-test bench](../03_the-test-bench.md), which is what makes the numbers below
+examiner](../03_the-examiner.md), which is what makes the numbers below
 comparable. There are two sets: spawned layouts, at the spacing the cell's own
 layout rule gives, and crowded layouts, closer than that rule allows. The
 columns say how many real glasses got a report, how many got none, and how good

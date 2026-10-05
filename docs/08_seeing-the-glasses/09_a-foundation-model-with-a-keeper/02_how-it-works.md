@@ -169,7 +169,7 @@ One thing stands between the input this problem defines and the input the
 borrowed model expects, and it is the riskiest choice in the whole design, so it
 belongs before the keeper rather than after it.
 
-The bench hands over a grey picture shaded from how far away each surface is,
+The examiner hands over a grey picture shaded from how far away each surface is,
 the depth reading at every pixel, and the camera's own pose. SAM 2, like every
 model of its kind, was fitted on ordinary colour photographs. So what it is
 shown here is a picture of distances dressed up as a photograph, and the single
@@ -367,7 +367,7 @@ answer is how little has to be written down, so the last decision is fitted
 rather than written.
 
 The third part is that **the labels are free**, which is what makes the second
-part affordable. The bench's answer key says which glass owns each pixel, so the
+part affordable. The examiner's answer key says which glass owns each pixel, so the
 overlap between a proposal and each real glass's pixels is a subtraction and a
 division: overlapping one glass well and no other is one glass, overlapping none
 is not a glass, and overlapping two of them well is more than one glass. That is
@@ -490,7 +490,7 @@ proposal.** At the cell's own survey height one picture does not hold the glass
 zone, so a glass at the edge of a station's frame shows part of its footprint
 and the width measured off that part is part of a width. Refusing on it refuses
 the view, and that was measured on masks nothing can improve on: handed the
-bench's own exact masks, one station at a time over 20 held-out spawned
+examiner's own exact masks, one station at a time over 20 held-out spawned
 arrangements, the kind's range of footprints refuses 66 of 297 glass sightings,
 and **every one of those 66 reaches the frame edge**. So the check is not put to
 a proposal whose mask reaches that edge. What answers such a proposal instead is
@@ -580,7 +580,7 @@ invented for it: only the lower rung has been measured.
 So the recommendation is still not to choose once. Fit the keeper, because it is
 small and it fits in seconds, and run both rungs on the same held-out
 arrangements on a machine whose account has been granted the newer weights. The
-bench makes that comparison honest, and if the text prompt wins, the keeper is
+examiner makes that comparison honest, and if the text prompt wins, the keeper is
 still the thing that explains why a region was refused.
 
 ← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

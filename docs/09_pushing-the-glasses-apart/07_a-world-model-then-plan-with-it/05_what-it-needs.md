@@ -39,7 +39,7 @@ evaluated by five networks, repeated across five copies of the table for the
 topple check, for every crowded glass. That is cheap in absolute terms, because
 the networks are small and the batch goes through in one call, but it is
 hundreds of times the arithmetic a fixed nudge costs, and it is the reason [the
-test bench](../02_the-test-bench.md) puts a compute column on the scorecard. A
+examiner](../02_the-examiner.md) puts a compute column on the scorecard. A
 two-push search multiplies it again. On a real arm this still sits comfortably
 inside the time one arm movement takes, which is the comparison that matters.
 
@@ -50,12 +50,12 @@ camera's error, and the weights are quietly out of date in a way no test of the
 code will notice.
 
 **Libraries, and no borrowed model.** PyTorch for both rungs, MuJoCo through the
-bench, and LeRobot for rung two. Neither rung downloads trained weights from
+examiner, and LeRobot for rung two. Neither rung downloads trained weights from
 anybody, so there is no model licence to meet in either — the only conditions
 are the libraries' own, and LeRobot is Apache 2.0.
 
-**Two additions to the bench, both of which it now has.** [The test
-bench](../02_the-test-bench.md) listed them as missing: repeats with a spread on the
+**Two additions to the examiner, both of which it now has.** [The test
+examiner](../02_the-examiner.md) listed them as missing: repeats with a spread on the
 scorecard, because one run of a trained solution is not a measurement, and the
 time per push beside the counts. Both are in `bench/scoring.py` today, as
 `Repeats` and as the seconds-per-push the scorecard records. Rung one's runner

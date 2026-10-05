@@ -89,7 +89,7 @@ solution the baseline it is meant to be.
 
 **Nothing whatsoever is fitted here.** The weights are downloaded and used
 unchanged. There is no training run, no fine-tuning, no small correction fitted
-on this cell's data, and no threshold tuned on the bench's training tables. If
+on this cell's data, and no threshold tuned on the examiner's training tables. If
 a number in this solution came from somewhere, it came from somebody else's
 robots.
 
@@ -97,7 +97,7 @@ So the model has never seen this cell. It has never seen these glasses — not
 the straight glass, not the tapered glass, not the stemmed glass and not the
 short stemmed glass. It has never seen this jaw, which is two fingers and two
 pads held closed and level, 30 mm tall, riding as low as the gripper reaches.
-And it has never seen a table rendered the way this bench renders one.
+And it has never seen a table rendered the way this examiner renders one.
 
 What **is** borrowed is everything else: the architecture, the weights, the
 convention by which pictures are read, the convention by which words are read,
@@ -130,11 +130,11 @@ to be decided in it and why. It turned out to be a larger decision than this
 section expected, because the checkpoint settles less about its own action
 space than the section assumed.
 
-It is also worth noting that this is the step the bench's own arrangement was
-designed to allow. [The test bench](../02_the-test-bench.md) accepts a run of
+It is also worth noting that this is the step the examiner's own arrangement was
+designed to allow. [The examiner](../02_the-examiner.md) accepts a run of
 waypoints directly, without the push macro, precisely so that a policy which
 thinks in movement is not squeezed into three numbers describing a push. Both
-that path and the rendered view from the top now exist in the bench, and this
+that path and the rendered view from the top now exist in the examiner, and this
 solution uses them as they come.
 
 ## 5. The instruction is nearly dead weight here
@@ -181,11 +181,11 @@ The third place the trade bites is the most interesting, because it is a
 mismatch between what this problem gives a solution and what this model is able
 to accept.
 
-[The test bench](../02_the-test-bench.md) is emphatic that the force reading is the
+[The examiner](../02_the-examiner.md) is emphatic that the force reading is the
 single most valuable thing it reports. Friction is never told to any solution
 and nothing in the cell measures it, so how much force it took to start a glass
 moving, and how far the glass travelled for that push, are the only evidence
-about friction that exists anywhere. The bench's own words are that every
+about friction that exists anywhere. The examiner's own words are that every
 solution which does better than a blind nudge does so by reading that channel,
 either by reasoning about it or by learning from it.
 
@@ -209,15 +209,15 @@ the new arrangement and answers again.
 This is also the clearest statement of what solution 6 has to gain, and of how
 little. Continuing the training here cannot add an input slot. What it can do
 is fit the model's response on pushes whose outcomes are known, so that this
-bench's own friction ends up absorbed into the weights as a constant. That is
+examiner's own friction ends up absorbed into the weights as a constant. That is
 not a way of observing friction, and [solution
-6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) names it as a liability away from this bench
+6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) names it as a liability away from this examiner
 rather than as a repair for the closed channel.
 
 ## 7. The domain gap, which is the heart of this document
 
 Everything above assumes the borrowed model works at all on the pictures this
-bench would show it, and that assumption is the one most likely to fail. It
+examiner would show it, and that assumption is the one most likely to fail. It
 deserves the longest section here, because the difference between what the
 model was fitted on and what it would be given is large.
 
@@ -233,7 +233,7 @@ scenes, which are cluttered: a workbench with other objects on it, a background
 that is a room, texture everywhere, and the particular visual mess that tells a
 model what is near and what is far.
 
-**What this bench offers is a rendered view from the top of pale blue glasses
+**What this examiner offers is a rendered view from the top of pale blue glasses
 on a tan table.** The glasses are built as stacks of cylinders and shaded as
 solid objects, the table is a flat rectangle, there is nothing else in the
 frame, and nothing in the picture was produced by light passing through a
@@ -252,7 +252,7 @@ plausible, wrong actions**: movement that looks like a push, aimed somewhere
 reasonable, at a sensible speed, that is simply not the push this table needed.
 That is worse than nonsense for one specific reason — **nothing downstream
 looks suspicious.** The waypoints are well formed, the jaw follows them, the
-arm does not fault, the bench records a push, and the only sign that anything
+arm does not fault, the examiner records a push, and the only sign that anything
 went wrong is in the arrangement afterwards. There is no error to catch and no
 confidence number to put a bar on.
 
@@ -289,7 +289,7 @@ and this is the solution in this book most likely to be doing exactly that.
 **And that is this solution's job.** It is the baseline for the sharpest
 comparison in the set, and a baseline is useful in proportion to how cleanly it
 isolates one variable, not in proportion to how well it scores. Solution 6 is
-the same library, the same weights and the same bench, with its training
+the same library, the same weights and the same examiner, with its training
 continued on this cell's own pushes. If this solution scored well, the pair
 would measure very little, because there would be little room for training to
 improve anything. A poor score here is what gives that comparison its range.
@@ -310,7 +310,7 @@ margin: the whole setup cost is a download.
 What it does cost is time per push, and that belongs on the scorecard. Every
 decision is a forward pass through a large network, which is a different kind
 of expense from solution 1's arithmetic and a different kind again from
-solution 4's run-time search. The bench carries a compute column for exactly
+solution 4's run-time search. The examiner carries a compute column for exactly
 this reason, because a solution that wins while taking a hundred times longer
 has not obviously won. The honest expectation here is a cost per push far above
 the hand-written solutions, and a different kind of expense from a planner that

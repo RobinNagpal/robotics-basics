@@ -18,7 +18,7 @@ rule the introduction describes is written out in
 carry the whole method: the circle fitted to a group, and the question the fit
 is asked again of every part a split produces.
 Everything else in the folder is the arithmetic that turns pixels into dots and
-the plumbing that hands masks to the bench.
+the plumbing that hands masks to the examiner.
 
 This is the fit, from `01-rules-on-the-table/find.py`. The first function is
 the one-shot least-squares solve, which is NumPy's `lstsq` and nothing else;
@@ -77,13 +77,13 @@ Two things are worth reading off that. The borrowed work is two library calls,
 one solve and one hull, and everything around them is this project's own; and
 the fitted width never leaves these functions, because the only thing it is
 allowed to decide is whether a patch comes apart. The width that goes into the
-record is measured by the bench, from the pixels these functions hand back.
+record is measured by the examiner, from the pixels these functions hand back.
 
 ## 2. The masks are what this contributes
 
 Every one of the six solutions is given the same input and judged on the same
 output, and the step that turns a mask into a place and a rough width belongs to
-the [test bench](../03_the-test-bench.md) rather than to any solution. So this solution
+the [examiner](../03_the-examiner.md) rather than to any solution. So this solution
 contributes **only the masks**, and a difference in its score belongs to the
 mask. It cannot win by measuring more cleverly and it cannot lose by measuring
 worse.
@@ -101,7 +101,7 @@ simply the picture pixels that fed one group, collected afterwards. Nobody chose
 its edge.
 
 That has a good consequence and a bad one, and they land on the two different
-numbers the bench takes for mask quality.
+numbers the examiner takes for mask quality.
 
 **How much of the mask was not that glass** should be very good, which is the
 good consequence. A pixel is put in the wrong glass's mask only if its dot
@@ -109,7 +109,7 @@ chained into the wrong group, and the two groups are a whole strip of bare table
 apart, so it takes a line of stray dots across that strip for this to happen at
 all. The method also never asserts a pixel it did not see. Every pixel in every
 mask carried a real depth reading, which means this solution never falls into
-the trap the bench warns about, where a mask claims pixels the camera never saw
+the trap the examiner warns about, where a mask claims pixels the camera never saw
 the glass at and the depth reading at such a pixel belongs to whatever stood in
 front. There is nothing for this solution to declare, because it claims nothing.
 
@@ -130,7 +130,7 @@ rather than about the method.
 The first is that the shortfall is **the same shape for every kind of glass**.
 The band lost at the base of a glass with no stem and the band lost at the foot
 of a stemmed glass are both bands at the bottom of the glass, so the per-kind
-breakdown the bench computes will spread this solution's coverage much less than
+breakdown the examiner computes will spread this solution's coverage much less than
 it spreads a model's. A model can learn an outline that follows the glass right
 down to the table, so a model has room to beat this solution on coverage. A
 model can also learn an outline that wanders onto the table or swallows a
@@ -166,7 +166,7 @@ flowchart TD
     CHK -- "no, narrower" --> EDGE{"do its pixels reach the frame edge?"}
     EDGE -- yes --> MK
     EDGE -- no --> DB["report the group as doubtful, and do not guess"]
-    MK --> OUT["the masks, handed to the bench"]
+    MK --> OUT["the masks, handed to the examiner"]
     MK --> SH["from the glasses found: each taller one hides a wedge"]
     SH --> BL["the blind region for this camera position"]
     BL --> PAT{"could any blind patch hold the smallest glass of the kind?"}

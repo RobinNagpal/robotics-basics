@@ -95,13 +95,13 @@ them.
 ## 2. The pushes are what this contributes
 
 Having chosen a push, this solution hands it over in the form [the test
-bench](../02_the-test-bench.md) defines, and it is worth being exact about where its
+examiner](../02_the-examiner.md) defines, and it is worth being exact about where its
 contribution stops.
 
 **It emits a parameterised push.** Which glass to move, where the fingertips
 come down, which way the jaw points, how far it feels forward and how far it
 pushes. That is what `push()` accepts, and **the expansion of those numbers
-into a jaw trajectory is a macro the bench owns**: the descend, the slow feel
+into a jaw trajectory is a macro the examiner owns**: the descend, the slow feel
 forward until contact, the push at a steady speed, the back-off and the lift.
 This solution does not write that expansion and gains nothing from it, and
 neither does any other solution that thinks in pushes.
@@ -166,7 +166,7 @@ predicted table, plus a small penalty per millimetre pushed. Keep the best
 thirty, draw the next round around them, and repeat four times in all.
 
 **Make one push.** The best push over every crowded glass on the table is
-expanded by the bench's macro and carried out. The jaw reports what it felt.
+expanded by the examiner's macro and carried out. The jaw reports what it felt.
 
 **Then look again**, and begin at the top with the arrangement as it now is.
 The loop ends when every glass has been racked, when the table's push budget is

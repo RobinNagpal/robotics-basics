@@ -17,10 +17,10 @@ four tests and the tipping rule have one definition in this repository. It is
 also the part that decides the ceiling.
 
 It needs a **training set**, which is a few thousand pairs of a candidate and
-what happened to it, generated on the training half of the bench's tables and
-executed there. That is minutes of bench time and no human labelling at all,
-because the bench measures the table after every push in any case. It needs the
-**held-out half** of the tables for marking, which the bench already enforces by
+what happened to it, generated on the training half of the examiner's tables and
+executed there. That is minutes of examiner time and no human labelling at all,
+because the examiner measures the table after every push in any case. It needs the
+**held-out half** of the tables for marking, which the examiner already enforces by
 splitting its table numbers.
 
 It needs **no accelerator**, and this is the clearest cost difference between
@@ -38,7 +38,7 @@ column on the scorecard is close to the fixed nudge's rather than to a
 foundation model's.
 
 And once fitted it needs **a model file kept in step with the cell**. Change
-the heading sweep, the step length, the glass zone or the way the bench draws
+the heading sweep, the step length, the glass zone or the way the examiner draws
 its crowded tables, and the fitted model quietly describes a cell that no
 longer exists, in a way no test of the code would notice.
 

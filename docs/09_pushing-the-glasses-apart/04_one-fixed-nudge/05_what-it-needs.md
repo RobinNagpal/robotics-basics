@@ -30,7 +30,7 @@ and then frozen. That is the entire configuration of the method.
 **One library, and it is NumPy.** The arithmetic over a handful of positions
 and widths is all this solution does for itself. Carrying the jaw to the place
 that arithmetic names is not part of it, because every solution here hands the
-same kind of instruction to the same cell: the test bench carries the jaw with
+same kind of instruction to the same cell: the examiner carries the jaw with
 its physics engine, and the real cell carries it with MoveIt. Both libraries
 are permissively licensed, and because nothing is fitted there is no weights
 file to redistribute and no licence inherited from somebody else's training
@@ -42,7 +42,7 @@ the number of glasses, and there are four to six of them. The shortfall, the
 heading and the travel are a few arithmetic operations each. The whole decision
 is a few hundred floating-point operations, it needs no accelerator, and it
 finishes in far less time than the arm takes to move anywhere. On the compute
-column that [the bench](../02_the-test-bench.md) describes for the scorecard, this
+column that [the examiner](../02_the-examiner.md) describes for the scorecard, this
 solution is the zero against which the others are read, and solutions that plan
 through a learned model at run time or evaluate a large neural network sit
 hundreds or thousands of times above it.

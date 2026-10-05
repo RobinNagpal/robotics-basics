@@ -133,7 +133,7 @@ of fitting buys, and this one is the baseline the others are read against.
 One of those comparisons is sharper than the rest, and it is the reason this
 document and the next one should be read together. **Solution 4 is this same
 model, from this same library, starting from these same downloaded weights, with
-its training continued on this cell's own pictures.** The bench holds the input,
+its training continued on this cell's own pictures.** The examiner holds the input,
 the output and the marking still for both. One further thing changes with the
 training, and it is honest to name it: solution 4 replaces the borrowed list of
 category names with the single class "glass", because a model cannot be trained

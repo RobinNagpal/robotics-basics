@@ -20,7 +20,7 @@
 > measurements and answers keep, drop, or more than one glass; what it keeps
 > still has to pass a width check against the kind, which is known; and the
 > proposals that survive all of that are the masks this solution reports.
-> **What it costs** — no hand labelling, because the bench's own answer key
+> **What it costs** — no hand labelling, because the examiner's own answer key
 > turns a proposal into a training label by arithmetic. Fitting the keeper is
 > seconds of processor time with no graphics card; what takes real time is
 > running SAM 2 over the arrangements to collect the proposals to fit it on. At
@@ -138,7 +138,7 @@ first cleanup is called a **proposal** from here on. The **keeper** is a small
 model which is shown a handful of measurements about one proposal and answers
 whether that proposal is one glass. The keeper is the only thing fitted in this
 solution, it would fit in seconds, and the examples it would learn from cost
-nothing, because the bench already knows which pixels belong to which glass in
+nothing, because the examiner already knows which pixels belong to which glass in
 the arrangements it draws.
 
 So, in the plainest terms: **everything that finds objects is borrowed whole,

@@ -12,7 +12,7 @@ The six ways of pushing crowded glasses apart so that each one can then be
 picked up are all tested on the same 50 tables holding 251 glasses, 193 of
 which have no room at the start. Every solution is given the same tables,
 spends the same push budget, and is judged by the same scorecard, which is
-described in [the test bench](02_the-test-bench.md).
+described in [the examiner](02_the-examiner.md).
 None of them saw these tables while it was being built or fitted. Every number
 on this page is read from a solution's own `results.json`.
 
@@ -100,7 +100,7 @@ on the right of the table matter more than the one on the left.
 - **Not Gazebo.** The physics is MuJoCo, standing in for the simulator the rest
   of the project uses, because a learned approach needs thousands of pushes.
 - **A guessed friction.** No solution is told what the table's friction is, and
-  the ones that reason about toppling use a believed range instead. The bench
+  the ones that reason about toppling use a believed range instead. The examiner
   knows the true value and never shares it.
 - **No early abort.** [Pushing without
   toppling](01_the-problem/03_pushing-without-toppling.md) argues

@@ -20,13 +20,13 @@ MPS backend. There is no separate graphics card here, and memory is shared
 between the graphics processor and the main processor, which is what lets a
 model this size be trained at all on this machine.
 
-It needs a **training set**, which the bench renders and labels for nothing from
+It needs a **training set**, which the examiner renders and labels for nothing from
 the training half of the arrangements, including the crowded arrangements the
 cell's own placement rule would never produce. It needs **time on the machine**
 for the training run, far less than a random start would need but not nothing.
 It needs a **held-out half** for setting the bar on the confidence number and
 for checking that the model learned the glasses rather than the arrangements,
-and the bench provides exactly that.
+and the examiner provides exactly that.
 
 And once fitted, it needs **a weights file kept in step with the cell**. Change
 the camera, the way depth is shaded into grey, or the range of proportions a

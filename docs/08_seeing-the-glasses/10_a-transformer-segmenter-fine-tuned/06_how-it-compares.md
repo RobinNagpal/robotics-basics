@@ -175,7 +175,7 @@ right on real photographs without care, because the label has to be drawn
 through a place nobody can see, so two careful annotators disagree with no way
 to settle who was right, and a model trained on such labels is fitted partly to
 the annotators' guesses. **None of that applies in a simulator**, which is why
-this rung is cheap here: the bench can render the arrangement again with the
+this rung is cheap here: the examiner can render the arrangement again with the
 other glasses taken away, and the mask that comes back is the whole silhouette
 exactly, with no guessing in it. For more, see [image
 segmentation](https://en.wikipedia.org/wiki/Image_segmentation).

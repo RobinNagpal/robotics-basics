@@ -92,7 +92,7 @@ but an answer that reads it is not answering this problem.
 This matters more here than in the other jobs. Six quite different methods
 are compared on this question, and a comparison only means something when the
 question was identical, so the input is stated once here and the [test
-bench](../03_the-test-bench.md) hands exactly it to every one of them.
+examiner](../03_the-examiner.md) hands exactly it to every one of them.
 
 ![The camera parks at overlapping stations above the glass zone and takes a pair of pictures 120 mm apart at each, and from every picture an answer may read the grey picture, the depth reading and the camera pose, while the simulator's own record of what it spawned is kept back for the marking.](../../images/seeing-the-glasses/what-is-asked-for/what-goes-in.png)
 
@@ -222,7 +222,7 @@ every glass that could not be separated from its neighbour is listed with the
 reason; and when every region of table that could not have been seen is listed
 as unsearched rather than quietly treated as empty.
 
-The [test bench](../03_the-test-bench.md) marks a run against the simulator's own record,
+The [examiner](../03_the-examiner.md) marks a run against the simulator's own record,
 and it describes each measurement in full. Two of them are worth naming here,
 because they are what the six answers are compared on.
 
@@ -242,7 +242,7 @@ is what shows the difference.
 
 ## 9. Where to go next
 
-- [The test bench](../03_the-test-bench.md) — the scenes, the pictures, and how a run is
+- [The examiner](../03_the-examiner.md) — the scenes, the pictures, and how a run is
   marked. Read this before any solution.
 - [Looking again at what was hidden](02_looking-again-at-what-was-hidden.md) — the part every
   solution shares.

@@ -25,8 +25,8 @@ project's code, with the two heads this document describes, in PyTorch on this
 machine's integrated graphics. Its training labels are read from the
 simulator's own record of which glass each pixel shows, its votes are piled up
 into a tally, and the peaks of that tally are picked off largest first. Running
-it on the shared [test bench](../03_the-test-bench.md) is built too, trained on
-arrangements below the bench's dividing line and scored on held-out ones above
+it on the shared [examiner](../03_the-examiner.md) is built too, trained on
+arrangements below the examiner's dividing line and scored on held-out ones above
 it.
 
 **What is a design.** Four things here are written and not built: the two fixes
@@ -58,7 +58,7 @@ right choice here, and the next section is why.
 The usual argument for fine-tuning rests on labels being scarce. Here they are
 not.
 
-**Labels in this cell are free and exact.** The bench renders every picture
+**Labels in this cell are free and exact.** The examiner renders every picture
 itself, so it also knows which glass every pixel shows, and asking for that
 record costs no more than asking for the picture. There is no annotator, so
 there is no annotator's budget and no annotator's mistakes. Training from
@@ -281,15 +281,15 @@ Nothing above says where the training labels come from, and that question has
 two answers. The network, the heads, the votes and the checks are the same in
 both: **only the source of the labels changes**, which is why the two are rungs
 of one solution rather than two solutions. The first rung takes its labels from
-the bench's answer key, which makes them free and exact. The second takes them
+the examiner's answer key, which makes them free and exact. The second takes them
 from the arm's own movement, which makes them neither, and buys something else
 instead.
 
 ## 9. Rung one — labels from the answer key
 
-The bench renders every picture itself, so alongside the grey picture and the
+The examiner renders every picture itself, so alongside the grey picture and the
 depth reading it has an **id image**: at every pixel, which glass that pixel
-shows, or nothing. The [test bench](../03_the-test-bench.md) describes it in full,
+shows, or nothing. The [examiner](../03_the-examiner.md) describes it in full,
 including the rule that a method may be trained on id images from the training
 half of the arrangements and is never given one while answering. This rung is
 built on that permission.
@@ -299,7 +299,7 @@ label is the id image with the identities forgotten**: a pixel is glass if the
 id image names any glass there, with nothing to judge and nothing to draw.
 **The second head's label is a subtraction**: for a pixel the id image assigns
 to one glass, the target arrow is that glass's middle minus the pixel's own
-position, and the bench knows both ends exactly because it put the glass there.
+position, and the examiner knows both ends exactly because it put the glass there.
 
 So the labels cost no more than the picture and hold no judgement that could be
 wrong, which is the whole reason training from scratch is sensible here.
@@ -454,7 +454,7 @@ all, and they apply to both rungs equally.
 distance apart, and a training set drawn only from that rule never once shows
 the network a pair that a page of arithmetic could not already separate. So the
 teaching has to happen on pairs standing far closer than the rule allows, which
-is what the bench's crowded family of arrangements is for. But keep the easy
+is what the examiner's crowded family of arrangements is for. But keep the easy
 case too, in proportion, or the network quietly learns that there is always a
 pair to find. As a general rule, **the edge of the specification should sit
 somewhere in the middle of the training set**, so that the network has met
@@ -481,7 +481,7 @@ and the picture size are facts about the camera this cell has rather than
 nuisances to be made robust against, and teaching the network to cope with
 lenses it will never meet would spend its limited capacity on nothing.
 
-The split between learning and marking is the bench's: it divides its
+The split between learning and marking is the examiner's: it divides its
 arrangements into a training half and a test half, so a network fitted on the
 first is marked on the second.
 

@@ -77,7 +77,7 @@ Two things show from that. The only object in this solution that has both a
 metric extent and is seen by the model is the frame of the straight-down
 picture, so `ACTION_SPAN = 2.0` is the decision that two standard deviations of
 the model's output span that frame exactly — which is what lets the model put
-the jaw anywhere it can see and nowhere it cannot. And because the bench
+the jaw anywhere it can see and nowhere it cannot. And because the examiner
 consumes waypoints a fixed period apart, the spacing of the waypoints this
 function returns *is* the speed the jaw is asked to travel at, so the same
 constant fixes the speed as well as the reach, and the two cannot be chosen
@@ -88,7 +88,7 @@ separately.
 It is worth stating plainly where this solution stops, because the boundary is
 the same for all six and is what makes them comparable.
 
-The input is fixed by [the test bench](../02_the-test-bench.md). This solution may read
+The input is fixed by [the examiner](../02_the-examiner.md). This solution may read
 what `look()` returns — where each glass stands, how tall it is, how wide it
 is at its widest and at its foot, and whether it is standing, each reading
 carrying the error measured for [telling the glasses apart in a
@@ -100,7 +100,7 @@ a borrowed model.
 
 The output is fixed too: **a jaw trajectory**. This solution emits one
 directly, as a run of waypoints, rather than as a parameterised push expanded
-by the bench's macro. Both forms are accepted and the bench treats them alike,
+by the examiner's macro. Both forms are accepted and the examiner treats them alike,
 because **what is scored is the table afterwards rather than the push that
 changed it**. That is the only arrangement under which a push described by
 three numbers and a run of fifty waypoints can be compared at all.
@@ -114,7 +114,7 @@ cannot lose by having its movement squeezed into a shape that does not suit it,
 because waypoints are accepted as they come.
 
 One thing about the repeats is specific to this solution and worth noting. The
-bench requires every trained solution to be trained with several seeds and
+examiner requires every trained solution to be trained with several seeds and
 evaluated over several runs, because training varies with its seed and one run
 is not a measurement. **This solution has no training seed**, since it trains
 nothing, so the only variation it has is in how its actions are drawn when it
@@ -128,11 +128,11 @@ The pieces now connect into one picture, and it is a short picture because the
 solution is short.
 
 A model fitted on an enormous pool of real teleoperation across many robots and
-many tasks would be downloaded unchanged and shown this bench's rendered view
+many tasks would be downloaded unchanged and shown this examiner's rendered view
 of the table from the top, together with one unvarying English sentence and the
 arm's own joint readings. It would return actions, which somebody has to
 interpret as waypoints for this jaw, because the units and layout it emits were
-fixed for other robots. The bench would carry those waypoints out, the table
+fixed for other robots. The examiner would carry those waypoints out, the table
 would change, fresh measurements would be taken, and the model would be asked
 again.
 

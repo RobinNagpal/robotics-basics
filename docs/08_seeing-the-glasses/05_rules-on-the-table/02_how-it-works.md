@@ -258,8 +258,8 @@ unknowns instead, it becomes linear. So the fit has a direct solution: no
 iteration, no starting guess, and the radius recovered at the end.
 
 **This fitted width is for the check only, and not for the answer.** The test
-bench computes the place and the width that go into the record, from the mask
-pixels this solution hands back, and the same bench step does it for all six
+examiner computes the place and the width that go into the record, from the mask
+pixels this solution hands back, and the same examiner step does it for all six
 solutions. So the circle fitted here never leaves this solution. It earns its
 place because of what it changes: when it says a group is too wide to be one
 glass, the group is split, and splitting a group changes which pixels go into
@@ -287,7 +287,7 @@ frame, and a refusal when they do not. And if any part cannot be settled either
 way, the whole group is reported as doubtful, with which side of the range it
 failed, rather than guessed at.
 
-![One circle fitted to the whole group comes out wider than any glass of this kind can be, so the group is rejected as one glass and two circles are fitted instead; both of those lie inside the widths the kind allows, so the group is split in two, and the fitted width decides only the split, because the width that goes into the record is measured by the bench.](../../images/seeing-the-glasses/rules-on-the-table/02-circle-fit-decides.png)
+![One circle fitted to the whole group comes out wider than any glass of this kind can be, so the group is rejected as one glass and two circles are fitted instead; both of those lie inside the widths the kind allows, so the group is split in two, and the fitted width decides only the split, because the width that goes into the record is measured by the examiner.](../../images/seeing-the-glasses/rules-on-the-table/02-circle-fit-decides.png)
 
 Splitting a group in two is done with a simple and well-known method called
 k-means with two centres: put one seed at each end of the group's longest
@@ -305,7 +305,7 @@ and that difference is the whole reason a written rule can be trusted here.
 ### Why one split is not enough
 
 Splitting once answers two glasses run together, and two is not what the
-difficult arrangements hold. The bench's crowded family stands **three** glasses
+difficult arrangements hold. The examiner's crowded family stands **three** glasses
 to a line and two lines to an arrangement, closer together than the cell's own
 layout rule allows, so a chain of three or more glasses in one group is the
 ordinary case there rather than the exception. It was counted: over 20 held-out
@@ -338,7 +338,7 @@ runs out on its own, and it runs out in one of three ways. Every part is a width
 the kind allows, which is the answer. Or a part comes back narrower than the
 kind allows, which splitting cannot repair. Or a part cannot be divided at all —
 the halving puts every dot on one side of it, or a half holds too few depth
-readings for the bench to fit a footprint to.
+readings for the examiner to fit a footprint to.
 
 A group with any part left over at the end is handed over **whole**, and not in
 pieces. Reporting the parts that happened to fit while dropping the one that did

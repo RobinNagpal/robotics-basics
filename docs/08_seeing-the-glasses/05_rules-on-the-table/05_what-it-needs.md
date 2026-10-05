@@ -6,7 +6,7 @@ that comes with the weights.
 
 ## 1. What it needs
 
-**No labelled data.** Nothing in the method is fitted, so the bench's training
+**No labelled data.** Nothing in the method is fitted, so the examiner's training
 half of the arrangements is never read.
 
 **No training time and no weights file.** There is nothing to train and nothing

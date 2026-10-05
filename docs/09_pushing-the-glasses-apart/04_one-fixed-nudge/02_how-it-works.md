@@ -47,7 +47,7 @@ anybody can measure how much room it is short of, and the rule that makes that
 smaller is to push it away from whatever is crowding it.
 
 The three parts map onto the cell directly. The measurement is `look()`, which
-the bench provides. The error is the shortfall. The correction is the nudge,
+the examiner provides. The error is the shortfall. The correction is the nudge,
 and the fraction that turns the error into the correction is called the
 **gain**, which is the standard word for it. A correction that is the error
 multiplied by a fixed gain is a **proportional controller**, and that is the
@@ -69,7 +69,7 @@ To close on a glass the open jaw has to get round it: a finger and a pad on
 each side, with the jaw opened wider than the glass before it closes. Added up
 from the glass's middle outwards, that comes to about **70 mm of clear room in
 every direction**. Those are the gripper's own numbers, so the project is
-allowed to write them down, and the bench holds the 70 mm as a constant and
+allowed to write them down, and the examiner holds the 70 mm as a constant and
 applies the test like this: **a glass has room when every other glass's edge is
 at least 70 mm from its middle.**
 
@@ -225,9 +225,9 @@ Before the output and the refusals, it is worth saying plainly which of all
 this exists as code, because this is one of the few solutions in the set where
 real code is involved and it would be easy to over-claim.
 
-**Built, in the repository, and run against the bench:**
+**Built, in the repository, and run against the examiner:**
 
-- the bench itself, in [`src/09_pushing-the-glasses-apart/bench/`](../../../code/src/09_pushing-the-glasses-apart/bench), with the
+- the examiner itself, in [`src/09_pushing-the-glasses-apart/bench/`](../../../code/src/09_pushing-the-glasses-apart/bench), with the
   crowded tables, the measurement error, `look()`, `push()`, `take()` and the
   scorecard;
 - the room test, as `has_room()` in
@@ -260,7 +260,7 @@ real code is involved and it would be easy to over-claim.
 - the shared target layout, which this solution does not use in any case;
 - the rendered view of the table from the top, and the path for a chunk of
   waypoints, neither of which this solution needs;
-- the repeats and the compute column that [the bench](../02_the-test-bench.md)
+- the repeats and the compute column that [the examiner](../02_the-examiner.md)
   describes for the scorecard.
 
 One measurement from the built code is worth quoting, with its attribution
@@ -269,12 +269,12 @@ made clear. The programmed run reports in
 that its pushed glasses stopped a median of 1.0 mm, and at worst 3.9 mm, from
 where they were aimed. **That run uses the searching planner rather than this
 solution's rule**, so the figure is not this solution's score. What it does say
-is something about the bench rather than about any rule: in this simulator, a
+is something about the examiner rather than about any rule: in this simulator, a
 glass that is pushed follows the jaw closely, so the unknown factor `g` of the
 previous section sits near one here. No solution is told that, nothing in the
 cell would reveal it, and on a real table with a real cloth or a real spill it
 would not hold. It is a reason to expect this method to converge in few pushes
-on the bench, and not a reason to trust it anywhere else.
+on the examiner's tables, and not a reason to trust it anywhere else.
 
 ## 6. It produces nothing anybody can learn from
 

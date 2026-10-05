@@ -6,7 +6,7 @@ all: a model that somebody else trained on photographs of everyday objects is
 downloaded, pointed at this cell's pictures, and asked which things it can see.
 By the end of this page you will know what kind of model it is, why its own
 vocabulary is used as a filter and never as an answer, what the licence costs,
-what it scored on the shared test bench, and why its score is the most useful
+what it scored on the shared examiner, and why its score is the most useful
 failure in the book. The full treatment is in [the chapter on this
 solution](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md), which is
 about half an hour of reading and the shortest of the six.
@@ -16,7 +16,7 @@ about half an hour of reading and the shortest of the six.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -49,7 +49,7 @@ There are only three steps, which is the point of this solution.
 **The picture goes in as it is.** The renderer produces a grey picture shaded
 from the depth readings, and that picture is handed to the model unchanged. A
 survey is three pictures from three overlapping camera stations, and the model
-is asked about each one on its own, which is the bench's arrangement for all six
+is asked about each one on its own, which is the examiner's arrangement for all six
 solutions rather than a choice this one makes.
 
 **The model returns a list of objects.** For each one it gives the rectangle,
@@ -62,7 +62,7 @@ they are somebody else's categories: they are useful for separating the glasses
 from the table and nothing else, and in particular they never say which *kind*
 of glass is on the table. The kind is already known from the problem statement.
 
-The kept outlines are the masks, and [the test bench](../03_the-test-bench.md)
+The kept outlines are the masks, and [the examiner](../03_the-examiner.md)
 turns each mask into a place on the table and a rough width using the same
 shared arithmetic it applies to all six solutions.
 
@@ -102,7 +102,7 @@ shipped or served. Nothing in the design depends on the borrowed model being
 this particular one, so the reading transfers to whichever instance segmenter is
 licensed conveniently.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 Every solution is given the same arrangements and marked the same way. There are
 two sets: spawned layouts, at the spacing the cell's own layout rule gives, and

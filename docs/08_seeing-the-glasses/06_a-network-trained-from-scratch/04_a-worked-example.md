@@ -50,7 +50,7 @@ There is one qualification worth working out rather than waving at, because it
 is the obvious objection. A network *can* be trained to mark part of an object
 it cannot see, and the name for that is **amodal segmentation**, which means
 predicting an object's whole extent rather than only its visible pixels. The
-bench could label it, because it can render each glass's mask with the other
+examiner could label it, because it can render each glass's mask with the other
 glasses taken away. But amodal completion extends evidence, so it needs some of
 the object to be visible to extend from, and with no pixels at all there is
 nothing to extend. A model asked to mark a glass that *might* be standing
@@ -91,7 +91,7 @@ case the whole solution exists for.
 
 **What is on the table.** Two glasses of one kind stand much closer together
 than the cell's own rule allows, which is the crowded family of arrangements
-the bench draws deliberately. There is still bare table between their rims, but
+the examiner draws deliberately. There is still bare table between their rims, but
 only a little.
 
 **What the picture does to them.** From the top, each glass's outline is thrown

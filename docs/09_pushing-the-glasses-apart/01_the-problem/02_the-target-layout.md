@@ -20,7 +20,7 @@ be the most valuable thing in here — and what the layout still does not tell
 you.
 
 Read this after [the problem](01_what-is-asked-for.md) and [the test
-bench](../02_the-test-bench.md), because it uses the clear room the gripper
+examiner](../02_the-examiner.md), because it uses the clear room the gripper
 needs and the measurements `look()` hands over, and both are explained there.
 
 ## Contents
@@ -233,7 +233,7 @@ algorithm is a starting layout and a sanity check. One of them has to be
 chosen and then frozen, for reasons the cautions below make plain.
 
 **None of this is written yet, and it is worth being plain about that.** The
-bench exists, and so does the programmed geometry that picks a landing spot one
+examiner exists, and so does the programmed geometry that picks a landing spot one
 push at a time, which is a different thing: it answers *where can this glass go
 next* rather than *where should every glass finish*. The layout described in
 this document is a design for shared machinery, not code that runs today.
@@ -262,12 +262,12 @@ rather than towards a place, and one of the six does; what that costs it is
 visible on the same scale, as travel against the floor described below.
 
 This is precisely the argument the camera work's [test
-bench](../../08_seeing-the-glasses/03_the-test-bench.md#6-what-must-come-back)
+examiner](../../08_seeing-the-glasses/03_the-examiner.md#6-what-must-come-back)
 makes about its own shared step. There, the step that turns a mask into a place
-and a width belongs to the bench rather than to any of the six, because if each
+and a width belongs to the examiner rather than to any of the six, because if each
 solution did its own arithmetic a difference in the result might be a difference
 in the arithmetic rather than in the mask. Here, the step that turns a set of
-measurements into a set of destinations belongs to the bench for exactly the
+measurements into a set of destinations belongs to the examiner for exactly the
 same reason. In both books
 the rule is the same: **the shared part is everything that is not the thing
 being compared.**
@@ -300,10 +300,10 @@ further cleverness in choosing pushes could have spent less. That is the signal
 to stop optimising this part and look elsewhere, because effort put into a
 solution already at its floor buys nothing.
 
-The camera work has the same instrument and uses it the same way. Its bench
+The camera work has the same instrument and uses it the same way. Its examiner
 runs its own exact masks through the shared arithmetic to find [the best place
 and width that step could ever
-produce](../../08_seeing-the-glasses/03_the-test-bench.md#the-ceiling-what-the-best-possible-answer-would-be),
+produce](../../08_seeing-the-glasses/03_the-examiner.md#the-ceiling-what-the-best-possible-answer-would-be),
 and a solution within a hair of that floor of error is, in that document's
 words, not a good solution so much as one whose remaining error is not its
 fault. The displacement floor is that measurement for this problem: computed
@@ -336,7 +336,7 @@ applied to wherever the glasses actually are, and it must never be the distance
 from each glass to its assigned target. **The computed layout is the reference
 and the floor, not the pass mark.** Scoring the distance to the targets would
 quietly punish a solution for finding a different good answer, which is the
-opposite of what a bench is for.
+opposite of what an examiner is for.
 
 ## 7. What the layout does not tell you
 
@@ -354,7 +354,7 @@ two different things.
 **The motions that can be achieved depend on friction, and nobody knows it.**
 The relation between a push and the slide it produces runs through the
 coefficient between the glass and the table. No sensor in this cell measures it,
-and the bench does not tell any solution what it is. So which pushes are even
+and the examiner does not tell any solution what it is. So which pushes are even
 available is uncertain before the first one is made.
 
 **A glass may tip instead of sliding.** A push above a certain height tips the
@@ -384,7 +384,7 @@ six solutions, say how.
 
 - [The problem](01_what-is-asked-for.md) — why dragging rather than lifting, the three
   distances that matter, and what "done" means.
-- [The test bench](../02_the-test-bench.md) — the shared input, output and marking, and
+- [The examiner](../02_the-examiner.md) — the shared input, output and marking, and
   where the floor sits on the scorecard.
 - [Pushing without toppling](03_pushing-without-toppling.md) — how low a push has
   to be, why that is a property of the glass, and the refusal path.

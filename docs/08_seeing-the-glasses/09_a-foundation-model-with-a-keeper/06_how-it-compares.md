@@ -261,7 +261,7 @@ which is a different and narrower virtue.
 
 What this solution is genuinely for is to find out how far borrowed weights get
 in this cell with almost nothing fitted behind them, and to find out at what
-point an explainable decision is worth more than a shorter program. The bench
+point an explainable decision is worth more than a shorter program. The examiner
 answers the first question by running it beside the other five on the same
 arrangements. The second question is the one the two rungs of this solution ask
 of each other, and it is a judgement rather than a measurement.

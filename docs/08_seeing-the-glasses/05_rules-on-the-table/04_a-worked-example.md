@@ -189,7 +189,7 @@ table several times wider than the grouping distance. The chain cannot cross a
 strip of nothing, so G1 and G2 come back as two separate groups. Every other
 pair in the arrangement stands further apart than that pair, so every other pair
 is separate too. Five groups come out of the one picture that would have given
-four patches, and five masks go back to the bench.
+four patches, and five masks go back to the examiner.
 
 | | the group | the mask it gives |
 | --- | --- | --- |
@@ -255,7 +255,7 @@ The first of those is wrong and silent. The second is incomplete and says so.
 
 ### The case the rule cannot answer
 
-The bench never draws the next case, because it always keeps the glasses a legal
+The examiner never draws the next case, because it always keeps the glasses a legal
 distance apart. The rule still has to behave sensibly in it, because [pushing
 crowded glasses
 apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md)

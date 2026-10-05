@@ -21,7 +21,7 @@ written down as a file of this project's own.
 The fitting step is in
 [`04-yolo-fine-tuned/yolo_fine_tuned.py`](../../../code/src/08_seeing-the-glasses/04-yolo-fine-tuned/yolo_fine_tuned.py).
 `borrowed()` is the downloaded file, the same one solution 3 runs untouched;
-`dataset.build` writes the bench's scenes out as the directory of pictures and
+`dataset.build` writes the examiner's scenes out as the directory of pictures and
 label files Ultralytics reads a training set from; and `model.train` is the one
 line where the borrowed library does the work.
 
@@ -84,15 +84,15 @@ contributes says what it is for.
 One point about the output has to be clear, because it decides what the
 comparison with solution 3 is a comparison of.
 
-**Turning a mask into a place on the table and a rough width is the bench's job,
-not this solution's.** The bench takes each mask pixel with its depth reading,
+**Turning a mask into a place on the table and a rough width is the examiner's job,
+not this solution's.** The examiner takes each mask pixel with its depth reading,
 turns it into a point in the room, takes the axis from the points at the top of
 the glass and the width from how far the points reach out from that axis. Every
 solution in this chapter is given that same step, so **a difference in the score
 belongs to the mask.** This solution contributes only the masks, and so does
 solution 3, which is exactly why the gap between the two is readable.
 
-**One check stands between the model and the bench, and solution 3 deliberately
+**One check stands between the model and the examiner, and solution 3 deliberately
 has none.** The kind of glass is known, so the narrowest and the widest
 footprint a glass of that kind could have are known too, and a candidate whose
 footprint falls outside that range is reported as a doubt rather than kept. That
@@ -104,19 +104,19 @@ flatter this side of the comparison.
 survey height one picture does not hold the glass zone, so a candidate whose
 mask reaches the edge of the picture is kept whatever its width: the picture ran
 out before the glass did, and a width read off part of a footprint is not the
-glass's width. Two measurements said so. Handed the bench's own exact masks, one
+glass's width. Two measurements said so. Handed the examiner's own exact masks, one
 station at a time over 20 held-out spawned scenes, the kind's own range refuses
 66 of 297 glass sightings, and every one of those 66 reaches the frame edge; and
 of this model's own refusals over eight of those scenes, all eleven too-narrow
 ones had a mask touching that edge. So the check was refusing the view rather
 than the mask. What makes standing down safe rather than generous is the
 survey's three overlapping stations: where a glass was seen squarely from
-another station, that is the report the bench keeps.
+another station, that is the report the examiner keeps.
 
 It follows that **this solution produces no pose.** Models produce masks. The
 place comes from depth and the camera's own pose, by arithmetic, and a glass
 standing upright on a flat table has no orientation left to find. [The
-bench](../03_the-test-bench.md) states this once so that no solution has to argue it
+examiner](../03_the-examiner.md) states this once so that no solution has to argue it
 again.
 
 ## 3. How the concepts fit together
@@ -124,17 +124,17 @@ again.
 The pieces now join into one pipeline, and it is short, because almost
 everything in it was borrowed and only one thing was changed.
 
-A grey picture shaded from depth is rendered by the bench and handed over with
+A grey picture shaded from depth is rendered by the examiner and handed over with
 its depth readings and the camera's pose. Before any of that, and once, the
 model was fitted: weights that arrived from a large collection of everyday
 photographs had their training continued on the training half of these same
-arrangements, with labels taken from the bench's id image and with the general
+arrangements, with labels taken from the examiner's id image and with the general
 list of categories replaced by the single class "glass". At run time the fitted
 model is shown the picture and returns candidates, each with a box, a confidence
 number and an outline built as a weighted sum of coarse patterns. Candidates
 overlapping a better one too heavily are discarded, so one object leaves one
-answer. The outlines above the bar are the masks. The bench's shared arithmetic
-turns each mask into a place and a width, and the bench marks the result.
+answer. The outlines above the bar are the masks. The examiner's shared arithmetic
+turns each mask into a place and a width, and the examiner marks the result.
 
 Three things are worth holding on to from all of that.
 
@@ -147,7 +147,7 @@ here from labels that cost nothing.
 **The domain gap closed and the coarse outline did not.** Those are the two
 halves of solution 3's trouble, and training addresses exactly one of them. So
 this solution should be expected to find glasses far more reliably than its
-partner while measuring their edges in much the same way, and the bench's two
+partner while measuring their edges in much the same way, and the examiner's two
 mask numbers are where that expectation can be checked.
 
 **The comparison is the product.** Even if this solution were not the one

@@ -33,7 +33,7 @@ it is solution 1's `slides`, in `01-one-fixed-nudge/plan.py`, which solutions
 2, 3, 6 and this one import rather than rewrite, so those five refuse exactly
 the same glasses. [Solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) is the exception: it judges
 toppling with its own learned model and says that the shared gate in front of
-it is not there yet. It does not live in the bench, which the second half of
+it is not there yet. It does not live in the examiner, which the second half of
 this section comes back to.
 
 **That arrangement is just as well, and the reason is the point of this whole
@@ -58,11 +58,11 @@ read rather than trusted: one that would reach a refused glass is thrown away,
 and the heights in the rest are bounded into the range the jaw rides at.
 
 Both of those checks are built, in `05-smolvla-as-it-downloads/clear.py` and
-`joining.py`. This document expected them to sit in the bench beside the
+`joining.py`. This document expected them to sit in the examiner beside the
 refusal, so that they would be identical for all six and not something a model
-can argue with. They do not: the bench grew the straight-down view and the
+can argue with. They do not: the examiner grew the straight-down view and the
 waypoint path but no shared guard, and the tipping refusal lives in solution
-1's folder rather than in the bench either. So the checks are this solution's
+1's folder rather than in the examiner either. So the checks are this solution's
 own, written to the same rule, and solution 6 should import them from here
 rather than write them again. Between them, this solution cannot topple a
 refused glass by choosing badly.
@@ -74,7 +74,7 @@ recognise, because they appear together rather than one at a time.
 
 Five glasses of the tapered kind stand in the glass zone. Two of them are
 standing deliberately close together, closer than the gripper can work with but
-not touching, which is how [the test bench](../02_the-test-bench.md) builds its tables.
+not touching, which is how [the examiner](../02_the-examiner.md) builds its tables.
 A third stands a little way off and is crowded by accident. The remaining two
 are clear of everything. One of the close pair is at the narrow-footed end of
 what its kind allows, and the tapered kind is wider higher up by definition, so

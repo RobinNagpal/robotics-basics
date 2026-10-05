@@ -89,14 +89,14 @@ to all six, so that no solution can look good at pushing by having aimed at an
 easier arrangement. It does not own the topple check, which is shared. It does
 not own the loop of plan, feel and look again, which is shared. And it does not
 own the macro that turns a parameterised push into a jaw trajectory, because it
-never produces a parameterised push; it emits waypoints, and the bench carries
+never produces a parameterised push; it emits waypoints, and the examiner carries
 them out as they are.
 
 That last point is worth one more sentence, because it is the reason this
-solution is allowed to be itself. The bench could have insisted that every
+solution is allowed to be itself. The examiner could have insisted that every
 solution hand back the same handful of push parameters, which sounds fairer and
 is not, because squeezing a chunked policy down to three numbers destroys the
-action chunking that makes it work. What the bench does instead is score the
+action chunking that makes it work. What the examiner does instead is score the
 outcome and never the action: which glasses have room, which are standing,
 where each one ended up, and how many pushes it took. So a three-number push
 and a chunk of fifty waypoints are compared on the only thing this problem

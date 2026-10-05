@@ -163,7 +163,7 @@ number comes from, which is nowhere.
 
 **The friction coefficient is never told to any solution, and nothing in the
 cell measures it.** The cell has four sensors, and none of them reports how
-slippery the table is. The bench holds the coefficients it runs the physics with
+slippery the table is. The examiner holds the coefficients it runs the physics with
 privately, and uses them to move the glasses and to score the outcome, but they
 are never an input to any decision the arm makes. The arm's situation is
 therefore not that it knows the friction imprecisely. It is that it has to
@@ -342,10 +342,10 @@ said yes on the strength of a number nobody had.
 
 - [The problem](01_what-is-asked-for.md) — why dragging rather than lifting, the distances
   that matter, and what "done" means.
-- [The test bench](../02_the-test-bench.md) — the shared input, output and marking.
+- [The examiner](../02_the-examiner.md) — the shared input, output and marking.
 - [The target layout](02_the-target-layout.md) — where the glasses should end up,
   and the least movement the task needs.
 - [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) — what each one puts between the
   measurements and the pushes.
 
-← [The target layout — where the glasses should end up](02_the-target-layout.md) · [The test bench — the same question for every answer](../02_the-test-bench.md) →
+← [The target layout — where the glasses should end up](02_the-target-layout.md) · [The examiner — the same question for every answer](../02_the-examiner.md) →

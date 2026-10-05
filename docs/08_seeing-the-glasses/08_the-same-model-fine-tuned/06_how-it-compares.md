@@ -20,7 +20,7 @@ to be converted, and no step has to find a seam in a joined region.
 thing about it, and the thing its partner cannot claim. The domain gap is closed
 by construction rather than left to hope.
 
-**Its labels cost nothing.** The bench's id image gives exact masks for free, so
+**Its labels cost nothing.** The examiner's id image gives exact masks for free, so
 the usual reason not to fine-tune a model does not apply here.
 
 **It has little to set by hand.** There is no grouping distance and no seam

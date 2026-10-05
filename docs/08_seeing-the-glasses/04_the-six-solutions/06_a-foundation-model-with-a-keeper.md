@@ -6,7 +6,7 @@ a large model that somebody else trained outlines every region in the picture
 and names none of them, and a small model fitted here decides which of those
 outlines are glasses. By the end of this page you will know what a foundation
 model is, why the naming half is the half worth replacing, how little training
-data this needs, what it scored on the shared test bench, and why it still does
+data this needs, what it scored on the shared examiner, and why it still does
 not survive real glassware. The full treatment is in [the chapter on this
 solution](../09_a-foundation-model-with-a-keeper/01_what-it-is.md), which is
 about an hour of reading.
@@ -16,7 +16,7 @@ about an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -78,7 +78,7 @@ that are the masks this solution reports.
 The keeper is small on purpose. It learns from a short table of numbers rather
 than from pictures, so it is fitted with scikit-learn in seconds on an ordinary
 processor, and printing its inputs beside its answer is an explanation a person
-can read. Its training labels cost nothing either, because the bench's answer
+can read. Its training labels cost nothing either, because the examiner's answer
 key turns a proposal into a label by arithmetic: a proposal whose pixels mostly
 belong to one glass is a keep, and one spread across two is a more-than-one.
 
@@ -96,7 +96,7 @@ file has to be fetched, pinned to a version, and stored where a run can find it.
 This is a real difference from the solutions whose weights are produced here and
 can be produced again at any time.
 
-It needs **arrangements for the keeper**, which the bench renders and labels for
+It needs **arrangements for the keeper**, which the examiner renders and labels for
 nothing, and **far fewer of them than a network fitted from scratch needs**,
 because the keeper learns from a short table of numbers rather than from
 pictures. Fitting the keeper then takes seconds with no graphics card. What takes
@@ -113,7 +113,7 @@ Affero General Public License, so on the day this cell becomes a product rather
 than an experiment those
 two have a question to answer and this one does not.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 The two sets of arrangements are the ones every solution is given: spawned
 layouts at the cell's own spacing, and crowded layouts closer than that.

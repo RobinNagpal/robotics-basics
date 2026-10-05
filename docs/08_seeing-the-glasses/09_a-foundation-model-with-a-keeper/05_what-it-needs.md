@@ -14,7 +14,7 @@ difference from solutions 2, 4 and 6, whose weights are produced here and can be
 produced again at any time. These cannot be produced here at all, so they have
 to be fetched, pinned to a version, and stored where a run can find them.
 
-It needs **arrangements for the keeper**, which the bench renders and labels for
+It needs **arrangements for the keeper**, which the examiner renders and labels for
 nothing, and far fewer of them than a network fitted from scratch needs, because
 the keeper learns from a short table of numbers rather than from pictures. The
 calibration needs no arrangements beyond those, because it is fitted in folds of

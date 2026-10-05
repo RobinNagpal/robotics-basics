@@ -20,10 +20,10 @@
 > the model's body turns it into a description of every part of the picture; the
 > queries read that description and each returns a class, a rectangle and a mask
 > over the whole picture; the queries that report "nothing" are dropped; each
-> surviving mask is handed to the bench, which back-projects its pixels with
+> surviving mask is handed to the examiner, which back-projects its pixels with
 > their depth readings and the camera's own pose and returns a place and a rough
 > width.
-> **What it costs** — the labels cost nothing, because the bench renders which
+> **What it costs** — the labels cost nothing, because the examiner renders which
 > glass owns each pixel and a mask is a selection over that. The training time
 > is the time of a fine-tune rather than of a start from nothing, so it is far
 > less than building the same model from random numbers would take, and it is
@@ -63,7 +63,7 @@ in the picture shows, which is the **second rung** of this solution and is
 described in full below.
 
 One thing has to be said before the rest. **The first rung is built and has
-been scored on the bench; the second rung is not.** Its fine-tune was started
+been scored by the examiner; the second rung is not.** Its fine-tune was started
 with the same settings as the first and stopped unfinished when the machine
 filled up, so no number is claimed for it anywhere. This document quotes no
 scorecard of its own either: the first rung's numbers sit beside its code, in

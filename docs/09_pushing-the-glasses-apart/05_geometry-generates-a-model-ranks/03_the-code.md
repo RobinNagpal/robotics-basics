@@ -17,7 +17,7 @@ two places, and they are small enough to read here. The first is the model
 itself: scikit-learn's boosted trees, fitted once and then asked for one number
 per candidate so that the candidates can be sorted. The second is the number
 those trees are asked to predict, which is measured by making the push on the
-bench and reading the table afterwards. Those two are the heart of this
+examiner and reading the table afterwards. Those two are the heart of this
 solution because the candidates themselves are not its own — they come from
 solution 1's enumerator unchanged — so the choosing is the only thing that
 differs, and the label is what the choosing is taught to want.
@@ -56,7 +56,7 @@ def ranked(
 ```
 
 What `labels` holds is the whole design decision, and it is produced by making
-one candidate on the bench and measuring what it did, in
+one candidate on the examiner's tables and measuring what it did, in
 `src/09_pushing-the-glasses-apart/02-geometry-ranked/rollout.py`:
 
 ```python
@@ -87,19 +87,19 @@ comparison with the other five is a comparison of.
 
 This solution thinks in **parameterised pushes**: which glass to move, where to
 put the fingertips down, which way to point the jaw, how far to feel forward
-and how far to push once it has touched. That is exactly what the bench's
+and how far to push once it has touched. That is exactly what the examiner's
 `push()` already accepts, and **the expansion of those numbers into a jaw
-trajectory is a macro the bench owns.** The bench brings the closed jaw down at
+trajectory is a macro the examiner owns.** The examiner brings the closed jaw down at
 the chosen start point, feels forward slowly until the force passes a small
 threshold, pushes the asked-for distance, backs off a couple of centimetres and
 lifts clear. Every parameterised push is expanded the same way by the same
 code, so this solution gains nothing and loses nothing in that step.
 
 It follows that **what this solution contributes is the choice of push and
-nothing else**. The trajectory is the bench's, the physics is MuJoCo's, and the
+nothing else**. The trajectory is the examiner's, the physics is MuJoCo's, and the
 marking reads the table afterwards rather than the action, which is what lets a
 three-number push and a chunk of waypoints from a learned policy be compared at
-all. [The test bench](../02_the-test-bench.md) states that once so that no solution has
+all. [The examiner](../02_the-examiner.md) states that once so that no solution has
 to argue it again.
 
 One consequence is worth drawing out, because it is a genuine limitation rather
@@ -117,7 +117,7 @@ toppling](../01_the-problem/03_pushing-without-toppling.md) describes: plan, fee
 
 Before any of it, and once, the model is fitted. Candidates are generated
 geometrically on the training tables, every one of them is executed on the
-bench, each is labelled with the clear room the table gained and with whether
+examiner, each is labelled with the clear room the table gained and with whether
 the glass toppled, and a few hundred boosted regression trees are fitted to
 those labels on a table of a few thousand rows.
 
@@ -132,7 +132,7 @@ friction in that range is refused with the reason. For the glasses that remain,
 the enumerator sweeps the headings, steps the travel out, applies its four
 tests and keeps the survivors. Each survivor is turned into the short list of
 lengths, angles, counts and ratios described above, the model scores it, and
-the candidates are sorted. The highest-scoring push is handed to the bench,
+the candidates are sorted. The highest-scoring push is handed to the examiner,
 which expands it into a trajectory, carries it out, and reports what the jaw
 felt. Then the arm looks again, and the loop repeats with the arrangement as it
 now is rather than as it was planned to be.

@@ -6,7 +6,7 @@ the arm is shown what a good push looks like, many times over, and a network is
 trained to copy it, with no geometry and no friction model anywhere inside it.
 By the end of this page you will know what behaviour cloning is, where the
 demonstrations come from and what that costs, what it scored on the shared test
-bench, and the one limit no amount of extra data removes. The full treatment is
+examiner, and the one limit no amount of extra data removes. The full treatment is
 in [the chapter on this
 solution](../06_imitation-from-demonstrations/01_what-it-is.md), which is about
 an hour of reading.
@@ -16,7 +16,7 @@ an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -43,14 +43,14 @@ Nothing is downloaded except the library.
 
 The demonstrations come from [geometry generates, a model
 ranks](03_geometry-generates-a-model-ranks.md), which is a program rather than a
-person, so they cost arm time on the bench and nothing else. That makes this
+person, so they cost arm time on the examiner's tables and nothing else. That makes this
 solution's teacher a sibling solution, and the consequence of that is the most
 important thing on this page.
 
 ## 2. How it works
 
 **The teacher produces the examples.** The ranked geometric solution runs over
-the training half of the bench's tables, and each push it makes is recorded as a
+the training half of the examiner's tables, and each push it makes is recorded as a
 picture of the table together with the waypoints the jaw followed.
 
 **The successful pushes are kept and the rest are dropped.** This filtering is
@@ -67,7 +67,7 @@ one at a time has to rediscover that relationship at every step while its own
 small errors accumulate.
 
 **At run time the chunk is carried out directly.** There is nothing to expand,
-because a chunk already *is* a jaw trajectory, so the bench follows the
+because a chunk already *is* a jaw trajectory, so the examiner follows the
 waypoints as given. The arm then looks again, and the fresh picture is the next
 input. One push is one chunk, and the loop runs until every glass has room, the
 remaining glasses have been refused, or the push budget is spent.
@@ -77,7 +77,7 @@ in behaviour cloning ever evaluates an outcome**, so this solution cannot
 discover that a different glass should have been moved or a different
 destination chosen. It can smooth away some of the teacher's inconsistency,
 because a fitted function averages over many examples, and it can express
-motions the bench's push macro could not. Beyond those two narrow things, its
+motions the examiner's push macro could not. Beyond those two narrow things, its
 ceiling is its teacher.
 
 ## 3. What it needs
@@ -90,21 +90,21 @@ It needs **its teacher working**, which is a real dependency rather than a
 preference: without a program that chooses pushes well there are no
 demonstrations at all, which is why the two are built in that order.
 
-It needed **two things the bench did not have**, and that was an honest cost of
-going off the shelf. The bench returned numeric readings and rendered the world
+It needed **two things the examiner did not have**, and that was an honest cost of
+going off the shelf. The examiner returned numeric readings and rendered the world
 only from the arm's side, so a straight-down view of the table had to be built.
-And the bench's push entry point takes three numbers and expands them itself, so
+And the examiner's push entry point takes three numbers and expands them itself, so
 a path that accepts a chunk of waypoints had to be built too. Both exist now,
 and every LeRobot policy would have needed them, because they all expect
 pictures and a control-rate action space.
 
 It needs **demonstrations**, which cost arm time and nothing else, drawn only
-from tables below the bench's dividing line. One prescription here is **not**
+from tables below the examiner's dividing line. One prescription here is **not**
 done and is worth knowing: the plan was to over-represent the crowded corner
 cases deliberately, so the edge of what the policy will face sits in the middle
 of what it was trained on, and in fact the demonstrations are drawn from
 consecutive table numbers, so the crowded corners are as rare in training as
-they are on the bench.
+they are on the examiner's tables.
 
 It needs **compute, and this is the cheapest entry among the six.** Training
 runs in hours on the graphics processor an Apple M4 already has. This document
@@ -115,10 +115,10 @@ general.
 
 At run time it needs one forward pass per chunk, against a push the arm takes
 seconds to carry out. And once fitted it needs **a weights file kept in step
-with the bench**: change how the top view is rendered, or the macro whose
+with the examiner**: change how the top view is rendered, or the macro whose
 waypoints became the labels, and the file is quietly out of date.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 All six solutions are given the same 50 tables holding 251 glasses, of which 193
 have no room at the start. The teacher's row is shown beside this one, because
@@ -173,7 +173,7 @@ mechanism in this solution compares one outcome against another.
 is read, and the policy's only output is waypoints, so a refusal has to come
 from the shared gate in front of it rather than from the policy itself.
 
-**It needed bench work the first two solutions did not**, and two smaller costs
+**It needed examiner work the first two solutions did not**, and two smaller costs
 are paid on every push: a glass and an aim have to be read back off the
 waypoints, and every chunk has to be pulled inside the jaw's limits before it is
 followed.

@@ -6,13 +6,13 @@
 > library,
 > the same model and the same downloaded weights as [solution
 > 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md), with its training continued on pushes
-> made on this bench by low-rank adaptation, so that the actions it emits are
+> made on the examiner's tables by low-rank adaptation, so that the actions it emits are
 > fitted to this cell's own range rather than left to the range the borrowed
 > recordings happened to use.
 > **What it does** — a model that arrives fitted to real teleoperation of
 > other robots is neither thrown away nor used as it arrives. Its numbers are
 > kept, and a small correction to them is learned from pushes made on this
-> bench, so that it stops being a general copier of robot motion and becomes a
+> examiner, so that it stops being a general copier of robot motion and becomes a
 > pusher of glasses on this table. The action chunks it then emits are this
 > solution's answer to the problem this book sets.
 > **How the output is produced** — a rendered view of the table from the top
@@ -22,11 +22,11 @@
 > consecutive jaw waypoints predicted together in one pass. The shared
 > geometry refuses the glasses that tip before they slide, and a chunk whose
 > path would reach one of those is not carried out.
-> The bench then carries the waypoints out directly, because a chunk needs no
+> The examiner then carries the waypoints out directly, because a chunk needs no
 > expansion. The arm looks again, and the loop repeats until the table is done
 > or the push budget is spent.
 > **What it costs** — the demonstrations are free, because solution 2
-> generates them and the bench executes them without anybody holding a
+> generates them and the examiner executes them without anybody holding a
 > controller. The training is a low-rank fine-tune, and it fits in 1.02 GiB on
 > a laptop, so nothing was rented; hours of a small rented accelerator, of
 > order tens of dollars, is what it would take to spend real compute on it.
@@ -64,7 +64,7 @@ pair.** [Solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) 
 training in this cell. This is the same model with training in this cell.
 Everything else between the two is held still, and the list of what
 "everything else" covers is the argument, so it is worth setting out one item
-at a time. The [test bench](../02_the-test-bench.md) holds the input still, so both
+at a time. The [examiner](../02_the-examiner.md) holds the input still, so both
 are shown the same rendered view of the same tables in the same order, with
 the same instruction and the same joint readings, and the same measurements
 reach the shared checks in both. It holds the output still, so both hand back a
@@ -99,14 +99,14 @@ needs a sense of what a push does, and nothing in a picture contains that.
 appear.** The solution lives in
 [`06-smolvla-fine-tuned/`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned):
 it records its demonstrations from the teacher, fits the correction, and has
-been run on the bench's held-out tables, with its numbers in
+been run by the examiner's held-out tables, with its numbers in
 [its own README](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/README.md).
-The two parts of the shared contract it waited on are in the bench
+The two parts of the shared contract it waited on are in the examiner
 now — a rendered view looking straight down in `bench/top_view.py`, and
 `Bench.follow()`, which carries a chunk of waypoints out as an action — so
 nothing below is blocked on them. Three things here are still prescriptions
 rather than code, and each says so where it is described: **DAgger**, the
-**second rung on π0.5**, and the **several training seeds** the bench asks for,
+**second rung on π0.5**, and the **several training seeds** the examiner asks for,
 of which one was fitted. Everything else in this document describes a program
 that has run.
 
@@ -140,7 +140,7 @@ about 70 mm of clear room around it or the glasses that are left have been
 refused with a reason. [The problem](../01_the-problem/01_what-is-asked-for.md) explains why that is hard,
 and the hardest part of it is a missing number: whether a pushed glass slides
 or tips depends on the friction between the glass and the table, **nothing in
-the cell measures friction**, and the bench never tells any solution what it
+the cell measures friction**, and the examiner never tells any solution what it
 is using.
 
 A learned policy answers that difficulty in the only way available to anything
@@ -173,7 +173,7 @@ all three at once, and that is what this solution does.
 ## 3. The main idea
 
 The idea is one sentence long: keep the borrowed numbers, and learn a small
-correction to them from pushes made on this bench.
+correction to them from pushes made on the examiner's tables.
 
 Three things follow from that sentence, and most of this document is those
 three things.
@@ -185,11 +185,11 @@ an edge in a picture is worth noticing and that a motion should be smooth. The
 borrowed weights already hold all of that, so the training continues from them
 rather than beginning beside them.
 
-**The pushes are this bench's pushes.** This is the part that makes the
+**The pushes are this examiner's pushes.** This is the part that makes the
 difference to solution 5. Solution 5 asks a model fitted on real teleoperation
 to act on a rendered view of a simulated table, which is a different kind of
 input leading to a different kind of outcome. Fine-tuning does not ask that.
-It shows the model this bench's views and this bench's pushes during training,
+It shows the model this examiner's views and this examiner's pushes during training,
 so at run time the model is being shown the kind of thing it was fitted on.
 The difference between the two kinds of input is called the **domain gap**, and
 fine-tuning is how a domain gap is closed.
@@ -204,7 +204,7 @@ pair's result should be read.
 Everything else about the model is unchanged, including the things that limit
 it. It still takes one instruction in words, and the task still has one
 instruction, so that channel still carries nothing. It still takes the arm's
-own pose, and the bench parks the jaw between actions, so that channel carries
+own pose, and the examiner parks the jaw between actions, so that channel carries
 nothing either: the same six numbers go in at every ask. It still predicts a
 chunk of waypoints and commits to the whole of it before looking again, because
 the number of actions SmolVLA emits in a pass and the number it is configured

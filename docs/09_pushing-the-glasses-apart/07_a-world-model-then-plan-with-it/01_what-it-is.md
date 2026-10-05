@@ -1,7 +1,7 @@
 # What it is
 
 > **What it uses** — PyTorch, and MuJoCo through [the test
-> bench](../02_the-test-bench.md). Rung one is a small network written for this cell
+> examiner](../02_the-examiner.md). Rung one is a small network written for this cell
 > and trained here, five copies of it, with no downloaded weights of any kind.
 > Rung two would be TD-MPC2, the model-based entry in LeRobot, trained here as
 > well. **Rung two is not built**, so no number anywhere in this document is
@@ -25,8 +25,8 @@
 > each answer; a candidate is thrown away if any copy thinks it might topple
 > something, or if the predicted table breaks the map; the survivors are scored
 > by how much room is still missing afterwards; a sampling search refines the
-> good ones and returns the best push; that push is handed to the bench as a
-> parameterised push, and the bench's own macro expands it into a jaw
+> good ones and returns the best push; that push is handed to the examiner as a
+> parameterised push, and the examiner's own macro expands it into a jaw
 > trajectory.
 > **What it costs** — pushes made in the simulator and recorded, which is the
 > only training data either rung needs and which nobody has to label. Rung one
@@ -79,7 +79,7 @@ document. And you will understand what the two rungs buy against each other:
 a small hand-built model that can be inspected, against a stronger off-the-shelf
 one that brings a maintained implementation.
 
-Read [the test bench](../02_the-test-bench.md) first, because what `look()` hands over
+Read [the examiner](../02_the-examiner.md) first, because what `look()` hands over
 and what `push()` accepts are assumed throughout, and read [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md), because the refusal rule this
 solution adds learned evidence to is stated there.
@@ -101,7 +101,7 @@ That half is hard for one reason above all others, and [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md) states it plainly. The rule that
 decides whether a glass slides or tips compares the contact height against half
 the foot width divided by the friction coefficient, and **nothing in this cell
-measures friction**. The bench holds the coefficients privately and never tells
+measures friction**. The examiner holds the coefficients privately and never tells
 anybody. So any solution that writes the rule down is writing down a rule with a
 guessed number in it, and the guess can be wrong by a factor that decides
 whether a glass should have been touched at all.

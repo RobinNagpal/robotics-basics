@@ -94,7 +94,7 @@ to one answer deals with them inside the model. The duplicate never leaves it.
 rendered glass seen from the top is a plain shaded shape, and a model fitted on
 photographs can reasonably call such a shape a bowl, a vase or a bottle. In
 solution 3 such an outline would be dropped and the glass missed. [The
-bench](../03_the-test-bench.md) says that **missed** is the count to watch hardest,
+examiner](../03_the-examiner.md) says that **missed** is the count to watch hardest,
 because a missed glass leaves no trace at all. With one class, a found object
 cannot be named out of the answer.
 
@@ -110,10 +110,10 @@ nothing this book asks for needs it.
 Fine-tuning needs examples, which means pictures with every glass already
 outlined, and this is where this cell is unusually fortunate.
 
-[The bench](../03_the-test-bench.md) renders an **id image** beside every picture: at
-each pixel, which glass that pixel shows, or nothing. The bench keeps that image
+[The examiner](../03_the-examiner.md) renders an **id image** beside every picture: at
+each pixel, which glass that pixel shows, or nothing. The examiner keeps that image
 to itself at run time and never hands it to a solution, because a solution that
-read one would not be answering the problem. However, the bench does make it
+read one would not be answering the problem. However, the examiner does make it
 available as a **training label**, and only on the training half of the
 arrangements, so that nothing is ever tested on an arrangement it learned from.
 
@@ -137,7 +137,7 @@ different.
 Free labels are not the same as a good training set, and one choice still has to
 be made well. The cell's own placement rule keeps glasses a comfortable distance
 apart, so a training set drawn only from arrangements of that kind would never
-show the model a pair that was hard to separate. The bench also draws
+show the model a pair that was hard to separate. The examiner also draws
 **crowded** arrangements, which push the glasses as close as the cell allows,
 and the training set should hold those in proportion with the ordinary ones. The
 principle is general and worth remembering: **the edge of what the method will
@@ -191,7 +191,7 @@ the glass turns out to be enough on its own, and the coarseness of the outline
 machinery does not stand in the way of it.
 
 **The edge of the outline stays approximate, and the width is read from the
-edge.** The bench reads a glass's width from how far its mask's points reach out
+edge.** The examiner reads a glass's width from how far its mask's points reach out
 from its axis, so an outline that is slightly too generous reports a glass
 slightly too wide and one slightly too tight reports it slightly too narrow. The
 enlargement step tends to err the same way each time, so the error does not
@@ -207,7 +207,7 @@ the rule claims less of the glass and nothing that is not the glass.
 **A partly hidden glass stays a problem.** The outline this model returns is
 **modal**, which means it marks only the pixels where the camera actually saw
 the object. When one glass stands partly behind another, the outline of the one
-behind stops where the one in front begins, so the bench reads a glass whose
+behind stops where the one in front begins, so the examiner reads a glass whose
 visible part is a slice of its true silhouette. A slice is both narrower than
 the whole and sits off to one side, so the glass is reported as a smaller glass
 in the wrong place. Training on masks of visible pixels cannot repair that,
@@ -235,9 +235,9 @@ more.
 
 Here the number comes from weights fitted on this cell's own pictures, so it has
 a much better claim to mean something. That claim still has to be checked rather
-than assumed, and the bench makes the check easy: the bar should be chosen on
+than assumed, and the examiner makes the check easy: the bar should be chosen on
 the training half of the arrangements and measured on the test half, which is
-the split the bench already enforces. Where the bar sits is a trade, and it is
+the split the examiner already enforces. Where the bar sits is a trade, and it is
 the same trade in both solutions. Set it low and bare table is reported as
 glass; set it high and faint glasses are dropped.
 
@@ -272,7 +272,7 @@ examples instead of the thing the examples are of. Here that would mean learning
 the arrangements rather than the glasses: which parts of the frame tend to hold
 a glass, how many glasses tend to be present, which spacings are common. Such a
 model scores well on the pictures it was trained on and poorly on new ones. Two
-things guard against it, and both are already in place. The bench divides the
+things guard against it, and both are already in place. The examiner divides the
 arrangements into a training half and a test half and never marks a method on an
 arrangement it learned from, so overfitting appears as a gap between the two
 halves rather than hiding. And the labels being free means the training set can

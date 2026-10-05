@@ -59,7 +59,7 @@ the friction coefficient, nobody has it, and the limit it computes is only as
 good as the guess. And the guard against a guess that was too generous — the
 early abort that reads the jaw's force while the push is happening and stops it
 when the contact stops behaving like a slide — **is a design and not code**.
-The bench stops a push at a jam, which is far more force than a glass needs to
+The examiner stops a push at a jam, which is far more force than a glass needs to
 begin tipping, and nothing reads the force as it develops. So the only thing
 protecting a glass in either half of this pair is the limit computed before the
 jaw moves, and a 5 mm test push where that limit is undecided.
@@ -71,11 +71,11 @@ recognise once both have been run over the same one.
 
 **The table.** Five tapered glasses stand in the glass zone, drawn at
 proportions from across the kind's range, so they are not all the same height.
-Two of them stand as close together as the bench allows, so neither has its
+Two of them stand as close together as the examiner allows, so neither has its
 70 mm of clear room measured to the other's edge, and because the test is to
 the edge rather than to the middle, the narrower of the two is crowded while
 the wider one may not be. A third glass, standing alone, is drawn with a foot
-narrow enough that its limit falls below the jaw's top edge. The bench renders
+narrow enough that its limit falls below the jaw's top edge. The examiner renders
 the view from the top and hands over the readings, each carrying the error that
 telling the glasses apart in a picture leaves in it.
 

@@ -27,7 +27,7 @@ and every refusal has a reason that can be checked with a ruler.
 
 **One run of it is a measurement.** Nothing in it was fitted and nothing in it
 is drawn at random, so it behaves the same way on the hundredth table as on the
-first. The repeats that [the bench](../02_the-test-bench.md) requires of the trained
+first. The repeats that [the examiner](../02_the-examiner.md) requires of the trained
 solutions, because their training and their actions both vary, are not needed
 here, and that makes it the one solution in the set whose number carries no
 spread.
@@ -191,7 +191,7 @@ exactly one place where that could happen, which is the gain, and that is why
 the gain is argued rather than swept over the training tables. The discipline
 also requires that the baseline be measured on the same tables with the same
 scoring as the methods meant to beat it, which is what [the
-bench](../02_the-test-bench.md) is for.
+examiner](../02_the-examiner.md) is for.
 
 ## 3. Where it sits among the other five
 

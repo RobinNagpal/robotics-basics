@@ -6,7 +6,7 @@ everything fitted here: a transformer that detects and segments in a single
 pass, fine-tuned on this cell's own pictures, under a permissive licence. By the
 end of this page you will know what makes a transformer segmenter different from
 the older shape, why that difference removes a setting somebody would otherwise
-have to justify, what it scored on the shared test bench, and why it is the only
+have to justify, what it scored on the shared examiner, and why it is the only
 one of the six that could be asked for the part of a glass nobody saw. The full
 treatment is in [the chapter on this
 solution](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md), which is
@@ -17,7 +17,7 @@ about an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -79,7 +79,7 @@ The run itself is short. The grey picture shaded from depth goes in; the model's
 body turns it into a description of every part of the picture; the queries read
 that description and each returns a class, a rectangle and a mask over the whole
 picture; the queries reporting "nothing" are dropped; and [the test
-bench](../03_the-test-bench.md) turns each surviving mask into a place and a
+examiner](../03_the-examiner.md) turns each surviving mask into a place and a
 rough width with the same shared arithmetic it uses for all six.
 
 ## 3. What it needs
@@ -92,7 +92,7 @@ needs **a downloaded file of weights**, which is large, is fetched rather than
 committed with the code, and which this project cannot produce, so it comes from
 outside and is taken on trust.
 
-It needs **a training set**, which the bench renders and labels for nothing,
+It needs **a training set**, which the examiner renders and labels for nothing,
 including the crowded arrangements the cell's own rule would never produce. That
 is the genuinely cheap part and it is what makes fine-tuning reasonable here. It
 needs **time on the machine** for the fine-tune, far less than a start from
@@ -117,7 +117,7 @@ solutions covered by the Affero General Public License, and it is worth knowing
 before a choice is made
 rather than after.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 The two sets of arrangements are the ones every solution is given: spawned
 layouts at the cell's own spacing, and crowded layouts closer than that.
@@ -128,7 +128,7 @@ layouts at the cell's own spacing, and crowded layouts closer than that.
 | crowded, 101 glasses | 78 | 23 | 3 | 2 | 0.5 mm | 97.3% | 0.0% |
 
 **It found more crowded glasses than any other solution**, 78 of 101, where the
-bench's own exact masks manage only 83, because a glass standing wholly behind
+examiner's own exact masks manage only 83, because a glass standing wholly behind
 another is in no picture at all. On the crowded set it also has the best
 position error of the six, at half a millimetre, and none of its masks leaked
 onto a neighbour or onto the table in either set.

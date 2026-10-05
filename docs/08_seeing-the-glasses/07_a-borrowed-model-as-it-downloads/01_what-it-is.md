@@ -8,7 +8,7 @@
 > takes the list of objects the model reports, and keeps the outlines whose
 > name is a drinking vessel while dropping everything else the model named. A
 > survey is three pictures from three overlapping stations, and the model is
-> asked about each one on its own, which is the bench's arrangement rather than
+> asked about each one on its own, which is the examiner's arrangement rather than
 > this solution's.
 > Nothing whatsoever is fitted in this cell, so there is not a single number in
 > this solution that came from this project's own data.
@@ -17,7 +17,7 @@
 > name from a fixed list of categories, a confidence number and an outline; the
 > design keeps the outlines named as drinking vessels and discards the names
 > afterwards; the kept outlines are the masks, and the shared arithmetic in [the
-> test bench](../03_the-test-bench.md) turns each mask into a place on the table and a
+> examiner](../03_the-examiner.md) turns each mask into a place on the table and a
 > rough width.
 > **What it costs** — no labels, no training run, no weights file to keep in
 > step with the cell, and no graphics card of its own. The whole cost is the
@@ -113,7 +113,7 @@ model named would be dropped.
 
 **Third, hand the kept outlines to the shared arithmetic.** An outline is a set
 of pixels, and turning a set of pixels into a place on the table and a width is
-a job the test bench does, the same way, for every solution that produces masks.
+a job the examiner does, the same way, for every solution that produces masks.
 Nothing about that step changes here.
 
 So the whole of this solution is the first two steps, and the second step is a

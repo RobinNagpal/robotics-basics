@@ -14,7 +14,7 @@ file produced by continuing their training inherits whatever they carried, and
 no amount of training here relicenses it. It needs **PyTorch** underneath,
 which is what both the training and the forward pass run on.
 
-It needs **the two parts of the bench this solution waited on**, and both are
+It needs **the two parts of the examiner this solution waited on**, and both are
 there now. A rendered view looking straight down is the input this model takes,
 and `bench/top_view.py` is that view: a camera fixed 750 mm above the middle of
 the glass zone, looking straight down, returning a 384 by 384 picture that
@@ -31,7 +31,7 @@ It needs **solution 2 built**, because solution 2 is the teacher and its pushes
 are the training set. It needs **simulator time** to record those pushes over
 the training half of the tables, unattended, and a filter that discards the
 recordings in which something went wrong. It needs the **held-out half** of the
-tables, which the bench already enforces, for checking that the policy learned
+tables, which the examiner already enforces, for checking that the policy learned
 pushing rather than the tables.
 
 **It does not need a rented accelerator, and this is the place the document

@@ -42,10 +42,10 @@ evaluation on rented hardware is at the cheap end of this book.
 **Data.** None. No demonstrations, no labels, no held-out set, and nothing to
 keep in step with the cell when the cell changes.
 
-**What the bench had to grow.** Two things, and both were gates rather than
+**What the examiner had to grow.** Two things, and both were gates rather than
 conveniences: the rendered view of the table from the top, and the path that
 accepts a run of waypoints without the push macro. [The test
-bench](../02_the-test-bench.md) now provides both, and both are shared with solutions
+examiner](../02_the-examiner.md) now provides both, and both are shared with solutions
 3 and 6, so the cost was paid once for three solutions rather than for this
 one.
 

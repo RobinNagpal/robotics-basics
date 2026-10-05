@@ -6,7 +6,7 @@ fitted here: a large model that somebody else trained on hundreds of real robot
 datasets is downloaded, shown a picture of the table, told in plain English what
 to do, and asked for actions. By the end of this page you will know what kind of
 model it is, why the instruction it is given does almost no work here, what it
-scored on the shared test bench, and why a poor score from it is the
+scored on the shared examiner, and why a poor score from it is the
 measurement working rather than a disappointment. The full treatment is in [the
 chapter on this
 solution](../08_a-foundation-model-as-it-downloads/01_what-it-is.md), which is
@@ -17,7 +17,7 @@ about three quarters of an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -39,7 +39,7 @@ It exists in this book for one reason above all others. [The same model,
 fine-tuned here](07_the-same-model-fine-tuned-here.md) is this same model, from
 this same library, starting from these same downloaded weights, with its
 training continued on this cell's own pushes. Everything else is held still: the
-same bench, the same input, the same output, the same marking, and the same
+same examiner, the same input, the same output, the same marking, and the same
 refusal rule running first. Nothing varies between the pair except the training,
 so the gap between their scores measures what that training bought and nothing
 else. No other pair in this book is that clean.
@@ -48,12 +48,12 @@ else. No other pair in this book is that clean.
 
 The chain is short, which is the point.
 
-**The model is shown the table from the top**, as the bench renders it, together
+**The model is shown the table from the top**, as the examiner renders it, together
 with **one instruction written in plain English** and **the arm's own joint
 readings**.
 
 **It returns a run of actions**, which are read as waypoints for the jaw and
-handed to the bench. The bench carries them out directly rather than through the
+handed to the examiner. The examiner carries them out directly rather than through the
 push macro it owns, because a run of waypoints already is a trajectory.
 
 **Then the arm looks again** and the model is asked once more, until every glass
@@ -102,12 +102,12 @@ several runs and many forward passes on a laptop take a while.
 **Data: none.** No demonstrations, no labels, no held-out set, and nothing to
 keep in step with the cell when the cell changes.
 
-**What the bench had to grow**: a rendered view of the table from the top, and a
+**What the examiner had to grow**: a rendered view of the table from the top, and a
 path that accepts a run of waypoints without the push macro. Both are shared
 with two other solutions, so the cost was paid once for three rather than for
 this one.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 All six solutions are given the same 50 tables holding 251 glasses, of which 193
 have no room at the start. This solution is run several times and the figure
@@ -141,7 +141,7 @@ results](../10_the-results.md).
 
 Its strengths all come from the same source, which is that nothing is fitted.
 There is nothing to collect, nothing to train and nothing to keep in step with
-the cell, so it can be tried in an afternoon once the bench's two missing parts
+the cell, so it can be tried in an afternoon once the examiner's two missing parts
 exist. It needs no accelerator. It gives the book a reading on what a borrowed
 robot model is worth before anybody spends a week recording pushes, which is a
 decision several of the other solutions depend on. And it is the clean half of

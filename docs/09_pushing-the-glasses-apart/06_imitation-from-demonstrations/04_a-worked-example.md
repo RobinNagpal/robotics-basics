@@ -31,10 +31,10 @@ correct answer is to refuse.
 
 **A policy of this kind has no way to say that.** Its output is a chunk of
 waypoints. There is no channel in it for "I cannot move this glass, and the
-reason is that it tips before it slides". The bench requires a refusal to carry
+reason is that it tips before it slides". The examiner requires a refusal to carry
 a reason — a glass abandoned in silence is marked **wrong**, while a glass
 refused with a reason is **correct but incomplete**, which is a good outcome —
-so the thing the bench wants is a kind of answer this policy cannot produce.
+so the thing the examiner wants is a kind of answer this policy cannot produce.
 
 It is tempting to hope the policy learns to refuse by itself, and it is worth
 being exact about why it does not. The teacher refuses those glasses, so the
@@ -69,7 +69,7 @@ can prevent a topple rather than report one. A chunking policy is open-loop
 while its chunk runs, so during that window such a monitor would be the only
 thing observing at all. **It is still a prescription rather than built code,
 and this solution is the one with the strongest reason to want it.** What the
-bench does have during a chunk is the jam threshold, which stops a chunk whose
+examiner does have during a chunk is the jam threshold, which stops a chunk whose
 jaw has wedged. That catches a blocked path; it does not recognise a glass
 beginning to tip, which is the failure the monitor was for.
 
@@ -83,12 +83,12 @@ abstract.
 proportions from across that kind's range, so they are not all the same size.
 Two of them stand deliberately close — closer than the gripper can work with,
 with a little daylight still between them — and one of that pair is also fairly
-near the edge of the glass zone. The other three have room. The bench accepted
+near the edge of the glass zone. The other three have room. The examiner accepted
 the table because at least one glass on it has no room, so there is work to do.
 
 **What happened offline.** Long before this table was drawn, the teacher was
 run over many tables below the dividing line. On each, it generated legal
-candidate pushes, ranked them, pushed, and the bench recorded the picture, the
+candidate pushes, ranked them, pushed, and the examiner recorded the picture, the
 waypoints and the verdict. The failures were dropped and counted. What was left
 was fitted into ACT, several times with different seeds. None of that involves
 this table, which comes from above the dividing line.
@@ -132,7 +132,7 @@ layout](../01_the-problem/02_the-target-layout.md) says plainly that both are le
 demonstration set will hold both kinds of example, taken from arrangements that
 look much alike. ACT must name one chunk, and the chunk that is least wrong on
 average over those examples is something between them: a short, hesitant motion
-that separates nothing. The bench would score that as a push spent with the
+that separates nothing. The examiner would score that as a push spent with the
 table unchanged, and a solution that repeats it would burn its push budget
 without failing in any way the counts call wrong. **This is the case the
 Diffusion Policy rung exists to test**, because a model that draws its chunk

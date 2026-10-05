@@ -9,7 +9,7 @@ reader who has already met the six, and it is the page to come back to whenever
 another document claims that one method did better than another.
 
 The six ways of turning the same pictures into the same masks are all scored on
-one bench, described in [the test bench](03_the-test-bench.md). Each gets the
+one examiner, described in [the examiner](03_the-examiner.md). Each gets the
 same 20 held-out arrangements from each family, the same three survey stations
 per arrangement, the same shared arithmetic turning a mask into a place and a
 width, and the same scorecard. None of them was trained or tuned on these
@@ -62,9 +62,9 @@ standing wholly behind another is in no picture at all.
 **Four of the six rows moved when one refusal was repaired.** Solutions 4, 5 and
 6 each refused a report whose width no glass of the kind could have, and each
 made that refusal on a report measured from a mask the frame had cut in half.
-Handed the bench's own exact masks, one station at a time, the kind's range
+Handed the examiner's own exact masks, one station at a time, the kind's range
 refuses 66 of 297 glass sightings and **every one of those 66 reaches the frame
-edge** — the bench refusing its own perfect masks. `masks_to_glasses` now says
+edge** — the examiner refusing its own perfect masks. `masks_to_glasses` now says
 whether a mask reached the picture's edge and the three solutions read it before
 refusing: 92 → 99, 76 → 81 and 90 → 96 found on spawned layouts, 66 → 73,
 71 → 73 and 74 → 78 on crowded ones. Solution 1 gained the width check its own
@@ -126,7 +126,7 @@ the places at all.
 
 ## 5. What these results do not cover
 
-- **Not Gazebo.** The pictures come from the bench's own renderer,
+- **Not Gazebo.** The pictures come from the examiner's own renderer,
   [`bench/render.py`](../../code/src/08_seeing-the-glasses/bench/render.py),
   which uses the wrist camera's lens and the cell's own survey stations, but not
   the simulator. The arm never moves, and no inverse kinematics or motion

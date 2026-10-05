@@ -4,7 +4,7 @@ This page describes the sixth of the six solutions in about eight minutes of
 reading. It is the same library, the same model and the same downloaded weights
 as [a foundation model as it
 downloads](06_a-foundation-model-as-it-downloads.md), with one thing added: a
-small correction learned from pushes made on this bench. The pair is the
+small correction learned from pushes made on the examiner's tables. The pair is the
 cleanest comparison in the book, and the answer it gave was not the one the book
 expected. By the end of this page you will know what low-rank adaptation is,
 what the training cost, what it scored, and why a solution that acts badly can
@@ -18,7 +18,7 @@ longest in the book at about seventy minutes.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -62,7 +62,7 @@ one instruction in plain English and the arm's own pose go in. The corrected
 model returns an **action chunk**, a short run of consecutive jaw waypoints
 predicted together in one pass. The shared geometry refuses the glasses that tip
 before they slide, and a chunk whose path would reach one of those is not
-carried out. The bench then follows the waypoints directly, the arm looks again,
+carried out. The examiner then follows the waypoints directly, the arm looks again,
 and the loop repeats.
 
 Three things this solution does **not** do are worth naming, because it is easy
@@ -103,7 +103,7 @@ sixty-four. What ran here is a thousand steps at a batch of four, which is about
 one part in three hundred of that compute, and **every number this solution
 reports carries that caveat**.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 All six solutions are given the same 50 tables holding 251 glasses, of which 193
 have no room at the start. Its partner's row is shown beside it, because the
@@ -170,8 +170,8 @@ successes, so it was fitted on the easy half of its teacher's experience. And it
 has seen no refusals at all, so it proposes pushes on glasses that must not be
 pushed.
 
-**What it owes to being trained on one bench.** Part of what it gains over its
-partner is this bench's own friction absorbed into its weights, which is a
+**What it owes to being trained on one examiner's tables.** Part of what it gains over its
+partner is this examiner's own friction absorbed into its weights, which is a
 memorised constant rather than an ability, and would not survive a real table.
 
 **What it does not do at all**, which is the list in section 2.
@@ -196,7 +196,7 @@ the states the student actually visits, not to collect more of the same
 demonstrations.
 
 If you read this page for one reason, read it for the pair with its partner.
-Same library, same model, same weights, same bench, same input, same output,
+Same library, same model, same weights, same examiner, same input, same output,
 same marking, same cost per push, and the only difference is the training. And
 read the result carefully, because the obvious reading of it is wrong.
 

@@ -15,7 +15,7 @@
 > into the network; the first head gives a glass-or-not score at every pixel
 > and the second head gives an arrow at every glass pixel; each glass pixel
 > casts one vote; the votes are piled up and the peaks are counted; the pixels
-> that voted into one peak are one glass's mask; the bench's shared arithmetic
+> that voted into one peak are one glass's mask; the examiner's shared arithmetic
 > turns each mask into a place and a width.
 > **What it costs** — a training set of this cell's own pictures with labels,
 > a training run before the solution can answer anything, and a file of weights
@@ -156,7 +156,7 @@ what is a design, so that nothing later has to be read twice. Then what a
 network is and what training from scratch means. Then the shape of the network
 and the two heads in turn. Then the two rungs of this solution, which are the
 two places the training labels can come from. Then what the solution hands to
-the bench, the failure that no amount of training can fix, and where this sits
+the examiner, the failure that no amount of training can fix, and where this sits
 among the other five.
 
 ← [Rules on the table — how it compares](../05_rules-on-the-table/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

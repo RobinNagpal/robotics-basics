@@ -15,7 +15,7 @@ It needs a **downloaded file of weights**, which is large, which is fetched
 rather than committed with the code, and which this project cannot produce, so
 it comes from outside and is taken on trust.
 
-It needs a **training set**, which the bench renders and labels for nothing,
+It needs a **training set**, which the examiner renders and labels for nothing,
 including the crowded arrangements the cell's own rule would never produce. That
 is the genuinely cheap part and it is what makes fine-tuning reasonable here. It
 needs **time on the machine** for the fine-tune, far less than a start from

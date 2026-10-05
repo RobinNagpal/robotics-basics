@@ -6,7 +6,7 @@ reader who believes that can read a difference between two scorecards as a
 difference between two masks, and a reader who does not cannot read the results
 at all. These three pictures are drawn to make that argument visible.
 
-    03-what-the-bench-does.png   the whole run, with the bench's many steps in
+    03-what-the-examiner-does.png   the whole run, with the bench's many steps in
                                  one band and the solution's single step in
                                  another, and both hand-over points named.
     03-what-must-come-back.png   the record per glass, with the fields the
@@ -29,7 +29,7 @@ Every number written into these pictures comes out of
 
 Run from code/:
 
-    pixi run python ../docs/diagrams/seeing-the-glasses/make_bench_flows.py
+    pixi run python ../docs/diagrams/seeing-the-glasses/make_examiner_flows.py
 """
 
 from __future__ import annotations
@@ -315,7 +315,7 @@ def what_the_bench_does() -> None:
         "What the bench does, and the one step of it a solution owns",
         fontsize=TITLE_SIZE, color=INK, pad=14,
     )
-    save(figure, "03-what-the-bench-does.png")
+    save(figure, "03-what-the-examiner-does.png")
 
 
 # --------------------------------------------------------------------------- #

@@ -88,20 +88,20 @@ candidate pushes from geometry — pushes that are legal by construction, aimed
 at destinations [the target layout](../01_the-problem/02_the-target-layout.md)
 computed — and ranks them with a fitted model, taking the best. Run it on a
 table and it produces a push. Run it on many tables and it produces many
-pushes. Each one is carried out by the bench, which expands the parameterised
+pushes. Each one is carried out by the examiner, which expands the parameterised
 push into the waypoints the jaw actually followed, and marks what happened to
 the table afterwards. So **every push that solution makes is a finished
 demonstration already**: a picture of the table before it, the waypoints that
-were followed, and the bench's own verdict on whether it worked.
+were followed, and the examiner's own verdict on whether it worked.
 
 Five consequences follow, and together they are why supplying demonstrations is
 what earns that solution its place beyond being a baseline.
 
-**The cost is arm time on a simulated bench, and nothing else.** There is no
+**The cost is arm time on a simulated examiner, and nothing else.** There is no
 teleoperation rig, no operator, no scheduling of a person's hours, and no
-agreement to be reached about what a good push looks like. The bench is
+agreement to be reached about what a good push looks like. The examiner is
 MuJoCo, which is fast for exactly this reason, and [the test
-bench](../02_the-test-bench.md) records that a learned approach needs thousands of
+examiner](../02_the-examiner.md) records that a learned approach needs thousands of
 pushes while Gazebo would run each one at the speed of real time.
 
 **The demonstrations are reproducible.** Every table comes from a single
@@ -110,7 +110,7 @@ regenerated rather than archived. This is not a small thing. A demonstration
 set recorded from a person is a one-off artefact that can never be made again;
 this one is a function of a list of numbers.
 
-**Training and testing cannot be confused.** The bench's table numbers are
+**Training and testing cannot be confused.** The examiner's table numbers are
 split, with numbers above a fixed dividing line reserved for testing.
 Demonstrations are drawn only from below it, so no policy here is ever marked
 on a table it learned from.
@@ -146,7 +146,7 @@ has only a label to reproduce. If the set holds a push that toppled a glass,
 that push is a label like any other, and the fitting moves the weights towards
 producing it. The teacher is not perfect — no solution here is — so some of its
 pushes topple a glass, push one out of the glass zone, or jam. Keeping those
-teaches the student to make them. So the set is filtered by the bench's own
+teaches the student to make them. So the set is filtered by the examiner's own
 verdict, and only the pushes that worked are kept.
 
 That is clearly right, and it has a consequence that is clearly uncomfortable.
@@ -191,7 +191,7 @@ drawn from numbers and cost only time, a thin region can be filled by drawing
 more tables of that kind rather than by accepting the thinness. That is the
 cheapest defence available here and it is unavailable on real hardware.
 **Not done**: the demonstration set is drawn from consecutive table numbers,
-so it holds whatever mixture the bench produces.
+so it holds whatever mixture the examiner produces.
 
 None of the three removes the problem. The ceiling stays where the next
 sections put it.
@@ -252,7 +252,7 @@ waypoints do not know. So the chunk's length is a real trade and not a
 formality: a long chunk is committed and blind, a short chunk is responsive and
 prone to dither. And it is a trade in speed as well as in length, because
 waypoints are consumed at a fixed rate: how far apart they are is how fast the
-jaw goes. The bench caps that at the fastest the cell ever moves the jaw, so a
+jaw goes. The examiner caps that at the fastest the cell ever moves the jaw, so a
 chunk whose waypoints are further apart than the arm can cover in one control
 period is taken slower rather than at a speed the arm does not have. A policy
 copying this teacher never meets the cap — the teacher's own waypoints are
@@ -261,20 +261,20 @@ emit coarser chunks would be slowed by it.
 
 What makes the trade bearable is set by `Bench.follow`, and it is worth being
 exact, because it is less than the loop gives a parameterised push. Coming
-down to the chunk's first waypoint is the bench's
+down to the chunk's first waypoint is the examiner's
 own move and it stops if the jaw touches anything on the way, so a chunk that
 starts over an obstacle comes back as blocked rather than being driven
-through. But **once the jaw is travelling across the table the bench does not
+through. But **once the jaw is travelling across the table the examiner does not
 feel for the glass.** A chunk is carried out as it was given, which is the
 whole point of accepting one, and the only thing that stops it is the jam
 threshold. So the slow approach to contact is not the cell's behaviour here;
 it is part of the chunk, copied from the teacher's own feel. That is the one
 place where this solution leans on the demonstrations for safety rather than
-on the bench.
+on the examiner.
 
-Finally, chunking is the reason [the test bench](../02_the-test-bench.md) accepts
+Finally, chunking is the reason [the examiner](../02_the-examiner.md) accepts
 waypoints at all, and that argument is worth repeating here because it is about
-this solution specifically. The bench could have required every solution to
+this solution specifically. The examiner could have required every solution to
 emit the same three or four push parameters, which sounds like the fairest
 possible rule. It would be the unfair one, because squeezing a chunking policy
 down to a handful of parameters removes the mechanism that makes it work, and
@@ -361,13 +361,13 @@ Two costs come with the second rung and both belong on the scorecard.
 
 **It costs more per push.** One chunk needs several denoising passes rather
 than one forward pass, so the run-time cost is some multiple of ACT's. [The
-test bench](../02_the-test-bench.md) carries a compute column for precisely this kind
+examiner](../02_the-examiner.md) carries a compute column for precisely this kind
 of difference, because a solution that wins while taking much longer has not
 obviously won.
 
 **It is one more thing that varies by seed.** A policy that draws its answer is
 stochastic by construction, so asked the same question twice it may act
-differently. The bench's requirement applies with full force: several training
+differently. The examiner's requirement applies with full force: several training
 seeds, several evaluation runs, and the spread reported, because a method that
 wins by less than its own spread has not been shown to win.
 

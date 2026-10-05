@@ -4,7 +4,7 @@ This page describes the second of the six solutions in about eight minutes of
 reading. It is the one that lets a fitted model choose but never decide: plain
 geometry writes down every push that is safe, and a small fitted model only puts
 those candidates in order. By the end of this page you will know why the learned
-part is placed where it is, what it scored on the shared test bench, why it lost
+part is placed where it is, what it scored on the shared examiner, why it lost
 to the printed rule it was meant to improve, and why it is still the most useful
 of the six to understand. The full treatment is in [the chapter on this
 solution](../05_geometry-generates-a-model-ranks/01_what-it-is.md), which is
@@ -15,7 +15,7 @@ about an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -61,14 +61,14 @@ here.
 
 **The model ranks what survived.** Each surviving candidate is described by a
 short list of lengths, angles, counts and ratios, the model turns that list into
-one number, and the highest-scoring candidate is handed to the bench as a
-parameterised push. The bench's macro expands it into the jaw trajectory, the
+one number, and the highest-scoring candidate is handed to the examiner as a
+parameterised push. The examiner's macro expands it into the jaw trajectory, the
 same one every solution here is judged on.
 
-Training it costs almost nothing. The bench measures the table after every push
+Training it costs almost nothing. The examiner measures the table after every push
 in any case, so the label — how much room a push actually gained — is free. A
 few thousand pairs of a candidate and what happened to it are collected on the
-training half of the tables, which is minutes of bench time with no human
+training half of the tables, which is minutes of examiner time with no human
 labelling at all, and the trees then fit in seconds to minutes on an ordinary
 processor.
 
@@ -91,8 +91,8 @@ ceiling on how good this solution can be, because the model cannot invent a
 candidate the enumerator did not produce.
 
 It needs a **training set** of a few thousand candidate-and-outcome pairs,
-generated and executed on the training half of the bench's tables, and the
-**held-out half** for marking, which the bench enforces by splitting its table
+generated and executed on the training half of the examiner's tables, and the
+**held-out half** for marking, which the examiner enforces by splitting its table
 numbers.
 
 It needs **no accelerator**, and this is the clearest cost difference between
@@ -103,11 +103,11 @@ candidate set in the thousands costs a small fraction of the seconds one arm
 movement takes.
 
 Once fitted it needs **a model file kept in step with the cell.** Change the
-heading sweep, the step length, the glass zone or the way the bench draws its
+heading sweep, the step length, the glass zone or the way the examiner draws its
 crowded tables, and the fitted model quietly describes a cell that no longer
 exists, in a way no test of the code would notice.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 All six solutions are given the same 50 tables holding 251 glasses, of which 193
 have no room at the start. The second row below is this solution with its model
@@ -171,7 +171,7 @@ commonest refusal in the record, which is a glass with nowhere clear to go.
 **What it cannot survive.** A log collected while the model is driving holds
 outcomes only for the candidates the model already prefers, so retraining on it
 without occasionally taking the second-ranked candidate locks in an early
-mistake. And every label in the training set was decided by the bench's private
+mistake. And every label in the training set was decided by the examiner's private
 friction, which was never measured against anything real.
 
 **How it fails is quietly.** A badly fitted ranker orders the candidates roughly

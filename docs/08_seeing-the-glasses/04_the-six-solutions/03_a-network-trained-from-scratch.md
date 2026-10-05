@@ -7,7 +7,7 @@ whole comparison: whatever the four borrowed models achieve, the distance
 between them and this one is the measurement of what borrowing was worth. By
 the end of this page you will know what the network is asked to predict, why
 that choice separates glasses whose outlines run together in the picture, what
-the training costs, what it scored on the shared test bench, and the one
+the training costs, what it scored on the shared examiner, and the one
 failure no amount of training can remove. The full method, with the shape of
 the network and both ways its labels can be produced, is in [the chapter on
 this solution](../06_a-network-trained-from-scratch/01_what-it-is.md), which is
@@ -18,7 +18,7 @@ about an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -85,7 +85,7 @@ biomedical pictures with very few training examples, which is exactly why it
 suits a small rendered training set.
 
 Where the labels come from is the one place this solution has two rungs. The
-first rung takes them from the bench's own answer key, which records which glass
+first rung takes them from the examiner's own answer key, which records which glass
 owns each pixel, so the labels are exact and cost only render time. The second
 rung takes them from the arm's own movement instead: the camera is moved a known
 distance between two pictures, and points on one rigid surface then move
@@ -106,7 +106,7 @@ is required, and nothing is
 downloaded, so no licence condition applies to anything it uses.
 
 It needs **a training set**. For the first rung that is arrangements rendered by
-the bench together with their answer keys, which costs render time and nothing
+the examiner together with their answer keys, which costs render time and nothing
 else. For the second rung it is pairs of pictures with the camera's movement
 logged beside each one, which costs arm time.
 
@@ -124,10 +124,10 @@ out of date in a way that no test of the code will notice.
 At run time it needs very little: one pass of a small network over a small
 picture, which is nothing beside the seconds an arm movement costs.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 Every solution is given the same arrangements and marked the same way by [the
-test bench](../03_the-test-bench.md). There are two sets: spawned layouts, at
+examiner](../03_the-examiner.md). There are two sets: spawned layouts, at
 the spacing the cell's own layout rule gives, and crowded layouts, closer than
 that rule allows. Read the rows against each other rather than on their own.
 

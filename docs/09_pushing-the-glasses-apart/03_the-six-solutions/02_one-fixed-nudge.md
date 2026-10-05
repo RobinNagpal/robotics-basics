@@ -5,7 +5,7 @@ reading. It is the one solution that holds no fitted numbers at all, and it is
 also, on this book's scorecard, the one that finished the most tables. By the
 end of this page you will know the single piece of arithmetic it rests on, why
 it repeats instead of predicting, what it costs, what it scored on the shared
-test bench, and the three things it cannot do that the other five were built to
+examiner, and the three things it cannot do that the other five were built to
 try. The full method is in [the chapter on this
 solution](../04_one-fixed-nudge/01_what-it-is.md), which is about an hour of
 reading.
@@ -15,7 +15,7 @@ reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored on the bench](#4-what-it-scored-on-the-bench)
+4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -78,9 +78,9 @@ arithmetic runs on what it now sees. The loop ends when every glass has room,
 when the push budget is spent, or when the only honest answer left is a refusal.
 
 Each push is handed over as three numbers — where to start, which way, how far —
-and the bench's own macro expands those into the jaw trajectory that every
+and the examiner's own macro expands those into the jaw trajectory that every
 solution in this book is judged on. Carrying the jaw there is the cell's job: on
-the bench the physics engine does it, and in the real cell MoveIt does.
+the examiner the physics engine does it, and in the real cell MoveIt does.
 
 ## 3. What it needs
 
@@ -110,11 +110,11 @@ the zero the others are read against.
 What it does need is **arm time**, paid in pushes and in looks, and the budget
 is what bounds them.
 
-## 4. What it scored on the bench
+## 4. What it scored by the examiner
 
 Every solution is given the same 50 tables holding 251 glasses, of which 193
 have no room at the start, spends the same push budget, and is judged by the
-same scorecard, which [the test bench](../02_the-test-bench.md) describes. A
+same scorecard, which [the examiner](../02_the-examiner.md) describes. A
 table is **done** when every glass on it could be picked up, and **wrong** when
 the run ended in a state the cell should never reach.
 
@@ -130,7 +130,7 @@ the pushes and toppled one glass doing so.
 
 One more property of this row is worth knowing. Nothing in this method was
 fitted and nothing in it is drawn at random, so it behaves the same way on the
-hundredth table as on the first. The repeated runs the bench requires of the
+hundredth table as on the first. The repeated runs the examiner requires of the
 trained solutions, because their training and their actions both vary, are not
 needed here, so this is the one row in the book that carries no spread. The full
 table for all six is in [the results](../10_the-results.md).

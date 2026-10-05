@@ -189,11 +189,11 @@ produce without difficulty.
 
 The labels are where this cell is unusually fortunate. In the ordinary case a
 person draws every mask by hand, which is why labelled data is the scarce
-resource in this field. Here nothing is drawn. The bench renders, beside every
+resource in this field. Here nothing is drawn. The examiner renders, beside every
 picture, an image saying which glass owns each pixel, described in [the test
-bench](../03_the-test-bench.md), so one glass's mask is the set of pixels carrying its
+examiner](../03_the-examiner.md), so one glass's mask is the set of pixels carrying its
 identity and the class is always "glass". Every label is a selection over an
-array the bench produced anyway. The bench hands those labels out only for the
+array the examiner produced anyway. The examiner hands those labels out only for the
 training half of its arrangements and marks on the other half, so no model is
 ever tested on an arrangement it learned from.
 
@@ -354,8 +354,8 @@ computed place across the gap and onto the object in front.
 So the rule is absolute. **A mask that claims pixels the camera never saw the
 glass at must say which pixels those are**, handing on the observed part and the
 asserted part as two things rather than one silhouette with the join hidden. The
-bench then **excludes those readings rather than guessing values for them**, and
-that is the bench's own stated behaviour rather than something this solution has
+examiner then **excludes those readings rather than guessing values for them**, and
+that is the examiner's own stated behaviour rather than something this solution has
 to arrange. Nothing is inferred in their place either: what an asserted pixel
 would be worth is a question about geometry, and a guess at it inside a
 segmenter would be arithmetic nobody asked for.
@@ -370,10 +370,10 @@ mask would look like a better mask, the footprint fitted to it would still be
 round, and the width would still be inside the range the kind allows, so what
 comes out would be a plausible wrong answer of exactly the kind this rung exists
 to prevent, reached by the repair instead of by the failure the repair is for.
-[The test bench](../03_the-test-bench.md) reports the measurement that settles it, taken
+[The examiner](../03_the-examiner.md) reports the measurement that settles it, taken
 with exact masks and no model anywhere in the chain: naming the asserted pixels
 and leaving them out places a glass markedly closer to where it stands than
-feeding them in does. That measurement belongs to the bench's arithmetic rather
+feeding them in does. That measurement belongs to the examiner's arithmetic rather
 than to any model, so it applies here unchanged.
 
 ### What the completion actually buys
@@ -435,7 +435,7 @@ edge of the frame it is not. At the cell's own survey height one picture does no
 hold the glass zone, so a glass at the far side of a station's frame is cut in
 half and the width read off the half is not the glass's width; refusing on it
 refuses the view and not the mask. That was measured on masks nothing can
-improve on: handed the bench's own exact masks, one station at a time over 20
+improve on: handed the examiner's own exact masks, one station at a time over 20
 held-out spawned arrangements, the kind's range of footprints refuses 66 of 297
 glass sightings, and **every one of those 66 reaches the frame edge**. The three
 overlapping stations are the answer to such a report instead.
@@ -489,7 +489,7 @@ and for a glass with a clear view it is nothing, so the number mostly reports
 how well the visible boundary was traced, which is the first rung's job.
 
 So the measure to watch during training is the **overlap over the hidden part
-alone**, which the bench can supply exactly by subtracting one of its own masks
+alone**, which the examiner can supply exactly by subtracting one of its own masks
 from the other. That number ignores every pixel the model could have got right
 by tracing a visible edge. Beside it belong the counts of glasses found, missed
 and merged, because what this rung changes shows up in those counts before it

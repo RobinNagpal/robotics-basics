@@ -21,12 +21,12 @@
 > heading round each crowded glass, steps the travel out along each heading,
 > applies its tests, and keeps what survives. Each survivor is described by a
 > short list of lengths, angles, counts and ratios, and the model turns that
-> list into one number. The highest-scoring push is handed to the bench as a
-> parameterised push, and the bench's own macro expands it into the jaw
+> list into one number. The highest-scoring push is handed to the examiner as a
+> parameterised push, and the examiner's own macro expands it into the jaw
 > trajectory that every solution here is judged on.
-> **What it costs** — the labels are free, because the bench measures the table
+> **What it costs** — the labels are free, because the examiner measures the table
 > after every push in any case. The training set is a few thousand pairs of a
-> candidate and what happened to it, which is minutes of bench time, because a
+> candidate and what happened to it, which is minutes of examiner time, because a
 > push in MuJoCo is cheap. Training a few hundred shallow trees on a table of a
 > few thousand rows takes seconds to minutes on an ordinary processor, so there
 > is no accelerator to rent and the running cost per push is arithmetic.
@@ -126,7 +126,7 @@ solution addresses is not how to find a safe push. It is **how to choose among
 safe pushes**, which is a different question and a smaller one.
 
 The complaint it is aimed at is therefore not safety. The geometry already in
-this repository toppled nothing at all over the bench's fifty held-out tables,
+this repository toppled nothing at all over the examiner's fifty held-out tables,
 as its results file records. The complaint is the number of attempts: that run
 spent **213 pushes on 251 glasses, and 90 of those were repeat pushes of a
 glass it had already moved once**. A repeat push is a push that did not achieve

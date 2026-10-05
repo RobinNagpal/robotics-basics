@@ -57,7 +57,7 @@ and no scrap of surface to say which glass of the kind's range this is. There is
 nothing to extend, and a model that extends nothing produces nothing.
 
 A model *could* be trained to mark a glass that **might** be behind this one,
-since the bench can supply that label too, and it is worth saying what such a
+since the examiner can supply that label too, and it is worth saying what such a
 model would be doing. It would be reporting where glasses tend to stand in
 arrangements like this one, which is a statement about the range of arrangements
 rather than about this arrangement. That is **inventing a scene rather than
@@ -121,7 +121,7 @@ the part behind the taller one as well, so the shorter glass is a region of its
 own and its visible slice is credited to it rather than absorbed into the taller
 glass's region. The mask is then split: the observed part is the slice, and the
 asserted part is the rest. The asserted pixels carry the taller glass's depth
-readings, so they are named and the bench leaves them out, and the place and the
+readings, so they are named and the examiner leaves them out, and the place and the
 width come from the slice alone. The place is good enough to send a camera to.
 The width is still under the truth, and the visible fraction travelling with the
 answer says so. The asserted part lies in the taller glass's own shadow, where

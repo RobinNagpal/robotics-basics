@@ -20,7 +20,7 @@ understanding of the task from whoever builds it.
 
 **The output is native.** This solution emits a chunk because a chunk is what
 it is built to emit, so nothing is squeezed or expanded on the way out, and the
-bench's decision to accept waypoints costs it nothing.
+examiner's decision to accept waypoints costs it nothing.
 
 **Labels are free and plentiful.** The usual reason not to attempt imitation
 learning — that somebody has to demonstrate the task by hand, many times — does
@@ -41,7 +41,7 @@ cannot beat its teacher by much on the pushes it imitates.** It is worth being
 precise about the two narrow ways it might exceed its teacher, because they are
 real but small: it can smooth away some of the teacher's inconsistency, since a
 fitted function averages over many examples and so is steadier than any one of
-them; and it can express motions the bench's macro cannot, since its output is
+them; and it can express motions the examiner's macro cannot, since its output is
 waypoints rather than push parameters. What it cannot do is discover that a
 different glass should have been moved, or a different destination chosen,
 because no mechanism in it compares one outcome against another. [A world
@@ -54,10 +54,10 @@ copies failures as readily as successes, and it thins the dataset exactly in
 the situations where the teacher struggled. So the student is fitted most
 densely where help was least needed.
 
-**It needed bench work the first two solutions did not.** A straight-down
+**It needed examiner work the first two solutions did not.** A straight-down
 rendered view and a waypoint path, both missing when this solution was designed
 and both now built. That cost is paid, but two smaller ones are paid on every
-push rather than once. The bench's chunk wants a glass and an aim that the
+push rather than once. The examiner's chunk wants a glass and an aim that the
 policy does not produce, so both are read back off the waypoints outside it.
 And nothing stops a network emitting a coordinate the jaw cannot reach, so
 every chunk is pulled inside the jaw's limits before it is followed, and how
@@ -75,7 +75,7 @@ astray. When this policy is wrong you can look at the picture and guess. It has
 no confidence output, and the situation in which it is least reliable — a table
 unlike anything in its data — is indistinguishable in its output from the
 situation in which it is most reliable. Combined with it being stochastic and
-with training varying by seed, that is why the bench insists that one run is
+with training varying by seed, that is why the examiner insists that one run is
 not a measurement and that a result quoted without a spread is not a result.
 
 ## 2. The general ideas behind this
@@ -212,7 +212,7 @@ teacher says the policy class is adequate and the remaining error belongs to
 the teacher's geometry, and a student that falls well short says the opposite.
 The two places this solution can legitimately exceed its teacher are narrow and
 worth watching for in the numbers — a steadier push, from averaging over many
-examples, and a motion the bench's macro could not have expressed.
+examples, and a motion the examiner's macro could not have expressed.
 
 Against [a world model, then plan with
 it](../07_a-world-model-then-plan-with-it/01_what-it-is.md), the comparison is the sharpest
@@ -221,7 +221,7 @@ learn the push directly? That solution learns how the world changes and
 searches over candidate actions at run time, simulating each one forward before
 committing, so **it can find a push nobody ever demonstrated** — which is
 exactly the thing this solution cannot do. It pays for that on every push, in
-run-time cost that [the test bench](../02_the-test-bench.md) puts at hundreds
+run-time cost that [the examiner](../02_the-examiner.md) puts at hundreds
 or thousands of times the arithmetic a fixed nudge costs, and it pays again in
 needing a model of the world accurate enough to plan against, which is a harder
 thing to learn than a mapping. So the pair trades a ceiling against a cost:
@@ -235,7 +235,7 @@ pretraining set of 487 community datasets of real teleoperation behind it, and
 fits nothing in this cell. So it brings a vast amount of experience of robot
 manipulation in general and none of this cell in particular, while this
 solution brings the opposite: a small network that has seen nothing but this
-bench, this jaw and these four kinds of glass. Which of those two is the better
+examiner, this jaw and these four kinds of glass. Which of those two is the better
 trade is precisely what this book is for.
 
 Against [SmolVLA fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md), the

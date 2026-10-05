@@ -87,8 +87,8 @@ machinery is coarse.
 
 **Where the two would still agree.** The nearer of the close pair covers part of
 the one behind it, so the mask of the one behind holds only the part the camera
-saw. Both solutions return modal masks, so both would hand the bench a slice of
-a silhouette rather than the whole of one. The bench would then report that
+saw. Both solutions return modal masks, so both would hand the examiner a slice of
+a silhouette rather than the whole of one. The examiner would then report that
 glass too narrow and at a place pulled towards the part that stayed visible. Its
 width might still fall inside the range a stemmed glass can have, in which case
 nothing would refuse it, and a wrong report would reach the marking with nothing

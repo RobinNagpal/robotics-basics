@@ -50,8 +50,8 @@ training set was filtered to successes, so it was fitted on the easy half of
 its teacher's experience and has never seen the hard half. And it has seen no
 refusals at all, so it proposes pushes on glasses that must not be pushed.
 
-**What it owes to being trained on one bench.** It becomes good here and worse
-elsewhere. Part of what it gains over its partner is this bench's own friction
+**What it owes to being trained on one examiner's tables.** It becomes good here and worse
+elsewhere. Part of what it gains over its partner is this examiner's own friction
 absorbed into its weights, which is a memorised constant rather than an ability,
 and it would not survive a real table. A small or uniform training set would
 teach it the tables rather than the pushing, and only the held-out half would
@@ -141,7 +141,7 @@ randomisation**, is the usual answer when a policy trained in a simulator has
 to work on a real robot, and it is worth knowing here because the problem it
 solves is the mirror image of this one. It is also the thing that would have to
 be added before any of this reached a real table, since a policy that absorbed
-one bench's friction has learned a number rather than a skill.
+one examiner's friction has learned a number rather than a skill.
 
 ### Catastrophic forgetting
 
@@ -154,7 +154,7 @@ the old task (Kirkpatrick and colleagues,
 
 It matters a great deal when a model has to stay good at several things, which
 is why continual learning is a field at all. It matters little here, because the
-model is wanted for one bench and nothing else, and that is the honest reason
+model is wanted for one examiner and nothing else, and that is the honest reason
 the usual precautions are not taken: not that the effect is absent, but that its
 cost in this project is close to zero. Low-rank adaptation happens to soften it
 for free, since the borrowed weights are never overwritten and the correction
@@ -185,9 +185,9 @@ per decision.
 It is right for smooth contact-rich motions, which is what this problem has. It
 is wrong where a fast reaction inside the chunk is needed, because the chunk is
 already decided, and here nothing fills that gap: the early abort that would
-have filled it is a design and the bench only stops a push at a jam. For the
+have filled it is a design and the examiner only stops a push at a jam. For the
 same
-reason, the bench had to be designed to accept chunks: forcing a chunked policy
+reason, the examiner had to be designed to accept chunks: forcing a chunked policy
 down to three numbers would have measured a damaged version of the method rather
 than the method.
 

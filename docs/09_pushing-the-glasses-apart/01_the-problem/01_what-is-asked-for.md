@@ -64,7 +64,7 @@ Every answer to this problem is given exactly this and nothing more.
 **What the camera work hands over.** For each standing glass: where it stands,
 how tall it is, how wide it is at its widest and at its foot. Every reading
 carries the error the camera work was [measured to
-have](../../08_seeing-the-glasses/05_the-results.md), so nothing here is exact.
+have](../../08_seeing-the-glasses/11_the-results.md), so nothing here is exact.
 
 **A view of the table from the top**, for the answers that read pictures rather
 than readings.
@@ -247,4 +247,4 @@ before any of the six.
 
 Then the six answers themselves:
 
-→ [The six solutions](../03_the-six-solutions/01_overview.md)
+→ [The six solutions](../03_the-six-solutions.md)

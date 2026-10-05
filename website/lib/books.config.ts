@@ -202,4 +202,18 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'the-test-bench': 'The Test Bench',
   'the-six-solutions': 'The Six Solutions',
   'the-results': 'The Results',
+  // The six ways of telling the glasses apart, one chapter each.
+  'rules-on-the-table': 'Solution 1: Rules on the Table',
+  'a-network-trained-from-scratch': 'Solution 2: A Network Trained From Scratch',
+  'a-borrowed-model-as-it-downloads': 'Solution 3: A Borrowed Model, as It Downloads',
+  'the-same-model-fine-tuned': 'Solution 4: The Same Model, Fine-Tuned',
+  'a-foundation-model-with-a-keeper': 'Solution 5: A Foundation Model With a Keeper',
+  'a-transformer-segmenter-fine-tuned': 'Solution 6: A Transformer Segmenter, Fine-Tuned',
+  // The six ways of pushing them apart, one chapter each.
+  'one-fixed-nudge': 'Solution 1: One Fixed Nudge',
+  'geometry-generates-a-model-ranks': 'Solution 2: Geometry Generates, a Model Ranks',
+  'imitation-from-demonstrations': 'Solution 3: Imitation From Demonstrations',
+  'a-world-model-then-plan-with-it': 'Solution 4: A World Model, Then Plan With It',
+  'a-foundation-model-as-it-downloads': 'Solution 5: A Foundation Model as It Downloads',
+  'the-same-model-fine-tuned-here': 'Solution 6: The Same Model, Fine-Tuned Here',
 };

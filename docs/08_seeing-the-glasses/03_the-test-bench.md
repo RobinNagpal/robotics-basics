@@ -256,5 +256,7 @@ rather than guessing a value for them.
 - [The problem](02_the-problem/01_what-is-asked-for.md) — what is asked for, and the three difficulties.
 - [Looking again at what was hidden](02_the-problem/02_looking-again-at-what-was-hidden.md) — the shared part that
   recovers a glass no picture held.
-- [The six solutions](04_the-six-solutions/01_overview.md) — what each method puts between the
+- [The six solutions](04_the-six-solutions.md) — what each method puts between the
   input and the output.
+
+← [The cell — the layout, the sensors, and the words](01_the-cell.md) · [The six solutions — same destination, six different cars](04_the-six-solutions.md) →

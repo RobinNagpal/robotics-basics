@@ -121,7 +121,7 @@ produces, which is why this problem can begin where that one ended.
 not the true ones. The bench adds a small random error to the position, to
 both widths and to the height, with sizes taken from what the programmed
 solution there actually scored, which [its own
-results](../08_seeing-the-glasses/05_the-results.md) record — the width error
+results](../08_seeing-the-glasses/11_the-results.md) record — the width error
 being the largest of the three, and the position error the smallest. The error
 is fresh on every look, so looking twice is worth something, but it is drawn
 from the table's number and the number of the look, which means the first look
@@ -380,5 +380,7 @@ the counts.
 - [Pushing without toppling](01_the-problem/03_pushing-without-toppling.md) — how low the push
   has to be, why that is a property of the glass, the refusal path, and the
   loop of plan, feel and look again.
-- [The six solutions](03_the-six-solutions/01_overview.md) — what each method puts between
+- [The six solutions](03_the-six-solutions.md) — what each method puts between
   the input and the output.
+
+[The six solutions — same table, six ways to push](03_the-six-solutions.md) →

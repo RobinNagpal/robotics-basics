@@ -299,7 +299,7 @@ is in contact with the glass while the glass is still deciding what to do. So
 topple rather than report one**, and that is the whole argument for building
 one. It is an argument and not a description: nothing in this project
 implements it, and the solutions that topple glasses topple them for want of
-it. [Solution 6](../03_the-six-solutions/07_the-same-model-fine-tuned-here.md),
+it. [Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md),
 which is the only one that topples glasses often, is the measurement of what its
 absence costs.
 
@@ -345,5 +345,5 @@ said yes on the strength of a number nobody had.
 - [The test bench](../02_the-test-bench.md) — the shared input, output and marking.
 - [The target layout](02_the-target-layout.md) — where the glasses should end up,
   and the least movement the task needs.
-- [The six solutions](../03_the-six-solutions/01_overview.md) — what each one puts between the
+- [The six solutions](../03_the-six-solutions.md) — what each one puts between the
   measurements and the pushes.

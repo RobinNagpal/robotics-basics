@@ -134,7 +134,7 @@ that shapes most of these solutions. It means the arm chooses its own
 viewpoints. It means moving the camera costs seconds of arm time. And it means
 the camera's pose is known exactly, from the joint encoders — which is what
 makes the second rung of [a network trained from
-scratch](04_the-six-solutions/03_a-network-trained-from-scratch.md), which takes its
+scratch](06_a-network-trained-from-scratch/01_what-it-is.md), which takes its
 labels from the arm's own movement, possible at all.
 
 ## 5. Where the camera stands, and what each place is called
@@ -316,7 +316,7 @@ Two different quantities get called by the same name:
   45–105 mm across.
 
 Most of these documents mean the second, because that is what
-[clustering on the table](04_the-six-solutions/02_rules-on-the-table.md)
+[clustering on the table](05_rules-on-the-table/01_what-it-is.md)
 groups and what a circle is fitted to, and it is also what limits how close two
 glasses can stand. Where a number matters, the documents say which they mean.
 
@@ -362,3 +362,5 @@ Two useful numbers are **derived**, not stored, and are recomputed every run:
 - [Pushing the glasses apart](../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md)
   — the other book that works in this cell, where glasses stand too close
   together for the gripper and the arm has to make room.
+
+[The test bench — the same question for every answer](03_the-test-bench.md) →

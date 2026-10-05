@@ -1,0 +1,154 @@
+# RF-DETR-Seg, fine-tuned here — the code
+
+This page shows the code at the heart of this solution, and says exactly what
+the solution hands back to the rest of the cell. The two belong on one page
+because the second explains the first: the code is far easier to read once you
+know which of its results leave this solution and which are working detail. By
+the end you will be able to point at the lines that produce the masks, and to
+see where the ideas of [how it works](02_how-it-works.md) meet.
+
+## Contents
+
+1. [The code at the heart of it](#1-the-code-at-the-heart-of-it)
+2. [The masks are what this contributes](#2-the-masks-are-what-this-contributes)
+3. [How the concepts fit together](#3-how-the-concepts-fit-together)
+
+## 1. The code at the heart of it
+
+Two pieces of code carry this solution, and both are worth seeing before the
+document explains them. The first is the **fine-tune**, which is what turns a
+model fitted on everyday photographs into a finder of glasses in this room. The
+second is the **split**, which separates the pixels of a mask the camera really
+saw from the pixels the model only asserts, and without it the second rung
+could not be let near the arm.
+
+The fine-tune is two steps, in `06-rf-detr-fine-tuned/rf_detr_seg.py`. The
+borrowed weights are built into a model, and the package's own training loop is
+then run over the folder of pictures and labels this cell wrote for it, with the
+list of classes cut down to one entry.
+
+```python
+def fresh():
+    ...
+    weights.borrowed()
+    import rfdetr
+
+    return getattr(rfdetr, SIZE)(device=str(device.pick()))
+    ...
+    model = fresh()
+    model.train(
+        dataset_dir=str(folder / "dataset"),
+        output_dir=str(folder / "run"),
+        epochs=epochs,
+        batch_size=batch,
+        lr=LEARNING_RATE,
+        class_names=[labels.CLASS],
+        tensorboard=False,
+    )
+```
+
+The split is this project's own arithmetic, in the same file, and it asks the
+simulator nothing. A camera looking down throws every outline outwards from the
+point below it, so of two reports whose masks overlap the one standing nearer
+that point is the one in front, and every pixel the two both claim belongs to
+it. What comes back is, per report, the pixels of it some nearer report covers.
+
+```python
+def hidden_by_others(picture, masks: list[np.ndarray], nadir: tuple[float, float]) -> list[np.ndarray]:
+    ...
+    usable = [mask & np.isfinite(picture.depth) for mask in masks]
+    ...
+    contested = np.sum(np.stack(usable), axis=0) > 1
+    away = []
+    for mine in usable:
+        alone = masks_to_glasses.one_glass(picture, mine & ~contested)
+        away.append(np.inf if alone is None else float(np.hypot(alone.x - nadir[0], alone.y - nadir[1])))
+
+    behind = []
+    for index, mine in enumerate(usable):
+        theirs = np.zeros_like(mine)
+        for other, nearer in enumerate(usable):
+            if other != index and away[other] < away[index]:
+                theirs |= nearer
+        behind.append(mine & contested & theirs)
+    return behind
+```
+
+The two blocks are the two halves of what this solution costs. The first is the
+borrowed work: the `rfdetr` package with PyTorch under it, and one `train` call
+doing everything this document means by fine-tuning. The second is the part
+nobody can borrow, and what it returns is handed to
+`masks_to_glasses.one_glass` as pixels whose depth readings are to be left out
+of the measurement. A second, smaller set of asserted pixels is named by the
+check described further down, and it is left out the same way.
+
+## 2. The masks are what this contributes
+
+Everything above is about producing masks, and this section says plainly where
+this solution stops, because it is the same place all six stop and it is what
+makes the six comparable at all.
+
+Turning a mask into a place on the table and a rough width is **the bench's job,
+not this solution's**. [The test bench](../03_the-test-bench.md) describes that step in
+full: each mask pixel carries a depth reading, so it becomes a point in the
+room, the axis comes from the points at the top of the glass, and the width
+comes from how far the cloud reaches out from that axis. The same function does
+it for every one of the six.
+
+Two things follow and neither is re-derived here. **A difference in the score
+belongs to the mask**, because nothing else is allowed to differ, so no solution
+can win by measuring more cleverly and none can lose by measuring worse. And
+**no model in this book produces a pose.** Models produce masks. The place
+comes from the depth readings and the camera's own pose, by arithmetic, and a
+glass standing upright on a flat table has no orientation left to find.
+
+The one thing this solution owes that step, beyond the masks themselves, is the
+split described in [the
+trap](02_how-it-works.md#the-trap-and-it-is-the-one-thing-most-easily-got-wrong): when a mask
+claims pixels the camera never saw the glass at, it must say which ones.
+
+## 3. How the concepts fit together
+
+Everything above is one chain, and it is worth reading in order, because each
+stage inherits what the one before it produced.
+
+A **grey picture**, shaded from the depth reading at every pixel, goes in. The
+body of the model reads it and produces a description of every part of it, using
+weights that arrived fitted to a large collection of ordinary pictures and were
+then nudged on this cell's own pictures. A fixed number of **queries** read that
+description, and each one returns either "nothing" or one object: a class, which
+here is only ever "glass", a rectangle, and a **mask** computed pixel by pixel
+over the whole picture rather than inside the rectangle. Because the training
+matched queries to real glasses **one to one**, the filled slots do not
+duplicate each other, so no step afterwards has to reduce overlapping claims to
+one answer.
+
+On the second rung the mask covers the glass's **whole silhouette** rather than
+only what the camera saw, so it is then split into its **observed part**, where
+the depth reading agrees that the surface seen there belongs to this glass, and
+its **asserted part**, which is the rest. The observed pixels go to the shared
+arithmetic and become points on the table. The asserted pixels are named and
+excluded, because the reading under each of them belongs to whatever stood in
+front. Out of that come a **place** and a **rough width**, both measurements of
+the part that was seen, and the **visible fraction** this document prescribes
+carrying alongside them.
+
+Then the two checks, each of which can only refuse. The width must lie inside
+the range the kind allows, unless the mask it was measured from reaches the edge
+of the frame, where the width belongs to the part of the glass the picture held.
+And no part of the mask may be asserted over a patch the camera plainly saw
+something else at. A glass passing both is reported with its place, its width
+and its visible fraction; a glass failing either is reported as doubtful, with
+the check it failed. Last, where two surviving reports land at one place on the
+table only the surer of them keeps the place, which is the shared rule every
+solution in this book ends with.
+
+Three things are worth holding on to. The **shape of the output** is what
+answers the hardest part of the problem, because a fixed set of slots filled one
+to one holds separate objects without anything having to divide a joined region.
+The **absence of a rectangle round each mask** is what makes the second rung a
+change of target rather than a change of architecture. And the **separation of
+observed from asserted pixels** is what keeps the second rung honest, because
+the arithmetic and both surviving checks need the two kinds of pixel kept apart.
+
+← [RF-DETR-Seg, fine-tuned here — how it works](02_how-it-works.md) · [RF-DETR-Seg, fine-tuned here — a worked example](04_a-worked-example.md) →

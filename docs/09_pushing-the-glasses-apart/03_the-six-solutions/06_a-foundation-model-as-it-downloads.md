@@ -2,7 +2,7 @@
 
 > **What it uses** — [LeRobot](https://github.com/huggingface/lerobot), the
 > library that holds reference implementations of every learned policy in this
-> folder, with PyTorch underneath it, and one borrowed model taken exactly as
+> book, with PyTorch underneath it, and one borrowed model taken exactly as
 > it downloads. The model is shown a picture, told in ordinary words what to
 > do, given the arm's own joint readings, and it returns robot actions. That
 > model is **SmolVLA**, about 450 million parameters, which uses a few
@@ -22,7 +22,7 @@
 > look again.
 > **How it differs from the other five** — [solution
 > 1](02_one-fixed-nudge.md) uses no model at all and no learned number of any
-> kind, and it is the floor this folder is read against. [Solution
+> kind, and it is the floor this book is read against. [Solution
 > 2](03_geometry-generates-a-model-ranks.md) writes the candidate pushes by hand with geometry
 > and fits only the small model that ranks them, so what it borrows is
 > nothing and what it fits is one component. [Solution
@@ -49,17 +49,20 @@
 
 ## Introduction
 
-This document describes how [problem 3](../01_the-problem/01_what-is-asked-for.md) could be answered by
+This document describes how [the problem this book
+sets](../01_the-problem/01_what-is-asked-for.md) could be answered by
 downloading a general-purpose robot model and running it, with nothing
 collected, nothing trained and nothing fitted in this cell at all. The model is
 shown the table from the top, told in words what to do, and asked for actions.
 Whatever it returns is carried out.
 
 **This solution is built and has run.** It lives in
-`03-push-glasses-apart/05-smolvla-as-it-downloads/`, it downloads the weights
-and makes the pushes on the same held-out tables as the rest of the folder,
-and its folder's README carries the numbers. What follows was written before
-it ran, so where this document says what would probably happen, that is an
+[`05-smolvla-as-it-downloads/`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads),
+it downloads the weights and makes the pushes on the same held-out tables as
+the other five, and
+[its README](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/README.md)
+carries the numbers. What follows was written before it ran, so where this
+document says what would probably happen, that is an
 argument from what the model was fitted on and what this bench offers it, and
 not a measurement. The measurements are in the README, and the one thing the
 design did not foresee is how much weight the reading between the model's
@@ -67,7 +70,7 @@ action space and this jaw would have to carry.
 
 The design is worth writing down for two quite separate reasons, and it is
 worth separating them at the start because they pull in opposite directions.
-The first is that it is the cheapest thing in this folder to try. There is
+The first is that it is the cheapest thing in this book to try. There is
 nothing to collect, so there is no week spent recording pushes, and there is
 nothing to train, so there is no accelerator to rent. The second reason is that
 it is very likely to do badly. Those two facts are not in tension, because this
@@ -84,7 +87,31 @@ why the difference between the pictures it learned from and the pictures this
 bench would show it is the central risk, why the instruction it is given
 carries almost no information in this problem, why the one channel that
 observes friction cannot reach it, and why a poor result here would still be
-the most useful thing in the folder.
+the most useful thing in this book.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code that does the work](#the-code-that-does-the-work)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [A model that sees, is told, and acts](#a-model-that-sees-is-told-and-acts)
+1. [Where such a model gets its competence](#where-such-a-model-gets-its-competence)
+1. [What is borrowed, and what is not](#what-is-borrowed-and-what-is-not)
+1. [The actions come out in somebody else's units](#the-actions-come-out-in-somebody-elses-units)
+1. [The instruction is nearly dead weight here](#the-instruction-is-nearly-dead-weight-here)
+1. [The force reading has nowhere to go](#the-force-reading-has-nowhere-to-go)
+1. [The domain gap, which is the heart of this document](#the-domain-gap-which-is-the-heart-of-this-document)
+1. [The honest expectation](#the-honest-expectation)
+1. [The price of the model, and why this model](#the-price-of-the-model-and-why-this-model)
+1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
 
 ## The code that does the work
 
@@ -99,7 +126,7 @@ to be **chosen** rather than converted, and the lines that choose it are the
 lines to read.
 
 The borrowed library does its work in one call, in
-[`03-push-glasses-apart/05-smolvla-as-it-downloads/policy.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/policy.py).
+[`05-smolvla-as-it-downloads/policy.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/policy.py).
 `predict_action_chunk` is LeRobot's; `self.pre` and `self.post` are the
 processors the checkpoint ships, which are the ones that do nothing here; and
 `to_jaw` is this project's.
@@ -118,7 +145,7 @@ processors the checkpoint ships, which are the ones that do nothing here; and
 ```
 
 The scale that `to_jaw` applies is in
-[`03-push-glasses-apart/05-smolvla-as-it-downloads/joining.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py),
+[`05-smolvla-as-it-downloads/joining.py`](../../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads/joining.py),
 and the whole of the choice is one constant and the four lines that spend it.
 
 ```python
@@ -171,7 +198,7 @@ foot is not the same everywhere on the foot, and the glass turns as well as
 travels. Predicting the outcome precisely needs numbers nobody in this cell
 has.
 
-Every other solution in this folder responds to that by building something.
+Every other solution in this book responds to that by building something.
 Solution 1 builds a rule, solution 2 builds geometry and a ranker, solution 3
 builds a policy from recorded pushes, and solution 4 builds a model of the
 table and searches through it. Each of those costs work, and three of the four
@@ -241,7 +268,7 @@ a goal in numbers. It takes the raw picture and the human sentence at one end
 and emits movement at the other, with nothing in between that a person writes.
 
 That is a genuinely different shape from the other learned solutions in this
-folder. Solution 4's learned part is a model of how the world changes, and a
+book. Solution 4's learned part is a model of how the world changes, and a
 separate search uses it to choose. Solution 2's learned part is a ranker, and
 hand-written geometry proposes what it ranks. Here there is one network and it
 does the whole job, which is why a single borrowed file can be a complete
@@ -272,7 +299,7 @@ comparison from programming is a library of general routines rather than a
 program for one job: nothing in it solves your problem, but the parts it offers
 are the parts most problems of that family are built from.
 
-**So what this model brings to problem 3 is a general sense of how
+**So what this model brings to this problem is a general sense of how
 manipulation goes, and nothing whatever about this cell.** It has no idea that
 this table has a glass zone, that a rack sits in one corner, that the arm
 reaches comfortably between 300 and 780 mm from its base, or that pushing a
@@ -348,7 +375,7 @@ open a drawer, and the sentence is what selects which. The pool it was fitted
 on contained a great many different instructions, and the model's ability to
 respond to them is a real capability that took a great deal of data to acquire.
 
-**Problem 3 has one instruction.** Every table, every push, every look again:
+**This problem has one instruction.** Every table, every push, every look again:
 the same sentence, because the task never changes. A quantity that takes the
 same value every time carries no information, in exactly the sense information
 is normally meant — knowing the instruction tells you nothing you did not
@@ -458,7 +485,7 @@ confidence number to put a bar on.
 It is worth noticing which direction those mistakes point. A push aimed at the
 wrong place is recoverable, because the arm looks again and the next pass
 replans from where the glasses really are. A push that topples a glass is not,
-because nothing in problem 3 stands a glass back up. So a borrowed model
+because nothing in this problem stands a glass back up. So a borrowed model
 producing plausible wrong actions is not merely inaccurate; it is inaccurate in
 the one way this problem cannot absorb, which is the whole reason the next
 section but one takes the topple limit out of the model's hands entirely.
@@ -483,7 +510,7 @@ Against [the target layout](../01_the-problem/02_the-target-layout.md)'s yardsti
 specific prediction: glasses that end up far from where the push aimed them,
 and a total travel that is a large multiple of the displacement floor. A method
 whose glasses scatter is succeeding by looking again rather than by predicting,
-and this is the solution in the folder most likely to be doing exactly that.
+and this is the solution in this book most likely to be doing exactly that.
 
 **And that is this solution's job.** It is the baseline for the sharpest
 comparison in the set, and a baseline is useful in proportion to how cleanly it
@@ -503,7 +530,7 @@ thing to try.
 memory while answering, and it runs on a laptop. There is no accelerator to
 rent to use it, no cluster, and no special hardware of any kind. Combined with
 the fact that nothing is collected and nothing is trained, that makes this
-**the cheapest of the learned solutions in this folder to try** by a wide
+**the cheapest of the learned solutions in this book to try** by a wide
 margin: the whole setup cost is a download.
 
 What it does cost is time per push, and that belongs on the scorecard. Every
@@ -525,7 +552,7 @@ than 22 GB of accelerator memory, and a full fine-tune more than 70 GB. Those
 floors decide the matter. A pair of solutions is only worth building if both
 halves can actually be built, and **SmolVLA is chosen here because it is the
 one whose fine-tuning is affordable**, which makes the 5-against-6 comparison
-possible at all. π0.5 appears in this folder only as a further rung inside
+possible at all. π0.5 appears in this book only as a further rung inside
 solution 6, reached by low-rank adaptation, to ask whether a markedly larger
 model is worth it.
 
@@ -537,7 +564,8 @@ the same for all six and is what makes them comparable.
 The input is fixed by [the test bench](../02_the-test-bench.md). This solution may read
 what `look()` returns — where each glass stands, how tall it is, how wide it
 is at its widest and at its foot, and whether it is standing, each reading
-carrying problem 2's measured error — and the rendered view of the same table
+carrying the error measured for [telling the glasses apart in a
+picture](../../08_seeing-the-glasses/05_the-results.md) — and the rendered view of the same table
 from the top. In practice it reads mostly the picture, because the picture is
 what the model takes. It may not read the simulator's record of what was placed,
 and it is not told the friction, and neither of those exceptions is relaxed for
@@ -599,7 +627,7 @@ exactly one of those levers is [solution
 
 ## When a glass cannot be pushed safely
 
-Every solution document in this folder answers this question, and this one's
+Every solution document in this book answers this question, and this one's
 answer is the shortest of the six, because **the answer does not involve the
 model at all**.
 
@@ -625,11 +653,13 @@ this section comes back to.
 
 **That arrangement is just as well, and the reason is the point of this whole
 document.** Nothing in a borrowed model's pretraining knows this cell's jaw or
-this kind's foot width. The limit depends on a foot width that problem 2
-measures here, on a jaw height that is this gripper's own number, and on a
-friction coefficient that nothing in this cell measures at all. A model fitted
-on other people's robots has met none of those three quantities, and it has no
-way to acquire them from a picture of plain shapes. Asking it to respect a limit
+this kind's foot width. The limit depends on a foot width measured by [the
+camera work that tells the glasses
+apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md), on a
+jaw height that is this gripper's own number, and on a friction coefficient
+that nothing in this cell measures at all. A model fitted on other people's
+robots has met none of those three quantities, and it has no way to acquire
+them from a picture of plain shapes. Asking it to respect a limit
 it cannot compute would be asking it to guess, and the one mistake this problem
 cannot absorb is a toppled glass. So the refusal is taken out of the model's
 hands entirely and made arithmetic that runs first.
@@ -708,17 +738,17 @@ has to be read against solution 6's rather than on its own.
 
 ## What it needs
 
-Less than anything else in this folder, which is the whole point.
+Less than anything else in this book, which is the whole point.
 
 **Software.** [LeRobot](https://github.com/huggingface/lerobot), licensed
 Apache-2.0, which holds the policy as a reference implementation, and PyTorch
-underneath it, licensed BSD-3-Clause. Both are permissive, so neither changes
-the terms of the project the way the implementation
-notes describe for a copyleft component. The
-weights themselves carry their own terms, which a reader taking this forward
-should check before anything is shipped, because a licence on weights is not
-the same thing as a licence on the library that loads them. Nothing here says
-what those terms are, since nothing in this project records them. What can be
+underneath it, licensed BSD-3-Clause. Both are permissive, so neither obliges
+this project to publish its own source, which is what a copyleft licence such
+as the AGPL would do. The weights themselves carry their own terms, which a
+reader taking this forward should check before anything is shipped, because a
+licence on weights is not the same thing as a licence on the library that
+loads them. Nothing here says what those terms are, since nothing in this
+project records them. What can be
 said structurally is that a file produced by continuing their training, as
 [solution 6](07_the-same-model-fine-tuned-here.md) produces one, inherits whatever the
 borrowed weights carried, so this solution is the half of the pair that leaves
@@ -739,7 +769,7 @@ evaluation throughput rather than capability — the scorecard asks for several
 runs per solution, and many forward passes on a laptop take a while. For
 scale, renting an accelerator for a weekend costs of order a hundred dollars,
 and a small one for a month costs of order five hundred, so even running the
-evaluation on rented hardware is at the cheap end of this folder.
+evaluation on rented hardware is at the cheap end of this book.
 
 **Data.** None. No demonstrations, no labels, no held-out set, and nothing to
 keep in step with the cell when the cell changes.
@@ -757,11 +787,11 @@ The strengths all come from the same source, which is that nothing is fitted.
 
 There is nothing to collect, nothing to train and nothing to keep in step with
 the cell, so this solution could be tried in an afternoon once the bench's two
-missing parts exist. It needs no accelerator. It gives the folder a reading on
+missing parts exist. It needs no accelerator. It gives this book a reading on
 what a borrowed robot model is worth before anybody spends a week recording
 pushes, which is a decision several of the other solutions depend on. It is a
 genuine upper bound on convenience, because no solution here can be cheaper to
-set up. And it is the clean half of the folder's sharpest pair, which is the
+set up. And it is the clean half of this book's sharpest pair, which is the
 strength that does not depend on it working at all.
 
 The weaknesses divide into what the borrowing costs and what it cannot be asked
@@ -811,7 +841,7 @@ download. It is normally wrong when your input does not look like the pool's
 input, which is the case here, and wrong when the task needs a quantity the
 model has no input for, which is also the case here. It is also the wrong thing
 to reach for when a few lines of geometry would settle the question, which
-[solution 2](03_geometry-generates-a-model-ranks.md) is in this folder to demonstrate.
+[solution 2](03_geometry-generates-a-model-ranks.md) is in this book to demonstrate.
 
 ### Zero-shot transfer — using a model on a task it was never fitted for
 
@@ -824,8 +854,8 @@ expensive, because it costs an afternoon and tells you how hard your problem
 really is. It is normally wrong as a final answer when the input differs
 visibly from what the model was fitted on, and the standard repair is to
 continue the training on your own data, which is [solution
-6](07_the-same-model-fine-tuned-here.md). The folder is built to measure exactly that
-repair.
+6](07_the-same-model-fine-tuned-here.md). This book is built to measure exactly
+that repair.
 
 ### Language conditioning — the sentence that selects the task
 
@@ -867,13 +897,13 @@ The useful discipline is to say which side of the gap you intend to move before
 you measure anything. Moving the model is fine-tuning, which is solution 6.
 Moving the data means making the rendered pictures resemble real ones, which is
 a large piece of work in its own right and is not attempted anywhere in this
-folder. The failure to avoid is concluding that the method is poor when what has
+book. The failure to avoid is concluding that the method is poor when what has
 actually been measured is the gap, and the whole reason this document and the
 next are written as a pair is to make that confusion impossible.
 
 ## Where it sits among the other five
 
-This solution sits at one end of the folder's main axis, and the axis is the
+This solution sits at one end of this book's main axis, and the axis is the
 useful way to see all six.
 
 The axis is **where the numbers came from**. [Solution
@@ -901,7 +931,7 @@ still, the interpretation that turns the model's actions into jaw waypoints is
 held still, and the topple refusal runs first in both. Nothing varies between
 the pair except the training. So the gap between their scores is a measurement
 of what that training bought and of nothing else, and no other pair in this
-folder is that clean. One qualification belongs with that claim, and solution 6
+book is that clean. One qualification belongs with that claim, and solution 6
 makes it in full: the training there adapts the model through a low-rank
 correction rather than by moving every weight, so the gap is a lower bound on
 what fine-tuning could buy rather than the whole of it.
@@ -910,9 +940,9 @@ That is also the closing argument for building this solution despite expecting
 it to do badly. A baseline is valuable in proportion to how cleanly it isolates
 one variable, and this one isolates fine-tuning exactly. If it scored well,
 there would be little room left for solution 6 to show anything, and the
-sharpest question in the plan, what does fine-tuning a foundation model buy,
-would have no range to be answered in. A poor score here is therefore not a
-disappointing result. It is the measurement working.
+sharpest question these six were arranged to answer, what does fine-tuning a
+foundation model buy, would have no range to be answered in. A poor score here
+is therefore not a disappointing result. It is the measurement working.
 
 ← [A world model, then plan with it](05_a-world-model-then-plan-with-it.md) · [The same model,
 fine-tuned here](07_the-same-model-fine-tuned-here.md) →

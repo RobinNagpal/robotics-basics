@@ -154,7 +154,7 @@ RESULTS = PROJECT / "code/src/09_pushing-the-glasses-apart/04-a-world-model" / "
 # Glasses, and tables to stand them on.
 # --------------------------------------------------------------------------- #
 def measured(glass) -> dict:
-    """One spawned glass as the four numbers problem 2 hands over, in millimetres."""
+    """One spawned glass as the four numbers the camera work hands over, in millimetres."""
     outline = glass.outline
     rim = outline.max_diameter * 1000.0
     foot = 2.0 * float(outline.radius[0]) * 1000.0

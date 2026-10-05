@@ -1,4 +1,4 @@
-# Problem 2 — segment the glasses
+# What is asked for — segment the glasses
 
 ## Introduction
 
@@ -13,12 +13,38 @@ photographing one glass, and why the hardest of the three is not that two
 glasses run together in a picture but that **one of them can be absent from the
 picture altogether**.
 
+This work cell was built for a series of five jobs, and each one is harder than
+the one before it because it takes away one more assumption. The first job is a
+single glass carried from the table to the rack, start to finish. This book is
+the second, where several glasses stand on the table and the arm has to tell
+them apart. [Pushing the glasses
+apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md)
+is the third, where the glasses stand too close together for the gripper and the
+arm has to make room. The last
+two jobs are not written up here: in one, several kinds of glass stand on the
+table at once, and in the other the proportions each kind is drawn from are not
+known in advance. Only the second job and the third have books, so where these
+pages mention a neighbouring job they describe it in words rather than sending
+you to read it.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [What is on the table](#what-is-on-the-table)
+1. [What goes in](#what-goes-in)
+1. [What must come out](#what-must-come-out)
+1. [The three difficulties](#the-three-difficulties)
+1. [Why one method is not enough](#why-one-method-is-not-enough)
+1. [What is deliberately not in this problem](#what-is-deliberately-not-in-this-problem)
+1. [What "done" means](#what-done-means)
+1. [Where to go next](#where-to-go-next)
+
 ## What is on the table
 
 Four to six glasses, standing upright and opaque, drawn at proportions picked at
 random inside their kind's range. The drying rack is where it always is, and
-nothing else changes from problem 1: same cell, same
-camera, same table.
+nothing else changes from the job of carrying a single glass to the rack: same
+cell, same camera, same table.
 
 **All the glasses in one arrangement are the same kind, and the kind changes
 from one arrangement to the next.** The cell has four kinds, described in [the
@@ -36,7 +62,7 @@ down by kind.
 **The glasses stand apart.** There is a guaranteed smallest gap between any two
 centres, wide enough that even the two widest glasses of a kind leave bare table
 between their rims, so no two glasses ever touch. Separating glasses that touch
-is [problem 3](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
+is the job of [pushing the glasses apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
 
 **One kind's range of sizes is deliberately very wide.** The tapered kind runs
 from a small glass to one more than twice its height, which is the widest range
@@ -58,7 +84,7 @@ pixel; and the camera's own pose, which the arm knows from its joint encoders.
 what it spawned. That record exists, and it is how the run is marked afterwards,
 but an answer that reads it is not answering this problem.
 
-This matters more here than in the other problems. Six quite different methods
+This matters more here than in the other jobs. Six quite different methods
 are compared on this question, and a comparison only means something when the
 question was identical, so the input is stated once here and the [test
 bench](../03_the-test-bench.md) hands exactly it to every one of them.
@@ -80,8 +106,8 @@ way a glass is turned, because a glass is the same shape from every side.
 **And two honest statements, neither of which is a list of glasses:**
 
 - **which glasses could not be separated, and why.** A pair the arm cannot tell
-  apart is a result, not a failure, and it is the input to [problem
-  3](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
+  apart is a result, not a failure, and it is the input to [pushing the glasses
+  apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
 - **where a glass could not have been seen at all.** This is the one that
   follows from the first difficulty below, and it is not the same as saying
   which glasses were found.
@@ -125,7 +151,7 @@ another, or put a third squarely in the line of sight. So choosing where to look
 stops being free and becomes its own small problem, described in [looking again
 at what was hidden](02_looking-again-at-what-was-hidden.md).
 
-![From the top, every other glass on the table blocks out a wedge of the places the camera could have stood to see the glass in question, and the camera has to be put down in what is left inside the arm's reach.](../../images/seeing-the-glasses/what-is-asked-for/problem-2-where-can-the-camera-stand.png)
+![From the top, every other glass on the table blocks out a wedge of the places the camera could have stood to see the glass in question, and the camera has to be put down in what is left inside the arm's reach.](../../images/seeing-the-glasses/what-is-asked-for/where-can-the-camera-stand.png)
 
 ## Why one method is not enough
 
@@ -146,18 +172,19 @@ hidden](02_looking-again-at-what-was-hidden.md) so that no solution has to resta
 ## What is deliberately not in this problem
 
 **Naming the kind.** Every glass in an arrangement is the same kind and that
-kind is known. Problem 4 is where that stops being
-true.
+kind is known. The harder job where several kinds stand on the table at once is
+where that stops being true.
 
 **Measuring a shape.** A shape needs the view from the side, and whether such a
 view is available is exactly what this problem is about. Once this problem has
-said which glasses can be seen from where, problem 1 measures them unchanged.
+said which glasses can be seen from where, the job of measuring a single glass
+does that part exactly as it did before.
 
 **Picking anything up.** No grasp, no lift, no rack.
 
 **Moving anything.** If two glasses cannot be separated from any reachable
-viewpoint, this problem reports that and stops. Moving them apart is [problem
-3](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
+viewpoint, this problem reports that and stops. Moving them apart is the job of
+[pushing the glasses apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
 
 ## What "done" means
 

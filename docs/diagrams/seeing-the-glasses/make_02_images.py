@@ -679,7 +679,7 @@ def figure_circle_fit() -> None:
         "into the record is measured by the bench, from the mask, so this circle\n"
         "never leaves the solution.\n\n"
         "This check exists only because every object here is one known kind, so\n"
-        "the range is one the project holds. Problem 4, with four kinds on the\n"
+        "the range is one the project holds. The harder job, with four kinds on the\n"
         "table, takes it back.",
         ha="left", va="top", fontsize=NOTE_SIZE, color=INK,
     )
@@ -784,7 +784,7 @@ def figure_the_limit() -> None:
         (touching, "touching",
          "No gap at all, at any grouping\ndistance. The fit can suspect two\nfrom the width, but"
          " there is\nnothing left to measure, and with\nthree in a row it cannot say how\nmany."
-         " Moving one of them is the\nonly way out, and that is\nproblem 3's job.", WARN,
+         " Moving one of them is the\nonly way out, and that is\nthe pushing job.", WARN,
          "not separable from here", "no strip at all"),
     )
     for axis, (spacing, heading, body, colour, verdict, strip) in zip(axes, cases, strict=True):

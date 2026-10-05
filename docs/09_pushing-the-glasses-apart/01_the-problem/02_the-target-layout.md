@@ -7,9 +7,11 @@ friction, tipping and the arm's own clumsiness live, and which is the whole of
 the rest of this problem. The other half is *where to push it to*, and this
 document is about that half. It is deliberately separate from the six
 solutions, for the same reason [looking again at what was
-hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md) is separate from problem 2's
-six: **every one of them needs it and none of them differs in it.** By the end
-of this document you will understand why choosing where a glass should end up
+hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md)
+is separate from the [six answers of the camera
+work](../../08_seeing-the-glasses/04_the-six-solutions/01_overview.md): **every
+one of them needs it and none of them differs in it.** By the end of this
+document you will understand why choosing where a glass should end up
 is not a learning problem at all but plain geometry, four methods that solve
 that geometry and what each one is good for, why the answer is computed once
 and handed to all six rather than left to each, how the same computation
@@ -17,17 +19,28 @@ produces the least movement the task could possibly need — which turns out to
 be the most valuable thing in here — and what the layout still does not tell
 you.
 
-Read this after [the problem](01_what-is-asked-for.md) and [the test bench](../02_the-test-bench.md),
-because it uses the clear room the gripper needs and the measurements `look()`
-hands over, and both are explained there.
+Read this after [the problem](01_what-is-asked-for.md) and [the test
+bench](../02_the-test-bench.md), because it uses the clear room the gripper
+needs and the measurements `look()` hands over, and both are explained there.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [The question, written out](#the-question-written-out)
+1. [Four ways to place the discs](#four-ways-to-place-the-discs)
+1. [Why this is shared and not a solution](#why-this-is-shared-and-not-a-solution)
+1. [The displacement floor](#the-displacement-floor)
+1. [Two cautions](#two-cautions)
+1. [What the layout does not tell you](#what-the-layout-does-not-tell-you)
+1. [Where to go next](#where-to-go-next)
 
 ## The question, written out
 
-Problem 3 is finished when every glass has about 70 mm of clear room in every
-direction, at least one usable viewpoint for a side-on photograph, and nothing
-has been knocked over. That is a statement about **where the glasses are**, so
-before anything can be pushed, somebody has to decide where each glass is
-supposed to go.
+The pushing task is finished when every glass has about 70 mm of clear room in
+every direction, at least one usable viewpoint for a side-on photograph, and
+nothing has been knocked over. That is a statement about **where the glasses
+are**, so before anything can be pushed, somebody has to decide where each glass
+is supposed to go.
 
 Written out, the decision has four conditions it must satisfy, and one thing it
 should make as small as possible.
@@ -243,17 +256,19 @@ would be worthless.
 One layout, computed once from the same measurements, handed to all six, removes
 that completely. Every solution that aims at a destination is then aiming at the
 same places, so the only thing that can differ between their scores is how well
-it gets the glasses there — which is the thing problem 3 exists to compare. A
+it gets the glasses there — which is the thing this book exists to compare. A
 solution is free to decline the layout and push a glass away from its neighbour
 rather than towards a place, and one of the six does; what that costs it is
 visible on the same scale, as travel against the floor described below.
 
-This is precisely the argument problem 2 makes about its own shared step. There,
-the step that turns a mask into a place and a width belongs to the bench rather
-than to any of the six, because if each solution did its own arithmetic a
-difference in the result might be a difference in the arithmetic rather than in
-the mask. Here, the step that turns a set of measurements into a set of
-destinations belongs to the bench for exactly the same reason. In both problems
+This is precisely the argument the camera work's [test
+bench](../../08_seeing-the-glasses/03_the-test-bench.md#what-must-come-back)
+makes about its own shared step. There, the step that turns a mask into a place
+and a width belongs to the bench rather than to any of the six, because if each
+solution did its own arithmetic a difference in the result might be a difference
+in the arithmetic rather than in the mask. Here, the step that turns a set of
+measurements into a set of destinations belongs to the bench for exactly the
+same reason. In both books
 the rule is the same: **the shared part is everything that is not the thing
 being compared.**
 
@@ -285,13 +300,15 @@ further cleverness in choosing pushes could have spent less. That is the signal
 to stop optimising this part and look elsewhere, because effort put into a
 solution already at its floor buys nothing.
 
-Problem 2 has the same instrument and uses it the same way. Its bench runs its
-own exact masks through the shared arithmetic to find the best place and width
-that step could ever produce, and a solution within a hair of that floor of
-error is, in that document's words, not a good solution so much as one whose
-remaining error is not its fault. The displacement floor is that measurement
-for this problem: computed from perfect information, independent of every
-method, and the thing that makes all the other numbers readable.
+The camera work has the same instrument and uses it the same way. Its bench
+runs its own exact masks through the shared arithmetic to find [the best place
+and width that step could ever
+produce](../../08_seeing-the-glasses/03_the-test-bench.md#the-ceiling-what-the-best-possible-answer-would-be),
+and a solution within a hair of that floor of error is, in that document's
+words, not a good solution so much as one whose remaining error is not its
+fault. The displacement floor is that measurement for this problem: computed
+from perfect information, independent of every method, and the thing that makes
+all the other numbers readable.
 
 ## Two cautions
 

@@ -14,7 +14,7 @@
 > kept, and a small correction to them is learned from pushes made on this
 > bench, so that it stops being a general copier of robot motion and becomes a
 > pusher of glasses on this table. The action chunks it then emits are this
-> solution's answer to problem 3.
+> solution's answer to the problem this book sets.
 > **How the output is produced** — a rendered view of the table from the top
 > goes in, together with one instruction in plain English and the arm's own
 > pose, which is the same every time because the jaw is parked between
@@ -48,9 +48,10 @@
 > Running it costs one large forward
 > pass per chunk, the same as its partner's, so the two cost the same to run
 > and differ only in what it cost to build them. The licence is not the
-> obstacle it was in problem 2, but a fine-tuned file inherits whatever terms
-> the borrowed file carried, so the terms have to be read before anything
-> leaves this project.
+> obstacle it was for [the pair that tells the glasses
+> apart](../../08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md#the-licence),
+> but a fine-tuned file inherits whatever terms the borrowed file carried, so
+> the terms have to be read before anything leaves this project.
 
 > **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
 > layout, the two places the camera works from, from the top and from the
@@ -59,7 +60,8 @@
 
 ## Introduction
 
-This document explains how to answer problem 3 by taking a robot foundation
+This document explains how to answer [the problem this book
+sets](../01_the-problem/01_what-is-asked-for.md) by taking a robot foundation
 model that was already fitted elsewhere and continuing its training on pushes
 made in this cell. The method has a name, **fine-tuning**, and it is the
 ordinary way a borrowed model is put to work on a particular job. Nothing in
@@ -91,8 +93,8 @@ used by both. So **nothing varies between the two that the training did not
 bring**, and the gap between solution 5 and this one is therefore a measurement
 of what this training bought on a robot foundation model, and of nothing else.
 
-That makes this pair the same question [problem
-2](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) asks about a segmenter, asked one
+That makes this pair the same question [telling the glasses apart in a
+picture](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) asks about a segmenter, asked one
 level up. There the pair was a model that finds objects in pictures, borrowed
 untouched against borrowed and fine-tuned, and the answer was about perception
 alone. Here the model does not report what it sees; it decides what the arm
@@ -103,10 +105,12 @@ glass in it and still be a poor chooser of pushes, because choosing a push
 needs a sense of what a push does, and nothing in a picture contains that.
 
 **Most of this is built, and the parts that are not are named where they
-appear.** The solution lives in `03-push-glasses-apart/06-smolvla-fine-tuned/`:
+appear.** The solution lives in
+[`06-smolvla-fine-tuned/`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned):
 it records its demonstrations from the teacher, fits the correction, and has
-been run on the bench's held-out tables, with its numbers in that folder's
-README. The two parts of the shared contract it waited on are in the bench
+been run on the bench's held-out tables, with its numbers in
+[its own README](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/README.md).
+The two parts of the shared contract it waited on are in the bench
 now — a rendered view looking straight down in `bench/top_view.py`, and
 `Bench.follow()`, which carries a chunk of waypoints out as an action — so
 nothing below is blocked on them. Three things here are still prescriptions
@@ -138,6 +142,28 @@ repairs and which of them survive it untouched, the two ways training on one
 cell's pushes goes wrong, and why a markedly larger foundation model is a
 second rung here rather than the main line.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code that does the work](#the-code-that-does-the-work)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [Fine-tuning — continuing somebody else's training](#fine-tuning--continuing-somebody-elses-training)
+1. [Low-rank adaptation — a small correction instead of a large change](#low-rank-adaptation--a-small-correction-instead-of-a-large-change)
+1. [Where the demonstrations come from, and what they cost](#where-the-demonstrations-come-from-and-what-they-cost)
+1. [Whether anything but the training differs](#whether-anything-but-the-training-differs)
+1. [What fine-tuning closes, and what it cannot touch](#what-fine-tuning-closes-and-what-it-cannot-touch)
+1. [Two ways training on one cell's pushes goes wrong](#two-ways-training-on-one-cells-pushes-goes-wrong)
+1. [A second rung: the same fine-tune on a larger model](#a-second-rung-the-same-fine-tune-on-a-larger-model)
+1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+
 ## The code that does the work
 
 Everything this solution shares with [solution
@@ -147,7 +173,7 @@ parts of the borrowed model the correction is allowed to touch, and how a push
 the jaw really made becomes a training example.
 
 The correction is in
-[`03-push-glasses-apart/06-smolvla-fine-tuned/correction.py`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/correction.py).
+[`06-smolvla-fine-tuned/correction.py`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/correction.py).
 `LoraConfig` and `get_peft_model` are the borrowed library's — PEFT, which
 defines the adapters, because LeRobot trains whole policies and has no low-rank
 adaptation of its own — and the three constants above them are this project's
@@ -173,7 +199,7 @@ def with_correction(policy, rank: int = RANK, scaling: int = SCALING):
 ```
 
 What the correction is fitted towards is built in
-[`03-push-glasses-apart/06-smolvla-fine-tuned/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/chunks.py).
+[`06-smolvla-fine-tuned/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/chunks.py).
 Nothing in it invents a path: it cuts the recorded push down to the flat
 stretch the model has to produce, resamples that to the fixed number of
 waypoints the model emits, checks the result survives a round trip through
@@ -207,7 +233,7 @@ one of them was fitted.
 
 ## The problem this solves
 
-Problem 3 asks for a jaw trajectory, and then another, until every glass has
+This book asks for a jaw trajectory, and then another, until every glass has
 about 70 mm of clear room around it or the glasses that are left have been
 refused with a reason. [The problem](../01_the-problem/01_what-is-asked-for.md) explains why that is hard,
 and the hardest part of it is a missing number: whether a pushed glass slides
@@ -459,7 +485,7 @@ expensive part of the whole exercise and usually the part that decides whether
 a method is affordable at all: somebody sits with a controller and teleoperates
 the task hundreds of times, the recordings disagree with each other, and the
 robot wears out. Here a program does it unattended. Any judgement made in this
-folder about whether fine-tuning is worth its price should carry that
+book about whether fine-tuning is worth its price should carry that
 qualification, because on a real arm the price would be quite different.
 
 **But free data is not neutral data, and this solution inherits two things
@@ -530,8 +556,9 @@ therefore in two pairs at once, and they ask different questions.
 ## Whether anything but the training differs
 
 A matched pair invites one particular mistake, and it is the mistake of saying
-that nothing varies except the training when something else does. [Problem
-2's own pair](../../08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md) shows
+that nothing varies except the training when something else does. [The matched
+pair in the book on telling the glasses
+apart](../../08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md) shows
 how to avoid it. There, the fine-tuning also replaces the model's borrowed list
 of everyday categories with a single class, and that document does not claim
 otherwise. What it does instead is show that the second change comes **with**
@@ -571,7 +598,7 @@ for this table; nothing fitted them, so nothing guarantees their scale. This
 solution's training targets are recordings of real pushes on this bench,
 already expressed in that same convention, so the ranges the model is trained
 to produce are this cell's ranges. **That is a property of the trained weights
-rather than a second thing changed beside them.** Problem 2 needed its
+rather than a second thing changed beside them.** That other pair needed its
 argument because its second change was a real one: a list of category names is
 part of how a model is configured and not only a value inside it, so it could
 in principle have been altered without any training, and that document had to
@@ -659,13 +686,15 @@ happens on the table rather than above it, and it is the clearest single sign
 in these measurements that the domain gap closed.
 
 The *length* was not learned. The fine-tuned chunks still cover about 315 mm
-of table where the teacher's covered 89, at about 90 mm/s where the teacher
-pushed at 20 — better than solution 5's 844 mm, and still three times too far.
+of table where the teacher's covered 89, and the jaw moves through them at
+about 90 mm/s where the demonstrations it learned from run at 36 — better than
+solution 5's 844 mm, and still three times too far.
 So the model learned where a push happens long before it learned how far one
 goes, and a push three times too long on a crowded table is a push into a
-neighbour. The toppled count in the folder's README is that. The honest answer
-to "does the scale of the actions stop being left to chance" is therefore:
-partly, and the part that was left is the part that topples glasses.
+neighbour. The toppled count in this solution's own README is that. The
+honest answer to "does the scale of the actions stop being left to chance" is
+therefore: partly, and the part that was left is the part that topples
+glasses.
 
 **Something like friction is absorbed, and this one needs care rather than
 celebration.** Nothing in the cell measures friction and the bench never
@@ -695,7 +724,7 @@ is the absorbed constant above, which is not a way of reading the channel.
 
 **The instruction is still nearly dead weight.** SmolVLA is a
 vision-language-action model, and the language is the part that lets one model
-be told to do different things in different words. Problem 3 has one task, so
+be told to do different things in different words. This problem has one task, so
 there is one instruction, and the same words go in on every table. Fine-tuning
 does not change that, because the task is what it is. Worse, the training makes
 it harder to pretend otherwise: when every example in a training set carries
@@ -760,10 +789,11 @@ per chunk in both, since the correction folds into the weights, and that cost
 is why the scorecard carries a compute column at all.
 
 **And the input's own error is unchanged.** Both solutions are handed readings
-that carry problem 2's measured error, and no amount of training makes a
-measurement truer than it was. What training can do is make the policy behave
-sensibly when a reading is a little wrong, because it was fitted on recordings
-in which readings were a little wrong. That is a different and smaller claim
+that carry the error measured for [telling the glasses apart in a
+picture](../../08_seeing-the-glasses/05_the-results.md), and no amount of
+training makes a measurement truer than it was. What training can do is make
+the policy behave sensibly when a reading is a little wrong, because it was
+fitted on recordings in which readings were a little wrong. That is a different and smaller claim
 than making the reading right.
 
 ## Two ways training on one cell's pushes goes wrong
@@ -812,7 +842,7 @@ because the action is drawn rather than computed. Training itself varies with
 its own random seed, so the same recipe run twice gives two policies of
 different quality. [The bench](../02_the-test-bench.md) requires several training seeds
 and several evaluation runs for exactly this reason, and the scorecard carries
-the spread. **This matters most to this document of any in the folder**, because
+the spread. **This matters most to this document of any in this book**, because
 the thing being measured is the gap between two solutions, and a gap smaller
 than either solution's own spread has not been shown to exist.
 
@@ -838,7 +868,7 @@ dollars.** That is honest and it is not nothing. It is also the affordable
 corner of this family: π0, which belongs to it too, holds about 3.3 billion
 parameters, and a full fine-tune of it needs more than 70 GB of accelerator
 memory, which is why no full fine-tune of a model this size appears anywhere in
-this folder. Low-rank adaptation is what brings a model of that size within
+this book. Low-rank adaptation is what brings a model of that size within
 reach at all, and it is the only way the rung is reached.
 
 **It is a rung rather than the main line for one practical reason, and the
@@ -883,7 +913,7 @@ is not, because squeezing a chunked policy down to three numbers destroys the
 action chunking that makes it work. What the bench does instead is score the
 outcome and never the action: which glasses have room, which are standing,
 where each one ended up, and how many pushes it took. So a three-number push
-and a chunk of fifty waypoints are compared on the only thing problem 3
+and a chunk of fifty waypoints are compared on the only thing this problem
 actually cares about, which is the table afterwards.
 
 It follows that **a difference in the score belongs to the chunks**. This
@@ -893,7 +923,7 @@ the gap between the two is readable.
 ## How the concepts fit together
 
 The pieces now join into one picture, and it is worth having that picture in
-one place before the question every solution document in this folder has to
+one place before the question every solution document in this book has to
 answer.
 
 A model fitted on a very large pool of other people's teleoperation is
@@ -917,13 +947,14 @@ time.
 
 ## When a glass cannot be pushed safely
 
-Every solution document in this folder answers this question, and this one's
+Every solution document in this book answers this question, and this one's
 answer is short, because the answer does not come from the model.
 
 A glass slides while the jaw's contact height is below half its foot width
 divided by the friction coefficient, and tips above it. The height that counts
-is the **top edge of the jaw**, which stands at 65 mm because the jaw rides as
-low as the gripper goes, at 50 mm, and is 30 mm tall. For a glass whose foot is
+is the **top edge of the jaw**, which stands at 65 mm: the middle of the jaw
+rides as low as the gripper goes, at 50 mm, and the finger is 30 mm tall, so
+its top edge is half of that, 15 mm, higher again. For a glass whose foot is
 narrow enough, the limit falls below 65 mm, and there is then no contact height
 the arm can offer that is below it. Such a glass tips before it slides whatever
 the arm does, and **the only correct answer for it is to refuse**, with the
@@ -980,8 +1011,8 @@ Two of them stand as close together as the bench allows, so neither has its
 the edge rather than to the middle, the narrower of the two is crowded while
 the wider one may not be. A third glass, standing alone, is drawn with a foot
 narrow enough that its limit falls below the jaw's top edge. The bench renders
-the view from the top and hands over the readings, each carrying problem 2's
-error.
+the view from the top and hands over the readings, each carrying the error that
+telling the glasses apart in a picture leaves in it.
 
 **What solution 5 would do.** The downloaded model is shown a rendered view of
 a kind it has never seen — pale blue glasses, opaque, shaded, standing on a
@@ -1096,12 +1127,12 @@ hours of a small accelerator is of order tens of dollars, a weekend of order a
 hundred, and a month of order five hundred, which is the scale to keep in mind
 if the training has to be repeated over several seeds. None of it was spent.
 
-The project's old rule was that everything must run on this machine, and the
-plan lifts that rule for problem 3 so that each solution
-states what it needs and roughly what renting it costs, in the same way a
-licence is stated. **The lifting turned out not to be needed for this
-solution**, which is the opposite of what this section first claimed. Where it
-is still needed is the second rung: π0, which belongs to the same family, holds
+The project's old rule was that everything must run on this machine. This book
+lifts that rule, so that each solution states what it needs and roughly what
+renting it costs, in the same way a licence is stated. **The lifting turned
+out not to be needed for this solution**, which is the opposite of what this
+section first claimed. Where it is still needed is the second rung: π0, which
+belongs to the same family, holds
 about 3.3 billion parameters and its full fine-tune floor is above 70 GB, and
 there the question really is whether the training fits. At 450 million it was
 not a question. And **the trained model runs here perfectly well** too,
@@ -1135,7 +1166,7 @@ document expected it to go, and it folds into the weights afterwards, so
 nothing about running it is more expensive than running the model as it
 downloads.
 
-**It is one half of the cleanest comparison in this folder**, and that is a
+**It is one half of the cleanest comparison in this book**, and that is a
 strength of the arrangement rather than of the model.
 
 Against that, four kinds of weakness.
@@ -1159,7 +1190,7 @@ absorbed into its weights, which is a memorised constant rather than an ability,
 and it would not survive a real table. A small or uniform training set would
 teach it the tables rather than the pushing, and only the held-out half would
 reveal it. And it is stochastic, so a single run is not a measurement, which
-bears on this document more than on any other in the folder, because what is
+bears on this document more than on any other in this book, because what is
 being measured here is a gap.
 
 **What it does not do at all.** It does not refuse, it does not choose
@@ -1315,8 +1346,8 @@ bound, and the agreed convention has to be chosen fairly or the gap measures
 that too. **If this document is read for one reason, it should be that one.**
 
 **And the measurement, now that it exists, answers it in a way this document
-did not anticipate.** The folder's README has the numbers; what they say is
-that training worked and the score got worse. The fine-tuned model's chunks
+did not anticipate.** This solution's own README has the numbers; what they
+say is that training worked and the score got worse. The fine-tuned model's chunks
 are much closer to the teacher's than the borrowed model's, and it brings the
 jaw down to the table where the borrowed model never did — but two thirds of
 its pushes are blocked coming down, because it never learned where to put the
@@ -1356,10 +1387,9 @@ as a question about the teacher's ranker rather than a triumph.
 
 Against [solution 1](02_one-fixed-nudge.md), the comparison is the cheapest
 thing against the most expensive. Solution 1 computes one push by fixed
-arithmetic and looks again, costs nothing to build or run, and is in this
-folder to answer
-the question of whether any learning beats a fixed nudge at all. If this
-solution does not beat it by a margin larger than its own spread, the
+arithmetic and looks again, costs nothing to build or run, and is in this book
+to answer the question of whether any learning beats a fixed nudge at all. If
+this solution does not beat it by a margin larger than its own spread, the
 450 million parameters and the hours of training have bought nothing.
 
 Against [solution 4](05_a-world-model-then-plan-with-it.md), the comparison is planning against
@@ -1373,7 +1403,7 @@ training it again.
 Read as a ladder, the six measure what each increment of fitting buys. This
 solution is the rung where all of the fitting happens on borrowed weights, and
 its partner one rung below is the rung where none of it does. The distance
-between those two rungs is the most valuable single number this folder can
+between those two rungs is the most valuable single number this book can
 produce, which is why it is the first thing this document said and the last.
 
 ← [A foundation model as it downloads](06_a-foundation-model-as-it-downloads.md) ·

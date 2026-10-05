@@ -15,6 +15,16 @@ refusal is a result rather than a failure, why every solution here acts and then
 measures instead of acting on a prediction, and where a trained model can sit
 inside that loop without being able to break it.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [Why no solution can answer this on its own](#why-no-solution-can-answer-this-on-its-own)
+1. [The limit: slide, or tip](#the-limit-slide-or-tip)
+1. [The number nobody has](#the-number-nobody-has)
+1. [The loop: plan, feel, look again](#the-loop-plan-feel-look-again)
+1. [The honest limit](#the-honest-limit)
+1. [Where to go next](#where-to-go-next)
+
 ## Why no solution can answer this on its own
 
 The six solutions differ in how they choose a push: which glass to move, in
@@ -65,7 +75,7 @@ would turn about. Sliding comes first while
 
 and tipping comes first above it.
 
-![Pushed low, a glass slides; pushed high, it turns about the bottom edge furthest from the jaw, and the height where the behaviour changes is set by the glass's own foot.](../../images/pushing-the-glasses-apart/pushing-without-toppling/problem-3-push-low-or-it-topples.png)
+![Pushed low, a glass slides; pushed high, it turns about the bottom edge furthest from the jaw, and the height where the behaviour changes is set by the glass's own foot.](../../images/pushing-the-glasses-apart/pushing-without-toppling/push-low-or-it-topples.png)
 
 Two things about that rule are worth noticing straight away, because they are
 what make pushing attractive in the first place. The weight appears on both
@@ -81,9 +91,10 @@ Because `a` is half the foot width, and every glass has its own foot, the
 highest safe contact is a different number for every glass on the table.
 
 That is why the push height is **computed from the measurement rather than
-chosen once**. Problem 2 hands over how wide each glass is at its foot, so the
-limit can be evaluated for that glass before the arm commits to touching it.
-Agreeing a single safe height for the whole kind would mean choosing it low
+chosen once**. The camera work hands over [how wide each glass is at its
+foot](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#what-must-come-out),
+so the limit can be evaluated for that glass before the arm commits to touching
+it. Agreeing a single safe height for the whole kind would mean choosing it low
 enough for the narrowest foot the kind allows, which refuses glasses that were
 perfectly pushable, or choosing it higher, which pushes glasses that were not.
 This is the pattern the whole project uses: compute what the measurement
@@ -288,8 +299,9 @@ is in contact with the glass while the glass is still deciding what to do. So
 topple rather than report one**, and that is the whole argument for building
 one. It is an argument and not a description: nothing in this project
 implements it, and the solutions that topple glasses topple them for want of
-it. Solution 6, which is the only one that topples glasses often, is the
-measurement of what its absence costs.
+it. [Solution 6](../03_the-six-solutions/07_the-same-model-fine-tuned-here.md),
+which is the only one that topples glasses often, is the measurement of what its
+absence costs.
 
 Its own powers are deliberately small. It cannot steer, it cannot choose a
 target and it cannot approve a push; it can only stop one. A monitor that fires
@@ -317,8 +329,8 @@ Nothing is lost, because the arrangement is re-read rather than assumed, and a
 wrong guess at the friction shows up here as a push that did not go where it was
 aimed.
 
-**But nothing in this loop stands a toppled glass back up.** No step in problem
-3 lifts anything, the arm has no way to right a glass lying on its side, and
+**But nothing in this loop stands a toppled glass back up.** No step in this
+book lifts anything, the arm has no way to right a glass lying on its side, and
 everything downstream carries on working beside it. That single fact is why the
 topple limit is written as a refusal rule rather than as a risk to be weighed
 against the value of moving the glass. A risk worth taking is one whose bad

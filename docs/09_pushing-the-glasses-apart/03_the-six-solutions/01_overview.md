@@ -2,16 +2,27 @@
 
 ## Introduction
 
-Problem 3 asks the arm to drag crowded glasses apart until each one has room
-for the gripper, without knocking any of them over. This folder answers that
+This book asks the arm to drag crowded glasses apart until each one has room
+for the gripper, without knocking any of them over. This chapter answers that
 six times, and the point of having six is not that one of them is the answer.
 The point is to be able to compare them and then choose, knowing what the
 choice costs. By the end of this document you will understand what all six
 share, what single thing each one changes, and which pair to look at first.
 
-The arrangement is the same one problem 2 uses: six cars driven to one
-destination, over the same road, so that when one arrives sooner you know it
-was the car.
+The arrangement is the same one [the six ways of telling the glasses
+apart](../../08_seeing-the-glasses/04_the-six-solutions/01_overview.md) uses:
+six cars driven to one destination, over the same road, so that when one
+arrives sooner you know it was the car.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [What all six share](#what-all-six-share)
+1. [The six, in one table](#the-six-in-one-table)
+1. [What each comparison isolates](#what-each-comparison-isolates)
+1. [Two things that cut across the table](#two-things-that-cut-across-the-table)
+1. [What is built](#what-is-built)
+1. [Where to go next](#where-to-go-next)
 
 ## What all six share
 
@@ -20,7 +31,8 @@ them in full. In short:
 
 **The same input.** What the camera work hands over for each standing glass —
 where it stands, how tall it is, how wide at its widest and at its foot,
-whether it is upright — every reading carrying problem 2's measured error. Plus
+whether it is upright — every reading carrying the error that camera work was
+[measured to make](../../08_seeing-the-glasses/05_the-results.md). Plus
 a view of the table from the top, for the solutions that read pictures, and
 what the jaw felt on the last push. Never the simulator's record, and never
 the friction it is using.
@@ -83,8 +95,9 @@ Three carry a **second rung** rather than a document of their own:
 **Start with solution 5 against solution 6.** It is the sharpest pair, because
 it is the same library, the same model and the same downloaded weights, and one
 of them has had its training continued on this cell's own pushes. That is the
-question problem 2 asks about a segmenter, asked one level up about a robot
-foundation model.
+question [the same pair asks about a
+segmenter](../../08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md),
+asked one level up about a robot foundation model.
 
 ## Two things that cut across the table
 
@@ -121,19 +134,17 @@ the comparison, not a detail.
 
 ## What is built
 
-**All six are built, and all six have been run on the bench.** Each has code in
-a folder named after the document you are reading about it, and the numbers they
-produced are set side by side in
-[`03-push-glasses-apart/results/`](../04_the-results.md).
+**All six are built, and all six have been run on the bench.** Each has its own
+folder of code under `code/src/09_pushing-the-glasses-apart/`, and the numbers
+they produced are set side by side in [the results](../04_the-results.md).
 Where something could not be run, the result is absent and the reason is
 written down rather than estimated.
 
 Solutions 1 and 2 were built first, and that order mattered more than expected.
 Solution 2 is the teacher whose pushes solutions 3 and 6 learn from, so until it
 worked there was nothing for them to learn from. The bench also had to grow
-before the three that read pictures could run at all: the view from above and
-the path that accepts waypoints are both recent, and
-the plan says what they cost to add.
+before the three that read pictures could run at all, because the view from
+above and the path that accepts waypoints both had to be added for them.
 
 One prescription in [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md) is **not** built and is worth knowing

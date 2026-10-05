@@ -672,7 +672,7 @@ def figure_semantic_against_instance() -> None:
     for (centre_x, centre_y, radius), colour in zip(pair, (GOOD, GLASS), strict=True):
         axes[2].add_patch(Circle((centre_x, centre_y), radius, facecolor=colour, alpha=0.8,
                                  edgecolor=INK, lw=0.9, zorder=3))
-    axes[2].set_title("what problem 2 actually wants", fontsize=LABEL_SIZE + 0.6, color=INK, pad=8)
+    axes[2].set_title("what the camera work actually wants", fontsize=LABEL_SIZE + 0.6, color=INK, pad=8)
     note(axes[2], 10, 158, "Two masks. The separating has\nto come from somewhere else:\n"
          "a boundary channel, or a vector\nat each pixel to its own centre.",
          colour=INK, size=NOTE_SIZE, va="top")

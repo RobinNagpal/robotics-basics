@@ -11,14 +11,28 @@ against what it knows really happened. By the end of this document you will
 understand what a solution is given, what the bench keeps to itself, why the
 shared output is a jaw trajectory rather than a push, why the marking looks at
 the outcome and never at the action, and which two things this scorecard needs
-that problem 2's did not.
+that the bench for [telling the glasses
+apart](../08_seeing-the-glasses/03_the-test-bench.md) did not.
 
 Read this before any of the solution documents, because every one of them
 assumes it.
 
-The bench is built. It lives in `03-push-glasses-apart/bench/`, and the two approaches
-already in the repository run on it, as does problem 4. Where this document
-describes something that is a decision rather than working code, it says so.
+The bench is built. It lives in `code/src/09_pushing-the-glasses-apart/bench/`,
+and every solution in this book runs on it. Where this document describes
+something that is a decision rather than working code, it says so.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [Why there is a bench at all](#why-there-is-a-bench-at-all)
+1. [What the bench draws](#what-the-bench-draws)
+1. [What a solution is given](#what-a-solution-is-given)
+1. [What `push()` does, and what it reports back](#what-push-does-and-what-it-reports-back)
+1. [The shared output, and why it is a jaw trajectory](#the-shared-output-and-why-it-is-a-jaw-trajectory)
+1. [The score is the outcome, not the action](#the-score-is-the-outcome-not-the-action)
+1. [What the bench measures](#what-the-bench-measures)
+1. [Two things this scorecard needs that the camera work's did not](#two-things-this-scorecard-needs-that-the-camera-works-did-not)
+1. [Where to go next](#where-to-go-next)
 
 ## Why there is a bench at all
 
@@ -68,19 +82,19 @@ from a single number, so the same number always gives the same table, and any
 solution can be run on exactly the tables another was run on. Numbers above a
 fixed dividing line are for testing only; training draws from below it. This
 means no solution is ever marked on a table it was fitted on, which matters
-here more than it did in problem 2, because four of the six solutions are
-trained.
+here more than it did when [telling the glasses
+apart](../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md),
+because four of the six solutions are trained.
 
-**The physics is MuJoCo, standing in for Gazebo.** There are two reasons, and
-the bench's own description gives both. The first is speed: a learned approach
-needs thousands of pushes, and Gazebo runs each one at the speed of real time,
-so a training set that MuJoCo produces in hours would take weeks. The second
-reason is fairness, and it is the more interesting one. MuJoCo is physics that
-neither approach wrote. If the bench pushed glasses around using a push model
-written for this project, then a programmed solution built on that same model
-would win by knowing the answer, and the comparison would measure nothing. A
-contact solver nobody here authored is a thing both sides are equally ignorant
-of.
+**The physics is MuJoCo, standing in for Gazebo.** There are two reasons. The
+first is speed: a learned approach needs thousands of pushes, and Gazebo runs
+each one at the speed of real time, so a training set that MuJoCo produces in
+hours would take weeks. The second reason is fairness, and it is the more
+interesting one. MuJoCo is physics that neither approach wrote. If the bench
+pushed glasses around using a push model written for this project, then a
+programmed solution built on that same model would win by knowing the answer,
+and the comparison would measure nothing. A contact solver nobody here
+authored is a thing both sides are equally ignorant of.
 
 The glasses in it are not simplified away. Each one is built as a stack of
 cylinders, each cylinder as wide as the glass is at its widest anywhere inside
@@ -99,17 +113,20 @@ The bench offers exactly three calls and nothing else: `look()`, `push()` and
 **`look()` returns one reading per glass still on the table.** For each glass:
 where it stands, how tall it is, how wide it is at its widest, how wide it is
 at its foot, and whether it is still standing. That is the whole input. It is
-the same list of facts problem 2's camera work produces, which is why this
-problem can begin where that one ended.
+the same list of facts the camera work for [telling the glasses
+apart](../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
+produces, which is why this problem can begin where that one ended.
 
-**Each reading carries problem 2's measured error.** The numbers are not the
-true ones. The bench adds a small random error to the position, to both widths
-and to the height, with sizes taken from what problem 2's programmed solution
-actually scored — the width error being the largest of the three, and the
-position error the smallest. The error is fresh on every look, so looking twice
-is worth something, but it is drawn from the table's number and the number of
-the look, which means the first look at a given table is identical for all six
-solutions. Nobody gets an easier first measurement than anybody else.
+**Each reading carries that camera work's measured error.** The numbers are
+not the true ones. The bench adds a small random error to the position, to
+both widths and to the height, with sizes taken from what the programmed
+solution there actually scored, which [its own
+results](../08_seeing-the-glasses/05_the-results.md) record — the width error
+being the largest of the three, and the position error the smallest. The error
+is fresh on every look, so looking twice is worth something, but it is drawn
+from the table's number and the number of the look, which means the first look
+at a given table is identical for all six solutions. Nobody gets an easier
+first measurement than anybody else.
 
 **Solutions that read pictures also get a rendered top-down view of the same
 table.** Three of the six read pictures rather than numbers — an imitation
@@ -179,9 +196,10 @@ learning from it, which is why a bench that reported only success or failure
 would have made the interesting half of this problem invisible.
 
 `take()` is the third call. It lifts a glass off the table and racks it, which
-is problem 1's job done for free here, and the bench quietly records whether
-the glass really had room at the moment it was taken. That recording is how the
-marking later knows whether the arm's own belief about room was correct.
+is the earlier job of carrying a single glass to the rack, done for free here.
+The bench quietly records whether the glass really had room at the moment it
+was taken. That recording is how the marking later knows whether the arm's own
+belief about room was correct.
 
 ## The shared output, and why it is a jaw trajectory
 
@@ -285,9 +303,12 @@ way down, never touching anything, or jamming. The budget itself — a fixed
 maximum per glass and per table, after which the remaining glasses must be
 refused — used to live in the code that drives each run, so the counts were not
 comparable. It now lives in the bench, as `PUSHES_PER_GLASS` and
-`PUSHES_PER_TABLE`, so all six are given the same number. One solution predates
-it: the fixed nudge spends 3 and 15 rather than 4 and 16, because its committed
-scorecard was measured at those and would change under the shared budget.
+`PUSHES_PER_TABLE`, so all six are given the same number. When the two numbers
+were brought together the larger pair was taken, 4 and 16 rather than 3 and 15,
+so that moving to one budget could not cramp a solution that already worked.
+The solution that had been running on the smaller pair, the fixed nudge, was
+measured under both and scores the same either way, because it refuses for want
+of room long before it runs out of tries.
 
 **Refusals are counted with their reason, and a refusal is a result rather
 than a failure.** Some glasses cannot be pushed safely at all, because they tip
@@ -312,13 +333,15 @@ what a push does, and a method whose glasses scatter is succeeding by looking
 again rather than by predicting, which is a real strategy but a different
 one.
 
-## Two things this scorecard needs that problem 2's did not
+## Two things this scorecard needs that the camera work's did not
 
-Problem 2's bench could run each solution once and read the result. This one
-cannot, and there are two reasons. Both are consequences of four of the six
-solutions being trained rather than written, and both are now in `scoring.py`:
-`Repeats` holds several evaluation runs and reports the spread across every
-number, and `Scorecard` reports the time per push beside the counts.
+The bench for [telling the glasses
+apart](../08_seeing-the-glasses/03_the-test-bench.md) could run each solution
+once and read the result. This one cannot, and there are two reasons. Both are
+consequences of four of the six solutions being trained rather than written,
+and both are now in `scoring.py`: `Repeats` holds several evaluation runs and
+reports the spread across every number, and `Scorecard` reports the time per
+push beside the counts.
 
 **One run is not a measurement.** The learned policies here are stochastic:
 asked the same question twice they may act differently, because the action is

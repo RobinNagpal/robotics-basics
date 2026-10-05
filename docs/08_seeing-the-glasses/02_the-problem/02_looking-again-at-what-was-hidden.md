@@ -14,6 +14,16 @@ could have been hiding without having seen it, how choosing where to look next
 becomes a covering problem with a known name, and why the one learned part in
 here is placed where a wrong answer costs a few seconds rather than a glass.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [Why no solution can answer this on its own](#why-no-solution-can-answer-this-on-its-own)
+1. [Step one: where could a glass have been hiding?](#step-one-where-could-a-glass-have-been-hiding)
+1. [Step two: where should the camera stand?](#step-two-where-should-the-camera-stand)
+1. [Step three: which look to take first](#step-three-which-look-to-take-first)
+1. [The honest limit](#the-honest-limit)
+1. [Where to go next](#where-to-go-next)
+
 ## Why no solution can answer this on its own
 
 The six solutions differ in how they turn pictures into masks. That difference
@@ -77,7 +87,7 @@ piece of work.
 
 Now the arm has a list of places that were never seen, and it has to choose
 camera positions that would see them. This is a different question from the one
-the measuring step asks, and the difference matters.
+the earlier job of measuring a single glass asks, and the difference matters.
 
 When a glass needs measuring, it has a position, so "somewhere around it, at
 the right distance, looking at it" is a sensible family of poses to try. An
@@ -157,9 +167,10 @@ whatever order the geometry suggests, and the run is slower rather than wrong.
 
 ### One number the model needs that is not in any picture
 
-One of its inputs deserves naming, because it comes from the problem statement
-rather than from a sensor: **how many glasses are on the table**. The problem
-says four to six, and the run knows how many it has already placed.
+One of its inputs deserves naming, because it comes from [the problem
+statement](01_what-is-asked-for.md) rather than from a sensor: **how many
+glasses are on the table**. The problem says four to six, and the run knows how
+many it has already placed.
 
 That single number changes how seriously the whole list of patches should be
 taken. If six glasses were expected and six were found, the patches are almost

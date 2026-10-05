@@ -55,8 +55,8 @@
 
 ## Introduction
 
-This document describes the sixth of the six answers to problem 2, and it is the
-one built on the most modern of the architectures in the set. The problem asks
+This document describes the sixth of the six answers this book gives, and it is
+the one built on the most modern of the architectures in the set. The problem asks
 which pixels belong to which glass, and this solution answers it by taking a
 transformer that detects and segments objects, RF-DETR-Seg, and continuing its
 training on this cell's own pictures with one class, "glass".
@@ -87,6 +87,27 @@ class list down to one class does and does not change, why this architecture
 suits the request for a glass's whole silhouette better than a rectangle-based
 one does, and the single mistake that would do the most damage if this solution
 were built carelessly.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code at the heart of it](#the-code-at-the-heart-of-it)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [What a transformer segmenter does differently](#what-a-transformer-segmenter-does-differently)
+1. [Why that matters for this problem](#why-that-matters-for-this-problem)
+1. [One class](#one-class)
+1. [Set prediction](#set-prediction)
+1. [Fine-tuning this model here](#fine-tuning-this-model-here)
+1. [The second rung — training against the whole silhouette](#the-second-rung--training-against-the-whole-silhouette)
+1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
 
 ## The code at the heart of it
 
@@ -307,9 +328,9 @@ contain anyway. Against it, the class answer stops being useful information. A
 model with a category list can be read as saying "I am sure this is a glass
 rather than a bowl", while here a high score means only "I am sure something is
 here", so the score cannot be read as agreement about the kind. That is no loss
-in this problem, because the kind on the table is already known, but it becomes
-one in problem 4, where naming the kind is the
-question.
+in this problem, because the kind on the table is already known, but it would be
+a loss in the harder job where several kinds of glass stand on the table at once
+and naming the kind is the question.
 
 One thing does not follow. Cutting the class list down does not make the model
 smaller or the training shorter in any important way, because almost all of the
@@ -356,7 +377,7 @@ amount to choose, so there is one fewer number that somebody has to justify
 against the geometry of this cell, and two heavily overlapping objects are not
 in competition with each other, because each occupies its own slot. That is a
 real advantage here and it should be stated as the design expectation it is, not
-as something this folder has measured.
+as something this book has measured.
 
 The cost of set prediction is also real and worth naming. Matching the slots to
 the objects one to one is a decision the training step has to make before it can
@@ -479,7 +500,7 @@ pixels loses every pixel of the far glass behind that surface. What is left is a
 slice of the glass, cut along one side, with every remaining pixel lying towards
 the side the camera could still see.
 
-Now hand that slice to the arithmetic every solution in this problem shares. It
+Now hand that slice to the arithmetic every solution in this book shares. It
 back-projects each mask pixel with its depth reading into a point in the room
 and drops the height to get a point on the table, takes the axis from the points
 at the top of the glass and the width from how far the cloud reaches out from
@@ -721,7 +742,7 @@ it for every one of the six.
 Two things follow and neither is re-derived here. **A difference in the score
 belongs to the mask**, because nothing else is allowed to differ, so no solution
 can win by measuring more cleverly and none can lose by measuring worse. And
-**no model in this problem produces a pose.** Models produce masks. The place
+**no model in this book produces a pose.** Models produce masks. The place
 comes from the depth readings and the camera's own pose, by arithmetic, and a
 glass standing upright on a flat table has no orientation left to find.
 
@@ -764,7 +785,7 @@ something else at. A glass passing both is reported with its place, its width
 and its visible fraction; a glass failing either is reported as doubtful, with
 the check it failed. Last, where two surviving reports land at one place on the
 table only the surer of them keeps the place, which is the shared rule every
-solution in this problem ends with.
+solution in this book ends with.
 
 Three things are worth holding on to. The **shape of the output** is what
 answers the hardest part of the problem, because a fixed set of slots filled one
@@ -844,7 +865,7 @@ So the completely hidden case has to be handed on, and what is handed on is not
 a glass but a region: the part of the table this picture could not have seen.
 Working that region out is arithmetic on splay and on the glasses that *were*
 found, and going to look at it is a move of the arm. Both belong to the shared
-part of this problem described in [looking again at what was
+part of the job described in [looking again at what was
 hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md), which every one of the six points at rather than
 restating. This solution contributes the masks that argument starts from, and
 none of the argument.

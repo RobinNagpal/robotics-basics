@@ -1,14 +1,38 @@
-# Problem 3 — the six solutions side by side
+# The six solutions side by side
 
-Six ways of pushing crowded glasses apart so that each one can then be picked
-up, all tested on the same 50 tables holding 251 glasses, 193 of which have no
-room at the start. Every solution is given the same tables, spends the same
-push budget, and is judged by the same scorecard, which is described in
-[`docs/03-push-glasses-apart/the-bench.md`](02_the-test-bench.md).
+## Introduction
+
+This page is the scoreboard for the six solutions in this book. It answers one
+question: given the same crowded tables and the same marking, how many of them
+did each method clear, and what did it knock over on the way? It is written for
+a reader who has already met the six, and it is the page to come back to
+whenever another document claims that one method did better than another.
+
+The six ways of pushing crowded glasses apart so that each one can then be
+picked up are all tested on the same 50 tables holding 251 glasses, 193 of
+which have no room at the start. Every solution is given the same tables,
+spends the same push budget, and is judged by the same scorecard, which is
+described in [the test bench](02_the-test-bench.md).
 None of them saw these tables while it was being built or fitted. Every number
 on this page is read from a solution's own `results.json`.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [The results](#the-results)
+1. [What the comparison says](#what-the-comparison-says)
+1. [What these results do not cover](#what-these-results-do-not-cover)
+1. [Reproducing](#reproducing)
+
 ## The results
+
+Read the table a column at a time rather than a row at a time, because no
+single column decides which solution is better. Each row is one solution and
+each column is one measurement, and the figure in bold is the best any of the
+six achieved in that column. The two columns that matter most are the ones on
+the right of the middle: a table the run left in a state the cell should never
+reach, and a glass knocked over, which is the one failure this cell cannot take
+back.
 
 | | tables done | tables wrong | glasses racked | toppled | pushes | thinking per push |
 |---|---|---|---|---|---|---|
@@ -17,12 +41,12 @@ on this page is read from a solution's own `results.json`.
 | [3 imitation, ACT](../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations) | 3 | 1 | 68 | 1 | 643 | fast |
 | [4 a world model](../../code/src/09_pushing-the-glasses-apart/04-a-world-model) | 31 | 1 | **202** | 1 | **114** | middling |
 | [5 SmolVLA as it downloads](../../code/src/09_pushing-the-glasses-apart/05-smolvla-as-it-downloads) | 0 | 5 | 56 | 6 | 754 | slow |
-| [6 SmolVLA fine-tuned](../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned) | 4 | **38** | 77 | **46** | 400 | slow |
+| [6 SmolVLA fine-tuned](../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned) | 4 | 38 | 77 | 46 | 400 | slow |
 
 A table is **done** when every glass on it was picked up, and **wrong** when
 the run ended in a state the cell should never reach. Solutions 3, 5 and 6 are
-run several times and the figure shown is the middle one; each folder's own
-page gives the spread between runs.
+run several times and the figure shown is the middle one; [each solution's own
+document](03_the-six-solutions/01_overview.md) gives the spread between runs.
 
 The thinking column is deliberately coarse. Every time on this page was
 measured while the machine was busy with other work, and the same solution
@@ -90,6 +114,7 @@ on the right of the table matter more than the one on the left.
 pixi run python 01-one-fixed-nudge/run.py
 ```
 
-The same line for each of the other five, from this problem's folder. The ones
-that fit something need their training step first, and each folder's README
-says which and what it costs.
+The same line works for each of the other five, run from
+`code/src/09_pushing-the-glasses-apart/`. The ones that fit something need
+their training step first, and each solution folder's own README says which
+step that is and what it costs.

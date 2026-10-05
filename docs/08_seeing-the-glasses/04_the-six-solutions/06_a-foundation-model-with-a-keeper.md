@@ -45,9 +45,10 @@
 
 ## Introduction
 
-This document describes a way to answer [problem 2](../02_the-problem/01_what-is-asked-for.md) in which
-almost nothing is fitted in this cell. The other five solutions either write
-every rule down by hand or fit a model to this cell's own pictures. This one
+This document describes a way to do [the job this book sets
+out](../02_the-problem/01_what-is-asked-for.md) in which almost nothing is
+fitted in this cell. The other five solutions either write every rule down by
+hand or fit a model to this cell's own pictures. This one
 does neither for the part that finds objects: the finding is done by a very
 large model that somebody else fitted, somewhere else, on photographs of the
 real world, and it is used exactly as it downloads. The only numbers fitted here
@@ -80,6 +81,27 @@ last concept section weighs the two against each other, and the honest answer is
 not simply that the newer one is better, because the keeper is the one place in
 this whole set of six solutions where the deciding can be explained by printing
 its inputs beside its answer.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code at the heart of it](#the-code-at-the-heart-of-it)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [What a foundation model is](#what-a-foundation-model-is)
+1. [Turning a promptable model into a proposer of everything](#turning-a-promptable-model-into-a-proposer-of-everything)
+1. [Why the borrowed model is never trained here](#why-the-borrowed-model-is-never-trained-here)
+1. [The picture the borrowed model is handed](#the-picture-the-borrowed-model-is-handed)
+1. [The keeper](#the-keeper)
+1. [The second rung — a word instead of a grid](#the-second-rung--a-word-instead-of-a-grid)
+1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
 
 ## The code at the heart of it
 
@@ -154,7 +176,7 @@ deciding looks like in code.
 
 ## The problem this solves
 
-Problem 2 puts four to six glasses on the table. They are all of one kind, the
+This book puts four to six glasses on the table. They are all of one kind, the
 kind is known, and they are opaque, so the depth camera sees them. The job is to
 say which pixels belong to which glass, and to give each glass a place on the
 table and a rough footprint width. Nothing is picked up and no shape is
@@ -437,9 +459,10 @@ holes from their neighbours rather than with a constant, so that a missing
 reading does not become an object with an outline.
 
 None of that closes the gap, and the honest claim is smaller: it makes the
-picture more like the pictures the weights were fitted on. The problem itself
-says that the two kinds of glass with a stem are harder than the two without,
-and that the stemmed glass is the hardest of the four, and that ordering is
+picture more like the pictures the weights were fitted on. The description of
+[what is asked for](../02_the-problem/01_what-is-asked-for.md) says that the
+two kinds of glass with a stem are harder than the two without, and that the
+stemmed glass is the hardest of the four, and that ordering is
 exactly what a shaded depth picture makes worse, because a stem is thin and the
 silhouette it offers is nearly nothing. Where the shading cannot be made good
 enough, the remedy is not available inside this solution at all: it is solution
@@ -577,9 +600,10 @@ combination, and the number of combinations grows faster than anybody will
 maintain.
 
 The second part is this solution's own purpose. A page of thresholds over
-regions is a programmed solution, and problem 2 already has one of those in
-solution 1. The question this solution exists to answer is how little has to be
-written down, so the last decision is fitted rather than written.
+regions is a programmed solution, and this book already has one of those in
+[solution 1](02_rules-on-the-table.md). The question this solution exists to
+answer is how little has to be written down, so the last decision is fitted
+rather than written.
 
 The third part is that **the labels are free**, which is what makes the second
 part affordable. The bench's answer key says which glass owns each pixel, so the
@@ -612,10 +636,11 @@ two of the regions which come back stand at different places on the table with
 widths inside the kind's range, the pair is reported as those two glasses.
 
 If they do not, the pair is **reported as an unseparated pair**, carrying its
-reason, and handed to [problem 3](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
+reason, and handed to [the job of pushing the glasses
+apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
 That is not a failure. This project's rule is that anything doubtful is reported
 and never guessed, and a pair the arm cannot tell apart is stated as the input
-to the next problem rather than turned into one wide glass that everything
+to that next job rather than turned into one wide glass that everything
 downstream would believe.
 
 ### What kind of model the keeper is
@@ -744,9 +769,9 @@ borrowed model.
 
 **Both rungs are the same solution.** Both borrow a promptable foundation model
 and train nothing in this cell. They differ only in where the judgement "this is
-a glass" lives: on the lower rung it lives in a small fitted model in this
-folder, and on the upper rung it lives inside borrowed weights, reached through
-a word.
+a glass" lives: on the lower rung it lives in a small model fitted in this
+cell, and on the upper rung it lives inside borrowed weights, reached through a
+word.
 
 What is gained is real and worth stating plainly. There is **less code**: no
 grid, no scoring and stability gate, no duplicate removal, no table of
@@ -833,7 +858,7 @@ against the kind before it is reported, and where two reports land at **one
 place on the table** only the surer of them survives. A proposal it calls more
 than one glass goes back for a **second round of prompts inside itself**.
 Anything left over is **reported doubtful**, which for a pair means handing it
-to problem 3.
+to the job of pushing the glasses apart.
 
 Three things about that chain are worth holding on to.
 
@@ -854,8 +879,9 @@ A glass can be missing from a picture altogether. It stands on the table, it is
 opaque, the camera is pointed at the part of the table it stands on, and not one
 pixel of it comes back, because a taller glass's outline has been thrown
 outwards by splay until it sweeps right over the shorter one. This is the most
-dangerous of the three difficulties in [problem 2](../02_the-problem/01_what-is-asked-for.md), every
-solution has to say what it does about it, and this solution's answer is a clean
+dangerous of the [three difficulties this book
+names](../02_the-problem/01_what-is-asked-for.md), every solution has to say what
+it does about it, and this solution's answer is a clean
 and complete no.
 
 Being exact about why takes five steps, and each one closes a different escape

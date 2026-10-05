@@ -2,22 +2,22 @@
 
 > **What it uses** — [LeRobot](https://github.com/huggingface/lerobot), which
 > holds reference implementations of this whole family of policies, with
-> PyTorch underneath. No rented accelerator: this one fitted on the machine
-> the project is written on, an Apple M4 with no NVIDIA card. The model
-> is **ACT**, an action chunking transformer: it predicts a short run of future
-> actions in one go rather than one action at a time. A second rung uses
-> **Diffusion Policy**, also in LeRobot, which reaches the same kind of answer
-> by starting from noise and denoising towards an action chunk. Nothing is
-> downloaded except the library: both models are fitted here, from random
-> numbers, on demonstrations produced inside this project.
+> PyTorch underneath. No rented accelerator: this one fitted on the machine the
+> project is written on, an Apple M4 with no NVIDIA card. The model is **ACT**,
+> an action chunking transformer: it predicts a short run of future actions in
+> one go rather than one action at a time. A second rung uses **Diffusion
+> Policy**, also in LeRobot, which reaches the same kind of answer by starting
+> from noise and denoising towards an action chunk. Nothing is downloaded
+> except the library: both models are fitted here, from random numbers, on
+> demonstrations produced inside this project.
 > **What it does** — the arm is shown what a good push looks like, many times
 > over, and a network is trained to copy it. The demonstrations come from
-> [solution 2](03_geometry-generates-a-model-ranks.md), which generates legal candidate pushes
-> and ranks them, so they cost nothing but arm time on the bench. The trained
-> policy then maps what the camera sees straight to a short run of jaw
-> waypoints, with no geometry, no friction model and no candidate list
-> anywhere inside it. Nobody writes down how to push a glass; the examples
-> carry that, and the fitting extracts it.
+> [geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md),
+> which generates legal candidate pushes and ranks them, so they cost nothing
+> but arm time on the bench. The trained policy then maps what the camera sees
+> straight to a short run of jaw waypoints, with no geometry, no friction model
+> and no candidate list anywhere inside it. Nobody writes down how to push a
+> glass; the examples carry that, and the fitting extracts it.
 > **How the output is produced** — a view of the table from the top goes in.
 > The policy returns an **action chunk**: a short run of consecutive jaw
 > waypoints, predicted together in one pass. The bench carries those waypoints
@@ -25,33 +25,32 @@
 > trajectory. The arm then looks again, and the fresh picture is the next
 > input. One push is one chunk, and the loop runs until every glass has room,
 > or the glasses that are left have been refused, or the push budget is spent.
-> **How it differs from the other five** — [solution
-> 1](02_one-fixed-nudge.md) fits nothing and pushes a fixed fraction of the
-> room a glass is short of, which is the floor this has to clear. [Solution
-> 2](03_geometry-generates-a-model-ranks.md) writes the geometry by hand and fits only a ranker
-> over the candidates that geometry produces, and it is this solution's
-> teacher, which makes the pair a reading of how close a student gets to the
-> program it copied. [Solution 4](05_a-world-model-then-plan-with-it.md) learns how the world
+> **How it differs from the other five** — [one fixed
+> nudge](02_one-fixed-nudge.md) fits nothing and pushes a fixed fraction of the
+> room a glass is short of, which is the floor this has to clear. [Geometry
+> generates, a model ranks](03_geometry-generates-a-model-ranks.md) writes the
+> geometry by hand and fits only a ranker over the candidates that geometry
+> produces, and it is this solution's teacher, which makes the pair a reading
+> of how close a student gets to the program it copied. [A world model, then
+> plan with it](05_a-world-model-then-plan-with-it.md) learns how the world
 > changes and searches over actions at run time, so it can find a push nobody
-> ever demonstrated, and pays for the search on every push. [Solution
-> 5](06_a-foundation-model-as-it-downloads.md) runs a large borrowed policy exactly as it
-> downloads, with no fitting here at all. [Solution
-> 6](07_the-same-model-fine-tuned-here.md) continues that borrowed policy's training on
-> this cell's own data, which is this solution's method applied to somebody
-> else's weights instead of to random ones.
+> ever demonstrated, and pays for the search on every push. [SmolVLA as it
+> downloads](06_a-foundation-model-as-it-downloads.md) runs a large borrowed
+> policy exactly as it downloads, with no fitting here at all. [SmolVLA
+> fine-tuned](07_the-same-model-fine-tuned-here.md) continues that borrowed
+> policy's training on this cell's own data, which is this solution's method
+> applied to somebody else's weights instead of to random ones.
 > **What it costs** — the demonstrations are free in money and cheap in time,
 > because the teacher is a program and the tables are simulated, so the whole
 > dataset is arm time on the bench rather than human hours at a teleoperation
-> rig. Training runs in hours — on this machine's own graphics processor, as
-> it turned out, so the rental this document first budgeted for was not
-> needed. The licence position is as simple as it gets here:
-> LeRobot is Apache-2.0, which is the permissive kind of licence the
-> implementation notes record for
-> everything else this project depends on, and because no borrowed weights
-> are used, the weights file this solution produces inherits no terms from
-> anybody. The real price is paid elsewhere, in two parts named plainly below:
-> the policy cannot be much better than its teacher, and the bench has to grow
-> two things it does not have.
+> rig. Training runs in hours — on this machine's own graphics processor, as it
+> turned out, so the rental this document first budgeted for was not needed.
+> The licence position is as simple as it gets here: LeRobot is Apache-2.0,
+> which is the same permissive kind of licence as everything else this project
+> depends on, and because no borrowed weights are used, the weights file this
+> solution produces inherits no terms from anybody. The real price is paid
+> elsewhere, in two parts named plainly below: the policy cannot be much better
+> than its teacher, and the bench has to grow two things it does not have.
 
 > **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
 > layout, the two places the camera works from, from the top and from the
@@ -60,8 +59,9 @@
 
 ## Introduction
 
-This document explains how to answer problem 3 by showing the arm examples of
-good pushes and training a model to copy them. The method has a name,
+This document explains how to [push the glasses
+apart](../01_the-problem/01_what-is-asked-for.md) by showing the arm examples
+of good pushes and training a model to copy them. The method has a name,
 **behaviour cloning**, and it is the plainest kind of learning there is: no
 reward, no exploration, no physics, only a large table of situations and the
 action somebody took in each one. The model that does the copying is ACT, an
@@ -70,17 +70,18 @@ with Diffusion Policy, which arrives at the same kind of answer by a different
 route.
 
 **This is built, and it is worth being exact about which parts.** [The test
-bench](../02_the-test-bench.md) is built, the programmed geometry that picks a landing
-spot for one glass at a time is built, and so is the ranker that turns that
-geometry into [solution 2](03_geometry-generates-a-model-ranks.md), which is this solution's
+bench](../02_the-test-bench.md) is built, the programmed geometry that picks a
+landing spot for one glass at a time is built, and so is the ranker that turns
+that geometry into [geometry generates, a model
+ranks](03_geometry-generates-a-model-ranks.md), which is this solution's
 teacher. The two things the bench was missing are built as well: the
 straight-down rendered view this policy reads, as `bench/top_view.py`, and the
 path that carries out a chunk of waypoints, as `Bench.follow`. ACT has been
-fitted here, from random numbers, on demonstrations recorded off solution 2's
-own pushes, and run over the held-out tables. The code is in
-`03-push-glasses-apart/03-imitation-from-demonstrations/` and the numbers it
-scored are in that folder's `README.md`, not here: this document is the
-design, and a measurement quoted in two places drifts.
+fitted here, from random numbers, on demonstrations recorded off that
+solution's own pushes, and run over the held-out tables. The code is in
+`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/` and
+the numbers it scored are in that folder's `README.md`, not here: this document
+is the design, and a measurement quoted in two places drifts.
 
 Three things below are still prescriptions rather than code, and each says so
 where it appears: the DAgger round, the force monitor that would watch a chunk
@@ -88,8 +89,9 @@ while it runs, and deliberately over-representing the crowded corner cases in
 the demonstration set.
 
 The reason this solution is worth writing out in full is that it is the
-cheapest way of asking a question the other five cannot ask. Solution 2 is a
-program that chooses pushes well. If a network trained only to copy that
+cheapest way of asking a question the other five cannot ask. The teacher,
+[geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md), is
+a program that chooses pushes well. If a network trained only to copy that
 program comes close to it, then the mapping from a picture of a crowded table
 to a good push is learnable, and the remaining error belongs to the teacher
 rather than to the idea. If the student falls a long way short, that is
@@ -105,6 +107,27 @@ good; what compounding error is, why it is the characteristic failure of
 copying, and what in this problem's own loop blunts it; and the three honest
 costs this solution carries, none of which can be engineered away.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code at the heart of it](#the-code-at-the-heart-of-it)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [Behaviour cloning — learning a policy by copying](#behaviour-cloning--learning-a-policy-by-copying)
+1. [Where the demonstrations come from](#where-the-demonstrations-come-from)
+1. [Choosing which demonstrations to keep, and the bias it buys](#choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
+1. [Action chunking, and why it matters](#action-chunking-and-why-it-matters)
+1. [The second rung — Diffusion Policy](#the-second-rung--diffusion-policy)
+1. [Compounding error](#compounding-error)
+1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+
 ## The code at the heart of it
 
 This solution lives or dies on one join. A demonstration is the path the jaw
@@ -116,7 +139,7 @@ contribution, and beside it sits the single call that reaches into the borrowed
 library.
 
 The conversion is in
-[`03-push-glasses-apart/03-imitation-from-demonstrations/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py),
+[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/chunks.py),
 which holds no model and no geometry of pushing. `push_segment` keeps the part
 of a recorded path at push height, from where the jaw started travelling across
 the table to the furthest point it reached, and drops the descent, the back-off
@@ -148,7 +171,7 @@ def to_action(waypoints: tuple[Waypoint, ...]) -> np.ndarray:
 ```
 
 The borrowed model is reached in one place, in
-[`03-push-glasses-apart/03-imitation-from-demonstrations/policy.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py):
+[`code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py`](../../../code/src/09_pushing-the-glasses-apart/03-imitation-from-demonstrations/policy.py):
 one call that builds LeRobot's ACT, and one that asks it for a chunk.
 
 ```python
@@ -176,11 +199,11 @@ one call that builds LeRobot's ACT, and one that asks it for a chunk.
         return self.scale.back(answer[0].float().cpu().numpy())
 ```
 
-Three of those settings are the whole of what this folder insists on against
+Three of those settings are the whole of what this solution insists on against
 LeRobot's own defaults: `pretrained_backbone_weights=None`, which switches off
 the ImageNet weights ACT would otherwise download for its vision backbone and
 is what makes "fitted from random numbers" true; `normalization_mapping`, which
-hands the scaling back to this folder's own code so that the numbers reaching
+hands the scaling back to this solution's own code so that the numbers reaching
 the model are only ones written here; and `n_action_steps` set to the chunk's
 full length, because one push is one chunk and nothing re-plans part way
 through. The rest of the model is LeRobot's, untouched.
@@ -210,13 +233,14 @@ a pushed glass turns as well as travels. Planar pushing is a well studied
 problem and the honest summary is that predicting an outcome precisely needs
 numbers nobody here has.
 
-Solution 2 answers that difficulty by not predicting much. It enumerates pushes
-that are legal by construction, scores each one, and takes the best. That works,
-and it has a price that is easy to overlook: somebody has to write the
-enumeration, choose which features the ranker sees, and keep both in step with
-the cell. Every one of those choices is a place where a person's model of
-pushing enters the method, and a person's model of pushing is the thing that is
-known to be incomplete.
+[Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md)
+answers that difficulty by not predicting much. It enumerates pushes that are
+legal by construction, scores each one, and takes the best. That works, and it
+has a price that is easy to overlook: somebody has to write the enumeration,
+choose which features the ranker sees, and keep both in step with the cell.
+Every one of those choices is a place where a person's model of pushing enters
+the method, and a person's model of pushing is the thing that is known to be
+incomplete.
 
 **This solution attacks the same difficulty from the other end.** Nobody can
 write the function from a crowded table to a good push. But a bench can tell
@@ -228,19 +252,18 @@ The function is not written; it is measured into existence.
 Two further things follow from doing it this way, and they are what make this
 solution different in kind from its teacher rather than merely cheaper.
 
-**The policy learns the motion, not only the choice.** Solution 2 emits a
+**The policy learns the motion, not only the choice.** The teacher emits a
 parameterised push — which glass, where to put the jaw down, which way to
 point, how far to feel, how far to push — and [the test
-bench](../02_the-test-bench.md) owns the macro that expands those numbers into a
-descent, a feel, a slide, a back-off and a lift. Every parameterised push is
+bench](../02_the-test-bench.md) owns the macro that expands those numbers into
+a descent, a feel, a slide, a back-off and a lift. Every parameterised push is
 expanded the same way. A policy that emits waypoints is not limited to motions
 that macro can express. It can slow where a neighbour is close, lean the slide
 away from a glass it is passing, or stop short of the distance it set out to
-cover. Whether any of that helps is exactly the sort of thing this folder
-exists to measure, but the freedom is real and only the trajectory solutions
-have it.
+cover. Whether any of that helps is exactly the sort of thing this book exists
+to measure, but the freedom is real and only the trajectory solutions have it.
 
-**The policy reads the picture.** Solution 2 works from the numeric readings
+**The policy reads the picture.** The teacher works from the numeric readings
 `look()` returns. A policy of this family takes an image, and the bench hands
 one over for that reason. An image holds things the readings do not: the shape
 of the gap between two glasses, how a third glass sits behind them, where the
@@ -250,7 +273,8 @@ to use it.
 
 ## The main idea
 
-The idea is one sentence long: **run solution 2 over the training tables, keep
+The idea is one sentence long: **run [geometry generates, a model
+ranks](03_geometry-generates-a-model-ranks.md) over the training tables, keep
 the pushes that worked, and fit a network that maps the picture of the table to
 the next short run of jaw waypoints.**
 
@@ -322,10 +346,11 @@ reads.
 method. Not as a constant, not as a guess, not as a quantity to be estimated.
 The demonstrations were produced in a world with friction in it, so the
 consequences of friction are in the data, and the network learns whatever of
-them it can use without ever representing the number. Compare that with
-[solution 4](05_a-world-model-then-plan-with-it.md), whose whole business is learning how the
-world changes and planning through it. This solution does not predict what a
-push will do. It only predicts what the teacher would have done.
+them it can use without ever representing the number. Compare that with [a
+world model, then plan with it](05_a-world-model-then-plan-with-it.md), whose
+whole business is learning how the world changes and planning through it. This
+solution does not predict what a push will do. It only predicts what the
+teacher would have done.
 
 Against those three, one fragility, and it is the only one that matters because
 everything else about this method follows from it.
@@ -346,20 +371,20 @@ Behaviour cloning needs examples, and in most of robotics that is the sentence
 that kills it. Here it is almost free, and it is worth being clear about why,
 because the judgement of whether this method is worth its price depends on it.
 
-**The teacher is [solution 2](03_geometry-generates-a-model-ranks.md).** That solution generates
+**The teacher is [geometry generates, a model
+ranks](03_geometry-generates-a-model-ranks.md).** That solution generates
 candidate pushes from geometry — pushes that are legal by construction, aimed
-at destinations [the target layout](../01_the-problem/02_the-target-layout.md) computed — and
-ranks them with a fitted model, taking the best. Run it on a table and it
-produces a push. Run it on many tables and it produces many pushes. Each one is
-carried out by the bench, which expands the parameterised push into the
-waypoints the jaw actually followed, and marks what happened to the table
-afterwards. So **every push solution 2 makes is a finished demonstration
-already**: a picture of the table before it, the waypoints that were followed,
-and the bench's own verdict on whether it worked.
+at destinations [the target layout](../01_the-problem/02_the-target-layout.md)
+computed — and ranks them with a fitted model, taking the best. Run it on a
+table and it produces a push. Run it on many tables and it produces many
+pushes. Each one is carried out by the bench, which expands the parameterised
+push into the waypoints the jaw actually followed, and marks what happened to
+the table afterwards. So **every push that solution makes is a finished
+demonstration already**: a picture of the table before it, the waypoints that
+were followed, and the bench's own verdict on whether it worked.
 
-Five consequences follow, and they are the reason the
-plan says that supplying demonstrations is what earns
-solution 2 its place beyond being a baseline.
+Five consequences follow, and together they are why supplying demonstrations is
+what earns that solution its place beyond being a baseline.
 
 **The cost is arm time on a simulated bench, and nothing else.** There is no
 teleoperation rig, no operator, no scheduling of a person's hours, and no
@@ -385,11 +410,11 @@ that came up today. A program can, every time, for nothing. This is the single
 most useful property of a programmed teacher, and the section on compounding
 error is where it is spent.
 
-**And the teacher is itself one of the six.** So the comparison between
-solution 2 and this solution is not two methods against each other but a
-student against the program it copied, measured on the same tables with the
-same scorecard. That is a rare and clean reading, and the
-plan builds it in deliberately.
+**And the teacher is itself one of the six.** So the comparison between the
+teacher and this solution is not two methods against each other but a student
+against the program it copied, measured on the same tables with the same
+scorecard. That is a rare and clean reading, and the six were arranged
+deliberately so that it could be taken.
 
 One honest qualification belongs with all of that. **This is a privilege of
 working in a simulator with a programmed teacher.** On a real arm with a human
@@ -408,7 +433,7 @@ Start with why any filtering happens at all. **A cloned policy copies
 everything in its data.** It has no notion of a good action and a bad one; it
 has only a label to reproduce. If the set holds a push that toppled a glass,
 that push is a label like any other, and the fitting moves the weights towards
-producing it. Solution 2 is not perfect — no solution here is — so some of its
+producing it. The teacher is not perfect — no solution here is — so some of its
 pushes topple a glass, push one out of the glass zone, or jam. Keeping those
 teaches the student to make them. So the set is filtered by the bench's own
 verdict, and only the pushes that worked are kept.
@@ -416,8 +441,8 @@ verdict, and only the pushes that worked are kept.
 That is clearly right, and it has a consequence that is clearly uncomfortable.
 
 **Filtering by outcome does not only change which actions are recommended. It
-changes which situations are covered.** Suppose there is a kind of table
-solution 2 handles badly — glasses crowded in a corner of the glass zone, say,
+changes which situations are covered.** Suppose there is a kind of table the
+teacher handles badly — glasses crowded in a corner of the glass zone, say,
 where the legal destinations are few and the teacher's candidates are poor.
 Most of the teacher's pushes on such tables fail, so most of them are dropped,
 so the training set holds few examples of that kind of table. The student is
@@ -428,19 +453,19 @@ most valuable.**
 
 Said in the language of the previous section: conditioning the dataset on
 success biases the input distribution as well as the labels, and it biases it
-towards the teacher's own competence. So this solution's picture of problem 3
-is solution 2's picture of problem 3, with solution 2's blind spots deepened
-rather than merely copied.
+towards the teacher's own competence. So this solution's picture of pushing the
+glasses apart is the teacher's picture of it, with the teacher's blind spots
+deepened rather than merely copied.
 
 Three things can be done about it. Two are now code and the third is still a
 prescription.
 
-**Keep the teacher's refusals, as refusals.** A glass solution 2 declined to
+**Keep the teacher's refusals, as refusals.** A glass the teacher declined to
 push is not a failure and should not be dropped as one; [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) is explicit that a refusal is a
-result. A dataset that silently omits those tables teaches the student nothing
-about them, and silence in a dataset is not a label. **Done**: the refusals
-and their reasons are counted beside the demonstrations.
+toppling](../01_the-problem/03_pushing-without-toppling.md) is explicit that a
+refusal is a result. A dataset that silently omits those tables teaches the
+student nothing about them, and silence in a dataset is not a label. **Done**:
+the refusals and their reasons are counted beside the demonstrations.
 
 **Record what the filtering removed, broken down by table.** The thinning is
 invisible unless it is counted. A table of kept and dropped pushes, grouped by
@@ -547,9 +572,9 @@ method that exists.
 
 ## The second rung — Diffusion Policy
 
-The plan carries a second rung for this solution, and it is not a spare in case
-the first one fails. It is there to test one specific weakness of the first,
-which the previous section has just named.
+This solution carries a second rung, and it is not a spare in case the first
+one fails. It is there to test one specific weakness of the first, which the
+previous section has just named.
 
 **Diffusion Policy reaches the same kind of answer by starting from noise and
 denoising towards an action chunk.** In plain words: instead of computing the
@@ -658,7 +683,7 @@ iterations.
 
 **What mitigates it here is the loop, and the mitigation is substantial.**
 [Pushing without toppling](../01_the-problem/03_pushing-without-toppling.md) describes every
-solution in this problem as acting, measuring what really happened, and then
+solution in this book as acting, measuring what really happened, and then
 deciding again from what it measured. The arm is not following a script of
 pushes; it repeats one step — look at the table, choose one push, make it, look
 again — until the work is done. For a cloned policy that arrangement is worth
@@ -694,10 +719,10 @@ policy's own drift, which is exactly the region plain cloning leaves empty.
 The reason this is affordable here is the property named two sections ago.
 **The teacher is a program, so it can be asked about any state, at any time,
 for nothing.** A human demonstrator cannot answer "what would you have done on
-this table that my policy produced last Tuesday"; solution 2 can answer it
-every time it is asked. So the one serious weakness of behaviour cloning has, in
-this particular arrangement, a cheap and well understood repair available — and
-it is worth recording that this is a consequence of the teacher being code,
+this table that my policy produced last Tuesday"; the teacher can answer it
+every time it is asked. So the one serious weakness of behaviour cloning has,
+in this particular arrangement, a cheap and well understood repair available —
+and it is worth recording that this is a consequence of the teacher being code,
 not a property of imitation learning in general.
 
 ## The pushes are what this contributes
@@ -719,10 +744,11 @@ pushes per glass and measures how far each glass ended from its aim. A policy
 whose output is a run of waypoints produces neither. Both are therefore read
 back off the chunk after the fact: the glass is the one the jaw ends up
 against, and the aim is that last fingertip moved forward by half the glass's
-measured width, which is solution 1's own convention. Nothing about that
-reaches the policy or changes the motion. It is bookkeeping for the
-scorecard, and it is named here because it is the one place where this
-solution's output is not literally the whole answer.
+measured width, which is the convention [one fixed
+nudge](02_one-fixed-nudge.md) uses. Nothing about that reaches the policy or
+changes the motion. It is bookkeeping for the scorecard, and it is named here
+because it is the one place where this solution's output is not literally the
+whole answer.
 
 **The score is the outcome, not the action.** The bench does not ask whether
 the chunk was the chunk it would have chosen, or whether the waypoints were
@@ -734,13 +760,15 @@ side.
 
 **Everything else in the pipeline is shared, so a difference in the score
 belongs to the policy.** The tables are the bench's. The measurements are the
-bench's, carrying problem 2's measured error. The destinations come from [the
-target layout](../01_the-problem/02_the-target-layout.md), computed once per arrangement and so
-every solution that aims at a destination aims at the same places, rather than
-at an easier arrangement than another. The topple limit and the refusal rule
-come from [pushing without toppling](../01_the-problem/03_pushing-without-toppling.md). What this
-solution contributes is one mapping — from a picture of the table to a short
-run of waypoints — and nothing else.
+bench's, carrying the measured error of [telling the glasses
+apart](../../08_seeing-the-glasses/05_the-results.md). The destinations come
+from [the target layout](../01_the-problem/02_the-target-layout.md), computed
+once per arrangement and so every solution that aims at a destination aims at
+the same places, rather than at an easier arrangement than another. The topple
+limit and the refusal rule come from [pushing without
+toppling](../01_the-problem/03_pushing-without-toppling.md). What this solution
+contributes is one mapping — from a picture of the table to a short run of
+waypoints — and nothing else.
 
 There is a pleasing detail in how the shared parts reach this solution, and it
 is worth noticing because it explains what the policy is really learning. The
@@ -761,21 +789,21 @@ apart because almost all the cost is in the first and almost all the risk is in
 the second.
 
 **Offline, and once.** Tables are drawn from numbers below the dividing line.
-Solution 2 is run over them. For every push it chooses, three things are
+The teacher is run over them. For every push it chooses, three things are
 recorded: the view of the table from the top at that moment, the waypoints the
 bench's macro produced, and the bench's verdict on what happened to the table
 afterwards. Pushes that failed are dropped and the dropping is counted, so the
-thinning is visible. Refusals are kept as refusals. What remains is a dataset of
-pairs — a picture, and a chunk of waypoints — which is exactly the shape
+thinning is visible. Refusals are kept as refusals. What remains is a dataset
+of pairs — a picture, and a chunk of waypoints — which is exactly the shape
 behaviour cloning needs. One detail of the shape is worth naming, because the
 document above does not settle it: a recorded path is a few hundred waypoints
 long and a chunk is a fixed, shorter run, so every demonstration is trimmed to
 the part at push height and resampled to the chunk's length. The trimming is
-free, because the bench does the descent and the lift itself. The resampling
-is not free: waypoints are consumed at a fixed rate, so squeezing a long push
-into a fixed chunk runs it faster than it was demonstrated. The chunk's length
-is therefore set near the median length of the teacher's own pushes, and a
-push longer than that is replayed quicker than it was made.
+free, because the bench does the descent and the lift itself. The resampling is
+not free: waypoints are consumed at a fixed rate, so squeezing a long push into
+a fixed chunk runs it faster than it was demonstrated. The chunk's length is
+therefore set near the median length of the teacher's own pushes, and a push
+longer than that is replayed quicker than it was made.
 
 ACT is then fitted on the dataset from random numbers, for hours. The second
 rung fits Diffusion Policy on the same dataset, changing the model and nothing
@@ -808,18 +836,18 @@ over a whole run would compound its own error. Run one chunk at a time against
 a freshly measured table, it is re-anchored on every push. The method and the
 loop are a pair; neither would be sensible here without the other.
 
-**The ceiling is the teacher.** Every label this policy ever saw came from
-solution 2, and nothing in behaviour cloning evaluates an outcome. So the
-student has no mechanism by which to discover a better choice of glass, or a
-better destination, than the one it was shown. The next sections are about what
-that does and does not rule out.
+**The ceiling is the teacher.** Every label this policy ever saw came from the
+teacher, and nothing in behaviour cloning evaluates an outcome. So the student
+has no mechanism by which to discover a better choice of glass, or a better
+destination, than the one it was shown. The next sections are about what that
+does and does not rule out.
 
 ## When a glass cannot be pushed safely
 
-Every solution document in this folder answers this question. This one's answer
-is that **the refusal does not and cannot live inside the policy**, and the
-reasoning is worth following because it is a good illustration of what a cloned
-policy is unable to express.
+Every solution document in this chapter answers this question. This one's
+answer is that **the refusal does not and cannot live inside the policy**, and
+the reasoning is worth following because it is a good illustration of what a
+cloned policy is unable to express.
 
 The limit itself is shared and is set out in full in [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md). A pushed glass slides while the
@@ -890,12 +918,12 @@ with a little daylight still between them — and one of that pair is also fairl
 near the edge of the glass zone. The other three have room. The bench accepted
 the table because at least one glass on it has no room, so there is work to do.
 
-**What happened offline.** Long before this table was drawn, solution 2 was run
-over many tables below the dividing line. On each, it generated legal candidate
-pushes, ranked them, pushed, and the bench recorded the picture, the waypoints
-and the verdict. The failures were dropped and counted. What was left was fitted
-into ACT, several times with different seeds. None of that involves this table,
-which comes from above the dividing line.
+**What happened offline.** Long before this table was drawn, the teacher was
+run over many tables below the dividing line. On each, it generated legal
+candidate pushes, ranked them, pushed, and the bench recorded the picture, the
+waypoints and the verdict. The failures were dropped and counted. What was left
+was fitted into ACT, several times with different seeds. None of that involves
+this table, which comes from above the dividing line.
 
 **The first push.** The arm takes the view from the top and the policy returns
 one chunk: a descent behind the outer glass of the crowded pair, a slow feel
@@ -925,7 +953,7 @@ pushes that failed and were dropped — then the policy is being asked about a
 table outside its data. It will answer. The answer will arrive as a chunk of
 waypoints like any other, with nothing to distinguish it from a confident one.
 This is the failure to watch for in this solution, and the DAgger repair is
-aimed precisely at it: ask solution 2 what it would have done on this table,
+aimed precisely at it: ask the teacher what it would have done on this table,
 and the gap closes.
 
 **Where the averaging problem would show.** Change the table slightly so that
@@ -961,7 +989,7 @@ thirty degrees away from where the teacher pointed, and the jaw is a quarter of
 a metre long behind its fingertips, so on a crowded table it meets a neighbour
 while it is still coming down. Almost every push ends there, before any glass
 is touched. Nothing in the example about leaning the slide or slowing near the
-end was reached, because the motion never got that far. The folder's
+end was reached, because the motion never got that far. The code folder's
 `README.md` has the counts.
 
 ## What it needs
@@ -971,27 +999,30 @@ and Diffusion Policy as reference implementations, with **PyTorch** underneath.
 LeRobot is Apache-2.0, and because this solution downloads no weights, the
 weights file it produces is fitted entirely on data generated inside this
 project and inherits no terms from anybody. That is as simple as a licence
-position gets in this folder: [solution 5](06_a-foundation-model-as-it-downloads.md) and
-[solution 6](07_the-same-model-fine-tuned-here.md) both carry borrowed weights, and this
-one carries none.
+position gets in this book: [SmolVLA as it
+downloads](06_a-foundation-model-as-it-downloads.md) and [SmolVLA
+fine-tuned](07_the-same-model-fine-tuned-here.md) both carry borrowed weights,
+and this one carries none.
 
-It needs **[solution 2](03_geometry-generates-a-model-ranks.md) working**, because that solution
+It needs **[geometry generates, a model
+ranks](03_geometry-generates-a-model-ranks.md) working**, because that solution
 is the teacher. This is a real dependency and not a preference: without a
 program that chooses pushes well, there are no demonstrations, and with a
-teacher that chooses badly the student has nothing worth copying. The
-plan builds the two in that order for this reason.
+teacher that chooses badly the student has nothing worth copying. That is why
+the two are built in that order.
 
 It needed **two things the bench did not have**, and that was the third of the
-honest costs. The plan recorded both in its audit of
-`bench.py`. The first was a **rendered view of the table from the top**: the
-bench returned numeric readings, and it did render the world, but from the
-arm's side rather than straight down, and only for the films used to check a
-run by eye. The second was a **path that accepts a chunk of waypoints**:
-`push()` takes a parameterised push and *is* the macro that expands it, so
-there was no way in for a trajectory. Both are now built — `bench/top_view.py`
-and `Bench.follow` — and both were the real price of going off the shelf,
-because every LeRobot policy expects pictures and a control-rate action space.
-Solutions 1 and 2 need neither, which is one more reason to build them first.
+honest costs. Both were missing from the bench's own `bench.py` when this
+solution was designed. The first was a **rendered view of the table from the
+top**: the bench returned numeric readings, and it did render the world, but
+from the arm's side rather than straight down, and only for the films used to
+check a run by eye. The second was a **path that accepts a chunk of
+waypoints**: `push()` takes a parameterised push and *is* the macro that
+expands it, so there was no way in for a trajectory. Both are now built —
+`bench/top_view.py` and `Bench.follow` — and both were the real price of going
+off the shelf, because every LeRobot policy expects pictures and a control-rate
+action space. [One fixed nudge](02_one-fixed-nudge.md) and the teacher need
+neither, which is one more reason to build them first.
 
 It needs **demonstrations**, which cost arm time on the bench and nothing else,
 drawn only from table numbers below the dividing line. The prescription here
@@ -1002,14 +1033,15 @@ consecutive table numbers, which is whatever mixture the bench's own table
 generator produces, and the crowded corners are therefore as rare in the
 training set as they are on the bench.
 
-It needs **compute**, and this is the cheapest entry in the folder. **Training
+It needs **compute**, and this is the cheapest entry among the six. **Training
 runs in hours.** The reason it is so modest is worth stating, because it is
 easy to assume that anything with a transformer in it is expensive. The dataset
 is small — thousands of pushes, each a picture and a short chunk — the network
-is small by the standards of the foundation models in [solution
-5](06_a-foundation-model-as-it-downloads.md) and [solution
-6](07_the-same-model-fine-tuned-here.md), and nothing has to be learned about vision in
-general, only about this one cell's pictures of this one task.
+is small by the standards of the foundation models in [SmolVLA as it
+downloads](06_a-foundation-model-as-it-downloads.md) and [SmolVLA
+fine-tuned](07_the-same-model-fine-tuned-here.md), and nothing has to be
+learned about vision in general, only about this one cell's pictures of this
+one task.
 
 **In the end nothing was rented.** This document first budgeted tens of
 dollars for a small accelerator, and that is still the right figure for
@@ -1057,18 +1089,18 @@ not the one carried forward, that reading would have earned its place.
 
 Against that, five weaknesses, and the first three cannot be engineered away.
 
-**The ceiling is the teacher's quality.** Every label came from solution 2, and
-nothing in behaviour cloning ever evaluates an outcome, so **this solution
-cannot beat solution 2 by much on the pushes it imitates.** It is worth being
+**The ceiling is the teacher's quality.** Every label came from the teacher,
+and nothing in behaviour cloning ever evaluates an outcome, so **this solution
+cannot beat its teacher by much on the pushes it imitates.** It is worth being
 precise about the two narrow ways it might exceed its teacher, because they are
 real but small: it can smooth away some of the teacher's inconsistency, since a
 fitted function averages over many examples and so is steadier than any one of
 them; and it can express motions the bench's macro cannot, since its output is
 waypoints rather than push parameters. What it cannot do is discover that a
 different glass should have been moved, or a different destination chosen,
-because no mechanism in it compares one outcome against another. [Solution
-4](05_a-world-model-then-plan-with-it.md) has such a mechanism, which is the sharpest difference
-between the two.
+because no mechanism in it compares one outcome against another. [A world
+model, then plan with it](05_a-world-model-then-plan-with-it.md) has such a
+mechanism, which is the sharpest difference between the two.
 
 **Filtering the demonstrations biases it towards what the teacher does well.**
 Keeping only the pushes that succeeded is necessary, because a cloned policy
@@ -1077,8 +1109,8 @@ the situations where the teacher struggled. So the student is fitted most
 densely where help was least needed.
 
 **It needed bench work the first two solutions did not.** A straight-down
-rendered view and a waypoint path, both recorded in the plan as missing and
-both now built. That cost is paid, but two smaller ones are paid on every
+rendered view and a waypoint path, both missing when this solution was designed
+and both now built. That cost is paid, but two smaller ones are paid on every
 push rather than once. The bench's chunk wants a glass and an aim that the
 policy does not produce, so both are read back off the waypoints outside it.
 And nothing stops a network emitting a coordinate the jaw cannot reach, so
@@ -1091,14 +1123,14 @@ the only thing stopping a chunk is the jam threshold. And the policy's only
 output is waypoints, so a refusal has to come from the shared gate in front of
 it rather than from the policy itself.
 
-**And it cannot explain itself, or say when it is lost.** When solution 2 is
+**And it cannot explain itself, or say when it is lost.** When the teacher is
 wrong you can print the candidates and the scores and see which step went
 astray. When this policy is wrong you can look at the picture and guess. It has
 no confidence output, and the situation in which it is least reliable — a table
 unlike anything in its data — is indistinguishable in its output from the
 situation in which it is most reliable. Combined with it being stochastic and
-with training varying by seed, that is why the bench insists that one run is not
-a measurement and that a result quoted without a spread is not a result.
+with training varying by seed, that is why the bench insists that one run is
+not a measurement and that a result quoted without a spread is not a result.
 
 ## The general ideas behind this
 
@@ -1146,8 +1178,8 @@ than predicting one action per control step. ACT introduced this for fine
 manipulation learned from inexpensive hardware (Zhao and colleagues,
 [arXiv:2304.13705](https://arxiv.org/abs/2304.13705)) and it has become a
 standard component of imitation policies, including the vision-language-action
-models [solution 5](06_a-foundation-model-as-it-downloads.md) and [solution
-6](07_the-same-model-fine-tuned-here.md) use.
+models [SmolVLA as it downloads](06_a-foundation-model-as-it-downloads.md) and
+[SmolVLA fine-tuned](07_the-same-model-fine-tuned-here.md) use.
 
 It is right for continuous, committed motions — a push, a wipe, a pour — where
 re-deciding every instant produces dithering and averages away the commitment
@@ -1198,15 +1230,15 @@ of the input.
 Use a slow but good procedure as the teacher for a fast network, so that the
 network ends up doing at run time what the procedure did offline. This is a
 common and unglamorous pattern, and it is exactly what the relationship between
-solution 2 and this solution is.
+the teacher and this solution is.
 
 It is right when the teacher is correct but too slow to run where it is needed,
 or when the teacher needs information at training time that is unavailable at
 run time. It is wrong when the student is expected to be better than the
 teacher, because distillation has no mechanism for improvement — it is copying,
-and copying has a ceiling. In this folder the honest statement is that
+and copying has a ceiling. In this book the honest statement is that
 distillation is being used for its measurement value rather than for speed,
-since solution 2 is not slow; what the pair establishes is whether the mapping
+since the teacher is not slow; what the pair establishes is whether the mapping
 is learnable at all.
 
 ## Where it sits among the other five
@@ -1215,64 +1247,65 @@ is learnable at all.
 was fitted in this cell, and this solution is the first rung on which
 everything was.
 
-Against [solution 1](02_one-fixed-nudge.md), the comparison is the basic one
-the whole folder is built around: does any learning beat a fixed nudge? Solution
-1 fits nothing, pushes the same distance in the same way every time, and looks
-again. It is arithmetic and it costs essentially nothing to run. If this
+Against [one fixed nudge](02_one-fixed-nudge.md), the comparison is the basic
+one this whole book is built around: does any learning beat a fixed nudge? That
+solution fits nothing, pushes the same distance in the same way every time, and
+looks again. It is arithmetic and it costs essentially nothing to run. If this
 solution cannot clear more tables than that, no part of the machinery above has
 earned its place.
 
-Against [solution 2](03_geometry-generates-a-model-ranks.md), the comparison is student against
-teacher, and it is the most informative pairing this solution has. Every label
-this policy saw came from that solution, so it cannot discover a better choice
-of glass or destination than the one it was shown, and it should not be expected
-to beat its teacher by much on the pushes it imitates. What the gap measures is
-therefore not which method is better but whether the mapping from a picture to
-a good push is learnable: a student that nearly matches its teacher says the
-policy class is adequate and the remaining error belongs to the teacher's
-geometry, and a student that falls well short says the opposite. The two places
-this solution can legitimately exceed its teacher are narrow and worth watching
-for in the numbers — a steadier push, from averaging over many examples, and a
-motion the bench's macro could not have expressed.
+Against [geometry generates, a model
+ranks](03_geometry-generates-a-model-ranks.md), the comparison is student
+against teacher, and it is the most informative pairing this solution has.
+Every label this policy saw came from that solution, so it cannot discover a
+better choice of glass or destination than the one it was shown, and it should
+not be expected to beat its teacher by much on the pushes it imitates. What the
+gap measures is therefore not which method is better but whether the mapping
+from a picture to a good push is learnable: a student that nearly matches its
+teacher says the policy class is adequate and the remaining error belongs to
+the teacher's geometry, and a student that falls well short says the opposite.
+The two places this solution can legitimately exceed its teacher are narrow and
+worth watching for in the numbers — a steadier push, from averaging over many
+examples, and a motion the bench's macro could not have expressed.
 
-Against [solution 4](05_a-world-model-then-plan-with-it.md), the comparison is the sharpest
-question in the folder after the foundation-model pair: plan with a model, or
+Against [a world model, then plan with
+it](05_a-world-model-then-plan-with-it.md), the comparison is the sharpest
+question among the six after the foundation-model pair: plan with a model, or
 learn the push directly? That solution learns how the world changes and
 searches over candidate actions at run time, simulating each one forward before
 committing, so **it can find a push nobody ever demonstrated** — which is
 exactly the thing this solution cannot do. It pays for that on every push, in
-run-time cost that [the test bench](../02_the-test-bench.md) puts at hundreds or
-thousands of times the arithmetic a fixed nudge costs, and it pays again in
-needing a model of the world accurate enough to plan against,
-which is a harder thing to learn than a mapping. So the pair trades a ceiling
-against a cost: this solution is cheap and capped by its teacher, that one is
-expensive and capped by what its own encoding can express rather than by
-anybody else's work.
+run-time cost that [the test bench](../02_the-test-bench.md) puts at hundreds
+or thousands of times the arithmetic a fixed nudge costs, and it pays again in
+needing a model of the world accurate enough to plan against, which is a harder
+thing to learn than a mapping. So the pair trades a ceiling against a cost:
+this solution is cheap and capped by its teacher, that one is expensive and
+capped by what its own encoding can express rather than by anybody else's work.
 
-Against [solution 5](06_a-foundation-model-as-it-downloads.md), the comparison is fitting
-here against borrowing wholesale. That solution runs SmolVLA exactly as it
-downloads, with about 450 million parameters and a pretraining set of 487
-community datasets of real teleoperation behind it, and fits nothing in this
-cell. So it brings a vast amount of experience of robot manipulation in general
-and none of this cell in particular, while this solution brings the opposite: a
-small network that has seen nothing but this bench, this jaw and these four
-kinds of glass. Which of those two is the better trade is precisely what the
-folder is for.
+Against [SmolVLA as it downloads](06_a-foundation-model-as-it-downloads.md),
+the comparison is fitting here against borrowing wholesale. That solution runs
+SmolVLA exactly as it downloads, with about 450 million parameters and a
+pretraining set of 487 community datasets of real teleoperation behind it, and
+fits nothing in this cell. So it brings a vast amount of experience of robot
+manipulation in general and none of this cell in particular, while this
+solution brings the opposite: a small network that has seen nothing but this
+bench, this jaw and these four kinds of glass. Which of those two is the better
+trade is precisely what this book is for.
 
-Against [solution 6](07_the-same-model-fine-tuned-here.md), the comparison is where the
-fitting happens. That solution takes SmolVLA's borrowed weights and continues
-their training on this cell's own data with low-rank adaptation, which is this
-solution's method — imitation from demonstrations collected here — applied to
-somebody else's starting point instead of to random numbers. Reading the two
-together separates what the demonstrations are worth from what the pretraining
-is worth. And solutions 5 and 6 are the sharpest pair in the folder in their own
-right: same model, same weights, and the only difference between them is that
-one has had its training continued here.
+Against [SmolVLA fine-tuned](07_the-same-model-fine-tuned-here.md), the
+comparison is where the fitting happens. That solution takes SmolVLA's borrowed
+weights and continues their training on this cell's own data with low-rank
+adaptation, which is this solution's method — imitation from demonstrations
+collected here — applied to somebody else's starting point instead of to random
+numbers. Reading the two together separates what the demonstrations are worth
+from what the pretraining is worth. And those two are the sharpest pair of the
+six in their own right: same model, same weights, and the only difference
+between them is that one has had its training continued here.
 
 Read as a ladder, the six measure what each increment of fitting buys. This one
 is the rung where all the fitting is done here, from nothing, on examples a
 program produced for free — the cheapest honest attempt at learning this task
-that the folder contains, and the one whose limits are easiest to state in
+that this book contains, and the one whose limits are easiest to state in
 advance.
 
 ← [Geometry generates, a model ranks](03_geometry-generates-a-model-ranks.md) · [A world model,

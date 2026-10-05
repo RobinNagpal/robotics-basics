@@ -50,12 +50,12 @@
 
 ## Introduction
 
-This document describes the one answer to [problem 2](../02_the-problem/01_what-is-asked-for.md) that
-contains no model of any kind. The problem is to say which pixels belong to
-which glass when several glasses stand on a table and the camera looks at them
-from the top. Five of the six answers to that problem fit numbers to examples,
-either here or somewhere else, and then trust the fitted numbers. This one fits
-nothing. It states a rule, in words a person can read, and applies it.
+This document describes the one answer to [the problem this book
+sets](../02_the-problem/01_what-is-asked-for.md) that contains no model of any
+kind. The problem is to say which pixels belong to which glass when several
+glasses stand on a table and the camera looks at them from the top. Five of the
+six answers to that problem fit numbers to examples, either here or somewhere
+else, and then trust the fitted numbers. This one fits nothing. It states a rule, in words a person can read, and applies it.
 
 The rule is possible because of one fact about the input. Every pixel arrives
 with a depth reading beside it, and a pixel with a depth reading is not really a
@@ -79,11 +79,12 @@ Two honest notes before the method starts, because both change how the rest
 should be read.
 
 **The method is built, and the numbers quoted below were measured by running
-it.** The code is in `02-segment-glasses/01-rules-on-the-table/` and it writes
-its own `results.json` beside itself. Five things this document describes are
-still prescriptions rather than code, and each is named where it appears: the
-grouping distance is a constant rather than computed from the two limits it sits
-between, the fit returns a width and no residual, there is no
+it.** The code is in
+[`src/08_seeing-the-glasses/01-rules-on-the-table/`](../../../code/src/08_seeing-the-glasses/01-rules-on-the-table)
+and it writes its own `results.json` beside itself. Five things this document
+describes are still prescriptions rather than code, and each is named where it
+appears: the grouping distance is a constant rather than computed from the two
+limits it sits between, the fit returns a width and no residual, there is no
 minimum-neighbours guard, a group only one station found is not reported as
 doubtful, and the branch that works out where a glass could have been hiding is
 arithmetic set out here rather than code that runs.
@@ -93,17 +94,38 @@ written down anywhere, so this document speaks in relations — wider than any
 glass of this kind can be, narrower than the strip of bare table between two
 glasses — and never in figures.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [The rule, in the code](#the-rule-in-the-code)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [Turning a pixel into a point in the room](#turning-a-pixel-into-a-point-in-the-room)
+1. [Keeping only what stands above the table](#keeping-only-what-stands-above-the-table)
+1. [Throwing the height away](#throwing-the-height-away)
+1. [Grouping the dots by how close they are](#grouping-the-dots-by-how-close-they-are)
+1. [The one setting, and where it comes from](#the-one-setting-and-where-it-comes-from)
+1. [Checking a group against the widths the kind allows](#checking-a-group-against-the-widths-the-kind-allows)
+1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+
 ## The rule, in the code
 
 Before going into why the method is built this way, it is worth seeing it. The
 rule the introduction describes is written out in
-`02-segment-glasses/01-rules-on-the-table/`, and two short pieces of it carry
-the whole method: the circle fitted to a
-group, and the question the fit is asked again of every part a split produces.
+`src/08_seeing-the-glasses/01-rules-on-the-table/`, and two short pieces of it
+carry the whole method: the circle fitted to a group, and the question the fit
+is asked again of every part a split produces.
 Everything else in the folder is the arithmetic that turns pixels into dots and
 the plumbing that hands masks to the bench.
 
-This is the fit, from ``01-rules-on-the-table/find.py``. The first function is
+This is the fit, from `01-rules-on-the-table/find.py`. The first function is
 the one-shot least-squares solve, which is NumPy's `lstsq` and nothing else;
 the second hands it the outside of the patch rather than all of the patch,
 which is OpenCV's `convexHull`.
@@ -169,7 +191,8 @@ record is measured by the bench, from the pixels these functions hand back.
 To state the problem we need the situation and three words, and the three words
 are used in a particular way here.
 
-The situation is the one [problem 2](../02_the-problem/01_what-is-asked-for.md) sets out. Four to six
+The situation is the one [this book's problem
+statement](../02_the-problem/01_what-is-asked-for.md) sets out. Four to six
 drinking glasses stand upright on a table, all of the same kind, and the kind is
 known. They stand inside the rectangle of table this project calls the glass
 zone. The camera is on the arm's wrist, and for this problem it works **from the
@@ -388,8 +411,8 @@ it from a camera looking down. For a glass with no stem the widest slice and the
 base are nearly the same, and the difference does not matter. For a stemmed
 glass, whose bowl is wider than its foot, the disc is the bowl. This problem
 asks for a rough width rather than an exact one, so the widest slice is an
-honest answer, and the exact shape is measured later with the camera brought
-down and round to look at the glass **from the side**.
+honest answer. An exact shape needs the camera brought down and round to look at
+the glass **from the side**, which is a different job from this one.
 
 ## Grouping the dots by how close they are
 
@@ -716,8 +739,9 @@ produced no pixels at all. The next section is where that branch is worked out.
 ## When the glasses are completely hidden
 
 Everything so far groups the glasses the pictures contain. This section is about
-the glasses they do not contain, which [problem 2](../02_the-problem/01_what-is-asked-for.md) names as the
-most dangerous of its three difficulties.
+the glasses they do not contain, which [this book's problem
+statement](../02_the-problem/01_what-is-asked-for.md) names as the most
+dangerous of its three difficulties.
 
 The difficulty was described earlier and is worth putting once more in the form
 the method has to deal with. A glass can contribute no pixels at all — not a
@@ -958,8 +982,10 @@ The first of those is wrong and silent. The second is incomplete and says so.
 ### The case the rule cannot answer
 
 The bench never draws the next case, because it always keeps the glasses a legal
-distance apart. The rule still has to behave sensibly in it, because [problem
-3](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md) is about exactly this.
+distance apart. The rule still has to behave sensibly in it, because [pushing
+crowded glasses
+apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md)
+is about exactly this.
 
 If two glasses stood closer together than the cell allows, the strip of bare
 table between them would be narrower than the grouping distance, the chain would
@@ -981,8 +1007,9 @@ parts that each fit — but every one of those cuts is a straight line through a
 patch of dots with no gap in it, drawn where the dots happen to divide rather
 than where the glasses do, so where the masks meet is a guess and the places
 read off them are worth less the more cuts it took. That is the handover to
-[problem 3](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md), and
-it is the honest edge of this method.
+[the job of pushing the glasses
+apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md),
+and it is the honest edge of this method.
 
 ![Two glasses are brought closer together in three steps: while the strip of bare table between them is wider than the grouping distance, distance alone separates them; once the strip is narrower than that, only the check on the width recovers them; and when they touch there is no strip left for either to work on.](../../images/seeing-the-glasses/rules-on-the-table/02-touching-is-the-limit.png)
 
@@ -1075,15 +1102,17 @@ This method works here because the problem hands it a rule that can be written
 down: glasses stand further apart than a known distance, so distance separates
 them. The moment that promise goes, the rule goes with it. Two glasses that
 touch leave no strip of bare table at any grouping distance, which is why
-[problem 3](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md) exists; two glasses one behind the other
-at the same distance from the camera stay one group, because distance cannot
-separate things that are not apart in the direction being measured. And allowing
+[the job of pushing crowded glasses
+apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md)
+exists; two glasses one behind the other at the same distance from the camera
+stay one group, because distance cannot separate things that are not apart in
+the direction being measured. And allowing
 all four kinds on the table at once widens the acceptable range of widths and
 weakens the width check by exactly as much, since a group that would be
-impossible for the narrowest kind is ordinary for the widest, which is problem
-4. In every one of those cases the fix is not a
-better rule but a method that does not need one, and that is the argument for
-the other five.
+impossible for the narrowest kind is ordinary for the widest, which is the
+difficulty in the harder job where several kinds of glass stand on the table at
+once. In every one of those cases the fix is not a better rule but a method
+that does not need one, and that is the argument for the other five.
 
 **The limit on the sensor is that the rule needs depth readings, and real
 transparent glass does not give them.** This is the most important sentence in
@@ -1274,11 +1303,11 @@ forget. This solution is the one that shows what the problem's *promises* are
 worth. Its rule exists only because the glasses are guaranteed to stand apart,
 the table's height is known, one kind is on the table at a time, and the glasses
 return depth readings. Each of the five models needs fewer of those promises
-than this one does, and the later problems in this project remove them one at a
+than this one does, and the harder jobs in the series remove them one at a
 time. So a reader who finds this solution convincing should read it as a
 statement about the problem rather than about the method: **a problem that a
 written rule can answer is a problem whose promises were generous**, and the
 value of the other five is what they do when the promises stop.
 
-← [Problem 2 — segment the glasses](../02_the-problem/01_what-is-asked-for.md) · [Solution 2 — a network
+← [What is asked for](../02_the-problem/01_what-is-asked-for.md) · [Solution 2 — a network
 trained from scratch](03_a-network-trained-from-scratch.md) →

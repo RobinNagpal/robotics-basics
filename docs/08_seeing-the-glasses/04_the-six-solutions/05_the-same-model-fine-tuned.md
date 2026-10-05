@@ -11,7 +11,7 @@
 > training is continued on pictures of this cell, with one class instead of the
 > general list, so that it stops being a general describer of photographs and
 > becomes a finder of glasses in this room. The outlines it then returns are the
-> answer to problem 2.
+> answer this book asks for.
 > **How the output is produced** — a survey picture from the top goes in, and a
 > survey is three of them from three overlapping stations, each asked about on
 > its own because that is the bench's arrangement for all six. The
@@ -45,7 +45,8 @@
 
 ## Introduction
 
-This document explains how to answer problem 2 by taking a model that was
+This document explains how to answer [what this book asks
+for](../02_the-problem/01_what-is-asked-for.md) by taking a model that was
 already fitted elsewhere and continuing its training on pictures of this cell.
 The method has a name, **fine-tuning**, and it is the ordinary way a borrowed
 model is put to work on a particular job. Nothing here is unusual, and that is
@@ -89,6 +90,28 @@ and why labelling it costs nothing here while it would be the most expensive
 part of the same work on real pictures, which of solution 3's weaknesses
 training repairs and which it cannot touch, and the two ways training on one
 cell's pictures can go wrong.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code that does the work](#the-code-that-does-the-work)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [Fine-tuning — continuing somebody else's training](#fine-tuning--continuing-somebody-elses-training)
+1. [What one class does](#what-one-class-does)
+1. [Where the training set comes from](#where-the-training-set-comes-from)
+1. [What training closes, and what it cannot touch](#what-training-closes-and-what-it-cannot-touch)
+1. [The number beside each outline](#the-number-beside-each-outline)
+1. [Two ways training on one cell's pictures goes wrong](#two-ways-training-on-one-cells-pictures-goes-wrong)
+1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [The licence](#the-licence)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
 
 ## The code that does the work
 
@@ -161,8 +184,9 @@ contributes says what it is for.
 
 ## The problem this solves
 
-Problem 2 asks for one record per glass, each with a mask, a place on the table
-and a rough width, and [the problem](../02_the-problem/01_what-is-asked-for.md) names three difficulties.
+This book asks for one record per glass, each with a mask, a place on the table
+and a rough width, and [what is asked
+for](../02_the-problem/01_what-is-asked-for.md) names three difficulties.
 The second of them is the one a model attacks: two glasses standing well apart
 on the table can still leave one connected shape in the picture, because a
 camera looking straight down from the top throws each glass's outline outwards
@@ -316,7 +340,7 @@ are the straight glass, the tapered glass, the stemmed glass and the short
 stemmed glass, and this solution would distinguish none of them, because it
 would be trained to answer "is this an instance" and nothing else. That is not a
 loss. Every glass in one arrangement is the same kind and the kind is known, so
-no part of problem 2 asks for it.
+nothing this book asks for needs it.
 
 ## Where the training set comes from
 
@@ -507,7 +531,7 @@ comparison with solution 3 is a comparison of.
 not this solution's.** The bench takes each mask pixel with its depth reading,
 turns it into a point in the room, takes the axis from the points at the top of
 the glass and the width from how far the points reach out from that axis. Every
-solution in this folder is given that same step, so **a difference in the score
+solution in this chapter is given that same step, so **a difference in the score
 belongs to the mask.** This solution contributes only the masks, and so does
 solution 3, which is exactly why the gap between the two is readable.
 
@@ -576,7 +600,7 @@ opinion about it.
 
 ## When the glasses are completely hidden
 
-Every solution document in this folder answers this question, which is whether
+Every solution document in this chapter answers this question, which is whether
 the method can find a glass that no picture holds. This one's answer is **that
 it cannot, from either of the camera's places**, and the reasoning is short and
 absolute.
@@ -614,7 +638,7 @@ So this solution reports the case rather than answering it, and what it reports
 is not a glass but a region of table it could not have seen. Working out that
 region is arithmetic on the outward throw and on the glasses that **were**
 found, and then going to look at it is a move of the arm. Both belong to the
-part every solution in this folder shares rather than to any one of them, as
+part every solution in this chapter shares rather than to any one of them, as
 [looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) sets out. This solution
 contributes the masks that shared part argues from, and none of the argument.
 
@@ -645,9 +669,9 @@ the only class it knows. Each glass would produce several candidates; the step
 that discards candidates overlapping a better one would reduce each cluster to a
 single answer, so five entries would be expected rather than seven or three. No
 entry could be lost to a name, because there is one name. The bowls would be
-outlined well and the stems would be thickened or dropped, because a stem is
-thin and the outline is coarse — and that part would look much as it does in
-solution 3, since it is the one thing training does not change.
+outlined well, and the stems would be outlined about as well, because the
+marking above shows that training does hold a stem even though the outline
+machinery is coarse.
 
 **Where the two would still agree.** The nearer of the close pair covers part of
 the one behind it, so the mask of the one behind holds only the part the camera
@@ -714,9 +738,8 @@ network**, makes the complete corresponding source available under the same
 terms. The network clause is the part that matters most here, because it reaches
 a product that never gives a copy of the model to anybody and only serves
 answers from it. Everything else this project depends on is permissively
-licensed and can be used commercially, as the implementation
-notes record, so this one component would
-change the terms of the whole perception step if it were carried into a product.
+licensed and can be used commercially, so this one component would change the
+terms of the whole perception step if it were carried into a product.
 
 **This solution carries the condition twice over, and that is the difference
 from solution 3.** Solution 3 runs the downloaded weights and nothing more. This
@@ -726,12 +749,12 @@ the training run is not a clean asset the project owns outright: it inherits the
 licence of the thing it was derived from, and it cannot be relicensed by having
 been trained here.
 
-That is understood and accepted, because this folder exists to compare methods
-and learn what each one buys, and for that purpose the licence costs nothing.
-If this method proved to be the right one and the work were headed somewhere
-commercial, the replacement is straightforward and the implementation notes
-already name candidates: permissively licensed instance segmenters that do the
-same job, one of which [solution 6](07_a-transformer-segmenter-fine-tuned.md) already uses under
+That is understood and accepted, because these six solutions exist to compare
+methods and learn what each one buys, and for that purpose the licence costs
+nothing. If this method proved to be the right one and the work were headed
+somewhere commercial, the replacement is straightforward, because permissively
+licensed instance segmenters that do the same job exist: [solution
+6](07_a-transformer-segmenter-fine-tuned.md) already uses one of them under
 Apache 2.0. Nothing in this solution's design depends on the borrowed model
 being this particular one. What is being tested is what fine-tuning buys on this
 kind of picture, and that answer transfers to whichever model is licensed
@@ -739,7 +762,7 @@ conveniently.
 
 ## Where it is strong and where it breaks
 
-**It answers the question actually asked.** Problem 2 asks which pixels belong
+**It answers the question actually asked.** This book asks which pixels belong
 to which glass, and this model's output is one outline per object. Nothing has
 to be converted, and no step has to find a seam in a joined region.
 
@@ -756,14 +779,16 @@ allowed before a candidate is discarded, are plain numbers with obvious
 meanings, and neither is a length that has to be justified against the geometry
 of the cell.
 
-**It is one half of the cleanest comparison in the folder**, and that is a
+**It is one half of the cleanest comparison in this chapter**, and that is a
 strength of the design rather than of the model.
 
 Against that, three kinds of weakness.
 
 **What it inherits from the model.** The outline is built coarsely and enlarged,
-so the width carries an error that does not average away, and the thin stem of a
-glass is where it is worst. The masks are modal, so a partly hidden glass is
+so the width carries an error that does not average away. That error is not
+worse on the stemmed glass than on the others at the median, as the marking
+above says, although the one glass the masks covered least well in the whole run
+was a stemmed one. The masks are modal, so a partly hidden glass is
 reported as a smaller glass in the wrong place. A completely hidden glass is
 invisible to it, and no training can change that. The confidence number is about
 the class and not about the mask, so a badly cut outline can still be scored
@@ -832,7 +857,7 @@ entry turns naming into pure finding, and the model's remaining job is to
 separate instances.
 
 One class is right when the question really is "where are the instances of this
-one thing", which is what problem 2 asks, and it is efficient, because none of
+one thing", which is what this book asks, and it is efficient, because none of
 the model's capacity is spent telling categories apart. It is wrong when the
 categories matter, and it then throws away information that was free: a model
 that has to distinguish several classes can use the disagreement between them as
@@ -918,9 +943,8 @@ fit. Solution 5 borrows a larger model untouched and fits only a small keeper
 that decides which of its outlines are glasses, which needs the least training
 data of any learned solution here and leaves its domain gap wide open, as
 solution 3 also does, because nothing in the borrowed weights is ever adjusted
-to this cell's pictures. This
-solution fits the whole model, so its weights have actually seen the pictures
-they will be asked about.
+to this cell's pictures. This solution fits the whole model, so its weights have
+actually seen the pictures they will be asked about.
 
 Against [solution 6](07_a-transformer-segmenter-fine-tuned.md), the comparison is architecture.
 Both are fine-tuned here on this cell's own pictures with one class and free

@@ -44,10 +44,11 @@
 
 ## Introduction
 
-This document describes how [problem 2](../02_the-problem/01_what-is-asked-for.md) could be answered by
-downloading a model and running it, without collecting a single label and
-without training anything at all. The solution is built, and what it scored is
-recorded beside the code, in
+This document describes how [what this book asks
+for](../02_the-problem/01_what-is-asked-for.md) could be answered by downloading
+a model and running it, without collecting a single label and without training
+anything at all. The solution is built, and what it scored is recorded beside
+the code, in
 [`03-yolo-zero-shot/README.md`](../../../code/src/08_seeing-the-glasses/03-yolo-zero-shot/README.md)
 and in that folder's `results.json`. The reasoning below was written before the
 run and is kept in the voice it was written in, so where it says what the method
@@ -72,6 +73,27 @@ outline is not a probability on these pictures even though it looks like one,
 what the domain gap is and why it runs in both directions here, and what the
 licence costs, because on this solution the licence is a real cost rather than a
 footnote.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code that does the work](#the-code-that-does-the-work)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [What instance segmentation is, and the two kinds beside it](#what-instance-segmentation-is-and-the-two-kinds-beside-it)
+1. [Why the borrowed names are a filter and never the kind of glass](#why-the-borrowed-names-are-a-filter-and-never-the-kind-of-glass)
+1. [How the outline is produced, and why it is approximate](#how-the-outline-is-produced-and-why-it-is-approximate)
+1. [The number beside each outline, and why it is not a probability](#the-number-beside-each-outline-and-why-it-is-not-a-probability)
+1. [The domain gap, which is the main risk](#the-domain-gap-which-is-the-main-risk)
+1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [The licence, which is the real cost here](#the-licence-which-is-the-real-cost-here)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
 
 ## The code that does the work
 
@@ -154,7 +176,7 @@ of it came from this cell's data.
 
 ## The problem this solves
 
-Problem 2 asks for one record per glass on the table, each with a mask, a place
+This book asks for one record per glass on the table, each with a mask, a place
 and a rough width. The difficulty is not seeing that something is there but
 deciding **how many things are there**. Two glasses standing well apart on the
 table can still leave one connected shape in a picture taken from the top,
@@ -221,7 +243,7 @@ straight back, unsolved.
 
 **Instance segmentation** labels every pixel *and* says which object it belongs
 to. Two glasses whose outlines join come back as two outlines that happen to be
-adjacent, so the merge is answered inside the model. This is why problem 2
+adjacent, so the merge is answered inside the model. This is why this book
 reaches for this kind of model and not for the simpler one.
 
 **Promptable segmentation** outlines whatever is at a place you point to, and
@@ -266,12 +288,12 @@ The second is that **the name must never be carried into the record as the kind
 of glass**. The temptation is real, because a free guess at the kind looks like
 a gift. It is not a gift: it is a category from somebody else's list, assigned
 by a model that was never shown this cell's kinds, and it would be wrong often
-enough to be dangerous. Problem 2 does not ask for the kind in any case, since
-every glass in one arrangement is the same kind and that kind is known, and
-naming a kind from a glass's own profile is what problem 1 does after the arm
-has looked at the glass from the
-side. So the name here serves as a
-filter and is then thrown away.
+enough to be dangerous. This book does not ask for the kind in any case, since
+every glass in one arrangement is the same kind and that kind is known. Naming a
+kind from a glass's own profile belongs to a different job in this cell, the
+earlier one of measuring a single glass once the arm has looked at it from the
+side, and that job is not written up here. So the name here serves as a filter
+and is then thrown away.
 
 Throwing it away is also what keeps this solution inside the rule that governs
 the whole project, which is that **no glass's size is written down anywhere**. A
@@ -305,11 +327,12 @@ with the bowl above it, so it is exactly the sort of detail a coarse pattern
 cannot hold, and the outline would tend either to thicken it into a stub or to
 drop it. The bench measures how much of each real glass a mask covered and
 breaks that number down by kind for precisely this reason, and the expectation
-here is the one the problem statement already sets out from the shapes alone:
-the two kinds without a stem should be outlined almost exactly, and the two with
-a stem should be where the method does worst, and the stemmed glass worst of
-all. That is an expectation drawn from the shape of the glasses and the
-coarseness of the outline, not a measurement of this model.
+here is the one [the problem
+statement](../02_the-problem/01_what-is-asked-for.md) already sets out from the
+shapes alone: the two kinds without a stem should be outlined almost exactly,
+and the two with a stem should be where the method does worst, and the stemmed
+glass worst of all. That is an expectation drawn from the shape of the glasses
+and the coarseness of the outline, not a measurement of this model.
 
 **The edge of the outline is approximate, and the arithmetic reads the width
 from the edge.** The shared step takes a glass's width from how far its mask's
@@ -389,7 +412,7 @@ rather than merely do poorly, and it is also what makes the comparison with
 same model and continues its training on this cell's pictures, which is the
 standard repair for exactly this gap. The difference between the two would
 therefore be a clean measurement of what the gap costs, and that is the most
-useful thing this solution could contribute to the folder even if it performed
+useful thing this solution could contribute to this chapter even if it performed
 badly.
 
 ## The masks are what this contributes
@@ -408,7 +431,7 @@ bench](../03_the-test-bench.md) rather than to the solution. So **this solution
 contributes only the masks**, and any difference in its score belongs to the
 mask. It cannot win by measuring more cleverly and it cannot lose by measuring
 worse. One consequence is worth repeating because it removes a question that
-would otherwise be asked here: **no model in this problem produces a pose.**
+would otherwise be asked here: **no model in this book produces a pose.**
 Models produce masks, the place comes from depth and the camera's own pose by
 arithmetic, and a glass standing upright on a flat table has no orientation left
 to find.
@@ -449,7 +472,7 @@ removes every lever that would normally be pulled to fix the problems above.
 
 ## When the glasses are completely hidden
 
-Every solution document in this folder answers this question, and the answers
+Every solution document in this chapter answers this question, and the answers
 differ in a way worth comparing. This one's answer is **no, from either of the
 camera's two places**, and the reason is the same reason as for the other
 mask-producing solutions.
@@ -545,21 +568,20 @@ network**, makes the complete corresponding source available under the same
 terms. That network clause is the demanding part, because it reaches a product
 that never ships a copy of the model to anybody and only ever serves answers
 from it. Everything else this project depends on is permissively licensed and
-can be used commercially without that obligation, as the implementation
-notes record, so this one component would
+can be used commercially without that obligation, so this one component would
 change the terms of the whole perception step if it were carried into a product.
 
-The choice is made here with that understood. This folder exists to compare
-methods and to learn what each kind of model buys, and for that purpose the
-licence costs nothing, because nothing is shipped and nothing is served. Nothing
-in this solution's design depends on the borrowed model being this particular
-one, which is worth saying plainly: what is being tested is whether an
-off-the-shelf instance segmenter works here at all, and the answer to that
+The choice is made here with that understood. These six solutions exist to
+compare methods and to learn what each kind of model buys, and for that purpose
+the licence costs nothing, because nothing is shipped and nothing is served.
+Nothing in this solution's design depends on the borrowed model being this
+particular one, which is worth saying plainly: what is being tested is whether
+an off-the-shelf instance segmenter works here at all, and the answer to that
 question transfers to whichever one is licensed conveniently. [Solution
 6](07_a-transformer-segmenter-fine-tuned.md) already uses a permissively licensed segmenter, and
-the implementation notes name others, so the replacement is straightforward if
-the method proved to be the right one and the work were headed somewhere
-commercial.
+it is not the only permissively licensed segmenter that could do this job, so
+the replacement is straightforward if the method proved to be the right one and
+the work were headed somewhere commercial.
 
 ## Where it is strong and where it breaks
 
@@ -567,8 +589,8 @@ The strengths all come from the same source, which is that nothing is fitted.
 
 There would be nothing to collect, nothing to train and nothing to keep in step
 with the cell, so this solution could be tried in an afternoon and would give
-the folder a reading on what a borrowed model is worth before anybody invests in
-labels. It attacks the merge directly, because a model that finds objects
+this chapter a reading on what a borrowed model is worth before anybody invests
+in labels. It attacks the merge directly, because a model that finds objects
 returns one outline per object rather than one per connected shape. It needs no
 graphics card of its own. And it is a genuine upper bound on convenience: no
 other solution here can be cheaper, so if this one were good enough, several of
@@ -692,7 +714,7 @@ towards this cell's own labels while still being asked which everyday object it
 is looking at. That change comes with the training rather than beside it, so
 nothing varies between the pair that the training did not bring, and the gap
 between their scores would be a measurement of what the training bought and of
-nothing else. No other pair in the folder is that clean, and that is the main
+nothing else. No other pair in this chapter is that clean, and that is the main
 reason this solution is worth building even though it is unlikely to be the one
 carried forward.
 

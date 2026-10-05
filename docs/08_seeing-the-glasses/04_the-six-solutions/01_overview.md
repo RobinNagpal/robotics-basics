@@ -2,18 +2,28 @@
 
 ## Introduction
 
-Problem 2 asks for one record per glass: which pixels are that glass, and where
-it stands on the table. This folder answers that question six times over, with
-six quite different methods, and the point of having six is **not** that one of
-them is the answer. The point is to be able to compare them, and then to choose
-one knowing what the choice costs. By the end of this document you will
-understand what all six have in common, what single thing each one changes, and
-which pair of them you should look at first if you only have time for one
-comparison.
+This book asks for one record per glass: which pixels are that glass, and where
+it stands on the table. [What is asked for](../02_the-problem/01_what-is-asked-for.md)
+sets out that question in full. This chapter answers it six times over, with six
+quite different methods, and the point of having six is **not** that one of them
+is the answer. The point is to be able to compare them, and then to choose one
+knowing what the choice costs. By the end of this document you will understand
+what all six have in common, what single thing each one changes, and which pair
+of them you should look at first if you only have time for one comparison.
 
 The comparison works because the six are arranged like cars driven to the same
 destination. The destination is fixed, the road is the same, and only the car
 changes — so when one arrives sooner, you know it was the car.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [What all six share](#what-all-six-share)
+1. [The six, in one table](#the-six-in-one-table)
+1. [What each comparison isolates](#what-each-comparison-isolates)
+1. [Two axes that cut across the table](#two-axes-that-cut-across-the-table)
+1. [What is built](#what-is-built)
+1. [Where to go next](#where-to-go-next)
 
 ## What all six share
 
@@ -141,7 +151,7 @@ Everything else this project depends on is permissively licensed, so those two
 would change the terms of the whole perception step if they were carried into a
 product.
 
-That is accepted deliberately here, because this folder exists to compare
+That is accepted deliberately here, because this chapter exists to compare
 methods and for that purpose the licence costs nothing. It is worth knowing
 anyway, because it means the two cars that win on convenience are the two that
 would need replacing if the work ever shipped — and the comparison is designed
@@ -151,10 +161,9 @@ so that the reading transfers to whichever model is licensed conveniently.
 
 **All six are built and all six have been run on the bench.** Each has code in
 a folder named after the document you are reading about it, and the numbers the
-six produced are set side by side in
-[`02-segment-glasses/results/`](../05_the-results.md). No number
-in this project is an estimate: where something could not be run, the result is
-absent and the reason is written down instead.
+six produced are set side by side in [the results](../05_the-results.md). No
+number in this project is an estimate: where something could not be run, the
+result is absent and the reason is written down instead.
 
 The bench was built before the solutions, which was deliberate rather than
 accidental, because a comparison whose yardstick arrives after the results is a
@@ -177,7 +186,10 @@ amodal target of solution 6 is the third.
   **Read this before any solution document.**
 - [Looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) — the part all six
   share.
-- Then the six, in order: [1](02_rules-on-the-table.md),
-  [2](03_a-network-trained-from-scratch.md), [3](04_a-borrowed-model-as-it-downloads.md),
-  [4](05_the-same-model-fine-tuned.md), [5](06_a-foundation-model-with-a-keeper.md),
-  [6](07_a-transformer-segmenter-fine-tuned.md).
+- Then the six, in order: [rules on the table](02_rules-on-the-table.md), [a
+  network trained here from scratch](03_a-network-trained-from-scratch.md), [a
+  borrowed model as it downloads](04_a-borrowed-model-as-it-downloads.md), [the
+  same model fine-tuned here](05_the-same-model-fine-tuned.md), [SAM 2 with a
+  keeper](06_a-foundation-model-with-a-keeper.md), and [RF-DETR-Seg fine-tuned
+  here](07_a-transformer-segmenter-fine-tuned.md).
+- [The results](../05_the-results.md) — what the six scored on the bench.

@@ -1,17 +1,34 @@
-# Problem 2 — the six solutions side by side
+# The six solutions side by side
 
-Six ways of turning the same pictures into the same masks, all scored on the
-bench described in
-[`docs/02-segment-glasses/the-bench.md`](03_the-test-bench.md):
-the same 20 held-out arrangements from each family, the same three survey
-stations per arrangement, the same shared arithmetic turning a mask into a place
-and a width, and the same scorecard. None of them was trained or tuned on these
-arrangements. Every number here comes from a folder's own `results.json`.
+## Introduction
+
+This page is the scoreboard for the six solutions in this book. It answers one
+question: given the same pictures and the same marking, how many glasses did
+each method find, and how good were the masks it drew? It is written for a
+reader who has already met the six, and it is the page to come back to whenever
+another document claims that one method did better than another.
+
+The six ways of turning the same pictures into the same masks are all scored on
+one bench, described in [the test bench](03_the-test-bench.md). Each gets the
+same 20 held-out arrangements from each family, the same three survey stations
+per arrangement, the same shared arithmetic turning a mask into a place and a
+width, and the same scorecard. None of them was trained or tuned on these
+arrangements. Every number here comes from a solution's own `results.json`.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [The results](#the-results)
+1. [What the numbers mean](#what-the-numbers-mean)
+1. [What the comparison says](#what-the-comparison-says)
+1. [What these results do not cover](#what-these-results-do-not-cover)
+1. [Reproducing](#reproducing)
 
 ## The results
 
 Each solution's own README explains its numbers; this page only sets them side
-by side.
+by side. [The six solutions](04_the-six-solutions/01_overview.md) says what each
+of the six methods is.
 
 ### Spawned layouts — 100 glasses, the spacing the cell's own layout rule gives
 
@@ -109,25 +126,30 @@ the places at all.
 
 ## What these results do not cover
 
-- **Not Gazebo.** The pictures come from `../bench/render.py`, which uses the
-  wrist camera's lens and the cell's own survey stations, but not the simulator.
-  The arm never moves, and no inverse kinematics or motion planning is checked.
+- **Not Gazebo.** The pictures come from the bench's own renderer,
+  [`bench/render.py`](../../code/src/08_seeing-the-glasses/bench/render.py),
+  which uses the wrist camera's lens and the cell's own survey stations, but not
+  the simulator. The arm never moves, and no inverse kinematics or motion
+  planning is checked.
 - **Opaque glasses and clean depth.** No noise, no reflections, no
   transparency, which flatters the methods built on the depth reading.
 - **One table, one light.** Nothing about the rendering is varied, so a model
   fitted here is free to use the renderer's own constants as a clue, and no
-  number in this folder would show it.
+  number on this page would show it.
 - **Nothing about hidden glasses.** Every solution here reports only what some
   picture held. Recovering a glass no picture held is
   [a shared step of its own](02_the-problem/02_looking-again-at-what-was-hidden.md).
 
 ## Reproducing
 
+Run these from `code/src/08_seeing-the-glasses/`, the folder that holds this
+book's Makefile and its pixi environment.
+
 ```
-cd .. && make floor                 # the floor, both families
+make floor                          # the floor, both families
 pixi run python 01-rules-on-the-table/run.py --scenes 20
 pixi run python 01-rules-on-the-table/run.py --scenes 20 --crowded
 ```
 
-The same two lines for each of the other five, from the problem folder. The
-fitted ones need their training step first; each README says which.
+The same two lines run each of the other five, from that same folder. The fitted
+ones need their training step first, and each solution's own README says which.

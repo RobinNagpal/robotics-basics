@@ -1,15 +1,29 @@
 # The cell — the layout, the sensors, and the words
 
-Every solution in this project works in the same room, with the same arm, the
-same camera and the same table. Rather than restate those numbers in each
-document, they are here once.
+Every solution in this book works in the same room, with the same arm, the same
+camera and the same table. So does every solution in [pushing the glasses
+apart](../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
+Rather than restate those numbers in each document, they are here once. Read
+this page first if you are starting either book, and come back to it whenever a
+later page quotes a dimension and you want to know where it came from.
 
-**Every dimension on this page is read from the project's own constants** by
+**Every dimension on this page is read from the cell's own constants** by
 [`make_cell_images.py`](../diagrams/seeing-the-glasses/make_cell_images.py), which imports
 `arm/dimensions.py`, `table/layout.py`, `rack/layout.py` and
 `glasses/shapes.py` and draws what it finds. If a number moves in the code, the
 pictures move with it the next time the script runs. Nothing here is typed in
 by hand.
+
+## Contents
+
+1. [The layout, from above](#the-layout-from-above)
+1. [The layout, from the side](#the-layout-from-the-side)
+1. [The glasses](#the-glasses)
+1. [The sensors](#the-sensors)
+1. [Where the camera stands, and what each place is called](#where-the-camera-stands-and-what-each-place-is-called)
+1. [The words](#the-words)
+1. [Every constant, and where it lives](#every-constant-and-where-it-lives)
+1. [Where to go next](#where-to-go-next)
 
 ## The layout, from above
 
@@ -31,7 +45,7 @@ limit.
 ![The cell from the side](../images/seeing-the-glasses/the-cell/cell-from-the-side.png)
 
 The table top is 750 mm above the floor and the arm stands on it, so **every
-height in this project is measured from the table**, not the ground. A glass's
+height in this cell is measured from the table**, not the ground. A glass's
 height, the camera's height, the rack's pegs: all from the table top.
 
 The camera is only ever put in two poses, and almost every misunderstanding in
@@ -48,8 +62,8 @@ these documents comes from mixing them up.
 
 These two have three more beside them — over the rack, down the fingers, and the
 spot the arm waits at. All five are named and drawn in [Where the camera
-stands](#where-the-camera-stands-and-what-each-place-is-called). Older documents
-call these two the *survey pose* and the *side-on pose*; they are the same two
+stands](#where-the-camera-stands-and-what-each-place-is-called). This page also
+calls these two the *survey pose* and the *side-on pose*; they are the same two
 places.
 
 The 380 mm is **not a constant**. `MEASURE_STANDOFF` fixes only a floor of
@@ -65,7 +79,7 @@ option available.
 ![The four kinds](../images/seeing-the-glasses/the-cell/the-four-kinds.png)
 
 Four kinds, each drawn at random inside its own range of proportions. **No
-glass's size is written down anywhere in this project** — not in a constant,
+glass's size is written down anywhere in the code** — not in a constant,
 not in a test fixture, not in a mesh. The arm measures every glass during the
 run. What the code holds is the *range the spawner draws from*, which is a
 different thing and is what makes the tests meaningful.
@@ -85,15 +99,16 @@ outline leans outwards away from the point directly below the camera, and the
 taller the glass the further out it is thrown. When one kind holds both a short
 glass and a much taller one, the tall one's outline can therefore sweep over the
 short one and cover it completely, and the short glass then appears in no
-picture at all. That is the headline difficulty of [problem
-2](02_the-problem/01_what-is-asked-for.md), and with a narrow range of sizes it cannot happen,
-which is why this one range is wide on purpose rather than by accident.
+picture at all. That is the headline difficulty of [telling the glasses
+apart](02_the-problem/01_what-is-asked-for.md), and with a narrow range of sizes
+it cannot happen, which is why this one range is wide on purpose rather than by
+accident.
 
 The range is as wide as the rest of the cell allows, and two other parts of the
 cell are what set its short end. A glass shorter than this no longer clears a
 rack peg when it is stood mouth down, and the gripper can no longer close on it
 where the rule for this kind says to hold it. Neither of those has anything to
-do with perception, which is a good illustration of something this project runs
+do with perception, which is a good illustration of something this work runs
 into often: a limit on what the arm can be asked to see is frequently a limit on
 what it can be asked to do.
 
@@ -195,7 +210,7 @@ things, in this order — **the spot, the height, the aim**.
   of the glass zone*, *over the rack*, *at the near edge of the table*, *beside
   the glass*.
 - **The height** is in millimetres above the table top, because every height in
-  this project is. The landmarks are 0 (table level), 120 (the level view) and
+  this cell is. The landmarks are 0 (table level), 120 (the level view) and
   450 (the survey view). A fraction is fine when the exact number does not
   matter: *half the survey height* is 225 mm.
 - **The aim** is *looking down*, *looking level*, *looking at a slant of 30°*,
@@ -251,9 +266,10 @@ the same angle at the lens, so their sides are in the same ratio:
 > reported distance = true distance × *H* / (*H* − *h*)
 
 Put the cell's numbers in. *H* is 450 mm. Take a real glass from the spawner
-whose widest part is 160.7 mm up. The factor is 450 / 289.3 = 1.555. Problem 1
-measured exactly this: a glass standing 157 mm from the nadir was reported at
-244 mm, which is 87 mm out.
+whose widest part is 160.7 mm up. The factor is 450 / 289.3 = 1.555. The
+earlier job of taking a single glass from the table to the rack measured exactly
+this: a glass standing 157 mm from the nadir was reported at 244 mm, which is
+87 mm out.
 
 ![Why splay happens](../images/seeing-the-glasses/the-cell/splay-why-it-happens.png)
 
@@ -279,8 +295,9 @@ the side before it measures anything.
 
 **Mask, patch, blob.** A **mask** marks every pixel as glass or not glass. A
 **patch** or **blob** is one group of touching marked pixels — what connected
-components returns. One patch is not the same as one glass, which is the whole
-of problem 2's first difficulty.
+components returns. One patch is not the same as one glass, which is the first
+of the difficulties in [telling the glasses
+apart](02_the-problem/01_what-is-asked-for.md).
 
 **Silhouette.** The outline of one glass in one picture. Not a circle in either
 pose: from above it is a teardrop leaning away from the nadir, from the side it
@@ -339,6 +356,9 @@ Two useful numbers are **derived**, not stored, and are recomputed every run:
 
 ## Where to go next
 
-- The five problems — the map.
-- Problem 1 — one glass, start to finish.
-- [Problem 2](02_the-problem/01_what-is-asked-for.md) — segment the glasses.
+- [What is asked for](02_the-problem/01_what-is-asked-for.md) — which pixels belong
+  to which glass, and where each glass stands. That page also says what the
+  other jobs this cell was built for were.
+- [Pushing the glasses apart](../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md)
+  — the other book that works in this cell, where glasses stand too close
+  together for the gripper and the arm has to make room.

@@ -592,7 +592,7 @@ def figure_class_map_against_instances() -> None:
         arrowprops={"arrowstyle": "->", "color": GOOD, "lw": 1.0},
     )
     note(axes[2], limits[1] - 12, limits[3] - 10,
-         "One mask per glass, each with\nits own box. This is what\nproblem 2 asks for.",
+         "One mask per glass, each with\nits own box. This is what\nthis book asks for.",
          colour=GOOD, ha="right")
 
     figure.suptitle(

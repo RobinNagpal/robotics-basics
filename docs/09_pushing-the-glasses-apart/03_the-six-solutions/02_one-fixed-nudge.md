@@ -99,6 +99,27 @@ wider than its neighbour, standing on the narrowest foot its kind allows — and
 quotes numbers only where they belong to the gripper, to the cell, or to a
 results file in the repository.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code at the heart of it](#the-code-at-the-heart-of-it)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [Open loop and closed loop](#open-loop-and-closed-loop)
+1. [The shortfall, and why it is measured to the neighbour's edge](#the-shortfall-and-why-it-is-measured-to-the-neighbours-edge)
+1. [Why the push is a fraction of the shortfall rather than all of it](#why-the-push-is-a-fraction-of-the-shortfall-rather-than-all-of-it)
+1. [Why repeating replaces predicting](#why-repeating-replaces-predicting)
+1. [What is built and what is a design](#what-is-built-and-what-is-a-design)
+1. [It produces nothing anybody can learn from](#it-produces-nothing-anybody-can-learn-from)
+1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+
 ## The code at the heart of it
 
 Two pieces of this solution are written and running in the repository, and they
@@ -113,7 +134,7 @@ place in the whole method where the arm reads the world before committing to a
 decision rather than after it.
 
 The tipping test, from
-[`03-push-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
+[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py).
 No library decides anything in it. The whole of it is a few divisions, two
 comparisons and two arctangents from Python's own `math`, which is the plainest
 illustration of what this solution being the control means.
@@ -173,13 +194,15 @@ commits to.
 
 ## The problem this solves
 
-[Problem 3](../01_the-problem/01_what-is-asked-for.md) begins where problem 2 ended. The arm knows where
-every glass stands, how tall it is, how wide it is at its widest and how wide
-it is at its foot, and every one of those readings carries a measurement error
-rather than being exact. Some of the glasses stand close enough together that
-the open jaw cannot get round one of them without fouling the one beside it,
-and the arm has to move them apart by dragging them across the table rather
-than by lifting them.
+[Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) begins
+where [telling them apart in a
+picture](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
+ended. The arm knows where every glass stands, how tall it is, how wide it is
+at its widest and how wide it is at its foot, and every one of those readings
+carries a measurement error rather than being exact. Some of the glasses stand
+close enough together that the open jaw cannot get round one of them without
+fouling the one beside it, and the arm has to move them apart by dragging them
+across the table rather than by lifting them.
 
 What makes that a problem rather than an exercise is one missing number. A
 pushed glass slides while the jaw touches it below a height set by its own foot
@@ -337,7 +360,7 @@ distances, and [the target layout](../01_the-problem/02_the-target-layout.md) ma
 insists that a layout has to use the edge version of the condition.
 
 **The shortfall is already in the repository.** The function `shortfall()` in
-[`03-push-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py)
+[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py)
 computes exactly the expression above and adds it up over the whole table, as a
 measure of how crowded the arrangement is. This solution uses the same quantity
 one glass at a time, as its error.
@@ -396,12 +419,12 @@ section.
 One more point about the gain, and it is about honesty rather than about
 control. The gain could be chosen by trying many values over the training
 tables and keeping the best, and that would be **fitting a number to data**,
-which this solution is not allowed to do: the plan for the six records that
-this solution fits nothing, and a baseline that is quietly tuned until it is
-competitive has stopped being a baseline. So the gain is argued instead. It is
-chosen small enough that the convergence condition holds across the whole
-plausible friction range, and then frozen, and that argument is written down
-where anybody can disagree with it.
+which this solution is not allowed to do: [the overview of the
+six](01_overview.md) records that this solution fits nothing, and a baseline
+that is quietly tuned until it is competitive has stopped being a baseline. So
+the gain is argued instead. It is chosen small enough that the convergence
+condition holds across the whole plausible friction range, and then frozen, and
+that argument is written down where anybody can disagree with it.
 
 ## Why repeating replaces predicting
 
@@ -412,13 +435,13 @@ know**.
 
 It is worth being exact about what is and is not claimed. The method claims a
 direction, which does not need the friction. It claims that the shortfall is
-measurable, which `look()` makes true up to the measurement error problem 2
-scored. It claims that a glass pushed away from its neighbour ends up further
-from that neighbour, which is true for any friction whatever. It does not claim
-how far the glass goes, it does not claim that the glass will not rotate, and
-it does not claim to know whether this table is slippery or sticky. Every
-solution that fails because its model of pushing was wrong fails on a claim
-this one does not make.
+measurable, which `look()` makes true up to the measurement error [the camera
+work reports](../../08_seeing-the-glasses/05_the-results.md). It claims that a
+glass pushed away from its neighbour ends up further from that neighbour, which
+is true for any friction whatever. It does not claim how far the glass goes, it
+does not claim that the glass will not rotate, and it does not claim to know
+whether this table is slippery or sticky. Every solution that fails because its
+model of pushing was wrong fails on a claim this one does not make.
 
 The price is arm time, and it should be read as a real price rather than as a
 rhetorical one. One push is a sequence: the closed jaw is carried to a start
@@ -455,18 +478,18 @@ real code is involved and it would be easy to over-claim.
 
 **Built, in the repository, and run against the bench:**
 
-- the bench itself, in [`03-push-glasses-apart/bench/`](../../../code/src/09_pushing-the-glasses-apart/bench), with the
+- the bench itself, in [`src/09_pushing-the-glasses-apart/bench/`](../../../code/src/09_pushing-the-glasses-apart/bench), with the
   crowded tables, the measurement error, `look()`, `push()`, `take()` and the
   scorecard;
 - the room test, as `has_room()` in
-  [`03-push-glasses-apart/bench/bench.py`](../../../code/src/09_pushing-the-glasses-apart/bench/bench.py), which holds the
+  [`src/09_pushing-the-glasses-apart/bench/bench.py`](../../../code/src/09_pushing-the-glasses-apart/bench/bench.py), which holds the
   70 mm as the gripper's constant and applies it to the neighbour's edge;
 - the shortfall, as `shortfall()` in
-  [`03-push-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py);
+  [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py);
 - the tipping rule, as `slides()` in the same file, evaluated at the top edge
   of the jaw and at both ends of the plausible friction range, together with
   the small test push that settles the glasses the range cannot;
-- the loop, in [`03-push-glasses-apart/01-one-fixed-nudge/run.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py):
+- the loop, in [`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/run.py):
   look, rack every glass that already has room, choose one push, make it, look
   again, with a budget of pushes per glass and a budget per table;
 - the refusal reasons, and the scorecard that counts them with the outcome
@@ -493,7 +516,7 @@ real code is involved and it would be easy to over-claim.
 
 One measurement from the built code is worth quoting, with its attribution
 made clear. The programmed run reports in
-[`03-push-glasses-apart/01-one-fixed-nudge/results.json`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json)
+[`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json`](../../../code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge/results.json)
 that its pushed glasses stopped a median of 1.0 mm, and at worst 3.9 mm, from
 where they were aimed. **That run uses the searching planner rather than this
 solution's rule**, so the figure is not this solution's score. What it does say
@@ -786,8 +809,10 @@ correct answer for it is a refusal with the reason.
 
 ## What it needs
 
-Everything the method requires is either already produced by problem 2 or is a
-constant that belongs to the gripper, which is why it can be built first.
+Everything the method requires is either already produced by [the camera work
+that measures the
+glasses](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) or
+is a constant that belongs to the gripper, which is why it can be built first.
 
 **The measurements, and nothing beyond them.** From `look()` it uses each
 glass's position and widest width, which are what the room test and the
@@ -854,8 +879,9 @@ spread.
 height, feeling in until the force threshold fires, pushing slowly along a
 line, retreating before lifting: every one of those steps is where a real glass
 gets knocked over, and this method runs all of them with no planning code in
-the way. When something falls over while problem 3 is being built, this method
-tells you the fault was in the contact, because there was no plan to be wrong.
+the way. When something falls over while the work in this book is being built,
+this method tells you the fault was in the contact, because there was no plan
+to be wrong.
 
 **Short pushes are safe pushes.** Every millimetre of travel is a millimetre in
 which something can be knocked, so a method whose instinct is to move a glass
@@ -1012,11 +1038,11 @@ bench](../02_the-test-bench.md) is for.
 
 ## Where it sits among the other five
 
-The plan for the six states the question this solution answers in one line:
-**does any learning beat a fixed nudge?** It is answered by comparing this
-solution against all five of the others, and that is the only comparison in the
-set with this shape, because every other comparison is between two methods that
-both cost something.
+[The overview of the six](01_overview.md) states the question this solution
+answers in one line: **does any learning beat a fixed nudge?** It is answered
+by comparing this solution against all five of the others, and that is the only
+comparison in the set with this shape, because every other comparison is
+between two methods that both cost something.
 
 **Against [solution 2](03_geometry-generates-a-model-ranks.md)** the gap is a search and a
 ranker. Solution 2 uses the same input, the same room test and the same tipping
@@ -1066,19 +1092,23 @@ after it needs the same contact sequence and the same refusals. Do not ship it,
 because it has one heading to offer, it cannot help a glass crowded from two
 sides, and it never asks whether the place it is sending a glass is clear.
 
-And read it in both directions, as problem 2 reads its own written rule. The
-usual reading is about the other five: if a model cannot beat a fixed nudge, it
-has earned nothing, because it cost data, training time and hardware that this
-one did not, so matching it is not a result. The other reading is about the
-problem. This method works at all only because the glasses stand upright on a
-flat table, because the gripper's clear room is a known constant, because
-problem 2 reports a position and a width for every glass, and because a refusal
-is an acceptable answer. Each of the other five needs fewer of those promises
-than this one does. So a reader who finds a fixed nudge convincing should read
-that as a statement about how generous problem 3's promises are, and the value
-of the other five is what they do when the promises stop.
+And read it in both directions, as the book on telling the glasses apart reads
+[its own written
+rule](../../08_seeing-the-glasses/04_the-six-solutions/02_rules-on-the-table.md).
+The usual reading is about the other five: if a model cannot beat a
+fixed nudge, it has earned nothing, because it cost data, training time and
+hardware that this one did not, so matching it is not a result. The other
+reading is about the problem. This method works at all only because the glasses
+stand upright on a flat table, because the gripper's clear room is a known
+constant, because [the camera
+work](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
+reports a position and a width for every glass, and because a refusal is an
+acceptable answer. Each of the other five needs fewer of those promises than
+this one does. So a reader who finds a fixed nudge convincing should read that
+as a statement about how generous this book's promises are, and the value of
+the other five is what they do when the promises stop.
 
 ---
 
-← [Problem 3 — push the glasses apart](../01_the-problem/01_what-is-asked-for.md) · [Solution 2 — geometry
+← [Push the glasses apart](../01_the-problem/01_what-is-asked-for.md) · [Solution 2 — geometry
 generates, a model ranks](03_geometry-generates-a-model-ranks.md) →

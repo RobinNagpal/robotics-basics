@@ -165,7 +165,7 @@ def separation_floor(metres: float):
 
 
 def layout(count: int, seed: int) -> list[dict]:
-    """One table of ``count`` tapered glasses, as problem 2 would report it."""
+    """One table of ``count`` tapered glasses, as the camera work would report it."""
     return [seen(glass) for glass in spawn.random_glasses(count, seed, kinds=["tapered_glass"])]
 
 
@@ -384,7 +384,7 @@ def picture_four_distances(pair: tuple[dict, dict]) -> None:
 
     The point of the picture is that a pair has three thresholds rather than
     one, that two of them are different from each other, and that all three are
-    below what problem 2 guarantees.
+    below what the camera work guarantees.
     """
     wide, narrow = pair
     touching = (wide["rim"] + narrow["rim"]) / 2.0
@@ -401,7 +401,7 @@ def picture_four_distances(pair: tuple[dict, dict]) -> None:
          "the narrow one's edge\nreaches the wide one's ring"),
         (narrow_needs, "the narrow one has it too",
          "the wide one's edge\nreaches the narrow one's ring"),
-        (guarantee, f"{guarantee:.0f} mm \u2014 what problem 2 guarantees",
+        (guarantee, f"{guarantee:.0f} mm \u2014 what the camera work guarantees",
          f"{guarantee:.0f} mm"),
     )
 
@@ -433,7 +433,7 @@ def picture_four_distances(pair: tuple[dict, dict]) -> None:
         f"and a glass is blocked when another glass's edge reaches inside that ring. So the test is not the "
         f"same for both of\nthem: the narrow glass's edge reaches less far out from its own middle, so the "
         f"wide one comes free first, and it comes free sooner by half of however much the two rims differ. "
-        f"Every one of these\ndistances is below the {guarantee:.0f} mm problem 2 hands over.",
+        f"Every one of these\ndistances is below the {guarantee:.0f} mm the camera work hands over.",
         fontsize=NOTE_SIZE, color=INK, ha="center",
     )
     figure.subplots_adjust(left=0.01, right=0.99, top=0.84, bottom=0.14, wspace=0.05)
@@ -471,7 +471,7 @@ def main() -> None:
         print(f"    {kind}: foot {feet.min():.1f}-{feet.max():.1f} mm, mean {feet.mean():.1f}; {shares}")
 
     handover = measure_handover()
-    print(f"problem 2's spawner ({handover['tables']} tables, "
+    print(f"the cell's spawner ({handover['tables']} tables, "
           f"{spawn.MIN_SEPARATION * 1000:.0f} mm floor):")
     print(f"    with a pair inside {GRIPPABLE_APART:.0f} mm: {handover['crowded']}")
     print(f"    with any glass blocked by the asymmetric test: {handover['blocked']}")

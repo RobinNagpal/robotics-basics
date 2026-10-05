@@ -72,21 +72,23 @@ great deal.
 
 All of this is now written, and the result is worth stating before anything
 else, because it is the finding rather than a footnote. The candidate
-generation exists: `03-push-glasses-apart/01-one-fixed-nudge/plan.py` sweeps the headings, steps
-the travel out, applies the tests and returns every push that survives. The
-printed rule that takes the shortest push which finishes the job exists beside
-it. And the trees described below — their inputs, the number they predict, the
-training set and the labelling — are built too, in
-`03-push-glasses-apart/02-geometry-ranked`, fitted, and run over the same fifty
-held-out tables as the rule, with the model deleted, so that both sides see
-exactly the same candidates and the only difference between the two runs is who
-picks. **The ranker loses that comparison.** It racked 185 of the 251 glasses
-in 229 pushes where the printed rule racked 195 in 213, finishing two fewer
-tables and toppling nothing either way. The ablation is in the folder:
-`results.json` is the ranker's run and `rule.json` is the rule's. Why it loses
-is explained in [where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks),
-and the short answer is that the model is fitted on room gained while the run
-is scored on glasses racked, and those are not the same quantity.
+generation exists:
+`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py` sweeps the
+headings, steps the travel out, applies the tests and returns every push that
+survives. The printed rule that takes the shortest push which finishes the job
+exists beside it. And the trees described below — their inputs, the number they
+predict, the training set and the labelling — are built too, in
+`src/09_pushing-the-glasses-apart/02-geometry-ranked`, fitted, and run over the
+same fifty held-out tables as the rule, with the model deleted, so that both
+sides see exactly the same candidates and the only difference between the two
+runs is who picks. **The ranker loses that comparison.** It racked 185 of the
+251 glasses in 229 pushes where the printed rule racked 195 in 213, finishing
+two fewer tables and toppling nothing either way. The ablation is in
+`src/09_pushing-the-glasses-apart/02-geometry-ranked`: `results.json` is the
+ranker's run and `rule.json` is the rule's. Why it loses is explained in [where
+it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks), and
+the short answer is that the model is fitted on room gained while the run is
+scored on glasses racked, and those are not the same quantity.
 
 By the end of this document you will understand what a decision tree is and
 what boosting a set of them means, why a handful of geometric quantities suits
@@ -99,11 +101,13 @@ Those two things are worth stating in the introduction, because they are the
 reason to read the rest.
 
 **The first is where the learned part sits.** Geometry generates every
-candidate and refuses the unsafe ones, and the model only orders what
-survives. So a wrong answer costs one wasted push and nothing worse. It cannot
-topple a glass, because the topple limit described in [pushing without
-toppling](../01_the-problem/03_pushing-without-toppling.md) is a refusal applied before the model
-is consulted at all. That is the same position problem 2's learned ranker
+candidate and refuses the unsafe ones, and the model only orders what survives.
+So a wrong answer costs one wasted push and nothing worse. It cannot topple a
+glass, because the topple limit described in [pushing without
+toppling](../01_the-problem/03_pushing-without-toppling.md) is a refusal
+applied before the model is consulted at all. That is the same position the
+learned ranker in [looking again at what was
+hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md)
 occupies, for the same reason, and the parallel is drawn out below.
 
 **The second is that this solution is the teacher.** Solutions 3 and 6 learn
@@ -113,6 +117,28 @@ single thing this solution contributes, and it comes with an honest cost: the
 two solutions that learn from it inherit its ceiling, and keeping only the
 demonstrations that succeeded trains them on a biased sample of what this
 solution happens to do well.
+
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code at the heart of it](#the-code-at-the-heart-of-it)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [What the geometry proposes](#what-the-geometry-proposes)
+1. [What the filter removes before the model is asked](#what-the-filter-removes-before-the-model-is-asked)
+1. [The model: boosted trees that score one candidate at a time](#the-model-boosted-trees-that-score-one-candidate-at-a-time)
+1. [The inputs are lengths, counts and ratios](#the-inputs-are-lengths-counts-and-ratios)
+1. [How it is trained](#how-it-is-trained)
+1. [Where the learned part sits is what makes it safe](#where-the-learned-part-sits-is-what-makes-it-safe)
+1. [It is the teacher](#it-is-the-teacher)
+1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
 
 ## The code at the heart of it
 
@@ -128,7 +154,7 @@ differs, and the label is what the choosing is taught to want.
 
 The borrowed library does its work in a constructor and one call to `fit`, and
 the sort that follows is the model's entire effect on the run. Both are in
-`03-push-glasses-apart/02-geometry-ranked/ranker.py`:
+`src/09_pushing-the-glasses-apart/02-geometry-ranked/ranker.py`:
 
 ```python
 from sklearn.ensemble import GradientBoostingRegressor
@@ -161,7 +187,7 @@ def ranked(
 
 What `labels` holds is the whole design decision, and it is produced by making
 one candidate on the bench and measuring what it did, in
-`03-push-glasses-apart/02-geometry-ranked/rollout.py`:
+`src/09_pushing-the-glasses-apart/02-geometry-ranked/rollout.py`:
 
 ```python
 def roll(table: Bench, before: Before, candidate: Candidate) -> Rolled:
@@ -186,12 +212,12 @@ rule.
 
 ## The problem this solves
 
-[Problem 3](../01_the-problem/01_what-is-asked-for.md) hands the arm a table with four to six glasses on
-it, some standing too close together for the open jaw to fit round one without
-fouling its neighbour. The arm has to drag them apart, because it may not lift
-them: lifting needs a measured profile, measuring needs a clear view from the
-side, and a clear view from the side is exactly what the crowding has taken
-away.
+[Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) hands
+the arm a table with four to six glasses on it, some standing too close
+together for the open jaw to fit round one without fouling its neighbour. The
+arm has to drag them apart, because it may not lift them: lifting needs a
+measured profile, measuring needs a clear view from the side, and a clear view
+from the side is exactly what the crowding has taken away.
 
 A push therefore needs three things decided — which glass to move, in which
 direction, and how far — and the honest difficulty is that the first attempt
@@ -238,8 +264,9 @@ of a fitted function than predicting the outcome correctly.
 
 **The method degrades to what already exists.** Delete the fitted model, keep
 the printed rule that takes the shortest job-finishing push, and the run is the
-geometry in `03-push-glasses-apart/01-one-fixed-nudge` exactly. So this solution extends that code
-rather than replacing it, and it can be tried and then abandoned at no cost.
+geometry in `src/09_pushing-the-glasses-apart/01-one-fixed-nudge` exactly. So
+this solution extends that code rather than replacing it, and it can be tried
+and then abandoned at no cost.
 
 The contrast that makes the arrangement worth understanding is with the obvious
 alternative, which is to let a model choose the push directly. Such a model
@@ -592,23 +619,23 @@ from the model's accuracy.** That is a rare thing to be able to say about a
 fitted component, and it is the whole argument for the pattern. A better model
 makes wasted pushes rarer. Only the geometry decides how bad things can get.
 
-This is precisely the position problem 2's learned ranker occupies, and the
-parallel is exact enough to be worth following. There, the shared machinery for
-[looking again at what was
-hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md) has to decide which of
-several places to stand the camera should be tried first. The geometry works
-out every candidate position and rejects the ones that are unreachable or whose
-line of sight is blocked, and a small fitted model orders what is left by how
-much it would be worth looking from there. That document states the reason in
-one sentence, and it is the same sentence that applies here: where the model
-sits is the whole reason it is safe to have, because a bad ordering costs one
-wasted look and nothing worse.
+This is precisely the position a learned ranker occupies in the work of telling
+the glasses apart in a picture, and the parallel is exact enough to be worth
+following. There, the shared machinery for [looking again at what was
+hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md)
+has to decide which of several places to stand the camera should be tried
+first. The geometry works out every candidate position and rejects the ones
+that are unreachable or whose line of sight is blocked, and a small fitted
+model orders what is left by how much it would be worth looking from there.
+That document states the reason in one sentence, and it is the same sentence
+that applies here: where the model sits is the whole reason it is safe to have,
+because a bad ordering costs one wasted look and nothing worse.
 
 The two cases differ in one respect, and it raises the bar here rather than
-lowering it. **A wasted look in problem 2 costs seconds of arm movement. A
-wasted push in problem 3 costs seconds and a contact with a glass**, and
-contact is where things break. So a push ranker has to be better than a
-viewpoint ranker to be worth the same amount.
+lowering it. **A wasted look when the camera is choosing where to stand costs
+seconds of arm movement. A wasted push here costs seconds and a contact with a
+glass**, and contact is where things break. So a push ranker has to be better
+than a viewpoint ranker to be worth the same amount.
 
 ## It is the teacher
 
@@ -708,18 +735,19 @@ those labels on a table of a few thousand rows.
 
 At run time, one pass of the loop goes like this. `look()` hands over where
 each glass stands and how wide it is at its widest and at its foot, carrying
-problem 2's measured error. Any glass that already has room is racked and
-removed from the problem. For each glass that is still crowded, the topple
-limit is evaluated from its measured foot across the believed range of
-friction, and a glass that tips before it slides at every friction in that
-range is refused with the reason. For the glasses that remain, the enumerator
-sweeps the headings, steps the travel out, applies its four tests and keeps the
-survivors. Each survivor is turned into the short list of lengths, angles,
-counts and ratios described above, the model scores it, and the candidates are
-sorted. The highest-scoring push is handed to the bench, which expands it into
-a trajectory, carries it out, and reports what the jaw felt. Then the arm looks
-again, and the loop repeats with the arrangement as it now is rather than as it
-was planned to be.
+the measurement error [the camera work
+reports](../../08_seeing-the-glasses/05_the-results.md). Any glass that already
+has room is racked and removed from the problem. For each glass that is still
+crowded, the topple limit is evaluated from its measured foot across the
+believed range of friction, and a glass that tips before it slides at every
+friction in that range is refused with the reason. For the glasses that remain,
+the enumerator sweeps the headings, steps the travel out, applies its four
+tests and keeps the survivors. Each survivor is turned into the short list of
+lengths, angles, counts and ratios described above, the model scores it, and
+the candidates are sorted. The highest-scoring push is handed to the bench,
+which expands it into a trajectory, carries it out, and reports what the jaw
+felt. Then the arm looks again, and the loop repeats with the arrangement as it
+now is rather than as it was planned to be.
 
 Three things are worth holding on to from all of that.
 
@@ -733,10 +761,10 @@ a push that fell short, went too far or turned the glass is simply the state of
 the table that the next pass plans against. That is why a wrong ordering costs
 a push rather than a run.
 
-**What the loop cannot recover is a toppled glass**, because nothing in problem
-3 lifts anything. That single fact is why the topple limit is a refusal rule
-rather than a risk weighed against the value of moving the glass, and it is why
-the model's position after the refusal matters more than the model's accuracy.
+**What the loop cannot recover is a toppled glass**, because nothing here lifts
+anything. That single fact is why the topple limit is a refusal rule rather
+than a risk weighed against the value of moving the glass, and it is why the
+model's position after the refusal matters more than the model's accuracy.
 
 ## When a glass cannot be pushed safely
 
@@ -763,13 +791,14 @@ refuses produces no candidates and the model is handed nothing.
 
 **There is nowhere clear to push it to.** Every candidate along every heading
 clashed with a neighbour, left the glass zone or left the arm's reach. The
-candidate set is empty, and **a ranking over an empty set is still empty**. This
-is the commoner refusal by a wide margin in the record this solution extends:
-all 56 of the glasses that run left on the table were refused for this reason,
-and not one for tipping. This folder reports the same glasses in two groups
-rather than one, separating those that had no candidate at all from those whose
-candidates were all too slight to be worth making, so its own results file
-spells the reason differently and counts the same refusals.
+candidate set is empty, and **a ranking over an empty set is still empty**.
+This is the commoner refusal by a wide margin in the record this solution
+extends: all 56 of the glasses that run left on the table were refused for this
+reason, and not one for tipping. This solution's own run reports the same
+glasses in two groups rather than one, separating those that had no candidate
+at all from those whose candidates were all too slight to be worth making, so
+its own results file spells the reason differently and counts the same
+refusals.
 
 ![The topple limit is evaluated at the jaw's top edge across the whole believed range of friction, and on the held-out tables it refuses nothing: every refusal in the record is a glass with nowhere clear to push it to.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/06-where-the-refusals-come-from.png)
 
@@ -849,10 +878,11 @@ It needs **scikit-learn and NumPy**, both small, both pure software, and both
 BSD 3-clause, so there is no licence condition to carry anywhere and nothing to
 revisit if this work were taken further.
 
-It needs the **enumerator**, which lives in `03-push-glasses-apart/01-one-fixed-nudge/plan.py`
-and is loaded from there rather than copied, so the heading sweep, the stepped
-travel, the four tests and the tipping rule have one definition in this
-repository. It is also the part that decides the ceiling.
+It needs the **enumerator**, which lives in
+`src/09_pushing-the-glasses-apart/01-one-fixed-nudge/plan.py` and is loaded
+from there rather than copied, so the heading sweep, the stepped travel, the
+four tests and the tipping rule have one definition in this repository. It is
+also the part that decides the ceiling.
 
 It needs a **training set**, which is a few thousand pairs of a candidate and
 what happened to it, generated on the training half of the bench's tables and
@@ -868,8 +898,9 @@ nothing to rent for a weekend and nothing to rent by the month, so the figure
 to quote against the other solutions' rental costs is zero.
 
 At run time it needs **one pass of the trees per candidate**, which is
-arithmetic: a few hundred threshold comparisons per tree, a few hundred trees,
-and no matrix multiplication anywhere. Even a candidate set in the thousands
+arithmetic: each tree is three levels deep, so it asks three threshold
+questions, and there are two hundred of them, which is six hundred comparisons
+in all and no matrix multiplication anywhere. Even a candidate set in the thousands
 costs a small fraction of the seconds one arm movement takes, so the compute
 column on the scorecard is close to the fixed nudge's rather than to a
 foundation model's.
@@ -1113,19 +1144,20 @@ fitted on this teacher's behaviour exceeds the teacher — and the section above
 on inheriting a ceiling says why that is a harder thing to achieve than it
 sounds.
 
-Against [solution 4](05_a-world-model-then-plan-with-it.md), the comparison is which question
-deserved a model, and it is the sharpest comparison in this folder. Both fit
-something, and the difference is what. This solution fits a model of **how much
-a push would help**, which is a quantity the geometry already computes exactly
-from the destination. Solution 4 fits a model of **what a push will actually
-do**, which is the quantity the geometry gets wrong, because predicting where a
-pushed glass ends up needs the friction and the weight distribution that nobody
-here has. Both have now been run on the same tables, and the result bears on
-that choice directly. Solution 4's first rung racked 202 of the 251 glasses in
-114 pushes, repeating only 14 of them, where the geometry racked 195 in 213
-pushes and had to repeat 90. **The learning that paid in this cell attacked the
-quantity the geometry gets wrong, not the quantity it gets right.** That is the
-single most useful thing to take from placing these two side by side.
+Against [solution 4](05_a-world-model-then-plan-with-it.md), the comparison is
+which question deserved a model, and it is the sharpest comparison among the
+six. Both fit something, and the difference is what. This solution fits a model
+of **how much a push would help**, which is a quantity the geometry already
+computes exactly from the destination. Solution 4 fits a model of **what a push
+will actually do**, which is the quantity the geometry gets wrong, because
+predicting where a pushed glass ends up needs the friction and the weight
+distribution that nobody here has. Both have now been run on the same tables,
+and the result bears on that choice directly. Solution 4's first rung racked
+202 of the 251 glasses in 114 pushes, repeating only 14 of them, where the
+geometry racked 195 in 213 pushes and had to repeat 90. **The learning that
+paid in this cell attacked the quantity the geometry gets wrong, not the
+quantity it gets right.** That is the single most useful thing to take from
+placing these two side by side.
 
 It cost something, though, and the cost is the point of the comparison rather
 than a footnote to it. The geometry toppled nothing at all, while the learned

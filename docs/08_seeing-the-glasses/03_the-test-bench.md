@@ -15,6 +15,18 @@ first appears.
 Read this before any of the solution documents, because every one of them
 assumes it.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [Why there is a bench at all](#why-there-is-a-bench-at-all)
+1. [What the bench draws](#what-the-bench-draws)
+1. [What a solution is given](#what-a-solution-is-given)
+1. [What the bench keeps to itself](#what-the-bench-keeps-to-itself)
+1. [What must come back](#what-must-come-back)
+1. [How a report is matched to a real glass](#how-a-report-is-matched-to-a-real-glass)
+1. [What the bench measures](#what-the-bench-measures)
+1. [Where to go next](#where-to-go-next)
+
 ## Why there is a bench at all
 
 Without one, each method would arrive with its own arrangements and its own
@@ -125,7 +137,7 @@ worse. The only thing any of them contributes is which pixels belong to which
 glass, which is what this problem asks.
 
 One consequence is worth stating plainly, because it answers a question that
-would otherwise come up in all six documents. **No model in this problem
+would otherwise come up in all six solution documents. **No model in this book
 produces a pose.** Models produce masks. The pose comes from depth and the
 camera's own pose, by arithmetic, and a glass standing upright on a flat table
 has no orientation left to find.

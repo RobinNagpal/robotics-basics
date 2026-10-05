@@ -56,9 +56,10 @@
 
 ## Introduction
 
-This document explains how to answer [problem 3](../01_the-problem/01_what-is-asked-for.md) by learning a
-model of what a push does, and then choosing pushes by trying them out against
-that model rather than against the table.
+This document explains how to [push the glasses
+apart](../01_the-problem/01_what-is-asked-for.md) by learning a model of what a
+push does, and then choosing pushes by trying them out against that model
+rather than against the table.
 
 The idea worth holding on to while reading is a small one with large
 consequences. Every other solution here learns, or writes down, **what to do**.
@@ -89,6 +90,31 @@ and what `push()` accepts are assumed throughout, and read [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md), because the refusal rule this
 solution adds learned evidence to is stated there.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [The code at the heart of it](#the-code-at-the-heart-of-it)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [What exists in code, and what is a design](#what-exists-in-code-and-what-is-a-design)
+1. [What a forward model is](#what-a-forward-model-is)
+1. [What this model is shown, and what it answers](#what-this-model-is-shown-and-what-it-answers)
+1. [The push's own frame, and why direction carries no information](#the-pushs-own-frame-and-why-direction-carries-no-information)
+1. [Ensembles as a measure of ignorance](#ensembles-as-a-measure-of-ignorance)
+1. [Planning by sampling: the cross-entropy method](#planning-by-sampling-the-cross-entropy-method)
+1. [Receding horizon: plan several, make one](#receding-horizon-plan-several-make-one)
+1. [Compounding error over a rollout](#compounding-error-over-a-rollout)
+1. [Planning a sequence, which only this solution could do](#planning-a-sequence-which-only-this-solution-could-do)
+1. [The second rung: TD-MPC2 off the shelf](#the-second-rung-td-mpc2-off-the-shelf)
+1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+
 ## The code at the heart of it
 
 Two pieces of rung one carry the whole idea, and they are short enough to read
@@ -102,7 +128,7 @@ reads the model's mind.
 
 The borrowed library does its work in the four `nn.Linear` lines, and
 everything around them is the ensemble, in
-[`03-push-glasses-apart/04-a-world-model/model.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py):
+[`code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/model.py):
 
 ```python
 ENSEMBLE = 5
@@ -130,7 +156,7 @@ class Ensemble:
 ```
 
 What the five answers are then used for is in
-[`03-push-glasses-apart/04-a-world-model/plan.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py),
+[`code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py`](../../../code/src/09_pushing-the-glasses-apart/04-a-world-model/plan.py),
 where every candidate push is scored at once and the unacceptable ones are given
 a cost of infinity:
 
@@ -174,8 +200,9 @@ them.
 
 ## The problem this solves
 
-The problem is the one [problem 3](../01_the-problem/01_what-is-asked-for.md) states, and this section
-narrows it to the single difficulty this solution is aimed at.
+[The problem](../01_the-problem/01_what-is-asked-for.md) has already been
+stated in full, and this section narrows it to the single difficulty this
+solution is aimed at.
 
 Four to six glasses stand on a table, some of them closer together than the
 gripper can work with. The arm has to push them apart without knocking any of
@@ -249,12 +276,14 @@ running code in this repository and which parts are described here and not
 written, because this solution is unusual among the six in how much of it
 exists.
 
-**Rung one is built.** It lives in `03-push-glasses-apart/04-a-world-model/`, it trains on data it
+**Rung one is built.** It lives in
+`code/src/09_pushing-the-glasses-apart/04-a-world-model/`, it trains on data it
 collects itself, and it has been run on the bench's held-out tables with its
 results recorded in that folder's own `results.json`, and set beside the other
-five in `03-push-glasses-apart/results/README.md`. The model is `model.py`, what it is
-shown is `features.py`, and the search and the loop around it are `plan.py`.
-Everything this document says about those three files is a description of code.
+five in `code/src/09_pushing-the-glasses-apart/results/README.md`. The model is
+`model.py`, what it is shown is `features.py`, and the search and the loop
+around it are `plan.py`. Everything this document says about those three files
+is a description of code.
 
 **The sequence capability is a design.** The planner that exists chooses one
 push at a time: it scores each candidate by the table one push later, makes the
@@ -267,14 +296,15 @@ compounding error.
 
 **Rung two is a design, and it claims nothing.** It is not wired to this bench
 and it has not been trained or run here, so every number in this document
-belongs to rung one. One thing about it is worth settling before anybody starts:
-the library this project uses elsewhere ships **TD-MPC**, the earlier method,
-and not TD-MPC2. So rung two means fetching TD-MPC2 from its own project, and
-the convenience of everything living in one library, which solutions 3, 5 and 6
-enjoy, does not apply here. The
-two bench pieces an off-the-shelf policy needs are no longer the obstacle: the
-straight-down rendered view and the path that accepts waypoints were built for
-[imitation from demonstrations](04_imitation-from-demonstrations.md), as
+belongs to rung one. One thing about it is worth settling before anybody
+starts: the library this project uses elsewhere ships **TD-MPC**, the earlier
+method, and not TD-MPC2. So rung two means fetching TD-MPC2 from its own
+project, and the convenience of everything living in one library, which
+[imitation from demonstrations](04_imitation-from-demonstrations.md) and the
+two SmolVLA solutions enjoy, does not apply here. The two bench pieces an
+off-the-shelf policy needs are no longer the obstacle: the straight-down
+rendered view and the path that accepts waypoints were built for [imitation
+from demonstrations](04_imitation-from-demonstrations.md), as
 `bench/top_view.py` and `Bench.follow`. What is still missing is the wiring and
 the training.
 
@@ -321,7 +351,8 @@ nothing else.
 
 **In go thirty-four numbers.** The table's one known kind, as four yes-or-no
 columns. The pushed glass's height, its width at its widest and its width at
-its foot — the three measurements `look()` reports, carrying problem 2's error.
+its foot — the three measurements `look()` reports, carrying the measured error
+of [telling the glasses apart](../../08_seeing-the-glasses/05_the-results.md).
 The push itself as two numbers: how far across the glass the jaw meets it, and
 how far it pushes. And then up to five other glasses, nearest first, each as
 where it stands relative to the pushed glass, how wide it is and how tall it
@@ -571,8 +602,9 @@ The size of this is easy to feel with the numbers recorded for rung one. Its
 README reports a median error of about four and a half millimetres for where a
 pushed glass lands, on tables it never trained on. That is a perfectly useful
 one-step model. If that error simply accumulated, a plan rolled three pushes
-deep would be starting its third push from a table some thirteen millimetres
-out — and the clearances this whole problem turns on are tens of millimetres.
+deep would judge the table it ends on to be where it is not by some thirteen
+millimetres — and the clearances this whole problem turns on are tens of
+millimetres.
 Compounding makes it worse than that straight sum, not better. **So a model
 that is good at one step can be useless at five**, and the quality of the
 one-step fit says almost nothing about it.
@@ -713,11 +745,12 @@ hour on a laptop processor, then the cell is narrow enough that the hand-built
 model was the right call, and the thirty-four numbers chosen by hand were a
 better encoding than one learned from scratch. If it clears tables markedly
 better, then what the hand-built encoding left out was real, and the places it
-was left out are where to look next. Either answer is useful, and neither can be
-had from one rung alone. This is the same argument [a network trained here from
-scratch](../../08_seeing-the-glasses/04_the-six-solutions/03_a-network-trained-from-scratch.md) makes in
-problem 2, where a model built entirely inside the cell is what makes the
-borrowed models' scores readable.
+was left out are where to look next. Either answer is useful, and neither can
+be had from one rung alone. This is the same argument [a network trained here
+from
+scratch](../../08_seeing-the-glasses/04_the-six-solutions/03_a-network-trained-from-scratch.md)
+makes about telling the glasses apart, where a model built entirely inside the
+cell is what makes the borrowed models' scores readable.
 
 ## The pushes are what this contributes
 
@@ -763,7 +796,8 @@ run, once per push.
 
 **Look.** `look()` returns one reading per glass: where it stands, how tall,
 how wide at its widest and at its foot, whether it is standing. Every reading
-carries problem 2's error.
+carries the error measured in [telling the glasses
+apart](../../08_seeing-the-glasses/05_the-results.md).
 
 **Apply the shared topple limit.** The arithmetic in [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md) is worked out from each glass's
@@ -958,9 +992,9 @@ being thirty-four numbers rather than a picture.
 **For rung two, rented hardware.** TD-MPC2 is reinforcement learning, it trains
 on far more interaction than a one-step fit needs, and it wants an accelerator.
 Renting one for a weekend is of order a hundred dollars, which covers a single
-training run. Because the plan requires several training
-seeds before any result is a result, the realistic figure is a small accelerator
-for about a month, which is of order five hundred dollars.
+training run. Because several training seeds are needed before any result is a
+result, the realistic figure is a small accelerator for about a month, which is
+of order five hundred dollars.
 
 **Run-time compute, and this is where this solution is expensive.** Every single
 push the arm makes is preceded by about fifteen hundred candidate pushes, each
@@ -1082,9 +1116,10 @@ efficiency — far fewer interactions than a model-free policy needs for the sam
 task.
 
 It is normally right when the situation can be written down as a short list of
-measured numbers, which is exactly this problem after problem 2 has run. It is
-normally wrong when it cannot, because then the model has to predict pictures,
-which is a far harder fit for a far worse prediction.
+measured numbers, which is exactly this problem once [the glasses have been
+told apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md)
+and measured. It is normally wrong when it cannot, because then the model has
+to predict pictures, which is a far harder fit for a far worse prediction.
 
 ### Ensembles, and planning with them
 
@@ -1144,13 +1179,15 @@ everything beyond the planning horizon, which is how they avoid needing a deep
 rollout. TD-MPC2 is rung two, and it reaches this project through LeRobot.
 
 This family is normally right where the situation cannot be written down — raw
-pictures, contact-rich manipulation, anything where the useful variables are not
-the measured ones. It is normally wrong, or at least wasteful, where the
+pictures, contact-rich manipulation, anything where the useful variables are
+not the measured ones. It is normally wrong, or at least wasteful, where the
 situation *can* be written down and already has been, which is the case here:
-problem 2 has measured the positions and widths, so a learned encoding is being
-asked to rediscover information the cell already supplies. That is the honest
-prior expectation for rung two on this bench, and it is exactly the expectation
-the comparison exists to test.
+the camera work that [tells the glasses
+apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) has
+already measured the positions and widths, so a learned encoding is being asked
+to rediscover information the cell already supplies. That is the honest prior
+expectation for rung two on this bench, and it is exactly the expectation the
+comparison exists to test.
 
 ### Where the push data of record comes from
 
@@ -1188,10 +1225,10 @@ imitation solutions, and this one is not: it needs no demonstrations, because
 its labels come from the second look.
 
 Against [imitation from demonstrations](04_imitation-from-demonstrations.md),
-the comparison is the one the plan names as *plan with a
-model, or learn the push directly*. A policy answers in one pass with no search,
-which makes it far cheaper to run, and it needs no explicit idea of the world at
-all. But it needs demonstrations, which somebody or something has to produce; it
+the comparison is one of the sharpest among the six: *plan with a model, or
+learn the push directly*. A policy answers in one pass with no search, which
+makes it far cheaper to run, and it needs no explicit idea of the world at all.
+But it needs demonstrations, which somebody or something has to produce; it
 inherits whatever its teacher did wrong; and changing the goal means training
 again. This solution needs no demonstrations and no teacher, and it can be
 re-aimed by editing arithmetic. It pays for that in run-time compute and in

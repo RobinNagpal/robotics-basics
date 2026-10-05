@@ -42,13 +42,14 @@
 
 ## Introduction
 
-This document explains how to answer [problem 2](../02_the-problem/01_what-is-asked-for.md) with a network
-that is built and fitted entirely inside this cell, borrowing nothing from
-anywhere else. That is the one property worth holding on to while reading,
-because it is what makes this solution different from the four learned ones
-beside it. Each of those starts from weights somebody else fitted to
-photographs of the real world. This one starts from random numbers and learns
-only from pictures this project rendered itself.
+This document explains how to answer [the problem this book
+sets](../02_the-problem/01_what-is-asked-for.md) with a network that is built
+and fitted entirely inside this cell, borrowing nothing from anywhere else.
+That is the one property worth holding on to while reading, because it is what
+makes this solution different from the four learned ones beside it. Each of
+those starts from weights somebody else fitted to photographs of the real
+world. This one starts from random numbers and learns only from pictures this
+project rendered itself.
 
 By the end you will understand four things. You will understand why a network
 is wanted here at all, which is that the hard part of this problem is a
@@ -74,12 +75,40 @@ six are scored side by side, this one is the line that says whether borrowing
 weights was worth anything at all. Without it, a good score from a borrowed
 model proves only that the model is good, and not that borrowing helped.
 
+## Contents
+
+1. [Introduction](#introduction)
+1. [The network, in the code](#the-network-in-the-code)
+1. [The problem this solves](#the-problem-this-solves)
+1. [The main idea](#the-main-idea)
+1. [What exists in code, and what is a design](#what-exists-in-code-and-what-is-a-design)
+1. [What a network is, and what training from scratch means](#what-a-network-is-and-what-training-from-scratch-means)
+1. [Why nothing is borrowed, and what that buys](#why-nothing-is-borrowed-and-what-that-buys)
+1. [The shape of the network](#the-shape-of-the-network)
+1. [The first head: which pixels are glass](#the-first-head-which-pixels-are-glass)
+1. [The second head: which way is the middle of my own glass](#the-second-head-which-way-is-the-middle-of-my-own-glass)
+1. [From votes to glasses](#from-votes-to-glasses)
+1. [The two rungs: where the labels come from](#the-two-rungs-where-the-labels-come-from)
+1. [Rung one — labels from the answer key](#rung-one--labels-from-the-answer-key)
+1. [Rung two — labels from the arm's own movement](#rung-two--labels-from-the-arms-own-movement)
+1. [The training set](#the-training-set)
+1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
+1. [How the concepts fit together](#how-the-concepts-fit-together)
+1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
+1. [A worked example](#a-worked-example)
+1. [What it needs](#what-it-needs)
+1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
+1. [The general ideas behind this](#the-general-ideas-behind-this)
+1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+
 ## The network, in the code
 
-The network is written in `02-segment-glasses/02-train-from-scratch/`, and the
-piece worth seeing is not its shape but what it is asked for. It answers three
-numbers at every pixel of a shrunk picture: one saying whether the pixel is
-glass, and two holding the arrow to the middle of that pixel's own glass.
+The network is written in
+[`02-train-from-scratch/`](../../../code/src/08_seeing-the-glasses/02-train-from-scratch),
+and the piece worth seeing is not its shape but what it is asked for. It
+answers three numbers at every pixel of a shrunk picture: one saying whether
+the pixel is glass, and two holding the arrow to the middle of that pixel's own
+glass.
 
 This is the answer it is trained towards, and the network that produces it,
 from ``02-train-from-scratch/models.py``. The first function builds the target
@@ -144,8 +173,9 @@ line that mentions a boundary is the one that keeps a block inside the picture.
 
 ## The problem this solves
 
-The problem is the one [problem 2](../02_the-problem/01_what-is-asked-for.md) states, and this section
-narrows it down to the single difficulty this solution is aimed at.
+The problem is the one [this book
+states](../02_the-problem/01_what-is-asked-for.md), and this section narrows it
+down to the single difficulty this solution is aimed at.
 
 Four to six glasses stand on the table. They are all the same kind, the kind is
 known, and they are opaque, so the depth camera gets a reading on them. They
@@ -883,7 +913,7 @@ down by a rule nobody trained.
 
 ## When the glasses are completely hidden
 
-Every solution in this problem has to answer the case where a glass is absent
+Every solution in this book has to answer the case where a glass is absent
 from the picture altogether, and this one's answer has two halves that point in
 opposite directions.
 

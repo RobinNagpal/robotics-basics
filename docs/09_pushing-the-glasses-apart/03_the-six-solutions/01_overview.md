@@ -1,6 +1,6 @@
 # The six solutions — same table, six ways to push
 
-## Introduction
+## 1. Introduction
 
 This book asks the arm to drag crowded glasses apart until each one has room
 for the gripper, without knocking any of them over. This chapter answers that
@@ -16,15 +16,15 @@ arrives sooner you know it was the car.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [What all six share](#what-all-six-share)
-1. [The six, in one table](#the-six-in-one-table)
-1. [What each comparison isolates](#what-each-comparison-isolates)
-1. [Two things that cut across the table](#two-things-that-cut-across-the-table)
-1. [What is built](#what-is-built)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [What all six share](#2-what-all-six-share)
+3. [The six, in one table](#3-the-six-in-one-table)
+4. [What each comparison isolates](#4-what-each-comparison-isolates)
+5. [Two things that cut across the table](#5-two-things-that-cut-across-the-table)
+6. [What is built](#6-what-is-built)
+7. [Where to go next](#7-where-to-go-next)
 
-## What all six share
+## 2. What all six share
 
 Three things are held still, and [the test bench](../02_the-test-bench.md) describes
 them in full. In short:
@@ -58,7 +58,7 @@ slides or tips, the refusal for glasses that cannot be pushed at all, and the
 loop of plan, feel and look again all live in [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md).
 
-## The six, in one table
+## 3. The six, in one table
 
 They are ordered by **how much of the pushing the model is asked to own**,
 which is what decides both the work involved and what can go wrong.
@@ -81,7 +81,7 @@ Three carry a **second rung** rather than a document of their own:
 - **Solution 6** fine-tunes SmolVLA, or π0.5, to see whether a markedly larger
   foundation model helps.
 
-## What each comparison isolates
+## 4. What each comparison isolates
 
 | Question | Compare | What is held still |
 |---|---|---|
@@ -99,7 +99,7 @@ question [the same pair asks about a
 segmenter](../../08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md),
 asked one level up about a robot foundation model.
 
-## Two things that cut across the table
+## 5. Two things that cut across the table
 
 ### Where the learned part sits
 
@@ -132,7 +132,7 @@ bench, and solution 4 collects its own pushes — random ones first, then its ow
 planner's — so neither owes anything to a sibling. That is a real asymmetry in
 the comparison, not a detail.
 
-## What is built
+## 6. What is built
 
 **All six are built, and all six have been run on the bench.** Each has its own
 folder of code under `code/src/09_pushing-the-glasses-apart/`, and the numbers
@@ -152,7 +152,7 @@ about before reading the results: the early abort, which would stop a push
 while the glass is still moving. Nothing here implements it, and solution 6 is
 what its absence costs.
 
-## Where to go next
+## 7. Where to go next
 
 - [The problem](../01_the-problem/01_what-is-asked-for.md) — what is asked for, and what makes it hard.
 - [The test bench](../02_the-test-bench.md) — the shared input, output and marking.

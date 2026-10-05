@@ -1,6 +1,6 @@
 # The test bench — the same question for every answer
 
-## Introduction
+## 1. Introduction
 
 This problem is answered six different ways, and six answers are only
 comparable if they were asked the same question and marked by the same examiner.
@@ -17,17 +17,17 @@ assumes it.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [Why there is a bench at all](#why-there-is-a-bench-at-all)
-1. [What the bench draws](#what-the-bench-draws)
-1. [What a solution is given](#what-a-solution-is-given)
-1. [What the bench keeps to itself](#what-the-bench-keeps-to-itself)
-1. [What must come back](#what-must-come-back)
-1. [How a report is matched to a real glass](#how-a-report-is-matched-to-a-real-glass)
-1. [What the bench measures](#what-the-bench-measures)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [Why there is a bench at all](#2-why-there-is-a-bench-at-all)
+3. [What the bench draws](#3-what-the-bench-draws)
+4. [What a solution is given](#4-what-a-solution-is-given)
+5. [What the bench keeps to itself](#5-what-the-bench-keeps-to-itself)
+6. [What must come back](#6-what-must-come-back)
+7. [How a report is matched to a real glass](#7-how-a-report-is-matched-to-a-real-glass)
+8. [What the bench measures](#8-what-the-bench-measures)
+9. [Where to go next](#9-where-to-go-next)
 
-## Why there is a bench at all
+## 2. Why there is a bench at all
 
 Without one, each method would arrive with its own arrangements and its own
 idea of a good answer, and nothing could be concluded by putting their results
@@ -52,7 +52,7 @@ everything else still, nothing varies between those two that the training did
 not bring, which makes the gap between them a measurement of what training
 bought.
 
-## What the bench draws
+## 3. What the bench draws
 
 **It draws the arrangements, not Gazebo.** The real simulator would produce a
 slower picture of the same thing, and a few hundred arrangements are needed, so
@@ -74,7 +74,7 @@ used to draw them. Anything a method is fitted on comes from below the dividing
 line, and everything it is marked on comes from above it, so no method is ever
 tested on an arrangement it learned from.
 
-## What a solution is given
+## 4. What a solution is given
 
 For each arrangement, the camera is parked at several overlapping stations above
 the glass zone, looking straight down. The overlap matters: a glass cut off at
@@ -90,7 +90,7 @@ That is the whole input. It is the same for all six, and it is handed over by
 the bench rather than fetched by the solution, so no solution can quietly read
 anything else.
 
-## What the bench keeps to itself
+## 5. What the bench keeps to itself
 
 Every picture also carries an **id image**: at each pixel, which glass that
 pixel shows, or nothing. The bench renders it alongside the depth and never
@@ -108,7 +108,7 @@ the training half of the arrangements. A method may be *trained* on id images
 and is never *run* on them. Any method that read one while answering would not
 be answering this problem.
 
-## What must come back
+## 6. What must come back
 
 One record per glass, holding its mask pixels, its place on the table, a rough
 width of its footprint, and **whether the picture held the whole glass** — that
@@ -142,7 +142,7 @@ produces a pose.** Models produce masks. The pose comes from depth and the
 camera's own pose, by arithmetic, and a glass standing upright on a flat table
 has no orientation left to find.
 
-## How a report is matched to a real glass
+## 7. How a report is matched to a real glass
 
 Before anything can be counted, the bench has to decide which real glass a
 report is talking about. It does this by pixels rather than by position: it
@@ -154,7 +154,7 @@ when a method is badly wrong about where the glass stands. A report whose mask
 is plainly a picture of glass number three is credited to glass number three,
 even if the place it computed is well off.
 
-## What the bench measures
+## 8. What the bench measures
 
 ### Did it separate the glasses?
 
@@ -251,7 +251,7 @@ out gives a place several times closer than feeding them in. So a mask that
 asserts pixels must say which ones, and the bench excludes their depth readings
 rather than guessing a value for them.
 
-## Where to go next
+## 9. Where to go next
 
 - [The problem](02_the-problem/01_what-is-asked-for.md) — what is asked for, and the three difficulties.
 - [Looking again at what was hidden](02_the-problem/02_looking-again-at-what-was-hidden.md) — the shared part that

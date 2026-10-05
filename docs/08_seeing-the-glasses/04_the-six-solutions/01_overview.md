@@ -1,6 +1,6 @@
 # The six solutions — same destination, six different cars
 
-## Introduction
+## 1. Introduction
 
 This book asks for one record per glass: which pixels are that glass, and where
 it stands on the table. [What is asked for](../02_the-problem/01_what-is-asked-for.md)
@@ -17,15 +17,15 @@ changes — so when one arrives sooner, you know it was the car.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [What all six share](#what-all-six-share)
-1. [The six, in one table](#the-six-in-one-table)
-1. [What each comparison isolates](#what-each-comparison-isolates)
-1. [Two axes that cut across the table](#two-axes-that-cut-across-the-table)
-1. [What is built](#what-is-built)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [What all six share](#2-what-all-six-share)
+3. [The six, in one table](#3-the-six-in-one-table)
+4. [What each comparison isolates](#4-what-each-comparison-isolates)
+5. [Two axes that cut across the table](#5-two-axes-that-cut-across-the-table)
+6. [What is built](#6-what-is-built)
+7. [Where to go next](#7-where-to-go-next)
 
-## What all six share
+## 2. What all six share
 
 Three things are held still for every solution, and they are described in full
 by [the test bench](../03_the-test-bench.md). In short:
@@ -63,7 +63,7 @@ Recovering a glass that appeared in no picture at all needs geometry rather than
 pixels, so it lives once in [looking again at what was
 hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) and all six point at it.
 
-## The six, in one table
+## 3. The six, in one table
 
 They are ordered by **how much is fitted, and where those numbers came from**,
 because that is what decides both the work involved and what can go wrong. The
@@ -89,7 +89,7 @@ without spending a whole document on it:
 - **Solution 6** trains its masks either on the pixels the camera can see, or on
   each glass's whole silhouette including the part nobody saw.
 
-## What each comparison isolates
+## 4. What each comparison isolates
 
 This is the table to read if you want to know what the six are *for*. Each row
 holds everything still except one thing.
@@ -111,7 +111,7 @@ varies between the two that the training did not bring. Whatever gap appears
 between them is what fine-tuning bought, and no other pairing can make that
 claim as cleanly.
 
-## Two axes that cut across the table
+## 5. Two axes that cut across the table
 
 ### How much is fitted
 
@@ -157,7 +157,7 @@ anyway, because it means the two cars that win on convenience are the two that
 would need replacing if the work ever shipped — and the comparison is designed
 so that the reading transfers to whichever model is licensed conveniently.
 
-## What is built
+## 6. What is built
 
 **All six are built and all six have been run on the bench.** Each has code in
 a folder named after the document you are reading about it, and the numbers the
@@ -179,7 +179,7 @@ cannot run here: one needs weights that are behind a licence gate, and one ran
 out of machine part way through its training. Neither claims a number. The
 amodal target of solution 6 is the third.
 
-## Where to go next
+## 7. Where to go next
 
 - [The problem](../02_the-problem/01_what-is-asked-for.md) — what is asked for, and the three difficulties.
 - [The test bench](../03_the-test-bench.md) — the shared input, output and marking.

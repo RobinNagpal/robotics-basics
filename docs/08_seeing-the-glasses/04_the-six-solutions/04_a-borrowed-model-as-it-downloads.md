@@ -42,7 +42,7 @@
 > sensors, and the words this project uses them with. What follows is only what
 > is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document describes how [what this book asks
 for](../02_the-problem/01_what-is-asked-for.md) could be answered by downloading
@@ -76,26 +76,26 @@ footnote.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code that does the work](#the-code-that-does-the-work)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [What instance segmentation is, and the two kinds beside it](#what-instance-segmentation-is-and-the-two-kinds-beside-it)
-1. [Why the borrowed names are a filter and never the kind of glass](#why-the-borrowed-names-are-a-filter-and-never-the-kind-of-glass)
-1. [How the outline is produced, and why it is approximate](#how-the-outline-is-produced-and-why-it-is-approximate)
-1. [The number beside each outline, and why it is not a probability](#the-number-beside-each-outline-and-why-it-is-not-a-probability)
-1. [The domain gap, which is the main risk](#the-domain-gap-which-is-the-main-risk)
-1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [The licence, which is the real cost here](#the-licence-which-is-the-real-cost-here)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code that does the work](#2-the-code-that-does-the-work)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [What instance segmentation is, and the two kinds beside it](#5-what-instance-segmentation-is-and-the-two-kinds-beside-it)
+6. [Why the borrowed names are a filter and never the kind of glass](#6-why-the-borrowed-names-are-a-filter-and-never-the-kind-of-glass)
+7. [How the outline is produced, and why it is approximate](#7-how-the-outline-is-produced-and-why-it-is-approximate)
+8. [The number beside each outline, and why it is not a probability](#8-the-number-beside-each-outline-and-why-it-is-not-a-probability)
+9. [The domain gap, which is the main risk](#9-the-domain-gap-which-is-the-main-risk)
+10. [The masks are what this contributes](#10-the-masks-are-what-this-contributes)
+11. [How the concepts fit together](#11-how-the-concepts-fit-together)
+12. [When the glasses are completely hidden](#12-when-the-glasses-are-completely-hidden)
+13. [A worked example](#13-a-worked-example)
+14. [What it needs](#14-what-it-needs)
+15. [The licence, which is the real cost here](#15-the-licence-which-is-the-real-cost-here)
+16. [Where it is strong and where it breaks](#16-where-it-is-strong-and-where-it-breaks)
+17. [The general ideas behind this](#17-the-general-ideas-behind-this)
+18. [Where it sits among the other five](#18-where-it-sits-among-the-other-five)
 
-## The code that does the work
+## 2. The code that does the work
 
 This solution is almost entirely somebody else's code, so the part worth reading
 is small: one call into the borrowed library, and the handful of lines that
@@ -174,7 +174,7 @@ refuse. The bar on the confidence number, the share of pixels that makes two
 outlines one, and those five names are everything this solution chose, and none
 of it came from this cell's data.
 
-## The problem this solves
+## 3. The problem this solves
 
 This book asks for one record per glass on the table, each with a mask, a place
 and a rough width. The difficulty is not seeing that something is there but
@@ -201,7 +201,7 @@ worked even moderately well, it would be the fastest route from no perception at
 all to a working report, and that is worth knowing in an afternoon rather than
 after a week spent building a training set.
 
-## The main idea
+## 4. The main idea
 
 The idea has three steps, and only the first two belong to this solution at all.
 
@@ -229,7 +229,7 @@ filter on a list of names rather than anything fitted. That is the point to
 remember: **this solution would contain no numbers fitted in this cell at all**,
 not one.
 
-## What instance segmentation is, and the two kinds beside it
+## 5. What instance segmentation is, and the two kinds beside it
 
 Three kinds of model all produce outlines, and they are not interchangeable, so
 they are worth separating before going further.
@@ -259,7 +259,7 @@ needs no such thing, because the naming is already done. The borrowed model's
 list of categories does the job that solution 5 has to fit a keeper to do, and
 that is exactly why this solution can claim that nothing in it is fitted here.
 
-## Why the borrowed names are a filter and never the kind of glass
+## 6. Why the borrowed names are a filter and never the kind of glass
 
 The naming is also where the weakness of borrowing first becomes visible, so
 this is the section to read most carefully.
@@ -305,7 +305,7 @@ have entered the cell without anything having measured it. Dropping the name
 immediately after filtering is what prevents that, and it is a deliberate choice
 rather than tidiness.
 
-## How the outline is produced, and why it is approximate
+## 7. How the outline is produced, and why it is approximate
 
 The outline needs some explanation too, because its shape is not free to be
 anything, and the restriction has a consequence the arithmetic downstream feels.
@@ -344,7 +344,7 @@ reason to expect this solution to sit further from the best achievable answer
 than a model fitted on this cell's own pictures, and it is a limit of the
 outline rather than of the finding.
 
-## The number beside each outline, and why it is not a probability
+## 8. The number beside each outline, and why it is not a probability
 
 Each outline arrives with a number the model offers as its confidence, and it is
 worth being precise about what that number would be worth here, because the
@@ -375,7 +375,7 @@ be a few fitted numbers rather than none, and it would buy a bar that means
 something. It is worth noting as an option and worth keeping out of the
 baseline, because the baseline's whole value is that it fits nothing.
 
-## The domain gap, which is the main risk
+## 9. The domain gap, which is the main risk
 
 Everything above assumes the borrowed model works at all on this cell's
 pictures, and that assumption deserves its own section, because the difference
@@ -415,7 +415,7 @@ therefore be a clean measurement of what the gap costs, and that is the most
 useful thing this solution could contribute to this chapter even if it performed
 badly.
 
-## The masks are what this contributes
+## 10. The masks are what this contributes
 
 It is worth stating plainly where this solution stops, because the boundary is
 the same for all six and is what makes them comparable.
@@ -447,7 +447,7 @@ pixel belongs to whatever stood in front; that case does not arise here, since
 the outlines this model returns mark only pixels where the object was actually
 visible.
 
-## How the concepts fit together
+## 11. How the concepts fit together
 
 The pieces now connect into one picture, and it is a short picture because the
 solution is short.
@@ -470,7 +470,7 @@ Every one of those is a consequence of one decision: **fit nothing here**. That
 decision is what would make the solution free to try, and it is also what
 removes every lever that would normally be pulled to fix the problems above.
 
-## When the glasses are completely hidden
+## 12. When the glasses are completely hidden
 
 Every solution document in this chapter answers this question, and the answers
 differ in a way worth comparing. This one's answer is **no, from either of the
@@ -498,7 +498,7 @@ out which parts of the table nobody could have seen and sends the camera to
 cover them from new positions. This solution would contribute the outlines that
 argument starts from, and would contribute nothing to the argument itself.
 
-## A worked example
+## 13. A worked example
 
 Following one crowded arrangement through makes the failures above easier to
 recognise, because they appear together rather than one at a time.
@@ -536,7 +536,7 @@ quietly wrong, and nothing in the run marks it as doubtful. It is the failure a
 borrowed model used as the decider would produce most often, and it is the
 reason the comparison against the same model fitted here matters.
 
-## What it needs
+## 14. What it needs
 
 Very little, which is the whole point.
 
@@ -556,7 +556,7 @@ here: no labelled pictures, no training run, no weights file to keep in step
 with the cell, and no held-out set beyond the small one used to set the bar on
 the confidence number.
 
-## The licence, which is the real cost here
+## 15. The licence, which is the real cost here
 
 This section exists because the choice of model carries a condition the rest of
 the project does not, and a reader who takes this solution forward should meet
@@ -583,7 +583,7 @@ it is not the only permissively licensed segmenter that could do this job, so
 the replacement is straightforward if the method proved to be the right one and
 the work were headed somewhere commercial.
 
-## Where it is strong and where it breaks
+## 16. Where it is strong and where it breaks
 
 The strengths all come from the same source, which is that nothing is fitted.
 
@@ -621,7 +621,7 @@ The honest position is therefore that this is the first thing to run and
 unlikely to be the one carried into a finished product. Its value is the
 comparison it makes possible rather than the accuracy it would deliver.
 
-## The general ideas behind this
+## 17. The general ideas behind this
 
 Four named ideas sit under this solution, and each is worth knowing in its own
 right, including where it is normally the wrong tool.
@@ -683,7 +683,7 @@ data where the answer is known, and that repair is cheap and almost always worth
 doing before a bar on a confidence number is allowed to decide anything that
 matters.
 
-## Where it sits among the other five
+## 18. Where it sits among the other five
 
 This solution is one end of a line that runs through three of the others, and
 the line is the useful way to see it.

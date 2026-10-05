@@ -1,6 +1,6 @@
 # The six solutions side by side
 
-## Introduction
+## 1. Introduction
 
 This page is the scoreboard for the six solutions in this book. It answers one
 question: given the same pictures and the same marking, how many glasses did
@@ -17,14 +17,14 @@ arrangements. Every number here comes from a solution's own `results.json`.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The results](#the-results)
-1. [What the numbers mean](#what-the-numbers-mean)
-1. [What the comparison says](#what-the-comparison-says)
-1. [What these results do not cover](#what-these-results-do-not-cover)
-1. [Reproducing](#reproducing)
+1. [Introduction](#1-introduction)
+2. [The results](#2-the-results)
+3. [What the numbers mean](#3-what-the-numbers-mean)
+4. [What the comparison says](#4-what-the-comparison-says)
+5. [What these results do not cover](#5-what-these-results-do-not-cover)
+6. [Reproducing](#6-reproducing)
 
-## The results
+## 2. The results
 
 Each solution's own README explains its numbers; this page only sets them side
 by side. [The six solutions](04_the-six-solutions/01_overview.md) says what each
@@ -71,7 +71,7 @@ refusing: 92 → 99, 76 → 81 and 90 → 96 found on spawned layouts, 66 → 73
 document prescribes and never had, which is where its two rows come from: 28 of
 101 crowded glasses with 21 merged reports before it, 71 with 10 after.
 
-## What the numbers mean
+## 3. What the numbers mean
 
 **Found, missed, merged, split, false.** *Found* is how many distinct real
 glasses got a report, judged by the pixels of the mask rather than by where the
@@ -95,7 +95,7 @@ table or swallows a neighbour. Both are medians over glasses, measured in the
 picture the mask was drawn in, and each solution's README breaks them down by
 kind of glass.
 
-## What the comparison says
+## 4. What the comparison says
 
 **The written rule and the fitted network fail in opposite directions.**
 Solution 1 finds every glass the layout spaces, and on the crowded layouts the
@@ -124,7 +124,7 @@ fitted and borrowed models all claim a thin margin around the glass (1.4–4.4%)
 because a learned outline follows a shape coarsely. Neither habit is visible in
 the places at all.
 
-## What these results do not cover
+## 5. What these results do not cover
 
 - **Not Gazebo.** The pictures come from the bench's own renderer,
   [`bench/render.py`](../../code/src/08_seeing-the-glasses/bench/render.py),
@@ -140,7 +140,7 @@ the places at all.
   picture held. Recovering a glass no picture held is
   [a shared step of its own](02_the-problem/02_looking-again-at-what-was-hidden.md).
 
-## Reproducing
+## 6. Reproducing
 
 Run these from `code/src/08_seeing-the-glasses/`, the folder that holds this
 book's Makefile and its pixi environment.

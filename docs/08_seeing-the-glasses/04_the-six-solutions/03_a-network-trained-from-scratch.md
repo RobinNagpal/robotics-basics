@@ -40,7 +40,7 @@
 > all four sensors, and the words this project uses them with. What follows is
 > only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document explains how to answer [the problem this book
 sets](../02_the-problem/01_what-is-asked-for.md) with a network that is built
@@ -77,31 +77,31 @@ model proves only that the model is good, and not that borrowing helped.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The network, in the code](#the-network-in-the-code)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [What exists in code, and what is a design](#what-exists-in-code-and-what-is-a-design)
-1. [What a network is, and what training from scratch means](#what-a-network-is-and-what-training-from-scratch-means)
-1. [Why nothing is borrowed, and what that buys](#why-nothing-is-borrowed-and-what-that-buys)
-1. [The shape of the network](#the-shape-of-the-network)
-1. [The first head: which pixels are glass](#the-first-head-which-pixels-are-glass)
-1. [The second head: which way is the middle of my own glass](#the-second-head-which-way-is-the-middle-of-my-own-glass)
-1. [From votes to glasses](#from-votes-to-glasses)
-1. [The two rungs: where the labels come from](#the-two-rungs-where-the-labels-come-from)
-1. [Rung one — labels from the answer key](#rung-one--labels-from-the-answer-key)
-1. [Rung two — labels from the arm's own movement](#rung-two--labels-from-the-arms-own-movement)
-1. [The training set](#the-training-set)
-1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The network, in the code](#2-the-network-in-the-code)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [What exists in code, and what is a design](#5-what-exists-in-code-and-what-is-a-design)
+6. [What a network is, and what training from scratch means](#6-what-a-network-is-and-what-training-from-scratch-means)
+7. [Why nothing is borrowed, and what that buys](#7-why-nothing-is-borrowed-and-what-that-buys)
+8. [The shape of the network](#8-the-shape-of-the-network)
+9. [The first head: which pixels are glass](#9-the-first-head-which-pixels-are-glass)
+10. [The second head: which way is the middle of my own glass](#10-the-second-head-which-way-is-the-middle-of-my-own-glass)
+11. [From votes to glasses](#11-from-votes-to-glasses)
+12. [The two rungs: where the labels come from](#12-the-two-rungs-where-the-labels-come-from)
+13. [Rung one — labels from the answer key](#13-rung-one--labels-from-the-answer-key)
+14. [Rung two — labels from the arm's own movement](#14-rung-two--labels-from-the-arms-own-movement)
+15. [The training set](#15-the-training-set)
+16. [The masks are what this contributes](#16-the-masks-are-what-this-contributes)
+17. [How the concepts fit together](#17-how-the-concepts-fit-together)
+18. [When the glasses are completely hidden](#18-when-the-glasses-are-completely-hidden)
+19. [A worked example](#19-a-worked-example)
+20. [What it needs](#20-what-it-needs)
+21. [Where it is strong and where it breaks](#21-where-it-is-strong-and-where-it-breaks)
+22. [The general ideas behind this](#22-the-general-ideas-behind-this)
+23. [Where it sits among the other five](#23-where-it-sits-among-the-other-five)
 
-## The network, in the code
+## 2. The network, in the code
 
 The network is written in
 [`02-train-from-scratch/`](../../../code/src/08_seeing-the-glasses/02-train-from-scratch),
@@ -171,7 +171,7 @@ this project's own arithmetic. And a mask here is a set of votes rather than a
 drawn outline: nothing in either piece asks where a glass ends, and the only
 line that mentions a boundary is the one that keeps a block inside the picture.
 
-## The problem this solves
+## 3. The problem this solves
 
 The problem is the one [this book
 states](../02_the-problem/01_what-is-asked-for.md), and this section narrows it
@@ -210,7 +210,7 @@ and that is what the second half of this solution's network is.
 
 ![Two glasses in line with the camera overlap in the picture, and a class map has only one value to put on both of them, so the separating has to come from a different output — which here is the arrow at each glass pixel towards the middle of its own glass.](../../images/seeing-the-glasses/a-network-trained-from-scratch/06-semantic-against-instance.png)
 
-## The main idea
+## 4. The main idea
 
 The main idea has two halves. The first half is a claim about this cell rather
 than about networks, and the second half is the different output just promised.
@@ -259,7 +259,7 @@ two places the training labels can come from. Then what the solution hands to
 the bench, the failure that no amount of training can fix, and where this sits
 among the other five.
 
-## What exists in code, and what is a design
+## 5. What exists in code, and what is a design
 
 All six solutions are built, and this one is built in two layers, so it is
 worth separating them plainly before going further.
@@ -288,7 +288,7 @@ peak, and the whole of the second rung described below, which changes where the
 labels come from. Where this document prescribes a check or a threshold, it
 says so, and it quotes no measurement from anywhere.
 
-## What a network is, and what training from scratch means
+## 6. What a network is, and what training from scratch means
 
 Before the two heads can be described, three words need defining, because
 everything after this uses them.
@@ -312,7 +312,7 @@ learn everything from your own examples. It is normally the worse choice, for
 exactly the reason fine-tuning is the standard advice. It is the right choice
 here, and the next section is why.
 
-## Why nothing is borrowed, and what that buys
+## 7. Why nothing is borrowed, and what that buys
 
 The usual argument for fine-tuning rests on labels being scarce, so the first
 thing to check is whether they are scarce here. They are not.
@@ -341,12 +341,12 @@ the last practical argument for borrowing. Many ready-made models expect a
 dedicated graphics card and this machine has none. A network small enough to
 be written for this cell does not.
 
-What all of that costs is set out in [what it needs](#what-it-needs), and the
+What all of that costs is set out in [what it needs](#20-what-it-needs), and the
 short version is a training set, a training run and a file of weights to keep
 in step with the cell. Those are real costs and rules on the table does
 not pay any of them.
 
-## The shape of the network
+## 8. The shape of the network
 
 With the choice of a random start settled, the shape of the network can be
 described, and it is the standard shape for labelling every pixel of a picture.
@@ -432,7 +432,7 @@ no unit ever needs to see both glasses at once. It is flagged here because it
 is far cheaper to check with arithmetic beforehand than to diagnose afterwards,
 when all you have is a network that quietly never separates anything.
 
-## The first head: which pixels are glass
+## 9. The first head: which pixels are glass
 
 The shape is settled, so the two heads can be taken in turn, and the first is
 the simpler. It has one output channel, it gives one number per pixel, and that
@@ -480,7 +480,7 @@ weighted cross entropy is the usual recipe, from Milletari and colleagues, 2016
 The general lesson is worth more than the detail: **a score that rewards saying
 nothing will be optimised by a network that says nothing.**
 
-## The second head: which way is the middle of my own glass
+## 10. The second head: which way is the middle of my own glass
 
 The first head stops exactly where the problem starts asking which glass is
 which, so this is where the second head comes in. It keeps the network's shape
@@ -539,7 +539,7 @@ it is the reason this choice is worth stating rather than assuming.
 Either way the votes are what comes next, and the rest of this document does
 not depend on which frame was chosen.
 
-## From votes to glasses
+## 11. From votes to glasses
 
 Each glass pixel now has a vote, so the remaining question is how a cloud of
 votes becomes a count of glasses. One glass's votes should land in one tight
@@ -596,7 +596,7 @@ keeps this solution inside the same safety argument as rules on the table: a
 learned part decides which pixels group together, and a rule nobody trained
 decides whether the result is believable.
 
-## The two rungs: where the labels come from
+## 12. The two rungs: where the labels come from
 
 Everything up to here is one method, and nothing in it says where the training
 labels come from. That question has two answers, and the rest of the method
@@ -611,7 +611,7 @@ which makes them neither free nor exact, and buys something else instead. The
 second rung is the point of this document, and the first is best read as the
 thing it is a step up from.
 
-## Rung one — labels from the answer key
+## 13. Rung one — labels from the answer key
 
 The bench renders every picture itself, so alongside the grey picture and the
 depth reading it has an **id image**: at every pixel, which glass that pixel
@@ -647,7 +647,7 @@ are simulated, and the day the cell meets real glasses, this rung has to be
 labelled again by somebody drawing round things. The second rung is what
 removes that dependency.
 
-## Rung two — labels from the arm's own movement
+## 14. Rung two — labels from the arm's own movement
 
 The second rung asks the same network the same two questions and fits it with
 no answer key at all. Nothing in the simulator's record is read, not even
@@ -816,7 +816,7 @@ trained to infer, so inside this problem rung two is doing hard work for
 information the cell already has. It earns its place the day that stops being
 true.
 
-## The training set
+## 15. The training set
 
 Both rungs need a set of arrangements to learn from, and two decisions about
 that set decide whether the network works at all. They apply to each rung
@@ -858,7 +858,7 @@ The bench divides its arrangements into a training half and a test half, so a
 network fitted on the first is marked on the second and is never tested on an
 arrangement it learned from.
 
-## The masks are what this contributes
+## 16. The masks are what this contributes
 
 Everything above produces one thing, and it is worth being plain about what
 happens to it.
@@ -876,7 +876,7 @@ produces a pose.** Models produce masks. The place comes from the depth
 readings under the mask together with the camera's own pose, by arithmetic, and
 a glass standing upright on a flat table has no orientation left to find.
 
-## How the concepts fit together
+## 17. How the concepts fit together
 
 Everything above is one chain, and it is worth seeing the whole of it in order
 before the failure cases, because each stage inherits what the last one got
@@ -911,7 +911,7 @@ network proposes; the vote count and the kind's own range of widths dispose. A
 pile of votes implying a footprint no glass of this kind could have is turned
 down by a rule nobody trained.
 
-## When the glasses are completely hidden
+## 18. When the glasses are completely hidden
 
 Every solution in this book has to answer the case where a glass is absent
 from the picture altogether, and this one's answer has two halves that point in
@@ -985,7 +985,7 @@ was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md), which eve
 solution contributes the masks that argument starts from and none of the
 argument.
 
-## A worked example
+## 19. A worked example
 
 This example follows one crowded arrangement through the method, and it is the
 case the whole solution exists for.
@@ -1031,7 +1031,7 @@ Moving the arm to a new place and letting it settle costs seconds. So the
 balance of this solution is to compute freely and move rarely, and the whole of
 its cost sits in building it rather than in running it.
 
-## What it needs
+## 20. What it needs
 
 This is the most demanding of the six to set up, and it is worth being plain
 about that before anyone starts.
@@ -1060,7 +1060,7 @@ that no test of the code will notice.
 At run time what it needs is small: one pass of a small network over a small
 picture, which is nothing beside the seconds an arm movement costs.
 
-## Where it is strong and where it breaks
+## 21. Where it is strong and where it breaks
 
 **It has no domain gap.** Everything it knows came from this cell's own
 pictures, so nothing it learned has to be transferred from a world it will
@@ -1098,7 +1098,7 @@ tolerable.
 the first copy is a maintenance job rules on the table simply does not
 have.
 
-## The general ideas behind this
+## 22. The general ideas behind this
 
 Every part of this is standard, and most of the parts are not new. Two things
 here are unusual: fitting from a random start on rendered pictures rather than
@@ -1263,7 +1263,7 @@ weights would bring knowledge of a world you do not have. This cell is that
 narrow case, and it is worth noticing how rare that is rather than generalising
 from it.
 
-## Where it sits among the other five
+## 23. Where it sits among the other five
 
 This solution is the one with nothing borrowed in it, so its place in the
 comparison is fixed by that and not by its score.

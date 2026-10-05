@@ -1,6 +1,6 @@
 # The six solutions side by side
 
-## Introduction
+## 1. Introduction
 
 This page is the scoreboard for the six solutions in this book. It answers one
 question: given the same crowded tables and the same marking, how many of them
@@ -18,13 +18,13 @@ on this page is read from a solution's own `results.json`.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The results](#the-results)
-1. [What the comparison says](#what-the-comparison-says)
-1. [What these results do not cover](#what-these-results-do-not-cover)
-1. [Reproducing](#reproducing)
+1. [Introduction](#1-introduction)
+2. [The results](#2-the-results)
+3. [What the comparison says](#3-what-the-comparison-says)
+4. [What these results do not cover](#4-what-these-results-do-not-cover)
+5. [Reproducing](#5-reproducing)
 
-## The results
+## 2. The results
 
 Read the table a column at a time rather than a row at a time, because no
 single column decides which solution is better. Each row is one solution and
@@ -55,7 +55,7 @@ good for the order of magnitude and nothing finer: the two geometry solutions
 think for a small fraction of a second, the world model for longer, and the two
 that run a large borrowed model take about a second for every push.
 
-## What the comparison says
+## 3. What the comparison says
 
 **Nothing learned beats the written rules here, and that is the result.** The
 fixed nudge finishes the most tables, and the only solution that racks more
@@ -95,7 +95,7 @@ at all, and every solution that learns something topples at least one. A
 toppled glass is the one failure this cell cannot take back, so the two columns
 on the right of the table matter more than the one on the left.
 
-## What these results do not cover
+## 4. What these results do not cover
 
 - **Not Gazebo.** The physics is MuJoCo, standing in for the simulator the rest
   of the project uses, because a learned approach needs thousands of pushes.
@@ -108,7 +108,7 @@ on the right of the table matter more than the one on the left.
   it, and solution 6 is what its absence costs.
 - **One kind of glass per table**, as the cell's own layout produces.
 
-## Reproducing
+## 5. Reproducing
 
 ```
 pixi run python 01-one-fixed-nudge/run.py

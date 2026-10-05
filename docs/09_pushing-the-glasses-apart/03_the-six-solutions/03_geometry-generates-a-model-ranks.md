@@ -54,7 +54,7 @@
 > side, all four sensors, and the words this project uses them with. What
 > follows is only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document explains the safest way there is to put a fitted model inside a
 machine that can break something, and then says honestly what that particular
@@ -86,7 +86,7 @@ runs is who picks. **The ranker loses that comparison.** It racked 185 of the
 two fewer tables and toppling nothing either way. The ablation is in
 `src/09_pushing-the-glasses-apart/02-geometry-ranked`: `results.json` is the
 ranker's run and `rule.json` is the rule's. Why it loses is explained in [where
-it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks), and
+it is strong and where it breaks](#17-where-it-is-strong-and-where-it-breaks), and
 the short answer is that the model is fitted on room gained while the run is
 scored on glasses racked, and those are not the same quantity.
 
@@ -120,27 +120,27 @@ solution happens to do well.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code at the heart of it](#the-code-at-the-heart-of-it)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [What the geometry proposes](#what-the-geometry-proposes)
-1. [What the filter removes before the model is asked](#what-the-filter-removes-before-the-model-is-asked)
-1. [The model: boosted trees that score one candidate at a time](#the-model-boosted-trees-that-score-one-candidate-at-a-time)
-1. [The inputs are lengths, counts and ratios](#the-inputs-are-lengths-counts-and-ratios)
-1. [How it is trained](#how-it-is-trained)
-1. [Where the learned part sits is what makes it safe](#where-the-learned-part-sits-is-what-makes-it-safe)
-1. [It is the teacher](#it-is-the-teacher)
-1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code at the heart of it](#2-the-code-at-the-heart-of-it)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [What the geometry proposes](#5-what-the-geometry-proposes)
+6. [What the filter removes before the model is asked](#6-what-the-filter-removes-before-the-model-is-asked)
+7. [The model: boosted trees that score one candidate at a time](#7-the-model-boosted-trees-that-score-one-candidate-at-a-time)
+8. [The inputs are lengths, counts and ratios](#8-the-inputs-are-lengths-counts-and-ratios)
+9. [How it is trained](#9-how-it-is-trained)
+10. [Where the learned part sits is what makes it safe](#10-where-the-learned-part-sits-is-what-makes-it-safe)
+11. [It is the teacher](#11-it-is-the-teacher)
+12. [The pushes are what this contributes](#12-the-pushes-are-what-this-contributes)
+13. [How the concepts fit together](#13-how-the-concepts-fit-together)
+14. [When a glass cannot be pushed safely](#14-when-a-glass-cannot-be-pushed-safely)
+15. [A worked example](#15-a-worked-example)
+16. [What it needs](#16-what-it-needs)
+17. [Where it is strong and where it breaks](#17-where-it-is-strong-and-where-it-breaks)
+18. [The general ideas behind this](#18-the-general-ideas-behind-this)
+19. [Where it sits among the other five](#19-where-it-sits-among-the-other-five)
 
-## The code at the heart of it
+## 2. The code at the heart of it
 
 Everything this solution adds to [solution 1](02_one-fixed-nudge.md) sits in
 two places, and they are small enough to read here. The first is the model
@@ -210,7 +210,7 @@ room the whole table gained, while the run is marked on how many glasses end up
 grippable — the mismatch that costs the ranker the comparison with the printed
 rule.
 
-## The problem this solves
+## 3. The problem this solves
 
 [Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) hands
 the arm a table with four to six glasses on it, some standing too close
@@ -242,7 +242,7 @@ bad ordering of them, and a ranking over an empty set is still empty. So
 whatever this solution is worth, it is worth nothing at all against the largest
 single failure in that record.
 
-## The main idea
+## 4. The main idea
 
 The idea is one sentence long: ask the geometry for **every** safe push rather
 than for the best one, and let a fitted model put the survivors in order.
@@ -281,7 +281,7 @@ the opposite trade, and the next sections are the two halves of it.
 
 ![The enumerator writes down every push, the filter keeps only the safe ones, and the model reorders what is left, so nothing it can emit is unsafe; a model that chooses the push instead has every push in its output space and needs a geometric check bolted on after it.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/06-generate-veto-then-rank.png)
 
-## What the geometry proposes
+## 5. What the geometry proposes
 
 The enumerator is the built half of this solution, so it comes first, and its
 exact shape decides what the model is later handed.
@@ -340,7 +340,7 @@ That is a sharp conclusion to reach before the model has been described, and it
 is the honest shape of this solution. The arrangement is excellent. The
 question it is asked here is one the arithmetic has largely already answered.
 
-## What the filter removes before the model is asked
+## 6. What the filter removes before the model is asked
 
 One of those four tests deserves its own section, because it is the one that
 can cause the failure nothing can repair, and because the height it is
@@ -381,7 +381,7 @@ implementation detail: **everything that can reject a push is arithmetic, and
 the model comes after all of it.** The model is never asked about safety, so it
 cannot cause an unsafe movement.
 
-## The model: boosted trees that score one candidate at a time
+## 7. The model: boosted trees that score one candidate at a time
 
 Now the fitted half. The model has to turn a short list of quantities into one
 number, so this section explains what kind of model does that and why this kind
@@ -463,7 +463,7 @@ It is a short list of relations against a picture of the table, and the model
 follows from that choice rather than the other way round. This solution chooses
 the short list, for the reason the next section gives.
 
-## The inputs are lengths, counts and ratios
+## 8. The inputs are lengths, counts and ratios
 
 Every input this model is shown is a length, an angle, a count or a ratio, and
 **none of them is an address on the table**. That is the most important design
@@ -531,7 +531,7 @@ a model should be shown the quantities the physics depends on, and the physics
 of a push depends on distances, angles and widths. It does not depend on where
 the table's origin was put.
 
-## How it is trained
+## 9. How it is trained
 
 The training set follows from the two halves above, and the pleasant part is
 that collecting it needs no extra work.
@@ -591,7 +591,7 @@ runs and never during one, because a model that changes during a run makes that
 run impossible to reproduce, and a run that cannot be reproduced cannot be
 debugged.
 
-## Where the learned part sits is what makes it safe
+## 10. Where the learned part sits is what makes it safe
 
 The two previous sections described a fitted model inside a machine that
 handles glass, so the obvious question is what happens when it is wrong. The
@@ -637,7 +637,7 @@ seconds of arm movement. A wasted push here costs seconds and a contact with a
 glass**, and contact is where things break. So a push ranker has to be better
 than a viewpoint ranker to be worth the same amount.
 
-## It is the teacher
+## 11. It is the teacher
 
 The second thing that makes this solution matter more than its score is that
 two other solutions cannot start without it, and this is the largest single
@@ -692,7 +692,7 @@ tables are not under-represented is another. Doing neither, and quietly
 training on successes alone, is the mistake worth naming here because it is the
 default thing to do.
 
-## The pushes are what this contributes
+## 12. The pushes are what this contributes
 
 One point about the output has to be clear, because it decides what a
 comparison with the other five is a comparison of.
@@ -722,7 +722,7 @@ candidate set can express any of those. That is part of the ceiling named in
 the previous section, and it is the clearest example of what the enumeration
 costs.
 
-## How the concepts fit together
+## 13. How the concepts fit together
 
 The pieces now join into one loop, and the loop is the one [pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md) describes: plan, feel, look again.
@@ -766,7 +766,7 @@ anything. That single fact is why the topple limit is a refusal rule rather
 than a risk weighed against the value of moving the glass, and it is why the
 model's position after the refusal matters more than the model's accuracy.
 
-## When a glass cannot be pushed safely
+## 14. When a glass cannot be pushed safely
 
 Every solution document answers this question, and this one's answer is that
 **the refusal belongs entirely to the arithmetic and the model is never
@@ -810,7 +810,7 @@ glass that was pushed over is finished and the arm carries on working beside
 it. So no fallback may be added that tries anyway, and the model is not a
 fallback: it has no input through which to disagree with a refusal.
 
-## A worked example
+## 15. A worked example
 
 Follow one crowded table through the whole method, because the argument is
 easier to recognise once the candidate set has a shape.
@@ -872,7 +872,7 @@ weight sits under the glass — which is to say on exactly the quantities a rank
 is not being asked about, and exactly the quantities [solution
 4](05_a-world-model-then-plan-with-it.md) fits a model of.
 
-## What it needs
+## 16. What it needs
 
 It needs **scikit-learn and NumPy**, both small, both pure software, and both
 BSD 3-clause, so there is no licence condition to carry anywhere and nothing to
@@ -910,7 +910,7 @@ the heading sweep, the step length, the glass zone or the way the bench draws
 its crowded tables, and the fitted model quietly describes a cell that no
 longer exists, in a way no test of the code would notice.
 
-## Where it is strong and where it breaks
+## 17. Where it is strong and where it breaks
 
 The strengths are real, and they are the reason to understand this arrangement
 even after deciding not to spend much on it here.
@@ -993,7 +993,7 @@ That is exactly how it failed here, and the only reason it was caught is that
 the test was run: count pushes and glasses racked against the printed rule on
 the held-out tables, with the model deleted and everything else held the same.
 
-## The general ideas behind this
+## 18. The general ideas behind this
 
 Nothing in this solution was invented for glassware. Four ideas in it are worth
 knowing separately from this cell, each with an honest note on where it is
@@ -1117,7 +1117,7 @@ confirming: where the mechanics has an answer, arithmetic gets it, and the
 uncertainty that is left sits in the numbers the mechanics needs and nobody
 measured — the friction, and the way the weight is distributed under the foot.
 
-## Where it sits among the other five
+## 19. Where it sits among the other five
 
 [The six solutions](01_overview.md) form a ladder ordered by how much of each one
 was fitted in this cell, and this one stands on the lowest rung that has

@@ -1,6 +1,6 @@
 # Looking again at what was hidden
 
-## Introduction
+## 1. Introduction
 
 A camera looking straight down at a table of glasses sometimes photographs only
 some of them. A tall glass's outline is thrown outwards away from the point
@@ -16,15 +16,15 @@ here is placed where a wrong answer costs a few seconds rather than a glass.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [Why no solution can answer this on its own](#why-no-solution-can-answer-this-on-its-own)
-1. [Step one: where could a glass have been hiding?](#step-one-where-could-a-glass-have-been-hiding)
-1. [Step two: where should the camera stand?](#step-two-where-should-the-camera-stand)
-1. [Step three: which look to take first](#step-three-which-look-to-take-first)
-1. [The honest limit](#the-honest-limit)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [Why no solution can answer this on its own](#2-why-no-solution-can-answer-this-on-its-own)
+3. [Step one: where could a glass have been hiding?](#3-step-one-where-could-a-glass-have-been-hiding)
+4. [Step two: where should the camera stand?](#4-step-two-where-should-the-camera-stand)
+5. [Step three: which look to take first](#5-step-three-which-look-to-take-first)
+6. [The honest limit](#6-the-honest-limit)
+7. [Where to go next](#7-where-to-go-next)
 
-## Why no solution can answer this on its own
+## 2. Why no solution can answer this on its own
 
 The six solutions differ in how they turn pictures into masks. That difference
 is invisible here, because the problem is not a hard mask to draw — it is that
@@ -49,7 +49,7 @@ three it can work out which parts of the table no ray from the lens could have
 reached — and that is a statement about the world rather than about the picture,
 which is exactly why it survives a glass being invisible.
 
-## Step one: where could a glass have been hiding?
+## 3. Step one: where could a glass have been hiding?
 
 The arm starts from what it found, and asks what each found glass could have
 been concealing.
@@ -83,7 +83,7 @@ unsearched patches are empty, because most hidden table really is empty. The
 value of reporting them is that it converts an invisible failure into a visible
 piece of work.
 
-## Step two: where should the camera stand?
+## 4. Step two: where should the camera stand?
 
 Now the arm has a list of places that were never seen, and it has to choose
 camera positions that would see them. This is a different question from the one
@@ -139,7 +139,7 @@ candidate that covers the most patches not yet covered, and repeat until
 everything is covered. That is the **greedy method**, and for set cover it is
 about as good as any simple approach can be.
 
-## Step three: which look to take first
+## 5. Step three: which look to take first
 
 Covering says *which* positions are needed. It does not say which to take first,
 and that matters because the run has a budget and may not get through the whole
@@ -180,7 +180,7 @@ for them to be. An empty result then teaches something too: the count still
 stands at four, there are fewer places left, and the remaining patches become
 *more* suspicious rather than less.
 
-## The honest limit
+## 6. The honest limit
 
 This machinery recovers a glass hidden from the top, because the wedges can be
 computed and a new position can be found that sees into them. It does much less
@@ -196,7 +196,7 @@ anything that reads those pictures.
 
 ![Looking from the side along the line the two glasses stand on, the far one is gone from the picture; a position off that line brings it back, while standing further away does not.](../../images/seeing-the-glasses/looking-again-at-what-was-hidden/03-hidden-from-the-side.png)
 
-## Where to go next
+## 7. Where to go next
 
 - [The problem](01_what-is-asked-for.md) — what is asked for, and the three difficulties.
 - [The test bench](../03_the-test-bench.md) — the shared input, output and marking.

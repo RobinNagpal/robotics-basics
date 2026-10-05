@@ -1,6 +1,6 @@
 # Push the glasses apart — what is asked for
 
-## Introduction
+## 1. Introduction
 
 The camera work has ended. [Telling the glasses apart in a
 picture](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) has
@@ -21,19 +21,19 @@ what counts as done, as correct but incomplete, and as wrong.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [Why dragging and not lifting](#why-dragging-and-not-lifting)
-1. [What is on the table](#what-is-on-the-table)
-1. [What goes in](#what-goes-in)
-1. [What must come out](#what-must-come-out)
-1. [The gap that matters is not the gap between the glasses](#the-gap-that-matters-is-not-the-gap-between-the-glasses)
-1. [How low the push has to be, and why it is a property of the glass](#how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass)
-1. [What else makes this hard](#what-else-makes-this-hard)
-1. [What is deliberately not in this problem](#what-is-deliberately-not-in-this-problem)
-1. [What "done" means](#what-done-means)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [Why dragging and not lifting](#2-why-dragging-and-not-lifting)
+3. [What is on the table](#3-what-is-on-the-table)
+4. [What goes in](#4-what-goes-in)
+5. [What must come out](#5-what-must-come-out)
+6. [The gap that matters is not the gap between the glasses](#6-the-gap-that-matters-is-not-the-gap-between-the-glasses)
+7. [How low the push has to be, and why it is a property of the glass](#7-how-low-the-push-has-to-be-and-why-it-is-a-property-of-the-glass)
+8. [What else makes this hard](#8-what-else-makes-this-hard)
+9. [What is deliberately not in this problem](#9-what-is-deliberately-not-in-this-problem)
+10. [What "done" means](#10-what-done-means)
+11. [Where to go next](#11-where-to-go-next)
 
-## Why dragging and not lifting
+## 2. Why dragging and not lifting
 
 Because lifting is the thing that is not available yet, and the reason is
 circular:
@@ -48,16 +48,16 @@ Dragging breaks the circle because it needs almost nothing. A push needs a
 contact and a direction. It does not need to know the glass's height, its shape,
 its weight, or where its stem is. All it needs is where the glass stands and
 how wide its base is, and both of those are already in [what the camera work
-hands over](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#what-must-come-out).
+hands over](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#4-what-must-come-out).
 
-## What is on the table
+## 3. What is on the table
 
 The same glasses as [the camera work
-had](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#what-is-on-the-table)
+had](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#2-what-is-on-the-table)
 — four to six, one known kind, upright and opaque — except that some of them are
 close together. Close enough that the numbers in the next section bite.
 
-## What goes in
+## 4. What goes in
 
 Every answer to this problem is given exactly this and nothing more.
 
@@ -72,7 +72,7 @@ than readings.
 **What the jaw felt on the last push.** The jaw comes down behind a glass,
 feels forward until it touches, pushes, and backs off, and it reports what it
 felt on the way. That force reading matters more than it looks, and [the number
-nobody has](03_pushing-without-toppling.md#the-number-nobody-has) says why.
+nobody has](03_pushing-without-toppling.md#4-the-number-nobody-has) says why.
 
 **Nothing else.** In particular, no answer may read the simulator's record of
 what it placed, or the friction it is using. Both exist, and both are how the
@@ -83,7 +83,7 @@ because six quite different methods are compared on this question, and a
 comparison only means something when the question was identical. The [test
 bench](../02_the-test-bench.md) hands exactly this to every one of them.
 
-## What must come out
+## 5. What must come out
 
 **A jaw trajectory**, and then another, until the table is done or the budget
 is spent.
@@ -100,7 +100,7 @@ can be compared at all.
 has nowhere clear to go, is reported with the reason rather than attempted. A
 refusal is a result.
 
-## The gap that matters is not the gap between the glasses
+## 6. The gap that matters is not the gap between the glasses
 
 ![The room a gripper needs round a glass](../../images/pushing-the-glasses-apart/what-is-asked-for/the-room-a-gripper-needs.png)
 
@@ -123,7 +123,7 @@ So there are three different distances in play and they are easy to confuse:
 
 | | What it is | Roughly |
 | --- | --- | --- |
-| glasses touching | the failure the [camera work never faces](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#what-is-on-the-table) | the two rims meet |
+| glasses touching | the failure the [camera work never faces](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#2-what-is-on-the-table) | the two rims meet |
 | glasses grippable | the jaw fits round one of them | 70 mm clear of the neighbour's **edge** |
 | glasses measurable | a clear line of sight from 380 mm back | depends on the angle |
 
@@ -132,7 +132,7 @@ belongs to [looking again at what was
 hidden](../../08_seeing-the-glasses/02_the-problem/02_looking-again-at-what-was-hidden.md),
 and moving a glass changes it too.
 
-## How low the push has to be, and why it is a property of the glass
+## 7. How low the push has to be, and why it is a property of the glass
 
 ![Push low or it topples](../../images/pushing-the-glasses-apart/what-is-asked-for/push-low-or-it-topples.png)
 
@@ -180,7 +180,7 @@ limit that is only as good as a guessed number. That is an argument for always
 pushing as low as the gripper can reach, and for watching what actually happens
 rather than trusting the prediction.
 
-## What else makes this hard
+## 8. What else makes this hard
 
 **Where to push it *to*.** The destination has to be clear of every other
 glass, clear of the rack, inside the arm's reach, and inside the part of the
@@ -203,7 +203,7 @@ arrangement, not just the crowded pair.
 a glass with no idea how heavy it is. Too fast is a knock, and a knock on a
 tall glass is the thing this problem exists to avoid.
 
-## What is deliberately not in this problem
+## 9. What is deliberately not in this problem
 
 **Lifting anything.** No grasp, no weighing, no rack.
 
@@ -214,7 +214,7 @@ tall glass is the thing this problem exists to avoid.
 **Tidying.** The glasses do not have to end up anywhere in particular. They have
 to end up far enough apart.
 
-## What "done" means
+## 10. What "done" means
 
 A run is **done** when every glass on the table has at least 70 mm of clear
 room around it, at least one usable viewpoint for a side-on photograph, and
@@ -232,7 +232,7 @@ Scored against the simulator's record, the numbers worth watching are: how many
 glasses ended up grippable, how many pushes it took, how far each glass ended
 up from where the push aimed it, and how many were refused.
 
-## Where to go next
+## 11. Where to go next
 
 Three documents describe what every answer shares, and they are worth reading
 before any of the six.

@@ -16,16 +16,16 @@ by hand.
 
 ## Contents
 
-1. [The layout, from above](#the-layout-from-above)
-1. [The layout, from the side](#the-layout-from-the-side)
-1. [The glasses](#the-glasses)
-1. [The sensors](#the-sensors)
-1. [Where the camera stands, and what each place is called](#where-the-camera-stands-and-what-each-place-is-called)
-1. [The words](#the-words)
-1. [Every constant, and where it lives](#every-constant-and-where-it-lives)
-1. [Where to go next](#where-to-go-next)
+1. [The layout, from above](#1-the-layout-from-above)
+2. [The layout, from the side](#2-the-layout-from-the-side)
+3. [The glasses](#3-the-glasses)
+4. [The sensors](#4-the-sensors)
+5. [Where the camera stands, and what each place is called](#5-where-the-camera-stands-and-what-each-place-is-called)
+6. [The words](#6-the-words)
+7. [Every constant, and where it lives](#7-every-constant-and-where-it-lives)
+8. [Where to go next](#8-where-to-go-next)
 
-## The layout, from above
+## 1. The layout, from above
 
 ![The cell from above](../images/seeing-the-glasses/the-cell/cell-from-above.png)
 
@@ -40,7 +40,7 @@ is folded over itself, further than 780 mm and it is reaching straight out with
 nothing left for the wrist. That ring is a working preference, not a hard joint
 limit.
 
-## The layout, from the side
+## 2. The layout, from the side
 
 ![The cell from the side](../images/seeing-the-glasses/the-cell/cell-from-the-side.png)
 
@@ -62,7 +62,7 @@ these documents comes from mixing them up.
 
 These two have three more beside them — over the rack, down the fingers, and the
 spot the arm waits at. All five are named and drawn in [Where the camera
-stands](#where-the-camera-stands-and-what-each-place-is-called). This page also
+stands](#5-where-the-camera-stands-and-what-each-place-is-called). This page also
 calls these two the *survey pose* and the *side-on pose*; they are the same two
 places.
 
@@ -74,7 +74,7 @@ fixed 120 mm, deliberately: the overhead view cannot tell how tall a glass is,
 which is what the side view is for, so aiming at a fixed height is the only
 option available.
 
-## The glasses
+## 3. The glasses
 
 ![The four kinds](../images/seeing-the-glasses/the-cell/the-four-kinds.png)
 
@@ -112,7 +112,7 @@ do with perception, which is a good illustration of something this work runs
 into often: a limit on what the arm can be asked to see is frequently a limit on
 what it can be asked to do.
 
-## The sensors
+## 4. The sensors
 
 ![The sensors](../images/seeing-the-glasses/the-cell/the-sensors.png)
 
@@ -137,7 +137,7 @@ makes the second rung of [a network trained from
 scratch](04_the-six-solutions/03_a-network-trained-from-scratch.md), which takes its
 labels from the arm's own movement, possible at all.
 
-## Where the camera stands, and what each place is called
+## 5. Where the camera stands, and what each place is called
 
 The arm has one camera and it is on the wrist, so a camera position here always
 means a place the arm carries that one camera to. Five places cover the whole
@@ -221,7 +221,7 @@ the fixed side camera some of the solutions weigh up, and "over the middle of
 the glass zone, 450 mm up, looking down" is the survey view written out the
 long way.
 
-## The words
+## 6. The words
 
 Terms used throughout, several of which mean different things elsewhere.
 
@@ -320,7 +320,7 @@ Most of these documents mean the second, because that is what
 groups and what a circle is fitted to, and it is also what limits how close two
 glasses can stand. Where a number matters, the documents say which they mean.
 
-## Every constant, and where it lives
+## 7. Every constant, and where it lives
 
 Numbers live with their subject and nowhere else, so this table is a directory
 rather than a second copy.
@@ -354,7 +354,7 @@ Two useful numbers are **derived**, not stored, and are recomputed every run:
   which turns every angle into pixels;
 - the **side-on standoff**, about 380 mm, from the lens and the tallest glass.
 
-## Where to go next
+## 8. Where to go next
 
 - [What is asked for](02_the-problem/01_what-is-asked-for.md) — which pixels belong
   to which glass, and where each glass stands. That page also says what the

@@ -1,6 +1,6 @@
 # Pushing without toppling
 
-## Introduction
+## 1. Introduction
 
 A glass pushed sideways across a table either slides or falls over, and which
 of the two happens is not luck. It is settled before the arm moves, by how far
@@ -17,15 +17,15 @@ inside that loop without being able to break it.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [Why no solution can answer this on its own](#why-no-solution-can-answer-this-on-its-own)
-1. [The limit: slide, or tip](#the-limit-slide-or-tip)
-1. [The number nobody has](#the-number-nobody-has)
-1. [The loop: plan, feel, look again](#the-loop-plan-feel-look-again)
-1. [The honest limit](#the-honest-limit)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [Why no solution can answer this on its own](#2-why-no-solution-can-answer-this-on-its-own)
+3. [The limit: slide, or tip](#3-the-limit-slide-or-tip)
+4. [The number nobody has](#4-the-number-nobody-has)
+5. [The loop: plan, feel, look again](#5-the-loop-plan-feel-look-again)
+6. [The honest limit](#6-the-honest-limit)
+7. [Where to go next](#7-where-to-go-next)
 
-## Why no solution can answer this on its own
+## 2. Why no solution can answer this on its own
 
 The six solutions differ in how they choose a push: which glass to move, in
 which direction, and how far. That difference stops at the edge of this
@@ -50,7 +50,7 @@ This document therefore holds those two things: **the limit, which says whether
 a push may happen at all**, and **the loop, which runs around every push that
 does**.
 
-## The limit: slide, or tip
+## 3. The limit: slide, or tip
 
 Start with what a push has to overcome, because the whole rule falls out of
 comparing two numbers.
@@ -92,7 +92,7 @@ highest safe contact is a different number for every glass on the table.
 
 That is why the push height is **computed from the measurement rather than
 chosen once**. The camera work hands over [how wide each glass is at its
-foot](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#what-must-come-out),
+foot](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md#4-what-must-come-out),
 so the limit can be evaluated for that glass before the arm commits to touching
 it. Agreeing a single safe height for the whole kind would mean choosing it low
 enough for the narrowest foot the kind allows, which refuses glasses that were
@@ -156,7 +156,7 @@ by its own learned model. That refusal rests on more evidence, and its ceiling
 comes from the model rather than from the arrangement. The limit is the same
 either way; what differs is what is trusted to apply it.
 
-## The number nobody has
+## 4. The number nobody has
 
 Everything above rests on `μ`, so it is time to be plain about where that
 number comes from, which is nowhere.
@@ -191,7 +191,7 @@ thing that can catch it is evidence from the table itself. That evidence arrives
 while the arm is pushing and just after it has finished, which is what the rest
 of this document is about.
 
-## The loop: plan, feel, look again
+## 5. The loop: plan, feel, look again
 
 So no solution here acts on a prediction and walks away. Every one of them acts,
 senses what really happened, and then decides again from what it sensed.
@@ -317,7 +317,7 @@ and the table has several glasses on it. The verifier can say exactly that, from
 a viewpoint chosen for the question, and it would be the natural thing to ask
 after an abort.
 
-## The honest limit
+## 6. The honest limit
 
 Looking again is what recovers the run from a bad prediction, and it is worth
 being precise about which failures it recovers and which it does not.
@@ -338,7 +338,7 @@ outcome the system can absorb. This one it cannot, so the arithmetic is used to
 say no, and the two helpers above exist to catch the cases where the arithmetic
 said yes on the strength of a number nobody had.
 
-## Where to go next
+## 7. Where to go next
 
 - [The problem](01_what-is-asked-for.md) — why dragging rather than lifting, the distances
   that matter, and what "done" means.

@@ -43,7 +43,7 @@
 > all four sensors, and the words this project uses them with. What follows is
 > only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document explains how to answer [what this book asks
 for](../02_the-problem/01_what-is-asked-for.md) by taking a model that was
@@ -93,27 +93,27 @@ cell's pictures can go wrong.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code that does the work](#the-code-that-does-the-work)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [Fine-tuning — continuing somebody else's training](#fine-tuning--continuing-somebody-elses-training)
-1. [What one class does](#what-one-class-does)
-1. [Where the training set comes from](#where-the-training-set-comes-from)
-1. [What training closes, and what it cannot touch](#what-training-closes-and-what-it-cannot-touch)
-1. [The number beside each outline](#the-number-beside-each-outline)
-1. [Two ways training on one cell's pictures goes wrong](#two-ways-training-on-one-cells-pictures-goes-wrong)
-1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [The licence](#the-licence)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code that does the work](#2-the-code-that-does-the-work)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [Fine-tuning — continuing somebody else's training](#5-fine-tuning--continuing-somebody-elses-training)
+6. [What one class does](#6-what-one-class-does)
+7. [Where the training set comes from](#7-where-the-training-set-comes-from)
+8. [What training closes, and what it cannot touch](#8-what-training-closes-and-what-it-cannot-touch)
+9. [The number beside each outline](#9-the-number-beside-each-outline)
+10. [Two ways training on one cell's pictures goes wrong](#10-two-ways-training-on-one-cells-pictures-goes-wrong)
+11. [The masks are what this contributes](#11-the-masks-are-what-this-contributes)
+12. [How the concepts fit together](#12-how-the-concepts-fit-together)
+13. [When the glasses are completely hidden](#13-when-the-glasses-are-completely-hidden)
+14. [A worked example](#14-a-worked-example)
+15. [What it needs](#15-what-it-needs)
+16. [The licence](#16-the-licence)
+17. [Where it is strong and where it breaks](#17-where-it-is-strong-and-where-it-breaks)
+18. [The general ideas behind this](#18-the-general-ideas-behind-this)
+19. [Where it sits among the other five](#19-where-it-sits-among-the-other-five)
 
-## The code that does the work
+## 2. The code that does the work
 
 One thing separates this solution from [solution
 3](04_a-borrowed-model-as-it-downloads.md), and it is the training. So the piece worth reading
@@ -182,7 +182,7 @@ category names anywhere. The width check in the second block is the one
 difference the training did not bring, and the section on what this solution
 contributes says what it is for.
 
-## The problem this solves
+## 3. The problem this solves
 
 This book asks for one record per glass, each with a mask, a place on the table
 and a rough width, and [what is asked
@@ -217,7 +217,7 @@ photographs, so a bar set on that number means nothing here.
 Training on this cell's own pictures is the standard repair for all three at
 once, and that is what this solution does.
 
-## The main idea
+## 4. The main idea
 
 The idea is one sentence long: keep the borrowed numbers, and continue training
 them on the pictures the model will really be shown, with one class instead of
@@ -250,7 +250,7 @@ Everything else about the model is unchanged, including the thing that limits
 it. Its outline is still built coarsely, for reasons described below, and
 training cannot make a coarse outline fine.
 
-## Fine-tuning — continuing somebody else's training
+## 5. Fine-tuning — continuing somebody else's training
 
 Because fine-tuning is the single thing that separates this solution from its
 partner, it is worth setting out carefully and in plain words.
@@ -301,7 +301,7 @@ borrowed models implies, and still far less work than a random start.
 
 ![The early layers of the borrowed model answer to edges and simple texture, which a grey picture shaded from depth holds as much of as a photograph, so they transfer almost untouched; the later layers carry the judgement fitted to colour and texture this cell does not render, and those are the ones training has to re-fit.](../../images/seeing-the-glasses/the-same-model-fine-tuned/09-what-a-backbone-brings.png)
 
-## What one class does
+## 6. What one class does
 
 The class list is the other thing this solution changes, and its effect is
 sharper than it first looks.
@@ -342,7 +342,7 @@ would be trained to answer "is this an instance" and nothing else. That is not a
 loss. Every glass in one arrangement is the same kind and the kind is known, so
 nothing this book asks for needs it.
 
-## Where the training set comes from
+## 7. Where the training set comes from
 
 Fine-tuning needs examples, which means pictures with every glass already
 outlined, and this is where this cell is unusually fortunate.
@@ -381,7 +381,7 @@ principle is general and worth remembering: **the edge of what the method will
 be asked to handle should sit somewhere in the middle of its training set**, so
 that the model has met worse than it ever will.
 
-## What training closes, and what it cannot touch
+## 8. What training closes, and what it cannot touch
 
 This is the section the matched pair exists for. Solution 3's weaknesses are
 known, and training repairs some of them and inherits others untouched.
@@ -456,7 +456,7 @@ rather than the visible part — and that is the choice [solution
 **A completely hidden glass stays invisible**, for a reason no model can argue
 with. That is its own section below.
 
-## The number beside each outline
+## 9. The number beside each outline
 
 Each outline arrives with a number the model offers as its confidence, and what
 that number is worth is one of the smaller things training changes.
@@ -487,7 +487,7 @@ because it plainly is a glass.
 
 ![Each thing the model finds leaves a box, a confidence number and an outline, and anything scoring below the bar is dropped; the number says how sure the model is that a glass is there, not whether the outline round it is right, and it says nothing at all about a glass that produced no candidate.](../../images/seeing-the-glasses/the-same-model-fine-tuned/09-boxes-scores-masks.png)
 
-## Two ways training on one cell's pictures goes wrong
+## 10. Two ways training on one cell's pictures goes wrong
 
 Fine-tuning is cheap and it is not free of risk, and the two risks have names
 worth knowing.
@@ -522,7 +522,7 @@ gap further while making both forgetting and overfitting more likely. So there
 is a sensible amount of training rather than a maximum, and the test half of the
 arrangements is what decides where it is.
 
-## The masks are what this contributes
+## 11. The masks are what this contributes
 
 One point about the output has to be clear, because it decides what the
 comparison with solution 3 is a comparison of.
@@ -562,7 +562,7 @@ standing upright on a flat table has no orientation left to find. [The
 bench](../03_the-test-bench.md) states this once so that no solution has to argue it
 again.
 
-## How the concepts fit together
+## 12. How the concepts fit together
 
 The pieces now join into one pipeline, and it is short, because almost
 everything in it was borrowed and only one thing was changed.
@@ -598,7 +598,7 @@ carried forward, the pair would have earned its place, because a measured answer
 to "what does fine-tuning buy on this kind of picture?" is worth more than an
 opinion about it.
 
-## When the glasses are completely hidden
+## 13. When the glasses are completely hidden
 
 Every solution document in this chapter answers this question, which is whether
 the method can find a glass that no picture holds. This one's answer is **that
@@ -642,7 +642,7 @@ part every solution in this chapter shares rather than to any one of them, as
 [looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) sets out. This solution
 contributes the masks that shared part argues from, and none of the argument.
 
-## A worked example
+## 14. A worked example
 
 Follow one arrangement through, because the difference from solution 3 is easier
 to recognise once both have been run over the same table.
@@ -699,7 +699,7 @@ it and not the second. The finding becomes reliable and the naming failures
 disappear; the coarse edge, the slice of a hidden silhouette and the glass with
 no pixels are all exactly where they were.
 
-## What it needs
+## 15. What it needs
 
 It needs the **Ultralytics package** and the model's weights, which the package
 fetches by itself. That file is large, it comes from outside the project, and it
@@ -726,7 +726,7 @@ pass over one picture, which is a small fraction of the seconds an arm movement
 costs. The cost of this solution sits almost entirely in building it rather than
 in running it.
 
-## The licence
+## 16. The licence
 
 The choice of model carries a condition the rest of this project does not, and
 anyone who chooses this solution should meet that condition here rather than
@@ -760,7 +760,7 @@ being this particular one. What is being tested is what fine-tuning buys on this
 kind of picture, and that answer transfers to whichever model is licensed
 conveniently.
 
-## Where it is strong and where it breaks
+## 17. Where it is strong and where it breaks
 
 **It answers the question actually asked.** This book asks which pixels belong
 to which glass, and this model's output is one outline per object. Nothing has
@@ -806,7 +806,7 @@ can look at the picture and guess.
 weights file fine-tuning produces, which is the one weakness here that no amount
 of engineering removes.
 
-## The general ideas behind this
+## 18. The general ideas behind this
 
 Nothing in this solution was invented for glassware. Every part of it is a
 standard piece of modern practice, and each is worth knowing on its own,
@@ -910,7 +910,7 @@ reduces an overlapping candidate's score rather than deleting it, is
 [arXiv:1704.04503](https://arxiv.org/abs/1704.04503)), and it exists for exactly
 that difficulty.
 
-## Where it sits among the other five
+## 19. Where it sits among the other five
 
 [The six solutions](01_overview.md) form a ladder, ordered by how much of them was
 fitted in this cell, and this one stands near the top of it.

@@ -43,7 +43,7 @@
 > sensors, and the words this project uses them with. What follows is only what
 > is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document describes a way to do [the job this book sets
 out](../02_the-problem/01_what-is-asked-for.md) in which almost nothing is
@@ -84,26 +84,26 @@ its inputs beside its answer.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code at the heart of it](#the-code-at-the-heart-of-it)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [What a foundation model is](#what-a-foundation-model-is)
-1. [Turning a promptable model into a proposer of everything](#turning-a-promptable-model-into-a-proposer-of-everything)
-1. [Why the borrowed model is never trained here](#why-the-borrowed-model-is-never-trained-here)
-1. [The picture the borrowed model is handed](#the-picture-the-borrowed-model-is-handed)
-1. [The keeper](#the-keeper)
-1. [The second rung — a word instead of a grid](#the-second-rung--a-word-instead-of-a-grid)
-1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code at the heart of it](#2-the-code-at-the-heart-of-it)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [What a foundation model is](#5-what-a-foundation-model-is)
+6. [Turning a promptable model into a proposer of everything](#6-turning-a-promptable-model-into-a-proposer-of-everything)
+7. [Why the borrowed model is never trained here](#7-why-the-borrowed-model-is-never-trained-here)
+8. [The picture the borrowed model is handed](#8-the-picture-the-borrowed-model-is-handed)
+9. [The keeper](#9-the-keeper)
+10. [The second rung — a word instead of a grid](#10-the-second-rung--a-word-instead-of-a-grid)
+11. [The masks are what this contributes](#11-the-masks-are-what-this-contributes)
+12. [How the concepts fit together](#12-how-the-concepts-fit-together)
+13. [When the glasses are completely hidden](#13-when-the-glasses-are-completely-hidden)
+14. [A worked example](#14-a-worked-example)
+15. [What it needs](#15-what-it-needs)
+16. [Where it is strong and where it breaks](#16-where-it-is-strong-and-where-it-breaks)
+17. [The general ideas behind this](#17-the-general-ideas-behind-this)
+18. [Where it sits among the other five](#18-where-it-sits-among-the-other-five)
 
-## The code at the heart of it
+## 2. The code at the heart of it
 
 This solution is two models meeting at one place, so that place is worth seeing
 before the rest of the document explains it. On one side a grid of point
@@ -174,7 +174,7 @@ never sees a pixel: what reaches scikit-learn — a
 list the second block returns. That is what borrowing the seeing and fitting the
 deciding looks like in code.
 
-## The problem this solves
+## 3. The problem this solves
 
 This book puts four to six glasses on the table. They are all of one kind, the
 kind is known, and they are opaque, so the depth camera sees them. The job is to
@@ -214,7 +214,7 @@ everything on the table is one kind of object, it does not know the gap the cell
 guarantees between two glasses, and there is no way to tell it any of those
 things.
 
-## The main idea
+## 4. The main idea
 
 The main idea is to stop asking for glasses and start asking for everything,
 then to throw away what is not a glass.
@@ -252,7 +252,7 @@ counts as a glass here. So the proposing half is borrowed and the naming half is
 replaced. **That is the opposite trade from solution 3**, which borrows both
 halves and takes the borrowed model's names as the answer.
 
-## What a foundation model is
+## 5. What a foundation model is
 
 Before the main idea can be made precise, the word for the borrowed half has to
 be defined, because everything this solution buys and everything it risks
@@ -310,7 +310,7 @@ on it. **A prompt selects; it does not add information.** Pointing at a picture
 says which part of that picture interests you. It cannot tell the model about
 anything the picture holds no evidence of.
 
-## Turning a promptable model into a proposer of everything
+## 6. Turning a promptable model into a proposer of everything
 
 If one prompt gives one thing, then many prompts give many things, and that is
 the whole of the step which turns SAM 2 from a tool somebody points at objects
@@ -371,7 +371,7 @@ asks. It says *where the regions are*, and the problem asks *which regions are
 glasses, and how many*. The rest of this solution is about closing that gap
 without ever training the borrowed model.
 
-## Why the borrowed model is never trained here
+## 7. Why the borrowed model is never trained here
 
 The obvious way to close that gap is to train the model, and this solution does
 not. **Never trained** means the weights file is used exactly as it downloads:
@@ -400,9 +400,9 @@ why none of this document is about the model's insides.
 
 Freezing a large borrowed model and fitting something small behind it is
 ordinary practice, named with its citations in [the general ideas behind
-this](#the-general-ideas-behind-this).
+this](#17-the-general-ideas-behind-this).
 
-## The picture the borrowed model is handed
+## 8. The picture the borrowed model is handed
 
 One thing stands between the input this problem defines and the input the
 borrowed model expects, and it is the riskiest choice in the whole design, so it
@@ -469,7 +469,7 @@ enough, the remedy is not available inside this solution at all: it is solution
 4 or solution 6, where the weights are allowed to move towards the pictures this
 cell really produces.
 
-## The keeper
+## 9. The keeper
 
 The keeper is where this solution stops being borrowed. It is to run once per
 surviving proposal, read a short table of numbers about that proposal, and
@@ -751,7 +751,7 @@ fitted component chooses among regions and a rule nobody trained decides whether
 the choice is believable, which is what makes a model this foreign safe to use
 here at all.
 
-## The second rung — a word instead of a grid
+## 10. The second rung — a word instead of a grid
 
 Everything above is one generation of this solution. There is a second, and it
 is the most interesting question this document carries, because it would delete
@@ -822,7 +822,7 @@ arrangements on a machine whose account has been granted the newer weights. The
 bench makes that comparison honest, and if the text prompt wins, the keeper is
 still the thing that explains why a region was refused.
 
-## The masks are what this contributes
+## 11. The masks are what this contributes
 
 Everything above produces masks, and nothing above produces a place or a width.
 
@@ -840,7 +840,7 @@ the keeper produces a decision about a region, and the pose comes from depth and
 the camera's own pose by arithmetic. A glass standing upright on a flat table
 has no orientation left to find.
 
-## How the concepts fit together
+## 12. How the concepts fit together
 
 Everything above is one pipeline, worth seeing in order before the failure
 cases, because each stage works only on what the stage before it passed along.
@@ -873,7 +873,7 @@ choice that no arithmetic can check changes what every later stage sees.
 answer from the keeper still has to get past a rule nobody fitted, and a wrong
 keep therefore becomes a doubtful report rather than a wrong glass.
 
-## When the glasses are completely hidden
+## 13. When the glasses are completely hidden
 
 A glass can be missing from a picture altogether. It stands on the table, it is
 opaque, the camera is pointed at the part of the table it stands on, and not one
@@ -937,7 +937,7 @@ part of this problem, described once in [looking again at what was
 hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md), which every solution points at. This solution
 contributes the masks those two argue from, and none of the argument.
 
-## A worked example
+## 14. A worked example
 
 One picture from the top shows the whole chain working, and failing once. It is
 a walk through the design rather than a record of a run.
@@ -983,7 +983,7 @@ a rounding error: the picture encoder runs once per picture, every prompt after
 it is cheap, and what the keeper adds is too small to see beside them. The whole
 chain still costs far less than one movement of the arm.
 
-## What it needs
+## 15. What it needs
 
 It needs a **deep learning framework** and the environment to run it, which is a
 large dependency for a cell whose simplest answer is a page of arithmetic.
@@ -1018,7 +1018,7 @@ footnote. Solutions 3 and 4 use weights under the AGPL, which places conditions
 on anything built around them, so on the day this cell becomes a product rather
 than an experiment those two have a question to answer and this one does not.
 
-## Where it is strong and where it breaks
+## 16. Where it is strong and where it breaks
 
 **Almost nothing is fitted here, and what is fitted is small, fast and
 inspectable.** Everything that finds objects is borrowed whole, and the borrowed
@@ -1076,7 +1076,7 @@ through them, this solution has no input at all, not even a picture.
 **It is blind to a glass hidden completely**, for the reasons worked out above,
 and that is a fact about the input rather than about the model.
 
-## The general ideas behind this
+## 17. The general ideas behind this
 
 Nothing here is new. It is a foundation model used zero-shot, a grid of prompts,
 a standard cleanup, a small classifier on top and a calibration step, and each
@@ -1225,7 +1225,7 @@ when you have examples of both appearances and nothing simpler works. Neither is
 right when the model cannot be trained at all, and then the honest options are
 to change the input or to stop borrowing.
 
-## Where it sits among the other five
+## 18. Where it sits among the other five
 
 The comparison worth making first is against **solution 3**, because the two are
 the only solutions here that fit nothing that finds objects, and they make

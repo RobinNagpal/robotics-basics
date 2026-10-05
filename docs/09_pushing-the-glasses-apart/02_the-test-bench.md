@@ -1,6 +1,6 @@
 # The test bench — the same question for every answer
 
-## Introduction
+## 1. Introduction
 
 This problem is answered six different ways, and six answers are only
 comparable if they were asked the same question and marked by the same
@@ -23,18 +23,18 @@ something that is a decision rather than working code, it says so.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [Why there is a bench at all](#why-there-is-a-bench-at-all)
-1. [What the bench draws](#what-the-bench-draws)
-1. [What a solution is given](#what-a-solution-is-given)
-1. [What `push()` does, and what it reports back](#what-push-does-and-what-it-reports-back)
-1. [The shared output, and why it is a jaw trajectory](#the-shared-output-and-why-it-is-a-jaw-trajectory)
-1. [The score is the outcome, not the action](#the-score-is-the-outcome-not-the-action)
-1. [What the bench measures](#what-the-bench-measures)
-1. [Two things this scorecard needs that the camera work's did not](#two-things-this-scorecard-needs-that-the-camera-works-did-not)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [Why there is a bench at all](#2-why-there-is-a-bench-at-all)
+3. [What the bench draws](#3-what-the-bench-draws)
+4. [What a solution is given](#4-what-a-solution-is-given)
+5. [What `push()` does, and what it reports back](#5-what-push-does-and-what-it-reports-back)
+6. [The shared output, and why it is a jaw trajectory](#6-the-shared-output-and-why-it-is-a-jaw-trajectory)
+7. [The score is the outcome, not the action](#7-the-score-is-the-outcome-not-the-action)
+8. [What the bench measures](#8-what-the-bench-measures)
+9. [Two things this scorecard needs that the camera work's did not](#9-two-things-this-scorecard-needs-that-the-camera-works-did-not)
+10. [Where to go next](#10-where-to-go-next)
 
-## Why there is a bench at all
+## 2. Why there is a bench at all
 
 Without one, each of the six would arrive with its own tables, its own idea of
 a good push and its own way of counting success, and nothing could be concluded
@@ -50,7 +50,7 @@ want to compare. So when a learned policy clears more tables than a fixed
 nudge, the difference belongs to the policy and not to a kinder table or a
 gentler scorecard.
 
-## What the bench draws
+## 3. What the bench draws
 
 The tables are the first of those three fixed things, so they come first.
 
@@ -103,7 +103,7 @@ cylinder is the foot, which is the edge the glass tips over.
 
 ![Every glass the bench stands on a table is a stack of cylinders, each one as wide as the glass is anywhere inside it, and the bottom cylinder is the foot it would tip over; the height at which a push starts tipping a glass rather than sliding it follows from that foot and from a friction the bench keeps to itself.](../images/pushing-the-glasses-apart/the-test-bench/04-the-model-that-was-built.png)
 
-## What a solution is given
+## 4. What a solution is given
 
 Given those tables, the next fixed thing is what a solution may read off them.
 
@@ -153,7 +153,7 @@ hiding them is honest — **nothing in the cell measures friction**. There is no
 sensor for it, and there is no way to find it out. This single omission is
 what makes the problem hard, for the reason the next section explains.
 
-## What `push()` does, and what it reports back
+## 5. What `push()` does, and what it reports back
 
 `look()` tells a solution where things are; `push()` is the only way it can
 change them.
@@ -201,7 +201,7 @@ The bench quietly records whether the glass really had room at the moment it
 was taken. That recording is how the marking later knows whether the arm's own
 belief about room was correct.
 
-## The shared output, and why it is a jaw trajectory
+## 6. The shared output, and why it is a jaw trajectory
 
 The input is now fixed and the physics is fixed, so the remaining question is
 what a solution hands back. This is the most important decision in the whole
@@ -245,7 +245,7 @@ down the path the jaw really followed on every action, sampled at a fixed rate,
 which is what turns a parameterised push into a demonstration a policy that
 emits waypoints can be trained on.
 
-## The score is the outcome, not the action
+## 7. The score is the outcome, not the action
 
 Allowing two different kinds of output raises an obvious objection: if one
 solution hands over three numbers and another hands over twenty waypoints, how
@@ -265,7 +265,7 @@ table is the same table either way. Both solutions are asked the one question
 that the problem actually cares about: are the glasses far enough apart now,
 and is everything still standing?
 
-## What the bench measures
+## 8. What the bench measures
 
 The scoring code reads the simulator's record after a run has finished and
 turns it into one scorecard, in the same shape for every solution.
@@ -333,7 +333,7 @@ what a push does, and a method whose glasses scatter is succeeding by looking
 again rather than by predicting, which is a real strategy but a different
 one.
 
-## Two things this scorecard needs that the camera work's did not
+## 9. Two things this scorecard needs that the camera work's did not
 
 The bench for [telling the glasses
 apart](../08_seeing-the-glasses/03_the-test-bench.md) could run each solution
@@ -371,7 +371,7 @@ solution reports what it needs and roughly what renting that costs, in the same
 way its licence is stated, and the time per push sits on the scorecard beside
 the counts.
 
-## Where to go next
+## 10. Where to go next
 
 - [The problem](01_the-problem/01_what-is-asked-for.md) — why dragging rather than lifting, the three
   distances that matter, and what "done" means.

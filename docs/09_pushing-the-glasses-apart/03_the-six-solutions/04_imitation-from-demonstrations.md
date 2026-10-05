@@ -57,7 +57,7 @@
 > side, all four sensors, and the words this project uses them with. What
 > follows is only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document explains how to [push the glasses
 apart](../01_the-problem/01_what-is-asked-for.md) by showing the arm examples
@@ -109,26 +109,26 @@ costs this solution carries, none of which can be engineered away.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code at the heart of it](#the-code-at-the-heart-of-it)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [Behaviour cloning — learning a policy by copying](#behaviour-cloning--learning-a-policy-by-copying)
-1. [Where the demonstrations come from](#where-the-demonstrations-come-from)
-1. [Choosing which demonstrations to keep, and the bias it buys](#choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
-1. [Action chunking, and why it matters](#action-chunking-and-why-it-matters)
-1. [The second rung — Diffusion Policy](#the-second-rung--diffusion-policy)
-1. [Compounding error](#compounding-error)
-1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code at the heart of it](#2-the-code-at-the-heart-of-it)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [Behaviour cloning — learning a policy by copying](#5-behaviour-cloning--learning-a-policy-by-copying)
+6. [Where the demonstrations come from](#6-where-the-demonstrations-come-from)
+7. [Choosing which demonstrations to keep, and the bias it buys](#7-choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
+8. [Action chunking, and why it matters](#8-action-chunking-and-why-it-matters)
+9. [The second rung — Diffusion Policy](#9-the-second-rung--diffusion-policy)
+10. [Compounding error](#10-compounding-error)
+11. [The pushes are what this contributes](#11-the-pushes-are-what-this-contributes)
+12. [How the concepts fit together](#12-how-the-concepts-fit-together)
+13. [When a glass cannot be pushed safely](#13-when-a-glass-cannot-be-pushed-safely)
+14. [A worked example](#14-a-worked-example)
+15. [What it needs](#15-what-it-needs)
+16. [Where it is strong and where it breaks](#16-where-it-is-strong-and-where-it-breaks)
+17. [The general ideas behind this](#17-the-general-ideas-behind-this)
+18. [Where it sits among the other five](#18-where-it-sits-among-the-other-five)
 
-## The code at the heart of it
+## 2. The code at the heart of it
 
 This solution lives or dies on one join. A demonstration is the path the jaw
 really followed, written down waypoint by waypoint by the bench; a policy's
@@ -216,7 +216,7 @@ degrees away from the teacher's, which is enough that on a crowded table the
 jaw meets a neighbour while it is still coming down, and the push ends before
 any glass is touched.
 
-## The problem this solves
+## 3. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) asks for a jaw trajectory, and then another, until
 every glass has about 70 mm of clear room in every direction or the glasses
@@ -271,7 +271,7 @@ edge of the glass zone is relative to all of it. None of that is in a list of
 positions and widths, and none of it has to be named in advance for a network
 to use it.
 
-## The main idea
+## 4. The main idea
 
 The idea is one sentence long: **run [geometry generates, a model
 ranks](03_geometry-generates-a-model-ranks.md) over the training tables, keep
@@ -302,7 +302,7 @@ computed point, still looks again afterwards, and still refuses a glass it
 cannot push safely. That the loop stays is what makes copying survivable at
 all, for a reason the section on compounding error gives.
 
-## Behaviour cloning — learning a policy by copying
+## 5. Behaviour cloning — learning a policy by copying
 
 Because behaviour cloning is the whole of this solution, it is worth setting
 out carefully and in plain words before anything is built on it.
@@ -365,7 +365,7 @@ of waypoints either way, with the same confidence, because it has no way of
 expressing doubt. A method whose mistakes announce themselves can be guarded;
 this one's do not.
 
-## Where the demonstrations come from
+## 6. Where the demonstrations come from
 
 Behaviour cloning needs examples, and in most of robotics that is the sentence
 that kills it. Here it is almost free, and it is worth being clear about why,
@@ -423,7 +423,7 @@ method, and usually the thing that decides whether it is affordable. Any
 judgement made here about whether imitation is worth its price should carry
 that qualification with it.
 
-## Choosing which demonstrations to keep, and the bias it buys
+## 7. Choosing which demonstrations to keep, and the bias it buys
 
 Free demonstrations are not the same as a good demonstration set, and the
 choice of which pushes to keep is the place where this solution's second honest
@@ -485,7 +485,7 @@ so it holds whatever mixture the bench produces.
 None of the three removes the problem. The ceiling stays where the next
 sections put it.
 
-## Action chunking, and why it matters
+## 8. Action chunking, and why it matters
 
 The policy's output is the second thing that defines this solution, and the
 word for it is the one in ACT's own name.
@@ -570,7 +570,7 @@ down to a handful of parameters removes the mechanism that makes it work, and
 what you would then measure is a damaged version of the method rather than the
 method that exists.
 
-## The second rung — Diffusion Policy
+## 9. The second rung — Diffusion Policy
 
 This solution carries a second rung, and it is not a spare in case the first
 one fails. It is there to test one specific weakness of the first, which the
@@ -660,7 +660,7 @@ differently. The bench's requirement applies with full force: several training
 seeds, several evaluation runs, and the spread reported, because a method that
 wins by less than its own spread has not been shown to win.
 
-## Compounding error
+## 10. Compounding error
 
 Behaviour cloning has one characteristic failure, and it follows directly from
 the fragility named earlier: a cloned policy only knows situations the
@@ -725,7 +725,7 @@ in this particular arrangement, a cheap and well understood repair available —
 and it is worth recording that this is a consequence of the teacher being code,
 not a property of imitation learning in general.
 
-## The pushes are what this contributes
+## 11. The pushes are what this contributes
 
 One point about the output has to be clear, because it decides what a
 comparison with this solution is a comparison of.
@@ -781,7 +781,7 @@ policy begins by being able to express only what the macro expressed, and
 whatever it learns beyond that comes from generalising between those examples
 rather than from being given a wider vocabulary.
 
-## How the concepts fit together
+## 12. How the concepts fit together
 
 The pieces now join into one pipeline. It has an offline half that happens once
 and an online half that happens on every push, and the halves are worth keeping
@@ -842,7 +842,7 @@ has no mechanism by which to discover a better choice of glass, or a better
 destination, than the one it was shown. The next sections are about what that
 does and does not rule out.
 
-## When a glass cannot be pushed safely
+## 13. When a glass cannot be pushed safely
 
 Every solution document in this chapter answers this question. This one's
 answer is that **the refusal does not and cannot live inside the policy**, and
@@ -905,7 +905,7 @@ bench does have during a chunk is the jam threshold, which stops a chunk whose
 jaw has wedged. That catches a blocked path; it does not recognise a glass
 beginning to tip, which is the failure the monitor was for.
 
-## A worked example
+## 14. A worked example
 
 Follow one table through, because the places where this solution differs from
 its teacher are easier to recognise on a concrete arrangement than in the
@@ -992,7 +992,7 @@ is touched. Nothing in the example about leaning the slide or slowing near the
 end was reached, because the motion never got that far. The code folder's
 `README.md` has the counts.
 
-## What it needs
+## 15. What it needs
 
 It needs **[LeRobot](https://github.com/huggingface/lerobot)**, which holds ACT
 and Diffusion Policy as reference implementations, with **PyTorch** underneath.
@@ -1064,7 +1064,7 @@ Change how the view from the top is rendered, or the macro whose waypoints
 became the labels, or the error the readings carry, and the file is quietly out
 of date in a way no test of the code would notice.
 
-## Where it is strong and where it breaks
+## 16. Where it is strong and where it breaks
 
 **Nothing has to be written about pushing.** No friction model, no candidate
 generator, no features chosen by hand, no geometry. The method's entire content
@@ -1132,7 +1132,7 @@ situation in which it is most reliable. Combined with it being stochastic and
 with training varying by seed, that is why the bench insists that one run is
 not a measurement and that a result quoted without a spread is not a result.
 
-## The general ideas behind this
+## 17. The general ideas behind this
 
 Nothing in this solution was invented for glassware. Every part of it is a
 standard piece of modern practice, and each is worth knowing on its own,
@@ -1241,7 +1241,7 @@ distillation is being used for its measurement value rather than for speed,
 since the teacher is not slow; what the pair establishes is whether the mapping
 is learnable at all.
 
-## Where it sits among the other five
+## 18. Where it sits among the other five
 
 [The six solutions](01_overview.md) form a ladder, ordered by how much of each one
 was fitted in this cell, and this solution is the first rung on which

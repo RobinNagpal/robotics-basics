@@ -1,6 +1,6 @@
 # What is asked for — segment the glasses
 
-## Introduction
+## 1. Introduction
 
 Several glasses stand on the table. The arm photographs them from the top and
 has to work out **which pixels belong to which glass**, and where each glass
@@ -29,17 +29,17 @@ you to read it.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [What is on the table](#what-is-on-the-table)
-1. [What goes in](#what-goes-in)
-1. [What must come out](#what-must-come-out)
-1. [The three difficulties](#the-three-difficulties)
-1. [Why one method is not enough](#why-one-method-is-not-enough)
-1. [What is deliberately not in this problem](#what-is-deliberately-not-in-this-problem)
-1. [What "done" means](#what-done-means)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [What is on the table](#2-what-is-on-the-table)
+3. [What goes in](#3-what-goes-in)
+4. [What must come out](#4-what-must-come-out)
+5. [The three difficulties](#5-the-three-difficulties)
+6. [Why one method is not enough](#6-why-one-method-is-not-enough)
+7. [What is deliberately not in this problem](#7-what-is-deliberately-not-in-this-problem)
+8. [What "done" means](#8-what-done-means)
+9. [Where to go next](#9-where-to-go-next)
 
-## What is on the table
+## 2. What is on the table
 
 Four to six glasses, standing upright and opaque, drawn at proportions picked at
 random inside their kind's range. The drying rack is where it always is, and
@@ -69,7 +69,7 @@ from a small glass to one more than twice its height, which is the widest range
 of the four. That width is not decoration: it is what causes the first
 difficulty below, and a narrow range could not produce it at all.
 
-## What goes in
+## 3. What goes in
 
 Every answer to this problem is given exactly this and nothing more.
 
@@ -89,7 +89,7 @@ are compared on this question, and a comparison only means something when the
 question was identical, so the input is stated once here and the [test
 bench](../03_the-test-bench.md) hands exactly it to every one of them.
 
-## What must come out
+## 4. What must come out
 
 **For each glass on the table, one record holding three things:**
 
@@ -112,7 +112,7 @@ way a glass is turned, because a glass is the same shape from every side.
   follows from the first difficulty below, and it is not the same as saying
   which glasses were found.
 
-## The three difficulties
+## 5. The three difficulties
 
 They are ordered by how dangerous they are, which is not the order in which they
 are easiest to notice.
@@ -153,7 +153,7 @@ at what was hidden](02_looking-again-at-what-was-hidden.md).
 
 ![From the top, every other glass on the table blocks out a wedge of the places the camera could have stood to see the glass in question, and the camera has to be put down in what is left inside the arm's reach.](../../images/seeing-the-glasses/what-is-asked-for/where-can-the-camera-stand.png)
 
-## Why one method is not enough
+## 6. Why one method is not enough
 
 The three difficulties are not independent, and the connection between them is
 why this problem is worth answering carefully.
@@ -169,7 +169,7 @@ the first of those differs between the six solutions. The other two are the same
 for all of them, and they live in [looking again at what was
 hidden](02_looking-again-at-what-was-hidden.md) so that no solution has to restate them.
 
-## What is deliberately not in this problem
+## 7. What is deliberately not in this problem
 
 **Naming the kind.** Every glass in an arrangement is the same kind and that
 kind is known. The harder job where several kinds stand on the table at once is
@@ -186,7 +186,7 @@ does that part exactly as it did before.
 viewpoint, this problem reports that and stops. Moving them apart is the job of
 [pushing the glasses apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
 
-## What "done" means
+## 8. What "done" means
 
 A run is **done** when every glass has a mask, a place and a rough width; when
 every glass that could not be separated from its neighbour is listed with the
@@ -209,7 +209,7 @@ The step that turns a mask into a place is deliberately forgiving, so two very
 different masks can give almost the same place. Comparing the masks themselves
 is what shows the difference.
 
-## Where to go next
+## 9. Where to go next
 
 - [The test bench](../03_the-test-bench.md) — the scenes, the pictures, and how a run is
   marked. Read this before any solution.

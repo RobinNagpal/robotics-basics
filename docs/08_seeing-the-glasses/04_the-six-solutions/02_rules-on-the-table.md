@@ -48,7 +48,7 @@
 > sensors, and the words this project uses them with. What follows is only what
 > is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document describes the one answer to [the problem this book
 sets](../02_the-problem/01_what-is-asked-for.md) that contains no model of any
@@ -96,26 +96,26 @@ glasses — and never in figures.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The rule, in the code](#the-rule-in-the-code)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [Turning a pixel into a point in the room](#turning-a-pixel-into-a-point-in-the-room)
-1. [Keeping only what stands above the table](#keeping-only-what-stands-above-the-table)
-1. [Throwing the height away](#throwing-the-height-away)
-1. [Grouping the dots by how close they are](#grouping-the-dots-by-how-close-they-are)
-1. [The one setting, and where it comes from](#the-one-setting-and-where-it-comes-from)
-1. [Checking a group against the widths the kind allows](#checking-a-group-against-the-widths-the-kind-allows)
-1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The rule, in the code](#2-the-rule-in-the-code)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [Turning a pixel into a point in the room](#5-turning-a-pixel-into-a-point-in-the-room)
+6. [Keeping only what stands above the table](#6-keeping-only-what-stands-above-the-table)
+7. [Throwing the height away](#7-throwing-the-height-away)
+8. [Grouping the dots by how close they are](#8-grouping-the-dots-by-how-close-they-are)
+9. [The one setting, and where it comes from](#9-the-one-setting-and-where-it-comes-from)
+10. [Checking a group against the widths the kind allows](#10-checking-a-group-against-the-widths-the-kind-allows)
+11. [The masks are what this contributes](#11-the-masks-are-what-this-contributes)
+12. [How the concepts fit together](#12-how-the-concepts-fit-together)
+13. [When the glasses are completely hidden](#13-when-the-glasses-are-completely-hidden)
+14. [A worked example](#14-a-worked-example)
+15. [What it needs](#15-what-it-needs)
+16. [Where it is strong and where it breaks](#16-where-it-is-strong-and-where-it-breaks)
+17. [The general ideas behind this](#17-the-general-ideas-behind-this)
+18. [Where it sits among the other five](#18-where-it-sits-among-the-other-five)
 
-## The rule, in the code
+## 2. The rule, in the code
 
 Before going into why the method is built this way, it is worth seeing it. The
 rule the introduction describes is written out in
@@ -186,7 +186,7 @@ the fitted width never leaves these functions, because the only thing it is
 allowed to decide is whether a patch comes apart. The width that goes into the
 record is measured by the bench, from the pixels these functions hand back.
 
-## The problem this solves
+## 3. The problem this solves
 
 To state the problem we need the situation and three words, and the three words
 are used in a particular way here.
@@ -258,13 +258,13 @@ table does.
 The second failure cannot be answered by grouping pixels better, because the
 pixels are not there to group. It is answered instead by arithmetic that never
 looks at the picture's contents, and [when the glasses are completely
-hidden](#when-the-glasses-are-completely-hidden) is where that arithmetic is set
+hidden](#13-when-the-glasses-are-completely-hidden) is where that arithmetic is set
 out. The first failure is what the rest of this method is about, and the lesson
 it teaches is that no amount of care inside the picture will fix it: the picture
 has already thrown away the one thing that would have kept the two glasses
 apart, which is which pixels were near the camera and which were far.
 
-## The main idea
+## 4. The main idea
 
 The main idea is a change of place rather than a change of algorithm, and it is
 small enough to state in two sentences.
@@ -282,7 +282,7 @@ one at a time, in the order the work happens: turning a pixel into a point,
 keeping only what stands above the table, throwing the height away, grouping the
 dots by distance, and checking each group against the widths the kind allows.
 
-## Turning a pixel into a point in the room
+## 5. Turning a pixel into a point in the room
 
 The first concept is the one everything else is built on, and it has a standard
 name: **back-projection**. Projection is what a camera does when it turns a
@@ -313,7 +313,7 @@ The second is that some pixels come back with no reading at all. Those are
 dropped rather than guessed, because a pixel with no distance cannot be placed
 anywhere in the room. That is a small loss here and a large one later, and
 [where it is strong and where it
-breaks](#where-it-is-strong-and-where-it-breaks) returns to it, because it is
+breaks](#16-where-it-is-strong-and-where-it-breaks) returns to it, because it is
 the single assumption that would stop this method working outside the simulator.
 
 There is one more thing the camera hands over that is easy to misread, which is
@@ -337,7 +337,7 @@ structure sounds like a step backwards, and it is in fact the point:
 neighbouring in the picture is the misleading idea this method is trying to
 escape.
 
-## Keeping only what stands above the table
+## 6. Keeping only what stands above the table
 
 The second concept decides which pixels are worth turning into points at all,
 and it is the cheapest step in the method because of one gift the cell gives it.
@@ -364,9 +364,9 @@ pixel belongs to; it never adds a pixel this test threw away. So the mask stops
 a small distance above the table, where the glass's wall can no longer be told
 apart from the table it stands on, and it stops wherever the depth reading was
 missing. No later step can recover either, and [the masks are what this
-contributes](#the-masks-are-what-this-contributes) is where that matters.
+contributes](#11-the-masks-are-what-this-contributes) is where that matters.
 
-## Throwing the height away
+## 7. Throwing the height away
 
 The third concept is the one that surprises people, because it discards
 information on purpose. Every point is dropped straight down onto the table, so
@@ -414,7 +414,7 @@ asks for a rough width rather than an exact one, so the widest slice is an
 honest answer. An exact shape needs the camera brought down and round to look at
 the glass **from the side**, which is a different job from this one.
 
-## Grouping the dots by how close they are
+## 8. Grouping the dots by how close they are
 
 The fourth concept is the grouping rule itself, and now that the dots are flat
 on the table it fits in one sentence.
@@ -450,7 +450,7 @@ every marked square outwards by that distance, and joins the squares that then
 touch, which is two OpenCV calls over a small grid. The same idea under a
 grander name is a k-d tree.
 
-## The one setting, and where it comes from
+## 9. The one setting, and where it comes from
 
 Because there is only one setting, it is worth being careful about where its
 value comes from, and the good news is that it does not come from trial and
@@ -507,7 +507,7 @@ unannounced. Two glasses merged into one group are quieter still, everywhere. So
 the setting leans towards splitting, which is the mistake that mostly gets
 caught.
 
-## Checking a group against the widths the kind allows
+## 10. Checking a group against the widths the kind allows
 
 The fifth concept is a check rather than a step, and it is what makes the method
 safe to trust with a moving arm.
@@ -626,7 +626,7 @@ rather than bad luck. A part cut out of a filled patch by a straight line is not
 a disc, so a circle fitted to it does not reach into the corners the cut left,
 and the further the splitting goes the less disc-like the parts become.
 
-## The masks are what this contributes
+## 11. The masks are what this contributes
 
 Every one of the six solutions is given the same input and judged on the same
 output, and the step that turns a mask into a place and a rough width belongs to
@@ -692,7 +692,7 @@ solution that drew its own outline would not. That is worth knowing before
 reading the numbers, because it is easy to credit a model with understanding
 glasses when what it actually learned was where the table is.
 
-## How the concepts fit together
+## 12. How the concepts fit together
 
 Put in order, the five concepts make one flow with two branches that share only
 their inputs. The left branch groups what was seen. The right branch works out
@@ -736,7 +736,7 @@ found** rather than from the pixels. It needs their positions, widths and
 heights and nothing else, which is why it can say something about a glass that
 produced no pixels at all. The next section is where that branch is worked out.
 
-## When the glasses are completely hidden
+## 13. When the glasses are completely hidden
 
 Everything so far groups the glasses the pictures contain. This section is about
 the glasses they do not contain, which [this book's problem
@@ -835,7 +835,7 @@ sent to look at one, in what order, and at what cost in arm time — is the same
 for all six solutions and is described once in [looking again at what was
 hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md), rather than six times.
 
-## A worked example
+## 14. A worked example
 
 This example follows one arrangement through the whole method. It is described
 in terms of what happens rather than what is measured, and the two relations
@@ -928,7 +928,7 @@ four patches, and five masks go back to the bench.
 Four of the five masks are as good as this method can make them, and the one
 thing missing from each is the thin band at the base that the depth test
 removed. That is the shortfall [the masks are what this
-contributes](#the-masks-are-what-this-contributes) describes, and it is the same
+contributes](#11-the-masks-are-what-this-contributes) describes, and it is the same
 band on all four.
 
 G2 needs its footnote, and the footnote is the interesting part. Part of G2 is
@@ -1013,7 +1013,7 @@ and it is the honest edge of this method.
 
 ![Two glasses are brought closer together in three steps: while the strip of bare table between them is wider than the grouping distance, distance alone separates them; once the strip is narrower than that, only the check on the width recovers them; and when they touch there is no strip left for either to work on.](../../images/seeing-the-glasses/rules-on-the-table/02-touching-is-the-limit.png)
 
-## What it needs
+## 15. What it needs
 
 The list is short, which is the point of this solution.
 
@@ -1055,7 +1055,7 @@ could not be stated.
 **And depth readings.** This is the one requirement that is not free, and it is
 the one the next section is mostly about.
 
-## Where it is strong and where it breaks
+## 16. Where it is strong and where it breaks
 
 The strengths all come from how little this method assumes.
 
@@ -1142,7 +1142,7 @@ nothing legal is cut, the design prescribes that the run report how many points
 were dropped at each end, because a sudden change there means something is
 wrong that nothing else would catch.
 
-## The general ideas behind this
+## 17. The general ideas behind this
 
 None of this was invented for glassware. It is the standard recipe for a robot
 arm working over a table, and has been for about twenty years: treat the depth
@@ -1265,7 +1265,7 @@ For more, the general form is [occupancy grid
 mapping](https://en.wikipedia.org/wiki/Occupancy_grid_mapping), where the
 three-way marking is the whole point.
 
-## Where it sits among the other five
+## 18. Where it sits among the other five
 
 This is the solution the other five are read against, and it is worth being
 exact about why, because the comparison is sharper than "rules against models".

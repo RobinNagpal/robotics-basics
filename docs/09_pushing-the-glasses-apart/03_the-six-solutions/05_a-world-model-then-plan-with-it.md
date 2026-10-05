@@ -54,7 +54,7 @@
 > all four sensors, and the words this project uses them with. What follows is
 > only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document explains how to [push the glasses
 apart](../01_the-problem/01_what-is-asked-for.md) by learning a model of what a
@@ -92,30 +92,30 @@ solution adds learned evidence to is stated there.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code at the heart of it](#the-code-at-the-heart-of-it)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [What exists in code, and what is a design](#what-exists-in-code-and-what-is-a-design)
-1. [What a forward model is](#what-a-forward-model-is)
-1. [What this model is shown, and what it answers](#what-this-model-is-shown-and-what-it-answers)
-1. [The push's own frame, and why direction carries no information](#the-pushs-own-frame-and-why-direction-carries-no-information)
-1. [Ensembles as a measure of ignorance](#ensembles-as-a-measure-of-ignorance)
-1. [Planning by sampling: the cross-entropy method](#planning-by-sampling-the-cross-entropy-method)
-1. [Receding horizon: plan several, make one](#receding-horizon-plan-several-make-one)
-1. [Compounding error over a rollout](#compounding-error-over-a-rollout)
-1. [Planning a sequence, which only this solution could do](#planning-a-sequence-which-only-this-solution-could-do)
-1. [The second rung: TD-MPC2 off the shelf](#the-second-rung-td-mpc2-off-the-shelf)
-1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code at the heart of it](#2-the-code-at-the-heart-of-it)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [What exists in code, and what is a design](#5-what-exists-in-code-and-what-is-a-design)
+6. [What a forward model is](#6-what-a-forward-model-is)
+7. [What this model is shown, and what it answers](#7-what-this-model-is-shown-and-what-it-answers)
+8. [The push's own frame, and why direction carries no information](#8-the-pushs-own-frame-and-why-direction-carries-no-information)
+9. [Ensembles as a measure of ignorance](#9-ensembles-as-a-measure-of-ignorance)
+10. [Planning by sampling: the cross-entropy method](#10-planning-by-sampling-the-cross-entropy-method)
+11. [Receding horizon: plan several, make one](#11-receding-horizon-plan-several-make-one)
+12. [Compounding error over a rollout](#12-compounding-error-over-a-rollout)
+13. [Planning a sequence, which only this solution could do](#13-planning-a-sequence-which-only-this-solution-could-do)
+14. [The second rung: TD-MPC2 off the shelf](#14-the-second-rung-td-mpc2-off-the-shelf)
+15. [The pushes are what this contributes](#15-the-pushes-are-what-this-contributes)
+16. [How the concepts fit together](#16-how-the-concepts-fit-together)
+17. [When a glass cannot be pushed safely](#17-when-a-glass-cannot-be-pushed-safely)
+18. [A worked example](#18-a-worked-example)
+19. [What it needs](#19-what-it-needs)
+20. [Where it is strong and where it breaks](#20-where-it-is-strong-and-where-it-breaks)
+21. [The general ideas behind this](#21-the-general-ideas-behind-this)
+22. [Where it sits among the other five](#22-where-it-sits-among-the-other-five)
 
-## The code at the heart of it
+## 2. The code at the heart of it
 
 Two pieces of rung one carry the whole idea, and they are short enough to read
 here. The first is the forward model itself: five copies of a small network
@@ -198,7 +198,7 @@ model's opinion and nothing else's, so where all five copies are confident and
 all five are wrong, there is nothing left in the code above to disagree with
 them.
 
-## The problem this solves
+## 3. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) has already been
 stated in full, and this section narrows it to the single difficulty this
@@ -241,7 +241,7 @@ arrangement**, not the crowded pair. That is a question about tables rather
 than about pushes, and only a method that can say what a table will look like
 afterwards can ask it.
 
-## The main idea
+## 4. The main idea
 
 The main idea is a separation, and the whole of this solution follows from it.
 
@@ -269,7 +269,7 @@ trained policy would have to be trained again.
 
 ![The model's question has one shape: a table as the camera measured it and one push go in, and a table afterwards comes out — a displacement for every glass, plus whether anything toppled and whether the jaw was blocked coming down.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-what-a-forward-model-predicts.png)
 
-## What exists in code, and what is a design
+## 5. What exists in code, and what is a design
 
 Before any of the concepts, it is worth saying which parts of this solution are
 running code in this repository and which parts are described here and not
@@ -308,7 +308,7 @@ from demonstrations](04_imitation-from-demonstrations.md), as
 `bench/top_view.py` and `Bench.follow`. What is still missing is the wiring and
 the training.
 
-## What a forward model is
+## 6. What a forward model is
 
 Start with the object everything else here rests on.
 
@@ -343,7 +343,7 @@ the two SmolVLA solutions are policies. The trade between the two kinds is
 discussed at the end of this document, but the short form is that a policy is
 fast and narrow, and a forward model is slow and general.
 
-## What this model is shown, and what it answers
+## 7. What this model is shown, and what it answers
 
 Given that shape, the only real design question for rung one is what to put in
 the two states and the action, and the answer is: exactly what the arm has, and
@@ -391,7 +391,7 @@ is the right choice, because what the camera will report is what the planner
 will see next, and a model that predicted a truth the arm can never observe
 would be predicting the wrong thing.
 
-## The push's own frame, and why direction carries no information
+## 8. The push's own frame, and why direction carries no information
 
 One decision inside those thirty-four numbers deserves a section of its own,
 because it is the clearest example in this project of making a problem smaller
@@ -434,7 +434,7 @@ nothing about either. That is why the map — where a glass may stand and where
 the arm can reach — stays as written-down arithmetic outside the model, and is
 checked against the model's predicted table rather than learned.
 
-## Ensembles as a measure of ignorance
+## 9. Ensembles as a measure of ignorance
 
 The hardest thing to get from a trained model is not an answer. It is an honest
 statement that it does not know, and this section is the most transferable idea
@@ -483,7 +483,7 @@ error, and the worst topple chance over all of them is the one that counts. **A
 hole in the model narrow enough to be found by luck does not survive being
 shifted by a millimetre.** A genuinely safe push does.
 
-## Planning by sampling: the cross-entropy method
+## 10. Planning by sampling: the cross-entropy method
 
 With a model that answers and an honest signal for where it does not know, the
 remaining question is how to find a good push, and the answer is the plainest
@@ -544,7 +544,7 @@ is the model guessing outside anything it has seen. What is left is scored, and
 the best push over all the crowded glasses on the table is the one that gets
 made.
 
-## Receding horizon: plan several, make one
+## 11. Receding horizon: plan several, make one
 
 The search above returns a push, and the natural next thought is to let it
 return several and carry them out in order. That thought is wrong in a specific
@@ -583,7 +583,7 @@ millimetres out is corrected for free by the next look. That is a much easier
 standard than accuracy, and it is the standard this arrangement actually
 imposes.
 
-## Compounding error over a rollout
+## 12. Compounding error over a rollout
 
 Receding horizon limits the damage a wrong plan can do. It does not make the
 plan right, and this section is about why a plan gets less right the further it
@@ -635,7 +635,7 @@ wrong in its own favour, those pushes are really made, and what really happened
 goes into the training set. That fills exactly the holes the search is going to
 exploit.
 
-## Planning a sequence, which only this solution could do
+## 13. Planning a sequence, which only this solution could do
 
 Everything so far has been machinery. This section is the reason the machinery
 is worth having, and it is the one capability that is this solution's alone.
@@ -685,7 +685,7 @@ spends four pushes instead of six has taken two fewer chances of the single
 failure that cannot be undone. It is not worth something because the arm is
 short of time.
 
-## The second rung: TD-MPC2 off the shelf
+## 14. The second rung: TD-MPC2 off the shelf
 
 Rung one is a model written for this cell. Rung two asks what a model written
 by people who do this for a living would do instead, and the comparison between
@@ -752,7 +752,7 @@ scratch](../../08_seeing-the-glasses/04_the-six-solutions/03_a-network-trained-f
 makes about telling the glasses apart, where a model built entirely inside the
 cell is what makes the borrowed models' scores readable.
 
-## The pushes are what this contributes
+## 15. The pushes are what this contributes
 
 Having chosen a push, this solution hands it over in the form [the test
 bench](../02_the-test-bench.md) defines, and it is worth being exact about where its
@@ -789,7 +789,7 @@ So the whole of this solution's contribution sits in one place: **which push,
 out of all the pushes the geometry allows, is the one worth making.** It is
 scored on the table afterwards, the same as everything else.
 
-## How the concepts fit together
+## 16. How the concepts fit together
 
 The pieces have been introduced separately, so here they are in the order they
 run, once per push.
@@ -840,7 +840,7 @@ Both are plain counters, both belong to the loop rather than to the model, and
 the budget must be the same number for all six or the push counts on the
 scorecard cannot be compared.
 
-## When a glass cannot be pushed safely
+## 17. When a glass cannot be pushed safely
 
 Every solution in this set has to answer this question, and this one answers it
 twice over, which makes it the most interesting place to look at what learning
@@ -905,7 +905,7 @@ rather than a cost to be weighed against the value of moving the glass. A risk
 worth taking is one whose bad outcome the system can absorb, and this one it
 cannot.
 
-## A worked example
+## 18. A worked example
 
 The clearest way to see the whole arrangement run is on one of the bench's
 held-out tables, and rung one can be traced step by step on any of them.
@@ -967,7 +967,7 @@ the shared scorecard, and against the displacement floor from [the target
 layout](../01_the-problem/02_the-target-layout.md), which says how little movement the task
 needed in the first place.
 
-## What it needs
+## 19. What it needs
 
 **A physics engine and thousands of pushes in it.** This is the real cost, and
 it is a cost no other solution in this set pays in the same currency. Every
@@ -1025,7 +1025,7 @@ time per push beside the counts. Both are in `bench/scoring.py` today, as
 uses the plain scorecard, so its results carry the time per push but no spread:
 it has been trained once and run once.
 
-## Where it is strong and where it breaks
+## 20. Where it is strong and where it breaks
 
 **It could plan a sequence, and nothing else here could.** That is the
 capability this document is built around, and it follows from the model
@@ -1081,7 +1081,7 @@ ensemble, a search and a loop, against [one fixed nudge](02_one-fixed-nudge.md),
 which is a page of arithmetic. That difference in setup cost is real and it
 should be weighed against the scores rather than hidden behind them.
 
-## The general ideas behind this
+## 21. The general ideas behind this
 
 Five lines of published work meet in this solution, and they are worth
 separating because they are usually run together under the word "learning".
@@ -1200,7 +1200,7 @@ one surface*, which is the only way to ask whether a fitted push model transfers
 at all — the question this solution cannot ask, because its bench has one table
 with one friction. What it costs is a robot, a motion-capture rig and months.
 
-## Where it sits among the other five
+## 22. Where it sits among the other five
 
 This solution is the only one that learns what will happen rather than what to
 do, and its place in the comparison follows from that rather than from its

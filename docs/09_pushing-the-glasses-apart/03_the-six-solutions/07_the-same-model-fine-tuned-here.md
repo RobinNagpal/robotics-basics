@@ -49,7 +49,7 @@
 > pass per chunk, the same as its partner's, so the two cost the same to run
 > and differ only in what it cost to build them. The licence is not the
 > obstacle it was for [the pair that tells the glasses
-> apart](../../08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md#the-licence),
+> apart](../../08_seeing-the-glasses/04_the-six-solutions/05_the-same-model-fine-tuned.md#16-the-licence),
 > but a fine-tuned file inherits whatever terms the borrowed file carried, so
 > the terms have to be read before anything leaves this project.
 
@@ -58,7 +58,7 @@
 > side, all four sensors, and the words this project uses them with. What
 > follows is only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document explains how to answer [the problem this book
 sets](../01_the-problem/01_what-is-asked-for.md) by taking a robot foundation
@@ -144,27 +144,27 @@ second rung here rather than the main line.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code that does the work](#the-code-that-does-the-work)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [Fine-tuning — continuing somebody else's training](#fine-tuning--continuing-somebody-elses-training)
-1. [Low-rank adaptation — a small correction instead of a large change](#low-rank-adaptation--a-small-correction-instead-of-a-large-change)
-1. [Where the demonstrations come from, and what they cost](#where-the-demonstrations-come-from-and-what-they-cost)
-1. [Whether anything but the training differs](#whether-anything-but-the-training-differs)
-1. [What fine-tuning closes, and what it cannot touch](#what-fine-tuning-closes-and-what-it-cannot-touch)
-1. [Two ways training on one cell's pushes goes wrong](#two-ways-training-on-one-cells-pushes-goes-wrong)
-1. [A second rung: the same fine-tune on a larger model](#a-second-rung-the-same-fine-tune-on-a-larger-model)
-1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code that does the work](#2-the-code-that-does-the-work)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [Fine-tuning — continuing somebody else's training](#5-fine-tuning--continuing-somebody-elses-training)
+6. [Low-rank adaptation — a small correction instead of a large change](#6-low-rank-adaptation--a-small-correction-instead-of-a-large-change)
+7. [Where the demonstrations come from, and what they cost](#7-where-the-demonstrations-come-from-and-what-they-cost)
+8. [Whether anything but the training differs](#8-whether-anything-but-the-training-differs)
+9. [What fine-tuning closes, and what it cannot touch](#9-what-fine-tuning-closes-and-what-it-cannot-touch)
+10. [Two ways training on one cell's pushes goes wrong](#10-two-ways-training-on-one-cells-pushes-goes-wrong)
+11. [A second rung: the same fine-tune on a larger model](#11-a-second-rung-the-same-fine-tune-on-a-larger-model)
+12. [The pushes are what this contributes](#12-the-pushes-are-what-this-contributes)
+13. [How the concepts fit together](#13-how-the-concepts-fit-together)
+14. [When a glass cannot be pushed safely](#14-when-a-glass-cannot-be-pushed-safely)
+15. [A worked example](#15-a-worked-example)
+16. [What it needs](#16-what-it-needs)
+17. [Where it is strong and where it breaks](#17-where-it-is-strong-and-where-it-breaks)
+18. [The general ideas behind this](#18-the-general-ideas-behind-this)
+19. [Where it sits among the other five](#19-where-it-sits-among-the-other-five)
 
-## The code that does the work
+## 2. The code that does the work
 
 Everything this solution shares with [solution
 5](06_a-foundation-model-as-it-downloads.md) is imported from it rather than written
@@ -231,7 +231,7 @@ targets are therefore written in the same units the partner's answers are read
 in, by the same code, and the only difference between the two solutions is that
 one of them was fitted.
 
-## The problem this solves
+## 3. The problem this solves
 
 This book asks for a jaw trajectory, and then another, until every glass has
 about 70 mm of clear room around it or the glasses that are left have been
@@ -268,7 +268,7 @@ pushing it holds belongs to other tables.
 Continuing the model's training on pushes made here is the standard repair for
 all three at once, and that is what this solution does.
 
-## The main idea
+## 4. The main idea
 
 The idea is one sentence long: keep the borrowed numbers, and learn a small
 correction to them from pushes made on this bench.
@@ -309,7 +309,7 @@ the number of actions SmolVLA emits in a pass and the number it is configured
 to carry out are the same fifty. And it still has no field in it for a rule, so
 it still cannot be the thing that refuses a glass.
 
-## Fine-tuning — continuing somebody else's training
+## 5. Fine-tuning — continuing somebody else's training
 
 Because fine-tuning is the single thing that separates this solution from its
 partner, it is worth setting out carefully and in plain words.
@@ -365,7 +365,7 @@ the one [solution 3](04_imitation-from-demonstrations.md) exists to check from
 the other side, because it fits a policy here from random numbers on the very
 same demonstrations.
 
-## Low-rank adaptation — a small correction instead of a large change
+## 6. Low-rank adaptation — a small correction instead of a large change
 
 Fine-tuning as described above moves every weight, and on a model of this size
 that is the expensive way to do it. Low-rank adaptation is the cheap way, and
@@ -441,7 +441,7 @@ solution and its partner cost the same to run**, and whatever separates their
 scores cannot be explained by one of them having been given more computation
 at run time.
 
-## Where the demonstrations come from, and what they cost
+## 7. Where the demonstrations come from, and what they cost
 
 Fine-tuning needs examples, which here means recorded pushes with what was
 seen beside what was done, and this is where the arrangement of the six
@@ -553,7 +553,7 @@ borrowing is what differs, which makes that pair a test of whether borrowed
 weights are worth having when the examples are the same. This solution is
 therefore in two pairs at once, and they ask different questions.
 
-## Whether anything but the training differs
+## 8. Whether anything but the training differs
 
 A matched pair invites one particular mistake, and it is the mistake of saying
 that nothing varies except the training when something else does. [The matched
@@ -641,7 +641,7 @@ bought and what a careless convention cost, with no way to separate the two
 afterwards. So the convention has to be chosen as well as it can be, recorded
 with solution 5, and left alone once both have run.
 
-## What fine-tuning closes, and what it cannot touch
+## 9. What fine-tuning closes, and what it cannot touch
 
 This is the section the matched pair exists for. Solution 5's weaknesses are
 known, and the honest exercise is to go through them one at a time and say
@@ -796,7 +796,7 @@ the policy behave sensibly when a reading is a little wrong, because it was
 fitted on recordings in which readings were a little wrong. That is a different and smaller claim
 than making the reading right.
 
-## Two ways training on one cell's pushes goes wrong
+## 10. Two ways training on one cell's pushes goes wrong
 
 Fine-tuning is cheap and it is not free of risk, and the two risks have names
 worth knowing.
@@ -846,7 +846,7 @@ the spread. **This matters most to this document of any in this book**, because
 the thing being measured is the gap between two solutions, and a gap smaller
 than either solution's own spread has not been shown to exist.
 
-## A second rung: the same fine-tune on a larger model
+## 11. A second rung: the same fine-tune on a larger model
 
 Everything above is about one model, and there is an obvious next question that
 one model cannot answer: would a markedly larger foundation model do better?
@@ -891,7 +891,7 @@ rung is also the thing most worth trying next, because "a larger model" and "a
 full fine-tune rather than a low-rank one" are the two directions the result
 leaves open, and only the first of them is affordable here.
 
-## The pushes are what this contributes
+## 12. The pushes are what this contributes
 
 One point about the output has to be clear, because it decides what the
 comparison with solution 5 is a comparison of.
@@ -920,7 +920,7 @@ It follows that **a difference in the score belongs to the chunks**. This
 solution contributes the chunks and so does solution 5, which is exactly why
 the gap between the two is readable.
 
-## How the concepts fit together
+## 13. How the concepts fit together
 
 The pieces now join into one picture, and it is worth having that picture in
 one place before the question every solution document in this book has to
@@ -945,7 +945,7 @@ did, and anything the shared machinery owns. The section on what fine-tuning
 closes and what it cannot touch is those gains and those limits taken one at a
 time.
 
-## When a glass cannot be pushed safely
+## 14. When a glass cannot be pushed safely
 
 Every solution document in this book answers this question, and this one's
 answer is short, because the answer does not come from the model.
@@ -999,7 +999,7 @@ begin tipping, and nothing reads the force as it develops. So the only thing
 protecting a glass in either half of this pair is the limit computed before the
 jaw moves, and a 5 mm test push where that limit is undecided.
 
-## A worked example
+## 15. A worked example
 
 Follow one table through, because the difference from solution 5 is easier to
 recognise once both have been run over the same one.
@@ -1074,7 +1074,7 @@ in units this cell can carry out, informed by what pushes on this table
 actually did. The refusal, the topple limit, the destinations and the loop are
 exactly where they were, because they were never the model's to begin with.
 
-## What it needs
+## 16. What it needs
 
 It needs **LeRobot**, which is Apache-2.0, and the SmolVLA weights, which the
 library fetches by itself. That file is large, it comes from outside the
@@ -1144,7 +1144,7 @@ the camera, the way the view from the top is rendered, the range of proportions
 a kind is drawn from, or the teacher, and the file is quietly out of date in a
 way no test of the code would notice.
 
-## Where it is strong and where it breaks
+## 17. Where it is strong and where it breaks
 
 **It is fitted on the inputs it will be shown.** That is the single strongest
 thing about it, and the thing its partner cannot claim. The domain gap is
@@ -1198,7 +1198,7 @@ destinations, it does not own the loop, and it does not stop a push that is
 going wrong. Each of those belongs to the shared machinery, and a reader who
 credits the model with them is crediting it with the geometry's work.
 
-## The general ideas behind this
+## 18. The general ideas behind this
 
 Nothing in this solution was invented for glassware. Every part of it is a
 standard piece of current practice, and each is worth knowing on its own,
@@ -1325,7 +1325,7 @@ reason, the bench had to be designed to accept chunks: forcing a chunked policy
 down to three numbers would have measured a damaged version of the method rather
 than the method.
 
-## Where it sits among the other five
+## 19. Where it sits among the other five
 
 [The six solutions](01_overview.md) form a ladder, ordered by how much of each one
 was fitted in this cell, and this one stands at the top of it, because all of

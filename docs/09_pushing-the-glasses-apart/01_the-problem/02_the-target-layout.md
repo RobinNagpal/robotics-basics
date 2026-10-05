@@ -1,6 +1,6 @@
 # The target layout — where the glasses should end up
 
-## Introduction
+## 1. Introduction
 
 A push has two halves. One half is *how* to push a glass, which is where
 friction, tipping and the arm's own clumsiness live, and which is the whole of
@@ -25,16 +25,16 @@ needs and the measurements `look()` hands over, and both are explained there.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The question, written out](#the-question-written-out)
-1. [Four ways to place the discs](#four-ways-to-place-the-discs)
-1. [Why this is shared and not a solution](#why-this-is-shared-and-not-a-solution)
-1. [The displacement floor](#the-displacement-floor)
-1. [Two cautions](#two-cautions)
-1. [What the layout does not tell you](#what-the-layout-does-not-tell-you)
-1. [Where to go next](#where-to-go-next)
+1. [Introduction](#1-introduction)
+2. [The question, written out](#2-the-question-written-out)
+3. [Four ways to place the discs](#3-four-ways-to-place-the-discs)
+4. [Why this is shared and not a solution](#4-why-this-is-shared-and-not-a-solution)
+5. [The displacement floor](#5-the-displacement-floor)
+6. [Two cautions](#6-two-cautions)
+7. [What the layout does not tell you](#7-what-the-layout-does-not-tell-you)
+8. [Where to go next](#8-where-to-go-next)
 
-## The question, written out
+## 2. The question, written out
 
 The pushing task is finished when every glass has about 70 mm of clear room in
 every direction, at least one usable viewpoint for a side-on photograph, and
@@ -89,7 +89,7 @@ clear room, none leaves the rectangle, and the total sliding is least. That is
 a geometry exercise, it has no unknowns in it, and it can be solved completely
 before the arm touches anything.
 
-## Four ways to place the discs
+## 3. Four ways to place the discs
 
 The exercise has several standard solutions, and they are worth knowing
 together because they trade different things against each other. Two words are
@@ -238,7 +238,7 @@ push at a time, which is a different thing: it answers *where can this glass go
 next* rather than *where should every glass finish*. The layout described in
 this document is a design for shared machinery, not code that runs today.
 
-## Why this is shared and not a solution
+## 4. Why this is shared and not a solution
 
 Having seen that the layout is computable, the next question is who should
 compute it, and the answer is that it must not be each solution separately.
@@ -262,7 +262,7 @@ rather than towards a place, and one of the six does; what that costs it is
 visible on the same scale, as travel against the floor described below.
 
 This is precisely the argument the camera work's [test
-bench](../../08_seeing-the-glasses/03_the-test-bench.md#what-must-come-back)
+bench](../../08_seeing-the-glasses/03_the-test-bench.md#6-what-must-come-back)
 makes about its own shared step. There, the step that turns a mask into a place
 and a width belongs to the bench rather than to any of the six, because if each
 solution did its own arithmetic a difference in the result might be a difference
@@ -272,7 +272,7 @@ same reason. In both books
 the rule is the same: **the shared part is everything that is not the thing
 being compared.**
 
-## The displacement floor
+## 5. The displacement floor
 
 The layout is useful for aiming, but the more valuable thing comes out of
 computing it, and it is a yardstick.
@@ -310,7 +310,7 @@ fault. The displacement floor is that measurement for this problem: computed
 from perfect information, independent of every method, and the thing that makes
 all the other numbers readable.
 
-## Two cautions
+## 6. Two cautions
 
 The floor is only trustworthy if two mistakes are avoided, and both of them are
 easy to make.
@@ -338,7 +338,7 @@ and the floor, not the pass mark.** Scoring the distance to the targets would
 quietly punish a solution for finding a different good answer, which is the
 opposite of what a bench is for.
 
-## What the layout does not tell you
+## 7. What the layout does not tell you
 
 The layout settles where the glasses should go and nothing whatever about
 getting them there, and everything it leaves open is the real content of the six
@@ -380,7 +380,7 @@ does not touch.
 So the division is clean. Geometry says where. The six solutions, and only the
 six solutions, say how.
 
-## Where to go next
+## 8. Where to go next
 
 - [The problem](01_what-is-asked-for.md) — why dragging rather than lifting, the three
   distances that matter, and what "done" means.

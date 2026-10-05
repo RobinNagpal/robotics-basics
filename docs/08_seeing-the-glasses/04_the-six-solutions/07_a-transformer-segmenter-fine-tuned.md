@@ -53,7 +53,7 @@
 > all four sensors, and the words this project uses them with. What follows is
 > only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document describes the sixth of the six answers this book gives, and it is
 the one built on the most modern of the architectures in the set. The problem asks
@@ -90,26 +90,26 @@ were built carelessly.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code at the heart of it](#the-code-at-the-heart-of-it)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [What a transformer segmenter does differently](#what-a-transformer-segmenter-does-differently)
-1. [Why that matters for this problem](#why-that-matters-for-this-problem)
-1. [One class](#one-class)
-1. [Set prediction](#set-prediction)
-1. [Fine-tuning this model here](#fine-tuning-this-model-here)
-1. [The second rung — training against the whole silhouette](#the-second-rung--training-against-the-whole-silhouette)
-1. [The masks are what this contributes](#the-masks-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When the glasses are completely hidden](#when-the-glasses-are-completely-hidden)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code at the heart of it](#2-the-code-at-the-heart-of-it)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [What a transformer segmenter does differently](#5-what-a-transformer-segmenter-does-differently)
+6. [Why that matters for this problem](#6-why-that-matters-for-this-problem)
+7. [One class](#7-one-class)
+8. [Set prediction](#8-set-prediction)
+9. [Fine-tuning this model here](#9-fine-tuning-this-model-here)
+10. [The second rung — training against the whole silhouette](#10-the-second-rung--training-against-the-whole-silhouette)
+11. [The masks are what this contributes](#11-the-masks-are-what-this-contributes)
+12. [How the concepts fit together](#12-how-the-concepts-fit-together)
+13. [When the glasses are completely hidden](#13-when-the-glasses-are-completely-hidden)
+14. [A worked example](#14-a-worked-example)
+15. [What it needs](#15-what-it-needs)
+16. [Where it is strong and where it breaks](#16-where-it-is-strong-and-where-it-breaks)
+17. [The general ideas behind this](#17-the-general-ideas-behind-this)
+18. [Where it sits among the other five](#18-where-it-sits-among-the-other-five)
 
-## The code at the heart of it
+## 2. The code at the heart of it
 
 Two pieces of code carry this solution, and both are worth seeing before the
 document explains them. The first is the **fine-tune**, which is what turns a
@@ -178,7 +178,7 @@ nobody can borrow, and what it returns is handed to
 of the measurement. A second, smaller set of asserted pixels is named by the
 check described further down, and it is left out the same way.
 
-## The problem this solves
+## 3. The problem this solves
 
 Four to six glasses stand on the table. They are all of one kind, the kind is
 known, and they are solid, so the depth camera reads them. The job, set out in
@@ -212,14 +212,14 @@ The second is that a glass can be **partly covered** by the glass in front of
 it. Its mask then stops where the near glass begins, and what is left is not a
 smaller copy of the glass but a slice of it, lying all to one side. That failure
 is quiet rather than loud, and the whole of [the second
-rung](#the-second-rung--training-against-the-whole-silhouette) is about it.
+rung](#10-the-second-rung--training-against-the-whole-silhouette) is about it.
 
 There is a third difficulty neither of those reaches, which is a glass covered
 so completely that it contributes no pixels at all. [When the glasses are
-completely hidden](#when-the-glasses-are-completely-hidden) settles what this
+completely hidden](#13-when-the-glasses-are-completely-hidden) settles what this
 solution can and cannot do about it, and the answer is short.
 
-## The main idea
+## 4. The main idea
 
 The main idea is to use a model whose output already holds separate objects, and
 to use one whose masks are not shut inside rectangles.
@@ -240,7 +240,7 @@ cell's own pictures with the class list cut down to one entry. That is
 **fine-tuning**, and it is why a model this size is a sensible thing to put on
 one laptop.
 
-## What a transformer segmenter does differently
+## 5. What a transformer segmenter does differently
 
 Everything above says what is wanted. This section says how this model's shape
 differs from the older shape, because the difference is the reason the rest of
@@ -284,7 +284,7 @@ report a rectangle round each object, because a rectangle is a convenient thing
 to have, but the rectangle is a result of the answer rather than a container the
 answer was built in.
 
-## Why that matters for this problem
+## 6. Why that matters for this problem
 
 That difference matters here for two reasons, one immediate and one that this
 solution's second rung depends on entirely.
@@ -305,10 +305,10 @@ decided by the evidence. Here there is no such edge. A mask may claim any pixel
 in the picture it likes, so asking the model for the whole shape of a glass is a
 request the architecture can express rather than one it has to be forced into.
 That request is [the second
-rung](#the-second-rung--training-against-the-whole-silhouette), and it is the
+rung](#10-the-second-rung--training-against-the-whole-silhouette), and it is the
 reason this architecture was chosen for this place in the set.
 
-## One class
+## 7. One class
 
 Before the training can be described, one small change to the model has to be
 stated, because it is the same change [the same YOLO fine-tuned
@@ -337,7 +337,7 @@ smaller or the training shorter in any important way, because almost all of the
 weights are in the part that reads the picture and that part does not know what
 the class list is.
 
-## Set prediction
+## 8. Set prediction
 
 With the slots and the single class in place, the next question is how the
 training gets one answer per glass instead of several, and this is where this
@@ -386,7 +386,7 @@ from one step to the next early in training. Models of this family are therefore
 known to need patience in training, and the published work on them is largely
 about making that matching settle faster.
 
-## Fine-tuning this model here
+## 9. Fine-tuning this model here
 
 The architecture is settled, so this section is about where its numbers come
 from, because that is the other half of the design and it decides whether the
@@ -448,7 +448,7 @@ keeping the ordinary case in proportion. The principle is worth remembering:
 **the edge of the specification should sit somewhere in the middle of the
 training set**, so that the model has met worse than it ever will.
 
-## The second rung — training against the whole silhouette
+## 10. The second rung — training against the whole silhouette
 
 Everything above describes a model that marks the pixels the camera can see of
 each glass. This section is the step up, and it belongs to this solution rather
@@ -491,7 +491,7 @@ wrong.
 ### Why it helps
 
 The reason this is worth doing is the quiet failure named in [the problem this
-solves](#the-problem-this-solves), and it is worth following through to the
+solves](#3-the-problem-this-solves), and it is worth following through to the
 place where the damage appears.
 
 Put one glass partly behind another. The camera sees the near glass's surface
@@ -530,7 +530,7 @@ to be worth reporting on its own is reported as part of something whole.
 
 This is where the shape of the model earns its place, and the argument is short
 because the work was done in [what a transformer segmenter does
-differently](#what-a-transformer-segmenter-does-differently).
+differently](#5-what-a-transformer-segmenter-does-differently).
 
 A whole silhouette sticks out beyond the visible evidence. In the older shape,
 the mask is painted inside a rectangle, and the rectangle is found from what the
@@ -726,7 +726,7 @@ glass that was already there.
 
 ![A stand-in prediction that completes most of the hidden part but stops short of its far edge scores well when the overlap is counted over the pixels the camera saw and much worse when it is counted over the hidden part alone, which is why the hidden part alone is the number to watch.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-measuring-whether-it-works.png)
 
-## The masks are what this contributes
+## 11. The masks are what this contributes
 
 Everything above is about producing masks, and this section says plainly where
 this solution stops, because it is the same place all six stop and it is what
@@ -751,7 +751,7 @@ split described in [the
 trap](#the-trap-and-it-is-the-one-thing-most-easily-got-wrong): when a mask
 claims pixels the camera never saw the glass at, it must say which ones.
 
-## How the concepts fit together
+## 12. How the concepts fit together
 
 Everything above is one chain, and it is worth reading in order, because each
 stage inherits what the one before it produced.
@@ -795,7 +795,7 @@ change of target rather than a change of architecture. And the **separation of
 observed from asserted pixels** is what keeps the second rung honest, because
 the arithmetic and both surviving checks need the two kinds of pixel kept apart.
 
-## When the glasses are completely hidden
+## 13. When the glasses are completely hidden
 
 Every document in this set has to answer this, and this one answers it twice,
 because the second rung moves the boundary without removing it.
@@ -870,7 +870,7 @@ hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md), which every o
 restating. This solution contributes the masks that argument starts from, and
 none of the argument.
 
-## A worked example
+## 14. A worked example
 
 Everything below follows from the cell's own geometry and from the design above.
 It is a walk through the design rather than a record of a run, and nothing in it
@@ -928,7 +928,7 @@ five stand, every report correct, every width legal, every score confident, and
 no check fires, because every check here is a check on something that was found.
 That is the case handed to the geometry.
 
-## What it needs
+## 15. What it needs
 
 This is one of the more demanding solutions in the set to set up, and it is
 worth being plain about that before anyone starts.
@@ -969,7 +969,7 @@ any obligation falling on the code around it. That is a real difference from
 here](05_the-same-model-fine-tuned.md), both of which are covered by the AGPL, and it is
 worth knowing before a choice is made rather than after.
 
-## Where it is strong and where it breaks
+## 16. Where it is strong and where it breaks
 
 **It answers the question actually asked.** The problem asks which pixels belong
 to which glass, and the output is one mask per glass. Every method in this set
@@ -1026,7 +1026,7 @@ looked like when they were fitted, on top of what a large collection of ordinary
 pictures looked like. Keeping that in step is a maintenance job the arithmetic
 solution does not have, and the borrowed part cannot be regenerated here at all.
 
-## The general ideas behind this
+## 17. The general ideas behind this
 
 Nothing here was invented for glassware. Every part of it is a standard piece of
 the modern detection toolkit, and what is specific to this cell is only the
@@ -1141,7 +1141,7 @@ segmentation](https://en.wikipedia.org/wiki/Image_segmentation).
 
 ![The whole silhouette is asked of the simulator rather than of a person: render the scene once for the pixels the camera sees of each glass, render the covered glass again with the others taken away for the shape it would have had, and the difference between the two is the hidden part.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-labels-for-free.png)
 
-## Where it sits among the other five
+## 18. Where it sits among the other five
 
 This solution sits at the far end of the ladder, with everything fitted here and
 the most modern architecture under it. Each comparison below holds something

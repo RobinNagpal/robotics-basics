@@ -47,7 +47,7 @@
 > side, all four sensors, and the words this project uses them with. What
 > follows is only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document describes how [the problem this book
 sets](../01_the-problem/01_what-is-asked-for.md) could be answered by
@@ -91,29 +91,29 @@ the most useful thing in this book.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code that does the work](#the-code-that-does-the-work)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [A model that sees, is told, and acts](#a-model-that-sees-is-told-and-acts)
-1. [Where such a model gets its competence](#where-such-a-model-gets-its-competence)
-1. [What is borrowed, and what is not](#what-is-borrowed-and-what-is-not)
-1. [The actions come out in somebody else's units](#the-actions-come-out-in-somebody-elses-units)
-1. [The instruction is nearly dead weight here](#the-instruction-is-nearly-dead-weight-here)
-1. [The force reading has nowhere to go](#the-force-reading-has-nowhere-to-go)
-1. [The domain gap, which is the heart of this document](#the-domain-gap-which-is-the-heart-of-this-document)
-1. [The honest expectation](#the-honest-expectation)
-1. [The price of the model, and why this model](#the-price-of-the-model-and-why-this-model)
-1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code that does the work](#2-the-code-that-does-the-work)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [A model that sees, is told, and acts](#5-a-model-that-sees-is-told-and-acts)
+6. [Where such a model gets its competence](#6-where-such-a-model-gets-its-competence)
+7. [What is borrowed, and what is not](#7-what-is-borrowed-and-what-is-not)
+8. [The actions come out in somebody else's units](#8-the-actions-come-out-in-somebody-elses-units)
+9. [The instruction is nearly dead weight here](#9-the-instruction-is-nearly-dead-weight-here)
+10. [The force reading has nowhere to go](#10-the-force-reading-has-nowhere-to-go)
+11. [The domain gap, which is the heart of this document](#11-the-domain-gap-which-is-the-heart-of-this-document)
+12. [The honest expectation](#12-the-honest-expectation)
+13. [The price of the model, and why this model](#13-the-price-of-the-model-and-why-this-model)
+14. [The pushes are what this contributes](#14-the-pushes-are-what-this-contributes)
+15. [How the concepts fit together](#15-how-the-concepts-fit-together)
+16. [When a glass cannot be pushed safely](#16-when-a-glass-cannot-be-pushed-safely)
+17. [A worked example](#17-a-worked-example)
+18. [What it needs](#18-what-it-needs)
+19. [Where it is strong and where it breaks](#19-where-it-is-strong-and-where-it-breaks)
+20. [The general ideas behind this](#20-the-general-ideas-behind-this)
+21. [Where it sits among the other five](#21-where-it-sits-among-the-other-five)
 
-## The code that does the work
+## 2. The code that does the work
 
 Nothing here is fitted, so the only code this project wrote is the join between
 what the borrowed model emits and what this cell's jaw is. That join turned out
@@ -186,7 +186,7 @@ function returns *is* the speed the jaw is asked to travel at, so the same
 constant fixes the speed as well as the reach, and the two cannot be chosen
 separately.
 
-## The problem this solves
+## 3. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) asks for a jaw trajectory, and then another, until
 every glass on the table has about 70 mm of clear room in every direction and
@@ -213,7 +213,7 @@ for tables in general and asks whether the general thing is good enough for the
 particular one. That is a real question with a real answer, and the answer is
 worth knowing before anybody spends a week recording demonstrations.
 
-## The main idea
+## 4. The main idea
 
 The idea has three steps, and the first two are the whole of the solution.
 
@@ -242,7 +242,7 @@ search. It contains a download, an instruction and a loop. **That is the point
 to hold on to while reading the rest**, because almost every strength and every
 weakness below follows from it directly.
 
-## A model that sees, is told, and acts
+## 5. A model that sees, is told, and acts
 
 The kind of model being borrowed needs explaining before anything else,
 because the rest of this document depends on what goes into it and what comes
@@ -275,7 +275,7 @@ does the whole job, which is why a single borrowed file can be a complete
 answer to the problem, and also why there is no small piece of it that can be
 corrected when it is wrong.
 
-## Where such a model gets its competence
+## 6. Where such a model gets its competence
 
 A model with no knowledge of this cell can only be worth trying if it knows
 something general, so it is worth being precise about where that general
@@ -308,7 +308,7 @@ facts about this cell, they are published once in [the
 cell](../../08_seeing-the-glasses/01_the-cell.md) and [the problem](../01_the-problem/01_what-is-asked-for.md), and a model fitted
 elsewhere has never met any of them.
 
-## What is borrowed, and what is not
+## 7. What is borrowed, and what is not
 
 That division matters enough to state it flatly, because it is what makes this
 solution the baseline it is meant to be.
@@ -332,7 +332,7 @@ by somebody else, for somebody else's robots, before this project existed. That
 is the trade this solution makes, and the next three sections are the three
 places where the trade bites.
 
-## The actions come out in somebody else's units
+## 8. The actions come out in somebody else's units
 
 The first place it bites is at the output, and it is a practical difficulty
 rather than a deep one, but it has to be solved before anything can run at all.
@@ -363,7 +363,7 @@ thinks in movement is not squeezed into three numbers describing a push. Both
 that path and the rendered view from the top now exist in the bench, and this
 solution uses them as they come.
 
-## The instruction is nearly dead weight here
+## 9. The instruction is nearly dead weight here
 
 The second place the trade bites is at the input, and it is the one most likely
 to be misread, so it needs stating carefully.
@@ -401,7 +401,7 @@ model's actual selling point untested, because this problem never asks it to
 do the one thing the language half exists for. A single-task cell is simply
 not where that capability can be seen.
 
-## The force reading has nowhere to go
+## 10. The force reading has nowhere to go
 
 The third place the trade bites is the most interesting, because it is a
 mismatch between what this problem gives a solution and what this model is able
@@ -440,7 +440,7 @@ not a way of observing friction, and [solution
 6](07_the-same-model-fine-tuned-here.md) names it as a liability away from this bench
 rather than as a repair for the closed channel.
 
-## The domain gap, which is the heart of this document
+## 11. The domain gap, which is the heart of this document
 
 Everything above assumes the borrowed model works at all on the pictures this
 bench would show it, and that assumption is the one most likely to fail. It
@@ -490,7 +490,7 @@ producing plausible wrong actions is not merely inaccurate; it is inaccurate in
 the one way this problem cannot absorb, which is the whole reason the next
 section but one takes the topple limit out of the model's hands entirely.
 
-## The honest expectation
+## 12. The honest expectation
 
 It follows from all of the above that this solution may well do badly, and it
 is better to say so here than to let a reader discover it in the scorecard.
@@ -520,7 +520,7 @@ continued on this cell's own pushes. If this solution scored well, the pair
 would measure very little, because there would be little room for training to
 improve anything. A poor score here is what gives that comparison its range.
 
-## The price of the model, and why this model
+## 13. The price of the model, and why this model
 
 Before leaving the model itself, it is worth being clear about what it costs to
 run, because the cost is unusually low and that is part of why it is the first
@@ -556,7 +556,7 @@ possible at all. π0.5 appears in this book only as a further rung inside
 solution 6, reached by low-rank adaptation, to ask whether a markedly larger
 model is worth it.
 
-## The pushes are what this contributes
+## 14. The pushes are what this contributes
 
 It is worth stating plainly where this solution stops, because the boundary is
 the same for all six and is what makes them comparable.
@@ -595,7 +595,7 @@ answers. Its spread should therefore be narrower than solution 6's, and the
 comparison between the two has to be read with that difference in mind rather
 than against it.
 
-## How the concepts fit together
+## 15. How the concepts fit together
 
 The pieces now connect into one picture, and it is a short picture because the
 solution is short.
@@ -625,7 +625,7 @@ every lever that would normally be pulled to fix the problems above. Pulling
 exactly one of those levers is [solution
 6](07_the-same-model-fine-tuned-here.md).
 
-## When a glass cannot be pushed safely
+## 16. When a glass cannot be pushed safely
 
 Every solution document in this book answers this question, and this one's
 answer is the shortest of the six, because **the answer does not involve the
@@ -682,7 +682,7 @@ own, written to the same rule, and solution 6 should import them from here
 rather than write them again. Between them, this solution cannot topple a
 refused glass by choosing badly.
 
-## A worked example
+## 17. A worked example
 
 Following one crowded table through makes the expectations above easier to
 recognise, because they appear together rather than one at a time.
@@ -736,7 +736,7 @@ output marked as doubtful. Every push would look like a push. That is the
 characteristic failure across a domain gap, and it is why this solution's result
 has to be read against solution 6's rather than on its own.
 
-## What it needs
+## 18. What it needs
 
 Less than anything else in this book, which is the whole point.
 
@@ -781,7 +781,7 @@ bench](../02_the-test-bench.md) now provides both, and both are shared with solu
 3 and 6, so the cost was paid once for three solutions rather than for this
 one.
 
-## Where it is strong and where it breaks
+## 19. Where it is strong and where it breaks
 
 The strengths all come from the same source, which is that nothing is fitted.
 
@@ -820,7 +820,7 @@ The honest position is therefore that this is among the first things to run and
 very unlikely to be the one carried forward. Its value is the comparison it
 makes possible rather than the accuracy it would deliver.
 
-## The general ideas behind this
+## 20. The general ideas behind this
 
 Five named ideas sit under this solution, and each is worth knowing in its own
 right, including where it is normally the wrong tool.
@@ -901,7 +901,7 @@ book. The failure to avoid is concluding that the method is poor when what has
 actually been measured is the gap, and the whole reason this document and the
 next are written as a pair is to make that confusion impossible.
 
-## Where it sits among the other five
+## 21. Where it sits among the other five
 
 This solution sits at one end of this book's main axis, and the axis is the
 useful way to see all six.

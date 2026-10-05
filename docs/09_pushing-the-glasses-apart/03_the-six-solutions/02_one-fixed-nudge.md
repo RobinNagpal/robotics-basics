@@ -52,7 +52,7 @@
 > side, all four sensors, and the words this project uses them with. What
 > follows is only what is specific to this solution.
 
-## Introduction
+## 1. Introduction
 
 This document describes the simplest thing that can move a crowded glass away
 from its neighbour, and then argues that the set of six would be worthless
@@ -88,7 +88,7 @@ should be read.
 
 **Part of this solution is built and part of it is a design**, and the two are
 separated plainly in [what is built and what is a
-design](#what-is-built-and-what-is-a-design). The bench, the room test, the
+design](#9-what-is-built-and-what-is-a-design). The bench, the room test, the
 tipping rule and the loop all exist in this repository and have been run. The
 particular rule for choosing a direction and a distance that this document
 describes is a design that would sit inside them.
@@ -101,26 +101,26 @@ results file in the repository.
 
 ## Contents
 
-1. [Introduction](#introduction)
-1. [The code at the heart of it](#the-code-at-the-heart-of-it)
-1. [The problem this solves](#the-problem-this-solves)
-1. [The main idea](#the-main-idea)
-1. [Open loop and closed loop](#open-loop-and-closed-loop)
-1. [The shortfall, and why it is measured to the neighbour's edge](#the-shortfall-and-why-it-is-measured-to-the-neighbours-edge)
-1. [Why the push is a fraction of the shortfall rather than all of it](#why-the-push-is-a-fraction-of-the-shortfall-rather-than-all-of-it)
-1. [Why repeating replaces predicting](#why-repeating-replaces-predicting)
-1. [What is built and what is a design](#what-is-built-and-what-is-a-design)
-1. [It produces nothing anybody can learn from](#it-produces-nothing-anybody-can-learn-from)
-1. [The pushes are what this contributes](#the-pushes-are-what-this-contributes)
-1. [How the concepts fit together](#how-the-concepts-fit-together)
-1. [When a glass cannot be pushed safely](#when-a-glass-cannot-be-pushed-safely)
-1. [A worked example](#a-worked-example)
-1. [What it needs](#what-it-needs)
-1. [Where it is strong and where it breaks](#where-it-is-strong-and-where-it-breaks)
-1. [The general ideas behind this](#the-general-ideas-behind-this)
-1. [Where it sits among the other five](#where-it-sits-among-the-other-five)
+1. [Introduction](#1-introduction)
+2. [The code at the heart of it](#2-the-code-at-the-heart-of-it)
+3. [The problem this solves](#3-the-problem-this-solves)
+4. [The main idea](#4-the-main-idea)
+5. [Open loop and closed loop](#5-open-loop-and-closed-loop)
+6. [The shortfall, and why it is measured to the neighbour's edge](#6-the-shortfall-and-why-it-is-measured-to-the-neighbours-edge)
+7. [Why the push is a fraction of the shortfall rather than all of it](#7-why-the-push-is-a-fraction-of-the-shortfall-rather-than-all-of-it)
+8. [Why repeating replaces predicting](#8-why-repeating-replaces-predicting)
+9. [What is built and what is a design](#9-what-is-built-and-what-is-a-design)
+10. [It produces nothing anybody can learn from](#10-it-produces-nothing-anybody-can-learn-from)
+11. [The pushes are what this contributes](#11-the-pushes-are-what-this-contributes)
+12. [How the concepts fit together](#12-how-the-concepts-fit-together)
+13. [When a glass cannot be pushed safely](#13-when-a-glass-cannot-be-pushed-safely)
+14. [A worked example](#14-a-worked-example)
+15. [What it needs](#15-what-it-needs)
+16. [Where it is strong and where it breaks](#16-where-it-is-strong-and-where-it-breaks)
+17. [The general ideas behind this](#17-the-general-ideas-behind-this)
+18. [Where it sits among the other five](#18-where-it-sits-among-the-other-five)
 
-## The code at the heart of it
+## 2. The code at the heart of it
 
 Two pieces of this solution are written and running in the repository, and they
 belong together, so they are worth reading before the prose explains them. The
@@ -188,11 +188,11 @@ Read together, the two blocks show the whole bargain of this solution in a
 dozen lines: where the arithmetic can answer, it answers, and where it cannot —
 because the friction is missing from it — the method spends one short push to
 find out instead of guessing. Note which fixed nudge this is. The proportional
-nudge of [the main idea](#the-main-idea) has no constant in the repository,
+nudge of [the main idea](#4-the-main-idea) has no constant in the repository,
 while `PROBE` does, so the fixed length above is the one this code really
 commits to.
 
-## The problem this solves
+## 3. The problem this solves
 
 [Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) begins
 where [telling them apart in a
@@ -221,7 +221,7 @@ measuring. This solution takes the second branch, and it takes it as far as it
 can be taken: it predicts nothing, assumes nothing about friction, and keeps
 only the one claim about a push that does not need friction to be true.
 
-## The main idea
+## 4. The main idea
 
 That one claim is the whole method, so it is worth stating before the
 arithmetic. **Pushing a glass away from a neighbour increases the distance
@@ -250,7 +250,7 @@ decision, because there is never a reason to push higher: the lower the
 contact, the further the glass is from tipping, so the only question the height
 raises is whether even the lowest contact is low enough. That question is
 answered in [when a glass cannot be pushed
-safely](#when-a-glass-cannot-be-pushed-safely).
+safely](#13-when-a-glass-cannot-be-pushed-safely).
 
 Then the arm looks at the table again, and the four decisions are made afresh
 from the new measurements. Nothing is remembered from one pass to the next
@@ -264,7 +264,7 @@ serve both ends of that range. What is fixed is the **fraction**: one constant,
 the same for every glass on every table, chosen once by argument and never
 changed. That single constant is the only free number in the entire method.
 
-## Open loop and closed loop
+## 5. Open loop and closed loop
 
 The four decisions above are small, and the thing that makes them sufficient is
 not their content but the loop they sit inside. That loop has a name in control
@@ -310,7 +310,7 @@ them can do otherwise. What makes this one the control is that in the other
 five the loop surrounds something substantial, and here **the loop is the
 method**. There is nothing inside it to compare.
 
-## The shortfall, and why it is measured to the neighbour's edge
+## 6. The shortfall, and why it is measured to the neighbour's edge
 
 The loop needs an error, so the error has to be defined before anything else,
 and the definition contains the one trap in this problem that catches almost
@@ -365,7 +365,7 @@ computes exactly the expression above and adds it up over the whole table, as a
 measure of how crowded the arrangement is. This solution uses the same quantity
 one glass at a time, as its error.
 
-## Why the push is a fraction of the shortfall rather than all of it
+## 7. Why the push is a fraction of the shortfall rather than all of it
 
 With the error defined, the only remaining question is how large a correction
 to make from it, and the answer is the one place where the missing friction
@@ -426,7 +426,7 @@ the gain is argued instead. It is chosen small enough that the convergence
 condition holds across the whole plausible friction range, and then frozen, and
 that argument is written down where anybody can disagree with it.
 
-## Why repeating replaces predicting
+## 8. Why repeating replaces predicting
 
 The small gain buys convergence, and the loop buys correctness, so the method
 can now be stated in its strongest form: it never says where the glass will
@@ -468,9 +468,9 @@ And repetition has a floor, which it would be dishonest to leave out. Pushes
 are not independent: giving one glass its room can take room from another,
 which then needs a push of its own, which can take it back. A loop that is
 reduced to repeating can oscillate, and the only thing that stops it is the
-budget. [A worked example](#a-worked-example) shows that happening.
+budget. [A worked example](#14-a-worked-example) shows that happening.
 
-## What is built and what is a design
+## 9. What is built and what is a design
 
 Before the output and the refusals, it is worth saying plainly which of all
 this exists as code, because this is one of the few solutions in the set where
@@ -497,7 +497,7 @@ real code is involved and it would be easy to over-claim.
 
 **A design, not code:**
 
-- the four decisions of [the main idea](#the-main-idea). The planner that
+- the four decisions of [the main idea](#4-the-main-idea). The planner that
   exists chooses its heading and its distance by searching many headings and
   every distance up to a limit, and keeping the shortest push that frees a
   glass — or, when no push on the table frees one, the push that most cuts the
@@ -527,7 +527,7 @@ cell would reveal it, and on a real table with a real cloth or a real spill it
 would not hold. It is a reason to expect this method to converge in few pushes
 on the bench, and not a reason to trust it anywhere else.
 
-## It produces nothing anybody can learn from
+## 10. It produces nothing anybody can learn from
 
 There is one thing this solution cannot do that its nearest neighbour in the
 set can, and because it is the single clearest difference between the two it
@@ -558,7 +558,7 @@ somewhere else, either by a person teleoperating the arm or by writing a second
 method for the purpose, and both of those are real costs that the comparison
 would then have to carry.
 
-## The pushes are what this contributes
+## 11. The pushes are what this contributes
 
 With the method, its loop and its honest extent all stated, what remains is the
 thing it actually hands over, and the bench is strict about the shape of that.
@@ -614,7 +614,7 @@ anything, because a glass in the rack is a glass that is nobody's neighbour,
 and that step is shared machinery rather than part of this method. What this
 document describes is what happens to the glasses that are left.
 
-## How the concepts fit together
+## 12. How the concepts fit together
 
 The pieces can now be put in the order the arm meets them, which is also the
 order in which each one depends only on what came before.
@@ -651,7 +651,7 @@ Written as the loop it is:
 The loop ends when no glass is short of room, when the budget of pushes is
 spent, or when every glass that is left has been refused.
 
-## When a glass cannot be pushed safely
+## 13. When a glass cannot be pushed safely
 
 Step 5 of that loop is the one that can end a glass's part in the run without
 touching it, and it is worth taking slowly, because a refusal here is a correct
@@ -707,7 +707,7 @@ refused is still a glass standing on a table, and something later may yet move
 it or be told to leave it. A glass that was pushed and went over is finished,
 and the arm carries on working beside it.
 
-## A worked example
+## 14. A worked example
 
 The method is small enough that one example can show all of it, so this section
 follows two tables through the loop: one where the method is sufficient and one
@@ -807,7 +807,7 @@ friction range is below the jaw's top edge, so D tips before it slides at any
 friction the cell might have. No method in the set can push D, and the only
 correct answer for it is a refusal with the reason.
 
-## What it needs
+## 15. What it needs
 
 Everything the method requires is either already produced by [the camera work
 that measures the
@@ -853,7 +853,7 @@ hundreds or thousands of times above it.
 **What it does need is arm time.** The honest cost of this method is pushes and
 looks, and the budget is what bounds them.
 
-## Where it is strong and where it breaks
+## 16. Where it is strong and where it breaks
 
 The strengths all follow from how little the method claims, and the weaknesses
 all follow from the same thing, which is what makes it a clean control rather
@@ -934,7 +934,7 @@ of it, which is exactly why every other solution has something to improve on.
 repetition, so a method whose only recovery is to repeat can run out of
 recoveries on a table that needs many.
 
-## The general ideas behind this
+## 17. The general ideas behind this
 
 Nothing here was invented for glassware. Knowing which older ideas the method
 is made of says where it should be expected to work and where it should not.
@@ -1036,7 +1036,7 @@ also requires that the baseline be measured on the same tables with the same
 scoring as the methods meant to beat it, which is what [the
 bench](../02_the-test-bench.md) is for.
 
-## Where it sits among the other five
+## 18. Where it sits among the other five
 
 [The overview of the six](01_overview.md) states the question this solution
 answers in one line: **does any learning beat a fixed nudge?** It is answered

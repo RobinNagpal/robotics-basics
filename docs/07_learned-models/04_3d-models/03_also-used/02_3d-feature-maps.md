@@ -28,7 +28,8 @@ needs from them.
    · [5.5 GraspSplats](#55-graspsplats)
    · [5.6 OpenScene](#56-openscene)
    · [5.7 How to choose](#57-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -698,7 +699,187 @@ built, so the first question to answer is how often your scene changes.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about the next few years of maps that carry meaning. It was written on 4
+October 2026, and every link in it was checked on that day. It sorts claims the way Book
+3's frontier chapter does in its section on [four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration is a recording of something working once, under conditions the publisher
+chose. A product announcement says that a thing can be bought or downloaded, which you
+can go and check. A research result is a measured number on a stated task. A projection
+is a statement about a date that has not arrived, and it is the weakest kind. Where a
+sentence below is my own judgement rather than a report of somebody else's claim, it
+says so.
+
+### How it got here
+
+The first maps of this kind were a function fitted to a scene, so asking one a question
+meant reading values out of a network's weights. The work since has gone in two
+directions, both about making the map usable by something else. One replaced the fitted
+function with a pile of blobs that have positions, as section 5.5 describes, because a
+blob can be moved and a function cannot. The other threw most of the per-point lists
+away and kept a small graph of objects and relations, as section 5.4 describes, because
+a graph is something a language model can read. The second of those decides what these
+maps are for.
+
+### Where it is used in industry today
+
+No product sells a 3D feature map, and I could not find a robot whose documentation
+advertises one. There are three things you can download, one of them with a robot you
+can order.
+
+NVIDIA's [nvblox](https://github.com/nvidia-isaac/nvblox) is a graphics-card
+reconstruction library under the Apache 2.0 licence, and its documentation includes an
+example of [deep feature
+reconstruction](https://nvidia-isaac.github.io/nvblox/v0.0.10/pages/torch_examples_deep_features.html)
+that shows "how to integrate foundation-model features into an nvblox reconstruction",
+using an image model called AM-RADIO to produce the features. It gets features into a
+real-time reconstruction, which is the hard engineering. It does not let you ask the map
+anything in words; the features are only shown by squeezing each list to three numbers
+and colouring the mesh. So the hard half of a 3D feature map ships in a vendor-supported
+library today and the question-asking half does not.
+
+NVIDIA's research code goes one step further.
+[mindmap](https://arxiv.org/abs/2509.20297) is described by its authors as "a 3D
+diffusion policy that generates robot trajectories based on a semantic 3D reconstruction
+of the environment", with [code](https://github.com/nvidia-isaac/nvblox_mindmap) in the
+same GitHub organisation, built on nvblox. Read its licence before planning anything
+around it. It is the NVIDIA License, whose section 3.3 says the work "only may be used
+or intended for use non-commercially", and defines that as "for research or evaluation
+purposes only". The paper's claim is also weaker than it sounds: it says the approach
+"is effective at solving tasks where state-of-the-art approaches without memory
+mechanisms struggle", in simulation, with no success rate in the abstract.
+
+The one case that matches this section's title is
+[stretch_ai](https://github.com/hello-robot/stretch_ai) from Hello Robot, mostly under
+the Apache 2.0 licence, which runs on Stretch, a mobile manipulator you can order; the
+company's [Stretch 4 page](https://hello-robot.com/stretch-4/) says "Stretch 4 is
+available now!". Its [open-vocabulary mobile manipulation
+app](https://github.com/hello-robot/stretch_ai/blob/main/docs/ovmm.md) uses "vision
+models such as siglip to generate online semantic memory", takes its instructions from a
+language model that writes code, and keeps the memory current from a modified
+`slam_toolbox` pose graph. That is a language-queryable map sitting between a planner
+and a scene, on hardware with a price. The nearest research equivalent is
+[OK-Robot](https://ok-robot.github.io/), which reports "a 58.5% success rate in
+open-ended pick-and-drop tasks" across "10 real-world home environments", rising to 82
+per cent in cleaner settings, with source code under the MIT licence. Those are research
+results, and the most honest numbers this idea has.
+
+### What is being worked on right now
+
+The first front is making the map something a planner can read rather than something you
+query a point at a time. [OP3DSG](https://arxiv.org/abs/2606.29786), from June 2026,
+builds graphs that "jointly model objects, interactive parts, spatial relations,
+functional relations, and affordances", and uses a language model to prune relations the
+geometry does not support. Its complaint about the existing work is worth remembering:
+those systems "remain object-centric and encode limited relational information". That is
+the gap between what a feature map returns, a place in 3D, and what a planner needs,
+which is which object, which part, and how they are arranged.
+
+The second front is keeping the map current without running a large model on every
+frame. [TRACKGRAPH](https://arxiv.org/abs/2609.31005), from September 2026, computes
+masks and CLIP features only at occasional keyframes and carries the masks between them
+with cheaper dense features, then fuses them into a hierarchical scene graph, measured
+on the Replica, ScanNet++ and HM3D scan datasets.
+[GaussLite](https://arxiv.org/abs/2606.30809), from June 2026, goes further and lets the
+question shape the map: given a task such as "prepare to pick up the object on the
+desk", a language model extracts the target and anchor objects once, and the mapper then
+spends its detail on those and not on the rest of the room. Both reject the assumption
+this page is built on, that you build the map first and ask afterwards.
+
+The third front treats the map as memory for a policy rather than as something a person
+queries. The mindmap work above is one example.
+[GaussMemory](https://arxiv.org/abs/2608.14986), from August 2026, is the clearer
+statement of it, learning "which objects to track precisely, how aggressively to update
+them, and what to discard, all learned end-to-end without hand-designed rules".
+[PA3FF](https://arxiv.org/abs/2602.14193), from February 2026, pushes the same idea
+towards parts, with a dense 3D feature field aimed at the handles and knobs of
+articulated objects, on the argument that 2D features lifted into 3D are slow,
+inconsistent between views and too coarse.
+
+The fourth front is the honest competitor to everything on this page: a vision-language
+model that answers questions about the picture in front of it, with no map. Book 3's
+frontier chapter covers this under [Gemini Robotics 2 and ER
+2](../../../03_frameworks/08_frontier/02_foundation-models.md#5-google-deepmind-gemini-robotics-2-and-er-2).
+Gemini Robotics ER 2 arrived on 30 July 2026 and is in public preview through Google AI
+Studio and the Gemini application programming interface, which makes it a product
+announcement you can check in an afternoon.
+[MolmoAct2](https://github.com/allenai/molmoact2), from 4 May 2026, is the open
+counterpart, with Apache-2.0 code. Against that, every system on this page is code you
+must install and a map you must keep current.
+
+### What is still unsolved
+
+The map still goes stale, which is where section 5.7 ends. TRACKGRAPH and GaussMemory
+are papers rather than releases, nvblox reconstructs features but its documentation
+shows no way to ask it anything, and stretch_ai's real-time update is a flag over a
+modified SLAM package. I could not find any published measurement of how wrong a map's
+answers become after an arm has been working in a scene for an hour.
+
+The features also do not hold relations. "The mug behind the box" and "the cup that is
+not the red one" are not nearest-neighbour searches in CLIP's space, because CLIP was
+trained to match a picture with a caption and not to count, compare or negate.
+[SaaF](https://arxiv.org/abs/2607.16309), from July 2026, names two symptoms of this in
+the splat-based language fields it compares against: "reduced discriminability among
+similar objects due to feature compression", and "poor handling of ambiguous queries". I
+did not find a 3D feature map that reports answering a negation correctly, and the move
+to graphs in the first front above is largely an admission of this.
+
+The evaluation measures the wrong thing for a robot arm. Replica, ScanNet++ and HM3D are
+scanned buildings, and the score is whether the right region was retrieved for a phrase.
+A map that names the mug correctly and puts it two centimetres from where it is counts
+as a success there and as a failed grasp on your arm.
+
+Licensing remains a real barrier. Section 5.5 covers the Inria terms that the splatting
+line inherits and the missing licence file in GraspSplats, and mindmap adds NVIDIA's
+non-commercial terms to the list. Three of the most interesting systems here cannot be
+shipped by anybody but their authors.
+
+### The next two to three years
+
+Five expectations follow, each with its reason, because the reason is the part worth
+reading. All five are my own judgement unless a sentence says otherwise.
+
+I expect maps built on 3D Gaussians to displace maps built on fitted fields. The reason
+is the one section 5.5 gives, that a scene made of pieces with positions can be
+re-fitted quickly and can be carried when an object moves, and both of those are what a
+map on a working robot needs. The 2026 papers above are nearly all splat-based, and Book
+3's frontier chapter reports splatting as the method that made rebuilding a room from
+photographs practical at all. This is a direction rather than an announcement, and no
+vendor has committed to it.
+
+I expect the per-point feature map to shrink into a graph of objects and parts carrying
+a few attributes each, queried by a language model. The reason is that the consumer
+decides the format. The thing asking the question is now a planner that reads and writes
+text, as [language models as
+planners](../../07_language-models/03_also-used/01_language-models-as-planners.md)
+describes, and a graph of fifty objects fits inside a prompt while a million points with
+several hundred numbers each does not. OP3DSG and ConceptGraphs are already that shape,
+and SaaF's finding about compression says the per-point route pays for its size by
+losing the ability to tell similar objects apart.
+
+I expect the map's job to narrow to memory, meaning what is not in view right now. The
+reason is that for anything the camera can currently see, one pass of a vision-language
+model gives a fresher answer than any stored map, and that model is a service you can
+call today while the map is code you must build and maintain. Both mindmap and
+GaussMemory already describe their contribution as memory rather than as querying.
+
+I expect the reconstruction half to arrive in vendor libraries before the
+question-asking half does, and nvblox is most of the way there already. The reason is
+where the engineering difficulty sits: reconstructing a scene on a graphics card at
+camera rate, carrying a list of numbers per voxel, and exposing all of it through ROS 2
+is the hard part, and it is Apache-2.0 today, while a text query over features that are
+already in the map is a small addition. NVIDIA has announced nothing of the kind, so
+this is a projection of mine with no date behind it.
+
+What I do not expect is an agreed format for these maps. The reason is that nobody
+agrees what belongs in one: whose features, per point or per object, with parts or
+without, with relations or without. A format gets standardised after that argument ends,
+and the argument is currently getting livelier rather than quieter.
+---
+
+## 7. Where to read next
 
 - [Open-vocabulary models](../../03_seeing-models/02_most-used/03_open-vocabulary-models.md)
     explains CLIP, Grounding DINO and SAM, which are the image models these maps

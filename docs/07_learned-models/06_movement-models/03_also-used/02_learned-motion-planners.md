@@ -33,7 +33,8 @@ page describes.
 5. [Learned inverse kinematics](#5-learned-inverse-kinematics)
 6. [How they are trained](#6-how-they-are-trained)
 7. [Well-known models of this kind](#7-well-known-models-of-this-kind)
-8. [Where to read next](#8-where-to-read-next)
+8. [Where this is going](#8-where-this-is-going)
+9. [Where to read next](#9-where-to-read-next)
 
 ---
 
@@ -795,7 +796,192 @@ One case needs no planner at all. If the part is always in the same place, teach
 
 ---
 
-## 8. Where to read next
+## 8. Where this is going
+
+Section 7 named the tools that exist today, and this section says where this kind
+of model is heading. Each statement below says what kind of claim it rests on,
+using the four kinds the frontier chapter
+[sets out](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+and where a judgement is mine rather than somebody's claim the sentence says so.
+
+### 8.1 How it got here
+
+Every learned helper on this page grew out of one complaint, which is that a
+sampling planner's running time has no upper bound. Motion Policy Networks
+answered it in 2022 by learning a planner's answers, and Neural MP repeated the
+answer in 2025 with weights you can download in one line. What happened beside
+them is the part a reader usually misses. The written planners did not stand
+still. They moved onto the graphics card, and they got there first, so the same
+complaint was being answered from both directions at once.
+
+### 8.2 Where it is used in industry today
+
+A learned planner is almost absent from industry, and that is the honest summary
+rather than a hedge. I could find no product announcement from any vendor saying
+that a neural network plans the route of an arm you can buy. What industry buys
+instead is written planning, sold as a supported product, and it is worth naming
+because it is what a learned planner would have to displace.
+
+[PickNik Robotics](https://picknik.ai/) sells MoveIt Pro and MoveIt Pro Core, the
+commercial build of the MoveIt 2 stack from sub-section 7.1, and its own customer
+pages name NASA's Johnson Space Center, the BMW Group, Lockheed Martin and
+Philips. On 23 September 2026
+[Qualcomm announced that it will acquire PickNik](https://www.qualcomm.com/news/releases/2026/09/qualcomm-to-acquire-picknik-to-advance-the-future-of-open-roboti)
+and stated that MoveIt 1 and MoveIt 2 will "remain open, community-driven, and
+supported across third-party hardware platforms". The acquisition had not
+completed when this was written, so the promise about openness is still a
+projection. A chip vendor paying for the motion planning layer is the clearest
+available signal about where the money in this area sits.
+
+[Realtime Robotics](https://rtr.ai/) sells Resolver and RapidPlan, and its
+business is planning and deconflicting the routes of several arms sharing one
+cell. Its own pages name Daimler Truck, Mercedes-Benz, Schaeffler, KUKA, FFT,
+EDAG and Valiant TMS as customers, and describe one application at FFT with
+120,000 weld points and four robots. Those figures come from vendor marketing, so
+read them as a product announcement about what the software is sold to do rather
+than as a measured result. NVIDIA ships cuRobo into ROS 2 as
+[isaac_ros_cumotion](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_cumotion), so
+the written graphics-card planner installs as an ordinary MoveIt planning plugin.
+That one is a download you can check today.
+
+### 8.3 What is being worked on right now
+
+The most consequential current work is not on the learned side at all.
+[cuRoboV2](https://arxiv.org/abs/2603.05493), by Balakumar Sundaralingam,
+Adithyavairavan Murali and Stan Birchfield, appeared on 5 March 2026 and shipped
+in NVIDIA's own repository as [cuRobo
+v0.8.0](https://github.com/NVlabs/curobo/releases) under Apache-2.0 on 18 April
+2026. The paper reports 99.7 per cent success under a 3 kg
+payload where its baselines reach 72 to 77 per cent, 99.6 per cent collision-free
+inverse kinematics on a 48-joint humanoid, and up to a 61-fold speedup in
+whole-body computation. Those are research results whose code is a download,
+which is an unusually strong pairing. Read the inverse kinematics figure next to
+sub-section 7.5: a written solver now reports 99.6 per cent collision-free
+answers on a body far larger than a Franka arm, and that is the number a learned
+solver now has to beat.
+
+The learned side's own front has moved to scenes that change while the arm is
+moving. The clearest result is [Deep Reactive
+Policy](https://deep-reactive-policy.com/) from Carnegie Mellon University,
+published at the 2025 Conference on Robot Learning as [arXiv
+2509.06953](https://arxiv.org/abs/2509.06953). Its core, called IMPACT, is a
+transformer trained on 10 million generated planner trajectories, and it reads a
+point cloud directly. The project's own page reports success rates against both
+cuRobo and Neural MP, and the shape of them is the useful part. In static scenes
+it reports 84.6 per cent against cuRobo's 82.97 per cent, which is a tie. On obstacles
+that appear suddenly it reports 86 per cent against 59. On goal blocking, where
+something sits on the place the arm was told to reach, it reports 66.67 per cent
+against 0 for cuRobo and 0 for Neural MP. These are research results from the
+authors' own page, which marked the code as a pre-release when this was written,
+so nothing here is a product announcement yet.
+
+The pattern in those three rows is the thing to carry away. A learned planner does
+not win by being quicker at the job cuRobo already does well. It wins by scoring
+above zero where the written planner cannot start, which today means a world that
+moves.
+
+Diffusion models are the other active line. [Motion Planning
+Diffusion](https://arxiv.org/abs/2412.19948) learns a distribution over whole
+trajectories and steers the sampling with a cost, so avoiding obstacles becomes a
+nudge during generation rather than a hard test. Work in 2026 uses the same
+generator for the starting guess of an ordinary optimiser instead of for the final
+answer, as in [warm-starting collision-free model predictive
+control](https://arxiv.org/abs/2601.02873). I expect the second use to last, for
+the reason in sub-section 7.3: a proposal that an exact method then repairs only
+has to be roughly right, so its mistakes cost time rather than safety.
+
+The field has also begun writing down its own open problems. [Toward Generalist
+Neural Motion Planners for Robotic
+Manipulators](https://arxiv.org/abs/2603.24318), from 25 March 2026, is a survey
+whose stated finding is that current neural motion planners "often struggle to
+generalize to unseen, out-of-distribution planning settings". A survey still
+naming generalisation as the obstacle, four years after Motion Policy Networks,
+tells you more than any single success rate.
+
+### 8.4 What is still unsolved
+
+A learned planner cannot tell you that no route exists. A sampling planner is
+**probabilistically complete**, which means it will find a route if one exists and
+it is given enough time, so a long search returning nothing is at least weak
+evidence that the gap is too tight. A network returns an answer of the same shape
+whether the problem is solvable or not, and nothing in that answer separates a
+route from a confident guess at a route that is not there. Nobody has published a
+learned planner that reports its own failure reliably, which is why every system
+in this section keeps a written collision checker downstream.
+
+Generalisation beyond the scene generator is the second, and section 6 named the
+mechanism. The training scenes are made by a program, so the network learns that
+program's idea of a room. Neural MP's answer was to generate far more kinds of
+scene, which pushes the boundary back without removing it, and the 2026 survey
+above reports that the boundary is still the open problem.
+
+The third is mundane and it stops real projects. IKFlow's licence file holds only
+the text `#TODO`, Neural MP's repository states no licence at all, and
+SceneCollisionNet's forbids commercial use, so the three most interesting learned
+helpers here grant you no clear rights over the part you run. OMPL and cuRobo have
+no such problem.
+
+### 8.5 The next two to three years
+
+Everything in this sub-section is my own expectation unless the sentence names
+somebody else's commitment.
+
+I expect the learned route planner to lose ground rather than gain it, because
+written code now supplies the one advantage it had. Its case was always a short
+answer time that does not vary. cuRobo's design gives that without any training,
+its version 2 is a download under Apache-2.0, and NVIDIA ships it into ROS 2. When
+the written tool is predictable, free, checked against the real shapes and now
+paid for by chip vendors, a network has to be better and not merely faster. That
+is my judgement, not an announcement by anybody.
+
+I expect the learned pieces that survive to be the ones doing something written
+code cannot do at all, and learned inverse kinematics is the clear case. A
+numerical solver gives one answer. IKFlow gives as many as you ask for from one
+gripper pose, and sub-section 7.5 explains why the average of two valid arm poses
+is usually invalid, so this is a difference in kind and not in speed.
+[CppFlow](https://github.com/jstmn/cppflow), by IKFlow's own author and published
+at the 2024 International Conference on Robotics and Automation, already uses
+those many answers to plan a Cartesian path, which is a path where the gripper
+follows a line through space. It is MIT licensed, which the model it builds on is
+not. I expect that shape to spread: the network supplies the variety, and a
+written method picks from it and checks the pick.
+
+I expect reactive planning to be where the two approaches actually meet, and Deep
+Reactive Policy's numbers are the reason. A written planner that replans every
+cycle still plans against the obstacles it can see, so an obstacle sitting on the
+goal leaves it nothing to plan towards, which is why cuRobo scores 0 on that row.
+A network trained on millions of scenes will propose something anyway, and a
+proposal a checker can reject is worth more than no proposal. So I expect the
+learned part to settle into the proposal step inside a written planner rather than
+replacing it. Neural MP's trajectory optimisation and the warm-start papers above
+are both already that shape.
+
+I expect certification to push against learned planning in Europe, and that
+expectation rests on a date somebody else published. The European Commission's own
+[machinery page](https://single-market-economy.ec.europa.eu/sectors/mechanical-engineering/machinery_en)
+states that Regulation (EU) 2023/1230 applies on a mandatory basis from 20 January
+2027 and adds provisions for machinery whose safety functions are powered by
+artificial intelligence. A written planner's answer can be shown to have been
+tested against the real geometry, one step at a time, and a network's answer
+cannot be shown to have been tested at all without the checker behind it. I expect
+this to make that checker permanent rather than to ban anything, because keeping
+it is cheap and arguing with an assessor is not.
+
+Last, I expect the planner's job to shrink from a direction this page does not
+cover. A vision-language-action model takes camera images and a sentence and emits
+motor commands, with no separate motion planner in the path at all, and the
+[frontier chapter on foundation models](../../../03_frameworks/08_frontier/02_foundation-models.md)
+records what those models can now do. If the short reach to an object gets
+absorbed into one such policy, what is left for a planner is the long travel
+through open space, which written planners already handle well. So I expect
+learned route planning to lose work in both directions, to the graphics-card
+planner underneath it and to the end-to-end policy above it. What is left over is
+many-answer inverse kinematics and reacting to a world that moves, which is
+exactly where the two strongest results of the last two years are.
+
+---
+
+## 9. Where to read next
 
 This page and the previous one both took over one part of an ordinary system. So
 the reading below either compares them, or it moves on to the two methods that

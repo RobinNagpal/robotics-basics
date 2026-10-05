@@ -26,7 +26,8 @@ means adjusting a model a little at a time until its answers match the examples.
    · [5.4 NeuS](#54-neus)
    · [5.5 VGGT and the DUSt3R family](#55-vggt-and-the-dust3r-family)
    · [5.6 How to choose](#56-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -289,12 +290,12 @@ either of them and the splat of the next sub-section is what they leave behind. 
 fitted NeRF is still a network you can ask about a spot nobody photographed, which is
 what [Dex-NeRF](https://arxiv.org/abs/2110.14217), by Jeffrey Ichnowski and colleagues
 at the 2021 Conference on Robot Learning, uses to find a glass object that a depth
-camera cannot see, as section 6 describes.
+camera cannot see.
 
 The obvious alternative is 3D Gaussian Splatting in section 5.2, and for a new job
 that is what to choose. A NeRF still wins in one case. It keeps a real radiance field,
-which means a network you can ask about any point in space, and the transparent-object
-trick in section 6 depends on exactly that. A splat has no network to ask, so what it
+which means a network you can ask about any point in space, and the Dex-NeRF trick
+just described depends on exactly that. A splat has no network to ask, so what it
 gives you is pictures and a depth picture worked out from the blobs.
 
 What they cost you is time, and the code. The original asks for TensorFlow 1.15, so
@@ -703,7 +704,201 @@ is worth anything until that is done.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+The sections above describe what you would run today. This one is about the
+direction, and it uses the
+[four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything)
+from Book 3's frontier chapter. A demonstration is a recording of something working
+once, under conditions its publisher chose. A product announcement says a thing can be
+downloaded or bought today, which you can check yourself, so it is the strongest kind
+here. A research result is a measured number on a stated task. A projection is a
+statement about a date that has not arrived, and it is the weakest. Where a sentence
+below is my own expectation rather than somebody's published claim, it says so.
+
+This is the fastest-moving corner of the chapter, and the change has one shape rather
+than a sequence. NeRF showed that a fitted field could hold a scene, and it was far
+too slow to use. Instant-NGP made the same idea minutes instead of days. Then Gaussian
+splatting threw out the network and left a pile of blobs that a graphics card draws
+directly, and because drawing blobs is an old, well-understood job, the method went
+from a paper to shipping software unusually quickly. The live question is no longer
+how to represent a scene but what the representation is good for.
+
+You can buy or download reconstruction today in two quite different markets, and the
+first is consumer and professional capture. Niantic Spatial's
+[Scaniverse](https://scaniverse.com/) is a free phone application that scans a space
+and fits a splat on the phone itself. Niantic also publishes the splat transport
+format [SPZ](https://github.com/nianticlabs/spz) under the MIT licence, which its
+README says is "typically around 10x smaller than the corresponding .ply files".
+[Polycam](https://poly.cam/gaussian-splatting) sells splat reconstruction from a
+phone, a drone or a browser upload, taking "between 20 and 200 images", and it offers
+a downloadable mesh for any splat, which is a detail worth remembering for later in
+this section. Jawset's
+[Postshot](https://www.jawset.com/) is a Windows desktop fitter for an NVIDIA card,
+and PlayCanvas publishes [SuperSplat](https://github.com/playcanvas/supersplat), an
+open-source browser editor, with a
+[compressed .sog format](https://developer.playcanvas.com/user-manual/gaussian-splatting/formats/)
+for web delivery. Those are all product announcements, checkable this afternoon with a
+phone and a browser.
+
+The second market is the one that matters for an arm, and it is simulation rather
+than perception. On 11 August 2025 NVIDIA
+[announced Omniverse NuRec](https://nvidianews.nvidia.com/news/nvidia-opens-portals-to-world-of-robotics-with-new-omniverse-libraries-cosmos-physical-ai-models-and-ai-computing-infrastructure),
+a set of Gaussian splatting libraries that, in the
+[product page's words](https://developer.nvidia.com/omniverse/nurec), "ingest real
+sensor data to reconstruct and render interactive simulation in OpenUSD". That release
+says NuRec rendering is integrated in the open driving simulator
+[CARLA](https://carla.org/), that [Foretellix](https://www.foretellix.com/) is
+integrating NuRec into its synthetic data generation, and that
+[Voxel51](https://voxel51.com/)'s FiftyOne data engine supports NuRec, naming Ford
+and Porsche as FiftyOne customers. Two pieces of it are downloadable rather than
+announced: the renderer [3DGRUT](https://github.com/nv-tlabs/3dgrut) is Apache-2.0,
+and it builds on [gsplat](https://github.com/nerfstudio-project/gsplat), the
+Apache-2.0 renderer from the same project as nerfstudio in
+[section 5.3](#53-nerfstudio).
+
+What NVIDIA ships alongside that is the most useful single artefact here. The
+[PhysicalAI-Robotics-NuRec](https://huggingface.co/datasets/nvidia/PhysicalAI-Robotics-NuRec)
+dataset on the Hugging Face Hub is nine reconstructed environments, 77 gigabytes,
+under a Creative Commons Attribution 4.0 licence, three of them captured by a Nova
+Carter robot and the rest by hand-held cameras. Its own description says that "the
+Mesh components are used for collision detection while the 3DGUT components provide
+realistic rendering". That is a company with every reason to sell you one
+representation telling you that it ships two. NVIDIA's own tutorial on
+[reconstructing a scene from a smartphone](https://developer.nvidia.com/blog/reconstruct-a-scene-in-nvidia-isaac-sim-using-only-a-smartphone/),
+published on 23 October 2025, says the same thing from the other side: your
+reconstructed scene "is simply visual geometry ... with no inherent collision
+properties", and you add a ground plane and a proxy mesh yourself.
+
+The research has four clear fronts. The first is removing the fit, which
+[section 5.5](#55-vggt-and-the-dust3r-family) already describes for VGGT, and the work
+since has pushed on two of that method's weaknesses: its answer has no real scale, and
+what it returns is points rather than a scene a renderer can draw.
+[MapAnything](https://arxiv.org/abs/2509.13414), from Meta and Carnegie Mellon in
+September 2025, produces metric geometry rather than geometry up to an unknown scale,
+covers more than twelve reconstruction tasks in one model, and has an Apache-2.0
+checkpoint at
+[facebook/map-anything-apache](https://huggingface.co/facebook/map-anything-apache),
+which makes it a research result and a product announcement at once. The metric part
+is what an arm cares about, for the reason [section 5.6](#56-how-to-choose) gives. In
+July 2026 NVIDIA published [Instant NuRec](https://arxiv.org/abs/2607.14203), which
+makes a splat scene in a single forward pass in about 1.5 seconds and reports 2.01
+decibels of peak signal-to-noise ratio above the strongest baseline it evaluated on
+the Waymo Open Dataset. That is a research result, measured on driving footage rather
+than in a work cell, and the paper does not state a code release.
+
+The second front is turning a splat into a surface, which is the unsolved problem
+below. The published attempts change what the blobs are allowed to be:
+[2D Gaussian Splatting](https://github.com/hbb1/2d-gaussian-splatting) flattens each
+blob onto a surface patch, and [PGSR](https://github.com/zju3dv/PGSR) adds terms that
+reward geometric agreement between views. Book 2's table of
+[methods that measure](../../../02_perception/02_object-perception/05_models-that-measure.md)
+records what they buy and what they cost: those variants reach 0.47 to 0.80 mm of
+error against plain splatting's 1.96 mm on the DTU benchmark, and all of them are
+non-commercial.
+
+The third front is reconstruction as a way to train a policy rather than a way to see.
+[SplatSim](https://arxiv.org/abs/2409.10161), from Carnegie Mellon, replaces a
+simulator's meshes with splats, trains an image-based manipulation policy inside that,
+and reports 86.25 per cent average success on the real robot with no real training
+data, against 97.5 per cent for the same policy trained on real data. Book 3's
+frontier chapter collects the
+[rest of this family](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#53-real-to-sim-rebuilding-the-room-instead-of-modelling-it)
+and notes that release practice in that corner is poor. These are research results;
+the shipped version of the same idea is the NuRec dataset above.
+
+The fourth front is reconstructing while the robot moves.
+[MonoGS](https://github.com/muskie82/MonoGS) and
+[SplaTAM](https://github.com/spla-tam/SplaTAM) fit a splat and track the camera at the
+same time, which is simultaneous localisation and mapping with blobs instead of a grid
+of cubes. Beside it sits the plumbing that decides whether any of this is usable: the
+compressed formats above, and the move to a standard container. 3DGRUT's own
+documentation says Isaac Sim 6.0 reads both the standard OpenUSD `ParticleField`
+schema and NVIDIA's own NuRec file type, and that the private one is being phased out
+in favour of the standard one.
+
+The unsolved problems start with one that no amount of engineering will remove,
+because it is a mismatch of objectives. Every method on this page is trained by
+comparing its rendered pictures against your photographs, so it is rewarded for
+pictures that look right. A gripper needs a surface in the right place, which is a
+different thing. The blob centres are not points on the object; they are wherever the
+fit put them to make the picture come out, which is why plain splatting measures 1.96
+mm on a 25 cm laboratory object in Book 2's table while NeuS, which fits a surface,
+measures 0.84 mm. The metric the field reports makes this worse rather than better.
+Peak signal-to-noise ratio, the number Instant NuRec improves by 2.01 decibels, is a
+measure of pictures. Nobody has published a benchmark that measures whether a grasp
+computed from a reconstruction succeeds, so the quantity you care about is not the
+quantity anybody competes on.
+
+The second unsolved problem is physics, and it is the same gap seen from further back.
+A reconstruction has no mass, no friction and no articulation, and Book 3's frontier
+chapter states plainly that
+[nothing published in 2026 claims to have closed the contact gap](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#54-what-still-does-not-transfer).
+A drawer in a splat does not open unless somebody says it is a drawer. That is why
+NVIDIA's dataset ships a mesh beside the splat and why its tutorial tells you to add a
+collision plane: the practical answer today is to keep two descriptions of the same
+room and use each for what it is good at.
+
+The third is licensing, which has resisted years of work because it is inherited
+rather than chosen. The original splatting code and almost every accurate surface
+variant carry Inria's research-only terms, so the most accurate methods in Book 2's
+table are the ones you may not ship. The permissive exceptions are nerfstudio, gsplat,
+[Brush](https://github.com/ArthurBrussee/brush), 3DGRUT and
+[fVDB Reality Capture](https://github.com/openvdb/fvdb-reality-capture), an Apache-2.0
+toolbox that began at NVIDIA, is now developed under OpenVDB, and extracts meshes and
+point clouds from the field it fits.
+
+The rest of this section is what I expect over the next two to three years, with the
+reason in each case. None of it is an announcement by anybody.
+
+I expect feed-forward reconstruction to become the normal choice for anything that
+happens while a robot is working, and per-scene fitting to survive for assets built
+once and reused. The reason is a gap in time of about two orders of magnitude, now
+measured rather than claimed: under a second for VGGT and about 1.5 seconds for
+Instant NuRec, against minutes for a good splat fit. An arm that photographs a bin on
+the way to it has no minutes, so the only question left is whether the fast answer is
+accurate enough, and MapAnything's metric output removes the other objection.
+
+I expect every shipped reconstruction to carry two representations, one for appearance
+and one for contact, rather than one representation that tries to be both. The reason
+is that this has already happened in a product: NVIDIA ships mesh collision geometry
+beside the splat, Polycam offers a mesh download beside the splat, and fVDB Reality
+Capture extracts meshes from the field. The alternative would require the appearance
+objective to start rewarding correct surfaces, and nothing in how these methods are
+trained makes that happen.
+
+I expect the main robotics use of reconstruction to be building training and
+evaluation environments rather than perceiving at run time, and this is my expectation
+rather than anybody's roadmap. Two reasons point the same way. The simulation route
+already has shipped tooling and a measured transfer number, in NuRec and SplatSim,
+while run-time reconstruction on an arm has neither. And at run time the arm usually
+has a depth camera, which answers where the surface is directly, in millimetres, in
+one frame.
+
+I expect splats to become a boring interchange asset, in the way triangle meshes and
+point clouds already are. The reason is two things that have already happened rather
+than any prediction: the representation landed in a standard schema, which Isaac Sim
+reads in preference to NVIDIA's own, and it acquired compressed
+transport formats in SPZ and .sog, with viewers in browsers and game engines. A
+representation with a standard container and a wire format has stopped being a
+research project.
+
+I expect the licence, rather than the accuracy, to keep deciding which of these
+methods reach products. The reason is visible in what already happened: NVIDIA built
+a commercial simulation feature on Apache-2.0 renderers rather than on code that
+scores better on surfaces. So I expect the permissive projects to keep absorbing the
+research ideas a year or two late, and that to be the version most readers of this
+page actually run.
+
+What I do not expect, in this window, is a reconstruction replacing a depth camera for
+grasping. The objective mismatch above is unaddressed, no published benchmark connects
+reconstruction quality to grasp success, and the cheap sensor keeps getting better. I
+would change that expectation the day somebody publishes grasp success rates measured
+against reconstruction error.
+
+---
+
+## 7. Where to read next
 
 - [3D feature maps](../03_also-used/02_3d-feature-maps.md) is the next page, and it
     adds meaning to a reconstructed scene so that the arm can find things in it by

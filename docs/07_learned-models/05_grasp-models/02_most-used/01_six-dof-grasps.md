@@ -24,7 +24,8 @@ first.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -835,7 +836,197 @@ theirs.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about the direction six-degree-of-freedom grasping is moving in. It is
+written on 4 October 2026, and it borrows the vocabulary Book 3's frontier chapter uses
+for
+[the four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+because the difference decides how much weight a sentence can carry. A demonstration is a
+recording of something working once under conditions the publisher chose. A product
+announcement says a thing can be bought or downloaded, and you can go and check, which
+makes it the most useful kind. A research result is a measured number under a stated
+protocol. A projection is about a date that has not arrived, and it is the weakest. Every
+claim below says which kind it is, and where the judgement is mine the sentence says so.
+
+### How it got here
+
+Every step in this area removed an assumption rather than adding accuracy. The first
+models asked you for your gripper's measurements and searched for poses that fitted them.
+The next ones learned to emit poses straight from a point cloud, which made them fast and
+quietly moved the gripper out of a configuration file and into the weights, where you
+cannot change it. The current ones are taking the gripper back out and making it an input
+again. Scores on the standard benchmark rose along the way, but the thing that really
+changed is what a model is allowed to assume about the hand on the end of your arm.
+
+### Where it is used in industry today
+
+Grasping has more commercial deployment behind it than anything else in this book, and
+very little of that deployment is six-degree-of-freedom finger grasping. The systems
+running at scale in warehouses hold things with a suction cup. Amazon says its
+[Cardinal](https://www.aboutamazon.com/news/operations/amazon-robotics-robots-fulfillment-center)
+parcel-sorting arm lifts a package "with air suction", and that its newer
+[Vulcan](https://www.aboutamazon.com/news/operations/amazon-vulcan-robot-pick-stow-touch)
+picks with "an arm that carries a camera and a suction cup". Ocado's
+[On-Grid Robotic Pick](https://www.ocadogroup.com/newsroom/stories/ocado-robotic-arms)
+arm packs grocery orders with a suction cup, and Boston Dynamics'
+[Stretch](https://bostondynamics.com/stretch/) unloads shipping containers with an array
+of them. Those are product announcements, and the
+[suction and affordance](02_suction-and-affordance.md) page covers them properly. They
+matter here because they are what a business buys when picking has to work this year.
+
+Where fingers do run at scale, they run alongside a cup rather than instead of one. The
+clearest case is RightHand Robotics, whose
+[RightPick](https://www.righthandrobotics.com/products/rightpick) workcell grips with
+"three compliant fingers and suction", and whose product page claims more than 1.2
+million successful picks in production per month and cycle times as fast as three
+seconds. It has run since 2019 at
+[PALTAC's warehouse](https://righthandrobotics.com/resources/paltac-corporation-japan) in
+Japan, which the case study says stocks over 20,000 product lines. Other vendors sell the
+same shape of piece-picking, including [Mujin](https://www.mujin.co.jp/en/),
+[Osaro](https://www.osaro.com/), [Nimble Robotics](https://www.nimblerobotics.com/) and
+[Plus One Robotics](https://www.plusonerobotics.com/automated-parcel-induction), and
+[Dexterity](https://www.dexterity.ai/) builds two-armed robots that
+[FedEx is scaling up at its Hagerstown hub](https://www.freightwaves.com/news/fedex-moves-closer-to-deploying-robots-that-can-load-trailers)
+to load trailers. One commercial event says more about the value of this work than any
+product page. In August 2024 Amazon
+[hired three of Covariant's founders and licensed its robot foundation models](https://www.robotics247.com/article/amazon_hires_the_founders_of_ai_robotics_company_covariant_licenses_its_technology),
+and [Covariant](https://covariant.ai/) continues under new leadership.
+
+What none of these companies publishes is which model it runs. No vendor names
+Contact-GraspNet or AnyGrasp, nobody reports a success rate per item class, and I could
+not find one published comparison of [these models](#5-well-known-models) on a real bin
+with a real arm. The honest summary is that the gap between section 5 and a warehouse is
+systems engineering, item-range curation and gripper choice, not a better network. Read
+every number above as a company claim, because none has been audited from outside the
+company.
+
+### What is being worked on right now
+
+The papers below come from an arXiv search of the computer science categories for "grasp"
+in the abstract, sorted by date and run on 4 October 2026, so you can repeat it and see
+what has arrived since.
+
+The first thread is taking the gripper out of the weights, which
+[section 5.6](#56-graspgen-and-graspgenx-the-models-that-ask-which-gripper-you-have)
+already ships.
+[Gripper-aware Vision Language Action Models](https://arxiv.org/abs/2608.24603), from
+August 2026, makes the same argument from the other side. A vision-language-action model,
+usually written VLA, is a policy that takes camera images and a sentence and emits robot
+actions. The paper's point is that existing VLAs act as though the choice of hand does
+not change the strategy, which is false: a parallel-jaw gripper and a suction cup reach
+the same goal differently. Its answer is MiGA, a dataset of 103,000 demonstrations across
+five gripper types, and a policy with a multi-gripper tokeniser. That is a research
+result, not a release. [FunCo-Grasp](https://arxiv.org/abs/2609.39006) does the same for
+multi-finger hands, by mapping each hand's links onto a shared set of functional parts so
+that a grasp learned on one hand transfers to a hand shaped differently.
+
+The second thread is grasping being pulled inside a larger policy.
+[Grasp-Anything-6D](https://arxiv.org/abs/2407.13842) is the dataset behind it: one
+million point-cloud scenes and more than 200 million grasp poses tied to language, whose
+diffusion model steers towards the object you named and away from the rest. The direction
+also shows in the counts. Book 3 measured that the share of robotics abstracts on arXiv
+mentioning "vision-language-action" went from 0.52 per cent in 2024 to 10.78 per cent of
+2026's submissions up to 23 September, in
+[its table of research momentum](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted).
+That is a measured trend, and it is the strongest single signal in this section.
+
+The third thread is adapting after installation.
+[Continual Learning for 6-DoF Grasp Synthesis](https://arxiv.org/abs/2610.01301), from 1
+October 2026, leaves the trained model alone and adapts through a memory in a learned
+embedding space, so the outcome of one attempt changes the score of the next. Its stated
+protocol is over 1,500 real grasp trials, and its claim is that it matches existing 6-DoF
+baselines before adapting and then improves on object categories that were thin in
+training. A neighbouring idea is to move the camera rather than improve the prediction,
+which is [active view selection](https://arxiv.org/abs/2609.39375).
+
+The fourth thread is measuring something other than the benchmark number.
+[ManiPhysicsBench](https://arxiv.org/abs/2610.02802), from 2 October 2026, scores whether
+a policy finishes the task and leaves the object undamaged. Its finding is worth
+repeating: public VLA checkpoints show a substantial gap between task success and safe
+success, and their gripper commands cluster near fully open and fully closed, because
+they were trained on a gripper signal that only had those two values. That is a measured
+result about every model that treats the gripper as a switch, which includes most of
+[section 5](#5-well-known-models).
+
+### What is still unsolved
+
+Picking unseen items out of a cluttered bin, at a rate and a reliability a business will
+pay for, is not solved. The useful evidence is not a paper but what the vendors sell.
+RightHand Robotics offers a Suction Cup Swapper whose stated benefit is making "roughly
+1.5x as many orders 100% robot pickable", which is a company telling you that without it
+a large share of orders were not. Plus One Robotics sells human-in-the-loop remote
+supervision as a named product feature, so a person elsewhere can take over when a robot
+is stuck. Ocado states that its arm is "expected to pick more than 70% of an extensive
+online grocery range" at full capacity, which means it expects to leave the rest to
+people. Three independent companies describe the same boundary in their own words, and no
+model in [section 5](#5-well-known-models) crosses it.
+
+The input is unsolved as well as the model. Every model on this page starts from a point
+cloud, and a depth camera returns nothing where a glass jar or a shiny tin was.
+[ClearGrasp](https://arxiv.org/abs/1910.02550) named that in 2019, and it is still being
+worked on: [HDCNet](https://arxiv.org/abs/2511.07081) completes the missing depth,
+[AISPO](https://arxiv.org/abs/2606.25503) uses a shape prior,
+[Trans2Occ](https://arxiv.org/abs/2606.01777) estimates occupancy instead of depth, and
+[TransGraspNet](https://arxiv.org/abs/2607.29567) targets transparent laboratory
+glassware. Seven years of work on one failure mode is a signal, and no better scorer
+fixes it, because the hole in the cloud is upstream of the scorer.
+
+There is also no agreed way to report a real number. GraspNet-1Billion scores poses
+offline against labels a simulator computed, which is reproducible and is not picks per
+hour. Nothing in section 5's table is a measured success rate on your bin. The licence
+problem has not moved either: the strongest model here needs a machine-locked key, and
+nobody has published an openly licensed model that matches it.
+
+### The next two to three years
+
+Everything in this part is my expectation rather than anybody's announcement, and the
+reason matters more than the prediction.
+
+I expect gripper-conditioned models to become the default, and weights with a gripper
+baked into them to become unsellable. The reason is arithmetic rather than science. A
+grasp pose only means something for the gripper it was predicted for, and four of the six
+models in [section 5](#5-well-known-models) fix a gripper that is probably not yours. No
+vendor can sell one model into a market where every customer has a different hand.
+GraspGenX already ships and MiGA already exists, which is the pattern that usually
+precedes adoption: somebody ships it, then the datasets arrive to make it better.
+
+I expect the standalone grasp detector to survive, but as a component a larger policy
+calls rather than as the thing you run. The reason is that a grasp detector cannot decide
+which object to pick and a sentence can, so the two layers have an obvious seam, and the
+measured VLA trend says where the attention is. The reason I do not expect the detector
+to disappear is also published: [Seg2Grasp](https://arxiv.org/abs/2607.17757) argues that
+end-to-end learning falters on unfamiliar objects and that a modular pipeline is more
+robust, and every deployment named above is modular. A module inside a policy is a
+different thing from no module.
+
+I expect adaptation on the installed robot to become something vendors advertise. The
+reason is that the unsolved problem is a tail of items nobody trained on, and no amount
+of pre-training removes a tail. A warehouse's item mix also changes week by week, so a
+frozen model gets worse without anybody touching it. The continual-learning result above
+is the only published approach aimed at that tail, and it reports real trials rather than
+simulation.
+
+I expect openly licensed models to be trained rather than waited for, and this is the
+prediction I hold most firmly. The reason is cost, which has already fallen far enough:
+[EconomicGrasp](#55-economicgrasp-the-one-you-can-train-yourself) trains under MIT on
+5.81 gigabytes of graphics memory, so a company needing a clean licence no longer has to
+choose between a machine-locked key and nothing. The blocker here was never the
+mathematics, and a blocker that is only cost tends to go away.
+
+I do not expect multi-finger dexterous grasping in a warehouse within three years. Two
+measured things point the same way. Book 3's count shows the share of robotics abstracts
+mentioning "dexterous" moving only from 3.64 to 4.16 per cent, far slower growth than the
+VLA line, and its
+[section on dexterous hands](../../../03_frameworks/08_frontier/06_what-is-coming.md#44-dexterous-hands-which-now-exist-and-are-not-sold)
+finds hands that have been demonstrated and are not sold. Against that, a two-finger
+gripper with a cup next to it already covers most of a warehouse item range. Nobody is
+paying for twenty degrees of freedom to pick a bottle of shampoo, and until that changes
+the research will not reach a loading bay.
+
+---
+
+## 7. Where to read next
 
 - [Grasp quality models](../03_also-used/02_grasp-quality-models.md) explains the
     scoring half of these models on its own.

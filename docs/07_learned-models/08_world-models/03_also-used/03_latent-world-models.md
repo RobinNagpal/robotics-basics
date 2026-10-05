@@ -27,7 +27,8 @@ joins ideas from both of those last two pages.
    · [5.5 TD-MPC2](#55-td-mpc2)
    · [5.6 V-JEPA 2 and V-JEPA 2-AC](#56-v-jepa-2-and-v-jepa-2-ac)
    · [5.7 How to choose](#57-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -839,7 +840,176 @@ your task, and you can measure them, a learned code is not worth its cost.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section looks forward rather than back, and it was written on 4 October
+2026. Book 3 sorts forward-looking statements into four kinds, in
+[four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything):
+a demonstration is a recording of something working once under conditions the
+publisher chose, a product announcement says a thing can be bought or
+downloaded, a research result is a measured number on a stated task, and a
+projection is a statement about a date that has not arrived. This section names
+the kind every time, and says so where the judgement is mine rather than
+somebody's published statement.
+
+The shape of the change in this family is where the code comes from. In the
+first models the code came from your own robot's pictures, which meant the robot
+had to move before the model knew anything, and
+[section 5](#5-well-known-models-of-this-kind) walks through eight years of
+making that cheaper: one network per task, then one set of settings for many
+tasks, and then codes learned from video of other people before the arm moves at
+all. The same eight years did not make anybody deploy one, and that gap is the
+subject of the rest of this section.
+
+Here is the honest summary of industrial use, and it is the distinction worth
+carrying away. The idea in this family is influential inside larger systems, and
+almost nobody runs a latent world model on its own. There is no product whose
+selling point is that a robot plans inside an imagined world. What exists instead
+is a set of shipped systems in which a latent world model trains something else
+and is then put away.
+
+The checkable case is
+[LeRobot v0.6.0](https://huggingface.co/blog/lerobot-release-v060), released on
+6 July 2026 under Apache-2.0, which added three world-model policies you install
+with `pip`. Two of them use a latent world model exactly as described above.
+[VLA-JEPA](https://huggingface.co/docs/lerobot/vla_jepa) pairs a
+[Qwen3-VL](https://github.com/QwenLM/Qwen3-VL) language backbone with Meta's
+[V-JEPA 2](https://github.com/facebookresearch/vjepa2) and states in its own
+documentation that at inference "only Qwen + the action head are used. The world
+model is not needed at inference time."
+[FastWAM](https://huggingface.co/docs/lerobot/fastwam) says the same in
+different words. Book 3 works through the mechanism in
+[world models that actually shipped](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies).
+This is a product announcement, which is the strongest kind of claim here, and
+what it announces is the representation rather than the planner.
+
+The rest of the industrial picture is weaker, and it is worth separating. You
+can download the pieces: the V-JEPA 2 encoders are on Hugging Face under the MIT
+licence, [TD-MPC2 publishes checkpoints](https://www.tdmpc2.com/models), and
+[DreamerV3's code](https://github.com/danijar/dreamerv3) is public. None of those
+is a product with a support contract behind it. Above that there are
+announcements with nothing to check. On 4 June 2026 the humanoid company 1X
+announced [the 1X World Model Lab](https://www.1x.tech/discover/1x-world-model-lab)
+and said that advances in its own world model "enabled NEO to generalize to
+completely unseen tasks with zero-shot execution". That sentence has no task
+list, no success rate, no protocol and no artefact, so it is a company claim
+about a demonstration rather than a result. Google DeepMind's
+[Genie](https://deepmind.google/models/genie/) is further back still: Book 3
+records it as
+[announced rather than released](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#42-genie-the-closed-frontier),
+with no weights and no interface a robot could act through.
+
+The research front is more interesting than the product front, and four things
+are moving. The first is practising inside the model at a scale that was not
+possible before. [Dreamer 4](https://danijar.com/project/dreamer4/), published as
+[Training Agents Inside of Scalable World Models](https://arxiv.org/abs/2509.24527)
+in September 2025, trains behaviour by reinforcement learning inside its own
+world model, which is what [section 3](#practising-inside-the-model) describes,
+and reports being the first agent to obtain diamonds in Minecraft purely from
+offline data, beating OpenAI's [VPT](https://arxiv.org/abs/2206.11795) agent
+with a hundred times less data. Its authors say directly that the reason to care
+is robotics, where letting the robot practise for real is impractical. That is a
+research result on a stated task, and the task is Minecraft rather than a robot
+arm, which is the part to keep in mind.
+
+The second is learning what an action is from video that has no actions recorded
+in it. [Latent Action Pretraining from Videos](https://arxiv.org/abs/2410.11758)
+infers a small set of latent actions from ordinary video and pretrains on those
+before any robot data is used. This matters because the binding constraint on
+this family is action-labelled data, and the one plentiful signal is video
+without actions, which is the same argument
+[section 5.6](#56-v-jepa-2-and-v-jepa-2-ac) makes for V-JEPA 2.
+
+The third is the missing half of the agent. Planning inside a latent model needs
+a score for an imagined future, and that score is the part that has been absent
+from the downloadable models. LeRobot v0.6.0 added two reward models alongside
+the three world models, and Dreamer 4's own page reports that its reward model
+identified task success inside imagined scenarios. A world model and a reward
+model arriving in the same release is the combination that makes planning
+possible at all.
+
+The fourth is pressure from the other direction. NVIDIA's Cosmos 3 models, such
+as [Cosmos3-Nano](https://huggingface.co/nvidia/Cosmos3-Nano), now take a
+sequence of actions and predict the video those actions would cause, which the
+[previous page](01_video-prediction-models.md) covers. If a model that predicts
+pixels becomes action-conditioned and fast enough to roll out, the main argument
+for predicting a code instead of a picture gets narrower.
+
+Three things remain unsolved, and the first has resisted the whole history of
+this family. You cannot read a wrong prediction. When a rollout goes wrong there
+is still no accepted way to tell whether the fault is in the encoder, the
+predictor or the reward model, because the only thing you can inspect is a list
+of numbers that means nothing on its own. Every entry in
+[section 5](#5-well-known-models-of-this-kind) carries this cost, and no paper
+in eight years has published a method for it that other groups adopted.
+
+The second is saying what you want. Planning by goal picture, which is how
+[section 5.6](#56-v-jepa-2-and-v-jepa-2-ac) plans, cannot express "press until
+it resists" or "do not let the lid tilt". A reward model can express those, but
+then somebody has to train the reward model, and nobody has published a general
+way to write a reward for a manipulation task that works outside the task it was
+written for.
+
+The third is that the benefit of the version that shipped is not established.
+Book 3 records that there is
+[no published head-to-head result](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies)
+with confidence intervals showing that the three LeRobot world-model policies
+beat a policy trained without the extra prediction loss. The defence against the
+model learning to predict nothing is also still a trick rather than a proof: both
+TD-MPC2 and V-JEPA 2 hold a copy of the target fixed, as
+[section 5.5](#55-td-mpc2) and [section 5.6](#56-v-jepa-2-and-v-jepa-2-ac)
+describe, and nothing bounds what the code ends up meaning.
+
+What follows is what I expect, and it is my judgement rather than anybody's
+commitment. I expect the world model as a training signal to become ordinary
+inside large robot policies, and the planner to stay rare. The reason is cost on
+three sides. It is already installable, it adds nothing to the time the robot
+takes to act because the predictor is discarded, and it does not require the
+model to be right about contact, only to be informative about it. Planning
+requires all three of the opposite things. When a method that is cheap on every
+axis ships at the same time as a method that is expensive on every axis, the
+cheap one is what gets adopted.
+
+I expect latent world models to be adopted for judging policies before they are
+adopted for controlling robots. The reason is that evaluation is the measured
+bottleneck in this field: Book 3's section on
+[why two numbers are usually not comparable](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#8-why-two-numbers-on-the-same-benchmark-are-usually-not-comparable)
+sets out the evidence. A model whose rollout is wrong by a tenth is useless for
+choosing the next action and still useful for ranking two policies against each
+other, because both policies are ranked by the same wrong model. That asymmetry
+is the opening. This is my expectation and not an announcement.
+
+I expect latent actions learned from human video to become a normal pretraining
+stage rather than a research idea. The reason is that it attacks the constraint
+everything else in this book keeps running into, which is the number of
+action-labelled robot demonstrations, and the recipe is already published and
+reproducible. The thing that would confirm it is a released policy whose model
+card names an unlabelled video pretraining stage.
+
+I expect on-robot planning to become technically possible soon and to stay
+narrow in use. The possibility has a date attached from somebody with a record
+of shipping: NVIDIA announced on 15 July 2026 that
+[Jetson Thor hardware](https://blogs.nvidia.com/blog/jetson-thor-robotics-edge-ai-agent/)
+arrives in the first quarter of 2027, and Book 3's
+[section on dated commitments](../../../03_frameworks/08_frontier/06_what-is-coming.md#22-nvidias-edge-computers-with-hardware-stated-for-the-first-quarter-of-2027)
+explains why that date is worth more than most. Rolling a latent model forward a
+few hundred times per decision is the kind of work that hardware is for. My
+guess about the use, and it is a guess, is that the first real applications will
+be tasks a photograph can describe, such as arranging objects into a pictured
+layout, because that is the only goal this family can currently be given without
+training a reward model first.
+
+The thing I do not expect within three years is a shipped product whose claim is
+that the robot plans inside an imagined world. That needs contact accuracy, a
+reward model and a search budget at the same time, and no published evidence says
+any one of the three is in place. If it does happen, the most likely place is a
+company that owns its whole stack and has said so, which is what 1X announced
+in June 2026 — and an announcement is the weakest kind of claim in the list this
+section started with.
+
+---
+
+## 7. Where to read next
 
 - Go back to the [world models overview](../01_overview.md) for how the four kinds
   compare.

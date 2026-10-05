@@ -21,7 +21,8 @@ camera leaves on shiny and clear objects.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -779,7 +780,198 @@ gripper closes.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about what to expect from learned depth next. Of the three
+subjects in this part of the chapter it is the one with a genuinely positive
+forward view, because depth from pictures has improved fast enough to replace
+hardware in shipping products, and this section names where.
+
+Everything below is labelled by what kind of claim it is, using the four kinds
+that Book 3 sets out in [four kinds of claim, and why the difference decides
+everything](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration shows something working once, a product announcement says
+something can be bought or downloaded, a research result is a measured number
+under a stated protocol, and a projection is a statement about a date that has
+not arrived. Product announcements carry the most weight because you can check
+them, and projections the least. Where I give my own judgement the sentence says
+so, and every link below was checked on 4 October 2026.
+
+### 6.1 How it got here
+
+The shape of the change is that depth stopped being a measurement and became a
+prediction. Stereo depth used to be a geometry calculation written by hand,
+matching patches between two pictures, and it worked where there was texture and
+failed where there was not. Then training one network on many datasets whose
+units did not agree gave relative depth from a single photo of almost any scene,
+which is the MiDaS lineage that [section 5](#5-well-known-models) describes.
+Metric depth, several pictures at once, and the sharpening of a sensor's own
+reading all followed from that same idea. What is left unresolved is the part
+geometry gave you for free, which is the scale.
+
+### 6.2 Where it is used in industry today
+
+The clearest case of a learned model replacing a hand-written one inside a
+product is Stereolabs, which sells the ZED depth cameras. Its current
+documentation says the three neural modes `NEURAL`, `NEURAL_LIGHT` and
+`NEURAL_PLUS` are the ones to choose between in ZED SDK version 5, and that the
+older computer-vision modes `PERFORMANCE`, `QUALITY` and `ULTRA` "are deprecated
+since ZED SDK 5.0 but still available in the API" ([ZED depth
+modes](https://www.stereolabs.com/docs/depth-sensing/depth-modes)). That is a
+product announcement, and it is the strongest single fact in this section: a
+camera company deprecated its own classical stereo algorithm in favour of
+networks. NVIDIA ships the same idea for robots as `isaac_ros_ess`, a learned
+stereo node in Isaac ROS whose documentation says the model predicts the
+disparity of each pixel from a stereo image pair
+([isaac_ros_dnn_stereo_depth](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_dnn_stereo_depth)),
+and which you can download today.
+
+Monocular depth replacing a depth sensor outright has happened at consumer
+scale. Google's ARCore Depth API computes depth from the motion of a single
+camera, and Google's own page says it "uses a depth-from-motion algorithm to
+create depth images and merges data from available hardware sensors" ([ARCore
+Depth API](https://developers.google.com/ar/develop/depth)). The hardware depth
+sensor is an optional extra there rather than the source. That is a product
+announcement, and it covers a large number of Android phones. In vehicles, Tesla
+removed the ultrasonic distance sensors from new Model 3 and Model Y production
+in October 2022 and replaced their output with a camera-based occupancy
+prediction. Its "Transitioning to Tesla Vision" support page is the source, and
+I am naming it without a link because tesla.com refuses automated requests, so I
+have no checked link to show you. Mobileye sells SuperVision, a camera-based
+driver-assistance system, and its own announcement says SuperVision will be in
+future Porsche production models ([Mobileye and
+Porsche](https://www.mobileye.com/news/porsche-mobileye-supervision-collaboration/)).
+In drones, the Skydio X10 page says "six custom-designed navigation lenses
+provide 360-degree visibility" and does not mention lidar anywhere ([Skydio
+X10](https://www.skydio.com/x10)), so obstacle avoidance there is vision only.
+
+Depth sensors are not dying, and a section that only listed the replacements
+would mislead you. RealSense completed its spin-out from Intel in July 2025 with
+50 million dollars of funding to keep building depth cameras for robotics
+([RealSense
+spin-out](https://www.intelcapital.com/realsense-completes-spin-out-from-intel-raises-50-million-to-accelerate-ai-powered-vision-for-robotics-and-biometrics/)),
+and Luxonis sells cameras that run stereo and networks on the camera itself
+([DepthAI documentation](https://docs.luxonis.com/)). Those are product
+announcements too. Meanwhile platform vendors are packaging monocular depth for
+on-device use: Apple publishes a Core ML conversion of Depth Anything V2 Small
+([apple/coreml-depth-anything-v2-small](https://huggingface.co/apple/coreml-depth-anything-v2-small)),
+which is a download rather than a claim.
+
+### 6.3 What is being worked on right now
+
+The first front is metric depth from one picture, meaning depth in metres rather
+than in order. The difficulty is that one picture does not contain its own
+scale, so these models learn a prior over how large things usually are and how a
+given focal length maps to a given size. Depth Anything 3 from [section
+5.2](#52-depth-anything-3) is one line of attack, and the others you will meet
+are UniDepth ([UniDepth](https://github.com/lpiccinelli-eth/UniDepth)), Metric3D
+([Metric3D](https://github.com/YvanYin/Metric3D)) and MoGe
+([MoGe](https://github.com/microsoft/MoGe)). All three publish code and numbers.
+
+The second front is reconstructing a scene from several pictures without knowing
+where the cameras were. VGGT infers camera parameters, depth maps, point maps
+and point tracks in one forward pass, and its repository records a best paper
+award at CVPR 2025 ([VGGT](https://github.com/facebookresearch/vggt)). For a
+robot this matters because the work it removes is calibration, which is a task
+that takes engineers days and that every new camera arrangement needs again.
+
+The third front is consistency over time. A single-frame depth model gives a
+slightly different answer on each frame of a still scene, and a plan computed
+from a flickering depth map makes the arm move when nothing moved. Video Depth
+Anything addresses exactly this, as a research result with open weights ([Video
+Depth Anything](https://github.com/DepthAnything/Video-Depth-Anything)).
+
+The fourth front combines a sensor with a model instead of choosing between
+them, which is Prompt Depth Anything from [section
+5.3](#53-prompt-depth-anything). The sensor supplies the scale it measured and
+the model supplies the sharp edges it predicted. Alongside it, hard surfaces are
+a front of their own: ClearGrasp began the work on transparent objects
+([ClearGrasp](https://sites.google.com/view/cleargrasp)) and ReMake from
+[section 5.6](#56-remake) is the current answer. Apple's Depth Pro is worth
+knowing as well, because it targets sharp object boundaries from one image with
+open weights ([ml-depth-pro](https://github.com/apple/ml-depth-pro)).
+
+### 6.4 What is still unsolved
+
+Scale from a single camera is not a gap in effort, it is a property of the
+problem. Two scenes that differ only in size can produce the same picture, so
+any model that prints metres has made an assumption about how large things are.
+That assumption is usually right about chairs and doorways and usually wrong
+about a custom fixture on a bench, and there is no amount of training that
+removes the ambiguity. Treat a metric number from one camera as a good starting
+guess and never as a measurement.
+
+Accuracy at the point where the gripper closes is the number that decides
+whether depth is usable for picking, and it is not the number these models are
+ranked on. Published comparisons report average error over a whole image, while
+a grasp depends on a few square centimetres, often on a thin or shiny part.
+Papers that add depth to a manipulation policy exist, such as "Depth Helps"
+([Depth Helps](https://arxiv.org/abs/2408.05107)) and 3D-CAVLA
+([3D-CAVLA](https://arxiv.org/abs/2505.05800)), but I did not find a published
+study that reports grasp success as a function of depth error on a stated set of
+objects, which is the measurement a developer would want before removing a
+sensor.
+
+Three categories of surface stay unreliable for every model on this page: thin
+structures such as cables and wire baskets, polished metal, and dark matte
+material that returns almost no light. ReMake exists because of the second of
+those, and [section 5.7](#57-how-to-choose) still tells you to segment the
+object first, so the problem is handled rather than solved. Uncertainty is the
+fourth gap. Most models output one number per pixel and nothing about how sure
+they are, so nothing tells the planner which pixels to distrust, and I did not
+find a monocular depth model that publishes a calibrated per-pixel uncertainty.
+
+### 6.5 The next two to three years
+
+Everything in this part is my expectation rather than anybody's announcement,
+and each item gives its reason, because the reason is the content and the
+prediction on its own is noise.
+
+I expect learned stereo to become the default inside depth cameras and robot
+stacks rather than an option you switch on. This is the best-supported item
+here, and the reason is that it is already most of the way done by a route that
+does not depend on anybody's roadmap: the hardware is unchanged, the change is a
+software update, and the vendor has already deprecated the alternative. A
+deprecation that has shipped is much stronger evidence than a promise, so I
+would bet on this item before any of the others.
+
+I expect monocular metric depth to keep displacing depth sensors where cost or
+shape decides the design, and not to displace them where accuracy decides it.
+The reason is in the two halves of this section. ARCore and the vehicle examples
+show that a model is good enough when the job is to know a wall is two metres
+away and the alternative costs money, power and space. The scale argument of
+[section 6.4](#64-what-is-still-unsolved) shows why the same model is not good
+enough to put a gripper on a specific edge. My expectation is therefore split:
+cheap mobile robots and inspection devices drop the depth camera, and arms doing
+precise picking keep it.
+
+I expect pose-free multi-view reconstruction to become a standard block in robot
+perception, the way a detector already is. The reason is the labour it removes
+rather than the accuracy it adds. Calibrating several cameras into one frame is
+a task that every cell needs and nobody enjoys, and a model that infers the
+camera parameters from the pictures removes it. The code is already open, so
+this is a prediction about adoption rather than about a capability arriving.
+
+I expect the winning arrangement on a robot arm to be a sensor and a model
+together rather than either alone, with the sensor supplying scale and the model
+supplying edges and filled holes. The reason is that this is the only
+arrangement whose weak points do not overlap, and Prompt Depth Anything shows it
+can be built. This is my judgement, and the way to check it is to watch whether
+depth camera vendors ship this combination in their own software development
+kits rather than leaving it to users.
+
+The last expectation is about licences rather than accuracy, and I think it will
+decide more adoption than any benchmark. The table in [section
+5](#5-well-known-models) shows the pattern already: several of the strongest
+checkpoints are released under non-commercial terms while the smaller ones are
+Apache-2.0. A company shipping a product will use the weaker model it is allowed
+to sell, so the practical state of the art in industry will keep lagging the
+published state of the art, and the gap will be a licence rather than a
+capability.
+
+---
+
+## 7. Where to read next
 
 - [Keypoints and object pose](../02_most-used/04_keypoints-and-object-pose.md) is the page before
   this one, and most pose models need good depth.

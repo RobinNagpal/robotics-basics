@@ -26,7 +26,8 @@ words without explaining them again.
    · [5.5 Mask R-CNN](#55-mask-r-cnn)
    · [5.6 Mask2Former](#56-mask2former)
    · [5.7 How to choose](#57-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -372,7 +373,7 @@ You supply the box, which means you supply a detector. The library prepares the
 picture, runs the network and stretches the mask back to your photo's size. It also
 takes a `multimask_output` argument, which is where the three masks of the paragraphs
 above are turned on or off. What you still have to write is the step from the mask to
-a place in the room, which is section 6.
+a place in the room.
 
 ### 5.2 SAM 3
 
@@ -849,7 +850,197 @@ lists more of these, each with the licence read from its own licence file.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+The sections above describe models that exist now, and this one is about what happens
+next. It follows the rule set out in [four kinds of claim, and why the difference
+decides
+everything](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything):
+a demonstration shows something working once, a product announcement says a thing can
+be bought or downloaded and is therefore checkable, a research result is a measured
+number with a stated method, and a projection names a date that has not arrived. Every
+paragraph below says which of those it rests on, and says when a judgement is mine.
+
+### How it got here
+
+Segmentation has changed by moving the class list out of the training and into the
+call. The first per-pixel models were trained on a fixed list and could only answer
+about that list. Mask R-CNN in [section 5.5](#55-mask-r-cnn) bolted a mask head onto a
+detector, so masks came with the same fixed list that detection had. SAM made the
+object an input instead of an entry in a list, so you point and it outlines. SAM 3
+made that input a phrase. Each step moved the decision about what counts as an object
+later in the process, and closer to the person asking the question.
+
+### Where it is used in industry today
+
+The largest commercial use of promptable segmentation today is not a robot at all. It
+is making the training data that other models learn from, which
+[section 4](#4-how-it-is-trained) mentions and which is worth naming precisely,
+because it is checkable. Roboflow's documentation for [AI
+labelling](https://docs.roboflow.com/datasets/annotate/annotate/ai-labeling) describes
+Smart Select, which runs the Segment Anything Model in your browser so that one click
+produces a polygon, and Auto Label, which labels a whole dataset with a foundation
+model and lists SAM 3 among the models you can choose. Label Studio publishes [its own
+guide to the same idea](https://labelstud.io/blog/get-started-using-segment-anything/),
+and Ultralytics ships [SAM 2](https://docs.ultralytics.com/models/sam-2/) inside the
+package you may already be using for detection. These are product announcements: you
+can open the page and use the thing today.
+
+Agriculture is where per-pixel decisions run on the most machines, because the machine
+acts on a plant rather than on a rectangle. Carbon Robotics sells the
+[LaserWeeder](https://carbonrobotics.com/laserweeder), whose specification page states
+42 high-resolution cameras, 30 diode lasers of 150 watts each, more than 100
+deep-learning crop models, sub-millimetre accuracy, and more than 100 growers across
+North America, Europe and Australia operating it since February 2022. John Deere sells
+[See & Spray](https://www.deere.com/en/sprayers/see-spray/), and
+[Blue River Technology](https://www.bluerivertechnology.com/), the Deere subsidiary
+that builds it, says on its own site that it "uses computer vision and machine
+learning to distinguish crops from weeds". Neither company publishes which model it
+runs, so I am not claiming either uses the models in [section 5](#5-well-known-models).
+What is certain from their own pages is the shape of the job: the machine decides for
+each small piece of ground whether to act on it, and that is a per-pixel question
+rather than a box question.
+
+Inspection on a production line is the other large use, and a mask fits it for a plain
+reason: a scratch, a weld bead or a coating fault has a shape and an area, and neither
+survives being reduced to a rectangle. MVTec sells HALCON and MERLIC, and its [deep
+learning methods page](https://www.mvtec.com/technologies/deep-learning/methods) offers
+semantic segmentation for texture recognition, part separation and pose estimation, and
+instance segmentation for multi-object detection and packaging inspection. The named
+deployment is useful: MVTec's own case study says [Endress+Hauser Flow in Reinach,
+Switzerland uses MERLIC in a digital assistance system for manual
+assembly](https://www.mvtec.com/application-areas/success-stories/article/how-machine-vision-and-ai-support-humans-in-complex-assembly),
+verifying each assembly step as a worker performs it, and MVTec tags that story with
+object detection and semantic segmentation. MVTec also publishes the benchmark this
+market measures on, [MVTec AD 2](https://www.mvtec.com/company/research/datasets/mvtec-ad-2),
+a dataset for finding defects nobody has shown the model before. Cognex and Keyence
+sell competing tools; Cognex's website refuses an automated request, so it is named
+here without a link, and [Keyence](https://www.keyence.com/products/vision/vision-sys/)
+is linked. [Elementary](https://www.elementaryml.com/) sells whole camera stations for
+defect detection and presence checks rather than a library.
+
+### What is being worked on right now
+
+The first front is the one [section 5.2](#52-sam-3) describes, and it is moving faster
+than anything else on this page. SAM 3 ([arXiv:2511.16719](https://arxiv.org/abs/2511.16719))
+takes a noun phrase and returns every matching instance, and its measured claim is 75
+to 80 per cent of human performance on SA-CO, a benchmark of 270,000 concepts the same
+team built. Improved [SAM 3.1](https://huggingface.co/facebook/sam3.1) checkpoints
+followed. What makes this unusual is how quickly the research result turned into
+something purchasable, because Roboflow's labelling documentation already lists SAM 3
+as a model you can select. The work still being done is on the hard half: making a
+phrase prompt behave the same way twice.
+
+The second front is size. SAM 3 holds about 860 million parameters, which is no
+candidate for a computer bolted to an arm, so a separate line of work shrinks the same
+ability. MobileSAM ([arXiv:2306.14289](https://arxiv.org/abs/2306.14289)) replaced
+SAM's heavy image encoder with a small one, and EdgeTAM
+([arXiv:2501.07256](https://arxiv.org/abs/2501.07256)) does the same for the video
+tracking that SAM 2 added, with code at
+[facebookresearch/EdgeTAM](https://github.com/facebookresearch/EdgeTAM). These are
+research results with public code rather than products, and the honest summary is that
+they trade accuracy for speed by an amount each paper states.
+
+The third front is making a mask mean something in three dimensions. A mask's value to
+a robot arm was always the depth points inside it, as
+[section 2](#2-what-goes-in-and-what-comes-out) explains, and two pieces of work push
+in that direction. SAM 2's memory carries one outline across the frames of a recording,
+so an object keeps its identity while the arm moves. Meta's
+[SAM 3D](https://ai.meta.com/sam3d/), with code at
+[facebookresearch/sam-3d-objects](https://github.com/facebookresearch/sam-3d-objects),
+estimates an object's shape from a single picture, which is the part a mask cannot
+give, because a mask stops at the silhouette. That is a research release rather than a
+product, and nobody has published a measurement of it on the kind of object a factory
+arm handles.
+
+The fourth front is the licence, and it is not a research question at all. The best
+promptable model, SAM 3, is under a bespoke SAM License with weights released only on
+an approved request. The easiest fast model, Ultralytics YOLO26-seg, is AGPL-3.0 unless
+you buy the [Enterprise licence](https://www.ultralytics.com/license), which obliges
+you to publish the source of anything you combine it with, including software you only
+run as a service. The permissive options are SAM 2 at Apache-2.0 and
+[RF-DETR-Seg](https://github.com/roboflow/rf-detr) at Apache-2.0 from Nano to Large.
+So the work here is other people making permissive models good enough that nobody has
+to read a bespoke licence, and [section 5.4](#54-rf-detr-seg) holds the measurements
+that say this is close to done.
+
+### What is still unsolved
+
+Transparent and shiny objects defeat a mask more completely than they defeat a box,
+because a mask is a claim about an edge, and glass has no reliable edge. ClearGrasp
+([arXiv:1910.02550](https://arxiv.org/abs/1910.02550)) appeared in 2019 and TransCG
+([arXiv:2202.08471](https://arxiv.org/abs/2202.08471)) in 2022, and both are still
+datasets with a baseline rather than a method anybody sells.
+[Segment anything, then keep the
+glasses](../../../08_robotics-by-example/02_many-glasses-of-one-kind/05_learned/08_segment-anything-then-keep-the-glasses.md)
+works through what this does to a real program.
+
+A mask also stops at whatever covers the object, and it has no way to say how much of
+the object is hidden. Predicting the whole of an object including its hidden part is
+called amodal segmentation, and it has been a named problem since "Amodal Instance
+Segmentation" ([arXiv:1604.08202](https://arxiv.org/abs/1604.08202)) in 2016. Recent
+work such as pix2gestalt ([arXiv:2401.14398](https://arxiv.org/abs/2401.14398))
+generates the missing part. Ten years on it is research results on datasets, and I
+know of no product that sells it. For an arm emptying a bin, this is the difference
+between planning several picks from one picture and picking the top item, taking
+another picture, and starting again.
+
+Two measurement problems are less discussed and matter just as much. The scores these
+models report reward getting most of the area right, and a gripper cares about the last
+few pixels of the boundary, so the number that goes up is not the number an arm needs;
+I have not found a published model card that reports a boundary error in pixels. And
+nobody has published a way to make a phrase prompt as repeatable as a trained class
+list, which is the single thing keeping SAM 3 out of a validated production line. That
+is a statement about what I could find rather than proof that no such work exists.
+
+### The next two to three years
+
+**I expect instance segmentation to take jobs that use boxes today, and the reason is
+the labelling cost rather than the models.** Outlines were always the better answer for
+a gripper, as [section 2](#2-what-goes-in-and-what-comes-out) argues, and the reason
+projects used boxes anyway was that tracing an outline by hand took far longer than
+dragging a rectangle. A one-click promptable tool removes most of that difference, and
+it is a product today rather than a projection, which you can check on the Roboflow and
+Label Studio pages above. This is my expectation about what teams will then choose, not
+an announcement by anybody.
+
+**I expect the phrase prompt to stay in the labelling tool and not reach the production
+line.** The reason is repeatability. An inspection station has to give the same verdict
+on the same part next month, and two reasonable wordings of one request return
+different sets of objects, which no amount of model quality fixes. So the shape I
+expect is SAM 3 or its successor labelling your pictures, and a small closed-set model
+trained on those labels running on the line. What would disprove this is a vendor
+shipping a phrase-prompted segmenter with a stated repeatability figure, which nobody
+has done.
+
+**I expect small promptable segmenters on the robot's own computer to arrive as
+products.** The reason is that the demand is specific and the research has already
+landed: a robot wants a mask on every frame, and MobileSAM and EdgeTAM show the ability
+survives being shrunk. What is missing is somebody packaging one with a stated frame
+rate on a stated board, which is engineering rather than discovery. This is a
+projection, and it is the one I hold most loosely, because the same prediction would
+have been reasonable two years ago.
+
+**I expect commercial deployments to settle on permissively licensed mask models, and
+the reason is that a licence is checkable while a benchmark needs interpreting.** SAM 3
+is the best model on this page and the hardest to ship, because its weights come only
+on an approved request and its licence is its own. YOLO26-seg is the easiest to use and
+carries AGPL-3.0. RF-DETR-Seg is Apache-2.0 and close enough in quality that the
+trade-off has mostly gone. A product team's lawyer reads the licence before the
+benchmark, so I expect the Apache-2.0 models to win the work even where the restricted
+model is better.
+
+**I expect masks to be consumed as three-dimensional information rather than as
+pictures.** The reason is in [section 2](#2-what-goes-in-and-what-comes-out): what a
+mask gives an arm is a set of depth points that all belong to one object, and the mask
+itself is only the way of selecting them. SAM 3D is a research release pointing the
+same way, by adding the hidden side that a mask cannot show. I expect grasp models to
+take shape rather than outline as their input, and I am recording that here as my own
+prediction, with no product and no date behind it.
+
+---
+
+## 7. Where to read next
 
 - The next page is [keypoints and object pose](04_keypoints-and-object-pose.md),
   which finds named points on an object and which way the object faces.

@@ -31,7 +31,8 @@ what each laboratory has released or shown, as of September 2026.
    · [5.6 OpenVLA](#56-openvla)
    · [5.7 The ones you will read about but cannot have](#57-the-ones-you-will-read-about-but-cannot-have)
    · [5.8 How to choose](#58-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -835,7 +836,209 @@ successes on your own arm.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+Forward-looking writing about robots is where invented facts collect, so every
+statement below says what kind of claim it rests on. A demonstration is a recording of
+something working once under conditions the publisher chose. A product announcement
+says something can be bought or downloaded today, which you can check, so it is worth
+the most. A research result is a measured number on a stated task. A projection is a
+statement about a date that has not arrived, and it is worth the least. The frontier
+chapter's [section on the four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything)
+explains why the difference decides everything. Where a judgement is mine rather than
+an organisation's published statement, the sentence says so.
+
+The change so far is one movement rather than a list of papers. The first VLAs were one
+laboratory's trick: take a model that already answered questions about pictures, and
+teach its output head to emit movements instead of words. That trick became the default
+way to build a general policy, and then it became infrastructure, with one library, one
+dataset format and a shelf of downloadable checkpoints. The frontier chapter counted
+the attention behind it from arXiv's own interface: abstracts in the robotics category
+containing "vision-language-action" went from 0.52 per cent in 2024 to 10.78 per cent
+in the first nine months of 2026. The hard problem moved too, from the architecture,
+which is now shared and boring, to the data and the measurement.
+
+Industry use starts with an honest summary, because it is not what the videos suggest.
+No company has published a fleet size, an uptime figure, or a count of how often a
+person had to intervene, for a VLA doing production work, and those are the three
+numbers an ordinary automation vendor publishes without being asked. What you can buy
+today is the hardware and the toolchain rather than the frontier model.
+[Universal Robots](https://www.universal-robots.com/products/ai-accelerator/) sells an
+AI Accelerator, which bundles an embedded NVIDIA Jetson Orin AGX 64 GB computer with an
+Orbbec Gemini 335Lg depth camera on its own PolyScope X software, with support for the
+Robot Operating System version 2, and its page says it is available for order. That is
+a product announcement, and the interesting part is not the specification: an
+industrial arm vendor now treats the computer a learned policy needs as a catalogue
+item. The same company's [news
+centre](https://www.universal-robots.com/about-universal-robots/news-centre/) records a
+launch with Scale AI, on 16 March 2026, of an imitation learning system called the UR
+AI Trainer. [NVIDIA's GR00T N1.7](https://huggingface.co/nvidia/GR00T-N1.7-3B) is the
+model side of the same pattern: a vendor gives weights away because it sells the
+computers they run on.
+
+The deployments with a named customer are small, and each was published by the company
+doing the deploying. [Figure](https://figure.ai/news/f-03-at-bmw) wrote on 30 June 2026
+that a Figure 03 robot is at BMW doing part sequencing, which means selecting and
+sorting parts for an assembly line, and the post describes one robot. [Dyna
+Robotics](https://www.dyna.co/research/dyna-2) reports a restaurant customer, Din Tai
+Fung, expanding from pilot sites to all of its locations, and the model behind that
+service has no released weights. [Skild AI](https://www.skild.ai/blogs/s1) says S1 is in
+commercial use and reachable only through partners and an early-access form, and its
+earlier [partnership post](https://www.skild.ai/blogs/reindustrial-revolution) names ABB
+Robotics, Universal Robots, Mobile Industrial Robots and NVIDIA, with the first two
+planning to integrate the model into their robot ranges. That post gives no date, which
+makes it a projection. [NVIDIA's post about
+Skild](https://blogs.nvidia.com/blog/skild-ai-s1-physical-ai/) relays more than 60
+deployment partnerships and a 100 million US dollar annual revenue run rate, which are
+Skild's own figures repeated by a partner rather than audited numbers.
+
+The first thing being worked on right now is force. Every model on this page outputs
+positions, joint angles or end-effector poses, and the cost shows up in the publishers'
+own numbers: Google DeepMind reports Gemini Robotics 2 succeeding 92 per cent of the
+time at unscrewing a light bulb and 36 per cent at screwing one in. Taking apart needs
+position control and putting together needs force control, so that pair of numbers is
+the clearest published measure of what is missing. Two September 2026 papers attack it.
+[CompVLA](https://arxiv.org/abs/2609.23614) has the policy predict a stiffness matrix
+alongside the motion, so the model deciding where to go also decides how hard to push.
+[ForceRFT](https://arxiv.org/abs/2609.22840) refines a trained VLA's actions using
+force-guided reinforcement learning. Both are research results rather than products.
+
+The second is size, and a dated product announcement is driving it. GR00T N1.7 wants
+16 GB or more of video memory to run and 40 GB or more to fine-tune. NVIDIA
+[announced three Jetson Thor computers on 15 July
+2026](https://blogs.nvidia.com/blog/jetson-thor-robotics-edge-ai-agent/) with physical
+hardware stated for the first quarter of 2027, and the entry-level part has 16
+gigabytes of memory, which current VLAs do not comfortably fit into. So the work is to
+make them fit. [FoldQuantVLA](https://arxiv.org/abs/2609.24433) reports four-bit
+weights and four-bit activations with speedups of 1.20 to 1.33 times. Quantisation
+means storing each number with fewer bits, which costs some accuracy.
+
+The third is where training data comes from, and it is the distinguishing work of 2026.
+GR00T N1.7 was pretrained on 20,000 hours of human video from a corpus NVIDIA calls
+EgoScale, which only works because its actions are relative to the gripper's current
+pose: three centimetres to the left means the same thing for a hand and for a gripper,
+while a target coordinate does not. Dyna Robotics reports pretraining on more than one
+million hours of first-person human video, and
+[Index](https://www.figure.ai/news/introducing-index) is Figure's phone application for
+collecting such video, with 44,000 weekly active users across 108 countries and more
+than 16 million videos reported in August 2026. The open counterpart you can download
+is [OpenWAM-α](https://github.com/OpenWAM-Official/OpenWAM), Apache-2.0 and pretrained
+on 518.5 million frames. A second strand adds practice instead of recordings: Physical
+Intelligence's π*0.6 has a teleoperator take over when the robot starts to go wrong and
+then lets it practise alone, and Skild's [physical
+self-play](https://www.skild.ai/blogs/physical-self-play) improves a policy by playing
+football against copies of itself. Neither released weights.
+
+The fourth is measurement, and it is the front a developer benefits from soonest.
+Benchmarks appeared in 20.04 per cent of robotics abstracts on arXiv in 2026 against
+15.27 per cent in 2025, so the field is building measuring instruments faster than
+methods. [LIBERO-VPro](https://arxiv.org/abs/2609.24350) tested six foundation models
+across twelve categories of visual disturbance and found something you can act on: they
+tolerate whole objects being hidden, break when the small cues at the point of contact
+are disturbed, and are badly hurt by stale or missing camera frames.
+[IndustrialVLA-Bench](https://arxiv.org/abs/2609.25562) proposes a shared reporting
+format so two laboratories' numbers can be compared, and [a survey of the embodiment
+gap](https://arxiv.org/abs/2608.18433) argues that a success rate never reveals how much
+work it took to get a model onto one robot. [LeRobot 0.6.0](https://huggingface.co/blog/lerobot-release-v060) shipped
+`lerobot-eval`, one command that runs six simulated benchmarks through a single
+harness, and [Robometer](https://huggingface.co/docs/lerobot/robometer), which scores
+progress from a video and an instruction so a machine can grade the attempts.
+
+What is unsolved begins with force, which is why that is a front and a failure at once.
+Impedance control, the settled mathematics for deciding how stiffly a joint resists
+being pushed, has existed for decades, and no released VLA exposes it. The share of
+robotics abstracts containing "dexterous" moved only from 3.64 to 4.16 per cent between
+2025 and 2026, which is not the pattern that precedes a sudden improvement. Part of the
+reason is dull: the cheap teleoperation rigs most data comes from give the operator no
+sense of touch, so they record where the arm went and not how hard it pushed. Assembly
+is most of the paid work in manipulation and it is what these models are worst at.
+
+The second unsolved problem is that none of them can refuse. A policy always emits an
+action, and no model here can say that it does not recognise this scene and will leave
+the object alone. Where doing nothing is cheaper than being wrong, you build that check
+yourself, and [uncertainty and
+confidence](../../10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md)
+is the page about it.
+
+The third is the distance between a research result and an industrial requirement. The
+strongest published numbers of 2026 are 56 per cent for Figure's Helix 2.5 across 30
+unseen homes, 53 per cent mean normalised score for Dyna-2 across 14 tasks, 66 per cent
+for Skild's S1 on unseen long tasks, and 45.7 per cent for Gemini Robotics 2 picking an
+object off the floor. A cell that runs unwatched needs a failure rate roughly a hundred
+times lower, and nothing published shows a mechanism that closes a gap that size. The
+one method that has moved a number that far, π*0.6's practice loop, adds task-specific
+practice, which is the opposite of generality.
+
+Five things follow for the next two to three years, in the order I would bet on them.
+Each is my expectation rather than anybody's announcement unless the sentence says
+otherwise, and the reason is the content.
+
+**The dataset format will keep deciding what gets adopted, more than the model will.**
+This is the safest of the five because it is already mostly true. The frontier chapter
+counted 77,598 datasets on the Hugging Face Hub carrying the [LeRobot
+tag](https://huggingface.co/datasets?other=LeRobot) in September 2026, and
+[LeRobot](https://github.com/huggingface/lerobot) implements about ten policies behind
+one dataset layout and one training script. A method that cannot read that format has an
+adoption problem unrelated to whether it works, so I expect the next VLA most people use
+to be the one that lands in that library first rather than the one with the best number.
+
+**Quantised models running on the robot's own computer will become the normal way to
+deploy one.** The dated part is a product announcement rather than my opinion: NVIDIA
+has stated Jetson Thor hardware for the first quarter of 2027, and its record of
+shipping what it announces is checkable, because GR00T N1.7, its LeRobot integration
+and [Isaac ROS
+5.0](https://blogs.nvidia.com/blog/isaac-ros-5-0-agentic-open-source-robotics/) all
+arrived. The rest is my inference from two facts that point at each other: the
+entry-level board has a fixed 16 gigabyte budget, and the work that makes a VLA fit it
+already exists. That matters to you and not only to a company, because a model that
+fits a 16 gigabyte board also fits a desktop graphics card you can afford.
+
+**Force or stiffness will become an ordinary policy output, the way the action chunk
+became ordinary.** The reason is the gap between 92 and 36 per cent in Google's own
+numbers, which points at exactly one missing output. [Action
+chunking](../../06_movement-models/02_most-used/02_action-chunking-transformers.md)
+made the same journey, from one paper to a field every policy has, because it fixed a
+visible failure anybody could reproduce. I am less confident of the pace than of the
+direction, for the two reasons above: dexterity research is barely growing, and force
+data is harder to collect than position data.
+
+**The open shelf will stay roughly a year and a half behind the frontier, and the
+vendors who sell hardware will keep it stocked.** The evidence for the lag is a release
+record rather than a forecast. Physical Intelligence published π0 and π0.5 and released
+their weights three to five months later, then published π*0.6 and π0.7 and released
+nothing, and [openpi](https://github.com/Physical-Intelligence/openpi) still carries
+checkpoints for only the first two. Figure has released neither Helix nor Index, Skild
+no weights for S1, and two of Google DeepMind's three robotics models reach
+early-access partners only. Against that, GR00T N1.7 is downloadable and
+[GigaBrain-0.7](https://huggingface.co/open-gigaai/GigaBrain-0.7-3.5B-Base) is
+Apache-2.0 on code and weights. My expectation, for a commercial reason rather than a
+technical one, is that an organisation selling computers or arms keeps giving models
+away while one selling a robot service stops. For somebody learning, that is better
+news than it sounds, because the open second tier runs on hardware you can buy.
+
+**Published evaluation will become a condition of being taken seriously, and
+regulation is the reason rather than good manners.** You cannot certify a policy you
+cannot measure. The European Union's machinery rules, [Regulation (EU)
+2023/1230](https://single-market-economy.ec.europa.eu/sectors/mechanical-engineering/machinery_en),
+apply on a mandatory basis from 20 January 2027 and cover machinery with safety
+functions that use artificial intelligence, while the rules for artificial intelligence
+embedded in regulated products under the [AI
+Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai) now
+have a transition until 2 August 2028. Both dates come from published legal texts,
+which makes them the most reliable here, and the second has already been moved once by
+a year.
+
+One expectation runs against all of that. I do not expect a general VLA to reach
+industrial reliability inside this window, for the reason in the third unsolved
+problem: the gap is about two orders of magnitude and no published mechanism closes it.
+That is my judgement rather than a reported claim, and the way to check it is to watch
+for the three numbers an automation vendor publishes without being asked, which are how
+many robots, how many hours, and how many human interventions.
+
+---
+
+## 7. Where to read next
 
 - [Foundation models and generalist
   policies](../../../03_frameworks/08_frontier/02_foundation-models.md) is the record

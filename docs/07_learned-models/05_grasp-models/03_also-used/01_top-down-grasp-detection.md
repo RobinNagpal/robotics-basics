@@ -24,7 +24,8 @@ explains the convolutional layers that this kind of model is built from.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -333,7 +334,7 @@ print(grasp.center, grasp.angle, grasp.length)   # pixel, radians, opening in pi
 The library gives you the network and the two steps around it that you would
 otherwise get wrong, which are the angle arithmetic and the peak finding. What you
 have to supply is the cropping and resizing to that exact shape, the conversion from
-the winning pixel to a gripper pose that section 6 sets out, and the cut-off on the
+the winning pixel to a gripper pose in the robot's own frame, and the cut-off on the
 quality map. That last one is a real decision, because `detect_grasps` accepts peaks
 above 0.2 by default, and a low cut-off means the model always answers even when
 nothing in the picture can be grasped.
@@ -686,7 +687,183 @@ flat table has not changed since 2020, and neither has the answer to it.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+The sections above describe a method that has stopped changing, and this section says
+what that means for the next two or three years. It was written on 4 October 2026,
+every link in it answered on that day, and where I counted something I say how, so that
+you can run the count again.
+
+Book 3's frontier chapter sorts forward-looking statements into
+[four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+and this section uses those words. A demonstration is a recording of something working
+once, under conditions the publisher chose. A product announcement says that something
+can be bought or downloaded, so you can go and check it. A research result is a measured
+number on a stated task. A projection is a statement about a date that has not arrived,
+and it is the weakest of the four. Where a sentence below is my own judgement rather
+than somebody else's claim, it says so.
+
+The arc that brought this method here was short. In 2015 a network was asked about one
+cut-out patch at a time, so covering a picture cost thousands of runs. By 2018 a network
+of the same kind painted an answer for every pixel in a single pass, and the search was
+not made faster but removed. That is the whole shape of the change, and it finished
+there, because four numbers drawn on a picture cannot describe a grasp arriving from any
+direction but straight down. Asking the next question meant changing the
+representation, and that is the
+[six-degree-of-freedom](../02_most-used/01_six-dof-grasps.md) page rather than this one.
+
+Where this method is used in industry is mostly not published, and that has to be said
+before any company is named. A vendor selling a picking cell publishes throughput,
+uptime and the kinds of item it handles, not the shape of its model's output. I looked
+for a vendor stating in its own words that it predicts grasp rectangles and did not find
+one, so the honest statement is that nobody has published it.
+
+The clearest documented line from this page to something you can buy runs through Ambi
+Robotics. The University of California, Berkeley's own licensing office
+[states](https://ipira.berkeley.edu/node/171) that the company "grew from the
+Dexterity Network (Dex-Net) project at UC Berkeley", and names Ken Goldberg and Jeff
+Mahler among its founders. Dex-Net is the work behind FC-GQ-CNN in
+[section 5.3](#53-fc-gq-cnn-the-dex-net-top-down-policy). The company's own
+[site](https://www.ambirobotics.com/) today names four products, AmbiSort A-Series,
+AmbiSort B-Series, AmbiStack and AmbiOS, which sort parcels from a bulk input flow into
+sacks and containers and stack them. Those are product announcements, because you can
+ask to buy them. What the site does not say is which representation the model inside
+uses now, so the lineage is documented and the present-day method is not. Treat it as
+history rather than as evidence that a grasp rectangle is running in a warehouse today.
+
+One fact about this method's place in industry is checkable, and it points downwards.
+Planar detection reached ordinary robot software through [MoveIt](https://moveit.ai/),
+the motion planning framework for the Robot Operating System, usually written ROS.
+[PickNik Robotics](https://picknik.ai/) published
+[deep_grasp_demo](https://github.com/PickNikRobotics/deep_grasp_demo), which wrapped
+Dex-Net's depth-picture scorer and [GPD](https://github.com/atenpas/gpd)'s point-cloud
+scorer as grasp generators inside the
+[MoveIt Task Constructor](https://github.com/moveit/moveit_task_constructor). GitHub's
+own application programming interface reports that repository as archived, with its last
+push on 12 August 2026 and 146 stars, and I read that on 4 October 2026. Archived means
+read-only, so nobody will update it for a newer MoveIt. That is a withdrawal of tooling rather than of the method, and it is the
+strongest single piece of evidence that nobody with a maintenance budget is carrying
+planar grasp detection forward.
+
+What is being worked on right now, in this exact area, is very little, and the way to
+see that is to count rather than to assert. The table below is a search of GitHub
+repository descriptions and readme files, restricted to repositories pushed to since 1
+January 2026, run on 4 October 2026. Read the left column as the phrase searched for,
+the middle as how many repositories matched, and the right as the star count of the
+most-starred match, which is the column that matters, because a count of repositories
+with no stars is a count of coursework.
+
+| Phrase in the readme, pushed to in 2026 | Repositories | Stars on the top match |
+| --- | --- | --- |
+| "grasp rectangle" | 33 | 1 |
+| "GG-CNN" | 28 | 6 |
+| "6-DoF grasp" | 221 | 19,892 |
+
+Two cautions apply before anything is read into that table. The star count in the last
+row belongs to a paper-list repository rather than to a grasp model, so that row is
+inflated by reading lists and is not a like-for-like comparison of working code. And a
+search of words is not a search of methods, so a planar model whose readme never uses
+the phrase is missed. What survives both cautions is the first two rows: new planar
+grasp code in 2026 is student work and single-author projects, and none of it has an
+audience.
+
+The repositories this page recommends tell the same story in dates. GitHub reports the
+last push to [GG-CNN](https://github.com/dougsm/ggcnn) as 21 July 2020, to
+[GR-ConvNet](https://github.com/skumra/robotic-grasping) as 9 November 2021, and to
+[gqcnn](https://github.com/BerkeleyAutomation/gqcnn) as 25 April 2024. Nobody has
+abandoned them in the sense of taking them down, and all three still have hundreds of
+stars, but nobody is developing them. The training data has not moved either. The
+[Jacquard dataset](https://jacquard.liris.cnrs.fr/) is still up and still the large one,
+the Cornell grasping dataset's original download page no longer answers, and I found no
+replacement for either.
+
+The research effort that touches this method's niche is not about the method at all. It
+is about making models small enough to run on the computer bolted to the robot, and
+Book 3's frontier chapter records both halves of that: quantisation work reporting
+four-bit weights and activations, and NVIDIA's announcement of 15 July 2026 putting new
+Jetson edge computers in
+[the first quarter of 2027](../../../03_frameworks/08_frontier/06_what-is-coming.md#22-nvidias-edge-computers-with-hardware-stated-for-the-first-quarter-of-2027)
+with 16 gigabytes of memory on the entry part. The date has not arrived, so that half
+is a projection. It matters here because the pressure it describes is the pressure this
+method was already the answer to.
+
+Three things here are still unsolved, and the first has been unsolved since 2018. The
+width map belongs to one gripper. No released planar model takes the gripper's opening
+as an input, so a gripper unlike the training gripper gets a width map that is wrong
+rather than approximate, and the only fix is retraining. The six-degree-of-freedom
+family has begun to answer this, because
+[GraspGenX](https://github.com/NVlabs/GraspGenX) takes the gripper as part of the
+question. The planar family has not answered it at all.
+
+The second is the depth camera. A planar model's only input is a depth picture, so what
+the camera cannot measure, the model cannot grasp, and shiny, transparent, thin and
+dark objects are still what a depth camera measures worst. No work on the network
+changes that, because the information is missing before the network runs.
+
+The third is measurement, and it is the one that would matter most if anybody fixed it.
+Papers on this method report how far a predicted rectangle is from a labelled rectangle
+on Cornell or Jacquard. That measures agreement with a label rather than whether an
+object was lifted, and the two come apart whenever the label set is incomplete, which
+it always is, because a mug has many good grasps and the dataset drew a few. Book 3's
+frontier chapter counts one in five robotics abstracts now mentioning a benchmark, in
+[its measured research directions](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted),
+and planar grasp detection has received none of that attention. No public benchmark for
+it states a real-robot protocol.
+
+Now for the next two to three years. Everything in the rest of this section is my
+expectation and not an announcement, and each one gives the reason, because a
+prediction without a reason is worth nothing.
+
+I expect the planar method to survive, and to survive because it is cheap and
+predictable rather than because it is advancing. The reason is a price comparison that
+does not depend on anybody's roadmap. GG-CNN is 62,420 weights and runs many times a
+second on a computer with no graphics card. Every six-degree-of-freedom model in this
+chapter needs an NVIDIA card, according to Book 3's
+[what runs without CUDA](../../../03_frameworks/02_gripping/04_models-that-grasp.md#8-what-runs-without-cuda),
+most need a segmentation model in front of them, and several carry licences you cannot
+ship. A fixed camera looking down at a flat conveyor is a problem whose geometry does
+not change from year to year, and the cheapest adequate answer to an unchanging problem
+usually stays in place. Advancing and useful are different claims, and this page is
+about a method that is the second without being the first.
+
+I expect it to stop being a model you install and become a function inside something
+larger. The reason is the archived MoveIt integration above, the absence of any
+maintained planar package to replace it, and the shape of what did ship in 2026, where
+a project like [GraspGen](https://github.com/NVlabs/GraspGen) delivers the sampler, the
+scorer and the gripper handling in one piece rather than as parts you wire together. A
+method with no packaging is still used, but it is used by people who copy a file into
+their own repository. To check this
+prediction, watch whether a planar grasp package appears in a ROS 2 distribution's
+package list. My expectation is that none does.
+
+I expect your own work on this method to be retraining rather than choosing, and the
+reason is the width map. The failure you will meet is a gripper whose opening differs
+from the training gripper's, no released model can be told about yours, and both GG-CNN
+and GR-ConvNet ship a training script that reads Jacquard. That makes retraining the
+normal path rather than the fallback. This one is easy to falsify: if a planar model
+appears that takes the gripper's geometry as an input, the paragraph is wrong, and the
+six-degree-of-freedom family has already shown that the idea works.
+
+I expect cheap edge hardware to keep the price gap open rather than close it, and the
+reason is arithmetic. Fitting a quantised vision-language-action model into 16 gigabytes
+is an achievement; a 62,420-weight convolutional network fits in any computer sold in
+the last decade. Each generation of edge hardware that makes a large model barely
+possible also makes a small model free, so the planar method's advantage is not eroded
+by hardware improving.
+
+What I do not expect is a new flagship planar model, or a planar benchmark with a
+real-robot protocol, and the reason is where the attention is. Book 3's frontier
+chapter measures vision-language-action models rising from 0.52 per cent of robotics
+abstracts in 2024 to 10.78 per cent by 23 September 2026, and 33 repositories whose best
+match has one star is not a community that produces a flagship. If I am wrong, the
+route will not be a standalone paper. It will be a per-pixel grasp head added inside a
+larger model by somebody who needs a grasp every frame and cannot afford to generate
+one, and then this method will have survived by being absorbed rather than by being
+developed.
+
+---
+
+## 7. Where to read next
 
 - [Six-degree-of-freedom grasps](../02_most-used/01_six-dof-grasps.md) removes the
     straight-down limit.

@@ -24,7 +24,8 @@ to train a model on examples.
 4. [How it works inside](#4-how-it-works-inside)
 5. [How it is trained](#5-how-it-is-trained)
 6. [Well-known models](#6-well-known-models)
-7. [Where to read next](#7-where-to-read-next)
+7. [Where this is going](#7-where-this-is-going)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -638,7 +639,176 @@ Its maker publishes neither a price nor a slip-detection delay, and a search of 
 for its name in October 2026 returns two small research repositories, the larger with
 three stars. So even the bought answer leaves you writing the software side yourself.
 
-## 7. Where to read next
+## 7. Where this is going
+
+This section is about what changes next, and it is written on 4 October 2026. It uses
+the four kinds of claim that the frameworks book sets out in [four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration worked once under conditions its publisher chose. A product
+announcement can be bought or downloaded, so you can check it, which makes it the most
+valuable kind. A research result is a measured number with a stated protocol. A
+projection is about a date that has not arrived, and it is the weakest. Where a sentence
+below is my own judgement rather than a report of somebody's claim, it says so.
+
+### 7.1 How it got here
+
+Slip detection began as a threshold on a cleaned force signal, became a classifier
+reading a window of readings, and is now being pulled inside the policy that moves the
+arm. Section 6 is that order laid out: hand-made features with a tree ensemble, then a
+small network on the raw window, then a tracker that measures the gel's printed dots,
+then a pretrained tactile backbone with a small force head bolted on. What changed in
+the last two years is not the accuracy of slip models. It is that the touch signal
+stopped being a separate module with its own threshold and started being another input
+to the same network that chooses the motion.
+
+### 7.2 Where it is used in industry today
+
+Almost nowhere as a learned model, and that is the honest summary. Force signals are in
+production on thousands of cells, and the software reading them is written mathematics
+rather than a trained model.
+
+What ships is the sensor. Bota Systems lists its MiniONE wrist force-torque sensor at
+CHF 3,045 on [its own shop](https://shop.botasys.com/shop/category/force-torque-sensors-4),
+and ATI Industrial Automation, now part of Novanta, sells
+[the ATI Varo](https://ati.novanta.com/products/varo) for humanoid robots at ±3000 N in
+x and y with a resolution of 0.29 N at 8 kHz. The sensor most collaborative cells
+actually use, the [Robotiq FT 300-S](https://www.robotiq.com/products/ft-300-force-torque-sensor),
+outputs at 100 Hz. Those are product announcements, checkable on the vendors' own pages.
+All three are used for force control and for contact thresholds, which are the methods
+this page's section 3 describes without any learning in them.
+
+The single place where slip itself is a product is Contactile's PapillArray, described
+in the frameworks book's [tactile sensing at the
+contact](../../../03_frameworks/02_gripping/02_grippers-and-hardware.md#82-tactile-sensing-at-the-contact).
+Its controller computes slip onset and a friction estimate from the raw pillar
+readings, each pillar sampled at 1,000 Hz. That is a product announcement, and it comes
+with neither a published price nor a published slip-detection latency.
+
+Touch at the fingertip became a gripper spare part in January 2026, when Robotiq
+launched its [TSF-85 tactile sensor fingertips](https://robotiq.com/tactile-sensor-fingertips):
+28 taxels in a four-by-seven grid, 1000 Hz, a force range of 0 to 225 N, and "Tested to
+over 2 million cycles", replacing the standard fingertips on the 2F-85 and 2F-140
+grippers. The same thing happened inside dexterous hands. AgiBot states "150+ tactile
+points" and a smallest force of 0.01 N for its
+[OmniHand O12](https://www.agibot.com/products/OmniHand_O12), Unitree states 33 tactile
+sensors for the [Dex3-1](https://www.unitree.com/Dex3-1), and Figure states fingertip
+sensing at about 0.03 N for [Figure 03](https://www.figure.ai/news/introducing-figure-03).
+Those are the makers' own figures on their own pages. None of them comes with a slip
+model. You buy the signal and you write the reader.
+
+### 7.3 What is being worked on right now
+
+The most active front is putting force inside the policy instead of beside it. Two
+preprints from September 2026 show the shape of it.
+[CompVLA](https://arxiv.org/abs/2609.23614) predicts a stiffness matrix alongside the
+motion, so the model that decides where to go also decides how hard to push, and
+[ForceRFT](https://arxiv.org/abs/2609.22840) refines a vision-language-action model's
+actions with force-guided reinforcement learning. Both are research results on their own
+benchmarks, and neither has released weights, so neither is something you can use today.
+The reason they matter to this page is that they attack the join described in section
+4.3, where a force model and a motion model are two separate things wired together.
+
+The second front is the tactile backbone, which is section 6.4 and section 6.5. Sparsh
+and Transferable Tactile Transformers both exist to make one pretrained model serve many
+sensors, and the open question for both is transfer to a sensor that was not in the
+training set.
+
+The third front is measuring that transfer, and it is the most useful work in the area
+because it turns an argument into a number. [A September 2026
+study](https://arxiv.org/abs/2609.08673) reports that a frozen classifier built on
+Sparsh scores **6.86 per cent** on a sensor it was not trained on, rising to 87.09 per
+cent once 10 per cent of the target sensor's data is labelled. That is a research result
+with a stated protocol, and it is the strongest published statement of how bad
+cross-sensor transfer currently is.
+
+The fourth front is the cheap force channel, and it is hardware rather than models.
+[AnySkin](https://any-skin.github.io/) and [eFlesh](https://github.com/notvenky/eFlesh)
+are magnetic skins published under the MIT licence, and a manufacturer read the files
+and now sells the parts: [WowRobo's shop](https://shop.wowrobo.com/) lists a WowSkin at
+$48 and the eFlesh magnetometer board at $25. Five magnetometers give fifteen numbers,
+which is force and shear rather than shape, and those fifteen numbers go straight into
+section 6.1 with no change to the model at all.
+
+### 7.4 What is still unsolved
+
+The limit in this area is the hardware, not the model, and that is the sentence worth
+carrying away. A gel pad is a consumable: GelSight's own product sheet for the Mini
+states a gel durability of 1,000 coin presses, with replacement gels at $57 against a
+$510 sensor. Contactile's own specification sheet says that "temperature variations can
+cause drift in sensor readings" so that "bias removal in software prior to operation is
+necessary", and that its v2.0 sensor "does not yet have ingress protection". Magnetic
+skins drift with temperature too and need re-zeroing. Every one of these sensors lives
+in the one place on a robot that gets hit thousands of times a day.
+
+Because there is no standard sensor, there is no shared dataset, and because there is no
+shared dataset there is no pretrained slip model worth the name. That chain is the whole
+problem and the 6.86 per cent above is the measurement of it. The contrast is worth
+stating plainly. Camera models have corpora everybody shares, and robot policies now
+have a default dataset layout with
+[tens of thousands of published datasets](https://huggingface.co/datasets?other=LeRobot)
+carrying it. Touch has nothing equivalent, and every model in section 6 is tied to one
+sensor family.
+
+The second unsolved thing is the ground truth. **No manufacturer in this category
+publishes a slip-detection latency**, which is the number you would most want, and
+labelling the start of slip in a recording is itself hard, because you can see that the
+object moved without knowing the millisecond at which it began to move. A field cannot
+report how fast its detectors are until it agrees what moment it is measuring from. No
+benchmark publishes that number either, so there is no way to compare any two entries in
+section 6 on the quantity that decides whether a grip is saved.
+
+### 7.5 The next two to three years
+
+Everything in this part is my expectation with a reason attached, not an announcement by
+anybody. The reason is the content, and a prediction without one is worth nothing.
+
+**Force and touch will appear as channels in the standard dataset format rather than as
+a separate module.** The reason is that the format fight is already over: one dataset
+layout has become the default way people publish robot demonstrations, adding a channel
+to a format is cheap compared with agreeing a new one, and the research in section 7.3 is
+already pushing force into the policy rather than beside it. This is the prediction that
+would most change how this page is written, because it would make slip a field in a
+recording rather than a model you train separately.
+
+**Magnetic skin will take the volume and camera-behind-gel will stay the measuring
+instrument.** The reason is a design decision rather than a manufacturing one, and
+AnySkin's own paper states it: the sensing electronics are decoupled from the sensing
+surface, so the board stays on the robot and the skin slips over it like a phone case.
+That is why a replacement is $48 rather than the price of the sensor, and it is the
+opposite of a consumable gel. The licences point the same way, because AnySkin and
+eFlesh are MIT while Sparsh is non-commercial. Gel keeps the jobs where the picture is
+the point, as the touch sensing page's section 6.1 explains.
+
+**Slip onset computed in the sensor's own firmware will spread, and it will come from
+the gripper makers rather than from the model makers.** The reason is the cycle rating.
+Robotiq published two million cycles for a tactile fingertip, which is the same order as
+a gripper's own service interval, and a vendor who can rate a part for that many cycles
+can also calibrate a threshold once in the factory and sell it with the part. Contactile
+already does the computation in its controller; what is missing is a vendor with volume.
+This is my expectation, and the thing that would confirm it is a published latency
+figure on a product page.
+
+**There will still be no pretrained slip model you can download and point at your own
+sensor.** This is the claim here I am most confident about, and it is a judgement rather
+than a report. The reason is that a pretrained model needs a standard sensor and touch
+sensing is diversifying rather than converging: every hand listed in section 7.2 has its
+own taxel count and its own layout, and a hand maker has no reason to match a rival's.
+Research attention is not arriving at the rate a breakthrough would need either. In
+submissions to the robotics category of arXiv, the share of abstracts containing
+"tactile" moved from 2.72 per cent in 2025 to 3.53 per cent in 2026 to late September,
+while "vision-language-action" went from 4.25 to 10.78 per cent over the same period.
+Those counts come from the frameworks book's
+[measured research directions](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted).
+
+**The useful thing to watch is a number, not a model.** If a maker publishes a
+slip-detection latency, or a benchmark defines the moment slip is measured from, this
+area becomes comparable and the rest follows. Until then, when somebody announces a
+tactile model that transfers across sensors, ask two questions: which sensors was it
+trained on, and how many labelled samples from your sensor does it need. The study above
+gives you the shape of the honest answer, and anyone who will not give you those two
+numbers has a demonstration rather than a product.
+
+## 8. Where to read next
 
 In this chapter:
 

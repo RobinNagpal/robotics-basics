@@ -24,7 +24,8 @@ those commands. Every new word is explained where it first appears.
 4. [Latent actions: learning actions without labels](#4-latent-actions-learning-actions-without-labels)
 5. [The gap between a hand and a gripper](#5-the-gap-between-a-hand-and-a-gripper)
 6. [Well-known models and libraries](#6-well-known-models-and-libraries)
-7. [Where to read next](#7-where-to-read-next)
+7. [Where this is going](#7-where-this-is-going)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -86,7 +87,7 @@ the encoder on human video first, with no actions at all, so that it learns what
 hands, objects and contact look like. Then you train the policy on a small number of
 robot demonstrations, starting from that encoder. For example, R3M and VC-1 are two
 encoders trained in this way, and sub-section 6.6 covers R3M. VC-1 is named here
-only to show that R3M is not the only one, and section 7 leaves it out because its
+only to show that R3M is not the only one, and section 6 leaves it out because its
 repository is Attribution-NonCommercial. The same idea is now also applied to a
 whole policy rather than only to its encoder, and GR00T N1.7 in sub-section 6.4 is
 one you can download with that pretraining already done. This route gives the
@@ -95,7 +96,7 @@ has to say anything about movement.
 
 **Track the hand and map it onto the gripper.** A **hand pose estimator** is a model
 that finds the position of each joint of a hand in a picture, and it runs on every
-frame of the video. Sub-sections 6.1 and 7.2 recommend two of these, one for live
+frame of the video. Sub-sections 6.1 and 6.2 recommend two of these, one for live
 video and one for video processed afterwards. Then a second step, called
 **retargeting**, turns the hand's motion into a motion the robot's gripper can
 make, and sub-section 6.3 recommends a library for that step. The result is a
@@ -111,7 +112,7 @@ openly published model of this kind.
 
 **Edit the video.** Some 2026 work redraws the video, so that the human hand becomes
 a robot gripper. The frontier document calls this the video-editing route, and it is
-new, so this page does not cover it further. Section 7 has no model for it either,
+new, so this page does not cover it further. Section 6 has no model for it either,
 because nothing from that route can be downloaded yet.
 
 The frontier document names three routes, which are visual pretraining,
@@ -165,7 +166,7 @@ which is the only openly published one.
 
 ## 5. The gap between a hand and a gripper
 
-The tools in section 7 all work, so the hard part is not the models themselves.
+The tools in section 6 all work, so the hard part is not the models themselves.
 Instead it is that a hand is not a gripper, and a person is not a robot. The
 frontier document names three things that human video still cannot supply, and
 this section explains each of them, then adds two more.
@@ -217,8 +218,8 @@ work.
 
 ## 6. Well-known models and libraries
 
-Section 6 described where each method is used, and this section names the tools
-people actually run, in the order of the four ways in section 3: the two hand
+Section 3 described the four ways to use human video, and this section names the
+tools people actually run, in that same order: the two hand
 trackers, then the library that turns a tracked hand into robot commands, then two
 models whose own pretraining used human video, and last the camera encoder that
 started the pretraining route.
@@ -507,7 +508,7 @@ given is the direction and distance from one tip to the other, and the
 configuration scales that by 1.5 before matching it, because a human pinch and a
 gripper opening are not the same size.
 
-What you supply yourself is the hand points, from section 6.1 or 7.2, and
+What you supply yourself is the hand points, from section 6.1 or 6.2, and
 everything about where the gripper goes, because this library sets the fingers and
 not the position of the wrist in the room. The repository's own example,
 `detect_from_video.py`, puts MediaPipe and this library together over a video
@@ -568,7 +569,7 @@ of section 5 in them. This needs the forty recordings and a fine-tuning run. The
 difference runs the other way if you have no NVIDIA card: MediaPipe and
 dex-retargeting run on a laptop, and this does not run at all.
 
-You would pick it rather than building the pipeline of sections 6.1 to 7.3
+You would pick it rather than building the pipeline of sections 6.1 to 6.3
 yourself. That pipeline gives you a few hundred retargeted demonstrations of one
 task, from one camera, with the error chain described above; this gives you a policy
 that has already watched 20,000 hours of people handling objects, which you then
@@ -655,7 +656,7 @@ videos of one task: retargeting turns those into usable demonstrations this week
 where LAPA's first stage learned its codes from a quantity of video that thirty
 clips do not approach.
 
-You would pick it rather than the retargeting route of sections 6.1 to 7.3 when
+You would pick it rather than the retargeting route of sections 6.1 to 6.3 when
 the video has no usable hand in it. Retargeting needs a visible hand, a depth
 estimate and a calibrated camera, and it fails on video that has none of them.
 LAPA needs only pairs of frames, so it can use video where the hand is out of
@@ -700,7 +701,7 @@ Size s, a laptop, MIT for the code and the weights.
 R3M is a camera encoder trained on Ego4D, a large collection of first-person video
 of people doing everyday tasks, and it was trained so that its output follows how
 a task unfolds over time and matches the words that describe the video. The models of sections 6.4 and
-7.5 now do that for a whole policy rather than for the encoder alone, which is why
+6.5 now do that for a whole policy rather than for the encoder alone, which is why
 this one is historical and not current.
 
 The one idea is the modest one, and it is the reason this page lists R3M first
@@ -811,7 +812,196 @@ terms on the part you actually run.
 
 ---
 
-## 7. Where to read next
+## 7. Where this is going
+
+Section 6 named the tools that exist today, and this section says where this kind
+of model is heading. This is the area where the strongest claims in the chapter are
+made, so each statement below says what kind of claim it rests on, using the four
+kinds the frontier chapter
+[sets out](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+and where a judgement is mine rather than somebody's claim the sentence says so.
+
+### 7.1 How it got here
+
+For years this was a pretraining trick. You trained a camera encoder on human
+video, as R3M did in sub-section 6.6, and then collected robot demonstrations for
+everything that actually mattered. The change since then is that human video now
+supplies the bulk of the training in several published systems, with robot data
+reduced to a small alignment step at the end. Whether that is the right order is
+still being argued, and the rest of this section is about that argument.
+
+### 7.2 Where it is used in industry today
+
+Separating what is sold from what is shown matters more here than anywhere else
+on this page, so start with the distinction. No robot you can buy is sold on the
+strength of having learned from human video. What you can obtain are the capture
+tools, some corpora, and one pretrained policy.
+
+The policy is [GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T), from sub-section
+6.4. Its pretraining included 20,000 hours of human video from a corpus NVIDIA
+calls EgoScale, and the [weights are on the Hugging Face
+Hub](https://huggingface.co/nvidia/GR00T-N1.7-3B) under the NVIDIA Open Model
+License. That is a product announcement in the only sense this page cares about:
+you can fetch it and run it. [EgoDex](https://arxiv.org/abs/2505.11709) from Apple
+is 829 hours of first-person video across 194 tabletop tasks with paired
+three-dimensional hand and finger tracking, recorded with Apple Vision Pro, and it
+is [publicly downloadable](https://github.com/apple/ml-egodex). Meta's [Project
+Aria](https://www.projectaria.com/) supplies research glasses, which its own page
+says are used by Meta and over 200 academic and corporate partners, through an
+application for a research kit rather than a purchase. That is a shipped programme
+you have to be accepted into, not hardware you can buy.
+
+The largest claims in this area come from companies whose evidence is a
+demonstration rather than a product, and the difference is worth holding on to as
+you read them. Figure's
+[Index](https://www.figure.ai/news/introducing-index) is the exception that is
+genuinely a product: a phone app anybody can install and contribute video to. The
+company reports 44,000 weekly active users across 108 countries, more than 16
+million videos uploaded, and an intake of 30 minutes of video every second, along
+with a diversity measure of 373 unique tasks, 1,146 objects and 116 environments
+per 1,000 hours collected. The app is shipped and the corpus is not published. The
+model trained on it,
+[Helix 2.5](https://www.figure.ai/news/helix-2-5-zero-shot-30-home-generalization),
+reports 56 per cent success on three long tasks in 30 homes where no data was
+collected, against 9 per cent for the same model trained from scratch, scored with
+no partial credit. That is a demonstration with company-reported numbers and no
+released artefact.
+
+[Dyna-2](https://www.dyna.co/research/dyna-2), from Dyna Robotics in August 2026,
+is the other one worth knowing. The company says it was pretrained on more than one
+million hours of first-person human video, and reports a mean normalised score
+across 14 manipulation tasks rising from 20 to 28 to 45 to 53 per cent as that
+pretraining grows from one thousand to one million hours. Nothing is released: no
+weights, no code, no dataset. The frontier chapter
+[records the detail and the separate commercial deployment claim](../../../03_frameworks/08_frontier/02_foundation-models.md#8-dyna-robotics-and-the-million-hour-scaling-law),
+and the deployment is the one part of it a customer could in principle confirm.
+[Skild's S1](https://www.skild.ai/blogs/s1) belongs in the same column: in
+commercial use, and not obtainable by you.
+
+### 7.3 What is being worked on right now
+
+The result that moved the argument is
+[HumanScale](https://arxiv.org/abs/2606.20521), from 18 June 2026. Holding the
+amount of pretraining data fixed and the later training fixed, a model pretrained
+on first-person human video beat the same model pretrained on teleoperated
+real-robot trajectories: 24 per cent lower validation loss on predicting robot
+actions, 52.5 per cent higher success on tasks like those it trained on, and 90
+per cent higher on tasks unlike them. The contribution the paper claims is not an
+architecture but a filtering and labelling pipeline applied before pretraining.
+That is a research result and it had not been independently replicated at the time
+of writing, which is the single most important qualification in this section.
+
+The engineering front is turning human video into something a policy can train on
+at scale, and the two largest efforts take the two routes section 3 named.
+[HuRo](https://arxiv.org/abs/2609.10706), September 2026, takes the retargeting
+route and publishes about 630,000 robotized episodes and 142 million processed
+frames drawn from five human-video sources; raising the amount of that video lifted
+completion on four real tasks from 51.5 to 80.3 per cent, and completion under
+visual and spatial change from 34.9 to 72.2 per cent.
+[RoboEdit](https://arxiv.org/abs/2608.18948), August 2026, takes the editing route
+and rewrites video so the hand becomes a robot, producing 174,000 aligned pairs
+across seven robot bodies. Both are research results with no obtainable dataset at
+the time of writing, so neither is something you can build on yet.
+
+The more interesting work is the work that admits the labels are wrong.
+[ACE-Ego-0](https://arxiv.org/abs/2606.17200) trains on 4,530 hours of robot and
+simulated data together with 1,480 hours of human video converted to invented
+actions, and weights the human examples down where they are least trustworthy. The
+method is built around the knowledge that its own human labels are unreliable, and
+that is an unusually honest piece of design. [UMI-Bridge](https://arxiv.org/abs/2609.18232)
+goes further and removes the uncertainty instead of modelling it: it uses a handheld
+gripper as a translator between human video and robot data, aligning them by what
+the action is rather than by what the pixels look like, and reports 91.7 per cent
+mean success against 73.3 for naively mixing human and robot data, while matching a
+robot-only baseline with a quarter of the robot demonstrations.
+
+Two things sit beside that work. The field now has a current survey, [Robot
+Learning from Human Videos](https://arxiv.org/abs/2604.27621) from April 2026. And
+its own evidence disagrees with itself: HumanScale argues human video is the better
+pretraining source, while [PrimeBot](https://arxiv.org/abs/2609.03591) in September
+2026 reports that more teleoperated robot data keeps paying off where a 2024
+scaling law said it saturates. Both are research results and they cannot both be
+the general case.
+
+### 7.4 What is still unsolved
+
+The five gaps in section 5 all survive the 2026 results, and nothing has been done
+about the missing force at all. Nothing in HumanScale, HuRo, RoboEdit or Dyna-2
+recovers how hard a hand pressed, because that information was never recorded. So the tasks this page can
+help with are still the tasks where position is the whole problem, and pushing a
+plug into a socket is still not one of them.
+
+The hand-to-gripper gap has been worked around rather than closed. Every pipeline
+either filters out the multi-finger behaviour, as HumanScale's does, or down-weights
+it, as ACE-Ego-0's does, or sidesteps it by changing the recording device, as
+UMI-Bridge does. Nobody has published a method that converts five-finger
+manipulation into two-finger manipulation without throwing most of it away, and I
+would be surprised if one existed, because the information really is absent.
+
+The third problem is about evidence rather than about robots. Every headline number
+in sub-section 7.2 was produced and published by the organisation that benefits
+from it, on tasks it chose, with nothing released for anybody to check. Figure,
+Dyna Robotics and Skild have each published a strong result and no artefact. That
+is not an accusation of dishonesty, it is a statement about what you can verify,
+which is nothing. Notice also that the two claims you can check, GR00T N1.7's
+weights and the Index app, are far more modest than the claims you cannot.
+
+### 7.5 The next two to three years
+
+Everything in this sub-section is my own expectation unless the sentence names
+somebody else's commitment.
+
+I expect human video to become the default pretraining source, with robot data kept
+as a small alignment step, and the reason is that three groups working separately
+have now reported the same shape of result. HumanScale reports it as a controlled
+comparison, Dyna-2 reports a scaling law across the gap between a human and a robot,
+and Figure reports a scaling law accurate enough to predict a training run's loss
+before paying for it. Any one of those could be a selection effect. Three results
+pointing the same way, with different data and different robots, are the kind of
+agreement that usually comes before a change in common practice. I am confident
+about the
+direction and not about the timing, and none of the three has promised a date.
+
+I expect the handheld gripper to beat bare-hand video for anything you actually
+ship, and this is the prediction I would act on myself. It removes the
+hand-to-gripper gap instead of modelling it, and UMI-Bridge has measured what that
+is worth. [Grabette](https://huggingface.co/blog/grabette) is a €490 handheld
+recorder that writes a standard LeRobot dataset, so the data arrives in the format
+your training code already reads. Bare-hand video stays the right answer for
+pretraining, where quantity matters more than fidelity, and the wrong answer for
+the fifty demonstrations of your own task.
+
+I expect robotized video corpora to become a download category of their own, and the
+reason is mechanical rather than scientific. HuRo and RoboEdit are pipelines, not
+models, and a pipeline's output is a set of files that somebody else can host and
+train on. The Hugging Face Hub already distributes robot datasets, and
+[LeRobot](https://github.com/huggingface/lerobot) already reads them. Nobody has
+announced such a release, so this is my expectation about how published pipelines
+usually end up, not news.
+
+I expect more of any human video corpus to become usable as robot hands gain
+fingers, and the reason is the filter. A pipeline today discards the frames where a
+person used three fingers, a wrist roll or the other hand, and the frontier
+chapter's [section on multi-finger
+hands](../../../03_frameworks/08_frontier/05_hardware.md#53-multi-finger-hands-became-genuinely-affordable)
+records five-finger hands priced from $4,420 down to parts costing under €200. A
+robot with fingers throws away less. I hold this loosely for the reason that same
+section gives: the cheap hands publish no payload, so they are research instruments
+rather than a way to pick things up.
+
+Last, I expect somebody to publish a benchmark that measures what an hour of human
+video is worth against an hour of teleoperation, and the reason is that the
+contradiction in sub-section 7.3 cannot be settled any other way. HumanScale and
+PrimeBot disagree, both honestly, and the existing shared evaluations — RoboArena,
+RoboChallenge and the ones the
+[frontier chapter lists](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#9-what-is-being-done-about-evaluation)
+— compare policies rather than data sources. Until one exists, the sensible position
+is the one this page already takes: use human video for the pretraining, collect your
+own data for the task, and do not believe a number you cannot download.
+
+---
+
+## 8. Where to read next
 
 This is the last page of the chapter, so the reading below either closes the
 thread that ran through it or opens the chapters that build on it.

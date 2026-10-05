@@ -35,7 +35,8 @@ here.
    · [6.4 MBPO, the model as extra practice](#64-mbpo-the-model-as-extra-practice)
    · [6.5 PILCO, a Gaussian process model](#65-pilco-a-gaussian-process-model)
    · [6.6 How to choose](#66-how-to-choose)
-7. [Where to read next](#7-where-to-read-next)
+7. [Where this is going](#7-where-this-is-going)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -951,7 +952,194 @@ then plans exactly as 6.1 does.
 
 ---
 
-## 7. Where to read next
+## 7. Where this is going
+
+Everything above describes what you can build today. This section is about where
+this kind of model is heading, which is a less reliable kind of writing, so it
+follows the rule that Book 3's
+[what is coming](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything)
+sets out. The rule is to say what kind of claim each statement rests on. A
+demonstration is a recording of something working once, under conditions the
+publisher chose. A product announcement says a thing can be bought or downloaded,
+so you can go and check, which makes it the most useful kind. A research result is
+a measured number on a stated task. A projection is about a date that has not
+arrived, and it is the weakest. Where a judgement below is mine, the sentence says
+so.
+
+This kind of model began as the answer to a shortage of real attempts. PILCO in
+2011 and PETS in 2018, both research results, made the same argument: learn a
+model of the thing you are controlling and you need far fewer tries on the real
+machine. Then large policies trained by copying people arrived, the field's
+attention moved to them, and learning a dynamics model stopped being the main road
+to a working arm. What survived is narrower and more useful than what was
+promised: the small model you train yourself in an afternoon, and the residual
+model of [section 5](#5-learning-only-the-part-physics-gets-wrong-residual-models),
+which keeps the physics you already have and learns only its error. The direction
+of travel has been away from learning the whole world and towards learning the
+part a formula gets wrong.
+
+Industrial use needs one honest sentence first. I could not find a robot arm
+product from any vendor that plans through a learned dynamics model, and no arm
+manufacturer has published one.
+
+The clearest documented deployment of this page's recipe is not a robot at all.
+Google DeepMind described its data centre cooling controller in a post of
+[17 August 2018](https://deepmind.google/discover/blog/safety-first-ai-for-autonomous-data-centre-cooling-and-industrial-control/),
+and the mechanism is the one [section 3](#3-how-it-works-inside) describes. The
+post says that every five minutes the system feeds a snapshot from thousands of
+sensors into "our deep neural networks, which predict how different combinations
+of potential actions will affect future energy consumption", and then picks the
+action that uses least energy while meeting safety constraints. It also says that
+"actions with low confidence are eliminated from consideration", which is the
+ensemble idea of [section 6.1](#61-an-ensemble-of-small-networks-the-pets-way)
+doing a safety job. The claimed saving rose from 12 per cent at launch to about 30
+per cent over nine months, which is Google's own figure on Google's own blog, so
+read it as a company claim.
+
+The hybrid shape of [section 6.2](#62-a-physics-formula-plus-a-learned-correction)
+is sold as a product, also outside robotics. AspenTech's
+[Aspen Hybrid Models](https://solutions.aspentech.com/en/solutions/aspen-hybrid-models)
+"combine the capabilities of first principles models, domain expertise and AI",
+fitted to plant data, for chemical and refining processes. That is a product
+announcement. It is worth naming because it is the one place where keeping the
+formula and learning only the correction became something a company buys, and the
+reason is instructive. A refinery has a formula worth keeping and years of logged
+measurements, which is exactly the condition section 6.2 asks for and exactly what
+a robot arm on a new table lacks.
+
+Inside robotics, what shipped is tooling rather than deployments.
+[MBRL-Lib](https://github.com/facebookresearch/mbrl-lib) under MIT and the
+[TD-MPC2](https://github.com/nicklashansen/tdmpc2) checkpoints are downloads you
+can check today, and the optimiser half comes from general libraries such as
+[acados](https://github.com/acados/acados) and
+[do-mpc](https://www.do-mpc.com/). Meanwhile the robot learning stack that did
+reach wide use, [LeRobot](https://github.com/huggingface/lerobot), ships policies.
+Its [version 0.6.0 of 6 July 2026](https://huggingface.co/blog/lerobot-release-v060)
+added world models, but as a training-time signal rather than as something a
+planner searches through, which Book 3's
+[simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#44-world-models-that-actually-shipped-inside-policies)
+records with its sources. The industry's answer so far is a policy, not a plan.
+
+The first thing being worked on now is fitting a simulator instead of replacing
+it. RialTo, published in 2024 by groups at MIT, the University of Washington and
+TU Darmstadt, scans a real scene into a simulator, trains in the copy, and puts
+the result back on the arm. Its [project page](https://real-to-sim-to-real.github.io/RialTo/)
+reports an increase of over 67 per cent in policy robustness against imitation
+learning baselines, and the
+[code is published](https://github.com/real-to-sim-to-real/RialToPolicyLearning),
+so this is a research result with a download attached. It is a live front rather
+than a side road because a model learned from scratch has to learn the shape of
+your table and your cube along with their physics, and a scan hands over the shape
+for nothing.
+
+The second is that the physics half of this page is improving faster than the
+learned half. Book 3's
+[list of what happened after May 2026](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#10-everything-that-happened-after-may-2026-in-one-list)
+records eleven [MuJoCo](https://github.com/google-deepmind/mujoco) releases in the
+eight months to September 2026, several of which changed the physics itself,
+including contact adhesion in version 3.11.0 and penetration-free flex contact in
+3.14.0 on 22 September 2026. The same list records
+[MuJoCo Warp](https://github.com/google-deepmind/mujoco_warp),
+[Newton](https://github.com/newton-physics/newton) and Isaac Lab 3.0 converging on
+one architecture, a compiled physics core with solvers that can be swapped above
+it. Those are product announcements, each checkable in a release note. The
+consequence is my own reading: every contact feature added to a simulator shrinks
+the residual that section 6.2 has to learn, so the hybrid method gets stronger
+without anybody working on learning at all.
+
+The third is the scoring half, which this page has taken for granted.
+[Section 3](#3-how-it-works-inside) plans by scoring imagined futures, and on a
+real arm nobody has a score. LeRobot 0.6.0 added reward models in July 2026, and a
+reward model is a network that judges whether an attempt is going well. Those are
+downloads, so this is a product announcement rather than a promise. I think it
+matters more than a better dynamics model would, because a planner with a good
+model and no cost function cannot plan at all, while one with a rough model and a
+real score can.
+
+The fourth is scale, and it is mostly leaving this page. Book 3's
+[measured count of research attention](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted)
+shows abstracts in arXiv's robotics category mentioning "world model" rising from
+2.39 per cent in 2025 to 5.48 per cent in the first nine months of 2026. Almost
+all of that growth is in latent and video models rather than in the state-vector
+models here, and TD-MPC2 in [section 6.3](#63-td-mpc2) already works that way, in
+a learned latent space rather than on measured numbers.
+[Latent world models](../03_also-used/03_latent-world-models.md) is where the work
+has gone.
+
+What is still unsolved begins with contact. A learned dynamics model is accurate
+while the arm moves through air and wrong at the moment the gripper touches
+something, and that moment is the task. Rolling the model forward multiplies the
+error, which section 3 explains, and nobody has published a learned model you can
+trust through a contact event on a real arm. The interesting part is where the
+2026 effort to fix it comes from: better contact solvers inside simulators, as the
+MuJoCo releases above show, rather than better learning. That is the strongest
+available evidence that the years since PETS did not solve contact by learning
+it.
+
+The second unsolved problem is that there is no agreed measurement. I looked for a
+benchmark reporting how accurately a dynamics model predicts real contact data,
+and found none that papers report against. Book 3 records a related finding:
+RoboTwin-Phys, a paper of 22 September 2026 with no artefact attached, argues that
+existing robot benchmarks vary how a scene looks but not how it behaves. Without a
+measurement you cannot compare section 6.1 with section 6.2 except on your own
+arm.
+
+The third is the state itself. Somebody has to decide which numbers are the state
+and then measure them, for every new task, and no model progress removes that
+step. It is why this category stays small while methods that read pixels grow.
+
+The rest of this section is my expectation, with the reason stated, and none of it
+is anybody's announcement.
+
+I expect the residual model, sitting on top of one of those fast simulators, to
+become the default, and the network trained from scratch to become the fallback
+rather than the starting point. The reason is the pairing of the two trends above. Simulator
+contact is improving every month, in a shared compiled core that MuJoCo, Newton
+and Isaac Lab will all use, while learning contact from scratch has not visibly
+improved in years. When the formula half gets better and cheaper and the learned
+half does not, the method that keeps the formula wins. What would change my mind
+is a published result where a model learned from scratch beats a fitted simulator
+on a contact task on real hardware.
+
+I expect scanning the scene to become a normal first step before any of this,
+because the geometry half is now a web service. World Labs made
+[Marble](https://www.worldlabs.ai/blog/marble-world-model) generally available on
+12 November 2025, and its post says it produces 3D worlds exportable as Gaussian
+splats, meshes or video. That is a product announcement you can test by signing
+up. A mesh of your actual table plus one friction number fitted from a few
+recorded pushes gives you most of what the network in section 6.1 was being asked
+to learn, and gives it before the first push.
+
+I do not expect this category to get a foundation model you download, and this is
+the prediction I hold most firmly. The reason is the interface.
+Vision-language-action models can be shared across robots because pixels and
+sentences are a shared interface. A state vector is not, because "three numbers
+for the cube and seven joint angles" means something different on every robot and
+in every task. The only published attempt to standardise it is Cosmos 3's fixed
+per-robot action layouts, described in
+[section 5.1 of the next page](../03_also-used/01_video-prediction-models.md#51-cosmos-3),
+and it works by listing robots one at a time, which will not include yours. The
+practical consequence is good news: expect to keep training your own model, which
+is still the cheapest thing in this chapter.
+
+I expect planning through a model to reach real arms through the reward model
+rather than through a better dynamics model. The reason is which half is missing.
+The dynamics half is already accurate enough over the half-second horizon that model
+predictive control actually uses, as section 6.1 shows on pushing tasks. The score
+is what nobody had, and the score is what became downloadable in July 2026.
+
+Against all of that runs one force I expect to keep winning. Industry keeps
+choosing policies, because a policy needs no state estimate, no cost function and
+no planner. So I expect the methods on this page to stay a specialist tool,
+strongest where attempts are slow or expensive and the state is genuinely
+measurable: laboratories, test rigs and single-task cells. The one event that
+would change that picture is an arm vendor shipping learned payload and friction
+compensation inside a controller and documenting it, and as of October 2026 I know
+of none.
+
+---
+
+## 8. Where to read next
 
 - The [next page](../03_also-used/01_video-prediction-models.md) covers video prediction models,
   which predict whole camera pictures instead of a few numbers.

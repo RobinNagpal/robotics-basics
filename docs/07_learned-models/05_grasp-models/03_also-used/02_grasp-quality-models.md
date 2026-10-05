@@ -26,7 +26,8 @@ explains the training loop that this page relies on.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -727,7 +728,186 @@ candidates before you spend it comparing scorers.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+The models in section 5 span 2017 to 2025, and the interesting thing about that span is
+not that the networks got better. It is that the scorer stopped being a thing of its
+own. This section says where that leaves the family. It was written on 4 October 2026,
+every link in it answered on that day, and the repository dates and star counts were
+read from GitHub's own application programming interface on that day.
+
+Book 3's frontier chapter sorts forward-looking statements into
+[four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+and this section uses those words. A demonstration is a recording of something working
+once under conditions the publisher chose. A product announcement says something can be
+bought or downloaded, so you can check it. A research result is a measured number on a
+stated task. A projection is a statement about a date that has not arrived, and it is
+the weakest. Where a sentence below is my own judgement, it says so.
+
+The shape of the change is one step repeated, and each step moved the scorer closer to
+whatever proposes the grasps. GQ-CNN was handed a 96 by 96 depth patch that ordinary
+code had cut out and rotated. GPD was handed the points between the jaws, which is less
+preparation and more information, and it brought its own sampler. PointNetGPD read those
+points as points instead of drawing them as a picture. GraspGen then removed the last
+gap by training the scorer beside the generator that would feed it. Read in that order,
+the family did not improve so much as dissolve into the thing above it.
+
+Where these models are used in industry is largely unpublished. A vendor selling a
+picking cell publishes picks per hour and the kinds of item it handles, not whether a
+learned scorer sits in its pipeline, and I found no vendor saying either way.
+
+The clearest documented line from section 5 to something you can buy runs through Ambi
+Robotics. The University of California, Berkeley's own licensing office
+[states](https://ipira.berkeley.edu/node/171) that the company "grew from the Dexterity
+Network (Dex-Net) project at UC Berkeley", and names Ken Goldberg and Jeff Mahler among
+its founders, which are the names on GQ-CNN. Its own
+[site](https://www.ambirobotics.com/) today sells AmbiSort and AmbiStack, which sort
+parcels from a bulk input flow and stack them. Those are product announcements, but the
+site does not say what is in the model now.
+
+Two facts about tooling are checkable. The first is that the supported path from a Robot
+Operating System application to a learned grasp scorer has lost its maintainer. [PickNik
+Robotics](https://picknik.ai/) published
+[deep_grasp_demo](https://github.com/PickNikRobotics/deep_grasp_demo), which wrapped
+both GPD's point-cloud scorer and Dex-Net's depth-picture scorer as grasp generators
+inside the
+[MoveIt Task Constructor](https://github.com/moveit/moveit_task_constructor), and GitHub
+reports it as archived with its last push on 12 August 2026 and 146 stars. Archived
+means read-only. The second is that what you
+can obtain today is a scorer inside a generator rather than one on its own.
+[AnyGrasp's software development kit](https://github.com/graspnet/anygrasp_sdk) is the
+strongest and the least free: its readme states that "due to the IP issue, currently we
+can only release the SDK library file of AnyGrasp in a licensed manner", and you apply
+with your machine's feature identifier. The
+[six-degree-of-freedom](../02_most-used/01_six-dof-grasps.md) page covers it.
+
+One named industry claim is worth reading carefully, because it shows how far a
+demonstration can travel. On 6 May 2024 NVIDIA
+[published a post](https://blogs.nvidia.com/blog/alphabet-intrinsic-robotics-isaac-manipulator/)
+about its collaboration with [Intrinsic](https://intrinsic.ai/), the robotics software
+company owned by Alphabet, saying the work "demonstrates the potential for a universally
+applicable
+robotic-grasping skill to work across grippers, environments and objects", and quoting
+Intrinsic's chief executive Wendy Tan White. Nothing in that post was for sale or for
+download, and the sentence contains the word "potential". My own reading, two and a half
+years later, is that the thing which did ship across grippers came from NVIDIA Research
+rather than from that collaboration, and it is two paragraphs below.
+
+What is being worked on right now has four live threads, and the first is the centre of
+the other three: the scorer as a discriminator trained beside a generator. GraspGen
+states that recipe as its own contribution in the
+[paper](https://arxiv.org/abs/2507.13097), and
+[section 5.4](#54-graspgens-discriminator-the-modern-scorer-inside-a-generator)
+describes how it works. The part to watch is that the recipe is published and the code
+is not. Its [readme](https://github.com/NVlabs/GraspGen) says plainly that "on-generator
+training is not released for the discriminator training (yet)", and that it will arrive
+with the data generation repository. So the idea this family is currently organised
+around is a research result you can read and cannot run, and whether that changes is
+checkable by reading one line of one readme.
+
+The second live thread is scoring that takes the gripper as an input.
+[GraspGenX](https://github.com/NVlabs/GraspGenX) is the released attempt: its readme
+states that the published model was "trained with a large-scale simulated grasp dataset,
+spanning over 2 billion grasps computed across 32 procedurally generated grippers", and
+claims it generalises to real grippers it never saw. That claim is a research result and
+I have not measured it. It matters more for a scorer than for a generator, because a
+score is a probability about one specific pair of jaws closing on one specific shape, so
+a scorer trained for a Franka Hand answers a different question from the one you asked
+when your gripper is a Robotiq. GQ-CNN could not be told, and GraspGen's readme says it
+supports three grippers.
+
+The third is a quieter change in what the scorer is for. GraspGenX's documentation
+describes its candidates as grasps sampled by diffusion combined with grasps from
+oriented bounding boxes, "all scored by the discriminator". The generator is no longer
+the only source of candidates, and the discriminator is what makes a mixed set
+comparable, because a geometric candidate and a diffusion candidate have no common score
+until one model gives them one. My reading is that this gives the scorer back an
+independent job: not a package you install, but the component that lets a system combine
+a learned sampler with a geometric one. The warning in
+[section 5.6](#56-how-to-choose) that the sampler decides more than the scorer is why
+that job is worth having.
+
+The fourth is happening outside grasping and is the one I would watch hardest. Book 3's
+frontier chapter records that
+[LeRobot 0.6.0](../../../03_frameworks/08_frontier/06_what-is-coming.md#23-lerobot-which-now-releases-on-a-predictable-rhythm),
+on 6 July 2026, added two reward models as downloadable policies. A reward model scores
+whether an attempt is going well, and a grasp quality model scores whether one grasp will
+hold, so the second is the first with a horizon of one step. I could find no released
+model that does both jobs from one set of weights, and that absence is the interesting
+part.
+
+Three things are still unsolved, and the first will affect you on your first day. A
+score is not calibrated. A 0.8 from any model on this page is not a claim that eight in
+ten such grasps hold, and I found no published curve relating a learned grasp score to
+measured success across a stated object set. That is why every interface here makes you
+choose a threshold yourself, including GraspGen's `grasp_threshold`, and why the only
+honest way to set one is to try grasps on your own objects and count.
+
+The second is that labels made in simulation depend on a contact model nobody has fixed.
+Section 4 describes the cheap route to labels, and Book 3's frontier chapter is blunt
+about what that physics rests on: the friction coefficient, the surface compliance and
+the stiffness of a rubber pad are
+[still numbers somebody typed in](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#54-what-still-does-not-transfer),
+and the same chapter concludes that simulation tells you whether your reasoning is right
+rather than whether your grasp will hold. So the limit on the cheap route is the
+simulator rather than the network or the amount of data.
+[Section 5.5](#55-qt-opt-what-real-robot-labels-cost) measured what avoiding it costs,
+and nobody has repeated that measurement.
+
+The third is that no released scorer takes a constraint. You cannot ask whether a grasp
+leaves the handle free, or whether it suits pouring rather than lifting. The argument
+this page makes for scorers over map painters is that you may hand them your own
+candidates, which is a weaker version of the same need: you choose where to look, but
+not what for.
+
+Now for the next two to three years. Everything below is my expectation rather than an
+announcement, and each one gives its reason, because a prediction without a reason is
+noise.
+
+I expect standalone scorers to stop being released, and scoring to ship as a component
+of something larger. The reason is the record. The last new standalone scorer in section
+5 is PointNetGPD from 2019, last pushed on 30 May 2025; GPD's last push was 31 January
+2022; the one integration that packaged either of them for application developers is
+archived; and the two most recent releases in this area, GraspGen and GraspGenX, are
+both generators with a discriminator inside. A new standalone scorer with a permissive
+licence and a maintainer would show me wrong.
+
+I expect on-generator training to become the default recipe for any scorer that is
+trained at all, because it fixes a defect no amount of extra data can fix. A scorer
+trained on a sampler's candidates and then asked about a generator's candidates is
+answering about grasps it never studied, and that mismatch is structural rather than a
+shortage. Training the scorer on the generator's own output removes it by construction.
+The mechanism is a research result in GraspGen's paper. The timing is a projection, and
+a weak one, because NVIDIA has said the code is coming and has given no date.
+
+I expect a scorer that does not take the gripper as an input to start looking obsolete,
+in the way a network with a hard-coded image size looks obsolete now. The alternative has
+become expensive to maintain: one checkpoint per gripper means a new training run for
+every customer's hardware, GraspGen's readme already redirects you to GraspGenX for any
+gripper beyond its three, and the advice this page records for a mismatched gripper,
+which is to reuse the nearest model and shift the grasp along the approach direction, is
+a guess rather than a calibration.
+
+I expect the grasp scorer and the reward model used for policy learning to converge, and
+this is the prediction I am least sure of. Both answer "will this go well", both are
+trained in simulation at large scale, and a policy that can judge its own attempt is the
+missing piece in every method that learns by practising, which is the reading Book 3's
+frontier chapter gives of reward models arriving in LeRobot. The reason to doubt it is
+that a grasp score is about one closing of two jaws while a reward model is about a
+sequence. The checkable sign would be a released checkpoint used both to rank grasp
+candidates and to score policy rollouts.
+
+I expect the physics formulas not to go away, which is the least exciting prediction here
+and the most reliable. When you have the object's mesh and its pose, Book 3's
+[computable quality metrics](../../../03_frameworks/02_gripping/03_choosing-a-grip.md#9-grasp-quality-metrics-you-can-compute)
+are exact and cost nothing, and a learned scorer trained on simulated labels is at best
+an approximation of them seen through a camera. What I do not expect is a calibrated
+score, because calibrating one means real attempts at the scale section 5.5 priced, and
+nobody has an incentive to publish a curve that turns their 0.9 into a 0.6.
+
+---
+
+## 7. Where to read next
 
 - [Six-degree-of-freedom grasps](../02_most-used/01_six-dof-grasps.md) covers the
     generators that most quality models are paired with today.

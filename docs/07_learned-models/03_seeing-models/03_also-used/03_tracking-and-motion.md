@@ -22,7 +22,8 @@ three kinds of model: optical flow, point tracking and object tracking.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -776,7 +777,208 @@ follows an object's six-number pose from frame to frame.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about what to expect from tracking next. The honest summary is
+that tracking several boxes through a video is mostly solved engineering, and
+the interesting movement is slow and in one direction: towards methods you point
+at or describe in words instead of methods you train.
+
+Everything below is labelled by what kind of claim it is, using the four kinds
+that Book 3 sets out in [four kinds of claim, and why the difference decides
+everything](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration shows something working once, a product announcement says
+something can be bought or downloaded, a research result is a measured number
+under a stated protocol, and a projection is a statement about a date that has
+not arrived. Product announcements carry the most weight because you can check
+them, and projections the least. Where I give my own judgement the sentence says
+so, and every link below was checked on 4 October 2026.
+
+### 6.1 How it got here
+
+The shape of the change is that tracking kept getting easier because detection
+kept getting better. When detectors were unreliable, a tracker had to do most of
+the work itself, predicting where an object would be and recognising it again,
+and the methods were elaborate. Once a detector found the objects in nearly
+every frame, all that was left was matching this frame's boxes to the last
+frame's boxes, which is the small amount of arithmetic that [section
+5.2](#52-sort-the-one-that-explains-the-others) describes. Segmentation models
+then made the box itself optional, so you could follow an outline you pointed
+at, and the newest models take a written phrase instead of a point.
+
+### 6.2 Where it is used in industry today
+
+Tracking is shipped as a library rather than sold as a product, which is itself
+the useful fact. Ultralytics ships ByteTrack and BoT-SORT as a track mode you
+turn on with one argument ([Ultralytics track
+mode](https://docs.ultralytics.com/modes/track/)), Roboflow ships the same
+trackers as a separate package
+([roboflow/trackers](https://github.com/roboflow/trackers)), and BoT-SORT's own
+repository is public ([BoT-SORT](https://github.com/NirAharon/BoT-SORT)). All
+three can be installed today and their code read.
+
+The large deployed systems are in video analytics rather than robotics. NVIDIA's
+DeepStream ships a tracker plugin holding several trackers in one library. Its
+documentation lists an IOU tracker, `NvSORT`, which it describes as "the
+NVIDIA-enhanced Simple Online and Realtime Tracking (SORT) algorithm",
+`NvDeepSORT`, `NvDCF`, and a `MaskTracker` that "simultaneously performs
+multi-object tracking and segmentation using advanced vision foundation models
+such as Segment Anything Model 2 (SAM2)" ([DeepStream
+nvtracker](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html)).
+That is the tracking stack actually running on cameras in buildings, and the
+last entry is worth noticing: the segmentation tracker of [section
+5.3](#53-sam-2-for-following-one-object-you-pointed-at) has already reached a
+commercial video pipeline. In sport, FIFA's own page for semi-automated offside
+technology states that 12 dedicated tracking cameras follow the ball and up to
+29 points on each player 50 times per second, and that the process "happens
+within a few seconds" ([FIFA semi-automated
+offside](https://inside.fifa.com/innovation/world-cup-2022/semi-automated-offside-technology)).
+That is a product announcement describing a deployment at a world cup, and it is
+worth noting that FIFA's page does not name the supplier.
+
+Retail is the case that cuts both ways. Amazon's Just Walk Out page says the
+system uses "computer vision or RFID to track what you take" ([Just Walk
+Out](https://www.justwalkout.com/)). The product announcement is that both are
+offered. My reading, which is an inference rather than something Amazon states,
+is that a radio tag is a cheaper route to certainty than following an item
+visually through a crowded aisle.
+
+For a robot arm, honest reporting is that this page's methods are used less than
+you might expect, and the reason is in [section 5.7](#57-how-to-choose): a
+camera on the wrist moves with the arm, so every box in the picture moves at
+once and box tracking breaks. Teams solve this by tracking positions in the
+robot's own frame instead, which Book 2's [tracking and
+association](../../../02_perception/02_object-perception/10_tracking-and-association.md)
+page covers.
+
+### 6.3 What is being worked on right now
+
+The front with the most attention is tracking from a written phrase. SAM 3 finds
+and then follows every object matching a short phrase with no detector of your
+own ([SAM 3](https://ai.meta.com/sam3/),
+[code](https://github.com/facebookresearch/sam3)), and it is covered in [section
+5.4](#54-sam-3-one-model-that-detects-and-follows-what-you-name). OVTrack is the
+paper that set this up as a measured task with a protocol rather than a
+demonstration ([OVTrack](https://arxiv.org/abs/2304.08408)).
+
+The second front turns tracking from a perception output into a way of telling a
+robot what to do, and it is the most interesting one for robot arms. Three
+groups built on the same idea, which is that the track of a point through a
+video is a cheap label you can get from ordinary human video with no robot
+involved. RoboTAP uses point tracks from a few minutes of demonstration to
+parameterise a controller ([RoboTAP](https://robotap.github.io/)). Any-point
+Trajectory Modeling pre-trains a model that predicts future point tracks and
+then uses those predictions to guide policy learning from about ten
+demonstrations per task; its page reports beating video pre-training baselines
+by 80 per cent on average across 130 language-conditioned tasks in the LIBERO
+simulation benchmark, and a cloth-folding task going from 0 to 63 per cent
+success when 100 human videos were combined with 10 robot demonstrations
+([ATM](https://xingyu-lin.github.io/atm/)). Those are research results, and the
+protocol matters: the 130 tasks are in simulation, and the real-robot part is
+five tasks on one UR5 arm. Track2Act works along the same lines
+([Track2Act](https://homangab.github.io/track2act/)).
+
+The third front is making point tracking fast. CoTracker3 from [section
+5.5](#55-cotracker3-for-points-on-something-that-bends) is the model this page
+recommends, and TAPNext reformulates the problem as predicting the next token,
+which removes the iterative refinement that makes earlier trackers slow
+([TAPNext](https://arxiv.org/abs/2504.05579)). On the single-object side,
+several projects extend SAM 2 with a better memory, SAMURAI being the one you
+will meet first ([SAMURAI](https://github.com/yangchris11/samurai)). All of
+these publish open code.
+
+The fourth front is measurement. Multi-object tracking was scored for years with
+a metric dominated by detection quality, so a better detector made your tracker
+look better; HOTA was designed to separate detection accuracy from association
+accuracy ([HOTA](https://arxiv.org/abs/2009.07736)), and reading which metric a
+paper reports tells you what it actually improved. DanceTrack exists to measure
+the case that appearance-based matching cannot handle, and its own repository
+describes it as "a benchmark for tracking multiple objects in uniform appearance
+and diverse motion" ([DanceTrack](https://github.com/DanceTrack/DanceTrack)). A
+tracker that scores well on pedestrians and badly on DanceTrack has been relying
+on the objects looking different from each other.
+
+### 6.4 What is still unsolved
+
+Identity through a long gap is the oldest unsolved problem here and it has
+resisted every approach. Re-identification models help when the objects look
+different from each other and do nothing when they do not. A tray of twelve
+identical bolts defeats every method on this page, because after one bolt is
+hidden for two seconds there is no information in the picture that says which of
+the twelve reappeared. I did not find any published method that claims to solve
+this, and be suspicious of one that does, because the information needed is not
+in the video.
+
+A camera that moves with the arm is the second. Every method in [section
+5](#5-well-known-models) assumes motion in the picture means motion in the
+world, and on a wrist camera that assumption is false. The workaround of
+tracking in the robot's frame is sound engineering rather than a solved research
+problem, and it needs the robot's own joint positions, so it is not available to
+somebody working from a video file.
+
+Cost is the third, and it is moving the wrong way. ByteTrack needs no graphics
+card and no weights, while the transformer trackers at the research front need a
+graphics card per video stream. The production answer and the research answer
+are drifting apart rather than converging.
+
+Evaluating a promptable tracker is the fourth and the newest. When the prompt is
+part of the input, two people get two different results from the same video, and
+I could not find a benchmark that controls for the wording of the prompt. Until
+one exists, a reported number for a promptable tracker includes the skill of
+whoever wrote the prompts.
+
+### 6.5 The next two to three years
+
+Everything in this part is my expectation rather than anybody's announcement,
+and each item gives its reason, because the reason is the content and the
+prediction on its own is noise.
+
+I expect a detector plus ByteTrack-style association to still be the normal
+production answer in three years. The reason is that it has almost nothing a
+competitor can undercut: no weights to licence, no graphics card, a few hundred
+lines you can read, and the same output every time you run it. The improvement
+it needs arrives whenever somebody releases a better detector. Predicting that
+something stays is unexciting, and it is the item here I am most confident
+about.
+
+I expect promptable tracking to take over the jobs that are done once or rarely,
+and not the jobs that run all day. The reason is which cost it removes. SAM 3
+removes training a detector, which is the expensive step when you have one
+unusual object and a deadline; it does not remove the cost of running a large
+model on every frame, which is what matters when the line runs for a shift. The
+brake on adoption here is the licence and the access request described in
+[section 5.4](#54-sam-3-one-model-that-detects-and-follows-what-you-name), not
+the accuracy, and that is a prediction about a legal document rather than about
+research.
+
+I expect point tracking to become an input to manipulation policies rather than
+a perception result you look at, and this is the item I would tell a robot
+developer to watch. The reason is the data: a point track is one of the few
+useful labels you can get from an ordinary video of a person doing a task, with
+no robot, no teleoperation rig and no annotation. Three groups arriving at that
+independently, as [section 6.3](#63-what-is-being-worked-on-right-now)
+describes, is a stronger signal than any one of their numbers. It is still a
+research result and not a product, so read the success rates as measured under
+the authors' own protocol.
+
+I expect tracking in the robot's frame to become the standard recipe taught for
+arms, replacing the image-space recipe this page's models assume. The reason is
+that wrist cameras are becoming ordinary on arms, and a box tracker cannot work
+on one. This is an expectation about teaching and tooling, not an announced
+package.
+
+The thing I do not expect is a single model that replaces the detector and the
+association step together in production within three years. The reason is
+diagnosability rather than accuracy. When a factory line stops, somebody has to
+know whether the camera failed to see the object or failed to keep its number,
+and two separate components answer that question while one combined model does
+not. This is my judgement, and the way to check it in a year is to see whether
+any vendor ships a single-model tracker as the default in a product rather than
+as a research release.
+
+---
+
+## 7. Where to read next
 
 - [Open-vocabulary models](../02_most-used/03_open-vocabulary-models.md) is the page before this
   one, and it shows where SAM 2 comes from, and how to choose the object to follow.

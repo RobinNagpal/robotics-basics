@@ -19,7 +19,8 @@ is: a grid of small squares called pixels, each with a number for its brightness
 4. [How it works inside](#4-how-it-works-inside)
 5. [How it is trained](#5-how-it-is-trained)
 6. [Well-known models and tools](#6-well-known-models-and-tools)
-7. [Where to read next](#7-where-to-read-next)
+7. [Where this is going](#7-where-this-is-going)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -650,7 +651,181 @@ model loses almost all of its accuracy on a sensor it was not trained on, and th
 is a labelling job. So decide which model you intend to use before you buy the sensor, and
 not the other way round.
 
-## 7. Where to read next
+## 7. Where this is going
+
+This section is about what changes next, and it is written on 4 October 2026. It uses
+the four kinds of claim that the frameworks book sets out in [four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration worked once under conditions its publisher chose. A product
+announcement can be bought or downloaded, so you can check it, which makes it the most
+valuable kind. A research result is a measured number with a stated protocol. A
+projection is about a date that has not arrived, and it is the weakest. Where a sentence
+below is my own judgement rather than a report of somebody's claim, it says so.
+
+### 7.1 How it got here
+
+Reading a tactile picture started with no learning in it at all. Shape from shading,
+which is section 4.1 and still what section 6.1 ships, works out the dent from the
+coloured lighting using the physics of the pad, and nothing trained beats it at that one
+job. Then convolutional networks took over the jobs the physics does not reach: where
+the contact sits, how hard it presses, what the object is. Then one pretrained backbone
+was trained across many sensors and given small heads for each job, which is section 6.4
+and section 6.5. That is the same path image models took, with one piece missing. Image
+models had a corpus everybody shared, and touch does not.
+
+### 7.2 Where it is used in industry today
+
+The industry here is a hardware industry, not a model industry. Nobody sells a tactile
+model, and the thing that got dramatically better in the last two years is the price of
+the sensor.
+
+GelSight is the only maker in this area that has published a price continuously. [Its own
+store](https://www.gelsight.com/online-store/) lists the Mini system at $510.00, the
+robotics package at $560.00, and the DIGIT, which is Meta's camera-behind-a-gel design
+now manufactured by GelSight, at $355.00 with replacement gels at $42.00. Those are
+product announcements and you can check every figure on the page. Worth noticing for
+anyone planning around this company: its 2025 and 2026 announcements were about surface
+metrology rather than robots.
+
+Underneath that, a manufacturing layer grew around the open academic designs.
+[WowRobo's shop](https://shop.wowrobo.com/) sells a WowSkin at $48, or $128 with the
+structural part, built on the open [AnySkin](https://any-skin.github.io/) and ReSkin
+designs, with mounts for the SO-100, SO-101 and Koch arms, and the eFlesh magnetometer
+board at $25 for one or $180 for ten. [PaXini](https://mall.paxini.com/) sells a
+three-axis tactile fingertip chip, 15 by 10 by 7 mm, at ¥499, about $70. Robotiq
+launched its [TSF-85 tactile sensor fingertips](https://robotiq.com/tactile-sensor-fingertips)
+in January 2026, 28 taxels at 1000 Hz on a production gripper fingertip, with no price
+published. All of those are product announcements with a page behind them.
+
+The other route is to buy a hand that already senses touch. AgiBot states "150+ tactile
+points" for its [OmniHand O12](https://www.agibot.com/products/OmniHand_O12), Unitree
+states 33 tactile sensors for the [Dex3-1](https://www.unitree.com/Dex3-1), and Figure
+states fingertip sensing plus a palm camera for
+[Figure 03](https://www.figure.ai/news/introducing-figure-03). Set against those, the
+clearest cautionary case in this whole area is Meta's Digit 360, announced on
+[31 October 2024](https://ai.meta.com/blog/fair-robotics-open-source/) with the statement
+that "GelSight Inc. will manufacture and distribute Digit 360, available for purchase in
+2025". It was never sold, and the only distribution route,
+[a free research programme](https://digit.ml/cfp), still shows proposals due on 20
+January 2025. A specification on a page is not a product, and two years is long enough
+to be sure.
+
+### 7.3 What is being worked on right now
+
+The whole front is cross-sensor transfer, and everything else is downstream of it.
+Sparsh in section 6.4 and Transferable Tactile Transformers in section 6.5 are both
+attempts to train one backbone that serves sensors it was not built for, and T3's claim
+of thirteen sensors is the broadest attempt published.
+
+The most useful work is measuring how badly that currently fails, because it replaces an
+argument with a number. [A September 2026 study](https://arxiv.org/abs/2609.08673)
+reports that a frozen classifier built on Sparsh scores **6.86 per cent** on a sensor it
+was not trained on, rising to 87.09 per cent once 10 per cent of the target sensor's data
+is labelled. That is a research result with a stated protocol, and section 6.6 already
+tells you what to do about it.
+
+A second front joins touch to vision so that the answer is about the whole object rather
+than one contact.
+[NeuralFeels](https://github.com/facebookresearch/neuralfeels) rebuilds an object's shape
+and position while a hand turns it, using both channels together, and it is the clearest
+published example of touch being useful for something a camera cannot see.
+
+A third front is making the sensor itself programmable in shape.
+[eFlesh](https://github.com/notvenky/eFlesh), under the MIT licence, lets you print a
+tactile sensor in an arbitrary shape from a printer, magnets costing a few dollars and a
+commodity magnetometer board. Alongside that, simulators let you build everything around
+a model before a sensor arrives: [TACTO](https://github.com/facebookresearch/tacto),
+which is MIT, and Taxim both draw the picture a sensor would take for a given contact.
+
+The thing none of this adds up to is momentum on the scale other areas have. In
+submissions to the robotics category of arXiv, the share of abstracts containing
+"tactile" moved from 2.72 per cent in 2025 to 3.53 per cent in 2026 to late September,
+while "vision-language-action" went from 4.25 to 10.78 per cent, according to the counts
+in the frameworks book's [measured research
+directions](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted).
+
+### 7.4 What is still unsolved
+
+The limit in this area is the hardware, and saying otherwise would be the most
+misleading thing this page could do. The sensors are fragile, they wear out, and no two
+makers build the same one.
+
+Take wear first. GelSight's own product sheet for the Mini gives the gel's durability as
+**1,000 coin presses**, with replacement gels at $57 against a $510 sensor, which makes
+the pad a consumable costing a ninth of the sensor each time it is replaced. Contactile's
+own specification sheet states that "temperature variations can cause drift in sensor
+readings" so that "bias removal in software prior to operation is necessary", and that
+its v2.0 sensor "does not yet have ingress protection". Magnetic skins drift with
+temperature as well and need re-zeroing. Set all of that against Robotiq's "Tested to
+over 2 million cycles" for a production gripper fingertip, and the gap is clear: a
+1,000-press gel is a bench instrument, not a part that lives in a cell.
+
+Take standardisation second, because it is the reason this page has no pretrained model
+to recommend. **There is no standard tactile sensor, so there is no shared tactile
+dataset, and so there is no pretrained tactile model worth the name.** Each link in that
+chain causes the next one. The 6.86 per cent above is the measured cost of it. Compare
+robot policies, which now have one default dataset layout carrying
+[tens of thousands of published datasets](https://huggingface.co/datasets?other=LeRobot),
+and the difference is not model architecture. It is agreement about what a recording
+looks like.
+
+The third unsolved thing is licensing, and it stops this area being usable commercially.
+Every piece of Meta tactile hardware and every Meta tactile model, which is `digit360`,
+`digit-design`, `digit-plexus` and `sparsh`, is licensed CC BY-NC 4.0, read from each
+repository's own licence file, and GitHub's licence detection reports all of them as
+unclassified, which is why they are so often described as open source. They are
+published and they are not usable in a product. Only Meta's TACTO simulator is
+permissively licensed, under MIT. If
+you sell anything, most of the strongest work in this area is closed to you, and section
+6.6 routes you to T3 for that reason.
+
+### 7.5 The next two to three years
+
+Everything in this part is my expectation with a reason attached, not an announcement by
+anybody.
+
+**The limit stays hardware, so no downloadable tactile model will work well on your
+sensor without labelling.** This is the claim here I am most confident about and it is a
+judgement, not a report. The reason is that transfer fails because sensors differ, and
+sensors are diversifying rather than converging: every hand named in section 7.2 has its
+own taxel count and its own layout, and a hand maker has no reason to match a rival's.
+The research share above says attention is not arriving at the rate a breakthrough would
+need either.
+
+**Magnetic skin takes the volume and camera-behind-gel stays the measuring instrument.**
+The reason is a design decision, and AnySkin's own paper states it: the sensing
+electronics are decoupled from the sensing surface, so the board stays on the robot and
+the skin slips over it like a phone case. The part that wears out is the cheap part,
+which is why a replacement is $48. Magnetometers are also a commodity made in the
+billions for phones, and the licences are MIT. Gel keeps the jobs where the picture
+itself is the point, because section 6.1 already beats anything you would train for
+shape.
+
+**Touch arrives bundled inside hands rather than bolted onto grippers.** The reason is
+routing and commercial packaging. A hand maker can run thousands of channels through its
+own wrist, which an add-on cannot, and the tactile version is sold as a more expensive
+option on a hand you were buying anyway. If you want touch on a gripper you already own,
+the answer stays the open skins or the Robotiq fingertips. This is my expectation drawn
+from what the hand vendors already ship, not from any roadmap.
+
+**Durability becomes a published specification, and that matters more than a new model.**
+Robotiq's two million cycles is the first number in this area a maintenance planner can
+use. My expectation is that once one vendor publishes a durability figure, buyers start
+asking the others for theirs, and the makers who sell to factories answer. A tactile
+sensor that survives a service interval changes what a cell will accept far more than
+another percentage point of accuracy does.
+
+**What would actually unlock the models is agreement, and I do not expect it within three
+years.** The missing piece is a tactile field in the standard dataset layout plus an
+agreement on what one frame of touch is, because that is exactly what happened to images
+and then to robot actions. The obstacle is that the agreement has to come from
+competitors who each sell a different sensor, and nobody in section 7.2 gains from it.
+So the practical advice in section 6.6 stands unchanged for the whole of this period:
+decide which model you intend to use before you buy the sensor, and when somebody
+announces a tactile model that transfers, ask which sensors it was trained on and how
+many labelled samples from yours it needs.
+
+## 8. Where to read next
 
 In this chapter:
 

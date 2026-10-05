@@ -21,7 +21,8 @@ every later page.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -745,7 +746,208 @@ the rule instead and skip the models entirely.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about what to expect from image classification next, and it is
+the one page in this chapter where the honest forward view is uncomfortable. As
+a task with products and research of its own, image classification is being
+absorbed into larger models. Saying that plainly is more useful to you than
+inventing a future for it.
+
+Everything below is labelled by what kind of claim it is, using the four kinds
+that Book 3 sets out in [four kinds of claim, and why the difference decides
+everything](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration shows something working once, a product announcement says
+something can be bought or downloaded, a research result is a measured number
+under a stated protocol, and a projection is a statement about a date that has
+not arrived. Product announcements carry the most weight because you can check
+them, and projections the least. Where I give my own judgement the sentence says
+so, and every link below was checked on 4 October 2026.
+
+### 6.1 How it got here
+
+The shape of the change is that the specific part of the job kept shrinking.
+First you trained a whole network on your own labelled pictures, and the network
+was the work. Then backbones trained on far more pictures than you will ever
+label became better than anything you could train, so the work became choosing a
+backbone and fitting a small head on top, which is the frozen-backbone route of
+[section 5.3](#53-dinov2-with-a-small-head). Then vision-language models let you
+write the class names as words instead of collecting pictures for them, which is
+[section 5.4](#54-siglip-2), and the fixed class list stopped being fixed. At
+each step the part you had to supply got smaller and the part somebody else had
+already trained got larger.
+
+### 6.2 Where it is used in industry today
+
+Classification still earns money as a product of its own in factory inspection.
+Cognex sells the ViDi suite, which has four tools named Blue Locate, Red
+Analyze, Green Classify and Blue Read, and its own documentation says "The ViDi
+Green Classify separates different classes based on a collection of labeled
+images" ([Cognex ViDi
+documentation](https://docs.cognex.com/vidi_413/web/en/vidisuite/Content/ViDi-Topics/get-started/get-started.htm)).
+MVTec sells HALCON, which lists classification among its deep-learning tools
+([HALCON product page](https://www.mvtec.com/products/halcon)), and MVTec
+publishes an account of Panasonic Energy running HALCON deep-learning inspection
+at its Kansas automotive battery plant ([MVTec success
+story](https://www.mvtec.com/application-areas/success-stories/article/mvtec-halcons-deep-learning-helps-panasonic-energy-to-propel-automotive-battery-production)).
+Both are product announcements for the software, and the Panasonic deployment is
+a vendor's account of its own customer rather than an independent measurement.
+
+The second real use is classification inside the image sensor. Sony's IMX500 is
+what Sony calls an intelligent vision sensor, and Sony's page says models run on
+the devices equipped with it so that only metadata and text leave the device
+([Sony IMX500](https://developer.sony.com/imx500/)). Raspberry Pi sells a camera
+built on that sensor, and its own tutorial trains a classifier that runs on the
+sensor and tells different Raspberry Pi models apart ([Raspberry Pi classifier
+tutorial](https://www.raspberrypi.com/news/build-a-raspberry-pi-classifier-detect-different-raspberry-pi-models/)).
+That is a product announcement and you can buy the part. For a robot arm it is
+the cheapest answer to a question like "is the gripper holding something",
+because the host computer does no work at all.
+
+Hosted classification services are moving the other way, and this is the part
+that supports the forward view of this section. Google's own deprecation page
+records Legacy AutoML Vision as deprecated on 23 January 2023 and shut down on
+31 July 2024, and AutoML Text as deprecated on 15 September 2024 with the
+instruction that text classification can now only be customised "by moving to
+Vertex AI Gemini prompts and tuning" ([Vertex AI
+deprecations](https://cloud.google.com/vertex-ai/docs/deprecations)). That is a
+product announcement, and it says a managed classifier was replaced by prompting
+a general model. Image classification in Vertex AI is not on that list, so I am
+not claiming it has gone; the text equivalent went first, and the direction is
+what the page shows. Amazon Web Services also retired Amazon Lookout for Vision,
+its defect-classification service. I am naming it without a link because its
+developer guide pages now answer with not-found, so I have no page to point you
+at.
+
+For code you install yourself, two things are current. The `timm` collection is
+still the reference set of classification architectures and now lives inside
+Hugging Face
+([pytorch-image-models](https://github.com/huggingface/pytorch-image-models)),
+and Ultralytics ships a classify task alongside its detectors ([Ultralytics
+classify](https://docs.ultralytics.com/tasks/classify/)). Both are downloadable
+today.
+
+### 6.3 What is being worked on right now
+
+The largest effort is on backbones, and classification is now how those
+backbones are measured rather than what they are for. DINOv3 from [section
+5.5](#55-dinov3) and Meta's Perception Encoder ([Perception
+Encoder](https://arxiv.org/abs/2504.13181)) are both published with linear-probe
+classification numbers, because freezing the features and fitting one linear
+layer is the cheapest honest way to compare two sets of features. These are
+research results, and the paper is telling you about the features while the
+classifier is only the ruler.
+
+The second effort is making zero-shot classification small enough to run on a
+device. Apple's MobileCLIP matches images against text at a size meant for a
+phone ([ml-mobileclip](https://github.com/apple/ml-mobileclip)), and its FastVLM
+does the same for a full vision-language model
+([ml-fastvlm](https://github.com/apple/ml-fastvlm)). Both are open code with
+published weights.
+
+The third effort replaces classification with anomaly detection for inspection,
+and the reason is about data rather than accuracy. In a factory you have
+thousands of pictures of good parts and almost no pictures of each defect, so
+the class list you would need cannot be filled. Anomaly detection learns what
+normal looks like and flags what does not match, which needs no defect examples.
+Anomalib collects these methods under one interface and is Apache-2.0
+([Anomalib](https://github.com/open-edge-platform/anomalib)), and MVTec AD is
+the dataset most of those papers report on ([MVTec
+AD](https://www.mvtec.com/company/research/datasets/mvtec-ad)). Research
+results, with a library you can install.
+
+The fourth effort is on knowing when the answer is wrong, and it is the one a
+robot needs most. Guo and colleagues showed in 2017 that modern networks report
+confidences much higher than their actual accuracy ([On Calibration of Modern
+Neural Networks](https://arxiv.org/abs/1706.04599)), and OpenOOD collects
+methods for detecting inputs that belong to none of the classes and compares
+them under one protocol ([OpenOOD](https://github.com/Jingkang50/OpenOOD)). Both
+are research results. The benchmark itself is also under repair. "Are we done
+with ImageNet?" collected new human labels for the validation set and reports
+that the gains of recent classifiers are "substantially smaller than those
+reported on the original labels" ([Are we done with
+ImageNet?](https://arxiv.org/abs/2006.07159)). The ImageNet-A dataset collected
+ordinary photographs that models get wrong, and its paper reports a DenseNet-121
+scoring "around 2% accuracy" on it ([Natural Adversarial
+Examples](https://arxiv.org/abs/1907.07174)). Both are research results, and
+both say the same thing: a number measured on the usual benchmark does not tell
+you what your robot will see.
+
+### 6.4 What is still unsolved
+
+A classifier must answer with one of its classes. It has no way to say "none of
+these", because the softmax of [section 3](#3-how-it-works-inside) always sums
+to one and always has a largest entry. On a robot this is the failure that costs
+you, because an unexpected object in the gripper gets the name of whichever
+class it resembles most, with a high number next to it. OpenOOD exists because
+this has resisted a decade of work.
+
+Confidence is not probability, and the gap moves with conditions. A model
+calibrated in the morning light of your cell is not calibrated under the
+afternoon light, so a confidence threshold you tuned once does not keep its
+meaning. I could not find a published measurement of how far a classifier's
+calibration drifts in a working robot cell over weeks of changing light, which
+is exactly the number a developer would want.
+
+Rare classes stay hard for a reason that is not going away. A defect you have
+seen four times gives you four training examples, and no amount of model
+improvement creates the fifth. This is why the anomaly-detection route above
+exists, and it is also why an accuracy number measured on a balanced benchmark
+says little about your own unbalanced problem.
+
+### 6.5 The next two to three years
+
+Everything in this part is my expectation rather than anybody's announcement,
+and each item gives its reason, because the reason is the content and the
+prediction on its own is noise.
+
+I expect the standalone classifier to keep shrinking into a small head on a
+backbone you did not train, until training a classifier end to end is something
+only researchers do. The reason is an asymmetry in cost. The backbone is free
+and better than one you could train, your labelled pictures are the expensive
+part, and a linear head needs the fewest of them. This is not a guess about a
+new capability but a guess that an existing cost difference keeps winning, which
+is the safer kind.
+
+I expect that for any classes you can describe in words, the classifier gets
+replaced by a prompt to a larger model, and that hosted image-classification
+services follow their text equivalents into deprecation. The reason is that the
+fixed class list is the costly commitment in a classifier, and a vision-language
+model removes it. Google's page already tells text customers to move to Gemini
+prompts, which is a product announcement; extending that to images is my
+projection and not something Google has said.
+
+I expect classification in the sensor to become the normal way to do small,
+repeated checks on a robot. The reason is arithmetic rather than fashion: a
+gripper-state check runs on every single close, and an IMX500-class part does it
+with no graphics card and no load on the host. The hardware already exists and
+can be bought, so the only uncertain part of this prediction is how common it
+becomes.
+
+I expect factory inspection to move from classification to anomaly detection
+wherever the defects are rare, and I expect that to be most places. The reason
+is again data and not accuracy: you can collect ten thousand good parts in a
+week and you cannot collect a hundred examples of a defect that happens twice a
+month.
+
+The thing I do not expect is a new general-purpose classifier architecture that
+matters to a robot developer. The reason is where the effort has gone. The
+groups with the compute to make such a thing are publishing backbones and
+vision-language models, and they report classification only as a probe. A paper
+that improves ImageNet accuracy now competes on a benchmark whose own labels are
+the limiting factor. This is my judgement, and the way to check it in a year is
+to look at whether the models in [section 5](#5-well-known-models) have been
+replaced by newer classifiers or by newer backbones.
+
+What this means for you is practical. Do not spend a month learning to train a
+classifier from nothing. Spend it on labelling carefully, on measuring on
+pictures from your own cell, and on deciding what the robot does when the
+classifier is unsure, because no model release will answer that last question
+for you.
+
+---
+
+## 7. Where to read next
 
 - The next page is [object detection](../02_most-used/01_object-detection.md), which adds boxes,
   so that the robot knows where each object is.

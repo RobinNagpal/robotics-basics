@@ -26,7 +26,8 @@ general-purpose picture features.
    · [5.5 SAM 2](#55-sam-2)
    · [5.6 SAM 3](#56-sam-3)
    · [5.7 How to choose](#57-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -828,7 +829,193 @@ these models knows when it is wrong.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+Everything above describes models you can download today. This section is about
+the direction, and it was written on 4 October 2026. Every company, product and
+number in it was checked against the page linked beside it on that day.
+
+It also uses [the frontier chapter's four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+which carry very different weight. A demonstration is a recording of something
+working once. A product announcement is checkable, which makes it the most useful.
+A research result is a measured number on a stated task. A projection is a
+statement about a date that has not arrived, and it is the weakest. Every claim
+below says which one it rests on, and where I give my own opinion the sentence says
+so.
+
+### How it got here
+
+The shape of the change is that the list of classes walked out of the model and
+became an argument you pass when you call it. CLIP showed in 2021 that a picture
+encoder and a text encoder can be trained to agree, which removed the final layer
+whose width was the number of classes. OWL-ViT ran that comparison on each patch
+instead of on the whole picture, which turned the idea into a detector. Grounding
+DINO let the words reach into the picture network, so a phrase could be read as a
+phrase. The Segment Anything Model did the same for outlines, first from a click
+and then, in SAM 3, from a phrase. All of them now install from one library.
+
+### Where it is used in industry today
+
+The largest industrial use of these models is not on a robot, and this is the part
+most summaries get wrong. It is in building the training set for the ordinary
+closed-vocabulary detector that does run on the robot. Roboflow sells that as
+[Auto Label](https://roboflow.com/blog/launch-auto-label), published on 6 March
+2024, which labels a batch of images from a text prompt using Grounding DINO for
+boxes and GroundingSAM for outlines. The same idea is free and open as
+[autodistill](https://github.com/autodistill/autodistill), which Roboflow also
+maintains. Both are product announcements, because you can open the page, sign in
+or install, and use the thing today. So the research idea of 2021 is now the normal
+first step in a 2026 data pipeline: a person writes the words, an open-vocabulary
+model draws the boxes, and a person corrects them instead of drawing them.
+
+The engineering is production grade, and the clearest evidence comes from outside
+robotics. Meta's engineering post says that [Cutouts in the Instagram Edits app
+runs SAM 2.1](https://ai.meta.com/blog/instagram-edits-cutouts-segment-anything/),
+so a click on an object in a video returns a mask for every frame. The post states a
+1.8 times increase in model throughput, a 3 times reduction in first-frame preview
+latency on NVIDIA H100 hardware, and that Cutouts was used hundreds of thousands of
+times in the first 24 hours after the app launched. Those are Meta's own figures
+about Meta's own product, and they describe a data centre rather than a robot.
+
+On robots the use is thinner, and it is honest to say so plainly. What exists today
+is edge ports and preview access. NVIDIA publishes
+[nanoowl](https://github.com/NVIDIA-AI-IOT/nanoowl), which is OWL-ViT rebuilt with
+TensorRT for Jetson Orin, together with
+[ROS2-NanoOWL](https://github.com/NVIDIA-AI-IOT/ROS2-NanoOWL), a ROS 2 node that
+takes a prompt on a topic, with a [tutorial for running
+it](https://www.jetson-ai-lab.com/tutorials/nanoowl). Those are downloadable, so
+they are product announcements. Google's embodied reasoning model answers to the
+identifier `gemini-robotics-er-2-preview`, and its [spatial reasoning
+documentation](https://ai.google.dev/gemini-api/docs/robotics-spatial) shows it
+returning points, boxes and movement trajectories from a prompt; the name says
+preview, so that is access rather than general availability. What I could not find
+is a named production robot cell in which an open-vocabulary model decides what the
+arm picks, and that absence is the most useful fact here.
+
+### What is being worked on right now
+
+The first front is the output format. A box is a poor answer for an arm, because a
+gripper needs a place and a box has to be converted into one. Two groups are making
+the model point instead. Google's documentation defines pointing as normalised
+`[y, x]` coordinates, beside boxes and trajectories. The Allen Institute for AI
+announced [MolmoAct 2 and a backbone called
+Molmo2-ER](https://allenai.org/blog/molmoact2) in May 2026, and reports an average
+of 63.8 out of 100 across 13 embodied reasoning benchmarks, which it says beats both
+GPT-5 and Gemini Robotics ER 1.5 Thinking. That is a research result from the people
+who built the model, and the weights and the training data are released, so somebody
+else can check it. Its [weights card](https://huggingface.co/allenai/MolmoAct2)
+declares no licence at all, which is the thing to read before building on it.
+
+The second front is getting these models onto the computer on the robot, and there
+is now a measured answer rather than an opinion. A paper in Frontiers in Robotics
+and AI on 21 October 2025 by Jongyoon Park, Pileun Kim and Daeil Ko, [Real-time
+open-vocabulary perception for mobile robots on edge
+devices](https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2025.1693988/full),
+timed NanoOWL against YOLO-World on a Jetson AGX Orin with 64 GB of memory. It
+reports NanoOWL with patch32 at half precision at 9.81 milliseconds per detection
+against 26.07 milliseconds for YOLO-World-S, and a best pipeline of 47.51 frames
+per second at 84.64 per cent mean intersection over union. It also names the
+trade-off the fast number hides: NanoOWL handles short noun phrases, while
+YOLO-World parses relational sentences better.
+
+The third front is what the prompt buys you. Meta's [SAM 3
+repository](https://github.com/facebookresearch/sam3) is pushing on the presence
+head of [section 5.6](#56-sam-3), which is the part that lets the honest answer be
+none, and
+[Grounded-SAM](https://github.com/IDEA-Research/Grounded-Segment-Anything) from
+IDEA Research is the Apache-2.0 pipeline most people still use instead. Meta also
+published [SAM 3D Objects](https://huggingface.co/facebook/sam-3d-objects) on 19
+November 2025, which takes a masked object in one photograph and returns a textured
+3D model with a pose, under the bespoke SAM License and with a gated download. The
+direction is the point: the same prompt that used to buy you a box is being made to
+buy you geometry, which is the subject of [keypoints and object
+pose](04_keypoints-and-object-pose.md).
+
+### What is still unsolved
+
+The confidence number is still not trustworthy, and five years of better models
+have not fixed it. One score has to express two things at once: whether an object
+of that kind is present, and whether this box is the right one. [Section
+5.1](#51-clip-the-model-the-others-are-built-on) describes the same failure in CLIP,
+which always picks a winner among the words you offered. SAM 3's presence head is the first serious attempt to separate the two,
+and it arrives in the one model here whose weights are gated. I could find no
+open-vocabulary detector published with a stated false-positive rate on a named
+robot task, so the rule for refusing an answer is still yours to write and yours to
+measure.
+
+Objects that words cannot separate remain outside what any of these models can do.
+Two valve bodies that differ by one hole have no short phrase that tells them apart,
+and more training data does not change that, because the limit is in the interface
+rather than in the model. [Section 5.7](#57-how-to-choose) sends you to a trained
+detector for this case, and I expect that advice to stay correct for the whole
+period this section covers.
+
+The last unsolved thing decides projects and is not technical. The best model for
+words to outlines carries a licence written by one company and a gated download that
+a build machine cannot fetch, and the fastest model on a live camera is AGPL-3.0.
+There is also no standard for reporting how much a reworded prompt changes the
+answer, so two teams reporting results on the same model may not be measuring the
+same thing.
+
+### The next two to three years
+
+**I expect the open-vocabulary model to stay off the robot and stay in the data
+pipeline, and this is the prediction I would bet on first.** Every force points the
+same way. The product that already exists works like this, as Auto Label shows. A
+small closed-vocabulary detector distilled from an open-vocabulary one is a smaller
+download, a faster answer and a cleaner licence. And a factory cell needs the same
+five part names every day, so paying for an open vocabulary on every frame buys
+nothing. This is my expectation rather than an announcement, but it rests on a
+product you can use today.
+
+**I expect pointing to replace the box as the normal output when a model is asked
+to find something for an arm.** Two independent groups already ship it: Google
+documents a point format in its interface, and the Allen Institute for AI has
+released weights that produce points. A point is also what the next step in the
+program wants, because grasping, placing and pushing all begin from a place rather
+than from a rectangle. This is my expectation, not an announcement, and what would
+falsify it is pointing staying a feature of large closed models while the
+downloadable detectors keep returning boxes.
+
+**I expect a permissively licensed model to take the default slot for words to
+outlines, and to win on its licence rather than on its accuracy.** The reason is
+visible in [section 5.7](#57-how-to-choose): the recommendation there is the
+Grounding DINO and SAM 2 pair, and the only reason it is not SAM 3 is the licence. Teams choose
+what they may ship. If a model with Apache-2.0 on both code and weights matches SAM
+3's phrase-to-mask behaviour, it takes the default slot immediately, and none of
+that depends on it being better. This is a judgement about how people choose, not a
+claim about a model that exists.
+
+**I expect the edge port to stop being a side project and become how these models
+are normally run on a robot.** One reason is measured and one is announced. The
+measured one is the Frontiers paper above, because 47.51 frames per second already
+fits inside a camera loop on hardware you can buy. The announced one is that NVIDIA
+[stated physical Jetson Thor hardware for the first quarter of
+2027](../../../03_frameworks/08_frontier/06_what-is-coming.md#22-nvidias-edge-computers-with-hardware-stated-for-the-first-quarter-of-2027),
+which is a projection from an organisation with a good recent record of shipping
+what it announces. My own part is the expectation that ROS 2 packages like
+ROS2-NanoOWL become ordinary rather than experimental.
+
+**I expect open-vocabulary perception to become a call inside a larger model rather
+than a step you assemble yourself, and this is the change with the largest cost
+attached.** The models that answer "where is the blue mug" best are the ones that
+also answer "what should I do next", and Google's robotics endpoint already puts
+detection, pointing and trajectories behind one interface. The cost is that you lose
+what this chapter has been teaching you to use: a separate box, with a separate
+score, that your own code can check and reject. A model that goes from a sentence
+straight to a movement gives your program nothing to disagree with. That is my
+judgement, and it is why I would keep a small detector in the loop even when a
+larger model could replace it.
+
+Here is the thing to check in a year. If a company publishes a cell in which an
+open-vocabulary model decides what the arm picks, and publishes how often it is
+wrong, then the first prediction above was wrong and the shape of this page
+changes.
+
+---
+
+## 7. Where to read next
 
 - [Tracking and motion](../03_also-used/03_tracking-and-motion.md) is the next page, and it shows
   how SAM 2 and other models follow an object through a video.

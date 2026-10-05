@@ -32,7 +32,8 @@ told the right answer, and adjusting.
    · [6.4 DAgger, which is now a command](#64-dagger-which-is-now-a-command)
    · [6.5 SmolVLA, if fifty recordings are not enough](#65-smolvla-if-fifty-recordings-are-not-enough)
    · [6.6 How to choose](#66-how-to-choose)
-7. [Where to read next](#7-where-to-read-next)
+7. [Where this is going](#7-where-this-is-going)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -879,7 +880,202 @@ below.
 
 ---
 
-## 7. Where to read next
+## 7. Where this is going
+
+This section is about the direction behaviour cloning is moving in. It is written on
+4 October 2026, and it borrows the vocabulary that Book 3's frontier chapter uses for
+[the four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+because the difference between them decides how much weight a sentence can carry. A
+demonstration is a recording of something working once under conditions the publisher
+chose. A product announcement says a thing can be bought or downloaded, and you can go
+and check, which makes it the most useful kind. A research result is a measured number
+under a stated protocol. A projection is a statement about a date that has not arrived,
+and it is the weakest. Every claim below says which kind it is, and where the
+judgement is mine the sentence says so.
+
+### How it got here
+
+ALVINN put one network between a camera and a steering wheel in 1988, and for a long
+time the interesting part of behaviour cloning was the network. That has reversed. The
+network in ACT is small, ordinary and almost never the thing anybody changes, and the
+two things that decide whether a policy works are now the demonstrations you fed it
+and the weights you started from. Everything in the rest of this section is about one
+of those two, because that is where the work moved.
+
+### Where it is used in industry today
+
+Plain behaviour cloning is rarely a product. It is the method inside products, which
+means the honest industrial picture is thinner than the research picture and has to be
+read through what companies sell rather than what they publish.
+
+The clearest commercial deployment claim belongs to Dyna Robotics, whose
+[Dyna-2 model](https://www.dyna.co/research/dyna-2) learns from recorded human
+behaviour and whose posts report a restaurant customer, Din Tai Fung, expanding from
+pilot sites to all its locations. Book 3 records that in
+[its section on Dyna Robotics](../../../03_frameworks/08_frontier/02_foundation-models.md#8-dyna-robotics-and-the-million-hour-scaling-law),
+and the honest label is a company claim rather than an audited figure, because no fleet
+size, no hours run and no intervention count has been published. Skild AI's
+[S1 model](https://www.skild.ai/blogs/s1) is in commercial use with partners and
+cannot be obtained by you, and the company's own
+[March 2026 partnership post](https://www.skild.ai/blogs/reindustrial-revolution)
+says that ABB Robotics and Universal Robots plan to integrate its models, which is a
+plan rather than a shipped integration. Google DeepMind's
+[Gemini Robotics 2 post](https://deepmind.google/blog/gemini-robotics-2-brings-whole-body-intelligence-to-robots/)
+offers its reasoning model through Google AI Studio and limits the two models that
+actually move a robot to early-access partners.
+
+What is genuinely for sale, with a price on the vendor's own page, is the equipment
+for recording demonstrations. Trossen Robotics sells the
+[Solo AI](https://www.trossenrobotics.com/solo-ai) single-arm kit at $11,385.95 and
+the [Stationary AI](https://www.trossenrobotics.com/stationary-ai) two-arm kit at
+$23,995.95, both descended from the ALOHA rig that
+[the ACT paper](https://arxiv.org/abs/2304.13705) introduced. It also sells
+[TRumi](https://www.trossenrobotics.com/trumi), a handheld recording gripper, at
+$2,195.99 a pair with cameras, and Almond AI sells
+[Mantis UMI](https://www.almond.bot/mantis-umi) at $1,799 a pair. At the other end of
+the ladder, the [SO-101](https://github.com/TheRobotStudio/SO-ARM100) bill of
+materials prices a leader-and-follower pair at $229.88. Those prices are checkable
+today, and they are the part of this field that has unambiguously become an industry.
+
+The other measurable sign of use is the data. On 23 September 2026 Book 3 counted
+77,598 datasets on the Hugging Face Hub carrying the
+[LeRobot tag](https://huggingface.co/datasets?other=LeRobot), most of them recorded by
+one person on one cheap arm. That is not an industry in the usual sense, and it is
+still the largest body of behaviour cloning data that exists.
+
+### What is being worked on right now
+
+Three threads dominate, and all three are about the supply of demonstrations rather
+than about the model.
+
+The first is making a teleoperation rig cheap enough that the rig stops being the
+reason not to collect. The $229.88 figure above is the result, and 2026 spent its
+effort on what that rig cannot do.
+[ArmnetBench](https://arxiv.org/abs/2607.24481), from July 2026, ran a farm of SO-101
+cells, trained seven policies on twelve tasks with 50 demonstrations each, and released
+2,518 policy rollouts labelled successful, suboptimal or failed. That research result
+is the first evidence of the cheap arm being used as evaluation equipment rather than
+as a hobby project.
+[Phone2Act](https://arxiv.org/abs/2605.01948) replaces the leader arm with a
+smartphone through Google ARCore. Neither is a product.
+
+The second is collecting without a robot in the room. The
+[Universal Manipulation Interface](https://umi-gripper.github.io/) put the gripper in
+the operator's hand with a camera bolted to it, and its
+[code and hardware files](https://github.com/real-stanford/universal_manipulation_interface)
+are MIT-licensed, so this one is downloadable. The important recent result is
+[HiFi-UMI](https://arxiv.org/abs/2607.25895), from July 2026, which reports that a
+policy post-trained only on handheld demonstrations matched in-domain teleoperation on
+a real robot across three model backbones, with success differences of −2.5, +3.1 and
+−0.6 percentage points. Read its protocol before believing the headline. The
+comparison used 3,200 handheld trajectories per task against 300 teleoperated ones, so
+it compares two pipelines at their natural throughputs rather than one demonstration
+against one. The rig is proprietary and
+[2,000 hours of its data](https://huggingface.co/datasets/simple-world-lab/HiFi-UMI-2K)
+is downloadable under CC BY 4.0. [YUBI](https://arxiv.org/abs/2606.10244), from Toyota's
+Frontier Research Center with AIRoA, published open handheld hardware under a licence
+permitting commercial manufacture, behind a corpus of 8,434 hours recorded by 179
+operators at 22 desks. Book 3's
+[handheld gripper section](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#4-handheld-grippers-collecting-without-a-robot)
+covers the whole family.
+
+The third is the open policy library, and it is the thread that most changes what a
+beginner can do in an evening. [LeRobot](https://github.com/huggingface/lerobot)
+shipped [version 0.6.0 on 6 July 2026](https://huggingface.co/blog/lerobot-release-v060)
+with depth cameras supported end to end, roughly twice as fast data loading, and a
+command that runs a vision-language model over your recordings and writes the task
+sentence for each episode. That last one removes one of the genuinely tedious parts of
+preparing a dataset. The same release added world models and vision-language-action
+models as downloadable policies, and NVIDIA
+[put GR00T N1.7 and a teleoperation framework into the library](https://blogs.nvidia.com/blog/hugging-face-lerobot-models-frameworks-open-robotics/)
+on the same date. These are product announcements: you can install the version and
+fetch the weights.
+
+Running underneath all three is the move from training a policy per task to
+fine-tuning one that was already trained. [SmolVLA](https://huggingface.co/blog/smolvla)
+and [GR00T N1.7](https://huggingface.co/nvidia/GR00T-N1.7-3B) are downloadable, and
+[openpi](https://github.com/Physical-Intelligence/openpi) carries checkpoints for π0
+and π0.5. Physical Intelligence has announced π\*0.6 and π0.7 and released weights for
+neither, so the frontier of this line is a demonstration and the second tier is what
+you can have.
+
+### What is still unsolved
+
+The problem that has resisted the most work is that nobody has shown a reliable way
+to tell whether a policy will work before you run it on the arm. Training loss does
+not predict it, a held-out test set does not predict it, and
+[section 2 of the evaluation page](../../10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md#2-a-test-set-is-not-a-trial)
+explains why. The research result that makes this concrete is
+[LIBERO-VPro](https://arxiv.org/abs/2609.24350), a September 2026 study of six
+foundation models across 12 categories of visual disturbance, roughly 196,000
+simulated episodes and 200 real trials on a Franka Research 3 arm. It found that the
+models tolerated whole objects being hidden and degraded sharply when the small local
+cues at the point of contact were disturbed, and that they were very sensitive to
+stale or missing camera frames. So a clean benchmark is not measuring the thing that
+will fail. Meanwhile real trials are slow and are almost never reproduced by anyone
+but the authors, which Book 3 summarises as
+[evaluation costing more than collection](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#12-what-none-of-this-fixes).
+
+Two more have not moved either. Every route that removes the robot from collection
+produces trajectories that nothing has verified the robot can execute, because the
+arm's reach and joint limits are unknown at recording time, and the filter that
+removes infeasible motions afterwards is a heuristic. And force is missing from almost
+every open dataset, because colour video and joint angles are cheap to record and
+contact force is not, so the policies in this chapter output positions and have nothing
+to say about how hard to push.
+
+The quietest unsolved problem affects every number you will read. Two LeRobot datasets
+can share every field name and still differ in frame rate, camera placement and what
+counts as an episode, and nothing in the format records the difference.
+
+### The next two to three years
+
+The four expectations below are mine. None of them is an announcement, and I have
+given the reason for each, because a prediction without its reason is worth nothing.
+
+I expect fine-tuning a pretrained policy to become the normal first move, and training
+from scratch to become the thing you do when fine-tuning has failed. The reason is
+arithmetic rather than fashion. Recording fifty more demonstrations costs a person an
+afternoon, and a fine-tune of a 450-million-parameter policy costs a few hours of one
+graphics card, so the cheaper move changes as soon as a downloadable checkpoint exists
+for your robot shape. Three such checkpoints already sit in one library with one
+training command. What would make me wrong is the open releases drying up,
+which is a real possibility: Book 3 notes that two of Google DeepMind's three 2026
+robotics models went to early-access partners only.
+
+I expect robot-free collection to become a normal way to get a first dataset, and not
+to replace teleoperation. The reason for the first half is that HiFi-UMI's result
+removes the last structural argument for owning a robot before you have a policy, and
+that assembled handheld rigs now have prices on vendor pages rather than being a
+printer and a weekend. The reason for the second half is the limitation above: nothing
+in a handheld recording knows your arm's kinematics, so somebody still has to run the
+policy on the arm, and the fastest way to fix a policy that fails in one place remains
+driving the arm yourself, which is what section 6.4 said about DAgger.
+
+I expect the LeRobot dataset format to decide which methods get used, more than any
+measured quality difference between them. The reason is the 77,598 figure. A method
+that cannot read the format people publish in has an adoption problem that has nothing
+to do with whether it works, and formats with that much data behind them do not get
+replaced by better formats.
+
+I expect evaluation to become the active research area, and I do not expect a reliable
+way to predict a policy's success rate before running it to arrive inside this window.
+The first half rests on a measured trend: Book 3's
+[count of arXiv robotics abstracts](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted)
+shows the share mentioning a benchmark rising from 15.27 to 20.04 per cent between
+2025 and 2026, faster than most of the methods, and ArmnetBench and the
+[UMI Arena](https://umi-arena.airoa.io/) competition are what that looks like in
+practice. The second half is a judgement, and the reason is that predicting whether a
+grip will hold means knowing the contact forces, and the datasets do not contain them.
+You cannot predict from a signal nobody recorded. Until force appears in large
+recordings, the only honest way to find out whether a policy works will remain running
+it a hundred times and counting, which is what the
+[evaluation page](../../10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md)
+teaches you to do.
+
+---
+
+## 8. Where to read next
 
 The next page, [action chunking transformers](02_action-chunking-transformers.md),
 shows how choosing a burst of moves at once reduces the adding-up of small

@@ -26,7 +26,8 @@ numbers.
    · [5.4 Point Transformer V3](#54-point-transformer-v3)
    · [5.5 Sonata](#55-sonata)
    · [5.6 How to choose](#56-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -779,7 +780,187 @@ size, before you commit.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+The sections above describe what you would run today. This one is about the
+direction, and it uses the
+[four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything)
+from Book 3's frontier chapter. A demonstration is a recording of something working
+once, under conditions its publisher chose. A product announcement says a thing can
+be downloaded or bought today, which you can check yourself, so it is the strongest
+kind here. A research result is a measured number on a stated task with a stated
+protocol. A projection is a statement about a date that has not arrived, and it is
+the weakest. Where a sentence below is my own expectation rather than somebody's
+published claim, it says so.
+
+The history here is short and its shape is simple. The first question was whether a
+network could read an unordered set of points at all, and PointNet answered it. The
+second was size, because a room scan has hundreds of thousands of points rather than
+a thousand, and the sparse convolution libraries answered that. The third was
+accuracy on a whole scene, and attention over points answered that. All three were
+questions about architecture, and they are now largely settled, which is why the
+designs in [section 3](#3-how-it-works-inside) have not changed in kind for several
+years. What moved instead is where the weights come from, and Sonata is the clearest
+marker of that shift: it is not a new way of reading points but a way of training the
+same reader on scans nobody labelled.
+
+Two things that ship today show you the two forms in which you will actually meet
+these models. The first is open and downloadable. The
+[Autoware Foundation](https://github.com/autowarefoundation/autoware), which
+maintains an open self-driving software stack, publishes its lidar perception models
+on the Hugging Face Hub: a CenterPoint detector as
+[lidar_centerpoint](https://huggingface.co/AutowareFoundation/lidar_centerpoint)
+and, more interesting for this page, a Point Transformer V3 as
+[ptv3](https://huggingface.co/AutowareFoundation/ptv3). Both are Apache-2.0. The
+second model card says the model is used by the `autoware_ptv3` node in Autoware,
+that it does object detection and semantic segmentation from one pass over a lidar
+cloud, and that it was trained on about 4,000 frames of the T4Dataset. The
+CenterPoint card states its training data too: nuScenes with 28,000 frames plus
+11,000 frames of TIER IV's own data for the base variant. Those pages are product
+announcements in the sense above, and they answer a question that
+[section 5.5](#55-sonata) leaves open, because they mean that permissively licensed
+Point Transformer V3 weights do exist, trained for traffic rather than for indoor
+rooms.
+
+The second form is closed, and it sits on top of the libraries in
+[section 5.3](#53-minkowskiengine-and-spconv).
+[AnyGrasp SDK](https://github.com/graspnet/anygrasp_sdk) detects and tracks grasps
+in a point cloud, and its own README says that because of the intellectual property
+involved it can only be released as a library file under a licence: you send a
+machine identifier, you receive a licence file, and you never see the code. Its
+stated dependency is MinkowskiEngine version 0.5.4, the sparse convolution library
+in the shortlist above. That is the normal shape of a shipped point cloud model.
+Nobody sells a point cloud encoder. They sell a grasp detector, a driving stack or
+an inspection product, and the encoder is a part inside it that the buyer never
+names.
+
+It is worth saying plainly how much of the industrial money in point clouds involves
+no learned model at all. Photoneo sells
+[Bin Picking Studio](https://photoneo.com/bin-picking-studio) as a package of its
+PhoXi structured-light scanners and software, and the product page describes a CAD
+matching approach rather than a trained network, which is the classical route Book 2
+covers. Ouster sells [Gemini](https://ouster.com/products/software/gemini), which it
+calls AI-enabled lidar perception software for traffic, security and retail spaces;
+the page claims centimetre-level accuracy and does not say what model is inside,
+which is usual for a closed product. So the honest summary of industry use is narrow.
+Learned point cloud models are shipping in self-driving stacks and inside grasp
+software, and in factory bin picking they are still competing with written geometry.
+
+The liveliest research question right now is the one Sonata opened: where the weights
+come from when nobody will label your scans. Sonata is a research result showing that
+self-supervised pretraining works on point clouds once the geometric shortcut is
+closed, and [Pointcept](https://github.com/Pointcept/Pointcept) is where that work
+continues in the open. The weights rather than the method are the obstacle, because
+[facebook/sonata](https://huggingface.co/facebook/sonata) is non-commercial. Two
+routes lead out, and one of them is already visible: train your own encoder on data
+you own, as Autoware did with 4,000 frames of its own driving. The other is for
+somebody to pretrain on data that permits commercial use, which nobody in this family
+has done at Sonata's scale.
+
+The second live question is whether a policy that moves the arm should see points at
+all. Three measured results frame it. 3D Diffusion Policy
+([arXiv 2403.03954](https://arxiv.org/abs/2403.03954)) feeds a sparse point cloud
+through a small encoder into a diffusion policy and reports a 24.2 per cent relative
+improvement over its baselines across 72 simulated tasks with ten demonstrations
+each, and 85 per cent success on four real tasks with forty demonstrations each.
+[Improved 3D Diffusion Policy](https://humanoid-manipulation.github.io/) carried the
+same idea to a humanoid.
+[PointVLA](https://arxiv.org/abs/2503.07511) takes the opposite tack and injects
+point clouds into a vision-language-action model that was pretrained on images,
+rather than replacing the images. Each is a research result under its own protocol,
+so the numbers do not compare with each other. The argument underneath them is
+between data and geometry: images have the enormous pretraining corpus, and points
+have the measurement.
+
+The third question is whether you should train a 3D network to recognise things at
+all, or take a 2D model that already recognises them and carry its answers onto the
+points. [OpenMask3D](https://github.com/OpenMask3D/openmask3d) does that for instance
+masks, the feature field methods on the
+[3D feature maps page](../03_also-used/02_3d-feature-maps.md) do it for words, and
+Meta's [SAM 3D](https://ai.meta.com/blog/sam-3d/), published on 19 November 2025 with
+checkpoints, inference code and a benchmark, produces a textured 3D mesh of an object
+from a single photograph with no depth sensor and no known camera. The download is a
+product announcement, the accuracy claims are research results on its own benchmark,
+and the licence is Meta's SAM 3 licence. If this route keeps gaining, the native 3D
+encoder's remaining job is geometry rather than naming.
+
+The fourth question is dull and decides whether any of this runs on the arm. Point
+Transformer V3 prefers FlashAttention, sparse kernels such as
+[spconv](https://github.com/traveller59/spconv) and
+[TorchSparse++](https://github.com/mit-han-lab/torchsparse) decide whether a bin scan
+fits in memory, and Book 3's frontier chapter counts a measured push towards
+[smaller models on the robot](../../../03_frameworks/08_frontier/06_what-is-coming.md#51-three-specific-directions-visible-in-this-months-submissions)
+driven by the fact that
+[NVIDIA's stated entry-level 2027 part has 16 gigabytes of memory](../../../03_frameworks/08_frontier/06_what-is-coming.md#22-nvidias-edge-computers-with-hardware-stated-for-the-first-quarter-of-2027).
+
+Now the problems that have not yielded. The first is that a point cloud model learns
+the sensor as well as the world. The Autoware model card says this about its own
+shipped model: it was trained on one lidar configuration and accuracy on a different
+one can drop without fine-tuning. That is a publisher warning you on its own download
+page, which makes it the most credible statement of the problem available. A camera
+model transfers between cameras far better, because a photograph of a mug looks like
+a photograph of a mug, while the pattern of points off a mug is a property of the
+scanner that made it.
+
+The second is that there is no large pretrained point cloud encoder you may put in a
+product. This has resisted work because it is a data licensing problem rather than a
+modelling one: the indoor scan collections that make pretraining possible forbid
+commercial use, so the weights inherit the restriction however good the recipe is.
+
+The third is missing data, and no architecture fixes it. A transparent or shiny
+surface returns no points, so there is nothing for the model to label, and Book 2
+collects what people do instead in its section on
+[transparent and shiny objects](../../../02_perception/02_object-perception/04_models-that-find.md#17-transparent-and-shiny-objects).
+Alongside that sits a quieter evaluation problem. The public benchmarks for these
+models score naming the points of a room, and nobody has published one that measures
+whether a point cloud encoder makes a bin-picking cell pick better. Until somebody
+does, every choice in
+[section 5.6](#56-how-to-choose) rests on room-scanning numbers being a fair proxy
+for your bin, which is an assumption and not a result.
+
+The rest of this section is what I expect over the next two to three years, with the
+reason in each case. None of it is an announcement by anybody.
+
+I expect point cloud encoders to stay components rather than becoming products, and
+the reason is in the two shipping examples above. The open Autoware node and the
+closed AnyGrasp library are both parts inside something a customer buys. There is no
+market for an encoder on its own, because the buyer's problem is stated as a picked
+part or a tracked vehicle and never as a labelled point.
+
+I expect permissively licensed pretrained 3D weights to appear, made by organisations
+that have to ship rather than by laboratories that have to publish. The reason is
+that it has already happened once in a narrow domain: Autoware's Apache-2.0 Point
+Transformer V3 exists because a driving stack needed weights it was allowed to use,
+and it was trained on data its publisher controls. The same pressure exists in
+warehouse and factory work, where the scans are easy to collect and the licence is
+the only obstacle. This is my expectation and not a published plan.
+
+I expect geometry to be added to image-pretrained policies more often than policies
+are built on points alone, which is the PointVLA shape rather than the 3D Diffusion
+Policy shape. The reason is an asymmetry between the two measured advantages. Points
+buy precision, which the 3D Diffusion Policy numbers support, but a point-only policy
+gives up the pretraining corpus that makes a vision-language-action model work at all,
+and that corpus is where most recent progress in
+[movement models](../../06_movement-models/01_overview.md) came from.
+
+I expect the naming job to move further towards 2D models lifted into 3D, while
+native 3D encoders keep the geometry job. The reason is supply. The number of
+labelled photographs grows every year and the number of labelled 3D scans barely
+does, so a method that inherits a 2D model's vocabulary inherits that growth, and
+SAM 3D and the feature field methods are already two independent demonstrations that
+the lift works. What a 2D model cannot do is tell you where a surface is in
+millimetres, which is exactly what a sparse convolution over measured points is for.
+
+I do not expect one point cloud foundation model that everybody uses, in the way one
+image model now serves most vision work. The reason is the sensor dependence in the
+first unsolved problem above. Until a pretrained encoder can absorb a lidar, a
+structured-light scanner and a stereo camera without fine-tuning for each, the
+pretraining will keep being redone per sensor family, and that is a measurement
+problem rather than a scale problem.
+
+---
+
+## 7. Where to read next
 
 - [Shape completion](../03_also-used/01_shape-completion.md) is the next page, and it
     deals with the missing back of the object.

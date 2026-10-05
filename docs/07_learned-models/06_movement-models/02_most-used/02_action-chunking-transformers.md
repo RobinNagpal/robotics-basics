@@ -33,7 +33,8 @@ small mistakes adding up that is described there.
    · [6.4 SmolVLA, a chunk from pretrained weights](#64-smolvla-a-chunk-from-pretrained-weights)
    · [6.5 π0.5 in LeRobot, and what a slow chunk needs](#65-π05-in-lerobot-and-what-a-slow-chunk-needs)
    · [6.6 How to choose](#66-how-to-choose)
-7. [Where to read next](#7-where-to-read-next)
+7. [Where this is going](#7-where-this-is-going)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -739,7 +740,197 @@ to join one to the next.
 
 ---
 
-## 7. Where to read next
+## 7. Where this is going
+
+This section is about where chunk-predicting policies are heading. It is written on 4
+October 2026, and it uses the vocabulary that Book 3's frontier chapter sets out for
+[the four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration is a recording of something working once under conditions the
+publisher chose. A product announcement says a thing can be bought or downloaded, and
+you can check it, which makes it the most useful kind. A research result is a measured
+number under a stated protocol. A projection is a statement about a date that has not
+arrived, and it is the weakest. Each claim below says which kind it is, and where the
+judgement is mine the sentence says so.
+
+### How it got here
+
+ACT arrived in 2023 as one paper's answer to one problem, and what happened next was
+not that ACT improved. ACT barely changed. Instead its output shape spread: predicting
+a burst of future commands in one pass, rather than one command at a time, became
+something almost every new policy does, including policies that share nothing else
+with ACT. Section 6.6 put it as the question no longer being whether to chunk. The
+work since has gone into what else the chunk should contain and how to join one chunk
+to the next.
+
+### Where it is used in industry today
+
+ACT itself is not a product and nobody sells it. Its industrial presence is indirect,
+and there are three honest ways to see it.
+
+The first is the hardware. The rig that
+[the ACT paper](https://arxiv.org/abs/2304.13705) introduced became a product line:
+Trossen Robotics sells its descendants as the
+[Stationary AI](https://www.trossenrobotics.com/stationary-ai) two-arm kit at
+$23,995.95 and the [Mobile AI](https://www.trossenrobotics.com/mobile-ai) version at
+$33,695.95. Read those pages carefully, because Trossen retired the ALOHA brand in
+March 2025 and the legacy line reached end of life on 1 July 2025, while the current
+products still carry "Aloha" inside their full names.
+
+The second is the library. [LeRobot](https://github.com/huggingface/lerobot) is
+Apache-2.0 and ships ACT as one policy among about ten, with one dataset format and one
+training command, and it is what NVIDIA chose when it
+[put GR00T N1.7 and a teleoperation framework into it](https://blogs.nvidia.com/blog/hugging-face-lerobot-models-frameworks-open-robotics/)
+on 6 July 2026. That is a vendor with its own stack deciding that somebody else's
+library is where its model should live, which tells you more about adoption than any
+download figure.
+
+The third is the chunk inside commercial policies. Google DeepMind's
+[Gemini Robotics 2](https://deepmind.google/blog/gemini-robotics-2-brings-whole-body-intelligence-to-robots/)
+offers its reasoning model through Google AI Studio and keeps the two models that
+actually move a robot with early-access partners. Figure's
+[Helix 2.5](https://figure.ai/news/helix-2-5-zero-shot-30-home-generalization) reports
+56 per cent zero-shot success across 30 unseen homes against 9 per cent for the same
+architecture trained from scratch, and nothing about it is downloadable, so it is a
+research result and not a product. Skild AI's [S1](https://www.skild.ai/blogs/s1) is in
+commercial use with partners and cannot be obtained. The pattern is the one Book 3
+records in
+[its section on what none of them can do](../../../03_frameworks/08_frontier/02_foundation-models.md#11-what-none-of-them-can-do-yet):
+the frontier chunk predictors are demonstrated and closed, and the open shelf trails
+them by roughly eighteen months.
+
+### What is being worked on right now
+
+Four fronts are active, and three of them are attempts to put something into the chunk
+that ACT's chunk does not contain.
+
+The largest is force. ACT predicts positions, and a position says nothing about how
+hard to push, which is why Gemini Robotics 2's own numbers show 92 per cent at
+unscrewing a light bulb and 36 per cent at screwing one in. Taking apart needs
+position control and putting together needs force control.
+[CompVLA](https://arxiv.org/abs/2609.23614) predicts a stiffness matrix alongside the
+motion, so the model that decides where to go also decides how hard to push, and
+[ForceRFT](https://arxiv.org/abs/2609.22840) refines a policy's actions using
+force-guided reinforcement learning. Both are September 2026 papers with measured
+results and no released product. This is the front I would watch most closely, because
+it is the one with a named commercial reason behind it.
+
+The second is memory. A chunk is chosen from the current observation, so two moments
+that look the same produce the same chunk even when the task needs different actions.
+Book 3 records several September 2026 submissions adding persistent state to policies
+for exactly this reason, in
+[its section on current research directions](../../../03_frameworks/08_frontier/06_what-is-coming.md#51-three-specific-directions-visible-in-this-months-submissions).
+It is the least glamorous of the four and probably the most consequential for long
+tasks, because a policy that cannot remember what it already did cannot recover from
+its own mistakes.
+
+The third is making the chunk predictor small enough to run on the robot.
+[FoldQuantVLA](https://arxiv.org/abs/2609.24433) reports four-bit weights and four-bit
+activations with speedups of 1.20 to 1.33 times. Quantisation means storing each
+number with fewer bits so the model fits in less memory. This front has an external
+cause with a date attached: NVIDIA
+[announced three Jetson Thor computers on 15 July 2026](https://blogs.nvidia.com/blog/jetson-thor-robotics-edge-ai-agent/)
+with physical hardware stated for the first quarter of 2027, the entry-level part has
+16 gigabytes of memory, and current large policies do not comfortably fit in it. That
+is a product announcement creating a research problem.
+
+The fourth is where the chunk predictor's weights come from. ACT is trained from
+nothing and the newer chunk policies are not.
+[SmolVLA](https://huggingface.co/blog/smolvla) puts a roughly 100-million-parameter
+flow-matching action expert on a vision-language backbone and reports about 78 per cent
+success on real SO-100 arm tasks. [MolmoAct2](https://arxiv.org/abs/2605.02881), from
+the Allen Institute for AI, grafts the same kind of expert onto an autoregressive
+vision-language model, and [GigaBrain-0.7](https://arxiv.org/abs/2608.15875) is
+Apache-2.0 on both code and weights. All three are downloadable, which puts them in a
+different class from the closed models above.
+
+### What is still unsolved
+
+Nobody has shown a reliable way to tell whether a chunk policy will work before
+running it on the arm, and this is the problem that has resisted the most effort. The
+research result that makes it concrete is
+[LIBERO-VPro](https://arxiv.org/abs/2609.24350), a September 2026 study of six
+foundation models across 12 categories of visual disturbance, roughly 196,000
+simulated episodes and 200 real trials on a Franka Research 3 arm. It found that the
+models tolerated whole objects being hidden, degraded sharply when the small local cues
+at the point of contact were disturbed, and were very sensitive to stale or missing
+camera frames. A chunk makes this worse, because the policy commits to a burst of
+commands and carries them out without looking, so a disturbance arriving mid-chunk is
+acted on only when the next chunk is chosen. An August 2026 survey,
+[The Embodiment Gap in Robot Foundation Models](https://arxiv.org/abs/2608.18433),
+makes the matching point about hardware: a policy can generalise and still need
+substantial work before it runs on a particular arm.
+
+Two others have not moved. The choice section 3 set out has no good answer yet: either
+you carry out part of a chunk and are blind for that span, or you ask for a new chunk
+every step and pay a forward pass every step, and temporal ensembling buys smoothness
+rather than escaping the trade. Nobody has published a way to revise the rest of a
+chunk cheaply when something changes inside it. And multi-finger dexterity is still the
+hard part by the admission of the organisation furthest along, because Google
+DeepMind's own post says that while Gemini Robotics 2 reaches a medium to high success
+rate with grippers, multi-finger dexterous manipulation remains challenging.
+
+The third is that two reported success rates cannot be compared, because every group
+evaluates on its own robot, objects and tasks, and the numbers above were each measured
+by the organisation that benefits from them. That is why
+[ArmnetBench](https://arxiv.org/abs/2607.24481), which trained seven policies on twelve
+tasks with 50 demonstrations each and released 2,518 labelled rollouts, and
+[IndustrialVLA-Bench](https://arxiv.org/abs/2609.25562), which proposes a shared
+reporting format for open policies, matter more than their own headline numbers do.
+
+### The next two to three years
+
+Five expectations follow. They are mine, not anybody's roadmap, and each one is given
+with its reason, because the reason is the only part worth reading.
+
+I expect ACT to stay the first policy anyone trains, for a reason that has nothing to
+do with ACT being good. LeRobot's own
+[compute hardware guide](https://huggingface.co/docs/lerobot/hardware_guide) groups
+policies by the video memory they need to train at a batch size of eight, and ACT sits
+in the 2 to 6 gigabyte band while the large policies need 24 to 40. Consumer memory
+grows slowly and model sizes do not, so the band ACT occupies will stay the only one
+that a person with a laptop can reach. Teaching will follow the hardware, and the
+policy people learn on is the policy they reach for afterwards.
+
+I expect chunk policies to acquire a force or stiffness output, and I expect that to be
+the change that moves assembly work from demonstration to deployment. The reason is
+the 92-against-36 gap above. That gap names a market in a single pair of numbers, two
+September 2026 papers are already predicting stiffness alongside motion, and the
+mathematics of impedance control has been settled for decades, so this is a question of
+merging two known layers rather than inventing one. This is my expectation and not an
+announcement.
+
+I expect ACT's own internals to be replaced while its output shape survives. SmolVLA,
+MolmoAct2 and the newer open models already use a flow-matching action expert in place
+of the transformer decoder and style encoder that section 3 described. The reason is
+practical: such a head bolts onto a pretrained vision-language backbone, which is where
+capability now comes from, and ACT's ResNet-18 and small transformer were designed to
+be trained from nothing. The chunk will outlive the network that introduced it, which
+is the usual way an idea wins.
+
+I expect a quantised chunk policy running on the robot's own computer to become
+ordinary, and this is the prediction in this section with the firmest external support.
+NVIDIA has announced hardware for the first quarter of 2027 with a stated memory size,
+four-bit quantisation of these policies is already measured, and a robot that does not
+need a machine on the network is cheaper to deploy and does not stop when the network
+does. The announcement is NVIDIA's; the expectation that policies will be shrunk to fit
+it is mine.
+
+I expect shared evaluation to arrive before any way of predicting a policy's success
+rate in advance, and I do not expect the second inside this window. The first half
+rests on a measured trend, which is that Book 3's
+[count of arXiv robotics abstracts](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted)
+shows the share mentioning a benchmark rising from 15.27 to 20.04 per cent between 2025
+and 2026, faster than most of the methods it would measure. The second half is a
+judgement, and the reason is that what you would have to predict is how contact turns
+out, and contact force is absent from almost every large recording. You cannot predict
+from a signal nobody recorded. Until that changes, the only honest way to know whether
+a chunk policy works will be to run it many times and count, which is what the
+[evaluation page](../../10_making-models-work-on-an-arm/02_most-used/03_evaluation-and-failure.md)
+sets out.
+
+---
+
+## 8. Where to read next
 
 The next page, [diffusion and flow policies](03_diffusion-and-flow-policies.md),
 keeps the chunks and adds a way to choose cleanly between different ways of doing a

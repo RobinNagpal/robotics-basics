@@ -25,7 +25,8 @@ angle.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -771,7 +772,170 @@ learned model does not help.
 - An error that really is one unknown number, such as the mass of a new gripper. Measure
   it or fit it, as in 5.1, rather than training a network to hide it.
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about what changes next, and it is written on 4 October 2026. It uses
+the four kinds of claim that the frameworks book sets out in [four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration worked once under conditions its publisher chose. A product
+announcement can be bought or downloaded, so you can check it, which makes it the most
+valuable kind. A research result is a measured number with a stated protocol. A
+projection is about a date that has not arrived, and it is the weakest. Where a sentence
+below is my own judgement rather than a report of somebody's claim, it says so.
+
+### 6.1 How it got here
+
+The order of section 5 is the history. Fitting the maker's own equations to a recording
+of your arm came first and is still the first thing to do. Then a network was added on
+top to absorb what those equations have no term for. Then came networks with the physics
+built into their structure, and local learners that report an error bar with each
+prediction. Then actuator networks arrived, and they changed what the whole subject is
+for: an actuator network exists to make a simulator behave like a real motor, not to
+improve a controller. That is the shape of the change. This subject started out aimed at
+the arm's control loop and is now aimed mostly at the simulator, because that is where
+the demand went.
+
+### 6.2 Where it is used in industry today
+
+This page has more genuine production use than the rest of the chapter, and all of it is
+inside tools rather than in anything sold as a learned arm model.
+
+The clearest case is [Isaac Lab](https://github.com/isaac-sim/IsaacLab), NVIDIA's
+simulation framework, which ships an actuator network configuration for the ANYdrive 3.0
+motors of the ANYmal-C robot, as section 5.3 describes. That is a learned model of real
+hardware, trained once, shipped as a configuration file inside a vendor framework, and
+used by anyone who trains a policy on that robot. It is a product announcement in the
+plainest sense, because you can clone the repository and read the file.
+
+The second case is system identification as a supported feature rather than a research
+script. Google DeepMind's MuJoCo now ships a
+[system identification toolbox](https://github.com/google-deepmind/mujoco/blob/main/python/mujoco/sysid/README.md)
+in its Python package, which is section 5.4, and
+[Pinocchio](https://github.com/stack-of-tasks/pinocchio) is the maintained rigid-body
+library that section 5.1 and section 5.2 both build on. Both are installable today.
+
+On the arm side, the honest position is that the makers keep this work to themselves and
+sell it as calibration. Absolute positioning accuracy comes from a factory calibration
+measured with an outside instrument, and the arm's own description file is what you are
+given. Franka Robotics exposes its dynamics model through
+[franka_ros2](https://github.com/frankarobotics/franka_ros2), which is more than most
+vendors do, and [Universal Robots](https://www.universal-robots.com/products/ur5e/)
+publishes nothing about the model inside its controller.
+
+What nobody publishes is the number that would settle whether this page's subject is
+worth your time: how much a learned arm model improves tracking error on a catalogue arm
+doing a real job. No vendor states it, and the papers in section 5 each measure on their
+own arm with their own protocol, so the results cannot be put side by side.
+
+### 6.3 What is being worked on right now
+
+The busiest front is fitting a simulator to a real robot, and the reason is demand
+rather than novelty. Policies are trained in simulation and then run on hardware, so
+every gap between the two costs attempts, and MuJoCo shipping a toolbox for closing that
+gap is the clearest signal of where the effort is going. Section 5.4 is that front, and
+section 5.3 is the part of it that replaces the simulator's ideal motors.
+
+The second front is that this subject is being swallowed by a bigger category. LeRobot's
+[version 0.6.0 release notes](https://huggingface.co/blog/lerobot-release-v060), from 6
+July 2026, add three world models as downloadable policies, and the share of robotics
+abstracts on arXiv containing "world model" went from 2.39 per cent in 2025 to 5.48 per
+cent in 2026 to late September, by the counts in the frameworks book's
+[measured research
+directions](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted).
+A world model predicts what happens next. A learned arm model is the same idea with the
+arm's own body as the whole world, which is the point the
+[learned dynamics models](../../08_world-models/02_most-used/01_learned-dynamics-models.md)
+page makes, so the research attention is moving to the general version of this page's
+subject.
+
+The third front is pulling force and compliance inside a learned policy instead of
+leaving them to the controller below it. Two September 2026 preprints show the shape:
+[CompVLA](https://arxiv.org/abs/2609.23614) predicts a stiffness matrix alongside the
+motion, and [ForceRFT](https://arxiv.org/abs/2609.22840) refines a policy's actions with
+force-guided reinforcement learning. Both are research results with no released weights.
+They matter here because the thing a residual torque model gives you, which is knowing
+what the arm will do under load, is being learned end to end by something else.
+
+The fourth front is making models small enough to run on the robot, and it bears
+directly on section 5.6. A learned correction has to produce an answer every control
+cycle, and a Gaussian process cannot even take a whole recording. Work such as
+[FoldQuantVLA](https://arxiv.org/abs/2609.24433), which reports four-bit weights and
+activations with speedups of 1.20 to 1.33 times, exists because current models do not
+comfortably fit the computers robots carry. NVIDIA's
+[Jetson Thor announcement of 15 July 2026](https://blogs.nvidia.com/blog/jetson-thor-robotics-edge-ai-agent/)
+puts the entry-level part's hardware in the first quarter of 2027, which is announced
+with a date.
+
+### 6.4 What is still unsolved
+
+Absolute positioning has resisted everything, and the reason is a measurement problem
+rather than a modelling one. A model trained from the arm's own encoders cannot discover
+an error those encoders cannot see, so a link that bends or a base that has shifted is
+invisible to it. Finding that error needs an outside instrument such as a laser tracker,
+and no amount of learning substitutes for one. Section 5.8 already says this, and five
+years of work has not changed it.
+
+Justifying a learned correction to somebody else is the second unsolved thing. The
+written model's behaviour can be checked in every pose by argument, and a network's
+cannot, so wherever a limit has to be defended the written model stays and the learned
+part stays clipped. Book 6's
+[safety monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md#7-this-is-not-a-certified-safety-function)
+page explains what a certified function has that a network does not, and nothing in this
+page's subject supplies any of it.
+
+The third is the interface, and it is the one that stops most readers before they begin.
+A learned torque correction needs a torque or current interface, and most catalogue arms
+accept position commands only. That is a firmware decision by the arm's maker, so it
+cannot be worked around by better models. The fourth is that there is no shared benchmark
+for arm dynamics models at all: no agreed arm, no agreed trajectory, no agreed error
+measure. Without one, "this model is better" is not a checkable statement.
+
+### 6.5 The next two to three years
+
+Everything in this part is my expectation with a reason attached, not an announcement by
+anybody.
+
+**Fitting a simulator to the real robot becomes a routine step rather than a research
+project.** The reason is that the tool now ships with the simulator, so the cost of doing
+it has dropped from writing an optimiser to calling one, and the consumer is already
+there in volume, because policy training in simulation is what most of this field now
+does. My expectation is that within this period a published policy recipe that does not
+fit its simulator to the hardware will look careless in the way an uncalibrated camera
+looks careless now.
+
+**Actuator networks spread with the drives that need them, and not to geared industrial
+arms.** The reason is what an actuator network is for. It exists because the motor is not
+an ideal torque source, and a harmonic-drive industrial joint is close enough to one that
+the network has little to learn. Tendon-driven hands and series-elastic legs are not, and
+those are exactly the hardware now becoming affordable. So I expect this entry to grow
+where the hands and legs go and to stay irrelevant on a six-axis catalogue arm.
+
+**The torque interface stays the gate, so a learned arm model keeps earning its place off
+the control loop.** The reason is responsibility rather than engineering. Opening a torque
+interface means the arm's maker accepting whatever torque a customer's software sends,
+and a vendor who has certified a stopping distance has a direct reason not to. So my
+expectation is that the two uses that need no torque interface grow fastest: the expected
+torque inside a collision detector, which the
+[collision and failure detection](../02_most-used/02_collision-and-failure-detection.md)
+page describes, and a fitted parameter set for a simulator.
+
+**World models absorb this subject in name, without replacing anything in section 5.**
+The reason is that one model predicting the next state of the arm and the next state of
+the object is simpler to train and to ship than two, and the research attention and the
+released software both already point that way. This is a judgement about vocabulary
+rather than a capability claim, and it has a practical consequence: in two years the
+work on this page may be published under a heading that does not contain the word "arm",
+so search for what a method predicts rather than for what it is called.
+
+**Nothing in this area becomes certified, and the useful thing to watch is a published
+number.** The reason is the four properties named on that safety monitoring page, none of which a
+network supplies. What would move this page is somebody publishing a tracking error, on a
+named catalogue arm, before and after a learned correction, with the trajectory stated.
+That is a cheap experiment and nobody has published it, which is itself informative about
+how much the improvement is worth. Until it appears, section 5.8's advice stands: fit the
+maker's model first, and only then ask whether anything is left to learn.
+
+## 7. Where to read next
 
 In this chapter:
 

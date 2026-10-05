@@ -21,7 +21,8 @@ explained where it first appears.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models and methods](#5-well-known-models-and-methods)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -657,7 +658,173 @@ are there to be read.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+Section 5 described the methods as they stand, and this section is about where they
+are heading. Four kinds of statement appear below, and they carry different weight. A
+**demonstration** is a recording of something working once, under conditions the
+publisher chose. A **product announcement** says that something can be downloaded or
+bought, so you can check it yourself. A **research result** is a measured number under
+a stated protocol. A **projection** is a claim about a date that has not arrived, and
+it is the weakest. Where a sentence below is my own expectation rather than somebody's
+claim, it says so. Book 3's
+[what is coming to robot arms](../../../03_frameworks/08_frontier/06_what-is-coming.md)
+uses the same four words across the whole field.
+
+### 6.1 How it got here
+
+The method's position has turned over completely. Between 2018 and 2023 reinforcement
+learning was how a robot was supposed to learn a hard contact task, and the landmark
+systems in sub-section 5.6 were the evidence for that. Then copying demonstrations
+turned out to be much less work for anything a person can show, which is most arm
+tasks. So reinforcement learning stopped being the way a policy is trained and became
+the stage that comes after one. HIL-SERL in 2024 and Recap in 2025 are both that
+stage. The algorithms themselves changed very little, and what changed is what they
+are pointed at.
+
+### 6.2 Where it is used in industry today
+
+It is used far less on real arms than the volume of research about it suggests, and
+that gap is the most useful thing to understand on this page. There is no downloadable
+reinforcement learning policy for an arm, by construction, as section 5 opened by
+saying. No vendor has published how many arms at a named customer site are driven by a
+practised policy, how many hours they ran, or how often a person had to step in. The
+clearest published success of practice-in-simulation on real hardware is not
+manipulation at all but legged walking, in
+[a 2019 result in *Science Robotics* on the ANYmal robot](https://arxiv.org/abs/1901.08652),
+which trained in simulation and transferred to the machine. The reason that worked is
+worth taking with you. Walking forwards without falling over is easy to write a score
+for, and a leg swinging through air is far easier to simulate than a peg entering a
+hole. Neither condition holds for assembly.
+
+What is checkable and genuinely useful is the open tooling, and all of it is recent.
+HIL-SERL ships inside LeRobot with
+[a documented workflow](https://huggingface.co/docs/lerobot/hilserl) under Apache-2.0,
+and [gym_hil](https://github.com/huggingface/gym-hil) lets you rehearse it without
+hardware. [Isaac Lab](https://github.com/isaac-sim/IsaacLab) is where large-scale
+simulated practice happens. LeRobot's
+[version 0.6.0 of 6 July 2026](https://huggingface.co/blog/lerobot-release-v060) added
+two reward models as downloadable policies, alongside three world models, and a reward
+model is a separate model that scores whether an attempt is going well. Those are
+product announcements, and you can test each one by fetching it. None of them is a
+deployment.
+
+### 6.3 What is being worked on right now
+
+The front has moved to practising on top of a policy that already half works, rather
+than learning from nothing. Sub-section 5.4 described the clearest instance, which is
+Recap inside π\*0.6 from Physical Intelligence. Read that as a research result
+published by the company that made it, with its per-task figures given as bar charts
+rather than in the text and no code or weights released, which is about as weak as a
+research result gets while still being one.
+
+The same shape is now being tried in the open, on top of a model you can download.
+[ForceRFT](https://arxiv.org/abs/2609.22840), submitted in September 2026, freezes a
+SmolVLA policy trained on demonstrations and learns a small correction on top of it
+from the force readings at the wrist. The corrections come from two sources, which are
+a person's take-overs and the robot's own attempts that the system could verify, and
+the authors are careful to keep the credit from crossing between the two. They report
+higher autonomous success than both a demonstration-trained policy and a correction
+learned by copying, on plug insertion, ring-on-peg assembly and whiteboard wiping.
+That is a research result on real hardware. It matters here because it is the Recap
+idea built on an Apache-2.0 model that anybody can fetch, so it is the first version
+of this a reader of this page could reproduce.
+
+The reward is turning into a model rather than a rule somebody writes. HIL-SERL
+already does this, because its reward is a classifier trained on the demonstration
+images, and LeRobot has now made reward models a downloadable category of their own.
+The [reward and progress models page](03_reward-and-progress-models.md) covers them.
+This is the part of the method where the real work is, because section 4 showed that
+producing the practice is mostly a matter of buying graphics cards, while deciding
+whether an attempt succeeded is not.
+
+Practice is also being moved off the real arm and out of the hand-built simulator, into
+a model that learned the physics from recordings. LeRobot shipped three such world
+models with pretrained checkpoints in the same release, and Book 3's frontier chapter
+measures the share of robotics abstracts mentioning a world model rising from 2.39 per
+cent in 2025 to 5.48 per cent in 2026. The
+[latent world models page](../../08_world-models/03_also-used/03_latent-world-models.md)
+explains the idea. The attraction is that it attacks the sim-to-real gap of section 4
+by learning the simulator instead of building it.
+
+### 6.4 What is still unsolved
+
+The reward is the problem that has resisted everything. Nobody has published a general
+way to score a manipulation attempt, and every working system on this page writes or
+trains one per task. A rule you write by hand gets the easy cases and misses the ones
+that matter, which is why HIL-SERL trains a classifier instead. A classifier brings
+its own failure, because a policy that practises against a learned score will find
+whatever makes that score say yes, including things that are not success. There is no
+published measurement of how often that happens on a real arm.
+
+Resetting the scene is the second, and it is unglamorous enough to be left out of most
+papers. Every one of the millions of attempts in section 4 starts from somewhere, and
+on a real arm somebody has to put the object back. HIL-SERL simply assumes a person is
+sitting there holding the controller, which is honest and is also why its published
+time is measured in hours of a person's attention. No system on this page removes that
+person for a contact-rich task.
+
+Simulated contact is the third. Sub-section 5.6 recorded that IndustReal's clearances
+were half a millimetre, which is much looser than a real electrical connector, and
+that its authors deliberately used no force sensor at all. Verification is the fourth,
+and it is about to become a dated problem rather than a vague one. A policy that
+explores on real hardware is harder to assess than one that repeats a fixed path, the
+European Union's
+[Machinery Regulation](https://single-market-economy.ec.europa.eu/sectors/mechanical-engineering/machinery_en)
+applies on a mandatory basis from 20 January 2027 and covers machinery whose safety
+functions use artificial intelligence, and NVIDIA's
+[post of 21 September 2026](https://blogs.nvidia.com/blog/physical-ai-halos-safety/)
+names the certification bodies now building the capacity to inspect learned systems.
+
+### 6.5 The next two to three years
+
+I expect reinforcement learning to stay a stage that comes after copying, and not to
+return as a way of training a policy from nothing. This is my expectation and not an
+announcement. The reason is that the thing it fixes only exists once you have a
+policy, because what demonstrations can never show you is how to recover from the
+particular mistakes your own policy makes. The surrounding tooling now assumes the
+same order: Book 3's frontier chapter counted 77,598 datasets of demonstrations on the
+Hugging Face Hub carrying the LeRobot tag on 23 September 2026, and there is no
+comparable supply of reward functions. For the same reason I do not expect a
+downloadable general reinforcement learning policy to appear, because a finished one
+belongs to one reward rule, one body and one scene.
+
+I expect the reward model to become the thing people download, more than the algorithm
+is. This is my expectation. The reason is that PPO and SAC are settled code from 2017
+and 2018 and nobody is waiting for a better version of either, so the thing that
+blocks a project is scoring the attempt rather than optimising it. LeRobot shipping
+reward models as a category in July 2026 is a product announcement rather than my
+guess, and it is the first evidence of this happening.
+
+I expect human take-over equipment to become ordinary on an arm that learns, in the
+way a gamepad already is. This is my expectation. The reason is that the strongest
+result on this page is also the cheapest one to adopt. HIL-SERL reached 100 per cent
+success on every task it was tried on after one to two and a half hours of real
+practice, that was peer-reviewed in *Science Robotics*, it needs no simulator at all, and the code is
+in LeRobot today. A method in that position spreads without anybody promoting it.
+
+I expect practice inside a learned world model to be tried seriously and to stay
+unproven within this window, and I am less sure of this than of anything else here. In
+favour, LeRobot shipped three world models with checkpoints and the research attention
+more than doubled in a year. Against, a learned simulator inherits the sim-to-real gap
+and adds a second one of its own, because a policy can exploit a world model's
+mistakes exactly as happily as a hand-built simulator's. I could not find a published
+real-arm result at the difficulty of HIL-SERL's connector insertions learned inside a
+learned world model, so treat this as a direction rather than as a method you can plan
+around.
+
+I expect PPO in a simulator to keep exactly the place sub-section 5.1 gives it, which
+is for tasks nobody can demonstrate, and I expect the simulator rather than the
+algorithm to keep being the work. This is my expectation. The reason is that a
+nine-year-old stable algorithm does not explain the difference between two projects,
+so the physics and the reward do. Two structural facts hold that in place. The
+large-scale simulators want an NVIDIA card, which limits an Apple Silicon reader to
+plain MuJoCo and small tasks, and Isaac Gym's replacement by Isaac Lab already means a
+tutorial built on the older one is wrong.
+
+---
+
+## 7. Where to read next
 
 This page covered the first of the also-used methods, and the reading below
 either compares it with copying or moves on to the next one.

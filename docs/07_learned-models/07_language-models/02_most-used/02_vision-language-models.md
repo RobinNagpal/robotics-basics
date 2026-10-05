@@ -24,7 +24,8 @@ overview](../../03_seeing-models/01_overview.md), because this page compares the
    · [5.5 PaliGemma](#55-paligemma)
    · [5.6 LLaVA](#56-llava)
    · [5.7 How to choose](#57-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -702,7 +703,184 @@ vision-language models.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+Forward-looking writing about robots is where invented facts collect, so every
+statement below says what kind of claim it rests on. A demonstration is a recording of
+something working once under conditions the publisher chose. A product announcement
+says something can be bought or downloaded today, which you can check, so it is worth
+the most. A research result is a measured number on a stated task. A projection is a
+statement about a date that has not arrived, and it is worth the least. The frontier
+chapter's [section on the four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything)
+explains why the difference decides everything. Where a judgement is mine rather than
+an organisation's published statement, the sentence says so.
+
+The change so far is that the recipe stopped being interesting and the output started
+being. [LLaVA](https://arxiv.org/abs/2304.08485) showed that a vision encoder and a
+language model could be joined by a small projector trained on generated questions and
+answers, and within two years every large laboratory shipped a family at every size,
+several of them under permissive licences. What is being argued about now is not
+whether a model can describe a picture. It is what kind of answer a robot can use: a
+point, a box, a yes or no, or a judgement about whether the step just finished.
+
+This is the one kind of model in this chapter that is genuinely in commercial use
+today, and the reason is structural rather than technical. A vision-language model
+ships as a download or as a web service, and nothing it does sits inside the loop that
+moves the arm, so deploying one needs no safety case for the motion. [Gemini Robotics
+ER 2](https://ai.google.dev/gemini-api/docs/robotics-overview) is available through the
+Gemini application programming interface and Google AI Studio, and in private preview
+on Google's enterprise agent platform. That is a product announcement rather than a
+video, and it comes with published numbers: 91.3 per cent accuracy at finding the
+moment in a video when something happened, and 57.4 per cent at classifying how far
+through a task a robot is. The earlier [Gemini Robotics ER
+1.6](https://deepmind.google/blog/gemini-robotics-er-1-6/) reports reading gauges and
+dials with 93 per cent success when its agentic vision mode is enabled.
+
+The larger industrial use is invisible, because it is inside other models. Every
+downloadable vision-language-action model on the [previous
+page](01_vision-language-action-models.md) is a vision-language model with an action
+head bolted on. [SmolVLA](https://huggingface.co/blog/smolvla) is built on SmolVLM2.
+[GR00T N1.7](https://github.com/NVIDIA/Isaac-GR00T) changed its backbone to
+Cosmos-Reason2-2B, which is built on the [Qwen3-VL](#51-qwen3-vl) architecture, and
+NVIDIA names that change as one of the three that mattered in the release.
+[MolmoAct2](https://huggingface.co/allenai/MolmoAct2) is [Molmo2-ER](#54-molmo2-er)
+with a flow-matching action expert attached, and π0 was built on
+[PaliGemma](#55-paligemma). So when an open
+vision-language family ships a better model, robot policies get better a few months
+later without any robotics research happening at all. That is the most consequential
+use of these models today and no company issues a press release about it.
+
+On a robot, the job that actually gets deployed is choosing a target and checking a
+result, outside the control loop, and the computer for doing it is now a catalogue
+item: [Universal Robots](https://www.universal-robots.com/products/ai-accelerator/)
+sells an AI Accelerator bundling an embedded NVIDIA Jetson Orin AGX 64 GB with an
+Orbbec Gemini 335Lg depth camera, and its page says it is available for order. The
+same pattern arrived in library form when
+[LeRobot](https://github.com/huggingface/lerobot), Hugging Face's robot learning
+library, shipped [Robometer](https://huggingface.co/docs/lerobot/robometer), a
+4-billion-parameter model
+that scores progress and success from a video and a written instruction. What nobody
+has published is how many production cells run a vision-language model at all, so this
+page gives no adoption figure rather than guessing one.
+
+The first thing being worked on right now is pointing. [Molmo2-ER](https://huggingface.co/allenai/Molmo2-ER)
+is Apache-2.0 on code and weights and exists for that one job, continuing
+[Molmo](https://arxiv.org/abs/2409.17146), which was the first open model trained to
+answer by pointing, and Gemini Robotics ER 2 returns points as two numbers scaled to a
+range of 0 to 1000. The reason this is a front rather than a detail is that a point
+needs no agreement about anything. A box needs a class name, and two programs have to
+mean the same thing by "the blue cup", while a point plus one depth reading is already
+a position in your robot's own coordinates.
+
+The second is letting a model judge an attempt, because a person scoring attempts is
+the bottleneck in every scheme for measuring a robot. Gemini Robotics ER 2 publishes
+numbers for exactly that job. Robometer does the same from an open checkpoint, and
+[AutoEval](https://arxiv.org/abs/2503.24278) automates both success detection and scene
+resets on WidowX arms so that policies can be evaluated around the clock. The honest
+limit is the obvious one: this is a model being judged by a model, and no published
+work establishes how often Robometer agrees with a careful human on a task it was not
+trained for.
+
+The third is making these models small enough to sit on the robot.
+[SmolVLM2](https://huggingface.co/blog/smolvlm2) comes at 256 and 500 million
+parameters and 2.2 billion, and [Gemma 4](https://ai.google.dev/gemma/docs/core/model_card_4)
+has E2B and E4B sizes that Google says are designed for laptops and mobile devices.
+The force behind this is a dated product announcement rather than a fashion: NVIDIA
+[announced three Jetson Thor computers on 15 July
+2026](https://blogs.nvidia.com/blog/jetson-thor-robotics-edge-ai-agent/) with physical
+hardware stated for the first quarter of 2027, and the entry-level part has 16
+gigabytes of memory shared with everything else the robot runs.
+
+The fourth is measuring how these models break, which matters here because the seeing
+half is where a robot's mistakes come from. [LIBERO-VPro](https://arxiv.org/abs/2609.24350),
+a September 2026 study, tested six robot foundation models across twelve categories of
+visual disturbance, 3,296 task-condition cases and about 196,000 simulated episodes.
+Its finding is counterintuitive and worth carrying around: the models tolerate whole
+objects being hidden, degrade sharply when the small cues at the point of contact are
+disturbed, and are badly hurt by stale or missing camera frames. A benchmark built on
+clean, current, consistent pictures is not measuring the thing that will fail on your
+arm.
+
+What is still unsolved begins with the answer no model on this page will give you,
+which is "I do not know". A vision-language model says "yes, the mug is in the bowl"
+with the same fluency whether it can see the mug or not, and none of these models
+publishes a calibration number, which would be a statement of how often its confident
+answers are right. The training objective rewards producing an answer. So the
+threshold that decides whether to act has to be yours, built from repeated questions
+or a second model, and [uncertainty and
+confidence](../../10_making-models-work-on-an-arm/03_also-used/01_uncertainty-and-confidence.md)
+is the page about building it.
+
+The second is that nobody publishes the number you would most want before choosing a
+pointing model. You cannot look up how far, in millimetres on a real table, a given
+model's point lands from the thing it was asked to point at, at a stated camera
+resolution and viewing angle. The published numbers are accuracies on benchmark images
+instead. That gap is not a small one, because the error that matters to an arm is a
+physical distance and the error that gets reported is a score.
+
+The third is that the strongest model here cannot be examined. Nothing about Gemini
+Robotics ER 2's insides is published, and its documentation says only that the
+`gemini-robotics-er-2-preview` endpoint is built on Gemini 3.5 Flash, about which
+nothing is published either. A wrong point from an open model can be traced to a half
+of the model; a wrong point from this one is just a wrong point. It is also a preview,
+and Google's own documentation already tells users of the earlier ER 1.6 endpoint to
+move, with a date after which the old one stops answering. Treating a preview endpoint
+as a fixed part of a robot is the mistake this arrangement invites.
+
+Four things follow for the next two to three years, in the order I would bet on them.
+Each is my expectation rather than anybody's announcement unless the sentence says
+otherwise, and the reason is the content.
+
+**The checking step becomes the standard industrial use of these models, and it will
+arrive in vendor products rather than in papers.** The reason is the delay. Every model
+on this page answers in a fraction of a second at best, which rules it out of the loop
+that moves the arm and leaves it the two jobs at either end: choose the target, and say
+whether the step worked. Universal Robots already sells the computer for that as a
+catalogue item, and the European Union's machinery rules, [Regulation (EU)
+2023/1230](https://single-market-economy.ec.europa.eu/sectors/mechanical-engineering/machinery_en),
+apply on a mandatory basis from 20 January 2027 and cover machinery with safety
+functions that use artificial intelligence, which pushes anybody selling into Europe
+towards a documented check at each step rather than a policy nobody watches.
+
+**Pointing becomes the common interface between a model and a robot, and the box
+becomes the special case.** The reason is in the paragraph on pointing above: a point
+carries no vocabulary to agree on and converts into a position with one depth reading.
+Both halves of the market already emit points, the open one with Molmo2-ER and the
+hosted one with Gemini Robotics ER 2, which is the kind of agreement that usually
+settles an interface. What would change my mind is somebody publishing the physical
+pointing error described two paragraphs above and finding it too large to use, and I
+would expect that to show up first on objects with no obvious centre, such as a cable
+or a pile of cloth.
+
+**The per-step checks move onto the robot's own computer, while the hard reasoning
+stays hosted.** This is the prediction I am most confident about, because three
+separate forces push the same way. A hosted model charges for every question and a
+check after every step asks a great many questions an hour. The prompt and the picture
+describe your workplace, and many factories decide on that point alone. And a robot
+whose checker is hosted cannot judge anything during a network outage. The models to do
+it with exist now in SmolVLM2 and Gemma 4's on-device sizes, and the hardware stated
+for the first quarter of 2027 makes them comfortable rather than marginal.
+
+**The choice of vision-language backbone becomes the main lever on how good robot
+policies get.** The evidence is NVIDIA's own account of GR00T N1.7, which names the
+move from its Eagle backbone to Cosmos-Reason2-2B as one of the three changes that
+mattered, and the fact that the open vision-language families release far more often
+than the robot laboratories do. My expectation, not an announcement, is that the next
+visible jump in open robot policy numbers comes from swapping in a newer backbone
+rather than from a new robot idea, and the way to check it is to read the release note
+and see which half changed.
+
+One expectation runs the other way. I do not expect a model on this page to start
+reliably saying that it does not know, inside this window. The reason is in the first
+unsolved problem: nobody publishes a calibration number today, and the thing being
+optimised during training is the production of an answer. Until a model card carries a
+calibration figure you can read, the refusal has to be built outside the model, in your
+code, with a threshold you chose and measured on your own arm.
+
+---
+
+## 7. Where to read next
 
 - [Vision-language-action models](01_vision-language-action-models.md) takes a
   vision-language model and teaches it to output arm movements as well as words.

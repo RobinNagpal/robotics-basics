@@ -27,7 +27,8 @@ page uses only a few lines of Python in one example, and explains each line.
    · [5.5 Qwen3.5](#55-qwen35)
    · [5.6 Gemma 4](#56-gemma-4)
    · [5.7 How to choose](#57-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -855,7 +856,182 @@ ordinary code goes between the planner and the robot in every case.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+Forward-looking writing about robots is where invented facts collect, so every
+statement below says what kind of claim it rests on. A demonstration is a recording of
+something working once under conditions the publisher chose. A product announcement
+says something can be bought or downloaded today, which you can check, so it is worth
+the most. A research result is a measured number on a stated task. A projection is a
+statement about a date that has not arrived, and it is worth the least. The frontier
+chapter's [section on the four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything)
+explains why the difference decides everything. Where a judgement is mine rather than
+an organisation's published statement, the sentence says so.
+
+The change so far is that the planner stopped being the hard part. In April 2022
+[SayCan](https://say-can.github.io/) needed a careful arrangement to get a usable plan
+out of a language model, scoring each candidate step twice, and [Code as
+Policies](https://code-as-policies.github.io/), whose paper appeared later that same
+year, needed a page of hand-written prompts to get a short program. Today a hosted model writes either shape on the first attempt.
+What that did was move the engineering, not remove it. The work is now in the two things
+on either side of the model: the list of skills you hand it, and the checker in ordinary
+code that stands between its answer and the robot.
+
+Industry use is the thinnest part of this page, and it is more useful to say so than to
+fill the space. Nobody has published a production deployment in which a language model
+chooses a robot arm's next step, with a named site, a number of hours run and a count of
+how often a person intervened. The repository's [frontier
+chapter](../../../03_frameworks/08_frontier/01_overview.md) was researched from primary
+sources and records no such deployment either. What exists is an interface you can buy
+and a pattern that is being absorbed into other models, and both are worth knowing
+exactly.
+
+The interface is a product announcement and you can check it today. Google documents a
+[task orchestration loop](https://ai.google.dev/gemini-api/docs/robotics-orchestration)
+in which [Gemini Robotics ER 2](https://ai.google.dev/gemini-api/docs/robotics-overview)
+is given the definitions of your robot's own functions, asks for them by name, and is
+handed the results, and the model itself is available through the Gemini application
+programming interface and Google AI Studio. On the other side,
+[Qwen3.5](https://github.com/QwenLM/Qwen3.5) and
+[Gemma 4](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/)
+publish weights under Apache-2.0, so the planner can run on your own machine with
+nothing leaving the building, and Anthropic publishes a [list of its current
+models](https://docs.claude.com/en/docs/about-claude/models/overview) so you can tell
+which name is still answering. None of that is a deployment. All of it is checkable,
+which is why it is here and the videos are not.
+
+The pattern being absorbed is the more interesting fact. The strongest robot systems of
+2026 do not call a planner, they contain one. Physical Intelligence's π0.7, described in
+its [paper](https://arxiv.org/abs/2604.15483), has a high-level policy that proposes the
+next sub-task in language and a small world model that turns that language into a
+picture of what the scene should look like next, all inside one model. Google DeepMind
+published [Gemini Robotics
+2](https://deepmind.google/blog/gemini-robotics-2-brings-whole-body-intelligence-to-robots/)
+as a reasoning model and an acting model from the same laboratory, built to work
+together. Neither arrangement is something you can obtain: π0.7 has no released weights,
+and Google's acting model reaches early-access partners only. So the absorbed version is
+a demonstration and the separate version on this page is the one you can actually build.
+
+The first thing being worked on right now is tool calling, which is turning the plan
+from a document into a conversation. Google's orchestration guide spells out the loop in
+full, and its own example stops after fifteen steps. Gemma 4 has function calling built
+in, with a context window its [model
+card](https://ai.google.dev/gemma/docs/core/model_card_4) gives as 128,000 tokens on the
+small sizes. The consequence for you is that the artefact you maintain stops being a
+prompt and becomes a set of function definitions, which is a better thing to maintain,
+because a function has a signature and a test.
+
+The second is moving the planner onto the robot. Google states that Gemma 4's E2B and
+E4B sizes are designed for running locally on laptops and mobile devices. Qwen3.5 goes
+at it from the architecture: it keeps the expensive kind of attention in one block out
+of every four and uses a linear-attention block its model card calls Gated DeltaNet in
+the other three, so the work grows with the length of what it has read rather than with
+the square of it. That matters for a planner more than for most models, because a
+planner's prompt carries the whole skill list every time and then grows with the history
+of what has already happened.
+
+The third is judging whether a step worked, which is the half of SayCan that never got
+solved cleanly. Gemini Robotics ER 2 publishes 57.4 per cent accuracy at classifying how
+far through a task a robot is and 91.3 per cent at finding the moment in a video when
+something happened. [Robometer](https://huggingface.co/docs/lerobot/robometer), shipped
+in LeRobot, scores progress and success from a video and a written instruction, and
+[AutoEval](https://arxiv.org/abs/2503.24278) automates success detection and scene
+resets so that attempts can be scored without a person watching. This is a planner
+problem rather than a perception one, because a plan with no feedback is an open-loop
+guess, and the feedback step is where a planner either recovers or repeats its mistake.
+
+The fourth is recovery, and the most honest statement about it comes from a company
+rather than from a paper. Google lists, among Gemini Robotics 2's own limits, that the
+reasoning model has to self-correct when a step fails, which is written as a requirement
+rather than as an achievement. Alongside that, the frontier chapter notes that several
+September 2026 robotics submissions add persistent state to a policy so that it can tell
+apart two moments that look identical but need different actions, and calls that the
+least glamorous and probably most consequential of the directions it identified, because
+a system that cannot remember what it already did cannot recover from its own mistake.
+
+What is still unsolved begins with grounding, and it is the clearest case in this
+chapter of a problem resisting years of work. SayCan's answer in 2022 was to score every
+candidate step a second time, with a model trained on that robot's own attempts, for
+whether the skill would succeed from where the robot was standing. Four years later the
+answer in production is still a skill list somebody wrote by hand and a checker in
+ordinary code. No model on this page knows what your robot can do unless you tell it,
+and nothing published has changed that. [Section 5.7](#57-how-to-choose) tells you to
+keep the checker whichever model you pick, and that advice is a statement about this
+unsolved problem rather than a matter of taste.
+
+The second is that nobody publishes the number you would need to choose between
+planners on evidence. There is no published figure for how often a given model's plan is
+executable on a stated robot with a stated skill list, so the only way to compare two
+models is to write the prompt, run it against your own skills and count the plans you
+could execute. The field is building measuring instruments quickly, and benchmarks
+appeared in 20.04 per cent of robotics abstracts on arXiv in 2026 against 15.27 per cent
+in 2025, but the instrument for this particular job is not one I can point you at.
+
+The third is that long plans compound their own errors. The fifteen-step cap in Google's
+own example is the honest engineering response to that rather than a limitation of the
+example. A planner that cannot tell whether its third step half-worked will spend steps
+four to fifteen building on a wrong belief, and since recovery is the open problem two
+paragraphs above, cutting the plan short is what is left.
+
+Four things follow for the next two to three years, in the order I would bet on them.
+Each is my expectation rather than anybody's announcement unless the sentence says
+otherwise, and the reason is the content.
+
+**The planner moves onto the robot's own computer for the ordinary case.** Three forces
+push the same way and they are the three in [section 5.7](#57-how-to-choose): a hosted
+model charges for every plan and a robot that replans after each step asks for a great
+many; the prompt describes your workplace, which many factories decide on by itself; and
+a robot whose planner is hosted cannot choose anything during a network outage. The
+models to do it with are published now, and NVIDIA [announced Jetson Thor
+computers](https://blogs.nvidia.com/blog/jetson-thor-robotics-edge-ai-agent/) with
+hardware stated for the first quarter of 2027, which is a dated product announcement
+from a company whose recent ones arrived. This is a safer bet for a planner than for a
+policy, because a plan is wanted every few seconds rather than many times a second.
+
+**Writing a program will displace writing a list as the default shape of a plan.** The
+original reason has not gone away: a program can loop, count and name a distance in
+centimetres, and a numbered list cannot. The newer reason is better. Generated code can
+be checked by ordinary tools before it runs, so the checker you have to write anyway
+gets easier, while a sentence can only be checked against a list of allowed phrases.
+I should be plain that this is my judgement rather than a measured result: I know of no
+benchmark that compares the two shapes on a real arm, which is exactly the missing
+measurement described above.
+
+**The separate planner will survive for long tasks and disappear for short ones.** The
+absorption is already visible in π0.7 and in Gemini Robotics 2's two-model split, and
+where a task is a single grasp a second model earns nothing. Where a task runs for
+minutes, uses skills you wrote yourself, and has to be explained to somebody later,
+keeping the planner outside the policy is what lets you change one skill without
+retraining anything. That is my expectation rather than an announcement, and the thing
+to watch is whether any laboratory releases weights for an absorbed system, because
+until one does the choice is not really open.
+
+**The checker in ordinary code is not going away, and regulation will make it
+explicit.** The European Union's machinery rules, [Regulation (EU)
+2023/1230](https://single-market-economy.ec.europa.eu/sectors/mechanical-engineering/machinery_en),
+apply on a mandatory basis from 20 January 2027 and the European Commission's own page
+says they cover machinery with safety functions that use artificial intelligence, while
+the rules for artificial intelligence embedded in regulated products under the [AI
+Act](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai) now have
+a transition until 2 August 2028. Both dates come from published legal texts, which
+makes them the most reliable here, and the second has already been moved once by a year.
+Certification bodies are building the capacity to assess learned systems, and [NVIDIA's
+post on physical AI safety](https://blogs.nvidia.com/blog/physical-ai-halos-safety/)
+names TÜV SÜD, TÜV Rheinland and the ANSI National Accreditation Board doing that work.
+A deterministic check with a threshold you wrote down can be shown to an inspector. A
+sentence a model produced cannot.
+
+One expectation runs the other way. I do not expect a planner that knows what your robot
+can do without being told, inside this window. It is the same gap SayCan named in 2022,
+the current answer is still a hand-written skill list, and no published mechanism
+replaces it. If that changes, the sign will be a model card that states which robot
+skills the model was trained to know about, and today no model card says anything of the
+kind.
+
+---
+
+## 7. Where to read next
 
 - [Vision-language models](../02_most-used/02_vision-language-models.md) adds a camera
   picture, so the model can see the table instead of being told about it.

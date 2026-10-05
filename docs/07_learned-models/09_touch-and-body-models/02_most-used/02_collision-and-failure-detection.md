@@ -27,7 +27,8 @@ electric current.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known methods and models](#5-well-known-methods-and-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -799,7 +800,188 @@ One thing should not change your choice. None of these six replaces the arm's ce
 safety function, and a learned detector that has to be
 right to keep a person safe is a learned detector in the wrong place.
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about what changes next, and it is written on 4 October 2026. It uses
+the four kinds of claim that the frameworks book sets out in [four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration worked once under conditions its publisher chose. A product
+announcement can be bought or downloaded, so you can check it, which makes it the most
+valuable kind. A research result is a measured number with a stated protocol. A
+projection is about a date that has not arrived, and it is the weakest. Where a sentence
+below is my own judgement rather than a report of somebody's claim, it says so.
+
+### 6.1 How it got here
+
+The collision half of this page has barely moved, and the failure half has moved a great
+deal. The momentum observer of section 5.1 is settled mathematics that has been inside
+collaborative arm controllers for most of two decades, and everything learned has been
+added around it rather than in place of it: a residual torque model behind the same limit
+in section 5.2, a classifier where no usable torque model exists in section 5.3, an
+anomaly detector trained on good runs in section 5.4. The change since 2024 is on the
+failure side, where the question stopped being "was the arm hit?" and became "is this
+learned policy actually doing the task?". Section 5.6 is that new question arriving as a
+category.
+
+### 6.2 Where it is used in industry today
+
+Collision detection is probably the most widely deployed subject in this entire book,
+and none of the deployed version is learned. Every collaborative arm ships it as a
+function of the robot's own controller. [Universal Robots' e-Series
+arms](https://www.universal-robots.com/products/ur5e/) and
+[Franka Robotics' arms](https://www.franka.de/) both expose it, and Franka's
+[franka_ros2](https://github.com/frankarobotics/franka_ros2) surfaces the contact and
+collision flags to a Robot Operating System program. Those are product announcements of
+the most checkable kind, because the behaviour is documented in a manual.
+
+The important property of that deployed version is what it is rather than how it works.
+It is a **certified safety function**, meaning it runs on hardware built for safety,
+its failure rates and tests are documented against a standard, it keeps working when the
+ordinary software crashes, and its stopping times have been measured on the real arm.
+Book 6's [safety
+monitoring](../../../06_programming-techniques/07_control-and-motion/02_most-used/04_safety-monitoring.md#7-this-is-not-a-certified-safety-function)
+page sets out those four properties. The relevant standards are ISO 10218, in two parts,
+republished in February 2025, and ISO/TS 15066 for collaborative robots. I have not
+linked them because the standards body's own pages refuse the request this repository
+uses to verify a link, and an unverifiable link does not go in.
+
+Learned failure detection in production is much harder to name, and the honest answer is
+that nobody publishes it. The frameworks book went looking for a fleet size, a mean time
+between interventions, or an uptime percentage at a named customer site and
+[found none](../../../03_frameworks/08_frontier/06_what-is-coming.md#71-humanoid-robots-will-be-working-in-factories-in-numbers-in-2027).
+Interventions per hour is exactly the number a failure detector exists to reduce, so its
+absence from every vendor's published material tells you how early this is.
+
+What has shipped around the problem is tooling rather than detection.
+[Robometer](https://huggingface.co/docs/lerobot/robometer), the four-billion-parameter
+reward model that arrived in LeRobot version 0.6.0, scores an attempt's progress and
+success from frames and a written instruction. That is a product announcement you can
+install today, and section 5.5 is where it is used and where its limits are set out.
+
+Separately, certification capacity for learned systems is being built, and NVIDIA's
+[21 September 2026 post on physical AI
+safety](https://blogs.nvidia.com/blog/physical-ai-halos-safety/) is useful for the
+institutions it names rather than its own claims: TÜV SÜD certifying software processes,
+TÜV Rheinland inspecting hardware for functional-safety certification readiness, the
+ANSI National Accreditation Board accrediting an inspection laboratory to ISO/IEC 17020,
+and ISO/IEC TS 22440 as an emerging standard for risks specific to artificial
+intelligence.
+
+### 6.3 What is being worked on right now
+
+The front with the most momentum is watching the policy rather than the arm. Sentinel in
+section 5.6 is the published example, and its measured result is that its two detectors
+together find 18 per cent more failures than either alone. That is a research result with
+MIT-licensed code you can read. The reason this front is active is the gap section 5.4
+cannot cross: a policy that hovers above a mug closing on nothing produces perfectly
+ordinary torques, positions and wrist loads, so a detector that reads only the arm sees
+nothing wrong.
+
+The second front is explaining a failure rather than only flagging it. REFLECT, from
+[June 2023](https://arxiv.org/abs/2306.15724), turns the robot's own readings into a
+written summary and asks a large language model to explain what went wrong and suggest a
+fix, and section 5.5's vision-language judge is the same idea applied to a finished
+attempt. Both are research results. Neither is a safety function, because both answer in
+seconds.
+
+The third front is measurement, and it is growing faster than the methods. The share of
+abstracts submitted to the robotics category of arXiv that mention a benchmark went from
+15.27 per cent in 2025 to 20.04 per cent in 2026 to late September, by the counts in the
+frameworks book's [measured research
+directions](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted).
+A concrete instance in that period is [LIBERO-VPro](https://arxiv.org/abs/2609.24350), on
+the closed-loop visual robustness of robot foundation models. A field that starts
+building measuring instruments has stopped trusting its own headline numbers, which is
+healthy, and for this page it matters because a failure detector's worth is a false-alarm
+rate rather than a video.
+
+The fourth front is lowering the limit on the collision side, which is section 5.2's
+subject, and its tooling is open and maintained:
+[Pinocchio](https://github.com/stack-of-tasks/pinocchio) computes the expected torque,
+and the [learned arm models page](../03_also-used/02_learned-arm-models.md) covers what
+goes on top of it.
+
+### 6.4 What is still unsolved
+
+The certification problem is the one that matters, and it has not moved. A learned
+detector cannot supply any of the four properties listed in section 6.2. It does not run
+on two channels that check each other, its failure rate cannot be stated for a pose it
+has never seen, it dies with the computer it runs on, and its stopping distance cannot be
+measured for every input because the inputs are not enumerable. No published method
+produces those four things for a network, and the shortage is not a research fashion that
+will pass.
+
+The second unsolved thing is the gentle contact. Section 5.1's limit has to sit above
+almost every residual seen in ordinary work, and a slow push with a soft object produces
+less than that. Section 5.2 is the honest answer and it is partial, because the residual
+model is only as good as the recording it was fitted to and the arm's friction changes as
+it warms up. Related and just as stubborn is the interface: an arm that accepts only
+position commands and reports only motor current gives a learned detector much less to
+work with, and that is a firmware decision by the arm's maker rather than a problem
+anyone outside can solve.
+
+The third is the number nobody publishes. Interventions per hour, at a named site, over a
+stated number of hours, is what would let you compare two detectors or justify buying
+one. No humanoid maker publishes it, no arm maker publishes it, and none of the six
+entries in section 5 reports it either, because research code is evaluated on recorded
+attempts rather than on a production shift.
+
+### 6.5 The next two to three years
+
+Everything in this part is my expectation with a reason attached, not an announcement by
+anybody.
+
+**Safety-rated collision detection stays a certified function supplied by the arm's
+maker, and no learned model replaces it.** This is the firmest statement in this section,
+and it is a judgement about a constraint rather than a guess about research. The reason
+is the four properties, every one of which is a property of an implementation and its
+paperwork rather than of an algorithm. The regulatory direction pushes the same way. The
+European Commission's own
+[machinery page](https://single-market-economy.ec.europa.eu/sectors/mechanical-engineering/machinery_en)
+states that Regulation (EU) 2023/1230 "applies on a mandatory basis as of 20 January
+2027", and the frameworks book establishes that the European Union Artificial
+Intelligence Act's rules for artificial intelligence embedded in regulated products now
+have [an extended transition until 2 August
+2028](../../../03_frameworks/08_frontier/06_what-is-coming.md#63-two-regulatory-dates-that-have-already-moved-once).
+So in 2027 the machinery rules apply and the artificial intelligence product rules do
+not, which means the thing anyone selling an arm into Europe has to satisfy next year is
+a machinery conformity assessment, and a learned detector does not help pass one.
+
+**Learned detection grows instead as the layer above, where it protects the process
+rather than the person.** The reason is that this layer needs no certificate, so there is
+nothing to stop it, and the demand is real: a learned policy driving the arm fails in
+ways the certified function was never designed to notice, as section 6.3 explains. My
+expectation is that the shape of section 5.6 becomes ordinary, with a monitor reading the
+policy's own output alongside one reading the arm. The thing that would confirm it is a
+monitor of that kind shipping inside a policy framework rather than as a research
+repository.
+
+**The split between the two layers becomes a fact about the computer, not only about the
+software.** NVIDIA
+[announced three new Jetson Thor computers on 15 July 2026](https://blogs.nvidia.com/blog/jetson-thor-robotics-edge-ai-agent/),
+one of which, the IGX T3000, has integrated functional safety for machines that work
+near people, with physical hardware stated for the first quarter of 2027. That is
+announced with a date by an organisation whose recent record of shipping what it
+announces is checkable. My expectation, which is not part of the announcement, is that
+having a safety island and a model accelerator in one part makes the layering on this
+page the normal way a cell is built, because the two jobs stop needing two computers.
+
+**Vision-language judges become standard in the evaluation loop and stay out of the
+safety loop.** The reason is latency and cost. A judge that answers in seconds can score
+an attempt after it finishes, or every few steps, and it cannot stop an arm that is
+already pushing on something. That is a property of asking a large model a question, not
+a limitation anyone is about to engineer away. The tooling is arriving in the right
+place: robometer scores attempts, which is evaluation, not enforcement.
+
+**The number to watch is interventions per hour at a named customer site.** My
+expectation is that the first credible publication of it comes from a customer or a
+certification body rather than from a robot maker, because a maker has no incentive to be
+the first, and that the certification capacity described in section 6.2 is what eventually
+forces it. If that number appears, this whole page becomes comparable, and every claim in
+section 5 can be checked against it. Until it does, treat any statement about how reliably
+a learned detector works as a demonstration.
+
+## 7. Where to read next
 
 In this chapter:
 

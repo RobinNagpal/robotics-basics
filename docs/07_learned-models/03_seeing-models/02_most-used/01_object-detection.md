@@ -28,7 +28,8 @@ fast enough for a live camera.
    · [5.5 Faster R-CNN](#55-faster-r-cnn)
    · [5.6 DETR](#56-detr)
    · [5.7 How to choose](#57-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -344,8 +345,7 @@ for box in result.boxes:
 You supply the picture and the threshold. The library downloads the weights, resizes
 the picture, runs the network, and runs the non-maximum suppression of [section
 3](#3-how-it-works-inside) for you, or skips it when you pass `nms=False`. What you
-still have to write is everything after the box, which is section
-6.
+still have to write is everything after the box.
 
 ### 5.2 RT-DETR
 
@@ -803,7 +803,216 @@ lists more detectors, each with the licence read from its own licence file.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+The sections above describe detectors that exist now, and this one is about what
+happens next. It follows the rule set out in [four kinds of claim, and why the
+difference decides
+everything](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything):
+a demonstration shows something working once, a product announcement says a thing can
+be bought or downloaded and is therefore checkable, a research result is a measured
+number with a stated method, and a projection names a date that has not arrived. Every
+paragraph below says which of those it rests on, and says when a judgement is mine.
+
+### How it got here
+
+Detection has moved in one direction for ten years, and the direction is that each
+hand-written step has been deleted. Faster R-CNN in [section 5.5](#55-faster-r-cnn)
+replaced a hand-written region proposer with a network that proposes regions. YOLO
+deleted the second pass over each proposal. DETR deleted the anchors and the cleanup
+step. Ultralytics YOLO26 in [section 5.1](#51-ultralytics-yolo26) makes that cleanup
+step optional inside the one-stage design too. The step being deleted now is the class
+list itself, and the models that delete it are on the page
+[open-vocabulary models](03_open-vocabulary-models.md).
+
+### Where it is used in industry today
+
+Detection is in production in warehouses, and the clearest published case is
+Amazon's. Amazon's own page for
+[Sparrow](https://www.aboutamazon.com/news/operations/amazon-introduces-sparrow-a-state-of-the-art-robot-that-handles-millions-of-diverse-products),
+the arm that moves individual products between totes before they are packed, says
+Sparrow uses computer vision and artificial intelligence and "can recognize and
+handle millions of items". That is a product announcement about a system Amazon runs
+in its own buildings, not about something you can buy. What you can buy is the
+perception layer that integrators put on their own arms. Plus One Robotics sells
+[PickOne](https://www.plusonerobotics.com/pickone), whose product page says it
+analyses two-dimensional, three-dimensional and model output together to decide the
+robot's commands at a depalletising station where the boxes vary and overhang the
+pallet. RightHand Robotics lists
+[RightPick AI](https://righthandrobotics.com/products) as the perception part of its
+piece-picking system. Ambi Robotics sells
+[AmbiSort](https://www.ambirobotics.com/ambisort-a-series/) for putting parcels into
+sort bins and [AmbiVision](https://www.ambirobotics.com/ambivision/) for reading
+them, and the AmbiVision page describes a station that photographs a box from every
+side and runs those pictures through a model to find the identifiers it was asked
+for, computing on site rather than in a data centre.
+
+Inspection on a production line is the second large use, and there a detector is
+usually sold inside a machine vision library rather than downloaded. MVTec sells
+HALCON and MERLIC, and its [deep learning methods
+page](https://www.mvtec.com/technologies/deep-learning/methods) recommends its object
+detection for pick-and-place, assembly inspection and robot vision. Its named
+deployments are the part worth reading. MVTec's own case study says [Panasonic Energy
+uses HALCON's deep learning at its Kansas
+plant](https://www.mvtec.com/application-areas/success-stories/article/mvtec-halcons-deep-learning-helps-panasonic-energy-to-propel-automotive-battery-production)
+to inspect cylindrical lithium-ion batteries after slitting, including the laser weld
+marks on the electrode tabs, and reports a 57.3 per cent reduction in over-detections
+in the trial that preceded it, which is the vendor's own figure from the vendor's own
+trial. Cognex sells the same kind of tool and is the best-known company in this
+market, but its website refuses an automated request, so this page names it without a
+link. Smaller companies sell the whole station rather
+than the library: [Instrumental](https://www.instrumental.com/) inspects electronics
+assembly and names Meta and NVIDIA as customers on its own home page, and
+[Elementary](https://www.elementaryml.com/) sells camera stations for defect
+detection, label verification and presence checks.
+
+Agriculture is where a detector runs on the largest number of machines, because one
+sprayer covers a field. John Deere sells
+[See & Spray](https://www.deere.com/en/sprayers/see-spray/), and
+[Blue River Technology](https://www.bluerivertechnology.com/), the Deere subsidiary
+that builds it, says on its own site that See & Spray "uses computer vision and
+machine learning to distinguish crops from weeds". Carbon Robotics sells the
+[LaserWeeder](https://carbonrobotics.com/laserweeder), which kills weeds with lasers
+rather than herbicide, and its specification page is unusually detailed for a vendor
+page: 42 high-resolution cameras, 30 diode lasers of 150 watts each, more than 100
+deep-learning crop models, and more than 100 growers across North America, Europe and
+Australia operating the implement since February 2022. Those are the company's own
+figures and nobody independent has published a check of them. What makes agriculture
+the strongest case on this page is the job itself, because the machine has to decide
+plant by plant at tractor speed.
+
+### What is being worked on right now
+
+The first front is the one [section 5](#5-well-known-models) already shows: the
+transformer detector is being made cheaper to train and faster to run, one component
+at a time. D-FINE changed how a box edge is predicted. DEIM, from the paper "DEIM:
+DETR with Improved Matching for Fast Convergence"
+([arXiv:2412.04234](https://arxiv.org/abs/2412.04234)), changed how predictions are
+matched to real objects during training so that fewer passes over the data are needed,
+and its [code](https://github.com/ShihuaHuang95/DEIM) is Apache-2.0. RF-DETR stopped
+designing the shape of the network and searched for it instead. These are research
+results with public code and published numbers, and together they mean a permissively
+licensed transformer detector is now a default rather than a sacrifice.
+
+The second front is removing the class list. An open-vocabulary detector takes words
+instead of a trained list, so adding a class costs a sentence instead of a labelling
+campaign. [Grounding DINO](https://github.com/IDEA-Research/GroundingDINO) and OWLv2
+are the permissive ones, [YOLOE](https://docs.ultralytics.com/models/yoloe/) is the
+fast one, and [open-vocabulary models](03_open-vocabulary-models.md) covers the family
+with each licence read from its own licence file. The measured form of the claim is
+[RF100-VL](https://rf100-vl.org/), a collection of real-world datasets whose classes
+are in none of these models' pre-training, which is why RF-DETR's paper uses it for
+its headline comparison. Half of this is already a product: Roboflow's documentation
+for [AI labelling](https://docs.roboflow.com/datasets/annotate/annotate/ai-labeling)
+describes Auto Label, which labels a whole dataset with a foundation model, and Box
+Prompting, which finds every other instance of a thing in a picture after you draw
+two or three examples. So what you can buy today removes the labelling, not the
+trained detector.
+
+The third front is the computer on the robot. The cleanup step of
+[section 3](#3-how-it-works-inside) is awkward to export, because it is a loop whose
+cost depends on how many boxes there are, which is why YOLO26's `nms=False` head and
+the whole DETR family matter more for deployment than for accuracy. The other half is
+arithmetic precision, because accelerators such as the
+[Hailo-8](https://hailo.ai/products/ai-accelerators/hailo-8-ai-accelerator/) run a
+fixed set of operations on low-precision numbers, so a model must be converted before
+it runs there at all. [Running a model on a
+robot](../../10_making-models-work-on-an-arm/02_most-used/02_running-a-model-on-a-robot.md)
+covers the measurement side.
+
+The fourth front is the measuring stick, and it is the one a reader is least likely to
+have heard of. COCO's labels are now worse than the detectors measured against them.
+The paper "Benchmarking Object Detectors with COCO: A New Path Forward"
+([arXiv:2403.18819](https://arxiv.org/abs/2403.18819)) inspected thousands of COCO
+masks, found imprecise boundaries, missing instances and mislabelled masks, published
+corrected annotations as [COCO-ReM](https://github.com/kdexd/coco-rem), and reports
+that of fifty detectors evaluated, those predicting sharper outlines score higher
+against the corrected labels. The consequence for a robot team is blunt: a few tenths
+of a point of average precision between two models on COCO is not evidence about your
+own parts.
+
+### What is still unsolved
+
+A detector reports what it can see, and it cannot report the part of an object that
+something else covers. The research name for the missing ability is amodal
+segmentation, which means predicting the whole of an object including its hidden part,
+and it has been a named problem since "Amodal Instance Segmentation"
+([arXiv:1604.08202](https://arxiv.org/abs/1604.08202)) in 2016. Recent work such as
+pix2gestalt ([arXiv:2401.14398](https://arxiv.org/abs/2401.14398)) draws the whole
+object by generating the missing part. Ten years on, that work is still research
+results on datasets and I know of no product that sells it. For a robot arm this is
+the difference between emptying a bin and picking the top item, taking a new picture,
+and starting again.
+
+Transparent and shiny objects are the second unsolved case, and the record is long
+enough to be instructive. ClearGrasp
+([arXiv:1910.02550](https://arxiv.org/abs/1910.02550)) appeared in 2019 and TransCG
+([arXiv:2202.08471](https://arxiv.org/abs/2202.08471)) in 2022, and both are datasets
+with a baseline rather than a method anybody ships. A glass has no reliable edge in a
+colour picture and no reliable surface in a depth picture, so both signals a detector
+relies on fail at once. [Segment anything, then keep the
+glasses](../../../08_robotics-by-example/02_many-glasses-of-one-kind/05_learned/08_segment-anything-then-keep-the-glasses.md)
+works through what this does to a real program.
+
+The third unsolved thing is the confidence number. It is not a probability, and it
+does not fall when the camera is shown something the model has never seen, so a
+detector trained on 80 classes will happily put 0.8 on a part belonging to none of
+them. Every project therefore checks the detector with something else, such as a size
+test or a depth test. I have not found a detector that ships a calibrated confidence,
+which is a statement about what I could find rather than proof that none exists.
+
+### The next two to three years
+
+**I expect permissively licensed transformer detectors to take most new commercial
+work from the YOLO family, and the reason is the licence rather than the accuracy.**
+This is my expectation and not an announcement by anybody, but the part underneath it
+is checkable. Ultralytics is AGPL-3.0 on code and weights, which obliges you to
+publish the source of what you combine it with, including software you only run as a
+service, and the alternative is an Enterprise licence [priced by
+negotiation](https://www.ultralytics.com/license). RT-DETR, D-FINE and DEIM are
+Apache-2.0, and [RF-DETR](https://github.com/roboflow/rf-detr) is Apache-2.0 from Nano
+to Large. Two years ago the permissive option cost you accuracy, and
+[section 5.3](#53-rf-detr) holds the measurements saying it no longer does. A product
+team's lawyer reads the licence before the benchmark.
+
+**I expect open-vocabulary detection to become normal at labelling time and to stay
+unusual at run time.** The labelling half is a product today, which you can check on
+the Roboflow page linked above. The run-time half has two problems nobody has solved.
+It is slower, because the model processes the words as well as the picture. And it is
+not repeatable, because two reasonable wordings of one request return different sets
+of objects, which is hard to defend where an inspection must give the same answer
+tomorrow. So the shape I expect is an open-vocabulary model labelling your pictures
+and a small closed-set detector trained on those labels running on the line. What
+would disprove it is a vendor shipping an open-vocabulary detector with a stated frame
+rate and a stated repeatability figure.
+
+**I expect the cleanup step to disappear from most deployed detectors, and the reason
+is deployment rather than accuracy.** Both design families have arrived there from
+opposite directions, which is the strongest evidence a prediction of this kind can
+have: the DETR family never had the step, and YOLO26 has added a head that does not
+need it. The step costs more as the picture gets busier, it is the awkward part of an
+export, and it is what loses one of two objects that touch. None of those reasons
+depends on anybody's roadmap.
+
+**I expect the numbers quoted at robot teams to move off COCO.** The reason is the
+research result above, that COCO's own labels are the limit of what it can measure, so
+a model can now look better on COCO partly by matching its mistakes. RF100-VL rewards
+what a robot team cares about instead, which is how a model behaves on objects that
+were not in its pre-training. This is already visible in how RF-DETR's authors report
+their own work, and I expect others to follow, because a project reporting only COCO
+starts to look like it is avoiding the harder measurement.
+
+One more direction is worth naming and worth distrusting. Several groups are folding
+detection into a larger model that also answers questions, of which ChatRex
+([arXiv:2411.18363](https://arxiv.org/abs/2411.18363)) is one example, so a robot would
+ask one model for the boxes and the reasoning together. These are research results on
+benchmarks, the models are far too slow for a live camera, and nothing in this
+direction is sold. I do not expect it to replace a detector in a robot cell within
+three years, and I record that here so it can be checked later.
+
+---
+
+## 7. Where to read next
 
 - The next page is [segmentation](02_segmentation.md), which replaces the box with
   the exact outline of each object.

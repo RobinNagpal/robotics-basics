@@ -26,7 +26,8 @@ page.
 4. [How it is trained](#4-how-it-is-trained)
 5. [Following a pose over time: 6D pose tracking](#5-following-a-pose-over-time-6d-pose-tracking)
 6. [Well-known models](#6-well-known-models)
-7. [Where to read next](#7-where-to-read-next)
+7. [Where this is going](#7-where-this-is-going)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -189,7 +190,7 @@ above uses keypoints and PnP instead.
 intend to ship, and [FoundationPose](#66-foundationpose) runs the same loop twice
 over: once with many guesses on the first frame of a video, and then with one guess
 on every frame after it, which [section
-7](#5-following-a-pose-over-time-6d-pose-tracking) describes.
+5](#5-following-a-pose-over-time-6d-pose-tracking) describes.
 
 ---
 
@@ -934,7 +935,207 @@ is the page that explains that step.
 
 ---
 
-## 7. Where to read next
+## 7. Where this is going
+
+Everything above describes models you can download today. This section is about
+the direction, and it was written on 4 October 2026. Every company, product and
+number in it was checked against the page linked beside it on that day.
+
+It also uses [the frontier chapter's four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+which carry very different weight. A demonstration is a recording of something
+working once. A product announcement is checkable, which makes it the most useful.
+A research result is a measured number on a stated task. A projection is about a
+date that has not arrived, and it is the weakest. Every claim below says which one
+it rests on, and where I give my own opinion the sentence says so.
+
+### How it got here
+
+The shape of the change is that the object stopped having to be in the training
+set. DOPE and PoseCNN trained one network for one set of objects, so a new part
+meant new data and a new network. MegaPose and FoundationPose train once on many
+objects and then take a new one at run time, as a CAD model or a handful of
+photographs, and find its pose by rendering it and comparing. The human-pose line
+did not change this way at all. It stayed a heatmap network on photographs of
+people and became easy to install instead, which is why the two lines in [section
+6](#6-well-known-models) feel different to use.
+
+### Where it is used in industry today
+
+The industrial use of object pose is bin picking and machine tending, and the
+companies selling it sell a whole cell rather than a model. Photoneo sells [Bin
+Picking Studio](https://photoneo.com/bin-picking-studio), built around CAD matching,
+offering CAD-based or AI-based localisation of parts, and running with Photoneo's
+own 3D scanners. Mech-Mind sells Mech-Vision with its own cameras, [listed in
+Universal Robots'
+marketplace](https://www.universal-robots.com/plus/products/mech-mind-robotics/mech-mind-3d-vision/)
+as something you can buy for a UR arm, and its [own post about Automate
+2026](https://www.mech-mind.com/news/mech-mind-at-automate-2026.html) names
+generalised picking of transparent objects, machine tending of sheet metal parts and
+picking from a moving conveyor as what it showed. Those are product announcements
+that need reading carefully, because the pose in such products usually comes from
+matching a CAD model to a point cloud rather than from a learned pose network, and
+that is [iterative closest
+point](../../../06_programming-techniques/03_searching-and-matching/02_most-used/02_iterative-closest-point.md)
+rather than anything on this page.
+
+Where learned models are shipped, two patterns are visible.
+[Fizyr](https://www.fizyr.com/) sells deep-learning vision for picking parcels and
+bulk goods, and what it predicts is a grasp for each item rather than the six
+numbers of a known object, which is how industry avoids the pose problem when every
+object is different. NVIDIA takes the other route and ships pose estimation as ROS 2
+packages: [Isaac ROS pose
+estimation](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_pose_estimation/index.html)
+contains FoundationPose, DOPE and CenterPose for Jetson Orin, Jetson Thor and
+desktop NVIDIA cards. Two things on [NVIDIA's own model card for
+FoundationPose](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/isaac/models/foundationpose)
+deserve attention. It states 4.6 queries per second for pose estimation and 746 for
+pose tracking on Jetson Orin, which is the first-frame-then-track split that
+[section 5](#5-following-a-pose-over-time-6d-pose-tracking) describes. And it says
+the model "is fully trained and does not require additional training for commercial
+applications", with the licence covered by a Model End User Licence Agreement, which
+is not the non-commercial research licence on the NVlabs repository that [section
+6.6](#66-foundationpose) describes. Read the licence of the copy you download, and
+note that a sentence about training is not a grant of permission.
+
+The clearest evidence that this is an industrial problem is that industry now
+publishes the datasets. In 2025 the BOP benchmark added a group called
+BOP-Industrial, and [its dataset
+page](https://bop.felk.cvut.cz/datasets/) names where each one came from: XYZ-IBD
+from XYZ Robotics, ITODD-MV with 28 objects from MVTec, and IPD from Intrinsic.
+Three companies that sell industrial vision and robotics software now supply the
+test that the research is scored on.
+
+### What is being worked on right now
+
+The first front is pose for objects the model has never seen, and it has a measured
+answer. The [BOP Challenge 2024 report](https://arxiv.org/abs/2504.02812) states
+that the best 2024 method for model-based 6D localisation of unseen objects,
+FreeZeV2.1, is 22 per cent more accurate than the best 2023 method, GenFlow, and
+only 4 per cent behind the best 2023 method that was allowed to see the objects,
+while taking 24.9 seconds per image against 2.7. It also names Co-op at 0.8 seconds
+per image and 13 per cent more accurate than GenFlow. Those are research results
+under a stated protocol, and the direction is clear: not having seen the object has
+almost stopped costing accuracy and now costs time.
+
+The second front is removing the CAD model as well. The 2024 challenge introduced
+model-free tasks, in which a method is given reference videos of an object instead
+of its 3D model. FoundationPose already accepts a few reference photographs, and
+Meta's [SAM 3D Objects](https://huggingface.co/facebook/sam-3d-objects), published
+on 19 November 2025, turns one masked photograph into a textured 3D model with a
+pose, under a bespoke licence and a gated download. The reason this matters is
+commercial rather than scientific. A customer very often has no CAD model of the
+part, or has one that does not match what the supplier machined.
+
+The third front is the kind of part that industry cares about and research used to
+avoid. The [XYZ-IBD paper](https://arxiv.org/abs/2506.00599) describes roughly
+273,000 annotated instances across 75 multi-view real scenes of metallic and
+specular objects, and says a multi-stage, partly manual annotation pipeline was
+needed to reach sub-millimetre annotation accuracy. Read that last part as a
+statement about the field: producing ground truth at that precision is itself a
+research effort. BOP 2025 also added a multi-view setup, which matches how those
+datasets were captured and how real cells are built.
+
+The human-pose line is being pushed somewhere else entirely. Its growth area is
+collecting demonstrations, by reading whole-body and hand keypoints from ordinary
+video of a person working, which is the subject of [learning from human
+video](../../06_movement-models/03_also-used/04_learning-from-human-video.md).
+
+### What is still unsolved
+
+A marker on the object still beats every learned method for accuracy, and that
+deserves to be said plainly rather than left implied. Start with what the benchmark
+measures. BOP counts a pose as correct when the surface error is below a threshold,
+and [its own evaluation
+methodology](https://bop.felk.cvut.cz/challenges/bop-challenge-2019/) sets that
+threshold "ranging from 5% to 50% of the object diameter with a step of 5%", then
+averages the recall across those thresholds. For a part 100 mm across that is a
+tolerance of 5 mm to 50 mm, while pressing a bearing into a housing needs a fraction
+of a millimetre. So the number that ranks the whole field does not measure the
+accuracy assembly needs, and I could find no learned 6D pose estimator published
+with a millimetre-level error on an industrial part.
+
+A printed marker is in a different position, and the clearest proof is where it is
+already used. [AprilTag](https://github.com/AprilRobotics/apriltag) and printed
+boards are what you measure the camera with in the first place:
+[calibration](../../../06_programming-techniques/02_geometry-and-cameras/02_most-used/03_calibration.md)
+finds both the lens and the camera-to-arm transform from a printed target, and every
+learned pose estimator inherits whatever that step achieved. If a learned model were
+as accurate, you would calibrate with it. The repository's own case study makes the
+same choice and [locates a rack with an AprilTag rather than with
+FoundationPose](../../../03_frameworks/04_one-arm-training/07_case-study/01_place-glass.md).
+A marker is not magic either, and the caveat is measured: Abbas, Aslam, Berns and
+Muhammad compared AprilTag with motion capture in Sensors in 2019, in [Analysis and
+Improvements in AprilTag Based State
+Estimation](https://pmc.ncbi.nlm.nih.gov/articles/PMC6960891/), and report about 1.0
+cm of error in one axis with the camera pointed at the tag centre, rising to about
+16 cm at a camera yaw of 110 degrees. Those figures come from one study across a
+range of distances and angles, and they are not a figure for a marker 40 cm in front
+of a wrist camera. What to take from them is that somebody measured a marker's error
+against motion capture and published it, which has not happened for a learned pose
+estimator on an industrial part. So the claim is narrow: a marker's error can be
+measured, bounded and improved, and a learned estimator's has not been published at
+all. The marker's cost is equally plain. You cannot glue one onto a part arriving
+loose in a bin, onto food, or onto a customer's own product.
+
+The rest of the list is shorter and older. Symmetric and textureless parts remain
+hard enough that the benchmark had to invent symmetry-aware error functions to score
+them at all. Transparent and shiny parts break the depth sensor before the model
+gets a chance, which is why Mech-Mind still presents transparent picking as a
+showcase rather than a feature. Speed is still traded against accuracy: against the
+same 2023 baseline, the most accurate 2024 method gained 22 per cent at 24.9 seconds
+per image, while the practical one gained 13 per cent at 0.8 seconds. And no vendor
+publishes a pick rate or an uptime figure, so the only way to learn what a cell
+achieves is to run one.
+
+### The next two to three years
+
+**I expect onboarding a new part from photographs, rather than from a CAD model, to
+become the normal way a part enters a pose system.** The measured reason is the BOP
+2024 result above, where not having seen the object costs about 4 per cent against
+the previous year's best seen-object method. The commercial reason is stronger: the
+CAD model is what customers most often cannot supply, and a method that needs one
+puts a procurement problem in front of an engineering one. This is my expectation,
+not an announcement.
+
+**I expect bin picking to stay the application, and the research to keep following
+the vendors' data.** The checkable part is that the 2025 industrial datasets came
+from companies rather than universities. A benchmark made of metallic, cluttered,
+specular scenes rewards methods that work in those scenes, and funding follows the
+benchmark. The inference is mine, and the datasets are a fact you can check on the
+BOP page.
+
+**I expect a second and third camera to become ordinary in a cell, and I expect
+this to deliver more than any model release in the same period.** BOP added a
+multi-view setup in 2025 and the industrial datasets were captured that way, which
+came from the people who build these cells rather than from a research fashion. The
+reason is arithmetic rather than science: occlusion in a bin causes most pose
+failures, another camera removes occlusion, and a camera costs less than the
+engineering time spent making a model cope with not seeing. This is my expectation.
+
+**I expect markers and learned pose to be used together for years, with the marker
+keeping the accurate job.** The gap above is a factor of ten or a hundred rather
+than a few per cent, and nothing on the current research front is aimed at closing
+it, because the benchmark does not measure it. So the arrangement I expect to see
+more of is a learned model finding the part roughly, and then a fixture, a marker or
+a force-controlled insertion achieving the final accuracy. This is my judgement, and
+what would change it is a published error bar in millimetres on a named industrial
+part.
+
+**I expect object pose to disappear from some robot stacks altogether, and this is
+the prediction I hold most loosely.** A policy trained end to end never computes a
+pose, because it maps pictures straight to movements, and the frontier chapter's
+[count of robotics papers](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted)
+shows vision-language-action work going from 0.52 per cent of robotics abstracts in
+2024 to 10.78 per cent by September 2026. That is a measured shift in attention
+rather than in capability, and the distinction matters. Pose survives wherever a
+number has to be checked before the arm moves, which means assembly, inspection and
+anything that has to be proven correct rather than observed to work. My expectation
+is two stacks rather than one, with the models on this page living in the second.
+
+---
+
+## 8. Where to read next
 
 - [Depth from pictures](../03_also-used/02_depth-from-pictures.md) is the next page, and
   most pose methods need good depth, so that page explains where depth comes from.

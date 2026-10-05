@@ -28,7 +28,8 @@ explains.
    · [5.6 Action-conditioned pixel prediction, and Visual Foresight](#56-action-conditioned-pixel-prediction-and-visual-foresight)
    · [5.7 UniPi](#57-unipi)
    · [5.8 How to choose](#58-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -812,7 +813,190 @@ move, nothing here is fast enough. The timings in 5.1 are seconds for one call.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about where this kind of model is heading rather than what it does
+today, so it follows the rule that Book 3's
+[what is coming](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything)
+sets out: say what kind of claim each statement rests on. A demonstration is a
+recording of something working once, under conditions the publisher chose. A
+product announcement says a thing can be bought or downloaded, so you can go and
+check, which makes it the most useful kind. A research result is a measured number
+on a stated task. A projection is about a date that has not arrived, and it is the
+weakest. Where a judgement below is mine, the sentence says so.
+
+The history has three steps and one shape. In 2016 a network predicted where the
+pixels already in the frame would move to, which is
+[section 5.6](#56-action-conditioned-pixel-prediction-and-visual-foresight). Then
+video generation moved to diffusion, which draws every pixel from noise, and the
+pictures became good enough that people believed them. Only recently has anybody
+been able to ask such a model what a particular action would do, because that
+needs training video with the actions written down beside it. The shape of the
+change is that appearance came first and control came second, and control is still
+the part that is thin.
+
+Start with what you can actually download, because that is the checkable half.
+NVIDIA's [Cosmos 3](https://huggingface.co/nvidia/Cosmos3-Edge) is there under
+OpenMDW 1.1 and takes an action table, as 5.1 describes, and Cosmos Predict 2.5 is
+there behind a sign-in. LeRobot's [LingBot-VA](https://huggingface.co/docs/lerobot/lingbot_va)
+and [FastWAM](https://huggingface.co/docs/lerobot/fastwam) are installable under
+Apache 2.0. AgiBot published
+[Genie Envisioner](https://github.com/AgibotTech/Genie-Envisioner), which is a
+video model, an action decoder and an action-conditioned neural simulator in one
+repository, with its weights on Hugging Face. Read its licence first, because only
+some directories are Apache 2.0 and the rest is CC BY-NC-SA 4.0, which forbids
+commercial use. Decart and Etched published
+[Oasis](https://oasis-model.github.io/) on 31 October 2024, a real-time
+interactive video model, with code and the weights of a 500-million-number version
+on [Hugging Face](https://huggingface.co/Etched/oasis-500m). And 1X released over
+100 hours of vector-quantised video under Apache 2.0, with baseline models and a
+public challenge, in [a post of 17 September 2024](https://www.1x.tech/discover/1x-world-model).
+Those are product announcements, each checkable in a minute.
+
+Now the half that cannot be downloaded, which is where most of the attention is.
+Google DeepMind announced [Genie 3](https://deepmind.google/discover/blog/genie-3-a-new-frontier-for-world-models/)
+on 5 August 2025: worlds you navigate in real time at 24 frames per second and
+720p, "largely consistent for several minutes", released as "a limited research
+preview, providing early access to a small cohort of academics and creators". That
+is a demonstration plus restricted access, not a product, and the same post lists
+"limited ability for agents to perform direct actions" among its own limitations.
+Wayve's [GAIA-2](https://wayve.ai/thinking/gaia-2/) of 26 March 2025 generates
+driving scenes across countries, weather and road types, and nothing on the page
+offers it to anyone outside Wayve. There is a
+[technical report](https://arxiv.org/abs/2503.20523) and no model.
+
+The useful question is what the companies that have one actually use it for, and
+the answer is consistent. 1X says it is "learning a simulator directly from raw
+sensor data and using it to evaluate our policies across millions of scenarios",
+which is a company statement about testing rather than control. Wayve uses GAIA-2
+to make training and safety-critical scenarios. NVIDIA's
+[GR00T-Dreams](https://github.com/NVIDIA/GR00T-Dreams) under Apache 2.0, and
+[Cosmos-H-Dreams](https://huggingface.co/blog/nvidia/cosmos-h-dreams) of 27 July
+2026, generate synthetic robot trajectories, as Book 3's
+[simulation and evaluation](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#45-one-more-for-the-record)
+records. In every named case the job is making data or scoring policies. Nobody
+has published a deployment in which a video world model chooses a robot's next
+move.
+
+The first thing being worked on now is making the action input general. Cosmos 3
+accepts a row of numbers only in the fixed layout of a robot it was trained on.
+Genie Envisioner's simulator and LingBot-VA's paired streams are two further
+designs, each with its own layout. One model that accepts any arm's actions
+would remove the largest single obstacle to using any of this, and no published
+model does it.
+
+The second is speed, and the numbers decide it. A forward-dynamics call to Cosmos
+3 takes 3.69 seconds on an H100 card by NVIDIA's own table, as 5.1 records, and
+planning means tens of such calls before every move. Oasis is the useful
+counter-example: 20 frames per second, in real time, from 500 million numbers at
+standard definition, with the weights published. So real-time generation is a
+question of model size and of how many denoising passes you take, not a question
+of whether it is possible. The engineering front is distillation, which trains a
+small fast model to copy a large slow one, and few-step sampling.
+
+The third is using the model as a test harness instead of as a planner. This is
+where the published activity is: 1X's statement above, Genie Envisioner's
+simulator for closed-loop policy development, and EWMBench, the benchmark that
+arrived with it, which scores visual fidelity, physical consistency and whether
+the motion matches the instruction. Book 3's
+[measured count](../../../03_frameworks/08_frontier/06_what-is-coming.md#5-research-directions-with-momentum-measured-rather-than-asserted)
+shows benchmark papers growing from 15.27 per cent of robotics abstracts in 2025
+to 20.04 per cent in 2026, faster than most of the methods. Evaluating a policy on
+real hardware is the most expensive step in this field, which is why the world
+model is being pointed at it first.
+
+The fourth is predicting something smaller than a picture. Meta's
+[V-JEPA 2](https://arxiv.org/abs/2506.09985) was deployed, in the paper's own
+words, "on Franka arms in two different labs" for picking and placing with image goals,
+"without collecting any data from the robots in these environments", from under 62
+hours of unlabelled robot video, and the [code is published](https://github.com/facebookresearch/vjepa2).
+[Dreamer 4](https://danijar.com/project/dreamer4/) reports the first agent to
+obtain diamonds in Minecraft from offline data alone, with a world model that runs
+interactively on one graphics card. Both are research results, both predict a
+compressed code rather than pixels, and
+[latent world models](03_latent-world-models.md) is the page that covers them.
+
+Now what is still unsolved, starting with the one that matters most to a robot. A
+model that predicts convincing pictures has not thereby predicted correct physics,
+and this is measured rather than argued.
+[Physics-IQ](https://arxiv.org/abs/2501.09038), published in January 2025 by Saman
+Motamed and four co-authors, tested six video generation models, including Sora,
+Runway and Stable Video Diffusion, against filmed scenarios covering collisions,
+fluids, gravity, optics and magnetism. The authors' conclusion is that "physical
+understanding is severely limited, and unrelated to visual realism", and the
+paper's own one-line summary is that "visual realism does not imply physical
+understanding". The
+[benchmark is downloadable](https://github.com/google-deepmind/physics-IQ-benchmark):
+198 scenarios filmed from three camera angles in two takes at 3840 by 2160 and 30
+frames per second, with the code under Apache 2.0 and the material under CC BY
+4.0, so you can run it rather than take my word.
+
+That result is the whole problem for a robot, and the reason is in the training.
+The loss function rewards a frame that looks like the recorded frame, and nothing
+in it separates a cube that slid 3 cm from one that slid 6 cm when both look
+plausible. A robot needs the second number. Worse, the one planner on this page
+that worked, Visual Foresight in 5.6, scored a plan by where a single marked pixel
+travelled, which is exactly the quantity a plausible-looking video gets wrong. So
+the better these models get at the thing they are trained for, the less safe it is
+to infer that they are getting better at the thing a robot needs.
+
+The remaining unsolved problems are smaller but they bite sooner. There is no
+accepted measurement for a world model on manipulation: EWMBench is new and comes
+from the authors of one of the models it scores, and Book 3 records that no
+published head-to-head result shows a policy trained with video prediction beating
+the same policy trained without it. The practical costs have not moved either.
+Everything downloadable here needs Linux and a large NVIDIA card, some weights are
+gated and some are non-commercial, and a rollout past the first chunk starts from a
+picture the model drew, so it drifts like the numeric rollout on the
+[previous page](../02_most-used/01_learned-dynamics-models.md#many-steps-in-a-row).
+
+The rest of this section is my expectation, with the reason given each time, and
+none of it is anybody's announcement.
+
+I expect the downloadable action-conditioned video model to become a normal part of
+the data pipeline and to stay out of the control loop. The reasons are the two
+facts above: every named industrial use today is data generation or evaluation, and the
+fastest published time for one action-conditioned call is seconds while a control
+loop needs milliseconds. The shape that shipped in LeRobot points the same way,
+because both of its world-model policies either throw the video away before the
+robot runs or predict a compressed form of it.
+
+I expect small real-time models to arrive and to be used for short checks rather
+than for plans. The reason is that Oasis has already shown 20 frames per second
+from 500 million numbers, and that the few-step distillation which made image
+generation fast is the same technique. A one-second look at what the next push
+would do is affordable in a pick-and-place cycle; a ten-second rollout is not.
+What would change my mind is the opposite result: a published attempt at a small
+fast action-conditioned model whose predictions are too inaccurate to use.
+
+I expect physics measurement to become a normal thing to report when one of these
+models is released. The reason is that the instruments now exist and cost nothing,
+with Physics-IQ downloadable and EWMBench published, and that Book 3's count shows
+the field building measuring instruments faster than methods. When a cheap
+measurement exists, reviewers start asking for it. The caveat is worth keeping:
+a good score on filmed laboratory scenarios still says nothing about your own
+table, your own friction and your own gripper.
+
+I expect evaluation rather than planning to be where video world models first
+matter to a developer, because evaluation tolerates a model that is wrong about
+physics in a way planning does not. A failure your world model invents is still
+worth checking on the real arm, so a wrong prediction costs you one wasted test.
+An action your world model recommends is simply the wrong action, and it costs you
+the task. That asymmetry, plus the cost of real-robot evaluation, is why I think
+1X's use is the one that spreads.
+
+Finally, I expect pixel prediction to keep losing to latent prediction inside
+policies, for the reason V-JEPA 2 demonstrates on a real Franka: most pixels in a
+robot's camera are background, and drawing them is work the robot does not need.
+
+Against all of this, one number would settle more than the whole section. Nobody
+has published a whole-task success rate for a real arm whose actions were chosen
+by a downloadable video world model. Until somebody does, every claim in this area
+rests on how good the video looked.
+
+---
+
+## 7. Where to read next
 
 - The [next page](02_learned-simulators.md) covers learned simulators, which
   follow cloth, liquids and other soft materials piece by piece.

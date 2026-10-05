@@ -25,7 +25,8 @@ that describes its shape.
    · [5.4 Occupancy Networks](#54-occupancy-networks)
    · [5.5 TRELLIS](#55-trellis)
    · [5.6 How to choose](#56-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -655,7 +656,185 @@ it needs no graphics card for clouds of a few thousand points.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about the next few years of guessing hidden geometry. It was written on
+4 October 2026, and every link in it was checked on that day. It sorts claims the way
+Book 3's frontier chapter does in its section on [four kinds of
+claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything).
+A demonstration is a recording of something working once, under conditions the publisher
+chose. A product announcement says that a thing can be bought or downloaded, which you
+can go and check. A research result is a measured number on a stated task. A projection
+is a statement about a date that has not arrived, and it is the weakest kind. Where a
+sentence below is my own judgement rather than a report of somebody else's claim, it
+says so.
+
+### How it got here
+
+The question being asked changed. The first systems took the points you had measured and
+extended them, which is what section 1 describes and what AdaPoinTr still does. The
+systems that get the attention now are not handed your points at all. They are handed
+one photo, asked what object this is, and they draw the whole thing, which is what
+TRELLIS in section 5.5 does. That change matters because the two kinds of system are
+judged by different people. A completion network is judged by roboticists on how close
+its surface comes to the real one, and a generative 3D model is judged by artists and
+game studios on whether the result is usable, so the second kind has far more paying
+users behind it.
+
+### Where it is used in industry today
+
+Almost nowhere, and the plain version of that sentence is worth more than a paragraph of
+hedging. I could not find a robot product whose own documentation says it runs a learned
+shape completion model, and nobody appears to have published one. Everything in this
+section is therefore about the generation side, which does have products.
+
+Generated 3D objects are sold as a service, and the customer is the graphics industry
+rather than robotics. [Meshy](https://docs.meshy.ai/) is the clearest example. Its own
+documentation describes a platform that "transforms text descriptions, 2D images, and
+conversational prompts into production-ready 3D assets", names Meshy 7 as its newest
+model, exports GLB, FBX, OBJ, STL, USDZ and 3MF files, and offers "a free plan with 100
+credits per month". That is a product announcement, which you can check by signing up.
+Nothing in that documentation is about robots.
+
+The downloadable side is the part that actually reaches a robotics team, and three
+releases define it. Microsoft's [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) is a
+4-billion-parameter image-to-3D model whose
+[weights](https://huggingface.co/microsoft/TRELLIS.2-4B) are MIT-licensed, and its
+README states about 3 seconds for a 512-resolution asset on an H100 graphics card and
+that "an NVIDIA GPU with at least 24GB of memory is necessary". Meta's [SAM 3D
+Objects](https://huggingface.co/facebook/sam-3d-objects) "reconstructs full 3D shape
+geometry, texture, and layout from a single image, excelling in real-world scenarios
+with occlusion and clutter"; its model card dates the checkpoints to 19 November 2025,
+and the [repository](https://github.com/facebookresearch/sam-3d-objects) carries the SAM
+License, which does permit commercial use but has to be passed on unchanged with
+anything you redistribute. Tencent's [Hunyuan3D
+2.1](https://huggingface.co/tencent/Hunyuan3D-2.1) is the third, under the community
+licence that section 5.5 warns about, and its weights have not been updated since June
+2025.
+
+How much these are used is checkable rather than a matter of opinion. Hugging Face's
+[image-to-3D
+listing](https://huggingface.co/models?pipeline_tag=image-to-3d&sort=downloads) is
+ranked by downloads, and on the day this was written its programming interface reported
+2.13 million downloads in the previous thirty days for the original TRELLIS weights and
+1.74 million for TRELLIS.2. Those two numbers are the strongest evidence on this page
+that generated 3D has an audience and that completion does not.
+
+### What is being worked on right now
+
+The liveliest use of generated objects in robotics is not perception on the robot. It is
+filling a simulator. [ZeroBot](https://arxiv.org/abs/2609.34010), from September 2026,
+is the clearest case. Given one view of an object and a goal pose for it, ZeroBot uses
+an image-to-3D model to make a complete mesh, puts that mesh in a simulator, and learns
+the task by trial and error there, with no human demonstrations and no pretrained
+policy. Its authors report an 87 per cent success rate on real tasks with an average
+training time of 119 seconds. That is a research result on the authors' own tasks rather
+than a product, and the training time is the number to read carefully, because it counts
+the learning and not the generation that came before it.
+[Scene-SAM3D](https://arxiv.org/abs/2607.16805), from July 2026, takes the same idea
+from one object to a whole scene by choosing a few complementary views and fusing them,
+and it needs no fine-tuning. Book 3's frontier chapter covers the wider version of this
+under
+[real-to-sim](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#53-real-to-sim-rebuilding-the-room-instead-of-modelling-it).
+
+The second front is making a generated object something a physics engine can use. A mesh
+is a surface and nothing else. It has no mass, no friction and no joints, so a drawer in
+it does not open. [PhysX-Omni](https://arxiv.org/abs/2605.21572), from May 2026, attacks
+that directly by generating what its authors call simulation-ready assets for rigid,
+deformable and articulated objects, and by publishing a dataset called PhysXVerse to
+train on. Book 3's frontier chapter makes the same complaint about reconstructed scenes,
+in the sentence that "a splat reconstruction has no mass, no friction and no
+articulation". Until that gap closes, a generated object is scenery rather than
+something to practise against.
+
+The third front is completion aimed at the grasp instead of at the object.
+[TOSC](https://arxiv.org/abs/2601.05499), from January 2026, argues that completing the
+whole shape is the wrong task when the camera saw very little of it, and completes only
+the regions the fingers are likely to touch, guided by what pretrained models believe
+the object is for. That is a research result, and I did not find a code release for it.
+
+The fourth front is using a sense other than the camera.
+[ShapeGrasp](https://arxiv.org/abs/2605.02347), from May 2026, completes the shape and
+grasps at the same time using touch as well as vision, and a [comparison of contact
+modes](https://arxiv.org/abs/2602.23206) for building a shape from touch appeared in
+February 2026. Touch is the only sense that can measure the far side of an object
+without moving the camera around it.
+
+### What is still unsolved
+
+Three problems have resisted the whole period this page covers.
+
+The first is that a generated object has no size and no place. TRELLIS returns an object
+in its own coordinates, as section 5.5 explains. SAM 3D Objects predicts layout as well
+as shape, which is a real step, but layout is relative to the camera that took the photo
+rather than to your gripper, so the alignment work still has to be done by you. Nobody
+has published a generative model that returns an object already in metres in a robot's
+own frame.
+
+The second is that these models do not know when they are wrong, and a confident wrong
+back is worse than a blurry one. Papers that measure this exist, including one that
+[predicts which regions of a completion are uncertain](https://arxiv.org/abs/2308.00377)
+and one that [uses that uncertainty to choose better
+grasps](https://arxiv.org/abs/2504.16183), and neither has turned into something people
+install. Until a completion comes back with a number a planner can compare against a
+threshold, the planner has to treat a guess and a measurement in the same way, and that
+is the wrong thing to do.
+
+The third is that the measure does not match the job. Chamfer distance, from section 4,
+scores the whole surface, including the parts no finger will ever touch.
+[TARGO](https://arxiv.org/abs/2407.06168) is the benchmark that asks the question a
+roboticist cares about, which is grasping under occlusion, and its authors report that
+even the best grasp model they tested gets worse as the occlusion level rises. No
+benchmark named on this page scores a completion by whether the grasp held afterwards.
+
+### The next two to three years
+
+Five expectations follow, each with its reason, because the reason is the part worth
+reading. All five are my own judgement unless a sentence says otherwise.
+
+I expect the first place a robotics team uses 3D generation to be a simulator rather
+than a robot. The reason is that the two faults which make a generated mesh unusable at
+run time do not matter offline. A mesh with no metric size is fine if you are going to
+scale it by hand once and then train against it ten thousand times, and a model that
+gives two different backs from two different random starts is fine if you wanted variety
+in your training scenes anyway. On top of that, the asset pipeline is already paid for
+by games and online shops, so robotics gets it for the cost of a download. ZeroBot is a
+measured result in exactly this shape, and the large simulated corpora that Book 3
+describes under [simulation
+benchmarks](../../../03_frameworks/08_frontier/03_data-and-demonstration.md#102-the-simulation-benchmarks-that-now-ship-the-data)
+already ship thousands of 3D objects, so the appetite is established.
+
+I expect the licence rather than the accuracy to decide which generator teams build on,
+and this part is not a projection, because the licence files say it today. TRELLIS and
+TRELLIS.2 are MIT for both code and weights. Hunyuan3D's community licence does not
+apply in the European Union, the United Kingdom and South Korea. The SAM License permits
+commercial use but binds anyone you pass the weights to. A team in London can ship on
+one of those and not on another, and that decision gets made before anybody compares
+output quality.
+
+I expect completion aimed at the contact region to displace completion aimed at the
+whole object. The reason is the third unsolved problem above: a network trained to
+minimise error over the whole surface spends its capacity on parts of the object that do
+not affect the outcome. TOSC is the first paper I have seen to state that in those
+words, so this is a direction with one clear argument behind it rather than an
+established trend, and it could stay a single paper.
+
+I expect touch and a second camera view to be folded into completion rather than offered
+as alternatives to it. The reason is that an arm can move and can feel, so the cheapest
+repair for a bad guess is a measurement, and the expensive part is knowing which guess
+needs repairing. That makes this expectation depend on the second unsolved problem: a
+completion that cannot say where it is unsure cannot tell the arm where to look or where
+to touch. The two move together, and if calibrated uncertainty does not arrive then this
+does not either.
+
+What I do not expect, within three years, is a robot product whose documentation names
+shape completion as a stage. The reason is that it has to beat moving the camera, and
+moving the camera keeps getting cheaper as reconstruction gets faster, which is the
+trend Book 3 reports under real-to-sim above. Section 5.6 already gives that advice for
+today, and I think it survives this whole list.
+---
+
+## 7. Where to read next
 
 - [Scene reconstruction](../02_most-used/02_scene-reconstruction.md) is the next
     page, and it covers the "look again" route in full, by building a whole scene from

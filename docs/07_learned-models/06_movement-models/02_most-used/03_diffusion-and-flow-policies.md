@@ -22,7 +22,8 @@ is explained where it first appears.
 4. [Diffusion and flow matching: the difference](#4-diffusion-and-flow-matching-the-difference)
 5. [How it is trained](#5-how-it-is-trained)
 6. [Well-known models of this kind](#6-well-known-models-of-this-kind)
-7. [Where to read next](#7-where-to-read-next)
+7. [Where this is going](#7-where-this-is-going)
+8. [Where to read next](#8-where-to-read-next)
 
 ---
 
@@ -734,7 +735,185 @@ If the motion must be identical on every run, none of these is the right answer.
 
 ---
 
-## 7. Where to read next
+## 7. Where this is going
+
+Section 6 described the models as they stand, and this section is about where the
+method is heading. Four kinds of statement appear below, and they carry very different
+weight. A **demonstration** is a recording of something working once, under conditions
+the publisher chose. A **product announcement** says that something can be downloaded
+or bought, so you can check it yourself. A **research result** is a measured number
+under a stated protocol. A **projection** is a claim about a date that has not
+arrived, and it is the weakest of the four. Where a sentence below is my own
+expectation rather than somebody's claim, it says so. Book 3's
+[what is coming to robot arms](../../../03_frameworks/08_frontier/06_what-is-coming.md)
+applies the same four words to the whole field.
+
+### 7.1 How it got here
+
+The idea has not changed since 2023, and the number of network runs per movement has
+fallen from a hundred to four. Diffusion Policy showed that a clean-up procedure
+borrowed from picture generation could drive a robot arm, and a hundred runs for every
+decision was the price of it. Everything since has been an attempt to pay less for the
+same thing. Flow matching replaced the wiggly path from noise to answer with a nearly
+straight one, which cut the hundred to about ten. The expensive half of the model was
+then lifted out of the loop, so that the pretrained vision-language part runs once for
+a decision while only the small action expert repeats. GR00T N1.7 now asks for four
+steps. That count is the thread running through the rest of this section.
+
+### 7.2 Where it is used in industry today
+
+The checkable part of this method's industrial position is that the models are
+downloadable. [GR00T N1.7](https://huggingface.co/nvidia/GR00T-N1.7-3B) has been on
+the Hugging Face Hub since 25 February 2026, and NVIDIA
+[put it into LeRobot on 6 July 2026](https://blogs.nvidia.com/blog/hugging-face-lerobot-models-frameworks-open-robotics/).
+The π0 and π0.5 checkpoints are served from
+[openpi](https://github.com/Physical-Intelligence/openpi), and
+[SmolVLA](https://huggingface.co/lerobot/smolvla_base) from Hugging Face. Those three
+are product announcements, which is the strongest kind of evidence here.
+
+One company has published a careful measurement of the method at scale. Toyota
+Research Institute built what it calls Large Behavior Models by extending the
+Diffusion Policy design across a body of simulated and real robot data, and it
+measured them in
+[blind, randomised trials against single-task policies](https://arxiv.org/abs/2507.05331)
+( [project page](https://toyotaresearchinstitute.github.io/lbm1/)). It reports that
+training on many tasks first made the policies both more successful and more robust,
+and let a hard new task be taught from a fraction of the data a single-task policy
+needed. That is a research result and not a product, because nothing from it is
+downloadable. Its value here is that the protocol was built to stop its own authors
+fooling themselves, which is unusual in this area.
+
+What is missing is the kind of fact any industrial automation vendor publishes as a
+matter of course. Nobody has said how many robots run one of these policies at a named
+customer site, for how many hours, or how often a person had to step in, and Book 3's
+frontier chapter finds the same gap across the whole field in its section on
+[what is promised that the evidence does not support](../../../03_frameworks/08_frontier/06_what-is-coming.md#7-what-is-promised-that-the-evidence-does-not-support).
+So read the deployment videos as demonstrations. What is established is narrower and
+still worth knowing, which is that this method is how almost every downloadable policy
+now produces its actions.
+
+### 7.3 What is being worked on right now
+
+The live problem is the one section 4 introduced. A control loop has a time budget,
+the network runs once per clean-up step, and so the number of runs per movement
+decides whether a policy fits the loop at all. Three lines of work attack that number,
+and they do not conflict, so one policy can take all three.
+
+The first is to take fewer steps, by compressing a policy you have already trained.
+[Consistency Policy](https://arxiv.org/abs/2405.07503) distils a trained Diffusion
+Policy into a faster one, by making the student agree with itself along the paths the
+teacher learned. Its authors report inference an order of magnitude faster than the
+quickest alternative they compared against, with competitive success rates on six
+simulated and three real tasks, running on a laptop graphics card, and they report
+that the procedure is not fussy about how good the teacher was. That is a research
+result. The appeal for a reader of this page is that you keep the policy you trained
+on your own recordings and pay once to compress it, instead of changing model.
+
+The second is not to wait for the answer at all.
+[Real-time chunking](https://arxiv.org/abs/2506.07339), published by Physical
+Intelligence in June 2025, computes the next chunk while the arm is still playing the
+current one. It freezes the actions that are certain to be carried out and fills in
+the rest around them, which is what stops the join between two chunks being a pause or
+a jerk. Its authors report that it works on any diffusion or flow policy with no
+retraining, and they measure it on twelve simulated tasks and six real two-armed ones,
+including lighting a match, with delay deliberately added. That is a research result.
+The same idea is shipped code rather than a paper in LeRobot's
+[asynchronous inference](https://huggingface.co/docs/lerobot/async), which section 6.3
+mentioned as part of SmolVLA's release, and that is a product announcement.
+
+The third is to make each step cheaper by making the model smaller.
+[FoldQuantVLA](https://arxiv.org/abs/2609.24433) reports four-bit weights and four-bit
+activations with speed-ups of 1.20 to 1.33 times, where storing each number with fewer
+bits is called **quantisation**. The reason this corner is busy has nothing to do with
+research fashion. NVIDIA
+[announced three new Jetson Thor computers on 15 July 2026](https://blogs.nvidia.com/blog/jetson-thor-robotics-edge-ai-agent/),
+which are computers for running a model on the robot itself, with physical hardware
+stated for the first quarter of 2027, and the smallest of the three has 16 gigabytes
+of memory. Today's large policies do not comfortably fit in that. The announcement is
+dated and checkable, and it sets the size a policy has to be.
+
+### 7.4 What is still unsolved
+
+The first unsolved thing is whether the clean-up earns its cost at all. Section 6.2
+quoted [MINERVA](https://arxiv.org/abs/2609.03715), which found no measurable
+advantage for flow matching over plain regression on its benchmarks while running
+several times more slowly. Nobody has published a measurement on a real arm showing
+that a diffusion or flow policy keeps two ways of doing a task apart better than a
+plainly trained policy of the same size does. The argument in section 1 is a good one,
+and it is still an argument rather than a number. Three years after the method
+arrived, that hole in the evidence is the most surprising thing on this page.
+
+The second is that you cannot compare two policies' speed from anything published. The
+step counts in section 6 come from each project's own configuration file, and a step
+means a different amount of work in each row, as section 6.1 said. No project reports
+actions per second on named hardware with the camera resolution and the chunk length
+stated, so only a measurement on your own machine settles anything.
+[IndustrialVLA-Bench](https://arxiv.org/abs/2609.25562) proposes a shared reporting
+format for open policies, and whether anybody adopts it is not yet established.
+
+The third is that a faster clean-up does not buy you hands. Google DeepMind's own post
+of 30 July 2026 on
+[Gemini Robotics 2](https://deepmind.google/blog/gemini-robotics-2-brings-whole-body-intelligence-to-robots/)
+says that while its models reach a medium to high success rate with grippers,
+"the multi-finger dexterous manipulation remains challenging". Book 3's frontier chapter
+says the same from the other side, because the share of robotics abstracts mentioning
+dexterity moved only from 3.64 per cent in 2025 to 4.16 per cent in 2026. A policy
+that answers in four network runs rather than a hundred still has to be told what to
+do with five fingers.
+
+### 7.5 The next two to three years
+
+I expect running the policy and playing the actions at the same time to become ordinary,
+rather than a feature of one release. This is my expectation and not an announcement.
+The reason is that it is the cheapest of the three attacks in section 7.3. Real-time
+chunking needs no retraining and works on any policy of this kind, and LeRobot's runner
+already serves every policy that library carries, so taking it costs a change of
+configuration rather than a change of model. A speed-up that is both free and general
+stops being news and becomes the default.
+
+I expect the number people quote to change, from clean-up steps per chunk to actions
+per second measured from camera to motor on named hardware. This is my expectation,
+and the reason is arithmetic. At four steps the clean-up is no longer where the time
+goes, so the step count has stopped being informative, and the size of the pretrained
+half, the camera resolution and the chunk length now decide the answer. The frontier
+chapter's measurement that the share of robotics abstracts mentioning a benchmark rose
+from 15.27 to 20.04 per cent in a year is the supporting evidence rather than my
+guess.
+
+I expect the open default to become a policy sized for a 16 gigabyte computer on the
+robot. This one rests on a dated product announcement rather than on my judgement,
+which is why I would bet on it hardest. NVIDIA has stated hardware for the first
+quarter of 2027 whose entry-level part has 16 gigabytes, that part is what a small
+company or a university will buy, and a policy that does not fit the computer people
+buy loses to one that does, whichever is better. So quantisation and small backbones
+gain adoption for a reason that has nothing to do with whether they are interesting,
+and SmolVLA is the model on this page already closest to that shape.
+
+I expect distilling your own trained policy into a few-step one to become a routine
+last stage, in the way that shrinking a language model already is. This is my
+expectation. The reason is that it suits the reader this page is written for.
+Section 6.1 recommends training Diffusion Policy on your own recordings, that is the
+model with a hundred steps, and Consistency Policy's authors report that the
+compression is cheap next to the training and tolerant of a mediocre teacher. The
+second reason is that waiting for a faster frontier model to be handed to you is a
+bet the record does not support, because Physical Intelligence has published no
+weights for π\*0.6 or π0.7, and both are now past the three to five month gap its
+first two models set.
+
+I expect flow matching to stay, and the claim made for it to get narrower. This is my
+expectation, and it is the one most likely to annoy people. It stays because it is
+what makes attaching a clean-up network to a large pretrained model affordable at all,
+which section 6.2 explained. The claim that narrows is the one about accuracy. After
+MINERVA, the honest reason to pick π0.5, SmolVLA or GR00T N1.7 is the pretraining
+inside it, and anybody selling you flow matching as more accurate than predicting the
+actions directly should be asked for the measurement. The shape itself, which is a
+large pretrained half that understands the scene and a small generative half that
+produces the numbers, has survived four generations of model, so I do not expect this
+family to be replaced inside the window.
+
+---
+
+## 8. Where to read next
 
 This page finishes the three copying policies, so the reading below either goes
 back over them or moves on to the methods that do not copy at all.

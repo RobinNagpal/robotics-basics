@@ -29,7 +29,8 @@ because a learned simulator often starts from a point cloud.
    · [5.5 VCD](#55-vcd)
    · [5.6 RoboCraft and RoboCook](#56-robocraft-and-robocook)
    · [5.7 How to choose](#57-how-to-choose)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -858,7 +859,198 @@ grip.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section looks forward rather than back, and it was written on 4 October
+2026. Book 3 sorts forward-looking statements into four kinds, in
+[four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything):
+a demonstration is a recording of something working once under conditions the
+publisher chose, a product announcement says a thing can be bought or
+downloaded, a research result is a measured number on a stated task, and a
+projection is a statement about a date that has not arrived. This section names
+the kind every time, and says so where the judgement is mine rather than
+somebody's published statement.
+
+The shape of the change in this family was never the architecture. Interaction
+Networks already had the two small networks that every entry in
+[section 5](#5-well-known-models-of-this-kind) still uses. What moved was where
+the list of pairs comes from, which went from a hand-written list to a list
+rebuilt from distance at every step, and then where the training data comes
+from, which went from another simulator's output to a real arm's recordings.
+The second move is the one still in progress, and it is the one the rest of this
+section is about.
+
+No robot cell in production runs a learned simulator, and the clearest evidence
+is where the maintained code lives. NVIDIA's PhysicsNeMo, which
+[section 5.7](#57-how-to-choose) sends you to, reached version 2.2.2 on 11
+September 2026 and is the only maintained home of MeshGraphNets. Its
+[examples folder](https://github.com/NVIDIA/physicsnemo/tree/main/examples) has
+areas for weather, computational fluid dynamics, structural mechanics,
+molecular dynamics, reservoir simulation, nuclear engineering, additive
+manufacturing and healthcare. It has no area for robotics. That is checkable
+today, and it says which industry pays for this family.
+
+The industries that pay buy it as a product. Ansys sells
+[SimAI](https://www.ansys.com/products/simai), whose own page describes training
+a model from a customer's existing simulation results with no coding, and whose
+2026 R1 release splits it into a desktop tier called SimAI Pro and a cloud tier
+called SimAI Premium. Siemens sells
+[Simcenter PhysicsAI](https://www.siemens.com/en-us/products/simcenter/engineering-data-science-ai/physicsai/),
+which predicts fields directly on a mesh or a computer-aided design model and is
+embedded inside Simcenter Hypermesh and the design manager of Simcenter
+STAR-CCM+. Both are product announcements, the strongest kind of claim here, and
+both vendors are careful in the same way. The Siemens page's own answer to
+whether it can replace traditional solvers says that it complements them, and
+that critical designs should still be validated with a conventional solver. The
+same page relays a customer claim from
+[Kinetic Vision](https://www.kinetic-vision.com/) of predictions up to 4,000
+times faster at up to 97.5% accuracy, with no protocol attached, so read that as
+a claim rather than a measurement. Note what
+these products predict: the answer for a new shape, not a long rollout of
+changing contact, which is a different job from the one a robot arm needs done.
+
+The one field where a learned simulator took over daily operational work is
+weather forecasting, and the most instructive event there is the one that went
+against it. The European Centre for Medium-Range Weather Forecasts has run its
+own machine-learning forecast system operationally since February 2025. On 11
+May 2026 it published
+[Farewell to the external AI models](https://www.ecmwf.int/en/about/media-centre/aifs-blog/2026/farewell-external-ai-models),
+which says it is stopping the real-time operation of four externally developed
+models: Google DeepMind's [GraphCast](https://arxiv.org/abs/2212.12794),
+Huawei's [Pangu-Weather](https://www.nature.com/articles/s41586-023-06185-3),
+Microsoft's [Aurora](https://www.nature.com/articles/s41586-025-09005-y) and
+NVIDIA's [FourCastNet](https://arxiv.org/abs/2202.11214). The reason is a
+research result with a stated protocol: when its hand-written forecasting system
+was upgraded to a new cycle, the learned models that had been fine-tuned against
+the old one got worse, measured over two months of forecasts against the new
+cycle's own analysis. That is the moving-target
+problem in one experiment. A model trained on a written simulator's output
+inherits the version it learned from, and the written simulator keeps shipping.
+
+The written simulators are where most of the current engineering effort actually
+is, and that matters to anyone choosing between them and a learned model.
+MuJoCo shipped eleven releases between February and September 2026, dated in
+[its changelog](https://mujoco.readthedocs.io/en/stable/changelog.html), and
+three of them attack exactly the problems this page's models were built for.
+Version 3.5.0 added a system identification toolbox, which fits masses,
+frictions and motor gains to measurements from your own machine, and added
+arbitrary delays
+for actuators and sensors. Version 3.13.0, on 8 September 2026, added a
+`discrete` integrator that keeps stiff springs stable at large timesteps.
+Version 3.14.0, on 22 September 2026, added the experimental `ipc` contact mode
+that [section 5.7](#57-how-to-choose) already describes. Newton reached 1.6.0 on
+10 September 2026, installs with `pip install "newton[examples]"`, and its
+[README](https://github.com/newton-physics/newton) lists cable examples, cloth
+examples including
+[a cloth held by a Franka arm](https://github.com/newton-physics/newton/blob/main/newton/examples/cloth/example_cloth_franka.py),
+material-point-method examples for granular material, water, snow and viscous
+material, and differentiable examples including differentiable cloth.
+[Genesis World](https://github.com/Genesis-Embodied-AI/genesis-world) runs
+multi-physics on an Apple Silicon Mac's own graphics processor. Every one of
+those is a product announcement, checkable today, and together they answer
+several of the cases this page recommends a learned model for.
+
+The research front on the learned side has moved accordingly, and the move is
+away from replacing the simulator. [AdaptiGraph](https://arxiv.org/abs/2407.07889)
+learns a graph dynamics model that carries an estimate of the material's
+properties and updates that estimate while the arm pushes.
+[PhysTwin](https://arxiv.org/abs/2503.17973) fits a spring-mass model, a shape
+model and a set of Gaussian splats to a few videos of a real rope, cloth or
+stuffed animal, which means the learned part is the parameters and the state
+rather than the physics.
+[Particle-Grid Neural Dynamics](https://arxiv.org/abs/2506.15680) learns a
+hybrid of particles and a spatial grid from colour-and-depth video. All three
+are research results with published papers, and
+[PhysTwin's code](https://github.com/Jianghanxiao/PhysTwin) is on GitHub. Read
+them together and the direction is clear: the valuable output is a description
+of the material in front of you, which a solver can then use.
+
+The second live front is getting the particles in the first place. A particle
+model cannot run without particle positions, and a camera sees one side of a
+crumpled towel. Book 3's section on
+[real-to-sim reconstruction](../../../03_frameworks/08_frontier/04_simulation-and-evaluation.md#53-real-to-sim-rebuilding-the-room-instead-of-modelling-it)
+records that rebuilding a scene from a phone scan became a recurring published
+result through 2026, mostly using Gaussian splatting, and that most of that work
+is paper only rather than downloadable. Our
+[scene reconstruction](../../04_3d-models/02_most-used/02_scene-reconstruction.md)
+page covers the methods. Until that half is solved, a learned simulator on a
+real arm is a research project.
+
+Three things remain unsolved, and the first is embarrassing rather than hard.
+Nobody in this family publishes a parameter count, a memory requirement or a
+shared benchmark. [Section 5](#5-well-known-models-of-this-kind) says `not
+stated` in six rows for that reason. The consequence is that you cannot compare
+two learned simulators, you cannot tell what hardware you need from a paper, and
+a claim of improvement cannot be checked by anybody who did not write it. Ten
+years of papers in this family have not fixed this, and no project has announced
+that it will.
+
+The second is that a learned simulator cannot promise anything. MuJoCo's `ipc`
+mode makes non-penetration a guarantee by checking every step, and the price of
+that guarantee is written in the changelog: the contacts are frictionless and
+exact replay is not supported. A learned model offers no such trade, because
+nothing in it can be checked. Long rollouts in this family are still kept
+stable by adding noise to the inputs during training, which
+[section 5.3](#53-graph-network-based-simulators-gns) describes, and that is a
+patch that works rather than a bound on the error.
+
+The third is that nobody has measured the materials. Book 2 explains that
+friction and softness numbers in a simulator are
+[plausible rather than measured](../../../02_perception/02_object-perception/07_making-it-work.md#5-what-simulation-will-not-tell-you),
+and a learned simulator does not escape it. The published GNS and MeshGraphNets
+models learned from a hand-written simulator's guesses, and AdaptiGraph and
+PhysTwin estimate the numbers from video with nothing independent to check them
+against. I could not find a published measurement of a real dough's or a real
+towel's properties that a second group reproduced.
+
+What follows is what I expect, and it is my judgement rather than anybody's
+commitment. I expect learned models in this family to be adopted as corrections
+on top of a written simulator rather than as replacements for one. The reason is
+the amount of data each job needs. Learning the whole physics of dough from
+scratch takes a dataset nobody on a robot project has; learning the difference
+between what MuJoCo predicts and what the real towel did takes far less, because
+the written simulator already supplies the part that is right. MuJoCo 3.5.0's
+system identification toolbox makes the written half fit your machine before the
+learned half is asked for anything, which is the step that was missing when GNS
+was published.
+
+I expect the product that actually gets bought in robotics to be material
+identification rather than simulation. What a robot engineer lacks is not a
+solver; MuJoCo and Newton are free. What they lack is the stiffness and friction
+of the specific thing on their bench. AdaptiGraph and PhysTwin both attack that,
+and both hand their answer to a solver afterwards, which tells you where the
+value sits. This is a projection, and the thing that would confirm it is a
+released tool that takes a video of your material and returns parameters for a
+written simulator.
+
+I expect mesh-based learned models to stay alive and particle-based ones to
+narrow to granular and liquid work. The reason is maintenance rather than
+quality. MeshGraphNets lives in PhysicsNeMo, which has releases, continuous
+integration and a company behind it. The reference code for GNS pins TensorFlow
+1, as [section 5.3](#53-graph-network-based-simulators-gns) records, and nobody
+has announced a replacement. Adoption follows maintained packaging more
+reliably than it follows published accuracy.
+
+I also expect the weather result to repeat in engineering, and this is the part
+worth carrying into how you read any paper in this family. A learned model
+trained on a written simulator's output has a shelf life set by the written
+simulator's release cycle. MuJoCo released eleven versions between February and
+September 2026 and changed the meaning of two contact parameters in one of them.
+A benchmark number produced against version 3.5.0 is not a number about version
+3.14.0, and nothing in this family currently reports which version its training
+data came from.
+
+The thing I do not expect, and I say so because the gap is the point of this
+page, is a learned simulator you can install and point at your own towel. No
+organisation has announced one. The distance between a published demonstration
+and a runnable program is wider in this family than anywhere else in this book,
+and nothing published in 2026 narrowed it. If that changes, it will show up as a
+package on the Python Package Index with a trained model and a licence file, and
+that is the thing to watch for rather than the next paper.
+
+---
+
+## 7. Where to read next
 
 - The [next page](03_latent-world-models.md) covers latent world models, which
   predict a short code instead of particles or pictures.

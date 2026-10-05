@@ -24,7 +24,8 @@ explained where it first appears.
 3. [The four kinds of judge](#3-the-four-kinds-of-judge)
 4. [A second worked example: where to put the cut-off](#4-a-second-worked-example-where-to-put-the-cut-off)
 5. [Well-known models and libraries](#5-well-known-models-and-libraries)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -166,7 +167,7 @@ all.
 
 ## 5. Well-known models and libraries
 
-Section 6 described the four jobs a judge does, and this section names the judges
+Section 3 described the four kinds of judge, and this section names the judges
 themselves. Most of the published work in this area is research code, so each
 model below says plainly whether you can run it today, and the first one is the
 one most people should start with.
@@ -720,7 +721,187 @@ so it belongs with the written alternatives rather than with the judges.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+Section 5 named the judges that exist today, and this section says where this kind
+of model is heading. Each statement below says what kind of claim it rests on,
+using the four kinds the frontier chapter
+[sets out](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+and where a judgement is mine rather than somebody's claim the sentence says so.
+
+### 6.1 How it got here
+
+Judging an attempt from a picture started as something you built per task, and the
+success classifier of sub-section 5.1 is what that looked like. The shift since
+then has one direction: the judge stopped being a thing you train and started
+being a thing you download. [Vision-Language Models as Success
+Detectors](https://arxiv.org/abs/2303.07280), from Google DeepMind in March 2023,
+made the first version of that argument by asking a large model whether a task was
+finished instead of training a head to say so. What changed in 2026 is that
+general-purpose judges arrived as ordinary checkpoints in an ordinary library,
+which is a difference in kind rather than in quality.
+
+### 6.2 Where it is used in industry today
+
+Nobody sells a judge model. I could find no product announcement from any robot
+vendor offering a reward or progress model as a thing you buy, and the shipping
+artefacts in this area are open downloads rather than products.
+
+Those downloads are real and they are checkable, which makes them the strongest
+claims on this page. [LeRobot version
+0.6.0](https://huggingface.co/blog/lerobot-release-v060), on 6 July 2026, put
+Robometer, TOPReward and SARM into one library with one interface, and
+[Robometer-4B](https://huggingface.co/lerobot/Robometer-4B) sits on the Hugging
+Face Hub under Apache-2.0 today. That is a product announcement in the only sense
+this page cares about: you can fetch the file and run it this afternoon.
+
+Where judges are used in production, the evidence is a demonstration rather than a
+product. Physical Intelligence's π\*0.6 trains a value function from the robot's
+own experience, and that value function is a judge in everything but name, because
+the difference between two of its scores is what tells the policy whether the
+action in between helped. The [frontier chapter's section on
+it](../../../03_frameworks/08_frontier/02_foundation-models.md#42-π06-and-π06-a-policy-that-improves-by-practising)
+records the reported throughput gains and also records that nothing was released.
+The one judge with a long industrial history is not learned at all: a sensor. A
+torque reading, a vacuum pressure switch or a part-present beam answers "is it
+done?" directly, costs nothing to run, and is what a working cell actually uses.
+Section 5.7 says to prefer that where it exists, and industry agrees with it.
+
+The nearest thing to industrial adoption is a judge used for evaluation rather
+than for reward. [AutoEval](https://arxiv.org/abs/2503.24278) runs real-robot
+evaluations with automatic success detection and automatic scene resets, and
+[RoboChallenge](https://robochallenge.ai/) runs submitted policies on operators'
+own robots and scores them centrally. Both are shipped and open, and both exist
+because a human scoring attempts by hand is the cost that makes real evaluation
+unaffordable.
+
+### 6.3 What is being worked on right now
+
+The live research thread is the large vision-language model used as a judge, and
+the reason it is live is that it needs no training data from you. [Large Reward
+Models](https://arxiv.org/abs/2603.16065), whose latest revision is dated 30
+September 2026, adapts a vision-language model into an online reward generator and
+exposes three interfaces from one model: progress estimation, task completion and
+a comparison between two attempts. It reports improving an imitation-learning
+baseline on four real manipulation tasks across two robot platforms. That is a
+research result, and no weights were released at the time of writing.
+[MARVL](https://arxiv.org/abs/2602.15872), from January 2026, attacks the same
+model's known weakness by fine-tuning it for spatial and semantic consistency and
+splitting a task into named stages, and it reports beating earlier
+vision-language-model rewards on the Meta-World simulated benchmark.
+
+The second thread is what trains the judge, and Robometer is the clearest statement
+of it. Its paper reports a dataset it calls RBM-1M, of more than one million
+trajectories across many robot bodies and tasks, and it trains on two signals at
+once: how far along a frame is within one attempt, and which of two attempts got
+further. The second signal is the interesting one, because asking a person where
+the line between success and failure sits is a question they answer
+inconsistently, while asking which of two attempts got further is a question that
+means the same thing on every task. That lets failed and clumsy attempts become
+training data instead of being thrown away.
+
+The third thread is the one that matters most to a reader, and it is new: people
+have started measuring the judges. [FailBench](https://arxiv.org/abs/2609.03611),
+published on 3 September 2026, is a benchmark of 2,197 manipulation attempts drawn
+from 14 public sources, of which 12 are real and six were not collected for
+failure detection at all, and 75 per cent of its failures happened naturally
+rather than being staged. Across 13 vision-language detectors, the best reaches
+0.77 mean balanced accuracy. **Balanced accuracy** here means the average of how
+often the judge catches a success and how often it catches a failure, so 0.5 is
+guessing. Three of its findings deserve to be read twice. Detectors fine-tuned for
+failure detection consistently did worse than general-purpose models, including
+worse than the models they were fine-tuned from. Performance approached chance,
+below 0.60, on tasks whose outcome depends on contact rather than on visible
+object motion. And the errors were biased: when the evidence was ambiguous the
+judges predicted success, and asking them to reason harder did not remove that.
+Those are research results on a stated protocol, which is the strongest kind of
+claim in this sub-section.
+
+The shared evaluation efforts keep improving alongside that.
+[RoboArena](https://arxiv.org/abs/2506.18123) ranks policies from double-blind
+comparisons between pairs rather than from absolute scores, which is the same
+insight Robometer's preference head rests on, applied to evaluation instead of to
+training.
+
+### 6.4 What is still unsolved
+
+Nobody has published how well a general judge agrees with a careful person. This
+is the gap to keep in mind whenever you read a reward-model result, and it is
+narrower than it sounds. FailBench measures a judge against the labels its source
+datasets already carried, which is not the same thing as putting a judge and an
+attentive human in front of the same hundred attempts and reporting how often they
+disagree. For Robometer in particular, which is the model this page tells you to
+download, no published work gives that figure on a task it was not trained for.
+Until somebody runs that study, every number a judge produces rests on an
+unmeasured assumption.
+
+Contact is the second gap, and it is the same gap the whole book keeps meeting. A
+camera sees where things are and not how hard they are pressed, so a judge looking
+at pictures cannot tell a screw that is tight from one that is merely seated.
+FailBench measured exactly this and found near-chance performance on
+contact-intensive assembly. No amount of better vision fixes it, because the
+information is not in the picture.
+
+The third is reward hacking, which is what happens when a policy is trained
+against a judge and finds a way to score well without doing the task. A learned
+judge is wrong in places, and a reinforcement learning run is a search that will
+find those places, because finding them is cheaper than doing the work.
+FailBench's bias finding makes this concrete: a judge that says "success" when the
+evidence is unclear is a judge that rewards attempts which end ambiguously. I know
+of no published study measuring how often this happens on a real arm, and that
+absence is itself worth noting.
+
+### 6.5 The next two to three years
+
+Everything in this sub-section is my own expectation unless the sentence names
+somebody else's commitment.
+
+I expect judges to be published with a measured accuracy number, the way policies
+are published with a success rate, and the reason is that FailBench has made it
+cheap to do. Running a benchmark of 2,197 recorded attempts costs computing time
+and no robot, so there is no good excuse left for shipping a reward model without
+one. That is my expectation. Neither LeRobot nor any model's authors have
+committed to it.
+
+I expect the large judge to be used to teach a small one rather than to run on the
+robot, and the reason is arithmetic that sub-section 5.7 already states. HIL-SERL
+needs a reward at every control step, and Robometer is an 8.9 GB checkpoint on a
+4-billion-parameter backbone. A big model scoring a few thousand recorded attempts
+once, and a small classifier trained on those scores to answer in milliseconds, is
+the shape that fits both constraints. Nobody has announced such a tool, so treat
+this as a prediction about engineering convenience rather than as news.
+
+I expect the most common use of a judge to be filtering data rather than supplying
+reward, and the reason is that the failure modes cost different amounts. A judge
+that mislabels one recorded episode costs you that episode. A judge that is wrong
+inside a reinforcement learning loop teaches the policy to exploit the mistake, as
+the paragraph above describes. The published work is already moving this way:
+π0.7 keeps failed and sloppy attempts in its training set with labels saying so,
+which the [frontier chapter
+records](../../../03_frameworks/08_frontier/02_foundation-models.md#43-π07-the-current-frontier-model),
+and a judge is the obvious thing to write those labels with.
+
+I expect comparisons between pairs to displace absolute labels wherever a judge is
+trained, and here the reason is already measured rather than guessed. Robometer
+trains on which of two attempts got further and reports that this generalises
+better than earlier methods, and RoboArena independently chose pairwise
+comparisons for evaluation after concluding that standard absolute scores do not
+scale across laboratories. Two groups solving different problems reached for the
+same trick, which is usually a sign the trick is right rather than fashionable.
+
+I expect the judge to stop being only a camera model, and the reason is
+sub-section 6.4's second gap. The tasks where a judge is most needed are the
+contact tasks, which are the tasks pictures cannot settle, and arms already
+produce force, torque and joint-current signals that none of these models are
+given. The
+[collision and failure detection page](../../09_touch-and-body-models/02_most-used/02_collision-and-failure-detection.md)
+covers judges built on those signals today. Joining the two is an obvious
+engineering step and I expect somebody to take it, but I know of no announced work
+on it, so this is the weakest prediction here and I would not plan around it.
+
+---
+
+## 7. Where to read next
 
 This page supplied the score that the earlier methods needed, and the next page
 supplies the data they needed, so the reading below follows that thread.

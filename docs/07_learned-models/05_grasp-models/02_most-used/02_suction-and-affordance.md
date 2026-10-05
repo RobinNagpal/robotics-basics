@@ -23,7 +23,8 @@ an affordance model is a kind of segmentation model.
 3. [How it works inside](#3-how-it-works-inside)
 4. [How it is trained](#4-how-it-is-trained)
 5. [Well-known models](#5-well-known-models)
-6. [Where to read next](#6-where-to-read-next)
+6. [Where this is going](#6-where-this-is-going)
+7. [Where to read next](#7-where-to-read-next)
 
 ---
 
@@ -760,7 +761,196 @@ the handle" is cheaper and more reliable written down than learned.
 
 ---
 
-## 6. Where to read next
+## 6. Where this is going
+
+This section is about the direction suction and affordance models are moving in. It is
+written on 4 October 2026, and it borrows the vocabulary Book 3's frontier chapter uses
+for
+[the four kinds of claim](../../../03_frameworks/08_frontier/06_what-is-coming.md#1-four-kinds-of-claim-and-why-the-difference-decides-everything),
+because the difference decides how much weight a sentence can carry. A demonstration is a
+recording of something working once under conditions the publisher chose. A product
+announcement says a thing can be bought or downloaded, and you can go and check, which
+makes it the most useful kind. A research result is a measured number under a stated
+protocol. A projection is about a date that has not arrived, and it is the weakest. Every
+claim below says which kind it is, and where the judgement is mine the sentence says so.
+
+### How it got here
+
+The two halves of this page moved in opposite directions. Suction prediction started as a
+physics calculation about a seal and a twisting force, became a learned per-pixel score
+trained on that same physics, and has largely gone back to geometry with a segmentation
+model in front of it. Affordance went the other way, from a fixed list of part names
+drawn on photographs by hand to a phrase you type. Both moves had the same cause: the
+hand-made part of the system was the part that did not generalise.
+
+### Where it is used in industry today
+
+This is the one page in this book whose subject runs at scale, for money, today. Every
+large warehouse picking system named below holds the item with a suction cup. Amazon's
+[Cardinal](https://www.aboutamazon.com/news/operations/amazon-robotics-robots-fulfillment-center)
+lifts a parcel "with air suction", and its
+[Vulcan](https://www.aboutamazon.com/news/operations/amazon-vulcan-robot-pick-stow-touch)
+picks with "an arm that carries a camera and a suction cup"; Amazon states Vulcan can
+handle about 75 per cent of the types of item it stores, and that it will be added to
+sites in Europe and the United States "over the next couple of years".
+[Sparrow](https://www.aboutamazon.com/news/operations/amazon-introduces-sparrow-a-state-of-the-art-robot-that-handles-millions-of-diverse-products)
+is Amazon's item-level picking arm, and Amazon does not state its gripper. Boston
+Dynamics' [Stretch](https://bostondynamics.com/stretch/) unloads shipping containers with
+an array of cups, and in May 2025 it and DHL
+[signed an agreement covering more than 1,000 further robots](https://bostondynamics.com/news/dhl-signs-mou-for-additional-1000-robot-deployment/),
+with DHL reporting unloading rates of up to 700 cases per hour. Those are product
+announcements with company-reported numbers attached.
+
+Two deployments matter more than the rest, because of what they say about
+[section 5.7](#57-how-to-choose). Ocado's
+[On-Grid Robotic Pick](https://www.ocadogroup.com/newsroom/stories/ocado-robotic-arms)
+arm packs grocery bags with a single suction cup, and Ocado says it picked over 30
+million items with it in 2024 and
+[expects it to reach "more than 70% of an extensive online grocery range"](https://www.ocadogroup.com/newsroom/news/kroger-rolls-out-new-technology-enhancements-with-ocado-group)
+at full capacity. An interview with its researchers describes
+[a 3D vision system that finds grasp points "big enough, flat enough and horizontal enough for the suction cup to attach to"](https://www.imveurope.com/feature/automating-grocery-shopping),
+and calls it "a model-free approach". That is the geometric flat-patch method section 5.7
+recommends, running in a working grocery warehouse. The other is
+[Ambi Robotics](https://www.ambirobotics.com/), founded by Ken Goldberg and Jeff Mahler,
+two of the authors of the Dex-Net work in
+[section 5.1](#51-the-dex-net-suction-models-30-and-40). Its AmbiSort parcel sorter runs
+software descended from Dex-Net, and
+[Pitney Bowes expanded its deployment across its United States hubs](https://www.robotics247.com/article/pitney_bowes_to_deploy_ambisort_ai_powered_robots_in_e_commerce_network).
+So both of the suction approaches on this page have a company behind them.
+
+Suction rarely runs alone. RightHand Robotics'
+[RightPick](https://www.righthandrobotics.com/products/rightpick) grips with "three
+compliant fingers and suction" and claims more than 1.2 million production picks a month,
+and [Plus One Robotics](https://www.plusonerobotics.com/automated-parcel-induction) and
+[Dexterity](https://www.dexterity.ai/) sell parcel handling of the same shape. For
+affordance models the industrial picture is empty, and that is the honest answer. I could
+find no company shipping an affordance model and no deployment of anything like
+AffordanceNet or Where2Act. What does ship is open-vocabulary segmentation used as a
+filter, which is what [section 5.6](#56-clipseg-asking-for-a-part-in-words) describes.
+
+### What is being worked on right now
+
+The papers below come from an arXiv search of the computer science categories for
+"suction" and for "affordance" in the abstract, sorted by date and run on 4 October 2026,
+so you can repeat it and see what has arrived since.
+
+The first thread is giving the cup a sense of whether it is actually holding anything.
+[CLAP](https://arxiv.org/abs/2609.32767), from September 2026, taps a pressure module
+into the vacuum line, feeds the reading into the policy in place of the suction command,
+and uses it to abandon an action already under way. Its stated reason for doing this is
+the sharpest sentence written about suction this year: at the moment it matters, the cup
+and the face it is holding hide each other from the camera, so vision cannot answer the
+question. That is a research result. The same thread is appearing in hardware, with
+[FlexiCup](https://arxiv.org/abs/2511.14139) and
+[SuckTac](https://arxiv.org/abs/2511.02294) building cups that see and feel what they are
+pressed against.
+
+The second thread is suction without a suction model at all, and it is the one with
+measured numbers. A July 2026 system called [Seg2Grasp](https://arxiv.org/abs/2607.17757)
+splits bin picking into segmentation, then suction points from surface normals, then
+open-vocabulary classification, and argues explicitly that end-to-end learning falters on
+unfamiliar objects. An August 2026 paper on
+[sorting deformed beverage cartons](https://arxiv.org/abs/2608.28246) goes further and
+uses no training at all: a vision-language model finds the cartons from a text prompt,
+[SAM 2](https://github.com/facebookresearch/sam2), the second version of Meta's Segment
+Anything Model, turns each detection into a mask, and a geometric score combines flatness
+with surface direction to pick the point. On a real robot across 35 cluttered scenes it
+reports 88.2 per cent single-object grasp success and 72.6 per cent end-to-end retrieval
+in clutter. Read the protocol before carrying those numbers anywhere: the objects are one
+product type at three levels of deformation, not a mixed bin.
+
+The third thread is the affordance half catching up with the rest of computer vision.
+[UniAfford](https://arxiv.org/abs/2609.37264), from September 2026, is one model for both
+2D and 3D affordance prediction, with a dataset that pairs pixel-level and point-level
+labels under a single taxonomy. The problem it names is the one
+[section 5](#5-well-known-models) exposes: 2D and 3D affordance work grew up as separate
+problems with different datasets and evaluation protocols, so nothing transfers between
+them.
+
+The fourth thread is hardware that holds things both ways, with a policy that knows which
+tool it is using. [VacuumVLA](https://arxiv.org/abs/2511.21557) drives suction and
+gripping from one policy, and the
+[Everything-Grasping gripper](https://arxiv.org/abs/2510.04585) and
+[Suction Leap-Hand](https://arxiv.org/abs/2509.20646) put cups on fingers. This is the
+research side of what RightHand Robotics already sells.
+
+### What is still unsolved
+
+Suction hides the problem rather than solving it, and this is the most important sentence
+on the page. A cup works when an item has one reachable face that is roughly flat, clean
+and airtight, and the warehouses where suction works are warehouses whose items are
+packaged for shipping and therefore mostly have such a face. The boundary is visible in
+the vendors' own numbers. Amazon says Vulcan handles about 75 per cent of item types.
+Ocado expects more than 70 per cent of its range. RightHand Robotics sells a Suction Cup
+Swapper whose stated benefit is making "roughly 1.5x as many orders 100% robot pickable",
+which is a company telling you how many orders one cup could not finish. The remaining
+items are not a slightly harder version of the same problem. They are the finger-grasping
+problem of [six-degree-of-freedom grasps](01_six-dof-grasps.md), untouched, and a better
+suction score does not move the boundary one item, because what fails is the shape of the
+object rather than the quality of the prediction.
+
+Picking unseen items from a cluttered bin at a rate a business will pay for is therefore
+still not solved, and the industry's answer is to put a person back in the loop. Plus One
+Robotics sells remote human supervision as a named product feature, so somebody elsewhere
+can take over when a robot is stuck. That is an honest engineering decision and it is
+also a measurement: a product built around human intervention is a product whose author
+does not expect autonomy to be enough.
+
+The smaller unsolved things are worth naming. A suction score is a prediction about an
+event the model cannot observe, which is why CLAP exists, and
+[SuctionNet-1Billion](#52-suctionnet-1billion-the-current-suction-benchmark) scores
+against labels a physics model produced rather than against picks, so no number on this
+page is picks per hour. Depth cameras still return nothing where a glass jar or a shiny
+foil tray was, which breaks a flat-patch method and a learned model equally. Affordance
+has no benchmark anybody agrees on, no model in [section 5](#5-well-known-models) with a
+licence a company can use, and nothing shipped for objects with moving parts.
+
+### The next two to three years
+
+Everything in this part is my expectation rather than anybody's announcement, and the
+reason matters more than the prediction.
+
+I expect the learned suction scorer not to come back, and the shipped shape to stay a
+segmentation model plus geometry plus a pressure sensor. Three independent things point
+the same way: Ocado's description of its own vision system, the measured numbers from the
+training-free carton work, and Seg2Grasp's argument that modular beats end-to-end on
+unfamiliar objects. The reason underneath all three is cost. The geometric method is a
+dozen lines, runs on a laptop, raises no licence question and fails in ways an engineer
+can see, and no published suction model beats it by enough to pay for the rest.
+
+I expect the cup to be instrumented before the model is improved, and this is the
+prediction I hold most firmly. The reason is that the failure which matters is a seal
+that leaks, that failure is directly observable with a pressure tap in the vacuum line,
+and it is not observable from a camera at the moment of contact. A sensor that answers
+the question costs less than a model that guesses at it. CLAP is a research result today,
+and my expectation is that reading the vacuum line becomes ordinary in commercial end
+effectors.
+
+I expect end effectors that combine a cup with fingers to become the default rather than
+an upgrade. The reason is the boundary above. An order is only finished when every line
+in it is picked, so the last item decides what the cell is worth, and nobody can sell
+"about 75 per cent of item types" to a customer whose orders mix freely. RightHand
+Robotics already ships fingers and suction together, and the research has started writing
+policies that know which tool they hold.
+
+I expect affordance to become a prompt into a general segmentation model, and dedicated
+robot affordance datasets to stop being the route to a product. The reason is that
+[CLIPSeg](#56-clipseg-asking-for-a-part-in-words) and SAM 2 install cleanly under
+permissive licences and need no training, the carton work above already uses exactly that
+stack, and a part vocabulary somebody fixed years ago cannot cover a warehouse. UniAfford
+is the honest counter-case, so the fair prediction is that the dedicated work continues
+in research while products use the promptable segmenter and a written rule.
+
+I do not expect a suction model you can buy that states your cup. GraspGen is the only
+one on this page that names its cup radius at all, and its licence forbids commercial
+use. Nobody has announced a commercially licensed suction model, and the companies who
+could publish one sell whole picking cells, so publishing it would give away the part
+they charge for. That is a structural reason rather than a technical one, and structural
+reasons hold.
+
+---
+
+## 7. Where to read next
 
 - [Grasp quality models](../03_also-used/02_grasp-quality-models.md) scores one
     grasp at a time, including suction grasps.

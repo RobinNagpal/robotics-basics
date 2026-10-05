@@ -48,16 +48,19 @@ cell, same camera, same table.
 
 **All the glasses in one arrangement are the same kind, and the kind changes
 from one arrangement to the next.** The cell has four kinds, described in [the
-cell](../01_the-cell.md), and the arrangements cycle through them, so a run meets
-all four in turn. That matters for comparing answers, because the four kinds are
-not equally hard to outline. A stem is thin, and a thin part is the first thing
-a rough outline loses, so the two kinds with a stem are the harder pair and the
-stemmed glass is the hardest of the four. That holds for a solution built from
-rules written by hand, which the marking confirms. It does not hold for a
-solution fitted on this cell's own pictures, which covers all four kinds about
-equally well. So the difference between the kinds is a difference between
-methods as much as between shapes, which is why every answer here is broken
-down by kind.
+cell](../01_the-cell.md), and the arrangements cycle through them, so a run
+meets all four in turn. That matters for comparing answers, because the four
+kinds are not equally hard to outline. Seen from straight above, a stem is
+never a band of its own, because the bowl is thrown outwards far enough to
+cover it. What a bowl-only outline loses is the foot and the sliver of stem
+beside it, so the two kinds with a stem are the harder pair and the stemmed
+glass is the hardest of the four. That holds for a solution built from rules
+written by hand, which the marking confirms. It does not hold for a solution
+fitted on this cell's own pictures, which covers all four kinds about equally
+well. So the difference between the kinds is a difference between methods as
+much as between shapes, which is why every answer here is broken down by kind.
+
+![Four to six glasses of one kind stand upright on the table with a guaranteed 150 mm between any two centres, and the four kinds the cell has differ in how much of a foot a rough outline can lose, which is why the two kinds with a stem are the harder pair.](../../images/seeing-the-glasses/what-is-asked-for/four-to-six-of-one-kind.png)
 
 **The glasses stand apart.** There is a guaranteed smallest gap between any two
 centres, wide enough that even the two widest glasses of a kind leave bare table
@@ -68,6 +71,8 @@ is the job of [pushing the glasses apart](../../09_pushing-the-glasses-apart/01_
 from a small glass to one more than twice its height, which is the widest range
 of the four. That width is not decoration: it is what causes the first
 difficulty below, and a narrow range could not produce it at all.
+
+![The tapered kind is drawn anywhere from 90 mm tall to 230 mm tall, which is the widest range of the four, and it is that width rather than the shape that lets one glass of the kind hide another of the same kind.](../../images/seeing-the-glasses/what-is-asked-for/the-widest-range-of-sizes.png)
 
 ## 3. What goes in
 
@@ -89,6 +94,8 @@ are compared on this question, and a comparison only means something when the
 question was identical, so the input is stated once here and the [test
 bench](../03_the-test-bench.md) hands exactly it to every one of them.
 
+![The camera parks at overlapping stations above the glass zone and takes a pair of pictures 120 mm apart at each, and from every picture an answer may read the grey picture, the depth reading and the camera pose, while the simulator's own record of what it spawned is kept back for the marking.](../../images/seeing-the-glasses/what-is-asked-for/what-goes-in.png)
+
 ## 4. What must come out
 
 **For each glass on the table, one record holding three things:**
@@ -102,6 +109,8 @@ once because it removes a question that would otherwise come up six times. A
 glass stands upright on a flat table, so its axis is vertical and the only thing
 left to find is where that axis meets the table. Nothing has to work out which
 way a glass is turned, because a glass is the same shape from every side.
+
+![Each glass comes back as a mask, a place on the table and a rough width of its footprint, and the place is a position rather than a pose because an upright glass has a vertical axis and looks the same from every side, so the only thing left to find is where that axis meets the table.](../../images/seeing-the-glasses/what-is-asked-for/what-must-come-out.png)
 
 **And two honest statements, neither of which is a list of glasses:**
 
@@ -117,6 +126,8 @@ way a glass is turned, because a glass is the same shape from every side.
 They are ordered by how dangerous they are, which is not the order in which they
 are easiest to notice.
 
+![The difficulty that is easiest to notice is two glasses running together in a picture, and the dangerous one is a glass that is in no picture at all, because the first can be settled from the pictures already taken and the second leaves nothing behind to find.](../../images/seeing-the-glasses/what-is-asked-for/the-three-difficulties.png)
+
 ### A glass can be missing from a picture altogether
 
 A camera looking straight down does not draw a glass's outline on top of the
@@ -124,12 +135,26 @@ glass. The rim is nearer the lens than the table, so the outline is thrown
 outwards, away from the point directly below the camera, and the taller the
 glass the further out it is thrown. When a kind holds both short glasses and
 much taller ones, a tall glass's outline can sweep right over a short neighbour
-and cover it completely. The short glass then appears in no picture at all.
+and cover it completely, and the short glass then appears in no picture at all.
+
+How close the two have to stand for that is worth knowing, because it decides
+where the difficulty appears. For the tapered kind, the tallest glass covers
+the shortest only when their centres are about 124 mm apart or less, and the
+pair then has to sit some 240 mm out from the point below the camera for the
+throw to be large enough. At the 150 mm the layout rule guarantees, the pair
+would have to sit 300 mm out, and no point that far out is both inside the
+glass zone and inside that station's own picture, which reaches 252 mm at the
+furthest. So a complete cover happens when the glasses stand closer than the
+rule allows, and that is exactly why the arrangements come in a crowded family
+as well as an ordinary one. In a spawned arrangement the same geometry shows up
+as a merge instead.
 
 This is the dangerous one because it leaves no trace. There is no bad number to
 find and no check that fails. The only defence is to have worked out in advance
 **where** a glass could have been hiding, which is geometry rather than
 perception, and then to go and look.
+
+![A tall glass of the tapered kind has its outline thrown so far outwards from the point below the camera that it sweeps over a short glass of the same kind standing beside it, and the short glass then contributes no pixels to the picture at all.](../../images/seeing-the-glasses/what-is-asked-for/a-glass-missing-altogether.png)
 
 ### Glasses merge in the picture even when they stand apart on the table
 
@@ -142,6 +167,8 @@ standing.
 This difficulty is answerable inside one station's pictures, because the depth
 readings still hold the information needed to tell the two apart. It is the one
 most of the six answers are really about.
+
+![On the table there is clear bare ground between the two glasses, and in the picture from above there is none, because each outline is thrown outwards until the two shapes meet, but the depth readings still separate them.](../../images/seeing-the-glasses/what-is-asked-for/merged-though-they-stand-apart.png)
 
 ### The camera can no longer stand wherever it likes
 
@@ -168,6 +195,8 @@ to work out what could not have been seen, and a way to go and look again. Only
 the first of those differs between the six solutions. The other two are the same
 for all of them, and they live in [looking again at what was
 hidden](02_looking-again-at-what-was-hidden.md) so that no solution has to restate them.
+
+![A complete answer places what was seen, works out what could not have been seen, and goes to look again, and only the first of the three differs between the six solutions, because no amount of work on the pixels that exist recovers a glass that produced none.](../../images/seeing-the-glasses/what-is-asked-for/a-complete-answer.png)
 
 ## 7. What is deliberately not in this problem
 
@@ -208,6 +237,8 @@ was, and it is the measurement that separates methods which the others cannot.
 The step that turns a mask into a place is deliberately forgiving, so two very
 different masks can give almost the same place. Comparing the masks themselves
 is what shows the difference.
+
+![A run is done when every glass has a mask, a place and a width, when every pair that could not be separated is listed with its reason, and when every patch of table nobody could see is listed as unsearched; and of the four ways the finding can go wrong, a missed glass is the one to watch hardest because it leaves nothing behind at all.](../../images/seeing-the-glasses/what-is-asked-for/what-done-means.png)
 
 ## 9. Where to go next
 

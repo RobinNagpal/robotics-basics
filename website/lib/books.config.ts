@@ -49,16 +49,8 @@ export const PARTS: Part[] = [
     title: 'Robotics Foundation',
     shortTitle: 'Foundation',
     blurb:
-      'Start here. These four books build the ground every robot arm stands on: the Python and the maths, how a camera turns the world into numbers, the simulators and frameworks the field is built on, and ROS, the software the parts talk through.',
-    books: ['robotics-intro', 'perception', 'frameworks', 'ros-and-rviz'],
-  },
-  {
-    slug: 'how-models-work',
-    title: 'How Models Work',
-    shortTitle: 'How Models Work',
-    blurb:
-      'One book, which explains the machinery. It starts with a single neuron worked out by hand and ends with the models that drive a robot arm today, so a reader who knows no machine learning at all can follow how a model is built, how it is trained, and what each family of model does inside.',
-    books: ['neural-networks'],
+      'Start here. These five books build the ground every robot arm stands on: the Python and the maths, how a camera turns the world into numbers, the simulators and frameworks the field is built on, ROS, the software the parts talk through, and how a neural network works, from a single neuron worked out by hand up to the models that drive an arm today.',
+    books: ['robotics-intro', 'perception', 'frameworks', 'ros-and-rviz', 'neural-networks'],
   },
   {
     slug: 'techniques-and-models',

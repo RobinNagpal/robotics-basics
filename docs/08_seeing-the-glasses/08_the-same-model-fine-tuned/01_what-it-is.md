@@ -21,16 +21,6 @@
 > heavily are discarded, and the outlines scoring above a bar are kept. Each
 > kept outline is one mask, and the bench's shared arithmetic turns a mask into
 > a place on the table and a rough width.
-> **How it differs from the other five** — [solution
-> 1](../05_rules-on-the-table/01_what-it-is.md) uses no model at all, only rules on the table.
-> [Solution 2](../06_a-network-trained-from-scratch/01_what-it-is.md) fits a small network here from random
-> numbers and borrows nothing. [Solution 3](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) is this exact
-> model with no training in this cell, which makes it this solution's matched
-> partner. [Solution 5](../09_a-foundation-model-with-a-keeper/01_what-it-is.md) borrows a larger model
-> untouched and fits only a small keeper that decides which of its outlines are
-> glasses. [Solution 6](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md) fine-tunes here as this one
-> does, but on a different architecture, which is what makes the two of them a
-> test of whether the architecture still matters once both are trained.
 > **What it costs** — labels are free, because the bench's own id image gives
 > an exact mask for every glass on the training half of the arrangements.
 > Training time is real but modest, because the model starts from somebody

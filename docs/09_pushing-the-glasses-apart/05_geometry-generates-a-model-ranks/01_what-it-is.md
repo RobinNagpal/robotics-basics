@@ -24,22 +24,6 @@
 > list into one number. The highest-scoring push is handed to the bench as a
 > parameterised push, and the bench's own macro expands it into the jaw
 > trajectory that every solution here is judged on.
-> **How it differs from the other five** — [solution
-> 1](../04_one-fixed-nudge/01_what-it-is.md) fits nothing at all and pushes a glass a fixed
-> fraction of the room it is short of, straight away from the neighbour whose
-> edge reaches furthest into that room, so it is this solution with the
-> enumeration and the choosing both removed. [Solution
-> 3](../06_imitation-from-demonstrations/01_what-it-is.md) fits everything and learns the push
-> itself from demonstrations, which is the opposite arrangement, and this
-> solution is where its demonstrations come from. [Solution
-> 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) also fits everything, but its model predicts what a
-> push will do rather than which push to try, so it attacks the quantity the
-> geometry gets wrong instead of ordering the quantity the geometry gets right.
-> [Solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) is a large vision-language-action
-> model used exactly as it downloads, with nothing fitted here and nothing
-> geometric in front of it. [Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is that same
-> model with its training continued on this cell, so all of it is fitted, where
-> here only the ordering is.
 > **What it costs** — the labels are free, because the bench measures the table
 > after every push in any case. The training set is a few thousand pairs of a
 > candidate and what happened to it, which is minutes of bench time, because a

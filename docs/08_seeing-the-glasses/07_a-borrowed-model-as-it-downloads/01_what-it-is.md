@@ -19,20 +19,6 @@
 > afterwards; the kept outlines are the masks, and the shared arithmetic in [the
 > test bench](../03_the-test-bench.md) turns each mask into a place on the table and a
 > rough width.
-> **How it differs from the other five** — [solution
-> 1](../05_rules-on-the-table/01_what-it-is.md) uses no model at all and reasons about depth with
-> arithmetic a person can read. [Solution 2](../06_a-network-trained-from-scratch/01_what-it-is.md) fits
-> every number it holds on this cell's own pictures, where this one fits none.
-> [Solution 4](../08_the-same-model-fine-tuned/01_what-it-is.md) is this same library, this same model and
-> these same starting weights with training on this cell's pictures added, and
-> with the borrowed list of category names cut to the single class "glass",
-> which is part of that training rather than a separate choice. Nothing else
-> varies between the two, and that is the point of running both. [Solution
-> 5](../09_a-foundation-model-with-a-keeper/01_what-it-is.md) borrows a model that outlines without naming, so
-> it has to fit a small keeper here to decide which outlines are glasses, which
-> is the one thing this solution never needs. [Solution
-> 6](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md) trains a different architecture here and carries
-> a permissive licence instead of this one's.
 > **What it costs** — no labels, no training run, no weights file to keep in
 > step with the cell, and no graphics card of its own. The whole cost is the
 > licence, which is why it has a section to itself below.

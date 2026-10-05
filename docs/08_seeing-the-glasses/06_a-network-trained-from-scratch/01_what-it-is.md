@@ -17,16 +17,6 @@
 > casts one vote; the votes are piled up and the peaks are counted; the pixels
 > that voted into one peak are one glass's mask; the bench's shared arithmetic
 > turns each mask into a place and a width.
-> **How it differs from the other five** — [rules on the
-> table](../05_rules-on-the-table/01_what-it-is.md) writes the grouping rule by hand, where this
-> one fits it from examples. [YOLO as it downloads](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md)
-> borrows a whole model and changes nothing, where this one borrows nothing.
-> [YOLO fine-tuned](../08_the-same-model-fine-tuned/01_what-it-is.md) and [RF-DETR
-> fine-tuned](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md) are both trained on this cell's
-> pictures as this one is, but they start from somebody else's weights rather
-> than from random numbers. [SAM 2 with a keeper](../09_a-foundation-model-with-a-keeper/01_what-it-is.md)
-> fits only a small decider on top of a borrowed model, where here every weight
-> in the network is fitted here.
 > **What it costs** — a training set of this cell's own pictures with labels,
 > a training run before the solution can answer anything, and a file of weights
 > that has to be kept in step with the cell. The training run is short enough

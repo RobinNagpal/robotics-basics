@@ -1,10 +1,8 @@
 # How it compares
 
 This page is the judgement on this solution. It says where the solution is
-strong and where it breaks, names the general ideas it is built from so that
-you can read about them outside this book, and places it beside the other five.
-By the end you will know when this is the solution to reach for, and when it is
-the wrong one.
+strong and where it breaks, names the general ideas behind it, and places it
+beside the other five.
 
 ## Contents
 

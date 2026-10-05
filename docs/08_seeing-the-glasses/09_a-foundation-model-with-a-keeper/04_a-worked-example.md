@@ -1,11 +1,9 @@
 # A worked example
 
-This page follows this solution through one arrangement of glasses from
-beginning to end, with real numbers rather than a description of what would
-happen. It then takes the case this book keeps returning to, a glass that is
-completely hidden, because a worked example that shows only the easy case
-teaches the wrong lesson. By the end you will have seen both what this solution
-does well and where it is left with nothing to say.
+This page follows this solution through one arrangement of glasses with real
+numbers, and then through the case this book keeps returning to, a glass that is completely hidden,
+because a worked example that shows only the easy case teaches the wrong
+lesson.
 
 ## Contents
 

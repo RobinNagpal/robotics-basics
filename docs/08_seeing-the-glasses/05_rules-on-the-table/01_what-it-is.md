@@ -23,20 +23,6 @@
 > to be one glass; then hand back, for each surviving group, the picture pixels
 > its dots came from. Those pixels are the mask, and the mask is the whole
 > contribution.
-> **How it differs from the other five** — solution 2 trains a small network
-> here on this cell's own pictures, so it needs labelled arrangements and a
-> training run, where this one needs neither; solution 3 runs Ultralytics
-> YOLO26-seg exactly as it downloads, so it fits nothing in this cell either,
-> but it carries a weights file that somebody else fitted on somebody else's
-> pictures; solution 4 is that same model fine-tuned on this cell's own
-> arrangements, which buys a far more reliable finding of the glasses for the
-> price of labels and training time, and leaves the coarseness of its outlines
-> where it was; solution 5 keeps a large promptable model, SAM 2, and fits only
-> a small keeper that decides which of the many outlines it offers are glasses;
-> and solution 6 fine-tunes a transformer segmenter, RF-DETR-Seg, which is the
-> largest fitted model of the six. This one is the only one of the six that
-> holds no fitted numbers at all, anywhere, and the only one that makes its
-> decision in the room rather than in the picture.
 > **What it costs** — no labels, because nothing learns; no training time, for
 > the same reason; no graphics processor, because the work is a few passes over
 > a small grid of numbers; and no licence condition, because the two libraries

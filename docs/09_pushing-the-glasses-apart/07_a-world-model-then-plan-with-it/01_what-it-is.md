@@ -28,18 +28,6 @@
 > good ones and returns the best push; that push is handed to the bench as a
 > parameterised push, and the bench's own macro expands it into a jaw
 > trajectory.
-> **How it differs from the other five** — [one fixed
-> nudge](../04_one-fixed-nudge/01_what-it-is.md) has no model at all and finds out what a push
-> did by looking afterwards, where this one asks before. [Geometry generates, a
-> model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) also scores candidate pushes, but its
-> candidates come from written geometry and its ranker scores a push without
-> ever saying what the table will look like, so it cannot chain two pushes
-> together. [Imitation from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md)
-> learns the answer directly and never represents the table afterwards, so it
-> is faster to run and cannot be re-aimed at a new goal without new training.
-> [SmolVLA as it downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) and [SmolVLA
-> fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md) bring a large pretrained policy to the
-> same question; they, too, learn what to do rather than what will happen.
 > **What it costs** — pushes made in the simulator and recorded, which is the
 > only training data either rung needs and which nobody has to label. Rung one
 > trains on an ordinary processor in minutes and needs no rented hardware at

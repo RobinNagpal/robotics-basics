@@ -25,21 +25,6 @@
 > trajectory. The arm then looks again, and the fresh picture is the next
 > input. One push is one chunk, and the loop runs until every glass has room,
 > or the glasses that are left have been refused, or the push budget is spent.
-> **How it differs from the other five** — [one fixed
-> nudge](../04_one-fixed-nudge/01_what-it-is.md) fits nothing and pushes a fixed fraction of the
-> room a glass is short of, which is the floor this has to clear. [Geometry
-> generates, a model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md) writes the
-> geometry by hand and fits only a ranker over the candidates that geometry
-> produces, and it is this solution's teacher, which makes the pair a reading
-> of how close a student gets to the program it copied. [A world model, then
-> plan with it](../07_a-world-model-then-plan-with-it/01_what-it-is.md) learns how the world
-> changes and searches over actions at run time, so it can find a push nobody
-> ever demonstrated, and pays for the search on every push. [SmolVLA as it
-> downloads](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) runs a large borrowed
-> policy exactly as it downloads, with no fitting here at all. [SmolVLA
-> fine-tuned](../09_the-same-model-fine-tuned-here/01_what-it-is.md) continues that borrowed
-> policy's training on this cell's own data, which is this solution's method
-> applied to somebody else's weights instead of to random ones.
 > **What it costs** — the demonstrations are free in money and cheap in time,
 > because the teacher is a program and the tables are simulated, so the whole
 > dataset is arm time on the bench rather than human hours at a teleoperation

@@ -26,19 +26,6 @@
 > the start point on that same line, a little outside the glass's widest part;
 > and hand the result over as one parameterised push, which the bench's own
 > macro expands into a jaw trajectory. Then look again and start over.
-> **How it differs from the other five** — solution 2 has geometry generate
-> many candidate pushes and fits gradient-boosted trees to rank them, so it
-> searches where this one computes one answer; solution 3 fits ACT, and then
-> Diffusion Policy, to demonstrations and emits a chunk of waypoints rather
-> than a push; solution 4 learns a model of what a push does and plans through
-> it at run time, which buys exactly the prediction this one refuses to make;
-> solution 5 runs SmolVLA as it downloads, so like this one it fits nothing
-> here, but it carries 450 million parameters somebody else fitted on 487
-> community datasets; and solution 6 is that same SmolVLA with its training
-> continued here by low-rank adaptation, which makes it and solution 5 the
-> sharpest pair in the set. This one is the only solution that holds no fitted
-> numbers at all, and the only one that makes no claim whatever about where a
-> pushed glass will go.
 > **What it costs** — no data, because nothing learns; no training time, for
 > the same reason; no accelerator to rent, so nothing to pay a cloud provider,
 > because the whole computation is a few hundred arithmetic operations on four

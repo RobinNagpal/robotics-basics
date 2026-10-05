@@ -20,21 +20,6 @@
 > which carries them out directly rather than through the push macro it owns.
 > So the chain is short: picture and words in, waypoints out, table changed,
 > look again.
-> **How it differs from the other five** — [solution
-> 1](../04_one-fixed-nudge/01_what-it-is.md) uses no model at all and no learned number of any
-> kind, and it is the floor this book is read against. [Solution
-> 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) writes the candidate pushes by hand with geometry
-> and fits only the small model that ranks them, so what it borrows is
-> nothing and what it fits is one component. [Solution
-> 3](../06_imitation-from-demonstrations/01_what-it-is.md) fits a policy entirely on
-> demonstrations recorded in this cell, borrowing an architecture but no
-> weights. [Solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) fits a model of how the table
-> behaves and then searches through it at run time, which is the opposite
-> trade from this one: it pays heavily per push and owes nothing to anybody
-> else's data. [Solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) is this same model, from
-> this same library, starting from these same downloaded weights, with its
-> training continued on this cell's own pushes, and nothing else varies
-> between the pair.
 > **What it costs** — no demonstrations, no labels, no training run and no
 > weights file to keep in step with the cell. It needs the library, the
 > weights the library downloads, and a laptop. The expense that remains is

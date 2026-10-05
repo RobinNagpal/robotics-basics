@@ -1,11 +1,8 @@
 # How it works
 
-This page explains what happens inside this solution, part by part. It follows
-[what it is](01_what-it-is.md), which states the question the solution answers
-and the single idea it rests on, and it assumes you have read that page first.
-By the end of this one you will understand what the method is built from, what
-each part does with what the part before it produced, and which part decides
-the answer.
+This page explains what happens inside this solution, part by part. It
+follows [what it is](01_what-it-is.md), which states the question the
+solution answers and the single idea it rests on.
 
 ## Contents
 

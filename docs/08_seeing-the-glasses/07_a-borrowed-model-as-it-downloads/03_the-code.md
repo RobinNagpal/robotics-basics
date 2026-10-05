@@ -1,11 +1,8 @@
 # The code
 
-This page shows the code at the heart of this solution, and says exactly what
-the solution hands back to the rest of the cell. The two belong on one page
-because the second explains the first: the code is far easier to read once you
-know which of its results leave this solution and which are working detail. By
-the end you will be able to point at the lines that produce the masks, and to
-see where the ideas of [how it works](02_how-it-works.md) meet.
+This page shows the code at the heart of this solution, and says what the
+solution hands back to the rest of the cell. The second explains the first,
+which is why they are on one page.
 
 ## Contents
 

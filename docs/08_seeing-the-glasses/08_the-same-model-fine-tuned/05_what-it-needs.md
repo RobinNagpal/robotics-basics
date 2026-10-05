@@ -1,10 +1,8 @@
 # What it needs
 
-This page is the bill for this solution: the libraries it rests on, the machine
-it wants, the data somebody has to supply and, where there is one, the licence
-that comes with the weights. It is deliberately short and deliberately separate
-from the method, so that the cost of any of the six can be read without reading
-how it works all over again.
+This page is the bill for this solution: the libraries it rests on, the
+machine it wants, the data somebody has to supply and, where there is one,
+the licence that comes with the weights.
 
 ## Contents
 

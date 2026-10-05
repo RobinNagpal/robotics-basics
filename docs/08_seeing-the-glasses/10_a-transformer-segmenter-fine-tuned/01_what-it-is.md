@@ -23,21 +23,6 @@
 > surviving mask is handed to the bench, which back-projects its pixels with
 > their depth readings and the camera's own pose and returns a place and a rough
 > width.
-> **How it differs from the other five** — against [rules on the
-> table](../05_rules-on-the-table/01_what-it-is.md), which fits nothing and is arithmetic a
-> person can read, this fits everything and is a file of weights. Against [a
-> network trained from scratch](../06_a-network-trained-from-scratch/01_what-it-is.md), which also fits
-> everything here, this begins from somebody else's numbers instead of from
-> random ones, and it reports separate glasses from the model itself rather than
-> recovering them afterwards by counting where each glass pixel's arrow votes.
-> Against [YOLO as it downloads](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md), which is fitted
-> nowhere and is covered by the AGPL, this is fitted here and is covered by a
-> permissive licence. Against [the same YOLO fine-tuned
-> here](../08_the-same-model-fine-tuned/01_what-it-is.md), which is the closest comparison in the set, the
-> amount of fitting is held still and the architecture and the licence change.
-> Against [SAM 2 with a keeper](../09_a-foundation-model-with-a-keeper/01_what-it-is.md), which leaves a large
-> borrowed model untouched and fits only a small decision on top of it, this
-> adjusts the whole model to the pictures the cell really renders.
 > **What it costs** — the labels cost nothing, because the bench renders which
 > glass owns each pixel and a mask is a selection over that. The training time
 > is the time of a fine-tune rather than of a start from nothing, so it is far

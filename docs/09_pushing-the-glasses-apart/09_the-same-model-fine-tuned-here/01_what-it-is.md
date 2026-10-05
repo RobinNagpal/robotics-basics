@@ -25,21 +25,6 @@
 > The bench then carries the waypoints out directly, because a chunk needs no
 > expansion. The arm looks again, and the loop repeats until the table is done
 > or the push budget is spent.
-> **How it differs from the other five** — [solution
-> 1](../04_one-fixed-nudge/01_what-it-is.md) fits nothing and chooses its one push by fixed
-> arithmetic on the measurements.
-> [Solution 2](../05_geometry-generates-a-model-ranks/01_what-it-is.md) generates pushes by geometry and fits
-> only a ranker to choose between them, and it is this solution's teacher,
-> because its pushes are the demonstrations. [Solution
-> 3](../06_imitation-from-demonstrations/01_what-it-is.md) learns from those same
-> demonstrations but from random numbers, borrowing an architecture and no
-> weights, which makes the pair with this one a test of whether borrowed
-> weights are worth having.
-> [Solution 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) learns how the table changes and searches
-> over candidate pushes at run time instead of learning a push directly.
-> [Solution 5](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) is this exact model with no
-> training in this cell at all, which makes it this solution's matched
-> partner.
 > **What it costs** — the demonstrations are free, because solution 2
 > generates them and the bench executes them without anybody holding a
 > controller. The training is a low-rank fine-tune, and it fits in 1.02 GiB on

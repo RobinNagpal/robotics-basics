@@ -1,4 +1,4 @@
-# RF-DETR-Seg, fine-tuned here — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -502,4 +502,4 @@ glass that was already there.
 
 ![A stand-in prediction that completes most of the hidden part but stops short of its far edge scores well when the overlap is counted over the pixels the camera saw and much worse when it is counted over the hidden part alone, which is why the hidden part alone is the number to watch.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-measuring-whether-it-works.png)
 
-← [RF-DETR-Seg, fine-tuned here — what it is](01_what-it-is.md) · [RF-DETR-Seg, fine-tuned here — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

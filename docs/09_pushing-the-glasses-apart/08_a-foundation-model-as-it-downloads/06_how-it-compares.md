@@ -1,4 +1,4 @@
-# A foundation model as it downloads — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -175,4 +175,4 @@ sharpest question these six were arranged to answer, what does fine-tuning a
 foundation model buy, would have no range to be answered in. A poor score here
 is therefore not a disappointing result. It is the measurement working.
 
-← [A foundation model as it downloads — what it needs](05_what-it-needs.md) · [The same foundation model, fine-tuned here — what it is](../09_the-same-model-fine-tuned-here/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [The same foundation model, fine-tuned here — what it is](../09_the-same-model-fine-tuned-here/01_what-it-is.md) →

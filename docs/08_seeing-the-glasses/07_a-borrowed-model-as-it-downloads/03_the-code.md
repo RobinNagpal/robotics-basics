@@ -1,4 +1,4 @@
-# A borrowed model, as it downloads — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -145,4 +145,4 @@ Every one of those is a consequence of one decision: **fit nothing here**. That
 decision is what would make the solution free to try, and it is also what
 removes every lever that would normally be pulled to fix the problems above.
 
-← [A borrowed model, as it downloads — how it works](02_how-it-works.md) · [A borrowed model, as it downloads — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

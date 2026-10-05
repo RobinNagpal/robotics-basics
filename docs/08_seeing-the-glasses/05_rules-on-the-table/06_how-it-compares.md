@@ -1,4 +1,4 @@
-# Rules on the table — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -266,4 +266,4 @@ statement about the problem rather than about the method: **a problem that a
 written rule can answer is a problem whose promises were generous**, and the
 value of the other five is what they do when the promises stop.
 
-← [Rules on the table — what it needs](05_what-it-needs.md) · [A network trained here from scratch — what it is](../06_a-network-trained-from-scratch/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [A network trained here from scratch — what it is](../06_a-network-trained-from-scratch/01_what-it-is.md) →

@@ -1,4 +1,4 @@
-# Imitation from demonstrations — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -162,4 +162,4 @@ is touched. Nothing in the example about leaning the slide or slowing near the
 end was reached, because the motion never got that far. The code folder's
 `README.md` has the counts.
 
-← [Imitation from demonstrations — the code](03_the-code.md) · [Imitation from demonstrations — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

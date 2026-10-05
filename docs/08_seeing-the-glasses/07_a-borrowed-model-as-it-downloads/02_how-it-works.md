@@ -1,4 +1,4 @@
-# A borrowed model, as it downloads — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -201,4 +201,4 @@ therefore be a clean measurement of what the gap costs, and that is the most
 useful thing this solution could contribute to this chapter even if it performed
 badly.
 
-← [A borrowed model, as it downloads — what it is](01_what-it-is.md) · [A borrowed model, as it downloads — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

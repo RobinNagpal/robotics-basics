@@ -1,4 +1,4 @@
-# RF-DETR-Seg, fine-tuned here — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -145,4 +145,4 @@ five stand, every report correct, every width legal, every score confident, and
 no check fires, because every check here is a check on something that was found.
 That is the case handed to the geometry.
 
-← [RF-DETR-Seg, fine-tuned here — the code](03_the-code.md) · [RF-DETR-Seg, fine-tuned here — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

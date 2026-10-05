@@ -1,4 +1,4 @@
-# The same model, fine-tuned here — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -72,4 +72,4 @@ being this particular one. What is being tested is what fine-tuning buys on this
 kind of picture, and that answer transfers to whichever model is licensed
 conveniently.
 
-← [The same model, fine-tuned here — a worked example](04_a-worked-example.md) · [The same model, fine-tuned here — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

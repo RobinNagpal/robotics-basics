@@ -1,4 +1,4 @@
-# A network trained here from scratch — what it is
+# What it is
 
 > **What it uses** — PyTorch, running on this machine's integrated graphics
 > through the MPS backend. One small convolutional network, written for this
@@ -169,4 +169,4 @@ two places the training labels can come from. Then what the solution hands to
 the bench, the failure that no amount of training can fix, and where this sits
 among the other five.
 
-← [Rules on the table — how it compares](../05_rules-on-the-table/06_how-it-compares.md) · [A network trained here from scratch — how it works](02_how-it-works.md) →
+← [Rules on the table — how it compares](../05_rules-on-the-table/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

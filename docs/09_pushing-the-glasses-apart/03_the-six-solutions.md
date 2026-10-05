@@ -10,9 +10,10 @@ choice costs. By the end of this document you will understand what all six
 share, what single thing each one changes, and which pair to look at first.
 
 The arrangement is the same one [the six ways of telling the glasses
-apart](../08_seeing-the-glasses/04_the-six-solutions.md) uses:
-six cars driven to one destination, over the same road, so that when one
-arrives sooner you know it was the car.
+apart](../08_seeing-the-glasses/04_the-six-solutions.md) uses: only one thing
+changes between any two of the six, because they are asked the same question
+and scored on the same measurements, so a gap in the scores is a statement
+about the method rather than about the conditions.
 
 ## Contents
 

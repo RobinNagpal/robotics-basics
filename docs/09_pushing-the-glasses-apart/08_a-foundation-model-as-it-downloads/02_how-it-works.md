@@ -1,4 +1,4 @@
-# A foundation model as it downloads — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -333,4 +333,4 @@ possible at all. π0.5 appears in this book only as a further rung inside
 solution 6, reached by low-rank adaptation, to ask whether a markedly larger
 model is worth it.
 
-← [A foundation model as it downloads — what it is](01_what-it-is.md) · [A foundation model as it downloads — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

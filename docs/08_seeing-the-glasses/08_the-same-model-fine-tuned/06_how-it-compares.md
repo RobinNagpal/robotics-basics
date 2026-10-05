@@ -1,4 +1,4 @@
-# The same model, fine-tuned here — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -209,4 +209,4 @@ Read as a ladder, the six measure what each increment of fitting buys. This
 solution is the rung where all of the fitting happens on a borrowed model, and
 its partner one rung below is the rung where none of it does.
 
-← [The same model, fine-tuned here — what it needs](05_what-it-needs.md) · [SAM 2 with a keeper — what it is](../09_a-foundation-model-with-a-keeper/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [SAM 2 with a keeper — what it is](../09_a-foundation-model-with-a-keeper/01_what-it-is.md) →

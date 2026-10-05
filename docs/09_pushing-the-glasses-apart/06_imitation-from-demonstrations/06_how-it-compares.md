@@ -1,4 +1,4 @@
-# Imitation from demonstrations — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -256,4 +256,4 @@ program produced for free — the cheapest honest attempt at learning this task
 that this book contains, and the one whose limits are easiest to state in
 advance.
 
-← [Imitation from demonstrations — what it needs](05_what-it-needs.md) · [A world model, then plan with it — what it is](../07_a-world-model-then-plan-with-it/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [A world model, then plan with it — what it is](../07_a-world-model-then-plan-with-it/01_what-it-is.md) →

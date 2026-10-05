@@ -1,4 +1,4 @@
-# Rules on the table — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -192,4 +192,4 @@ found** rather than from the pixels. It needs their positions, widths and
 heights and nothing else, which is why it can say something about a glass that
 produced no pixels at all. The next section is where that branch is worked out.
 
-← [Rules on the table — how it works](02_how-it-works.md) · [Rules on the table — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

@@ -1,4 +1,4 @@
-# Geometry generates, a model ranks — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -118,4 +118,4 @@ weight sits under the glass — which is to say on exactly the quantities a rank
 is not being asked about, and exactly the quantities [solution
 4](../07_a-world-model-then-plan-with-it/01_what-it-is.md) fits a model of.
 
-← [Geometry generates, a model ranks — the code](03_the-code.md) · [Geometry generates, a model ranks — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

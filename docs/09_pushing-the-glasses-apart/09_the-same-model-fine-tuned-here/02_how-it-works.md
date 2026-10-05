@@ -1,4 +1,4 @@
-# The same foundation model, fine-tuned here — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -599,4 +599,4 @@ rung is also the thing most worth trying next, because "a larger model" and "a
 full fine-tune rather than a low-rank one" are the two directions the result
 leaves open, and only the first of them is affordable here.
 
-← [The same foundation model, fine-tuned here — what it is](01_what-it-is.md) · [The same foundation model, fine-tuned here — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

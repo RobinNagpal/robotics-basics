@@ -1,4 +1,4 @@
-# The six solutions — same destination, six different cars
+# The six solutions — one question, six ways to see
 
 ## 1. Introduction
 
@@ -11,9 +11,11 @@ knowing what the choice costs. By the end of this document you will understand
 what all six have in common, what single thing each one changes, and which pair
 of them you should look at first if you only have time for one comparison.
 
-The comparison works because the six are arranged like cars driven to the same
-destination. The destination is fixed, the road is the same, and only the car
-changes — so when one arrives sooner, you know it was the car.
+The comparison works because only one thing changes between any two of the six.
+They are asked the same question, shown the same arrangements of glasses and
+scored on the same measurements, so the method is the only difference left.
+That is what lets a gap in the scores be read as a statement about the method,
+rather than about the conditions it was tested under.
 
 ## Contents
 
@@ -153,9 +155,10 @@ product.
 
 That is accepted deliberately here, because this chapter exists to compare
 methods and for that purpose the licence costs nothing. It is worth knowing
-anyway, because it means the two cars that win on convenience are the two that
-would need replacing if the work ever shipped — and the comparison is designed
-so that the reading transfers to whichever model is licensed conveniently.
+anyway, because it means the two solutions that win on convenience are the two
+that would need replacing if the work ever shipped — and the comparison is
+designed so that the reading transfers to whichever model is licensed
+conveniently.
 
 ## 6. What is built
 

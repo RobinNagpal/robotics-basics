@@ -1,4 +1,4 @@
-# A borrowed model, as it downloads — what it is
+# What it is
 
 > **What it uses** — the Ultralytics package, PyTorch running on this machine's
 > integrated graphics through Apple's MPS backend, and the Ultralytics
@@ -135,4 +135,4 @@ filter on a list of names rather than anything fitted. That is the point to
 remember: **this solution would contain no numbers fitted in this cell at all**,
 not one.
 
-← [A network trained here from scratch — how it compares](../06_a-network-trained-from-scratch/06_how-it-compares.md) · [A borrowed model, as it downloads — how it works](02_how-it-works.md) →
+← [A network trained here from scratch — how it compares](../06_a-network-trained-from-scratch/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

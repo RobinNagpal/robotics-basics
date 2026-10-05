@@ -1,4 +1,4 @@
-# The same foundation model, fine-tuned here — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -76,4 +76,4 @@ the camera, the way the view from the top is rendered, the range of proportions
 a kind is drawn from, or the teacher, and the file is quietly out of date in a
 way no test of the code would notice.
 
-← [The same foundation model, fine-tuned here — a worked example](04_a-worked-example.md) · [The same foundation model, fine-tuned here — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

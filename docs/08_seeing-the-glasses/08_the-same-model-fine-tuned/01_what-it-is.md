@@ -1,4 +1,4 @@
-# The same model, fine-tuned here — what it is
+# What it is
 
 > **What it uses** — the Ultralytics package, with PyTorch underneath reaching
 > this machine's integrated graphics through its MPS backend. The model is
@@ -165,4 +165,4 @@ Everything else about the model is unchanged, including the thing that limits
 it. Its outline is still built coarsely, for reasons described below, and
 training cannot make a coarse outline fine.
 
-← [A borrowed model, as it downloads — how it compares](../07_a-borrowed-model-as-it-downloads/06_how-it-compares.md) · [The same model, fine-tuned here — how it works](02_how-it-works.md) →
+← [A borrowed model, as it downloads — how it compares](../07_a-borrowed-model-as-it-downloads/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

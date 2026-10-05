@@ -1,4 +1,4 @@
-# A foundation model as it downloads — what it is
+# What it is
 
 > **What it uses** — [LeRobot](https://github.com/huggingface/lerobot), the
 > library that holds reference implementations of every learned policy in this
@@ -151,4 +151,4 @@ search. It contains a download, an instruction and a loop. **That is the point
 to hold on to while reading the rest**, because almost every strength and every
 weakness below follows from it directly.
 
-← [A world model, then plan with it — how it compares](../07_a-world-model-then-plan-with-it/06_how-it-compares.md) · [A foundation model as it downloads — how it works](02_how-it-works.md) →
+← [A world model, then plan with it — how it compares](../07_a-world-model-then-plan-with-it/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

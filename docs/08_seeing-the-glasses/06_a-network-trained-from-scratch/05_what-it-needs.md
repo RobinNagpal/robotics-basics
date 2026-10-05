@@ -1,4 +1,4 @@
-# A network trained here from scratch — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -35,4 +35,4 @@ that no test of the code will notice.
 At run time what it needs is small: one pass of a small network over a small
 picture, which is nothing beside the seconds an arm movement costs.
 
-← [A network trained here from scratch — a worked example](04_a-worked-example.md) · [A network trained here from scratch — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

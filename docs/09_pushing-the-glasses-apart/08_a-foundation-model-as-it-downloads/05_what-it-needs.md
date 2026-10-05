@@ -1,4 +1,4 @@
-# A foundation model as it downloads — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -51,4 +51,4 @@ bench](../02_the-test-bench.md) now provides both, and both are shared with solu
 3 and 6, so the cost was paid once for three solutions rather than for this
 one.
 
-← [A foundation model as it downloads — a worked example](04_a-worked-example.md) · [A foundation model as it downloads — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

@@ -1,4 +1,4 @@
-# SAM 2 with a keeper — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -134,4 +134,4 @@ choice that no arithmetic can check changes what every later stage sees.
 answer from the keeper still has to get past a rule nobody fitted, and a wrong
 keep therefore becomes a doubtful report rather than a wrong glass.
 
-← [SAM 2 with a keeper — how it works](02_how-it-works.md) · [SAM 2 with a keeper — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

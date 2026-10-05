@@ -1,4 +1,4 @@
-# A network trained here from scratch — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -132,4 +132,4 @@ Moving the arm to a new place and letting it settle costs seconds. So the
 balance of this solution is to compute freely and move rarely, and the whole of
 its cost sits in building it rather than in running it.
 
-← [A network trained here from scratch — the code](03_the-code.md) · [A network trained here from scratch — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

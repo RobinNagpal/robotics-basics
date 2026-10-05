@@ -1,4 +1,4 @@
-# The same foundation model, fine-tuned here — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -274,4 +274,4 @@ its partner one rung below is the rung where none of it does. The distance
 between those two rungs is the most valuable single number this book can
 produce, which is why it is the first thing this document said and the last.
 
-← [The same foundation model, fine-tuned here — what it needs](05_what-it-needs.md) · [The six solutions side by side](../10_the-results.md) →
+← [What it needs](05_what-it-needs.md) · [The six solutions side by side](../10_the-results.md) →

@@ -1,4 +1,4 @@
-# A borrowed model, as it downloads — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -78,4 +78,4 @@ quietly wrong, and nothing in the run marks it as doubtful. It is the failure a
 borrowed model used as the decider would produce most often, and it is the
 reason the comparison against the same model fitted here matters.
 
-← [A borrowed model, as it downloads — the code](03_the-code.md) · [A borrowed model, as it downloads — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

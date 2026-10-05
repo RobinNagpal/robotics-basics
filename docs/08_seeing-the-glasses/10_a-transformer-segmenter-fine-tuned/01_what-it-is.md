@@ -1,4 +1,4 @@
-# RF-DETR-Seg, fine-tuned here — what it is
+# What it is
 
 > **What it uses** — the RF-DETR package, with PyTorch underneath it, reaching
 > this machine's graphics processor through the MPS backend. The model is
@@ -156,4 +156,4 @@ cell's own pictures with the class list cut down to one entry. That is
 **fine-tuning**, and it is why a model this size is a sensible thing to put on
 one laptop.
 
-← [SAM 2 with a keeper — how it compares](../09_a-foundation-model-with-a-keeper/06_how-it-compares.md) · [RF-DETR-Seg, fine-tuned here — how it works](02_how-it-works.md) →
+← [SAM 2 with a keeper — how it compares](../09_a-foundation-model-with-a-keeper/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

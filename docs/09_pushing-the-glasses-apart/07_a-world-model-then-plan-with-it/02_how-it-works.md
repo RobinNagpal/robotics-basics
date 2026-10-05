@@ -1,4 +1,4 @@
-# A world model, then plan with it — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -503,4 +503,4 @@ scratch](../../08_seeing-the-glasses/06_a-network-trained-from-scratch/01_what-i
 makes about telling the glasses apart, where a model built entirely inside the
 cell is what makes the borrowed models' scores readable.
 
-← [A world model, then plan with it — what it is](01_what-it-is.md) · [A world model, then plan with it — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

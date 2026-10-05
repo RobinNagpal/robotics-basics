@@ -1,4 +1,4 @@
-# One fixed nudge — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -310,4 +310,4 @@ somewhere else, either by a person teleoperating the arm or by writing a second
 method for the purpose, and both of those are real costs that the comparison
 would then have to carry.
 
-← [One fixed nudge — what it is](01_what-it-is.md) · [One fixed nudge — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

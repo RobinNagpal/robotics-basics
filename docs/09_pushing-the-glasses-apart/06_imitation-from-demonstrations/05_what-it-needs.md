@@ -1,4 +1,4 @@
-# Imitation from demonstrations — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -78,4 +78,4 @@ Change how the view from the top is rendered, or the macro whose waypoints
 became the labels, or the error the readings carry, and the file is quietly out
 of date in a way no test of the code would notice.
 
-← [Imitation from demonstrations — a worked example](04_a-worked-example.md) · [Imitation from demonstrations — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

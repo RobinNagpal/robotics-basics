@@ -1,4 +1,4 @@
-# Rules on the table — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -360,4 +360,4 @@ rather than bad luck. A part cut out of a filled patch by a straight line is not
 a disc, so a circle fitted to it does not reach into the corners the cut left,
 and the further the splitting goes the less disc-like the parts become.
 
-← [Rules on the table — what it is](01_what-it-is.md) · [Rules on the table — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

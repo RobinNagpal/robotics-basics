@@ -1,4 +1,4 @@
-# The same model, fine-tuned here — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -158,4 +158,4 @@ carried forward, the pair would have earned its place, because a measured answer
 to "what does fine-tuning buy on this kind of picture?" is worth more than an
 opinion about it.
 
-← [The same model, fine-tuned here — how it works](02_how-it-works.md) · [The same model, fine-tuned here — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

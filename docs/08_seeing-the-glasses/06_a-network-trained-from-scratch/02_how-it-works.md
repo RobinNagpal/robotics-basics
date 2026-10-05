@@ -1,4 +1,4 @@
-# A network trained here from scratch — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -37,11 +37,11 @@ simulator's own record of which glass each pixel shows. Its votes are piled up
 into a tally and the peaks of that tally are picked off one at a time, largest
 first, and the pixels that voted near a peak are that peak's glass.
 
-Running it as one of the six cars on the shared [test bench](../03_the-test-bench.md)
-is built too. The training set is drawn from the bench's own arrangements, half
-of them crowded and all of them below the bench's dividing line, and the
-solution is scored on held-out arrangements above that line and writes its own
-`results.json` beside itself.
+Running it as one of the six solutions on the shared
+[test bench](../03_the-test-bench.md) is built too. The training set is drawn
+from the bench's own arrangements, half of them crowded and all of them below
+the bench's dividing line, and the solution is scored on held-out arrangements
+above that line and writes its own `results.json` beside itself.
 
 **What is a design.** Four things this document describes are written here and
 not built: the two fixes for the rare class in the loss, the check on a pile's
@@ -620,4 +620,4 @@ The bench divides its arrangements into a training half and a test half, so a
 network fitted on the first is marked on the second and is never tested on an
 arrangement it learned from.
 
-← [A network trained here from scratch — what it is](01_what-it-is.md) · [A network trained here from scratch — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

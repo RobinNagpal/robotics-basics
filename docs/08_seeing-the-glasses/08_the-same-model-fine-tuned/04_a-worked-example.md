@@ -1,4 +1,4 @@
-# The same model, fine-tuned here — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -113,4 +113,4 @@ it and not the second. The finding becomes reliable and the naming failures
 disappear; the coarse edge, the slice of a hidden silhouette and the glass with
 no pixels are all exactly where they were.
 
-← [The same model, fine-tuned here — the code](03_the-code.md) · [The same model, fine-tuned here — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

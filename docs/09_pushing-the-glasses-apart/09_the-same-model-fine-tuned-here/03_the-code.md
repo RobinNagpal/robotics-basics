@@ -1,4 +1,4 @@
-# The same foundation model, fine-tuned here — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -134,4 +134,4 @@ did, and anything the shared machinery owns. The section on what fine-tuning
 closes and what it cannot touch is those gains and those limits taken one at a
 time.
 
-← [The same foundation model, fine-tuned here — how it works](02_how-it-works.md) · [The same foundation model, fine-tuned here — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

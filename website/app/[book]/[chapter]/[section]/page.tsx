@@ -23,7 +23,14 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const p = await params;
   const found = locate(p.book, p.chapter, p.section);
-  return found ? { title: found.section.title, description: found.section.summary || found.chapter.summary } : {};
+  if (!found) return {};
+  // A chapter with several sections names itself in the browser tab, because
+  // many section titles are only unique within their chapter: every solution
+  // chapter has a page called "What it is", and several books have an
+  // "Overview". The title alone would then be the same in a dozen tabs.
+  const { chapter, section } = found;
+  const title = chapter.sections.length > 1 ? `${chapter.title} — ${section.title}` : section.title;
+  return { title, description: section.summary || chapter.summary };
 }
 
 export default async function SectionPage({ params }: Params) {

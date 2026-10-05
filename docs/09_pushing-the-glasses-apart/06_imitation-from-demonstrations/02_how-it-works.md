@@ -1,4 +1,4 @@
-# Imitation from demonstrations — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -439,4 +439,4 @@ in this particular arrangement, a cheap and well understood repair available —
 and it is worth recording that this is a consequence of the teacher being code,
 not a property of imitation learning in general.
 
-← [Imitation from demonstrations — what it is](01_what-it-is.md) · [Imitation from demonstrations — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

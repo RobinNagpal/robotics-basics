@@ -1,4 +1,4 @@
-# SAM 2 with a keeper — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -586,4 +586,4 @@ arrangements on a machine whose account has been granted the newer weights. The
 bench makes that comparison honest, and if the text prompt wins, the keeper is
 still the thing that explains why a region was refused.
 
-← [SAM 2 with a keeper — what it is](01_what-it-is.md) · [SAM 2 with a keeper — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

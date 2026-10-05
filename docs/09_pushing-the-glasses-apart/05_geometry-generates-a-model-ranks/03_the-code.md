@@ -1,4 +1,4 @@
-# Geometry generates, a model ranks — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -157,4 +157,4 @@ anything. That single fact is why the topple limit is a refusal rule rather
 than a risk weighed against the value of moving the glass, and it is why the
 model's position after the refusal matters more than the model's accuracy.
 
-← [Geometry generates, a model ranks — how it works](02_how-it-works.md) · [Geometry generates, a model ranks — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

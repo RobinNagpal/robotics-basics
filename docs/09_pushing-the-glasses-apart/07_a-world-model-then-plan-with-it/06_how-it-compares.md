@@ -1,4 +1,4 @@
-# A world model, then plan with it — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -236,4 +236,4 @@ model by hand was worth the effort. The honest expectation is that in a cell
 this narrow, with the state already measured, the hand-built model is
 competitive. Finding out is the point.
 
-← [A world model, then plan with it — what it needs](05_what-it-needs.md) · [A foundation model as it downloads — what it is](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [A foundation model as it downloads — what it is](../08_a-foundation-model-as-it-downloads/01_what-it-is.md) →

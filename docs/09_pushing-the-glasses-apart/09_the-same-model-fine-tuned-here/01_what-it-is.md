@@ -1,4 +1,4 @@
-# The same foundation model, fine-tuned here — what it is
+# What it is
 
 > **What it uses** — LeRobot, with PyTorch underneath, and this machine's own
 > Metal GPU for the training run, which is further than this document expected
@@ -226,4 +226,4 @@ the number of actions SmolVLA emits in a pass and the number it is configured
 to carry out are the same fifty. And it still has no field in it for a rule, so
 it still cannot be the thing that refuses a glass.
 
-← [A foundation model as it downloads — how it compares](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md) · [The same foundation model, fine-tuned here — how it works](02_how-it-works.md) →
+← [A foundation model as it downloads — how it compares](../08_a-foundation-model-as-it-downloads/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

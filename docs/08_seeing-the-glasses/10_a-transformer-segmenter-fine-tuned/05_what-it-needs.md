@@ -1,4 +1,4 @@
-# RF-DETR-Seg, fine-tuned here — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -47,4 +47,4 @@ any obligation falling on the code around it. That is a real difference from
 here](../08_the-same-model-fine-tuned/01_what-it-is.md), both of which are covered by the AGPL, and it is
 worth knowing before a choice is made rather than after.
 
-← [RF-DETR-Seg, fine-tuned here — a worked example](04_a-worked-example.md) · [RF-DETR-Seg, fine-tuned here — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

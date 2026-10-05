@@ -1,4 +1,4 @@
-# Geometry generates, a model ranks — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -428,4 +428,4 @@ tables are not under-represented is another. Doing neither, and quietly
 training on successes alone, is the mistake worth naming here because it is the
 default thing to do.
 
-← [Geometry generates, a model ranks — what it is](01_what-it-is.md) · [Geometry generates, a model ranks — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

@@ -1,4 +1,4 @@
-# Geometry generates, a model ranks — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -44,4 +44,4 @@ the heading sweep, the step length, the glass zone or the way the bench draws
 its crowded tables, and the fitted model quietly describes a cell that no
 longer exists, in a way no test of the code would notice.
 
-← [Geometry generates, a model ranks — a worked example](04_a-worked-example.md) · [Geometry generates, a model ranks — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

@@ -1,4 +1,4 @@
-# One fixed nudge — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -52,4 +52,4 @@ hundreds or thousands of times above it.
 **What it does need is arm time.** The honest cost of this method is pushes and
 looks, and the budget is what bounds them.
 
-← [One fixed nudge — a worked example](04_a-worked-example.md) · [One fixed nudge — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

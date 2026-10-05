@@ -1,4 +1,4 @@
-# SAM 2 with a keeper — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -41,4 +41,4 @@ footnote. Solutions 3 and 4 use weights under the AGPL, which places conditions
 on anything built around them, so on the day this cell becomes a product rather
 than an experiment those two have a question to answer and this one does not.
 
-← [SAM 2 with a keeper — a worked example](04_a-worked-example.md) · [SAM 2 with a keeper — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

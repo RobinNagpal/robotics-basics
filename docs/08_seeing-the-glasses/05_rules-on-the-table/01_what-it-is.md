@@ -1,4 +1,4 @@
-# Rules on the table — what it is
+# What it is
 
 > **What it uses** — NumPy for the arithmetic over the depth readings, and
 > OpenCV for the picture handling the cell already does. There is no model, no
@@ -196,4 +196,4 @@ one at a time, in the order the work happens: turning a pixel into a point,
 keeping only what stands above the table, throwing the height away, grouping the
 dots by distance, and checking each group against the widths the kind allows.
 
-← [The six solutions — same destination, six different cars](../04_the-six-solutions.md) · [Rules on the table — how it works](02_how-it-works.md) →
+← [The six solutions — one question, six ways to see](../04_the-six-solutions.md) · [How it works](02_how-it-works.md) →

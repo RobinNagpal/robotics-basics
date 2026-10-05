@@ -1,4 +1,4 @@
-# A world model, then plan with it — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -64,4 +64,4 @@ time per push beside the counts. Both are in `bench/scoring.py` today, as
 uses the plain scorecard, so its results carry the time per push but no spread:
 it has been trained once and run once.
 
-← [A world model, then plan with it — a worked example](04_a-worked-example.md) · [A world model, then plan with it — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

@@ -259,4 +259,4 @@ rather than guessing a value for them.
 - [The six solutions](04_the-six-solutions.md) — what each method puts between the
   input and the output.
 
-← [Looking again at what was hidden](02_the-problem/02_looking-again-at-what-was-hidden.md) · [The six solutions — same destination, six different cars](04_the-six-solutions.md) →
+← [Looking again at what was hidden](02_the-problem/02_looking-again-at-what-was-hidden.md) · [The six solutions — one question, six ways to see](04_the-six-solutions.md) →

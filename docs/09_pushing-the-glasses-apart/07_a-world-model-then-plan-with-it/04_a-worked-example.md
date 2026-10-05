@@ -1,4 +1,4 @@
-# A world model, then plan with it — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -139,4 +139,4 @@ the shared scorecard, and against the displacement floor from [the target
 layout](../01_the-problem/02_the-target-layout.md), which says how little movement the task
 needed in the first place.
 
-← [A world model, then plan with it — the code](03_the-code.md) · [A world model, then plan with it — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

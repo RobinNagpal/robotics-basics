@@ -1,4 +1,4 @@
-# Geometry generates, a model ranks — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -286,4 +286,4 @@ ever shows this solution close to those two, the interesting reading is not that
 the trees are clever. It is that the geometry was doing most of the work all
 along.
 
-← [Geometry generates, a model ranks — what it needs](05_what-it-needs.md) · [Imitation from demonstrations — what it is](../06_imitation-from-demonstrations/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [Imitation from demonstrations — what it is](../06_imitation-from-demonstrations/01_what-it-is.md) →

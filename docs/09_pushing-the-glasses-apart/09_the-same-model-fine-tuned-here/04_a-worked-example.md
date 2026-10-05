@@ -1,4 +1,4 @@
-# The same foundation model, fine-tuned here — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -141,4 +141,4 @@ in units this cell can carry out, informed by what pushes on this table
 actually did. The refusal, the topple limit, the destinations and the loop are
 exactly where they were, because they were never the model's to begin with.
 
-← [The same foundation model, fine-tuned here — the code](03_the-code.md) · [The same foundation model, fine-tuned here — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

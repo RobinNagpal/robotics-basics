@@ -1,4 +1,4 @@
-# Rules on the table — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -48,4 +48,4 @@ could not be stated.
 **And depth readings.** This is the one requirement that is not free, and it is
 the one the next section is mostly about.
 
-← [Rules on the table — a worked example](04_a-worked-example.md) · [Rules on the table — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

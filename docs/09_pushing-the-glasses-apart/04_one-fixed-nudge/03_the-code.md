@@ -1,4 +1,4 @@
-# One fixed nudge — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -177,4 +177,4 @@ Written as the loop it is:
 The loop ends when no glass is short of room, when the budget of pushes is
 spent, or when every glass that is left has been refused.
 
-← [One fixed nudge — how it works](02_how-it-works.md) · [One fixed nudge — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

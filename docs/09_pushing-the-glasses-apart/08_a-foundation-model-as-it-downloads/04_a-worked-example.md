@@ -1,4 +1,4 @@
-# A foundation model as it downloads — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -123,4 +123,4 @@ output marked as doubtful. Every push would look like a push. That is the
 characteristic failure across a domain gap, and it is why this solution's result
 has to be read against solution 6's rather than on its own.
 
-← [A foundation model as it downloads — the code](03_the-code.md) · [A foundation model as it downloads — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

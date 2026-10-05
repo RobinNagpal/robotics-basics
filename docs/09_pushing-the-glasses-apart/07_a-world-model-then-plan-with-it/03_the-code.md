@@ -1,4 +1,4 @@
-# A world model, then plan with it — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -183,4 +183,4 @@ Both are plain counters, both belong to the loop rather than to the model, and
 the budget must be the same number for all six or the push counts on the
 scorecard cannot be compared.
 
-← [A world model, then plan with it — how it works](02_how-it-works.md) · [A world model, then plan with it — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

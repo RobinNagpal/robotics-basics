@@ -1,4 +1,4 @@
-# RF-DETR-Seg, fine-tuned here — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -151,4 +151,4 @@ change of target rather than a change of architecture. And the **separation of
 observed from asserted pixels** is what keeps the second rung honest, because
 the arithmetic and both surviving checks need the two kinds of pixel kept apart.
 
-← [RF-DETR-Seg, fine-tuned here — how it works](02_how-it-works.md) · [RF-DETR-Seg, fine-tuned here — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

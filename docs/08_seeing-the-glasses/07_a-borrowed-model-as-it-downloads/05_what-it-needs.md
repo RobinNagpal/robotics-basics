@@ -1,4 +1,4 @@
-# A borrowed model, as it downloads — what it needs
+# What it needs
 
 This page is the bill for this solution: the libraries it rests on, the machine
 it wants, the data somebody has to supply and, where there is one, the licence
@@ -58,4 +58,4 @@ it is not the only permissively licensed segmenter that could do this job, so
 the replacement is straightforward if the method proved to be the right one and
 the work were headed somewhere commercial.
 
-← [A borrowed model, as it downloads — a worked example](04_a-worked-example.md) · [A borrowed model, as it downloads — how it compares](06_how-it-compares.md) →
+← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

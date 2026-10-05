@@ -1,4 +1,4 @@
-# One fixed nudge — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -168,4 +168,4 @@ friction range is below the jaw's top edge, so D tips before it slides at any
 friction the cell might have. No method in the set can push D, and the only
 correct answer for it is a refusal with the reason.
 
-← [One fixed nudge — the code](03_the-code.md) · [One fixed nudge — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

@@ -1,4 +1,4 @@
-# SAM 2 with a keeper — what it is
+# What it is
 
 > **What it uses** — SAM 2, the second generation of the Segment Anything model,
 > loaded through Hugging Face `transformers` and never trained here;
@@ -166,4 +166,4 @@ counts as a glass here. So the proposing half is borrowed and the naming half is
 replaced. **That is the opposite trade from solution 3**, which borrows both
 halves and takes the borrowed model's names as the answer.
 
-← [The same model, fine-tuned here — how it compares](../08_the-same-model-fine-tuned/06_how-it-compares.md) · [SAM 2 with a keeper — how it works](02_how-it-works.md) →
+← [The same model, fine-tuned here — how it compares](../08_the-same-model-fine-tuned/06_how-it-compares.md) · [How it works](02_how-it-works.md) →

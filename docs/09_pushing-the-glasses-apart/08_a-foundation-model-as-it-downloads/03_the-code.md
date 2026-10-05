@@ -1,4 +1,4 @@
-# A foundation model as it downloads — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -155,4 +155,4 @@ every lever that would normally be pulled to fix the problems above. Pulling
 exactly one of those levers is [solution
 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
 
-← [A foundation model as it downloads — how it works](02_how-it-works.md) · [A foundation model as it downloads — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

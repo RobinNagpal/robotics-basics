@@ -1,4 +1,4 @@
-# The same model, fine-tuned here — how it works
+# How it works
 
 This page explains what happens inside this solution, part by part. It follows
 [what it is](01_what-it-is.md), which states the question the solution answers
@@ -288,4 +288,4 @@ gap further while making both forgetting and overfitting more likely. So there
 is a sensible amount of training rather than a maximum, and the test half of the
 arrangements is what decides where it is.
 
-← [The same model, fine-tuned here — what it is](01_what-it-is.md) · [The same model, fine-tuned here — the code](03_the-code.md) →
+← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

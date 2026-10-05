@@ -1,4 +1,4 @@
-# A network trained here from scratch — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -253,4 +253,4 @@ appearance, in [looking again at what was hidden](../02_the-problem/02_looking-a
 all six share. This solution contributes the masks that argument starts from,
 and none of the argument.
 
-← [A network trained here from scratch — what it needs](05_what-it-needs.md) · [A borrowed model, as it downloads — what it is](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [A borrowed model, as it downloads — what it is](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) →

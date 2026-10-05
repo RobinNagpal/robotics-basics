@@ -1,4 +1,4 @@
-# A network trained here from scratch — the code
+# The code
 
 This page shows the code at the heart of this solution, and says exactly what
 the solution hands back to the rest of the cell. The two belong on one page
@@ -135,4 +135,4 @@ network proposes; the vote count and the kind's own range of widths dispose. A
 pile of votes implying a footprint no glass of this kind could have is turned
 down by a rule nobody trained.
 
-← [A network trained here from scratch — how it works](02_how-it-works.md) · [A network trained here from scratch — a worked example](04_a-worked-example.md) →
+← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

@@ -1,4 +1,4 @@
-# SAM 2 with a keeper — a worked example
+# A worked example
 
 This page follows this solution through one arrangement of glasses from
 beginning to end, with real numbers rather than a description of what would
@@ -122,4 +122,4 @@ a rounding error: the picture encoder runs once per picture, every prompt after
 it is cheap, and what the keeper adds is too small to see beside them. The whole
 chain still costs far less than one movement of the arm.
 
-← [SAM 2 with a keeper — the code](03_the-code.md) · [SAM 2 with a keeper — what it needs](05_what-it-needs.md) →
+← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

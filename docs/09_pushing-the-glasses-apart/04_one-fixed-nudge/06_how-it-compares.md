@@ -1,4 +1,4 @@
-# One fixed nudge — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -267,4 +267,4 @@ this one does. So a reader who finds a fixed nudge convincing should read that
 as a statement about how generous this book's promises are, and the value of
 the other five is what they do when the promises stop.
 
-← [One fixed nudge — what it needs](05_what-it-needs.md) · [Geometry generates, a model ranks — what it is](../05_geometry-generates-a-model-ranks/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [Geometry generates, a model ranks — what it is](../05_geometry-generates-a-model-ranks/01_what-it-is.md) →

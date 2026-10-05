@@ -1,4 +1,4 @@
-# SAM 2 with a keeper — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -268,4 +268,4 @@ answers the first question by running it beside the other five on the same
 arrangements. The second question is the one the two rungs of this solution ask
 of each other, and it is a judgement rather than a measurement.
 
-← [SAM 2 with a keeper — what it needs](05_what-it-needs.md) · [RF-DETR-Seg, fine-tuned here — what it is](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [RF-DETR-Seg, fine-tuned here — what it is](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md) →

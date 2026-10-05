@@ -1,4 +1,4 @@
-# RF-DETR-Seg, fine-tuned here — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -255,4 +255,4 @@ moves the boundary at which hiding becomes complete further out than the other
 five, and it does not remove it. The whole comparison, with all six side by
 side, is in [the overview](../04_the-six-solutions.md).
 
-← [RF-DETR-Seg, fine-tuned here — what it needs](05_what-it-needs.md) · [The six solutions side by side](../11_the-results.md) →
+← [What it needs](05_what-it-needs.md) · [The six solutions side by side](../11_the-results.md) →

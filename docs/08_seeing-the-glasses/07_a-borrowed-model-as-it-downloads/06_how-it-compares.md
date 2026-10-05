@@ -1,4 +1,4 @@
-# A borrowed model, as it downloads — how it compares
+# How it compares
 
 This page is the judgement on this solution. It says where the solution is
 strong and where it breaks, names the general ideas it is built from so that
@@ -147,4 +147,4 @@ nothing else. No other pair in this chapter is that clean, and that is the main
 reason this solution is worth building even though it is unlikely to be the one
 carried forward.
 
-← [A borrowed model, as it downloads — what it needs](05_what-it-needs.md) · [The same model, fine-tuned here — what it is](../08_the-same-model-fine-tuned/01_what-it-is.md) →
+← [What it needs](05_what-it-needs.md) · [The same model, fine-tuned here — what it is](../08_the-same-model-fine-tuned/01_what-it-is.md) →

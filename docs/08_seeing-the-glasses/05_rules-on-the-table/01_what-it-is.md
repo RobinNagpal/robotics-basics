@@ -45,30 +45,16 @@
 This document describes the one answer to [the problem this book
 sets](../02_the-problem/01_what-is-asked-for.md) that contains no model of any
 kind. The problem is to say which pixels belong to which glass when several
-glasses stand on a table and the camera looks at them from the top. Five of the
-six answers to that problem fit numbers to examples, either here or somewhere
-else, and then trust the fitted numbers. This one fits nothing. It states a rule, in words a person can read, and applies it.
+glasses stand on a table and the camera looks at them from the top. This one
+fits nothing. It states a rule, in words a person can read, and applies it.
 
 The rule is possible because of one fact about the input. Every pixel arrives
-with a depth reading beside it, and a pixel with a depth reading is not really a
-pixel at all: it is a point in the room, waiting to be worked out. Once the
+with a depth reading beside it, and a pixel with a depth reading is not really
+a pixel at all: it is a point in the room, waiting to be worked out. Once the
 picture has become a crowd of points in the room, the question "which glass is
 this?" stops being a question about the picture and becomes a question about
 distance on the table. That change of place is the whole idea, and everything
 else in this document follows from it.
-
-By the end you will understand how a pixel and a depth reading become a point in
-the room, why throwing the height of those points away makes the grouping easy
-rather than harder, what the one grouping rule is and where its single setting
-comes from, why this solution's masks are a *consequence* of the grouping rather
-than the thing it directly produces, and what that costs it on the one
-measurement the test bench uses to separate methods. You will also understand
-why this solution is the one the other five are read against: it needs no data,
-no training, no weights file and no graphics processor, so if a model cannot
-beat a written rule, the model has earned nothing.
-
-Two honest notes before the method starts, because both change how the rest
-should be read.
 
 **The method is built, and the numbers quoted below were measured by running
 it.** The code is in
@@ -88,40 +74,32 @@ glasses — and never in figures.
 
 ## 2. The problem this solves
 
-To state the problem we need the situation and three words, and the three words
-are used in a particular way here.
-
 The situation is the one [this book's problem
 statement](../02_the-problem/01_what-is-asked-for.md) sets out. Four to six
-drinking glasses stand upright on a table, all of the same kind, and the kind is
-known. They stand inside the rectangle of table this project calls the glass
-zone. The camera is on the arm's wrist, and for this problem it works **from the
-top**, which means the arm lifts it well clear of the tallest glass the cell
-handles and points it straight down. The job is to say which pixels belong to
-which glass.
+drinking glasses stand upright on a table, all of the same kind, and the kind
+is known. They stand inside the rectangle of table this project calls the glass
+zone. The camera is on the arm's wrist, and for this problem it works **from
+the top**, which means the arm lifts it well clear of the tallest glass the
+cell handles and points it straight down. The job is to say which pixels belong
+to which glass.
 
 The first word is **mask**. A mask is a picture the same size as the camera's
 picture, in which every pixel holds only yes or no, and yes means that this
 pixel is believed to show a glass.
 
-The second word is **patch**. A patch is one group of touching yes pixels — what
-you get by starting at a yes pixel and spreading out to every neighbouring yes
-pixel until nothing new joins. A patch is cheap to find and it is exactly what a
-single glass on an empty table gives back, so it is the obvious thing to reach
-for. **One patch is not the same as one glass**, however, and that gap is the
-first difficulty of this problem.
+The second word is **patch**. A patch is one group of touching yes pixels —
+what you get by starting at a yes pixel and spreading out to every neighbouring
+yes pixel until nothing new joins. **One patch is not the same as one glass**,
+however, and that gap is the first difficulty of this problem.
 
 The third word is the promise the problem makes about where the glasses stand.
 There is a guaranteed smallest distance between the centres of any two glasses,
 and it is wide enough that even the two widest glasses of a kind leave bare
 table between their rims. So two glasses can never touch, and there is always a
-strip of bare table between them. Everything below rests on that strip existing,
-which is why it is stated here rather than assumed later.
+strip of bare table between them. Everything below rests on that strip
+existing, which is why it is stated here rather than assumed later.
 
 ### Why a picture from the top joins two glasses that stand apart
-
-The reason one patch can hold two glasses is worth following, because it is also
-the reason the fix has to work outside the picture.
 
 A picture of a tall object is not a picture of its base. The camera looks down,
 so the table is the furthest thing from the lens and a glass's rim is the
@@ -133,15 +111,10 @@ further out from the point directly below the camera than it really does, and
 effect **splay**, and [the cell](../01_the-cell.md) derives it in full.
 
 The practical result is that a tall glass's outline leans outwards, away from
-the point below the camera, and it can come to rest on top of whatever stands in
-that direction. Whether that matters depends on how much the heights inside one
-kind differ, and in this problem one kind is deliberately very wide: its tall
-glasses are more than twice the height of its short ones. A tall glass of that
-kind is thrown outwards a long way while a short glass standing beyond it is
-barely thrown at all, so the tall glass's outline can reach the short one and
-pass over it.
-
-That gives two failures rather than one, and they are not equally dangerous.
+the point below the camera, and it can come to rest on top of whatever stands
+in that direction. A tall glass of that kind is thrown outwards a long way
+while a short glass standing beyond it is barely thrown at all, so the tall
+glass's outline can reach the short one and pass over it.
 
 **The merge is the loud failure.** If the tall glass's outline reaches the short
 one without covering it, the two touch and come back as a single patch. That
@@ -158,28 +131,17 @@ table does.
 The second failure cannot be answered by grouping pixels better, because the
 pixels are not there to group. It is answered instead by arithmetic that never
 looks at the picture's contents, and [when the glasses are completely
-hidden](04_a-worked-example.md#1-when-the-glasses-are-completely-hidden) is where that arithmetic is set
-out. The first failure is what the rest of this method is about, and the lesson
-it teaches is that no amount of care inside the picture will fix it: the picture
-has already thrown away the one thing that would have kept the two glasses
-apart, which is which pixels were near the camera and which were far.
+hidden](04_a-worked-example.md#1-when-the-glasses-are-completely-hidden) is
+where that arithmetic is set out.
 
 ## 3. The main idea
 
-The main idea is a change of place rather than a change of algorithm, and it is
-small enough to state in two sentences.
-
 A depth camera gives a distance for every pixel, which is enough to turn each
 pixel into a point in the room: the pixel says which direction the camera was
-looking, the depth says how far along that direction to travel, and the camera's
-own pose says where that direction starts. Once every pixel has become a point
-in the room, the glasses are told apart by distance on the table, and the strip
-of bare table between two glasses — which the picture could not show us — is
-simply there to be measured.
-
-That is the whole method. Five concepts fill it in, and the sections below take
-one at a time, in the order the work happens: turning a pixel into a point,
-keeping only what stands above the table, throwing the height away, grouping the
-dots by distance, and checking each group against the widths the kind allows.
+looking, the depth says how far along that direction to travel, and the
+camera's own pose says where that direction starts. Once every pixel has become
+a point in the room, the glasses are told apart by distance on the table, and
+the strip of bare table between two glasses — which the picture could not show
+us — is simply there to be measured.
 
 ← [A transformer segmenter, fine-tuned](../04_the-six-solutions/07_a-transformer-segmenter-fine-tuned.md) · [How it works](02_how-it-works.md) →

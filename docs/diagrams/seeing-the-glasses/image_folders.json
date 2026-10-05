@@ -1,158 +1,212 @@
 {
- "02-circle-fit-decides.png": [
-  "rules-on-the-table"
- ],
- "02-grouping-distance.png": [
-  "rules-on-the-table"
- ],
- "02-hidden-from-above.png": [
-  "rules-on-the-table"
- ],
- "02-merged-in-the-picture.png": [
-  "rules-on-the-table"
- ],
- "02-pixel-to-point.png": [
-  "rules-on-the-table"
- ],
- "02-touching-is-the-limit.png": [
-  "rules-on-the-table"
- ],
- "02-why-flatten.png": [
-  "rules-on-the-table"
- ],
- "03-hidden-from-the-side.png": [
-  "looking-again-at-what-was-hidden"
- ],
- "03-three-tests.png": [
-  "looking-again-at-what-was-hidden"
- ],
- "04-hidden-from-above.png": [
-  "looking-again-at-what-was-hidden"
- ],
- "04-hidden-from-the-side.png": [
-  "looking-again-at-what-was-hidden"
- ],
- "04-veto-then-ordering.png": [
-  "looking-again-at-what-was-hidden"
- ],
- "06-domain-randomisation.png": [
-  "a-network-trained-from-scratch"
- ],
- "06-hidden-from-above.png": [
-  "a-network-trained-from-scratch"
- ],
- "06-hidden-from-the-side.png": [
-  "a-network-trained-from-scratch"
- ],
- "06-image-space-against-table-space.png": [
-  "a-network-trained-from-scratch"
- ],
- "06-most-pixels-are-table.png": [
-  "a-network-trained-from-scratch"
- ],
- "06-semantic-against-instance.png": [
-  "a-network-trained-from-scratch"
- ],
- "06-the-voting-idea.png": [
-  "a-network-trained-from-scratch"
- ],
- "06-too-few-votes.png": [
-  "a-network-trained-from-scratch"
- ],
- "06-vote-cloud-and-mean-shift.png": [
-  "a-network-trained-from-scratch"
- ],
- "07-deliberate-motion-loop.png": [
-  "a-network-trained-from-scratch"
- ],
- "07-depth-against-shift.png": [
-  "a-network-trained-from-scratch"
- ],
- "07-embedding-space.png": [
-  "a-network-trained-from-scratch"
- ],
- "07-hidden-from-above.png": [
-  "a-network-trained-from-scratch"
- ],
- "07-hidden-from-the-side.png": [
-  "a-network-trained-from-scratch"
- ],
- "07-the-limit.png": [
-  "a-network-trained-from-scratch"
- ],
- "07-two-views-parallax.png": [
-  "a-network-trained-from-scratch"
- ],
- "07-where-the-labels-come-from.png": [
-  "a-network-trained-from-scratch"
- ],
- "08-borrowed-against-trained.png": [
-  "a-foundation-model-with-a-keeper"
- ],
- "08-everything-is-proposed.png": [
-  "a-foundation-model-with-a-keeper"
- ],
- "08-the-domain-gap.png": [
-  "a-foundation-model-with-a-keeper"
- ],
- "08-the-keeper.png": [
-  "a-foundation-model-with-a-keeper"
- ],
- "08-the-prompt-grid.png": [
-  "a-foundation-model-with-a-keeper"
- ],
- "08-what-promptable-means.png": [
-  "a-foundation-model-with-a-keeper"
- ],
- "08-where-it-stops.png": [
-  "a-foundation-model-with-a-keeper"
- ],
- "09-boxes-scores-masks.png": [
-  "the-same-model-fine-tuned"
- ],
- "09-class-map-against-instances.png": [
-  "the-same-model-fine-tuned"
- ],
- "09-fine-tune-against-scratch.png": [
-  "the-same-model-fine-tuned"
- ],
- "09-what-a-backbone-brings.png": [
-  "the-same-model-fine-tuned"
- ],
- "10-labels-for-free.png": [
-  "a-transformer-segmenter-fine-tuned"
- ],
- "10-measuring-whether-it-works.png": [
-  "a-transformer-segmenter-fine-tuned"
- ],
- "10-modal-against-amodal.png": [
-  "a-transformer-segmenter-fine-tuned"
- ],
- "10-where-it-stops.png": [
-  "a-transformer-segmenter-fine-tuned"
- ],
- "cell-from-above.png": [
-  "the-cell"
- ],
- "cell-from-the-side.png": [
-  "the-cell"
- ],
- "splay-what-it-costs.png": [
-  "the-cell"
- ],
- "splay-why-it-happens.png": [
-  "the-cell"
- ],
- "the-camera-positions.png": [
-  "the-cell"
- ],
- "the-four-kinds.png": [
-  "the-cell"
- ],
- "the-sensors.png": [
-  "the-cell"
- ],
- "where-can-the-camera-stand.png": [
-  "what-is-asked-for"
- ]
+  "02-circle-fit-decides.png": [
+    "rules-on-the-table"
+  ],
+  "02-grouping-distance.png": [
+    "rules-on-the-table"
+  ],
+  "02-hidden-from-above.png": [
+    "rules-on-the-table"
+  ],
+  "02-merged-in-the-picture.png": [
+    "rules-on-the-table"
+  ],
+  "02-pixel-to-point.png": [
+    "rules-on-the-table"
+  ],
+  "02-touching-is-the-limit.png": [
+    "rules-on-the-table"
+  ],
+  "02-why-flatten.png": [
+    "rules-on-the-table"
+  ],
+  "03-hidden-from-the-side.png": [
+    "looking-again-at-what-was-hidden"
+  ],
+  "03-matching-by-pixels.png": [
+    "the-test-bench"
+  ],
+  "03-the-floor.png": [
+    "the-test-bench"
+  ],
+  "03-the-two-mask-numbers.png": [
+    "the-test-bench"
+  ],
+  "03-three-stations.png": [
+    "the-test-bench"
+  ],
+  "03-three-tests.png": [
+    "looking-again-at-what-was-hidden"
+  ],
+  "03-two-families.png": [
+    "the-test-bench"
+  ],
+  "03-what-a-solution-is-given.png": [
+    "the-test-bench"
+  ],
+  "03-what-must-come-back.png": [
+    "the-test-bench"
+  ],
+  "03-what-the-bench-does.png": [
+    "the-test-bench"
+  ],
+  "03-what-the-bench-keeps.png": [
+    "the-test-bench"
+  ],
+  "04-hidden-from-above.png": [
+    "looking-again-at-what-was-hidden"
+  ],
+  "04-hidden-from-the-side.png": [
+    "looking-again-at-what-was-hidden"
+  ],
+  "04-veto-then-ordering.png": [
+    "looking-again-at-what-was-hidden"
+  ],
+  "06-domain-randomisation.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "06-hidden-from-above.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "06-hidden-from-the-side.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "06-image-space-against-table-space.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "06-most-pixels-are-table.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "06-semantic-against-instance.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "06-the-voting-idea.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "06-too-few-votes.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "06-vote-cloud-and-mean-shift.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "07-deliberate-motion-loop.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "07-depth-against-shift.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "07-embedding-space.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "07-hidden-from-above.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "07-hidden-from-the-side.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "07-the-limit.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "07-two-views-parallax.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "07-where-the-labels-come-from.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "08-borrowed-against-trained.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
+  "08-everything-is-proposed.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
+  "08-the-domain-gap.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
+  "08-the-keeper.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
+  "08-the-prompt-grid.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
+  "08-what-promptable-means.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
+  "08-where-it-stops.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
+  "09-boxes-scores-masks.png": [
+    "the-same-model-fine-tuned"
+  ],
+  "09-class-map-against-instances.png": [
+    "the-same-model-fine-tuned"
+  ],
+  "09-fine-tune-against-scratch.png": [
+    "the-same-model-fine-tuned"
+  ],
+  "09-what-a-backbone-brings.png": [
+    "the-same-model-fine-tuned"
+  ],
+  "10-labels-for-free.png": [
+    "a-transformer-segmenter-fine-tuned"
+  ],
+  "10-measuring-whether-it-works.png": [
+    "a-transformer-segmenter-fine-tuned"
+  ],
+  "10-modal-against-amodal.png": [
+    "a-transformer-segmenter-fine-tuned"
+  ],
+  "10-where-it-stops.png": [
+    "a-transformer-segmenter-fine-tuned"
+  ],
+  "a-complete-answer.png": [
+    "what-is-asked-for"
+  ],
+  "a-glass-missing-altogether.png": [
+    "what-is-asked-for"
+  ],
+  "cell-from-above.png": [
+    "the-cell"
+  ],
+  "cell-from-the-side.png": [
+    "the-cell"
+  ],
+  "four-to-six-of-one-kind.png": [
+    "what-is-asked-for"
+  ],
+  "merged-though-they-stand-apart.png": [
+    "what-is-asked-for"
+  ],
+  "splay-what-it-costs.png": [
+    "the-cell"
+  ],
+  "splay-why-it-happens.png": [
+    "the-cell"
+  ],
+  "the-camera-positions.png": [
+    "the-cell"
+  ],
+  "the-four-kinds.png": [
+    "the-cell"
+  ],
+  "the-sensors.png": [
+    "the-cell"
+  ],
+  "the-three-difficulties.png": [
+    "what-is-asked-for"
+  ],
+  "the-widest-range-of-sizes.png": [
+    "what-is-asked-for"
+  ],
+  "what-done-means.png": [
+    "what-is-asked-for"
+  ],
+  "what-goes-in.png": [
+    "what-is-asked-for"
+  ],
+  "what-must-come-out.png": [
+    "what-is-asked-for"
+  ],
+  "where-can-the-camera-stand.png": [
+    "what-is-asked-for"
+  ]
 }

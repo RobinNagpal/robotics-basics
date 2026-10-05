@@ -41,6 +41,8 @@ measurements, computed the same way. Everything a solution is free to change
 sits between the input and the output, and that is exactly the part we want to
 compare.
 
+![The bench draws the arrangement, parks the camera at three stations, renders a grey picture, a depth reading, a camera pose and an id image, and hands over only the first three; the solution turns those into one mask per glass and contributes nothing else; and the bench then turns each mask into a place and a width, matches it to a real glass and counts.](../images/seeing-the-glasses/the-test-bench/03-what-the-bench-does.png)
+
 The comparison that follows from this is sharper than it sounds. Two of the six
 solutions use the same model from the same library, starting from the same
 downloaded weights, and one of them has had its training continued on this
@@ -69,6 +71,8 @@ as the cell's spawner would. The crowded one pushes them as close as the cell
 allows, which is where the methods separate most, because crowding is what
 creates both the merge and the complete hiding.
 
+![In the ordinary family the glasses stand the guaranteed 150 mm apart between centres, and in the crowded family they stand at a third to two thirds of that, which is where two outlines run together in the picture and where one glass can cover another completely.](../images/seeing-the-glasses/the-test-bench/03-two-families.png)
+
 **Arrangements are split into a training half and a test half**, by the number
 used to draw them. Anything a method is fitted on comes from below the dividing
 line, and everything it is marked on comes from above it, so no method is ever
@@ -80,6 +84,8 @@ For each arrangement, the camera is parked at several overlapping stations above
 the glass zone, looking straight down. The overlap matters: a glass cut off at
 the edge of one station's picture sits well inside another's.
 
+![One picture from the survey height covers more table than the glass zone is wide but less than a station can be credited with, because the second picture of the pair slides sideways and a glass has to be inside far enough not to be cut off, so the zone takes three stations 93 mm apart and anything lost at one edge lands well inside its neighbour.](../images/seeing-the-glasses/the-test-bench/03-three-stations.png)
+
 From each picture a solution may read three things:
 
 - the **grey picture**, shaded from how far away each surface is;
@@ -89,6 +95,8 @@ From each picture a solution may read three things:
 That is the whole input. It is the same for all six, and it is handed over by
 the bench rather than fetched by the solution, so no solution can quietly read
 anything else.
+
+![From each picture a solution may read the grey picture shaded from how far away each surface is, the depth reading at every pixel, and the camera pose the arm knows from its own joint encoders, and nothing else reaches it.](../images/seeing-the-glasses/the-test-bench/03-what-a-solution-is-given.png)
 
 ## 5. What the bench keeps to itself
 
@@ -108,6 +116,8 @@ the training half of the arrangements. A method may be *trained* on id images
 and is never *run* on them. Any method that read one while answering would not
 be answering this problem.
 
+![The id image says which glass owns each pixel, and the bench uses it for two separate jobs: as the answer key when it marks any solution, and as a training label for a fitted solution, available only from the arrangements below the dividing line and never while a solution is answering.](../images/seeing-the-glasses/the-test-bench/03-what-the-bench-keeps.png)
+
 ## 6. What must come back
 
 One record per glass, holding its mask pixels, its place on the table, a rough
@@ -120,6 +130,8 @@ honest statements [the problem](02_the-problem/01_what-is-asked-for.md) asks for
 separated and why, and which parts of the table could not have been seen at
 all. Neither is a list of glasses, and the bench counts both rather than
 treating a reported doubt as a missing answer.
+
+![A solution supplies the mask pixels and whether the picture held the whole glass, the bench computes the place and the width from the mask itself, and the two honest statements that come beside the records are counted as reported doubt rather than as answers that never arrived.](../images/seeing-the-glasses/the-test-bench/03-what-must-come-back.png)
 
 **The step that turns a mask into a place and a width is the bench's, not the
 solution's.** This is the single most important decision in the whole
@@ -154,6 +166,8 @@ when a method is badly wrong about where the glass stands. A report whose mask
 is plainly a picture of glass number three is credited to glass number three,
 even if the place it computed is well off.
 
+![The bench asks the id image which real glass owns most of the pixels a report is made of, so a report is credited to the glass its mask is a picture of even when the place it computed sits well away from where that glass stands.](../images/seeing-the-glasses/the-test-bench/03-matching-by-pixels.png)
+
 ## 8. What the bench measures
 
 ### Did it separate the glasses?
@@ -166,7 +180,7 @@ every way the finding step can go right or wrong.
 | **put out** | how many glasses were really on the table |
 | **found** | how many distinct real glasses got a report |
 | **missed** | real glasses that got no report at all |
-| **merged** | one report whose pixels substantially cover two real glasses |
+| **merged** | one report that two real glasses each own more than a fifth of |
 | **split** | one real glass that collected two reports |
 | **false** | a report whose pixels belong to no glass at all |
 
@@ -201,20 +215,21 @@ arithmetic made of it.
 
 Two numbers per glass: **how much of the real glass the mask covered**, and
 **how much of the mask was not that glass**. The first catches an outline that
-lost the thin stem of a glass or stopped at the edge of an occluder. The second
-catches an outline that leaked onto the table or swallowed a neighbour.
+lost the foot of a stemmed glass or stopped at the edge of an occluder. The
+second catches an outline that leaked onto the table or swallowed a neighbour.
 
 Both are then **broken down by kind of glass**, because the four kinds are not
 equally hard to outline and an average over all four would hide that.
 
-What the breakdown shows is worth saying plainly, because it is not what the
-shapes alone suggest. A solution that works from rules written by hand does
-lose the thin stem: it covers the two kinds without a stem almost completely,
-and the two kinds with a stem noticeably less, so for that kind of solution the
-stem really is the hard part. A solution fitted on this cell's own pictures does
-not lose it: it covers all four kinds almost equally well, the stemmed glass
-included. So the stem is where a written rule runs out, and not where every
-method runs out.
+What the breakdown shows is not what the shapes alone suggest. Seen from
+straight above, a stem is never a band of its own: the bowl is thrown outwards
+far enough to cover it, so what a bowl-only outline really loses is the foot
+and the sliver of stem beside it. A solution built from rules written by hand
+loses exactly that. It covers the two kinds without a stem almost completely,
+99.5 and 100.0 per cent at the median, and the two kinds with one noticeably
+less, 86.6 and 88.7. A solution fitted on this cell's own pictures does not: it
+covers all four between 96.8 and 98.6 per cent. So the foot of a stemmed glass
+is where a written rule runs out, and not where every method runs out.
 
 Those two solutions differ in the other number instead, and in opposite
 directions. The written rule almost never includes a pixel that is not the
@@ -224,6 +239,8 @@ few, because a learned outline follows the shape coarsely and its edge sits a
 little outside the glass, so it claims the whole glass and a thin margin around
 it. Neither of those two habits can be seen in the places the solutions report,
 which is the reason this measurement exists at all.
+
+![A rule written by hand loses the foot of a stemmed glass and the sliver of stem beside it, so its coverage falls while almost nothing it claims is not the glass, and a learned outline follows the shape coarsely and sits a little outside it, so it covers the whole glass and claims a thin margin that is not.](../images/seeing-the-glasses/the-test-bench/03-the-two-mask-numbers.png)
 
 The measurement is checked against the floor below, where the masks are the ones
 the renderer itself drew. There both numbers come out perfect for all four
@@ -246,10 +263,13 @@ It also exposes one trap that is easy to fall into. A mask may claim pixels the
 camera never saw the glass at, which happens on purpose when a method predicts
 the hidden part of a glass. The depth reading at such a pixel belongs to
 whatever stood in front, so feeding it in drags the computed place onto the
-object in front. Measured with exact masks, naming those pixels and leaving them
-out gives a place several times closer than feeding them in. So a mask that
-asserts pixels must say which ones, and the bench excludes their depth readings
-rather than guessing a value for them.
+object in front. Measured with exact masks over the 133 partly hidden glasses
+of the crowded arrangements, naming those pixels and leaving them out puts the
+place 12.2 mm out at the median, where feeding them in puts it 46.1 mm out. So
+a mask that asserts pixels must say which ones, and the bench excludes their
+depth readings rather than guessing a value for them.
+
+![The bench sends its own id masks through the same arithmetic a solution's masks go through, which gives the best place and width that step can produce from a perfect mask, and it leaves out the depth readings of any pixel a mask asserts, because the depth there belongs to whatever stood in front.](../images/seeing-the-glasses/the-test-bench/03-the-floor.png)
 
 ## 9. Where to go next
 

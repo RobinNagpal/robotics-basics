@@ -118,9 +118,9 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
     );
   }
 
-  // Robotics by Example: three tapered glasses on a table, with the camera
-  // looking down at them, which is the problem the whole book works through.
-  if (slug === 'robotics-by-example') {
+  // Seeing the Glasses: three tapered glasses on a table, with the camera
+  // looking down at them, which is the question the whole book works through.
+  if (slug === 'seeing-the-glasses') {
     const glasses = [
       { x: 26, w: 7, h: 20 },
       { x: 52, w: 9, h: 28 },
@@ -135,6 +135,29 @@ export default function BookGlyph({ slug }: { slug: string; accent: Accent }) {
         <path d="M44 10 L68 10 L68 22 L44 22 Z" />
         <circle cx="56" cy="16" r="3" fill="currentColor" />
         <path d="M52 22 L26 44 M56 22 L52 36 M60 22 L80 48" strokeDasharray="3 4" opacity="0.55" />
+      </svg>
+    );
+  }
+
+  // Pushing the Glasses Apart: two glasses that started together, the gripper
+  // jaw that came down between them, and the room the push opened up.
+  if (slug === 'pushing-the-glasses-apart') {
+    const glass = (x: number, w: number, h: number) =>
+      `M${x - w - 2} ${66 - h} L${x - w + 1.5} 66 L${x + w - 1.5} 66 L${x + w + 2} ${66 - h}`;
+    return (
+      <svg className="book-glyph" viewBox="0 0 120 80" aria-hidden {...common}>
+        <path d="M10 66 L110 66" opacity="0.5" />
+        {/* where the two glasses stood before the push */}
+        <path d={glass(50, 8, 24)} strokeDasharray="3 3" opacity="0.35" />
+        <path d={glass(68, 8, 24)} strokeDasharray="3 3" opacity="0.35" />
+        {/* where they stand after it */}
+        <path d={glass(28, 8, 24)} />
+        <path d={glass(92, 8, 24)} />
+        {/* the jaw that came down between them */}
+        <path d="M56 8 L56 30 M50 30 L50 44 M62 30 L62 44" />
+        {/* the room the push opened */}
+        <path d="M40 58 L22 58 M80 58 L98 58" opacity="0.8" />
+        <path d="M26 55 L22 58 L26 61 M94 55 L98 58 L94 61" opacity="0.8" />
       </svg>
     );
   }

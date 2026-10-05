@@ -2428,7 +2428,8 @@ BOOKS: list[tuple[str, str]] = [
     ('06_programming-techniques', 'Programming Techniques'),
     ('05_neural-networks', 'Neural Networks and AI Models'),
     ('07_learned-models', 'Learned Models'),
-    ('08_robotics-by-example', 'Robotics by Example'),
+    ('08_seeing-the-glasses', 'Seeing the Glasses'),
+    ('09_pushing-the-glasses-apart', 'Pushing the Glasses Apart'),
 ]
 
 
@@ -2480,7 +2481,8 @@ HANDOFFS: list[tuple[str, str]] = [
     ('simulators, and training an arm in one', 'Frameworks and Manipulation'),
     ('the software the parts talk through', 'ROS and RViz'),
     ('which models exist, what they cost, their licences', 'Learned Models'),
-    ('one problem followed the whole way down', 'Robotics by Example'),
+    ('one perception problem, answered six ways', 'Seeing the Glasses'),
+    ('one manipulation problem, where the rule wins', 'Pushing the Glasses Apart'),
 ]
 
 
@@ -2488,21 +2490,31 @@ def handoff_map() -> None:
     """Everything this book left out, and the book that holds it."""
     titles = [t for _, t in BOOKS]
     colours = {t: c for t, c in zip(titles, [TEAL, PURPLE, JOINT, LINK, SLIDE, GRIP,
-                                             WRIST, '#8a6d3b'])}
+                                             WRIST, '#8a6d3b', '#4a5568'])}
     for topic, book in HANDOFFS:
         print(f'[p2-s6] left out: {topic:52s} -> {book}')
 
-    fig, ax = plt.subplots(figsize=(12.6, 5.4), facecolor='white')
+    # The figure and the rows are both sized from the list, because a handoff
+    # added to HANDOFFS used to fall off the bottom of a fixed-height figure
+    # while the title went on claiming the old count.
+    rows = len(HANDOFFS)
+    words = {7: 'Seven', 8: 'Eight', 9: 'Nine', 10: 'Ten', 11: 'Eleven', 12: 'Twelve'}
+    count = words.get(rows, str(rows))
+
+    fig, ax = plt.subplots(figsize=(12.6, 1.2 + 0.525 * rows), facecolor='white')
     _blank(ax)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.text(0.5, 0.985, 'Eight things this book does not cover, and the book that does',
+    ax.text(0.5, 0.985, f'{count} things this book does not cover, and the book that does',
             ha='center', va='top', fontsize=13, weight='bold', color=INK)
+    band_top, band_bottom = 0.90, 0.03
+    step = (band_top - band_bottom) / rows
+    box_h = step * 0.80
     for i, (topic, book) in enumerate(HANDOFFS):
-        y = 0.86 - i * 0.104
-        _box(ax, 0.02, y - 0.042, 0.50, 0.084, topic, '#f4f4f4', size=9.4)
+        y = band_top - step * (i + 0.5)
+        _box(ax, 0.02, y - box_h / 2, 0.50, box_h, topic, '#f4f4f4', size=9.4)
         _arrow(ax, 0.53, y, 0.60, y, MUTED, 1.4)
-        _box(ax, 0.61, y - 0.042, 0.36, 0.084, book, '#eef3f9',
+        _box(ax, 0.61, y - box_h / 2, 0.36, box_h, book, '#eef3f9',
              edge=colours.get(book, INK), size=9.4)
     _save(fig, MAP_DOC, 'handoff-map.svg')
 
@@ -2516,7 +2528,8 @@ def reading_order() -> None:
         ('then', '06_programming-techniques', 'the methods nobody had to train'),
         ('then', '02_perception', 'what the camera really measures'),
         ('then', '03_frameworks', 'simulators, and training an arm in one'),
-        ('last', '08_robotics-by-example', 'one problem solved ten ways, written and learned'),
+        ('then', '08_seeing-the-glasses', 'one perception problem, answered six ways'),
+        ('last', '09_pushing-the-glasses-apart', 'one manipulation problem, where the rule wins'),
     ]
     total = sum(counts[f] for _, f, _ in steps)
     print(f'[p2-s6] the suggested onward path covers {total} chapters in {len(steps)} books')

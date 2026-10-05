@@ -38,6 +38,10 @@
   --gold-soft: #f7efdc;
   --indigo: #3b3bb0;
   --indigo-soft: #e8e8f8;
+  --cyan: #0e7490;
+  --cyan-soft: #e0f2f7;
+  --slate: #475569;
+  --slate-soft: #ebeef2;
 
   --accent: #1f5fbf;
   --accent-soft: #e6eefb;
@@ -78,6 +82,10 @@
   --gold-soft: rgb(217 172 74 / 0.13);
   --indigo: #9b9bf2;
   --indigo-soft: rgb(155 155 242 / 0.13);
+  --cyan: #22d3ee;
+  --cyan-soft: rgb(34 211 238 / 0.12);
+  --slate: #94a3b8;
+  --slate-soft: rgb(148 163 184 / 0.13);
 
   --accent: #7aa7ff;
   --accent-soft: rgb(122 167 255 / 0.12);
@@ -91,6 +99,8 @@
 [data-accent='rose'] { --accent: var(--rose); --accent-soft: var(--rose-soft); }
 [data-accent='gold'] { --accent: var(--gold); --accent-soft: var(--gold-soft); }
 [data-accent='indigo'] { --accent: var(--indigo); --accent-soft: var(--indigo-soft); }
+[data-accent='cyan'] { --accent: var(--cyan); --accent-soft: var(--cyan-soft); }
+[data-accent='slate'] { --accent: var(--slate); --accent-soft: var(--slate-soft); }
 
 /* -------------------------------------------------------------------- base */
 

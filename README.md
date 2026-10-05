@@ -204,7 +204,8 @@ docs/04_ros-and-rviz/     ROS and the RViz 3D viewer
 docs/05_neural-networks/        how a neural network works and how a model is trained
 docs/06_programming-techniques/ the algorithms arm software is built from
 docs/07_learned-models/         every kind of learned model a robot arm uses
-docs/08_robotics-by-example/    one problem on a real table, solved ten ways
+docs/08_seeing-the-glasses/     one perception problem, answered six ways
+docs/09_pushing-the-glasses-apart/  one manipulation problem, answered six ways
 ```
 
 Everything is numbered in the order it is meant to be read: the books, the chapter

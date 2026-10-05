@@ -971,8 +971,7 @@ because a mask is a claim about an edge, and glass has no reliable edge. ClearGr
 ([arXiv:1910.02550](https://arxiv.org/abs/1910.02550)) appeared in 2019 and TransCG
 ([arXiv:2202.08471](https://arxiv.org/abs/2202.08471)) in 2022, and both are still
 datasets with a baseline rather than a method anybody sells.
-[Segment anything, then keep the
-glasses](../../../08_robotics-by-example/02_many-glasses-of-one-kind/05_learned/08_segment-anything-then-keep-the-glasses.md)
+[A foundation model with a keeper](../../../08_seeing-the-glasses/04_the-six-solutions/06_a-foundation-model-with-a-keeper.md)
 works through what this does to a real program.
 
 A mask also stops at whatever covers the object, and it has no way to say how much of

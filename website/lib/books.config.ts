@@ -7,7 +7,9 @@
 // book not listed in BOOK_INFO still appears, titled from its folder name, and
 // a chapter not listed in CHAPTER_TITLES uses the title of its first document.
 
-export type Accent = 'teal' | 'violet' | 'amber' | 'blue' | 'green' | 'rose' | 'gold' | 'indigo';
+export type Accent =
+  | 'teal' | 'violet' | 'amber' | 'blue' | 'green' | 'rose' | 'gold' | 'indigo'
+  | 'cyan' | 'slate';
 
 export type BookInfo = {
   title: string;
@@ -18,7 +20,9 @@ export type BookInfo = {
   accent: Accent;
 };
 
-export const ACCENTS: Accent[] = ['teal', 'violet', 'amber', 'blue', 'green', 'rose', 'gold', 'indigo'];
+export const ACCENTS: Accent[] = [
+  'teal', 'violet', 'amber', 'blue', 'green', 'rose', 'gold', 'indigo', 'cyan', 'slate',
+];
 
 // The books are grouped into parts. A part is a shelf: several books that
 // belong together. The word "section" is already taken here, because a section
@@ -69,8 +73,8 @@ export const PARTS: Part[] = [
     title: 'Robotics by Example',
     shortTitle: 'By Example',
     blurb:
-      'One problem, followed the whole way down. Instead of explaining a method and then showing a use for it, this part starts with a table, a camera and a job to do, and works through every way the job can be done.',
-    books: ['robotics-by-example'],
+      'Two problems from one work cell, each followed the whole way down. Instead of explaining a method and then showing a use for it, these books start with a table, a camera and a job to do, build six quite different answers to the same job, and measure all six against one another on the same test bench. The first book is about seeing, and the second is about moving.',
+    books: ['seeing-the-glasses', 'pushing-the-glasses-apart'],
   },
 ];
 
@@ -115,13 +119,21 @@ export const BOOK_INFO: Record<string, BookInfo> = {
       'The written, language-independent techniques behind seeing, planning and moving: camera geometry, pose from points and calibration, matching and registration, least squares, RANSAC and filters, masks, clustering and 3D maps, sampling-based planning, inverse kinematics and MPC, PID, dynamics and safety monitoring, and state machines and behaviour trees. Each chapter puts the most used techniques first. Each page says where a technique is used on an arm, where it fails, and which library already does it.',
     accent: 'green',
   },
-  'robotics-by-example': {
-    title: 'Robotics by Example',
-    shortTitle: 'By Example',
-    subtitle: 'One problem on a real table, solved ten ways',
+  'seeing-the-glasses': {
+    title: 'Seeing the Glasses',
+    shortTitle: 'Seeing',
+    subtitle: 'One perception problem, answered six ways and measured',
     description:
-      'Several glasses of one kind stand on a table, and the arm has to work out which pixels belong to which glass. That one question is followed the whole way down: what makes it hard, what the camera can and cannot see, and ten ways to answer it. Three of the ten are written by hand and seven have something trained inside them, and each says what it costs, where it is the right tool, and where it breaks. The programs behind them are in the repository, and each solution names the folder it was built in.',
-    accent: 'gold',
+      'Several glasses of one kind stand on a table, and the arm has to work out which pixels belong to which glass. This book follows that single question the whole way down: what the camera can and cannot see, why a glass standing behind another is in no picture at all, and six quite different ways to answer it. One is a written rule with nothing fitted to anything, one is a small network trained in this cell from nothing, and four start from weights somebody else fitted to photographs of the everyday world. All six are built, and all six are scored on the same test bench, so the differences between them are measured rather than argued. The programs are in the repository, and each solution names the folder it was built in.',
+    accent: 'cyan',
+  },
+  'pushing-the-glasses-apart': {
+    title: 'Pushing the Glasses Apart',
+    shortTitle: 'Pushing',
+    subtitle: 'One manipulation problem, answered six ways and measured',
+    description:
+      'The glasses stand too close together for the gripper to reach between them, so the arm has to drag them apart without knocking any of them over. This book answers that six ways, from a single fixed nudge with nothing learned at all, through a model that ranks pushes the geometry proposed, to a borrowed robot foundation model fine-tuned on this cell. All six are built and scored on one bench, and the result is worth the reading: nothing learned beats the written rule here, the one learned method that wins is the one that learned the quantity the geometry gets wrong, and every method that learns something topples at least one glass where the geometry topples none.',
+    accent: 'slate',
   },
   'neural-networks': {
     title: 'Neural Networks and AI Models',
@@ -194,5 +206,8 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'control-and-motion': 'Control and Motion',
   'decisions-and-task-logic': 'Decisions and Task Logic',
   'the-cell': 'The Cell Everything Happens In',
-  'many-glasses-of-one-kind': 'Many Glasses of One Kind',
+  'the-problem': 'The Problem',
+  'the-test-bench': 'The Test Bench',
+  'the-six-solutions': 'The Six Solutions',
+  'the-results': 'The Results',
 };

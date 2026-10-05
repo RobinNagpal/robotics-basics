@@ -368,8 +368,11 @@ This is the last page of the book, so these links point outwards rather than onw
   which this book assumed throughout and never said.
 - [Simulation and evaluation](../../03_frameworks/08_frontier/04_simulation-and-evaluation.md)
   covers the benchmark problem of section 5 as the research field sees it.
-- [Many glasses of one kind](../../08_robotics-by-example/02_many-glasses-of-one-kind/01_overview.md)
-  takes one problem and solves it ten ways, written and learned side by side.
+- [Seeing the glasses](../../08_seeing-the-glasses/04_the-six-solutions/01_overview.md)
+  takes one perception problem and answers it six ways, written and learned side by
+  side, and measures all six on one bench.
+- [Pushing the glasses apart](../../09_pushing-the-glasses-apart/03_the-six-solutions/01_overview.md)
+  does the same for one manipulation problem, where the written rule wins.
 
 ---
 

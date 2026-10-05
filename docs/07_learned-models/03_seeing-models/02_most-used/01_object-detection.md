@@ -950,8 +950,7 @@ enough to be instructive. ClearGrasp
 ([arXiv:2202.08471](https://arxiv.org/abs/2202.08471)) in 2022, and both are datasets
 with a baseline rather than a method anybody ships. A glass has no reliable edge in a
 colour picture and no reliable surface in a depth picture, so both signals a detector
-relies on fail at once. [Segment anything, then keep the
-glasses](../../../08_robotics-by-example/02_many-glasses-of-one-kind/05_learned/08_segment-anything-then-keep-the-glasses.md)
+relies on fail at once. [A foundation model with a keeper](../../../08_seeing-the-glasses/04_the-six-solutions/06_a-foundation-model-with-a-keeper.md)
 works through what this does to a real program.
 
 The third unsolved thing is the confidence number. It is not a probability, and it

@@ -10,8 +10,12 @@
 > survey is three pictures from three overlapping stations, and the model is
 > asked about each one on its own, which is the examiner's arrangement rather than
 > this solution's.
-> Nothing whatsoever is fitted in this cell, so there is not a single number in
-> this solution that came from this project's own data.
+> Nothing whatsoever is fitted in this cell. The one number this solution adds
+> beside the borrowed model is a bar on the model's own confidence, set by hand
+> at 0.25 and checked by eye against the training half of the arrangements, and
+> it claims nothing about how often an outline above it is really a glass.
+> Solution 4 carries the same bar at the same value, so the pair is unaffected by
+> it.
 > **How the output is produced** — the grey picture shaded from depth goes into
 > the model; the model returns, for each object it believes it found, a box, a
 > name from a fixed list of categories, a confidence number and an outline; the

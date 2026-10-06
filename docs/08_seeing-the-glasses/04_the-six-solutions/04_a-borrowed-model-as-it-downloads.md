@@ -29,10 +29,12 @@ fixed list of everyday categories, a number saying how sure it is, and an
 outline of the pixels inside that rectangle which belong to the object. The
 outline is what this book asks for, so the model's output needs no conversion.
 
-The important word is **borrowed**. The weights were fitted by somebody else, on
-somebody else's photographs, for somebody else's purpose, and they are used here
-exactly as they download. Not one number in this solution came from this
-project's own data. That is what makes it worth building: it is the upper bound
+The important word is **borrowed**. The weights were fitted by somebody else, on somebody else's photographs, for
+somebody else's purpose, and they are used here exactly as they download.
+Nothing is fitted in this cell at all. The one number the solution adds is a
+bar on the model's own confidence, set by hand at 0.25 and checked by eye
+against the training half, and the fine-tuned solution carries the same bar at
+the same value. That is what makes it worth building: it is the upper bound
 on convenience, so if it were good enough, several of the other five would not
 need to exist.
 

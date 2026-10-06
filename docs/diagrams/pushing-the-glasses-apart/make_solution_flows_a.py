@@ -301,6 +301,31 @@ def loop_back(
     return low
 
 
+def loop_back_into_the_side(
+    axis,
+    chain_x: float,
+    from_y: float,
+    box_left: float,
+    box_middle: float,
+    spine_x: float,
+    *,
+    colour=INK,
+    lw=1.3,
+    drop=0.42,
+) -> float:
+    """The same look-again arrow, but coming back into the side of the first step.
+
+    Used where something else already arrives at the top of that step, so that
+    two routes with different meanings do not end on the same point.
+    """
+    low = from_y - drop
+    run(axis, (chain_x, from_y), (chain_x, low), colour=colour, lw=lw)
+    run(axis, (chain_x, low), (spine_x, low), colour=colour, lw=lw)
+    run(axis, (spine_x, low), (spine_x, box_middle), colour=colour, lw=lw)
+    arrow(axis, (spine_x, box_middle), (box_left, box_middle), colour=colour, lw=lw)
+    return low
+
+
 def band(axis, left: float, bottom: float, width: float, height: float, colour, label) -> None:
     """A lane of the chart, with the name of whoever owns its steps down the left."""
     axis.add_patch(
@@ -973,6 +998,7 @@ def imitation_what_it_does() -> None:
         figure, axis, chain_x, first_top, chain_w,
         "A view of the table from straight above goes in. No positions, no widths, no candidate list, no friction.",
     )
+    first_middle = (first_top + y) / 2.0
     arrow(axis, (chain_x, y), (chain_x, y - GAP))
     y = box(
         figure, axis, chain_x, y - GAP, chain_w,
@@ -995,7 +1021,8 @@ def imitation_what_it_does() -> None:
     band(axis, band_left, y - 0.30, chain_w + 1.25, band_top - (y - 0.30),
          GLASS, "once per push, at run time")
 
-    low = loop_back(axis, chain_x, y, first_top, spine, colour=GLASS, drop=0.42, rise=0.38)
+    low = loop_back_into_the_side(axis, chain_x, y, left_edge, first_middle, spine,
+                                 colour=GLASS, drop=0.42)
     bottom = note(
         axis, spine + 0.14, low - 0.26,
         "The loop runs until every glass has room, the glasses that are left have been refused with a reason, or the\n"
@@ -1070,7 +1097,7 @@ def imitation_the_demonstrations() -> None:
         "during training is how far the network's action\n"
         "was from that one.",
         "So the demonstrations hold only the pushes the\n"
-        "teacher could express. A push its heading sweep\n"
+        "teacher could express. A push the heading sweep\n"
         "never wrote down appears in no example, and the\n"
         "student has no way to discover it.",
         "And filtering to the pushes that worked thins the\n"
@@ -1125,7 +1152,7 @@ def imitation_the_demonstrations() -> None:
         axis, start, y + 0.08,
         "The counts in this sketch stand for the mechanism and are not a measurement of these tables: the collection\n"
         "writes its own table of kept and dropped pushes, and the thinning it reports on the examiner's tables is small.\n"
-        "Drawing more tables of the kind that thinned is the cheap repair here, and it is a repair simulation allows.",
+        "Drawing more tables of the kind that thinned is the cheap repair here, and it is one only simulation allows.",
         colour=INK, figure=figure,
     )
 

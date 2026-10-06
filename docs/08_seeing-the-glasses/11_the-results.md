@@ -9,11 +9,14 @@ reader who has already met the six, and it is the page to come back to whenever
 another document claims that one method did better than another.
 
 The six ways of turning the same pictures into the same masks are all scored on
-one examiner, described in [the examiner](03_the-examiner/01_the-examiner.md). Each gets the
-same 20 held-out arrangements from each family, the same three survey stations
-per arrangement, the same shared arithmetic turning a mask into a place and a
-width, and the same scorecard. None of them was trained or tuned on these
-arrangements. Every number here comes from a solution's own `results.json`.
+one examiner, described in [the examiner](03_the-examiner/01_the-examiner.md).
+**Every solution is run twice**, once on the ordinary arrangements the cell's
+own layout rule produces and once on crowded arrangements that stand the glasses
+closer than that rule allows, which is why there are two tables below rather
+than one. Each run uses the same 20 held-out arrangements, the same three survey
+stations per arrangement, the same shared arithmetic turning a mask into a place
+and a width, and the same scorecard. None of the six was trained or tuned on
+these arrangements. Every number here comes from a solution's own `results.json`.
 
 ## Contents
 

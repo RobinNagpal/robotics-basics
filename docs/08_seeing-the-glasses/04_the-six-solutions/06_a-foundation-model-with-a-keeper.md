@@ -119,8 +119,8 @@ two have a question to answer and this one does not.
 
 ## 4. What it scored
 
-The two sets of arrangements are the ones every solution is given: spawned
-layouts at the cell's own spacing, and crowded layouts closer than that.
+**Every solution is run twice**, so there are two rows: one on spawned layouts,
+at the cell's own spacing, and one on crowded layouts, closer than that.
 
 | | found | missed | merged | position median | mask covered | mask not the glass |
 |---|---|---|---|---|---|---|

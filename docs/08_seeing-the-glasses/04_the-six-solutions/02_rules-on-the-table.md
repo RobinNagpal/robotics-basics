@@ -145,8 +145,9 @@ and section 5 is mostly about it.
 
 Every solution is given the same arrangements and marked the same way by [the
 examiner](../03_the-examiner/01_the-examiner.md), which is what makes the numbers below
-comparable. There are two sets: spawned layouts, at the spacing the cell's own
-layout rule gives, and crowded layouts, closer than that rule allows. The
+comparable, and **every solution is run twice**: once on spawned layouts, at
+the spacing the cell's own layout rule gives, and once on crowded layouts,
+closer than that rule allows. The
 columns say how many real glasses got a report, how many got none, and how good
 the masks were.
 

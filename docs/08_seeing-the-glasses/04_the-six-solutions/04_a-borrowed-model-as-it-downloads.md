@@ -109,8 +109,8 @@ licensed conveniently.
 ## 4. What it scored
 
 Every solution is given the same arrangements and marked the same way. There are
-two sets: spawned layouts, at the spacing the cell's own layout rule gives, and
-crowded layouts, closer than that rule allows.
+run twice: once on spawned layouts, at the spacing the cell's own layout rule
+gives, and once on crowded layouts, closer than that rule allows.
 
 | | found | missed | position median | mask covered | mask not the glass |
 |---|---|---|---|---|---|

@@ -147,9 +147,10 @@ picture, which is nothing beside the seconds an arm movement costs.
 ## 4. What it scored
 
 Every solution is given the same arrangements and marked the same way by [the
-examiner](../03_the-examiner/01_the-examiner.md). There are two sets: spawned layouts, at
-the spacing the cell's own layout rule gives, and crowded layouts, closer than
-that rule allows. Read the rows against each other rather than on their own.
+examiner](../03_the-examiner/01_the-examiner.md), and **every solution is run
+twice**: once on spawned layouts, at the spacing the cell's own layout rule
+gives, and once on crowded layouts, closer than that rule allows. Read the two
+rows against each other rather than on their own.
 
 | | found | missed | merged | position median | mask covered | mask not the glass |
 |---|---|---|---|---|---|---|

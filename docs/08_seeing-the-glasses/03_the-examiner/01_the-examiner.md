@@ -11,8 +11,14 @@ those three pictures to whichever solution is being tried. It **takes back**
 what that solution returns. Then it **marks** the answer against what it knows
 it put out.
 
-By the end of this page you will know what the examiner puts on the table, what
-it gives a solution, what it keeps to itself, and what has to come back. The
+Those four steps are run twice for every solution: once with the glasses spaced
+as the cell normally spaces them, and once with the glasses crowded closer than
+the cell allows. So each of the six comes back with two scorecards rather than
+one, and section 3 says why.
+
+By the end of this page you will know what the examiner puts on the table, why
+it puts it out twice, what it gives a solution, what it keeps to itself, and
+what has to come back. The
 three pages after it do the same thing once on one real arrangement: [an example
 of the input](02_an-example-of-the-input.md) shows the pictures that go in, [an
 example of the output](03_an-example-of-the-output.md) shows the masks that come
@@ -100,6 +106,30 @@ The whole arrangement makes two patches of pixels where there are six glasses.
 used to draw them. Anything a method is fitted on comes from below the dividing
 line, and everything it is marked on comes from above it, so no method is ever
 tested on an arrangement it learned from.
+
+### Every solution is tested twice, once on each family
+
+This is the shape of the whole test, so it is worth stating on its own. **A
+solution is not run once and scored once. It is run twice, once on each family,
+and it comes back with two scorecards.** Both runs use the same 20 held-out
+arrangements of their family, and both are marked exactly the same way, so the
+only thing that changes between a solution's two scorecards is how close the
+glasses were standing.
+
+| run | arrangements | glasses | what it asks |
+|---|---|---|---|
+| the ordinary run | 20 | 100 | can the method do the job the cell actually sets it? |
+| the crowded run | 20 | 101 | where does the method begin to break? |
+
+Every solution gets the same two runs, so the twelve scorecards in [the
+results](../11_the-results.md) are two columns of six rather than six separate
+numbers. Reading a solution means reading its pair: a method that does well on
+the ordinary run has met the cell's own spacing, and the distance between its
+two rows is how much of that depended on the glasses standing apart.
+
+A fitted solution is still trained only once. Its training set is drawn from
+below the dividing line and holds both kinds of arrangement mixed together, so
+no method meets crowding for the first time in the run that scores it.
 
 ## 4. What a solution is given
 

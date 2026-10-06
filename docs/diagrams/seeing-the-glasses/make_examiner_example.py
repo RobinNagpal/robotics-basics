@@ -11,12 +11,14 @@ whole chain can be read off a single example:
     03-example-mask-to-record.png       one mask through the shared arithmetic
     03-example-the-scorecard.png        what this arrangement contributes
 
-**The arrangement is the examiner's own number 10046.** It is one of the held-out
+**The arrangement is the examiner's own number 10038.** It is one of the held-out
 spawned arrangements, so it is what the cell's spawner really produces rather
-than anything built for a diagram, and it was chosen because it shows four of
-the difficulties at once: six glasses of a kind with a foot and a stem, one
-glass completely covered by another at one station, a second glass partly
-covered at another, and glasses cut off at the frame edge in every picture.
+than anything built for a diagram. It holds four glasses rather than the five or
+six the spawner also draws, which is what makes a picture of all four masks
+readable, and it was chosen because it still shows three difficulties at once:
+the glasses are a kind with a foot and a stem, which is where a written rule
+loses coverage; one glass is more than half covered by another at one station;
+and every station cuts at least three of the four off at a frame edge.
 
 **Nothing here is drawn by hand.** The grey pictures, the depth readings and the
 id images come from ``bench/render.py`` through ``bench/data.py``, which is the
@@ -109,16 +111,16 @@ from work_cell.rack.layout import GLASS_ZONE  # noqa: E402
 from work_cell.table.layout import TABLE_TOP_Z  # noqa: E402
 
 # Which arrangement these pictures follow, and which of its stations is shown in
-# full. The middle station is the one that holds all six glasses, so it is the
-# one picture in which every glass has a mask to show.
-SEED = 10046
+# full. The middle station is the one standing over the glasses, so it holds all
+# four of them and every glass has a mask to show in that one picture.
+SEED = 10038
 STATION = 1
 
 # The glass whose mask is followed through the shared arithmetic. It is the one
 # standing nearest the point below the camera, so the station sees it squarest
 # and the arithmetic has its best chance; what is left over is the floor of the
 # step rather than the fault of the mask.
-FOLLOWED = 4
+FOLLOWED = 1
 
 FAINT = "#eef1f4"
 
@@ -517,14 +519,17 @@ def on_the_table() -> None:
     Everything the other five pictures say is measured against this, so it is
     drawn first and drawn plainly: the circle each glass covers on the table, the
     zone the glasses stand in, and the three places the camera stands.
+
+    The picture used to carry a second panel holding three paragraphs and a
+    table of every glass's height, rim and place. That is prose, and prose is
+    easier to read as prose, so the panel is gone and the facts are printed
+    instead for the document to quote. The picture keeps the plan view, which is
+    the one thing a drawing says better than a sentence.
     """
-    figure, axes = plt.subplots(1, 2, figsize=(12.4, 7.0),
-                               gridspec_kw={"width_ratios": [1.3, 1.0]})
+    figure, plan = plt.subplots(1, 1, figsize=(7.4, 7.2))
     figure.patch.set_facecolor(PAPER)
-    plan, told = axes
-    figure.subplots_adjust(left=0.04, right=0.98, top=0.86, bottom=0.08, wspace=0.04)
-    for axis in axes:
-        axis.set_facecolor(PAPER)
+    plan.set_facecolor(PAPER)
+    figure.subplots_adjust(left=0.04, right=0.97, top=0.90, bottom=0.08)
 
     bare(plan)
     plan.set_aspect("equal")
@@ -543,65 +548,31 @@ def on_the_table() -> None:
     plan.plot([first[0], last[0]], [first[1], last[1]], color=INK, linewidth=1.0,
               linestyle=(0, (2, 2)), zorder=9)
 
-    # ---- what the examiner knows about this arrangement
-    text_panel(told)
-    y = rows_of_text(told, 0.0, 0.985, [
-        f"The examiner drew this arrangement from the number {SEED}, which is one",
-        f"of the numbers held back for testing. It holds {len(glasses())} glasses, and every",
-        f"one of them is a {kind_words()}: an arrangement holds four to six",
-        "glasses of a single kind, and the kind changes from one arrangement",
-        "to the next.",
-    ], step=0.040)
+    figure.text(0.5, 0.965, f"Arrangement {SEED}: {len(glasses())} {kind_words()}es, "
+                            "seen from straight above",
+                ha="center", va="top", fontsize=TITLE_SIZE, color=INK)
+    caption(figure,
+            "Each shaded circle is the part of the table one glass covers, and the cross at its middle is "
+            "where it stands.\nNo picture has been taken yet: this is what the examiner knows, and what "
+            "everything reported later is marked against.")
+    save(figure, "03-example-on-the-table.png")
 
-    gap = station_mm(1)[1] - station_mm(0)[1]
-    y = rows_of_text(told, 0.0, y - 0.022, [
-        f"The dotted rectangle is the glass zone, {ZONE[1] - ZONE[0]:.0f} mm across by "
-        f"{ZONE[3] - ZONE[2]:.0f} mm deep,",
-        "which is the part of the table glasses are put on. The three dots",
-        f"are where the camera stands to photograph it: {gap:.0f} mm apart, all of",
-        f"them {1000 * SURVEY_HEIGHT:.0f} mm above the table and all looking straight down.",
-    ], step=0.040)
-
+    # ---- the facts the second panel used to carry, for the document to quote
     low, high = KIND_RANGES[example().kind]["height"]
     narrow, wide = KIND_RANGES[example().kind]["bowl_diameter"]
-    tallest, shortest = max(map(height_mm, keys())), min(map(height_mm, keys()))
-    y = rows_of_text(told, 0.0, y - 0.022, [
-        f"A {kind_words()} may be {1000 * low:.0f} to {1000 * high:.0f} mm tall with a bowl "
-        f"{1000 * narrow:.0f} to {1000 * wide:.0f} mm",
-        f"across. These six run from {shortest:.0f} to {tallest:.0f} mm tall. The table below gives",
-        "each glass the number the id image gives it, which is the number",
-        "used in every picture that follows; read across it for how tall",
-        "that glass is, how wide its rim is, and where it stands.",
-    ], step=0.040)
-
-    columns = (0.02, 0.17, 0.37, 0.56)
-    y -= 0.022
-    for label, x in zip(("glass", "height", "rim across", "stands at"), columns, strict=True):
-        told.text(x, y, label, ha="left", va="top", fontsize=NOTE_SIZE, color=MUTED)
-    y -= 0.042
-    for key in keys():
-        place = glass_mm(key)
-        cells = (str(key), f"{height_mm(key):.0f} mm", f"{rim_mm(key):.0f} mm",
-                 f"x = {place[0]:.0f} mm, y = {place[1]:.0f} mm")
-        for cell, x in zip(cells, columns, strict=True):
-            told.text(x, y, cell, ha="left", va="top", fontsize=NOTE_SIZE, color=INK)
-        y -= 0.042
-
+    gap = station_mm(1)[1] - station_mm(0)[1]
     apart = min(float(np.linalg.norm(glass_mm(a) - glass_mm(b)))
                 for a in keys() for b in keys() if a < b)
-    rows_of_text(told, 0.0, y - 0.018, [
-        f"No two centres may come closer than {1000 * MIN_SEPARATION:.0f} mm. The closest pair here",
-        f"stands {apart:.0f} mm apart, so no glass touches another.",
-    ], step=0.040)
-
-    titles(figure, axes, ["Where the glasses stand", "What the examiner put out"],
-           heading=f"One arrangement, number {SEED}: "
-                   f"{len(glasses())} {kind_words()}es on the table", lift=0.015)
-    caption(figure,
-            "Seen from straight above. Each shaded circle is the part of the table one glass covers, and the "
-            "cross at its middle is where it stands.\nNo picture has been taken yet: this is what the examiner "
-            "knows, and what everything reported later is marked against.")
-    save(figure, "03-example-on-the-table.png")
+    print(f"  arrangement {SEED}: {len(glasses())} {kind_words()}es; "
+          f"zone {ZONE[1] - ZONE[0]:.0f} x {ZONE[3] - ZONE[2]:.0f} mm; "
+          f"stations {gap:.0f} mm apart at {1000 * SURVEY_HEIGHT:.0f} mm")
+    print(f"  the kind: {1000 * low:.0f} to {1000 * high:.0f} mm tall, "
+          f"bowl {1000 * narrow:.0f} to {1000 * wide:.0f} mm across")
+    print(f"  closest pair {apart:.0f} mm apart, against the {1000 * MIN_SEPARATION:.0f} mm guarantee")
+    for key in keys():
+        place = glass_mm(key)
+        print(f"  | {key} | {height_mm(key):.0f} mm | {rim_mm(key):.0f} mm | "
+              f"x = {place[0]:.0f} mm, y = {place[1]:.0f} mm |")
 
 
 # --------------------------------------------------------------------------- #
@@ -669,17 +640,28 @@ def three_pictures() -> None:
                          f"{behind},\nwhose bowl is thrown out over it.",
                 glass_mm(key), (x0 + 14.0, y1 - 14.0), colour=WARN, ha="left", va="top")
 
-    # The glass another glass stands partly in front of at the last station. The
-    # arrow is aimed a little below that glass's own number, so that it ends on
-    # the picture rather than on the digit.
-    partly = max(keys(), key=lambda key: standing(key, 2)[2])
-    aim = glass_mm(partly) + np.array([0.0, -26.0])
-    axes[2].annotate("", xy=aim, xytext=(x0 + 150.0, y0 + 136.0),
-                     arrowprops={"arrowstyle": "->", "color": WARN, "linewidth": 1.1}, zorder=15)
-    note(axes[2], x0 + 14.0, y0 + 134.0,
-         f"glass {partly} keeps {standing(partly, 2)[1]} pixels here and\nloses "
-         f"{standing(partly, 2)[2]} of them to glass {covered_by(partly, 2)}",
-         colour=WARN, ha="left", va="top")
+    # The worst case in this arrangement of one glass standing in front of
+    # another, wherever it falls. Which station that is depends on the
+    # arrangement, so it is searched for rather than written down, and the
+    # pointer is left off altogether when no glass covers any other. The arrow
+    # is aimed a little below the glass's own number, so that it ends on the
+    # picture rather than on the digit.
+    worst = max(((key, number) for key in keys()
+                 for number in range(len(example().sights))
+                 if standing(key, number)[0] != "gone"),
+                key=lambda pair: standing(*pair)[2])
+    partly, where = worst
+    kept, lost = standing(partly, where)[1], standing(partly, where)[2]
+    if lost:
+        # No arrow: the glass already carries its own number in the panel, and
+        # every line from a free corner to it crosses a brighter glass on the
+        # way. The note goes in the dark corner and names the glass instead.
+        note(axes[where], x0 + 14.0, y0 + 134.0,
+             f"glass {partly} keeps {kept} pixels here\nand loses "
+             f"{lost} to glass {covered_by(partly, where)}",
+             colour=WARN, ha="left", va="top")
+    print(f"  most covered sighting: glass {partly} at station {where + 1}, "
+          f"keeps {kept} pixels and loses {lost} to glass {covered_by(partly, where)}")
 
     names, notes, colours = [], [], []
     for number, (whole, cut, gone) in enumerate(held):
@@ -692,11 +674,9 @@ def three_pictures() -> None:
                                         "arrangement", lift=0.012)
     under(figure, axes, notes, colours, y=0.145)
     caption(figure,
-            "The dashed rectangle is the edge of each station's picture, the dot is the point on the table below "
-            "its camera, and the dotted rectangle is the glass zone. The glasses keep the numbers they have on the "
-            "table. A green outline is a glass the picture holds whole, a red one a glass cut off where the picture "
-            "ends.\nThese outlines are the examiner's own id image and not a solution's answer: this is what is "
-            "really there to be found.", y=0.015)
+            "The dashed rectangle is the edge of a station's picture and the dotted one is the glass zone. "
+            "A green outline is a glass held whole, a red one a glass cut off at the frame edge.\n"
+            "These outlines are the examiner's own answer key, not any solution's answer.", y=0.015)
     save(figure, "03-example-three-pictures.png")
 
 
@@ -748,25 +728,22 @@ def what_one_station_gives() -> None:
 
     place = station_mm(STATION)
     nothing = 100.0 * np.count_nonzero(picture.ids == 0) / picture.ids.size
+    # One short line under each panel. What each of the three really is, and the
+    # numbers on them, belong in the document under the picture.
     under(figure, axes, [
-        f"{render.WIDTH} by {render.HEIGHT} pixels, one shade per pixel, bright\n"
-        "where the surface is near the lens. Shaded by the\nexaminer, so all six solutions are handed the "
-        "same bytes.",
-        f"The nearest rim reads {1000 * picture.depth.min():.0f} mm below the camera and\n"
-        f"the bare table {1000 * picture.depth[np.isfinite(picture.depth)].max():.0f} mm. Handed over with the "
-        f"camera's pose:\nx = {place[0]:.0f} mm, y = {place[1]:.0f} mm, "
-        f"{1000 * SURVEY_HEIGHT:.0f} mm up, looking straight down.",
-        f"At each pixel, which glass it shows, or nothing: "
-        f"{nothing:.0f} per\ncent of this picture is table. Rendered beside the other\n"
-        "two and never handed to a solution while it answers.",
+        f"{render.WIDTH} by {render.HEIGHT} pixels, bright where the surface\nis near the lens",
+        f"the nearest rim {1000 * picture.depth.min():.0f} mm below the camera,\nthe bare table "
+        f"{1000 * picture.depth[np.isfinite(picture.depth)].max():.0f} mm",
+        f"which glass each pixel shows, or nothing:\n{nothing:.0f} per cent of this picture is table",
     ], [GOOD, GOOD, WARN], y=0.165)
     titles(figure, axes, ["The grey picture", "The depth reading at every pixel",
                           "The id image, which it keeps"], [GOOD, GOOD, WARN],
            heading=f"What station {STATION + 1} gives a solution, and what it keeps back", lift=0.012)
     caption(figure,
-            "One station, one arrangement, three renders of it. The two green panels and the pose are the whole "
-            "input: a solution is handed them rather\nthan fetching them, so none of the six can quietly read the "
-            "third one.")
+            "The two green panels, with the camera's pose, are the whole input. The red one is the examiner's "
+            "answer key and never reaches a solution.")
+    print(f"  station {STATION + 1} pose: x = {place[0]:.0f} mm, y = {place[1]:.0f} mm, "
+          f"{1000 * SURVEY_HEIGHT:.0f} mm up, looking straight down")
     save(figure, "03-example-what-one-station-gives.png")
 
 
@@ -796,19 +773,27 @@ def mask_window() -> tuple[float, float]:
 def the_masks() -> None:
     """One panel per glass: the mask the solution handed back, over the glass itself.
 
-    Six panels rather than a sample of them, because the two numbers the examiner
-    takes off a mask run from nearly all of the glass down to a quarter of it in
+    Every glass rather than a sample of them, because the two numbers the examiner
+    takes off a mask run from nearly all of the glass down to a fraction of it in
     this one picture, and which glass is which is the whole explanation.
+
+    The grid follows the number of glasses the arrangement holds: two columns up
+    to four glasses and three above that, so a panel never comes out so small
+    that the mask inside it cannot be read.
     """
     matched, doubts = reports()
     window = mask_window()
-    figure, axes = plt.subplots(2, 3, figsize=(12.8, 9.4))
+    across = 2 if len(keys()) <= 4 else 3
+    down = -(-len(keys()) // across)
+    figure, axes = plt.subplots(down, across, figsize=(4.3 * across, 4.7 * down))
     figure.patch.set_facecolor(PAPER)
     figure.subplots_adjust(left=0.03, right=0.98, top=0.86, bottom=0.14,
                           wspace=0.08, hspace=0.40)
     extent = plan_extent(STATION)
 
-    for key, axis in zip(keys(), axes.ravel(), strict=True):
+    for axis in axes.ravel()[len(keys()):]:
+        axis.set_visible(False)
+    for key, axis in zip(keys(), axes.ravel(), strict=False):
         axis.set_facecolor(PAPER)
         bare(axis)
         axis.set_aspect("equal")
@@ -839,20 +824,20 @@ def the_masks() -> None:
                   + ("cut off at the frame edge" if one.cut_off else "whole in the picture"),
                   transform=axis.transAxes, ha="center", va="top", fontsize=NOTE_SIZE, color=INK)
 
+    # The paragraph that used to sit here read the picture out loud. It belongs
+    # in the document, so it is printed for the document to quote and the
+    # picture keeps its title, its legend and the two numbers under each panel.
     worst = min(matched, key=lambda key: mask_numbers(matched[key][0], key)[0])
     best = max(matched, key=lambda key: mask_numbers(matched[key][0], key)[0])
     seen_best = int(np.count_nonzero(sight().visible[best - 1]))
     seen_worst = int(np.count_nonzero(sight().visible[worst - 1]))
-    figure.text(0.5, 0.935,
-                f"Every mask here lost the band at the base of its glass and the foot under it, which is where a "
-                f"written rule stops being sure. What that costs depends on how much of the\nglass the station "
-                f"sees: glass {best}, almost under the camera, keeps "
-                f"{mask_numbers(matched[best][0], best)[0]:.1f} per cent of the {seen_best} pixels station "
-                f"{STATION + 1} sees of it, while glass {worst}, at the far edge of the\npicture, keeps "
-                f"{mask_numbers(matched[worst][0], worst)[0]:.1f} per cent of {seen_worst}. Not one of the six "
-                "masks claimed a pixel that was not its glass, so the right-hand number is zero six times over.",
-                ha="center", va="top", fontsize=NOTE_SIZE, color=INK)
-    figure.text(0.5, 0.985, f"The mask that came back for every glass, in station {STATION + 1}'s picture",
+    print(f"  best mask: glass {best}, {mask_numbers(matched[best][0], best)[0]:.1f} per cent "
+          f"of the {seen_best} pixels station {STATION + 1} sees of it")
+    print(f"  worst mask: glass {worst}, {mask_numbers(matched[worst][0], worst)[0]:.1f} per cent "
+          f"of {seen_worst}")
+    print("  not the glass, per mask: "
+          + ", ".join(f"g{key} {mask_numbers(matched[key][0], key)[1]:.1f}%" for key in sorted(matched)))
+    figure.text(0.5, 0.975, f"The mask that came back for every glass, in station {STATION + 1}'s picture",
                 ha="center", va="top", fontsize=TITLE_SIZE + 1, color=INK)
 
     swatches = ((to_rgba(GLASS, 0.52), "the glass, and in the mask"),
@@ -865,11 +850,9 @@ def the_masks() -> None:
                                         transform=figure.transFigure, figure=figure))
         figure.text(x + 0.018, 0.0595, label, ha="left", va="center", fontsize=NOTE_SIZE, color=INK)
     caption(figure,
-            f"These masks are the real output of 01-rules-on-the-table, run on station {STATION + 1}'s grey picture "
-            f"and depth reading and told only that the glasses are {kind_words()}es. It returned "
-            f"{len(matched)} masks and "
+            f"The real output of the written rule on station {STATION + 1}'s picture: {len(matched)} masks and "
             + ("no doubts" if not doubts else f"{len(doubts)} doubts") +
-            ". Each is drawn over what that station can really see of its glass.", y=0.008)
+            ". Each is drawn over what that station really sees of its glass.", y=0.008)
     save(figure, "03-example-the-masks.png")
 
 
@@ -1025,34 +1008,34 @@ def mask_to_record() -> None:
     exact = exact_mask_place(key, STATION)
     floor = float(np.linalg.norm(exact[0] - truth))
     apart = float(np.linalg.norm(exact[0] - chain["place"]))
+    # Two short lines under each panel. The reasoning — why the axis comes from
+    # the top of the glass, and what the step would do with a perfect mask —
+    # belongs in the document under the picture.
     under(figure, axes, [
-        f"The mask 01-rules-on-the-table returned for glass {key},\n"
-        f"{len(one.pixels)} pixels of station {STATION + 1}'s picture. The green cross\n"
-        "is where the glass really stands.",
-        "Each of those pixels carries a depth reading, so it is a\n"
-        f"point in the room. Seen edge on they are nearly all rim:\n"
-        f"the highest reads {top:.0f} mm above the table, the lowest "
+        f"{len(one.pixels)} pixels of station {STATION + 1}'s picture.\n"
+        "The green cross is where the glass stands.",
+        f"The highest point reads {top:.0f} mm above\nthe table, the lowest "
         f"{chain['heights'].min():.0f} mm.",
-        f"The {int(np.count_nonzero(chain['band']))} points in that top band are drawn red, and\n"
-        "their middle is the axis. The cloud reaches "
-        f"{chain['cut']:.1f} mm\nfrom the axis at the "
-        f"{masks_to_glasses.SPREAD}th percentile of all its points.",
-        f"Place x = {chain['place'][0]:.1f} mm, y = {chain['place'][1]:.1f} mm, "
-        f"width {chain['width']:.1f} mm,\nagainst a true place of x = {truth[0]:.1f} mm, "
-        f"y = {truth[1]:.1f} mm\nand a rim {rim_mm(key):.1f} mm across.",
+        f"{int(np.count_nonzero(chain['band']))} points in the top band, in red.\n"
+        f"The cloud reaches {chain['cut']:.1f} mm from the axis.",
+        f"x = {chain['place'][0]:.1f} mm, y = {chain['place'][1]:.1f} mm, "
+        f"width {chain['width']:.1f} mm.\nThe glass stands at x = {truth[0]:.1f} mm, "
+        f"y = {truth[1]:.1f} mm.",
     ], y=0.225)
 
     titles(figure, axes, ["The mask", "Its pixels as points in the room",
                           "The top of the glass, and the reach", "The record it becomes"],
-           heading="One mask through the examiner's own arithmetic, which is the same for "
-                   "all six solutions", lift=0.012)
+           heading="One mask through the examiner's own arithmetic", lift=0.012)
     caption(figure,
-            f"The axis is taken from the top of the glass and not from the whole cloud, because a rim seen from "
-            f"above leans away from the point below the camera. Handed the examiner's own exact mask of glass "
-            f"{key} instead, the same arithmetic puts it {floor:.1f} mm out, which is {apart:.1f} mm from where "
-            f"this mask put it:\nthe error left here belongs to the step and to the view rather than to the mask. "
-            f"The width is a rough one by design, and it is {chain['width'] - rim_mm(key):+.1f} mm against the "
-            "rim.")
+            f"The same four steps run on every solution's masks, so a difference between two records "
+            f"is a difference between two masks.")
+    print(f"  mask to record, glass {key}: the axis comes from the top "
+          f"{1000 * masks_to_glasses.RIM_BAND:.0f} mm of the cloud; "
+          f"the width is taken at the {masks_to_glasses.SPREAD}th percentile")
+    print(f"  the exact mask of glass {key} lands {floor:.1f} mm out, "
+          f"{apart:.1f} mm from where this mask put it")
+    print(f"  width {chain['width']:.1f} mm against a rim of {rim_mm(key):.1f} mm "
+          f"({chain['width'] - rim_mm(key):+.1f} mm)")
     save(figure, "03-example-mask-to-record.png")
 
 
@@ -1062,22 +1045,25 @@ def mask_to_record() -> None:
 
 
 def the_scorecard() -> None:
-    """The eight numbers this one arrangement adds, each traced back to a glass.
+    """Where each report put its glass, against where that glass really stands.
 
-    The survey is three pictures, so the examiner keeps one report per place and
-    takes the one from the station that saw the glass squarest. That is why the
-    station named beside a report here is not always the station whose masks the
-    pictures above show.
+    The survey is three pictures, so the examiner keeps one report per glass and
+    takes the one from the station that saw that glass squarest. That is why the
+    station a report came from is not always the station whose masks the picture
+    above shows.
+
+    The picture used to carry the whole scorecard beside the plan: five counts
+    with a sentence each, a table of every report, and two paragraphs of
+    summary. All of that is prose and a table, so it is printed for the document
+    to hold and the picture keeps the one thing only a drawing says, which is how
+    far each cross sits from its plus.
     """
     card, rows = survey()
     counts = card.count
-    figure, axes = plt.subplots(1, 2, figsize=(13.8, 8.2),
-                               gridspec_kw={"width_ratios": [1.0, 1.15]})
+    figure, plan = plt.subplots(1, 1, figsize=(7.4, 7.2))
     figure.patch.set_facecolor(PAPER)
-    figure.subplots_adjust(left=0.03, right=0.98, top=0.87, bottom=0.11, wspace=0.05)
-    plan, card_axis = axes
-    for axis in axes:
-        axis.set_facecolor(PAPER)
+    plan.set_facecolor(PAPER)
+    figure.subplots_adjust(left=0.04, right=0.97, top=0.90, bottom=0.09)
 
     bare(plan)
     plan.set_aspect("equal")
@@ -1092,82 +1078,38 @@ def the_scorecard() -> None:
         plan.add_patch(FancyArrowPatch(truth, row["place"], arrowstyle="-", color=WARN,
                                        linewidth=1.3, shrinkA=0, shrinkB=0, zorder=10))
 
-    # ---- the scorecard itself
-    text_panel(card_axis)
-    y = 0.985
-    card_axis.text(0.0, y, "The five counts", ha="left", va="top", fontsize=TITLE_SIZE, color=INK)
-    y -= 0.046
+    figure.text(0.5, 0.965, f"Where the {len(rows)} reports put the {len(keys())} glasses",
+                ha="center", va="top", fontsize=TITLE_SIZE, color=INK)
+    caption(figure,
+            "Each cross is where a report put a glass and each plus is where that glass stands, joined by the "
+            "distance between them.\nThe reports are the written rule's own, kept one per glass from the station "
+            "that saw that glass squarest.")
+    save(figure, "03-example-the-scorecard.png")
+
+    # ---- the scorecard itself, for the document to hold as prose and a table
     second = 100.0 * max(row["second_share"] for row in rows)
-    reasons = {
-        "found": ["one report per glass, each kept from the station that saw that glass squarest"],
-        "missed": ["every glass got a report: what one station loses, another holds"],
-        "merged": [f"no report had a second glass owning more than {100 * MERGED_SHARE:.0f} per cent of its "
-                   "pixels. The most",
-                   f"any second glass owned was {second:.0f} per cent"],
-        "split": ["no glass collected two reports once the three stations were brought together"],
-        "false": ["every report's pixels belonged to a glass"],
-    }
-    for name in ("found", "missed", "merged", "split", "false"):
-        colour = GOOD if (name == "found") == bool(counts[name]) else WARN
-        card_axis.text(0.0, y, f"{counts[name]}", ha="left", va="top", fontsize=TITLE_SIZE,
-                       color=colour, fontweight="bold")
-        card_axis.text(0.05, y, name, ha="left", va="top", fontsize=NOTE_SIZE, color=colour)
-        rows_of_text(card_axis, 0.05, y - 0.026, reasons[name], step=0.028, colour=MUTED)
-        y -= 0.032 + 0.028 * len(reasons[name])
-
-    # ---- every number above, against the report it came from
-    y -= 0.010
-    card_axis.text(0.0, y, "The six reports, one per glass", ha="left", va="top",
-                   fontsize=TITLE_SIZE, color=INK)
-    y -= 0.046
-    columns = (0.0, 0.10, 0.27, 0.46, 0.70)
-    headings = ("glass", "station", "place out by", "mask covered", "pixels")
-    for heading, x in zip(headings, columns, strict=True):
-        card_axis.text(x, y, heading, ha="left", va="top", fontsize=NOTE_SIZE, color=MUTED)
-    y -= 0.036
-    for row in rows:
-        cells = (str(row["key"]), str(row["station"]), f"{row['error']:.1f} mm",
-                 f"{row['covered']:.1f} per cent", f"{row['pixels']}")
-        for cell, x in zip(cells, columns, strict=True):
-            card_axis.text(x, y, cell, ha="left", va="top", fontsize=NOTE_SIZE, color=INK)
-        y -= 0.034
-
     worst_place = max(rows, key=lambda row: row["error"])
     median_place = float(np.median([row["error"] for row in rows]))
     quality = card.mask_quality()["all"]
-    worst_mask = min(rows, key=lambda row: row["covered"])
     gaps = []
     for row in rows:
         exact = exact_mask_place(row["key"], row["station"] - 1)
         if exact is not None:
             gaps.append(float(np.linalg.norm(exact[0] - row["place"])))
-    y -= 0.020
-    card_axis.text(0.0, y, "What those six add up to", ha="left", va="top",
-                   fontsize=TITLE_SIZE, color=INK)
-    rows_of_text(card_axis, 0.0, y - 0.046, [
-        f"The place is {median_place:.1f} mm out in the middle, and at worst {worst_place['error']:.1f} mm on "
-        f"glass {worst_place['key']}, whose mask at station",
-        f"{worst_place['station']} "
-        + ("was cut off at the frame edge and held" if worst_place["cut_off"] else "held")
-        + f" only {worst_place['pixels']} pixels. Handed the examiner's own exact masks,",
-        f"the same arithmetic puts these six within {max(gaps):.1f} mm of the same places, so almost none of",
-        "that error belongs to the masks.",
-        "",
-        f"The masks covered {quality['covered_median']} per cent of their glass in the middle, "
-        f"{quality['covered_worst']} per cent at worst. None of them claimed",
-        f"a pixel that was not its glass, so the second mask number is {quality['not_the_glass_worst']} per "
-        "cent even at worst.",
-    ], step=0.030)
-
-    titles(figure, axes, ["The six reports against the six glasses", "What this arrangement adds"],
-           heading=f"What arrangement {SEED} contributes to the scorecard", lift=0.015)
-    caption(figure,
-            f"Each cross is where a report put a glass and each plus is where that glass stands, joined by the "
-            f"distance between them. Every one of them comes from one survey of three pictures, and the "
-            f"station named is the one the examiner kept, which is the station the glass stood nearest the camera "
-            f"of.\nThe masks behind these numbers are 01-rules-on-the-table's, and the counts, the place error and "
-            "the two mask numbers are bench/scoring.py's own.")
-    save(figure, "03-example-the-scorecard.png")
+    print("  counts: " + ", ".join(f"{name} {counts[name]}"
+                                   for name in ("found", "missed", "merged", "split", "false")))
+    print(f"  the most any second glass owned of a report: {second:.0f} per cent, "
+          f"against the {100 * MERGED_SHARE:.0f} per cent that counts as merged")
+    for row in rows:
+        print(f"  | {row['key']} | {row['station']} | {row['error']:.1f} mm | "
+              f"{row['covered']:.1f} per cent | {row['pixels']} |"
+              + ("" if not row["cut_off"] else "  (cut off at the frame edge)"))
+    print(f"  place: {median_place:.1f} mm out in the middle, worst {worst_place['error']:.1f} mm "
+          f"on glass {worst_place['key']} from station {worst_place['station']}")
+    print(f"  exact masks put the same places within {max(gaps):.1f} mm")
+    print(f"  masks covered {quality['covered_median']} per cent in the middle, "
+          f"{quality['covered_worst']} per cent at worst; "
+          f"not the glass {quality['not_the_glass_worst']} per cent even at worst")
 
 
 def main() -> None:

@@ -1,8 +1,9 @@
-"""Pictures for the test bench — the examiner all six solutions are marked by.
+"""Pictures for the examiner — the one all six solutions are marked by.
 
-Six diagrams, each carrying one point from ``03_the-test-bench.md``:
+Each diagram carries one point from the examiner chapter:
 
-    03-two-families.png             spaced as the spawner spaces it, and crowded
+    03-the-ordinary-family.png      the spacing the cell's own spawner gives
+    03-the-crowded-family.png       the same zone, as close as the cell allows
     03-three-stations.png           three pictures rather than one, and why they overlap
     03-what-a-solution-is-given.png the grey picture, the depth, the pose, and nothing else
     03-what-the-examiner-keeps.png     the id picture, and its two separate jobs
@@ -520,91 +521,86 @@ def hidden_share(scene, key, nadir=MIDDLE):
 # --------------------------------------------------------------------------- #
 
 
-def two_families() -> None:
-    """Spaced as the spawner spaces it, and pushed as close as the cell allows.
+def _family_panel(axis, scene):
+    """One family of arrangement, drawn from straight above, on its own axes.
 
-    One kind of glass in both panels, because an arrangement holds one kind. The
-    point is the distance between centres: 150 mm on the left is a guarantee,
-    and 45 to 105 mm on the right is what crowding means. Crowding is what runs
-    two outlines into one and what puts a short glass out of sight behind a tall
-    one, and both of those are counted off the pictures rather than asserted.
+    The two families are two separate pictures rather than two panels of one,
+    because they are two different ideas and a reader meets them a paragraph
+    apart. Both panels use the same limits so that the spacing in one can be
+    compared with the spacing in the other by eye.
     """
-    figure, axes = new(11.6, 7.2, columns=2)
-    # Room under the panels for the sentences that go there, taken off the
-    # figure rather than written over the drawing.
-    figure.subplots_adjust(bottom=0.26, top=0.88, left=0.05, right=0.97)
-    left, right = axes
     x0, x1, y0, y1 = bounds_of((SPAWNED, CROWDED), MIDDLE)
+    bare(axis)
+    axis.set_xlim(x0 - 30.0, x1 + 30.0)
+    axis.set_ylim(y0 - 30.0, y1 + 30.0)
+    axis.set_aspect("equal")
+    zone_patch(axis)
+    axis.plot(*MIDDLE, marker="x", ms=8, mew=1.8, color=MUTED, zorder=9)
+    for key, (centre, glass) in scene.items():
+        draw_glass_from_above(axis, MIDDLE, centre, glass, key=key)
 
-    for axis in axes:
-        bare(axis)
-        axis.set_xlim(x0 - 30.0, x1 + 30.0)
-        axis.set_ylim(y0 - 30.0, y1 + 30.0)
-        axis.set_aspect("equal")
-        # The zone and the cross are named in the caption rather than labelled
-        # here. Every spare corner of this panel is taken by an outline, so a
-        # label put anywhere inside it lands on a glass.
-        zone_patch(axis)
-        axis.plot(*MIDDLE, marker="x", ms=8, mew=1.8, color=MUTED, zorder=9)
 
-    # ---- spaced as the spawner spaces it
-    for key, (centre, glass) in SPAWNED.items():
-        draw_glass_from_above(left, MIDDLE, centre, glass, key=key)
+def ordinary_family() -> None:
+    """The spacing the cell's own spawner gives, and the guarantee under it.
+
+    One thing only: no second centre may lie inside the dashed circle, so there
+    is always bare table between two glasses. What that spacing costs a reader
+    in words belongs in the prose; the picture carries the circle.
+    """
+    figure, axis = new(6.4, 6.6)
+    figure.subplots_adjust(bottom=0.06, top=0.88, left=0.06, right=0.96)
+    _family_panel(axis, SPAWNED)
+
     first, second = SPAWNED[1][0], SPAWNED[2][0]
-    left.add_patch(Circle(first, MIN_SEPARATION, facecolor="none", edgecolor=GOOD,
+    axis.add_patch(Circle(first, MIN_SEPARATION, facecolor="none", edgecolor=GOOD,
                           linestyle=(0, (5, 4)), linewidth=1.3, zorder=10))
-    measure(left, first, second, f"{np.linalg.norm(second - first):.0f} mm", colour=GOOD,
+    measure(axis, first, second, f"{np.linalg.norm(second - first):.0f} mm", colour=GOOD,
             offset=(8.0, 0.0), ha="left", va="center")
 
-    spawned_ids, _, _, _, _ = overhead(SPAWNED)
-    spawned_patches = patches_in(spawned_ids)
-    worst = max(hidden_share(SPAWNED, key) for key in SPAWNED)
+    figure.text(0.5, 0.955, "The ordinary family: spaced as the cell's spawner spaces it",
+                ha="center", va="top", fontsize=TITLE_SIZE, color=INK)
+    figure.text(0.5, 0.905, "No other centre may lie inside the dashed circle.",
+                ha="center", va="top", fontsize=NOTE_SIZE, color=GOOD)
+    save(figure, "03-the-ordinary-family.png")
 
-    # ---- crowded
-    for key, (centre, glass) in CROWDED.items():
-        draw_glass_from_above(right, MIDDLE, centre, glass, key=key)
+
+def crowded_family() -> None:
+    """The same zone with the glasses pushed as close as the cell allows.
+
+    One thing only: at this spacing two outlines run together and a short glass
+    can go behind a tall one. Both are measured off the drawing rather than
+    asserted, and both are named in two or three words.
+    """
+    figure, axis = new(6.4, 6.6)
+    figure.subplots_adjust(bottom=0.06, top=0.88, left=0.06, right=0.96)
+    _family_panel(axis, CROWDED)
+
     gap_close = np.linalg.norm(CROWDED[2][0] - CROWDED[1][0])
     gap_far = np.linalg.norm(CROWDED[5][0] - CROWDED[4][0])
-    measure(right, CROWDED[1][0], CROWDED[2][0], f"{gap_close:.0f} mm", colour=WARN,
+    measure(axis, CROWDED[1][0], CROWDED[2][0], f"{gap_close:.0f} mm", colour=WARN,
             offset=(-44.0, 16.0), ha="right", va="center")
-    measure(right, CROWDED[4][0], CROWDED[5][0], f"{gap_far:.0f} mm", colour=WARN,
-            offset=(10.0, 0.0), ha="left", va="center")
+    # Up and to the left of the pair, because the straight-across position puts
+    # the label's own white box over glass 5's centre marker and the reader then
+    # sees a line of two glasses numbered 4 and 6.
+    measure(axis, CROWDED[4][0], CROWDED[5][0], f"{gap_far:.0f} mm", colour=WARN,
+            offset=(-14.0, 24.0), ha="right", va="center")
 
-    crowded_ids, _, _, _, _ = overhead(CROWDED)
-    crowded_patches = patches_in(crowded_ids)
+    # The two things this spacing causes — glass 2 with no pixels at all, and
+    # glasses 4, 5 and 6 running into one patch — are visible in the drawing and
+    # named in the prose under it. A pointer to either one has to cross a glass
+    # to reach it, and a line through the thing being described is worse than a
+    # sentence beside the picture.
     swallowed = splay_covers(circles_of(stack(MIDDLE, CROWDED[1][0], CROWDED[1][1])),
                              circles_of(stack(MIDDLE, CROWDED[2][0], CROWDED[2][1])))
-    pointer(right,
-            "glass 2 stands behind glass 1, and "
-            + ("appears in this\npicture not at all" if swallowed
-               else f"loses {100 * hidden_share(CROWDED, 2):.0f} per cent of its outline"),
-            CROWDED[2][0], (x0 + 10.0, y0 + 110.0), colour=WARN, ha="left", va="top")
-    pointer(right, "glasses 4, 5 and 6 make one patch of pixels,\n"
-                   "so one report covers all three of them",
-            (CROWDED[5][0] + CROWDED[6][0]) / 2.0, (x1 + 20.0, y1 - 40.0),
-            colour=WARN, ha="right", va="bottom")
+    print(f"  crowded: glass 2 completely hidden by glass 1: {swallowed}; "
+          f"patches of pixels: {patches_in(overhead(CROWDED)[0])}; "
+          f"glass 2 loses {100 * hidden_share(CROWDED, 2):.0f} per cent of its outline")
 
-    titles(figure, axes,
-           ["Spaced as the cell's spawner spaces it", "Crowded, as close as the cell allows"],
-           [GOOD, WARN], heading="The two families of arrangement, seen from straight above",
-           lift=0.02)
-    under(figure, axes, [
-        "No other centre may lie inside the dashed circle: the spawner keeps\n"
-        f"{MIN_SEPARATION:.0f} mm between centres. These five glasses make {spawned_patches} separate patches of\n"
-        f"pixels, and the most any one of them loses to another is {100 * worst:.0f} per cent.",
-        f"Two lines of three, each step {CROWDED_GAP[0]:.0f} to {CROWDED_GAP[1]:.0f} mm, which is "
-        f"{CROWDED_SHARE[0]} to {CROWDED_SHARE[1]} of that\n"
-        f"separation. These six glasses make {crowded_patches} patches of pixels. Crowding is what\n"
-        "creates both the merge and the complete hiding.",
-    ], [GOOD, WARN], y=0.215)
-    caption(figure,
-            "Both arrangements hold one kind of glass. Each shaded patch is what the overhead camera sees of a "
-            "glass: the rim leans outwards from the point\nbelow the lens, and the taller the glass the further it "
-            "leans. The small circle and cross is where the glass really stands, and every one of them\nis inside "
-            f"the dotted rectangle, which is the glass zone, {ZONE[1] - ZONE[0]:.0f} mm across by "
-            f"{ZONE[3] - ZONE[2]:.0f} mm deep. The grey cross is the "
-            "point on the table below the camera.")
-    save(figure, "03-two-families.png")
+    figure.text(0.5, 0.955, "The crowded family: as close as the cell allows",
+                ha="center", va="top", fontsize=TITLE_SIZE, color=INK)
+    figure.text(0.5, 0.905, "Each step is a third to two thirds of the ordinary spacing.",
+                ha="center", va="top", fontsize=NOTE_SIZE, color=WARN)
+    save(figure, "03-the-crowded-family.png")
 
 
 # --------------------------------------------------------------------------- #
@@ -1126,7 +1122,8 @@ def the_two_mask_numbers() -> None:
 
 
 def main() -> None:
-    two_families()
+    ordinary_family()
+    crowded_family()
     three_stations()
     what_a_solution_is_given()
     what_the_bench_keeps()

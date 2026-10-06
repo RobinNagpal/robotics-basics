@@ -2,30 +2,29 @@
 
 ## 1. Introduction
 
-The previous page, [the examiner](01_the-examiner.md), ended with six masks
-handed back from one arrangement. A mask on its own is not yet an answer to
-anything, and it is certainly not a score. This page is the second half of the
-examiner's job: taking what came back and saying how good it is.
+The previous page, [an example of the output](03_an-example-of-the-output.md),
+ended with four masks handed back and one of them turned into a record. A record
+on its own is not yet a score. This page is the last part of the examiner's job:
+taking what came back and saying how good it is.
 
 The marking happens in four steps, and this page is those four steps in order.
 First the examiner has to work out **which real glass each report is talking
 about**, because a solution hands back a set of pixels and not a name. Then it
-turns each mask into **a place and a width**, using the one shared piece of
-arithmetic that every solution's answer goes through. Then it asks the three
-questions that make up the score: did the method **separate** the glasses, how
-far out was the **place**, and how good was the **mask** itself. Finally it
-compares all of that against the best answer the arithmetic could give even from
-a perfect mask, which is what tells you whether a remaining error is the
-method's fault at all.
+has to decide **which of a glass's three reports to keep**, since every
+arrangement is photographed three times. Then it asks the three questions that
+make up the score: did the method **separate** the glasses, how far out was the
+**place**, and how good was the **mask** itself. Finally it compares all of that
+against the best answer the arithmetic could give even from a perfect mask,
+which is what tells you whether a remaining error is the method's fault at all.
 
-The same arrangement from the previous page is carried through to the end, so
-every number on this page was measured on glasses you have already seen.
+Arrangement 10038 is carried through to the end, so every number on this page
+was measured on glasses you have already seen.
 
 ## Contents
 
 1. [Introduction](#1-introduction)
 2. [Which real glass is this report about?](#2-which-real-glass-is-this-report-about)
-3. [From a mask to a place and a width](#3-from-a-mask-to-a-place-and-a-width)
+3. [Which report the examiner keeps](#3-which-report-the-examiner-keeps)
 4. [Did it separate the glasses?](#4-did-it-separate-the-glasses)
 5. [How far out was the place?](#5-how-far-out-was-the-place)
 6. [How good was the mask?](#6-how-good-was-the-mask)
@@ -50,26 +49,27 @@ method would then have been marked for a mistake it did not make.
 
 ![The examiner asks the id image which real glass owns most of the pixels a report is made of, so a report is credited to the glass its mask is a picture of even when the place it computed sits well away from where that glass stands.](../../images/seeing-the-glasses/the-examiner/03-matching-by-pixels.png)
 
-## 3. From a mask to a place and a width
+## 3. Which report the examiner keeps
 
-Once a report is attached to a real glass, the examiner can turn its pixels into
-the thing the problem actually asks for, which is a place on the table and a
-rough width. As [the examiner](01_the-examiner.md#6-what-must-come-back) said,
-this step belongs to the examiner and not to the solution, and it uses only the
-three things every solution was given: the pixels, the depth reading beside each
-one, and the camera's pose.
+A survey is three pictures, so one glass can collect up to three reports and the
+examiner keeps only one of them. **It keeps the report from the station that
+stood nearest that glass**, and it decides that from the camera's position
+alone, before any marking has happened.
 
-The picture below follows a single mask through it. The pixels become points
-standing in the room, the upright axis of the glass is taken from the points at
-the top of it, the width is how far the cloud of points reaches out from that
-axis, and the place that falls out at the end is shown beside the place the
-glass really stands.
+That order matters. Choosing on geometry rather than on the score means the
+examiner cannot flatter a solution by keeping whichever of its three reports
+happened to come out best, and it means every solution is scored from the same
+station for the same glass. In arrangement 10038 it costs a little: glass 4's
+mask at station 2 covered 41.9 per cent of what that station could see, while
+the kept report comes from station 3 and covers 38.7 per cent. The rule is
+applied as written rather than adjusted after the fact.
 
-![One mask followed through the shared arithmetic: its pixels become points in the room, the axis comes from the points at the top of the glass, the width is the 95th percentile of how far the cloud reaches from that axis, and the place that comes out is shown beside the place the glass really stands.](../../images/seeing-the-glasses/the-examiner/03-example-mask-to-record.png)
-
-Because every solution's masks go through exactly this, a difference between two
-scorecards belongs to the masks and not to the measuring. That is what makes the
-three questions below a fair comparison.
+Each kept report is then turned into a place and a width by the shared
+arithmetic of [an example of the
+output](03_an-example-of-the-output.md#4-from-one-mask-to-one-record). Because
+every solution's masks go through exactly that step, a difference between two
+scorecards belongs to the masks and not to the measuring, which is what makes
+the three questions below a fair comparison.
 
 ## 4. Did it separate the glasses?
 
@@ -102,10 +102,11 @@ accurate the answer is. For each glass that was found, the examiner records how
 far the reported place is from the true one, and reports the middle value and
 the worst.
 
-**This number saturates, and knowing that saves a lot of confusion.** The step
-in section 3 is deliberately forgiving, so two quite different masks can produce
-almost the same place, close enough to the floor of error described in section 7
-that the difference between them disappears into it. The consequence is that
+**This number saturates, and knowing that saves a lot of confusion.** The shared
+step that turns a mask into a place is deliberately forgiving, so two quite
+different masks can produce almost the same place, close enough to the floor of
+error described in section 7 that the difference between them disappears into
+it. The consequence is that
 this number stops telling the six apart long before the masks do, which is why
 the mask itself has to be measured as well.
 
@@ -148,8 +149,7 @@ which is the reason this measurement exists at all.
 
 One more measurement is not about any method at all, and it is what makes the
 three questions above readable. The examiner can run its own id images through
-the shared arithmetic of section 3, as though a method had returned perfect
-masks. What comes out is the **floor of error**: the best place and width that
+the same shared arithmetic, as though a method had returned perfect masks. What comes out is the **floor of error**: the best place and width that
 step can produce even when the mask is exactly right.
 
 A method within a hair of that floor is not a good method so much as a method
@@ -174,26 +174,50 @@ excludes their depth readings rather than guessing a value for them.
 
 ## 8. What one arrangement adds to the scorecard
 
-All four steps can now be run on the six masks from the previous page, and what
-they contribute is below. All six glasses were found and nothing was missed,
-merged, split or falsely reported, which is the easy half of the result.
+All of the above can now be run on arrangement 10038, and what it contributes is
+below. The five counts are the easy half of the result: **all four glasses were
+found and nothing was missed, merged, split or falsely reported.** The merge
+count had room to spare rather than being a near miss, because the most any
+second glass owned of any report was 0 per cent against the 20 per cent that
+counts as merged.
 
-The hard half is in the other columns, and its worst entries point back at
-pictures you have already seen. The place is furthest out on glass 5, at 35.5
-mm, whose mask held only 1902 pixels because the station it was kept from cut it
-off at the frame edge. The coverage is worst on glass 3, at 22.6 per cent, whose
-mask is 264 pixels: a glass seen almost edge on, with the rule keeping only the
-part of it the depth readings make it sure about.
+The hard half is the other columns. This table has one row per glass: the
+station the examiner kept its report from, how far the reported place sits from
+where the glass really stands, how much of the glass the mask covered, and how
+many pixels that mask held.
 
-![What arrangement 10046 contributes to the scorecard: the five counts, then one row per glass giving the station its report was kept from, how far out the place was, how much of the glass the mask covered and how many pixels it held.](../../images/seeing-the-glasses/the-examiner/03-example-the-scorecard.png)
+| glass | kept from | place out by | mask covered | pixels |
+|---|---|---|---|---|
+| 1 | station 2 | 0.1 mm | 99.3 per cent | 8304 |
+| 2 | station 2 | 13.6 mm | 83.0 per cent | 3693 |
+| 3 | station 3 | 0.0 mm | 98.8 per cent | 5793 |
+| 4 | station 3 | 39.6 mm | 38.7 per cent | 622 |
 
-Two things are worth taking from this one arrangement before reading any
-solution. **A glass is scored from the station that saw it best, not from an
-average of three**, so a station losing a glass costs nothing as long as another
-station holds it. And **the place error and the mask error are not the same
-measurement**: this solution's places are good while its masks are missing a
-fifth of some glasses, which is exactly the gap the mask numbers of section 6
-exist to show.
+The picture below is the first of those columns drawn on the table. Each cross
+is where a report put a glass, each plus is where that glass really stands, and
+the line between them is the error.
+
+![The four reports drawn against the four glasses: a cross where each report put its glass, a plus where that glass stands, and a line joining them.](../../images/seeing-the-glasses/the-examiner/03-example-the-scorecard.png)
+
+The worst entries point back at pictures you have already seen. The place is
+furthest out on glass 4, at 39.6 mm, whose kept mask held only 622 pixels
+because the station it came from cut it off at the frame edge. The coverage is
+worst on the same glass, at 38.7 per cent. Across the four the place is 6.9 mm
+out at the middle glass, the masks covered 90.9 per cent of their glass at the
+middle, and not one of them claimed a pixel that was not its glass.
+
+Handed the examiner's own exact masks, the shared arithmetic puts these four
+glasses in the same places to within a tenth of a millimetre, so almost none of
+the remaining place error belongs to the masks at all. That is the floor of
+section 7, measured on one arrangement rather than on all of them.
+
+Two things are worth taking from this before reading any solution. **A glass is
+scored from one station rather than from an average of three**, so a station
+losing a glass costs nothing as long as another station holds it. And **the
+place error and the mask error are not the same measurement**: glasses 1 and 3
+are within a tenth of a millimetre of the truth while glass 4's mask is missing
+three fifths of its glass, which is exactly the gap the mask numbers of section
+6 exist to show.
 
 ## 9. Where to go next
 
@@ -202,7 +226,7 @@ exist to show.
 - [The results](../11_the-results.md) — every measurement on this page, for all
   six solutions at once.
 - [How a mask becomes a record](../12_how-a-mask-becomes-a-record.md) — the
-  arithmetic of section 3 in full, for a reader who wants it. Nothing in the
+  shared arithmetic in full, for a reader who wants it. Nothing in the
   comparison depends on it.
 
-← [The examiner — the same question for every answer](01_the-examiner.md) · [The six solutions — one question, six ways to see](../04_the-six-solutions/01_how-the-six-compare.md) →
+← [An example of the output](03_an-example-of-the-output.md) · [The six solutions — one question, six ways to see](../04_the-six-solutions/01_how-the-six-compare.md) →

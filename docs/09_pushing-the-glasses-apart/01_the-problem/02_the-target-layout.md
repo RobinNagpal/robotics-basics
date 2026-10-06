@@ -303,7 +303,7 @@ solution already at its floor buys nothing.
 The camera work has the same instrument and uses it the same way. Its examiner
 runs its own exact masks through the shared arithmetic to find [the best place
 and width that step could ever
-produce](../../08_seeing-the-glasses/03_the-examiner/02_comparing-the-outputs.md#7-the-best-possible-answer-and-the-trap-below-it),
+produce](../../08_seeing-the-glasses/03_the-examiner/04_comparing-the-outputs.md#7-the-best-possible-answer-and-the-trap-below-it),
 and a solution within a hair of that floor of error is, in that document's
 words, not a good solution so much as one whose remaining error is not its
 fault. The displacement floor is that measurement for this problem: computed

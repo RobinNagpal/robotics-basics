@@ -153,4 +153,4 @@ document that asks for it, because no number in this project is an estimate.
   link to the chapter that treats it in full.
 - [The results](../11_the-results.md) — the full scorecard, with every column.
 
-← [Comparing the outputs](../03_the-examiner/02_comparing-the-outputs.md) · [Rules on the table](02_rules-on-the-table.md) →
+← [Comparing the outputs](../03_the-examiner/04_comparing-the-outputs.md) · [Rules on the table](02_rules-on-the-table.md) →

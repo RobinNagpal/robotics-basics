@@ -13,10 +13,10 @@ it put out.
 
 By the end of this page you will know what the examiner puts on the table, what
 it gives a solution, what it keeps to itself, and what has to come back. The
-last part of the page follows one real arrangement through all of it, so that
-you see the pictures that go in and the answer that comes out. How the marking
-itself works is the next page, [comparing the
-outputs](02_comparing-the-outputs.md).
+three pages after it do the same thing once on one real arrangement: [an example
+of the input](02_an-example-of-the-input.md) shows the pictures that go in, [an
+example of the output](03_an-example-of-the-output.md) shows the masks that come
+back, and [comparing the outputs](04_comparing-the-outputs.md) is the marking.
 
 Read this before any of the solution documents, because every one of them
 assumes it.
@@ -29,8 +29,7 @@ assumes it.
 4. [What a solution is given](#4-what-a-solution-is-given)
 5. [What the examiner keeps to itself](#5-what-the-examiner-keeps-to-itself)
 6. [What must come back](#6-what-must-come-back)
-7. [One arrangement, from the table to the answer](#7-one-arrangement-from-the-table-to-the-answer)
-8. [Where to go next](#8-where-to-go-next)
+7. [Where to go next](#7-where-to-go-next)
 
 ## 2. Why there is an examiner at all
 
@@ -71,12 +70,31 @@ invented for convenience.
 from one arrangement to the next so that all four kinds are met in turn. The
 glasses stand far enough apart never to touch.
 
-**There are two families of arrangement.** The ordinary one spaces the glasses
-as the cell's spawner would. The crowded one pushes them as close as the cell
-allows, which is where the methods separate most, because crowding is what
-creates both the merge and the complete hiding.
+**There are two families of arrangement**, and the difference between them is
+only how far apart the glasses stand. Both pictures below are drawn from
+straight above, and both use the same limits, so the spacing in one can be
+compared with the spacing in the other by eye. In each of them the shaded patch
+is what the overhead camera sees of a glass, which leans outwards from the point
+below the lens, and the small circle and cross is where that glass really
+stands.
 
-![In the ordinary family the glasses stand the guaranteed 150 mm apart between centres, and in the crowded family they stand at a third to two thirds of that, which is where two outlines run together in the picture and where one glass can cover another completely.](../../images/seeing-the-glasses/the-examiner/03-two-families.png)
+The **ordinary family** is what the cell's own spawner produces. It keeps 150 mm
+between any two centres, which is the dashed circle in the picture: no second
+centre may lie inside it. That guarantee is what leaves a strip of bare table
+between every pair of glasses, and the five glasses below make five separate
+patches of pixels with nothing hidden behind anything.
+
+![Five glasses spaced as the cell's spawner spaces them, each inside the glass zone, with a dashed circle of 150 mm radius round one of them showing that no second centre may come inside it.](../../images/seeing-the-glasses/the-examiner/03-the-ordinary-family.png)
+
+The **crowded family** pushes the glasses as close as the cell allows, which is
+a third to two thirds of that ordinary spacing. This is where the methods
+separate most, because crowding is what creates the two failures worth studying.
+In the six glasses below, glasses 4, 5 and 6 run into a single patch of pixels,
+so one report would cover all three of them; and glass 2 stands behind glass 1
+and loses 100 per cent of its outline, so it appears in this picture not at all.
+The whole arrangement makes two patches of pixels where there are six glasses.
+
+![Six glasses crowded as close as the cell allows, with the two closest steps measured at 45 mm and 75 mm against the ordinary 150 mm.](../../images/seeing-the-glasses/the-examiner/03-the-crowded-family.png)
 
 **Arrangements are split into a training half and a test half**, by the number
 used to draw them. Anything a method is fitted on comes from below the dividing
@@ -161,58 +179,22 @@ produces a pose.** Models produce masks. The place comes afterwards, from the
 depth readings and the camera's pose, by arithmetic — and a glass standing
 upright on a flat table has no orientation left for anybody to find.
 
-## 7. One arrangement, from the table to the answer
+That is the whole arrangement in general terms. The next page does it once, on
+one real arrangement of four glasses, so that you can see what the examiner
+actually hands over.
 
-Everything above says what happens in general. This section says it once on a
-real arrangement, number 10046, which holds six stemmed glasses. Every picture
-below was made by running the examiner's own code on that arrangement, and every
-number on them was measured rather than chosen.
+## 7. Where to go next
 
-It begins with the glasses standing on the table. This is what is really there,
-which only the examiner knows, and it is what everything afterwards is marked
-against.
-
-![Arrangement 10046 holds six stemmed glasses standing inside the glass zone, with the three camera stations marked above them, and this is the record of what is really there that only the examiner holds.](../../images/seeing-the-glasses/the-examiner/03-example-on-the-table.png)
-
-The camera then takes one picture from each of the three stations, and these
-three pictures are the input. They are not interchangeable. **Station 1 holds
-glass 1 whole and loses glass 6 entirely**: glass 6's outline falls inside the
-frame, and every one of those pixels shows glass 4, whose bowl is thrown out
-over it. Station 2 holds no glass whole, because every one of the six reaches a
-frame edge. Station 3 holds glass 2 whole. That is the overlap doing its work:
-what one station loses, another holds.
-
-![The same arrangement from each of the three stations, with the glasses keeping their numbers, a green outline where the picture holds a glass whole and a red one where it is cut off at the frame edge, and glass 6 absent from station 1 altogether.](../../images/seeing-the-glasses/the-examiner/03-example-three-pictures.png)
-
-One of those three pictures, taken apart, is the whole of what a solution is
-given, plus the one thing it is not. The grey picture and the depth reading go
-to the solution with the camera's pose. The id picture does not.
-
-![Station 2's picture as its three parts: the grey picture shaded from how far away each surface is, the depth reading at every pixel, and the id picture saying which glass owns each pixel, which the examiner keeps.](../../images/seeing-the-glasses/the-examiner/03-example-what-one-station-gives.png)
-
-Handed that, a solution returns one mask per glass, and those masks are the
-output. The ones below are the real output of the written rule, run on station
-2's grey picture and depth reading and told only that the glasses are stemmed.
-**Every one of the six lost the band at the base of its glass**, which is where
-that rule stops being sure; and not one of them claimed a pixel that was not its
-glass. That is the habit of a rule written by hand, and it is the kind of thing
-the next page measures: it claims too little and never too much.
-
-![The mask the written rule returned for each of the six glasses in station 2's picture, with the part of the glass it covered, the part it missed, and the per-glass coverage below each one.](../../images/seeing-the-glasses/the-examiner/03-example-the-masks.png)
-
-That is one full pass through the examiner: glasses on a table, three pictures
-handed over, six masks handed back. What the examiner then does with those six
-masks — how it decides which real glass each one is talking about, and how good
-an answer it is — is [comparing the outputs](02_comparing-the-outputs.md).
-
-## 8. Where to go next
-
-- [Comparing the outputs](02_comparing-the-outputs.md) — how the examiner marks
-  what came back, worked through on the masks above.
+- [An example of the input](02_an-example-of-the-input.md) — one real
+  arrangement, and the three pictures the examiner hands over for it.
+- [An example of the output](03_an-example-of-the-output.md) — the masks that
+  came back for that arrangement, and the record each one becomes.
+- [Comparing the outputs](04_comparing-the-outputs.md) — how the examiner marks
+  what came back.
 - [The problem](../02_the-problem/01_what-is-asked-for.md) — what is asked for, and the two difficulties.
 - [Looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) — the shared part that
   recovers a glass no picture held.
 - [The six solutions](../04_the-six-solutions/01_how-the-six-compare.md) — what each method puts between the
   input and the output.
 
-← [Looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) · [Comparing the outputs](02_comparing-the-outputs.md) →
+← [Looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) · [An example of the input](02_an-example-of-the-input.md) →

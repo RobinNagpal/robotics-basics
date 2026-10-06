@@ -14,13 +14,12 @@ cannot be told apart from any reachable viewpoint it reports that and stops,
 because moving them apart is [the next
 book](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
 
-The reason to state it this carefully is that **this book exists to compare six
-ways of answering it**. Six quite different methods are each given this one
-question, and a comparison only means something when the question was
-identical, so what goes in and what must come out are fixed here once. By the
-end of this document you will know both of those exactly, and the two
-difficulties that make this harder than photographing one glass — the one the
-six differ on, and the one none of them can answer.
+The question is stated this carefully because **the book answers it six times
+over, with six different techniques, so that a reader can see which technique
+to reach for and when.** A comparison only means anything if every method was
+asked the same question, so what goes in and what must come out are fixed here
+once. By the end you will know both exactly, and the two difficulties that make
+this harder than photographing one glass.
 
 ## Contents
 
@@ -34,36 +33,31 @@ six differ on, and the one none of them can answer.
 
 ## 2. What is on the table
 
-Four to six glasses, standing upright and opaque, drawn at proportions picked at
-random inside their kind's range. The drying rack is where it always is, and
-nothing else changes from the job of carrying a single glass to the rack: same
-cell, same camera, same table.
+Four to six glasses, standing upright and opaque, drawn at proportions picked
+at random inside their kind's range. Nothing else about the cell changes: same
+table, same camera, same drying rack where it always is.
 
-**All the glasses in one arrangement are the same kind, and the kind changes
-from one arrangement to the next.** The cell has four kinds, described in [the
-cell](../01_the-cell.md), and the arrangements cycle through them, so a run
-meets all four in turn. That matters for comparing answers, because the four
-kinds are not equally hard to outline. Seen from straight above, a stem is
-never a band of its own, because the bowl is thrown outwards far enough to
-cover it. What a bowl-only outline loses is the foot and the sliver of stem
-beside it, so the two kinds with a stem are the harder pair and the stemmed
-glass is the hardest of the four. That holds for a solution built from rules
-written by hand, which the marking confirms. It does not hold for a solution
-fitted on this cell's own pictures, which covers all four kinds about equally
-well. So the difference between the kinds is a difference between methods as
-much as between shapes, which is why every answer here is broken down by kind.
+**All the glasses in one arrangement are the same kind, and the kind is
+known.** The cell has four — straight, tapered, stemmed and short stemmed — and
+[the cell](../01_the-cell.md) describes them. Arrangements cycle through them,
+so a run meets all four, and because they are not equally easy to outline the
+[examiner](../03_the-examiner.md) reports every measurement broken down by
+kind.
 
-![Four to six glasses of one kind stand upright on the table with a guaranteed 150 mm between any two centres, and the four kinds the cell has differ in how much of a foot a rough outline can lose, which is why the two kinds with a stem are the harder pair.](../../images/seeing-the-glasses/what-is-asked-for/four-to-six-of-one-kind.png)
+![Four to six glasses of one kind stand upright inside the glass zone, with a guaranteed 150 mm between any two centres.](../../images/seeing-the-glasses/what-is-asked-for/four-to-six-of-one-kind.png)
+
+![The cell has four kinds of glass, drawn here side on with the range of heights each one is picked from, and the tapered kind, which every worked example in this book uses, is picked out from the other three.](../../images/seeing-the-glasses/what-is-asked-for/the-kind-this-book-uses.png)
 
 **The glasses stand apart.** There is a guaranteed smallest gap between any two
 centres, wide enough that even the two widest glasses of a kind leave bare table
 between their rims, so no two glasses ever touch. Separating glasses that touch
 is the job of [pushing the glasses apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
 
-**One kind's range of sizes is deliberately very wide.** The tapered kind runs
-from a small glass to one more than twice its height, which is the widest range
-of the four. That width is not decoration: it is what causes the first
-difficulty below, and a narrow range could not produce it at all.
+**Every worked example in this book uses the tapered kind, because its range of
+sizes is deliberately very wide.** It runs from a small glass to one more than
+twice its height, which is the widest range of the four. That width is not
+decoration: it is what causes the first difficulty below, and a narrow range
+could not produce it at all.
 
 ![The tapered kind is drawn anywhere from 90 mm tall to 230 mm tall, which is the widest range of the four, and it is that width rather than the shape that lets one glass of the kind hide another of the same kind.](../../images/seeing-the-glasses/what-is-asked-for/the-widest-range-of-sizes.png)
 
@@ -203,10 +197,14 @@ as unsearched rather than quietly treated as empty.
 The [examiner](../03_the-examiner.md) marks a run against the simulator's own
 record and describes each measurement in full. Two of them are what the six
 answers are compared on: how many glasses were found, missed, merged or split,
-and how much of each glass the mask actually covered. The picture below says
-why **missed** is the one to watch hardest.
+and how much of each glass the mask actually covered. Why the mask is measured
+as well as the place is set out in [how a mask becomes a
+record](../12_how-a-mask-becomes-a-record.md). The second picture below says
+why **missed** is the count to watch hardest.
 
-![A run is done when every glass has a mask, a place and a width, when every pair that could not be separated is listed with its reason, and when every patch of table nobody could see is listed as unsearched; and of the four ways the finding can go wrong, a missed glass is the one to watch hardest because it leaves nothing behind at all.](../../images/seeing-the-glasses/what-is-asked-for/what-done-means.png)
+![The three conditions a run has to meet before it counts as done: every glass has a mask, a place and a width; every pair that could not be separated is listed with its reason; and every patch of table nobody could see is listed as unsearched.](../../images/seeing-the-glasses/what-is-asked-for/what-done-means.png)
+
+![A split glass announces itself because both halves are too small to be a glass, a merged pair looks like one ordinary large glass, and a missed glass leaves nothing at all, so the three are ordered by how hard they are to spot.](../../images/seeing-the-glasses/what-is-asked-for/missed-is-the-one-to-watch.png)
 
 ## 7. Where to go next
 

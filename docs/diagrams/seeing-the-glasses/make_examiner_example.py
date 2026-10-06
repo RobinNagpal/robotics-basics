@@ -36,7 +36,7 @@ Run from code/:
 
     pixi run python ../docs/diagrams/seeing-the-glasses/make_examiner_example.py
 
-Needs matplotlib and numpy. The bench imports torch for a function none of this
+Needs matplotlib and numpy. The examiner imports torch for a function none of this
 calls, so an empty stand-in is put in its place when it is not installed; see
 ``bench_on_the_path`` below.
 """

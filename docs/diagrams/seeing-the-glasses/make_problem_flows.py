@@ -1,17 +1,20 @@
-"""The flow chart for "what is asked for".
+"""The two flow charts for "what is asked for".
 
-That document states the question all six solutions answer, and one of its
-claims is easier to see as a picture than to hold in the head while reading:
+That document states the question all six solutions answer, and two of its
+claims are easier to see as a picture than to hold in the head while reading:
 
-    what-done-means.png         the three conditions a run has to meet, the two
-                                measurements the answers are compared on, why
-                                a missed glass is the one to watch hardest, and
-                                why the mask is measured as well as the place.
+    what-done-means.png              the three conditions a run has to meet.
+    missed-is-the-one-to-watch.png   why a missed glass is the worst of the
+                                     three ways of getting a glass wrong.
 
-Two other charts lived here, one putting the difficulties in their two orders
-and one laying out the three parts of a complete answer. The document now shows
-each difficulty as three drawings of a real arrangement instead, so both were
-removed with the sections that held them.
+One chart to a picture, because two charts in one image give a reader no way
+of telling where the first argument ends and the second begins.
+
+Three other charts lived here: two putting the difficulties in their orders and
+laying out the parts of a complete answer, and one arguing that the mask has to
+be measured as well as the place. The document now shows each difficulty as
+three drawings of a real arrangement, and the mask argument has a chapter of
+its own, so all three went with the sections that held them.
 
 Run from code/:
 
@@ -22,7 +25,6 @@ from __future__ import annotations
 
 import matplotlib.colors as mcolors
 from diagram_style import (
-    GLASS,
     GOOD,
     INK,
     LABEL_SIZE,
@@ -39,11 +41,7 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 
 # ------------------------------------------------------------------ the numbers
 
-MIN_CENTRES_MM = 150     # bench/render.py, the rule the layouts are drawn under
-SURVEY_MM = 450          # SURVEY_HEIGHT in work_cell/arm/dimensions.py
-BASELINE_MM = 120        # SURVEY_BASELINE in the same file
-SPREAD = 95              # bench/masks_to_glasses.SPREAD
-COUNTS = "found, missed, merged, split and false"   # bench/marking.FIND
+COUNTS = "found, missed, merged, split and false"   # bench/marking.py FIND
 
 SHOW_FIT = False         # print where the drawing ends, when tuning a figure
 
@@ -151,167 +149,92 @@ class Sheet:
             print(f"  {name}: the drawing stops at y = {self.low:.1f}, one line is "
                   f"{self.line:.2f} units")
         save(self.figure, name)
+
+
 def what_done_means() -> None:
-    """The three conditions for a finished run, then the two measurements.
+    """The three conditions a finished run has to meet.
 
-    The conditions go across the top because no one of them matters more than
-    the others: a run that misses any one of them is not done. The two
-    measurements below are not alike, and the chart spends its space on what is
-    unlike about them. One of the counts hides itself, and the other
-    measurement exists only because the step that follows a mask is forgiving.
+    The three go across rather than down because no one of them comes before
+    the others or matters more than the others. A run that misses any one of
+    them is not done.
     """
-    sheet = Sheet(11.0, 7.2)
-    line, gap = sheet.line, sheet.gap
-
-    # ------------------------------------------- done, in three conditions
-    y = 97.0
-    sheet.note(50.0, y, "A run is done when all three of these hold",
-               colour=INK, size=LABEL_SIZE + 1.0, ha="center", weight="bold")
+    sheet = Sheet(8.2, 1.12)
+    line = sheet.line
 
     conditions = (
         "Every glass has a mask, a place on\n"
-        "the table and a rough width of its\n"
-        "footprint.",
-        "Every glass that could not be\n"
-        "separated from its neighbour is\n"
-        "listed, with the reason.",
-        "Every region of table that could not\n"
-        "have been seen is listed as\n"
-        "unsearched, not treated as empty.",
+        "the table and a rough width.",
+        "Every glass that could not be told\n"
+        "apart from its neighbour is listed,\n"
+        "with the reason.",
+        "Every region that could not be seen\n"
+        "is listed as unsearched, not treated\n"
+        "as empty.",
     )
     condition_h = sheet.height_for(*conditions)
-    y -= 1.5 * line + condition_h / 2.0
-    for x, text in zip((19.0, 50.0, 81.0), conditions):
-        sheet.box(x, y, 30.0, text, height=condition_h, edge=GOOD,
+    y = 95.0 - condition_h / 2.0
+    for x, text in zip((17.5, 50.0, 82.5), conditions):
+        sheet.box(x, y, 31.0, text, height=condition_h, edge=GOOD,
                   face=_tint(GOOD, 0.90), lw=1.5, name="done")
 
-    y -= condition_h / 2.0 + 1.3 * line
-    sheet.rule(y)
-    y -= 1.5 * line
-    sheet.note(50.0, y, "And the six answers are compared on two measurements",
-               colour=INK, size=LABEL_SIZE + 1.0, ha="center", weight="bold")
-
-    left_x, right_x, column_w = 27.0, 74.0, 42.0
-
-    measures = (
-        "How many glasses were found, missed, merged or\n"
-        "split. This says whether the method separated the\n"
-        f"glasses at all, and the bench reports five counts:\n"
-        f"{COUNTS}.",
-        "How much of each glass the mask actually covered.\n"
-        "This says how good the outline was, and it is the\n"
-        "measurement that separates methods which the\n"
-        "other measurements cannot.",
-    )
-    measure_h = sheet.height_for(*measures)
-    y -= 1.4 * line + measure_h / 2.0
-    for x, text in zip((left_x, right_x), measures):
-        sheet.box(x, y, column_w, text, height=measure_h, lw=1.4, name="measure")
-    columns_top = y - measure_h / 2.0
-
-    # ---------------------------- why missed is the count to watch hardest
-    head_y = columns_top - 1.5 * line
-    sheet.note(left_x, head_y, "Three ways of getting a glass wrong, hardest to spot last",
+    y -= condition_h / 2.0 + 1.6 * line
+    sheet.note(50.0, y, "All three have to hold. Two out of the three is not a finished run.",
                colour=INK, ha="center", weight="bold")
-    sheet.note(right_x, head_y, "Why the mask is measured as well as the place",
-               colour=INK, ha="center", weight="bold")
+
+    sheet.finish("What “done” means", "what-done-means.png")
+
+
+def missed_is_the_one_to_watch() -> None:
+    """Why a missed glass is the worst of the three ways of getting one wrong.
+
+    The three are stacked in the order they are hard to spot in, because that
+    order is the whole argument. A split glass contradicts itself, a merged
+    pair does not, and a missed glass leaves nothing behind to contradict.
+    """
+    sheet = Sheet(6.6, 2.6)
+    line, gap = sheet.line, sheet.gap
+    column_x, column_w = 60.0, 70.0
+
+    y = 95.0
+    sheet.note(column_x, y, f"The examiner counts {COUNTS}.",
+               colour=MUTED, ha="center")
 
     outcomes = (
-        (
-            "A split glass announces itself: one glass comes\n"
-            "back as two reports, and both halves are too\n"
-            "small to be a glass.",
-            GOOD, 1.3,
-        ),
-        (
-            "A merged pair looks like one large glass, which is\n"
-            "worse, because nothing about it looks wrong and\n"
-            "everything downstream believes it.",
-            WARN, 1.3,
-        ),
-        (
-            "A missed glass leaves nothing at all: no report,\n"
-            "no mask, and no number out of place for a check\n"
-            "to catch.",
-            WARN, 2.0,
-        ),
+        ("Split: one glass comes back as two reports.\n"
+         "Both halves are too small to be a glass.", GOOD, 1.3),
+        ("Merged: two glasses come back as one.\n"
+         "Nothing about that report looks wrong.", WARN, 1.3),
+        ("Missed: nothing comes back at all. No report,\n"
+         "no mask, no number out of place.", WARN, 2.0),
     )
     outcome_h = sheet.height_for(*(text for text, _, _ in outcomes))
-    cursor = head_y - 1.4 * line
+    cursor = y - 1.8 * line
     first_top, last_bottom = cursor, cursor
     for text, colour, lw in outcomes:
         row = cursor - outcome_h / 2.0
-        sheet.box(left_x + 2.0, row, column_w - 4.0, text, height=outcome_h, edge=colour,
+        sheet.box(column_x, row, column_w, text, height=outcome_h, edge=colour,
                   face=_tint(colour, 0.88), lw=lw, name="outcome")
         last_bottom = row - outcome_h / 2.0
         cursor = last_bottom - 0.8 * gap
-    sheet.arrow((7.0, first_top - 0.5), (7.0, last_bottom + 0.5), colour=WARN, lw=1.6)
-    sheet.note(5.0, (first_top + last_bottom) / 2.0, "harder to spot, so worse",
+
+    sheet.arrow((12.0, first_top - 0.5), (12.0, last_bottom + 0.5), colour=WARN, lw=1.6)
+    sheet.note(8.0, (first_top + last_bottom) / 2.0, "harder to spot, so worse",
                colour=WARN, ha="center", weight="bold", rotation=90)
 
-    left_end = last_bottom - 1.6 * line
-    sheet.note(left_x + 2.0, left_end,
-               "So missed is the count to watch hardest. It is the only\n"
-               "one of the three that nothing in the results points at.",
+    sheet.note(column_x, last_bottom - 1.7 * line,
+               "So missed is the count to watch hardest. It is the only one of\n"
+               "the three that nothing in the results points at.",
                colour=INK, ha="center", weight="bold")
-
-    # ------------------- why the mask has to be measured as well as the place
-    forgiving = (
-        "The shared step that turns a mask into a place is\n"
-        "deliberately forgiving. It takes the axis from the points\n"
-        "at the top of the glass, and the width as the "
-        f"{SPREAD}th\n"
-        "percentile of how far the cloud of points spreads from\n"
-        "that axis."
-    )
-    forgiving_h = sheet.height_for(forgiving)
-    forgiving_y = head_y - 1.4 * line - forgiving_h / 2.0
-    sheet.box(right_x, forgiving_y, column_w, forgiving, height=forgiving_h, edge=GLASS,
-              face=_tint(GLASS, 0.88), lw=1.6, name="forgiving")
-
-    masks = (
-        ("a mask that follows\nthe glass closely", GLASS, right_x - 11.0),
-        ("a mask that is far\ntoo generous", WARN, right_x + 11.0),
-    )
-    mask_h = sheet.height_for(*(text for text, _, _ in masks))
-    mask_y = forgiving_y - forgiving_h / 2.0 - 1.9 * gap - mask_h / 2.0
-    for text, colour, x in masks:
-        sheet.arrow((x, forgiving_y - forgiving_h / 2.0 - 0.3), (x, mask_y + mask_h / 2.0 + 0.6),
-                    colour=colour)
-        sheet.box(x, mask_y, 20.0, text, height=mask_h, edge=colour, lw=1.3, name="mask")
-
-    same = "almost the same place on the table"
-    same_h = sheet.height_for(same)
-    same_y = mask_y - mask_h / 2.0 - 1.9 * gap - same_h / 2.0
-    for _, colour, x in masks:
-        sheet.arrow((x, mask_y - mask_h / 2.0 - 0.3),
-                    (right_x + (4.0 if x > right_x else -4.0), same_y + same_h / 2.0 + 0.6),
-                    colour=colour)
-    sheet.box(right_x, same_y, 34.0, same, height=same_h, edge=MUTED,
-              face=_tint(MUTED, 0.88), lw=1.3, name="same place")
-
-    sheet.note(right_x, same_y - same_h / 2.0 - 1.6 * line,
-               "The place cannot tell those two masks apart, so comparing\n"
-               "the masks themselves is what shows the difference.",
-               colour=INK, ha="center", weight="bold")
-
-    y = min(left_end, same_y) - 3.2 * line
-    sheet.rule(y)
-    y -= 1.6 * line
-    sheet.note(50.0, y, "The three conditions decide whether a run finished. The two "
-                        "measurements decide which of the six answers did it better.\n"
-                        "A run can score well on both measurements and still not be done, "
-                        "because a region nobody looked at is counted by neither.",
-               colour=INK, ha="center")
 
     sheet.finish(
-        "What “done” means, and the two measurements the six answers are compared on",
-        "what-done-means.png",
+        "Three ways of getting a glass wrong, hardest to spot last",
+        "missed-is-the-one-to-watch.png",
     )
 
 
 def main() -> None:
     what_done_means()
+    missed_is_the_one_to_watch()
 
 
 if __name__ == "__main__":

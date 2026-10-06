@@ -1,19 +1,19 @@
 """The three flow charts for the test bench document.
 
-The document beside these pictures argues one thing above all: the bench owns
+The document beside these pictures argues one thing above all: the examiner owns
 every step of a run except one, and the one step it does not own is the mask. A
 reader who believes that can read a difference between two scorecards as a
 difference between two masks, and a reader who does not cannot read the results
 at all. These three pictures are drawn to make that argument visible.
 
-    03-what-the-examiner-does.png   the whole run, with the bench's many steps in
+    03-what-the-examiner-does.png   the whole run, with the examiner's many steps in
                                  one band and the solution's single step in
                                  another, and both hand-over points named.
     03-what-must-come-back.png   the record per glass, with the fields the
                                  solution supplies separated from the fields
-                                 the bench computes, and the two honest
+                                 the examiner computes, and the two honest
                                  statements that come beside the records.
-    03-the-floor.png             the solution's masks and the bench's own id
+    03-the-floor.png             the solution's masks and the examiner's own id
                                  masks through the same arithmetic, and the
                                  trap of a mask that asserts pixels.
 
@@ -202,7 +202,7 @@ def _panel(axis, xlim, ylim) -> None:
 
 
 def what_the_bench_does() -> None:
-    """Every step of a run, in two bands: the bench's steps, and the one step
+    """Every step of a run, in two bands: the examiner's steps, and the one step
     that is the solution's.
 
     The chart exists for the separation rather than for the sequence. A reader
@@ -216,13 +216,13 @@ def what_the_bench_does() -> None:
     chain_x = 26.0          # the flow runs down here, left of the boxes' middle
     middle, span = 50.0, 72.0
 
-    _band(axis, 3, 69.5, 94, 29.5, MUTED, "the bench")
+    _band(axis, 3, 69.5, 94, 29.5, MUTED, "the examiner")
     _band(axis, 3, 44.5, 94, 16.0, GLASS, "the solution")
-    _band(axis, 3, -19.0, 94, 54.5, MUTED, "the bench again")
+    _band(axis, 3, -19.0, 94, 54.5, MUTED, "the examiner again")
 
     _box(
         axis, middle, 92.5, span, 10.5,
-        "The bench draws an arrangement: four to six glasses of one kind, from the cell's\n"
+        "The examiner draws an arrangement: four to six glasses of one kind, from the cell's\n"
         "own glass shapes and its own table layout. The arrangements are split into a\n"
         "training half and a test half by the number that drew them, so a method is fitted\n"
         "only below the dividing line and marked only above it.",
@@ -241,13 +241,13 @@ def what_the_bench_does() -> None:
     _arrow(axis, (chain_x, 72.0), (chain_x, 57.5))
     _note(
         axis, 31.0, 67.0,
-        "Hand-over 1. The bench gives the solution the grey picture, the\n"
+        "Hand-over 1. The examiner gives the solution the grey picture, the\n"
         "depth reading and the camera pose, and nothing else.",
         colour=INK, weight="bold",
     )
     _note(
         axis, 31.0, 62.8,
-        "The id image was rendered too. The bench keeps it, because it is\n"
+        "The id image was rendered too. The examiner keeps it, because it is\n"
         "the answer key it will mark with.",
     )
 
@@ -268,13 +268,13 @@ def what_the_bench_does() -> None:
     )
     _note(
         axis, 31.0, 38.0,
-        "No place, no width and no pose. Those are the bench's own\n"
+        "No place, no width and no pose. Those are the examiner's own\n"
         "arithmetic, the same arithmetic for every solution.",
     )
 
     _box(
         axis, middle, 28.0, span, 11.0,
-        "The bench's own shared arithmetic turns each mask into a place on the table and\n"
+        "The examiner's own shared arithmetic turns each mask into a place on the table and\n"
         "a rough width. It takes the axis from the points at the top of the glass, and the\n"
         f"width as the {SPREAD}th percentile of how far the cloud of points reaches from that\n"
         "axis. The depth reading of an asserted pixel is left out rather than guessed at.",
@@ -283,7 +283,7 @@ def what_the_bench_does() -> None:
 
     _box(
         axis, middle, 14.0, span, 9.5,
-        "The bench asks its id image which real glass owns most of the pixels a report is\n"
+        "The examiner asks its id image which real glass owns most of the pixels a report is\n"
         "made of, and credits the report to that glass, however far out the place it\n"
         "computed may be.",
     )
@@ -291,7 +291,7 @@ def what_the_bench_does() -> None:
 
     _box(
         axis, middle, 0.0, span, 11.0,
-        f"The bench counts {COUNTS}, records how far each\n"
+        f"The examiner counts {COUNTS}, records how far each\n"
         "reported place is from the true one, and measures how much of each real glass\n"
         "the mask covered and how much of the mask was not that glass, broken down by\n"
         "the four kinds of glass.",
@@ -312,14 +312,14 @@ def what_the_bench_does() -> None:
     )
 
     axis.set_title(
-        "What the bench does, and the one step of it a solution owns",
+        "What the examiner does, and the one step of it a solution owns",
         fontsize=TITLE_SIZE, color=INK, pad=14,
     )
     save(figure, "03-what-the-examiner-does.png")
 
 
 # --------------------------------------------------------------------------- #
-# 2. what a solution has to return, and what the bench does with each piece
+# 2. what a solution has to return, and what the examiner does with each piece
 # --------------------------------------------------------------------------- #
 
 
@@ -327,9 +327,9 @@ def what_must_come_back() -> None:
     """The record per glass, split by who fills each field in.
 
     Two of the four fields in a record come from the solution and two are
-    computed by the bench from the first of them. Drawing the record as four
+    computed by the examiner from the first of them. Drawing the record as four
     fields of one colour would hide the whole point, so the fields are grouped
-    by their owner and the arithmetic that makes the bench's two sits between
+    by their owner and the arithmetic that makes the examiner's two sits between
     the groups.
     """
     figure, axis = new(10.0, 7.8)
@@ -370,10 +370,10 @@ def what_must_come_back() -> None:
 
     _arrow(axis, (left, 45.5), (left, 41.5), colour=GLASS)
 
-    # ---- the bench's arithmetic, and the two fields it fills in itself
+    # ---- the examiner's arithmetic, and the two fields it fills in itself
     _box(
         axis, left, 36.0, wide, 9.0,
-        "the bench's shared arithmetic: the axis from the\n"
+        "the examiner's shared arithmetic: the axis from the\n"
         f"points at the top of the glass, the width as the {SPREAD}th\n"
         "percentile of the spread around that axis",
     )
@@ -391,7 +391,7 @@ def what_must_come_back() -> None:
     )
     _note(
         axis, left, 6.5,
-        "The bench fills these two in from the mask itself, so no\n"
+        "The examiner fills these two in from the mask itself, so no\n"
         "solution can win by measuring better or lose by measuring worse.",
         colour=INK, ha="center",
     )
@@ -418,7 +418,7 @@ def what_must_come_back() -> None:
 
     _box(
         axis, right, 35.0, wide, 11.0,
-        "The bench counts a reported doubt as a reported\n"
+        "The examiner counts a reported doubt as a reported\n"
         "doubt. A glass a solution says it could not separate\n"
         "is not marked as an answer that never arrived, and a\n"
         "patch of table it says it could not see is not marked\n"
@@ -435,7 +435,7 @@ def what_must_come_back() -> None:
     # which colour means which owner, said once rather than on every box
     for row, (colour, text) in enumerate((
         (GLASS, "a field the solution supplies"),
-        (MUTED, "a field the bench computes from the mask"),
+        (MUTED, "a field the examiner computes from the mask"),
     )):
         y = 14.0 - row * 5.0
         axis.add_patch(
@@ -447,7 +447,7 @@ def what_must_come_back() -> None:
         _note(axis, 59.5, y, text, colour=INK)
 
     axis.set_title(
-        "What must come back from a solution, and what the bench does with each piece",
+        "What must come back from a solution, and what the examiner does with each piece",
         fontsize=TITLE_SIZE, color=INK, pad=12,
     )
     save(figure, "03-what-must-come-back.png")
@@ -461,7 +461,7 @@ def what_must_come_back() -> None:
 def the_floor() -> None:
     """The two paths through the one arithmetic, and the asserted-pixel trap.
 
-    The upper half sends a solution's masks and the bench's own id masks
+    The upper half sends a solution's masks and the examiner's own id masks
     through the same step, because the floor only means anything if both sides
     of the comparison went through identical arithmetic. The lower half draws
     the trap the same section names, with the measured cost of falling into it.
@@ -485,7 +485,7 @@ def the_floor() -> None:
     )
     _box(
         axis, right, 93.0, wide, 8.5,
-        "The bench's own id masks, run as though a\n"
+        "The examiner's own id masks, run as though a\n"
         "method had returned perfect masks",
         edge=GOOD, face=_tint(GOOD, 0.80), lw=1.6,
     )
@@ -615,7 +615,7 @@ def the_floor() -> None:
     _box(
         axis, 74.0, 21.0, 46.0, 10.0,
         "Named and left out: the mask says which pixels\n"
-        "it asserts, the bench drops their depth readings\n"
+        "it asserts, the examiner drops their depth readings\n"
         f"rather than guessing a value, and the place lands\n"
         f"{NAMED_MM} mm out instead.",
         edge=GOOD, face=_tint(GOOD, 0.86), lw=1.6,

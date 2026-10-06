@@ -23,8 +23,8 @@ import numpy as np  # noqa: E402
 from matplotlib.colors import to_rgba  # noqa: E402
 from matplotlib.patches import Circle, FancyArrowPatch, Rectangle, Wedge  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src" / "work_cell"))
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "code" / "src" / "08_seeing-the-glasses" / "work_cell"))
 
 from work_cell.arm.dimensions import (  # noqa: E402
     CAMERA_OFFSET,

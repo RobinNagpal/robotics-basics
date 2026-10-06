@@ -355,7 +355,7 @@ def patches_in(ids) -> int:
 
 
 def place_and_width(mask, top, grid, nadir=MIDDLE):
-    """The bench's shared step, run on the pixels of one mask.
+    """The examiner's shared step, run on the pixels of one mask.
 
     The same arithmetic as bench/masks_to_glasses.py one_glass(): every mask
     pixel becomes a point in the room, the axis is the middle of the points
@@ -710,7 +710,7 @@ def what_a_solution_is_given() -> None:
     """The three things a solution may read, side by side for one arrangement.
 
     The point is that this is the whole input: two pictures and a pose, handed
-    over by the bench, with nothing for a solution to go and fetch.
+    over by the examiner, with nothing for a solution to go and fetch.
     """
     _, distance, _, extent, _ = overhead(IN_FRAME)
     figure, axes = new(12.4, 5.2, columns=3)
@@ -762,7 +762,7 @@ def what_a_solution_is_given() -> None:
          colour=INK, ha="center", va="bottom")
     pose_axis.text(0.0, -60.0,
                    "The same arrangement, seen edge on. The arm knows this pose\n"
-                   "from its own joint encoders, and the bench hands it over with\nthe two pictures.",
+                   "from its own joint encoders, and the examiner hands it over with\nthe two pictures.",
                    ha="center", va="top", fontsize=NOTE_SIZE, color=MUTED)
 
     titles(figure, axes, ["The grey picture", "The depth reading at every pixel", "The camera's pose"],
@@ -775,7 +775,7 @@ def what_a_solution_is_given() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# 4. what the bench keeps to itself
+# 4. what the examiner keeps to itself
 # --------------------------------------------------------------------------- #
 
 
@@ -818,7 +818,7 @@ def what_the_bench_keeps() -> None:
     bare(jobs_axis)
     jobs_axis.set_xlim(0.0, 1.0)
     jobs_axis.set_ylim(0.0, 1.0)
-    jobs_axis.text(0.5, 0.97, "The bench renders this picture beside every other one\n"
+    jobs_axis.text(0.5, 0.97, "The examiner renders this picture beside every other one\n"
                               "and never gives it to a solution at run time.",
                    ha="center", va="top", fontsize=NOTE_SIZE, color=INK)
     jobs_axis.text(0.5, 0.84, "every arrangement, split by the number it was drawn with",
@@ -845,7 +845,7 @@ def what_the_bench_keeps() -> None:
                    ha="center", va="top", fontsize=NOTE_SIZE, color=INK)
 
     titles(figure, axes, ["The grey picture again", "The id picture, which it keeps", "Its two separate jobs"],
-           heading="What the bench keeps to itself", lift=0.02)
+           heading="What the examiner keeps to itself", lift=0.02)
     under(figure, axes, [
         "This one is handed to the solution.",
         f"Four glasses and the table: {nothing:.0f} per cent of\nthe pixels show no glass at all.",
@@ -853,7 +853,7 @@ def what_the_bench_keeps() -> None:
     ], y=0.175)
     caption(figure,
             "The id picture is the same arrangement from the same station: at each pixel, which glass that pixel "
-            "shows, or nothing.\nIt is the bench's whole power, because knowing who owns each pixel is what lets it "
+            "shows, or nothing.\nIt is the examiner's whole power, because knowing who owns each pixel is what lets it "
             "decide what a returned mask\nis really a picture of.")
     save(figure, "03-what-the-examiner-keeps.png")
 
@@ -870,7 +870,7 @@ def report_over_two(ids, top, want: float = 0.15):
     facing glass 1, as makes ``want`` of the report. That side carries part of
     glass 2's rim, which is the highest thing in the mask, and the highest
     points are what the shared step takes the axis from. The share is kept
-    under the one at which the bench would call the two glasses merged, so the
+    under the one at which the examiner would call the two glasses merged, so the
     picture is about matching and not about that count.
     """
     rows, columns = np.nonzero(ids == 2)
@@ -962,17 +962,17 @@ def matching_by_pixels() -> None:
                     f"Matched by position instead, the computed place is {away[nearest]:.0f} mm from glass "
                     f"{nearest}\nand {away[winner]:.0f} mm from glass {winner}, so the report would have been "
                     f"credited to glass {nearest},\nwhich it is not a picture of. Matching by pixels still works "
-                    "when a method is\nbadly wrong about where the glass stands, and that is why the bench "
+                    "when a method is\nbadly wrong about where the glass stands, and that is why the examiner "
                     "matches\nthat way.\n\n"
                     f"Glass {other} holds {100 * shares[other]:.0f} per cent of this report, under the "
-                    f"{100 * MERGED_SHARE:.0f} per cent at which the bench\nwould have counted the two of them "
+                    f"{100 * MERGED_SHARE:.0f} per cent at which the examiner\nwould have counted the two of them "
                     "merged into one report instead.",
                     ha="left", va="top", fontsize=NOTE_SIZE, color=INK)
 
     titles(figure, axes, ["One report, drawn over the grey picture", "What the id picture says those pixels are"],
            heading="How a report is matched to a real glass", lift=0.02)
     caption(figure,
-            f"The place comes from the bench's own shared step, which takes the axis from the points within "
+            f"The place comes from the examiner's own shared step, which takes the axis from the points within "
             f"{RIM_BAND:.0f} mm of "
             "the highest point in the mask. The few\npixels of the taller glass's rim are the highest points in "
             "this mask, so they drag the place onto the neighbour while the mask itself stays\nplainly glass 1.")
@@ -980,7 +980,7 @@ def matching_by_pixels() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# 6. the two numbers the bench measures per mask
+# 6. the two numbers the examiner measures per mask
 # --------------------------------------------------------------------------- #
 
 
@@ -999,7 +999,7 @@ def stemmed_view(out_by: float = STEMMED_OUT_BY):
     picture has it.
 
     The canvas is a crop of the station's own picture, at that picture's pixel
-    size, so the pixels counted below are the size the bench counts.
+    size, so the pixels counted below are the size the examiner counts.
     """
     outline = build("stemmed_glass", **STEMMED)
     direction = np.array([-0.88, -0.48])
@@ -1028,7 +1028,7 @@ def stemmed_view(out_by: float = STEMMED_OUT_BY):
 
 
 def mask_numbers(mine, truth):
-    """The bench's two fractions, computed as bench/scoring.py mask() computes them."""
+    """The examiner's two fractions, computed as bench/scoring.py mask() computes them."""
     whole = np.count_nonzero(truth)
     on_it = np.count_nonzero(mine & truth)
     return on_it / whole, (np.count_nonzero(mine) - on_it) / np.count_nonzero(mine)
@@ -1116,12 +1116,12 @@ def the_two_mask_numbers() -> None:
         figure.text(x + 0.020, 0.144, label, ha="left", va="center", fontsize=NOTE_SIZE, color=INK)
 
     titles(figure, axes, ["A rule written by hand", "An outline a model learned"],
-           heading="The two numbers the bench measures for every mask", lift=0.02)
+           heading="The two numbers the examiner measures for every mask", lift=0.02)
     caption(figure,
             "One stemmed glass, 210 mm tall with an 8 mm stem, standing 95 mm to the side of the point below the "
             "camera. The bowl is thrown further out\nthan the foot, so the foot shows beside it rather than under "
             "it, and that crescent of foot and stem is the thin part a mask can lose. Coverage alone\nwould prefer "
-            "the model and leakage alone would prefer the rule, which is why the bench reports both.", y=0.005)
+            "the model and leakage alone would prefer the rule, which is why the examiner reports both.", y=0.005)
     save(figure, "03-the-two-mask-numbers.png")
 
 

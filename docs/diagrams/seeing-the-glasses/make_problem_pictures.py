@@ -1,8 +1,12 @@
-"""The four pictures for docs/08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md.
+"""The five pictures for docs/08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md.
 
 That document states the problem: four to six glasses of one kind on the table,
-what an answer is given and what it must hand back. The two difficulties are
-drawn in make_difficulty_pictures.py, three views each, rather than here.
+which kind the worked examples use, what an answer is given and what it must
+hand back. The two difficulties are drawn in make_difficulty_pictures.py,
+three views each, rather than here.
+
+Each picture shows one thing, so the arrangement on the table and the four
+kinds of glass are two pictures and not two panels of one.
 
 Every length here is read out of the cell's own constants, so the pictures
 cannot drift from the code:
@@ -244,38 +248,7 @@ def splay_outline(nadir, centre, h, r):
     k = HEIGHT / (HEIGHT - h)
     return [(offset * factor, radius * factor) for factor, radius in zip(k, r)]
 
-def waisted(r) -> bool:
-    """Does this radius profile narrow and then widen again?
-
-    True for the two kinds with a stem and false for the two tumblers, which
-    only ever widen going up. The script checks this rather than trusting it,
-    because the whole claim about the harder pair rests on it.
-    """
-    rising = np.diff(np.asarray(r))
-    return bool(np.any(rising[:-1] < -0.1) and np.any(rising[1:] > 0.1)
-                and np.argmax(np.asarray(r)) > int(np.argmin(np.asarray(r)[1:]) + 1))
-
-def measured_coverage():
-    """The median per cent of each glass the mask covered, per kind.
-
-    Read out of the two solutions' own results.json rather than typed in: the
-    one built from rules written by hand, and the one fitted on this cell's own
-    pictures. These are the numbers behind the claim that the two kinds with a
-    stem are the harder pair for the first and not for the second.
-    """
-    import json
-
-    folder = ROOT / "code" / "src" / "08_seeing-the-glasses"
-    out = {}
-    for label, where in (("rules", "01-rules-on-the-table"), ("fitted", "02-train-from-scratch")):
-        path = folder / where / "results.json"
-        if not path.exists():
-            raise SystemExit(f"no marking to read the per-kind coverage from: {path}")
-        by_kind = json.loads(path.read_text())["mask"]["by_kind"]
-        out[label] = {kind: by_kind[kind]["covered_median"] for kind in KINDS}
-    return out
-
-# ------------------------------------------------------- 1. what is on the table
+# -------------------------------------------- 1. the arrangement on the table
 
 # Five tapered glasses, written down here because a picture wants an
 # arrangement a reader can take in rather than a random one. The two at the
@@ -289,48 +262,8 @@ ARRANGEMENT = (
     ((585.0, -125.0), 95.0, 67.0),
 )
 
-def silhouette_rasters(kind: str, out: float, cells: int = 460):
-    """Where a glass of ``kind`` lands in an overhead picture, as two rasters.
-
-    The glass stands ``out`` millimetres from the point below the camera. The
-    first raster is its whole silhouette. The second is the part of that
-    silhouette outside the one thrown circle of its widest slice, which is what
-    an outline that follows only the widest part of the glass leaves behind.
-    Returns the two rasters, the extent they cover in millimetres, the thrown
-    widest circle, and how wide the glass really is.
-    """
-    height, radius = outline_mm(kind, tall=True)
-    circles = splay_outline((0.0, 0.0), (out, 0.0), height, radius)
-    broad = int(np.argmax([r for _c, r in circles]))
-    x_from = min(c[0] - r for c, r in circles)
-    x_to = max(c[0] + r for c, r in circles)
-    reach = max(r for _c, r in circles)
-    extent = (x_from - 4, x_to + 4, -reach - 4, reach + 4)
-    down = max(40, int(cells * (reach + 4) * 2 / (extent[1] - extent[0])))
-    gx, gy = np.meshgrid(
-        np.linspace(extent[0], extent[1], cells), np.linspace(extent[2], extent[3], down)
-    )
-    whole = np.zeros_like(gx, dtype=bool)
-    for c, r in circles:
-        whole |= (gx - c[0]) ** 2 + (gy - c[1]) ** 2 <= r**2
-    wide_c, wide_r = circles[broad]
-    blob = (gx - wide_c[0]) ** 2 + (gy - wide_c[1]) ** 2 <= wide_r**2
-    return whole, whole & ~blob, extent, (float(wide_c[0]), float(wide_r)), float(radius.max())
-
-def shade(axis, mask, extent, colour, alpha, shift=0.0, zorder=3):
-    """Paint a boolean raster in one colour, leaving everything else clear."""
-    from matplotlib.colors import to_rgb
-
-    rgba = np.zeros(mask.shape + (4,))
-    rgba[..., :3] = to_rgb(colour)
-    rgba[..., 3] = np.where(mask, alpha, 0.0)
-    axis.imshow(
-        rgba, origin="lower", zorder=zorder, interpolation="nearest",
-        extent=(extent[0] + shift, extent[1] + shift, extent[2], extent[3]),
-    )
-
-def what_is_on_the_table() -> None:
-    """Four to six glasses of one kind, and why two of the four kinds are harder."""
+def the_arrangement() -> None:
+    """Four to six glasses of one kind, standing in the glass zone."""
     rim_low, rim_high = span("tapered_glass", "rim_diameter")
     high_low, high_high = span("tapered_glass", "height")
     for (centre, height, rim) in ARRANGEMENT:
@@ -348,24 +281,7 @@ def what_is_on_the_table() -> None:
     if closest[2] < SEPARATION - 0.05:
         raise SystemExit(f"two glasses stand {closest[2]:.1f} mm apart, inside the guarantee")
 
-    out = 100.0
-    rasters = {kind: silhouette_rasters(kind, out) for kind in KINDS}
-    pitch = max(e[1] - e[0] for _w, _l, e, _b, _r in rasters.values()) + 56.0
-    tallest = max(e[3] for _w, _l, e, _b, _r in rasters.values())
-
-    figure = plt.figure(figsize=(12.8, 8.2))
-    figure.patch.set_facecolor(PAPER)
-    grid = figure.add_gridspec(
-        2, 2, height_ratios=[1.0, 0.94], width_ratios=[0.50, 1.0], hspace=0.30, wspace=0.06
-    )
-    plan = figure.add_subplot(grid[0, 0])
-    side = figure.add_subplot(grid[0, 1])
-    top = figure.add_subplot(grid[1, :])
-    for axis in (plan, side, top):
-        axis.set_facecolor(PAPER)
-        bare(axis)
-
-    # -- the arrangement, in plan
+    figure, (plan,) = panels(6.4, 6.0)
     plan.set_aspect("equal")
     draw_zone(plan, label=False)
     plan.text(
@@ -376,6 +292,7 @@ def what_is_on_the_table() -> None:
     for centre, _height, rim in ARRANGEMENT:
         plan.add_patch(Circle(centre, rim / 2.0, fc=GLASS, alpha=0.30, ec=GLASS, lw=1.3))
         plan.plot(*centre, marker="+", ms=6, mew=1.2, color=GLASS)
+
     a, b, gap = closest
     double_arrow(plan, a[0], b[0])
     plan.plot(
@@ -385,101 +302,88 @@ def what_is_on_the_table() -> None:
     )
     plan.text(
         (a[0][0] + b[0][0]) / 2.0, ZONE[2] - 42,
-        f"{gap:.0f} mm, the guaranteed smallest gap\n"
-        f"between centres. At the widest rim the kind\n"
-        f"allows that still leaves {SEPARATION - rim_high:.0f} mm of bare table.",
+        f"{gap:.0f} mm, the guaranteed smallest gap between centres",
         ha="center", va="top", fontsize=NOTE_SIZE, color=INK,
     )
     plan.set_title(
-        "Five glasses of one kind, every centre inside the zone",
-        fontsize=LABEL_SIZE + 0.6, color=INK, pad=10,
+        "Four to six glasses of one kind stand in the glass zone",
+        fontsize=TITLE_SIZE, color=INK, pad=20,
+    )
+    plan.text(
+        0.5, 1.004, "This arrangement has five of them, seen from above.",
+        transform=plan.transAxes, ha="center", va="bottom",
+        fontsize=NOTE_SIZE, color=MUTED,
     )
     plan.set_xlim(ZONE[0] - 50, ZONE[1] + 50)
-    plan.set_ylim(ZONE[2] - 150, ZONE[3] + 54)
-
-    # -- the four kinds, in side elevation at their tallest
-    side.set_aspect("equal")
-    pitch_side = 178.0
-    for index, kind in enumerate(KINDS):
-        x = index * pitch_side
-        colour = WARN if "stemmed" in kind else GLASS
-        side_glass(side, x, kind, tall=True, colour=colour, alpha=0.26)
-        low, high = span(kind, "height")
-        wide_low, wide_high = span(kind, widest(kind))
-        part = "rim" if widest(kind) == "rim_diameter" else "bowl"
-        lines = [f"{low:.0f} to {high:.0f} mm tall", f"{part} {wide_low:.0f} to {wide_high:.0f} mm"]
-        if "stem_diameter" in KIND_RANGES[kind]:
-            stem_low, stem_high = span(kind, "stem_diameter")
-            lines.append(f"stem {stem_low:.0f} to {stem_high:.0f} mm")
-        side.text(x, -16, PLAIN[kind], ha="center", va="top", fontsize=LABEL_SIZE, color=colour)
-        side.text(x, -44, "\n".join(lines), ha="center", va="top", fontsize=NOTE_SIZE, color=MUTED)
-    side.plot([-80, 3 * pitch_side + 80], [0, 0], color=INK, lw=1.1)
-    side.text(-80, 5, "the table", ha="left", va="bottom", fontsize=NOTE_SIZE, color=INK)
-    side.set_title(
-        "The cell's four kinds, each at the tallest its range allows",
-        fontsize=LABEL_SIZE + 0.6, color=INK, pad=10,
-    )
-    side.set_xlim(-95, 3 * pitch_side + 95)
-    side.set_ylim(-128, 244)
-
-    # -- the same four from straight above
-    top.set_aspect("equal")
-    coverage = measured_coverage()
-    for index, kind in enumerate(KINDS):
-        whole, lost, extent, (wide_x, wide_r), _true_r = rasters[kind]
-        shift = index * pitch - extent[0]
-        stemmed = "stemmed" in kind
-        _h, r = outline_mm(kind, tall=True)
-        if waisted(r) != stemmed:
-            raise SystemExit(f"{kind} does not have the shape this picture claims for it")
-        shade(top, whole, extent, GLASS, 0.22, shift=shift, zorder=3)
-        shade(top, lost, extent, WARN if stemmed else MUTED, 0.60, shift=shift, zorder=4)
-        top.add_patch(Circle((wide_x + shift, 0.0), wide_r, fill=False, ec=INK, lw=1.0,
-                             ls=(0, (4, 3)), zorder=5))
-        top.plot(out + shift, 0.0, marker="+", ms=7, mew=1.3, color=INK, zorder=6)
-        colour = WARN if stemmed else GLASS
-        top.text(out + shift, -tallest - 14, PLAIN[kind], ha="center", va="top",
-                 fontsize=LABEL_SIZE, color=colour)
-        top.text(
-            out + shift, -tallest - 38,
-            f"rules cover {coverage['rules'][kind]:.1f}%\n"
-            f"fitted cover {coverage['fitted'][kind]:.1f}%",
-            ha="center", va="top", fontsize=NOTE_SIZE, color=MUTED,
-        )
-    top.text(
-        0.5 * pitch, tallest + 104,
-        "The dashed circle is the widest slice of\n"
-        "the glass, thrown outwards. On a tumbler\n"
-        "what it leaves out is the base, which is\n"
-        "nearly as wide as the rim and lies against it.",
-        ha="center", va="top", fontsize=NOTE_SIZE, color=INK,
-    )
-    top.text(
-        2.5 * pitch, tallest + 104,
-        "On a glass with a stem the bowl is thrown\n"
-        "far enough to swallow the stem. What is\n"
-        "left out is the foot, and the sliver of stem\n"
-        "beside it. These two are the harder pair.",
-        ha="center", va="top", fontsize=NOTE_SIZE, color=WARN,
-    )
-    top.text(
-        -60, 0, f"the point below\nthe camera is\n{out:.0f} mm this way",
-        ha="right", va="center", fontsize=NOTE_SIZE, color=MUTED,
-    )
-    top.add_patch(FancyArrowPatch((-52, 0), (14, 0), arrowstyle="-|>", mutation_scale=9,
-                                  color=MUTED, lw=1.0))
-    top.set_title(
-        "The same four kinds from straight above, each standing "
-        f"{out:.0f} mm from the point below the camera",
-        fontsize=LABEL_SIZE + 0.6, color=INK, pad=10,
-    )
-    last = rasters[KINDS[-1]][2]
-    top.set_xlim(-250, 3 * pitch + (last[1] - last[0]) + 24)
-    top.set_ylim(-tallest - 118, tallest + 120)
-
+    plan.set_ylim(ZONE[2] - 90, ZONE[3] + 44)
     save(figure, "four-to-six-of-one-kind.png")
 
-# ---------------------------------------------- 2. the widest range of sizes
+
+# ------------------------------------------- 2. the kind every example uses
+
+def the_kind_this_book_uses() -> None:
+    """The four kinds side on, with the one the book works in picked out.
+
+    The cell has four kinds and its arrangements cycle through them, but every
+    worked example in this book uses the tapered kind. The reason is in the
+    ranges themselves: the tapered range of heights is much the widest of the
+    four, and that width is what makes one glass able to hide another. So the
+    picture draws each kind at the tallest and the shortest its range allows,
+    and the script refuses to draw anything if tapered is not in fact the kind
+    with the widest range.
+    """
+    spans = {kind: span(kind, "height") for kind in KINDS}
+    picked = max(KINDS, key=lambda kind: spans[kind][1] - spans[kind][0])
+    if picked != "tapered_glass":
+        raise SystemExit(
+            f"the widest range of heights belongs to {PLAIN[picked]}, not to tapered, "
+            "so this picture would pick out the wrong kind"
+        )
+
+    pitch = 270.0
+    offset = 62.0
+    figure, (side,) = panels(11.6, 4.4)
+    side.set_aspect("equal")
+
+    for index, kind in enumerate(KINDS):
+        base = index * pitch
+        chosen = kind == picked
+        colour = GLASS if chosen else MUTED
+        if chosen:
+            card(side, base - 120.0, -66.0, 240.0, 322.0, colour=GLASS, lw=1.6,
+                 fc="#eaf2fb")
+        side_glass(side, base - offset, kind, tall=True, colour=colour,
+                   alpha=0.34 if chosen else 0.20)
+        side_glass(side, base + offset, kind, tall=False, colour=colour,
+                   alpha=0.34 if chosen else 0.20)
+        low, high = spans[kind]
+        side.text(base, -18, PLAIN[kind], ha="center", va="top",
+                  fontsize=LABEL_SIZE, color=INK if chosen else MUTED,
+                  weight="bold" if chosen else "normal")
+        side.text(base, -38, f"{low:.0f} to {high:.0f} mm tall", ha="center", va="top",
+                  fontsize=NOTE_SIZE, color=colour)
+
+    side.text(
+        (KINDS.index(picked)) * pitch, 268,
+        "this book works in this kind:\nits range of heights is the widest",
+        ha="center", va="bottom", fontsize=NOTE_SIZE, color=GLASS,
+    )
+    side.plot([-150, 3 * pitch + 150], [0, 0], color=INK, lw=1.1)
+    side.text(-150, 6, "the table", ha="left", va="bottom", fontsize=NOTE_SIZE, color=INK)
+    side.set_title(
+        "The cell's four kinds, and the one this book uses",
+        fontsize=TITLE_SIZE, color=INK, pad=20,
+    )
+    side.text(
+        0.5, 1.004, "Each kind is drawn twice: the tallest and the shortest its range allows.",
+        transform=side.transAxes, ha="center", va="bottom",
+        fontsize=NOTE_SIZE, color=MUTED,
+    )
+    side.set_xlim(-160, 3 * pitch + 160)
+    side.set_ylim(-80, 320)
+    save(figure, "the-kind-this-book-uses.png")
+
+# ---------------------------------------------- 3. the widest range of sizes
 
 def best_ray():
     """The place in the zone where hiding is most likely, and how far it reaches.
@@ -608,7 +512,7 @@ def the_widest_range_of_sizes() -> None:
     )
     save(figure, "the-widest-range-of-sizes.png")
 
-# ------------------------------------------------------------- 3. what goes in
+# ------------------------------------------------------------- 4. what goes in
 
 def what_goes_in() -> None:
     """Everything an answer is given, and the one thing it is not."""
@@ -735,7 +639,7 @@ def what_goes_in() -> None:
     )
     save(figure, "what-goes-in.png")
 
-# ------------------------------------------------------- 4. what must come out
+# ------------------------------------------------------- 5. what must come out
 
 def union_raster(circles, cells=520):
     """A boolean picture of a splayed silhouette, with the extent it covers."""
@@ -901,7 +805,7 @@ def what_must_come_out() -> None:
                  fontsize=NOTE_SIZE, color=MUTED)
     save(figure, "what-must-come-out.png")
 
-# ------------------------------------------- 5. a glass missing altogether
+# ------------------------------------------- 6. a glass missing altogether
 
 # The tallest tapered glass hides the shortest one only where the throw is
 # largest, which is as far out from a station as the zone and that station's own
@@ -910,7 +814,8 @@ def what_must_come_out() -> None:
 # the script finds them again every run and refuses to draw anything else.
 HIDING_KIND = "tapered_glass"
 def main() -> None:
-    what_is_on_the_table()
+    the_arrangement()
+    the_kind_this_book_uses()
     the_widest_range_of_sizes()
     what_goes_in()
     what_must_come_out()

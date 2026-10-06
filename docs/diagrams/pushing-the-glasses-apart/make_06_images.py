@@ -33,7 +33,7 @@ down, because a position is a layout and not a measurement of a glass. The
 glasses themselves are redrawn here from the project's own drawer at the same
 seed, exactly as ``bench.scene`` draws them, so no glass's size appears in
 this file. ``check_the_example`` re-runs the room test on what it redrew and
-prints the result, so a silent drift between this file and the bench shows up
+prints the result, so a silent drift between this file and the examiner shows up
 as a failed check rather than as a wrong picture.
 
     pixi run python ../docs/diagrams/pushing-the-glasses-apart/make_06_images.py
@@ -234,7 +234,7 @@ def example_glasses():
 
     ``bench.scene`` draws its outlines with ``random.Random(seed)`` and
     ``glasses.shapes.draw``, in order, before it places them. Repeating that
-    here gives the same glasses without importing the bench, and without any
+    here gives the same glasses without importing the examiner, and without any
     size being written down in this file.
     """
     rng = random.Random(EXAMPLE_SEED)
@@ -596,7 +596,7 @@ def example_state():
 def check_the_example(width_list) -> None:
     """Re-run the room test on what was redrawn, and print what it found.
 
-    If this file and the bench ever drift apart, the numbers printed here stop
+    If this file and the examiner ever drift apart, the numbers printed here stop
     matching the ones the measurement script reported, and the pictures are
     wrong in a way somebody can see.
     """

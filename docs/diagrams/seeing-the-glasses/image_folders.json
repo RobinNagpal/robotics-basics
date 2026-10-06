@@ -176,12 +176,6 @@
   "10-where-it-stops.png": [
     "a-transformer-segmenter-fine-tuned"
   ],
-  "a-complete-answer.png": [
-    "what-is-asked-for"
-  ],
-  "a-glass-missing-altogether.png": [
-    "what-is-asked-for"
-  ],
   "borrowed-flow-what-it-does.png": [
     "a-borrowed-model-as-it-downloads"
   ],
@@ -200,13 +194,28 @@
   "four-to-six-of-one-kind.png": [
     "what-is-asked-for"
   ],
+  "hidden-from-the-side.png": [
+    "what-is-asked-for"
+  ],
+  "hidden-on-the-table.png": [
+    "what-is-asked-for"
+  ],
+  "hidden-what-the-camera-sees.png": [
+    "what-is-asked-for"
+  ],
   "keeper-flow-fitting-the-keeper.png": [
     "a-foundation-model-with-a-keeper"
   ],
   "keeper-flow-what-it-does.png": [
     "a-foundation-model-with-a-keeper"
   ],
-  "merged-though-they-stand-apart.png": [
+  "merge-from-the-side.png": [
+    "what-is-asked-for"
+  ],
+  "merge-on-the-table.png": [
+    "what-is-asked-for"
+  ],
+  "merge-what-the-camera-sees.png": [
     "what-is-asked-for"
   ],
   "network-flow-labels.png": [
@@ -236,9 +245,6 @@
   "the-sensors.png": [
     "the-cell"
   ],
-  "the-three-difficulties.png": [
-    "what-is-asked-for"
-  ],
   "the-widest-range-of-sizes.png": [
     "what-is-asked-for"
   ],
@@ -255,9 +261,6 @@
     "what-is-asked-for"
   ],
   "what-must-come-out.png": [
-    "what-is-asked-for"
-  ],
-  "where-can-the-camera-stand.png": [
     "what-is-asked-for"
   ]
 }

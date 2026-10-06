@@ -337,6 +337,16 @@ costs you. Naming the rejected alternative is the part that carries the value.
   per area, and write to `docs/images/<area>/<doc-name>/`.
 - A diagram must illustrate one specific idea from its own document. A reusable
   box-and-arrow chart is not acceptable.
+- **One picture shows one thing.** Do not put two or three separate ideas side by
+  side in one image. Two panels belong together only when they are the same thing
+  seen differently: the same scene from two camera positions, or the same picture
+  with two different measurements marked on it. Anything else is two pictures.
+- **Never put two flow charts in one image.** A flow chart is a whole argument on
+  its own, and a second one beside it halves the size of both.
+- **Keep the text in a picture short.** A picture crowded with sentences is harder
+  to read than the paragraph it was meant to replace. Put the explanation in the
+  prose under the picture and leave the picture to carry the shape of the idea.
+  If a label needs more than a line or two, the picture is doing the prose's job.
 - Check a diagram by rendering it to PNG and looking at it. Overlapping labels and
   lines passing through obstacles are the usual faults, and the SVG write succeeds
   either way.

@@ -1,9 +1,8 @@
-"""The six pictures for docs/08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md.
+"""The four pictures for docs/08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md.
 
 That document states the problem: four to six glasses of one kind on the table,
-what an answer is given, what it must hand back, and the two difficulties that
-live inside a single station's pictures. These six pictures draw those
-statements.
+what an answer is given and what it must hand back. The two difficulties are
+drawn in make_difficulty_pictures.py, three views each, rather than here.
 
 Every length here is read out of the cell's own constants, so the pictures
 cannot drift from the code:
@@ -16,14 +15,6 @@ cannot drift from the code:
     the stations themselves, from ``arm/dimensions.py``;
   * how much table one picture covers, worked out from the wrist camera's own
     lens exactly as ``bench/data.py frame()`` works it out.
-
-The two difficulty pictures are drawn with ``splay_circles``, ``splay_covers``
-and ``splay_width`` from diagram_style, which model what a camera looking
-straight down does to a standing glass: a slice at height z is imaged as though
-the scene were scaled about the point directly below the camera by H / (H - z).
-Nothing in those two pictures is placed by eye. The arrangement in
-``a-glass-missing-altogether`` is asserted with ``splay_covers`` before it is
-drawn, and the script stops if the assertion fails.
 
 Run from code/:
 
@@ -118,17 +109,14 @@ PLAIN = {
     "short_stemmed_glass": "short stemmed",
 }
 
-
 def span(kind: str, name: str) -> tuple[float, float]:
     """One of a kind's ranges, in millimetres."""
     low, high = KIND_RANGES[kind][name]
     return low * MM, high * MM
 
-
 def widest(kind: str) -> str:
     """Which range gives the widest part of a glass of this kind."""
     return "rim_diameter" if "rim_diameter" in KIND_RANGES[kind] else "bowl_diameter"
-
 
 def outline_mm(kind: str, tall: bool):
     """The cell's own outline for the tallest or shortest glass of a kind.
@@ -148,9 +136,7 @@ def outline_mm(kind: str, tall: bool):
     line = build(kind, **picked)
     return np.asarray(line.height) * MM, np.asarray(line.radius) * MM
 
-
 # --------------------------------------------------------------- the machinery
-
 
 def panels(width: float, height: float, ratios=(1.0,)):
     """A figure with bare panels of unequal width.
@@ -171,11 +157,9 @@ def panels(width: float, height: float, ratios=(1.0,)):
         bare(axis)
     return figure, axes
 
-
 def frame_box(axis, x, y, w, h, **kw):
     kw.setdefault("fill", False)
     axis.add_patch(Rectangle((x, y), w, h, **kw))
-
 
 def draw_zone(axis, label=True, colour=MUTED):
     """The glass zone, in plan, in millimetres of table."""
@@ -187,7 +171,6 @@ def draw_zone(axis, label=True, colour=MUTED):
             ha="center", va="top", fontsize=NOTE_SIZE, color=colour,
         )
 
-
 def side_glass(axis, x, kind, tall, colour=GLASS, alpha=0.55, lw=1.4, base=0.0):
     """One glass of a kind, in side elevation, from the cell's own outline."""
     h, r = outline_mm(kind, tall)
@@ -196,7 +179,6 @@ def side_glass(axis, x, kind, tall, colour=GLASS, alpha=0.55, lw=1.4, base=0.0):
     axis.plot(x - r, h + base, color=colour, lw=lw)
     axis.plot([x - r[-1], x + r[-1]], [h[-1] + base] * 2, color=colour, lw=lw)
     return h, r
-
 
 def height_map(nadir, glasses, grid=(PIXELS_ACROSS, PIXELS_DOWN)):
     """What one overhead picture sees, as the height of the nearest surface.
@@ -219,7 +201,6 @@ def height_map(nadir, glasses, grid=(PIXELS_ACROSS, PIXELS_DOWN)):
             out = np.where(inside, np.maximum(out, z), out)
     return out, (-FRAME[0] / 2.0, FRAME[0] / 2.0, -FRAME[1] / 2.0, FRAME[1] / 2.0)
 
-
 def connected(first, second):
     """Do two splayed silhouettes form one shape? True if any circles meet."""
     for c1, r1 in first:
@@ -228,23 +209,18 @@ def connected(first, second):
                 return True
     return False
 
-
 def in_zone(point) -> bool:
     return ZONE[0] <= point[0] <= ZONE[1] and ZONE[2] <= point[1] <= ZONE[3]
 
-
 def in_frame(point, nadir) -> bool:
     return abs(point[0] - nadir[0]) <= FRAME[0] / 2.0 and abs(point[1] - nadir[1]) <= FRAME[1] / 2.0
-
 
 def double_arrow(axis, a, b, colour=INK, lw=1.1):
     axis.add_patch(
         FancyArrowPatch(a, b, arrowstyle="<|-|>", mutation_scale=9, color=colour, lw=lw, zorder=6)
     )
 
-
 MASK = dict(facecolor=PAPER, edgecolor="none", pad=1.2)
-
 
 def card(axis, x, y, w, h, colour=MUTED, lw=1.0, ls="-", fc="none"):
     axis.add_patch(
@@ -253,7 +229,6 @@ def card(axis, x, y, w, h, colour=MUTED, lw=1.0, ls="-", fc="none"):
             ec=colour, fc=fc, lw=lw, ls=ls, zorder=2,
         )
     )
-
 
 def splay_outline(nadir, centre, h, r):
     """splay_circles for an outline the cell actually builds.
@@ -269,7 +244,6 @@ def splay_outline(nadir, centre, h, r):
     k = HEIGHT / (HEIGHT - h)
     return [(offset * factor, radius * factor) for factor, radius in zip(k, r)]
 
-
 def waisted(r) -> bool:
     """Does this radius profile narrow and then widen again?
 
@@ -280,7 +254,6 @@ def waisted(r) -> bool:
     rising = np.diff(np.asarray(r))
     return bool(np.any(rising[:-1] < -0.1) and np.any(rising[1:] > 0.1)
                 and np.argmax(np.asarray(r)) > int(np.argmin(np.asarray(r)[1:]) + 1))
-
 
 def measured_coverage():
     """The median per cent of each glass the mask covered, per kind.
@@ -302,7 +275,6 @@ def measured_coverage():
         out[label] = {kind: by_kind[kind]["covered_median"] for kind in KINDS}
     return out
 
-
 # ------------------------------------------------------- 1. what is on the table
 
 # Five tapered glasses, written down here because a picture wants an
@@ -316,7 +288,6 @@ ARRANGEMENT = (
     ((430.0, -245.0), 160.0, 88.0),
     ((585.0, -125.0), 95.0, 67.0),
 )
-
 
 def silhouette_rasters(kind: str, out: float, cells: int = 460):
     """Where a glass of ``kind`` lands in an overhead picture, as two rasters.
@@ -346,7 +317,6 @@ def silhouette_rasters(kind: str, out: float, cells: int = 460):
     blob = (gx - wide_c[0]) ** 2 + (gy - wide_c[1]) ** 2 <= wide_r**2
     return whole, whole & ~blob, extent, (float(wide_c[0]), float(wide_r)), float(radius.max())
 
-
 def shade(axis, mask, extent, colour, alpha, shift=0.0, zorder=3):
     """Paint a boolean raster in one colour, leaving everything else clear."""
     from matplotlib.colors import to_rgb
@@ -358,7 +328,6 @@ def shade(axis, mask, extent, colour, alpha, shift=0.0, zorder=3):
         rgba, origin="lower", zorder=zorder, interpolation="nearest",
         extent=(extent[0] + shift, extent[1] + shift, extent[2], extent[3]),
     )
-
 
 def what_is_on_the_table() -> None:
     """Four to six glasses of one kind, and why two of the four kinds are harder."""
@@ -510,9 +479,7 @@ def what_is_on_the_table() -> None:
 
     save(figure, "four-to-six-of-one-kind.png")
 
-
 # ---------------------------------------------- 2. the widest range of sizes
-
 
 def best_ray():
     """The place in the zone where hiding is most likely, and how far it reaches.
@@ -538,7 +505,6 @@ def best_ray():
                 direction = np.array([corner[0] - nadir[0], corner[1] - nadir[1]]) / reach
                 best = (reach, nadir, direction)
     return best
-
 
 @cache
 def hiding_separation(kind: str, tolerance: float = 0.5):
@@ -588,7 +554,6 @@ def hiding_separation(kind: str, tolerance: float = 0.5):
         else:
             high = middle
     return low, nadir, np.array(nadir) + (reach - low) * direction, short
-
 
 def the_widest_range_of_sizes() -> None:
     """The tapered kind's range of sizes, against a narrower kind's."""
@@ -643,9 +608,7 @@ def the_widest_range_of_sizes() -> None:
     )
     save(figure, "the-widest-range-of-sizes.png")
 
-
 # ------------------------------------------------------------- 3. what goes in
-
 
 def what_goes_in() -> None:
     """Everything an answer is given, and the one thing it is not."""
@@ -772,9 +735,7 @@ def what_goes_in() -> None:
     )
     save(figure, "what-goes-in.png")
 
-
 # ------------------------------------------------------- 4. what must come out
-
 
 def union_raster(circles, cells=520):
     """A boolean picture of a splayed silhouette, with the extent it covers."""
@@ -792,14 +753,12 @@ def union_raster(circles, cells=520):
         out |= (gx - float(c[0])) ** 2 + (gy - float(c[1])) ** 2 <= r**2
     return out, extent, gx, gy
 
-
 def covered_by(circles, gx, gy):
     """Which points of a grid fall inside a splayed silhouette."""
     out = np.zeros_like(gx, dtype=bool)
     for c, r in circles:
         out |= (gx - float(c[0])) ** 2 + (gy - float(c[1])) ** 2 <= r**2
     return out
-
 
 def trace(axis, circles, colour, lw=1.2, ls=(0, (4, 3)), zorder=6):
     """Draw the edge of a splayed silhouette and nothing inside it."""
@@ -808,7 +767,6 @@ def trace(axis, circles, colour, lw=1.2, ls=(0, (4, 3)), zorder=6):
         mask.astype(float), levels=[0.5], colors=[colour], linewidths=lw, linestyles=[ls],
         extent=extent, zorder=zorder,
     )
-
 
 def fit(axis, circles, points=(), pad=34.0, headroom=0.0):
     """Set a panel's limits from what was drawn, with room above for a note.
@@ -829,7 +787,6 @@ def fit(axis, circles, points=(), pad=34.0, headroom=0.0):
     y_from, y_to = min(ys) - pad, max(ys) + pad
     axis.set_xlim(x_from, x_to)
     axis.set_ylim(y_from, y_to + headroom * (y_to - y_from))
-
 
 def what_must_come_out() -> None:
     """One record per glass, and why its place is a position and not a pose."""
@@ -944,7 +901,6 @@ def what_must_come_out() -> None:
                  fontsize=NOTE_SIZE, color=MUTED)
     save(figure, "what-must-come-out.png")
 
-
 # ------------------------------------------- 5. a glass missing altogether
 
 # The tallest tapered glass hides the shortest one only where the throw is
@@ -953,231 +909,11 @@ def what_must_come_out() -> None:
 # will still call a complete cover, found by sweeping the separation downwards;
 # the script finds them again every run and refuses to draw anything else.
 HIDING_KIND = "tapered_glass"
-
-
-def a_glass_missing_altogether() -> None:
-    """A tall glass whose outline covers a short neighbour completely."""
-    separation, nadir, tall, short = hiding_separation(HIDING_KIND)
-    tall_h = span(HIDING_KIND, "height")[1]
-    tall_w = span(HIDING_KIND, "rim_diameter")[1]
-    short_h = span(HIDING_KIND, "height")[0]
-    short_w = span(HIDING_KIND, "rim_diameter")[0]
-    big = splay_circles(nadir, tall, tall_h, tall_w)
-    small = splay_circles(nadir, short, short_h, short_w)
-    if not splay_covers(big, small):
-        raise SystemExit("the arrangement this picture is about does not actually hide anything")
-    for name, point in (("the tall glass", tall), ("the short glass", short)):
-        if not in_zone(point) or not in_frame(point, nadir):
-            raise SystemExit(f"{name} stands where no station could have seen it")
-
-    # The same short glass at the guaranteed separation. The tall glass then has
-    # to stand further in, where it is thrown less far, and no longer reaches
-    # over its neighbour.
-    direction = (np.asarray(short) - np.asarray(nadir))
-    direction = direction / float(np.linalg.norm(direction))
-    pulled = np.asarray(short) - SEPARATION * direction
-    pulled_big = splay_circles(nadir, pulled, tall_h, tall_w)
-    if splay_covers(pulled_big, small):
-        raise SystemExit("the comparison panel is supposed to show a glass that is not hidden")
-    # how far out along the line each silhouette reaches, and so how much of the
-    # short glass is left outside the tall one
-    def along(circles):
-        return max(float(np.dot(c, direction)) + r for c, r in circles)
-
-    survives = along(small) - along(pulled_big)
-
-    figure, (table, hidden, spared) = panels(13.4, 5.4, ratios=(0.92, 1.0, 1.0))
-
-    # -- on the table
-    table.set_aspect("equal")
-    draw_zone(table, label=False)
-    table.text((ZONE[0] + ZONE[1]) / 2.0, ZONE[3] + 10, "the glass zone",
-               ha="center", va="bottom", fontsize=NOTE_SIZE, color=MUTED)
-    table.plot(*nadir, marker="+", ms=10, mew=1.4, color=INK, zorder=7)
-    table.text(nadir[0] + 12, nadir[1] + 8, "the point below\nthe camera",
-               ha="left", va="bottom", fontsize=NOTE_SIZE, color=INK, bbox=MASK, zorder=7)
-    table.plot([nadir[0], short[0]], [nadir[1], short[1]], color=MUTED, lw=0.9, ls=(0, (4, 3)))
-    for point, width, label, colour in (
-        (tall, tall_w, f"the tallest the kind\nallows, {tall_h:.0f} mm", GLASS),
-        (short, short_w, f"the shortest,\n{short_h:.0f} mm", WARN),
-    ):
-        table.add_patch(Circle(point, width / 2.0, fc=colour, alpha=0.28, ec=colour, lw=1.4))
-        table.plot(*point, marker="+", ms=7, mew=1.4, color=colour)
-        table.text(point[0] - width / 2.0 - 12, point[1], label, ha="right", va="center",
-                   fontsize=NOTE_SIZE, color=colour, bbox=MASK, zorder=7)
-    double_arrow(table, tuple(tall), tuple(short))
-    table.text(
-        (tall[0] + short[0]) / 2.0 + 12, (tall[1] + short[1]) / 2.0,
-        f"{separation:.0f} mm\nbetween centres",
-        ha="left", va="center", fontsize=NOTE_SIZE, color=INK, bbox=MASK, zorder=7,
-    )
-    table.text(
-        ZONE[0], ZONE[2] - 16,
-        "both centres inside the glass zone, and both\ninside this station's own picture",
-        ha="left", va="top", fontsize=NOTE_SIZE, color=MUTED,
-    )
-    table.set_title("On the table", fontsize=LABEL_SIZE + 0.8, color=INK, pad=8)
-    table.set_xlim(ZONE[0] - 160, ZONE[1] + 40)
-    table.set_ylim(ZONE[2] - 76, ZONE[3] + 34)
-
-    # -- in the picture, twice
-    for axis, shapes, title in (
-        (hidden, (big, small), f"In the picture, {separation:.0f} mm apart"),
-        (spared, (pulled_big, small), f"In the picture, {SEPARATION:.0f} mm apart"),
-    ):
-        axis.set_aspect("equal")
-        axis.plot(0, 0, marker="+", ms=10, mew=1.4, color=INK, zorder=7)
-        splay_patch(axis, shapes[0], colour=GLASS, alpha=0.28, zorder=3)
-        # what is left of the short glass once the tall one is drawn over it
-        mask, extent, gx, gy = union_raster(shapes[1])
-        shade(axis, mask & ~covered_by(shapes[0], gx, gy), extent, WARN, 0.75, zorder=5)
-        trace(axis, shapes[1], WARN)
-        axis.set_title(title, fontsize=LABEL_SIZE + 0.8, color=INK, pad=8)
-        fit(axis, list(big) + list(small) + list(pulled_big), points=[(0.0, 0.0)],
-            pad=40.0, headroom=0.34)
-        axis.text(0.0, 6.0, "the point below\nthe camera", ha="center", va="bottom",
-                  fontsize=NOTE_SIZE, color=INK)
-
-    hidden.text(
-        0.02, 0.99,
-        "The tall glass's rim is nearer the lens than the table is,\n"
-        "so its outline is thrown outwards and lands over its\n"
-        "neighbour. The short glass is in there, and not one pixel\n"
-        "of the picture is its own: the dashed line is where it stands,\n"
-        "and nothing inside it is left over. There is no bad number to\n"
-        "find and no check that fails.",
-        transform=hidden.transAxes, ha="left", va="top", fontsize=NOTE_SIZE, color=INK,
-    )
-    spared.text(
-        0.02, 0.99,
-        f"The layout rule keeps every pair of centres at least\n"
-        f"{SEPARATION:.0f} mm apart. The tall glass then stands further in,\n"
-        f"where it is thrown less far, and {survives:.0f} mm of the short glass\n"
-        f"is left outside it, shaded here. A complete cover needs\n"
-        f"{separation:.0f} mm, so in a spawned arrangement this shows up as\n"
-        f"a merge rather than as a loss.",
-        transform=spared.transAxes, ha="left", va="top", fontsize=NOTE_SIZE, color=INK,
-    )
-    save(figure, "a-glass-missing-altogether.png")
-
-
-# -------------------------------------- 6. merged though they stand apart
-
-
-def merged_though_they_stand_apart() -> None:
-    """Two glasses with bare table between them, and one shape in the picture."""
-    nadir = STATIONS[1]
-    corner = (ZONE[1], ZONE[3])
-    reach = math.dist(nadir, corner)
-    direction = np.array([corner[0] - nadir[0], corner[1] - nadir[1]]) / reach
-    near = np.asarray(nadir) + 70.0 * direction
-    far = np.asarray(nadir) + (70.0 + SEPARATION) * direction
-    near_h, near_w = 225.0, 102.0
-    far_h, far_w = 208.0, 96.0
-    for point in (near, far):
-        if not in_zone(point) or not in_frame(point, nadir):
-            raise SystemExit("this picture stands a glass where no station could have seen it")
-    first = splay_circles(nadir, near, near_h, near_w)
-    second = splay_circles(nadir, far, far_h, far_w)
-    if not connected(first, second):
-        raise SystemExit("the two silhouettes this picture is about do not actually meet")
-    bare_table = SEPARATION - (near_w + far_w) / 2.0
-
-    figure, (table, shot, depth) = panels(13.4, 4.8, ratios=(0.95, 1.0, 0.92))
-
-    table.set_aspect("equal")
-    draw_zone(table, label=False)
-    table.plot(*nadir, marker="+", ms=10, mew=1.4, color=INK, zorder=7)
-    table.text(nadir[0] - 12, nadir[1], "the point below\nthe camera",
-               ha="right", va="center", fontsize=NOTE_SIZE, color=INK, bbox=MASK, zorder=7)
-    for point, width, colour in ((near, near_w, GLASS), (far, far_w, GLASS)):
-        table.add_patch(Circle(point, width / 2.0, fc=colour, alpha=0.28, ec=colour, lw=1.4))
-        table.plot(*point, marker="+", ms=7, mew=1.4, color=colour)
-    inner = near + direction * near_w / 2.0
-    outer = far - direction * far_w / 2.0
-    double_arrow(table, tuple(inner), tuple(outer), colour=GOOD)
-    table.text(
-        (inner[0] + outer[0]) / 2.0 + 16, (inner[1] + outer[1]) / 2.0 - 26,
-        f"{bare_table:.0f} mm of bare table\nbetween the two rims",
-        ha="left", va="top", fontsize=NOTE_SIZE, color=GOOD, bbox=MASK, zorder=7,
-    )
-    table.text(
-        ZONE[0], ZONE[2] - 18,
-        f"centres {SEPARATION:.0f} mm apart, the smallest the\nlayout rule allows",
-        ha="left", va="top", fontsize=NOTE_SIZE, color=MUTED,
-    )
-    table.set_title("On the table: a clear gap", fontsize=LABEL_SIZE + 0.8, color=INK, pad=8)
-    table.set_xlim(ZONE[0] - 40, ZONE[1] + 70)
-    table.set_ylim(ZONE[2] - 86, ZONE[3] + 30)
-
-    shot.set_aspect("equal")
-    shot.plot(0, 0, marker="+", ms=10, mew=1.4, color=INK)
-    shot.text(-12, -6, "the point below\nthe camera", ha="right", va="top",
-              fontsize=NOTE_SIZE, color=INK)
-    splay_patch(shot, first, colour=GLASS, alpha=0.26, zorder=3)
-    splay_patch(shot, second, colour=GLASS, alpha=0.26, zorder=3)
-    shot.annotate(
-        "no gap anywhere along here: each glass\ncovers more of the picture than its\n"
-        "footprint deserves, and the two smears meet",
-        xy=(float(first[-1][0][0]) + 10, float(first[-1][0][1]) + 10), xytext=(-44, 486),
-        ha="left", va="top", fontsize=NOTE_SIZE, color=WARN,
-        arrowprops=dict(arrowstyle="-|>", mutation_scale=8, color=WARN, lw=0.9),
-    )
-    line = np.array([direction * t for t in np.linspace(0.0, 520.0, 2)])
-    shot.plot(line[:, 0], line[:, 1], color=INK, lw=0.8, ls=(0, (4, 3)), zorder=6)
-    shot.set_title("In the picture: one connected shape",
-                   fontsize=LABEL_SIZE + 0.8, color=INK, pad=8)
-    shot.set_xlim(-50, 450)
-    shot.set_ylim(-60, 500)
-
-    # the depth reading along the dashed line, which still separates the two
-    steps = np.linspace(0.0, 520.0, 700)
-    surface = np.zeros_like(steps)
-    for circles, h in ((first, near_h), (second, far_h)):
-        for index, (c, radius) in enumerate(circles):
-            z = h * index / (len(circles) - 1)
-            points = np.outer(steps, direction)
-            inside = np.hypot(points[:, 0] - c[0], points[:, 1] - c[1]) <= radius
-            surface = np.where(inside, np.maximum(surface, z), surface)
-    reading = HEIGHT - surface
-    depth.plot(steps, reading, color=GOOD, lw=1.6)
-    depth.axhline(HEIGHT, color=MUTED, lw=0.9, ls=(0, (4, 3)))
-    depth.text(14, HEIGHT - 4, f"the bare table, {HEIGHT:.0f} mm from the lens",
-               ha="left", va="bottom", fontsize=NOTE_SIZE, color=MUTED, bbox=MASK)
-    half = len(steps) // 2
-    first = int(np.argmin(reading[:half]))
-    second = half + int(np.argmin(reading[half:]))
-    valley = first + int(np.argmax(reading[first:second]))
-    depth.annotate(
-        "between the two glasses the depth climbs\nback towards the table, so the readings\n"
-        "still say where one ends and the next begins",
-        xy=(steps[valley], reading[valley]), xytext=(steps[valley] + 18, reading[valley] + 46),
-        ha="left", va="top", fontsize=NOTE_SIZE, color=INK,
-        arrowprops=dict(arrowstyle="-|>", mutation_scale=8, color=INK, lw=0.9),
-    )
-    depth.set_xlim(0, 520)
-    depth.set_ylim(470, 190)
-    depth.set_xticks([0, 130, 260, 390, 520])
-    depth.set_yticks([200, 250, 300, 350, 400, 450])
-    depth.tick_params(labelsize=NOTE_SIZE - 0.4, colors=MUTED, length=3)
-    for side in ("left", "bottom"):
-        depth.spines[side].set_visible(True)
-        depth.spines[side].set_color(MUTED)
-    depth.set_xlabel("millimetres along the dashed line", fontsize=NOTE_SIZE, color=MUTED)
-    depth.set_ylabel("depth reading, millimetres from the lens", fontsize=NOTE_SIZE, color=MUTED)
-    depth.set_title("The depth readings still tell them apart",
-                    fontsize=LABEL_SIZE + 0.8, color=INK, pad=8)
-    save(figure, "merged-though-they-stand-apart.png")
-
-
 def main() -> None:
     what_is_on_the_table()
     the_widest_range_of_sizes()
     what_goes_in()
     what_must_come_out()
-    a_glass_missing_altogether()
-    merged_though_they_stand_apart()
-
 
 if __name__ == "__main__":
     main()

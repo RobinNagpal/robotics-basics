@@ -2,31 +2,25 @@
 
 ## 1. Introduction
 
-Several glasses stand on the table. The arm photographs them from the top and
-has to work out **which pixels belong to which glass**, and where each glass
-stands. That is the whole problem: it picks nothing up and it measures no
-shape. The reason to state it this carefully is that **this book exists to compare six
+The whole job this cell was built for is picking glasses off a table and
+standing them on a rack. A glass can only be picked up once the arm knows which
+glass is which and where each one stands, so that is the part this book takes:
+**several glasses stand on the table, the arm photographs them from the top,
+and it has to work out which pixels belong to which glass and where each glass
+stands.**
+
+It stops there. It picks nothing up, it measures no shape, and if two glasses
+cannot be told apart from any reachable viewpoint it reports that and stops,
+because moving them apart is [the next
+book](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
+
+The reason to state it this carefully is that **this book exists to compare six
 ways of answering it**. Six quite different methods are each given this one
 question, and a comparison only means something when the question was
 identical, so what goes in and what must come out are fixed here once. By the
-end of this document you will know both of those exactly, and the three
-difficulties that make this harder than photographing one glass — including
-which of the three the six actually differ on, and which of them none of them
-can answer.
-
-This work cell was built for a series of five jobs, and each one is harder than
-the one before it because it takes away one more assumption. The first job is a
-single glass carried from the table to the rack, start to finish. This book is
-the second, where several glasses stand on the table and the arm has to tell
-them apart. [Pushing the glasses
-apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md)
-is the third, where the glasses stand too close together for the gripper and the
-arm has to make room. The last
-two jobs are not written up here: in one, several kinds of glass stand on the
-table at once, and in the other the proportions each kind is drawn from are not
-known in advance. Only the second job and the third have books, so where these
-pages mention a neighbouring job they describe it in words rather than sending
-you to read it.
+end of this document you will know both of those exactly, and the two
+difficulties that make this harder than photographing one glass — the one the
+six differ on, and the one none of them can answer.
 
 ## Contents
 
@@ -34,11 +28,9 @@ you to read it.
 2. [What is on the table](#2-what-is-on-the-table)
 3. [What goes in](#3-what-goes-in)
 4. [What must come out](#4-what-must-come-out)
-5. [The three difficulties](#5-the-three-difficulties)
-6. [Why one method is not enough](#6-why-one-method-is-not-enough)
-7. [What is deliberately not in this problem](#7-what-is-deliberately-not-in-this-problem)
-8. [What "done" means](#8-what-done-means)
-9. [Where to go next](#9-where-to-go-next)
+5. [The two difficulties](#5-the-two-difficulties)
+6. [What "done" means](#6-what-done-means)
+7. [Where to go next](#7-where-to-go-next)
 
 ## 2. What is on the table
 
@@ -122,32 +114,37 @@ way a glass is turned, because a glass is the same shape from every side.
   follows from the first difficulty below, and it is not the same as saying
   which glasses were found.
 
-## 5. The three difficulties
+## 5. The two difficulties
 
-They are ordered by how dangerous they are, which is not the order in which
-they are easiest to notice. Read them with one thing in mind: **the second is
-the one the six solutions differ on, and every number in the results is about
-it.** The first is the one none of them answers, and it is here because knowing
-that it cannot be answered from the pictures is what stops the effort going
-into the wrong place.
+Both come from the same fact, and it is worth stating once before either of
+them. **A camera looking straight down does not draw a glass's outline on top
+of the glass.** The rim is nearer the lens than the table, so the outline is
+thrown outwards, away from the point directly below the camera, and the taller
+the glass the further out it goes.
 
-![The difficulty that is easiest to notice is two glasses running together in a picture, and the dangerous one is a glass that is in no picture at all, because the first can be settled from the pictures already taken and the second leaves nothing behind to find.](../../images/seeing-the-glasses/what-is-asked-for/the-three-difficulties.png)
+What that does depends on how close two glasses stand. The second difficulty
+below is the one the six solutions differ on, and every number in the results
+is about it. The first is the one none of them answers.
 
-### A glass can be missing from a picture altogether
+### A glass can be missing from the picture altogether
 
-A camera looking straight down does not draw a glass's outline on top of the
-glass. The rim is nearer the lens than the table, so the outline is thrown
-outwards, away from the point directly below the camera, and the taller the
-glass the further out it is thrown. When a kind holds both short glasses and
-much taller ones, a tall glass's outline can sweep right over a short neighbour
-and cover it completely, and the short glass then appears in no picture at all.
+A tall glass's outline can sweep right over a short neighbour and cover it
+completely, and the short glass then appears in no picture at all. The three
+pictures below are one crowded arrangement: where the glasses really stand, the
+same glasses from the side with the camera above them, and the picture that
+comes back.
+
+![Three glasses of one kind stand on the table, with the short one beyond the tall one along the line running out from the point below the camera.](../../images/seeing-the-glasses/what-is-asked-for/hidden-on-the-table.png)
+
+![The same three glasses seen from the side, with the camera above them and the line of sight drawn, so that the tall glass stands between the lens and the short one.](../../images/seeing-the-glasses/what-is-asked-for/hidden-from-the-side.png)
+
+![The picture that comes back holds the tall glass and the third glass, and not one pixel of the short one.](../../images/seeing-the-glasses/what-is-asked-for/hidden-what-the-camera-sees.png)
 
 It takes an unusual arrangement. For the tapered kind, the tallest glass covers
 the shortest only when their centres are about 124 mm apart or less, and the
 layout rule guarantees 150 mm, so **it never happens in an ordinary arrangement
 at all**. It happens when the glasses stand closer than the rule allows, which
-is why the arrangements come in a crowded family as well as an ordinary one. In
-an ordinary one the same geometry shows up as a merge instead.
+is why the arrangements come in a crowded family as well as an ordinary one.
 
 This is the dangerous one because it leaves no trace. There is no bad number to
 find and no check that fails, so nothing in the run tells anybody a glass is
@@ -156,20 +153,29 @@ of any of them: handed the renderer's own perfect masks, the examiner still
 misses 18 of the 101 crowded glasses, because a glass that left no pixels
 cannot be drawn by anybody. The only defence is to work out in advance
 **where** a glass could have been hiding, which is geometry rather than
-perception, and then to go and look. [Looking again at what was
-hidden](02_looking-again-at-what-was-hidden.md) sets out how, and says plainly
+perception, and then to move the camera and look there. That also makes
+choosing where to look its own small problem, because with five glasses on the
+table a position that would see one of them may put another squarely in the
+line of sight. [Looking again at what was
+hidden](02_looking-again-at-what-was-hidden.md) sets out both, and says plainly
 that it is a design rather than something that runs.
 
-![A tall glass of the tapered kind has its outline thrown so far outwards from the point below the camera that it sweeps over a short glass of the same kind standing beside it, and the short glass then contributes no pixels to the picture at all.](../../images/seeing-the-glasses/what-is-asked-for/a-glass-missing-altogether.png)
+### Glasses merge in the picture although they stand apart on the table
 
-### Glasses merge in the picture even when they stand apart on the table
+Two glasses with clear bare table between them can still leave one connected
+shape in the picture, because the same outward throw makes each glass cover
+more of the picture than its footprint deserves. The same three pictures tell
+this one, on an ordinary arrangement.
 
-Two glasses with clear table between them can still leave one connected shape
-in the picture, because the same outward throw that hides a glass also makes
-each glass cover more of the picture than its footprint deserves. A method that
-treats each connected shape as one object then reports one glass where two are
-standing, and the report that comes back looks like one perfectly ordinary
-large glass with nothing wrong about it.
+![Three glasses of one kind stand on the table with a clear strip of bare table between two of them.](../../images/seeing-the-glasses/what-is-asked-for/merge-on-the-table.png)
+
+![The same three glasses from the side, with the camera above them, showing how far each rim leans away from the point below the lens.](../../images/seeing-the-glasses/what-is-asked-for/merge-from-the-side.png)
+
+![In the picture that comes back the two outlines have met, and there is no gap left between them.](../../images/seeing-the-glasses/what-is-asked-for/merge-what-the-camera-sees.png)
+
+A method that treats each connected shape as one object then reports one glass
+where two are standing, and the report looks like one perfectly ordinary large
+glass with nothing wrong about it.
 
 **This one is answerable, and that is why it is the difficulty this book is
 really about.** The pixels alone cannot separate the two, but the pixels are
@@ -187,79 +193,22 @@ the six merge between 0 and 10 pairs and find between 4 and 78 of the 101
 glasses. Every row of [the results](../11_the-results.md) is a different answer
 to this one paragraph.
 
-![On the table there is clear bare ground between the two glasses, and in the picture from above there is none, because each outline is thrown outwards until the two shapes meet, but the depth readings still separate them.](../../images/seeing-the-glasses/what-is-asked-for/merged-though-they-stand-apart.png)
-
-### The camera can no longer stand wherever it likes
-
-With one glass on the table, the camera could be parked anywhere around it. With
-five, a glass that would give a clear view of one glass may stand inside
-another, or put a third squarely in the line of sight. So choosing where to look
-stops being free and becomes its own small problem, described in [looking again
-at what was hidden](02_looking-again-at-what-was-hidden.md).
-
-![From the top, every other glass on the table blocks out a wedge of the places the camera could have stood to see the glass in question, and the camera has to be put down in what is left inside the arm's reach.](../../images/seeing-the-glasses/what-is-asked-for/where-can-the-camera-stand.png)
-
-## 6. Why one method is not enough
-
-The three difficulties are not independent, and the connection between them is
-why this problem is worth answering carefully.
-
-The second can be settled from the pictures already taken. The first and third
-cannot. A glass that produced no pixels cannot be recovered by any amount of
-work on the pixels that exist, and a glass with no clear viewpoint cannot be
-measured from the viewpoints available.
-
-So a complete answer is a **combination**: a way to place what was seen, a way
-to work out what could not have been seen, and a way to go and look again. Only
-the first of those differs between the six solutions. The other two are the same
-for all of them, and they live in [looking again at what was
-hidden](02_looking-again-at-what-was-hidden.md) so that no solution has to restate them.
-
-![A complete answer places what was seen, works out what could not have been seen, and goes to look again, and only the first of the three differs between the six solutions, because no amount of work on the pixels that exist recovers a glass that produced none.](../../images/seeing-the-glasses/what-is-asked-for/a-complete-answer.png)
-
-## 7. What is deliberately not in this problem
-
-**Naming the kind.** Every glass in an arrangement is the same kind and that
-kind is known. The harder job where several kinds stand on the table at once is
-where that stops being true.
-
-**Measuring a shape.** A shape needs the view from the side, and whether such a
-view is available is exactly what this problem is about. Once this problem has
-said which glasses can be seen from where, the job of measuring a single glass
-does that part exactly as it did before.
-
-**Picking anything up.** No grasp, no lift, no rack.
-
-**Moving anything.** If two glasses cannot be separated from any reachable
-viewpoint, this problem reports that and stops. Moving them apart is the job of
-[pushing the glasses apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
-
-## 8. What "done" means
+## 6. What "done" means
 
 A run is **done** when every glass has a mask, a place and a rough width; when
 every glass that could not be separated from its neighbour is listed with the
 reason; and when every region of table that could not have been seen is listed
 as unsearched rather than quietly treated as empty.
 
-The [examiner](../03_the-examiner.md) marks a run against the simulator's own record,
-and it describes each measurement in full. Two of them are worth naming here,
-because they are what the six answers are compared on.
-
-**How many glasses were found, missed, merged or split** says whether the method
-separated the glasses at all. Of these, **missed** is the one to watch hardest.
-A split glass announces itself, because both halves are too small to be a
-glass. A merged pair looks like one large glass, which is worse, because
-everything downstream believes it. A missed glass leaves nothing at all.
-
-**How much of each glass the mask actually covered** says how good the outline
-was, and it is the measurement that separates methods which the others cannot.
-The step that turns a mask into a place is deliberately forgiving, so two very
-different masks can give almost the same place. Comparing the masks themselves
-is what shows the difference.
+The [examiner](../03_the-examiner.md) marks a run against the simulator's own
+record and describes each measurement in full. Two of them are what the six
+answers are compared on: how many glasses were found, missed, merged or split,
+and how much of each glass the mask actually covered. The picture below says
+why **missed** is the one to watch hardest.
 
 ![A run is done when every glass has a mask, a place and a width, when every pair that could not be separated is listed with its reason, and when every patch of table nobody could see is listed as unsearched; and of the four ways the finding can go wrong, a missed glass is the one to watch hardest because it leaves nothing behind at all.](../../images/seeing-the-glasses/what-is-asked-for/what-done-means.png)
 
-## 9. Where to go next
+## 7. Where to go next
 
 - [The examiner](../03_the-examiner.md) — the scenes, the pictures, and how a run is
   marked. Read this before any solution.

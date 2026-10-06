@@ -5,13 +5,14 @@
 Several glasses stand on the table. The arm photographs them from the top and
 has to work out **which pixels belong to which glass**, and where each glass
 stands. That is the whole problem: it picks nothing up and it measures no
-shape. By the end of this document you will understand exactly what goes in and
-exactly what must come out, because this problem is answered six different ways
-and the only way to compare six answers is to give them all the same question.
-You will also understand the three difficulties that make this harder than
-photographing one glass, and why the hardest of the three is not that two
-glasses run together in a picture but that **one of them can be absent from the
-picture altogether**.
+shape. The reason to state it this carefully is that **this book exists to compare six
+ways of answering it**. Six quite different methods are each given this one
+question, and a comparison only means something when the question was
+identical, so what goes in and what must come out are fixed here once. By the
+end of this document you will know both of those exactly, and the three
+difficulties that make this harder than photographing one glass — including
+which of the three the six actually differ on, and which of them none of them
+can answer.
 
 This work cell was built for a series of five jobs, and each one is harder than
 the one before it because it takes away one more assumption. The first job is a
@@ -123,8 +124,12 @@ way a glass is turned, because a glass is the same shape from every side.
 
 ## 5. The three difficulties
 
-They are ordered by how dangerous they are, which is not the order in which they
-are easiest to notice.
+They are ordered by how dangerous they are, which is not the order in which
+they are easiest to notice. Read them with one thing in mind: **the second is
+the one the six solutions differ on, and every number in the results is about
+it.** The first is the one none of them answers, and it is here because knowing
+that it cannot be answered from the pictures is what stops the effort going
+into the wrong place.
 
 ![The difficulty that is easiest to notice is two glasses running together in a picture, and the dangerous one is a glass that is in no picture at all, because the first can be settled from the pictures already taken and the second leaves nothing behind to find.](../../images/seeing-the-glasses/what-is-asked-for/the-three-difficulties.png)
 
@@ -137,36 +142,50 @@ glass the further out it is thrown. When a kind holds both short glasses and
 much taller ones, a tall glass's outline can sweep right over a short neighbour
 and cover it completely, and the short glass then appears in no picture at all.
 
-How close the two have to stand for that is worth knowing, because it decides
-where the difficulty appears. For the tapered kind, the tallest glass covers
+It takes an unusual arrangement. For the tapered kind, the tallest glass covers
 the shortest only when their centres are about 124 mm apart or less, and the
-pair then has to sit some 240 mm out from the point below the camera for the
-throw to be large enough. At the 150 mm the layout rule guarantees, the pair
-would have to sit 300 mm out, and no point that far out is both inside the
-glass zone and inside that station's own picture, which reaches 252 mm at the
-furthest. So a complete cover happens when the glasses stand closer than the
-rule allows, and that is exactly why the arrangements come in a crowded family
-as well as an ordinary one. In a spawned arrangement the same geometry shows up
-as a merge instead.
+layout rule guarantees 150 mm, so **it never happens in an ordinary arrangement
+at all**. It happens when the glasses stand closer than the rule allows, which
+is why the arrangements come in a crowded family as well as an ordinary one. In
+an ordinary one the same geometry shows up as a merge instead.
 
 This is the dangerous one because it leaves no trace. There is no bad number to
-find and no check that fails. The only defence is to have worked out in advance
+find and no check that fails, so nothing in the run tells anybody a glass is
+missing. **No solution in this book recovers one**, and that is not a failure
+of any of them: handed the renderer's own perfect masks, the examiner still
+misses 18 of the 101 crowded glasses, because a glass that left no pixels
+cannot be drawn by anybody. The only defence is to work out in advance
 **where** a glass could have been hiding, which is geometry rather than
-perception, and then to go and look.
+perception, and then to go and look. [Looking again at what was
+hidden](02_looking-again-at-what-was-hidden.md) sets out how, and says plainly
+that it is a design rather than something that runs.
 
 ![A tall glass of the tapered kind has its outline thrown so far outwards from the point below the camera that it sweeps over a short glass of the same kind standing beside it, and the short glass then contributes no pixels to the picture at all.](../../images/seeing-the-glasses/what-is-asked-for/a-glass-missing-altogether.png)
 
 ### Glasses merge in the picture even when they stand apart on the table
 
-Two glasses with clear table between them can still leave one connected shape in
-the picture, because the same outward throw that hides a glass also makes each
-glass cover more of the picture than its footprint deserves. A method that
+Two glasses with clear table between them can still leave one connected shape
+in the picture, because the same outward throw that hides a glass also makes
+each glass cover more of the picture than its footprint deserves. A method that
 treats each connected shape as one object then reports one glass where two are
-standing.
+standing, and the report that comes back looks like one perfectly ordinary
+large glass with nothing wrong about it.
 
-This difficulty is answerable inside one station's pictures, because the depth
-readings still hold the information needed to tell the two apart. It is the one
-most of the six answers are really about.
+**This one is answerable, and that is why it is the difficulty this book is
+really about.** The pixels alone cannot separate the two, but the pixels are
+not all there is: every pixel carries a depth reading, and the two glasses
+stand at different places on the table whatever their outlines do in the
+picture. So the information needed to tell them apart is in the input already,
+and the six methods are six different ways of getting at it. One writes down a
+rule about distance on the table. One fits a network that has every glass pixel
+vote for the middle of its own glass. Four ask a model to return one outline
+per object so that nothing is ever joined in the first place.
+
+The spread between them is wide, which is what makes the comparison worth
+having. On the crowded arrangements, where this difficulty is at its sharpest,
+the six merge between 0 and 10 pairs and find between 4 and 78 of the 101
+glasses. Every row of [the results](../11_the-results.md) is a different answer
+to this one paragraph.
 
 ![On the table there is clear bare ground between the two glasses, and in the picture from above there is none, because each outline is thrown outwards until the two shapes meet, but the depth readings still separate them.](../../images/seeing-the-glasses/what-is-asked-for/merged-though-they-stand-apart.png)
 

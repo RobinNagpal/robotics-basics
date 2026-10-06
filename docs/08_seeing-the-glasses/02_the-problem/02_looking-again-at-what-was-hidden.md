@@ -14,6 +14,14 @@ could have been hiding without having seen it, how choosing where to look next
 becomes a covering problem with a known name, and why the one learned part in
 here is placed where a wrong answer costs a few seconds rather than a glass.
 
+**What follows is a design, and none of it is built.** The six solutions are
+built and scored; this is not, and no number anywhere in this book belongs to
+it. There is no code that computes the wedges, chooses where to look next, or
+sends the arm back for a second picture. The other documents separate what
+exists in code from what is prescribed, and this one is prescribed from
+beginning to end, so read it as the answer this book proposes to its own
+hardest difficulty rather than as the answer it delivered.
+
 ## Contents
 
 1. [Introduction](#1-introduction)

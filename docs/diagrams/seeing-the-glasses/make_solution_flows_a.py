@@ -32,6 +32,11 @@ its line count plus padding and no text can spill out of it. The figure's height
 in inches follows from the number of units the content uses, which is what keeps
 a figure from being much larger than what it holds.
 
+``_audit`` then measures the drawn figure and prints anything a glance can miss:
+words outside the box they belong to, two pieces of text sharing a patch of page,
+two boxes on top of each other, and a caption landing on a box. It prints nothing
+now, and a chart should not be committed while it prints anything.
+
 Run from code/:
 
     pixi run python ../docs/diagrams/seeing-the-glasses/make_solution_flows_a.py

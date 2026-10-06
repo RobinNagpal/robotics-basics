@@ -66,6 +66,8 @@ what the domain gap is and why it runs in both directions here, and what the
 licence costs, because on this solution the licence is a real cost rather than a
 footnote.
 
+![The grey picture goes to the downloaded model unchanged, the model returns a box, a name, a confidence number and an outline per object it believes it found, the outlines named as drinking vessels are kept and the names discarded, and not one number in the chain came from this project's data.](../../images/seeing-the-glasses/a-borrowed-model-as-it-downloads/borrowed-flow-what-it-does.png)
+
 ## 2. The problem this solves
 
 This book asks for one record per glass on the table, each with a mask, a place

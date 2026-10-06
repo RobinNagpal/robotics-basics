@@ -43,6 +43,10 @@ single most important idea for reading this chapter. This solution has no
 domain gap, because everything it knows came from the pictures it will be shown.
 That makes it the line the borrowed models are measured against.
 
+![One network answers two questions at every pixel, whether the pixel is glass and which way the middle of its own glass lies, and the pixels then vote, so a connected blob comes apart into separate glasses without any rule for cutting it having been written down.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-what-it-does.png)
+
+![The labels come either from the simulator's own record of which glass owns each pixel, which costs only render time, or from the arm's own movement between two pictures, which costs arm time and is the only supervision a real arm would also have.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-labels.png)
+
 ## 2. How it works
 
 The interesting decision is not the shape of the network but what the network is

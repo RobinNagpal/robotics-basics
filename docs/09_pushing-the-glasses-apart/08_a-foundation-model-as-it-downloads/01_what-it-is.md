@@ -80,6 +80,8 @@ carries almost no information in this problem, why the one channel that
 observes friction cannot reach it, and why a poor result here would still be
 the most useful thing in this book.
 
+![The view from the top, one instruction in plain English and the arm's joint readings go into the downloaded model, which returns a run of actions that are read as waypoints and carried out, with no training step, no data collection and no fitted parameter anywhere in the chain.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-flow-what-it-does.png)
+
 ## 2. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) asks for a jaw trajectory, and then another, until

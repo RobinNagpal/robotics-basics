@@ -92,6 +92,10 @@ wider than its neighbour, standing on the narrowest foot its kind allows — and
 quotes numbers only where they belong to the gripper, to the cell, or to a
 results file in the repository.
 
+![The camera measures the table, the glass with the worst shortfall of clear room is chosen along with the neighbour responsible for it, the glass is checked against the tipping rule, and it is pushed a fixed fraction of the shortfall straight away from that neighbour before the arm looks again.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-what-it-does.png)
+
+![Predicting where a pushed glass stops needs the friction and the weight distribution that nobody in this cell has measured, so this method makes no prediction at all: the direction is right for any friction and the travel is deliberately too small, which leaves a smaller shortfall rather than an overshoot.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-repeat-not-predict.png)
+
 ## 2. The problem this solves
 
 [Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) begins

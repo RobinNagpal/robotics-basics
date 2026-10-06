@@ -72,6 +72,10 @@ written down anywhere, so this document speaks in relations — wider than any
 glass of this kind can be, narrower than the strip of bare table between two
 glasses — and never in figures.
 
+![Pixels standing above the known table height become points in the room, lose their height to leave a flat patch of dots on the table, are joined into groups by one chosen distance, and are checked against the widths the kind allows, so the masks are a consequence of the grouping rather than the thing the method directly produces.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-what-it-does.png)
+
+![Every group has to hold enough dots and to fit a width inside the range the kind allows before it is reported, and the three outcomes are a report, a split into two, or a refusal.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-each-group.png)
+
 ## 2. The problem this solves
 
 The situation is the one [this book's problem

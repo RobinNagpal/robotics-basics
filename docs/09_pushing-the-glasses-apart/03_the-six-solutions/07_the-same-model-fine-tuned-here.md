@@ -45,6 +45,10 @@ this solution part of two clean pairs at once: against the borrowed model it
 measures what fine-tuning buys, and against the solution fitted here from random
 numbers it measures what the borrowed weights were worth.
 
+![The same chain as the borrowed model with a training step put in front: the teacher records its pushes, the failures are dropped, and a small correction is fitted so the chunks come out in this cell's own range, after which the shared geometry still refuses the glasses that tip before they slide.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/smolvla-finetuned-flow-what-it-does.png)
+
+![The borrowed weights stay as they are and a correction of about four million numbers is learned beside them, so only the correction carries gradients and the training fits on a laptop, and afterwards the correction folds into the weights so running it costs what running the original cost.](../../images/pushing-the-glasses-apart/the-same-model-fine-tuned-here/smolvla-finetuned-flow-the-correction.png)
+
 ## 2. How it works
 
 **The teacher records the demonstrations.** The ranked geometric solution runs

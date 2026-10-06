@@ -41,6 +41,10 @@ cell renders a grey picture shaded from depth readings, and solution 3 found ten
 glasses out of a hundred because of it. So this solution is the direct test of
 whether that repair works.
 
+![A training step is put in front of the borrowed model: the examiner supplies an exact mask for every glass for nothing, the list of everyday categories is replaced by the single class glass, and training continues from the downloaded weights, after which the run is the borrowed model's own run.](../../images/seeing-the-glasses/the-same-model-fine-tuned/finetuned-flow-what-it-does.png)
+
+![Training closed the gap between the pictures the model was fitted on and the pictures it is shown, and it did not change the shape of the output, so the outline is still built coarsely inside a rectangle and still marks only pixels where the camera saw the glass.](../../images/seeing-the-glasses/the-same-model-fine-tuned/finetuned-flow-what-training-changes.png)
+
 ## 2. How it works
 
 The method is solution 3's method with a training step in front of it, so this

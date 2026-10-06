@@ -79,6 +79,10 @@ not simply that the newer one is better, because the keeper is the one place in
 this whole set of six solutions where the deciding can be explained by printing
 its inputs beside its answer.
 
+![A grid of point prompts makes the borrowed model outline everything in the picture, scoring and duplicate removal cut the heap to a shortlist, and a small model fitted in this cell answers keep, drop or more than one glass, so the half that finds shapes is borrowed whole and the half that decides what a shape is was replaced.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/keeper-flow-what-it-does.png)
+
+![The keeper's training labels fall out of the answer key by arithmetic, so fitting it takes seconds on an ordinary processor, and nearly all the cost is in running the borrowed model over the arrangements to collect the proposals in the first place.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/keeper-flow-fitting-the-keeper.png)
+
 ## 2. The problem this solves
 
 This book puts four to six glasses on the table. They are all of one kind, the

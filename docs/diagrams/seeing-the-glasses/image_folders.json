@@ -182,17 +182,44 @@
   "a-glass-missing-altogether.png": [
     "what-is-asked-for"
   ],
+  "borrowed-flow-what-it-does.png": [
+    "a-borrowed-model-as-it-downloads"
+  ],
   "cell-from-above.png": [
     "the-cell"
   ],
   "cell-from-the-side.png": [
     "the-cell"
   ],
+  "finetuned-flow-what-it-does.png": [
+    "the-same-model-fine-tuned"
+  ],
+  "finetuned-flow-what-training-changes.png": [
+    "the-same-model-fine-tuned"
+  ],
   "four-to-six-of-one-kind.png": [
     "what-is-asked-for"
   ],
+  "keeper-flow-fitting-the-keeper.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
+  "keeper-flow-what-it-does.png": [
+    "a-foundation-model-with-a-keeper"
+  ],
   "merged-though-they-stand-apart.png": [
     "what-is-asked-for"
+  ],
+  "network-flow-labels.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "network-flow-what-it-does.png": [
+    "a-network-trained-from-scratch"
+  ],
+  "rules-flow-each-group.png": [
+    "rules-on-the-table"
+  ],
+  "rules-flow-what-it-does.png": [
+    "rules-on-the-table"
   ],
   "splay-what-it-costs.png": [
     "the-cell"
@@ -214,6 +241,12 @@
   ],
   "the-widest-range-of-sizes.png": [
     "what-is-asked-for"
+  ],
+  "transformer-flow-set-prediction.png": [
+    "a-transformer-segmenter-fine-tuned"
+  ],
+  "transformer-flow-what-it-does.png": [
+    "a-transformer-segmenter-fine-tuned"
   ],
   "what-done-means.png": [
     "what-is-asked-for"

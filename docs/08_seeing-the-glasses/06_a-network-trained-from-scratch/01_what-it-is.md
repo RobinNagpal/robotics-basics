@@ -71,6 +71,10 @@ six are scored side by side, this one is the line that says whether borrowing
 weights was worth anything at all. Without it, a good score from a borrowed
 model proves only that the model is good, and not that borrowing helped.
 
+![One network answers two questions at every pixel, whether the pixel is glass and which way the middle of its own glass lies, and the pixels then vote, so a connected blob comes apart into separate glasses without any rule for cutting it having been written down.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-what-it-does.png)
+
+![The labels come either from the simulator's own record of which glass owns each pixel, which costs only render time, or from the arm's own movement between two pictures, which costs arm time and is the only supervision a real arm would also have.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-labels.png)
+
 ## 2. The problem this solves
 
 The problem is the one [this book

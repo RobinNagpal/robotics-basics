@@ -47,6 +47,10 @@ person, so they cost arm time on the examiner's tables and nothing else. That ma
 solution's teacher a sibling solution, and the consequence of that is the most
 important thing on this page.
 
+![The teacher runs over the training half of the tables and every push it makes is recorded as a picture and the waypoints the jaw followed, the failures are dropped, and the fitted policy then maps a picture straight to a short run of waypoints that the examiner follows without expanding.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-flow-what-it-does.png)
+
+![The teacher is a program rather than a person, so the labels are free and plentiful, and the price is that nothing in behaviour cloning evaluates an outcome and that filtering to successful pushes thins the data exactly where the teacher struggled.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-flow-the-demonstrations.png)
+
 ## 2. How it works
 
 **The teacher produces the examples.** The ranked geometric solution runs over

@@ -108,6 +108,10 @@ two solutions that learn from it inherit its ceiling, and keeping only the
 demonstrations that succeeded trains them on a biased sample of what this
 solution happens to do well.
 
+![Geometry sweeps every heading and steps the travel out along each one, geometry then discards every candidate that cannot be reached, that clashes with a neighbour, that leaves the zone or that would tip the glass, and only the survivors are put in order by the fitted trees.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-flow-what-it-does.png)
+
+![Everything that could cause an unrecoverable failure is settled before the model is consulted, the model can never add a candidate or bring back one the geometry rejected, and deleting the model leaves a working system behind.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-flow-where-the-model-sits.png)
+
 ## 2. The problem this solves
 
 [Pushing the glasses apart](../01_the-problem/01_what-is-asked-for.md) hands

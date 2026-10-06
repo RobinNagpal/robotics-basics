@@ -44,6 +44,8 @@ refusal rule running first. Nothing varies between the pair except the training,
 so the gap between their scores measures what that training bought and nothing
 else. No other pair in this book is that clean.
 
+![The view from the top, one instruction in plain English and the arm's joint readings go into the downloaded model, which returns a run of actions that are read as waypoints and carried out, with no training step, no data collection and no fitted parameter anywhere in the chain.](../../images/pushing-the-glasses-apart/a-foundation-model-as-it-downloads/smolvla-flow-what-it-does.png)
+
 ## 2. How it works
 
 The chain is short, which is the point.

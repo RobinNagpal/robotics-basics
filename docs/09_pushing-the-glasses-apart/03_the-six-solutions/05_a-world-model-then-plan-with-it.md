@@ -51,6 +51,10 @@ here, with no downloaded weights of any kind. The second way would be TD-MPC2, t
 model-based entry in LeRobot. **The second way is not built**, so no number here is
 its.
 
+![Thousands of pushes are made in the simulator and nobody labels any of them, because the answer to every example is what the second look found; five copies of a small network are fitted to say what the table looks like after a push; and before every push the arm makes, candidates are drawn, put to all five, filtered and scored, and only the best one is carried out.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-what-it-does.png)
+
+![Five networks fitted on the same data from different random starts agree where the training data covered that kind of push and diverge where it did not, which is a measure of ignorance that costs almost nothing — and where the data was thin in a way none of them noticed, all five agree and are wrong together.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-flow-the-five-copies.png)
+
 ## 2. How it works
 
 **The readings and a candidate push become one row of numbers.** Each glass's

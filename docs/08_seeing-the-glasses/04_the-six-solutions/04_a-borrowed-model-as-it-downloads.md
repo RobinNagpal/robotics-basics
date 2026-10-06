@@ -42,6 +42,8 @@ model and these same downloaded weights, with training on this cell's pictures
 added. Nothing else varies between the two, so whatever separates their scores
 is what training bought and nothing else can be blamed for it.
 
+![The grey picture goes to the downloaded model unchanged, the model returns a box, a name, a confidence number and an outline per object it believes it found, the outlines named as drinking vessels are kept and the names discarded, and not one number in the chain came from this project's data.](../../images/seeing-the-glasses/a-borrowed-model-as-it-downloads/borrowed-flow-what-it-does.png)
+
 ## 2. How it works
 
 There are only three steps, which is the point of this solution.

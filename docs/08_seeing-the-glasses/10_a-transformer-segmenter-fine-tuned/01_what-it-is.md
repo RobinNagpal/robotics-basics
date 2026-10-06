@@ -79,6 +79,10 @@ suits the request for a glass's whole silhouette better than a rectangle-based
 one does, and the single mistake that would do the most damage if this solution
 were built carelessly.
 
+![A fixed number of queries read the model's description of the picture and each returns a class, a rectangle and a mask over the whole picture, the queries reporting nothing are dropped, and what is left is one mask per glass with nothing to cut apart.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/transformer-flow-what-it-does.png)
+
+![The older shape proposes many candidate rectangles and prunes the ones that overlap too heavily, which needs a number saying how much is too much, while here the queries are matched to the glasses one to one during training, so there is nothing to prune and no rectangle to box a mask in.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/transformer-flow-set-prediction.png)
+
 ## 2. The problem this solves
 
 Four to six glasses stand on the table. They are all of one kind, the kind is

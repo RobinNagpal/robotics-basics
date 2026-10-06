@@ -37,6 +37,10 @@ separates their scores is about design rather than about training. It is the
 natural question to ask once the pair of solutions 3 and 4 has answered what
 training is worth at all.
 
+![A fixed number of queries read the model's description of the picture and each returns a class, a rectangle and a mask over the whole picture, the queries reporting nothing are dropped, and what is left is one mask per glass with nothing to cut apart.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/transformer-flow-what-it-does.png)
+
+![The older shape proposes many candidate rectangles and prunes the ones that overlap too heavily, which needs a number saying how much is too much, while here the queries are matched to the glasses one to one during training, so there is nothing to prune and no rectangle to box a mask in.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/transformer-flow-set-prediction.png)
+
 ## 2. How it works
 
 The older shape of detector proposes many candidate rectangles, scores them, and

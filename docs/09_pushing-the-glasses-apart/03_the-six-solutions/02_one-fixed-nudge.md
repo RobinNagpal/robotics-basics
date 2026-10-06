@@ -44,6 +44,10 @@ That is what makes it the control for the whole comparison. It cost no data, no
 training time and no hardware, so a solution that merely matches it has earned
 nothing.
 
+![The camera measures the table, the glass with the worst shortfall of clear room is chosen along with the neighbour responsible for it, the glass is checked against the tipping rule, and it is pushed a fixed fraction of the shortfall straight away from that neighbour before the arm looks again.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-what-it-does.png)
+
+![Predicting where a pushed glass stops needs the friction and the weight distribution that nobody in this cell has measured, so this method makes no prediction at all: the direction is right for any friction and the travel is deliberately too small, which leaves a smaller shortfall rather than an overshoot.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-repeat-not-predict.png)
+
 ## 2. How it works
 
 The arithmetic is one quantity, computed again after every push.

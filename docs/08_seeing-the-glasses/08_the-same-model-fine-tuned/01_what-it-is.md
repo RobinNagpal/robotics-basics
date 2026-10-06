@@ -87,6 +87,10 @@ part of the same work on real pictures, which of solution 3's weaknesses
 training repairs and which it cannot touch, and the two ways training on one
 cell's pictures can go wrong.
 
+![A training step is put in front of the borrowed model: the examiner supplies an exact mask for every glass for nothing, the list of everyday categories is replaced by the single class glass, and training continues from the downloaded weights, after which the run is the borrowed model's own run.](../../images/seeing-the-glasses/the-same-model-fine-tuned/finetuned-flow-what-it-does.png)
+
+![Training closed the gap between the pictures the model was fitted on and the pictures it is shown, and it did not change the shape of the output, so the outline is still built coarsely inside a rectangle and still marks only pixels where the camera saw the glass.](../../images/seeing-the-glasses/the-same-model-fine-tuned/finetuned-flow-what-training-changes.png)
+
 ## 2. The problem this solves
 
 This book asks for one record per glass, each with a mask, a place on the table

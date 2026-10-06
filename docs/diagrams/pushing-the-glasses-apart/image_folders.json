@@ -53,11 +53,44 @@
   "an-off-centre-push-spins.png": [
     "what-is-asked-for"
   ],
+  "imitation-flow-the-demonstrations.png": [
+    "imitation-from-demonstrations"
+  ],
+  "imitation-flow-what-it-does.png": [
+    "imitation-from-demonstrations"
+  ],
+  "nudge-flow-repeat-not-predict.png": [
+    "one-fixed-nudge"
+  ],
+  "nudge-flow-what-it-does.png": [
+    "one-fixed-nudge"
+  ],
   "push-low-or-it-topples.png": [
     "pushing-without-toppling",
     "what-is-asked-for"
   ],
+  "ranked-flow-what-it-does.png": [
+    "geometry-generates-a-model-ranks"
+  ],
+  "ranked-flow-where-the-model-sits.png": [
+    "geometry-generates-a-model-ranks"
+  ],
+  "smolvla-finetuned-flow-the-correction.png": [
+    "the-same-model-fine-tuned-here"
+  ],
+  "smolvla-finetuned-flow-what-it-does.png": [
+    "the-same-model-fine-tuned-here"
+  ],
+  "smolvla-flow-what-it-does.png": [
+    "a-foundation-model-as-it-downloads"
+  ],
   "the-room-a-gripper-needs.png": [
     "what-is-asked-for"
+  ],
+  "worldmodel-flow-the-five-copies.png": [
+    "a-world-model-then-plan-with-it"
+  ],
+  "worldmodel-flow-what-it-does.png": [
+    "a-world-model-then-plan-with-it"
   ]
 }

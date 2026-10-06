@@ -44,6 +44,10 @@ hundred trees, which is the standard tool for predicting a number from a short
 list of quantities of different kinds. There is no neural network anywhere in
 it, and no accelerator is needed to train it.
 
+![Geometry sweeps every heading and steps the travel out along each one, geometry then discards every candidate that cannot be reached, that clashes with a neighbour, that leaves the zone or that would tip the glass, and only the survivors are put in order by the fitted trees.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-flow-what-it-does.png)
+
+![Everything that could cause an unrecoverable failure is settled before the model is consulted, the model can never add a candidate or bring back one the geometry rejected, and deleting the model leaves a working system behind.](../../images/pushing-the-glasses-apart/geometry-generates-a-model-ranks/ranked-flow-where-the-model-sits.png)
+
 ## 2. How it works
 
 The work happens in three stages, and only the last one is fitted.

@@ -49,6 +49,10 @@ promises that no two glasses stand closer than a known distance, so there is
 always bare table between them, and the rule stops working the moment that
 promise does.
 
+![Pixels standing above the known table height become points in the room, lose their height to leave a flat patch of dots on the table, are joined into groups by one chosen distance, and are checked against the widths the kind allows, so the masks are a consequence of the grouping rather than the thing the method directly produces.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-what-it-does.png)
+
+![Every group has to hold enough dots and to fit a width inside the range the kind allows before it is reported, and the three outcomes are a report, a split into two, or a refusal.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-each-group.png)
+
 ## 2. How it works
 
 The work happens in five steps, in this order, and each one hands its result to

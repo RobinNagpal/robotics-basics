@@ -98,6 +98,10 @@ good; what compounding error is, why it is the characteristic failure of
 copying, and what in this problem's own loop blunts it; and the three honest
 costs this solution carries, none of which can be engineered away.
 
+![The teacher runs over the training half of the tables and every push it makes is recorded as a picture and the waypoints the jaw followed, the failures are dropped, and the fitted policy then maps a picture straight to a short run of waypoints that the examiner follows without expanding.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-flow-what-it-does.png)
+
+![The teacher is a program rather than a person, so the labels are free and plentiful, and the price is that nothing in behaviour cloning evaluates an outcome and that filtering to successful pushes thins the data exactly where the teacher struggled.](../../images/pushing-the-glasses-apart/imitation-from-demonstrations/imitation-flow-the-demonstrations.png)
+
 ## 2. The problem this solves
 
 [The problem](../01_the-problem/01_what-is-asked-for.md) asks for a jaw trajectory, and then another, until

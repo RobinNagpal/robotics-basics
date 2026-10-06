@@ -12,7 +12,7 @@ understand what a solution is given, what the examiner keeps to itself, why the
 shared output is a jaw trajectory rather than a push, why the marking looks at
 the outcome and never at the action, and which two things this scorecard needs
 that the examiner for [telling the glasses
-apart](../08_seeing-the-glasses/03_the-examiner.md) did not.
+apart](../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) did not.
 
 Read this before any of the solution documents, because every one of them
 assumes it.
@@ -336,7 +336,7 @@ one.
 ## 9. Two things this scorecard needs that the camera work's did not
 
 The examiner for [telling the glasses
-apart](../08_seeing-the-glasses/03_the-examiner.md) could run each solution
+apart](../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md) could run each solution
 once and read the result. This one cannot, and there are two reasons. Both are
 consequences of four of the six solutions being trained rather than written,
 and both are now in `scoring.py`: `Repeats` holds several evaluation runs and

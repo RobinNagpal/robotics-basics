@@ -94,7 +94,7 @@ to one answer deals with them inside the model. The duplicate never leaves it.
 rendered glass seen from the top is a plain shaded shape, and a model fitted on
 photographs can reasonably call such a shape a bowl, a vase or a bottle. In
 solution 3 such an outline would be dropped and the glass missed. [The
-examiner](../03_the-examiner.md) says that **missed** is the count to watch hardest,
+examiner](../03_the-examiner/01_the-examiner.md) says that **missed** is the count to watch hardest,
 because a missed glass leaves no trace at all. With one class, a found object
 cannot be named out of the answer.
 
@@ -110,7 +110,7 @@ nothing this book asks for needs it.
 Fine-tuning needs examples, which means pictures with every glass already
 outlined, and this is where this cell is unusually fortunate.
 
-[The examiner](../03_the-examiner.md) renders an **id image** beside every picture: at
+[The examiner](../03_the-examiner/01_the-examiner.md) renders an **id image** beside every picture: at
 each pixel, which glass that pixel shows, or nothing. The examiner keeps that image
 to itself at run time and never hands it to a solution, because a solution that
 read one would not be answering the problem. However, the examiner does make it

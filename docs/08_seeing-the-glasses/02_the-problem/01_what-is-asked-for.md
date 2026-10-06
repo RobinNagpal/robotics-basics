@@ -41,7 +41,7 @@ table, same camera, same drying rack where it always is.
 known.** The cell has four — straight, tapered, stemmed and short stemmed — and
 [the cell](../01_the-cell.md) describes them. Arrangements cycle through them,
 so a run meets all four, and because they are not equally easy to outline the
-[examiner](../03_the-examiner.md) reports every measurement broken down by
+[examiner](../03_the-examiner/01_the-examiner.md) reports every measurement broken down by
 kind.
 
 ![Four to six glasses of one kind stand upright inside the glass zone, with a guaranteed 150 mm between any two centres.](../../images/seeing-the-glasses/what-is-asked-for/four-to-six-of-one-kind.png)
@@ -79,7 +79,7 @@ but an answer that reads it is not answering this problem.
 This matters more here than in the other jobs. Six quite different methods
 are compared on this question, and a comparison only means something when the
 question was identical, so the input is stated once here and the [test
-examiner](../03_the-examiner.md) hands exactly it to every one of them.
+examiner](../03_the-examiner/01_the-examiner.md) hands exactly it to every one of them.
 
 ![The camera parks at overlapping stations above the glass zone and takes a pair of pictures 120 mm apart at each, and from every picture an answer may read the grey picture, the depth reading and the camera pose, while the simulator's own record of what it spawned is kept back for the marking.](../../images/seeing-the-glasses/what-is-asked-for/what-goes-in.png)
 
@@ -194,7 +194,7 @@ every glass that could not be separated from its neighbour is listed with the
 reason; and when every region of table that could not have been seen is listed
 as unsearched rather than quietly treated as empty.
 
-The [examiner](../03_the-examiner.md) marks a run against the simulator's own
+The [examiner](../03_the-examiner/01_the-examiner.md) marks a run against the simulator's own
 record and describes each measurement in full. Two of them are what the six
 answers are compared on: how many glasses were found, missed, merged or split,
 and how much of each glass the mask actually covered. Why the mask is measured
@@ -208,7 +208,7 @@ why **missed** is the count to watch hardest.
 
 ## 7. Where to go next
 
-- [The examiner](../03_the-examiner.md) — the scenes, the pictures, and how a run is
+- [The examiner](../03_the-examiner/01_the-examiner.md) — the scenes, the pictures, and how a run is
   marked. Read this before any solution.
 - [Looking again at what was hidden](02_looking-again-at-what-was-hidden.md) — the part every
   solution shares.

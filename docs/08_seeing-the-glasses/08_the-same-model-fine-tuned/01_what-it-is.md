@@ -61,7 +61,7 @@ say so.
 pair.** [Solution 3](../07_a-borrowed-model-as-it-downloads/01_what-it-is.md) is this model with no training in
 this cell. This is the same model with training in this cell. Everything else
 between the two is held still, and it is worth listing exactly what "everything
-else" means, because the list is the argument. The [examiner](../03_the-examiner.md)
+else" means, because the list is the argument. The [examiner](../03_the-examiner/01_the-examiner.md)
 holds the input still, so both are shown the same pictures of the same
 arrangements in the same order. It holds the output still, so both return the
 same record per glass. It holds the marking still, so both are measured by the

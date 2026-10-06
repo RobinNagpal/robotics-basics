@@ -88,7 +88,7 @@ This solution contributes **only the masks**: which pixels in which picture are
 which glass. Turning a mask into a place on the table and a rough width is the
 examiner's job, done by one shared piece of arithmetic that every one of the six
 solutions goes through, and it is described in the [test
-examiner](../03_the-examiner.md). So a difference in the score belongs to the mask. This
+examiner](../03_the-examiner/01_the-examiner.md). So a difference in the score belongs to the mask. This
 solution cannot win by measuring more cleverly and it cannot lose by measuring
 worse.
 

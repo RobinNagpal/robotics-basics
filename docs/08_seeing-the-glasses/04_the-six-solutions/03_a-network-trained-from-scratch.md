@@ -131,7 +131,7 @@ picture, which is nothing beside the seconds an arm movement costs.
 ## 4. What it scored
 
 Every solution is given the same arrangements and marked the same way by [the
-examiner](../03_the-examiner.md). There are two sets: spawned layouts, at
+examiner](../03_the-examiner/01_the-examiner.md). There are two sets: spawned layouts, at
 the spacing the cell's own layout rule gives, and crowded layouts, closer than
 that rule allows. Read the rows against each other rather than on their own.
 

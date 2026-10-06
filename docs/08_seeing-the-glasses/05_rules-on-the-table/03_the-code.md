@@ -83,7 +83,7 @@ record is measured by the examiner, from the pixels these functions hand back.
 
 Every one of the six solutions is given the same input and judged on the same
 output, and the step that turns a mask into a place and a rough width belongs to
-the [examiner](../03_the-examiner.md) rather than to any solution. So this solution
+the [examiner](../03_the-examiner/01_the-examiner.md) rather than to any solution. So this solution
 contributes **only the masks**, and a difference in its score belongs to the
 mask. It cannot win by measuring more cleverly and it cannot lose by measuring
 worse.

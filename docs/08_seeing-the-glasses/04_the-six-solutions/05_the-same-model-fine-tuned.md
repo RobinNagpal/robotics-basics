@@ -71,7 +71,7 @@ clean measurement.
 fitted model returns a rectangle, a confidence number and an outline of the
 pixels inside that rectangle. Candidates that overlap a better-scoring candidate
 too heavily are discarded, the outlines scoring above a bar are kept, and [the
-examiner](../03_the-examiner.md) turns each kept mask into a place on the
+examiner](../03_the-examiner/01_the-examiner.md) turns each kept mask into a place on the
 table and a rough width with the same shared arithmetic it uses for all six.
 
 What training closes is the gap between the pictures: the model stops looking

@@ -99,7 +99,7 @@ what it spawned. The output is fixed too: one record per glass, holding its mask
 pixels, its place on the table and a rough width.
 
 The step between the mask and the place belongs to [the test
-examiner](../03_the-examiner.md) rather than to the solution. So **this solution
+examiner](../03_the-examiner/01_the-examiner.md) rather than to the solution. So **this solution
 contributes only the masks**, and any difference in its score belongs to the
 mask. It cannot win by measuring more cleverly and it cannot lose by measuring
 worse. One consequence is worth repeating because it removes a question that

@@ -66,7 +66,7 @@ they are somebody else's categories: they are useful for separating the glasses
 from the table and nothing else, and in particular they never say which *kind*
 of glass is on the table. The kind is already known from the problem statement.
 
-The kept outlines are the masks, and [the examiner](../03_the-examiner.md)
+The kept outlines are the masks, and [the examiner](../03_the-examiner/01_the-examiner.md)
 turns each mask into a place on the table and a rough width using the same
 shared arithmetic it applies to all six solutions.
 

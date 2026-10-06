@@ -118,7 +118,7 @@ and section 5 is mostly about it.
 ## 4. What it scored
 
 Every solution is given the same arrangements and marked the same way by [the
-examiner](../03_the-examiner.md), which is what makes the numbers below
+examiner](../03_the-examiner/01_the-examiner.md), which is what makes the numbers below
 comparable. There are two sets: spawned layouts, at the spacing the cell's own
 layout rule gives, and crowded layouts, closer than that rule allows. The
 columns say how many real glasses got a report, how many got none, and how good

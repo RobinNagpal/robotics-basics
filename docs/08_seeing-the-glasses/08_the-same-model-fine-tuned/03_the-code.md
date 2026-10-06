@@ -116,7 +116,7 @@ another station, that is the report the examiner keeps.
 It follows that **this solution produces no pose.** Models produce masks. The
 place comes from depth and the camera's own pose, by arithmetic, and a glass
 standing upright on a flat table has no orientation left to find. [The
-examiner](../03_the-examiner.md) states this once so that no solution has to argue it
+examiner](../03_the-examiner/01_the-examiner.md) states this once so that no solution has to argue it
 again.
 
 ## 3. How the concepts fit together

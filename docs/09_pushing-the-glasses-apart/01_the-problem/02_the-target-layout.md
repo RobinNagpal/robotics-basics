@@ -262,7 +262,7 @@ rather than towards a place, and one of the six does; what that costs it is
 visible on the same scale, as travel against the floor described below.
 
 This is precisely the argument the camera work's [test
-examiner](../../08_seeing-the-glasses/03_the-examiner.md#6-what-must-come-back)
+examiner](../../08_seeing-the-glasses/03_the-examiner/01_the-examiner.md#6-what-must-come-back)
 makes about its own shared step. There, the step that turns a mask into a place
 and a width belongs to the examiner rather than to any of the six, because if each
 solution did its own arithmetic a difference in the result might be a difference
@@ -303,7 +303,7 @@ solution already at its floor buys nothing.
 The camera work has the same instrument and uses it the same way. Its examiner
 runs its own exact masks through the shared arithmetic to find [the best place
 and width that step could ever
-produce](../../08_seeing-the-glasses/03_the-examiner.md#the-ceiling-what-the-best-possible-answer-would-be),
+produce](../../08_seeing-the-glasses/03_the-examiner/02_comparing-the-outputs.md#7-the-best-possible-answer-and-the-trap-below-it),
 and a solution within a hair of that floor of error is, in that document's
 words, not a good solution so much as one whose remaining error is not its
 fault. The displacement floor is that measurement for this problem: computed

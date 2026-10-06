@@ -191,7 +191,7 @@ The labels are where this cell is unusually fortunate. In the ordinary case a
 person draws every mask by hand, which is why labelled data is the scarce
 resource in this field. Here nothing is drawn. The examiner renders, beside every
 picture, an image saying which glass owns each pixel, described in [the test
-examiner](../03_the-examiner.md), so one glass's mask is the set of pixels carrying its
+examiner](../03_the-examiner/01_the-examiner.md), so one glass's mask is the set of pixels carrying its
 identity and the class is always "glass". Every label is a selection over an
 array the examiner produced anyway. The examiner hands those labels out only for the
 training half of its arrangements and marks on the other half, so no model is

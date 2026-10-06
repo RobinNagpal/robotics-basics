@@ -109,7 +109,7 @@ perfect masks and nothing left to improve. A solution within a hair of that is
 not a good solution so much as one whose remaining error is not its fault.
 
 So the place is not the measurement that ranks the six. [What the examiner
-measures](03_the-examiner.md#8-what-the-examiner-measures) says which
+measures](03_the-examiner/02_comparing-the-outputs.md#6-how-good-was-the-mask) says which
 measurement does: how many glasses were found, missed, merged, split or falsely
 reported, and the two numbers comparing a mask against what the camera really
 saw of its glass. Those are pixel against pixel, and they separate methods that

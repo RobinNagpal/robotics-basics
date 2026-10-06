@@ -21,7 +21,7 @@
 > name from a fixed list of categories, a confidence number and an outline; the
 > design keeps the outlines named as drinking vessels and discards the names
 > afterwards; the kept outlines are the masks, and the shared arithmetic in [the
-> examiner](../03_the-examiner.md) turns each mask into a place on the table and a
+> examiner](../03_the-examiner/01_the-examiner.md) turns each mask into a place on the table and a
 > rough width.
 > **What it costs** — no labels, no training run, no weights file to keep in
 > step with the cell, and no graphics card of its own. The whole cost is the

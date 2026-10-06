@@ -1,6 +1,6 @@
 """One arrangement followed from the table to the scorecard.
 
-``03_the-examiner.md`` explains how a run is set and marked in general terms.
+``03_the-examiner/01_the-examiner.md`` explains how a run is set and marked in general terms.
 These six pictures do the same thing once, on one real arrangement, so that the
 whole chain can be read off a single example:
 

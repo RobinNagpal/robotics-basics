@@ -38,7 +38,7 @@ rather than about the conditions it was tested under.
 ## 2. What all six share
 
 Three things are held still for every solution, and they are described in full
-by [the examiner](../03_the-examiner.md). In short:
+by [the examiner](../03_the-examiner/01_the-examiner.md). In short:
 
 **The same input.** One fixed set of arrangements, in the same order. For each
 picture, a solution may read the grey picture shaded from depth, the depth
@@ -193,7 +193,7 @@ amodal target of solution 6 is the third.
 ## 7. Where to go next
 
 - [The problem](../02_the-problem/01_what-is-asked-for.md) — what is asked for, and the three difficulties.
-- [The examiner](../03_the-examiner.md) — the shared input, output and marking.
+- [The examiner](../03_the-examiner/01_the-examiner.md) — the shared input, output and marking.
   **Read this before any solution document.**
 - [Looking again at what was hidden](../02_the-problem/02_looking-again-at-what-was-hidden.md) — the part all six
   share.
@@ -210,4 +210,4 @@ amodal target of solution 6 is the third.
   arithmetic the examiner turns every mask into a record with, which is the
   same for all six.
 
-← [The examiner — the same question for every answer](../03_the-examiner.md) · [Rules on the table](02_rules-on-the-table.md) →
+← [Comparing the outputs](../03_the-examiner/02_comparing-the-outputs.md) · [Rules on the table](02_rules-on-the-table.md) →

@@ -83,7 +83,7 @@ The run itself is short. The grey picture shaded from depth goes in; the model's
 body turns it into a description of every part of the picture; the queries read
 that description and each returns a class, a rectangle and a mask over the whole
 picture; the queries reporting "nothing" are dropped; and [the test
-examiner](../03_the-examiner.md) turns each surviving mask into a place and a
+examiner](../03_the-examiner/01_the-examiner.md) turns each surviving mask into a place and a
 rough width with the same shared arithmetic it uses for all six.
 
 ## 3. What it needs

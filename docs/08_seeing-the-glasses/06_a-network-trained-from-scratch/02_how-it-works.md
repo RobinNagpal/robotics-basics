@@ -25,7 +25,7 @@ project's code, with the two heads this document describes, in PyTorch on this
 machine's integrated graphics. Its training labels are read from the
 simulator's own record of which glass each pixel shows, its votes are piled up
 into a tally, and the peaks of that tally are picked off largest first. Running
-it on the shared [examiner](../03_the-examiner.md) is built too, trained on
+it on the shared [examiner](../03_the-examiner/01_the-examiner.md) is built too, trained on
 arrangements below the examiner's dividing line and scored on held-out ones above
 it.
 
@@ -289,7 +289,7 @@ instead.
 
 The examiner renders every picture itself, so alongside the grey picture and the
 depth reading it has an **id image**: at every pixel, which glass that pixel
-shows, or nothing. The [examiner](../03_the-examiner.md) describes it in full,
+shows, or nothing. The [examiner](../03_the-examiner/01_the-examiner.md) describes it in full,
 including the rule that a method may be trained on id images from the training
 half of the arrangements and is never given one while answering. This way is
 built on that permission.

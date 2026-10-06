@@ -365,13 +365,13 @@ def the_kind_this_book_uses() -> None:
 
     side.text(
         (KINDS.index(picked)) * pitch, 268,
-        "this book works in this kind:\nits range of heights is the widest",
+        "the difficulties are explained in this kind:\nits range of heights is the widest",
         ha="center", va="bottom", fontsize=NOTE_SIZE, color=GLASS,
     )
     side.plot([-150, 3 * pitch + 150], [0, 0], color=INK, lw=1.1)
     side.text(-150, 6, "the table", ha="left", va="bottom", fontsize=NOTE_SIZE, color=INK)
     side.set_title(
-        "The cell's four kinds, and the one this book uses",
+        "The cell's four kinds, and the one the difficulties are explained with",
         fontsize=TITLE_SIZE, color=INK, pad=20,
     )
     side.text(

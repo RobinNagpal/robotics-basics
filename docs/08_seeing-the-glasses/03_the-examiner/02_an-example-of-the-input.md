@@ -43,8 +43,12 @@ against.
 
 All four glasses are **stemmed glasses**, because an arrangement holds four to
 six glasses of a single kind and the kind changes from one arrangement to the
-next. A stemmed glass in this cell may be 165 to 230 mm tall with a bowl 60 to
-100 mm across. The table below gives each glass the number the examiner's
+next. This one drew the stemmed kind, and a later arrangement draws another, so
+a run meets all four. [What is asked for](../02_the-problem/01_what-is-asked-for.md)
+explains the problem's difficulties with the tapered kind alone, because one
+telling is clearer than four, but nothing in the test is restricted to it. A
+stemmed glass in this cell may be 165 to 230 mm tall with a bowl 60 to 100 mm
+across. The table below gives each glass the number the examiner's
 answer key gives it, and that number is used in every picture that follows.
 Read across a row for how tall that glass is, how wide its bowl is, and where it
 stands on the table.

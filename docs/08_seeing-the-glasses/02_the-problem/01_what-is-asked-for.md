@@ -46,18 +46,22 @@ kind.
 
 ![Four to six glasses of one kind stand upright inside the glass zone, with a guaranteed 150 mm between any two centres.](../../images/seeing-the-glasses/what-is-asked-for/four-to-six-of-one-kind.png)
 
-![The cell has four kinds of glass, drawn here side on with the range of heights each one is picked from, and the tapered kind, which every worked example in this book uses, is picked out from the other three.](../../images/seeing-the-glasses/what-is-asked-for/the-kind-this-book-uses.png)
+![The cell has four kinds of glass, drawn here side on with the range of heights each one is picked from, and the tapered kind, which the two difficulties below are explained with, is picked out from the other three.](../../images/seeing-the-glasses/what-is-asked-for/the-kind-this-book-uses.png)
 
 **The glasses stand apart.** There is a guaranteed smallest gap between any two
 centres, wide enough that even the two widest glasses of a kind leave bare table
 between their rims, so no two glasses ever touch. Separating glasses that touch
 is the job of [pushing the glasses apart](../../09_pushing-the-glasses-apart/01_the-problem/01_what-is-asked-for.md).
 
-**Every worked example in this book uses the tapered kind, because its range of
-sizes is deliberately very wide.** It runs from a small glass to one more than
-twice its height, which is the widest range of the four. That width is not
-decoration: it is what causes the first difficulty below, and a narrow range
-could not produce it at all.
+**The two difficulties below are explained with the tapered kind, to keep the
+explaining simple.** A run meets all four kinds and a score is taken over all
+four, but setting out a difficulty four times over would say the same thing
+four times, so each one is told once, in the kind that shows it most clearly.
+
+That kind is the tapered one, because its range of sizes is deliberately very
+wide: it runs from a small glass to one more than twice its height, which is the
+widest range of the four. The width is not decoration. It is what causes the
+first difficulty below, and a narrow range could not produce it at all.
 
 ![The tapered kind is drawn anywhere from 90 mm tall to 230 mm tall, which is the widest range of the four, and it is that width rather than the shape that lets one glass of the kind hide another of the same kind.](../../images/seeing-the-glasses/what-is-asked-for/the-widest-range-of-sizes.png)
 

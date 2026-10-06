@@ -206,5 +206,8 @@ amodal target of solution 6 is the third.
   fine-tuned](07_a-transformer-segmenter-fine-tuned.md). Each one ends with a
   link to the chapter that treats it in full.
 - [The results](../11_the-results.md) — what the six scored by the examiner.
+- [How a mask becomes a record](../12_how-a-mask-becomes-a-record.md) — the
+  arithmetic the examiner turns every mask into a record with, which is the
+  same for all six.
 
 ← [The examiner — the same question for every answer](../03_the-examiner.md) · [Rules on the table](02_rules-on-the-table.md) →

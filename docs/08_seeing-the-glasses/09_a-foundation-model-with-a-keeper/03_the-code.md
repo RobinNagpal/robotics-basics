@@ -84,13 +84,11 @@ deciding looks like in code.
 
 Everything above produces masks, and nothing above produces a place or a width.
 
-Turning a mask into a place on the table and a rough width is the examiner's job,
-described once in [the examiner](../03_the-examiner.md) and shared by all six
-solutions: every mask pixel carries a depth reading, so it becomes a point in
-the room, the axis comes from the points at the top of the glass, and the width
-is how far the cloud reaches from that axis. **So this solution contributes only
-the masks, and any difference in its score belongs to the mask.** It cannot win
-by measuring more cleverly and it cannot lose by measuring worse.
+Turning a mask into a place on the table and a rough width is the examiner's
+job, shared by all six solutions and set out in [how a mask becomes a
+record](../12_how-a-mask-becomes-a-record.md). **So this solution contributes
+only the masks, and any difference in its score belongs to the mask.** It
+cannot win by measuring more cleverly and it cannot lose by measuring worse.
 
 One consequence is worth stating because it removes a question this solution
 invites. **No model here produces a pose.** The borrowed model produces regions,

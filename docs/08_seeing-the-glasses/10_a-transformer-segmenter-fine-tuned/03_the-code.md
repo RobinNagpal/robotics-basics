@@ -86,11 +86,8 @@ this solution stops, because it is the same place all six stop and it is what
 makes the six comparable at all.
 
 Turning a mask into a place on the table and a rough width is **the examiner's job,
-not this solution's**. [The examiner](../03_the-examiner.md) describes that step in
-full: each mask pixel carries a depth reading, so it becomes a point in the
-room, the axis comes from the points at the top of the glass, and the width
-comes from how far the cloud reaches out from that axis. The same function does
-it for every one of the six.
+not this solution's**. [How a mask becomes a record](../12_how-a-mask-becomes-a-record.md) sets that
+step out in full. The same function does it for every one of the six.
 
 Two things follow and neither is re-derived here. **A difference in the score
 belongs to the mask**, because nothing else is allowed to differ, so no solution

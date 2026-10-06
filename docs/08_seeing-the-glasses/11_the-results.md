@@ -81,10 +81,10 @@ merged pair looks like one large glass, but a missed glass leaves no trace
 anywhere in the run.
 
 **Position error.** How far a reported place sits from where the glass really
-stands. **This number saturates**, which is why the floor row is in both tables:
-the shared arithmetic takes the axis from the rim and the width from a
-percentile precisely so that a ragged mask edge cannot move the answer, so two
-quite different masks can give almost the same place. A solution at the floor is
+stands. **This number saturates**, which is why the floor row is in both tables: the
+shared arithmetic is deliberately insensitive to a ragged mask edge, so two
+quite different masks can give almost the same place. [How a mask becomes a
+record](12_how-a-mask-becomes-a-record.md) says why. A solution at the floor is
 not a good solution so much as one whose remaining error is not its fault.
 
 **Mask covered, mask not the glass.** How much of the real glass the mask
@@ -157,3 +157,5 @@ ones need their training step first, and each solution's own README says which.
 ← [RF-DETR-Seg, fine-tuned here — how it compares](10_a-transformer-segmenter-fine-tuned/06_how-it-compares.md)
 
 ← [RF-DETR-Seg, fine-tuned here — how it compares](10_a-transformer-segmenter-fine-tuned/06_how-it-compares.md)
+
+← [RF-DETR-Seg, fine-tuned here — how it compares](10_a-transformer-segmenter-fine-tuned/06_how-it-compares.md) · [How a mask becomes a record](12_how-a-mask-becomes-a-record.md) →

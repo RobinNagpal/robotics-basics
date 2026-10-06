@@ -134,15 +134,13 @@ treating a reported doubt as a missing answer.
 
 ![A solution supplies the mask pixels and whether the picture held the whole glass, the examiner computes the place and the width from the mask itself, and the two honest statements that come beside the records are counted as reported doubt rather than as answers that never arrived.](../images/seeing-the-glasses/the-examiner/03-what-must-come-back.png)
 
-**The step that turns a mask into a place and a width is the examiner's, not the
-solution's.** This is the single most important decision in the whole
-arrangement, so it is worth being clear about why. Each mask pixel carries a
-depth reading, so it becomes a point in the room. The axis is taken from the
-points at the top of the glass rather than from all of them, because a rim leans
-outwards from the point below the camera, so the middle of the whole cloud sits
-off to one side of where the glass really stands while the middle of the rim
-sits over it. The width is how far the cloud reaches from that axis, taken as a
-high percentile so that one stray point cannot widen it.
+**The step that turns a mask into a place and a width is the examiner's, not
+the solution's.** This is the single most important decision in the whole
+arrangement. Each mask pixel carries a depth reading, so the mask becomes a
+cloud of points standing in the room, and the examiner reads a place and a
+width off that cloud the same way for every solution. [How a mask becomes a
+record](12_how-a-mask-becomes-a-record.md) sets out the arithmetic; nothing in
+the comparison depends on it.
 
 Because that step is shared, **a difference in the result belongs to the mask**.
 No solution can win by measuring more cleverly, and none can lose by measuring
@@ -199,14 +197,13 @@ For each glass that was found, the examiner records how far the reported place i
 from the true one, and reports the middle value and the worst.
 
 **This number saturates, and knowing that saves a lot of confusion.** The step
-that turns a mask into a place is deliberately forgiving, because it takes the
-axis from the rim and the width from a percentile precisely so that a ragged
-mask edge cannot move the answer. The consequence is that two quite different
-masks can produce almost the same place — close enough to the floor of error
-described below that the difference between the two masks disappears into it.
-When two answers both sit that near the best the shared step can give, this
-number can no longer tell them apart, which is why the mask itself has to be
-measured as well.
+that turns a mask into a place is deliberately forgiving, so two quite
+different masks can produce almost the same place, close enough to the floor of
+error described below that the difference between them disappears into it. [How
+a mask becomes a record](12_how-a-mask-becomes-a-record.md) says why it is
+built that way. The consequence here is that this number stops telling the six
+apart long before the masks do, which is why the mask itself has to be measured
+as well.
 
 ### How good was the mask?
 
@@ -343,5 +340,8 @@ fifth of some glasses, which is exactly the gap the mask numbers exist to show.
   recovers a glass no picture held.
 - [The six solutions](04_the-six-solutions/01_how-the-six-compare.md) — what each method puts between the
   input and the output.
+- [How a mask becomes a record](12_how-a-mask-becomes-a-record.md) — the
+  arithmetic this document leaves out, for a reader who wants it. Nothing in
+  the comparison depends on it.
 
 ← [Looking again at what was hidden](02_the-problem/02_looking-again-at-what-was-hidden.md) · [The six solutions — one question, six ways to see](04_the-six-solutions/01_how-the-six-compare.md) →

@@ -202,6 +202,7 @@ export const CHAPTER_TITLES: Record<string, string> = {
   'the-examiner': 'The Examiner',
   'the-six-solutions': 'The Six Solutions',
   'the-results': 'The Results',
+  'how-a-mask-becomes-a-record': 'How a Mask Becomes a Record',
   // The six ways of telling the glasses apart, one chapter each.
   'rules-on-the-table': 'Solution 1: Rules on the Table',
   'a-network-trained-from-scratch': 'Solution 2: A Network Trained From Scratch',

@@ -37,7 +37,7 @@ from whoever builds it.
 
 The model is **ACT**, an action chunking transformer, taken from
 [LeRobot](https://github.com/huggingface/lerobot) and fitted here from random
-numbers. A second rung uses **Diffusion Policy**, also in LeRobot, which reaches
+numbers. A second way uses **Diffusion Policy**, also in LeRobot, which reaches
 the same kind of answer by starting from noise and denoising towards an answer.
 Nothing is downloaded except the library.
 
@@ -147,7 +147,7 @@ between two good pushes is not a good push.
 That is useful to know, because it tells you what to change. More data is the
 wrong lever. A model that can represent several different answers to the same
 situation, rather than averaging them, is the right one — which is exactly what
-the second rung, Diffusion Policy, is for. The full table for all six solutions
+the second way, Diffusion Policy, is for. The full table for all six solutions
 is in [the results](../10_the-results.md).
 
 ## 5. Where it is strong and where it breaks

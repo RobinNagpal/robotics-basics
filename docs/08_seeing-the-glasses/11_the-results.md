@@ -54,8 +54,8 @@ of the six methods is.
 | [5 SAM 2 with a keeper](../../code/src/08_seeing-the-glasses/05-sam2-with-a-keeper) | 73 | 28 | 0 | 0 | 0 | 1.0 · 28.7 mm | 98.4% | **0.0%** |
 | [6 RF-DETR fine-tuned](../../code/src/08_seeing-the-glasses/06-rf-detr-fine-tuned) | **78** | 23 | 3 | 2 | 0 | **0.5** · 58.4 mm | 97.3% | **0.0%** |
 
-Solutions 5 and 6 have more than one rung; the rows above are rung `sam2` and
-rung `modal`. The floor is `bench/floor.py` with the renderer's own masks, which
+Solutions 5 and 6 can each be built two ways; the rows above are the `sam2` and
+`modal` runs, which are the ways that were built. The floor is `bench/floor.py` with the renderer's own masks, which
 no segmenter can improve on. Even it misses 18 crowded glasses, because a glass
 standing wholly behind another is in no picture at all.
 

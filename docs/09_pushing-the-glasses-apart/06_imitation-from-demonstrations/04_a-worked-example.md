@@ -135,7 +135,7 @@ average over those examples is something between them: a short, hesitant motion
 that separates nothing. The examiner would score that as a push spent with the
 table unchanged, and a solution that repeats it would burn its push budget
 without failing in any way the counts call wrong. **This is the case the
-Diffusion Policy rung exists to test**, because a model that draws its chunk
+Diffusion Policy way exists to test**, because a model that draws its chunk
 can commit to one side.
 
 **And the refusal.** Take a different table, of stemmed glasses this time, one

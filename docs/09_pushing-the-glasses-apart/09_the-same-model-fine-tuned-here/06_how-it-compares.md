@@ -267,9 +267,9 @@ so it is a different kind of expense per push, and can only be changed by
 training it again.
 
 Read as a ladder, the six measure what each increment of fitting buys. This
-solution is the rung where all of the fitting happens on borrowed weights, and
-its partner one rung below is the rung where none of it does. The distance
-between those two rungs is the most valuable single number this book can
+solution is the way where all of the fitting happens on borrowed weights, and
+its partner one way below is the way where none of it does. The distance
+between those two ways is the most valuable single number this book can
 produce, which is why it is the first thing this document said and the last.
 
 ← [What it needs](05_what-it-needs.md) · [The six solutions side by side](../10_the-results.md) →

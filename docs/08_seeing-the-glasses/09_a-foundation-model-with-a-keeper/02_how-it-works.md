@@ -11,7 +11,7 @@ solution answers and the single idea it rests on.
 3. [Why the borrowed model is never trained here](#3-why-the-borrowed-model-is-never-trained-here)
 4. [The picture the borrowed model is handed](#4-the-picture-the-borrowed-model-is-handed)
 5. [The keeper](#5-the-keeper)
-6. [The second rung — a word instead of a grid](#6-the-second-rung--a-word-instead-of-a-grid)
+6. [A second way — a word instead of a grid](#6-a-second-way--a-word-instead-of-a-grid)
 
 ## 1. What a foundation model is
 
@@ -512,75 +512,25 @@ fitted component chooses among regions and a rule nobody trained decides whether
 the choice is believable, which is what makes a model this foreign safe to use
 here at all.
 
-## 6. The second rung — a word instead of a grid
+## 6. A second way — a word instead of a grid
 
-Everything above is one generation of this solution. There is a second, and it
-is the most interesting question this document carries, because it would delete
-the keeper entirely.
+There is a second way to build this solution, and it would delete the keeper
+entirely. SAM 3, through the same library, takes an **open-vocabulary text
+prompt**: the prompt is a phrase rather than a point, and the model returns
+every instance of the concept that phrase names. So the grid, the shortlist and
+the keeper would all be replaced by one request for "drinking glass", answered
+with one outline per glass, with nothing fitted in this cell at all.
 
-SAM 3 is available through the same library, and it takes **open-vocabulary text
-prompts**. Open-vocabulary means the model is not limited to a fixed list of
-categories: the prompt is a phrase rather than a point, and the model returns
-every instance of the concept that phrase names. So instead of a grid of points
-and a keeper, the whole of this solution's finding and deciding would be a
-single request for "drinking glass", answered with one outline per glass. There
-is no heap to clean up, because nothing proposes the table or a rim in the first
-place, and there is nothing to fit, because the naming is done inside the
-borrowed model.
+What that loses is the thing this solution is valued for. **The keeper is the
+one place among the six where the deciding can be explained by printing its
+inputs beside its answer.** A text prompt moves that judgement inside borrowed
+weights nobody here can inspect, so when it misses a glass there is nothing to
+print and the only response is to try another phrase. It also makes this
+solution resemble the borrowed model that fits nothing, because both then rely
+on somebody else's idea of what a glass is.
 
-**Both rungs are the same solution.** Both borrow a promptable foundation model
-and train nothing in this cell. They differ only in where the judgement "this is
-a glass" lives: on the lower rung it lives in a small model fitted in this
-cell, and on the upper rung it lives inside borrowed weights, reached through a
-word.
-
-What is gained is real and worth stating plainly. There is **less code**: no
-grid, no scoring and stability gate, no duplicate removal, no table of
-measurements, no classifier, no calibration, and no training step of any kind.
-There is **nothing fitted at all**, so the solution has no training half of the
-arrangements, nothing to keep in step with the cell, and nothing that can be
-fitted to the renderer by mistake. And the proposals that do come back are
-already about glasses, so the whole class of mistakes the keeper exists to catch
-— the table proposed as an object, a rim proposed without its glass — does not
-arise.
-
-What is lost is one thing, and it is the thing this document values most. **The
-keeper is the one place in the set of six where the deciding is explainable by
-printing its inputs beside its answer.** When the keeper drops a region, the
-reason is a short list of named measurements and the answer that followed from
-them, and a person can read that list, disagree with it, and point at the
-measurement that was wrong. A text prompt moves that judgement inside a model
-nobody here can inspect, so when it misses a glass there is nothing to print:
-the only available response is to try a different phrase and see what happens.
-The difference is between a decision with a readable argument behind it and a
-decision that can only be measured from the outside.
-
-There is a second loss, and it is about where this solution then sits. **With a
-text prompt this solution begins to resemble solution 3**, because both of them
-then rely on a borrowed model's own idea of what a glass is. The resemblance is
-only partial, because the two reach that idea differently — solution 3 can only
-return a name from a list fixed before it was downloaded, while an open
-vocabulary is not limited to any list — and the open vocabulary is a genuine
-improvement on a fixed list, since the fixed list has to contain something close
-enough to a drinking glass while the phrase can simply say so. But the
-structural trade is the same one, and it is the trade this solution was built to
-avoid: borrowing both halves rather than borrowing the half that transfers and
-replacing the half that does not.
-
-One practical note belongs here, because the licence is one of this solution's
-advantages and that advantage is not automatically inherited. The terms a newer
-generation of weights is released under have to be read for themselves rather
-than assumed to match the generation before it, and here that matters more than
-as a caution. **The upper rung has not been run on this machine.** The library
-holds the model and the code for this rung is written against it, but the newer
-weights are gated: the upload will not hand them over without an account that
-has been granted access. So this rung has no scorecard, and none has been
-invented for it: only the lower rung has been measured.
-
-So the recommendation is still not to choose once. Fit the keeper, because it is
-small and it fits in seconds, and run both rungs on the same held-out
-arrangements on a machine whose account has been granted the newer weights. The
-examiner makes that comparison honest, and if the text prompt wins, the keeper is
-still the thing that explains why a region was refused.
+**It has not been run.** The newer weights are gated and this machine's account
+has not been granted them, so this way has no scorecard and none has been
+invented for it.
 
 ← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

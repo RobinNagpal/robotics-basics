@@ -16,7 +16,7 @@ Two pieces of code carry this solution, and both are worth seeing before the
 document explains them. The first is the **fine-tune**, which is what turns a
 model fitted on everyday photographs into a finder of glasses in this room. The
 second is the **split**, which separates the pixels of a mask the camera really
-saw from the pixels the model only asserts, and without it the second rung
+saw from the pixels the model only asserts, and without it the second way
 could not be let near the arm.
 
 The fine-tune is two steps, in `06-rf-detr-fine-tuned/rf_detr_seg.py`. The
@@ -98,7 +98,7 @@ glass standing upright on a flat table has no orientation left to find.
 
 The one thing this solution owes that step, beyond the masks themselves, is the
 split described in [the
-trap](02_how-it-works.md#the-trap-and-it-is-the-one-thing-most-easily-got-wrong): when a mask
+trap](../12_how-a-mask-becomes-a-record.md#4-why-a-mask-that-asserts-pixels-must-say-which-ones): when a mask
 claims pixels the camera never saw the glass at, it must say which ones.
 
 ## 3. How the concepts fit together
@@ -117,7 +117,7 @@ matched queries to real glasses **one to one**, the filled slots do not
 duplicate each other, so no step afterwards has to reduce overlapping claims to
 one answer.
 
-On the second rung the mask covers the glass's **whole silhouette** rather than
+On the second way the mask covers the glass's **whole silhouette** rather than
 only what the camera saw, so it is then split into its **observed part**, where
 the depth reading agrees that the surface seen there belongs to this glass, and
 its **asserted part**, which is the rest. The observed pixels go to the shared
@@ -140,9 +140,9 @@ solution in this book ends with.
 Three things are worth holding on to. The **shape of the output** is what
 answers the hardest part of the problem, because a fixed set of slots filled one
 to one holds separate objects without anything having to divide a joined region.
-The **absence of a rectangle round each mask** is what makes the second rung a
+The **absence of a rectangle round each mask** is what makes the second way a
 change of target rather than a change of architecture. And the **separation of
-observed from asserted pixels** is what keeps the second rung honest, because
+observed from asserted pixels** is what keeps the second way honest, because
 the arithmetic and both surviving checks need the two kinds of pixel kept apart.
 
 ← [How it works](02_how-it-works.md) · [A worked example](04_a-worked-example.md) →

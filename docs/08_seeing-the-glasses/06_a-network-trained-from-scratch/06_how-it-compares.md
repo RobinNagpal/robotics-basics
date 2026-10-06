@@ -146,7 +146,7 @@ For more, see [mean shift](https://en.wikipedia.org/wiki/Mean_shift).
 ### Self-supervised learning — labels from the structure of the data
 
 Rather than annotate anything, construct a task whose answer is already implied
-by the data, so that the supervision is free and unlimited. Rung two is this
+by the data, so that the supervision is free and unlimited. The second way is this
 idea with the arm's own encoders as the generator of labels.
 
 It is used where unlabelled data is abundant and labels are expensive, and in
@@ -185,7 +185,7 @@ appearance at all, which is why it works on two identical glasses.
 
 It is used for video segmentation and tracking, and anywhere objects are hard
 to tell apart by how they look. It is rarely right where nothing moves relative
-to anything else, which is exactly why rung two is weak from the top: two rims
+to anything else, which is exactly why the second way is weak from the top: two rims
 at nearly the same distance have almost no relative movement to group by.
 
 ### Contrastive training — turning "these belong together" into a loss

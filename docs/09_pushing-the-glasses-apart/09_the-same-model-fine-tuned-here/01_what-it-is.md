@@ -106,7 +106,7 @@ now — a rendered view looking straight down in `bench/top_view.py`, and
 `Bench.follow()`, which carries a chunk of waypoints out as an action — so
 nothing below is blocked on them. Three things here are still prescriptions
 rather than code, and each says so where it is described: **DAgger**, the
-**second rung on π0.5**, and the **several training seeds** the examiner asks for,
+**second way on π0.5**, and the **several training seeds** the examiner asks for,
 of which one was fitted. Everything else in this document describes a program
 that has run.
 
@@ -131,7 +131,7 @@ where the demonstrations come from and why they are free while also capping
 what this solution can ever be, which of solution 5's weaknesses the training
 repairs and which of them survive it untouched, the two ways training on one
 cell's pushes goes wrong, and why a markedly larger foundation model is a
-second rung here rather than the main line.
+second way here rather than the main line.
 
 ## 2. The problem this solves
 

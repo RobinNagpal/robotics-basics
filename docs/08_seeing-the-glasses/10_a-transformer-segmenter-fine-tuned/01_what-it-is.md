@@ -7,7 +7,7 @@
 > so the size can be chosen to suit the machine.
 > **What it does** — it takes one picture from the top and returns one mask per
 > glass, with no step in between that has to cut a joined region apart. The
-> first of its two rungs is built and has been scored; the second was never
+> first of its two ways is built and has been scored; the second was never
 > fitted to completion and claims no number. The model arrives with its weights
 > already fitted to a large collection of ordinary labelled pictures, and
 > training then continues on this cell's own pictures with the list of classes
@@ -59,16 +59,16 @@ reach past the rectangle's edge. This model has no such rectangle standing in
 the way of its masks, and that single structural fact is what the rest of this
 document builds on. The second is what that fact permits: this is the only one
 of the six that can reasonably be asked to mark the part of a glass that nothing
-in the picture shows, which is the **second rung** of this solution and is
+in the picture shows, which is the **second way** of this solution and is
 described in full below.
 
-One thing has to be said before the rest. **The first rung is built and has
-been scored by the examiner; the second rung is not.** Its fine-tune was started
+One thing has to be said before the rest. **The first way is built and has
+been scored by the examiner; the second way is not.** Its fine-tune was started
 with the same settings as the first and stopped unfinished when the machine
 filled up, so no number is claimed for it anywhere. This document quotes no
-scorecard of its own either: the first rung's numbers sit beside its code, in
+scorecard of its own either: the first way's numbers sit beside its code, in
 [`06-rf-detr-fine-tuned/`](../../../code/src/08_seeing-the-glasses/06-rf-detr-fine-tuned).
-So where this document says what the second rung would do, that is the design
+So where this document says what the second way would do, that is the design
 speaking and not a run.
 
 By the end you will understand what a query is and why a fixed number of them is
@@ -113,7 +113,7 @@ The second is that a glass can be **partly covered** by the glass in front of
 it. Its mask then stops where the near glass begins, and what is left is not a
 smaller copy of the glass but a slice of it, lying all to one side. That failure
 is quiet rather than loud, and the whole of [the second
-rung](02_how-it-works.md#6-the-second-rung--training-against-the-whole-silhouette) is about it.
+way](02_how-it-works.md#6-a-second-way--training-against-the-whole-silhouette) is about it.
 
 There is a third difficulty neither of those reaches, which is a glass covered
 so completely that it contributes no pixels at all. [When the glasses are
@@ -129,7 +129,7 @@ Those are two separate claims and it is worth keeping them apart. The first is
 shared with other solutions in this set: a model that returns one mask per
 object needs no step that divides a joined region, because the division never
 had to happen. The second belongs to this solution alone, and it is what the
-second rung rests on, because a mask asked to cover more than the camera saw has
+second way rests on, because a mask asked to cover more than the camera saw has
 to be free to grow.
 
 The second half of the main idea is where the numbers inside the model come

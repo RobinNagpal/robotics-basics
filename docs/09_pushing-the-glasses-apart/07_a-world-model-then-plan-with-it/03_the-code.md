@@ -12,7 +12,7 @@ which is why they are on one page.
 
 ## 1. The code at the heart of it
 
-Two pieces of rung one carry the whole idea, and they are short enough to read
+Two pieces of the first way carry the whole idea, and they are short enough to read
 here. The first is the forward model itself: five copies of a small network
 that take a table and a candidate push and answer with what that push would do.
 The second is the arithmetic that turns those five answers into a single

@@ -36,9 +36,9 @@ nothing else.
 **Its licence is permissive**, which matters when the same model has to be
 shipped inside something else.
 
-**Its second rung is the easiest thing in this set to implement wrongly.** If
+**Its second way is the easiest thing in this set to implement wrongly.** If
 the asserted pixels are fed into the shared arithmetic instead of being named
-and excluded, the answer gets worse in exactly the way the rung exists to
+and excluded, the answer gets worse in exactly the way the way exists to
 prevent, and nothing complains: the mask looks better, the footprint stays
 round, and the width stays inside the range the kind allows.
 
@@ -50,7 +50,7 @@ gap to close as well. That is a cost in training time rather than in
 correctness, because the pictures the model is fitted on are the pictures it
 will be run on.
 
-**It is blind to a glass hidden completely**, and so is its second rung. No
+**It is blind to a glass hidden completely**, and so is its second way. No
 pixels means no slot filled, no low score and nothing to check. That is a fact
 about the input rather than about the model.
 
@@ -175,7 +175,7 @@ right on real photographs without care, because the label has to be drawn
 through a place nobody can see, so two careful annotators disagree with no way
 to settle who was right, and a model trained on such labels is fitted partly to
 the annotators' guesses. **None of that applies in a simulator**, which is why
-this rung is cheap here: the examiner can render the arrangement again with the
+this way is cheap here: the examiner can render the arrangement again with the
 other glasses taken away, and the mask that comes back is the whole silhouette
 exactly, with no guessing in it. For more, see [image
 segmentation](https://en.wikipedia.org/wiki/Image_segmentation).

@@ -71,7 +71,7 @@ rectangle. Here the mask is predicted over the whole picture, with no rectangle
 boxing it in. That is why this is the only one of the six that could be asked
 for a glass's *whole* silhouette, including the part standing behind another
 glass that nobody saw: with no rectangle to escape, asking for the hidden part
-is a change of training target and nothing else. That second rung is specified
+is a change of training target and nothing else. That second way is specified
 in the full chapter and was not fitted to completion, so it claims no number
 here.
 
@@ -160,14 +160,14 @@ to settle before the slots stop changing their minds about which glass each of
 them is responsible for, and the fine-tune has a domain gap to close as well.
 That is a cost in training time rather than in correctness.
 
-**Its second rung is the easiest thing in the book to implement wrongly.** If
+**Its second way is the easiest thing in the book to implement wrongly.** If
 the pixels the model asserts for the hidden part are fed into the shared
 arithmetic instead of being named and excluded, the answer gets worse in exactly
-the way the rung exists to prevent, and nothing complains: the mask looks
+the way the way exists to prevent, and nothing complains: the mask looks
 better, the footprint stays round, and the width stays inside the range the kind
 allows.
 
-**It is blind to a glass hidden completely**, and so is its second rung. No
+**It is blind to a glass hidden completely**, and so is its second way. No
 pixels means no slot filled, no low score and nothing to check.
 
 **Its answer cannot explain itself**, and **its weights are a second copy of the
@@ -204,7 +204,7 @@ The code is in
 [`src/08_seeing-the-glasses/06-rf-detr-fine-tuned/`](../../../code/src/08_seeing-the-glasses/06-rf-detr-fine-tuned)
 and it writes its own `results.json` beside itself. The full treatment, with
 what a transformer segmenter does differently, what set prediction means, and
-the second rung that trains against the whole silhouette, starts at [what it
+the second way that trains against the whole silhouette, starts at [what it
 is](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md).
 
 ← [A foundation model with a keeper](06_a-foundation-model-with-a-keeper.md) · [Rules on the table — what it is](../05_rules-on-the-table/01_what-it-is.md) →

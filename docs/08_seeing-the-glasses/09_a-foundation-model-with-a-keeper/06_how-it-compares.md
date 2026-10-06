@@ -115,7 +115,7 @@ concept that phrase names, rather than choosing from a fixed list of categories.
 The idea that a phrase and a picture can be matched in one space became
 mainstream with CLIP (Radford and colleagues, 2021,
 [arXiv:2103.00020](https://arxiv.org/abs/2103.00020)), and the segmentation
-models built on it are the second rung of this solution.
+models built on it are the second way of this solution.
 
 It is normally the right tool when the thing you want is easy to say and hard to
 write a rule for, and when nobody needs to audit the decision. It is normally
@@ -227,7 +227,7 @@ a glass is. This solution borrows the shapes and replaces the names with
 something fitted here and readable. That is the better half to replace, because
 a boundary between one surface and the surface behind it transfers from
 photographs to this cell far better than a category boundary does. The second
-rung of this solution gives that advantage back, which is why the section about
+way of this solution gives that advantage back, which is why the section about
 it is careful rather than enthusiastic.
 
 Against **solution 4** the comparison is about where the adaptation happens.
@@ -263,7 +263,7 @@ What this solution is genuinely for is to find out how far borrowed weights get
 in this cell with almost nothing fitted behind them, and to find out at what
 point an explainable decision is worth more than a shorter program. The examiner
 answers the first question by running it beside the other five on the same
-arrangements. The second question is the one the two rungs of this solution ask
+arrangements. The second question is the one the two ways of this solution ask
 of each other, and it is a judgement rather than a measurement.
 
 ← [What it needs](05_what-it-needs.md) · [RF-DETR-Seg, fine-tuned here — what it is](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md) →

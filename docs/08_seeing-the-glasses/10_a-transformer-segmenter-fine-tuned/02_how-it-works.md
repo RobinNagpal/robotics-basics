@@ -11,7 +11,7 @@ solution answers and the single idea it rests on.
 3. [One class](#3-one-class)
 4. [Set prediction](#4-set-prediction)
 5. [Fine-tuning this model here](#5-fine-tuning-this-model-here)
-6. [The second rung — training against the whole silhouette](#6-the-second-rung--training-against-the-whole-silhouette)
+6. [A second way — training against the whole silhouette](#6-a-second-way--training-against-the-whole-silhouette)
 
 ## 1. What a transformer segmenter does differently
 
@@ -60,7 +60,7 @@ answer was built in.
 ## 2. Why that matters for this problem
 
 That difference matters here for two reasons, one immediate and one that this
-solution's second rung depends on entirely.
+solution's second way depends on entirely.
 
 The immediate reason is that two glasses whose outlines join are two different
 slots from the beginning. The queries work over the whole picture at once, so
@@ -78,7 +78,7 @@ decided by the evidence. Here there is no such edge. A mask may claim any pixel
 in the picture it likes, so asking the model for the whole shape of a glass is a
 request the architecture can express rather than one it has to be forced into.
 That request is [the second
-rung](#6-the-second-rung--training-against-the-whole-silhouette), and it is the
+way](#6-a-second-way--training-against-the-whole-silhouette), and it is the
 reason this architecture was chosen for this place in the set.
 
 ## 3. One class
@@ -221,282 +221,64 @@ keeping the ordinary case in proportion. The principle is worth remembering:
 **the edge of the specification should sit somewhere in the middle of the
 training set**, so that the model has met worse than it ever will.
 
-## 6. The second rung — training against the whole silhouette
+## 6. A second way — training against the whole silhouette
 
-Everything above describes a model that marks the pixels the camera can see of
-each glass. This section is the step up, and it belongs to this solution rather
-than to any of the other five, because this is the architecture whose masks have
-room to hold it.
-
-The step is one sentence long: **train each mask against the glass's whole
-silhouette — the shape it would have if nothing stood in front of it — instead
-of against only the pixels the camera can see of it.** A mask of that sort is
-called an **amodal** mask, and the word is worth unpacking once. A **mode** here
-means a sense: seeing, hearing, touching. Something is **modally** present when
-a sense delivers it, so the part of a glass whose own surface the camera sees is
-modally present in the picture. Something is **amodally** present when the
-perceiver has it although no sense delivered it, which is the part of a glass
-hidden behind another object: you know it is there, you know roughly where its
-edge runs, and no light from it reached the camera. So a **modal mask** covers
-the pixels where the glass's own surface is what the camera saw, and an **amodal
-mask** covers the pixels the glass would occupy if nothing stood in front of it.
-The amodal mask always contains the modal one, and the difference between the
-two is the **hidden part**.
+There is a second way to train this model, and it belongs to this solution
+rather than to any of the other five, because this is the architecture whose
+masks have room to hold it. The step is one sentence: **train each mask against
+the glass's whole silhouette — the shape it would have if nothing stood in
+front of it — instead of against only the pixels the camera can see.** A mask
+of that sort is called an **amodal** mask. A sense delivers what is modally
+present, so the part of a glass whose own surface the camera sees is modal;
+what the perceiver has although no sense delivered it is amodal, which is the
+part hidden behind another object. The amodal mask always contains the modal
+one, and the difference between them is the **hidden part**.
 
 ![The same arrangement from the top, shown three ways: the modal mask of the covered glass holds only the pixels where its own surface was seen, the amodal mask holds its whole silhouette, and the difference between the two is the hidden part.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-modal-against-amodal.png)
 
-The everyday version shows that the amodal answer is the normal one. Look at a
-cat sitting behind a garden railing. What reaches your eyes, strictly, is a set
-of vertical strips of cat separated by bars, and what you report is **one cat**.
-The alternative report, several slices of cat of various widths, is so strange
-that it takes an effort to produce. A model marking only visible pixels is a
-system that reports the slices, which is exactly what it was asked for and
-exactly what the picture holds. It becomes a problem only when the next step
-assumes a whole object.
-
-One property of the two masks matters for the training. **On a glass with
-nothing in front of it the modal and amodal masks are the same**, because there
-is no hidden part to complete. So training against whole silhouettes costs
-nothing on the easy pictures, and it leaves a free test available afterwards: on
-a glass with a clear view, a model that adds anything at all is adding something
-wrong.
-
-### Why it helps
-
-The reason this is worth doing is the quiet failure named in [the problem this
-solves](01_what-it-is.md#2-the-problem-this-solves), and it is worth following through to the
-place where the damage appears.
-
-Put one glass partly behind another. The camera sees the near glass's surface
-where the far glass would otherwise have been, so a mask marking only visible
-pixels loses every pixel of the far glass behind that surface. What is left is a
-slice of the glass, cut along one side, with every remaining pixel lying towards
-the side the camera could still see.
-
-Now hand that slice to the arithmetic every solution in this book shares. It
-back-projects each mask pixel with its depth reading into a point in the room
-and drops the height to get a point on the table, takes the axis from the points
-at the top of the glass and the width from how far the cloud reaches out from
-that axis. A whole footprint gives a disc, and the arithmetic reads it
-correctly. A slice is narrower than the whole and it lies off to one side of the
-true centre, so the arithmetic reads a glass that is both **smaller than the
-truth and standing where no glass stands**.
-
-That failure is dangerous because of what does *not* happen. The reported width
-is still a width this kind of glass is allowed to have, because a kind whose
+**Why it helps** is the quiet failure. Put one glass partly behind another, and
+a mask marking only visible pixels loses every pixel behind the near glass's
+surface. What is left is a slice, cut along one side. Hand that slice to the
+shared arithmetic and it reads a glass that is both narrower than the truth and
+standing where no glass stands — and nothing objects, because a kind whose
 range runs from a small glass to a much larger one has room for a short
-measurement: a slice does not look like an error, it looks like a shorter glass.
-So nothing in the answer objects, and the arm is sent towards a place where
-there is no glass. Compare it with the loud failure these checks were built for:
-when two glasses come back as one region the width comes out wider than any
-glass of this kind can be, the check fires, and the region is reported as
-doubtful. **A loud failure is a result; a quiet one is a trap**, and in a cell
-whose next step is an arm moving, the quiet one is far worse.
+measurement. A slice does not look like an error; it looks like a shorter
+glass. Compare that with two glasses coming back as one region, where the width
+exceeds anything the kind allows, the check fires, and the region is reported
+as doubtful. **A loud failure is a result; a quiet one is a trap.**
 
-A mask covering the whole silhouette repairs the thing that caused it. The far
-glass becomes a region of its own, with its outline where the glass's outline
-really runs, so its visible slice is attributed to the glass it came off instead
-of being swallowed into the region of the glass in front, and a slice too thin
-to be worth reporting on its own is reported as part of something whole.
+**Why this architecture suits it** is that there is no rectangle to escape. In
+the older shape the mask is painted inside a rectangle found from what the
+picture shows, so a completion is clipped at an edge the evidence drew, and
+making it work means training the rectangles to be amodal too. Here the mask is
+computed over the whole picture from the start, so asking for the whole
+silhouette changes only what the mask is scored against. That is worth knowing
+generally: **one network answers a different question by changing its target
+rather than its shape.** The task is not small even though the change is:
+tracing a boundary that is not in the picture needs the model to have learned
+the shape of the kind and to get the near-and-far relation right.
 
-### Why this architecture suits it
+**One rule is absolute.** A mask claiming pixels the camera never saw the glass
+at must say which pixels those are, because the depth reading at such a pixel
+belongs to whatever stood in front. [How a mask becomes a
+record](../12_how-a-mask-becomes-a-record.md#4-why-a-mask-that-asserts-pixels-must-say-which-ones)
+sets out what that costs when it is got wrong, and the examiner leaves those
+readings out rather than guessing values for them.
 
-This is where the shape of the model earns its place, and the argument is short
-because the work was done in [what a transformer segmenter does
-differently](#1-what-a-transformer-segmenter-does-differently).
-
-A whole silhouette sticks out beyond the visible evidence. In the older shape,
-the mask is painted inside a rectangle, and the rectangle is found from what the
-picture shows, so the completion is clipped at an edge the evidence drew and the
-model is being asked for something it has no room to express. Making that work
-means training the rectangles to be amodal as well, which is asking the
-proposing stage to propose a rectangle **larger than the evidence in the
-picture**. Here there is nothing to fix, because the mask is computed over the
-whole picture from the start. **With no rectangle to escape, a mask is free to
-grow**, and asking for the whole silhouette changes only what the mask is scored
-against during training.
-
-That is worth stating as a general lesson, because it is one of the more useful
-things to know about models of this sort. **One network answers a different
-question by changing its target rather than its shape.** The body learns to
-describe what is in the picture, and the question being asked lives in what the
-final output is compared with. Here not even the last part of the model changes
-shape, so the question lives entirely in the target.
-
-The code change being small does not make the task change small, and it would be
-dishonest to let that pass. Marking visible pixels traces a boundary that is
-present in the picture, which is a question about where the evidence stops.
-Marking a whole silhouette traces part of a boundary that is not in the picture,
-which is a question about what a glass of this kind looks like and about which
-of two objects at a boundary is in front. The second question needs the model to
-have learned the shape of the kind, and it needs the near-and-far relation to
-come out right, because completing the wrong one of the two objects produces a
-mask spreading over a glass that is actually nearer the camera. So this rung may
-need more training, or a larger size of the model, than the first rung does.
-Whether it does is **not known here**, and this document does not assert it.
-
-### The trap, and it is the one thing most easily got wrong
-
-Now the part that matters a great deal, and it is the single thing this solution
-would most easily get wrong. It deserves its own section because the mistake is
-invisible: it makes the mask look better while making the answer much worse.
-
-A mask covering the whole silhouette claims pixels where the camera saw some
-other object's surface. The model is asserting that the glass continues
-underneath what is in front of it, and an assertion is not an observation. The
-damage comes from the depth reading. **The depth reading at such a pixel belongs
-to whatever stood in front**, so it says how far away the near glass is and
-nothing at all about the glass being reported. Feed it into the shared
-arithmetic and the point it gives sits on the near glass, somewhere between the
-camera and the glass being reported, and a patch of such points drags the
-computed place across the gap and onto the object in front.
-
-So the rule is absolute. **A mask that claims pixels the camera never saw the
-glass at must say which pixels those are**, handing on the observed part and the
-asserted part as two things rather than one silhouette with the join hidden. The
-examiner then **excludes those readings rather than guessing values for them**, and
-that is the examiner's own stated behaviour rather than something this solution has
-to arrange. Nothing is inferred in their place either: what an asserted pixel
-would be worth is a question about geometry, and a guess at it inside a
-segmenter would be arithmetic nobody asked for.
-
-Working out which pixels are asserted costs nothing, which removes the only
-excuse for not doing it. The depth reading at a pixel already says whether the
-surface there sits at this glass's distance or at the near object's, so the
-split can be read off the answer itself without any reference to the truth.
-
-The failure if the split is skipped would pass every check the project has. The
-mask would look like a better mask, the footprint fitted to it would still be
-round, and the width would still be inside the range the kind allows, so what
-comes out would be a plausible wrong answer of exactly the kind this rung exists
-to prevent, reached by the repair instead of by the failure the repair is for.
-[The examiner](../03_the-examiner.md) reports the measurement that settles it, taken
-with exact masks and no model anywhere in the chain: naming the asserted pixels
-and leaving them out places a glass markedly closer to where it stands than
-feeding them in does. That measurement belongs to the examiner's arithmetic rather
-than to any model, so it applies here unchanged.
-
-### What the completion actually buys
-
-Put the rule together with the exclusion, and the value of the whole silhouette
-turns out to sit where a reader does not first look for it. This is worth being
-exact about, because it is the easiest thing in this rung to misdescribe.
-
-The asserted pixels are left out, so they contribute nothing to the place and
-nothing to the width. The measurement is the one the observed pixels alone would
-have given, and the completion supplies no measurement at all, because it has no
-reading to supply. **What it buys is attribution rather than measurement.** The
-model reports one region per glass, drawn round the shape the glass really has,
-so the hidden glass's visible part is credited to that glass instead of being
-absorbed into the region of the glass in front. A glass that would otherwise
-have been left out of the report altogether is reported as itself, in roughly
-the right place, with a width that comes from the part that was seen and is
-therefore under the truth.
-
-Two consequences follow, and both are honest rather than flattering. The first
-is that a width from such a report is a figure for planning and not for
-gripping. This project's rule is that the last millimetres are felt rather than
-driven: the fingers close until they touch and then check the width. A width
-fitted to part of a glass is exactly what that rule keeps away from the gripper.
-The second is that where the completion covers a glass the camera barely saw,
-what arrives is an outline with too little seen inside it to place, and such an
-outline should be handed on as doubtful rather than placed from nothing. A glass
-reported as doubtful is a result in this project and not a failure.
-
-One further number comes free once the two parts are kept apart, and this
-document prescribes carrying it. Dividing the size of the observed part by the
-size of the whole mask gives the **visible fraction**, which says how much of
-that glass the camera actually saw. It costs one division, it comes from the
-answer itself rather than from the model's opinion of itself, and it should
-travel with every reported glass, because every consumer further down has its
-own tolerance for how much of an answer was asserted and none of them can apply
-that tolerance once the two parts have been merged.
-
-### The risk of inventing glass, and what bounds it
-
-A model trained to extend evidence has an obvious failure direction, and it is
-the mirror image of the failure this rung is for: it can extend evidence that
-needed no extending, or extend a scrap of evidence into a whole object that is
-not there. Two facts about this cell make that concrete. A narrow strip of glass
-pixels looks much the same whether it is the visible sliver of a mostly hidden
-glass or simply the edge of something that ends there, and splay stretches every
-outline in a picture from the top outwards, so an outline's far edge can look
-cut off when the glass merely ends.
-
-This failure is loud where the one it replaces is quiet, and two cheap checks
-bound it. Both are in the code, and each of them can only refuse.
-
-**The width must lie inside the range the kind allows, unless the picture ran
-out before the glass did.** Inventing glass means reporting a glass where none
-stands, and every report carries a width, so a width outside the range this kind
-allows is reason enough to refuse the report and hand it on as doubtful — when
-the mask it was measured from lies inside the frame. When the mask reaches the
-edge of the frame it is not. At the cell's own survey height one picture does not
-hold the glass zone, so a glass at the far side of a station's frame is cut in
-half and the width read off the half is not the glass's width; refusing on it
-refuses the view and not the mask. That was measured on masks nothing can
-improve on: handed the examiner's own exact masks, one station at a time over 20
-held-out spawned arrangements, the kind's range of footprints refuses 66 of 297
-glass sightings, and **every one of those 66 reaches the frame edge**. The three
-overlapping stations are the answer to such a report instead.
-
-Notice as well that this check is useless against a mask cut short by the glass
-in front of it, where the shrunken width looks like a legal smaller glass, and
-useful against an invention, where claiming a glass means claiming a footprint
-and a claimed footprint either fits the kind or does not.
-
-**The asserted part must lie where the camera could not see.** A model claiming
-a glass continues behind the near glass is claiming something about a part of
-the scene the camera could not see, which is allowed. A model claiming a glass
-continues across a patch the camera had a clear view of, where the reading comes
-back off a surface standing nowhere near this glass, is contradicting a direct
-observation. So every pixel of a mask that no nearer report accounts for is
-back-projected with its own depth reading, and one whose surface stands further
-from the report's own middle than the widest footprint the kind allows is a
-pixel the camera plainly saw something else at. Those are left out of the
-arithmetic like the rest of the asserted part, and a report holding more than a
-small share of them is refused — wrong on arithmetic alone, with no reference to
-the model, the training set or the kind. That is the strongest of the two,
-because it is geometry rather than judgement, and it is the reason a learned
-completion can be let near the arm at all.
-
-There is also a free test for the quiet version of invention, where a model
-completes a little on every glass whether or not anything is in front of it, so
-that every footprint comes out slightly too wide and displaced slightly outwards
-and no single answer looks wrong. **On a glass with nothing in front of it, the
-amodal mask must equal the modal one.** So keep only the unobstructed glasses in
-the marking half of the arrangements and measure what the model adds to them:
-the right answer is nothing, and any systematic addition is a bias worth knowing
-about before the model is trusted.
-
-### How to tell whether the completion works at all
-
-The last thing this rung needs is a way to tell whether the model is doing what
-it was asked, because the ordinary measure of a segmenter misleads here, and a
-model of this kind can be built, trained and declared a success while completing
-nothing.
-
-The ordinary measure is **overlap**: the number of pixels both the predicted and
-the true mask hold, divided by the number either of them holds. Measured against
-the visible truth it punishes the model for working, because every pixel of a
-correct completion lies outside that truth and is counted as a mistake, so the
-better the completion the lower the score and the best score goes to a model
-that has learned to ignore the amodal target entirely. The lesson generalises:
-**a score that rewards doing nothing will be optimised by a model that does
-nothing.** Measured against the whole silhouette it is better but still a poor
-guide, because for most glasses the hidden part is a minority of the silhouette
-and for a glass with a clear view it is nothing, so the number mostly reports
-how well the visible boundary was traced, which is the first rung's job.
-
-So the measure to watch during training is the **overlap over the hidden part
-alone**, which the examiner can supply exactly by subtracting one of its own masks
-from the other. That number ignores every pixel the model could have got right
-by tracing a visible edge. Beside it belong the counts of glasses found, missed
-and merged, because what this rung changes shows up in those counts before it
-shows up in any footprint: a completion that attributes a slice to the glass it
-came off adds a glass to the answer rather than improving the footprint of a
-glass that was already there.
+**Two checks come free.** On a glass with nothing in front of it the amodal
+mask must equal the modal one, so measuring what the model adds to unobstructed
+glasses gives a direct test for a model that completes a little everywhere. And
+the measure to watch during training is the **overlap over the hidden part
+alone**, which the examiner can supply by subtracting one of its own masks from
+the other. Overlap against the visible truth punishes the model for working,
+since every pixel of a correct completion lies outside that truth, so the best
+score would go to a model that ignores the amodal target entirely: **a score
+that rewards doing nothing will be optimised by a model that does nothing.**
 
 ![A stand-in prediction that completes most of the hidden part but stops short of its far edge scores well when the overlap is counted over the pixels the camera saw and much worse when it is counted over the hidden part alone, which is why the hidden part alone is the number to watch.](../../images/seeing-the-glasses/a-transformer-segmenter-fine-tuned/10-measuring-whether-it-works.png)
+
+**This way was never fitted to completion, so it claims no number.** Everything
+above is a prescription, and the row this solution has in the results is the
+first way, trained against the pixels the camera can see.
 
 ← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

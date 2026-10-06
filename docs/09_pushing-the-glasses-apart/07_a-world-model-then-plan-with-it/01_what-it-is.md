@@ -1,11 +1,11 @@
 # What it is
 
 > **What it uses** — PyTorch, and MuJoCo through [the test
-> examiner](../02_the-examiner.md). Rung one is a small network written for this cell
+> examiner](../02_the-examiner.md). The first way is a small network written for this cell
 > and trained here, five copies of it, with no downloaded weights of any kind.
-> Rung two would be TD-MPC2, the model-based entry in LeRobot, trained here as
-> well. **Rung two is not built**, so no number anywhere in this document is
-> its. Neither rung borrows a model from anybody, so the only licences in play
+> The second way would be TD-MPC2, the model-based entry in LeRobot, trained here as
+> well. **The second way is not built**, so no number anywhere in this document is
+> its. Neither of them borrows a model from anybody, so the only licences in play
 > are the libraries' own.
 > **What it does** — it learns what a push does, and then looks for a good push
 > by trying candidate pushes against that learned model instead of against the
@@ -29,12 +29,12 @@
 > parameterised push, and the examiner's own macro expands it into a jaw
 > trajectory.
 > **What it costs** — pushes made in the simulator and recorded, which is the
-> only training data either rung needs and which nobody has to label. Rung one
+> only training data either way needs and which nobody has to label. The first way
 > trains on an ordinary processor in minutes and needs no rented hardware at
-> all. Rung two is reinforcement learning and wants an accelerator: a weekend
+> all. The second way is reinforcement learning and wants an accelerator: a weekend
 > of rented time, of order a hundred dollars, and a month of a small one, of
 > order five hundred, if several training seeds are to be run. At run time both
-> rungs are the expensive end of the six, because the search asks the model
+> ways are the expensive end of the six, because the search asks the model
 > about hundreds of candidate pushes before every single push the arm makes.
 
 > **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
@@ -75,7 +75,7 @@ that is wrong in small ways is still useful, which turns on planning several
 pushes ahead but executing only the first. You will understand why a
 disagreement between several copies of the same model is a usable measurement
 of the model's own ignorance, which is the most transferable idea in this
-document. And you will understand what the two rungs buy against each other:
+document. And you will understand what the two ways buy against each other:
 a small hand-built model that can be inspected, against a stronger off-the-shelf
 one that brings a maintained implementation.
 

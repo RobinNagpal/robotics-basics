@@ -84,14 +84,14 @@ so that detail lost going down is available coming back. It was designed for
 biomedical pictures with very few training examples, which is exactly why it
 suits a small rendered training set.
 
-Where the labels come from is the one place this solution has two rungs. The
-first rung takes them from the examiner's own answer key, which records which glass
+Where the labels come from is the one place this solution has two ways. The
+first way takes them from the examiner's own answer key, which records which glass
 owns each pixel, so the labels are exact and cost only render time. The second
-rung takes them from the arm's own movement instead: the camera is moved a known
+way takes them from the arm's own movement instead: the camera is moved a known
 distance between two pictures, and points on one rigid surface then move
 together in the picture while points on a surface at a different distance do
 not. That is enough to group pixels with no answer key at all, which is the idea
-called self-supervised learning. The first rung is what the numbers below come
+called self-supervised learning. The first way is what the numbers below come
 from.
 
 ## 3. What it needs
@@ -105,9 +105,9 @@ reaches the graphics processor on an Apple machine. No dedicated graphics card
 is required, and nothing is
 downloaded, so no licence condition applies to anything it uses.
 
-It needs **a training set**. For the first rung that is arrangements rendered by
+It needs **a training set**. For the first way that is arrangements rendered by
 the examiner together with their answer keys, which costs render time and nothing
-else. For the second rung it is pairs of pictures with the camera's movement
+else. For the second way it is pairs of pictures with the camera's movement
 logged beside each one, which costs arm time.
 
 It needs **a training run before it can answer anything at all**. The network is

@@ -190,7 +190,7 @@ is learnable at all.
 ## 3. Where it sits among the other five
 
 [The six solutions](../03_the-six-solutions/01_how-the-six-compare.md) form a ladder, ordered by how much of each one
-was fitted in this cell, and this solution is the first rung on which
+was fitted in this cell, and this solution is the first way on which
 everything was.
 
 Against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md), the comparison is the basic
@@ -249,7 +249,7 @@ six in their own right: same model, same weights, and the only difference
 between them is that one has had its training continued here.
 
 Read as a ladder, the six measure what each increment of fitting buys. This one
-is the rung where all the fitting is done here, from nothing, on examples a
+is the way where all the fitting is done here, from nothing, on examples a
 program produced for free — the cheapest honest attempt at learning this task
 that this book contains, and the one whose limits are easiest to state in
 advance.

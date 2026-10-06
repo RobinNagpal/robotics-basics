@@ -133,7 +133,7 @@ The camera being *on the wrist* rather than above the table is the single fact
 that shapes most of these solutions. It means the arm chooses its own
 viewpoints. It means moving the camera costs seconds of arm time. And it means
 the camera's pose is known exactly, from the joint encoders — which is what
-makes the second rung of [a network trained from
+makes the second way of [a network trained from
 scratch](06_a-network-trained-from-scratch/01_what-it-is.md), which takes its
 labels from the arm's own movement, possible at all.
 

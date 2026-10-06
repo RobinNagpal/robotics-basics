@@ -46,9 +46,9 @@ because predicting where a pushed glass stops needs the friction and the weight
 distribution that nobody in this cell has measured. Those are two different
 bets about which question deserved a model, and the examiner settles it.
 
-Rung one is five copies of a small network written for this cell and trained
-here, with no downloaded weights of any kind. Rung two would be TD-MPC2, the
-model-based entry in LeRobot. **Rung two is not built**, so no number here is
+The first way is five copies of a small network written for this cell and trained
+here, with no downloaded weights of any kind. The second way would be TD-MPC2, the
+model-based entry in LeRobot. **The second way is not built**, so no number here is
 its.
 
 ## 2. How it works
@@ -92,7 +92,7 @@ trained on single pushes.
 ## 3. What it needs
 
 **A physics engine and thousands of pushes in it.** This is the real cost, and
-no other solution pays it in the same currency. Rung one records thirty-eight
+no other solution pays it in the same currency. The first way records thirty-eight
 thousand pushes, collected in two rounds: a first round of random pushes, and a
 second round of pushes chosen by the planner using the first round's model,
 which fills the holes the search would otherwise exploit. **Nobody labels any of
@@ -105,7 +105,7 @@ half an hour on a laptop processor, with **no accelerator needed at all**. That
 is unusual among the learned solutions here, and it follows from the model being
 small and its input being a few dozen numbers rather than a picture.
 
-**Rented hardware for rung two.** TD-MPC2 is reinforcement learning, it trains
+**Rented hardware for the second way.** TD-MPC2 is reinforcement learning, it trains
 on far more interaction than a one-step fit needs, and it wants an accelerator:
 of order a hundred dollars for a weekend, or five hundred for a month if several
 training seeds are to be run.
@@ -117,7 +117,7 @@ the arithmetic a fixed nudge costs, which is why the scorecard carries a compute
 column.
 
 **A file of weights kept in step with the cell**, and **no borrowed model**, so
-there is no model licence to meet in either rung.
+there is no model licence to meet in either way.
 
 ## 4. What it scored
 
@@ -127,7 +127,7 @@ the pair is what this solution exists to settle.
 
 | | tables done | tables wrong | glasses racked | toppled | pushes |
 |---|---|---|---|---|---|
-| this solution (rung one) | 31 | 1 | **202** | 1 | **114** |
+| this solution (the first way) | 31 | 1 | **202** | 1 | **114** |
 | the ranked geometry | 31 | 0 | 185 | 0 | 229 |
 
 **It racked more glasses than any other solution in the book, in half the

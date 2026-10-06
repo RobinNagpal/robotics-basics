@@ -67,9 +67,9 @@ five hundred, so even a generous schedule of retraining stays well inside a
 weekend's rental if a laptop is not available.
 
 At run time it needs very little: **one forward pass per chunk** for ACT, and
-several passes per chunk for the denoising rung, against a push that takes the
+several passes per chunk for the denoising way, against a push that takes the
 arm seconds to carry out. The compute column on the scorecard is where that
-difference between the two rungs becomes visible.
+difference between the two ways becomes visible.
 
 And once fitted, it needs **a weights file kept in step with the examiner**.
 Change how the view from the top is rendered, or the macro whose waypoints

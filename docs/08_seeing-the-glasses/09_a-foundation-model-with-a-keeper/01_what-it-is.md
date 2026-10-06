@@ -72,7 +72,7 @@ You will also understand the one design question this solution carries inside
 itself, which is the most interesting part of the document. A newer generation
 of the same borrowed model takes a **word** instead of a point: ask it for
 "drinking glass" and it returns every instance of that concept. That would
-delete the keeper completely. So this solution has two **rungs**, meaning two
+delete the keeper completely. So this solution has two **ways**, meaning two
 versions of one approach, one of them a generation newer than the other. The
 last concept section weighs the two against each other, and the honest answer is
 not simply that the newer one is better, because the keeper is the one place in

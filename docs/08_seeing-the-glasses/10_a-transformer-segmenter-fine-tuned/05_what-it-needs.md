@@ -20,7 +20,7 @@ including the crowded arrangements the cell's own rule would never produce. That
 is the genuinely cheap part and it is what makes fine-tuning reasonable here. It
 needs **time on the machine** for the fine-tune, far less than a start from
 random numbers would need but still the largest cost in the solution, and the
-second rung may need more of it than the first.
+second way may need more of it than the first.
 
 It needs **hardware it fits on**. The machine here is a laptop whose graphics
 processor shares memory with the main processor, and PyTorch reaches that

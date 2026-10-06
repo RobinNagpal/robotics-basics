@@ -59,7 +59,7 @@ planned, and the cap for a one-step-trained model is low.
 **It cannot be inspected the way written geometry can.** When a written rule is
 wrong you can print one number and see why. Here you print thirty-four numbers,
 five answers and what really happened, and infer. That is far better than
-nothing — and it is better than rung two offers — but it is not an explanation.
+nothing — and it is better than the second way offers — but it is not an explanation.
 
 **And it is the most machinery of the six.** A data collector, a trainer, an
 ensemble, a search and a loop, against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md),
@@ -94,7 +94,7 @@ what the comparison with the other five is meant to settle.
 Nagabandi, Kahn, Fearing and Levine's [*Neural Network Dynamics for Model-Based
 Deep Reinforcement Learning with Model-Free
 Fine-Tuning*](https://arxiv.org/abs/1708.02596) (2017) is the clearest statement
-of the recipe rung one follows: fit a plain network to situation, action and
+of the recipe the first way follows: fit a plain network to situation, action and
 next situation gathered by random exploration, then control with
 model-predictive control on top of it. Its headline result is sample
 efficiency — far fewer interactions than a model-free policy needs for the same
@@ -116,7 +116,7 @@ copies as uncertainty. Chua, Calandra, McAllister and Levine's [*Deep
 Reinforcement Learning in a Handful of Trials using Probabilistic Dynamics
 Models*](https://arxiv.org/abs/1805.12114) (2018), usually called PETS, is the
 version that plans with the cross-entropy method against such an ensemble and
-keeps track of where the copies disagree. **Rung one is a simplified PETS**:
+keeps track of where the copies disagree. **The first way is a simplified PETS**:
 five networks, the cross-entropy method, and a veto driven by the worst copy
 rather than the average.
 
@@ -161,7 +161,7 @@ description and predict how *that* changes. Hansen, Wang and Su's
 [TD-MPC2](https://arxiv.org/abs/2310.16828) (2023) combine such a learned
 internal model with planning at run time and a learned value to stand in for
 everything beyond the planning horizon, which is how they avoid needing a deep
-rollout. TD-MPC2 is rung two, and it reaches this project through LeRobot.
+rollout. TD-MPC2 is the second way, and it reaches this project through LeRobot.
 
 This family is normally right where the situation cannot be written down — raw
 pictures, contact-rich manipulation, anything where the useful variables are
@@ -171,7 +171,7 @@ the camera work that [tells the glasses
 apart](../../08_seeing-the-glasses/02_the-problem/01_what-is-asked-for.md) has
 already measured the positions and widths, so a learned encoding is being asked
 to rediscover information the cell already supplies. That is the honest prior
-expectation for rung two here, and it is exactly the expectation the
+expectation for the second way here, and it is exactly the expectation the
 comparison exists to test.
 
 ### Where the push data of record comes from

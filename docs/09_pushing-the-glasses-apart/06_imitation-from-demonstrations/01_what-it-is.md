@@ -5,7 +5,7 @@
 > PyTorch underneath. No rented accelerator: this one fitted on the machine the
 > project is written on, an Apple M4 with no NVIDIA card. The model is **ACT**,
 > an action chunking transformer: it predicts a short run of future actions in
-> one go rather than one action at a time. A second rung uses **Diffusion
+> one go rather than one action at a time. A second way uses **Diffusion
 > Policy**, also in LeRobot, which reaches the same kind of answer by starting
 > from noise and denoising towards an action chunk. Nothing is downloaded
 > except the library: both models are fitted here, from random numbers, on
@@ -56,7 +56,7 @@ of good pushes and training a model to copy them. The method has a name,
 **behaviour cloning**, and it is the plainest kind of learning there is: no
 reward, no exploration, no physics, only a large table of situations and the
 action somebody took in each one. The model that does the copying is ACT, an
-action chunking transformer, taken from LeRobot, and a second rung replaces it
+action chunking transformer, taken from LeRobot, and a second way replaces it
 with Diffusion Policy, which arrives at the same kind of answer by a different
 route.
 

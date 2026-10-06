@@ -8,7 +8,7 @@ the licence that comes with the weights.
 
 **A physics engine and thousands of pushes in it.** This is the real cost, and
 it is a cost no other solution in this set pays in the same currency. Every
-training example is one push really made: look, push, look again. Rung one's
+training example is one push really made: look, push, look again. The first way's
 README records thirty-eight thousand of them, collected in two rounds — a first
 round of random pushes on thousands of tables, and a second round of pushes
 chosen by the planner using the first round's model, which is what fills the
@@ -19,14 +19,14 @@ advantage this family has over anything trained on demonstrations.
 
 ![One training table yields a dozen examples, because the table is built once and the state after each push starts the next and no push has to be a useful one; a real run makes as few pushes as it can, so gathering the same thirty-eight thousand rows from ordinary runs would take thousands of them, where the simulator produces them in under an hour of processor time and nobody labels any of it.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-the-data-it-takes.png)
 
-**A training run, before the solution can answer anything.** Rung one trains
+**A training run, before the solution can answer anything.** The first way trains
 five small networks, and its README records the whole of that — the pushes and
 the five networks — at about half an hour on a laptop processor. **No
-accelerator is needed for rung one at all.** This is unusual among the learned
+accelerator is needed for the first way at all.** This is unusual among the learned
 solutions here and it follows directly from the model being small and the inputs
 being thirty-four numbers rather than a picture.
 
-**For rung two, rented hardware.** TD-MPC2 is reinforcement learning, it trains
+**For the second way, rented hardware.** TD-MPC2 is reinforcement learning, it trains
 on far more interaction than a one-step fit needs, and it wants an accelerator.
 Renting one for a weekend is of order a hundred dollars, which covers a single
 training run. Because several training seeds are needed before any result is a
@@ -49,8 +49,8 @@ jaw, the glass zone, the range of proportions a kind is drawn from, or the
 camera's error, and the weights are quietly out of date in a way no test of the
 code will notice.
 
-**Libraries, and no borrowed model.** PyTorch for both rungs, MuJoCo through the
-examiner, and LeRobot for rung two. Neither rung downloads trained weights from
+**Libraries, and no borrowed model.** PyTorch for both of them, MuJoCo through the
+examiner, and LeRobot for the second way. Neither of them downloads trained weights from
 anybody, so there is no model licence to meet in either — the only conditions
 are the libraries' own, and LeRobot is Apache 2.0.
 
@@ -58,7 +58,7 @@ are the libraries' own, and LeRobot is Apache 2.0.
 examiner](../02_the-examiner.md) listed them as missing: repeats with a spread on the
 scorecard, because one run of a trained solution is not a measurement, and the
 time per push beside the counts. Both are in `bench/scoring.py` today, as
-`Repeats` and as the seconds-per-push the scorecard records. Rung one's runner
+`Repeats` and as the seconds-per-push the scorecard records. The first way's runner
 uses the plain scorecard, so its results carry the time per push but no spread:
 it has been trained once and run once.
 

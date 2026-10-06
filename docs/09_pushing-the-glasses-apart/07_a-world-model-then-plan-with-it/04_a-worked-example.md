@@ -54,7 +54,7 @@ worst one. **The model can be confidently wrong.** The ensemble measures
 disagreement, and disagreement only appears where the training data was thin in
 a way the copies noticed. A kind of failure that is absent from the training
 data altogether can produce five copies that agree, agree confidently, and agree
-wrongly. Rung one's own results record exactly this: one glass went over on the
+wrongly. The first way's own results record exactly this: one glass went over on the
 fifty held-out tables and one on a hundred tuning tables, and the model had
 rated as safe every topple it missed. The three causes recorded there are
 instructive, because all three are
@@ -78,7 +78,7 @@ cannot.
 ## 2. A worked example
 
 The clearest way to see the whole arrangement run is on one of the examiner's
-held-out tables, and rung one can be traced step by step on any of them.
+held-out tables, and the first way can be traced step by step on any of them.
 
 Take a table of six glasses of one kind. The first look reports six readings.
 Several pairs are closer than the 70 mm of clear room the gripper needs, so
@@ -112,7 +112,7 @@ After this push one glass has room and is taken. Two pushes later the rest are
 clear and are taken as well, and the table finishes done.
 
 Not every table finishes that way, and the two interesting endings are both
-recorded in rung one's traces. On one, a push is blocked on the way down — the
+recorded in the first way's traces. On one, a push is blocked on the way down — the
 jaw touches something before reaching the table, goes straight back up without
 pushing, and the loop simply looks again and plans afresh, so a blocked push
 costs a push and nothing else. On another, two pushes are made and then no
@@ -120,7 +120,7 @@ further push survives the filters, so three glasses are reported refused with
 their reasons and the table finishes **correct but incomplete**, which [the
 problem](../01_the-problem/01_what-is-asked-for.md) counts as a correct outcome rather than a failure.
 
-Across the fifty held-out tables as a whole, rung one's recorded results — read
+Across the fifty held-out tables as a whole, the first way's recorded results — read
 from its own `results.json` — are two hundred and two of two hundred and
 fifty-one glasses racked in a hundred and fourteen pushes, thirty-one tables
 finished, and the glasses that were left all reported with a reason. **That is

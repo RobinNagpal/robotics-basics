@@ -10,7 +10,7 @@ solution answers and the single idea it rests on.
 2. [Where the demonstrations come from](#2-where-the-demonstrations-come-from)
 3. [Choosing which demonstrations to keep, and the bias it buys](#3-choosing-which-demonstrations-to-keep-and-the-bias-it-buys)
 4. [Action chunking, and why it matters](#4-action-chunking-and-why-it-matters)
-5. [The second rung — Diffusion Policy](#5-the-second-rung--diffusion-policy)
+5. [A second way — Diffusion Policy](#5-a-second-way--diffusion-policy)
 6. [Compounding error](#6-compounding-error)
 
 ## 1. Behaviour cloning — learning a policy by copying
@@ -281,95 +281,29 @@ down to a handful of parameters removes the mechanism that makes it work, and
 what you would then measure is a damaged version of the method rather than the
 method that exists.
 
-## 5. The second rung — Diffusion Policy
+## 5. A second way — Diffusion Policy
 
-This solution carries a second rung, and it is not a spare in case the first
-one fails. It is there to test one specific weakness of the first, which the
-previous section has just named.
+There is a second way to fit this solution, and it exists to attack the
+weakness the section above just named. **Diffusion Policy starts from a chunk
+of pure noise and removes a little of what it judges to be noise, again and
+again, until a plausible run of waypoints is left.** Because where it arrives
+depends on where the noise started, asking twice can give two different good
+answers.
 
-**Diffusion Policy reaches the same kind of answer by starting from noise and
-denoising towards an action chunk.** In plain words: instead of computing the
-chunk, the model begins with a chunk of pure random numbers — a run of
-waypoints that is nothing but static — and then removes a little of what it
-judges to be noise, and does that again, and again, until what is left is a
-plausible run of waypoints. The model was trained to answer one question: given
-a noisy chunk, which part of it is noise? Asking that question repeatedly
-carves an answer out of the static.
+That is the whole argument for it. A model trained to predict one answer
+averages the answers it was shown, and this problem has several good answers
+nearly everywhere: pushing the left glass left and pushing the right glass
+right are both correct for the same crowded pair, and the average of those two
+is barely moving at all. ACT's measured failure is exactly that shape — a
+heading about thirty degrees off, which is close to what averaging the
+teacher's alternatives would give.
 
-A comparison from mathematics helps with why that is even possible. Think of
-every possible chunk of waypoints as a point in a space, and of the good chunks
-— the ones a demonstration might contain — as lying on a thin region inside it.
-Pure noise is a point far off that region. The denoising step is a nudge
-towards it. Repeated, the nudges arrive at the region, and where exactly they
-arrive depends on where the noise started, which is why asking twice can give
-two different good answers.
-
-That last property is the whole argument, and it is worth stating carefully
-because it is the clearest reason to carry both rungs.
-
-**When several different pushes would all be good, a model trained to predict
-one answer tends to average them.** This is not a flaw in any particular
-network; it is what fitting towards a single answer does. If the training data
-holds, for situations that look alike, one demonstration that pushed the left
-glass left and one that pushed the right glass right, then the single prediction
-that is least wrong on average is somewhere between the two — and between
-"push left" and "push right" is "barely move". The average of several good
-pushes is commonly not a push at all. A denoising model does not have this
-problem, because it is not trying to name one answer. It represents a
-distribution over chunks and draws from it, so it can keep both options and
-pick one.
-
-**And this problem has several good answers nearly everywhere.** That is not a
-hypothetical. [The target layout](../01_the-problem/02_the-target-layout.md) says it twice over:
-minimising travel subject to clearance has more than one local optimum, because
-moving the left glass left and moving the right glass right are both perfectly
-good answers to the same crowded pair; and success is defined on the clearance
-rather than on the layout, so **there is more than one way to uncrowd a table
-and the alternatives are not wrong.** A method that must name a single answer
-is therefore being asked, at almost every step, to choose between options it has
-no reason to choose between — and its way of coping is to produce their
-average.
-
-So the two rungs together measure something real rather than merely trying two
-models. ACT predicts a chunk directly, and if the averaging problem bites, it
-will show up as pushes that move glasses too little or in the wrong direction
-on exactly the symmetric arrangements where two answers were available.
-Diffusion Policy can represent the choice. The gap between the two is a
-measurement of how much the averaging cost, on this table, with this data.
-
-**The rung is written and it runs; it has not been fitted here.** It is in
-`policy.py` beside ACT, taking the same demonstrations, the same scaling and
-the same picture, so that only the model differs. What stopped it was the
-compute bill rather than the code: Diffusion Policy is about 75 million
-parameters against ACT's 52 million, a training step costs it roughly twice as
-much, and one chunk at run time is sixteen denoising passes rather than one
-forward pass. Fitting it with several seeds on this machine is a night's work
-on top of ACT's, and a rung reported from one seed is not a result. So there
-is no `results-diffusion.json`, and the gap this section argues for has not
-been measured.
-
-It is worth saying plainly that **ACT's measured behaviour makes this the most
-valuable thing left undone in this solution.** What ACT produces on a table it
-has not seen is a chunk about 55 mm away from the teacher's and about 30
-degrees off in heading — close to what averaging over the teacher's
-alternatives would give, and far enough off that the jaw meets a neighbour on
-the way down. Whether a model that draws its chunk instead of naming one
-escapes that is now a question with a measurement behind it rather than an
-argument.
-
-Two costs come with the second rung and both belong on the scorecard.
-
-**It costs more per push.** One chunk needs several denoising passes rather
-than one forward pass, so the run-time cost is some multiple of ACT's. [The
-examiner](../02_the-examiner.md) carries a compute column for precisely this kind
-of difference, because a solution that wins while taking much longer has not
-obviously won.
-
-**It is one more thing that varies by seed.** A policy that draws its answer is
-stochastic by construction, so asked the same question twice it may act
-differently. The examiner's requirement applies with full force: several training
-seeds, several evaluation runs, and the spread reported, because a method that
-wins by less than its own spread has not been shown to win.
+**It is written and it runs, and it has not been fitted here.** It sits in
+`policy.py` beside ACT on the same demonstrations, so only the model differs.
+What stopped it was the compute: it is half again as large, a training step
+costs about twice as much, one chunk at run time is sixteen denoising passes
+rather than one, and a result from a single seed is not a result. So there is
+no scorecard for it, and the gap this section argues for has not been measured.
 
 ## 6. Compounding error
 

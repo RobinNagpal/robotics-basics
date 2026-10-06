@@ -57,7 +57,7 @@ nothing to extend. A model asked to mark a glass that *might* be standing
 behind this one would be inventing an arrangement rather than reading a
 picture. Whether predicting the hidden part of a partly visible glass is worth
 doing is studied inside [RF-DETR fine-tuned](../10_a-transformer-segmenter-fine-tuned/01_what-it-is.md), which
-carries that question as its own second rung.
+carries that question as its own second way.
 
 The two views lose a glass in different ways, and the difference is worth
 separating, because what this solution cannot see is not the same in each. From

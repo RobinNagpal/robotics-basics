@@ -12,7 +12,7 @@ solution answers and the single idea it rests on.
 4. [Whether anything but the training differs](#4-whether-anything-but-the-training-differs)
 5. [What fine-tuning closes, and what it cannot touch](#5-what-fine-tuning-closes-and-what-it-cannot-touch)
 6. [Two ways training on one cell's pushes goes wrong](#6-two-ways-training-on-one-cells-pushes-goes-wrong)
-7. [A second rung: the same fine-tune on a larger model](#7-a-second-rung-the-same-fine-tune-on-a-larger-model)
+7. [A second way — the same fine-tune on a larger model](#7-a-second-way--the-same-fine-tune-on-a-larger-model)
 
 ## 1. Fine-tuning — continuing somebody else's training
 
@@ -551,49 +551,23 @@ the spread. **This matters most to this document of any in this book**, because
 the thing being measured is the gap between two solutions, and a gap smaller
 than either solution's own spread has not been shown to exist.
 
-## 7. A second rung: the same fine-tune on a larger model
+## 7. A second way — the same fine-tune on a larger model
 
-Everything above is about one model, and there is an obvious next question that
-one model cannot answer: would a markedly larger foundation model do better?
-That question is this solution's second rung.
+One model cannot answer the obvious next question: would a markedly larger
+foundation model do better? **The second way is the same fine-tune on π0.5** —
+the same demonstrations, the same low-rank adaptation, the same examiner and
+the same marking, with a much larger borrowed model in the middle. Everything
+except the model is held still, so the gap would measure what size is worth.
+The library this problem installs already carries π0.5 beside SmolVLA, so it is
+the same training loop pointed at different weights rather than new machinery.
 
-**The rung is the same fine-tune on π0.5.** The same demonstrations, the same
-low-rank adaptation, the same examiner, the same marking, with a much larger
-borrowed model in the middle. Because everything except the model is held
-still, the gap between the two rungs measures what size is worth on this task,
-in the same way the gap between this solution and solution 5 measures what
-training is worth. It is also less work than it sounds: the version of LeRobot
-this problem installs carries π0.5 beside SmolVLA, so the rung is the same
-training loop pointed at a different policy and a different set of weights,
-rather than new machinery. What it is not is affordable here, and that is the
-whole of why it stays a prescription.
-
-**Its cost is a weekend on a rented accelerator, which is of order a hundred
-dollars.** That is honest and it is not nothing. It is also the affordable
-corner of this family: π0, which belongs to it too, holds about 3.3 billion
-parameters, and a full fine-tune of it needs more than 70 GB of accelerator
-memory, which is why no full fine-tune of a model this size appears anywhere in
-this book. Low-rank adaptation is what brings a model of that size within
-reach at all, and it is the only way the rung is reached.
-
-**It is a rung rather than the main line for one practical reason, and the
-reason is about where mistakes are found.** Almost everything that will go
-wrong in this solution is in the pipeline rather than in the model: rendering
-the view from the top, recording the demonstrations in a form the training loop
-accepts, carrying the action space across, choosing how long to train, and
-getting the evaluation to run the trained policy against the examiner at all. Each
-of those is found by a run that fails. SmolVLA uses a few gigabytes at
-inference and runs on a laptop, so on the small model every one of those
-mistakes is found for nothing, and only a training run that is already correct
-ever reaches rented hardware. Starting on the large model instead means
-debugging a pipeline at a hundred dollars a weekend, which is how a budget
-disappears without a single comparison being produced.
-
-So the order is: get the small model working end to end, measure it against
-solution 5, and only then rent the accelerator for the weekend that answers
-whether size helps. If the small model's fine-tune turns out to buy little, the
-rung is also the thing most worth trying next, because "a larger model" and "a
-full fine-tune rather than a low-rank one" are the two directions the result
-leaves open, and only the first of them is affordable here.
+**It is not built, and the reason is about where mistakes are found rather than
+about the model.** Almost everything that goes wrong here is in the pipeline —
+rendering the view from the top, recording the demonstrations in a form the
+training loop accepts, carrying the action space across, getting the evaluation
+to run at all — and each is found by a run that fails. SmolVLA runs on a
+laptop, so those mistakes are found for nothing. Starting on the large model
+means debugging at a weekend of rented accelerator, of order a hundred dollars,
+which is how a budget disappears without a single comparison being produced.
 
 ← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

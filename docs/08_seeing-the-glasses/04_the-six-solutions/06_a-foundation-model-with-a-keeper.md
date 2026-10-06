@@ -204,7 +204,7 @@ The code is in
 [`src/08_seeing-the-glasses/05-sam2-with-a-keeper/`](../../../code/src/08_seeing-the-glasses/05-sam2-with-a-keeper)
 and it writes its own `results.json` beside itself. The full treatment, with
 what a foundation model is, how a promptable model becomes a proposer of
-everything, the keeper's inputs in detail, and the second rung that prompts with
+everything, the keeper's inputs in detail, and the second way that prompts with
 a word instead of a grid, starts at [what it
 is](../09_a-foundation-model-with-a-keeper/01_what-it-is.md).
 

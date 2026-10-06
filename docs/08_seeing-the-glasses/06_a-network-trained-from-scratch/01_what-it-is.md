@@ -154,7 +154,7 @@ two objects completely.
 The rest of this document builds that up. First comes what exists in code and
 what is a design, so that nothing later has to be read twice. Then what a
 network is and what training from scratch means. Then the shape of the network
-and the two heads in turn. Then the two rungs of this solution, which are the
+and the two heads in turn. Then the two ways of this solution, which are the
 two places the training labels can come from. Then what the solution hands to
 the examiner, the failure that no amount of training can fix, and where this sits
 among the other five.

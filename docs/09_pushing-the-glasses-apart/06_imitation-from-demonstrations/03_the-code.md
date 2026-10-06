@@ -178,7 +178,7 @@ therefore set near the median length of the teacher's own pushes, and a push
 longer than that is replayed quicker than it was made.
 
 ACT is then fitted on the dataset from random numbers, for hours. The second
-rung fits Diffusion Policy on the same dataset, changing the model and nothing
+way fits Diffusion Policy on the same dataset, changing the model and nothing
 else. Both are fitted several times with different seeds, because one training
 run is not a measurement.
 

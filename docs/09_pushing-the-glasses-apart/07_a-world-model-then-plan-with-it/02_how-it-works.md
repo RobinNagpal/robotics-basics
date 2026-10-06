@@ -15,7 +15,7 @@ solution answers and the single idea it rests on.
 7. [Receding horizon: plan several, make one](#7-receding-horizon-plan-several-make-one)
 8. [Compounding error over a rollout](#8-compounding-error-over-a-rollout)
 9. [Planning a sequence, which only this solution could do](#9-planning-a-sequence-which-only-this-solution-could-do)
-10. [The second rung: TD-MPC2 off the shelf](#10-the-second-rung-td-mpc2-off-the-shelf)
+10. [A second way — TD-MPC2 off the shelf](#10-a-second-way--td-mpc2-off-the-shelf)
 
 ## 1. What exists in code, and what is a design
 
@@ -24,7 +24,7 @@ running code in this repository and which parts are described here and not
 written, because this solution is unusual among the six in how much of it
 exists.
 
-**Rung one is built.** It lives in
+**The first way is built.** It lives in
 `code/src/09_pushing-the-glasses-apart/04-a-world-model/`, it trains on data it
 collects itself, and it has been run by the examiner's held-out tables with its
 results recorded in that folder's own `results.json`, and set beside the other
@@ -42,11 +42,11 @@ explains how that extension works and what it would buy. But the horizon in the
 built planner is one push, and the reason it is one push is given below under
 compounding error.
 
-**Rung two is a design, and it claims nothing.** It is not wired to this examiner
+**The second way is a design, and it claims nothing.** It is not wired to this examiner
 and it has not been trained or run here, so every number in this document
-belongs to rung one. One thing about it is worth settling before anybody
+belongs to the first way. One thing about it is worth settling before anybody
 starts: the library this project uses elsewhere ships **TD-MPC**, the earlier
-method, and not TD-MPC2. So rung two means fetching TD-MPC2 from its own
+method, and not TD-MPC2. So the second way means fetching TD-MPC2 from its own
 project, and the convenience of everything living in one library, which
 [imitation from demonstrations](../06_imitation-from-demonstrations/01_what-it-is.md) and the
 two SmolVLA solutions enjoy, does not apply here. The two examiner pieces an
@@ -93,7 +93,7 @@ fast and narrow, and a forward model is slow and general.
 
 ## 3. What this model is shown, and what it answers
 
-Given that shape, the only real design question for rung one is what to put in
+Given that shape, the only real design question for the first way is what to put in
 the two states and the action, and the answer is: exactly what the arm has, and
 nothing else.
 
@@ -199,7 +199,7 @@ badly wrong in a few places will have those few places chosen for it.
 
 The fix used here is simple to describe and hard to improve on. **Train the
 same network several times from different starting weights on the same data,
-and keep all the copies.** Rung one keeps five. Where the five agree, the
+and keep all the copies.** The first way keeps five. Where the five agree, the
 training data pinned the answer down, which means the model has seen pushes like
 this one. Where they disagree, the data did not pin it down, and each copy
 filled the gap with whatever its own starting weights happened to lead to. So
@@ -252,7 +252,7 @@ batch from around that average with that spread. Repeat. Each round the cloud
 of candidates contracts onto whatever region keeps scoring well, so the method
 spends its later draws where the answer is rather than where it started.
 
-Rung one runs this with six hundred draws in the first round and three hundred
+The first way runs this with six hundred draws in the first round and three hundred
 in each of three more, keeping the best thirty each time, which is about fifteen
 hundred candidate pushes examined per crowded glass. That sounds extravagant
 and costs almost nothing, because a candidate push is one row of thirty-four
@@ -346,7 +346,7 @@ model asked about a table slightly unlike anything in its training data answers
 slightly worse, which produces a table a little further from anything in its
 training data, which it answers worse again.
 
-The size of this is easy to feel with the numbers recorded for rung one. Its
+The size of this is easy to feel with the numbers recorded for the first way. Its
 README reports a median error of about four and a half millimetres for where a
 pushed glass lands, on tables it never trained on. That is a perfectly useful
 one-step model. If that error simply accumulated, a plan rolled three pushes
@@ -358,7 +358,7 @@ that is good at one step can be useless at five**, and the quality of the
 one-step fit says almost nothing about it.
 
 This is why the built planner's horizon is one push. It is the honest horizon
-for a model trained the way rung one's is: every training example is a single
+for a model trained the way the first way's is: every training example is a single
 push, so the model was never asked to be right about a table that one of its own
 predictions produced.
 
@@ -370,14 +370,14 @@ over those pushes. The error then has somewhere to go: the fit is penalised for
 predictions that are plausible one step out and drift two steps out, so it
 learns to produce tables that it can itself handle as input. This is the
 standard remedy in the learned-world-model literature and it is exactly what
-rung two does by construction, which is one of the clearest reasons to want
-rung two at all.
+the second way does by construction, which is one of the clearest reasons to want
+the second way at all.
 
-Two cheaper habits help as well, and rung one uses both. **Keep the horizon as
+Two cheaper habits help as well, and the first way uses both. **Keep the horizon as
 short as the task allows**, because the compounding is a function of depth.
 And **collect training data from the planner itself**, not only from random
 pushes, so that the tables the model sees during training are tables a planner
-would really reach. Rung one's second round of data collection does precisely
+would really reach. The first way's second round of data collection does precisely
 that: the first model plans, the planner finds the pushes where that model is
 wrong in its own favour, those pushes are really made, and what really happened
 goes into the training set. That fills exactly the holes the search is going to
@@ -419,7 +419,7 @@ which is the real reason to want the shortest horizon that can see the answer.
 Two honest qualifications belong here, and they matter.
 
 **The depth that is useful is small.** Compounding error sets an upper limit on
-how far a rollout can be trusted, and for rung one's model that limit is low.
+how far a rollout can be trusted, and for the first way's model that limit is low.
 Two pushes is defensible, three is optimistic, and anything deeper is planning
 against a story rather than a prediction.
 
@@ -433,71 +433,27 @@ spends four pushes instead of six has taken two fewer chances of the single
 failure that cannot be undone. It is not worth something because the arm is
 short of time.
 
-## 10. The second rung: TD-MPC2 off the shelf
+## 10. A second way — TD-MPC2 off the shelf
 
-Rung one is a model written for this cell. Rung two asks what a model written
-by people who do this for a living would do instead, and the comparison between
-them is the point of having both.
+There is a second way to build this solution: take a model somebody else
+maintains instead of writing one. **TD-MPC2** has the same shape — learn what
+happens, search over actions against what was learned, act on only the first —
+and differs in what the model predicts.
 
-**TD-MPC2** is the better known of the two model-based methods of this family,
-and it does not come from the library the other borrowed solutions here use;
-that library ships its predecessor. Like rung one it learns a model of how the world changes and plans
-through it at run time, rather than learning a policy that maps a situation
-straight to an action. So the overall shape — learn what happens, then search
-over actions against what was learned, then act on only the first — is the same
-shape this whole document has described.
+The model written here predicts the next table directly, in the quantities the
+arm measures, so every number in it has a name and a unit a person can check.
+TD-MPC2 encodes the situation into a vector of its own choosing, whose entries
+mean nothing to anybody, learns how that vector changes under an action, and
+plans there without ever converting back into positions and widths. The
+hand-built one is inspectable and trains in minutes on an ordinary processor;
+the off-the-shelf one is stronger, is trained against multi-step rollouts by
+construction, and is maintained by people who do this for a living, but it
+cannot be read and it wants an accelerator.
 
-The difference is what the model predicts, and it is worth stating honestly
-because it is the whole contrast.
-
-**Rung one predicts the next table directly, in the quantities the arm
-measures.** Its output is displacements in millimetres and two yes-or-no
-answers, and every number in it has a name a person can check against a
-photograph.
-
-**TD-MPC2 learns its own internal representation and plans in that.** It
-encodes the situation into a vector of its own choosing — a vector whose entries
-mean nothing to anybody — learns how that vector changes when an action is
-applied, and does all of its planning there, never converting back into
-positions and widths. It is trained so that this internal description keeps the
-information needed to predict rewards and values rather than the information
-needed to reconstruct the table, which is why it can afford to throw away
-everything the task does not use.
-
-Each buys something real, and the two lists do not overlap.
-
-**The hand-built one is inspectable and small.** Every input has a name and
-every output has a unit. When it is wrong you can print the thirty-four numbers
-it was shown, the fourteen each copy answered, and the fourteen that really
-happened, and see the disagreement — which is exactly what rung one's tracing
-does. It trains in minutes on an ordinary processor, it needs no accelerator,
-and its ensemble gives a signal for ignorance that is easy to reason about.
-Against that, it is weak where it was not told what matters: it sees five
-neighbours and no more, it has no idea the arm has a body, and the one thing it
-is good at is pushing glasses on this table.
-
-**The off-the-shelf one is stronger and brings a maintained implementation.**
-It is designed to work across many tasks without being retuned for each, it is
-trained against multi-step rollouts by construction, which is the direct answer
-to compounding error, and the implementation and its defaults have been
-exercised by many people on many problems. The code is not this project's to
-maintain, and the published results are a reference that a hand-built model
-simply does not have. Against that, it is a larger thing to train, it wants an
-accelerator, its internal representation cannot be read, and a failure in it is
-much harder to attribute than a wrong number with a unit on it.
-
-**Comparing them is a measurement of whether building it yourself was worth
-it**, and that is the reason this solution has two rungs rather than one. If
-TD-MPC2 clears tables no better than five small networks trained in half an
-hour on a laptop processor, then the cell is narrow enough that the hand-built
-model was the right call, and the thirty-four numbers chosen by hand were a
-better encoding than one learned from scratch. If it clears tables markedly
-better, then what the hand-built encoding left out was real, and the places it
-was left out are where to look next. Either answer is useful, and neither can
-be had from one rung alone. This is the same argument [a network trained here
-from
-scratch](../../08_seeing-the-glasses/06_a-network-trained-from-scratch/01_what-it-is.md)
-makes about telling the glasses apart, where a model built entirely inside the
-cell is what makes the borrowed models' scores readable.
+**It is not built, so it has no scorecard.** Comparing the two would measure
+whether building the model by hand was worth it, which is the only reason to
+carry both: if a maintained implementation clears tables no better than five
+small networks trained in half an hour on a laptop, the cell is narrow enough
+that the hand-built model was the right call.
 
 ← [What it is](01_what-it-is.md) · [The code](03_the-code.md) →

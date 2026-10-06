@@ -61,7 +61,7 @@ The project's old rule was that everything must run on this machine. This book
 lifts that rule, so that each solution states what it needs and roughly what
 renting it costs, in the same way a licence is stated. **The lifting turned
 out not to be needed for this solution**, which is the opposite of what this
-section first claimed. Where it is still needed is the second rung: π0, which
+section first claimed. Where it is still needed is the second way: π0, which
 belongs to the same family, holds
 about 3.3 billion parameters and its full fine-tune floor is above 70 GB, and
 there the question really is whether the training fits. At 450 million it was

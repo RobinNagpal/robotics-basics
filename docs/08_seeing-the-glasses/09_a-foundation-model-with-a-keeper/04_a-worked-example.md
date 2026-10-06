@@ -56,7 +56,7 @@ and the same arrangement with that glass removed produce the same picture, pixel
 for pixel. No function of the picture can tell them apart, whatever its size and
 however it was fitted, because the thing that differs between the two left no
 trace in the input. A larger checkpoint changes nothing, a text prompt on the
-second rung changes nothing, and neither would training the borrowed model if
+second way changes nothing, and neither would training the borrowed model if
 training it were allowed.
 
 One more thing is worth saying, because it is the temptation this solution

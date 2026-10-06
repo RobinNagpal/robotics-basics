@@ -204,7 +204,7 @@ The code is in
 [`src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned)
 and it writes its own `results.json` beside itself. The full treatment, with
 low-rank adaptation explained, where the demonstrations come from, the two ways
-training on one cell's pushes goes wrong, and a second rung on a markedly larger
+training on one cell's pushes goes wrong, and a second way on a markedly larger
 model, starts at [what it
 is](../09_the-same-model-fine-tuned-here/01_what-it-is.md).
 

@@ -1,10 +1,12 @@
-"""The four flow charts and sketches for the test bench document.
+"""The four flow charts and sketches for the examiner chapter.
 
-The document beside these pictures argues one thing above all: the examiner owns
-every step of a run except one, and the one step it does not own is the mask. A
-reader who believes that can read a difference between two scorecards as a
-difference between two masks, and a reader who does not cannot read the results
-at all. These pictures are drawn to make that argument visible.
+The first two belong to the document that introduces the examiner, and the last
+two to the document that works through the marking. Together they argue one
+thing above all: the examiner owns every step of a run except one, and the one
+step it does not own is the mask. A reader who believes that can read a
+difference between two scorecards as a difference between two masks, and a
+reader who does not cannot read the results at all. These pictures are drawn to
+make that argument visible.
 
     03-what-the-examiner-does.png    the whole run as one chain, in three bands,
                                      with the single box a solution owns picked
@@ -380,7 +382,7 @@ def what_the_examiner_does() -> None:
     a difference between two sets of masks.
     """
     figure, axis, _ = _figure(9.6, 37.0)
-    flow = Chain(axis, 35.5, 54.0, 68.0, chain_x=27.0)
+    flow = Chain(axis, 35.5, 55.0, 72.0, chain_x=27.0)
 
     flow.box("Draws an arrangement: four to six glasses of one kind")
     flow.box(
@@ -416,11 +418,11 @@ def what_the_examiner_does() -> None:
     ends = flow.extents
     for first, last, colour, label in (
         (0, 1, MUTED, "the examiner"),
-        (2, 2, GLASS, "the solution"),
+        (2, 2, GLASS, "the\nsolution"),
         (3, 6, MUTED, "the examiner again"),
     ):
-        top = ends[first][0] + 0.7
-        bottom = ends[last][1] - 0.7
+        top = ends[first][0] + 0.9
+        bottom = ends[last][1] - 0.9
         _band(axis, 5.0, bottom, 92.0, top - bottom, colour, label)
 
     _note(
@@ -451,7 +453,7 @@ def what_must_come_back() -> None:
     """
     figure, axis, _ = _figure(10.0, 32.0)
 
-    top = 29.5
+    top = 30.5
     wide = 44.0
     left = Chain(axis, top, 26.0, wide)
     right = Chain(axis, top, 74.0, wide)
@@ -464,9 +466,9 @@ def what_must_come_back() -> None:
              edge=GLASS, face=_tint(GLASS, 0.72), lw=1.6, gap=1.0)
     left.note("The solution supplies these two, and only these two.",
               colour=GLASS, weight="bold", gap=1.0)
-    left.arrow(colour=GLASS)
+    left.arrow(2.0, colour=GLASS)
     left.box("the examiner's shared arithmetic, run on the mask")
-    left.arrow()
+    left.arrow(2.0)
     left.box("the place on the table", face=_tint(MUTED, 0.86), edge=MUTED,
              size=LABEL_SIZE, gap=1.0)
     left.box("a rough width of the footprint", face=_tint(MUTED, 0.86), edge=MUTED,
@@ -481,7 +483,7 @@ def what_must_come_back() -> None:
               edge=WARN, face=_tint(WARN, 0.86), size=LABEL_SIZE, lw=1.6, gap=1.0)
     right.note("Neither statement is a list of glasses.", colour=WARN, weight="bold",
                gap=1.0)
-    right.arrow(colour=WARN)
+    right.arrow(2.0, colour=WARN)
     right.box("A reported doubt is counted as a reported doubt.",
               edge=GOOD, face=_tint(GOOD, 0.86), lw=1.6, size=LABEL_SIZE)
     right.note("Saying nothing instead is counted as a miss.", colour=INK)
@@ -491,7 +493,7 @@ def what_must_come_back() -> None:
         (GLASS, "a field the solution supplies"),
         (MUTED, "a field the examiner computes from the mask"),
     )):
-        y = right.y - 1.0 - row * 2.2
+        y = 9.0 - row * 2.2
         axis.add_patch(
             Rectangle(
                 (56.0, y - 0.6), 2.6, 1.2,
@@ -518,10 +520,10 @@ def the_floor() -> None:
     through identical arithmetic. What comes out on the right is the best the
     step can do from a mask that is exactly right.
     """
-    figure, axis, _ = _figure(9.8, 20.0)
+    figure, axis, _ = _figure(9.8, 19.0)
 
     left, right, wide = 27.0, 73.0, 44.0
-    top = 18.0
+    top = 17.5
 
     one = Chain(axis, top, left, wide)
     two = Chain(axis, top, right, wide)
@@ -572,31 +574,33 @@ def the_asserted_pixel_trap() -> None:
     above the table, the two glasses are the tall and the short end of the one
     kind, and they stand the closest apart the arrangements allow. The line of
     sight to the asserted pixel therefore really does stop on the tall glass's
-    rim, which is the whole of the argument.
+    rim, which is the whole of the argument, and the two numbers beside it are
+    what falling into the trap costs.
     """
-    units = 32.0
-    figure, axis, aspect = _figure(10.0, units)
+    units = 26.0
+    figure, axis, aspect = _figure(9.6, units)
 
-    k = 0.05                        # units of height per millimetre
+    k = 0.04                        # units of height per millimetre
+
     def dy(mm: float) -> float:
         return mm * k
 
     def dx(mm: float) -> float:
         return mm * k / aspect
 
-    table_y = 4.5
-    tall_x = 18.0
+    table_y = 4.6
+    tall_x = 17.0
     tall_half = dx(TALL_RIM_MM / 2.0)
     short_x = tall_x + dx(SEPARATION_MM)
     short_half = dx(SHORT_RIM_MM / 2.0)
     tall_top = table_y + dy(TALL_MM)
     camera_y = table_y + dy(SURVEY_MM)
-    # The camera sits where the ray grazing the tall rim lands on the short
-    # glass's middle, which is what the drawing is about.
+    # The camera stands where the ray grazing the tall rim lands on the middle of
+    # the short glass, which is the one line of sight the picture is about.
     camera_x = 2.0 * (tall_x + tall_half) - short_x
 
-    axis.plot([3, 50], [table_y, table_y], color=INK, lw=1.6, zorder=2)
-    _note(axis, 3.0, table_y - 1.0, "the table", colour=MUTED, size=NOTE_SIZE - 0.4)
+    axis.plot([4, 46], [table_y, table_y], color=INK, lw=1.6, zorder=2)
+    _note(axis, 4.0, table_y - 1.0, "the table", colour=MUTED)
 
     axis.add_patch(
         Polygon(
@@ -619,9 +623,9 @@ def the_asserted_pixel_trap() -> None:
 
     tumbler(tall_x, tall_top, tall_half, MUTED)
     tumbler(short_x, table_y + dy(SHORT_MM), short_half, GLASS)
-    _note(axis, tall_x - tall_half - 1.0, table_y + dy(TALL_MM) * 0.55,
+    _note(axis, tall_x - tall_half - 1.2, table_y + dy(TALL_MM) * 0.5,
           "a tall glass\nin front", colour=INK, ha="right")
-    _note(axis, short_x + short_half + 1.2, table_y + dy(SHORT_MM) * 0.6,
+    _note(axis, short_x + short_half + 1.2, table_y + dy(SHORT_MM) * 0.5,
           "the short glass\nthe mask is about", colour=GLASS, ha="left")
 
     # The line of sight to an asserted pixel stops on the tall glass's rim, well
@@ -633,27 +637,31 @@ def the_asserted_pixel_trap() -> None:
     axis.plot([rim[0], ground[0]], [rim[1], ground[1]], color=WARN, lw=1.1,
               ls=(0, (3, 3)), zorder=5)
     axis.plot(*rim, marker="o", ms=5.5, color=WARN, zorder=6)
-    _note(axis, rim[0] + 1.0, rim[1] + 1.1, "the depth reading\nstops here",
+    _note(axis, rim[0] + 1.0, rim[1] + 1.2, "the depth reading\nstops here",
           colour=WARN, va="bottom")
     axis.plot(*ground, marker="x", ms=6, mew=1.6, color=WARN, zorder=6)
 
-    _arrow(axis, (ground[0], table_y - 2.6), (rim[0], table_y - 2.6), colour=WARN, lw=1.6)
-    _note(axis, ground[0] + 1.4, table_y - 2.6, "the place is dragged this way",
+    _arrow(axis, (ground[0], table_y - 2.4), (rim[0], table_y - 2.4), colour=WARN, lw=1.6)
+    _note(axis, ground[0] + 1.4, table_y - 2.4, "the place is dragged this way",
           colour=WARN)
 
     # ---- the measured cost, beside the sketch
-    side = Chain(axis, units - 1.5, 76.0, 44.0)
+    side = Chain(axis, units - 1.5, 75.0, 46.0)
     side.box(f"Fed in: the place lands {FED_IN_MM} mm out",
-             edge=WARN, face=_tint(WARN, 0.86), size=LABEL_SIZE, lw=1.6, gap=1.2)
+             edge=WARN, face=_tint(WARN, 0.86), size=LABEL_SIZE, lw=1.6, gap=1.5)
     side.box(f"Named and left out: {NAMED_MM} mm out instead",
-             edge=GOOD, face=_tint(GOOD, 0.86), size=LABEL_SIZE, lw=1.6, gap=1.2)
+             edge=GOOD, face=_tint(GOOD, 0.86), size=LABEL_SIZE, lw=1.6, gap=2.0)
     side.note(
         "Exact masks on the crowded arrangements,\n"
         f"over the {HIDDEN_GLASSES} glasses something stood in front of.",
-        colour=MUTED,
+        colour=MUTED, gap=7.0,
     )
-    side.note("So a mask that asserts pixels must say which ones.",
+    side.note("So a mask that asserts pixels\nmust say which ones.",
               colour=INK, weight="bold")
+
+    _note(axis, 4.0, 0.8,
+          "The depth reading at an asserted pixel belongs to the glass in front.",
+          colour=INK)
 
     _title(axis, "The trap: a mask that asserts pixels the camera never saw the glass at")
     _audit(figure, "03-the-asserted-pixel-trap.png")

@@ -81,15 +81,17 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Polygon, Rectang
 STATIONS = 3                           # bench/data.stations() returns three
 SURVEY_MM = 450                        # mm; SURVEY_HEIGHT in arm/dimensions.py
 
-# bench/results-floor.json, "exact visible masks" on the spawned layouts.
-FLOOR_GLASSES = 100
-FLOOR_MEDIAN_MM = 6.3
-FLOOR_WORST_MM = 46.5
+# The floor, averaged over the five blocks of held-out arrangements the results
+# page reports: bench/results-floor-from*.json, "exact visible masks", spawned.
+FLOOR_GLASSES = 499
+FLOOR_MEDIAN_MM = 6.8
+FLOOR_WORST_MM = 46.6
 
-# bench/results-floor-crowded.json, "one glass at a time".
-HIDDEN_GLASSES = 133
+# bench/results-floor-crowded-from*.json, "one glass at a time", over the same
+# five blocks. The medians are the mean of the blocks' medians.
+HIDDEN_GLASSES = 681
 NAMED_MM = 12.2
-FED_IN_MM = 46.1
+FED_IN_MM = 42.7
 
 # The two glasses the side-on sketch draws, in millimetres, from the shared cast.
 TALL_MM, TALL_RIM_MM = TALL_A

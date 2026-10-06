@@ -77,22 +77,22 @@ object, and the axis is dragged towards it.
 
 So a mask that asserts pixels has to name them, and the examiner leaves their
 depth readings out rather than guessing a value. What that is worth was
-measured. Over the 133 partly hidden glasses of the crowded arrangements,
-naming the asserted pixels puts the place **12.2 mm** out at the median, and
-feeding them in puts it **46.1 mm** out.
+measured. Over the 681 partly hidden glasses of five blocks of crowded arrangements,
+naming the asserted pixels puts the place **12.2 mm** out at the middle glass,
+and feeding them in puts it **42.7 mm** out.
 
 The same mistake made at scale is worse than that figure suggests, and the
 examiner's own floor shows it. The run below hands the renderer's perfect masks
 to the arithmetic twice. The two runs use **exactly the same pixels**; the only
 difference is whether the asserted ones were named.
 
-| exact masks, crowded arrangements | found | missed | merged | mask covered | mask not the glass |
+| exact masks, crowded arrangements, per 100 glasses | found | missed | merged | mask covered | mask not the glass |
 |---|---|---|---|---|---|
-| asserted pixels named and left out | 83 | 18 | 1 | 100.0% | 0.0% |
-| asserted pixels fed in | **69** | **32** | **14** | 100.0% | 0.0% |
+| asserted pixels named and left out | 86.4 | 13.6 | 0.6 | 100.0% | 0.0% |
+| asserted pixels fed in | **72.4** | **27.6** | **10.7** | 100.0% | 0.0% |
 
 Both score perfectly on both mask measurements, because the masks are identical
-and both are perfect. Fourteen glasses are lost anyway. That is why the examiner
+and both are perfect. Fourteen glasses in every hundred are lost anyway. That is why the examiner
 measures what the arithmetic made of a mask as well as the mask itself: a
 comparison of pixels alone cannot see this at all.
 
@@ -104,8 +104,8 @@ different masks can produce almost the same place.
 
 The examiner measures how much room is left by running the renderer's own masks
 through the same arithmetic, which is the **floor of error**. On the ordinary
-arrangements that floor is 6.3 mm at the median and 46.5 mm at worst, with
-perfect masks and nothing left to improve. A solution within a hair of that is
+arrangements that floor is 6.8 mm at the median and 46.6 mm at worst, averaged
+over five blocks, with perfect masks and nothing left to improve. A solution within a hair of that is
 not a good solution so much as one whose remaining error is not its fault.
 
 So the place is not the measurement that ranks the six. [What the examiner

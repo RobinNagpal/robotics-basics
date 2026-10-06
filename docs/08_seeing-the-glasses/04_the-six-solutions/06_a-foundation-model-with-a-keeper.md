@@ -122,10 +122,10 @@ two have a question to answer and this one does not.
 **Every solution is run twice**, so there are two rows: one on spawned layouts,
 at the cell's own spacing, and one on crowded layouts, closer than that.
 
-| | found | missed | merged | position median | mask covered | mask not the glass |
+| | found per 100 | missed | merged | place | mask covered | mask not the glass |
 |---|---|---|---|---|---|---|
-| spawned, 100 glasses | 81 | 19 | 0 | 3.0 mm | 96.8% | 0.0% |
-| crowded, 101 glasses | 73 | 28 | 0 | 1.0 mm | 98.4% | 0.0% |
+| spawned | 83.0 (78.0–86.1) | 17.0 | 0.0 | 5.6 mm | 97.2% | 0.0% |
+| crowded | 73.6 (71.9–76.6) | 26.4 | 0.0 | 0.8 mm | 98.3% | 0.0% |
 
 **The result to take seriously is the last column.** None of its masks leaked
 onto a neighbouring glass or onto the table, in either set, and it merged
@@ -135,8 +135,8 @@ glass. It is also the best crowded mask coverage of the six after the fine-tuned
 model, which is a good showing for a model that was never trained on these
 pictures at all.
 
-What it pays for that caution is in the first column. It found 81 glasses out of
-100 on the spawned set, so about one glass in five arrived as a proposal the
+What it pays for that caution is in the first column. It finds 83.0 glasses per
+100 on the spawned set, so about one glass in six arrived as a proposal the
 keeper would not keep or as no proposal at all. The borrowed model is being
 shown a kind of picture it has never seen, and nothing in this solution can
 teach it otherwise. The full table for all six is in [the

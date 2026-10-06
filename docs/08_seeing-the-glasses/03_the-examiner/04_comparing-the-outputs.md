@@ -164,13 +164,13 @@ The same run exposes one trap that is easy to fall into. A mask may claim pixels
 the camera never saw the glass at, which happens on purpose when a method
 predicts the hidden part of a glass. The depth reading at such a pixel belongs
 to whatever stood in front, so feeding it into the arithmetic drags the computed
-place onto the object in front. Measured with exact masks over the 133 partly
-hidden glasses of the crowded arrangements, naming those pixels and leaving them
-out puts the place 12.2 mm out at the median, where feeding them in puts it 46.1
-mm out. So a mask that asserts pixels must say which ones, and the examiner
+place onto the object in front. Measured with exact masks over the 681 partly
+hidden glasses of five blocks of crowded arrangements, naming those pixels and
+leaving them out puts the place 12.2 mm out at the middle glass, where feeding
+them in puts it 42.7 mm out. So a mask that asserts pixels must say which ones, and the examiner
 excludes their depth readings rather than guessing a value for them.
 
-![A mask that claims pixels the camera never saw the glass at: the depth reading there belongs to whatever stood in front, so leaving those pixels out puts the place 12.2 mm out at the median where feeding them in puts it 46.1 mm out.](../../images/seeing-the-glasses/the-examiner/03-the-asserted-pixel-trap.png)
+![A mask that claims pixels the camera never saw the glass at: the depth reading there belongs to whatever stood in front, so leaving those pixels out puts the place 12.2 mm out at the middle glass where feeding them in puts it 42.7 mm out.](../../images/seeing-the-glasses/the-examiner/03-the-asserted-pixel-trap.png)
 
 ## 8. What one arrangement adds to the scorecard
 

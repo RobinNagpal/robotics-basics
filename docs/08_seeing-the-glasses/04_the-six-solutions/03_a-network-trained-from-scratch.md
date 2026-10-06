@@ -152,10 +152,10 @@ twice**: once on spawned layouts, at the spacing the cell's own layout rule
 gives, and once on crowded layouts, closer than that rule allows. Read the two
 rows against each other rather than on their own.
 
-| | found | missed | merged | position median | mask covered | mask not the glass |
+| | found per 100 | missed | merged | place | mask covered | mask not the glass |
 |---|---|---|---|---|---|---|
-| spawned, 100 glasses | 63 | 37 | 0 | 0.5 mm | 98.2% | 1.5% |
-| crowded, 101 glasses | 72 | 29 | 1 | 0.7 mm | 97.2% | 1.4% |
+| spawned | 64.1 (62.4–66.7) | 35.9 | 0.0 | 0.6 mm | 98.3% | 1.6% |
+| crowded | 74.6 (71.3–79.8) | 25.4 | 0.6 | 0.9 mm | 97.1% | 1.4% |
 
 Two things in this table are worth reading carefully, and they point in opposite
 directions.
@@ -164,13 +164,15 @@ directions.
 both sets, and it merged almost nothing. When this solution reports a glass, the
 report is very good.
 
-**It reported far too few of them.** It found 63 of 100 glasses on the easy set,
-which is the worst finding rate of any solution here except the borrowed model
-that was never trained. It is also the one solution that does *better* on the
-crowded set than on the spawned one, which is a strong hint that the shortfall
-is in the training set rather than in the idea: the crowded arrangements are
-over-represented in what it was fitted on. The full table for all six is in
-[the results](../11_the-results.md).
+**It reported far too few of them.** It finds 64.1 glasses per 100 on the easy
+set, which is the worst finding rate of any solution here except the borrowed
+model that was never trained. It is also the one solution that does *better* on
+the crowded set than on the spawned one, 74.6 against 64.1, which is a strong
+hint that the shortfall is in the training set rather than in the idea: the
+crowded arrangements are over-represented in what it was fitted on. It carries
+the widest spread of any solution, 71.3 to 79.8 on the crowded set, so its
+crowded score is also the least settled number in the book. The full table for
+all six is in [the results](../11_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 

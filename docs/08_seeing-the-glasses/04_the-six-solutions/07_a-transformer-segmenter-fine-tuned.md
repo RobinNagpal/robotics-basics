@@ -126,20 +126,23 @@ rather than after.
 **Every solution is run twice**, so there are two rows: one on spawned layouts,
 at the cell's own spacing, and one on crowded layouts, closer than that.
 
-| | found | missed | merged | split | position median | mask covered | mask not the glass |
-|---|---|---|---|---|---|---|---|
-| spawned, 100 glasses | 96 | 4 | 0 | 0 | 4.5 mm | 96.7% | 0.0% |
-| crowded, 101 glasses | 78 | 23 | 3 | 2 | 0.5 mm | 97.3% | 0.0% |
+| | found per 100 | missed | merged | place | mask covered | mask not the glass |
+|---|---|---|---|---|---|---|
+| spawned | 96.4 (94.9–98.0) | 3.6 | 0.0 | 6.0 mm | 96.6% | 0.0% |
+| crowded | 81.9 (77.2–86.5) | 18.1 | 1.4 | 0.5 mm | 97.2% | 0.0% |
 
-**It found more crowded glasses than any other solution**, 78 of 101, where the
-examiner's own exact masks manage only 83, because a glass standing wholly behind
-another is in no picture at all. On the crowded set it also has the best
+**It found more crowded glasses than any other solution**, 81.9 per 100, where
+the examiner's own exact masks manage only 86.4, because a glass standing wholly
+behind another is in no picture at all. It is the only solution that sits clear
+of the group on crowded tables: solutions 1, 2, 4 and 5 all land between 72 and
+75 with overlapping spreads, and this one is five glasses per 100 above the best
+of them. On the crowded set it also has the best
 position error of the six, at half a millimetre, and none of its masks leaked
 onto a neighbour or onto the table in either set.
 
 It is not the best on every column, and the places where it is not are worth
-noting. The fine-tuned YOLO found more glasses on the spawned set, 99 against
-96, and its masks covered more of the glass on both sets. This solution merged
+noting. The fine-tuned YOLO found more glasses on the spawned set, 99.4 against
+96.4, and its masks covered more of the glass on both sets. This solution merged
 three crowded pairs and split two glasses, where that solution merged one and
 split none. So the honest summary is that the newer architecture wins where the
 arrangement is hard and the older one wins where it is easy, and the gap in

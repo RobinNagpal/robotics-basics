@@ -112,15 +112,18 @@ Every solution is given the same arrangements and marked the same way. There are
 run twice: once on spawned layouts, at the spacing the cell's own layout rule
 gives, and once on crowded layouts, closer than that rule allows.
 
-| | found | missed | position median | mask covered | mask not the glass |
-|---|---|---|---|---|---|
-| spawned, 100 glasses | 10 | 90 | 28.1 mm | 100.0% | 4.3% |
-| crowded, 101 glasses | 4 | 97 | 36.5 mm | 84.5% | 3.6% |
+| | found per 100 | missed | merged | place | mask covered | mask not the glass |
+|---|---|---|---|---|---|---|
+| spawned | 6.4 (2.0–11.9) | 93.6 | 0.0 | 23.7 mm | 95.2% | 3.3% |
+| crowded | 2.1 (0.0–4.2) | 97.9 | 0.0 | 39.1 mm | 96.0% | 4.9% |
 
-**It found ten glasses out of a hundred, and it is the worst score in the book
+**It finds about six glasses in a hundred, and it is the worst score in the book
 by a wide margin.** That is not a disappointing result; it is the result this
-solution was built to produce, and it is the most informative single number in
-the chapter. The reason is the domain gap. What identifies a drinking glass in a
+solution was built to produce. It is also the least settled number here: across
+five blocks it ranges from 2.0 to 11.9 per 100 on the spawned set, and on one
+whole block of 20 crowded arrangements it found **no glass at all**. The method
+fails so completely that which arrangements it is shown barely matters, and the
+conclusion does not depend on any one block. The reason is the domain gap. What identifies a drinking glass in a
 photograph is light passing through it, the highlights on its curve and the
 scene around it, and almost none of that survives in a grey picture shaded from
 depth readings. The model is not confused about glasses in general. It is being

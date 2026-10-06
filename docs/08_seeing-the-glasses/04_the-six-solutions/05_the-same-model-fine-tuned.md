@@ -118,19 +118,21 @@ project owns outright, and it cannot be relicensed by having been trained here.
 **Every solution is run twice**, so there are two rows: one on spawned layouts,
 at the cell's own spacing, and one on crowded layouts, closer than that.
 
-| | found | missed | merged | position median | mask covered | mask not the glass |
+| | found per 100 | missed | merged | place | mask covered | mask not the glass |
 |---|---|---|---|---|---|---|
-| spawned, 100 glasses | 99 | 1 | 0 | 5.5 mm | 99.8% | 4.4% |
-| crowded, 101 glasses | 73 | 28 | 1 | 0.9 mm | 99.3% | 3.9% |
+| spawned | 99.4 (99.0–100.0) | 0.6 | 0.0 | 6.6 mm | 99.7% | 4.6% |
+| crowded | 72.0 (70.8–72.9) | 28.0 | 0.8 | 0.6 mm | 99.2% | 3.7% |
 
 **Read this table beside solution 3's, because that is what the pair is for.**
-Ten glasses found became ninety-nine; four became seventy-three. Nothing changed
-except that the model was trained on the pictures it would be shown. That is the
-measurement of what fine-tuning bought in this cell, and it is large.
+Six glasses per 100 became 99.4; two became 72.0. Nothing changed except that
+the model was trained on the pictures it would be shown. That gap is far larger
+than either solution's spread across the five blocks, so it is the one
+comparison in the book that this test could not have got wrong by drawing a
+lucky set of arrangements.
 
 **Its masks cover more of the glass than any other solution's**, on both sets,
 which is the column that separates methods when the positions cannot. Against
-that, 4.4% of each mask was not the glass, which is the highest figure of the
+that, 4.6% of each mask was not the glass, which is the highest figure of the
 six, so its outlines are generous: they cover the glass completely and reach a
 little beyond it. That is the enlargement error training could not remove, and
 it is a reasonable trade for a cell where a mask is used to find a place to

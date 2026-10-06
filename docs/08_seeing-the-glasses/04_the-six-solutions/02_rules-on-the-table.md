@@ -151,24 +151,26 @@ closer than that rule allows. The
 columns say how many real glasses got a report, how many got none, and how good
 the masks were.
 
-| | found | missed | merged | position median | mask covered | mask not the glass |
+| | found per 100 | missed | merged | place | mask covered | mask not the glass |
 |---|---|---|---|---|---|---|
-| spawned, 100 glasses | 100 | 0 | 0 | 8.5 mm | 98.9% | 0.0% |
-| crowded, 101 glasses | 71 | 30 | 10 | 6.0 mm | 94.6% | 0.0% |
+| spawned | 100.0 (100.0–100.0) | 0.0 | 0.0 | 8.3 mm | 99.1% | 0.0% |
+| crowded | 73.0 (70.3–75.5) | 27.0 | 10.7 | 8.7 mm | 91.9% | 0.0% |
 
-On the spawned layouts it found every glass, which no other solution in the
-book did. That is the result to take seriously, because those are the
-arrangements the cell actually produces, and the rule was derived for exactly
-their spacing. Its masks never leaked onto a neighbour or onto the table in
-either set, which is what the zero in the last column means.
+On the spawned layouts it found every glass in every one of the five blocks,
+which no other solution managed. That is the result to take seriously, because
+those are the arrangements the cell actually produces, the rule was derived for
+exactly their spacing, and a score that does not move at all across five blocks
+is a score with no luck in it. Its masks never leaked onto a neighbour or onto
+the table in either set, which is what the zero in the last column means.
 
-On the crowded layouts it missed thirty glasses and merged ten pairs, and both
-failures have one cause: the promise the rule was derived from has been
+On the crowded layouts it misses 27 glasses per 100 and merges nearly 11 pairs,
+and both failures have one cause: the promise the rule was derived from has been
 withdrawn, so the strip of bare table the grouping distance relies on is
-sometimes not there. Its position error is the largest of the six on the
-spawned layouts, which matters less than it looks, because that number
-saturates by design. The full table, with all six solutions, is in [the
-results](../11_the-results.md).
+sometimes not there. Its position error is the largest of the six on the spawned
+layouts, which matters less than it looks, because that number saturates by
+design. Its crowded score of 73.0 sits inside the band that solutions 2, 4 and 5
+also fall in, so on crowded tables this solution is not separated from them. The
+full table, with all six solutions, is in [the results](../11_the-results.md).
 
 ## 5. Where it is strong and where it breaks
 

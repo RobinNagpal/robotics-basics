@@ -16,7 +16,7 @@ is about an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
+4. [What it scored](#4-what-it-scored)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -111,7 +111,7 @@ three the rule could not be stated at all.
 And it needs **depth readings**. That is the one requirement that is not free,
 and section 5 is mostly about it.
 
-## 4. What it scored by the examiner
+## 4. What it scored
 
 Every solution is given the same arrangements and marked the same way by [the
 examiner](../03_the-examiner.md), which is what makes the numbers below

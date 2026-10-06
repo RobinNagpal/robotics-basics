@@ -16,7 +16,7 @@ about an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
+4. [What it scored](#4-what-it-scored)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -119,7 +119,7 @@ column.
 **A file of weights kept in step with the cell**, and **no borrowed model**, so
 there is no model licence to meet in either rung.
 
-## 4. What it scored by the examiner
+## 4. What it scored
 
 All six solutions are given the same 50 tables holding 251 glasses, of which 193
 have no room at the start. The geometry's row is shown beside this one, because

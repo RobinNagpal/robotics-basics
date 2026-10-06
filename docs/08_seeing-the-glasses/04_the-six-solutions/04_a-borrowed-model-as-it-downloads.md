@@ -16,7 +16,7 @@ about half an hour of reading and the shortest of the six.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
+4. [What it scored](#4-what-it-scored)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -102,7 +102,7 @@ shipped or served. Nothing in the design depends on the borrowed model being
 this particular one, so the reading transfers to whichever instance segmenter is
 licensed conveniently.
 
-## 4. What it scored by the examiner
+## 4. What it scored
 
 Every solution is given the same arrangements and marked the same way. There are
 two sets: spawned layouts, at the spacing the cell's own layout rule gives, and

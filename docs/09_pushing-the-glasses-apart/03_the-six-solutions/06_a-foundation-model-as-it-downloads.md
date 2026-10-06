@@ -17,7 +17,7 @@ about three quarters of an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
+4. [What it scored](#4-what-it-scored)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -107,7 +107,7 @@ path that accepts a run of waypoints without the push macro. Both are shared
 with two other solutions, so the cost was paid once for three rather than for
 this one.
 
-## 4. What it scored by the examiner
+## 4. What it scored
 
 All six solutions are given the same 50 tables holding 251 glasses, of which 193
 have no room at the start. This solution is run several times and the figure

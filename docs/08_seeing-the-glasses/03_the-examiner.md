@@ -25,7 +25,8 @@ assumes it.
 6. [What must come back](#6-what-must-come-back)
 7. [How a report is matched to a real glass](#7-how-a-report-is-matched-to-a-real-glass)
 8. [What the examiner measures](#8-what-the-examiner-measures)
-9. [Where to go next](#9-where-to-go-next)
+9. [One arrangement, followed all the way through](#9-one-arrangement-followed-all-the-way-through)
+10. [Where to go next](#10-where-to-go-next)
 
 ## 2. Why there is an examiner at all
 
@@ -271,7 +272,71 @@ depth readings rather than guessing a value for them.
 
 ![The examiner sends its own id masks through the same arithmetic a solution's masks go through, which gives the best place and width that step can produce from a perfect mask, and it leaves out the depth readings of any pixel a mask asserts, because the depth there belongs to whatever stood in front.](../images/seeing-the-glasses/the-examiner/03-the-floor.png)
 
-## 9. Where to go next
+## 9. One arrangement, followed all the way through
+
+Everything above says what happens in general. This section says it once on a
+real arrangement, number 10046, which holds six stemmed glasses. Every picture
+below was made by running the examiner's own code on that arrangement, and every
+number on them was measured rather than chosen.
+
+It begins with the glasses standing on the table. This is what is really there,
+which only the examiner knows, and it is what everything afterwards is marked
+against.
+
+![Arrangement 10046 holds six stemmed glasses standing inside the glass zone, with the three camera stations marked above them, and this is the record of what is really there that only the examiner holds.](../images/seeing-the-glasses/the-examiner/03-example-on-the-table.png)
+
+The camera then takes one picture from each of the three stations, and the three
+are not interchangeable. **Station 1 holds glass 1 whole and loses glass 6
+entirely**: glass 6's outline falls inside the frame, and every one of those
+pixels shows glass 4, whose bowl is thrown out over it. Station 2 holds no glass
+whole, because every one of the six reaches a frame edge. Station 3 holds glass
+2 whole. That is the overlap doing its work: what one station loses, another
+holds.
+
+![The same arrangement from each of the three stations, with the glasses keeping their numbers, a green outline where the picture holds a glass whole and a red one where it is cut off at the frame edge, and glass 6 absent from station 1 altogether.](../images/seeing-the-glasses/the-examiner/03-example-three-pictures.png)
+
+One of those three pictures, taken apart, is the whole of what a solution is
+given, plus the one thing it is not. The grey picture and the depth reading go
+to the solution with the camera's pose. The id picture does not.
+
+![Station 2's picture as its three parts: the grey picture shaded from how far away each surface is, the depth reading at every pixel, and the id picture saying which glass owns each pixel, which the examiner keeps.](../images/seeing-the-glasses/the-examiner/03-example-what-one-station-gives.png)
+
+Handed that, a solution returns one mask per glass. The masks below are the real
+output of the written rule, run on station 2's grey picture and depth reading
+and told only that the glasses are stemmed. Read them against the two numbers
+the examiner measures. **Every one of the six lost the band at the base of its
+glass**, which is where that rule stops being sure, so the coverage falls; and
+not one of them claimed a pixel that was not its glass, so the second number is
+zero six times over. That is the habit of a rule written by hand: it claims too
+little and never too much.
+
+![The mask the written rule returned for each of the six glasses in station 2's picture, with the part of the glass it covered, the part it missed, and the per-glass coverage below each one.](../images/seeing-the-glasses/the-examiner/03-example-the-masks.png)
+
+A mask on its own is not a record. The examiner's own arithmetic turns it into
+one, the same arithmetic for every solution, which is why a difference between
+two scorecards belongs to the mask rather than to the measuring.
+
+![One mask followed through the shared arithmetic: its pixels become points in the room, the axis comes from the points at the top of the glass, the width is the 95th percentile of how far the cloud reaches from that axis, and the place that comes out is shown beside the place the glass really stands.](../images/seeing-the-glasses/the-examiner/03-example-mask-to-record.png)
+
+What this one arrangement adds to the scorecard is below. All six glasses were
+found and nothing was missed, merged, split or falsely reported, which is the
+easy half of the result. The hard half is in the other columns, and the worst
+entries point back at the pictures above. The place is furthest out on glass 5,
+at 35.5 mm, whose mask held only 1902 pixels because the station it was kept
+from cut it off at the frame edge. The coverage is worst on glass 3, at 22.6
+per cent, whose mask is 264 pixels: a glass seen almost edge on, with the rule
+keeping only the part of it the depth readings make it sure about.
+
+![What arrangement 10046 contributes to the scorecard: the five counts, then one row per glass giving the station its report was kept from, how far out the place was, how much of the glass the mask covered and how many pixels it held.](../images/seeing-the-glasses/the-examiner/03-example-the-scorecard.png)
+
+Two things are worth taking from this one arrangement before reading any
+solution. **A glass is scored from the station that saw it best, not from an
+average of three**, so a station losing a glass costs nothing as long as another
+station holds it. And **the place error and the mask error are not the same
+measurement**: this solution's places are good while its masks are missing a
+fifth of some glasses, which is exactly the gap the mask numbers exist to show.
+
+## 10. Where to go next
 
 - [The problem](02_the-problem/01_what-is-asked-for.md) — what is asked for, and the three difficulties.
 - [Looking again at what was hidden](02_the-problem/02_looking-again-at-what-was-hidden.md) — the shared part that

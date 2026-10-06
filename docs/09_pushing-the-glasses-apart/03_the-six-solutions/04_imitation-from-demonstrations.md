@@ -16,7 +16,7 @@ an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
+4. [What it scored](#4-what-it-scored)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -118,7 +118,7 @@ seconds to carry out. And once fitted it needs **a weights file kept in step
 with the examiner**: change how the top view is rendered, or the macro whose
 waypoints became the labels, and the file is quietly out of date.
 
-## 4. What it scored by the examiner
+## 4. What it scored
 
 All six solutions are given the same 50 tables holding 251 glasses, of which 193
 have no room at the start. The teacher's row is shown beside this one, because

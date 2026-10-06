@@ -18,7 +18,7 @@ three quarters of an hour of reading.
 1. [What it is](#1-what-it-is)
 2. [How it works](#2-how-it-works)
 3. [What it needs](#3-what-it-needs)
-4. [What it scored by the examiner](#4-what-it-scored-on-the-examiner)
+4. [What it scored](#4-what-it-scored)
 5. [Where it is strong and where it breaks](#5-where-it-is-strong-and-where-it-breaks)
 6. [When to choose it](#6-when-to-choose-it)
 
@@ -111,7 +111,7 @@ the training of those weights, and a file derived from an AGPL work is bound by
 the same terms. So the output of the training run is not a clean asset the
 project owns outright, and it cannot be relicensed by having been trained here.
 
-## 4. What it scored by the examiner
+## 4. What it scored
 
 The two sets of arrangements are the ones every solution is given: spawned
 layouts at the cell's own spacing, and crowded layouts closer than that.

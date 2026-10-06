@@ -348,36 +348,15 @@ def rules_what_it_does() -> None:
     that has the solution's one idea, which is that the question stops being
     about the picture and becomes a question about distance on the table.
     """
-    figure, axis, _ = _figure(10.6, 46.0)
-    flow = Flow(axis, 44.0, 54.0, 76.0, 27.0)
+    figure, axis, _ = _figure(9.6, 34.0)
+    flow = Flow(axis, 32.0, 54.0, 72.0, 24.0)
 
-    flow.box(
-        "From each picture, keep the pixels whose points stand more than "
-        f"{CLEARANCE_MM} mm above the known\n"
-        "table top, and drop the pixels that came back with no depth reading at all.",
-    )
-    flow.box(
-        "Turn each kept pixel into a point in the room: the pixel's offsets from the middle of\n"
-        "the picture give the direction the camera was looking, the depth reading gives how far\n"
-        "along that direction to travel, and the camera's own pose says where the ray begins.",
-    )
-    flow.box(
-        "Drop the height, so each glass becomes a flat patch of dots on the table. The gap\n"
-        "inside one glass closes to nothing, and the strip of bare table between two glasses\n"
-        "stays exactly as wide as it was.",
-    )
-    flow.box(
-        "Join dots lying within one chosen distance of each other into groups, and keep joining\n"
-        f"until nothing new joins. That distance is {GROUPING_MM} mm, and it is the method's only setting.",
-    )
-    flow.box(
-        "Fit a circle to each group's outer dots and check its width against the range this kind\n"
-        f"of glass allows, which is {RIM_LOW_MM} to {RIM_HIGH_MM} mm across the rim for the tapered glass. A group\n"
-        "too wide to be one glass is split in two, and each part is asked the same question again.",
-    )
-    flow.box(
-        "Hand back, for each surviving group, the picture pixels its dots came from.",
-    )
+    flow.box(f"Keep the pixels standing more than {CLEARANCE_MM} mm above the table top")
+    flow.box("Turn each kept pixel into a point in the room")
+    flow.box("Drop the height: each glass is a flat patch of dots")
+    flow.box(f"Join dots within {GROUPING_MM} mm of each other into groups")
+    flow.box("Fit a circle to each group, and split one too wide to be a glass")
+    flow.box("Hand back the picture pixels each surviving group came from")
     flow.box(
         "Those pixels are the masks, and the mask is the whole contribution.",
         edge=GLASS, face=_tint(GLASS, 0.72), size=LABEL_SIZE, lw=1.8, weight="bold",
@@ -393,23 +372,10 @@ def rules_what_it_does() -> None:
     ):
         top = ends[first][0] + 0.7
         bottom = ends[last][1] - 0.7
-        _band(axis, 7.0, bottom, 94.0, top - bottom, colour, label)
+        _band(axis, 7.0, bottom, 86.0, top - bottom, colour, label)
 
-    _note(
-        axis, 54.0, flow.y - 1.4,
-        "The masks are a consequence of the grouping on the table rather than the thing the method\n"
-        "produces directly. Nothing here draws an outline or measures a mask: the dots decide which\n"
-        "group they join, and the picture pixels behind them follow.",
-        colour=INK, ha="center", va="top",
-    )
-    _note(
-        axis, 54.0, flow.y - 6.0,
-        "Not one number in this chain was fitted to anything. There is no model, no weights file and no\n"
-        f"training data. The table top, the {RIM_LOW_MM} to {RIM_HIGH_MM} mm the width is checked against, and the "
-        f"{GROUPING_MM} mm the\n"
-        "grouping uses were all known before the run started.",
-        colour=GOOD, ha="center", va="top", weight="bold",
-    )
+    _note(axis, 54.0, flow.y - 1.4, "Not one number in this chain was fitted to anything.",
+          colour=GOOD, ha="center", va="top", weight="bold")
 
     _title(axis, "Rules on the table: what the method does, from a picture to the masks")
     _audit(figure, "rules-flow-what-it-does.png")
@@ -421,25 +387,23 @@ def rules_what_it_does() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def rules_each_group() -> None:
-    """The two questions asked of every group, and the three ways out.
+def rules_grouping_distance() -> None:
+    """The one setting, and the window of values that would all have worked.
 
-    The setting is drawn at the top rather than at the bottom, because the
-    grouping distance is what made the group in the first place: it enters the
-    chart where the group enters it. The window it sits in is drawn as a measured
-    line, since the whole claim about this method is that both ends of that
-    window were known before the run started.
+    Its own picture rather than a band across the top of the flow chart, because
+    the window and the chain of checks are two different ideas and a reader meets
+    them a paragraph apart. What each end of the window is, and why, belongs in
+    the prose under it; the drawing carries the width of the window.
     """
-    figure, axis, _ = _figure(12.4, 59.5)
+    figure, axis, _ = _figure(9.8, 15.0)
 
-    # ------------------------------------------- the one setting, and its window
     _note(
-        axis, 50.0, 58.0,
-        "The one setting: how far apart two dots may be and still be joined into one group",
+        axis, 50.0, 14.0,
+        "How far apart two dots may be and still be joined into one group",
         colour=INK, size=LABEL_SIZE + 1.0, ha="center", va="top", weight="bold",
     )
 
-    bar_left, bar_right, bar_y, bar_h = 12.0, 90.0, 52.5, 1.6
+    bar_left, bar_right, bar_y, bar_h = 12.0, 90.0, 8.0, 1.6
     span_mm = 60.0
 
     def at(mm: float) -> float:
@@ -461,7 +425,7 @@ def rules_each_group() -> None:
     _note(axis, (bar_left + at(low_mm)) / 2.0, bar_y + bar_h + 0.9, "too small",
           colour=WARN, ha="center", va="bottom", weight="bold")
     _note(axis, (at(low_mm) + at(STRIP_MM)) / 2.0, bar_y + bar_h + 0.9,
-          "any distance in here holds one glass together and keeps its neighbour out",
+          "any distance in here works",
           colour=GOOD, ha="center", va="bottom", weight="bold")
     _note(axis, (at(STRIP_MM) + bar_right) / 2.0, bar_y + bar_h + 0.9, "too large",
           colour=WARN, ha="center", va="bottom", weight="bold")
@@ -471,35 +435,37 @@ def rules_each_group() -> None:
     _note(axis, at(GROUPING_MM), bar_y - 1.4, f"{GROUPING_MM} mm, the value the code uses",
           colour=INK, ha="center", va="top", weight="bold")
 
-    _note(
-        axis, bar_left, bar_y - 4.4,
-        "The lower end is the widest stretch between two\n"
-        "neighbouring dots on one glass. Below it the chain\n"
-        "breaks in the middle of a single glass, and one glass\n"
-        "comes back as two groups.",
-        colour=INK, ha="left", va="top",
-    )
-    _note(
-        axis, bar_right, bar_y - 4.4,
-        f"The upper end is {STRIP_MM} mm, the narrowest strip of bare table\n"
-        f"two glasses can leave: {CENTRES_MM} mm between centres, less half\n"
-        "of each of the two widest rims this kind allows, which are\n"
-        f"{RIM_HIGH_MM} mm. Above it the chain hops the strip and two glasses\n"
-        "come back as one group.",
-        colour=INK, ha="right", va="top",
-    )
+    _note(axis, bar_left, bar_y - 3.0,
+          "below: one glass comes back\nas two groups",
+          colour=WARN, ha="left", va="top")
+    _note(axis, bar_right, bar_y - 3.0,
+          f"above {STRIP_MM} mm: two glasses come\nback as one group",
+          colour=WARN, ha="right", va="top")
 
-    # ------------------------------------------------------------- the main chain
+    _title(axis, "Rules on the table: the one setting, and the window it sits in")
+    _audit(figure, "rules-flow-grouping-distance.png")
+    save(figure, "rules-flow-grouping-distance.png")
+
+
+# --------------------------------------------------------------------------- #
+# 3. solution 1, what one group has to pass
+# --------------------------------------------------------------------------- #
+
+
+def rules_each_group() -> None:
+    """The two questions asked of every group, and the three ways out.
+
+    Three outcomes and no fourth is the point of the drawing. What each outcome
+    means, and why splitting cannot repair a width that is too narrow, is prose
+    under the picture rather than text inside its boxes.
+    """
+    figure, axis, _ = _figure(11.0, 32.0)
+
     centre, width, chain_x = 50.0, 58.0, 30.0
     left_edge = centre - width / 2.0 - BOX_PAD
     right_edge = centre + width / 2.0 + BOX_PAD
 
-    _arrow(axis, (chain_x, 42.1), (chain_x, 40.0))
-    _note(axis, chain_x + 1.4, 41.1,
-          "every dot in a group is within this distance of another dot in it",
-          colour=MUTED, va="center")
-
-    flow = Flow(axis, 40.0, centre, width, chain_x)
+    flow = Flow(axis, 29.5, centre, width, chain_x)
     flow.box(
         "One group of dots on the table",
         arrow=False, edge=GLASS, face=_tint(GLASS, 0.76), size=LABEL_SIZE, lw=1.6,
@@ -512,17 +478,9 @@ def rules_each_group() -> None:
     q1_top, q1_bottom = flow.extents[-1]
     q1_middle = (q1_top + q1_bottom) / 2.0
 
-    flow.box(
-        "Fit a circle to the dots on the outside of the patch. Multiplying the circle's equation out makes\n"
-        "the fit linear, so it has a direct solution: no starting guess and nothing to iterate. The width it\n"
-        "returns decides this check and nothing else, because the width that goes into the record is\n"
-        "measured by the examiner from the mask pixels, the same way for every solution.",
-    )
-    flow.box(
-        "Is that fitted width inside the range this kind of glass allows,\n"
-        f"which is {RIM_LOW_MM} to {RIM_HIGH_MM} mm across the rim for the tapered glass?",
-        weight="bold",
-    )
+    flow.box("Fit a circle to the dots on the outside of the patch")
+    flow.box(f"Is that width between {RIM_LOW_MM} and {RIM_HIGH_MM} mm, the range this kind allows?",
+             weight="bold")
     q2_bottom = flow.extents[-1][1]
 
     # ------------------------------------------------------- the three ways out
@@ -530,44 +488,9 @@ def rules_each_group() -> None:
     out_width = 28.0
     refused_x, reported_x, split_x = 20.0, 50.0, 80.0
 
-    refused = (
-        "Refused, and handed over whole.\n"
-        "\n"
-        "Either too few dots with a depth reading to\n"
-        "place the group at all, or a width narrower\n"
-        "than any glass of this kind with the whole of\n"
-        "the group inside the frame.\n"
-        "\n"
-        "Splitting cannot repair a width that is too\n"
-        "narrow, because both halves of a footprint\n"
-        "are narrower still. Which side of the range\n"
-        "the group failed is reported, rather than the\n"
-        "count being guessed at."
-    )
-    reported = (
-        "Reported.\n"
-        "\n"
-        "The group is one glass, and the picture\n"
-        "pixels its dots came from are that glass's\n"
-        "mask.\n"
-        "\n"
-        "That mask is the whole of what this solution\n"
-        "hands over."
-    )
-    split = (
-        "Split in two, and asked again.\n"
-        "\n"
-        "Two seeds at the ends of the group's longest\n"
-        "direction, each dot to the nearer seed, each\n"
-        "seed to the middle of the dots it was given,\n"
-        "until nothing moves.\n"
-        "\n"
-        "Both parts go back through the same two\n"
-        "questions, so a part still too wide is split\n"
-        "again. Nothing counts the rounds down: each\n"
-        "part has fewer dots than the part it came\n"
-        "from, so the splitting runs out on its own."
-    )
+    refused = "Refused,\nand said so"
+    reported = "Reported:\nits pixels are the mask"
+    split = "Split in two,\nand asked again"
     heights = [_height(text) for text in (refused, reported, split)]
     for x, text, height, edge, face in (
         (refused_x, refused, heights[0], WARN, _tint(WARN, 0.86)),
@@ -597,15 +520,13 @@ def rules_each_group() -> None:
               color=GLASS, lw=1.3, zorder=6)
     axis.plot([loop_x, loop_x], [split_middle, q1_middle], color=GLASS, lw=1.3, zorder=6)
     _arrow(axis, (loop_x, q1_middle), (right_edge, q1_middle), colour=GLASS)
-    _note(axis, loop_x, q1_middle + 0.9, "each part, as its own group",
+    # Short, and kept right of the boxes: a longer label reaches back across the
+    # chain and the audit counts it as sitting on the question it points at.
+    _note(axis, loop_x, q1_middle + 1.0, "each part again",
           colour=GLASS, ha="right", va="bottom", weight="bold")
 
-    _note(
-        axis, 50.0, 1.4,
-        "Three outcomes and no fourth: a report, a split, or a refusal. Both questions are arithmetic over quantities known\n"
-        "before the run started, so a refusal can be explained and a split can be justified.",
-        colour=INK, ha="center", va="bottom",
-    )
+    _note(axis, 50.0, 1.4, "Three outcomes and no fourth.",
+          colour=INK, ha="center", va="bottom", weight="bold")
 
     _title(axis, "Rules on the table: what every group has to pass before it is reported")
     _audit(figure, "rules-flow-each-group.png")
@@ -625,38 +546,17 @@ def network_what_it_does() -> None:
     inside it pointing two different ways, and the two piles those arrows make.
     Nothing in that drawing is a cut, because nothing in the method cuts.
     """
-    figure, axis, aspect = _figure(11.6, 63.0)
+    figure, axis, _ = _figure(10.2, 26.0)
 
-    flow = Flow(axis, 61.0, 50.0, 80.0, 22.0)
-    flow.box(
-        "A survey picture from the top and its depth reading, turned into something like a height above the\n"
-        "table, with two further channels saying where in the frame each pixel sits. A camera looking straight\n"
-        f"down throws a glass's outline outwards, so where a pixel sits is the one fact it cannot see. All of it\n"
-        f"goes in at half size, which is {SHRINK * SHRINK} times quicker to train on and still leaves a glass many pixels across.",
-    )
-    flow.box(
-        "One network: a down path that halves the picture while doubling the channels, an up path that enlarges\n"
-        "it back, and the copies set aside before each halving carried across so that fine detail survives the\n"
-        "journey. Both heads sit on the end of that one up path, which is why they are one network and not two.",
-    )
+    flow = Flow(axis, 24.0, 50.0, 76.0, 22.0)
+    flow.box("The grey picture, the depth reading, and where in the frame each pixel sits")
+    flow.box("One network: a down path, an up path, and the detail carried across")
     network_bottom = flow.extents[-1][1]
 
     # the two heads, side by side under the one network
     left_x, right_x, head_width = 28.0, 72.0, 40.0
-    head_left = (
-        "The first head: one number per pixel,\n"
-        "how sure the network is that the pixel is\n"
-        "glass. Squashed into nought to one and\n"
-        "cut at a threshold, that is the mask of\n"
-        "glass pixels."
-    )
-    head_right = (
-        "The second head: two numbers per glass\n"
-        "pixel, the parts of a short arrow towards\n"
-        "the middle of that pixel's own glass. It is\n"
-        "asked only of the glass pixels, because a\n"
-        "table pixel has no glass to point at."
-    )
+    head_left = "The first head:\nis this pixel glass?"
+    head_right = "The second head:\nwhich way is its middle?"
     head_height = max(_height(head_left), _height(head_right))
     head_middle = network_bottom - GAP - head_height / 2.0
     _box(axis, left_x, head_middle, head_width, head_left, edge=GLASS,
@@ -675,29 +575,28 @@ def network_what_it_does() -> None:
     _arrow(axis, (left_x, head_middle - head_height / 2.0), (left_x, vote_top), colour=GLASS)
     _arrow(axis, (right_x, head_middle - head_height / 2.0), (right_x, vote_top), colour=GLASS)
 
-    flow.box(
-        "Each glass pixel adds its own arrow to its own position and casts one vote at the place the arrow points.",
-        arrow=False,
-    )
-    flow.box(
-        "The votes are added into a tally the size of the picture and smoothed a little, so that votes landing on\n"
-        "neighbouring places reinforce each other. Then the largest place in the tally is taken as one glass's\n"
-        f"middle, the votes around it are set aside, and the next largest is taken, until no place has {MIN_VOTES} votes left.",
-    )
+    flow.box("Every glass pixel casts one vote at the place its arrow points", arrow=False)
+    flow.box(f"Take the largest pile of votes, then the next, until none has {MIN_VOTES} left")
     flow.box(
         "The pixels that voted into one peak are one glass's mask.",
         edge=GLASS, face=_tint(GLASS, 0.70), size=LABEL_SIZE, lw=1.8, weight="bold",
     )
 
-    # ------------------------------------------------- what the votes buy, drawn
-    rule_y = flow.y - 0.4
-    axis.plot([4, 96], [rule_y, rule_y], color=MUTED, lw=0.9, ls=(0, (5, 4)), zorder=1)
+    _title(axis, "A network trained from scratch: one network, two heads, and the votes")
+    _audit(figure, "network-flow-what-it-does.png")
+    save(figure, "network-flow-what-it-does.png")
 
-    _note(
-        axis, 50.0, rule_y - 1.3,
-        "Why the arrow is asked for instead of a boundary",
-        colour=INK, size=LABEL_SIZE + 1.0, ha="center", va="top", weight="bold",
-    )
+
+def network_votes_come_apart() -> None:
+    """Why the arrow is asked for instead of a boundary.
+
+    Its own picture rather than the lower half of the flow chart, because a
+    flow chart and a drawing of what the method buys are two different things
+    and neither is helped by sharing a figure with the other.
+    """
+    figure, axis, aspect = _figure(10.6, 22.0)
+
+    rule_y = 21.0
 
     # One unit across the chart is not one unit up it, so a circle of radius r in
     # units across needs a radius of r * aspect in units up, and a distance has to
@@ -707,8 +606,8 @@ def network_what_it_does() -> None:
 
     sketch_top = rule_y - 3.4
     radius = 5.5
-    a_centre = np.array([21.0, sketch_top - 7.0])
-    b_centre = np.array([28.0, sketch_top - 9.0])
+    a_centre = np.array([25.0, sketch_top - 6.0])
+    b_centre = np.array([32.0, sketch_top - 8.0])
 
     for centre in (a_centre, b_centre):
         axis.add_patch(
@@ -718,7 +617,7 @@ def network_what_it_does() -> None:
 
     rng = np.random.default_rng(7)
     for _ in range(320):
-        point = np.array([rng.uniform(14.0, 35.0), rng.uniform(sketch_top - 15.0, sketch_top - 1.0)])
+        point = np.array([rng.uniform(18.0, 39.0), rng.uniform(sketch_top - 14.0, sketch_top - 1.0)])
         in_a = np.hypot(*across(point - a_centre)) <= radius * 0.93
         in_b = np.hypot(*across(point - b_centre)) <= radius * 0.93
         if not (in_a or in_b):
@@ -735,47 +634,33 @@ def network_what_it_does() -> None:
     for centre, colour in ((a_centre, GOOD), (b_centre, WARN)):
         axis.plot(*centre, marker="o", ms=6.0, color=colour, zorder=8)
 
-    _note(axis, 4.0, sketch_top, "One connected patch of glass pixels,\nwith no gap anywhere in it",
+    _note(axis, 12.0, sketch_top, "One connected patch of glass pixels",
           colour=INK, ha="left", va="top", weight="bold")
-    _note(axis, 4.0, sketch_top - 15.0,
-          "The pixels along the seam are no different from any other\n"
-          "pixel. What changes across the seam is the direction the\n"
-          "arrows point, so nothing had to find the seam.",
-          colour=INK, ha="left", va="top")
 
     # the two piles of votes, to the right
-    pile_a = a_centre + np.array([45.0, 0.0])
-    pile_b = b_centre + np.array([45.0, 0.0])
+    pile_a = a_centre + np.array([44.0, 0.0])
+    pile_b = b_centre + np.array([44.0, 0.0])
     for centre, colour in ((pile_a, GOOD), (pile_b, WARN)):
         cloud = rng.normal(0.0, 1.0, size=(110, 2)) * np.array([1.1, 1.1 * aspect])
         axis.plot(centre[0] + cloud[:, 0], centre[1] + cloud[:, 1], marker="o", ms=1.8,
                   ls="none", color=colour, alpha=0.75, zorder=5)
         axis.plot(*centre, marker="o", ms=6.0, color=colour, zorder=8)
-    _note(axis, 58.0, sketch_top, "Two piles of votes, because each glass's\npixels point at their own middle",
+    _note(axis, 58.0, sketch_top, "Two piles of votes, one per glass",
           colour=INK, ha="left", va="top", weight="bold")
-    _note(axis, 58.0, sketch_top - 15.0,
-          "Counting glasses is counting piles, and nothing had to be\n"
-          "told how many piles to expect. A handful of arrows pointing\n"
-          "the wrong way are outvoted rather than fatal.",
-          colour=INK, ha="left", va="top")
 
-    _arrow(axis, (40.0, (a_centre[1] + b_centre[1]) / 2.0),
-           (52.0, (a_centre[1] + b_centre[1]) / 2.0), colour=INK, lw=1.6)
+    _arrow(axis, (44.0, (a_centre[1] + b_centre[1]) / 2.0),
+           (56.0, (a_centre[1] + b_centre[1]) / 2.0), colour=INK, lw=1.6)
 
-    _note(
-        axis, 50.0, 1.4,
-        "A connected blob comes apart into separate glasses without any rule for cutting it having been written down.\n"
-        "Nothing has to find a boundary, so nothing can get a boundary wrong.",
-        colour=GOOD, ha="center", va="bottom", weight="bold",
-    )
+    _note(axis, 50.0, 1.4, "Nothing has to find a boundary, so nothing can get one wrong.",
+          colour=GOOD, ha="center", va="bottom", weight="bold")
 
-    _title(axis, "A network trained from scratch: one network, two heads, and the votes")
-    _audit(figure, "network-flow-what-it-does.png")
-    save(figure, "network-flow-what-it-does.png")
+    _title(axis, "A network trained from scratch: why the arrow is asked for instead of a boundary")
+    _audit(figure, "network-flow-votes-come-apart.png")
+    save(figure, "network-flow-votes-come-apart.png")
 
 
 # --------------------------------------------------------------------------- #
-# 4. solution 2, the two places the labels come from
+# 5. solution 2, the two places the labels come from
 # --------------------------------------------------------------------------- #
 
 
@@ -788,101 +673,43 @@ def network_labels() -> None:
     labels in two columns under it, and the one difference that outlives this
     problem at the bottom of the second column.
     """
-    figure, axis, _ = _figure(12.4, 49.5)
+    figure, axis, _ = _figure(11.6, 31.0)
 
     _box(
-        axis, 50.0, 46.2, 92.0,
-        "The network, the two heads, the votes and the checks are the same in both columns.\n"
-        "Only the source of the training labels changes, which is why these are two ways of one solution.",
+        axis, 50.0, 29.0, 92.0,
+        "Everything but the labels is the same in both columns.",
         edge=INK, face=_tint(MUTED, 0.90), size=LABEL_SIZE, lw=1.6, weight="bold",
     )
 
     left_x, right_x, width = 26.0, 74.0, 44.0
     chain_left, chain_right = 8.0, 56.0
 
-    _note(axis, left_x, 42.4, "The first way: labels from the answer key",
+    _note(axis, left_x, 25.6, "The first way: labels from the answer key",
           colour=INK, size=LABEL_SIZE + 1.0, ha="center", va="top", weight="bold")
-    _note(axis, right_x, 42.4, "The second way: labels from the arm's own movement",
+    _note(axis, right_x, 25.6, "The second way: labels from the arm's own movement",
           colour=INK, size=LABEL_SIZE + 1.0, ha="center", va="top", weight="bold")
 
-    first = Flow(axis, 40.8, left_x, width, chain_left)
-    first.box(
-        "The examiner rendered the picture itself, so\n"
-        "beside the grey picture and the depth reading\n"
-        "it has an id image: at every pixel, which glass\n"
-        "that pixel shows, or nothing.",
-    )
-    first.box(
-        "The first head's label is the id image with the\n"
-        "identities forgotten. A pixel is glass if the id\n"
-        "image names any glass there, with nothing to\n"
-        "judge and nothing to draw.",
-    )
-    first.box(
-        "The second head's label is a subtraction: that\n"
-        "glass's middle minus the pixel's own position.\n"
-        "The examiner knows both ends exactly, because\n"
-        "it put the glass there.",
-    )
-    first.box(
-        "What it costs: render time, and nothing else.\n"
-        "There is no annotator, so no annotator's budget\n"
-        "and no annotator's mistakes. Both heads' labels\n"
-        "fall out of the id image by arithmetic.",
-        edge=MUTED, face=_tint(MUTED, 0.88),
-    )
-    first.box(
-        "What it depends on: the simulator's own record.\n"
-        "A real camera on a real table has no id image,\n"
-        "so the day this cell meets real glasses this way\n"
-        "has to be labelled again by somebody drawing\n"
-        "round things.",
-        edge=WARN, face=_tint(WARN, 0.88), lw=1.6,
-    )
+    first = Flow(axis, 24.0, left_x, width, chain_left)
+    first.box("The examiner's id image: which glass each pixel shows")
+    first.box("First head's label: is any glass named here?")
+    first.box("Second head's label: that glass's middle, less this pixel")
+    first.box("Costs render time, and nothing else",
+              edge=MUTED, face=_tint(MUTED, 0.88))
+    first.box("Needs the simulator's own record",
+              edge=WARN, face=_tint(WARN, 0.88), lw=1.6)
 
-    second = Flow(axis, 40.8, right_x, width, chain_right)
-    second.box(
-        "The camera slides a known distance between\n"
-        "two pictures of a scene that stood still. The arm\n"
-        "commanded that slide and reads it back from its\n"
-        "own joint encoders, so it is measured and not\n"
-        "estimated from the pictures.",
-    )
-    second.box(
-        "Points on one surface shift across the picture\n"
-        "together, and points on a surface at a different\n"
-        "distance shift by a different amount, because the\n"
-        "shift is the slide divided by the depth.",
-    )
-    second.box(
-        "Two pixels whose shifts agree to within the noise\n"
-        "belong together and two whose shifts clearly\n"
-        "differ do not. That agreement is the label, and\n"
-        "training pulls the pixels that belong together\n"
-        "into one neighbourhood of a map it draws itself.",
-    )
-    second.box(
-        "What it costs: arm time rather than render time,\n"
-        "because collecting a label means moving the arm.\n"
-        "The labels are weakest from the top, where two\n"
-        "rims sit at almost the same distance, and the top\n"
-        "is where the merge happens.",
-        edge=MUTED, face=_tint(MUTED, 0.88),
-    )
-    second.box(
-        "What it buys: this is the only supervision a real\n"
-        "arm would also have. A real arm has joint\n"
-        "encoders and a wrist camera, and that is all this\n"
-        "way needs, so this is the one way that would not\n"
-        "have to be labelled again outside the simulator.",
-        edge=GOOD, face=_tint(GOOD, 0.80), lw=1.8, weight="bold",
-    )
+    second = Flow(axis, 24.0, right_x, width, chain_right)
+    second.box("The camera slides a distance the arm measured")
+    second.box("Points at one distance shift together; points at another do not")
+    second.box("Label: pixels whose shifts agree belong together")
+    second.box("Costs arm time, and is weakest from the top",
+               edge=MUTED, face=_tint(MUTED, 0.88))
+    second.box("Needs only what a real arm already has",
+               edge=GOOD, face=_tint(GOOD, 0.80), lw=1.8, weight="bold")
 
-    _note(
-        axis, 50.0, 1.4,
-        "So the first way is the one to build for this problem, and the second is the one to reach for when the cell leaves the simulator.",
-        colour=INK, ha="center", va="bottom", weight="bold",
-    )
+    _note(axis, 50.0, 1.4,
+          "The first way is for this problem; the second is for leaving the simulator.",
+          colour=INK, ha="center", va="bottom", weight="bold")
 
     _title(axis, "A network trained from scratch: the two places the training labels can come from")
     _audit(figure, "network-flow-labels.png")
@@ -902,47 +729,19 @@ def borrowed_what_it_does() -> None:
     file to keep in step with the cell — is missing here, so the chart is drawn
     at the height its own content needs and no more.
     """
-    figure, axis, _ = _figure(10.4, 36.5)
+    figure, axis, _ = _figure(9.6, 24.0)
 
-    flow = Flow(axis, 34.4, 50.0, 78.0, 24.0)
-    flow.box(
-        "The grey picture, shaded from the depth reading, goes to the downloaded model unchanged.\n"
-        f"The weights are Ultralytics YOLO26-seg at the small end of the family, the file {MODEL_FILE},\n"
-        "and they fetch themselves the first time the model is used.",
-    )
-    flow.box(
-        "The model returns, for each object it believes it found, four things together: a box around the\n"
-        "object, a name from its own fixed list of everyday categories, a number saying how sure it is,\n"
-        f"and an outline marking which pixels inside the box are that object. Outlines scoring below a\n"
-        f"bar set by hand at {CONFIDENCE_BAR} are never built.",
-    )
-    flow.box(
-        f"Keep the outlines whose name is a drinking vessel — {KEPT_NAMES} —\n"
-        "and drop every other object the model named. The filter is generous on purpose, because the\n"
-        "boundary the model draws between its own categories was never meant to tell this cell's\n"
-        "kinds of glass apart.",
-        edge=GLASS, face=_tint(GLASS, 0.84), lw=1.6,
-    )
-    flow.box(
-        "Discard the names. The kept outlines are the masks.",
-        edge=GLASS, face=_tint(GLASS, 0.70), size=LABEL_SIZE, lw=1.8, weight="bold",
-    )
+    flow = Flow(axis, 22.0, 50.0, 74.0, 22.0)
+    flow.box("The grey picture goes to the downloaded model unchanged")
+    flow.box("Back comes a box, a name, a confidence number and an outline per object")
+    flow.box(f"Keep the outlines named as drinking vessels — {KEPT_NAMES}",
+             edge=GLASS, face=_tint(GLASS, 0.84), lw=1.6)
+    flow.box("Discard the names. The kept outlines are the masks.",
+             edge=GLASS, face=_tint(GLASS, 0.70), size=LABEL_SIZE, lw=1.8, weight="bold")
 
-    _note(
-        axis, 50.0, flow.y - 1.2,
-        "Nothing in this solution was fitted in this cell. Every number inside the model came from somebody\n"
-        f"else's photographs of everyday scenes, and the one number beside it, the {CONFIDENCE_BAR} bar, was set by hand\n"
-        "and claims nothing about how often an outline above it is really a glass.",
-        colour=GOOD, ha="center", va="top", weight="bold",
-    )
-    _note(
-        axis, 50.0, flow.y - 5.8,
-        "The name is a filter and never an answer. A borrowed category carries an implied size with it, because the\n"
-        "model's idea of a cup was formed from photographs of real cups at the sizes real cups come in, so a name\n"
-        "that travelled any further would bring a belief about how big a glass is into a cell where no glass's size is\n"
-        "written down. Dropping it immediately after the filter is what stops that.",
-        colour=WARN, ha="center", va="top",
-    )
+    _note(axis, 50.0, flow.y - 1.2,
+          f"Nothing here was fitted in this cell, except the {CONFIDENCE_BAR} bar, set by hand.",
+          colour=GOOD, ha="center", va="top", weight="bold")
 
     _title(axis, "A borrowed model as it downloads: the whole method, from the picture to the masks")
     _audit(figure, "borrowed-flow-what-it-does.png")
@@ -951,8 +750,10 @@ def borrowed_what_it_does() -> None:
 
 def main() -> None:
     rules_what_it_does()
+    rules_grouping_distance()
     rules_each_group()
     network_what_it_does()
+    network_votes_come_apart()
     network_labels()
     borrowed_what_it_does()
 

@@ -49,9 +49,12 @@ promises that no two glasses stand closer than a known distance, so there is
 always bare table between them, and the rule stops working the moment that
 promise does.
 
-![Pixels standing above the known table height become points in the room, lose their height to leave a flat patch of dots on the table, are joined into groups by one chosen distance, and are checked against the widths the kind allows, so the masks are a consequence of the grouping rather than the thing the method directly produces.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-what-it-does.png)
+![The method in six steps, in four lanes: it starts in the picture, moves into the room, does its work on the table, and comes back to the picture only to hand the pixels over.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-what-it-does.png)
 
-![Every group has to hold enough dots and to fit a width inside the range the kind allows before it is reported, and the three outcomes are a report, a split into two, or a refusal.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-each-group.png)
+The lanes in that picture are as much the point as the order is. The question
+starts as a question about the picture, becomes a question about distance on the
+table, and only returns to the picture at the end to say which pixels to hand
+over.
 
 ## 2. How it works
 
@@ -88,11 +91,34 @@ glasses that were joined, and it is split. The pixels that fed each surviving
 group are that glass's mask, so the masks are a consequence of the grouping
 rather than the thing the method directly produces.
 
+Each group therefore leaves by one of three doors, and there is no fourth.
+
+![One group of dots entering the two checks, and the three ways it can leave them: refused, reported, or split in two and asked again.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-each-group.png)
+
+A group is **reported** when it holds enough dots and its width is inside the
+range. It is **split in two and asked again** when it is too wide, and both
+halves go back through the same two questions, so a half still too wide is split
+again. That never runs forever, because each part holds fewer dots than the part
+it came from. And it is **refused** when it has too few dots to place at all, or
+when its width is narrower than any glass of this kind can be. Splitting cannot
+repair a width that is too narrow, because both halves of a footprint are
+narrower still, so a refusal is reported as a refusal with its reason rather
+than guessed at.
+
 The one setting is the grouping distance, and it is not tuned. It is pinned
-between two quantities the project already holds: it has to be larger than the
-gaps between dots on one glass, and smaller than the narrowest strip of bare
-table two glasses can leave. The window between those two limits is wide, which
-is why the value can be computed from the limits instead of being tried out.
+between two quantities the project already holds, and the window between them is
+wide enough that the value can be computed from the limits instead of being
+tried out.
+
+![The window of grouping distances that would all have worked, with the 25 mm the code uses marked inside it.](../../images/seeing-the-glasses/rules-on-the-table/rules-flow-grouping-distance.png)
+
+The lower end of that window is the widest stretch between two neighbouring dots
+on one glass. Below it the chain of joins breaks in the middle of a single
+glass, and one glass comes back as two groups. The upper end is 45 mm, which is
+the narrowest strip of bare table two glasses can leave: 150 mm between centres,
+less half of each of the two widest rims this kind allows. Above it the chain
+hops that strip and two glasses come back as one group. The code uses 25 mm,
+which sits well inside the window rather than near either edge.
 
 ## 3. What it needs
 

@@ -45,9 +45,7 @@ not. The replacement is a small model fitted in this cell, and this project
 calls it the **keeper**, because its whole job is to decide which outlines to
 keep.
 
-![A grid of point prompts makes the borrowed model outline everything in the picture, scoring and duplicate removal cut the heap to a shortlist, and a small model fitted in this cell answers keep, drop or more than one glass, so the half that finds shapes is borrowed whole and the half that decides what a shape is was replaced.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/keeper-flow-what-it-does.png)
-
-![The keeper's training labels fall out of the answer key by arithmetic, so fitting it takes seconds on an ordinary processor, and nearly all the cost is in running the borrowed model over the arrangements to collect the proposals in the first place.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/keeper-flow-fitting-the-keeper.png)
+![The run in three bands: the part borrowed whole and never trained here, the keeper fitted in this cell, and the width check nobody fitted.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/keeper-flow-what-it-does.png)
 
 ## 2. How it works
 
@@ -90,6 +88,8 @@ The borrowed model is never trained here, and that is a decision rather than an
 omission. Leaving it untouched is what keeps the solution's data cost almost
 nothing and its weights free of any dependence on this cell; the cost is that
 its domain gap cannot be closed from inside.
+
+![The six steps that fit the keeper, with the one that costs nearly all the time marked, and the one that takes seconds.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/keeper-flow-fitting-the-keeper.png)
 
 ## 3. What it needs
 

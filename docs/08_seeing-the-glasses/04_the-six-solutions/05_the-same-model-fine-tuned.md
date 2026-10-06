@@ -41,9 +41,7 @@ cell renders a grey picture shaded from depth readings, and solution 3 found ten
 glasses out of a hundred because of it. So this solution is the direct test of
 whether that repair works.
 
-![A training step is put in front of the borrowed model: the examiner supplies an exact mask for every glass for nothing, the list of everyday categories is replaced by the single class glass, and training continues from the downloaded weights, after which the run is the borrowed model's own run.](../../images/seeing-the-glasses/the-same-model-fine-tuned/finetuned-flow-what-it-does.png)
-
-![Training closed the gap between the pictures the model was fitted on and the pictures it is shown, and it did not change the shape of the output, so the outline is still built coarsely inside a rectangle and still marks only pixels where the camera saw the glass.](../../images/seeing-the-glasses/the-same-model-fine-tuned/finetuned-flow-what-training-changes.png)
+![The training, done once before any run, and the run itself, done once per picture, with the fitted weights passing between them.](../../images/seeing-the-glasses/the-same-model-fine-tuned/finetuned-flow-what-it-does.png)
 
 ## 2. How it works
 
@@ -137,6 +135,8 @@ six, so its outlines are generous: they cover the glass completely and reach a
 little beyond it. That is the enlargement error training could not remove, and
 it is a reasonable trade for a cell where a mask is used to find a place to
 grip. The full table for all six is in [the results](../11_the-results.md).
+
+![What the training moved on the left and what it did not touch on the right, four of each.](../../images/seeing-the-glasses/the-same-model-fine-tuned/finetuned-flow-what-training-changes.png)
 
 ## 5. Where it is strong and where it breaks
 

@@ -43,9 +43,7 @@ single most important idea for reading this chapter. This solution has no
 domain gap, because everything it knows came from the pictures it will be shown.
 That makes it the line the borrowed models are measured against.
 
-![One network answers two questions at every pixel, whether the pixel is glass and which way the middle of its own glass lies, and the pixels then vote, so a connected blob comes apart into separate glasses without any rule for cutting it having been written down.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-what-it-does.png)
-
-![The labels come either from the simulator's own record of which glass owns each pixel, which costs only render time, or from the arm's own movement between two pictures, which costs arm time and is the only supervision a real arm would also have.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-labels.png)
+![One picture in, one network with two heads, every glass pixel casting a vote, and the pixels that voted into one pile coming back as one glass's mask.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-what-it-does.png)
 
 ## 2. How it works
 
@@ -72,6 +70,16 @@ one pile and two glasses make two piles. The glasses are the piles, counted
 afterwards, and a connected region comes apart into separate glasses **without
 any rule for cutting it having been written down**.
 
+The picture below is why that second question is asked. Two glasses whose
+outlines run together make one connected patch of glass pixels, with no gap
+anywhere in it to find. What changes across the place where they meet is not the
+pixels but the direction their arrows point, so the patch comes apart into two
+piles of votes and nothing had to look for a seam. Counting glasses becomes
+counting piles, and a handful of arrows pointing the wrong way are outvoted
+rather than fatal.
+
+![One connected patch of glass pixels with its arrows pointing two different ways, and the two piles of votes those arrows make.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-votes-come-apart.png)
+
 That voting idea is old and well tested. It is the Hough transform, in which a
 single piece of local evidence cannot say where a shape is but can vote for
 every shape that would explain it, with the hand-built table of offsets
@@ -97,6 +105,14 @@ together in the picture while points on a surface at a different distance do
 not. That is enough to group pixels with no answer key at all, which is the idea
 called self-supervised learning. The first way is what the numbers below come
 from.
+
+![The two sources of training labels side by side: the examiner's answer key in one column and the arm's own movement in the other, with everything else about the method the same in both.](../../images/seeing-the-glasses/a-network-trained-from-scratch/network-flow-labels.png)
+
+The columns in that picture are identical except for their labels, which is the
+point of drawing them together. Read the last box in each one for the trade: the
+first way costs only render time but needs the simulator's own record, which a
+real table does not have, while the second costs arm time and needs only what a
+real arm already carries, which is joint encoders and a wrist camera.
 
 ## 3. What it needs
 

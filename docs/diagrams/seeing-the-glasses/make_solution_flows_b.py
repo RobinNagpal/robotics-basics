@@ -364,49 +364,26 @@ def finetuned_what_it_does() -> None:
     thing that differs. The two phases are therefore two bands of one picture,
     and the fitted weights are the one thing that passes between them.
     """
-    figure, axis = new(10.4, 13.4)
+    figure, axis = new(10.4, 9.0)
     _panel(figure, axis, (0, 100), (0, 100))
 
     middle, span = 53.0, 80.0
 
     training = [
-        "The examiner renders arrangements and, beside every picture, an answer key saying\n"
-        "which glass owns each pixel. Only the training half of the arrangements is handed\n"
-        "out, so nothing is ever tested on an arrangement it learned from.",
-
-        "Every label is a selection over that key: one glass's mask is the pixels carrying its\n"
-        "identity, under a class that is always \"glass\". So an exact mask for every glass\n"
-        "costs nothing. Nobody draws an outline, and there is no annotator's mistake in it.",
-
-        "The borrowed model's list of everyday categories is replaced by the single class\n"
-        "\"glass\", so the model is no longer asked which everyday object it is looking at. It\n"
-        "is asked only where the instances are, and every instance it finds is a glass or\n"
-        "is nothing.",
-
-        f"Training continues from the downloaded weights, {YOLO_MODEL}, rather than from\n"
-        "random numbers, on this cell's own grey pictures shaded from depth. Most of the\n"
-        "weights already sit at values that work, so the training only has to adjust them.",
+        "Take the training half of the examiner's arrangements, and its answer key",
+        "Turn the key into labels: one mask per glass, all under one class",
+        "Replace the borrowed list of everyday categories with the single class \"glass\"",
+        f"Continue training from the downloaded weights, {YOLO_MODEL}, on this cell's pictures",
     ]
     run = [
-        "One grey picture shaded from depth goes in. A survey is three of them, from three\n"
-        "overlapping stations, and each is asked about on its own.",
-
-        "The fitted model returns, for each thing it believes it has found, a box, a number\n"
-        "saying how sure it is, and an outline of the pixels inside that box that belong to\n"
-        "the object.",
-
-        f"A candidate covering more than {YOLO_OVERLAP} of a better-scoring candidate is discarded as\n"
-        "the same object arriving twice.",
-
-        f"The outlines whose confidence number reaches the bar of {YOLO_BAR} are kept. Below it a\n"
-        "candidate is ignored.",
+        "One grey picture goes in",
+        "Back comes a box, a confidence number and an outline per object",
+        f"Discard a candidate covering more than {YOLO_OVERLAP} of a better-scoring one",
+        f"Keep the outlines whose confidence reaches the bar of {YOLO_BAR}",
     ]
 
-    bridge = (
-        "the fitted weights: a file that describes this cell's grey pictures\n"
-        "and nothing else"
-    )
-    result = "Each kept outline is one mask of one glass, and that is what this solution reports."
+    bridge = "the fitted weights"
+    result = "Each kept outline is one glass's mask."
 
     # The layout is computed before anything is drawn, so that the two bands can
     # be sized from the boxes that go in them rather than guessed at.
@@ -442,13 +419,9 @@ def finetuned_what_it_does() -> None:
     _box(axis, middle, result_centre, 86.0, result, height=result_h,
          edge=GLASS, face=_tint(GLASS, 0.76), size=LABEL_SIZE, lw=1.8, weight="bold")
 
-    _note(
-        axis, middle, result_centre - result_h / 2.0 - 5.0,
-        "The examiner's shared arithmetic then turns each mask into a place on the table and a rough width,\n"
-        f"as the {SPREAD}th percentile of how far the mask's cloud of points reaches from its axis. That step belongs\n"
-        "to the examiner and is the same for all six solutions.",
-        colour=INK, ha="center",
-    )
+    _note(axis, middle, result_centre - result_h / 2.0 - 4.0,
+          "The examiner turns each mask into a place and a width, the same way for all six.",
+          colour=INK, ha="center")
 
     axis.set_title(
         "Solution 4: the borrowed model with a training step put in front of it",
@@ -466,81 +439,44 @@ def finetuned_what_training_changes() -> None:
     from the inheritances. Two columns, one colour each, and nothing in the
     middle for an eye to get lost in.
     """
-    figure, axis = new(13.2, 8.2)
+    figure, axis = new(12.0, 4.8)
     _panel(figure, axis, (0, 100), (0, 100))
 
     left, right, wide = 26.0, 74.0, 44.0
-    top = 82.0
+    top = 76.0
 
     moved = [
-        "The gap between the two kinds of picture closes. The model was\n"
-        "fitted on photographs, where a glass is transparent, carries a\n"
-        "highlight on its rim and bends what is behind it. It is now fitted on\n"
-        "the grey pictures this renderer draws, where a glass is an opaque\n"
-        "shape and a step in brightness is a step in distance. It stops\n"
-        "looking for the light passing through a glass and starts\n"
-        "recognising the shapes this renderer draws.",
-
-        "The naming failures close. With one class a glass cannot arrive\n"
-        "twice under two neighbouring everyday names, and cannot be\n"
-        "dropped because the model called it a bowl, a vase or a bottle.",
-
-        "The confidence number now comes from weights fitted on this\n"
-        "cell's own pictures, so a bar set on it has a claim to mean\n"
-        "something rather than being a knob set by hand.",
-
-        "The thin part of a glass survives. After training the stemmed\n"
-        "glass is covered as completely as the two kinds with no stem, so\n"
-        "the stem is not where a fitted model loses pixels.",
+        "The gap between photographs and this renderer's grey pictures",
+        "The naming failures: one class, so no glass is lost to a name",
+        "The confidence number, now fitted on this cell's own pictures",
+        "The thin part of a glass, covered as well as a glass with no stem",
     ]
     kept = [
-        "The shape of the output does not change. The model still computes\n"
-        "a short list of coarse pattern images for the whole picture, returns\n"
-        "a few weights per object, cuts the weighted sum at a threshold,\n"
-        "and enlarges the result to the size of the picture. The outline is\n"
-        "built coarsely inside a rectangle and then enlarged, and training\n"
-        "cannot make a coarse outline fine.",
-
-        "So the edge of the outline stays approximate, and the width is\n"
-        f"read from the edge: the examiner takes it as the {SPREAD}th percentile of\n"
-        "how far the mask's points reach from the glass's axis. The\n"
-        "enlargement errs the same way each time, so the error in the\n"
-        "width does not average away over many glasses.",
-
-        "The mask still marks only the pixels where the camera actually\n"
-        "saw the glass. A glass standing partly behind another comes back\n"
-        "as a slice cut along one side, so it is reported narrower than it is\n"
-        "and standing where no glass stands.",
-
-        "A glass hidden completely behind another stays invisible. It leaves\n"
-        "no pixels for anything to find, so no amount of training on this\n"
-        "cell's pictures can reach it.",
+        "The coarse outline, built inside a rectangle and then enlarged",
+        "The width read off that outline, erring the same way every time",
+        "The mask of a partly covered glass: still a slice, still too narrow",
+        "A completely hidden glass, which leaves no pixels to find",
     ]
 
-    _note(axis, left, 95.0, "What the training moved",
+    _note(axis, left, 96.0, "What the training moved",
           colour=GOOD, size=LABEL_SIZE + 2.0, ha="center", weight="bold")
-    _note(axis, left, 89.5,
-          "the three failures of the untrained borrowed model,\nand one that was expected and did not happen",
+    _note(axis, left, 86.0, "what the untrained model got wrong",
           colour=INK, ha="center")
-    _note(axis, right, 95.0, "What the training did not touch",
+    _note(axis, right, 96.0, "What the training did not touch",
           colour=WARN, size=LABEL_SIZE + 2.0, ha="center", weight="bold")
-    _note(axis, right, 89.5,
-          "the limits that survive any amount of training, because they\nbelong to the shape of the output or to what the picture never held",
+    _note(axis, right, 86.0, "what no amount of training reaches",
           colour=INK, ha="center")
 
-    axis.plot([50.0, 50.0], [8.0, 85.0], color=MUTED, lw=1.0, ls=(0, (5, 4)), zorder=1)
+    axis.plot([50.0, 50.0], [10.0, 90.0], color=MUTED, lw=1.0, ls=(0, (5, 4)), zorder=1)
 
     _stack(axis, left, wide, top, moved, gap=3.0, edge=GOOD,
            face=_tint(GOOD, 0.90), arrows=False)
     _stack(axis, right, wide, top, kept, gap=3.0, edge=WARN,
            face=_tint(WARN, 0.90), arrows=False)
 
-    _note(
-        axis, 50.0, 3.0,
-        "Same library, same model and same downloaded weights as the borrowed model that fits nothing. The training is the only\n"
-        "difference between the two, so the gap between their two scorecards measures what fine-tuning buys and nothing else.",
-        colour=INK, ha="center", weight="bold",
-    )
+    _note(axis, 50.0, 4.0,
+          "Training is the only difference from solution 3, so the gap between them measures it.",
+          colour=INK, ha="center", weight="bold")
 
     axis.set_title(
         "Solution 4: what training this cell's pictures moved, and what it left where it was",
@@ -564,59 +500,28 @@ def keeper_what_it_does() -> None:
     a chart that drew the steps in one colour would hide the only interesting
     thing about them.
     """
-    figure, axis = new(10.8, 15.0)
+    figure, axis = new(10.6, 10.4)
     _panel(figure, axis, (0, 100), (0, 100))
 
     middle, span = 53.0, 80.0
 
     before = [
-        "The depth readings are shaded into a grey picture, normalised to the range of depth\n"
-        "that picture holds, and the single grey channel is repeated across all three colour\n"
-        "channels, because the borrowed model takes a photograph.",
+        "Shade the depth readings into a grey picture the borrowed model will take",
     ]
     borrowed = [
-        "SAM 2's picture encoder reads that picture once. This is the expensive part, and it\n"
-        "runs once per picture rather than once per prompt.",
-
-        "A plain grid of point prompts, aimed at nothing and spread over the whole picture,\n"
-        f"goes through the cheap mask decoder. The grid is fine enough to put\n"
-        f"{POINTS_ACROSS_SMALLEST} points across the narrowest glass this kind allows.",
-
-        "A heap of outlines of everything comes back: each glass, the table, a rim on its own,\n"
-        "two glasses that ran together into one shape. Not one of them carries a name, because\n"
-        "this model returns regions and never labels them.",
-
-        f"Scoring, a stability check and duplicate removal cut the heap down to a shortlist of\n"
-        f"proposals: the model's own quality estimate must reach {GOOD_ENOUGH}, the mask must change\n"
-        f"less than {STEADY} when the cut-off is nudged, and two masks overlapping by more\n"
-        f"than {DUPLICATE} are one region arriving twice.",
+        "The picture encoder reads it once",
+        f"A grid of point prompts, fine enough for {POINTS_ACROSS_SMALLEST} points across the narrowest glass",
+        "Back comes a heap of unnamed outlines: glasses, table, rims, pairs",
+        "Score, check for steadiness, drop duplicates: what is left is a proposal",
     ]
     fitted = [
-        f"Each proposal's pixels and their depth readings become {KEEPER_MEASUREMENTS} measurements on the\n"
-        "table: how its width falls in the range this kind allows, how round it is, how far it\n"
-        "stands above the table, how far it sits from the point below the camera, how many\n"
-        "prompt points returned it, how much of its outline is a step in depth, its area on\n"
-        "the table, and whether another proposal contains it. Every one is a length, a count\n"
-        "or a ratio, and not one of them is an address in the picture.",
-
-        f"The keeper reads those measurements and answers keep, drop, or this is more than\n"
-        f"one glass. It is {ROUNDS} rounds of trees {DEPTH} questions deep, one set per answer, and its\n"
-        f"score is straightened into an honest probability in {FOLDS} folds. Above {SURE_ONE_GLASS} the proposal\n"
-        f"is reported, below {SURE_NOT_ONE_GLASS} it is dropped, and between the two the keeper cannot tell,\n"
-        "which is a reason to take another picture rather than to guess.",
+        f"Turn each proposal into {KEEPER_MEASUREMENTS} measurements on the table",
+        "The keeper answers: keep it, drop it, or this is more than one glass",
     ]
     arithmetic = [
-        f"A proposal the keeper wants to keep still has its width measured against the {NARROWEST_MM} to\n"
-        f"{WIDEST_MM} mm this known kind allows. Outside that range it is not reported as a glass,\n"
-        "whatever the keeper said: it becomes a doubtful report carrying its reason. The\n"
-        "check is not put to a proposal whose mask reaches the edge of the frame, because\n"
-        "there the measured width is part of a width.",
+        f"Check the width against the {NARROWEST_MM} to {WIDEST_MM} mm this kind allows",
     ]
-    result = (
-        "The proposals that survive all of that are the masks this solution reports.\n"
-        "A proposal the keeper called more than one glass is prompted again with a fresh grid\n"
-        "inside it, and if that does not separate it, it is reported as an unseparated pair."
-    )
+    result = "What survives is the mask of one glass."
 
     top = 96.0
     gap = 3.6
@@ -626,18 +531,21 @@ def keeper_what_it_does() -> None:
     arith_h = _measure(arithmetic)
     result_h = _height(result, LABEL_SIZE)
 
+    # The bands carry their names in rotated text down the left, so a band has to
+    # be at least as tall as its own name. The boxes are short now, so the gaps
+    # between the bands do that work instead of the boxes.
     before_top = top
-    borrowed_top = before_top - before_h - 5.0
-    fitted_top = borrowed_top - borrowed_h - 5.5
-    arith_top = fitted_top - fitted_h - 5.5
-    result_centre = arith_top - arith_h - 5.0 - result_h / 2.0
+    borrowed_top = before_top - before_h - 7.0
+    fitted_top = borrowed_top - borrowed_h - 9.0
+    arith_top = fitted_top - fitted_h - 13.0
+    result_centre = arith_top - arith_h - 7.0 - result_h / 2.0
 
     _band(axis, 2.0, borrowed_top - borrowed_h - 1.5, 96.0, borrowed_h + 3.0, GLASS,
           "borrowed whole, and never trained here")
     _band(axis, 2.0, fitted_top - fitted_h - 1.5, 96.0, fitted_h + 3.0, GOOD,
           "fitted in this cell")
     _band(axis, 2.0, arith_top - arith_h - 1.5, 96.0, arith_h + 3.0, MUTED,
-          "arithmetic nobody fitted")
+          "not fitted")
 
     _stack(axis, middle, span, before_top, before, gap=gap, edge=INK)
     foot = before_top - before_h
@@ -664,15 +572,6 @@ def keeper_what_it_does() -> None:
         "The borrowed model proposes, the keeper sorts, and the geometry disposes.",
         colour=INK, ha="center", weight="bold",
     )
-    _note(
-        axis, middle, result_centre - result_h / 2.0 - 9.5,
-        "No gradient is ever computed through the borrowed model, no layer of it is replaced, and nothing about this cell reaches\n"
-        "its numbers: running it is a forward pass. So it cannot fall out of step with the cell, and there is no way to teach it\n"
-        "anything either. Every difficulty peculiar to this cell has to be met before it, in the picture it is handed, or after it,\n"
-        "in the keeper.",
-        colour=INK, ha="center", va="top",
-    )
-
     axis.set_title(
         "Solution 5: the finding is borrowed whole, and only the deciding is fitted here",
         fontsize=TITLE_SIZE, color=INK, pad=14,
@@ -690,35 +589,18 @@ def keeper_fitting_the_keeper() -> None:
     the fit itself. The strip at the foot says the second claim in the one way a
     column of boxes cannot.
     """
-    figure, axis = new(11.0, 11.6)
+    figure, axis = new(10.6, 6.4)
     _panel(figure, axis, (0, 100), (0, 100))
 
     middle, span = 52.0, 82.0
 
     steps = [
-        "Render the training half of the examiner's arrangements, the ordinary ones and the\n"
-        "crowded ones together. Nothing here is ever an arrangement a score is claimed on.",
-
-        "Run the borrowed model over every one of them and collect the proposals: the picture\n"
-        "encoder once per picture, then the whole grid of point prompts through the mask\n"
-        "decoder, then the same scoring, stability and duplicate cleanup as at run time.",
-
-        f"Measure each proposal the way the keeper will see it at run time: the same {KEEPER_MEASUREMENTS}\n"
-        "lengths, counts and ratios on the table, and nothing measured in pixels.",
-
-        "The examiner's answer key turns a proposal into a label by arithmetic, because the key\n"
-        "says which glass owns each pixel. Overlap the proposal with each real glass's pixels:\n"
-        f"more than {MOSTLY} of one glass inside it and nothing else is a keep, a proposal spread\n"
-        "across two glasses is a more-than-one, and a proposal holding neither is a drop.\n"
-        "There is no annotator, so there are none of an annotator's mistakes either.",
-
-        "What comes out is a short table of named numbers: one row per proposal, one column\n"
-        "per measurement, and one of three answers in the last column.",
-
-        f"Fit {ROUNDS} rounds of trees {DEPTH} questions deep, one set per answer, and fit the correction\n"
-        f"from the raw score to an honest probability in {FOLDS} folds, each fold's correction fitted\n"
-        "only on rows the trees behind it never saw. Seconds on an ordinary processor, with\n"
-        "no graphics card involved.",
+        "Render the training half of the examiner's arrangements",
+        "Run the borrowed model over all of them and collect the proposals",
+        f"Measure each proposal the way the keeper will see it: the same {KEEPER_MEASUREMENTS} numbers",
+        "Label each one from the answer key, by arithmetic: keep, drop, or more than one",
+        "What comes out is a table: one row per proposal, one answer in the last column",
+        f"Fit {ROUNDS} rounds of trees, and straighten the score into a probability",
     ]
     costly = 1      # which step in that list is the expensive one
     cheap = len(steps) - 1
@@ -769,18 +651,9 @@ def keeper_fitting_the_keeper() -> None:
           colour=INK, ha="center", weight="bold")
     _note(axis, 87.0, strip_y + strip_h + 1.4, "the fit",
           colour=GOOD, ha="center", va="bottom", weight="bold")
-    _note(axis, 52.0, strip_y - 2.4,
-          "The borrowed model's weights are large and the keeper's numbers are a rounding error beside them, so the graphics\n"
-          "card is busy collecting the proposals and idle during the fit. Drawn to show which step costs; neither part has been\n"
-          "timed here, so no length in this strip is a measurement.",
-          colour=INK, ha="center", va="top")
-
-    _note(
-        axis, 52.0, strip_y - 12.0,
-        "So the keeper is cheap to refit and the proposals are expensive to collect, which is why the proposals are\n"
-        "collected once and kept. The labels come only from the training half, and the keeper is never run on the answer key.",
-        colour=INK, ha="center", weight="bold",
-    )
+    _note(axis, 52.0, strip_y - 2.6,
+          "Drawn to show which step costs, not to scale: neither part has been timed here.",
+          colour=MUTED, ha="center", va="top")
 
     axis.set_title(
         "Solution 5: where the keeper's training labels come from, and which step costs the time",
@@ -804,100 +677,61 @@ def transformer_what_it_does() -> None:
     many queries the model carries is not one of the constants in this
     project's code and no number for it is invented here.
     """
-    figure, axis = new(12.6, 10.8)
+    figure, axis = new(11.6, 6.6)
     _panel(figure, axis, (0, 100), (0, 100))
 
     middle, span = 25.0, 44.0
 
     steps = [
-        "The grey picture shaded from depth goes in, one of the three\n"
-        "stations at a time.",
-
-        "The model's body turns that picture into a description of every\n"
-        "part of the picture, and almost all of its weights are in this part.",
-
-        "A fixed number of queries read that description. A query is not a\n"
-        "rectangle and not a region: it is a small list of numbers the model\n"
-        "carries along and updates as it reads the picture, and its job is to\n"
-        "ask one question over the whole picture, which is whether there\n"
-        "is an object here and which pixels are it.",
-
-        "Each query returns a class, a rectangle, and a mask computed\n"
-        "pixel by pixel over the whole picture. The rectangle is a result of\n"
-        "the answer rather than a container the answer was built inside.",
-
-        f"A query whose class answer does not reach {FILLED} is reporting\n"
-        "\"nothing\", and its slot is dropped.",
-
-        "Each surviving mask is one glass. No step has to cut a joined\n"
-        "region apart, because nothing ever treated the joined region as\n"
-        "one thing.",
+        "One grey picture goes in",
+        "The model's body describes every part of it",
+        "A fixed number of queries read that description",
+        "Each query returns a class, a rectangle and a mask",
+        f"A query whose class answer is below {FILLED} says \"nothing\"",
+        "Each surviving mask is one glass",
     ]
 
-    top = 86.0
+    top = 82.0
     foot = _stack(axis, middle, span, top, steps, gap=3.2, edge=GLASS, arrow_colour=GLASS)
 
     _box(
-        axis, middle, foot - 9.0, span,
-        "One mask per glass, handed to the examiner,\n"
-        "which back-projects its pixels with their depth\n"
-        "readings and the camera's own pose.",
+        axis, middle, foot - 7.0, span,
+        "One mask per glass, handed to the examiner",
         edge=GLASS, face=_tint(GLASS, 0.76), size=LABEL_SIZE, lw=1.8, weight="bold",
     )
 
     # ---- the fixed array of slots, drawn beside the chain
     centre = 74.0
-    _note(axis, centre, 88.0, "What the queries hand back is an array of slots",
+    _note(axis, centre, 84.0, "What the queries hand back is an array of slots",
           colour=INK, size=LABEL_SIZE + 1.0, ha="center", weight="bold")
-    _note(axis, centre, 85.0,
-          "The array is the same length for every picture, declared before training and\n"
-          "never changed, and chosen to be comfortably longer than the number of glasses\n"
-          "any picture is expected to hold. Every slot is either filled with one object or\n"
-          "left empty, and nothing is ever appended to it or removed from it.",
+    _note(axis, centre, 80.0,
+          "The same length for every picture, and never added to or removed from.",
           colour=INK, ha="center", va="top")
 
     slot_x, slot_w, slot_h = 52.0, 44.0, 4.6
     rows = [
-        ("query 1: glass, and a mask over the whole picture", GOOD),
-        ("query 2: glass, and a mask over the whole picture", GOOD),
-        ("query 3: glass, and a mask over the whole picture", GOOD),
-        ("query 4: nothing, so this slot is dropped", MUTED),
-        ("query 5: nothing, so this slot is dropped", MUTED),
+        ("query 1: glass, and a mask", GOOD),
+        ("query 2: glass, and a mask", GOOD),
+        ("query 3: glass, and a mask", GOOD),
+        ("query 4: nothing", MUTED),
+        ("query 5: nothing", MUTED),
     ]
     for index, (text, colour) in enumerate(rows):
-        y = 70.0 - index * (slot_h + 1.6)
+        y = 68.0 - index * (slot_h + 1.6)
         box = Rectangle((slot_x, y - slot_h), slot_w, slot_h,
                         facecolor=_tint(colour, 0.84), edgecolor=colour, lw=1.4, zorder=3)
         axis.add_patch(box)
         _SOLID.append(box)
         _note(axis, slot_x + slot_w / 2.0, y - slot_h / 2.0, text,
               colour=INK, ha="center", free=False)
-    _note(axis, slot_x + slot_w / 2.0, 70.0 - 5 * (slot_h + 1.6) + 1.0,
+    _note(axis, slot_x + slot_w / 2.0, 68.0 - 5 * (slot_h + 1.6) + 1.0,
           "and so on, to the end of the array",
           colour=MUTED, ha="center", va="top")
 
     # ---- where the numbers come from
-    _box(
-        axis, centre, 26.0, 46.0,
-        f"Where the numbers come from. The model is {DETR_SIZE},\n"
-        "the smallest of its family, and it arrives already fitted to a\n"
-        "large collection of ordinary labelled pictures. Training then\n"
-        "continues from those downloaded weights on this cell's own\n"
-        "pictures, with the list of classes cut down to the single class\n"
-        "\"glass\", so a query's class answer is a choice between\n"
-        "\"glass\" and \"nothing\" and nothing else.",
-        edge=GOOD, face=_tint(GOOD, 0.90), lw=1.6,
-    )
-    _box(
-        axis, centre, 8.0, 46.0,
-        "The labels cost nothing. The examiner renders, beside every\n"
-        "picture, an image saying which glass owns each pixel, so one\n"
-        "glass's mask is the set of pixels carrying its identity and the\n"
-        "class is always \"glass\". Nobody draws a mask by hand, and\n"
-        "the labels are handed out only for the training half of the\n"
-        "arrangements.",
-        edge=GOOD, face=_tint(GOOD, 0.90), lw=1.6,
-    )
+    # Where the weights and the labels come from used to be two more boxes down
+    # here. They are a third idea in a picture that already holds two, and they
+    # are prose in the document now.
 
     axis.set_title(
         "Solution 6: one picture in, one mask per glass out, through a fixed array of queries",
@@ -915,98 +749,50 @@ def transformer_set_prediction() -> None:
     rest of this solution's chapter rests on: a mask predicted over the whole
     picture has somewhere to grow into.
     """
-    figure, axis = new(13.4, 10.6)
+    figure, axis = new(12.4, 5.0)
     _panel(figure, axis, (0, 100), (0, 100))
 
     left, right, wide = 26.0, 74.0, 44.0
-    top = 84.0
+    top = 76.0
 
     older = [
-        "Look over the picture and propose many candidate\n"
-        "rectangles that might hold an object. The list has no fixed\n"
-        "length: it starts long and is then cut down.",
-
-        "Score every candidate. Several reference rectangles at\n"
-        "neighbouring positions really do contain most of one glass,\n"
-        "so one object comes back as a cluster of overlapping claims\n"
-        "that all score highly.",
-
-        "Reduce the cluster with a step of its own, called non-maximum\n"
-        "suppression: sort the claims by score, keep the best, discard\n"
-        "every later claim that overlaps a kept one too heavily, and\n"
-        "repeat down the list.",
-
-        "That step needs a number saying how much overlap is too\n"
-        "much, and it assumes heavy overlap means duplication. In this\n"
-        "cell that assumption is awkward, because splay can push one\n"
-        "glass's stretched outline right across another's, so two\n"
-        "genuinely different glasses can overlap heavily and one of\n"
-        "them can be thrown away for looking like a duplicate.",
+        "Propose many candidate rectangles",
+        "Score them all: one glass comes back as a cluster of claims",
+        "Prune the cluster: keep the best, discard what overlaps it",
+        "That needs a number saying how much overlap is too much",
     ]
     here = [
-        "Carry a fixed number of queries. Every query is a slot that is\n"
-        "either filled with one object or left empty, and the array is the\n"
-        "same length for every picture.",
-
-        "During training the filled slots are matched to the real glasses\n"
-        "one to one: each real glass is assigned exactly one query, each\n"
-        "query gets at most one real glass, and the pairing chosen is the\n"
-        "one that fits best overall.",
-
-        "Every query left over is told that the right answer for it was\n"
-        "\"nothing\". A query reporting a glass another query was already\n"
-        "matched to is not rewarded for being nearly right, so each query\n"
-        "learns to be responsible for at most one glass.",
-
-        "The duplicates are therefore trained out of the model rather\n"
-        "than pruned out of its output. There is nothing to prune, and the\n"
-        "number saying how much overlap is too much does not exist. The\n"
-        f"only number left is {FILLED}, what a query's class answer has to reach\n"
-        "for its slot to count as filled.",
+        "Carry a fixed number of queries, the same every picture",
+        "In training, match the filled slots to the real glasses one to one",
+        "Tell every query left over that the answer was \"nothing\"",
+        f"No pruning, and no overlap number: only {FILLED}, the bar for a filled slot",
     ]
 
-    _note(axis, left, 95.0, "The older shape: propose, score, then prune",
+    _note(axis, left, 96.0, "The older shape: propose, score, then prune",
           colour=WARN, size=LABEL_SIZE + 2.0, ha="center", weight="bold")
-    _note(axis, right, 95.0, "This model: one set of answers, matched one to one",
+    _note(axis, right, 96.0, "This model: one set of answers, matched one to one",
           colour=GOOD, size=LABEL_SIZE + 2.0, ha="center", weight="bold")
-    _note(axis, left, 89.5, "a list that grows and is then cut down",
+    _note(axis, left, 86.0, "a list that grows and is then cut down",
           colour=INK, ha="center")
-    _note(axis, right, 89.5, "a fixed-size array of optional values, declared once",
+    _note(axis, right, 86.0, "a fixed array of slots, declared once",
           colour=INK, ha="center")
 
-    axis.plot([50.0, 50.0], [27.0, 87.0], color=MUTED, lw=1.0, ls=(0, (5, 4)), zorder=1)
+    axis.plot([50.0, 50.0], [10.0, 90.0], color=MUTED, lw=1.0, ls=(0, (5, 4)), zorder=1)
 
     _stack(axis, left, wide, top, older, gap=3.0, edge=WARN,
            face=_tint(WARN, 0.90), arrow_colour=WARN)
     _stack(axis, right, wide, top, here, gap=3.0, edge=GOOD,
            face=_tint(GOOD, 0.90), arrow_colour=GOOD)
 
-    _note(axis, 50.0, 24.0, "The second consequence, and the one the rest of this chapter rests on",
-          colour=INK, size=LABEL_SIZE + 1.0, ha="center", weight="bold")
-
-    _box(
-        axis, left, 13.0, wide,
-        "In the older shape the mask is painted on a small grid\n"
-        "covering the rectangle and then stretched to the rectangle's\n"
-        "size, so it physically cannot reach past that edge. A glass\n"
-        "partly covered by the one in front has evidence on one side\n"
-        "only, so the rectangle is smaller than the glass, and a mask\n"
-        "that should cover the whole glass is clipped by the evidence.",
-        edge=WARN, face=_tint(WARN, 0.90), lw=1.6,
-    )
-    _box(
-        axis, right, 13.0, wide,
-        "Here the mask is computed over the whole picture from the\n"
-        "start, as \"which pixels match this query's description\", so\n"
-        "there is no rectangle for it to escape. A mask may claim any\n"
-        "pixel in the frame, which is why this is the only one of the six\n"
-        "that could be asked for the part of a glass nobody saw: the\n"
-        "request changes what the mask is scored against, not its shape.",
-        edge=GOOD, face=_tint(GOOD, 0.90), lw=1.6,
-    )
+    # The second consequence — that a mask computed over the whole picture has
+    # somewhere to grow into — used to sit under this comparison as a second row
+    # of boxes. It is a different idea and it is prose in the document now.
+    _note(axis, 50.0, 4.0,
+          "The duplicates are trained out of the model rather than pruned out of its output.",
+          colour=INK, ha="center", weight="bold")
 
     axis.set_title(
-        "Solution 6: what set prediction removes, and what a mask over the whole picture allows",
+        "Solution 6: what set prediction removes",
         fontsize=TITLE_SIZE, color=INK, pad=14,
     )
     _audit(figure, axis, "transformer-flow-set-prediction.png")

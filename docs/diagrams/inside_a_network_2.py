@@ -21,7 +21,8 @@ Made-up data that needs to be random comes from numpy.random.default_rng with
 a fixed seed, and the pages say so where the picture is used. No benchmark
 score, no real model's parameter count and no measured running time appears
 anywhere; the model sizes in the memory bill are round numbers chosen to
-stand for small, middling and large models.
+stand for small, middling and large models, as are the four model shapes whose
+parameters section 2 counts.
 """
 
 import pathlib
@@ -673,6 +674,210 @@ def layer_cost() -> None:
                  'every input-and-neuron pair', fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='upper left')
     _save(fig, DOC3, 'layer-cost.svg')
+
+
+# --------------------------------------------------------------------------
+# 03, section 2 continued: counting the parameters of a whole model
+# --------------------------------------------------------------------------
+
+# The four models that section 2 counts and section 6 prices. Each one is a
+# round made-up size chosen to stand for a scale of model, not a real model.
+# A fully connected layer of n inputs into m neurons holds n x m weights and
+# m biases, so a stack of such layers is a sum of (n x m + m).
+LINE_SIZES: tuple[int, ...] = (1, 1)             # a fitted straight line
+TINY_SIZES: tuple[int, ...] = (3, 8, 1)          # 3 inputs, 8 neurons, 1 output
+PICTURE_SIZES: tuple[int, ...] = (64 * 64, 256, 256, 1)   # a 64 by 64 grey picture
+STACK_BLOCKS: int = 48
+STACK_WIDTH: int = 2048
+# One block holds twelve square grids of its own width: four in the attention
+# part, and two in the middle layer, whose middle is four times the width, so
+# those two cover eight times the area of one square grid.
+BLOCK_GRIDS: int = 12
+
+
+def _layers_of(sizes: tuple[int, ...]) -> list[tuple[int, int]]:
+    """The (inputs, neurons) pair of every layer in a stack of sizes."""
+    return list(zip(sizes, sizes[1:]))
+
+
+def _mlp_params(sizes: tuple[int, ...]) -> int:
+    """Parameters of a stack of fully connected layers: sum of n x m + m."""
+    return sum(n * m + m for n, m in _layers_of(sizes))
+
+
+def _mlp_macs(sizes: tuple[int, ...]) -> int:
+    """Multiply-adds for one example: one for every input-and-neuron pair."""
+    return sum(n * m for n, m in _layers_of(sizes))
+
+
+def _stack_params() -> int:
+    """Parameters of a stack of blocks, counting its square grids only."""
+    return STACK_BLOCKS * BLOCK_GRIDS * STACK_WIDTH * STACK_WIDTH
+
+
+def _print_stack(sizes: tuple[int, ...], name: str) -> int:
+    total = 0
+    for i, (n, m) in enumerate(_layers_of(sizes), start=1):
+        total += n * m + m
+        print(f'[count] {name}, layer {i}: {_commas(n)} x {_commas(m)} = '
+              f'{_commas(n * m)} weights, + {_commas(m)} biases = '
+              f'{_commas(n * m + m)} parameters')
+    print(f'[count] {name}: {_commas(total)} parameters in all')
+    return total
+
+
+def count_the_tiny_network() -> None:
+    """Every parameter of a 3 -> 8 -> 1 network, drawn small enough to count."""
+    _print_stack(LINE_SIZES, 'a fitted straight line')
+    total = _print_stack(TINY_SIZES, 'the tiny network 3 -> 8 -> 1')
+
+    (n1, m1), (n2, m2) = _layers_of(TINY_SIZES)
+    fig, ax = plt.subplots(figsize=(10.6, 5.4), facecolor='white')
+    _blank(ax, (-2.8, 19.4), (-3.6, 9.6))
+    cell, top = 1.0, 8.0
+    blue = [_shade(0.55, 0.0, 1.0)]
+    amber = [_shade(0.55, 0.0, 1.0, cmap='Oranges')]
+
+    # first layer: an 8 by 3 weight grid beside a column of 8 biases
+    _grid_at(ax, np.zeros((m1, n1)), 0.0, top, cell=cell,
+             faces=[blue * n1 for _ in range(m1)], show_text=False, edge='white')
+    _grid_at(ax, np.zeros((m1, 1)), n1 + 1.2, top, cell=cell,
+             faces=[amber for _ in range(m1)], show_text=False, edge='white')
+    ax.text(n1 / 2, top + 0.35, 'weights', fontsize=10.5, ha='center', va='bottom',
+            color=LINK, weight='bold')
+    ax.text(n1 + 1.7, top + 0.35, 'biases', fontsize=10.5, ha='center', va='bottom',
+            color=WRIST, weight='bold')
+    mid1 = (n1 + 2.2) / 2
+    ax.text(mid1, -0.5, f'first layer: {n1} inputs into {m1} neurons', fontsize=11,
+            ha='center', va='top', color=MUTED)
+    ax.text(mid1, -1.5, f'{n1} x {m1} + {m1} = {n1 * m1 + m1}', fontsize=12,
+            ha='center', va='top', color=INK, weight='bold')
+
+    # second layer: a column of 8 weights beside its single bias
+    x2 = 11.6
+    _grid_at(ax, np.zeros((n2, m2)), x2, top, cell=cell,
+             faces=[blue for _ in range(n2)], show_text=False, edge='white')
+    _grid_at(ax, np.zeros((1, 1)), x2 + 2.2, top, cell=cell, faces=[amber],
+             show_text=False, edge='white')
+    ax.text(x2 + 0.5, top + 0.35, 'weights', fontsize=10.5, ha='center', va='bottom',
+            color=LINK, weight='bold')
+    ax.text(x2 + 2.7, top + 0.35, 'bias', fontsize=10.5, ha='center', va='bottom',
+            color=WRIST, weight='bold')
+    mid2 = x2 + 1.6
+    ax.text(mid2, -0.5, f'second layer: {n2} inputs into {m2} output', fontsize=11,
+            ha='center', va='top', color=MUTED)
+    ax.text(mid2, -1.5, f'{n2} x {m2} + {m2} = {n2 * m2 + m2}', fontsize=12,
+            ha='center', va='top', color=INK, weight='bold')
+
+    ax.text((mid1 + mid2) / 2, -2.9,
+            f'{n1 * m1 + m1} + {n2 * m2 + m2} = {total} parameters in all',
+            fontsize=13, ha='center', va='top', color=INK, weight='bold')
+    _title(fig, 'Every parameter of a network with 3 inputs, 8 neurons and 1 output',
+           size=12.5)
+    _save(fig, DOC3, 'count-the-tiny-network.svg')
+
+
+def parameters_layer_by_layer() -> None:
+    """Where the parameters of the 64 by 64 picture network sit, layer by layer."""
+    total = _print_stack(PICTURE_SIZES, 'the 64 by 64 picture network')
+    layers = _layers_of(PICTURE_SIZES)
+    counts = [n * m + m for n, m in layers]
+    for (n, m), c in zip(layers, counts):
+        print(f'[count] the {_commas(n)} -> {_commas(m)} layer is '
+              f'{100 * c / total:.2f} per cent of the {_commas(total)}')
+
+    names = [f'layer {i}\n{_commas(n)} -> {_commas(m)}'
+             for i, (n, m) in enumerate(layers, start=1)]
+    fig, ax = plt.subplots(figsize=(11.2, 4.6), facecolor='white')
+    _plain(ax)
+    pos = np.arange(len(counts), dtype=float)[::-1]
+    ax.barh(pos, counts, height=0.55, color=LINK, edgecolor=INK, lw=0.6)
+    for p, (n, m), c in zip(pos, layers, counts):
+        ax.text(c + total * 0.015, p, f'{_commas(n)} x {_commas(m)} + {_commas(m)} '
+                f'= {_commas(c)}', fontsize=10.5, va='center', ha='left', color=INK)
+    ax.set_yticks(pos)
+    ax.set_yticklabels(names, fontsize=10)
+    ax.set_xlim(0, total * 1.62)
+    ax.set_xticks([0, 250_000, 500_000, 750_000, 1_000_000])
+    ax.set_xticklabels(['0', '250,000', '500,000', '750,000', '1,000,000'],
+                       fontsize=9.5)
+    ax.set_xlabel('parameters the layer holds', fontsize=10)
+    ax.set_title(f'The first layer holds {100 * counts[0] / total:.0f} of every 100 '
+                 f'parameters, because it reads all 4,096 pixels', fontsize=12,
+                 weight='bold')
+    ax.text(0.5, -0.30, f'{_commas(counts[0])} + {_commas(counts[1])} + '
+            f'{_commas(counts[2])} = {_commas(total)} parameters in all',
+            transform=ax.transAxes, fontsize=11.5, ha='center', va='top',
+            color=INK, weight='bold')
+    fig.tight_layout(rect=(0, 0.14, 1, 1))
+    _save(fig, DOC3, 'parameters-layer-by-layer.svg')
+
+
+def block_of_twelve_grids() -> None:
+    """One block of the 48-block stack is twelve square grids of its width."""
+    per_grid = STACK_WIDTH * STACK_WIDTH
+    per_block = BLOCK_GRIDS * per_grid
+    total = _stack_params()
+    print(f'[count] one grid of the stack: {STACK_WIDTH} x {STACK_WIDTH} = '
+          f'{_commas(per_grid)} weights')
+    print(f'[count] one block: {BLOCK_GRIDS} x {_commas(per_grid)} = '
+          f'{_commas(per_block)} weights')
+    print(f'[count] {STACK_BLOCKS} blocks: {STACK_BLOCKS} x {_commas(per_block)} = '
+          f'{_commas(total)} parameters')
+    norms = STACK_BLOCKS * 2 * STACK_WIDTH
+    print(f'[count] the two normalisations in each block, which this count leaves '
+          f'out, hold {STACK_BLOCKS} x 2 x {STACK_WIDTH} = {_commas(norms)}, '
+          f'which is 1 part in {total / norms:,.0f}')
+
+    fig, ax = plt.subplots(figsize=(11.6, 4.8), facecolor='white')
+    _blank(ax, (-1.2, 20.0), (-4.2, 7.2))
+    side, gap = 2.1, 0.32
+    for r in range(2):
+        for c in range(2):
+            _box(ax, c * (side + gap), 4.7 - r * (side + gap) - side, side, side,
+                 face=_shade(0.5, 0.0, 1.0), edge=INK, lw=0.8)
+    left_w = 2 * side + gap
+    x0 = left_w + 2.6
+    for r in range(2):
+        for c in range(4):
+            _box(ax, x0 + c * (side + gap), 4.7 - r * (side + gap) - side, side, side,
+                 face=_shade(0.5, 0.0, 1.0, cmap='Oranges'), edge=INK, lw=0.8)
+    right_w = 4 * side + 3 * gap
+    ax.text(left_w / 2, -0.1, 'the attention part\n4 grids', fontsize=10.5,
+            ha='center', va='top', color=LINK, weight='bold')
+    ax.text(x0 + right_w / 2, -0.1, 'the middle layer, four times wider\n'
+            '8 grids of the same area', fontsize=10.5, ha='center', va='top',
+            color=WRIST, weight='bold')
+    ax.text((x0 + right_w) / 2, 6.0, f'every grid is {STACK_WIDTH:,} by '
+            f'{STACK_WIDTH:,} = {_commas(per_grid)} numbers', fontsize=11,
+            ha='center', va='bottom', color=INK)
+    ax.text((x0 + right_w) / 2, -2.4, f'one block: {BLOCK_GRIDS} x '
+            f'{_commas(per_grid)} = {_commas(per_block)}', fontsize=11.5,
+            ha='center', va='top', color=INK)
+    ax.text((x0 + right_w) / 2, -3.3, f'{STACK_BLOCKS} blocks: {STACK_BLOCKS} x '
+            f'{_commas(per_block)} = {_commas(total)} parameters', fontsize=12.5,
+            ha='center', va='top', color=INK, weight='bold')
+    _title(fig, f'One block of a stack {STACK_WIDTH:,} numbers wide is twelve '
+                'square grids', size=12.5)
+    _save(fig, DOC3, 'block-of-twelve-grids.svg')
+
+
+def answer_cost_counts() -> None:
+    """Multiplications and additions for one answer, printed for the prose."""
+    for label, sizes in (('a fitted straight line', LINE_SIZES),
+                         ('a three-weight model', (3, 1)),
+                         ('the tiny network 3 -> 8 -> 1', TINY_SIZES),
+                         ('the 64 by 64 picture network', PICTURE_SIZES)):
+        macs = _mlp_macs(sizes)
+        print(f'[answer] {label}: {_commas(macs)} multiply-adds for one answer, '
+              f'which is {_commas(macs)} multiplications and {_commas(macs)} '
+              f'additions, so {_commas(2 * macs)} operations')
+    passes, examples = 400, 800
+    one = _mlp_macs((3, 1)) * 2
+    forward = passes * examples * one
+    print(f'[answer] {passes} passes x {examples} examples x {one} operations = '
+          f'{_commas(forward)} operations in the forward passes of training, '
+          f'which is {_commas(passes * examples)} times one answer')
 
 
 # --------------------------------------------------------------------------
@@ -1486,6 +1691,42 @@ def three_sizes() -> None:
                 'per number', size=12.5)
     fig.tight_layout(rect=(0, 0.02, 1, 0.86))
     _save(fig, DOC3, 'three-sizes.svg')
+
+
+def _bytes_text(nbytes: int) -> str:
+    """A byte count, with the same count in MB or GB under it where that helps."""
+    if nbytes < 1_000_000:
+        return f'{_commas(nbytes)} bytes'
+    if nbytes < 1_000_000_000:
+        return f'{_commas(nbytes)} bytes\n{nbytes / 1e6:.2f} MB'
+    return f'{_commas(nbytes)} bytes\n{nbytes / 1e9:.2f} GB'
+
+
+def four_models_in_bytes() -> None:
+    """The same sum, count times bytes, for the four models of section 2."""
+    models = [('a fitted straight line', _mlp_params(LINE_SIZES)),
+              ('a tiny network, 3 -> 8 -> 1', _mlp_params(TINY_SIZES)),
+              ('a 64 by 64 picture network', _mlp_params(PICTURE_SIZES)),
+              ('a stack of 48 blocks, 2,048 wide', _stack_params())]
+    rows = []
+    for label, n in models:
+        cells = [label, _commas(n)]
+        for _, nbytes in (('four bytes', 4), ('two bytes', 2), ('one byte', 1)):
+            total = n * nbytes
+            cells.append(_bytes_text(total))
+            print(f'[store] {label}: {_commas(n)} x {nbytes} = {_commas(total)} '
+                  f'bytes = {total / 1e6:,.3f} MB = {total / 1e9:,.3f} GB '
+                  f'({total / 2 ** 20:,.3f} MiB, {total / 2 ** 30:,.3f} GiB)')
+        rows.append(tuple(cells))
+
+    fig, ax = plt.subplots(figsize=(13.2, 4.2), facecolor='white')
+    _table(ax, ('the model', 'parameters', 'at four bytes each',
+                'at two bytes each', 'at one byte each'), rows,
+           (4.0, 2.8, 3.1, 3.1, 3.1), size=10.0, head_size=10.0)
+    _title(fig, 'The weights of four models: the parameter count multiplied by the '
+                'bytes each parameter takes', size=12.5)
+    fig.tight_layout(rect=(0, 0.02, 1, 0.86))
+    _save(fig, DOC3, 'four-models-in-bytes.svg')
 
 
 def does_it_fit() -> None:
@@ -2653,6 +2894,10 @@ def main() -> None:
     shapes_must_match()
     batch_matmul()
     layer_cost()
+    count_the_tiny_network()
+    parameters_layer_by_layer()
+    block_of_twelve_grids()
+    answer_cost_counts()
     work_per_number()
     squares_are_independent()
     tiles_reuse()
@@ -2672,6 +2917,7 @@ def main() -> None:
     mixed_precision()
     memory_bill()
     three_sizes()
+    four_models_in_bytes()
     does_it_fit()
     weights_are_not_the_bill()
     straight_line_fails()

@@ -494,8 +494,8 @@ def picture_the_refusals() -> None:
                   f"Read the two panels together. The tipping arithmetic is real and it is inside the\n"
                   f"filter, so a glass that would go over never reaches a ranker. On these tables it\n"
                   f"refuses nothing, because the jaw meets a glass low enough that the foot usually\n"
-                  f"wins. Every refusal code/src/09_pushing-the-glasses-apart/01-one-fixed-nudge made on the {SWEEP['tables']} held-out "
-                  f"tables was the other\nkind: {SWEEP['safe_none_pct']:.0f}% of crowded glasses have "
+                  f"wins. Every refusal the fixed nudge made on the {SWEEP['tables']} held-out\n"
+                  f"tables was the other kind: {SWEEP['safe_none_pct']:.0f}% of crowded glasses have "
                   f"no safe push at all, and most of the rest have\nnone that finishes the job. That "
                   f"is a shortage of candidates, and no ranking repairs it.",
                   fontsize=NOTE_SIZE, color=INK, ha="left", va="top")

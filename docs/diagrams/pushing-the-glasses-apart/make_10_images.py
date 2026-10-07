@@ -896,7 +896,7 @@ def picture_the_data(crowded: list[dict]) -> None:
     frame_on(real, crowded, pad=90.0)
     under(figure, 1, 2,
           f"a run stops as soon as every glass has room, so it makes as few pushes as it can.\n"
-          f"Over the {scenes} held-out tables code/src/09_pushing-the-glasses-apart/04-a-world-model was scored on, {run_pushes} pushes "
+          f"Over the {scenes} held-out tables this solution was scored on, {run_pushes} pushes "
           f"were made\nin all: {per_run:.2f} a table, and each one costs a survey and a plan")
 
     core_minutes = rows * BENCH_PUSH_MS / 1000.0 / 60.0

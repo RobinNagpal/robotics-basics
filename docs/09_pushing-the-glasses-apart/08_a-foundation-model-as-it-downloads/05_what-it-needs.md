@@ -1,8 +1,8 @@
 # What it needs
 
-This page is the bill for this solution: the libraries it rests on, the
-machine it wants, the data somebody has to supply and, where there is one,
-the licence that comes with the weights.
+This page is the bill for this solution: the libraries it rests on, the machine
+it wants, the data somebody has to supply and, where there is one, the licence
+that comes with the weights.
 
 ## 1. What it needs
 
@@ -14,39 +14,42 @@ underneath it, licensed BSD-3-Clause. Both are permissive, so neither obliges
 this project to publish its own source, which is what a copyleft licence such
 as the AGPL would do. The weights themselves carry their own terms, which a
 reader taking this forward should check before anything is shipped, because a
-licence on weights is not the same thing as a licence on the library that
-loads them. Nothing here says what those terms are, since nothing in this
-project records them. What can be
-said structurally is that a file produced by continuing their training, as
-[solution 6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) produces one, inherits whatever the
-borrowed weights carried, so this solution is the half of the pair that leaves
-no new file to carry anything.
+licence on weights is not the same thing as a licence on the library that loads
+them. Nothing here says what those terms are, since nothing in this project
+records them. What can be said structurally is that a file produced by
+continuing their training, as [solution
+6](../09_the-same-model-fine-tuned-here/01_what-it-is.md) produces one,
+inherits whatever the borrowed weights carried, so this solution is the half of
+the pair that leaves no new file to carry anything.
 
-**The weights.** Downloaded, used unchanged, and about 450 million parameters,
-so a few gigabytes while answering.
+**The weights.** Downloaded, used unchanged, and about 450 million parameters.
+The first run fetches 2.9 GB: 907 MB of SmolVLA's own weights and 2.0 GB of the
+`HuggingFaceTB/SmolVLM2-500M-Video-Instruct` backbone, which LeRobot fetches
+separately because the checkpoint asks it to. After that it is read from the
+cache.
 
-**Hardware.** A laptop. There is nothing to train, so there is no accelerator
-to rent for this solution at all. This document said that solution 6 would pay
-for the accelerator while solution 5 paid for nothing, and that turned out to
-be wrong about the other half of the pair: [solution
-6](../09_the-same-model-fine-tuned-here/01_what-it-is.md)'s low-rank fine-tune of this same model held
-**1.02 GiB** while it ran, on this machine's own Metal, so neither half rented
-anything. The 22 GB and 70 GB floors quoted above belong to π0, which is
-several times larger. The one case where renting would still be sensible is
-evaluation throughput rather than capability — the scorecard asks for several
-runs per solution, and many forward passes on a laptop take a while. For
-scale, renting an accelerator for a weekend costs of order a hundred dollars,
-and a small one for a month costs of order five hundred, so even running the
-evaluation on rented hardware is at the cheap end of this book.
+**Hardware.** A laptop, and nothing else. There is nothing to train, so there
+is no accelerator to rent for this solution at all. [How it
+works](02_how-it-works.md#9-the-price-of-the-model-and-why-this-model) argues
+that solution 6 would be the half of the pair that paid for one, and that
+turned out to be wrong too: solution 6's low-rank fine-tune of this same model
+held **1.02 GiB** while it ran, on this machine's own Metal. The 22 GB and 70
+GB floors quoted there belong to π0, which is several times larger. The one
+case where renting would still be sensible is evaluation throughput rather than
+capability — the scorecard asks for three runs of 50 tables, each answer takes
+about a second, and that comes to roughly an hour of forward passes on a
+laptop. For scale, renting an accelerator for a weekend costs of order a
+hundred dollars, so even running the evaluation on rented hardware is at the
+cheap end of this book.
 
-**Data.** None. No demonstrations, no labels, no held-out set, and nothing to
-keep in step with the cell when the cell changes.
+**Data.** None. No demonstrations, no labels, no held-out training set, and
+nothing to keep in step with the cell when the cell changes.
 
 **What the examiner had to grow.** Two things, and both were gates rather than
 conveniences: the rendered view of the table from the top, and the path that
 accepts a run of waypoints without the push macro. [The test
-examiner](../02_the-examiner.md) now provides both, and both are shared with solutions
-3 and 6, so the cost was paid once for three solutions rather than for this
-one.
+examiner](../02_the-examiner.md) provides both, and both are shared with
+solutions 3 and 6, so the cost was paid once for three solutions rather than
+for this one.
 
 ← [A worked example](04_a-worked-example.md) · [How it compares](06_how-it-compares.md) →

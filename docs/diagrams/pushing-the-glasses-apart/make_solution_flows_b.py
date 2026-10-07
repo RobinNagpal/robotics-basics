@@ -631,7 +631,10 @@ def smolvla_what_it_does() -> None:
             f"colour from a camera {VIEW_HEIGHT_MM} mm\nabove the glass zone, looking\nstraight down",
             "One instruction in plain English,\nthe same line every table:\n"
             '"the glasses are too close together,\npush them apart"',
-            "The arm's own joint readings,\nwhich say the shape the arm is\nin at this moment",
+            # The model's slot is for joint readings. What this cell puts in it
+            # is where the jaw is, which joining.to_state fills from the jaw's
+            # pose, so the picture says what is really handed over.
+            "Where the jaw is, in the slot\nthe model keeps for the arm's\nown joint readings",
         ],
         edge=GLASS, face=_tint(GLASS, 0.86),
     )

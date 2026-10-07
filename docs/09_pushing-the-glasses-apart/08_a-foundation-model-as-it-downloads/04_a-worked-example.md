@@ -1,9 +1,9 @@
 # A worked example
 
 This page follows this solution through one arrangement of glasses with real
-numbers, and then through the case this book keeps returning to, a glass that cannot be pushed safely,
-because a worked example that shows only the easy case teaches the wrong
-lesson.
+numbers, and first through the case this book keeps returning to, a glass that
+cannot be pushed safely, because a worked example that shows only the easy case
+teaches the wrong lesson.
 
 ## Contents
 
@@ -20,9 +20,10 @@ The only correct answer for such a glass is to refuse, with the reason
 recorded, which marks the run *correct but incomplete* rather than wrong.
 [Pushing without toppling](../01_the-problem/03_pushing-without-toppling.md)
 sets all of that out once, including what is done when the unknown friction
-leaves the limit undecided, and it is **arithmetic applied before any model is
-consulted** in five of the six solutions. What follows is only what is this
-solution's own.
+leaves the limit undecided. It is **arithmetic applied before any model is
+consulted**, in all six solutions: the rule is `slides()` in solution 1's
+`plan.py`, and this solution imports it rather than writing its own, so the six
+refuse exactly the same glasses.
 
 **It is just as well that the refusal is arithmetic, and the reason is the
 point of this whole document.** Nothing in a borrowed model's pretraining knows
@@ -38,62 +39,76 @@ the picture, so a model that reads the picture can still aim at a refused
 glass, and a solution that emits waypoints freely can emit a contact higher
 than the jaw rides at. **So the trajectory that comes back is read rather than
 trusted**: one that would reach a refused glass is thrown away, and the heights
-in the rest are bounded into the range the jaw rides at. Both checks are built
-— and they sit in this solution's own folder rather than in the examiner, which
-is where a thing five solutions need would belong.
+in the rest are bounded into the range the jaw rides at. Both checks are built,
+in `clear.py` and `joining.py`, and they sit in this solution's own folder
+rather than in the examiner.
+
+How much that first check was needed is worth reporting, because the answer is
+not at all. Over the three runs the model was asked 2,260 times, and **not one
+of its trajectories was thrown away for reaching a refused glass**. Section 2
+explains why: the trajectories do not come down far enough to reach any glass,
+refused or not.
 
 ## 2. A worked example
 
-Following one crowded table through makes the expectations above easier to
-recognise, because they appear together rather than one at a time.
+Following one of the examiner's own tables through makes the measured behaviour
+easier to recognise, because the parts of it appear together rather than one at
+a time.
 
-Five glasses of the tapered kind stand in the glass zone. Two of them are
-standing deliberately close together, closer than the gripper can work with but
-not touching, which is how [the examiner](../02_the-examiner.md) builds its tables.
-A third stands a little way off and is crowded by accident. The remaining two
-are clear of everything. One of the close pair is at the narrow-footed end of
-what its kind allows, and the tapered kind is wider higher up by definition, so
-that glass meets the top edge of the jaw first and its limit is the tightest on
-the table.
+**The table.** Take the second of the 50 held-out tables, which the examiner
+draws from seed 10001. It holds six tapered glasses between 109 and 211 mm
+tall, from 75 to 104 mm across at their widest, standing on feet between 35 and
+45 mm across. Three of the six are crowded at the start: a neighbour's rim
+reaches inside the 70 mm of clear room the open jaw needs round them.
 
-**The shared machinery runs first.** It evaluates the topple limit for every
-glass from its measured foot width, and the narrow-footed glass of the close
-pair fails: its limit falls below the jaw's top edge. That glass is refused with
-its reason, and it is removed from the task. Four glasses remain as a question
-for the model, though the view it is shown still contains all five, so a push
-aimed at the refused glass is rejected rather than carried out. The crowding
-around that glass is now a problem nothing can solve, which is a correct
-outcome rather than a failure.
+**The shared machinery runs first**, and on this table it changes nothing. It
+asks `slides()` about every glass from its measured foot, and no glass fails.
+That is not special to this table. Over all 251 glasses on the 50 held-out
+tables, the rule refuses none of them on their true sizes, and on the sizes the
+camera reports — which carry its own measurement error — it refuses at most one
+glass in a whole run. So the topple refusal, which the rest of this book spends
+a chapter on, hardly binds here, and almost none of this solution's shortfall is
+explained by it.
 
 **Then the model is asked.** It receives the rendered view from the top, the
-unvarying sentence, and the joint readings. What would probably come back is a
-run of waypoints that is well formed as movement — smooth, at a sensible
-speed, descending and then travelling in one direction, which is the shape a
-push has. What is far less certain is whether it is the right push. The most
-likely mistakes, reasoning from the gap, are three. It may aim at the wrong
-glass, because every glass in the picture is the same colour and nothing in it
-says which pair is the tight one, and in a rendered view with no shadows the
-cue that would normally say how close two objects are standing is weak. It may
-push in a direction that moves the glass out of one crowd and into another,
-because the arrangement as a whole is what decides a good direction and
-reading an arrangement is the part that needs the picture to be understood.
-Or it may push much too far or much too little, because the distance a push
-should cover is a property of this table's clearances and nothing in the
-model's pretraining knows them.
+unvarying sentence, and the jaw's parked pose. What comes back is 50 waypoints,
+and the measured shape of those answers is the result of this solution. The
+median answer's lowest point is 209 mm above the table. Five of this table's
+six glasses are shorter than that, so the jaw passes over them without touching
+anything. The same answer travels 844 mm across the table, which is further
+than the picture's frame is wide, in waypoints 14.3 mm apart — more than the
+arm's own top speed, and fourteen times the speed a push macro moves at.
 
-**Then the arm looks again**, and this is where the loop earns its keep. The
-fresh measurements say where the glasses really are, the refused glass is still
-refused, and the model is asked once more from the new arrangement. A wrong push
-is therefore not fatal, only wasteful, and what it costs is one entry against
-the push budget. Repeated often enough, that is the signature this solution
-would most likely leave on the scorecard: a run that spends many pushes, moves
-the glasses a long way in total compared with the displacement floor, and
-clears fewer tables than the solutions that were fitted here.
+So what the examiner records is a push that happened and touched nothing. That
+costs one entry against the budget of 16 pushes per table. **Then the arm looks
+again**, the arrangement is unchanged because nothing moved, the model is asked
+once more, and the same thing happens. Across a run of 50 tables this solution
+spends 754 pushes, which is a little over 15 per table against a budget of 16,
+so almost every table runs to the end of its budget. 674 of those 754 pushes
+never touched anything.
 
-The instructive part is what the run would *not* contain. There would be no
-crash, no fault, no refusal the model generated, and no number anywhere in the
-output marked as doubtful. Every push would look like a push. That is the
-characteristic failure across a domain gap, and it is why this solution's result
-has to be read against solution 6's rather than on its own.
+The 80 that did touch something are the other half of the story. 69 of them
+jammed: the jaw arrived at a glass at more than the speed the arm is meant to
+move and wedged against it instead of sliding it along. That is where this
+solution's toppled glasses come from — 6 in this run, and between 5 and 8 in
+the three — and why a glass it does move lands a
+median of 74 mm from where the trajectory ended rather than the millimetre or
+two solution 1 manages.
+
+A table that goes that way ends with its already-free glasses racked, its
+crowded ones refused for want of room, and the outcome *incomplete*. **No table
+in any of the three runs was finished.** Put the counts side by side and there is nothing
+left over: 58 of the 251 glasses had room before anything was pushed, and 56
+were racked. Racking a glass loosens its neighbours, so a solution that freed
+anything at all would rack more than 58. This one racks fewer.
+
+The instructive part is what this run does **not** look like. The failure this
+solution was written to expect was a well-formed push aimed at the wrong glass,
+which nothing downstream would notice. That is not what happened, and the
+difference is worth holding on to, because a failure that the scorecard counts
+directly — a push that touched nothing — is a far easier thing to diagnose than
+a push that looks right and is not. The reasoning about the domain gap in [how
+it works](02_how-it-works.md#7-the-domain-gap-which-is-the-heart-of-this-document)
+stands. The guess about which way the gap would show did not.
 
 ← [The code](03_the-code.md) · [What it needs](05_what-it-needs.md) →

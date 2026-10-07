@@ -40,18 +40,23 @@ learned policy would have to be trained again.
 
 **It can be confidently wrong, and that is its worst failure.** Where the
 training data is thin in a way the copies did not notice, five copies agree and
-are wrong together. The topples recorded on the tuning tables were exactly
-this: the model had rated every one of them safe, and a lower limit does not
-catch that.
+are wrong together. The two topples on record — one on the fifty held-out
+tables and one on a hundred tuning tables — were exactly this: the model had
+rated both of those pushes safe, and a lower limit does not catch that. It only
+refuses more.
 
-**Its model is only as wide as its encoding.** Five neighbours, four
-measurements each, and no representation of the jaw's body. Anything the
-thirty-four numbers cannot express cannot be learned however much data is
-collected, and most of the recorded failure causes are of that kind.
+**Its model is only as wide as its encoding.** Five neighbours, five numbers
+each, and no representation of the jaw's body. Anything the thirty-four numbers
+cannot express cannot be learned however much data is collected, and the causes
+the README records for its topples are of that kind: the jaw's 90 mm body
+clipped a neighbour behind, which the thirty-four numbers do not describe at
+all, and a stemmed glass was met at its stem under the bowl, which they describe
+only as three widths.
 
-**It is slow at run time, and in a different way from a foundation model.**
-Hundreds of model calls per push is the price of searching rather than
-answering.
+**It is the dearest of the four solutions that do not run a borrowed model.**
+0.41 seconds of thinking per push, against 0.01 to 0.08 for the other three, is
+the price of searching rather than answering. The two foundation models are
+still dearer, at 0.82 and 1.07.
 
 **It compounds error over depth**, which caps how far a sequence can usefully be
 planned, and the cap for a one-step-trained model is low.
@@ -161,7 +166,9 @@ description and predict how *that* changes. Hansen, Wang and Su's
 [TD-MPC2](https://arxiv.org/abs/2310.16828) (2023) combine such a learned
 internal model with planning at run time and a learned value to stand in for
 everything beyond the planning horizon, which is how they avoid needing a deep
-rollout. TD-MPC2 is the second way, and it reaches this project through LeRobot.
+rollout. TD-MPC2 is the second way. The library this project uses elsewhere
+ships TD-MPC rather than TD-MPC2, so it would have to be fetched from its own
+project.
 
 This family is normally right where the situation cannot be written down — raw
 pictures, contact-rich manipulation, anything where the useful variables are
@@ -191,12 +198,15 @@ This solution is the only one that learns what will happen rather than what to
 do, and its place in the comparison follows from that rather than from its
 score.
 
-Against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md), the comparison is whether any
-learning beats no learning. The fixed nudge needs no data, no training and no
-weights, it explains every one of its own failures, and on any table where a
-small shove in a sensible direction is enough it is the easier tool by a wide
-margin. This solution earns its place where choosing the push matters — where a
-nudge in the obvious direction moves a glass into a different crowd.
+Against [one fixed nudge](../04_one-fixed-nudge/01_what-it-is.md), the comparison
+is whether any learning beats no learning, and the answer on the shared scorecard
+is split. This solution racks 202 glasses to the written geometry's 195, and does
+it in 114 pushes rather than 213. The written geometry finishes 33 tables to this
+solution's 31, and breaks nothing at all where this one breaks one glass. Seven
+more glasses racked for one glass toppled is the whole of the trade, and it is a
+trade rather than a win because a toppled glass cannot be stood back up. Against
+all that, the fixed nudge needs no data, no training and no weights, and it
+explains every one of its own failures.
 
 Against [geometry generates, a model ranks](../05_geometry-generates-a-model-ranks/01_what-it-is.md), the
 comparison is the closest in the set and the easiest to misread. Both search

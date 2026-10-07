@@ -37,10 +37,9 @@ is a description of code.
 push at a time: it scores each candidate by the table one push later, makes the
 best push, and then looks again. It never asks the model about a push that
 follows another push. The *model* is what makes planning a sequence possible,
-because its answer is a table and a table is a legal question, and this document
-explains how that extension works and what it would buy. But the horizon in the
-built planner is one push, and the reason it is one push is given below under
-compounding error.
+because its answer is a table and a table is a legal question. But the horizon
+in the built planner is one push, and the reason it is one push is given below
+under compounding error.
 
 **The second way is a design, and it claims nothing.** It is not wired to this examiner
 and it has not been trained or run here, so every number in this document
@@ -98,14 +97,16 @@ the two states and the action, and the answer is: exactly what the arm has, and
 nothing else.
 
 **In go thirty-four numbers.** The table's one known kind, as four yes-or-no
-columns. The pushed glass's height, its width at its widest and its width at
-its foot — the three measurements `look()` reports, carrying the measured error
-of [telling the glasses apart](../../08_seeing-the-glasses/11_the-results.md).
+columns, one per kind. The pushed glass's height, its width at its widest and
+its width at its foot — the three measurements `look()` reports, carrying the
+measured error of [telling the glasses
+apart](../../08_seeing-the-glasses/11_the-results.md).
 The push itself as two numbers: how far across the glass the jaw meets it, and
-how far it pushes. And then up to five other glasses, nearest first, each as
-where it stands relative to the pushed glass, how wide it is and how tall it
-is. Six glasses on a table is the most the examiner ever draws, so five others is
-everyone.
+how far it pushes. And then five slots for other glasses, nearest first, five
+numbers each: where it stands relative to the pushed glass, which is two
+numbers, how wide it is, how tall it is, and whether there is a glass in that
+slot at all. Six glasses on a table is the most the examiner ever draws, so five
+others is everyone, and a table with fewer leaves the spare slots empty.
 
 **Out come fourteen numbers.** A displacement for the pushed glass. A
 displacement for each of the five other glasses, because a push moves
@@ -150,10 +151,12 @@ Every position in the inputs, and every displacement in the outputs, is measured
 number across to its left. Nothing is measured in the table's north and east.
 
 The consequence is that **a push to the north and the same push to the east are
-one example rather than two**. A glass 40 mm ahead of the target and 20 mm to
-its left is the same input row whichever way round the table the jaw happens to
-be pointing, so the model sees the two situations as what they are, which is
-one situation.
+one example rather than two**. A neighbour 30 mm ahead of the pushed glass and
+92 mm to its left is the same input row whichever way round the table the jaw
+happens to be pointing, so the model sees the two situations as what they are,
+which is one situation.
+
+![The same glass and the same neighbour, pushed on two different headings: in the table's north and east the neighbour sits at two different pairs of numbers, and in the push's own frame it sits at one pair, so the two pushes reach the model as a single row.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-the-pushs-own-frame.png)
 
 The justification is a fact about the cell rather than a trick: **the table's
 friction is the same everywhere and the same in every direction**. There is no
@@ -227,9 +230,12 @@ knowing because it generalises as well as the ensemble does. A search over
 thousands of candidates will find a push that looks safe because of a
 millimetre of luck in the measurements. So every candidate is also checked
 against four copies of the table with every reading moved by about the camera's
-error, and the worst topple chance over all of them is the one that counts. **A
-hole in the model narrow enough to be found by luck does not survive being
-shifted by a millimetre.** A genuinely safe push does.
+error — a millimetre on each position and three on each width — and the worst
+topple chance over all five readings is the one that counts. **A hole in the
+model narrow enough to be found by luck does not survive being shifted by a
+millimetre.** A genuinely safe push does.
+
+![The worst copy's topple chance for one candidate push as the reading of the table is shifted: a genuinely safe push stays under the one-in-a-hundred limit however the reading moves, while a hole in the model is a narrow dip that the measured reading happens to land in and that none of the four shifted readings does, so the push is dropped.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-the-jitter-check.png)
 
 ## 6. Planning by sampling: the cross-entropy method
 
@@ -252,11 +258,13 @@ batch from around that average with that spread. Repeat. Each round the cloud
 of candidates contracts onto whatever region keeps scoring well, so the method
 spends its later draws where the answer is rather than where it started.
 
-The first way runs this with six hundred draws in the first round and three hundred
-in each of three more, keeping the best thirty each time, which is about fifteen
-hundred candidate pushes examined per crowded glass. That sounds extravagant
-and costs almost nothing, because a candidate push is one row of thirty-four
-numbers through five small networks, and the batch goes through in one call.
+The first way runs this with six hundred draws in the first round and three
+hundred in each of three more, keeping the best thirty each time, which is
+fifteen hundred candidate pushes examined per crowded glass. That sounds
+extravagant and costs little, because a candidate push is one row of thirty-four
+numbers and each network takes the whole round's rows in a single call. The
+measured price for the whole of it is 0.41 seconds of thinking per push the arm
+makes.
 
 ![An early round spreads its candidates over the whole range and most are struck out by the filters, on the table the model predicts for them; by round four the draws have collapsed onto one small region, and the score is the room still missing on the table plus a small penalty per millimetre pushed.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/10-planning-against-the-model.png)
 
@@ -283,14 +291,21 @@ convenience but the deciding property.
 The score itself is deliberately plain arithmetic over the predicted table, and
 it is short enough to state in full. Add up, over every glass, how much clear
 room is still missing at the end — how far each neighbour's edge reaches inside
-the 70 mm that glass needs. Add a small penalty for each millimetre pushed, so
-that the shortest push that does the job wins. Throw the candidate away
-entirely if any copy of the model gives it more than the topple limit, if the
-predicted table puts a moved glass outside the glass zone or outside the arm's
-reach, or if the model predicts a movement longer than the push itself, which
-is the model guessing outside anything it has seen. What is left is scored, and
-the best push over all the crowded glasses on the table is the one that gets
-made.
+the 70 mm that glass needs. Charge a tenth of a millimetre of that missing room
+for every millimetre the jaw travels, so that the shortest push which does the
+job wins. One more term keeps the arithmetic honest: the model also returns how
+likely the jaw is to be blocked on the way down, and a push that is blocked
+moves nothing, so the two outcomes are mixed in that proportion — the table as
+it already stands, weighted by the chance of a block, against the predicted
+table, weighted by the rest.
+
+Three conditions throw a candidate away before it is scored at all. Any copy of
+the model giving it more than the topple limit. A predicted table that puts a
+moved glass outside the glass zone or outside the arm's reach. And a predicted
+movement more than two centimetres longer than the push that caused it, which
+is the model answering about something well outside anything it has seen. What
+survives is scored, and the best push over all the crowded glasses on the table
+is the one that gets made.
 
 ## 7. Receding horizon: plan several, make one
 
@@ -381,7 +396,8 @@ would really reach. The first way's second round of data collection does precise
 that: the first model plans, the planner finds the pushes where that model is
 wrong in its own favour, those pushes are really made, and what really happened
 goes into the training set. That fills exactly the holes the search is going to
-exploit.
+exploit. A quarter of that round is still drawn at random, so the model keeps
+seeing pushes the planner would never choose and does not forget what they do.
 
 ## 9. Planning a sequence, which only this solution could do
 

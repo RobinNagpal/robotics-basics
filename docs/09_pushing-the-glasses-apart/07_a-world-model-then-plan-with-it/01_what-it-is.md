@@ -3,8 +3,9 @@
 > **What it uses** — PyTorch, and MuJoCo through [the test
 > examiner](../02_the-examiner.md). The first way is a small network written for this cell
 > and trained here, five copies of it, with no downloaded weights of any kind.
-> The second way would be TD-MPC2, the model-based entry in LeRobot, trained here as
-> well. **The second way is not built**, so no number anywhere in this document is
+> The second way would be TD-MPC2, fetched from its own project, because the
+> library this project uses elsewhere ships the earlier TD-MPC instead.
+> **The second way is not built**, so no number anywhere in this document is
 > its. Neither of them borrows a model from anybody, so the only licences in play
 > are the libraries' own.
 > **What it does** — it learns what a push does, and then looks for a good push
@@ -14,28 +15,29 @@
 > topples, and whether the jaw is blocked on the way down. Because the answer
 > is a table rather than a score, the same answer can be fed back in as the
 > next question, which is what would let this solution plan a *sequence* of
-> pushes — move one glass out of the way first so that a second glass has
-> somewhere to go. The built planner's horizon is one push, so the sequence is
+> pushes. The built planner's horizon is one push, so the sequence is
 > an extension this document designs rather than code that runs.
-> **How the output is produced** — `look()` hands over one reading per glass;
-> the shared topple limit that refuses a glass that tips before it slides
-> belongs in front of all of this, and the built planner does not have it yet;
-> the readings and a candidate push are encoded
-> into one row of numbers in the push's own frame; the five copies of the model
-> each answer; a candidate is thrown away if any copy thinks it might topple
-> something, or if the predicted table breaks the map; the survivors are scored
-> by how much room is still missing afterwards; a sampling search refines the
-> good ones and returns the best push; that push is handed to the examiner as a
-> parameterised push, and the examiner's own macro expands it into a jaw
-> trajectory.
+> **How the output is produced** — `look()` hands over one reading per glass.
+> The readings and a candidate push are encoded into one row of thirty-four
+> numbers in the push's own frame, and the five copies of the model each
+> answer. A candidate is thrown away if any copy thinks it might topple
+> something, if the predicted table breaks the map, or if the predicted
+> movement is far longer than the push. The survivors are scored by how much
+> room is still missing afterwards, a sampling search refines the good ones,
+> and the best push is handed to the examiner, whose own macro expands it into
+> a jaw trajectory. The shared topple limit that refuses a glass that tips
+> before it slides belongs in front of all of this, and the built planner does
+> not have it yet.
 > **What it costs** — pushes made in the simulator and recorded, which is the
 > only training data either way needs and which nobody has to label. The first way
 > trains on an ordinary processor in minutes and needs no rented hardware at
 > all. The second way is reinforcement learning and wants an accelerator: a weekend
 > of rented time, of order a hundred dollars, and a month of a small one, of
-> order five hundred, if several training seeds are to be run. At run time both
-> ways are the expensive end of the six, because the search asks the model
-> about hundreds of candidate pushes before every single push the arm makes.
+> order five hundred, if several training seeds are to be run. At run time the
+> first way spends 0.41 seconds of thinking on every push it makes, because the
+> search asks the model about fifteen hundred candidate pushes first. That is
+> five to seven times what the two geometry solutions spend, and half or less
+> of what the two borrowed models spend.
 
 > **The cell is described once, in [the cell](../../08_seeing-the-glasses/01_the-cell.md)** — the
 > layout, the two places the camera works from, from the top and from the side,
@@ -66,18 +68,16 @@ that returns a table can be asked again about the table it just returned. A
 method that scores a push without saying where the glasses end up has nothing
 to ask the second question of.
 
-By the end you will understand five things. You will understand what a forward
-model is and why it is a different kind of object from a policy. You will
-understand how a push is chosen by sampling candidates and refining the good
-ones, which is a search called the cross-entropy method, and why that search
-suits a problem where the cost is not smooth. You will understand why a model
-that is wrong in small ways is still useful, which turns on planning several
-pushes ahead but executing only the first. You will understand why a
-disagreement between several copies of the same model is a usable measurement
-of the model's own ignorance, which is the most transferable idea in this
-document. And you will understand what the two ways buy against each other:
-a small hand-built model that can be inspected, against a stronger off-the-shelf
-one that brings a maintained implementation.
+By the end you will understand five things. What a forward model is, and why it
+is a different kind of object from a policy. How a push is chosen by sampling
+candidates and refining the good ones, which is a search called the
+cross-entropy method, and why that search suits a problem where the cost is not
+smooth. Why a model that is wrong in small ways is still useful, which turns on
+planning several pushes ahead but making only the first. Why a disagreement
+between several copies of the same model is a usable measurement of the model's
+own ignorance, which is the most transferable idea here. And what the two ways
+buy against each other: a small hand-built model that can be inspected, against
+a stronger off-the-shelf one that brings a maintained implementation.
 
 Read [the examiner](../02_the-examiner.md) first, because what `look()` hands over
 and what `push()` accepts are assumed throughout, and read [pushing without

@@ -106,13 +106,15 @@ forward until contact, the push at a steady speed, the back-off and the lift.
 This solution does not write that expansion and gains nothing from it, and
 neither does any other solution that thinks in pushes.
 
-Two of the numbers in that push are arithmetic rather than model output, and
-saying so keeps the boundary clean. Where the fingertips come down is behind the
-glass's widest edge with a margin for the camera's error. How far forward the
-jaw feels is far enough to pass the glass's middle, because a stemmed glass is
-met at its stem, well inside its widest edge, and a jaw that misses and lifts
-under the bowl tips it. Neither number is learned, because neither depends on
-anything nobody knows.
+Two of those numbers are arithmetic rather than model output, and saying so
+keeps the boundary clean. The fingertips come down 20 mm behind the glass's
+widest edge, which is the margin that clears it despite the camera's error. The
+jaw then feels forward until 10 mm past the glass's middle, because a stemmed
+glass is met at its stem, well inside its widest edge, and a jaw that misses and
+lifts under the bowl tips it. Neither number is learned, because neither depends
+on anything nobody knows. The search chooses the other three.
+
+![A push on one glass drawn from above with its five numbers marked: the fingertips come down 20 mm behind the widest edge and the jaw feels forward to 10 mm past the middle, both of which are arithmetic on the measured width, while the heading, the offset across the glass and the travel are the three numbers the search is free to choose.](../../images/pushing-the-glasses-apart/a-world-model-then-plan-with-it/worldmodel-pages-what-the-push-says.png)
 
 **The height is not a choice.** [Pushing without
 toppling](../01_the-problem/03_pushing-without-toppling.md) settles that for all six: the jaw
@@ -146,9 +148,11 @@ fails it is refused with that reason. This step is the same for all six and is
 the one part of the loop the built planner does not yet have.
 
 **Take anything that can be taken.** Any glass with clear room is lifted off
-immediately, with a small extra margin for the camera's error, because a glass
+immediately, with 3 mm of extra margin for the camera's error, because a glass
 that is gone cannot be toppled and cannot be in the way. The model is not
-consulted.
+consulted. The margin was chosen on the tuning tables: at 4 or 5 mm, glasses
+that already had room were pushed instead of taken, and every extra push is
+another chance to topple one.
 
 **For each glass still crowded, search.** Draw candidate pushes, encode each
 one with the table into a row in the push's own frame, ask all five copies of
@@ -158,12 +162,16 @@ camera's error.
 
 **Throw away everything unacceptable.** Any candidate over the topple limit.
 Any candidate whose predicted table puts a moved glass outside the glass zone or
-outside the arm's reach. Any candidate whose predicted movement is longer than
-the push, which is the model answering about something it has not seen.
+outside the arm's reach. Any candidate whose predicted movement is more than two
+centimetres longer than the push, which is the model answering about something
+it has not seen.
 
 **Score the survivors and refine.** The score is the room still missing on the
-predicted table, plus a small penalty per millimetre pushed. Keep the best
-thirty, draw the next round around them, and repeat four times in all.
+predicted table, plus a tenth of a millimetre of that for every millimetre the
+jaw travels, with the chance of a blocked descent mixed in. Keep the best
+thirty, draw the next round around them, and repeat four times in all. A push
+has to be expected to clear at least 2 mm of missing room, or the whole table is
+refused rather than nudged for nothing.
 
 **Make one push.** The best push over every crowded glass on the table is
 expanded by the examiner's macro and carried out. The jaw reports what it felt.

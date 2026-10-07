@@ -22,10 +22,11 @@ arithmetic rate of the two machines, the rent, the human minutes per picture
 and per demonstration and the human hours per project stage are stated
 assumptions, and the pictures and the page say so.
 
-The learning experiments are simulated. Each example is 24 numbers standing in
-for one reading of one object, drawn from Gaussian blobs with
-numpy.random.default_rng, and a small fully connected network (24 to 32 to 24
-to 6) is pretrained on a six-class source job in NumPy. The six rungs of the
+The learning experiments are simulated. Each example is 200 numbers standing in
+for one look at one object: a fixed random mixture of 16 hidden numbers, 6 of
+them part strengths and 10 of them nuisance, put through a cosine, drawn with
+numpy.random.default_rng. A small fully connected network (200 to 48 to 24 to
+6) is pretrained on a six-class source job in NumPy. The six rungs of the
 ladder are then run on that network for real: using it as it is, picking the
 best fixed mapping of its existing classes, training a new head on its frozen
 features, training a rank-2 low-rank adapter, fine-tuning everything, and
@@ -768,8 +769,12 @@ class Candidates:
         print(f'{"model":>6s} {"classes":>8s} {"own job":>8s} {"overlap":>8s} '
               f'{"probe 64":>9s} {"tune 512":>9s}')
         for i in range(CANDIDATES):
-            print(f'{chr(65 + i):>6s} {self.own_classes[i]:8d} {self.own[i]:8.3f} '
-                  f'{self.overlap[i]:8.3f} {self.probe[i]:9.3f} {self.ft[i]:9.3f}')
+            print(f'{chr(65 + i):>6s} {self.own_classes[i]:8d} {self.own[i]:8.4f} '
+                  f'{self.overlap[i]:8.4f} {self.probe[i]:9.4f} {self.ft[i]:9.4f}')
+        by_probe = ''.join(chr(65 + i) for i in np.argsort(self.probe_a))
+        by_ft = ''.join(chr(65 + i) for i in np.argsort(self.ft_a))
+        print(f'the probe ranks them     {by_probe}')
+        print(f'the fine-tune ranks them {by_ft}')
         print(f'its score on its own job against its worth here: r = {self.r_own:+.3f}')
         print(f'its overlap with our job against its worth here: r = '
               f'{self.r_overlap:+.3f}')
@@ -910,14 +915,6 @@ class Jobs:
 # ==========================================================================
 
 RUNG_COLOURS: list[str] = [MUTED, '#8ab4d8', LINK, TEAL, PURPLE, GRIP]
-CLIMB_QUESTION: list[str] = [
-    'are its answers wrong on\nyour own held-out examples?',
-    'does no wording you try\nmove the held-out number?',
-    'can the head not even fit\nthe examples it trained on?',
-    'does a bigger adapter, trained\nlonger, still not fit them?',
-    'is your input or output not\nthe kind this model takes?',
-    'nothing above this rung',
-]
 
 
 def fig_ladder_what_moves() -> None:
@@ -1043,11 +1040,11 @@ def fig_climb_test(L: 'Ladder') -> None:
     ax.bar(xs + 0.19, L.test[:, k], width=0.36, color=LINK, edgecolor=INK,
            linewidth=0.7, label='on 1,500 examples held back')
     ax.axhline(L.ceiling, color=GRIP, linewidth=1.4, linestyle='--')
-    ax.set_xlim(-1.15, 5.6)
-    ax.text(-1.1, L.ceiling + 0.016, f'the best anything could do, {L.ceiling:.3f}',
+    ax.set_xlim(-1.62, 5.6)
+    ax.text(-1.57, L.ceiling + 0.016, f'the best anything could do, {L.ceiling:.3f}',
             ha='left', fontsize=8.5, color=GRIP)
     ax.axhline(1 / TGT_CLASSES, color=MUTED, linewidth=1.0, linestyle=':')
-    ax.text(-1.1, 1 / TGT_CLASSES + 0.016, f'guessing, {1 / TGT_CLASSES:.3f}',
+    ax.text(-1.57, 1 / TGT_CLASSES + 0.016, f'guessing, {1 / TGT_CLASSES:.3f}',
             ha='left', fontsize=8.5, color=MUTED)
     for i in range(6):
         ax.text(i - 0.19, L.train[i, k] + 0.012, f'{L.train[i, k]:.3f}', ha='center',
@@ -1095,8 +1092,7 @@ def fig_rung_learning_curves(L: 'Ladder') -> None:
 
 def fig_rung_memory() -> None:
     """Memory each rung needs, for the picture model and for the big one."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.6, 4.6),
-                                   gridspec_kw={'width_ratios': [1.55, 1]})
+    fig, ax1 = plt.subplots(figsize=(9.2, 4.6))
     _plain(ax1)
     xs = np.arange(6)
     fro = np.array(RUN.frozen) / 2 ** 30
@@ -1117,24 +1113,26 @@ def fig_rung_memory() -> None:
     ax1.set_ylabel('memory, GiB', fontsize=10)
     ax1.set_ylim(0, 9.2)
     ax1.legend(fontsize=8.5, loc='upper left', frameon=False)
-    ax1.set_title(f'The picture model, {SH.whole / 1e6:.1f} million numbers:\n'
+    ax1.set_title(f'The picture model, {SH.whole / 1e6:.1f} million numbers: '
                   f'every rung fits on one small card',
-                  fontsize=11, fontweight='bold', loc='left')
+                  fontsize=11.5, fontweight='bold', loc='left')
+    _save(fig, 'rung-memory.svg')
 
+    fig, ax2 = plt.subplots(figsize=(5.4, 4.6))
     _plain(ax2)
     big = [RUN.big_memory_lora / 2 ** 30, RUN.big_memory_full / 2 ** 30]
     ax2.bar([0, 1], big, color=[TEAL, PURPLE], edgecolor=INK, linewidth=0.7, width=0.55)
     for i, v in enumerate(big):
         ax2.text(i, v + 1.0, f'{v:.2f} GiB', ha='center', fontsize=9, color=INK)
     ax2.axhline(24.0, color=GRIP, linewidth=1.2, linestyle='--')
-    ax2.text(-0.42, 25.2, 'a 24 GiB card', ha='left', fontsize=8.5, color=GRIP)
+    ax2.text(-0.42, 26.4, 'a 24 GiB card', ha='left', fontsize=8.5, color=GRIP)
     ax2.set_xticks([0, 1])
     ax2.set_xticklabels(['a rank-8 adapter', 'a full fine-tune'], fontsize=9.5)
     ax2.set_ylabel('memory, GiB', fontsize=10)
     ax2.set_ylim(0, 88)
     ax2.set_title(f'The {BIG_N / 1e9:.2f} thousand million model:\n'
-                  'only the adapter fits', fontsize=11, fontweight='bold', loc='left')
-    _save(fig, 'rung-memory.svg')
+                  'only the adapter fits', fontsize=11.5, fontweight='bold', loc='left')
+    _save(fig, 'big-model-memory.svg')
 
 
 def fig_rung_arithmetic() -> None:
@@ -1218,9 +1216,14 @@ def fig_from_nothing_days() -> None:
         ax.bar(xs + (j - 1.5) * width, vals, width=width, edgecolor=INK, linewidth=0.6,
                color=[LINK_PALE, LINK, PURPLE, TEAL][j], label=label)
         for i, v in enumerate(vals):
-            ax.text(xs[i] + (j - 1.5) * width, v * 1.2,
-                    f'{v:,.0f}' if v >= 1 else f'{v:.2f}', ha='center', fontsize=7.5,
-                    color=INK, rotation=90)
+            if v >= 100:
+                shown = f'{v:,.0f}'
+            elif v >= 1:
+                shown = f'{v:,.1f}'
+            else:
+                shown = f'{v:.2f}'
+            ax.text(xs[i] + (j - 1.5) * width, v * 1.2, shown, ha='center',
+                    fontsize=7.5, color=INK, rotation=90)
     ax.axhline(7, color=GRIP, linewidth=1.3, linestyle='--')
     ax.text(-0.82, 9.0, 'one week', ha='left', fontsize=8.5, color=GRIP)
     ax.axhline(365.25, color=GRIP, linewidth=1.0, linestyle=':')
@@ -1264,7 +1267,8 @@ def fig_from_nothing_data() -> None:
     ax2.barh([0, 1, 2], hours, color=[LINK, PURPLE, GRIP], edgecolor=INK, linewidth=0.7,
              height=0.55)
     for i, v in enumerate(hours):
-        ax2.text(v + 180, i, f'{v:,.0f} hours' + (f' = {v / PRE.working_year:.1f} '
+        shown = f'{v:,.1f}' if v < 100 else f'{v:,.0f}'
+        ax2.text(v + 180, i, f'{shown} hours' + (f' = {v / PRE.working_year:.1f} '
                  f'working years' if v > PRE.working_year else ''), va='center',
                  fontsize=9, color=INK)
     ax2.set_yticks([0, 1, 2])
@@ -1283,23 +1287,24 @@ def fig_from_nothing_data() -> None:
 
 def fig_budget_buys(budget: dict[str, float]) -> None:
     """What one stated budget of accelerator time buys at each rung."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.0, 4.2),
-                                   gridspec_kw={'width_ratios': [1, 1.2]})
+    fig, ax1 = plt.subplots(figsize=(5.4, 4.6))
     _plain(ax1)
     share = budget['share_of_pretrain']
     ax1.bar([0], [100], color=GRID, edgecolor=INK, linewidth=0.7, width=0.5)
     ax1.bar([0], [share], color=GRIP, edgecolor=INK, linewidth=0.7, width=0.5)
-    ax1.set_xlim(-1.0, 0.8)
+    ax1.set_xlim(-1.0, 0.55)
     ax1.set_xticks([0])
     ax1.set_xticklabels(['one pretraining run\nof the big model'], fontsize=9.5)
     ax1.set_ylabel('per cent of the run paid for', fontsize=10)
     ax1.set_ylim(0, 112)
-    ax1.annotate(f'your 200 hours\nbuy {share:.3f}%', xy=(-0.24, 0.4),
+    ax1.annotate(f'your 200 hours\nbuy {share:.4f}%', xy=(-0.24, 0.4),
                  xytext=(-0.95, 30), fontsize=9.5, color=GRIP,
                  arrowprops=dict(arrowstyle='->', color=GRIP, linewidth=1.1))
     ax1.set_title('200 accelerator-hours against\none pretraining run', fontsize=11,
                   fontweight='bold', loc='left')
+    _save(fig, 'budget-against-pretrain.svg')
 
+    fig, ax2 = plt.subplots(figsize=(9.0, 3.6))
     _plain(ax2)
     vals = [budget['full_runs'], budget['adapter_runs'], budget['probe_runs']]
     labels = ['full fine-tunes', 'adapter runs', 'frozen-feature probes']
@@ -1317,8 +1322,8 @@ def fig_budget_buys(budget: dict[str, float]) -> None:
                    fontsize=9.5)
     ax2.grid(axis='x', color=GRID, linewidth=0.6)
     ax2.set_axisbelow(True)
-    ax2.set_title('The same money, spent on the rungs below', fontsize=11,
-                  fontweight='bold', loc='left')
+    ax2.set_title('The same 200 accelerator-hours, spent on the rungs below',
+                  fontsize=11, fontweight='bold', loc='left')
     _save(fig, 'budget-buys.svg')
 
 
@@ -1345,7 +1350,7 @@ def fig_small_model_exception() -> None:
         elif secs < 86400 * 365:
             when = f'{secs / 86400:.1f} days'
         else:
-            when = f'{secs / 86400 / 365.25:,.0f} years'
+            when = f'{secs / 86400 / 365.25:,.1f} years'
         ax.text(f * 2.5, i, f'{f:.3g} FLOP, {when} on one desktop card', va='center',
                 fontsize=9, color=INK)
     ax.set_yticks(ys)
@@ -1397,10 +1402,11 @@ def fig_probe_predicts(C: 'Candidates') -> None:
     _plain(ax)
     ax.scatter(C.probe_a, C.ft_a, s=80, color=TEAL, edgecolor=INK, linewidth=0.7,
                zorder=3)
-    for i in range(CANDIDATES):
-        ax.annotate(chr(65 + i), (C.probe_a[i], C.ft_a[i]), textcoords='offset points',
-                    xytext=(8, -3), fontsize=10, color=INK)
     order = np.argsort(C.probe_a)
+    for j, i in enumerate(order):
+        near = j > 0 and abs(C.probe_a[i] - C.probe_a[order[j - 1]]) < 0.005
+        ax.annotate(chr(65 + i), (C.probe_a[i], C.ft_a[i]), textcoords='offset points',
+                    xytext=(8, 6) if near else (8, -8), fontsize=10, color=INK)
     ax.plot(C.probe_a[order], C.ft_a[order], color=TEAL, linewidth=1.0, alpha=0.5)
     ax.scatter([C.probe_a[C.best_probe]], [C.ft_a[C.best_probe]], s=260,
                facecolor='none', edgecolor=GRIP, linewidth=1.8, zorder=4)
@@ -1413,8 +1419,8 @@ def fig_probe_predicts(C: 'Candidates') -> None:
                   fontsize=9.5)
     ax.grid(color=GRID, linewidth=0.6)
     ax.set_axisbelow(True)
-    ax.set_title(f'The cheap test put the eight candidates in the same order as the '
-                 f'slow one (rank correlation {C.rho_probe:+.3f})', fontsize=11,
+    ax.set_title(f'Seven of the eight sit in the same position in both orders '
+                 f'(rank correlation {C.rho_probe:+.3f})', fontsize=11,
                  fontweight='bold', loc='left')
     _save(fig, 'probe-predicts.svg')
 
@@ -1700,7 +1706,7 @@ def fig_three_jobs_hours(J: 'Jobs') -> None:
 
 def fig_job_a_where_to_stop(L: 'Ladder') -> None:
     """How much the next doubling of examples buys, which says when to stop collecting."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.4, 4.4))
+    fig, ax1 = plt.subplots(figsize=(8.0, 4.8))
     _plain(ax1)
     ax1.plot(SIZES, L.test[2], marker='o', color=LINK, linewidth=2.0,
              label='a head on frozen features')
@@ -1718,9 +1724,11 @@ def fig_job_a_where_to_stop(L: 'Ladder') -> None:
     ax1.grid(color=GRID, linewidth=0.6)
     ax1.set_axisbelow(True)
     ax1.legend(fontsize=9, loc='lower right', frameon=False)
-    ax1.set_title('One curve flattens and one does not', fontsize=11,
-                  fontweight='bold', loc='left')
+    ax1.set_title('Two rungs on the same job: one curve flattens and one does not',
+                  fontsize=11.5, fontweight='bold', loc='left')
+    _save(fig, 'where-to-stop-curves.svg')
 
+    fig, ax2 = plt.subplots(figsize=(9.2, 4.4))
     _plain(ax2)
     width = 0.38
     xs = np.arange(len(SIZES) - 1)
@@ -1734,13 +1742,108 @@ def fig_job_a_where_to_stop(L: 'Ladder') -> None:
     ax2.text(-1.7, 0.0115, 'a hundredth of\nthe answers', fontsize=8.5, color=GRIP)
     ax2.set_xticks(xs)
     ax2.set_xticklabels([f'{SIZES[i]}\nto\n{SIZES[i + 1]}' for i in xs], fontsize=8)
+    ax2.set_xlabel('the doubling of your own examples', fontsize=10)
     ax2.set_ylabel('what the doubling bought', fontsize=10)
     ax2.axhline(0.0, color=INK, linewidth=0.8)
     ax2.legend(fontsize=9, loc='upper right', frameon=False)
-    ax2.set_title('What each doubling bought: below the line,\n'
-                  'another afternoon of collecting is not worth it', fontsize=11,
+    ax2.set_title('What each doubling of the examples bought: below the line, '
+                  'another\nafternoon of collecting is not worth it', fontsize=11.5,
                   fontweight='bold', loc='left')
-    _save(fig, 'job-a-where-to-stop.svg')
+    _save(fig, 'what-each-doubling-bought.svg')
+
+
+def fig_bytes_per_weight() -> None:
+    """Why one trained weight costs six times what one frozen weight costs."""
+    parts_frozen = [('the weight itself', 2, LINK_PALE)]
+    parts_trained = [('the weight itself', 2, LINK_PALE),
+                     ('its gradient', 2, LINK),
+                     ('running average of the gradient', 4, PURPLE),
+                     ('running average of its square', 4, TEAL)]
+    print('--- bytes for one number ---')
+    print(f'a frozen number costs {BF16} bytes; a trained one costs '
+          f'{TRAINED_BYTES} bytes, which is {TRAINED_BYTES // BF16} times as much')
+    fig, ax = plt.subplots(figsize=(9.6, 2.9))
+    _plain(ax)
+    for y, parts in ((1, parts_frozen), (0, parts_trained)):
+        left = 0.0
+        for name, width, colour in parts:
+            ax.barh([y], [width], left=left, height=0.5, color=colour, edgecolor=INK,
+                    linewidth=0.8)
+            ax.text(left + width / 2.0, y, f'{width}', ha='center', va='center',
+                    fontsize=11, fontweight='bold', color=INK)
+            ax.text(left + width / 2.0, y - 0.34, name, ha='center', va='top',
+                    fontsize=8, color=MUTED, rotation=0)
+            left += width
+        ax.text(left + 0.25, y, f'{left:.0f} bytes', va='center', fontsize=10,
+                fontweight='bold', color=INK)
+    ax.set_yticks([0, 1])
+    ax.set_yticklabels(['a number training changes', 'a number held still'],
+                       fontsize=10)
+    ax.set_ylim(-0.75, 1.45)
+    ax.set_xlim(0, 14.5)
+    ax.set_xlabel('bytes kept in memory for that one number', fontsize=10)
+    ax.set_title(f'One trained number costs {TRAINED_BYTES // BF16} times what one '
+                 f'frozen number costs', fontsize=11.5, fontweight='bold', loc='left')
+    _save(fig, 'bytes-per-weight.svg')
+
+
+def fig_cached_features() -> None:
+    """Why a head on frozen features costs one forward pass and almost nothing after."""
+    fig, ax = plt.subplots(figsize=(6.4, 5.2))
+    _blank(ax)
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0.6, 9.6)
+    steps = [(f'{RUN.pictures} pictures', GRID,
+              ''),
+             ('one forward pass each,\nthrough the frozen backbone', LINK_PALE,
+              f'{RUN.cache_flop:.3g} operations, '
+              f'{RUN.cache_flop / DESKTOP:.2f} s, done once'),
+             (f'{RUN.pictures} saved rows of\n{WIDTH} numbers', JOINT,
+              f'{RUN.pictures * WIDTH:,} numbers on disk'),
+             ('200 passes of the head\nover the saved rows', LINK,
+              f'{RUN.head_flop:.3g} operations in all')]
+    for i, (txt, colour, note) in enumerate(steps):
+        y = 8.2 - 2.1 * i
+        ax.add_patch(Rectangle((1.0, y), 6.2, 1.25, facecolor=colour, edgecolor=INK,
+                               linewidth=0.9))
+        ax.text(4.1, y + 0.62, txt, ha='center', va='center', fontsize=10, color=INK)
+        if note:
+            ax.text(7.45, y + 0.62, note, ha='left', va='center', fontsize=8.5,
+                    color=MUTED)
+        if i < len(steps) - 1:
+            ax.add_patch(FancyArrowPatch((4.1, y), (4.1, y - 0.82),
+                                         arrowstyle='-|>', mutation_scale=13,
+                                         color=INK, linewidth=1.2))
+    ax.set_title('Why the third rung is cheap: the backbone runs once and\nthe head '
+                 'trains on what it saved', fontsize=11.5, fontweight='bold',
+                 loc='left')
+    _save(fig, 'cached-features.svg')
+
+
+def fig_gain_per_climb(L: 'Ladder') -> None:
+    """What climbing each rung bought on the simulated job, at 512 examples."""
+    k = SIZES.index(512)
+    gains = [L.test[i, k] - L.test[i - 1, k] for i in range(1, 6)]
+    names = [f'{i + 1}. {RUNG_SHORT[i]}\nfrom {i}. {RUNG_SHORT[i - 1]}'
+             for i in range(1, 6)]
+    fig, ax = plt.subplots(figsize=(9.2, 4.2))
+    _plain(ax)
+    xs = np.arange(5)
+    colours = [RUNG_COLOURS[i] for i in range(1, 6)]
+    ax.bar(xs, gains, width=0.56, color=colours, edgecolor=INK, linewidth=0.7)
+    for i, g in enumerate(gains):
+        ax.text(i, g + (0.004 if g >= 0 else -0.012), f'{g:+.3f}', ha='center',
+                va='bottom' if g >= 0 else 'top', fontsize=10, color=INK)
+    ax.axhline(0.0, color=INK, linewidth=0.9)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(names, fontsize=9)
+    ax.set_ylabel('what the climb added, at 512 examples', fontsize=10)
+    ax.set_ylim(min(gains) - 0.04, max(gains) + 0.04)
+    ax.grid(axis='y', color=GRID, linewidth=0.6)
+    ax.set_axisbelow(True)
+    ax.set_title('Only two of the five climbs paid for themselves on this job',
+                 fontsize=11.5, fontweight='bold', loc='left')
+    _save(fig, 'gain-per-climb.svg')
 
 
 def report_pictures(L: 'Ladder', J: 'Jobs') -> None:
@@ -1803,8 +1906,11 @@ def main() -> None:
     fig_ladder_bytes_kept()
     fig_climb_test(ladder)
     fig_rung_learning_curves(ladder)
+    fig_gain_per_climb(ladder)
     fig_rung_memory()
+    fig_bytes_per_weight()
     fig_rung_arithmetic()
+    fig_cached_features()
     fig_rung_human_hours()
     fig_from_nothing_days()
     fig_from_nothing_data()

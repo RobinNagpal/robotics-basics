@@ -10,9 +10,9 @@ Every number drawn in a picture is worked out in this file, and the script
 prints them so the document can quote the same values.
 
 What is real arithmetic or a real measurement here: the two learning curves in
-`examples_per_class_curve`, which really train a multinomial logistic
-regression by gradient descent in NumPy on drawn pictures and score it on a
-held-out set it never saw; the coverage calculation, which counts how often a
+`examples_per_class_curve` and the per-class scores in `worst_class`, which
+really train a multinomial logistic regression by gradient descent in NumPy on
+drawn pictures and score it on a held-out set it never saw; the coverage calculation, which counts how often a
 random collection of pictures leaves one of the twenty-four conditions short;
 the box arithmetic of the drawn scene; the labelling-hour arithmetic; the
 binomial chance that a rare class lands badly in a split; the average precision
@@ -391,8 +391,9 @@ def examples_per_class_curve() -> None:
     ax.set_ylim(0.0, 1.0)
     ax.set_xlabel('training pictures per class (log scale)', fontsize=10)
     ax.set_ylabel('accuracy on 720 held-out pictures', fontsize=10)
-    ax.set_title('Simulated data: reused features reach their own ceiling by about 32 a class,\n'
-                 'raw pixels still climb at 256', fontsize=12, weight='bold')
+    ax.set_title('Simulated data: reused features are within a tenth of their best '
+                 'from 16 a class,\nwhile raw pixels are still climbing at 256',
+                 fontsize=12, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     ax.grid(axis='y', color=GRID, lw=0.7)
     _save(fig, DOC, 'examples-per-class-curve.svg')
@@ -418,13 +419,6 @@ def classifier_example_files() -> None:
     for i, ln in enumerate(lines):
         ax.text(0.4, 8.2 - 1.03 * i, ln, fontsize=9.5, family='monospace', color=INK,
                 va='top')
-    ax.text(5.6, 8.2, 'The label is a single word for the whole picture.\n'
-                      'There is no position, no size and no outline in it,\n'
-                      'so the training needs nobody to draw anything.\n\n'
-                      'One person can take and sort a few hundred\n'
-                      'pictures in an afternoon, which is why this is\n'
-                      'the cheapest labelled data of any seeing job.',
-            fontsize=10, color=INK, va='top')
     fig.suptitle('A classifier\'s training example: a file and a word, and nothing else',
                  fontsize=12.5, weight='bold', y=1.03)
     _save(fig, DOC, 'one-example-classifier.svg')
@@ -458,8 +452,7 @@ def covering_the_conditions() -> None:
     print(f'      one collection of 96: {short} of {COV_CELLS} conditions short of '
           f'{COV_NEED}, {empty} of them with nothing at all')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.4, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.25]})
+    fig, ax1 = plt.subplots(figsize=(6.2, 5.0), facecolor='white')
     ax1.imshow(counts, cmap='Blues', vmin=0, vmax=counts.max(), aspect='auto')
     for i in range(COV_ORIENT):
         for j in range(COV_LIGHT):
@@ -475,19 +468,26 @@ def covering_the_conditions() -> None:
     ax1.set_yticks(range(COV_ORIENT))
     ax1.set_yticklabels(['upright', 'tipped', 'on side', 'upside\ndown', 'half\nhidden',
                          'at an\nangle'], fontsize=9.5)
-    ax1.set_title(f'96 pictures taken at random:\n{short} of {COV_CELLS} conditions are '
-                  f'short of {COV_NEED} (red)', fontsize=11, weight='bold')
+    ax1.set_title(f'96 pictures taken at random: {short} of the {COV_CELLS}\n'
+                  f'conditions are short of {COV_NEED} examples (red)',
+                  fontsize=11.5, weight='bold')
+    _save(fig, DOC, 'conditions-grid.svg')
+
+    fig, ax2 = plt.subplots(figsize=(7.2, 4.6), facecolor='white')
     _plain(ax2)
     ax2.plot(sizes, probs, marker='o', color=TEAL, lw=2.2)
     ax2.axhline(0.9, color=GRIP, ls='--', lw=1.4)
-    ax2.text(sizes[0], 0.915, 'a 9 in 10 chance', fontsize=9, color=GRIP)
+    ax2.text(sizes[0], 0.915, 'a 9 in 10 chance', fontsize=9.5, color=GRIP)
+    ax2.axvline(first, color=MUTED, ls=':', lw=1.4)
+    ax2.text(first + 10, 0.06, f'{first} pictures', fontsize=9.5, color=MUTED)
     ax2.set_xlabel('pictures taken at random', fontsize=10)
-    ax2.set_ylabel(f'chance all {COV_CELLS} conditions got {COV_NEED} or more', fontsize=10)
+    ax2.set_ylabel(f'chance all {COV_CELLS} conditions got {COV_NEED} or more',
+                   fontsize=10)
     ax2.set_ylim(0, 1.03)
-    ax2.set_title('The number of examples is set by the conditions,\nnot by the number of '
-                  'classes', fontsize=11, weight='bold')
+    ax2.set_title(f'It takes about {first} pictures collected at random before\nevery '
+                  'condition is covered', fontsize=11.5, weight='bold')
     ax2.grid(axis='y', color=GRID, lw=0.7)
-    _save(fig, DOC, 'covering-the-conditions.svg')
+    _save(fig, DOC, 'coverage-chance.svg')
 
 
 def one_name_is_not_a_place() -> None:
@@ -509,8 +509,7 @@ def one_name_is_not_a_place() -> None:
     print(f'      the three glasses\' middles span {spread_px:.0f} pixels, '
           f'which is {spread_mm:.0f} mm, against a gripper margin of {GRIP_MARGIN_MM} mm')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.6, 4.6), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.3, 1.0]})
+    fig, ax1 = plt.subplots(figsize=(7.4, 5.4), facecolor='white')
     _show(ax1, SCENE_RGB)
     ax1.plot([cx], [cy], marker='+', ms=16, mew=2.4, color=GRIP)
     ax1.plot([mx], [my], marker='o', ms=9, color=TEAL)
@@ -521,27 +520,29 @@ def one_name_is_not_a_place() -> None:
     ax1.text(cx - 10, cy + 34, 'middle of the picture', fontsize=9, color=GRIP,
              ha='right')
     ax1.text(mx, my + 72, 'middle of the mug', fontsize=9, color=TEAL, ha='center')
-    for o in glasses:
-        _draw_box(ax1, o['box'], LINK, lw=1.2)
-    ax1.set_title('The classifier\'s whole answer: "mug"', fontsize=11.5, weight='bold')
-    _blank(ax2, (0, 10), (0, 10))
-    ax2.text(0.2, 9.6, 'what the classifier gives', fontsize=10.5, weight='bold', color=INK,
-             va='top')
-    ax2.text(0.4, 8.7, 'one word: mug', fontsize=10, family='monospace', color=TEAL, va='top')
-    ax2.text(0.2, 7.6, 'what the arm needs before it moves', fontsize=10.5, weight='bold',
-             color=INK, va='top')
-    for i, ln in enumerate(['where the mug is, to about 6.5 mm',
-                            'which of the three glasses was meant',
-                            'how wide to open the fingers']):
-        ax2.text(0.4, 6.7 - 0.95 * i, '- ' + ln, fontsize=10, color=INK, va='top')
-    ax2.text(0.2, 3.3, f'Reaching for the middle of the picture instead\n'
-                       f'of the mug misses by {d_mm:.0f} mm, and the gripper\n'
-                       f'tolerates about {GRIP_MARGIN_MM:.1f} mm, so the answer is\n'
-                       f'{d_mm / GRIP_MARGIN_MM:.0f} times too coarse to act on.',
-             fontsize=10.5, color=GRIP, va='top')
-    fig.suptitle('A name for the whole picture is not a place on the table',
-                 fontsize=12.5, weight='bold', y=1.03)
+    ax1.set_title('The classifier\'s whole answer is the word "mug", and reaching\n'
+                  f'for the middle of the picture misses it by {d_mm:.0f} mm',
+                  fontsize=11.5, weight='bold')
     _save(fig, DOC, 'one-name-is-not-a-place.svg')
+
+    fig, ax2 = plt.subplots(figsize=(7.0, 4.8), facecolor='white')
+    lo_x, hi_x = int(min(gx)) - 70, int(max(gx)) + 70
+    lo_y, hi_y = 200, 430
+    _show(ax2, SCENE_RGB[lo_y:hi_y, lo_x:hi_x])
+    for o, gxv in zip(glasses, gx):
+        bx1, by1, bx2, by2 = o['box']
+        _draw_box(ax2, (bx1 - lo_x, by1 - lo_y, bx2 - lo_x, by2 - lo_y), LINK, lw=1.4)
+        ax2.plot([gxv - lo_x], [(by1 + by2) / 2.0 - lo_y], marker='o', ms=8,
+                 color=TEAL)
+    ymark = hi_y - lo_y - 26
+    ax2.annotate('', xy=(min(gx) - lo_x, ymark), xytext=(max(gx) - lo_x, ymark),
+                 arrowprops=dict(arrowstyle='<->', color=PURPLE, lw=1.8))
+    ax2.text((min(gx) + max(gx)) / 2.0 - lo_x, ymark - 8,
+             f'{spread_px:.0f} px = {spread_mm:.0f} mm', fontsize=10.5, color=PURPLE,
+             weight='bold', ha='center', va='bottom')
+    ax2.set_title('All three are called "glass", and the middles the arm\nwould reach '
+                  f'for lie {spread_mm:.0f} mm apart', fontsize=11.5, weight='bold')
+    _save(fig, DOC, 'three-glasses-one-name.svg')
 
 
 # ==========================================================================
@@ -592,18 +593,12 @@ def detector_label_file() -> None:
     _blank(ax2, (0, 10), (0, 10))
     ax2.text(0.1, 9.8, 'frame_0417.txt', fontsize=10.5, weight='bold',
              family='monospace', color=INK, va='top')
-    ax2.text(0.1, 9.0, 'class   middle x  middle y    width   height',
+    ax2.text(0.1, 8.6, 'class   middle x  middle y    width   height',
              fontsize=9, color=MUTED, va='top', family='monospace')
     for i, (name, cx, cy, bw, bh) in enumerate(rows):
-        ax2.text(0.1, 8.3 - 0.78 * i,
+        ax2.text(0.1, 7.5 - 1.25 * i,
                  f'{name:6s}  {cx:.4f}    {cy:.4f}    {bw:.4f}   {bh:.4f}',
                  fontsize=9, family='monospace', color=cols[name], va='top')
-    ax2.text(0.1, 3.0, 'The four numbers are fractions of the picture, so the\n'
-                       'same line means the same box at any picture size.\n'
-                       'Somebody had to draw all six boxes by hand, and a\n'
-                       'missed object is not a gap in the file but a positive\n'
-                       'statement that there is nothing there.',
-             fontsize=10, color=INK, va='top')
     fig.suptitle("A detector's training example: one picture file and one line an object",
                  fontsize=12.5, weight='bold', y=1.03)
     _save(fig, DOC, 'one-example-detector.svg')
@@ -675,8 +670,7 @@ def rare_class_split() -> None:
               'cracked cup': RARE_PICS}
     print('      instances in 300 pictures of the scene: ' +
           ', '.join(f'{k} {v}' for k, v in counts.items()))
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.6, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.25]})
+    fig, ax1 = plt.subplots(figsize=(7.0, 4.0), facecolor='white')
     _plain(ax1)
     names = list(counts)
     vals = [counts[n] for n in names]
@@ -687,8 +681,11 @@ def rare_class_split() -> None:
                  color=colours[i])
     ax1.set_xlim(0, 1050)
     ax1.set_xlabel('labelled instances in 300 pictures', fontsize=10)
-    ax1.set_title('Five classes in one set of 300 pictures,\nand one of them is barely there',
-                  fontsize=11, weight='bold')
+    ax1.set_title('Five classes in one set of 300 pictures,\nand one of them is barely '
+                  'there', fontsize=11.5, weight='bold')
+    _save(fig, DOC, 'instances-not-pictures.svg')
+
+    fig, ax2 = plt.subplots(figsize=(7.6, 4.8), facecolor='white')
     _plain(ax2)
     ax2.plot(ks, p_one, marker='o', ms=4, color=GRIP, lw=2.0,
              label='held-out side gets 0 or 1 of them')
@@ -702,8 +699,9 @@ def rare_class_split() -> None:
     ax2.set_xlabel('labelled instances of that one class', fontsize=10)
     ax2.set_ylabel('chance of too few in the held-out set', fontsize=10)
     ax2.set_ylim(0, 1.0)
-    ax2.set_title(f'At {RARE_PICS} instances there is a {at14:.0%} chance the held-out set\n'
-                  'cannot say anything about that class', fontsize=11, weight='bold')
+    ax2.set_title(f'At {RARE_PICS} instances there is a {at14:.0%} chance the held-out '
+                  'set\ncannot say anything about that class', fontsize=11.5,
+                  weight='bold')
     ax2.legend(fontsize=9.5, frameon=False, loc='upper right')
     ax2.grid(axis='y', color=GRID, lw=0.7)
     _save(fig, DOC, 'rare-class-split.svg')
@@ -786,26 +784,32 @@ def average_precision() -> None:
               f'AP at 0.5 {res[c]["ap50"]:.3f}   AP at 0.75 {res[c]["ap75"]:.3f}')
     print(f'      mean over the four classes: {m50:.3f} at 0.5 and {m75:.3f} at 0.75')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
+    fig, ax1 = plt.subplots(figsize=(7.0, 4.8), facecolor='white')
     cls = 'bolt'
     sc, hits, n = res[cls]['scores'], res[cls]['hits50'], res[cls]['n']
     order = np.argsort(-sc)
     tp = np.cumsum(hits[order])
     fp = np.cumsum(~hits[order])
     _plain(ax1)
-    ax1.plot(tp / n, tp / np.maximum(tp + fp, 1), color=GRIP, lw=2.2, label='bolt')
+    ax1.plot(tp / n, tp / np.maximum(tp + fp, 1), color=GRIP, lw=2.2,
+             label=f'bolt, box side {22.8:.1f} px')
     sc2, hits2, n2 = res['mug']['scores'], res['mug']['hits50'], res['mug']['n']
     o2 = np.argsort(-sc2)
     tp2, fp2 = np.cumsum(hits2[o2]), np.cumsum(~hits2[o2])
-    ax1.plot(tp2 / n2, tp2 / np.maximum(tp2 + fp2, 1), color=TEAL, lw=2.2, label='mug')
+    ax1.plot(tp2 / n2, tp2 / np.maximum(tp2 + fp2, 1), color=TEAL, lw=2.2,
+             label=f'mug, box side {113.9:.1f} px')
     ax1.set_xlabel('share of the real objects found (recall)', fontsize=10)
     ax1.set_ylabel('share of the guesses that were right (precision)', fontsize=10)
     ax1.set_xlim(0, 1.02)
     ax1.set_ylim(0, 1.05)
-    ax1.set_title(f'The same box error: mug {res["mug"]["ap50"]:.2f}, '
-                  f'bolt {res["bolt"]["ap50"]:.2f}', fontsize=11, weight='bold')
+    ax1.set_title(f'The same box error on both: the area under the mug\'s\ncurve is '
+                  f'{res["mug"]["ap50"]:.3f} and under the bolt\'s '
+                  f'{res["bolt"]["ap50"]:.3f}', fontsize=11.5, weight='bold')
     ax1.legend(fontsize=9.5, frameon=False, loc='lower left')
     ax1.grid(color=GRID, lw=0.7)
+    _save(fig, DOC, 'precision-recall-two-sizes.svg')
+
+    fig, ax2 = plt.subplots(figsize=(7.2, 4.8), facecolor='white')
     _plain(ax2)
     xs = np.arange(len(DET_CLASSES))
     ax2.bar(xs - 0.19, [res[c]['ap50'] for c in DET_CLASSES], 0.36, color=LINK,
@@ -813,18 +817,18 @@ def average_precision() -> None:
     ax2.bar(xs + 0.19, [res[c]['ap75'] for c in DET_CLASSES], 0.36, color=PURPLE,
             alpha=0.9, label='AP at an overlap of 0.75')
     for i, c in enumerate(DET_CLASSES):
-        ax2.text(i - 0.19, res[c]['ap50'] + 0.02, f'{res[c]["ap50"]:.2f}', ha='center',
+        ax2.text(i - 0.19, res[c]['ap50'] + 0.02, f'{res[c]["ap50"]:.3f}', ha='center',
                  fontsize=9, color=LINK, weight='bold')
-        ax2.text(i + 0.19, res[c]['ap75'] + 0.02, f'{res[c]["ap75"]:.2f}', ha='center',
+        ax2.text(i + 0.19, res[c]['ap75'] + 0.02, f'{res[c]["ap75"]:.3f}', ha='center',
                  fontsize=9, color=PURPLE, weight='bold')
     ax2.axhline(m50, color=GRIP, ls='--', lw=1.4)
-    ax2.text(2.6, m50 + 0.03, f'the mean, {m50:.2f}', fontsize=9.5, color=GRIP)
+    ax2.text(2.6, m50 + 0.03, f'the mean at 0.5, {m50:.3f}', fontsize=9.5, color=GRIP)
     ax2.set_xticks(xs)
     ax2.set_xticklabels(DET_CLASSES, fontsize=10)
     ax2.set_ylim(0, 1.42)
     ax2.set_ylabel('average precision', fontsize=10)
     ax2.set_title('The small object is the worst, and the mean does not say so',
-                  fontsize=11, weight='bold')
+                  fontsize=11.5, weight='bold')
     ax2.legend(fontsize=9, frameon=False, loc='upper right')
     _save(fig, DOC, 'average-precision.svg')
 
@@ -891,39 +895,40 @@ def polygon_clicks() -> None:
     print(f'      {first95} clicks reach an overlap of 0.95 and {first98} reach 0.98, '
           f'against 2 clicks for a box')
 
-    fig = plt.figure(figsize=(11.8, 5.0), facecolor='white')
-    gs = fig.add_gridspec(1, 4, width_ratios=[1, 1, 1, 1.6], wspace=0.3)
+    fig, axes = plt.subplots(1, 3, figsize=(9.0, 3.8), facecolor='white')
+    lo, hi = int(PART_CX - PART_R0 * 1.55), int(PART_CX + PART_R0 * 1.55)
     for i, k in enumerate((4, 8, 16)):
-        ax = fig.add_subplot(gs[0, i])
+        ax = axes[i]
         pm, pts = _poly_mask(k)
         rgb = np.ones((GRID_N, GRID_N, 3))
         rgb[true] = np.array([0.80, 0.88, 0.92])
         rgb[pm & ~true] = np.array([0.95, 0.72, 0.72])
         rgb[true & ~pm] = np.array([0.98, 0.88, 0.60])
-        lo, hi = int(PART_CX - PART_R0 * 1.55), int(PART_CX + PART_R0 * 1.55)
         _show(ax, rgb[lo:hi, lo:hi])
         ax.add_patch(Polygon(pts - lo, closed=True, fill=False, edgecolor=PURPLE,
                              lw=1.6))
         ax.plot(pts[:, 0] - lo, pts[:, 1] - lo, 'o', ms=4.5, color=PURPLE)
         ax.set_title(f'{k} clicks\noverlap {POLY_IOU[k]:.3f}', fontsize=10.5,
                      weight='bold')
-    ax = fig.add_subplot(gs[0, 3])
+    fig.suptitle('The same simulated part outlined with 4, 8 and 16 clicks, with the '
+                 'mismatched pixels shaded', fontsize=12, weight='bold', y=1.04)
+    _save(fig, DOC, 'polygon-clicks.svg')
+
+    fig, ax = plt.subplots(figsize=(7.2, 4.6), facecolor='white')
     _plain(ax)
     ax.plot(POLY_K, [POLY_IOU[k] for k in POLY_K], marker='o', color=TEAL, lw=2.2)
     ax.axhline(BOX_IOU_PART, color=GRIP, ls='--', lw=1.4)
-    ax.text(POLY_K[-1], BOX_IOU_PART - 0.045,
-            f'a box, 2 clicks: {BOX_IOU_PART:.2f}', fontsize=9, color=GRIP, ha='right')
+    ax.text(POLY_K[-1], BOX_IOU_PART - 0.05,
+            f'a box, 2 clicks: {BOX_IOU_PART:.2f}', fontsize=9.5, color=GRIP, ha='right')
     ax.axhline(0.95, color=SLIDE, ls=':', lw=1.3)
-    ax.text(3, 0.96, 'overlap 0.95', fontsize=9, color=SLIDE)
+    ax.text(3, 0.96, 'overlap 0.95', fontsize=9.5, color=SLIDE)
     ax.set_xlabel('clicks round the outline', fontsize=10)
     ax.set_ylabel('overlap with the true outline', fontsize=10)
     ax.set_ylim(0.3, 1.02)
-    ax.set_title(f'{first95} clicks for 0.95, against 2 for a box',
-                 fontsize=11, weight='bold')
+    ax.set_title(f'{first95} clicks buy an overlap of 0.95, against 2 clicks\nfor a box '
+                 f'and {BOX_IOU_PART:.2f}', fontsize=11.5, weight='bold')
     ax.grid(axis='y', color=GRID, lw=0.7)
-    fig.suptitle('What an outline costs: the overlap climbs with every click, and so '
-                 'does the bill', fontsize=12.5, weight='bold', y=1.03)
-    _save(fig, DOC, 'polygon-clicks.svg')
+    _save(fig, DOC, 'clicks-overlap-curve.svg')
 
 
 def prompt_or_train() -> None:
@@ -945,8 +950,7 @@ def prompt_or_train() -> None:
     print(f'      the outlining route costs {poly_h / check_h:.1f} times the checking '
           f'route and {poly_h - check_h:.1f} hours more')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.0, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.3]})
+    fig, ax1 = plt.subplots(figsize=(8.4, 3.8), facecolor='white')
     _plain(ax1)
     labels = [f'train a segmenter:\noutline {n_masks * per_pic} objects',
               f'train a detector:\nbox {n_masks * per_pic} objects',
@@ -955,35 +959,27 @@ def prompt_or_train() -> None:
     cols = [GRIP, WRIST, TEAL]
     ax1.barh(labels, vals, color=cols, alpha=0.9)
     for i, v in enumerate(vals):
-        ax1.text(v + 1.2, i, f'{v:.1f} h', va='center', fontsize=10.5, weight='bold',
+        ax1.text(v + 0.5, i, f'{v:.1f} h', va='center', fontsize=10.5, weight='bold',
                  color=cols[i])
     ax1.set_xlim(0, max(vals) * 1.25)
     ax1.set_xlabel('hours of somebody labelling', fontsize=10)
-    ax1.set_title('The same 1800 objects, three ways', fontsize=11, weight='bold')
+    ax1.set_title(f'The same {n_masks * per_pic} objects, three ways',
+                  fontsize=11.5, weight='bold')
     ax1.invert_yaxis()
-    _blank(ax2, (0, 10), (0, 10))
-    ax2.text(0.1, 9.8, 'the prompting route, at run time', fontsize=11, weight='bold',
-             color=INK, va='top')
+    _save(fig, DOC, 'prompt-or-train.svg')
+
+    fig, ax2 = plt.subplots(figsize=(5.6, 4.6), facecolor='white')
+    _blank(ax2, (0, 10), (0.95, 9.25))
     steps = [('camera frame', LINK_PALE), ('a detector or a phrase\ngives one box',
               LINK), ('promptable segmenter\nreturns the pixels in it', TEAL),
              ('grasp width across\nthe mask, in mm', SLIDE)]
     for i, (txt, col) in enumerate(steps):
-        _box(ax2, 0.3, 7.6 - 2.0 * i, 4.4, 1.5, col, txt, fs=9.5, alpha=0.3)
+        _box(ax2, 1.4, 7.4 - 2.1 * i, 7.2, 1.6, col, txt, fs=10.5, alpha=0.3)
         if i < len(steps) - 1:
-            _arrow(ax2, (2.5, 7.6 - 2.0 * i), (2.5, 7.25 - 2.0 * i))
-    ax2.text(5.3, 9.0, 'What it costs instead of labelling:\n\n'
-                       '- two models in the loop rather than one,\n'
-                       '  so two things to load and two to time;\n'
-                       '- the masks carry no class name, so the\n'
-                       '  box has to come from somewhere;\n'
-                       '- a point prompt is genuinely ambiguous,\n'
-                       '  so a box prompt is the safer one;\n'
-                       '- you cannot improve it by labelling more,\n'
-                       '  because you are not training it.',
-             fontsize=10, color=INK, va='top')
-    fig.suptitle('Prompting a promptable segmenter needs no masks drawn at all',
-                 fontsize=12.5, weight='bold', y=1.03)
-    _save(fig, DOC, 'prompt-or-train.svg')
+            _arrow(ax2, (5.0, 7.4 - 2.1 * i), (5.0, 7.05 - 2.1 * i))
+    fig.suptitle('The prompting route at run time: two models, no masks drawn',
+                 fontsize=12, weight='bold', y=0.98)
+    _save(fig, DOC, 'prompting-route.svg')
 
 
 def where_the_overlap_goes() -> None:
@@ -1019,10 +1015,9 @@ def where_the_overlap_goes() -> None:
               f'{h:.3f}, {wr} wrong pixels of which {wh} are in the handle '
               f'({100.0 * wh / max(wr, 1):.0f} per cent)')
 
-    fig = plt.figure(figsize=(12.0, 4.6), facecolor='white')
-    gs = fig.add_gridspec(1, 5, width_ratios=[1, 1, 1, 1, 1.9], wspace=0.3)
+    fig, axes = plt.subplots(1, 4, figsize=(10.4, 3.6), facecolor='white')
     for i, g in enumerate((7, 14, 28, 56)):
-        ax = fig.add_subplot(gs[0, i])
+        ax = axes[i]
         ys = (np.arange(hh) * g // hh).clip(0, g - 1)
         xs = (np.arange(ww) * g // ww).clip(0, g - 1)
         small = np.zeros((g, g)); cnt = np.zeros((g, g))
@@ -1036,7 +1031,11 @@ def where_the_overlap_goes() -> None:
         _show(ax, rgb)
         ax.set_title(f'{g} by {g}\nall {rows[i][1]:.3f}\nhandle {rows[i][2]:.3f}',
                      fontsize=10, weight='bold')
-    ax = fig.add_subplot(gs[0, 4])
+    fig.suptitle("The same mug mask drawn on four grids and stretched back: the wrong "
+                 "pixels sit in the handle", fontsize=12, weight='bold', y=1.04)
+    _save(fig, DOC, 'mask-grids.svg')
+
+    fig, ax = plt.subplots(figsize=(7.2, 4.6), facecolor='white')
     _plain(ax)
     gsz = [r[0] for r in rows]
     ax.plot(gsz, [r[1] for r in rows], marker='o', color=TEAL, lw=2.2,
@@ -1051,11 +1050,9 @@ def where_the_overlap_goes() -> None:
     ax.set_xlabel('the grid the mask is drawn on', fontsize=10)
     ax.set_ylabel('overlap with the true mask', fontsize=10)
     ax.set_title('The handle stays wrong long after the\nwhole-mug number looks fine',
-                 fontsize=11, weight='bold')
+                 fontsize=11.5, weight='bold')
     ax.legend(fontsize=9.5, frameon=False, loc='lower right')
     ax.grid(axis='y', color=GRID, lw=0.7)
-    fig.suptitle('Where a mask\'s error actually sits: in the thin part the arm has to '
-                 'take hold of', fontsize=12.5, weight='bold', y=1.03)
     _save(fig, DOC, 'where-the-overlap-goes.svg')
 
 
@@ -1100,8 +1097,7 @@ def do_you_need_pixels() -> None:
           f'{100.0 * stray / box_area:.1f} per cent of the box')
     print(f'      the middle of that box lands on the middle glass: {on_target}')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.25]})
+    fig, ax1 = plt.subplots(figsize=(6.6, 5.0), facecolor='white')
     pad = 78
     sub = SCENE_RGB[max(y1 - pad, 0):y2 + 40, max(x1 - 60, 0):x2 + 60].copy()
     oy, ox = max(y1 - pad, 0), max(x1 - 60, 0)
@@ -1112,8 +1108,11 @@ def do_you_need_pixels() -> None:
     _draw_box(ax1, (x1 - ox, y1 - oy, x2 - ox, y2 - oy), PURPLE, 'box of the middle glass')
     ax1.plot([cx - ox], [cy - oy], marker='+', ms=14, mew=2.2, color=INK)
     ax1.text(cx - ox + 6, cy - oy + 16, 'middle of the box', fontsize=9, color=INK)
-    ax1.set_title(f'{stray} pixels inside this box belong to the\nglasses either side of it',
-                  fontsize=11, weight='bold')
+    ax1.set_title(f'{stray} pixels inside this box, shaded red, belong\nto the glasses '
+                  'either side of it', fontsize=11.5, weight='bold')
+    _save(fig, DOC, 'touching-objects.svg')
+
+    fig, ax2 = plt.subplots(figsize=(7.6, 4.8), facecolor='white')
     _plain(ax2)
     names = [o['name'] for o in SCENE_OBJ]
     xs = np.arange(len(names))
@@ -1125,11 +1124,9 @@ def do_you_need_pixels() -> None:
     ax2.set_xticklabels([f'{n}\n{narrow[n]:.0f} mm' for n in names], fontsize=9.5)
     ax2.set_ylim(0, 1.12)
     ax2.set_ylabel('share of the box that is really the object', fontsize=10)
-    ax2.set_title('The bar is how much of the box is really the object;\nunder each name '
-                  'is the narrow way across its pixels', fontsize=11, weight='bold')
+    ax2.set_title('How much of each box is really the object, with the narrow\nway '
+                  'across its pixels under each name', fontsize=11.5, weight='bold')
     ax2.grid(axis='y', color=GRID, lw=0.7)
-    fig.suptitle('Two tests that say whether you need pixels or a box will do',
-                 fontsize=12.5, weight='bold', y=1.03)
     _save(fig, DOC, 'do-you-need-pixels.svg')
 
 
@@ -1162,21 +1159,24 @@ def calibrate_before_training() -> None:
         print(f'      at {d:.1f} m the whole {GRIP_MARGIN_MM} mm margin is used up by '
               f'{cross[d]:.3f} of a degree')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
+    fig, ax1 = plt.subplots(figsize=(7.4, 4.8), facecolor='white')
     _plain(ax1)
     for d, colour in zip(dists, (TEAL, LINK, PURPLE)):
         ax1.plot(degs, d * 1000.0 * np.tan(np.deg2rad(degs)), color=colour, lw=2.2,
                  label=f'object at {d:.1f} m')
     ax1.axhline(GRIP_MARGIN_MM, color=GRIP, ls='--', lw=1.5)
-    ax1.text(1.95, 2.6, f'the whole gripper margin, {GRIP_MARGIN_MM} mm',
+    ax1.text(1.95, 2.0, f'the whole gripper margin, {GRIP_MARGIN_MM} mm',
              fontsize=9.5, color=GRIP, ha='right')
     ax1.set_xlabel('error in the camera-to-arm angle (degrees)', fontsize=10)
     ax1.set_ylabel('how far out the point lands (mm)', fontsize=10)
     ax1.set_ylim(0, 60)
-    ax1.set_title('Half a degree of calibration error is already\nmost of the margin',
-                  fontsize=11, weight='bold')
+    ax1.set_title('Half a degree of calibration error is already\nmore than the whole '
+                  'margin at 0.8 m', fontsize=11.5, weight='bold')
     ax1.legend(fontsize=9.5, frameon=False, loc='upper left')
     ax1.grid(color=GRID, lw=0.7)
+    _save(fig, DOC, 'calibrate-before-training.svg')
+
+    fig, ax2 = plt.subplots(figsize=(7.8, 4.8), facecolor='white')
     _plain(ax2)
     zs = np.linspace(0.25, 2.0, 120)
     ax2.plot(zs, _stereo_error_mm(zs), color=TEAL, lw=2.2,
@@ -1189,13 +1189,11 @@ def calibrate_before_training() -> None:
     ax2.set_xlabel('distance to the object (m)', fontsize=10)
     ax2.set_ylabel('error contributed (mm)', fontsize=10)
     ax2.set_ylim(0, 40)
-    ax2.set_title('Out to about a metre the calibration is the\nbigger of the two errors',
-                  fontsize=11, weight='bold')
+    ax2.set_title('Out to about one and a half metres the calibration\nis the bigger '
+                  'of the two errors', fontsize=11.5, weight='bold')
     ax2.legend(fontsize=9, frameon=False, loc='upper left')
     ax2.grid(color=GRID, lw=0.7)
-    fig.suptitle('Before training any depth model, find out what the calibration is '
-                 'already costing', fontsize=12.5, weight='bold', y=1.03)
-    _save(fig, DOC, 'calibrate-before-training.svg')
+    _save(fig, DOC, 'calibration-against-stereo.svg')
 
 
 def where_depth_labels_come_from() -> None:
@@ -1213,8 +1211,7 @@ def where_depth_labels_come_from() -> None:
     for name, err, _ in sources:
         print(f'      {name.replace(chr(10), " "):48s} {err:6.1f} mm of error in the label')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.6), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.2, 1.0]})
+    fig, ax1 = plt.subplots(figsize=(8.0, 3.8), facecolor='white')
     _plain(ax1)
     names = [s[0] for s in sources[:3]]
     vals = [s[1] for s in sources[:3]]
@@ -1228,30 +1225,23 @@ def where_depth_labels_come_from() -> None:
              fontsize=9, color=GRIP, va='center')
     ax1.set_xlim(0, 12)
     ax1.set_xlabel(f'error the label carries at {Z_TABLE:.2f} m (mm)', fontsize=10)
-    ax1.set_title('Three honest ways to get a metric depth label',
-                  fontsize=11, weight='bold')
+    ax1.set_title('Three honest ways to get a metric depth label,\nand what each one '
+                  'puts into every label', fontsize=11.5, weight='bold')
     ax1.invert_yaxis()
     ax1.set_ylim(2.95, -0.65)
-    _blank(ax2, (0, 10), (0, 10))
-    ax2.text(0.1, 9.8, 'one training example for a metric depth model', fontsize=10.5,
-             weight='bold', color=INK, va='top')
-    rows = ['frame_0417.png        the colour picture',
-            'frame_0417_depth.png  one distance a pixel,',
-            '                      in millimetres',
-            'frame_0417.json       the camera\'s focal length,',
-            '                      centre, and the pose it',
-            '                      was at when the frame',
-            '                      was taken']
-    for i, r in enumerate(rows):
-        ax2.text(0.3, 8.9 - 0.80 * i, r, fontsize=9.5, family='monospace', color=INK,
-                 va='top')
-    ax2.text(0.1, 2.6, 'A missing camera file makes the pair useless, because\n'
-                       'a distance in millimetres means nothing without the\n'
-                       'focal length that turns a pixel into a direction.',
-             fontsize=10, color=GRIP, va='top')
-    fig.suptitle('A depth model cannot be better than the thing that measured its labels',
-                 fontsize=12.5, weight='bold', y=1.03)
     _save(fig, DOC, 'where-depth-labels-come-from.svg')
+
+    fig, ax2 = plt.subplots(figsize=(8.4, 2.6), facecolor='white')
+    _blank(ax2, (0, 10), (1.0, 9.6))
+    rows = ['frame_0417.png        the colour picture',
+            'frame_0417_depth.png  one distance a pixel, in millimetres',
+            'frame_0417.json       the focal length, the centre, the pose']
+    for i, r in enumerate(rows):
+        ax2.text(0.3, 8.8 - 2.6 * i, r, fontsize=10.5, family='monospace', color=INK,
+                 va='top')
+    fig.suptitle('One training example for a metric depth model is three files',
+                 fontsize=12.5, weight='bold', y=1.02)
+    _save(fig, DOC, 'one-example-depth.svg')
 
 
 AMBIG_MM: list[float] = [0.0, 0.4, 1.0, 2.0]   # how much the real object's height varies
@@ -1317,8 +1307,7 @@ def cue_ambiguity_floor() -> None:
         print(f'      n={n:5d}  the model is {b:+.2f} mm out on average, and more '
               f'examples do not help')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.3, 1.0]})
+    fig, ax1 = plt.subplots(figsize=(8.0, 5.0), facecolor='white')
     _plain(ax1)
     for spread, colour in zip(AMBIG_MM, (SLIDE, TEAL, LINK, GRIP)):
         ax1.plot(AMBIG_N, AMBIG_RES[spread], marker='o', color=colour, lw=2.2,
@@ -1337,6 +1326,9 @@ def cue_ambiguity_floor() -> None:
                   'never go below that', fontsize=11.5, weight='bold')
     ax1.legend(fontsize=9.5, frameon=False, loc='upper right')
     ax1.grid(axis='y', color=GRID, lw=0.7)
+    _save(fig, DOC, 'cue-ambiguity-floor.svg')
+
+    fig, ax2 = plt.subplots(figsize=(6.2, 4.8), facecolor='white')
     _plain(ax2)
     ax2.bar([str(n) for n, _ in bias_rows], [b for _, b in bias_rows], 0.5, color=GRIP,
             alpha=0.9)
@@ -1344,16 +1336,16 @@ def cue_ambiguity_floor() -> None:
         ax2.text(i, b + 0.12, f'{b:+.2f} mm', ha='center', fontsize=10.5, weight='bold',
                  color=GRIP)
     ax2.axhline(5.0, color=INK, ls='--', lw=1.5)
-    ax2.text(-0.44, 5.15, 'the ruler was 5 mm out', fontsize=9.5, color=INK)
+    ax2.text(2.45, 5.0, 'the ruler was\n5 mm out', fontsize=9.5, color=INK,
+             ha='left', va='center')
+    ax2.set_xlim(-0.6, 3.6)
     ax2.set_ylim(0, 7.6)
     ax2.set_xlabel('training examples', fontsize=10)
     ax2.set_ylabel('average error left in the model (mm)', fontsize=10)
     ax2.set_title('A measuring mistake that never varies\ngoes into the model and '
                   'stays', fontsize=11.5, weight='bold')
     ax2.grid(axis='y', color=GRID, lw=0.7)
-    fig.suptitle('Two floors a depth model cannot get under: an ambiguous cue and a '
-                 'biased ruler', fontsize=12.5, weight='bold', y=1.03)
-    _save(fig, DOC, 'cue-ambiguity-floor.svg')
+    _save(fig, DOC, 'biased-ruler.svg')
 
 
 def depth_error_budget() -> None:
@@ -1383,7 +1375,7 @@ def depth_error_budget() -> None:
     print(f'      the angle alone is {100.0 * before[1] ** 2 / tot_b ** 2:.0f} per cent '
           f'of the squared total before the fix')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
+    fig, ax1 = plt.subplots(figsize=(7.4, 4.8), facecolor='white')
     _plain(ax1)
     names = [t[0] for t in terms]
     xs = np.arange(len(names))
@@ -1400,9 +1392,13 @@ def depth_error_budget() -> None:
                          'middle of\nthe mask'], fontsize=9.5)
     ax1.set_ylabel('error contributed (mm)', fontsize=10)
     ax1.set_ylim(0, 9)
-    ax1.set_title('Four things that each add millimetres', fontsize=11, weight='bold')
+    ax1.set_title('Four things that each add millimetres, and\nthe one that calibrating '
+                  'shrinks', fontsize=11.5, weight='bold')
     ax1.legend(fontsize=9.5, frameon=False, loc='upper right')
     ax1.grid(axis='y', color=GRID, lw=0.7)
+    _save(fig, DOC, 'depth-error-budget.svg')
+
+    fig, ax2 = plt.subplots(figsize=(6.0, 4.8), facecolor='white')
     _plain(ax2)
     ax2.bar(['as found', 'after calibrating'], [tot_b, tot_a], 0.5,
             color=[GRIP, SLIDE], alpha=0.9)
@@ -1415,12 +1411,10 @@ def depth_error_budget() -> None:
     ax2.set_xlim(-0.65, 1.6)
     ax2.set_ylim(0, 11)
     ax2.set_ylabel('all four added in quadrature (mm)', fontsize=10)
-    ax2.set_title('Calibrating the angle fixed the grasp;\ntraining a depth model would '
-                  'not have', fontsize=11, weight='bold')
+    ax2.set_title('The four terms added up, against the\nmargin they have to fit in',
+                  fontsize=11.5, weight='bold')
     ax2.grid(axis='y', color=GRID, lw=0.7)
-    fig.suptitle('The error budget tells you what to work on, and it is usually not '
-                 'the model', fontsize=12.5, weight='bold', y=1.03)
-    _save(fig, DOC, 'depth-error-budget.svg')
+    _save(fig, DOC, 'budget-total.svg')
 
 
 # ==========================================================================
@@ -1539,8 +1533,7 @@ def word_list_baseline() -> None:
         ok = sum(1 for _, w, g in [(r, w, g) for r, w, g in right] if w == nm)
         per[nm] = (ok, tot)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.0, 5.2), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.25]})
+    fig, ax1 = plt.subplots(figsize=(7.6, 5.2), facecolor='white')
     _plain(ax1)
     ys = np.arange(len(names))
     ax1.barh(ys, [per[nm][1] for nm in names], 0.62, color=LINK_PALE,
@@ -1554,21 +1547,8 @@ def word_list_baseline() -> None:
     ax1.set_xlim(0, 6.6)
     ax1.set_xticks(range(0, 6))
     ax1.set_title(f'{len(right)} of {n} requests need no model at all',
-                  fontsize=11.5, weight='bold')
+                  fontsize=12, weight='bold')
     ax1.legend(fontsize=9.5, frameon=False, loc='lower right')
-    _blank(ax2, (0, 10), (0, 10))
-    ax2.text(0.1, 9.9, f'the {len(wrong)} the word list got wrong, and why',
-             fontsize=11, weight='bold', color=INK, va='top')
-    for i, (req, want, got) in enumerate(wrong[:9]):
-        ax2.text(0.3, 9.0 - 0.92 * i, f'"{req}"', fontsize=9.5, color=GRIP, va='top')
-        ax2.text(5.0, 9.0 - 0.92 * i, f'{want}  not  {got}', fontsize=9,
-                 family='monospace', color=MUTED, va='top')
-    ax2.text(0.1, 1.5, 'Every one of them is a different way of saying a command\n'
-                       'that is already on the list, which is the one thing a\n'
-                       'language model is reliably good at.',
-             fontsize=10, color=INK, va='top')
-    fig.suptitle('Write the word list first: it is the baseline the model has to beat',
-                 fontsize=12.5, weight='bold', y=1.03)
     _save(fig, DOC, 'word-list-baseline.svg')
 
 
@@ -1667,8 +1647,7 @@ def retriever_first() -> None:
         print(f'      outside the top three: "{q}" came back {rank}th, '
               f'first was "{got}"')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.0, 1.3]})
+    fig, ax1 = plt.subplots(figsize=(6.4, 4.6), facecolor='white')
     _plain(ax1)
     vals = [at1, at3, at5]
     labs = ['first', 'in the\ntop three', 'in the\ntop five']
@@ -1678,28 +1657,25 @@ def retriever_first() -> None:
                  weight='bold', color=[LINK, TEAL, SLIDE][i])
     ax1.set_ylim(0, n * 1.22)
     ax1.set_ylabel('questions whose note was found', fontsize=10)
-    ax1.set_title('The retrieving step on its own,\nbefore any model reads anything',
-                  fontsize=11, weight='bold')
+    ax1.set_title(f'Where the right note landed, for {n} questions\nover '
+                  f'{len(NOTES)} notes, with no model reading anything',
+                  fontsize=11.5, weight='bold')
     ax1.grid(axis='y', color=GRID, lw=0.7)
+    _save(fig, DOC, 'retriever-first.svg')
+
     rowq, want = FACT_QUESTIONS[0]
     scores_order = _tfidf_match([rowq], NOTES)[0]
-    _blank(ax2, (0, 10), (0, 10))
-    ax2.text(0.1, 9.8, f'"{rowq}"', fontsize=11, weight='bold', color=INK, va='top')
-    ax2.text(0.1, 8.9, 'the five notes it brings back, in order', fontsize=10,
+    fig, ax2 = plt.subplots(figsize=(8.8, 3.4), facecolor='white')
+    _blank(ax2, (0, 10), (1.3, 10.0))
+    ax2.text(0.1, 9.6, f'"{rowq}"', fontsize=11.5, weight='bold', color=INK, va='top')
+    ax2.text(0.1, 8.2, 'the five notes it brings back, in order', fontsize=10,
              color=MUTED, va='top')
     for i in range(5):
         ni = int(scores_order[i])
         col = SLIDE if ni == want else MUTED
-        ax2.text(0.3, 8.1 - 1.0 * i, f'{i + 1}. {NOTES[ni]}', fontsize=9.5, color=col,
-                 va='top')
-    ax2.text(0.1, 2.6, 'If the right note is not in this list, no model can\n'
-                       'answer from it, so this is the number to fix first,\n'
-                       'and fixing it means editing notes rather than\n'
-                       'training anything.',
-             fontsize=10, color=INK, va='top')
-    fig.suptitle('Retrieval is tested without a model, because a model cannot read a '
-                 'note it was not given', fontsize=12.5, weight='bold', y=1.03)
-    _save(fig, DOC, 'retriever-first.svg')
+        ax2.text(0.3, 7.0 - 1.35 * i, f'{i + 1}. {NOTES[ni]}', fontsize=10.5,
+                 color=col, va='top')
+    _save(fig, DOC, 'one-question-five-notes.svg')
 
 
 LORA_RANKS: list[int] = [2, 4, 8, 16, 32, 64]
@@ -1721,24 +1697,17 @@ def adapter_and_pairs() -> None:
           f'pairs as a floor, and the {len(REQUESTS)} requests above average '
           f'{len(REQUESTS) / n_cmd:.1f} a command')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.15, 1.0]})
-    _blank(ax1, (0, 10), (0, 10))
-    ax1.text(0.1, 9.9, 'one fine-tuning example: a pair of written strings',
-             fontsize=11, weight='bold', color=INK, va='top')
+    fig, ax1 = plt.subplots(figsize=(7.6, 2.4), facecolor='white')
+    _blank(ax1, (0, 10), (0.6, 9.8))
     pair = ['{', '  "prompt":  "operator: take it easy",', '  "answer":  "slower"', '}']
     for i, ln in enumerate(pair):
-        ax1.text(0.3, 9.0 - 0.72 * i, ln, fontsize=10, family='monospace', color=TEAL,
+        ax1.text(0.3, 9.2 - 2.2 * i, ln, fontsize=12, family='monospace', color=TEAL,
                  va='top')
-    ax1.text(0.1, 5.7, 'how many pairs the job needs', fontsize=11, weight='bold',
-             color=INK, va='top')
-    ax1.text(0.3, 4.9, f'{n_cmd} commands, and a person can say each of\n'
-                       f'them about {phrasings} different ways, so {pairs} pairs\n'
-                       f'is the floor and not the target. Every pair is\n'
-                       f'a sentence somebody wrote, so the data is\n'
-                       f'written rather than collected, and a day of\n'
-                       f'writing gets you several hundred.',
-             fontsize=10, color=INK, va='top')
+    fig.suptitle('One fine-tuning example for this job: a prompt and the answer you '
+                 'wanted', fontsize=12.5, weight='bold', y=1.02)
+    _save(fig, DOC, 'one-example-pair.svg')
+
+    fig, ax2 = plt.subplots(figsize=(7.4, 4.6), facecolor='white')
     _plain(ax2)
     ax2.bar([str(r) for r in LORA_RANKS], counts, 0.55, color=PURPLE, alpha=0.9)
     for i, c in enumerate(counts):
@@ -1752,11 +1721,9 @@ def adapter_and_pairs() -> None:
     ax2.set_xlabel('rank of the adapter', fontsize=10)
     ax2.set_ylabel('numbers trained (log scale)', fontsize=10)
     ax2.set_title(f'A rank 8 adapter trains {100.0 * counts[2] / full:.2f} per cent of '
-                  'one matrix', fontsize=11, weight='bold')
+                  f'one {LORA_DIM} by {LORA_DIM} matrix', fontsize=11.5, weight='bold')
     ax2.grid(axis='y', color=GRID, lw=0.7)
-    fig.suptitle('A fine-tune for this job is written sentences and a very small number '
-                 'of new weights', fontsize=12.5, weight='bold', y=1.03)
-    _save(fig, DOC, 'adapter-and-pairs.svg')
+    _save(fig, DOC, 'adapter-ranks.svg')
 
 
 TEST_N: list[int] = [10, 20, 40, 100, 200, 400]
@@ -1898,7 +1865,25 @@ def tokens_and_time() -> None:
         print(f'      {res:4d} px at 4000 tokens a second: {work / 4000.0:.2f} s, which '
               f'is {100 * work / 4000.0 / budget:.0f} per cent of a {budget:.0f} s cycle')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.8), facecolor='white')
+    fig, ax2 = plt.subplots(figsize=(7.0, 4.6), facecolor='white')
+    _plain(ax2)
+    xs = np.arange(len(rows))
+    toks = [r[2] for r in rows]
+    ax2.bar(xs, toks, 0.55, color=LINK, alpha=0.9)
+    for i, (res, tiles, tk, _, _) in enumerate(rows):
+        ax2.text(i, tk + 110, f'{tk}\n{tiles} crop' + ('s' if tiles > 1 else ''),
+                 ha='center', fontsize=9.5, weight='bold', color=LINK)
+    ax2.set_xticks(xs)
+    ax2.set_xticklabels([f'{r[0]} px' for r in rows], fontsize=10)
+    ax2.set_ylim(0, max(toks) * 1.3)
+    ax2.set_xlabel('width of the picture handed to the model', fontsize=10)
+    ax2.set_ylabel('tokens the picture alone becomes', fontsize=10)
+    ax2.set_title('A wider picture becomes more crops, and\nevery crop is '
+                  f'{(TILE // PATCH) ** 2} tokens', fontsize=11.5, weight='bold')
+    ax2.grid(axis='y', color=GRID, lw=0.7)
+    _save(fig, DOC, 'picture-tokens.svg')
+
+    fig, ax1 = plt.subplots(figsize=(7.6, 4.8), facecolor='white')
     _plain(ax1)
     for (res, _, _, _, work), colour in zip(rows, (SLIDE, TEAL, LINK, PURPLE)):
         ax1.plot(rates, work / rates, color=colour, lw=2.2, label=f'{res} px picture')
@@ -1911,25 +1896,9 @@ def tokens_and_time() -> None:
     ax1.set_ylabel('time to answer one question (s)', fontsize=10)
     ax1.set_ylim(0, 5.2)
     ax1.set_title('One question, four picture sizes: the time is the\ntoken count '
-                  'divided by your own speed', fontsize=11, weight='bold')
+                  'divided by your own speed', fontsize=11.5, weight='bold')
     ax1.legend(fontsize=9.5, frameon=False, loc='upper right')
     ax1.grid(color=GRID, lw=0.7)
-    _plain(ax2)
-    xs = np.arange(len(rows))
-    toks = [r[2] for r in rows]
-    ax2.bar(xs, toks, 0.55, color=LINK, alpha=0.9)
-    for i, (res, tiles, tk, _, _) in enumerate(rows):
-        ax2.text(i, tk + 110, f'{tk}\n{tiles} crop' + ('s' if tiles > 1 else ''),
-                 ha='center', fontsize=9.5, weight='bold', color=LINK)
-    ax2.set_xticks(xs)
-    ax2.set_xticklabels([f'{r[0]} px' for r in rows], fontsize=10)
-    ax2.set_ylim(0, max(toks) * 1.3)
-    ax2.set_ylabel('tokens the picture alone becomes', fontsize=10)
-    ax2.set_title('Doubling the picture\'s width roughly quadruples\nwhat the model has '
-                  'to read', fontsize=11, weight='bold')
-    ax2.grid(axis='y', color=GRID, lw=0.7)
-    fig.suptitle('Asking about a picture costs time, and the picture is nearly all of it',
-                 fontsize=12.5, weight='bold', y=1.03)
     _save(fig, DOC, 'tokens-and-time.svg')
 
 
@@ -1972,33 +1941,115 @@ def fixed_answer_list() -> None:
     print(f'      scored by mapping each answer onto the two allowed replies: '
           f'{mapped} of {n} ({mapped / n:.1%})')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 5.0), facecolor='white',
-                                   gridspec_kw={'width_ratios': [1.35, 1.0]})
+    fig, ax1 = plt.subplots(figsize=(8.8, 4.8), facecolor='white')
     _blank(ax1, (0, 10), (0, 10))
-    ax1.text(0.1, 9.9, 'sixteen answers to one question, every one of them correct',
-             fontsize=11, weight='bold', color=INK, va='top')
     for i, (a, t) in enumerate(FREE_ANSWERS):
         col = SLIDE if t else WRIST
         row, col_i = i % 8, i // 8
-        ax1.text(0.3 + 5.0 * col_i, 8.9 - 1.03 * row, f'"{a}"', fontsize=9.5, color=col,
-                 va='top')
-    ax1.text(0.1, 0.5, f'{distinct_raw} different strings; '
-                       f'{distinct_norm} once the capitals and full stops go.',
+        ax1.text(0.3 + 4.9 * col_i, 9.2 - 1.07 * row, f'"{a}"', fontsize=10.5,
+                 color=col, va='top')
+    ax1.text(0.1, 0.5, f'{distinct_raw} different strings, {distinct_norm} once the '
+                       f'capitals and full stops go.',
              fontsize=10, color=MUTED, va='top')
+    fig.suptitle('One question, sixteen correct answers, sixteen different strings',
+                 fontsize=12.5, weight='bold', y=1.0)
+    _save(fig, DOC, 'sixteen-answers.svg')
+
+    fig, ax2 = plt.subplots(figsize=(6.2, 4.6), facecolor='white')
     _plain(ax2)
     ax2.bar(['matching the\nstring exactly', 'mapping onto\ntwo allowed replies'],
             [exact / n, mapped / n], 0.5, color=[GRIP, SLIDE], alpha=0.9)
     for i, v in enumerate([exact / n, mapped / n]):
         ax2.text(i, v + 0.02, f'{v:.0%}', ha='center', fontsize=13, weight='bold',
                  color=[GRIP, SLIDE][i])
-    ax2.set_ylim(0, 1.12)
+    ax2.set_ylim(0, 1.15)
     ax2.set_ylabel('share the scoring program counted as right', fontsize=10)
     ax2.set_title('The same sixteen correct answers,\nscored two ways',
-                  fontsize=11, weight='bold')
+                  fontsize=11.5, weight='bold')
     ax2.grid(axis='y', color=GRID, lw=0.7)
-    fig.suptitle('The commonest mistake is letting the model answer in free text and '
-                 'then scoring the text', fontsize=12.5, weight='bold', y=1.03)
     _save(fig, DOC, 'fixed-answer-list.svg')
+
+
+def _logreg_pred(xtr: Arr, ytr: NDArray[np.int64], xte: Arr,
+                 steps: int = 700, lr: float = 1.2,
+                 wd: float = 3e-3) -> NDArray[np.int64]:
+    """The same training as _logreg, but return what it guessed for each test row."""
+    mu, sd = xtr.mean(0), xtr.std(0) + 1e-8
+    a = np.hstack([(xtr - mu) / sd, np.ones((len(xtr), 1))])
+    b = np.hstack([(xte - mu) / sd, np.ones((len(xte), 1))])
+    wt = np.zeros((a.shape[1], N_CLS))
+    target = np.eye(N_CLS)[ytr]
+    for _ in range(steps):
+        pr = _softmax_rows(a @ wt)
+        wt -= lr * (a.T @ (pr - target) / len(a) + wd * wt)
+    return np.argmax(b @ wt, axis=1).astype(np.int64)
+
+
+WORST_N: int = 16          # training pictures a class for the per-class measurement
+
+
+def worst_class() -> None:
+    """1e: the average over classes hides the class that is never right."""
+    _, sm_te, y_te = _batch(120, seed=99)
+    _, sm_tr, y_tr = _batch(WORST_N, seed=1000)
+    said = _logreg_pred(sm_tr, y_tr, sm_te)
+    per = [float((said[y_te == c] == c).mean()) for c in range(N_CLS)]
+    mean = float(np.mean(per))
+    worst = int(np.argmin(per))
+    print(f'[1e] the same really trained classifier at {WORST_N} pictures a class, '
+          f'scored class by class on {len(y_te)} held-out pictures')
+    for c, v in enumerate(per):
+        print(f'      {CLS_NAMES[c]:6s} {v:.3f}')
+    print(f'      the average over the six classes is {mean:.3f}, and the worst class, '
+          f'{CLS_NAMES[worst]}, is {mean - per[worst]:.3f} below it')
+
+    fig, ax = plt.subplots(figsize=(7.4, 4.6), facecolor='white')
+    _plain(ax)
+    cols = [GRIP if c == worst else LINK for c in range(N_CLS)]
+    ax.bar(np.arange(N_CLS), per, 0.6, color=cols, alpha=0.9)
+    for c, v in enumerate(per):
+        ax.text(c, v - 0.03, f'{v:.3f}', ha='center', va='top', fontsize=10,
+                weight='bold', color='white')
+    ax.axhline(mean, color=INK, ls='--', lw=1.5)
+    ax.text(-0.45, mean + 0.025, f'the average, {mean:.3f}', fontsize=9.5,
+            color=INK, ha='left')
+    ax.set_xticks(np.arange(N_CLS))
+    ax.set_xticklabels(CLS_NAMES, fontsize=10)
+    ax.set_ylim(0, 1.12)
+    ax.set_ylabel('share of that class\'s held-out pictures named right', fontsize=10)
+    ax.set_title(f'One average, six very different classes: {CLS_NAMES[worst]} is '
+                 f'{mean - per[worst]:.3f}\nbelow the number you would have reported',
+                 fontsize=11.5, weight='bold')
+    ax.grid(axis='y', color=GRID, lw=0.7)
+    _save(fig, DOC, 'worst-class.svg')
+
+
+def missing_label_line() -> None:
+    """2e: a missing line is a statement that there is nothing there."""
+    bolt = next(o for o in SCENE_OBJ if o['name'] == 'bolt')
+    bx1, by1, bx2, by2 = bolt['box']
+    print('[2e] the same scene with the bolt left unlabelled: the file holds '
+          f'{len(SCENE_OBJ) - 1} lines for {len(SCENE_OBJ)} objects')
+
+    fig, ax = plt.subplots(figsize=(7.4, 5.4), facecolor='white')
+    _show(ax, SCENE_RGB)
+    cols = {'mug': TEAL, 'glass': LINK, 'tray': PURPLE}
+    for o in SCENE_OBJ:
+        if o['name'] == 'bolt':
+            continue
+        name = 'glass' if o['name'].startswith('glass') else o['name']
+        _draw_box(ax, o['box'], cols[name], name, lw=1.8,
+                  above=o['name'] != 'tray')
+    ax.add_patch(Circle(((bx1 + bx2) / 2.0, (by1 + by2) / 2.0), 34, fill=False,
+                        edgecolor=GRIP, lw=2.0, ls='--'))
+    ax.annotate('no line in the file\nmentions this bolt',
+                xy=((bx1 + bx2) / 2.0 - 36, (by1 + by2) / 2.0 + 4),
+                xytext=(30, 440), fontsize=10, color=GRIP, weight='bold',
+                va='top', ha='left',
+                arrowprops=dict(arrowstyle='->', color=GRIP, lw=1.4))
+    ax.set_title('Five lines for six objects: the file now says the bolt\n'
+                 'is not an object worth finding', fontsize=11.5, weight='bold')
+    _save(fig, DOC, 'missing-line.svg')
 
 
 def main() -> None:
@@ -2010,9 +2061,11 @@ def main() -> None:
     classifier_example_files()
     examples_per_class_curve()
     covering_the_conditions()
+    worst_class()
     one_name_is_not_a_place()
     detector_label_file()
     boxes_and_hours()
+    missing_label_line()
     rare_class_split()
     average_precision()
     polygon_clicks()

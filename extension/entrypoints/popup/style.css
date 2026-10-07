@@ -1,0 +1,13 @@
+body { width: 360px; margin: 0; padding: 12px; font: 13px system-ui, sans-serif; color: #111; }
+header, .filters { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+header span { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+select { flex: 1; min-width: 0; }
+button { cursor: pointer; }
+.status { color: #666; font-size: 11px; margin-bottom: 8px; }
+.status.err { color: #b91c1c; }
+ul { list-style: none; padding: 0; margin: 0; max-height: 420px; overflow-y: auto; }
+li { border-left: 4px solid; padding: 4px 8px; margin-bottom: 8px; background: #fafafa; }
+li a { color: #111; text-decoration: none; display: block; }
+li small { color: #666; }
+li .note { margin-top: 2px; font-style: italic; }
+li button { float: right; border: 0; background: none; color: #999; }

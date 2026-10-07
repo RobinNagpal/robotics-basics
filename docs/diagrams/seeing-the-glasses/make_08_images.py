@@ -82,7 +82,15 @@ MM_PER_PIXEL = SURVEY_H / FX
 # The prompt grid. SAM 2 is prompted with points laid out regularly in the
 # picture; the table is flat and square to the camera, so a regular grid of
 # pixels is a regular grid of millimetres on the table plane as well.
-GRID_PIXELS = 24.0
+#
+# The spacing is NOT a number chosen for the picture. sam_keeper.prompt_spacing
+# divides the narrowest footprint the kind allows by POINTS_ACROSS_SMALLEST = 3,
+# so the grid always puts three points across the smallest glass the kind can
+# produce. This file used to carry GRID_PIXELS = 24.0, which drew a grid at
+# 39 mm where the code lays one at 15 to 21 mm depending on the kind — about
+# twice too coarse, and a picture claiming a density the run never used.
+POINTS_ACROSS_SMALLEST = 3    # 05-sam2-with-a-keeper/sam_keeper.py
+GRID_PIXELS = float(max(1, int((KIND_NARROWEST / MM_PER_PIXEL) / POINTS_ACROSS_SMALLEST)))
 GRID_MM = GRID_PIXELS * MM_PER_PIXEL
 
 # SAM 2 answers one point with more than one mask, at more than one scale, and the

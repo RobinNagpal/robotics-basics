@@ -1,23 +1,20 @@
 # The code
 
 This page shows the code at the heart of this solution, and says what the
-solution hands back to the rest of the cell. The second explains the first,
-which is why they are on one page.
+solution hands back to the rest of the cell.
 
 ## Contents
 
 1. [The code at the heart of it](#1-the-code-at-the-heart-of-it)
 2. [The masks are what this contributes](#2-the-masks-are-what-this-contributes)
-3. [How the concepts fit together](#3-how-the-concepts-fit-together)
+3. [Three things to hold on to](#3-three-things-to-hold-on-to)
 
 ## 1. The code at the heart of it
 
-This solution is two models meeting at one place, so that place is worth seeing
-before the rest of the document explains it. On one side a grid of point
-prompts goes into the borrowed model. On the other a short row of measurements
-comes back out of what the borrowed model returned, and that row is the only
-thing the fitted model ever reads. Everything after this section is an account
-of those two sides.
+This solution is two models meeting at one place, so that place is worth seeing.
+On one side a grid of point prompts goes into the borrowed model. On the other a
+short row of measurements comes back out of what the borrowed model returned,
+and that row is the only thing the fitted model ever reads.
 
 Going in, in `05-sam2-with-a-keeper/sam_keeper.py`: how far apart the grid's
 points stand is taken from the narrowest glass the kind allows rather than
@@ -49,10 +46,7 @@ def _grid(spacing: int, inside: np.ndarray | None = None) -> list[list[float]]:
 ```
 
 Coming out, in the same file: every region that survived the cleanup becomes
-numbers measured on the table rather than in the picture. Six of the keeper's
-eight come from here. The other two — how many prompt points returned this same
-region, and how it nests among the regions beside it — are added by the function
-that calls this one, because neither can be known from one region on its own.
+numbers measured on the table rather than in the picture.
 
 ```python
 def _measure(picture, mask, found, jumps, step, camera, widths) -> list[float]:
@@ -71,6 +65,17 @@ def _measure(picture, mask, found, jumps, step, camera, widths) -> list[float]:
         _table_area(points),
     ]
 ```
+
+That function returns six numbers and the keeper reads eight, and the gap is not
+an oversight. Six of the eight can be worked out from one proposal on its own,
+and two of them cannot be worked out from one proposal at all. How many prompt
+points returned this same mask is a count the duplicate removal already made
+while comparing the whole shortlist. Whether another proposal contains this one,
+or this one contains another, is a statement about a pair. Both are added by
+`_proposals`, which holds the whole shortlist, after `_measure` has done its
+work on each region separately.
+
+![Six of the keeper's eight numbers are measured from one proposal on its own, while the vote count and the containment count exist only once the whole shortlist is laid side by side, which is why the measuring is split across two functions.](../../images/seeing-the-glasses/a-foundation-model-with-a-keeper/09-where-the-eight-numbers-come-from.png)
 
 Two things show in those two blocks. The borrowed half is one call,
 `self.model(...)` on a `Sam2Model` loaded through Hugging Face `transformers`,
@@ -96,27 +101,7 @@ the keeper produces a decision about a region, and the pose comes from depth and
 the camera's own pose by arithmetic. A glass standing upright on a flat table
 has no orientation left to find.
 
-## 3. How the concepts fit together
-
-Everything above is one pipeline, worth seeing in order before the failure
-cases, because each stage works only on what the stage before it passed along.
-
-The depth readings are **shaded** into a grey picture. The **picture encoder**
-runs once over it. A **grid of point prompts** then goes through the mask
-decoder, one cheap pass each, and scoring, stability and duplicate removal
-reduce what comes back to a shortlist of **proposals**. Each proposal's pixels
-become **points in the room**, and a place, a width, a height above the table
-and the rest of the **measurements** come out of those points and of the
-proposals beside it. The **keeper** reads the measurements and answers one of
-three things, with its probability **calibrated** so that the two thresholds
-mean what they say. A proposal it keeps must still pass the **width check**
-against the kind before it is reported, and where two reports land at **one
-place on the table** only the surer of them survives. A proposal it calls more
-than one glass goes back for a **second round of prompts inside itself**.
-Anything left over is **reported doubtful**, which for a pair means handing it
-to the job of pushing the glasses apart.
-
-Three things about that chain are worth holding on to.
+## 3. Three things to hold on to
 
 **The only fitted stage is the keeper**, which reads a table of numbers rather
 than pictures, so everything that finds objects is borrowed and none of it knows

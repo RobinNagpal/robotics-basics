@@ -93,7 +93,17 @@ put on a table rather than a measurement of anything standing on one.
 
 ![The camera measures the table, the glass with the worst shortfall of clear room is chosen along with the neighbour responsible for it, the glass is checked against the tipping rule, and it is pushed a fixed fraction of the shortfall straight away from that neighbour before the arm looks again.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-what-it-does.png)
 
-![Predicting where a pushed glass stops needs the friction and the weight distribution that nobody in this cell has measured, so this method makes no prediction at all: the direction is right for any friction and the travel is deliberately too small, which leaves a smaller shortfall rather than an overshoot.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-repeat-not-predict.png)
+The two pictures below say why the loop has that shape. The first is the method
+this one refuses: aiming the push at where the glass will stop. The second is
+what this solution does instead.
+
+![Aiming a push at where the glass will come to rest needs the friction with the table and how the weight sits on the foot; nobody in this cell has measured either, so the push lands short of the room needed or into the next glass.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-why-prediction-fails.png)
+
+So this solution makes no prediction at all. It measures, pushes a little way in
+a direction that is right whatever the friction turns out to be, and then looks
+at the table again.
+
+![The same job done without any prediction: measure the shortfall, push straight away from the crowding neighbour by a fixed fraction of it, look at the table again, and repeat until the glass is no longer short of room.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-flow-repeat-not-predict.png)
 
 ## 2. The problem this solves
 

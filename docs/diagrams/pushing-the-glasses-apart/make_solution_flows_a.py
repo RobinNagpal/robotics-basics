@@ -8,9 +8,11 @@ has to stand on its own.
 
     nudge-flow-what-it-does.png         solution 1 as the loop it is, with the
                                         three ways the loop ends.
-    nudge-flow-repeat-not-predict.png   a method that predicts beside one that
-                                        does not, which is solution 1's whole
-                                        idea.
+    nudge-flow-why-prediction-fails.png why aiming at where the glass will stop
+                                        needs a number nothing here measures
+    nudge-flow-repeat-not-predict.png   the loop that predicts nothing and
+                                        looks again instead, which is
+                                        solution 1's whole idea.
     ranked-flow-what-it-does.png        solution 2 in three stages, only the
                                         last of which is fitted.
     ranked-flow-where-the-model-sits.png  what the placement of the fitted part
@@ -604,121 +606,76 @@ def nudge_what_it_does() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def nudge_repeat_not_predict() -> None:
-    """A method that predicts where the glass stops, beside one that predicts nothing.
+def nudge_why_prediction_fails() -> None:
+    """One flow chart: why a method that predicts where the glass stops cannot work here.
 
-    The two columns are the comparison the document rests on. The left column
-    ends in a claim that can be wrong; the right column makes no claim that
-    needs the missing number, so the only thing it spends is passes round the
-    loop.
+    The chart ends in a claim that can be wrong, and the reason it can be wrong
+    is one number nothing in this cell measures. The method that answers it is
+    a chart of its own, because two charts in one picture halve the size of
+    both.
     """
-    width, height = 12.1, 7.8
+    width, height = 7.6, 4.4
     figure, axis = sheet(width, height)
-    left_x, left_w = 2.95, 4.95
-    right_x, right_w = 8.65, 5.3
-    corridor = right_x + right_w / 2.0 + 0.45
+    middle, span = width / 2.0, 5.6
 
     top = title(figure, axis, width, height - 0.12,
-                "Why one fixed nudge repeats instead of predicting") - 0.30
+                "Why predicting where the glass stops does not work here") - 0.34
 
-    note(axis, left_x, top, "A method that predicts where the glass will stop",
-         colour=WARN, size=LABEL_SIZE, ha="center", weight="bold", figure=figure)
-    note(axis, right_x, top, "One fixed nudge, which predicts nothing",
-         colour=GOOD, size=LABEL_SIZE, ha="center", weight="bold", figure=figure)
-    row = top - 0.34
+    y = box(figure, axis, middle, top, span,
+            "Work out where the glass will come to rest, and aim the push there.")
+    arrow(axis, (middle, y), (middle, y - GAP))
+    y = box(figure, axis, middle, y - GAP, span,
+            "That needs the friction with the table,\n"
+            "and how the weight sits on the foot.")
+    arrow(axis, (middle, y), (middle, y - GAP), colour=WARN)
+    y = box(figure, axis, middle, y - GAP, span,
+            "Nobody in this cell has measured either.\n"
+            f"The most that can be believed is a range: {MU_LOWEST} to {MU_HIGHEST}.",
+            edge=WARN, face=_tint(WARN, 0.93))
+    arrow(axis, (middle, y), (middle, y - GAP), colour=WARN)
+    bottom = box(figure, axis, middle, y - GAP, span,
+                 "So the push lands somewhere else:\n"
+                 "short of the room needed, or into the next glass.",
+                 edge=WARN, face=_tint(WARN, 0.86), weight="bold")
 
-    # ---- the column that predicts
-    y = box(
-        figure, axis, left_x, row, left_w,
-        "Choose the push by working out where the\n"
-        "glass will come to rest, and aim it there.",
-    )
-    arrow(axis, (left_x, y), (left_x, y - GAP))
-    y = box(
-        figure, axis, left_x, y - GAP, left_w,
-        "That prediction needs the friction between\n"
-        "the glass and the table, and it needs how the\n"
-        "glass's weight is spread over its foot.",
-    )
-    arrow(axis, (left_x, y), (left_x, y - GAP), colour=WARN)
-    y = box(
-        figure, axis, left_x, y - GAP, left_w,
-        "Nobody in this cell has measured either.\n"
-        "Nothing here measures friction and the\n"
-        "examiner never tells a solution the numbers\n"
-        "it runs the physics with, so the best that\n"
-        f"can be believed is a range, {MU_LOWEST} to {MU_HIGHEST} for\n"
-        "glass on a dry wooden top.",
-        edge=WARN, face=_tint(WARN, 0.93),
-    )
-    arrow(axis, (left_x, y), (left_x, y - GAP), colour=WARN)
-    left_bottom = box(
-        figure, axis, left_x, y - GAP, left_w,
-        "So the prediction can be wrong, and a push\n"
-        "aimed straight at the answer lands\n"
-        "somewhere else: short of the room the glass\n"
-        "needed, or past it and into the next glass.\n"
-        "The extra travel is extra distance in which\n"
-        "something gets knocked over.",
-        edge=WARN, face=_tint(WARN, 0.86), weight="bold",
-    )
+    finish(figure, axis, "nudge-flow-why-prediction-fails.png", bottom - 0.30)
+    save(figure, "nudge-flow-why-prediction-fails.png")
 
-    # ---- the column that does not
-    y = box(
-        figure, axis, right_x, row, right_w,
-        f"Measure how much room the glass is short of: {GRIP_ROOM_MM} mm,\n"
-        "plus half the neighbour's widest width, minus the\n"
-        "distance between the two middles.",
-    )
-    measure_mid = y + 0.5 * (row - y)
-    arrow(axis, (right_x, y), (right_x, y - GAP), colour=GOOD)
-    y = box(
-        figure, axis, right_x, y - GAP, right_w,
-        "Push straight away from the crowding neighbour. The\n"
-        "friction decides how far the glass goes. It does not\n"
-        "decide which way, so this direction increases the\n"
-        "distance between the two glasses for any friction there\n"
-        "is, and no number anybody failed to measure is needed\n"
-        "for that to be true.",
-        edge=GOOD, face=_tint(GOOD, 0.90),
-    )
-    arrow(axis, (right_x, y), (right_x, y - GAP), colour=GOOD)
-    y = box(
-        figure, axis, right_x, y - GAP, right_w,
-        "Travel a fixed fraction of the shortfall. The fraction is\n"
-        "deliberately less than one, so the push closes part of\n"
-        "the gap and cannot carry the glass past where it\n"
-        "needed to be.",
-        edge=GOOD, face=_tint(GOOD, 0.90),
-    )
-    arrow(axis, (right_x, y), (right_x, y - GAP), colour=GOOD)
-    right_bottom = box(
-        figure, axis, right_x, y - GAP, right_w,
-        "Look at the table again. The remaining shortfall is\n"
-        "simply smaller than it was, and the same arithmetic\n"
-        "runs on the new measurements.",
-    )
-    elbow(axis, (right_x + right_w / 2.0, right_bottom + 0.22),
-          (right_x + right_w / 2.0, measure_mid), corridor, colour=GOOD)
-    right_bottom = note(
-        axis, right_x, right_bottom - 0.18,
-        "and again, until the glass is no longer short of room",
-        colour=GOOD, ha="center", weight="bold", figure=figure,
-    )
 
-    bottom = min(left_bottom, right_bottom) - 0.40
-    axis.plot([0.4, width - 0.4], [bottom, bottom], color=MUTED, lw=0.9, ls=(0, (5, 4)), zorder=1)
-    bottom = note(
-        axis, width / 2.0, bottom - 0.22,
-        "Write the shortfall as s and the fraction as k, so the jaw is told to travel k · s. What the glass does is\n"
-        "g · k · s, where g stands for everything the friction decides and nothing in the cell measures it. The\n"
-        "shortfall left afterwards is s · (1 − g · k), which shrinks whenever g · k lies between 0 and 2. Aiming to\n"
-        "close the whole gap, k = 1, needs g known to within a factor of two. A small k converges without\n"
-        "knowing g at all, and pays for that in passes round the loop rather than in glasses knocked over.",
-        colour=INK, ha="center", figure=figure,
-    )
+def nudge_repeat_not_predict() -> None:
+    """One flow chart: the loop that predicts nothing and runs again instead."""
+    width, height = 7.6, 4.7
+    figure, axis = sheet(width, height)
+    middle, span = width / 2.0 - 0.3, 5.4
+    corridor = middle + span / 2.0 + 0.5
 
-    finish(figure, axis, "nudge-flow-repeat-not-predict.png", bottom)
+    top = title(figure, axis, width, height - 0.12,
+                "One fixed nudge: measure, push a little, and look again") - 0.34
+
+    y = box(figure, axis, middle, top, span,
+            "Measure how much room the glass is short of.")
+    measure_mid = y + 0.5 * (top - y)
+    arrow(axis, (middle, y), (middle, y - GAP), colour=GOOD)
+    y = box(figure, axis, middle, y - GAP, span,
+            "Push straight away from the crowding neighbour.\n"
+            "That direction opens the gap at any friction.",
+            edge=GOOD, face=_tint(GOOD, 0.90))
+    arrow(axis, (middle, y), (middle, y - GAP), colour=GOOD)
+    y = box(figure, axis, middle, y - GAP, span,
+            "Travel a fixed fraction of the shortfall,\n"
+            "and the fraction is less than one.",
+            edge=GOOD, face=_tint(GOOD, 0.90))
+    arrow(axis, (middle, y), (middle, y - GAP), colour=GOOD)
+    bottom = box(figure, axis, middle, y - GAP, span,
+                 "Look at the table again.\n"
+                 "The shortfall left is smaller than it was.")
+    elbow(axis, (middle + span / 2.0, bottom + 0.22),
+          (middle + span / 2.0, measure_mid), corridor, colour=GOOD)
+    bottom = note(axis, middle, bottom - 0.22,
+                  "and again, until the glass is no longer short of room",
+                  colour=GOOD, ha="center", weight="bold", figure=figure)
+
+    finish(figure, axis, "nudge-flow-repeat-not-predict.png", bottom - 0.20)
     save(figure, "nudge-flow-repeat-not-predict.png")
 
 
@@ -1162,6 +1119,7 @@ def imitation_the_demonstrations() -> None:
 
 def main() -> None:
     nudge_what_it_does()
+    nudge_why_prediction_fails()
     nudge_repeat_not_predict()
     ranked_what_it_does()
     ranked_where_the_model_sits()

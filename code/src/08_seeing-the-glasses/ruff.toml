@@ -1,4 +1,11 @@
-extend = "../ruff.toml"
+# These four settings used to live in a shared ruff.toml one level up. That file
+# belonged to the single book these two were split out of, and went with it, so
+# each book now carries them itself rather than extending a path that is gone.
+line-length = 110
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 
 [lint.isort]
 # The bench's modules import each other by bare name, and so do the solutions.

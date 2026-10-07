@@ -187,18 +187,18 @@ def build(kind: str, seed: int = 0, chunk: int = CHUNK):
         from lerobot.policies.act.configuration_act import ACTConfig
         from lerobot.policies.act.modeling_act import ACTPolicy
 
-        # Step 9: ask LeRobot for its ACT model -- the one borrowed piece of this solution
+        # Step 4: ask LeRobot for its ACT model -- the one borrowed piece of this solution
         return ACTPolicy(
             ACTConfig(
                 input_features=inputs,
                 output_features=outputs,
-                # Step 10: the answer is one block of this many waypoints
+                # Step 4: the answer is one block of this many waypoints
                 chunk_size=chunk,
-                # Step 11: carry the whole block out, because one push is one chunk
+                # Step 4: carry the whole block out, because one push is one chunk
                 n_action_steps=chunk,
-                # Step 12: start the vision part from random numbers, downloading nothing
+                # Step 4: start the vision part from random numbers, downloading nothing
                 pretrained_backbone_weights=None,
-                # Step 13: leave the library's own scaling off; this folder scales the numbers
+                # Step 4: leave the library's own scaling off; this folder scales the numbers
                 normalization_mapping=_UNTOUCHED,
                 push_to_hub=False,
             )
@@ -265,12 +265,12 @@ class Imitator:
 
     def chunk(self, picture: np.ndarray) -> np.ndarray:
         """One action chunk from one picture: (chunk, 5) in the table's own units."""
-        # Step 14: switch the model from being fitted to answering
+        # Step 5: switch the model from being fitted to answering
         self.net.eval()
         with torch.no_grad():
-            # Step 15: hand it the scaled picture of the table and take one chunk back
+            # Step 5: hand it the scaled picture of the table and take one chunk back
             answer = self.net.predict_action_chunk(self.batch(picture))
-        # Step 16: turn the model's -1 to 1 numbers back into the table's own units
+        # Step 5: turn the model's -1 to 1 numbers back into the table's own units
         return self.scale.back(answer[0].float().cpu().numpy())
 
     def save(self, folder: Path) -> None:

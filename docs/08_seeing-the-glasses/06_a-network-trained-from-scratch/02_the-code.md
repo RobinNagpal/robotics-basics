@@ -21,31 +21,32 @@ answers three numbers at every pixel of a half-size picture: one saying whether
 the pixel is glass, and two holding the arrow to the middle of that pixel's own
 glass.
 
-The code runs in twenty steps, and the comments in it carry the same numbers.
-Steps 1 to 7 build the answer the network is trained towards, steps 8 to 14 are
-the network that produces it, and steps 15 to 20 turn its answer into one
-glass's mask.
+The code runs in six steps, and the comments in it carry the same numbers. The
+first two build the answer the network is trained towards, the next two are the
+network that produces it, and the last two turn its answer into one glass's
+mask.
 
-Steps 1 to 7 are in ``02-train-from-scratch/models.py``. Step 1 reads the
-simulator's record of which glass each pixel shows, which is the answer key.
-Step 2 makes room for three numbers at every pixel. Step 3 fills in the first of
-them: one where a glass was seen, zero on the table. Step 4 notes the row and
-column of every pixel, because an arrow has to be measured from somewhere. Steps
-5 to 7 then run once for each glass in the scene. Step 5 works out where that
-glass's rim middle falls in the picture. Step 6 picks out the pixels showing
-that glass and no other. Step 7 writes, at each of those pixels, the arrow from
-the pixel to that middle, divided by `VOTE_SCALE` so that the numbers sit near
-one.
+1. Build the first of the three numbers wanted at every pixel, which is one
+   where a glass was seen and zero on the table, read off the simulator's record
+   of which glass each pixel shows.
+2. Build the other two, which hold the arrow from a pixel to the middle of its
+   own glass's rim, divided by `VOTE_SCALE` so that the numbers sit near one.
+   This runs once for each glass in the scene.
+3. Go down the network, reading the picture at the size it arrived in and then
+   halving it twice, so that a unit at the bottom sees a wide patch of table.
+4. Come back up the network, enlarging twice and setting the kept copy from the
+   way down beside each enlargement, then collapsing the channels into the three
+   numbers asked for.
+5. Gather the votes that landed near one middle, and refuse a pile built from
+   too few of them to be a whole glass.
+6. Grow every voting pixel back into the block it stands for, keep those pixels
+   inside the picture, and mark them in a mask the size of the picture.
 
-Steps 8 to 14 are the network, and this is where PyTorch does the work. Steps 8
-to 10 are the down path: step 8 reads the picture at the size it arrived in,
-step 9 halves it, and step 10 halves it again, so that a unit at the bottom sees
-a wide patch of table. Steps 11 to 14 are the way back up, which is the same
-pair of moves done twice. Step 11 enlarges the small block to half size and step
-12 sets the half-size copy kept on the way down beside it; step 13 enlarges
-again and step 14 sets the full-size copy beside that, then collapses the
-channels into the three numbers asked for. The two `torch.cat` lines, steps 12
-and 14, are those copies carried from the way down across to the way up.
+Steps 1 to 4 are in ``02-train-from-scratch/models.py``. Steps 1 and 2 are the
+answer key, and the line that makes step 2 possible is the one noting the row
+and column of every pixel, because an arrow has to be measured from somewhere.
+Steps 3 and 4 are where PyTorch does the work, and the two `torch.cat` lines in
+step 4 are the copies carried from the way down across to the way up.
 
 ```python
 def top_target(picture: Picture, glasses) -> np.ndarray:
@@ -53,19 +54,19 @@ def top_target(picture: Picture, glasses) -> np.ndarray:
     # Step 1: take the simulator's record of which glass each pixel shows, at the
     # half size the network works in -- this is the answer key
     ids = picture.ids[::SHRINK, ::SHRINK]
-    # Step 2: make room for the three numbers wanted at every pixel
+    # Step 1: make room for the three numbers wanted at every pixel
     target = np.zeros((3, *SMALL), dtype=np.float32)
-    # Step 3: the first number is 1 where a glass was seen and 0 on the table
+    # Step 1: the first number is 1 where a glass was seen and 0 on the table
     target[0] = ids > 0
-    # Step 4: the row and column of every pixel, to measure an arrow from
+    # Step 2: the row and column of every pixel, to measure an arrow from
     rows, columns = np.indices(SMALL)
     for index, glass in enumerate(glasses):
-        # Step 5: where this glass's rim middle sits in the picture -- the place
+        # Step 2: where this glass's rim middle sits in the picture -- the place
         # its own pixels have to point at
         column, row = rim_middle(picture, glass)
-        # Step 6: the pixels showing this glass and no other
+        # Step 2: the pixels showing this glass and no other
         mine = ids == index + 1
-        # Step 7: at each of those pixels, the arrow to that middle, divided by
+        # Step 2: at each of those pixels, the arrow to that middle, divided by
         # VOTE_SCALE so the numbers sit near one
         target[1][mine] = (column - columns[mine]) / VOTE_SCALE
         target[2][mine] = (row - rows[mine]) / VOTE_SCALE
@@ -74,54 +75,52 @@ def top_target(picture: Picture, glasses) -> np.ndarray:
 class TopNet(nn.Module):
     ...
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Step 8: read the picture at the size it came in at, where fine detail is
+        # Step 3: read the picture at the size it came in at, where fine detail is
         full = self.at_full(x)
-        # Step 9: halve it, which loses exactly where things are and widens what
+        # Step 3: halve it, which loses exactly where things are and widens what
         # one unit can see
         half = self.at_half(full)
-        # Step 10: halve it again, so a unit here sees a wide patch of table --
+        # Step 3: halve it again, so a unit here sees a wide patch of table --
         # enough to tell which way its own glass's middle lies
         quarter = self.at_quarter(half)
-        # Step 11: enlarge the small block back up to half size
+        # Step 4: enlarge the small block back up to half size
         up = nn.functional.interpolate(quarter, size=half.shape[-2:])
-        # Step 12: set the kept half-size copy beside it, so the detail the
+        # Step 4: set the kept half-size copy beside it, so the detail the
         # halving threw away comes back
         up = self.up_half(torch.cat([up, half], 1))
-        # Step 13: enlarge again, back to the size the picture came in at
+        # Step 4: enlarge again, back to the size the picture came in at
         up = nn.functional.interpolate(up, size=full.shape[-2:])
-        # Step 14: set the full-size copy beside it, then a window one pixel wide
+        # Step 4: set the full-size copy beside it, then a window one pixel wide
         # turns the channels into the three numbers at every pixel
         return self.head(self.up_full(torch.cat([up, full], 1)))
 ```
 
-Steps 15 to 20 are where the votes become one glass's mask, in
-``02-train-from-scratch/pipeline.py``. Step 15 picks out the votes that landed
-near one middle, and step 16 refuses a pile built from too few of them to be a
-whole glass. Step 17 multiplies each voting pixel by `SHRINK`, which is how much
-the picture was shrunk by, to get the corner of the block that pixel stands for.
-Step 18 adds `_BLOCK`, the offsets of one shrunk pixel's own block, to every
-corner, so the mask claims the whole block rather than the one sampled pixel.
-Step 19 keeps those pixels inside the picture, and step 20 marks them in a mask
-the size of the picture and hands it back.
+Steps 5 and 6 are where the votes become one glass's mask, in
+``02-train-from-scratch/pipeline.py``. Step 6 is worth reading closely, because
+the growing happens in two lines: each voting pixel is multiplied by `SHRINK`,
+which is how much the picture was shrunk by, to get the corner of the block that
+pixel stands for, and then `_BLOCK`, the offsets of one shrunk pixel's own
+block, is added to every corner. That is what makes the mask claim the whole
+block rather than the one sampled pixel.
 
 ```python
 def pile_mask(picture: Picture, votes: Votes, middle) -> np.ndarray | None:
     """The pixels that voted for one middle, as a boolean mask, or None if too few did.
     ...
     """
-    # Step 15: which votes landed close enough to this middle to belong to it
+    # Step 5: which votes landed close enough to this middle to belong to it
     mine = np.linalg.norm(votes.landed - middle, axis=1) < MIDDLE_RADIUS
-    # Step 16: too small a pile is not a whole glass, so hand back nothing
+    # Step 5: too small a pile is not a whole glass, so hand back nothing
     if mine.sum() < MIN_VOTES:
         return None
-    # Step 17: the corner, in full-size pixels, of the block each voting pixel stands for
+    # Step 6: the corner, in full-size pixels, of the block each voting pixel stands for
     corners = np.stack([votes.rows[mine], votes.columns[mine]], 1) * SHRINK
-    # Step 18: grow every corner into its whole block, so the mask claims all the
+    # Step 6: grow every corner into its whole block, so the mask claims all the
     # pixels that voting pixel stood for
     pixels = (corners[:, None, :] + _BLOCK[None, :, :]).reshape(-1, 2)
-    # Step 19: keep every one of those pixels inside the picture
+    # Step 6: keep every one of those pixels inside the picture
     pixels = np.clip(pixels, 0, np.array(picture.depth.shape) - 1)
-    # Step 20: mark them true in a picture-sized mask, which is what is handed back
+    # Step 6: mark them true in a picture-sized mask, which is what is handed back
     mask = np.zeros(picture.depth.shape, dtype=bool)
     mask[pixels[:, 0], pixels[:, 1]] = True
     return mask
@@ -132,8 +131,8 @@ layers and the training loop, while the idea — an arrow at every glass pixel
 instead of a label — lives in the twelve lines that build the target, which is
 this project's own arithmetic. And a mask here is a set of votes rather than a
 drawn outline: nothing in either piece asks where a glass ends, and the only
-line that mentions a boundary is step 19, which keeps a block inside the
-picture.
+line that mentions a boundary is the clipping line in step 6, which keeps a
+block inside the picture.
 
 ## 2. The masks are what this contributes
 

@@ -63,7 +63,7 @@ class Ranker:
         )
         # Step 2: fit them to one row of numbers per candidate and the room that candidate gained
         trees.fit(rows, labels)
-        # Step 3: hand back the fitted model -- from here it answers with one score per candidate
+        # Step 2: hand back the fitted model -- from here it answers with one score per candidate
         return cls(trees)
 
     def __call__(self, rows: np.ndarray) -> np.ndarray:
@@ -91,16 +91,16 @@ def ranked(
     The geometry has already removed everything unsafe by the time ``score``
     is called, and ``score`` cannot put anything back.
     """
-    # Step 4: ask the geometry for every safe push on the table, and why a refused glass has none
+    # Step 3: ask the geometry for every safe push on the table, and why a refused glass has none
     kept, why = survivors(seen, skip)
-    # Step 5: stop here if the geometry allowed nothing -- there is nothing for the model to order
+    # Step 3: stop here if the geometry allowed nothing -- there is nothing for the model to order
     if not kept:
         return [], np.zeros(0), why
-    # Step 6: describe each surviving push as its eight numbers and ask the model to score it
+    # Step 4: describe each surviving push as its eight numbers and ask the model to score it
     scores = np.asarray(score(features.rows(seen, kept)), dtype=np.float64)
-    # Step 7: sort by score, highest first; a stable sort leaves tied candidates in their old order
+    # Step 4: sort by score, highest first; a stable sort leaves tied candidates in their old order
     order = np.argsort(-scores, kind="stable")
-    # Step 8: hand back the pushes best first, their scores in the same order, and the refusals
+    # Step 4: hand back the pushes best first, their scores in the same order, and the refusals
     return [kept[i] for i in order], scores[order], why
 
 

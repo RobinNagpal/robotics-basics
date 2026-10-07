@@ -49,10 +49,10 @@ CORRECTION = HERE / "correction"
 
 # Step 1: set how narrow the correction's squeeze is -- sixteen numbers, the usual starting rank
 RANK = 16
-# Step 2: set how hard the correction may pull -- twice the rank, the usual pairing, which
+# Step 1: set how hard the correction may pull -- twice the rank, the usual pairing, which
 # keeps its effect the same whatever rank it was fitted at
 SCALING = 32
-# Step 3: name the only tables the correction is added to -- attention's four projections
+# Step 1: name the only tables the correction is added to -- attention's four projections
 TABLES = ("q_proj", "k_proj", "v_proj", "o_proj")
 
 
@@ -100,15 +100,15 @@ def with_correction(policy, rank: int = RANK, scaling: int = SCALING):
     What comes back answers exactly as it did before, because a correction
     starts at zero. What has changed is which numbers the optimiser may move.
     """
-    # Step 4: bring in the library that builds the correction -- PEFT, because LeRobot has none
+    # Step 2: bring in the library that builds the correction -- PEFT, because LeRobot has none
     from peft import LoraConfig, get_peft_model
 
-    # Step 5: add a correction beside each named table -- and freeze all the borrowed numbers
+    # Step 3: add a correction beside each named table -- and freeze all the borrowed numbers
     policy.model = get_peft_model(
         policy.model,
         LoraConfig(r=rank, lora_alpha=scaling, lora_dropout=0.0, bias="none", target_modules=list(TABLES)),
     )
-    # Step 6: hand back the same model, with only the correction left free to move
+    # Step 3: hand back the same model, with only the correction left free to move
     return policy
 
 

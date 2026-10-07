@@ -31,16 +31,19 @@ No library decides anything in it. The whole of it is three divisions, three
 comparisons and two arctangents from Python's own `math`, which is the
 plainest illustration of what this solution being the control means.
 
-The function runs in five steps, and each one is marked in the code below.
-Step 1 takes half the width of the foot the glass stands on. Step 2 divides
-that by the grippiest friction the table could have, which gives the lowest
-push height that would tip this glass, and answers "yes" when the jaw pushes
-below it. Step 3 divides it by the slipperiest friction, which gives the
-highest such height, and answers "no" when the jaw still pushes at or above
-that one. Step 4 is reached only between those two cases, and measures how far
-this glass can lean before it falls over, from its foot and the height of its
-centre of mass. Step 5 compares the lean the short test push could cause
-against that angle, and answers "try" only while the lean is well inside it.
+The function runs in three steps, and each one is marked in the code below.
+
+1. Take half the width of the foot the glass stands on, and divide it by each
+   end of the friction range. Dividing by the grippiest friction gives the
+   lowest push height that would tip this glass, and the answer is "yes" when
+   the jaw pushes below it. Dividing by the slipperiest friction gives the
+   highest such height, and the answer is "no" when the jaw still pushes at or
+   above that one.
+2. Between those two heights, measure how far this glass can lean before it
+   falls over, from its foot and the height of its centre of mass. This step is
+   reached only when the friction, which nobody has measured, decides the case.
+3. Compare the lean the short test push could cause against that angle, and
+   answer "try" only while the lean is well inside it.
 
 ```python
 # Glass on a dry wooden top is somewhere in here. Nothing in the cell measures
@@ -58,42 +61,45 @@ def slides(glass: Seen) -> str:
     # Step 1: take half the width of the foot the glass stands on -- how far the foot's edge
     # is from the middle, which is what keeps the glass from going over
     half_foot = glass.foot / 2
-    # Step 2: divide it by the grippiest friction in the range, which gives the lowest push
+    # Step 1: divide it by the grippiest friction in the range, which gives the lowest push
     # height that tips this glass; a jaw under that slides it at every friction in the range
     if half_foot / MU_HIGHEST > JAW_TOP:
         return "yes"
-    # Step 3: divide it by the slipperiest friction, which gives the highest such height; a
+    # Step 1: divide it by the slipperiest friction, which gives the highest such height; a
     # jaw at or above that one tips the glass at every friction in the range, so refuse it
     if half_foot / MU_LOWEST <= JAW_TOP:
         return "no"
-    # Step 4: between the two widths the friction decides it, so measure how far this glass
+    # Step 2: between the two widths the friction decides it, so measure how far this glass
     # can lean before it falls: half its foot against the height of its centre of mass
     falls_past = math.atan2(half_foot, CENTRE_OF_MASS_SHARE * glass.height)
-    # Step 5: allow the short test push only while the lean it could cause stays well inside
+    # Step 3: allow the short test push only while the lean it could cause stays well inside
     # that angle, so a glass tall enough to be leaned most of the way over is refused instead
     return "try" if math.atan2(PROBE, JAW_TOP) < PROBE_LEAN_SHARE * falls_past else "no"
 ```
 
-Steps 2 and 3 are a question about the foot, and the picture below marks the
-two widths they compare against on one. Between those two widths the
-arithmetic has nothing left to say.
+Step 1 is a question about the foot, and the picture below marks the two widths
+it compares against on one. Between those two widths the arithmetic has nothing
+left to say.
 
 ![The foot a glass stands on, with the two widths the arithmetic compares against marked on it: below 26 mm a glass tips at every friction in the range and is refused, above 65 mm it slides at every friction and is pushed, and between the two the answer depends on a number nobody has. The ranges the four kinds of glass are drawn from show that neither the tapered kind nor the short stemmed one ever reaches the right-hand zone.](../../images/pushing-the-glasses-apart/one-fixed-nudge/nudge-pages-three-answers.png)
 
-Steps 4 and 5 are the one exception to that. A glass tall enough that even the
+Steps 2 and 3 are the one exception to that. A glass tall enough that even the
 short test push could lean it most of the way to falling is refused rather
 than tried, which is what the two arctangents compare.
 
 A glass that comes back "try" gets the fixed nudge, which is the same file's
 `probe`: the chosen push cut down to one constant length, aimed along the same
-line, and looked at before and after. It runs in four steps, numbered again
-from its own first line. Step 1 turns the push's heading into a unit vector,
-which is what NumPy is here for. Step 2 steps back from the aim
-by the whole travel, which lands on the glass's middle. Step 3 aims five
-millimetres past that middle instead. Step 4 hands back the same push with
-that short travel and near aim, leaving where the fingertips come down, the
-heading and the feeling forward alone. The two-line `needs_probe` below it is
-the gate that asks for all this, and it has one step of its own.
+line, and looked at before and after. It runs in three steps, numbered again
+from its own first line.
+
+1. Turn the push's heading into a unit vector, which is what NumPy is here for.
+2. Step back from the aim by the whole travel, which lands on the glass's
+   middle, and aim five millimetres past that middle instead.
+3. Hand back the same push with that short travel and near aim, leaving where
+   the fingertips come down, the heading and the feeling forward alone.
+
+The two-line `needs_probe` below it is the gate that asks for all this, and it
+has one step of its own.
 
 ```python
 # A glass that slides only at the low end is tried with a push this long, and
@@ -107,9 +113,9 @@ def probe(push: Push) -> Push:
     u = np.array([math.cos(push.heading), math.sin(push.heading)])
     # Step 2: step back from the aim by the whole travel, which lands on the glass's middle
     middle = np.array(push.aim) - push.travel * u
-    # Step 3: aim PROBE past that middle instead, so the jaw carries the glass 5 mm and stops
+    # Step 2: aim PROBE past that middle instead, so the jaw carries the glass 5 mm and stops
     aim = middle + PROBE * u
-    # Step 4: hand back the same push with the short travel and the near aim; where the
+    # Step 3: hand back the same push with the short travel and the near aim; where the
     # fingertips come down, the heading and the feeling forward are all unchanged
     return Push(push.glass, push.start, push.heading, push.reach, PROBE, (float(aim[0]), float(aim[1])))
 

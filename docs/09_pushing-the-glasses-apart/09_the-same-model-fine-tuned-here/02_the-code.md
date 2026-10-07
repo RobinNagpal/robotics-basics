@@ -22,40 +22,43 @@ to touch, and how a push the jaw really made becomes a training example.
 
 The first piece is in
 [`06-smolvla-fine-tuned/correction.py`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/correction.py),
-and it runs in six steps.
+and it runs in three steps.
 
-Steps 1 to 3 are settings, and they are this project's only choice about the
-correction. Step 1 sets the width of the squeeze the correction is forced
-through, which is sixteen numbers. Step 2 sets how hard the correction is
-allowed to pull. Step 3 names the weight tables it may be added to. Step 4
-brings in PEFT, the library that builds the correction, which is borrowed
-because LeRobot trains whole policies and has no low-rank adaptation of its
-own. Step 5 adds a fresh correction beside each named table and freezes every
-borrowed number, so the optimiser can move the correction and nothing else.
-Step 6 hands the same model back, ready to train.
+1. Set the three things this project chooses about the correction: the width of
+   the squeeze it is forced through, which is sixteen numbers, how hard it is
+   allowed to pull, and which weight tables it may be added to.
+2. Bring in PEFT, the library that builds the correction, which is borrowed
+   because LeRobot trains whole policies and has no low-rank adaptation of its
+   own.
+3. Add a fresh correction beside each named table, freeze every borrowed number
+   so the optimiser can move the correction and nothing else, and hand the same
+   model back, ready to train.
+
+Step 1 is the only one of the three this project decides anything in, and the
+three settings it holds are the whole of that decision.
 
 ```python
 # Step 1: set how narrow the correction's squeeze is -- sixteen numbers, the usual starting rank
 RANK = 16
-# Step 2: set how hard the correction may pull -- twice the rank, the usual pairing, which
+# Step 1: set how hard the correction may pull -- twice the rank, the usual pairing, which
 # keeps its effect the same whatever rank it was fitted at
 SCALING = 32
-# Step 3: name the only tables the correction is added to -- attention's four projections
+# Step 1: name the only tables the correction is added to -- attention's four projections
 TABLES = ("q_proj", "k_proj", "v_proj", "o_proj")
 
 ...
 
 def with_correction(policy, rank: int = RANK, scaling: int = SCALING):
     ...
-    # Step 4: bring in the library that builds the correction -- PEFT, because LeRobot has none
+    # Step 2: bring in the library that builds the correction -- PEFT, because LeRobot has none
     from peft import LoraConfig, get_peft_model
 
-    # Step 5: add a correction beside each named table -- and freeze all the borrowed numbers
+    # Step 3: add a correction beside each named table -- and freeze all the borrowed numbers
     policy.model = get_peft_model(
         policy.model,
         LoraConfig(r=rank, lora_alpha=scaling, lora_dropout=0.0, bias="none", target_modules=list(TABLES)),
     )
-    # Step 6: hand back the same model, with only the correction left free to move
+    # Step 3: hand back the same model, with only the correction left free to move
     return policy
 ```
 
@@ -67,42 +70,44 @@ sets out, written down as four strings.
 
 What the correction is fitted towards is built in
 [`06-smolvla-fine-tuned/chunks.py`](../../../code/src/09_pushing-the-glasses-apart/06-smolvla-fine-tuned/chunks.py).
-It is a separate file, so its steps are numbered from one again. Nothing in
-them invents a path.
+It is a separate file, so its steps are numbered from one again, and it runs in
+four of them. Nothing in them invents a path.
 
-Step 1 cuts the recorded push down to the flat stretch the model has to
-produce, which is the jaw at push height travelling forward. Step 2 throws the
-recording away if the jaw barely moved across the table, because there is no
-push in it to learn from. Step 3 resamples that stretch to the fifty waypoints
-a chunk holds, which is the borrowed model's own number. Step 4 throws the
-recording away if reading it through solution 5's convention and back out again
-moves it, because a push the model cannot ask for is not a target. Step 5 reads
-the waypoints into the numbers the model emits. Step 6 checks the result is the
-shape the training expects, and raises if it is not, because a wrong shape here
-is a mistake in this file rather than a bad recording.
+1. Cut the recorded push down to the flat stretch the model has to produce,
+   which is the jaw at push height travelling forward, and throw the recording
+   away if the jaw barely moved across the table, because there is no push in it
+   to learn from.
+2. Resample that stretch to the fifty waypoints a chunk holds, which is the
+   borrowed model's own number.
+3. Throw the recording away if reading it through solution 5's convention and
+   back out again moves it, because a push the model cannot ask for is not a
+   target.
+4. Read the waypoints into the numbers the model emits, and check the result is
+   the shape the training expects, raising if it is not, because a wrong shape
+   here is a mistake in this file rather than a bad recording.
 
 ```python
 def demonstration(path: tuple[Waypoint, ...]) -> np.ndarray | None:
     ...
     # Step 1: cut the recording down to the flat stretch the model has to produce
     part = pushing_part(path)
-    # Step 2: drop it if the jaw barely moved -- there is no push in it to learn from
+    # Step 1: drop it if the jaw barely moved -- there is no push in it to learn from
     if len(part) < 2 or across(part) < LEAST_ACROSS:
         return None
-    # Step 3: resample that stretch to the fifty waypoints a chunk holds -- the model's own number
+    # Step 2: resample that stretch to the fifty waypoints a chunk holds -- the model's own number
     waypoints = resampled(part)
-    # Step 4: drop it if a round trip through the convention moves it -- it is not a target then
+    # Step 3: drop it if a round trip through the convention moves it -- it is not a target then
     if drift(waypoints) > FAITHFUL:
         return None
-    # Step 5: read the waypoints into the numbers the model emits -- the units its answers are in
+    # Step 4: read the waypoints into the numbers the model emits -- the units its answers are in
     action = as_action(waypoints)
-    # Step 6: check the chunk is the shape the training expects -- a wrong shape is a bug here
+    # Step 4: check the chunk is the shape the training expects -- a wrong shape is a bug here
     if action.shape != (CHUNK, SLOTS):
         raise AssertionError(f"a chunk is ({CHUNK}, {SLOTS}), not {action.shape}")
     return action
 ```
 
-Step 3 is the line with a consequence in it. A chunk holds fifty
+Step 2 is the line with a consequence in it. A chunk holds fifty
 waypoints, which is the borrowed model's own number, and a recorded push is two
 or three times that many once the examiner has sampled it. Squeezing the longer
 path into the shorter one does not change where the jaw goes; it changes how

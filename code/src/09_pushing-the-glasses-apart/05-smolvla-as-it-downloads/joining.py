@@ -98,17 +98,17 @@ def to_jaw(action: np.ndarray, up: float = UP_HIGHER) -> np.ndarray:
     action = np.asarray(action, dtype=float)
     if action.ndim != 2 or action.shape[1] != SLOTS:
         raise ValueError(f"a SmolVLA chunk is (n, {SLOTS}), not {action.shape}")
-    # Step 6: divide by ACTION_SPAN and clip -- two standard deviations become the frame's edge
+    # Step 3: divide by ACTION_SPAN and clip -- two standard deviations become the frame's edge
     unit = np.clip(action / ACTION_SPAN, -1.0, 1.0)
     return np.stack(
         [
-            # Step 7: the across slot sets the position across the table -- from the frame's centre
+            # Step 4: the across slot sets the position across the table -- from the frame's centre
             VIEW_CENTRE[0] + unit[:, ACROSS] * TOP_VIEW_HALF_FRAME,
-            # Step 8: the out slot sets the position out from the arm -- the frame's other axis
+            # Step 4: the out slot sets the position out from the arm -- the frame's other axis
             VIEW_CENTRE[1] + unit[:, OUT] * TOP_VIEW_HALF_FRAME,
-            # Step 9: the up slot sets the height -- between the pushing and the travel height
+            # Step 4: the up slot sets the height -- between the pushing and the travel height
             PUSH_HEIGHT + (up * unit[:, UP] + 1.0) / 2.0 * (TRAVEL_HEIGHT - PUSH_HEIGHT),
-            # Step 10: the turn slot sets the heading -- a half turn either way, in radians
+            # Step 4: the turn slot sets the heading -- a half turn either way, in radians
             unit[:, TURN] * math.pi,
         ],
         axis=1,

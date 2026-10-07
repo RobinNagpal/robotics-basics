@@ -29,13 +29,13 @@ class PushNet(nn.Module):
             nn.Linear(HIDDEN, HIDDEN), nn.SiLU(),
             nn.Linear(HIDDEN, features.OUTPUTS),
         )  # fmt: skip
-        # Step 2: keep the training set's own average and spread beside the
+        # Step 1: keep the training set's own average and spread beside the
         # weights -- so a push asked about later is scaled as training scaled it
         self.register_buffer("mean", torch.zeros(features.INPUTS))
         self.register_buffer("spread", torch.ones(features.INPUTS))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Step 3: subtract that average and divide by that spread, then run the
+        # Step 1: subtract that average and divide by that spread, then run the
         # layers -- every number reaches the first layer at about the same size
         return self.net((x - self.mean) / self.spread)
 
@@ -99,11 +99,11 @@ class Ensemble:
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """(copies, rows, outputs), raw: movements scaled, yes-or-no as logits."""
-        # Step 4: answer without recording the workings -- nothing is being
+        # Step 2: answer without recording the workings -- nothing is being
         # trained here, so the workings would only cost time and memory
         with torch.no_grad():
             x_t = torch.as_tensor(x)
-            # Step 5: ask all five copies the same question and keep the five
+            # Step 2: ask all five copies the same question and keep the five
             # answers apart -- where they disagree is how the planner sees doubt
             return np.stack([net(x_t).numpy() for net in self.nets])
 

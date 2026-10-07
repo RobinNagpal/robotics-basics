@@ -73,23 +73,23 @@ def push_segment(waypoints: tuple[Waypoint, ...]) -> tuple[Waypoint, ...]:
     """
     # Step 1: pick out every waypoint the jaw took at push height -- the push itself is in there
     low = [i for i, point in enumerate(waypoints) if point.z <= PUSH_HEIGHT + AT_PUSH_HEIGHT]
-    # Step 2: a path that never got down there holds no push, so hand nothing back
+    # Step 1: a path that never got down there holds no push, so hand nothing back
     if len(low) < 2:
         return ()
-    # Step 3: the first and last of those bracket the time the jaw spent at push height
+    # Step 2: the first and last of those bracket the time the jaw spent at push height
     start, end = low[0], low[-1]
-    # Step 4: measure how far the jaw had travelled from the start of the push at each of them
+    # Step 2: measure how far the jaw had travelled from the start of the push at each of them
     origin = waypoints[start]
     gone = [math.dist((p.x, p.y), (origin.x, origin.y)) for p in waypoints[start : end + 1]]
-    # Step 5: the furthest it got is where the push ended and the back-off began
+    # Step 2: the furthest it got is where the push ended and the back-off began
     furthest = start + int(np.argmax(gone))
-    # Step 6: keep the start of the push up to that point, and drop everything after it
+    # Step 2: keep the start of the push up to that point, and drop everything after it
     return tuple(waypoints[start : furthest + 1]) if furthest > start else ()
 
 
 def to_action(waypoints: tuple[Waypoint, ...]) -> np.ndarray:
     """A run of waypoints as the (n, 5) numbers a policy is fitted on."""
-    # Step 7: write each waypoint as five numbers -- where the jaw is, then its heading as a
+    # Step 3: write each waypoint as five numbers -- where the jaw is, then its heading as a
     # cosine and a sine, which is a pair that does not jump when the angle wraps round
     return np.array(
         [[p.x, p.y, p.z, math.cos(p.heading), math.sin(p.heading)] for p in waypoints],
@@ -104,7 +104,7 @@ def resample(action: np.ndarray, count: int = CHUNK) -> np.ndarray:
         raise ValueError(f"an action is (n, {ACTION_WIDTH}), not {action.shape}")
     if len(action) < 2:
         raise ValueError("a path needs two waypoints to be resampled")
-    # Step 8: stretch or squeeze the kept push onto the chunk's fixed number of waypoints,
+    # Step 3: stretch or squeeze the kept push onto the chunk's fixed number of waypoints,
     # spread evenly in time, so the demonstrated pattern of speed survives
     was = np.linspace(0.0, 1.0, len(action))
     now = np.linspace(0.0, 1.0, count)
@@ -125,7 +125,7 @@ def to_waypoints(action: np.ndarray) -> tuple[tuple[Waypoint, ...], int]:
     if action.ndim != 2 or action.shape[1] != ACTION_WIDTH:
         raise ValueError(f"a chunk is (n, {ACTION_WIDTH}), not {action.shape}")
     half_x, half_y = TABLE_SIZE[0] / 2, TABLE_SIZE[1] / 2
-    # Step 17: pull every waypoint back onto the table and into the heights the jaw works at
+    # Step 6: pull every waypoint back onto the table and into the heights the jaw works at
     inside = np.stack(
         [
             np.clip(action[:, 0], TABLE_CENTRE_XY[0] - half_x, TABLE_CENTRE_XY[0] + half_x),
@@ -134,11 +134,11 @@ def to_waypoints(action: np.ndarray) -> tuple[tuple[Waypoint, ...], int]:
         ],
         axis=1,
     )
-    # Step 18: count the waypoints that had to be pulled in, so the number can be reported
+    # Step 6: count the waypoints that had to be pulled in, so the number can be reported
     pulled = int(np.any(np.abs(inside - action[:, :3]) > 1e-9, axis=1).sum())
-    # Step 19: turn the cosine and sine pair back into one heading angle
+    # Step 6: turn the cosine and sine pair back into one heading angle
     headings = np.arctan2(action[:, 4], action[:, 3])
-    # Step 20: hand back waypoints in the bench's own shape, with the count of pulled-in ones
+    # Step 6: hand back waypoints in the bench's own shape, with the count of pulled-in ones
     points = tuple(
         Waypoint(float(x), float(y), float(z), float(heading))
         for (x, y, z), heading in zip(inside, headings, strict=True)

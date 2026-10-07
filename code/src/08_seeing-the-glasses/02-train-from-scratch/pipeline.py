@@ -126,19 +126,19 @@ def pile_mask(picture: Picture, votes: Votes, middle) -> np.ndarray | None:
     quarter of the glass, and the bench measures how much of a glass a mask
     covered.
     """
-    # Step 15: which votes landed close enough to this middle to belong to it
+    # Step 5: which votes landed close enough to this middle to belong to it
     mine = np.linalg.norm(votes.landed - middle, axis=1) < MIDDLE_RADIUS
-    # Step 16: too small a pile is not a whole glass, so hand back nothing
+    # Step 5: too small a pile is not a whole glass, so hand back nothing
     if mine.sum() < MIN_VOTES:
         return None
-    # Step 17: the corner, in full-size pixels, of the block each voting pixel stands for
+    # Step 6: the corner, in full-size pixels, of the block each voting pixel stands for
     corners = np.stack([votes.rows[mine], votes.columns[mine]], 1) * SHRINK
-    # Step 18: grow every corner into its whole block, so the mask claims all the
+    # Step 6: grow every corner into its whole block, so the mask claims all the
     # pixels that voting pixel stood for
     pixels = (corners[:, None, :] + _BLOCK[None, :, :]).reshape(-1, 2)
-    # Step 19: keep every one of those pixels inside the picture
+    # Step 6: keep every one of those pixels inside the picture
     pixels = np.clip(pixels, 0, np.array(picture.depth.shape) - 1)
-    # Step 20: mark them true in a picture-sized mask, which is what is handed back
+    # Step 6: mark them true in a picture-sized mask, which is what is handed back
     mask = np.zeros(picture.depth.shape, dtype=bool)
     mask[pixels[:, 0], pixels[:, 1]] = True
     return mask

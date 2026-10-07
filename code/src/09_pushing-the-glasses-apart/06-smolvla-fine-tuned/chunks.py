@@ -132,17 +132,17 @@ def demonstration(path: tuple[Waypoint, ...]) -> np.ndarray | None:
     """
     # Step 1: cut the recording down to the flat stretch the model has to produce
     part = pushing_part(path)
-    # Step 2: drop it if the jaw barely moved -- there is no push in it to learn from
+    # Step 1: drop it if the jaw barely moved -- there is no push in it to learn from
     if len(part) < 2 or across(part) < LEAST_ACROSS:
         return None
-    # Step 3: resample that stretch to the fifty waypoints a chunk holds -- the model's own number
+    # Step 2: resample that stretch to the fifty waypoints a chunk holds -- the model's own number
     waypoints = resampled(part)
-    # Step 4: drop it if a round trip through the convention moves it -- it is not a target then
+    # Step 3: drop it if a round trip through the convention moves it -- it is not a target then
     if drift(waypoints) > FAITHFUL:
         return None
-    # Step 5: read the waypoints into the numbers the model emits -- the units its answers are in
+    # Step 4: read the waypoints into the numbers the model emits -- the units its answers are in
     action = as_action(waypoints)
-    # Step 6: check the chunk is the shape the training expects -- a wrong shape is a bug here
+    # Step 4: check the chunk is the shape the training expects -- a wrong shape is a bug here
     if action.shape != (CHUNK, SLOTS):
         raise AssertionError(f"a chunk is ({CHUNK}, {SLOTS}), not {action.shape}")
     return action

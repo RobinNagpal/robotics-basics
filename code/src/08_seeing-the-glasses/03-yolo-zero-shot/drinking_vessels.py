@@ -42,13 +42,13 @@ VESSELS = ("wine glass", "cup")
 # a shape it has never met, and dropping it would lose a real glass.
 NEIGHBOURS = ("bowl", "vase", "bottle")
 
-# Step 6: the five names worth keeping, as one set to test against -- all read off the model's list.
+# Step 3: the five names worth keeping, as one set to test against -- all read off the model's list.
 ACCEPTED = frozenset(VESSELS + NEIGHBOURS)
 
 
 def is_drinking_vessel(name: str) -> bool:
     """Whether one of the model's category names is kept."""
-    # Step 6: say whether one of the model's names is on that list -- anything else is dropped.
+    # Step 3: say whether one of the model's names is on that list -- anything else is dropped.
     return name in ACCEPTED
 
 
@@ -59,12 +59,12 @@ def accepted_ids(names: Mapping[int, str]) -> frozenset[int]:
     Taken from the model rather than written down, because the numbering belongs
     to whoever fitted the weights and a number copied here would rot silently.
     """
-    # Step 6: turn the accepted names into the model's own class numbers -- the answer has numbers.
+    # Step 3: turn the accepted names into the model's own class numbers -- the answer has numbers.
     return frozenset(number for number, name in names.items() if is_drinking_vessel(name))
 
 
 def are_drinking_vessels(class_ids, names: Mapping[int, str]) -> np.ndarray:
     """Per detection, whether the model's name for it is a drinking vessel."""
     kept = accepted_ids(names)
-    # Step 6: mark each detection whose class number is in that set -- this is the whole filter.
+    # Step 3: mark each detection whose class number is in that set -- this is the whole filter.
     return np.array([int(number) in kept for number in np.asarray(class_ids).ravel()], dtype=bool)

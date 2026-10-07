@@ -26,21 +26,18 @@ The library is Ultralytics: `YOLO` is the model, `attempt_download_asset` is
 what fetches the weights, and `model.predict` is the one line where the borrowed
 model does its work.
 
-One picture becomes a list of masks in eight steps, and the comments in the code
+One picture becomes a list of masks in four steps, and the comments in the code
 carry those numbers.
 
 1. Load the borrowed model, whose weights download themselves on the first
-   picture and are found on disk after that.
-2. Ask for that one loaded model and the processor to run it on.
-3. Shade the depth picture into the three-channel picture the model expects, and
-   run the model on it.
-4. Bring the answer back into ordinary memory.
-5. Read what the model reported: its own name for each outline, and how sure it
-   was.
-6. Keep the outlines named a drinking vessel that also clear the hand-set bar.
-7. Put the keepers in order, surest first.
-8. Fill each one into a mask, and drop a mask that covers mostly the same pixels
-   as a better-scoring one.
+   picture and are found on disk after that, so only the first picture pays.
+2. Shade the depth picture into the three-channel picture the model expects, run
+   the model on it, and bring the answer back into ordinary memory.
+3. Read what the model reported, which is its own name for each outline and how
+   sure it was, then keep the outlines named a drinking vessel that also clear
+   the hand-set bar, surest first.
+4. Fill each keeper into a mask, and drop a mask that covers mostly the same
+   pixels as a better-scoring one.
 
 The file writes the filtering above the call that produces its input, so the
 numbers below do not read top to bottom.
@@ -60,33 +57,33 @@ def _model():
 
 def masks_from(answer, shape: tuple[int, int]) -> list[np.ndarray]:
     ...
-    # Step 5: read the model's own list of category names -- the numbering belongs to the weights.
+    # Step 3: read the model's own list of category names -- the numbering belongs to the weights.
     names: Mapping[int, str] = answer.names
-    # Step 5: read how sure the model was about each outline -- only their order is worth trusting.
+    # Step 3: read how sure the model was about each outline -- only their order is worth trusting.
     confidences = np.asarray(answer.boxes.conf, dtype=float).ravel()
-    # Step 6: keep the outlines named a drinking vessel that also clear the bar -- name, then score.
+    # Step 3: keep the outlines named a drinking vessel that also clear the bar -- name, then score.
     keep = drinking_vessels.are_drinking_vessels(answer.boxes.cls, names) & above_the_bar(confidences)
-    # Step 7: put the outlines in order, surest first -- so a repeated glass keeps its better mask.
+    # Step 3: put the outlines in order, surest first -- so a repeated glass keeps its better mask.
     surest = sorted(range(len(confidences)), key=lambda index: -confidences[index])
-    # Step 8: fill every kept outline into a mask, surest first, and drop the ones that repeat.
+    # Step 4: fill every kept outline into a mask, surest first, and drop the ones that repeat.
     return merge_doubles(outline_to_mask(answer.masks.xy[index], shape) for index in surest if keep[index])
 
 def look(picture) -> object:
     ...
-    # Step 2: ask for that model and its processor -- only the first picture pays for loading it.
+    # Step 1: ask for that model and its processor -- only the first picture pays for loading it.
     model, where = _model()
-    # Step 3: shade the depth picture into the three-channel picture the model expects, and run it.
+    # Step 2: shade the depth picture into the three-channel picture the model expects, and run it.
     answers = model.predict(
         pictures.shade(picture),
         conf=CONFIDENCE_BAR_SET_BY_HAND,
         device=where,
         verbose=False,
     )
-    # Step 4: bring the answer back into ordinary memory -- the rest of the chain is plain numpy.
+    # Step 2: bring the answer back into ordinary memory -- the rest of the chain is plain numpy.
     return answers[0].cpu()
 ```
 
-The list of names step 6 tests against is in
+The list of names step 3 tests against is in
 [`03-yolo-zero-shot/drinking_vessels.py`](../../../code/src/08_seeing-the-glasses/03-yolo-zero-shot/drinking_vessels.py),
 and it is worth showing rather than describing, because the solution's one
 promise is that nothing in it was tuned to this cell and that promise covers
@@ -101,12 +98,12 @@ VESSELS = ("wine glass", "cup")
 
 NEIGHBOURS = ("bowl", "vase", "bottle")
 
-# Step 6: the five names worth keeping, as one set to test against -- all read off the model's list.
+# Step 3: the five names worth keeping, as one set to test against -- all read off the model's list.
 ACCEPTED = frozenset(VESSELS + NEIGHBOURS)
 
 def is_drinking_vessel(name: str) -> bool:
     """Whether one of the model's category names is kept."""
-    # Step 6: say whether one of the model's names is on that list -- anything else is dropped.
+    # Step 3: say whether one of the model's names is on that list -- anything else is dropped.
     return name in ACCEPTED
 ```
 

@@ -29,21 +29,23 @@ the sort that follows is the model's entire effect on the run. Both are in
 `src/09_pushing-the-glasses-apart/02-geometry-ranked/ranker.py`, and the steps
 below are marked in it with the same numbers.
 
-The file runs in two bursts. The first happens once, before any run of the arm.
-Step 1 sets up the trees without showing them anything, fixing how many there
-are, how deep each one asks its questions, and how small a correction each one
-may add. Step 2 fits them to the training table, which is one row of numbers per
-candidate and one measured outcome per row. Step 3 hands the fitted trees back
-wrapped in an object that answers with one score per candidate.
+The file runs in four steps, in two bursts. The first two happen once, before
+any run of the arm, and the last two run once per push.
 
-The second burst runs once per push. Step 4 asks the geometry for every safe push
-on the table, along with the reason any refused glass has none. Step 5 returns
-straight away when the geometry allowed nothing, because there is then nothing to
-put in order. Step 6 turns each surviving push into its eight numbers and asks
-the model to score it. Step 7 sorts those scores highest first, by a stable sort,
-so that candidates the model scored equally keep the order the geometry wrote
-them in. Step 8 hands back the sorted pushes, their scores in the same order, and
-the refusals.
+1. Set up the trees without showing them anything, fixing how many there are,
+   how deep each one asks its questions, and how small a correction each one may
+   add.
+2. Fit them to the training table, which is one row of numbers per candidate and
+   one measured outcome per row, then hand the fitted trees back wrapped in an
+   object that answers with one score per candidate.
+3. Ask the geometry for every safe push on the table, along with the reason any
+   refused glass has none, and return straight away when the geometry allowed
+   nothing, because there is then nothing to put in order.
+4. Turn each surviving push into its eight numbers, ask the model to score it,
+   sort those scores highest first by a stable sort, and hand back the sorted
+   pushes, their scores in the same order, and the refusals. The sort is stable
+   so that candidates the model scored equally keep the order the geometry wrote
+   them in.
 
 ```python
 from sklearn.ensemble import GradientBoostingRegressor
@@ -60,7 +62,7 @@ LEARNING_RATE = 0.05
         )
         # Step 2: fit them to one row of numbers per candidate and the room that candidate gained
         trees.fit(rows, labels)
-        # Step 3: hand back the fitted model -- from here it answers with one score per candidate
+        # Step 2: hand back the fitted model -- from here it answers with one score per candidate
         return cls(trees)
 ...
 def ranked(
@@ -69,16 +71,16 @@ def ranked(
     """Every safe push on the table, best first, with its score and the refusals.
     ...
     """
-    # Step 4: ask the geometry for every safe push on the table, and why a refused glass has none
+    # Step 3: ask the geometry for every safe push on the table, and why a refused glass has none
     kept, why = survivors(seen, skip)
-    # Step 5: stop here if the geometry allowed nothing -- there is nothing for the model to order
+    # Step 3: stop here if the geometry allowed nothing -- there is nothing for the model to order
     if not kept:
         return [], np.zeros(0), why
-    # Step 6: describe each surviving push as its eight numbers and ask the model to score it
+    # Step 4: describe each surviving push as its eight numbers and ask the model to score it
     scores = np.asarray(score(features.rows(seen, kept)), dtype=np.float64)
-    # Step 7: sort by score, highest first; a stable sort leaves tied candidates in their old order
+    # Step 4: sort by score, highest first; a stable sort leaves tied candidates in their old order
     order = np.argsort(-scores, kind="stable")
-    # Step 8: hand back the pushes best first, their scores in the same order, and the refusals
+    # Step 4: hand back the pushes best first, their scores in the same order, and the refusals
     return [kept[i] for i in order], scores[order], why
 ```
 
@@ -86,32 +88,33 @@ What `labels` holds is the whole design decision, and it is produced by making
 one candidate on the examiner's tables and measuring what it did, in
 `src/09_pushing-the-glasses-apart/02-geometry-ranked/rollout.py`. Its steps are
 numbered from one again, because this is a separate file and it runs before any
-of the eight above.
+of the four above.
 
-Step 1 puts the table back exactly as it was, so that every candidate is judged
-from the same arrangement. Step 2 makes the push for real and keeps what the jaw
-felt while it pushed. Step 3 looks at the table again with the camera, exactly as
-the arm would during a run. Step 4 measures the room gained, by taking the
-table's shortfall of room afterwards away from its shortfall before. Step 5 asks
-whether any glass is now leaning further than a standing glass ever leans. Step 6
-writes the label down: a topple scores worse than any push can be good, and
-anything else scores the room it gained.
+1. Put the table back exactly as it was, so that every candidate is judged from
+   the same arrangement, then make the push for real and keep what the jaw felt
+   while it pushed.
+2. Look at the table again with the camera, exactly as the arm would during a
+   run, and measure the room gained by taking the table's shortfall of room
+   afterwards away from its shortfall before.
+3. Ask whether any glass is now leaning further than a standing glass ever
+   leans, and write the label down. A topple scores worse than any push can be
+   good, and anything else scores the room it gained.
 
 ```python
 def roll(table: Bench, before: Before, candidate: Candidate) -> Rolled:
     """Put the table back as it was, make the push, and measure what it did."""
     # Step 1: put the table back exactly as it was -- every candidate is judged from the same start
     restore(table, before)
-    # Step 2: make the push for real, and keep what the jaw felt while it was pushing
+    # Step 1: make the push for real, and keep what the jaw felt while it was pushing
     felt = table.push(candidate.push)
-    # Step 3: look at the table again with the camera, exactly as the arm would during a run
+    # Step 2: look at the table again with the camera, exactly as the arm would during a run
     after = table.look()
-    # Step 4: measure the room gained: the table's shortfall of room before, less its shortfall now
+    # Step 2: measure the room gained: the table's shortfall of room before, less its shortfall now
     gained = nudge.shortfall(before.layout) - nudge.shortfall(truth(table))
-    # Step 5: ask whether any glass is now leaning further than a standing glass ever leans
+    # Step 3: ask whether any glass is now leaning further than a standing glass ever leans
     fell = any(table.tilt(i) >= STANDING_TILT_DEG for i in table.on_table())
     return Rolled(
-        # Step 6: a topple scores worse than any push can be good; anything else scores room gained
+        # Step 3: a topple scores worse than any push can be good; anything else scores room gained
         label=TOPPLED if fell else gained,
         ...
     )

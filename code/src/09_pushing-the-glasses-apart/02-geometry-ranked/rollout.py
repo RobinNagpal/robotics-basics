@@ -72,16 +72,16 @@ def roll(table: Bench, before: Before, candidate: Candidate) -> Rolled:
     """Put the table back as it was, make the push, and measure what it did."""
     # Step 1: put the table back exactly as it was -- every candidate is judged from the same start
     restore(table, before)
-    # Step 2: make the push for real, and keep what the jaw felt while it was pushing
+    # Step 1: make the push for real, and keep what the jaw felt while it was pushing
     felt = table.push(candidate.push)
-    # Step 3: look at the table again with the camera, exactly as the arm would during a run
+    # Step 2: look at the table again with the camera, exactly as the arm would during a run
     after = table.look()
-    # Step 4: measure the room gained: the table's shortfall of room before, less its shortfall now
+    # Step 2: measure the room gained: the table's shortfall of room before, less its shortfall now
     gained = nudge.shortfall(before.layout) - nudge.shortfall(truth(table))
-    # Step 5: ask whether any glass is now leaning further than a standing glass ever leans
+    # Step 3: ask whether any glass is now leaning further than a standing glass ever leans
     fell = any(table.tilt(i) >= STANDING_TILT_DEG for i in table.on_table())
     return Rolled(
-        # Step 6: a topple scores worse than any push can be good; anything else scores room gained
+        # Step 3: a topple scores worse than any push can be good; anything else scores room gained
         label=TOPPLED if fell else gained,
         gained=gained,
         seen_gained=room_gained(before.seen, after),

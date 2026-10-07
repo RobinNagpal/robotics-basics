@@ -209,24 +209,24 @@ class Finder:
         the glass did, so its width is not the glass's width and cannot refuse
         it.
         """
-        # Step 6: look up the narrowest and widest footprint a glass of this kind could have
+        # Step 4: look up the narrowest and widest footprint a glass of this kind could have
         narrowest, widest = data.widths(kind)
         kept: list[Found] = []
         doubts: list[str] = []
-        # Step 7: walk the model's candidate masks, surest first -- one candidate per object found
+        # Step 4: walk the model's candidate masks, surest first -- one candidate per object found
         for mask in self.candidates(picture)[0]:
-            # Step 8: turn one mask into a place and a width -- arithmetic every solution shares
+            # Step 4: turn one mask into a place and a width -- arithmetic every solution shares
             found = masks_to_glasses.one_glass(picture, mask)
-            # Step 9: too few depth readings to place it -- report a doubt instead of a glass
+            # Step 5: too few depth readings to place it -- report a doubt instead of a glass
             if found is None:
                 doubts.append(TOO_LITTLE)
-            # Step 10: keep it if its width suits the kind -- a frame-cut mask is excused the check
+            # Step 5: keep it if its width suits the kind -- a frame-cut mask is excused the check
             elif narrowest <= found.width <= widest or found.cut_off:
                 kept.append(found)
             else:
-                # Step 11: no glass of this kind is this wide -- report a doubt, never a glass
+                # Step 5: no glass of this kind is this wide -- report a doubt, never a glass
                 doubts.append(NO_SUCH_WIDTH)
-        # Step 12: leave one report per place on the table -- two masks on one glass become one
+        # Step 5: leave one report per place on the table -- two masks on one glass become one
         return masks_to_glasses.one_per_place(kept, narrowest), doubts
 
 
@@ -269,11 +269,11 @@ def fit(examples: Iterable[data.Example], *, amodal: bool, save: Path, epochs: i
         )
     from ultralytics import YOLO
 
-    # Step 2: write both parts out as pictures and label files -- the only shape Ultralytics reads
+    # Step 1: write both parts out as pictures and label files -- the only shape Ultralytics reads
     described, counts = dataset.build(fitting, checking)
-    # Step 3: pick up the downloaded weights -- the same file solution 3 runs untouched
+    # Step 2: pick up the downloaded weights -- the same file solution 3 runs untouched
     model = YOLO(str(borrowed()), task="segment")
-    # Step 4: continue that model's training on these pictures -- the one line that does the work
+    # Step 2: continue that model's training on these pictures -- the one line that does the work
     model.train(
         data=str(described),
         epochs=epochs,
@@ -291,7 +291,7 @@ def fit(examples: Iterable[data.Example], *, amodal: bool, save: Path, epochs: i
         plots=False,
         verbose=False,
     )
-    # Step 5: copy the run's best weights out -- this file is what run.py loads later
+    # Step 3: copy the run's best weights out -- this file is what run.py loads later
     shutil.copy(model.trainer.best, save)
 
     measured = model.trainer.metrics or {}

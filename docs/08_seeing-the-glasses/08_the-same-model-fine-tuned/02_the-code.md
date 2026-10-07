@@ -20,14 +20,17 @@ training. So the piece worth reading first is the fitting step.
 
 The fitting step is in
 [`04-yolo-fine-tuned/yolo_fine_tuned.py`](../../../code/src/08_seeing-the-glasses/04-yolo-fine-tuned/yolo_fine_tuned.py),
-and it runs five steps in order. Step 1 takes the scenes it was handed and holds
-every fourth one back, so the training run has pictures to check its own
-progress on. Step 2 writes both parts out as a directory of pictures and label
-files, which is the only shape Ultralytics reads a training set from. Step 3
-picks up the downloaded weights, the same file solution 3 runs untouched. Step 4
-is the single line where the borrowed library continues that model's training on
-these pictures. Step 5 copies the best weights the run produced into a file of
-this project's own, and that file is what `run.py` loads afterwards.
+and it runs in three steps.
+
+1. Take the scenes it was handed, hold every fourth one back so the training run
+   has pictures to check its own progress on, and write both parts out as a
+   directory of pictures and label files, which is the only shape Ultralytics
+   reads a training set from.
+2. Pick up the downloaded weights, the same file solution 3 runs untouched, and
+   continue that model's training on these pictures. The continuing is a single
+   line, because the borrowed library owns the training loop.
+3. Copy the best weights the run produced into a file of this project's own,
+   which is what `run.py` loads afterwards.
 
 ```python
 def fit(examples: Iterable[data.Example], *, amodal: bool, save: Path, epochs: int = EPOCHS) -> Mapping:
@@ -39,11 +42,11 @@ def fit(examples: Iterable[data.Example], *, amodal: bool, save: Path, epochs: i
     ...
     from ultralytics import YOLO
 
-    # Step 2: write both parts out as pictures and label files -- the only shape Ultralytics reads
+    # Step 1: write both parts out as pictures and label files -- the only shape Ultralytics reads
     described, counts = dataset.build(fitting, checking)
-    # Step 3: pick up the downloaded weights -- the same file solution 3 runs untouched
+    # Step 2: pick up the downloaded weights -- the same file solution 3 runs untouched
     model = YOLO(str(borrowed()), task="segment")
-    # Step 4: continue that model's training on these pictures -- the one line that does the work
+    # Step 2: continue that model's training on these pictures -- the one line that does the work
     model.train(
         data=str(described),
         epochs=epochs,
@@ -56,7 +59,7 @@ def fit(examples: Iterable[data.Example], *, amodal: bool, save: Path, epochs: i
         plots=False,
         verbose=False,
     )
-    # Step 5: copy the run's best weights out -- this file is what run.py loads later
+    # Step 3: copy the run's best weights out -- this file is what run.py loads later
     shutil.copy(model.trainer.best, save)
 ```
 
@@ -66,38 +69,40 @@ is no filter on category names here, because there is one class, so the only
 judgement left is the width check against the kind and the exemption for a
 candidate the frame cut short.
 
-Seven more steps run, and their numbers carry on from the fitting step, because
-the fitting happens once and these run on every picture afterwards. Step 6 looks
-up the narrowest and the widest footprint a glass of the known kind could have.
-Step 7 walks the model's candidates, surest first. Step 8 turns one candidate's
-mask into a place on the table and a width, by arithmetic every solution in the
-chapter shares. Step 9 reports a doubt when there were too few depth readings to
-place that mask at all. Step 10 keeps a candidate whose width suits the kind,
-and keeps one whose mask the frame cut short whatever its width. Step 11 reports
-a doubt for every candidate left. Step 12 leaves one report per place on the
-table, so two masks landing on one glass become one answer.
+Two more steps run, and their numbers carry on from the fitting step, because
+the fitting happens once and these run on every picture afterwards.
+
+4. Look up the narrowest and the widest footprint a glass of the known kind
+   could have, then walk the model's candidates surest first, turning each
+   candidate's mask into a place on the table and a width by arithmetic every
+   solution in the chapter shares.
+5. Keep a candidate whose width suits the kind, and keep one whose mask the
+   frame cut short whatever its width. Every candidate left is reported as a
+   doubt, as is one with too few depth readings to place at all, and what
+   survives is reduced to one report per place on the table, so two masks
+   landing on one glass become one answer.
 
 ```python
     def find(self, picture, kind: str) -> tuple[list[Found], list[str]]:
         ...
-        # Step 6: look up the narrowest and widest footprint a glass of this kind could have
+        # Step 4: look up the narrowest and widest footprint a glass of this kind could have
         narrowest, widest = data.widths(kind)
         kept: list[Found] = []
         doubts: list[str] = []
-        # Step 7: walk the model's candidate masks, surest first -- one candidate per object found
+        # Step 4: walk the model's candidate masks, surest first -- one candidate per object found
         for mask in self.candidates(picture)[0]:
-            # Step 8: turn one mask into a place and a width -- arithmetic every solution shares
+            # Step 4: turn one mask into a place and a width -- arithmetic every solution shares
             found = masks_to_glasses.one_glass(picture, mask)
-            # Step 9: too few depth readings to place it -- report a doubt instead of a glass
+            # Step 5: too few depth readings to place it -- report a doubt instead of a glass
             if found is None:
                 doubts.append(TOO_LITTLE)
-            # Step 10: keep it if its width suits the kind -- a frame-cut mask is excused the check
+            # Step 5: keep it if its width suits the kind -- a frame-cut mask is excused the check
             elif narrowest <= found.width <= widest or found.cut_off:
                 kept.append(found)
             else:
-                # Step 11: no glass of this kind is this wide -- report a doubt, never a glass
+                # Step 5: no glass of this kind is this wide -- report a doubt, never a glass
                 doubts.append(NO_SUCH_WIDTH)
-        # Step 12: leave one report per place on the table -- two masks on one glass become one
+        # Step 5: leave one report per place on the table -- two masks on one glass become one
         return masks_to_glasses.one_per_place(kept, narrowest), doubts
 ```
 

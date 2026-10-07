@@ -110,11 +110,11 @@ def circle_width(dots: np.ndarray) -> float:
     """
     # Step 1: one row per dot, holding its x, its y and a 1 -- the circle equation written out flat
     terms = np.column_stack([dots, np.ones(len(dots))])
-    # Step 2: solve every row at once for D, E and F -- least squares, so no starting guess is used
+    # Step 1: solve every row at once for D, E and F -- least squares, so no starting guess is used
     solved = np.linalg.lstsq(terms, (dots**2).sum(1), rcond=None)[0]
-    # Step 3: halve D and E to get the centre -- that is where the multiplied-out equation puts it
+    # Step 2: halve D and E to get the centre -- that is where the multiplied-out equation puts it
     x, y = solved[0] / 2.0, solved[1] / 2.0
-    # Step 4: turn F and the centre back into a width -- held at zero so a bad fit cannot go under
+    # Step 2: turn F and the centre back into a width -- held at zero so a bad fit cannot go under
     return 2.0 * float(np.sqrt(max(solved[2] + x * x + y * y, 0.0)))
 
 
@@ -129,7 +129,7 @@ def footprint(dots: np.ndarray) -> float:
     patch is, and over the 289 whole glasses of 20 held-out spawned scenes a
     circle fitted to the hull reads 0.3 mm over the true width at the median.
     """
-    # Step 5: fit the circle to the outline of the patch only -- all the dots would read too narrow
+    # Step 3: fit the circle to the outline of the patch only -- all the dots would read too narrow
     return circle_width(cv2.convexHull(dots.astype(np.float32)).reshape(-1, 2).astype(float))
 
 
@@ -210,15 +210,15 @@ def as_glasses(picture: Picture, one: Found, widths: tuple[float, float]) -> lis
     is as far as the fit goes: it is a glass the picture did not hold all of when
     its pixels reach the frame edge, and a refusal when they do not.
     """
-    # Step 6: measure the patch of table this group's own pixels stand on
+    # Step 4: measure the patch of table this group's own pixels stand on
     width = footprint(dots_of(picture, one.pixels))
-    # Step 7: a width the kind allows means one glass, and this patch is finished
+    # Step 4: a width the kind allows means one glass, and this patch is finished
     if widths[0] <= width <= widths[1]:
         return [one]
-    # Step 8: wider than the kind allows means more than one glass, so split the patch
+    # Step 4: wider than the kind allows means more than one glass, so split the patch
     if width > widths[1]:
         return come_apart(picture, one, widths)
-    # Step 9: narrower is forgiven only when the frame cut the patch short, else refuse to guess
+    # Step 4: narrower is forgiven only when the frame cut the patch short, else refuse to guess
     return [one] if one.cut_off else None
 
 
@@ -243,21 +243,21 @@ def come_apart(picture: Picture, one: Found, widths: tuple[float, float]) -> lis
     Each half is measured by the bench like any other mask, so the fitted circles
     leave this file and only the split they decided reaches the record.
     """
-    # Step 10: cut the patch's dots in two with k-means -- which of the two halves each dot went to
+    # Step 5: cut the patch's dots in two with k-means -- which of the two halves each dot went to
     mine = halve(dots_of(picture, one.pixels))
-    # Step 11: a cut that leaves one half empty is no cut, so hand the whole group over as doubtful
+    # Step 5: a cut that leaves one half empty is no cut, so hand the whole group over as doubtful
     if mine.all() or not mine.any():
         return None
     parts: list[Found] = []
     for half in (~mine, mine):
-        # Step 12: turn this half's dots back into a mask of the picture's own pixels
+        # Step 5: turn this half's dots back into a mask of the picture's own pixels
         side = np.zeros(picture.depth.shape, dtype=bool)
         side[one.pixels[half, 0], one.pixels[half, 1]] = True
-        # Step 13: let the examiner place and measure the half, as it does any other mask
+        # Step 5: let the examiner place and measure the half, as it does any other mask
         measured = masks_to_glasses.one_glass(picture, side)
         if measured is None:
             return None
-        # Step 14: ask Step 6 again of the half -- a part still too wide is split again
+        # Step 5: ask Step 4 again of the half -- a part still too wide is split again
         got = as_glasses(picture, measured, widths)
         if got is None:
             return None

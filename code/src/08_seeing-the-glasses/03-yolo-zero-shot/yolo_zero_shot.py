@@ -117,7 +117,7 @@ def outline_to_mask(outline: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
     """
     mask = np.zeros(shape, dtype=np.uint8)
     corners = np.asarray(outline, dtype=np.float64).reshape(-1, 2)
-    # Step 8: fill the ring of corners in, so the outline becomes a mask the bench can read.
+    # Step 4: fill the ring of corners in, so the outline becomes a mask the bench can read.
     if len(corners) >= CORNERS_OF_A_SHAPE:
         cv2.fillPoly(mask, [np.round(corners).astype(np.int32)], 1)
     return mask.astype(bool)
@@ -125,7 +125,7 @@ def outline_to_mask(outline: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
 
 def above_the_bar(confidences) -> np.ndarray:
     """Per outline, whether its confidence clears the hand-set bar."""
-    # Step 6: compare each confidence with the hand-set bar -- a knob set by eye, not a probability.
+    # Step 3: compare each confidence with the hand-set bar -- a knob set by eye, not a probability.
     return np.asarray(confidences, dtype=float).ravel() >= CONFIDENCE_BAR_SET_BY_HAND
 
 
@@ -146,7 +146,7 @@ def merge_doubles(masks: Iterable[np.ndarray]) -> list[np.ndarray]:
     """
     kept: list[np.ndarray] = []
     for mask in masks:
-        # Step 8: keep this mask only if no kept mask overlaps it -- one glass, one report.
+        # Step 4: keep this mask only if no kept mask overlaps it -- one glass, one report.
         if not any(_overlap(mask, other) > SAME_OUTLINE for other in kept):
             kept.append(mask)
     return kept
@@ -160,18 +160,18 @@ def masks_from(answer, shape: tuple[int, int]) -> list[np.ndarray]:
     what kind of thing was outlined. Surest first, so that `merge_doubles` keeps
     the better-scoring of a pair.
     """
-    # Step 5: with nothing outlined there is nothing to keep, so hand back an empty list.
+    # Step 3: with nothing outlined there is nothing to keep, so hand back an empty list.
     if answer.masks is None or len(answer.masks.xy) == 0:
         return []
-    # Step 5: read the model's own list of category names -- the numbering belongs to the weights.
+    # Step 3: read the model's own list of category names -- the numbering belongs to the weights.
     names: Mapping[int, str] = answer.names
-    # Step 5: read how sure the model was about each outline -- only their order is worth trusting.
+    # Step 3: read how sure the model was about each outline -- only their order is worth trusting.
     confidences = np.asarray(answer.boxes.conf, dtype=float).ravel()
-    # Step 6: keep the outlines named a drinking vessel that also clear the bar -- name, then score.
+    # Step 3: keep the outlines named a drinking vessel that also clear the bar -- name, then score.
     keep = drinking_vessels.are_drinking_vessels(answer.boxes.cls, names) & above_the_bar(confidences)
-    # Step 7: put the outlines in order, surest first -- so a repeated glass keeps its better mask.
+    # Step 3: put the outlines in order, surest first -- so a repeated glass keeps its better mask.
     surest = sorted(range(len(confidences)), key=lambda index: -confidences[index])
-    # Step 8: fill every kept outline into a mask, surest first, and drop the ones that repeat.
+    # Step 4: fill every kept outline into a mask, surest first, and drop the ones that repeat.
     return merge_doubles(outline_to_mask(answer.masks.xy[index], shape) for index in surest if keep[index])
 
 
@@ -183,16 +183,16 @@ def look(picture) -> object:
     What goes in has the shape of a photograph and none of its content, and that
     is the largest risk in this solution rather than an accident of the code.
     """
-    # Step 2: ask for that model and its processor -- only the first picture pays for loading it.
+    # Step 1: ask for that model and its processor -- only the first picture pays for loading it.
     model, where = _model()
-    # Step 3: shade the depth picture into the three-channel picture the model expects, and run it.
+    # Step 2: shade the depth picture into the three-channel picture the model expects, and run it.
     answers = model.predict(
         pictures.shade(picture),
         conf=CONFIDENCE_BAR_SET_BY_HAND,
         device=where,
         verbose=False,
     )
-    # Step 4: bring the answer back into ordinary memory -- the rest of the chain is plain numpy.
+    # Step 2: bring the answer back into ordinary memory -- the rest of the chain is plain numpy.
     return answers[0].cpu()
 
 

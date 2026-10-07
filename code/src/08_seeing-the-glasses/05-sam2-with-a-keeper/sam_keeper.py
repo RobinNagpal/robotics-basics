@@ -176,16 +176,16 @@ def prompt_spacing(kind: str) -> int:
     """
     # Step 1: how wide the narrowest glass is, in pixels -- the grid must catch the smallest one
     narrowest = data.widths(kind)[0] / _metres_per_pixel()
-    # Step 2: divide it so three points land across that glass -- that is the grid's spacing
+    # Step 1: divide it so three points land across that glass -- that is the grid's spacing
     return max(1, int(narrowest / POINTS_ACROSS_SMALLEST))
 
 
 def _grid(spacing: int, inside: np.ndarray | None = None) -> list[list[float]]:
     """Prompt points (column, row) on a regular grid, optionally only where ``inside`` is true."""
-    # Step 3: pick the rows and columns of the grid -- it starts half a step in from the edge
+    # Step 2: pick the rows and columns of the grid -- it starts half a step in from the edge
     rows = np.arange(spacing // 2, render.HEIGHT, spacing)
     columns = np.arange(spacing // 2, render.WIDTH, spacing)
-    # Step 4: pair every row with every column -- this is the list of points to prompt with
+    # Step 2: pair every row with every column -- this is the list of points to prompt with
     points = [[float(column), float(row)] for row in rows for column in columns]
     if inside is None:
         return points
@@ -246,19 +246,19 @@ class _Look:
         to the size the encoder was given, and the picture's own size is all that
         takes, so nothing re-reads the pixels for a second round of prompts.
         """
-        # Step 5: wrap each point in a prompt of its own -- not one prompt holding every point
+        # Step 3: wrap each point in a prompt of its own -- not one prompt holding every point
         asked = [[[point] for point in points]]
-        # Step 6: scale the points to the size the encoder saw -- the pixels are not read again
+        # Step 3: scale the points to the size the encoder saw -- the pixels are not read again
         prepared = self.processor(original_sizes=self.sizes, input_points=asked, return_tensors="pt")
-        # Step 7: move the points onto the model's processor -- and into a type it will take
+        # Step 3: move the points onto the model's processor -- and into a type it will take
         all_points = _onto(prepared["input_points"], self.where)
 
         masks, scores, stability = [], [], []
         with torch.no_grad():
-            # Step 8: send the prompts 64 at a time -- all their masks at once need too much memory
+            # Step 4: send the prompts 64 at a time -- all their masks at once need too much memory
             for start in range(0, all_points.shape[1], PROMPTS_AT_ONCE):
                 chunk = all_points[:, start : start + PROMPTS_AT_ONCE]
-                # Step 9: ask the borrowed model for masks -- three per point, encoder already run
+                # Step 4: ask the borrowed model for masks -- three per point, encoder already run
                 out = self.model(image_embeddings=self.embeddings, input_points=chunk, multimask_output=True)
                 # Judged small and enlarged afterwards. Most of what comes back
                 # is thrown away, and enlarging a mask costs far more than
@@ -360,15 +360,15 @@ def _table_area(points: np.ndarray) -> float:
 def _measure(picture, mask, found, jumps, step, camera, widths) -> list[float]:
     """Six of the keeper's eight numbers. The other two need the rest of the proposals:
     how many prompt points agreed on this shape, and whether another proposal contains it."""
-    # Step 10: take the rows and columns of the footprint's pixels -- places in the picture
+    # Step 5: take the rows and columns of the footprint's pixels -- places in the picture
     rows, columns = found.pixels[:, 0], found.pixels[:, 1]
-    # Step 11: turn those pixels into real points on the table -- not pixels in a picture
+    # Step 5: turn those pixels into real points on the table -- not pixels in a picture
     points = render.to_world(picture, rows, columns)
 
     low, high = widths
-    # Step 12: find the one-pixel ring just inside the mask -- where a depth step would show
+    # Step 5: find the one-pixel ring just inside the mask -- where a depth step would show
     edge = mask & ~cv2.erode(mask.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
-    # Step 13: hand back the six numbers -- six of the eight the keeper reads; two come later
+    # Step 5: hand back the six numbers -- six of the eight the keeper reads; two come later
     return [
         (found.width - low) / (high - low),  # where its width falls in the kind's range
         _roundness(mask),

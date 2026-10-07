@@ -78,19 +78,19 @@ def top_target(picture: Picture, glasses) -> np.ndarray:
     # Step 1: take the simulator's record of which glass each pixel shows, at the
     # half size the network works in -- this is the answer key
     ids = picture.ids[::SHRINK, ::SHRINK]
-    # Step 2: make room for the three numbers wanted at every pixel
+    # Step 1: make room for the three numbers wanted at every pixel
     target = np.zeros((3, *SMALL), dtype=np.float32)
-    # Step 3: the first number is 1 where a glass was seen and 0 on the table
+    # Step 1: the first number is 1 where a glass was seen and 0 on the table
     target[0] = ids > 0
-    # Step 4: the row and column of every pixel, to measure an arrow from
+    # Step 2: the row and column of every pixel, to measure an arrow from
     rows, columns = np.indices(SMALL)
     for index, glass in enumerate(glasses):
-        # Step 5: where this glass's rim middle sits in the picture -- the place
+        # Step 2: where this glass's rim middle sits in the picture -- the place
         # its own pixels have to point at
         column, row = rim_middle(picture, glass)
-        # Step 6: the pixels showing this glass and no other
+        # Step 2: the pixels showing this glass and no other
         mine = ids == index + 1
-        # Step 7: at each of those pixels, the arrow to that middle, divided by
+        # Step 2: at each of those pixels, the arrow to that middle, divided by
         # VOTE_SCALE so the numbers sit near one
         target[1][mine] = (column - columns[mine]) / VOTE_SCALE
         target[2][mine] = (row - rows[mine]) / VOTE_SCALE
@@ -110,22 +110,22 @@ class TopNet(nn.Module):
         self.head = nn.Conv2d(16, 3, 1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Step 8: read the picture at the size it came in at, where fine detail is
+        # Step 3: read the picture at the size it came in at, where fine detail is
         full = self.at_full(x)
-        # Step 9: halve it, which loses exactly where things are and widens what
+        # Step 3: halve it, which loses exactly where things are and widens what
         # one unit can see
         half = self.at_half(full)
-        # Step 10: halve it again, so a unit here sees a wide patch of table --
+        # Step 3: halve it again, so a unit here sees a wide patch of table --
         # enough to tell which way its own glass's middle lies
         quarter = self.at_quarter(half)
-        # Step 11: enlarge the small block back up to half size
+        # Step 4: enlarge the small block back up to half size
         up = nn.functional.interpolate(quarter, size=half.shape[-2:])
-        # Step 12: set the kept half-size copy beside it, so the detail the
+        # Step 4: set the kept half-size copy beside it, so the detail the
         # halving threw away comes back
         up = self.up_half(torch.cat([up, half], 1))
-        # Step 13: enlarge again, back to the size the picture came in at
+        # Step 4: enlarge again, back to the size the picture came in at
         up = nn.functional.interpolate(up, size=full.shape[-2:])
-        # Step 14: set the full-size copy beside it, then a window one pixel wide
+        # Step 4: set the full-size copy beside it, then a window one pixel wide
         # turns the channels into the three numbers at every pixel
         return self.head(self.up_full(torch.cat([up, full], 1)))
 
